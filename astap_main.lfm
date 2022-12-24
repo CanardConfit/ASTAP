@@ -1529,9 +1529,16 @@ object mainwindow: Tmainwindow
         ShortCut = 16470
         OnClick = flip_vertical1Click
       end
+      object fittowindow1: TMenuItem
+        Caption = 'Fit to window'
+        Hint = 'Fit to window.'
+        ShortCut = 16432
+        OnClick = fittowindow1Click
+      end
       object zoomfactorone1: TMenuItem
         Caption = 'Zoom 100%'
-        Hint = 'Zoom to 100%'
+        Hint = 'Zoom to 100%. Image pixels will match with screen pixels.'
+        ShortCut = 16433
         OnClick = zoomfactorone1Click
       end
       object MenuItem20: TMenuItem

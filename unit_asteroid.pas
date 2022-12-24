@@ -741,9 +741,6 @@ end;
 procedure Tform_asteroids1.annotate_asteroids1Click(Sender: TObject); {han.k}
 var maxcount : integer;
     maxmag   : double;
-    Save_Cursor: TCursor;
-
-
 begin
   set_some_defaults;
 
@@ -768,8 +765,7 @@ begin
   mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
   cometels_path:=form_asteroids1.mpcorb_path2.caption;
 
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux } 
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   plot_mpcorb(maxcount,maxmag,add_annotations);
   Screen.Cursor:=crDefault;
 

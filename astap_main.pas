@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.12.20';
+  astap_version='2022.12.24';
 
 type
   { Tmainwindow }
@@ -111,6 +111,7 @@ type
     MenuItem21: TMenuItem;
     display_adu1: TMenuItem;
     localcoloursmooth2: TMenuItem;
+    fittowindow1: TMenuItem;
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
@@ -393,6 +394,7 @@ type
     procedure halo_removal1Click(Sender: TObject);
     procedure display_adu1Click(Sender: TObject);
     procedure localcoloursmooth2Click(Sender: TObject);
+    procedure fittowindow1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure set_modified_date1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
@@ -3275,7 +3277,7 @@ begin
 
  {$IFDEF fpc}
  {$MACRO ON} {required for FPC_fullversion info}
-  about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+', Application path '+application_path;
+  about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+'. Application path '+application_path;
  {$ELSE} {delphi}
   about_message5:='';
  {$ENDIF}
@@ -4586,7 +4588,6 @@ const
   median_max_size=5000;
 
 begin
-  Save_Cursor := Screen.Cursor;
   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   if ((abs(stopX-startX)>2)and (abs(stopY-starty)>2))=false then {do statistics on whole image}
@@ -5087,7 +5088,6 @@ end;
 
 procedure split_raw(xp,yp : integer; filtern: string);{extract one of the Bayer matrix pixels}
 var
-  Save_Cursor : TCursor;
   dobackup    : boolean;
   i           : integer;
 
@@ -5103,7 +5103,6 @@ begin
 
     if OpenDialog1.Execute then
     begin
-      Save_Cursor := Screen.Cursor;
       Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
       dobackup:=img_loaded<>nil;
       if dobackup then backup_img;{preserve img array and fits header of the viewer}
@@ -7427,8 +7426,6 @@ begin
       c:=Sett.ReadInteger('stack','hue_fuzziness',987654321); if c<>987654321 then stackmenu1.hue_fuzziness1.position:=c;
       c:=Sett.ReadInteger('stack','saturation_tolerance',987654321);  if c<>987654321 then stackmenu1.saturation_tolerance1.position:=c;
 
-      stackmenu1.remove_luminance1.checked:= Sett.ReadBool('stack','remove_luminance',false);
-
       c:=Sett.ReadInteger('stack','sample_size',987654321);if c<>987654321 then stackmenu1.sample_size1.itemindex:=c;
 
       stackmenu1.mount_write_wcs1.Checked:=Sett.ReadBool('stack','wcs',true);{use wcs files for mount}
@@ -7790,7 +7787,6 @@ begin
 
       sett.writeInteger('stack','hue_fuzziness',stackmenu1.hue_fuzziness1.position);
       sett.writeInteger('stack','saturation_tolerance',stackmenu1.saturation_tolerance1.position);
-      sett.writeBool('stack','remove_luminance',stackmenu1.remove_luminance1.checked);{asteroids}
 
       sett.writeInteger('stack','sample_size',stackmenu1.sample_size1.itemindex);
 
@@ -8908,11 +8904,10 @@ end;
 
 procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 var
-  Save_Cursor         : TCursor;
   lim_magn            : double;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass;
+  application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   case stackmenu1.annotate_mode1.itemindex of
        0,1: lim_magn:=-99;//use local database
@@ -9250,7 +9245,6 @@ procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,tx,ty,saturation_counter : integer;
    flux,bg_median,value  : double;
-   Save_Cursor           : TCursor;
    mag_str               : string;
    bg_array              : array of double;
 begin
@@ -9266,7 +9260,6 @@ begin
     end;
     if flux_magn_offset=0 then begin beep; exit;end;
 
-    Save_Cursor := Screen.Cursor;
     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
@@ -9421,13 +9414,11 @@ var
    hfd1,star_fwhm,snr,flux,xc,yc, hfd2,
    star_fwhm2,snr2,flux2,xc2,yc2,angle     : double;
    info_message,info_message2 : string;
-   Save_Cursor              : TCursor;
 begin
   if head.naxis=0 then exit;
 
   if  ((abs(stopX-startX)>2) or (abs(stopY-starty)>2)) then
   begin
-    Save_Cursor := Screen.Cursor;
     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
@@ -10263,11 +10254,9 @@ procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
 var
   apert,annul,backgr,hfd_med : double;
   hfd_counter                : integer;
-  Save_Cursor                           : TCursor;
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
-  Save_Cursor := Screen.Cursor;
   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
@@ -10581,8 +10570,13 @@ begin
     //view
     with image_cleanup1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with center_lost_windows do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-    with flip_horizontal1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-    with flip_vertical1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
+    with flip_horizontal1 do shortcut:=menus.ShortCut(VK_H,[ssMeta,ssShift]);//note Macs universally use Cmd-H for "Hide App so add shift"
+    with flip_vertical1 do shortcut:=menus.ShortCut(VK_V,[ssMeta,ssShift]);
+
+
+    with fittowindow1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with zoomfactorone1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with grid1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
 
     //headermemo
@@ -12540,7 +12534,9 @@ begin
   areax2:=stopX;
   areay2:=stopY;
   set_area1.checked:=(areaX1<>areaX2);
-  stackmenu1.area_set1.caption:='✓';
+  //stackmenu1.area_set1.caption:='✓';
+  stackmenu1.area_set1.caption:='['+inttostr(areax1)+','+inttostr(areay1)+'], ['+inttostr(areax2)+','+inttostr(areay2)+']';
+
   stackmenu1.center_position1.caption:='Center: '+inttostr((startX+stopX) div 2)+', '+inttostr((startY+stopY) div 2);
 end;
 
@@ -12642,8 +12638,6 @@ procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
 var
   i                        : integer;
   dobackup,success         : boolean;
-  Save_Cursor              : TCursor;
-
 begin
   OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -12653,7 +12647,6 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     dobackup:=img_loaded<>nil;
@@ -14743,6 +14736,11 @@ begin
   end{fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
+end;
+
+procedure Tmainwindow.fittowindow1Click(Sender: TObject);
+begin
+  mainwindow.FormResize(nil);
 end;
 
 

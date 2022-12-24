@@ -515,7 +515,6 @@ var
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
   current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start       : double;
   solution, go_ahead, autoFOV,autoMaxstars,use_triples,yes_use_triples         : boolean;
-  Save_Cursor                                                                  : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,popup_warningV17,popup_warningSample,suggest_str, solved_in,
   offset_found,ra_offset_str,dec_offset_str,mount_info_str,mount_offset_str,warning_downsample                                         : string;
@@ -526,7 +525,6 @@ const
 
 
 begin
-  Save_Cursor := Screen.Cursor;
   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   result:=false;
   esc_pressed:=false;

@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 641
+  Left = 34
   Height = 813
-  Top = 196
+  Top = 125
   Width = 1857
   HorzScrollBar.Page = 1856
   VertScrollBar.Page = 558
@@ -542,12 +542,12 @@ object stackmenu1: Tstackmenu1
         OnClick = help_uncheck_outliers1Click
       end
       object blink_unaligned_multi_step1: TButton
-        Left = 1264
+        Left = 1368
         Height = 25
-        Hint = 'Un-aligned blink'
+        Hint = 'Un-aligned blink. For single step blink use the left and right arrow keys.'
         Top = 5
         Width = 50
-        Caption = '▶'
+        Caption = '▶▶'
         OnClick = blink_unaligned_multi_step1Click
         ParentFont = False
         ParentShowHint = False
@@ -566,12 +566,12 @@ object stackmenu1: Tstackmenu1
         TabOrder = 6
       end
       object blink_unaligned_multi_step_backwards1: TButton
-        Left = 1352
+        Left = 1432
         Height = 25
-        Hint = 'Un-aligned blink'
+        Hint = 'Un-aligned blink. For single step blink use the left and right arrow keys.'
         Top = 5
         Width = 50
-        Caption = '◀'
+        Caption = '◀◀'
         OnClick = blink_unaligned_multi_step1Click
         ParentFont = False
         ParentShowHint = False
@@ -1256,6 +1256,20 @@ object stackmenu1: Tstackmenu1
         Checked = True
         State = cbChecked
         TabOrder = 2
+      end
+      object clear_result_list1: TButton
+        Left = 1264
+        Height = 25
+        Hint = 'Clear result list'
+        Top = 5
+        Width = 53
+        AutoSize = True
+        Caption = 'Clear'
+        OnClick = clear_result_list1Click
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
       end
     end
     object tab_stackmethod1: TTabSheet
@@ -5860,7 +5874,7 @@ object stackmenu1: Tstackmenu1
           Left = 96
           Height = 30
           Hint = 'Add noise to the image in the viewer'
-          Top = 317
+          Top = 328
           Width = 184
           Caption = 'Apply'
           OnClick = apply_hue1Click
@@ -5886,7 +5900,7 @@ object stackmenu1: Tstackmenu1
           Left = 296
           Height = 30
           Hint = 'Undo last action'
-          Top = 317
+          Top = 328
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -6012,7 +6026,7 @@ object stackmenu1: Tstackmenu1
           ParentColor = False
         end
         object unselect_area1: TButton
-          Left = 184
+          Left = 328
           Height = 25
           Hint = 'Unselect area. If unselected the colours in whole image will be replaced.'
           Top = 144
@@ -6020,16 +6034,6 @@ object stackmenu1: Tstackmenu1
           Caption = '⍻'
           OnClick = unselect_area1Click
           TabOrder = 8
-        end
-        object remove_luminance1: TCheckBox
-          Left = 128
-          Height = 19
-          Hint = 'Use this to remove red, green or blue hot pixels. '
-          Top = 259
-          Width = 122
-          Caption = 'Remove luminance'
-          OnChange = remove_luminance1Change
-          TabOrder = 9
         end
         object saturation_tolerance1: TTrackBar
           Left = 152
@@ -6043,6 +6047,20 @@ object stackmenu1: Tstackmenu1
           OnChange = saturation_tolerance1Change
           PageSize = 5
           Position = 20
+          TickStyle = tsNone
+          TabOrder = 9
+        end
+        object new_colour_luminance1: TTrackBar
+          Left = 152
+          Height = 39
+          Hint = 'New luminance [0..200%]'
+          Top = 272
+          Width = 96
+          LineSize = 5
+          Max = 200
+          OnChange = new_colour_luminance1Change
+          PageSize = 5
+          Position = 100
           TickStyle = tsNone
           TabOrder = 10
         end
@@ -6624,6 +6642,8 @@ object stackmenu1: Tstackmenu1
             '0.6'
             '0.7'
             '0.8'
+            '2'
+            '5'
             '10'
             '20'
             '40'

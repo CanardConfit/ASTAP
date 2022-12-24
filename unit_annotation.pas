@@ -1788,7 +1788,6 @@ var
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                          : integer;
   flip_horizontal, flip_vertical        : boolean;
   mag_offset_array,hfd_x_sd             : array of double;
-  Save_Cursor                           : TCursor;
   mess                                  : string;
 
     procedure plot_star;
@@ -1884,7 +1883,6 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Save_Cursor := Screen.Cursor;
     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
@@ -2170,7 +2168,6 @@ var
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count    : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
   error_array                          : array of double;
-  Save_Cursor                          : TCursor;
 
     procedure plot_star;
     begin
@@ -2237,7 +2234,6 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Save_Cursor := Screen.Cursor;
     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
@@ -2416,7 +2412,6 @@ var
   mag2,Bp_Rp, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,sep      : double;
   x,y, max_nr_stars, area1,area2,area3,area4,count                                  : integer;
-  Save_Cursor                      : TCursor;
 
     procedure plot_star;
     begin
@@ -2443,7 +2438,6 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Save_Cursor := Screen.Cursor;
     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     counter_flux_measured:=0;
