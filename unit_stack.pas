@@ -1345,6 +1345,13 @@ begin
   for c := 0 to stackmenu1.ListView1.items.Count - 1 do
     if stackmenu1.ListView1.Items[c].Checked then Inc(images_selected, 1);
   stackmenu1.nr_selected1.Caption := IntToStr(images_selected);{update menu info}
+
+  {temporary fix for CustomDraw not called}
+  {$ifdef darwin} {MacOS}
+  stackmenu1.nr_total1.caption:=inttostr(stackmenu1.listview1.items.count);{update counting info}
+  {$endif}
+
+
 end;
 
 
@@ -2598,7 +2605,14 @@ end;
 
 procedure Tstackmenu1.removeselected1Click(Sender: TObject);
 begin
-  if Sender = removeselected1 then listview_removeselect(listview1);{from popup menu}
+  if Sender = removeselected1 then
+  begin
+     listview_removeselect(listview1);{from popup menu}
+         //temporary till MACOS customdraw is fixed
+       {$ifdef darwin} {MacOS}
+        count_selected;
+       {$endif}
+  end;
   if Sender = removeselected2 then listview_removeselect(listview2);{from popup menu}
   if Sender = removeselected3 then listview_removeselect(listview3);{from popup menu}
   if Sender = removeselected4 then listview_removeselect(listview4);{from popup menu}
@@ -2621,6 +2635,12 @@ procedure Tstackmenu1.clear_image_list1Click(Sender: TObject);
 begin
   ListView1.Clear;
   stackmenu1.ephemeris_centering1.Clear;
+
+  //temporary till MACOS customdraw is fixed
+  {$ifdef darwin} {MacOS}
+  count_selected;
+  {$endif}
+
 end;
 
 
@@ -3730,6 +3750,7 @@ begin
       exit;{done, can display only one image}
     end;
   end;
+  Screen.Cursor:=crDefault;//required sometimes for MacOS
 end;
 
 
@@ -3737,8 +3758,7 @@ procedure Tstackmenu1.listview1DblClick(Sender: TObject);
 begin
   listview_view(TListView(Sender));
   if ((pagecontrol1.tabindex = 8) {photometry} and (annotate_mode1.ItemIndex > 0)) then
-    mainwindow.variable_star_annotation1Click(nil);
-  //plot variable stars and comp star annotations
+    mainwindow.variable_star_annotation1Click(nil); //plot variable stars and comp star annotations
 end;
 
 function date_obs_regional(thedate: string): string;
@@ -5096,6 +5116,7 @@ begin
   if load_fits(filename2, True {light}, True, True {update memo}, 0, head,
     img_loaded) = False then
   begin
+    Screen.Cursor:=crDefault;
     exit;
   end;
 
@@ -5117,6 +5138,8 @@ begin
   lv.ItemIndex := c;// mark where we are.
 
   lv.setfocus;
+
+  Screen.Cursor:=crDefault;
 end;
 
 procedure Tstackmenu1.listview1KeyDown(Sender: TObject; var Key: word;
@@ -9326,6 +9349,12 @@ begin
     item.subitems.Strings[L_quality]:=add_unicode('', item.subitems.Strings[L_quality]);//remove crown or thumb down
     {$endif}
   end;
+
+  //temporary till MACOS customdraw is fixed
+  {$ifdef darwin} {MacOS}
+  count_selected;
+  {$endif}
+
 end;
 
 procedure Tstackmenu1.listview7Change(Sender: TObject; Item: TListItem;
