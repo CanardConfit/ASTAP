@@ -30,6 +30,7 @@ https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/37454
 Mac
 Listview event OnCustomDrawItem is never triggered/fired in Mac, widget Cocoa
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/40065
 }
 
 interface
@@ -59,7 +60,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.12.24';
+  astap_version='2022.12.26';
 
 type
   { Tmainwindow }
@@ -67,6 +68,7 @@ type
     add_marker_position1: TMenuItem;
     bin3x3: TMenuItem;
     BitBtn1: TBitBtn;
+    boxshape1: TShape;
     error_label1: TLabel;
     FontDialog1: TFontDialog;
     image_north_arrow1: TImage;
@@ -350,6 +352,8 @@ type
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
+    procedure boxshape1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
     procedure calibrate_photometry1Click(Sender: TObject);
     procedure Constellations1Click(Sender: TObject);
     procedure convert_to_ppm1Click(Sender: TObject);
@@ -396,6 +400,8 @@ type
     procedure localcoloursmooth2Click(Sender: TObject);
     procedure fittowindow1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
+    procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure set_modified_date1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
@@ -660,7 +666,7 @@ var {################# initialised variables #########################}
   stopY: integer=0;
   width_radians : double=(140/60)*pi/180;
   height_radians: double=(100/60)*pi/180;
-  mouse_enter : integer=0;{for crop function}
+//  mouse_enter : integer=0;{for crop function}
   application_path:string='';{to be set in main}
   database_path:string='';{to be set in main}
   bayerpat: string='';{bayer pattern}
@@ -899,8 +905,7 @@ uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, 
 
 var
   recent_files : tstringlist;
-  stop_RX, stop_RY, start_RX,start_RY,
-  export_index                                 : integer; {for rubber rectangle. These values are the same startX,.... except if image is flipped}
+  export_index                                 : integer;
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
 var {################# initialised variables #########################}
@@ -3356,7 +3361,7 @@ end;
 procedure Tmainwindow.Image1MouseEnter(Sender: TObject);
 begin
   mainwindow.caption:=filename2;{restore filename in caption}
-  if mouse_enter=0 then mouse_enter:=1;
+//  if mouse_enter=0 then mouse_enter:=1;
 end;
 
 
@@ -5149,7 +5154,7 @@ end;
 procedure Tmainwindow.Panel1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 begin
-  if (ssright in shift)=false then mouse_enter:=0; {for crop function}
+  Image1MouseMove(Sender,Shift, X-image1.Left, Y-image1.top);// transfer mouse move to image1
 end;
 
 
@@ -9426,13 +9431,13 @@ begin
     HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
     if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
-    begin
+    begin //lock
       shapetype:=1;{circle}
       shape_marker1_fitsX:=xc+1;{store fits value for zoom}
       shape_marker1_fitsY:=yc+1;
     end
     else
-    begin
+    begin //no lock
        info_message:='Object 1, no lock'+#10;
        shape_marker1_fitsX:=startX+1;{store fits value for zoom}
        shape_marker1_fitsY:=startY+1;
@@ -9442,32 +9447,35 @@ begin
 
     HFD(img_loaded,stopX,stopY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
     if ((hfd2<15) and (hfd2>=0.8) {two pixels minimum} and (snr2>10) and (flux2>1){rare but happens}) then {star detected in img_loaded}
-    begin
+    begin //lock
       shapetype:=1;{circle}
       shape_marker2_fitsX:=xc2+1;{store fits value for zoom}
       shape_marker2_fitsY:=yc2+1;
     end
     else
-    begin
+    begin //no lock
        info_message:=info_message+'Object 2, no lock'+#10;
        shape_marker2_fitsX:=stopX+1;{store fits value for zoom}
        shape_marker2_fitsY:=stopY+1;
        shapetype:=0;{rectangle}
     end;
+
+    boxshape1.visible:=true;//show box
     show_marker_shape(mainwindow.shape_marker2,shapetype,20,20,10{minimum},shape_marker2_fitsX,shape_marker2_fitsY);
 
-    angle:=fnmodulo (arctan2(shape_marker2_fitsX-shape_marker1_fitsX,shape_marker2_fitsY-shape_marker1_fitsY)*180/pi + head.crota2,360);
+    angle:=fnmodulo (arctan2(shape_marker1_fitsX-shape_marker2_fitsX,shape_marker2_fitsY-shape_marker1_fitsY)*180/pi - head.crota2,360);
+    if head.cdelt2<>0 then
+      info_message2:=floattostrf(sqrt(sqr(shape_marker2_fitsX-shape_marker1_fitsX)+sqr(shape_marker2_fitsY-shape_marker1_fitsY))*head.cdelt2*3600,ffFixed,0,2)+'"'
+    else
+      info_message2:=floattostrf(sqrt(sqr(shape_marker2_fitsX-shape_marker1_fitsX)+sqr(shape_marker2_fitsY-shape_marker1_fitsY)),ffFixed,0,2)+' pixels';
 
-    info_message2:=floattostrf(sqrt(sqr(shape_marker2_fitsX-shape_marker1_fitsX)+sqr(shape_marker2_fitsY-shape_marker1_fitsY))*head.cdelt2*3600,ffgeneral,5,5);
-    if head.cdelt2<>0 then  info_message2:=info_message2+'"'
-                 else  info_message2:=info_message2+' pixels';
 
-    info_message2:=info_message2+#9+'        ∠='+floattostrf(angle,ffgeneral,5,5)+'°';
+    info_message2:=info_message2+#9+'        ∠ '+floattostrf(angle,ffFixed,0,2)+'°';
 
     case  QuestionDlg (pchar('Angular distance '),pchar(info_message+info_message2),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
              mrYes: Clipboard.AsText:=info_message2;
     end;
-
+    boxshape1.visible:=false; //remove info box
     Screen.Cursor:=crDefault;
   end {fits file}
   else
@@ -10211,6 +10219,17 @@ begin
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
+
+
+
+
+
+procedure Tmainwindow.boxshape1MouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+begin
+  Image1MouseMove(Sender,Shift, boxshape1.left-image1.Left+X, boxshape1.top-image1.top+Y);// transfer mouse move to image1
+end;
+
 
 
 procedure give_spiral_position(position : integer; var x,y : integer); {give x,y position of square spiral as function of input value}
@@ -12186,7 +12205,7 @@ procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
 var fitsX,fitsY,col,dum       : integer;
     ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
 begin
-  if ((head.naxis<>0) and (abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
+  if ((head.naxis<>0) and (abs(stopX-startX)>3)and (abs(stopY-starty)>3)) then
   begin
    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
@@ -12195,6 +12214,17 @@ begin
    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
+
+   inc(startX);//take only inside of rectangle
+   inc(startY);
+   dec(stopX);
+   dec(stopY);
+
+   startx:=max(startX,0);  // prevent runtime errors. Box can be outside image
+   startY:=max(startY,0);
+   stopX:=min(stopX,head.width-1);
+   stopY:=min(stopY,head.height-1);
+
    head.width:=stopX-startx+1;
    head.height:=stopY-starty+1;
    setlength(img_temp,head.naxis3,head.width,head.height);{set length of image array}
@@ -12202,7 +12232,7 @@ begin
 
    for col:=0 to head.naxis3-1 do
      for fitsY:=startY to stopY do
-       for fitsX:=startX to stopX do {crop image INCLUDING rectangle. Do this that if used near corners they are included}
+       for fitsX:=startX to stopX do {crop image EXCLUDING rectangle.}
           img_temp[col,fitsX-startX,fitsY-startY]:=img_loaded[col,fitsX,fitsY];
 
    img_loaded:=nil;{release memory}
@@ -13563,36 +13593,6 @@ begin
 end;
 
 
-procedure erase_rectangle;
-begin
-  begin
-    mainwindow.image1.Canvas.Pen.color:=clblack;{define otherwise problems in Linux}
-    mainwindow.image1.Canvas.Pen.Mode := pmNotXor;       { use XOR mode to draw/erase }
-    mainwindow.image1.Canvas.Pen.width := round(1+head.width/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
-    mainwindow.image1.Canvas.MoveTo(start_RX , start_RY);   { move pen back to origin }
-
-    mainwindow.image1.Canvas.LineTo(stop_RX,start_RY);        { erase the old line }
-    mainwindow.image1.Canvas.LineTo(stop_RX,stop_RY);          { erase the old line }
-    mainwindow.image1.Canvas.LineTo(start_RX,stop_RY);        { erase the old line }
-    mainwindow.image1.Canvas.LineTo(start_RX,start_RY);      { erase the old line }
-    mainwindow.image1.Canvas.Pen.Mode := pmCopy;{back to normal}
-  end;
-end;
-
-
-procedure draw_rectangle(x_sized,y_sized:integer);
-begin
-  mainwindow.image1.Canvas.Pen.color:=clblack;
-  mainwindow.image1.Canvas.Pen.Mode := pmNotXor;       { use XOR mode to draw/erase }
-  mainwindow.image1.Canvas.Pen.width := round(1+head.width/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
-  mainwindow.image1.Canvas.LineTo(X_sized, start_RY);    { draw the new line }
-  mainwindow.image1.Canvas.LineTo(X_sized, Y_sized);   { draw the new line }
-  mainwindow.image1.Canvas.LineTo(start_RX, Y_sized);    { draw the new line }
-  mainwindow.image1.Canvas.LineTo(start_RX, start_RY);     { draw the new line }
-  mainwindow.image1.Canvas.Pen.Mode := pmCopy;{back to normal}
-end;
-
-
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 var
   egain: double;
@@ -13620,9 +13620,9 @@ end;
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor,
-  adu_e                                                                        : double;
+  adu_e,l,t                                                                       : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str                  : string;
-  width5,height5,x_sized,y_sized,factor,flipH,flipV,iterations                 : integer;
+  width5,height5,box_SX,box_SY,flipH,flipV,iterations, box_LX,box_LY                   : integer;
   color1:tcolor;
   r,b :single;
 begin
@@ -13684,59 +13684,43 @@ begin
    mouse_fitsx:=0.5+(0.5+xf)/(image1.width/width5);{starts at +0.5 and  middle pixels is 1}
    mouse_fitsy:=0.5+height5-(0.5+yf)/(image1.height/height5); {from bottom to top, starts at +0.5 and 1 at middle first pixel}
 
-
    //rubber rectangle
-   x_sized:=trunc(x*width5/image1.width);
-   y_sized:=trunc(y*height5/image1.height);
-
-   if ssright in shift then {for crop function}
+   if ssright in shift then {rubber rectangle}
    begin
-     if mouse_enter=1 then
+
+     stopX:=round(-1+mouse_fitsX); {starts at -0.5 and  middle pixels is 0}
+     stopY:=round(-1+mouse_fitsY); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
+
+     if flipH>0 then box_SX:=min(startX,stopX) else box_SX:=width5-1-max(startX,stopX);//box left position
+     if flipV<0 then box_SY:=min(startY,stopY) else box_SY:=height5-1-max(startY,stopY);// box top position
+     box_LX:=abs(startX-stopX);//box width
+     box_LY:=abs(startY-stopY);// box height
+
+     boxshape1.Left:=image1.left + trunc((image1.width/width5)*box_SX);
+     boxshape1.top:= image1.top+trunc((image1.height/height5)* box_SY);
+     boxshape1.width:= trunc( (image1.width/width5)* (box_LX+1)         );
+     boxshape1.height:=trunc( (image1.height/height5)* (box_LY+1)        );
+     boxshape1.Pen.width :=max(1,round(image1.width/width5));
+     boxshape1.visible:=true;
+
+     if head.cdelt2<>0 then
      begin
-       start_RX:= x_sized;
-       start_RY:= y_sized;
-       stop_RX:= x_sized;
-       stop_RY:= y_sized;
-     end;
-     mouse_enter:=2;{right button pressed}
+       pixel_distance:= 3600*sqrt (sqr((box_LX)*head.cdelt1)+sqr((box_LY)*head.cdelt2));{pixel distance in arcsec}
+       if pixel_distance<60 then dist_str:=inttostr(round(pixel_distance))+'"'
+       else
+       if pixel_distance<3600 then dist_str:=floattostrF(pixel_distance/60,ffgeneral,3,2)+#39
+       else
+       dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
+     end
+     else dist_str:='';
+     if head.cdelt2<>0 then angle_str:='∠ '+inttostr(round(fnmodulo (arctan2(startX-stopX,stopY-startY)*180/pi - head.crota2,360)) )+'°' else  angle_str:=''; ;
+     mainwindow.statusbar1.panels[7].text:=inttostr(box_LX)+' x '+inttostr(box_LY)+'    '+dist_str+'    '+angle_str;{indicate rectangle size}
    end
    else
-   mouse_enter:=0;
-
-
-   factor:=round(1+width5/image1.width);
-   if ((abs(stop_RX -x)>factor) and (abs(stop_RY -y)>factor))then
    begin
-     if ssright in shift then {rubber rectangle}
-     begin
-       erase_rectangle;
-       draw_rectangle(x_sized,y_sized);
-
-       stopX:=round(-1+mouse_fitsX); {starts at -0.5 and  middle pixels is 0}
-       stopY:=round(-1+mouse_fitsY); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
-
-       if head.cdelt2<>0 then
-       begin
-         pixel_distance:= 3600*sqrt (sqr((X_sized-start_RX)*head.cdelt1)+sqr((start_RY-Y_sized)*head.cdelt2));{pixel distance in arcsec}
-         if pixel_distance<60 then dist_str:=inttostr(round(pixel_distance))+'"'
-         else
-         if pixel_distance<3600 then dist_str:=floattostrF(pixel_distance/60,ffgeneral,3,2)+#39
-         else
-         dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
-       end
-       else dist_str:='';
-       if head.cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-start_RX),flipV*(start_RY-Y_sized))*180/pi + head.crota2,360)) )+'°' else  angle_str:=''; ;
-       mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-start_RX)-1)+' x '+inttostr(abs(start_RY-Y_sized)-1)+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
-     end
-     else
-     begin
-       start_RX:=x_sized; {These values are the same startX,.... except if image is flipped}
-       start_RY:=y_sized;
-       mainwindow.statusbar1.panels[7].text:='';{remove crop size}
-     end;
-     stop_RX:=x_sized; {These values are the same startX,.... except if image is flipped}
-     stop_RY:=y_sized;
+     mainwindow.statusbar1.panels[7].text:='';{remove crop size}
    end;
+
   {end rubber rectangle}
 
    if ssright in shift then exit; {rubber rectangle with update statusbar is very slow. Does it trigger an event???}
@@ -13840,12 +13824,9 @@ procedure Tmainwindow.Image1MouseUp(Sender: TObject; Button: TMouseButton;
 begin
    if button=mbright then
    begin
+     if abs(stopX-startX)>2 then boxshape1.visible:=true;//extra for case it is invisible
      PopupMenu1.PopUp;{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
-     {$IfDef Darwin}// for OS X,
-     {not required in Mac. After popup the rectangle is gone}
-      {$ELSE}
-      erase_rectangle;
-     {$ENDIF}
+     boxshape1.visible:=false;
    end;
 
   down_xy_valid := False;
@@ -14814,6 +14795,12 @@ begin
     progress_indicator(-100,'');{progresss done}
   end;
   img_temp:=nil;
+end;
+
+procedure Tmainwindow.Panel1MouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  Image1MouseDown(Sender,Button,Shift, X-image1.left, Y-image1.top);//transfer mouse down to image1
 end;
 
 

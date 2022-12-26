@@ -1,9 +1,9 @@
 object stackmenu1: Tstackmenu1
-  Left = 34
+  Left = 49
   Height = 813
-  Top = 125
+  Top = 313
   Width = 1857
-  HorzScrollBar.Page = 1856
+  HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -479,6 +479,7 @@ object stackmenu1: Tstackmenu1
         SortType = stText
         TabOrder = 2
         ViewStyle = vsReport
+        OnChange = listview1Change
         OnColumnClick = listview1ColumnClick
         OnCompare = listview1Compare
         OnCustomDraw = listview1CustomDraw
@@ -3495,10 +3496,10 @@ object stackmenu1: Tstackmenu1
         SortType = stText
         TabOrder = 5
         ViewStyle = vsReport
+        OnChange = listview7Change
         OnColumnClick = listview1ColumnClick
         OnCompare = listview1Compare
         OnCustomDraw = listview7CustomDraw
-        OnCustomDrawItem = listview7CustomDrawItem
         OnDblClick = listview1DblClick
         OnKeyDown = listview1KeyDown
       end

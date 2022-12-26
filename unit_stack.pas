@@ -630,7 +630,11 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
+    procedure listview1Change(Sender: TObject; Item: TListItem;
+      Change: TItemChange);
     procedure listview1ItemChecked(Sender: TObject; Item: TListItem);
+    procedure listview7Change(Sender: TObject; Item: TListItem;
+      Change: TItemChange);
     procedure live_monitoring1Click(Sender: TObject);
     procedure auto_select1Click(Sender: TObject);
     procedure make_osc_color1Click(Sender: TObject);
@@ -2340,6 +2344,11 @@ end;
 procedure Tstackmenu1.Analyse1Click(Sender: TObject);
 begin
   analyse_tab_lights(True {full});
+  {temporary fix for CustomDraw not called}
+  {$ifdef darwin} {MacOS}
+  stackmenu1.nr_total1.caption:=inttostr(listview1.items.count);{update counting info}
+  {$endif}
+
 end;
 
 
@@ -5250,11 +5259,6 @@ begin
     Sender.Canvas.Font.Color := clmenutext;
     {required for high contrast settings. Otherwise it is always black}
   end;
- {$ifdef mswindows}
- {$else} {unix}
- {temporary fix for CustomDraw not called}
- if Item.index=0 then  stackmenu1.nr_total1.caption:=inttostr(sender.items.count);{update counting info}
- {$endif}
 end;
 
 
@@ -5268,11 +5272,6 @@ end;
 procedure Tstackmenu1.listview2CustomDrawItem(Sender: TCustomListView;
   Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
 begin
-  {$ifdef mswindows}
-  {$else} {unix}
-  {temporary fix for CustomDraw not called}
-  if  Item.index=0 then  stackmenu1.nr_total_flats1.caption:=inttostr(ListView2.items.count);{update counting info}
-  {$endif}
   Sender.Canvas.Font.Color := clmenutext;
   {required for high contrast settings. Otherwise it is always black}
 end;
@@ -5286,11 +5285,6 @@ end;
 procedure Tstackmenu1.listview3CustomDrawItem(Sender: TCustomListView;
   Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
 begin
-  {$ifdef mswindows}
-  {$else} {unix}
-  {temporary fix for CustomDraw not called}
-  if  Item.index=0 then  stackmenu1.nr_total_flats1.caption:=inttostr(sender.items.count);{update counting info}
-  {$endif}
   Sender.Canvas.Font.Color := clmenutext;
   {required for high contrast settings. Otherwise it is always black}
 end;
@@ -5323,11 +5317,6 @@ end;
 procedure Tstackmenu1.listview6CustomDrawItem(Sender: TCustomListView;
   Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
 begin
-  {$ifdef mswindows}
-  {$else} {unix}
-  {temporary fix for CustomDraw not called}
-  if  Item.index=0 then  stackmenu1.nr_total_blink1.caption:=inttostr(sender.items.count);{update counting info}
-  {$endif}
   Sender.Canvas.Font.Color := clmenutext;
   {required for high contrast settings. Otherwise it is always black}
 end;
@@ -7675,11 +7664,6 @@ end;
 procedure Tstackmenu1.listview7CustomDrawItem(Sender: TCustomListView;
   Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
 begin
-  {$ifdef mswindows}
-  {$else} {unix}
-  {temporary fix for CustomDraw not called}
-  if  Item.index=0 then  stackmenu1.nr_total_photometry1.caption:=inttostr(sender.items.count);{update counting info}
-  {$endif}
   Sender.Canvas.Font.Color := clmenutext;
   {required for high contrast settings. Otherwise it is always black}
 end;
@@ -9321,6 +9305,15 @@ begin
   openurl('http://www.hnsky.org/astap.htm#mount_tab');
 end;
 
+procedure Tstackmenu1.listview1Change(Sender: TObject; Item: TListItem;
+  Change: TItemChange);
+begin
+  {temporary fix for CustomDraw not called}
+  {$ifdef darwin} {MacOS}
+  stackmenu1.nr_total1.caption:=inttostr(listview1.items.count);{update counting info}
+  {$endif}
+end;
+
 
 
 procedure Tstackmenu1.listview1ItemChecked(Sender: TObject; Item: TListItem);
@@ -9333,6 +9326,17 @@ begin
     item.subitems.Strings[L_quality]:=add_unicode('', item.subitems.Strings[L_quality]);//remove crown or thumb down
     {$endif}
   end;
+end;
+
+procedure Tstackmenu1.listview7Change(Sender: TObject; Item: TListItem;
+  Change: TItemChange);
+begin
+  {$ifdef mswindows}
+  {$else} {unix}
+  {temporary fix for CustomDraw not called}
+   stackmenu1.nr_total_photometry1.Caption := IntToStr(listview7.items.Count);
+  {$endif}
+  {update counting info}
 end;
 
 
@@ -9747,6 +9751,14 @@ begin
   listview7.items.beginupdate;
   listview7.alphasort;{sort on time}
   listview7.items.endupdate;
+
+  {$ifdef mswindows}
+  {$else} {unix}
+  {temporary fix for CustomDraw not called}
+   stackmenu1.nr_total_photometry1.Caption := IntToStr(listview7.items.Count);
+  {$endif}
+  {update counting info}
+
 end;
 
 

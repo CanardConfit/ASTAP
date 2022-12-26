@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
-  Left = 292
-  Height = 646
+  Left = 97
+  Height = 706
   Hint = ' '
-  Top = 134
-  Width = 1272
+  Top = 114
+  Width = 1275
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 626
-  ClientWidth = 1272
+  ClientHeight = 686
+  ClientWidth = 1275
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -201,32 +201,34 @@ object mainwindow: Tmainwindow
     TabOrder = 2
   end
   object Panel1: TPanel
-    Left = 0
-    Height = 455
+    Left = -19
+    Height = 691
     Hint = 'hint'
     Top = 176
-    Width = 1297
+    Width = 1300
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 455
-    ClientWidth = 1297
+    ClientHeight = 691
+    ClientWidth = 1300
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
     Font.Height = -12
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
+    ParentBackground = False
     ParentColor = False
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
+    OnMouseDown = Panel1MouseDown
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 182
+      Left = 62
       Height = 264
-      Top = 78
+      Top = 43
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -432,6 +434,23 @@ object mainwindow: Tmainwindow
       ShowHint = True
       Visible = False
     end
+    object boxshape1: TShape
+      Left = 392
+      Height = 75
+      Hint = 'Select rectangle'
+      Top = 32
+      Width = 104
+      Brush.Color = clNone
+      Brush.Style = bsClear
+      ParentShowHint = False
+      Pen.Color = clYellow
+      Pen.EndCap = pecSquare
+      Pen.JoinStyle = pjsMiter
+      Pen.Mode = pmXor
+      OnMouseMove = boxshape1MouseMove
+      OnMouseUp = Image1MouseUp
+      Visible = False
+    end
   end
   object data_range_groupBox1: TGroupBox
     Left = 8
@@ -450,6 +469,7 @@ object mainwindow: Tmainwindow
     Font.Name = 'Segoe UI'
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
+    ParentBackground = False
     ParentFont = False
     TabOrder = 4
     object Label12: TLabel
@@ -704,8 +724,8 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 603
-    Width = 1272
+    Top = 663
+    Width = 1275
     Panels = <    
       item
         Width = 200
@@ -820,7 +840,7 @@ object mainwindow: Tmainwindow
     Left = 595
     Height = 177
     Top = 0
-    Width = 680
+    Width = 683
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
@@ -828,12 +848,12 @@ object mainwindow: Tmainwindow
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
-      ClientWidth = 672
+      ClientWidth = 675
       object Memo1: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 672
+        Width = 675
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9
@@ -853,12 +873,12 @@ object mainwindow: Tmainwindow
     object TabSheet2: TTabSheet
       Caption = 'Table'
       ClientHeight = 149
-      ClientWidth = 672
+      ClientWidth = 675
       object Memo3: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 672
+        Width = 675
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9
@@ -2070,7 +2090,9 @@ object mainwindow: Tmainwindow
       0000000000000000
     }
     Text = 'Text'
+    TextFont.Height = -24
     Title = 'ASTAP astrometric solver'
+    TitleFont.Height = -24
     TitleFont.Style = [fsBold]
     Visible = False
     Left = 1128
