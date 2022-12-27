@@ -630,11 +630,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
-    procedure listview1Change(Sender: TObject; Item: TListItem;
-      Change: TItemChange);
     procedure listview1ItemChecked(Sender: TObject; Item: TListItem);
-    procedure listview7Change(Sender: TObject; Item: TListItem;
-      Change: TItemChange);
     procedure live_monitoring1Click(Sender: TObject);
     procedure auto_select1Click(Sender: TObject);
     procedure make_osc_color1Click(Sender: TObject);
@@ -2640,7 +2636,6 @@ begin
   {$ifdef darwin} {MacOS}
   count_selected;
   {$endif}
-
 end;
 
 
@@ -3704,7 +3699,6 @@ begin
       CompareAnything(Item1.SubItems[SortedColumn - 1], Item2.SubItems[SortedColumn - 1]);
   if TListView(Sender).SortDirection = sdDescending then
     Compare := -Compare;
-
 end;
 
 
@@ -4760,12 +4754,23 @@ begin
   analyse_listview(listview3, False {light}, True
     {full fits, include background and noise}, new_analyse_required3{refresh});
   new_analyse_required3 := False;{analyse done}
+
+  {temporary fix for CustomDraw not called}
+  {$ifdef darwin} {MacOS}
+   stackmenu1.nr_total_bias1.caption:=inttostr(listview3.items.count);{update counting info}
+  {$endif}
 end;
 
 procedure Tstackmenu1.analyseflatdarksButton1Click(Sender: TObject);
 begin
   analyse_listview(listview4, False {light}, True
     {full fits, include background and noise}, False{refresh});
+
+  {temporary fix for CustomDraw not called}
+  {$ifdef darwin} {MacOS}
+   stackmenu1.nr_total_flats1.caption:=inttostr(listview4.items.count);{update counting info}
+  {$endif}
+
 end;
 
 
@@ -5218,8 +5223,13 @@ end;
 
 procedure Tstackmenu1.analysedarksButton2Click(Sender: TObject);
 begin
-  analyse_listview(listview2, False {light}, True {full fits, include background and SD},
-    False{refresh}); {img_loaded array and memo1 will not be modified}
+  analyse_listview(listview2, False {light}, True {full fits, include background and SD},  False{refresh}); {img_loaded array and memo1 will not be modified}
+
+  {temporary fix for CustomDraw not called}
+  {$ifdef darwin} {MacOS}
+   stackmenu1.nr_total_darks1.caption:=inttostr(listview2.items.count);{update counting info}
+  {$endif}
+
 end;
 
 
@@ -5246,8 +5256,7 @@ begin
   {recalibrate}
   if flux_magn_offset <> 0 then
   begin
-    memo2_message(
-      'Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
+    memo2_message('Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
     flux_magn_offset := 0;
   end;
 end;
@@ -9263,6 +9272,14 @@ procedure Tstackmenu1.analyseblink1Click(Sender: TObject);
 begin
   analyse_listview(listview6, True {light}, False {full fits}, False{refresh});
   listview6.alphasort; {sort on time}
+
+  {$ifdef mswindows}
+  {$else} {unix}
+  {temporary fix for CustomDraw not called}
+   stackmenu1.nr_total_blink1.Caption := IntToStr(listview6.items.Count);
+  {$endif}
+  {update counting info}
+
 end;
 
 
@@ -9328,16 +9345,6 @@ begin
   openurl('http://www.hnsky.org/astap.htm#mount_tab');
 end;
 
-procedure Tstackmenu1.listview1Change(Sender: TObject; Item: TListItem;
-  Change: TItemChange);
-begin
-  {temporary fix for CustomDraw not called}
-  {$ifdef darwin} {MacOS}
-  stackmenu1.nr_total1.caption:=inttostr(listview1.items.count);{update counting info}
-  {$endif}
-end;
-
-
 
 procedure Tstackmenu1.listview1ItemChecked(Sender: TObject; Item: TListItem);
 begin
@@ -9349,23 +9356,6 @@ begin
     item.subitems.Strings[L_quality]:=add_unicode('', item.subitems.Strings[L_quality]);//remove crown or thumb down
     {$endif}
   end;
-
-  //temporary till MACOS customdraw is fixed
-  {$ifdef darwin} {MacOS}
-  count_selected;
-  {$endif}
-
-end;
-
-procedure Tstackmenu1.listview7Change(Sender: TObject; Item: TListItem;
-  Change: TItemChange);
-begin
-  {$ifdef mswindows}
-  {$else} {unix}
-  {temporary fix for CustomDraw not called}
-   stackmenu1.nr_total_photometry1.Caption := IntToStr(listview7.items.Count);
-  {$endif}
-  {update counting info}
 end;
 
 
