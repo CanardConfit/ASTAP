@@ -5102,53 +5102,58 @@ end;
 
 procedure scroll_up_down(lv:tlistview; up: boolean);
 var
-  c, step: integer;
+  c, step,watchdog: integer;
+  checkf : boolean;
 begin
+  watchdog:=0;
   if lv.items.Count <= 1 then exit; {no files}
 
   if up=False then step := -1  else   step := 1;{forward/ backwards}
 
   c := listview_find_selection(lv); {find the row selected}
-  lv.Selected := nil; {remove any selection}
-  lv.ItemIndex := c;
-  {mark where we are. Important set in object inspector    lv.HideSelection := false; lv.Rowselect := true}
-  lv.Items[c].MakeVisible(False);{scroll to selected item}
 
-  filename2 := lv.items[c].Caption;
-  mainwindow.Caption := filename2;
+  repeat // find checked file
+    Inc(c, step);
+    if c >= lv.items.Count then c := 0;
+    if c < 0 then c := lv.items.Count - 1;
 
-  {load image}
-  if load_fits(filename2, True {light}, True, True {update memo}, 0, head,
-    img_loaded) = False then
-  begin
-    Screen.Cursor:=crDefault;
-    exit;
-  end;
+    checkf:=lv.Items.item[c].Checked;
+    if checkf then
+    begin
+      lv.Selected := nil;//remove any selection
+      lv.ItemIndex := c;// mark where we are.
+      lv.ItemIndex := c;
+      {mark where we are. Important set in object inspector    lv.HideSelection := false; lv.Rowselect := true}
+      lv.Items[c].MakeVisible(False);{scroll to selected item}
+      filename2 := lv.items[c].Caption;
+      mainwindow.Caption := filename2;
 
-  use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+      {load image}
+      if load_fits(filename2, True {light}, True, True {update memo}, 0, head,
+        img_loaded) = False then
+      begin
+        memo2_message('repeat exit');
 
-  plot_fits(mainwindow.image1, False {re_center}, True);
+        Screen.Cursor:=crDefault;
+        exit;
+      end;
+     use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+     plot_fits(mainwindow.image1, False {re_center}, True);
 
-  {show alignment marker}
-  if (stackmenu1.use_manual_alignment1.Checked) then
-    show_shape_manual_alignment(c) {show the marker on the reference star}
-  else
-    mainwindow.shape_manual_alignment1.Visible := False;
+     {show alignment marker}
+      if (stackmenu1.use_manual_alignment1.Checked) then
+        show_shape_manual_alignment(c) {show the marker on the reference star}
+      else
+        mainwindow.shape_manual_alignment1.Visible := False;
 
-  Inc(c, step);
-  if c >= lv.items.Count then c := 0;
-  if c < 0 then c := lv.items.Count - 1;
-
-  lv.Selected := nil;//remove any selection
-  lv.ItemIndex := c;// mark where we are.
-
-  lv.setfocus;
-
-  Screen.Cursor:=crDefault;
+    end; //checkf=true
+    inc(watchdog);
+  until ((checkf) or (esc_pressed) or (watchdog>300));
 end;
 
+
 procedure Tstackmenu1.listview1KeyDown(Sender: TObject; var Key: word;
-  Shift: TShiftState);
+  Shift: TShiftState);  // for all listviexX
 begin
   if key = vk_delete then listview_removeselect(TListView(Sender));
   if key = vk_left then scroll_up_down(tlistview(sender), false);

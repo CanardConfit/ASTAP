@@ -60,7 +60,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.12.27';
+  astap_version='2022.12.28';
 
 type
   { Tmainwindow }
@@ -3266,7 +3266,7 @@ var
     about_message, about_message4, about_message5 : string;
 var {################# initialised variables #########################}
   {$IfDef Darwin}// {MacOS}
-    about_title  : string= 'About ASTAP for OSX:';
+    about_title  : string= 'About ASTAP for MacOS:';
   {$ELSE}
      {$IFDEF unix}
         about_title  : string= 'About ASTAP for Linux:';
@@ -6544,7 +6544,11 @@ var
    Bitmap  : TBitmap;{for fast pixel routine}
    xLine :  PByteArray;{for fast pixel routine}
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass;
+  {$ifdef linux}
+  application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  // this also disturbs the event keypress for lv_left, lv_right key in MacOS !!
+  {$endif}
   img.visible:=true;
   mainwindow.memo1.visible:=show_header;{start updating memo1}
 
@@ -6757,7 +6761,12 @@ var
   histo_peak : array[0..2] of integer;
 
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass;
+  {$ifdef linux}
+  application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  // this also disturbs the event keypress for lv_left, lv_right key in MacOS !!
+  {$endif}
+
 
   number_colors:=length(img);
 
