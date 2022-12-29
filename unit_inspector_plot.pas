@@ -144,7 +144,7 @@ var
  style: TTextStyle;
 begin
   if head.naxis=0 then exit; {file loaded?}
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   restore_req:=false;
   if head.naxis3>1 then {colour image}
@@ -1067,7 +1067,7 @@ var
   demode : char;
   aspect : boolean;
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   form_inspection1.undo_button1Click(nil);{undo if required}
   backup_img;
@@ -1243,7 +1243,7 @@ begin
 
   form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   restore_req:=false;
   if head.naxis3>1 then {colour image}
@@ -1339,7 +1339,7 @@ const
 begin
   if head.naxis<>0 then
   begin
-   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+   Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
    form_inspection1.undo_button1Click(nil);{undo if required}
    backup_img;

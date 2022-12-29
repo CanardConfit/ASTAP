@@ -1330,7 +1330,7 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
@@ -1883,7 +1883,7 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
@@ -2234,7 +2234,7 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
@@ -2438,7 +2438,7 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     counter_flux_measured:=0;
 

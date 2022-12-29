@@ -765,7 +765,7 @@ begin
   mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
   cometels_path:=form_asteroids1.mpcorb_path2.caption;
 
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   plot_mpcorb(maxcount,maxmag,add_annotations);
   Screen.Cursor:=crDefault;
 

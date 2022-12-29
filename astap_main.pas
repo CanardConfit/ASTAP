@@ -60,7 +60,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.12.28';
+  astap_version='2022.12.29';
 
 type
   { Tmainwindow }
@@ -408,7 +408,6 @@ type
     procedure removegreenpurple1Click(Sender: TObject);
     procedure roundness1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
-    procedure split_osc1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
@@ -2756,7 +2755,7 @@ begin
   opendialog1.filterindex:=LoadFITSPNGBMPJPEG1filterindex;
   if opendialog1.execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     filename2:=opendialog1.filename;
     if opendialog1.FilterIndex<>4 then {<> preview FITS files, not yet loaded}
@@ -3221,7 +3220,7 @@ begin
   begin
     if img_backup=nil then exit;{for some rare cases}
 
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     old_width2:=head.width;
     old_height2:=head.height;
@@ -3529,7 +3528,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
     try { Do some lengthy operation }
@@ -3588,7 +3587,7 @@ begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     backup_img;
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -3645,8 +3644,7 @@ end;
 
 procedure Tmainwindow.hyperleda_annotation1Click(Sender: TObject);
 begin
-  Screen.Cursor:=crHourglass; application.processmessages; { Show hourglass cursor }
-//  backup_img;
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   load_hyperleda;   { Load the database once. If loaded no action}
   plot_deepsky;{plot the deep sky object on the image}
   Screen.Cursor:=crDefault;
@@ -3695,7 +3693,7 @@ begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img;
 
@@ -4141,7 +4139,7 @@ var
 begin
   if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.constellations1.checked=false)) then exit;
 
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   {$ifdef mswindows}
    mainwindow.image1.Canvas.Font.Name :='default';
@@ -4245,7 +4243,7 @@ var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr syste
 begin
   if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
 
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   {$ifdef mswindows}
    mainwindow.image1.Canvas.Font.Name :='default';
@@ -4593,7 +4591,7 @@ const
   median_max_size=5000;
 
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   if ((abs(stopX-startX)>2)and (abs(stopY-starty)>2))=false then {do statistics on whole image}
   begin
@@ -4836,7 +4834,7 @@ begin
   end;
   save_settings2;
 
-  Screen.Cursor:=crHourglass; application.processmessages;
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   {solve internal}
   mainwindow.caption:='Solving.......';
@@ -5108,7 +5106,7 @@ begin
 
     if OpenDialog1.Execute then
     begin
-      Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+      Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
       dobackup:=img_loaded<>nil;
       if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -5182,7 +5180,7 @@ begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img;
 
@@ -6544,11 +6542,8 @@ var
    Bitmap  : TBitmap;{for fast pixel routine}
    xLine :  PByteArray;{for fast pixel routine}
 begin
-  Screen.Cursor:=crHourglass;
-  {$ifdef linux}
-  application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
-  // this also disturbs the event keypress for lv_left, lv_right key in MacOS !!
-  {$endif}
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
   img.visible:=true;
   mainwindow.memo1.visible:=show_header;{start updating memo1}
 
@@ -6761,12 +6756,7 @@ var
   histo_peak : array[0..2] of integer;
 
 begin
-  Screen.Cursor:=crHourglass;
-  {$ifdef linux}
-  application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
-  // this also disturbs the event keypress for lv_left, lv_right key in MacOS !!
-  {$endif}
-
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   number_colors:=length(img);
 
@@ -6924,8 +6914,6 @@ var
   header    : array[0..2880] of ansichar;
   endfound  : boolean;
   filename_tmp: string;
-
-  dummy,DUMMY1: string;
 
      procedure close_fits_files;
      begin
@@ -8438,7 +8426,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
@@ -8610,7 +8598,7 @@ end;
 procedure Tmainwindow.convertmono1Click(Sender: TObject);
 begin
   if head.naxis3<3 then exit;{prevent run time error mono images}
-  Screen.Cursor:=crHourglass; application.processmessages;
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
   convert_mono(img_loaded,head);
@@ -8638,7 +8626,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     try { Do some lengthy operation }
        with OpenDialog1.Files do
        for I := 0 to Count - 1 do
@@ -8732,7 +8720,7 @@ procedure Tmainwindow.bin_2x2menu1Click(Sender: TObject);
 begin
  if head.naxis<>0 then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img; {move viewer data to img_backup}
     if sender=bin_2x2menu1 then
@@ -8920,8 +8908,7 @@ procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 var
   lim_magn            : double;
 begin
-  Screen.Cursor:=crHourglass;
-  application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   case stackmenu1.annotate_mode1.itemindex of
        0,1: lim_magn:=-99;//use local database
@@ -8994,7 +8981,7 @@ var
   factorsX,factorsY  : array of double;
   valid              : boolean;
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   if calculate_undisturbed_image_scale then {calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
   begin
@@ -9179,12 +9166,7 @@ begin
       memo2_message('Abort, not enough stars detected!');
     end;
   end;{succesfull measure scale}
-  Screen.Cursor:=crDefault;   { Show hourglass cursor, processmessages is for Linux }
-end;
-
-procedure Tmainwindow.split_osc1Click(Sender: TObject);
-begin
-
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -9274,7 +9256,7 @@ begin
     end;
     if flux_magn_offset=0 then begin beep; exit;end;
 
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img;
 
@@ -9433,7 +9415,7 @@ begin
 
   if  ((abs(stopX-startX)>2) or (abs(stopY-starty)>2)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img;
 
@@ -9591,7 +9573,7 @@ begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>100) OR (abs(stopY-starty)>100)) then {or function since it could be parallel to x or y axis}
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img;
 
@@ -9646,7 +9628,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -9879,7 +9861,7 @@ const
 
  begin
   if head.naxis=0 then exit; {file loaded?}
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
@@ -10083,7 +10065,7 @@ var
   stars  : star_list;
 begin
   if head.naxis=0 then exit; {file loaded?}
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
@@ -10177,7 +10159,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     nrannotated:=0;
     skipped:=0;
@@ -10285,7 +10267,7 @@ var
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
   if ((flux_magn_offset=0) or (aperture_ratio<>apert){new calibration required})  then
@@ -10394,7 +10376,7 @@ var
   ratio    : double;
   flipH,flipV : boolean;
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   backup_img;
   try
@@ -10670,7 +10652,7 @@ end;
 
 procedure Tmainwindow.deepsky_annotation1Click(Sender: TObject);
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
   load_deep;{load the deepsky database once. If loaded no action}
   plot_deepsky;{plot the deep sky object on the image}
@@ -11948,7 +11930,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     nrsolved:=0;
     nrskipped:=0;
     nrfailed:=0;
@@ -12097,7 +12079,7 @@ begin
   mainwindow.taskbar1.progressstate:=TTaskBarProgressState.Normal;
   mainwindow.taskbar1.progressvalue:=0; {show progress}
   {$endif}
-  Screen.Cursor:=crHourglass; application.processmessages;
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
   demosaic_advanced(img_loaded);
@@ -12216,7 +12198,7 @@ var fitsX,fitsY,col,dum       : integer;
 begin
   if ((head.naxis<>0) and (abs(stopX-startX)>3)and (abs(stopY-starty)>3)) then
   begin
-   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+   Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
    backup_img;
 
@@ -12536,7 +12518,7 @@ procedure Tmainwindow.inversimage1Click(Sender: TObject);
 var
   max_range, col,fitsX,fitsY : integer;
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   backup_img;
 
@@ -12657,7 +12639,7 @@ begin
     if mainwindow.flip_vertical1.checked then   flipped:=-flipped;{change rotation if flipped}
   end;
 
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   memo2_message('Start rotation. This takes some time due to subsampling 10x10.');
   backup_img;
@@ -12686,7 +12668,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
@@ -12987,7 +12969,7 @@ begin
     object_decM:=(dec1+dec2)/2;
   end;
 
-  Screen.Cursor:=crHourglass; application.processmessages;
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
@@ -13629,7 +13611,7 @@ end;
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor,
-  adu_e,l,t                                                                       : double;
+  adu_e                                                                       : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str                  : string;
   width5,height5,box_SX,box_SY,flipH,flipV,iterations, box_LX,box_LY                   : integer;
   color1:tcolor;
@@ -13848,7 +13830,7 @@ var
   tmpbmp: TBitmap;
   ARect: TRect;
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   backup_img;
   try
@@ -14334,7 +14316,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -14408,7 +14390,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -14471,7 +14453,7 @@ var
   col,fitsX,fitsY : integer;
   vertical             :boolean;
 begin
-  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   backup_img;
 
@@ -14564,7 +14546,7 @@ begin
 
   if  ((abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     Randomize; {initialise}
 
     startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
@@ -14637,13 +14619,13 @@ end;
 procedure Tmainwindow.localcoloursmooth2Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,counter    : integer;
-   flux,center_x,center_y,a,b,angle_from_center,mean_value,old_value,rgb,distance,val1,val2,lumr,strongest_colour_local : single;
+   flux,center_x,center_y,a,b,angle_from_center,rgb,distance,lumr : single;
    colour,mean : array[0..2] of single;
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img;
 
@@ -14753,7 +14735,7 @@ begin
     err:=false;
     if SelectDirectoryDialog1.Execute then
     begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     try { Do some lengthy operation }
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
@@ -14827,7 +14809,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     try { Do some lengthy operation }
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
@@ -14886,7 +14868,7 @@ begin
   savedialog1.filterindex:=export_index; {default 3 tiff stretched}
   if savedialog1.execute then
   begin
-    Screen.Cursor:=crHourglass; application.processmessages;
+    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     if head.naxis3>1 then {color}
     begin
@@ -15053,7 +15035,7 @@ begin
   mainwindow.taskbar1.progressvalue:=0; {show progress}
 
   {$endif}
-  Screen.Cursor:=crHourglass; application.processmessages;
+  Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   try
     TheFile4:=tfilestream.Create(filen2, fmcreate );
