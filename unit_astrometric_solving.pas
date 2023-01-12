@@ -104,7 +104,7 @@ uses   Classes,SysUtils,controls,forms,math,
 function solve_image(img :image_array;var hd: Theader; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height :double) : integer;{select the binning}
-function fnmodulo (x,range: double):double;
+
 
 var
   star1   : array[0..2] of array of single;
@@ -112,14 +112,6 @@ var
 implementation
 var
   mag2  : double; {magnitude of star found}
-
-
-function fnmodulo(x,range: double):double;
-begin
-  {range should be 2*pi or 24 hours or 0 .. 360}
-  result:=range*frac(x/range);
-  if result<0 then result:=result+range;   {do not like negative numbers}
-end;
 
 
 function distance_to_string(dist, inp:double):string; {angular distance to string intended for RA and DEC. Unit is based on dist}
@@ -510,10 +502,10 @@ end;
 function solve_image(img :image_array;var hd: Theader;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
-  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars  : integer;
+  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i  : integer;
   search_field,step_size,ra_database,dec_database,ra_database_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
-  current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start       : double;
+  current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio   : double;
   solution, go_ahead, autoFOV,autoMaxstars,use_triples,yes_use_triples         : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,popup_warningV17,popup_warningSample,suggest_str, solved_in,
@@ -642,6 +634,18 @@ begin
 
       bin_and_find_stars(img,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
       nrstars:=Length(starlist2[0]);
+
+      if ((hd.xpixsz<>0) and (hd.ypixsz<>0) and (abs(hd.xpixsz-hd.ypixsz)>0.1)) then //non-square pixels, correct. Remove in future?
+      begin //very very rare. Example QHY6 camera
+        memo2_message('Rare none square pixels specified.');
+        pixel_aspect_ratio:=hd.xpixsz/hd.ypixsz;
+        for i:=0 to nrstars-1 do {correct star positions for non-square pixels}
+        begin
+          starlist2[0,i]:=hd.width/2+(starlist2[0,i]-hd.width/2)*pixel_aspect_ratio;
+        end;
+      end
+      else
+      pixel_aspect_ratio:=1;// this is the case in 99.95% of the cases
 
       {report advice}
       if length(warning_downsample)>0  then
@@ -905,10 +909,10 @@ begin
     //    hd.cd2_2:= + solution_vectorY[1]/3600;
 
     // rather then using the solution vector directly, for maximum accuracy find the vector for the center of the image.
-    //make 1 step in direction hd.crpix1
+    // make 1 step in direction hd.crpix1
     standard_equatorial( ra_database,dec_database,
-        (solution_vectorX[0]*(centerX+1) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
-        (solution_vectorY[0]*(centerX+1) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
+        (solution_vectorX[0]*(centerX+pixel_aspect_ratio{normally 1}) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
+        (solution_vectorY[0]*(centerX+pixel_aspect_ratio{normally 1}) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
         1, {CCD scale}
         ra7 ,dec7{center equatorial position});
 

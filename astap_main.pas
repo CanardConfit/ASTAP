@@ -31,6 +31,11 @@ Mac
 Listview event OnCustomDrawItem is never triggered/fired in Mac, widget Cocoa
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/40065
+
+Cursor  macOS Ventura
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/40078
+https://forum.lazarus.freepascal.org/index.php/topic,61595.0.html
+Lazarus 2.3.0 (rev main-2_3-3114-g5719672f) FPC 3.3.1 x86_64-darwin-cocoa
 }
 
 interface
@@ -60,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.12.29';
+  astap_version='2023.01.12';
 
 type
   { Tmainwindow }
@@ -743,6 +748,7 @@ procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to h
 procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
 procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
+function fnmodulo (x,range: double):double;
 function strtoint2(s: string):integer; {str to integer, fault tolerant}
 function strtofloat1(s:string): double;{string to float, error tolerant}
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
@@ -2083,6 +2089,19 @@ begin
     Sleep(5);
     if GetCurrentThreadId=MainThreadID then Application.ProcessMessages;
   end;
+end;
+
+
+function fnmodulo(x,range: double):double;
+begin
+  {range should be 2*pi or 24 hours or 0 .. 360}
+  if ((x>=0) and (x<range)) then // avoid division. A very tiny amount faster
+    result:=x
+  else
+    begin
+      result:=x - range*int(x/range);// this is twice a fast as: x mod range
+      if result<0 then result:=result+range;// avoid negative numbers
+    end;
 end;
 
 function fits_file_name(inp : string): boolean; {fits file name?}
@@ -10212,15 +10231,11 @@ begin
 end;
 
 
-
-
-
 procedure Tmainwindow.boxshape1MouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
 begin
   Image1MouseMove(Sender,Shift, boxshape1.left-image1.Left+X, boxshape1.top-image1.top+Y);// transfer mouse move to image1
 end;
-
 
 
 procedure give_spiral_position(position : integer; var x,y : integer); {give x,y position of square spiral as function of input value}
@@ -10246,6 +10261,7 @@ begin
      y :=y+ dy;{walk through square}
   end;{for loop}
 end;
+
 
 procedure standard_equatorial2(ra0,dec0,x,y,cdelt: double; var ra,dec : double); inline;{transformation from CCD coordinates into equatorial coordinates}
 var sin_dec0 ,cos_dec0 : double;
@@ -12561,13 +12577,13 @@ begin
   stackmenu1.center_position1.caption:='Center: '+inttostr((startX+stopX) div 2)+', '+inttostr((startY+stopY) div 2);
 end;
 
-procedure rotate_arbitrary(angle,flipped: double);
+procedure rotate_arbitrary(angle,flipped_view, flipped_image: double);
 var centerxs,centerys  : double;
 begin
   centerxs:=head.width/2;
   centerys:=head.height/2;
 
-  raster_rotate(flipped*angle,centerxs,centerys ,img_loaded);
+  raster_rotate(flipped_view*angle,centerxs,centerys ,img_loaded);
 
   head.width:=length(img_loaded[0]);{update width}  ;
   head.height:=length(img_loaded[0,0]);{update length};
@@ -12585,9 +12601,9 @@ begin
       remove_key('CD2_1   ',false);
       remove_key('CD2_2   ',false);
     end;
-    head.crota2:=fnmodulo(head.crota2+angle,360);
-    head.crota1:=fnmodulo(head.crota1+angle,360);
-    head.crpix1:= head.width/2;
+    head.crota2:=fnmodulo(head.crota2+angle*flipped_image*flipped_view,360);
+    head.crota1:=fnmodulo(head.crota1+angle*flipped_image*flipped_view,360);
+    head.crpix1:=head.width/2;
     head.crpix2:=head.height/2;
     old_to_new_WCS(head);{convert old style FITS to newd style}
 
@@ -12602,30 +12618,32 @@ begin
 
     update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ' ,head.crota1);
     update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,head.crota2);
-
-
-    add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
   end;
   remove_key('ANNOTATE',true{all});{this all will be invalid}
+  add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
+
 end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
-  angle,flipped  : double;
+  angle,flipped_view,flipped_image  : double;
   valueI : string;
 
 begin
-  flipped:=+1;//not flipped
+  flipped_view:=+1;//not flipped
+
+  if head.CD1_1*head.CD2_2>0 then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+    flipped_image:=-1  //change rotation for flipped image
+  else
+    flipped_image:=+1;//not flipped
+
   valueI:=InputBox('Arbitrary rotation','Enter angle CCW in degrees:              (If solved, enter N for north up)','' );
   if valueI=''  then exit;
   if ((valueI='n') or (valueI='N')) then
   begin
     angle:=-head.crota2;
     if head.cd1_1<>0 then //solved
-    begin
-      if ((head.CD1_1>0)=(head.CD2_2>0)) then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-      flipped:=-1; //change rotation for flipped image
-    end
+      angle:=angle*flipped_image
     else
     begin
       application.messagebox(pchar('Abort! Can not execute without astrometric solution. Solve image first.'),'',MB_OK);
@@ -12635,8 +12653,8 @@ begin
   else
   begin
     angle:=strtofloat2(valueI);
-    if mainwindow.flip_horizontal1.checked then flipped:=-flipped;{change rotation if flipped}
-    if mainwindow.flip_vertical1.checked then   flipped:=-flipped;{change rotation if flipped}
+    if mainwindow.flip_horizontal1.checked then flipped_view:=-flipped_view;{change rotation if flipped}
+    if mainwindow.flip_vertical1.checked then   flipped_view:=-flipped_view;{change rotation if flipped}
   end;
 
   Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -12644,7 +12662,7 @@ begin
   memo2_message('Start rotation. This takes some time due to subsampling 10x10.');
   backup_img;
 
-  rotate_arbitrary(angle,flipped);
+  rotate_arbitrary(angle,flipped_view,flipped_image);
 
   plot_fits(mainwindow.image1,false,true);
 
@@ -12659,6 +12677,7 @@ procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
 var
   i                        : integer;
   dobackup,success         : boolean;
+  flipped_image            : double;
 begin
   OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -12681,12 +12700,18 @@ begin
       Application.ProcessMessages;
       if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin break;end;
 
+      if head.CD1_1*head.CD2_2>0 then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+        flipped_image:=-1  // change rotation for flipped image
+      else
+        flipped_image:=+1; // not flipped
+
+
       if sender=mainwindow.batch_rotate_left1 then
-         rotate_arbitrary(90,1) else
+         rotate_arbitrary(90,1,flipped_image) else
       if sender=mainwindow.batch_rotate_right1 then
-         rotate_arbitrary(-90,1) else
+         rotate_arbitrary(-90,1,flipped_image) else
       if sender=mainwindow.batch_rotate_1801   then
-         rotate_arbitrary(180,1);
+         rotate_arbitrary(180,1,flipped_image);
 
       if fits_file_name(filename2) then
         success:=save_fits(img_loaded,filename2,nrbits,true)

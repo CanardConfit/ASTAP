@@ -1343,7 +1343,9 @@ begin
     cos_telescope_dec:=cos(telescope_dec);
     fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
-    if ((head.cdelt1>0) = (head.cdelt2>0)) then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+//    if ((head.cdelt1>0) = (head.cdelt2>0)) then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+    if head.cdelt1*head.cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+//    flipped:=-1;
 
     {$ifdef mswindows}
      mainwindow.image1.Canvas.Font.Name :='default';
@@ -1542,7 +1544,7 @@ begin
     coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     cos_telescope_dec:=cos(telescope_dec);
-    if ((head.cdelt1>0) = (head.cdelt2>0)) then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+    if head.cdelt1*head.cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
 
     {$ifdef mswindows}
      mainwindow.image1.Canvas.Font.Name :='default';
@@ -2553,7 +2555,7 @@ begin
  end;
 
   {do database stars}
-  if ((hd.CD1_1>0)=(hd.CD2_2>0)) then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+  if (hd.CD1_1*hd.CD2_2>0) then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
     flipped:=-1
   else
     flipped:=+1; //change rotation for flipped image

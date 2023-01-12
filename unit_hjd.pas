@@ -134,13 +134,6 @@ begin
 end;
 
 
-function fnmodulo(x,range: double):double;
-begin
-  {range should be 2*pi or 24 hours or 0 .. 360}
-  result:=range*frac(x/range);
-  if result<0 then result:=result+range;   {do not like negative numbers}
-end;
-
 //function altitude(ra3,dec3 {2000},lat,long,julian:double):double;{conversion ra & dec to altitude only. This routine is created for speed, only the altitude is calculated}
 //{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
 //var t5,wtime2actual : double;

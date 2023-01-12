@@ -316,13 +316,6 @@ begin
 end;
 
 
-function fnmodulo(x,range: double):double;
-begin
-  {range should be 2*pi or 24 hours or 0 .. 360}
-  result:=range*frac(x/range);
-  if result<0 then result:=result+range;   {do not like negative numbers}
-end;
-
 function deltaT_calc(jd: double) : double; {delta_T in days}
 var
    year   : integer;
