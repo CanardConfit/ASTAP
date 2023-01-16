@@ -10543,7 +10543,7 @@ begin
   with stackmenu1 do
   begin
     save_settings2;
-
+    memo2_message('Analysing flats');
     analyse_listview(listview3, False {light}, False {full fits},
       new_analyse_required3{refresh});{update the tab information. Convert to FITS if required}
     if esc_pressed then exit;{esc could be pressed in analyse}
@@ -11185,7 +11185,7 @@ begin
 
   if ListView1.items.Count <> 0 then
   begin
-    memo2_message('Analysing images.');
+    memo2_message('Analysing lights.');
     analyse_tab_lights(calibration_mode = False);
     {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;

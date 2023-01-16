@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.01.12';
+  astap_version='2023.01.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -119,6 +119,7 @@ type
     display_adu1: TMenuItem;
     localcoloursmooth2: TMenuItem;
     fittowindow1: TMenuItem;
+    flipVH1: TMenuItem;
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
@@ -404,6 +405,7 @@ type
     procedure display_adu1Click(Sender: TObject);
     procedure localcoloursmooth2Click(Sender: TObject);
     procedure fittowindow1Click(Sender: TObject);
+    procedure flipVH1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -895,6 +897,7 @@ var
   fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
 
+
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
@@ -907,6 +910,7 @@ uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, 
 {$else}  {delphi}
  {$R *.dfm}
 {$endif}
+
 
 var
   recent_files : tstringlist;
@@ -3318,7 +3322,7 @@ begin
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
+  #13+#10+'© 2018, 2023 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -6556,10 +6560,11 @@ end;
 
 procedure plot_fits(img:timage; center_image,show_header:boolean);
 var
-   i,j,col,col_r,col_g,col_b :integer;
+   i,j,col,col_r,col_g,col_b,linenr,columnr :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
    Bitmap  : TBitmap;{for fast pixel routine}
    xLine :  PByteArray;{for fast pixel routine}
+   flipv, fliph : boolean;
 begin
   Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -6587,18 +6592,22 @@ begin
   cwhite:=mainwindow.maximum1.position;
   if cwhite<=cblack then cwhite:=cblack+1;
 
+  flipv:=mainwindow.flip_vertical1.Checked;
+  fliph:=mainwindow.Flip_horizontal1.Checked;
+
   for i:=0 to head.height-1 do
   begin
-    xLine := Bitmap.ScanLine[(head.height-1)-i];{head.height-1)-i, FITS count from bottom, windows from top}
+    if flipv then linenr:=i else linenr:=(head.height-1)-i;{flip vertical?. Note FITS count from bottom, windows from top}
+    xLine := Bitmap.ScanLine[linenr];
     for j:=0 to head.width-1 do
     begin
-
-      col:=round(img_loaded[0,j,i]);
+      if fliph then columnr:=(head.width-1)-j else columnr:=j;{flip horizontal?}
+      col:=round(img_loaded[0,columnr,i]);
       colrr:=(col-cblack)/(cwhite-cblack);{scale to 1}
 
       if head.naxis3>=2 then {at least two colours}
       begin
-        col:=round(img_loaded[1,j,i]);
+        col:=round(img_loaded[1,columnr,i]);
         colgg:=(col-cblack)/(cwhite-cblack);{scale to 1}
       end
       else
@@ -6606,7 +6615,7 @@ begin
 
       if head.naxis3>=3 then {at least three colours}
       begin
-        col:=round(img_loaded[2,j,i]);
+        col:=round(img_loaded[2,columnr,i]);
         colbb:=(col-cblack)/(cwhite-cblack);{scale to 1}
 
         if sat_factor<>1 then {adjust saturation}
@@ -6689,10 +6698,6 @@ begin
 
   if img=mainwindow.image1 then {plotting to mainwindow?}
   begin
-    {next two could be written more efficient using previous bitmap}
-    if mainwindow.Flip_horizontal1.Checked then mainwindow.Flip_horizontal1Click(nil);
-    if mainwindow.flip_vertical1.Checked then mainwindow.flip_vertical1Click(nil);
-
     plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
     plot_north_on_image;
     plot_large_north_indicator;
@@ -7925,18 +7930,15 @@ begin
   bmp.SetSize(w, h);
   for y := 0 to h -1 do
   begin // scan each line
-  pixelrow1:=image1.Picture.Bitmap.ScanLine[y];
+    pixelrow1:=image1.Picture.Bitmap.ScanLine[y];
     pixelrow2:=bmp.ScanLine[y];
-    for x := 0 to w-1 do {swap left and right}
-      pixelrow2[x] := pixelrow1[w-1 -x];  {faster solution then using pbytearray as in vertical flip}
+      for x := 0 to w-1 do {swap left and right}
+        pixelrow2[x] := pixelrow1[w-1 -x];  {faster solution then using pbytearray as in vertical flip}
   end;
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
 
-  if sender<>nil then {not from plot_fits, redraw required}
-  begin
-    plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
-  end;
+  plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
 end;
 
 
@@ -7969,9 +7971,10 @@ end;
 procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
 var bmp: TBitmap;
     w, h, y  : integer;
-    xLine1,xline2 :  PByteArray;
+    pixelrow1,pixelrow2 :  PByteArray;
 begin
-  w:=image1.Picture.Width; h:=image1.Picture.Height;
+  w:=image1.Picture.Width;
+  h:=image1.Picture.Height;
   bmp:=TBitmap.Create;
 
   bmp.PixelFormat:=pf24bit;{This must be pf24 bit both for Windows and Linux! Doesn't work in Linux with pf32?}
@@ -7979,21 +7982,56 @@ begin
   bmp.SetSize(w, h);
   for y := 0 to h -1 do
   begin // scan each line and swap top and bottom}
-    xline1:=image1.Picture.Bitmap.ScanLine[h-1-y];
-    xline2:=bmp.ScanLine[y];
+    pixelrow1:=image1.Picture.Bitmap.ScanLine[h-1-y];
+    pixelrow2:=bmp.ScanLine[y];
+
     {$ifdef mswindows}
-    Move(xline1[0], xline2[0],w*3);
+    Move(pixelrow1[0], pixelrow2[0],w*3);
     {$else} {unix, Darwin}
-    Move(xline1[0], xline2[0],w*4); {4 bytes per pixel}
+    Move(pixelrow1[0], pixelrow2[0],w*4); {4 bytes per pixel}
     {$endif}
+  end;
+
+  image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
+  bmp.Free;
+
+  plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
+end;
+
+
+procedure Tmainwindow.flipVH1Click(Sender: TObject);
+var bmp: TBitmap;
+    w, h, x, y : integer;
+type
+  PRGBTripleArray = ^TRGBTripleArray; {for fast pixel routine}
+  {$ifdef mswindows}
+  TRGBTripleArray = array[0..trunc(bufwide/3)] of TRGBTriple; {for fast pixel routine}
+  {$else} {unix}
+  TRGBTripleArray = array[0..trunc(bufwide/4)] of tagRGBQUAD; {for fast pixel routine}
+  {$endif}
+var
+  pixelrow1 : PRGBTripleArray;{for fast pixel routine}
+  pixelrow2 : PRGBTripleArray;{for fast pixel routine}
+begin
+  w:=image1.Picture.Width;
+  h:=image1.Picture.Height;
+  bmp:=TBitmap.Create;
+  bmp.PixelFormat:=pf24bit;
+
+  bmp.SetSize(w, h);
+  for y := 0 to h -1 do
+  begin // scan each line
+    pixelrow1:=image1.Picture.Bitmap.ScanLine[h-1-y];
+    pixelrow2:=bmp.ScanLine[y];
+      for x := 0 to w-1 do {swap left and right}
+        pixelrow2[x] := pixelrow1[w-1 -x];  {faster solution then using pbytearray as in vertical flip}
   end;
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
 
-  if sender<>nil then {not from plot_fits, redraw required}
-  begin
-    plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
-  end;
+  plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
+  flip_vertical1.checked:=flip_vertical1.checked=false;
+  flip_horizontal1.checked:=flip_horizontal1.checked=false;
 end;
 
 
@@ -14741,6 +14779,7 @@ begin
 end;
 
 
+
 procedure Tmainwindow.move_images1Click(Sender: TObject);
 var
   I    : integer;
@@ -14812,6 +14851,7 @@ begin
   end;
   img_temp:=nil;
 end;
+
 
 procedure Tmainwindow.Panel1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
