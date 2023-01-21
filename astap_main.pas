@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.01.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.01.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -122,6 +122,7 @@ type
     flipVH1: TMenuItem;
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
+    flip_indication1: TLabel;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
     Separator1: TMenuItem;
     simbad_annotation_star1: TMenuItem;
@@ -3558,6 +3559,7 @@ begin
        with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
+        progress_indicator(100*i/(count),' Solving');{show progress}
         filename2:=Strings[I];
         {load fits}
         Application.ProcessMessages;
@@ -3566,6 +3568,7 @@ begin
       end;
       finally
       if dobackup then restore_img;{for the viewer}
+      progress_indicator(-100,'');{progresss done}
       Screen.Cursor:=crDefault;  { Always restore to normal }
     end;
   end;
@@ -3915,13 +3918,15 @@ begin
     canvas.brush.color:=clmenu;
     Canvas.FillRect(rect(0,0,width,height));
 
-    if ((head.naxis=0) or (head.cd1_1=0)) then {remove rotation indication and exit}
+    if ((head.naxis=0) or (head.cd1_1=0)) then {No solution, remove rotation and flipped indication and exit}
     begin
-       mainwindow.rotation1.caption:='';
-       exit;
+      mainwindow.rotation1.caption:='';// clear rotation indication
+      mainwindow.flip_indication1.Visible:=false;// remove any flipped indication
+      exit;
     end;
 
     mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
+    mainwindow.flip_indication1.Visible:=head.cd1_1*head.cd2_2>0;// flipped?
 
     Canvas.Pen.Color := clred;
 
@@ -3960,7 +3965,6 @@ begin
     x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
     y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
     lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
-
   end;
 end;
 

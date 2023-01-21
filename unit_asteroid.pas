@@ -77,7 +77,7 @@ const
    maxcount_asteroid : string='10000';
    maxmag_asteroid : string='17';
    mpcorb_path : string='MPCORB.DAT';
-   cometels_path : string='CometEls.txt';
+   cometels_path : string='*.txt';
    font_follows_diameter:boolean=false;
    showfullnames: boolean=true;
    showmagnitude: boolean=false;

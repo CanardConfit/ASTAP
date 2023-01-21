@@ -949,6 +949,25 @@ object mainwindow: Tmainwindow
     ShowHint = True
     TabOrder = 11
   end
+  object flip_indication1: TLabel
+    Left = 531
+    Height = 15
+    Hint = 'The image is flipped. Either the east is swapped with west or north is swapped with south.'
+    Top = 150
+    Width = 6
+    Caption = 'F'
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -12
+    Font.Name = 'Segoe UI'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    ParentColor = False
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    Visible = False
+  end
   object MainMenu1: TMainMenu
     Images = ImageList1
     Left = 848
