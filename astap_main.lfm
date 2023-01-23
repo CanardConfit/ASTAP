@@ -442,13 +442,12 @@ object mainwindow: Tmainwindow
       Width = 104
       Brush.Color = clNone
       Brush.Style = bsClear
+      Enabled = False
       ParentShowHint = False
       Pen.Color = clYellow
       Pen.EndCap = pecSquare
       Pen.JoinStyle = pjsMiter
       Pen.Mode = pmXor
-      OnMouseMove = boxshape1MouseMove
-      OnMouseUp = Image1MouseUp
       Visible = False
     end
   end

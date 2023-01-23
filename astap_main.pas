@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.01.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.01.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -359,8 +359,6 @@ type
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
-    procedure boxshape1MouseMove(Sender: TObject; Shift: TShiftState; X,
-      Y: Integer);
     procedure calibrate_photometry1Click(Sender: TObject);
     procedure Constellations1Click(Sender: TObject);
     procedure convert_to_ppm1Click(Sender: TObject);
@@ -10270,13 +10268,6 @@ begin
   form_astrometry_net1:=Tform_astrometry_net1.Create(self); {in project option not loaded automatic}
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
-end;
-
-
-procedure Tmainwindow.boxshape1MouseMove(Sender: TObject; Shift: TShiftState;
-  X, Y: Integer);
-begin
-  Image1MouseMove(Sender,Shift, boxshape1.left-image1.Left+X, boxshape1.top-image1.top+Y);// transfer mouse move to image1
 end;
 
 
