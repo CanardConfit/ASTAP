@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 367
+  Left = 141
   Height = 681
-  Top = 267
-  Width = 1280
-  HorzScrollBar.Page = 1280
+  Top = 215
+  Width = 1397
+  HorzScrollBar.Page = 1397
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
   ClientHeight = 664
-  ClientWidth = 1280
+  ClientWidth = 1397
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 20283
+    Left = 21318
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -6110,10 +6110,8 @@ object stackmenu1: Tstackmenu1
           Top = 16
           Width = 164
           Caption = 'Yij = k [ a * Xij / ({Xij} + a ) ] + b'
-          Color = clBtnFace
           ParentColor = False
           ParentFont = False
-          Transparent = False
         end
         object Label31: TLabel
           Left = 48
@@ -6122,10 +6120,8 @@ object stackmenu1: Tstackmenu1
           Width = 17
           Alignment = taRightJustify
           Caption = 'a ='
-          Color = clBtnFace
           ParentColor = False
           ParentFont = False
-          Transparent = False
         end
         object Label32: TLabel
           Left = -106
@@ -6149,10 +6145,8 @@ object stackmenu1: Tstackmenu1
           Width = 17
           Alignment = taRightJustify
           Caption = 'k ='
-          Color = clBtnFace
           ParentColor = False
           ParentFont = False
-          Transparent = False
         end
         object Label34: TLabel
           Left = 32
@@ -6161,10 +6155,8 @@ object stackmenu1: Tstackmenu1
           Width = 22
           Alignment = taRightJustify
           Caption = '{ } ='
-          Color = clBtnFace
           ParentColor = False
           ParentFont = False
-          Transparent = False
         end
         object apply_dpp_button1: TButton
           Left = 8
@@ -6981,9 +6973,7 @@ object stackmenu1: Tstackmenu1
           Top = 8
           Width = 24
           Caption = '1080'
-          Color = clBtnFace
           ParentColor = False
-          Transparent = False
         end
         object new_height2: TLabel
           Left = 176
@@ -6991,9 +6981,7 @@ object stackmenu1: Tstackmenu1
           Top = 8
           Width = 6
           Caption = 'x'
-          Color = clBtnFace
           ParentColor = False
-          Transparent = False
         end
       end
       object help_pixel_math2: TLabel
@@ -7030,13 +7018,11 @@ object stackmenu1: Tstackmenu1
           Alignment = taRightJustify
           AutoSize = False
           Caption = 'Telescope focal length [mm]'
-          Color = clBtnFace
           Constraints.MaxHeight = 40
           Constraints.MaxWidth = 130
           Constraints.MinHeight = 40
           ParentColor = False
           ParentFont = False
-          Transparent = False
           WordWrap = True
         end
         object focallength1: TEdit
@@ -7059,13 +7045,11 @@ object stackmenu1: Tstackmenu1
           Alignment = taRightJustify
           AutoSize = False
           Caption = 'Sensor pixel size after binning [µm]'
-          Color = clBtnFace
           Constraints.MaxHeight = 40
           Constraints.MaxWidth = 130
           Constraints.MinHeight = 40
           ParentColor = False
           ParentFont = False
-          Transparent = False
           WordWrap = True
         end
         object pixelsize1: TEdit

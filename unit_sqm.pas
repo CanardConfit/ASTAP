@@ -173,7 +173,7 @@ begin
 
     if jd_start<=2400000 then {no date, found year <1858}
     begin
-      error_message1.caption:='Error converting date obs.'+#10;
+      error_message1.caption:='Error converting DATE-OBS.'+#10;
       sqm1.caption:='?';
       exit;
     end;

@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.01.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.02.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -120,6 +120,7 @@ type
     localcoloursmooth2: TMenuItem;
     fittowindow1: TMenuItem;
     flipVH1: TMenuItem;
+    simbad_annotation_deepsky_filtered1: TMenuItem;
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
     flip_indication1: TLabel;
@@ -405,6 +406,7 @@ type
     procedure localcoloursmooth2Click(Sender: TObject);
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
+    procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -715,6 +717,7 @@ var {################# initialised variables #########################}
   mouse_positionRADEC1 : string='';{For manual reference solving}
   mouse_positionRADEC2 : string='';{For manual reference solving}
   flipped_img          : string='';
+  maintype               : string='';
   bayer_pattern : array[0..4] of string=('GRBG',
                                          'BGGR',
                                          'RGGB',
@@ -8036,6 +8039,12 @@ begin
   flip_horizontal1.checked:=flip_horizontal1.checked=false;
 end;
 
+procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
+begin
+  maintype:=InputBox('Simbad search with criteria.','Enter the object main type (E.g. star=*, galaxy=G, quasar=QSO):',maintype);
+  gaia_star_position1Click(sender);
+end;
+
 
 procedure Convert_to_BMP;
 var
@@ -13046,6 +13055,17 @@ begin
     y1:=(stopY+startY) div 2;
     url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype!=*)'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
 //    http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(Vmag<15+|+Bmag<15+)%26+region(box,60.2175d%2B25.5763d,+32.3592m+38.5229m)&OutputMode=LIST&output.format=ASCII'
+    plot_simbad(get_http(url));
+    Screen.Cursor:=crDefault;
+    exit;
+  end
+
+  else
+  if sender=simbad_annotation_deepsky_filtered1 then //Simbad deepsky with maintype filter
+  begin
+    x1:=(stopX+startX) div 2;
+    y1:=(stopY+startY) div 2;
+    url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype='+maintype+')'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
     plot_simbad(get_http(url));
     Screen.Cursor:=crDefault;
     exit;

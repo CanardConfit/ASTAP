@@ -613,9 +613,9 @@ begin
 
   if jd_start<=2400000 then {no date, found year <1858}
   begin
-    mainwindow.error_label1.caption:=('Error converting date-obs or date-avg from the FITS header');
+    mainwindow.error_label1.caption:=('Error converting DATE-OBS or DATE-AVG from the file header!');
     mainwindow.error_label1.visible:=true;
-    memo2_message(filename2+ ' Error converting date-obs or date-avg from the FITS header');
+    memo2_message(filename2+ ' Error converting DATE-OBS or DATE-AVG from the file header!');
     exit;
   end;
 
@@ -812,9 +812,9 @@ end;
 
 procedure Tform_asteroids1.file_to_add2Click(Sender: TObject);
 begin
-  OpenDialog1.Title := 'Select CometEls.txt to use';
+  OpenDialog1.Title := 'Select AllCometEls.txt to use';
   OpenDialog1.Options := [ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'CometEls.txt file (Com*.txt)|Com*.txt';
+  opendialog1.Filter := 'AllCometEls.txt file (*.txt)|*.txt';
   if opendialog1.execute then
   begin
     mpcorb_path2.caption:=OpenDialog1.Files[0];
