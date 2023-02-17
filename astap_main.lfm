@@ -1811,17 +1811,17 @@ object mainwindow: Tmainwindow
         ImageIndex = 38
         OnClick = gaia_star_position1Click
       end
-      object simbad_annotation_deepsky_filtered1: TMenuItem
-        Caption = 'Simbad, deepsky annotion filtered'
-        Hint = 'Annotate the selected area with deepsky object info from Simbad. A input will be shown to filter on object type.'
-        ImageIndex = 38
-        OnClick = simbad_annotation_deepsky_filtered1Click
-      end
       object simbad_annotation_star1: TMenuItem
         Caption = 'Simbad, star annotation'
         Hint = 'Annotate the selected area with star info from Simbad'
         ImageIndex = 38
         OnClick = gaia_star_position1Click
+      end
+      object simbad_annotation_deepsky_filtered1: TMenuItem
+        Caption = 'Simbad, deepsky annotion filtered'
+        Hint = 'Annotate the selected area with deepsky object info from Simbad. A input will be shown to filter on object type.'
+        ImageIndex = 38
+        OnClick = simbad_annotation_deepsky_filtered1Click
       end
       object MenuItem21: TMenuItem
         Caption = '-'
