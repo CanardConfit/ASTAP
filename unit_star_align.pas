@@ -48,7 +48,7 @@ uses  unit_annotation;
 {   see also Montenbruck & Pfleger, Astronomy on the personal computer}
 procedure lsq_fit( A_matrix: star_list; {[0..nr_equations-1, 0..3]}
                        b_matrix  : array of double;{equations result, b=A*s}
-                       var x_matrix: array of double );
+                       out x_matrix: array of double );
   const tiny = 1E-10;  {accuracy}
   var i,j,k, nr_equations,nr_columns,hhh  : integer;
       p,q,h                           : double;
@@ -217,7 +217,7 @@ begin
   if nrstars>=150 then
   begin
     quickSort_starlist(starlist,0,nrstars-1); {sort in X only}
-    tolerance:=round(0.5*sqrt(nrstars));{tolerance band is about twice the every star distance}
+    tolerance:=round(0.5*sqrt(nrstars));{resulting tolerance band will be about twice the average star distance assuming the stars are equally distributed}
   end
   else
   tolerance:=1;{switch pre-filtering in X off}
@@ -432,7 +432,7 @@ begin
   if nrstars>=150 then
   begin
     quickSort_starlist(starlist,0,nrstars-1); {sort in X only}
-    tolerance:=round(0.5*sqrt(nrstars));{tolerance band is about twice the every star distance}
+    tolerance:=round(0.5*sqrt(nrstars));{resulting tolerance band will be about twice the average star distance assuming the stars are equally distributed}
   end
   else
   tolerance:=1;{switch pre-filtering in X off}
@@ -554,7 +554,7 @@ end;
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 var
    i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads                          : integer;
-   distance,distance1,distance2,distance3{,dummy },x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
+   distance,distance1,distance2,distance3{,dummy },x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,xx,yy  : double;
    identical_quad : boolean;
 begin
   nrstars_min_one:=Length(starlist[0])-1;
@@ -582,9 +582,10 @@ begin
     begin
       if j<>i{not the first star} then
       begin
+
         distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
 
-        if distance>1 then {not an identical star. Mod 2021-6-25}
+  //      if distance>1 then {not an identical star. Mod 2021-6-25}
         begin
           if distance<distance1 then
           begin

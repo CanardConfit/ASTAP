@@ -2530,7 +2530,7 @@ end;
 procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
   hfd_min: double;
-  max_stars, binning: integer;
+  max_stars, binning,x: integer;
   starlistquads: star_list;
   warning_downsample: string;
 begin
@@ -2561,10 +2561,9 @@ begin
         stackmenu1.min_star_size_stacking1.Caption){hfd});
     {to ignore hot pixels which are too small}
 
-    bin_and_find_stars(img_loaded, binning, 1 {cropping}, hfd_min, max_stars,
-      False{update hist}, starlist1, warning_downsample);{bin, measure background}
-
+    bin_and_find_stars(img_loaded, binning, 1 {cropping}, hfd_min, max_stars, False{update hist}, starlist1, warning_downsample);{bin, measure background}
     find_quads_xy(starlist1, starlistquads);{find quads}
+
     display_quads(starlistquads);
     quads_displayed := True;
     starlistquads := nil;{release memory}
