@@ -32,7 +32,7 @@ var
   naam2,naam3,naam4: string;
 
 var  {################# initialised variables #########################}
-  flux_magn_offset       : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
+  flux_ratio       : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
   limiting_magnitude     : double=0;{magnitude where snr is 5}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
   database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
@@ -1330,7 +1330,7 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
@@ -1731,32 +1731,10 @@ begin
 end;
 
 
-procedure get_best_meanold(list: array of double; leng : integer; out mean,cv : double);{Remove outliers from polulation using MAD. }
+procedure get_best_mean(list: array of double; leng : integer; out mean,standard_error_mean,cv : double);{Remove outliers from polulation using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   i,count         : integer;
-  median, mad     : double;
-
-begin
- mad_median(list,leng,mad,median);{{calculate mad and median without modifying the data}
- if median>0 then cv:=mad*1.4826/median else cv:=0;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
-
- count:=0;
- mean:=0;
-
- for i:=0 to leng-1 do
-   if abs(list[i]-median)<1.50*1.4826*mad then {offset less the 1.5*sigma.}
-   begin
-     mean:=mean+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
-     inc(count);
-   end;
- if count>0 then  mean:=mean/count;  {mean without using outliers}
-end;
-
-
-procedure get_best_mean(list: array of double; leng : integer; out mean, cv : double);{Remove outliers from polulation using MAD. }
-var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
-  i,count         : integer;
-  median, mad     : double;
+  median, mad,sd,confidence1,confidence2     : double;
 
 begin
  cv:=0;
@@ -1767,30 +1745,35 @@ begin
 
  mad_median(list,leng,mad,median);{calculate mad and median without modifying the data}
 
- if median>0 then cv:=mad*1.4826/median;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
+ sd:=mad*1.4826;//standard deviation calculated from mad
+ if median>0 then cv:=sd/median;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
 
  count:=0;
  mean:=0;
+ standard_error_mean:=0;
 
  for i:=0 to leng-1 do
-   if abs(list[i]-median)<1.50*1.4826*mad then {offset less the 1.5*sigma.}
+   if abs(list[i]-median)<1.50*sd then {offset less the 1.5*sigma.}
    begin
      mean:=mean+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
      inc(count);
    end;
- if count>0 then  mean:=mean/count;  {mean without using outliers}
+  if count>0 then
+  begin
+    mean:=mean/count;  {mean without using outliers}
+    standard_error_mean:=sd/sqrt(count); //https://onlinestatbook.com/2/estimation/mean.html
+  end;
 end;
 
 
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   dra,ddec, telescope_ra,telescope_dec,fov,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,xx,yy : double;
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,xx,yy,magn_limit_min,magn_limit_max,cv  : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                          : integer;
   flip_horizontal, flip_vertical        : boolean;
-  mag_offset_array,hfd_x_sd             : array of double;
-  mess                                  : string;
+  flux_ratio_array,hfd_x_sd             : array of double;
 
     procedure plot_star;
     begin
@@ -1860,14 +1843,12 @@ var
                 (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
                 (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
             begin
-              magn:=(-ln(flux)*2.511886432/LN(10));
-              if counter_flux_measured>=length(mag_offset_array) then
+              if counter_flux_measured>=length(flux_ratio_array) then
               begin
-               SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
+               SetLength(flux_ratio_array,counter_flux_measured+500);{increase length array}
                if report_lim_magn then  SetLength(hfd_x_sd,counter_flux_measured+500);{increase length array}
               end;
-              mag_offset_array[counter_flux_measured]:=mag2/10-magn;
-
+              flux_ratio_array[counter_flux_measured]:=flux*power(2.511886432,(mag2/10));//flux ratio measured.
               if report_lim_magn then
               begin
                 hfd_x_sd[counter_flux_measured]:=hfd1*sd_bg;{calculate hfd*SD. sd_bg  is a global variable from procedure hfd. The minimum diameter for star detection is 4}
@@ -1885,13 +1866,12 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
 //    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}  Already set
-
 
     bp_rp:=999;{not defined in mono versions of the database}
 
@@ -1927,7 +1907,7 @@ begin
     if flux_calibration then
     begin
        max_nr_stars:=round(max_nr_stars*0.6); {limit to the brightest stars. Fainter stars have more noise}
-       setlength(mag_offset_array,max_nr_stars);
+       setlength(flux_ratio_array,max_nr_stars);
        if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
     end;
 
@@ -2016,7 +1996,7 @@ begin
     begin
       if counter_flux_measured>=3 then {at least three stars}
       begin
-        get_best_mean(mag_offset_array,counter_flux_measured {length},flux_magn_offset,cv );
+        get_best_mean(flux_ratio_array,counter_flux_measured {length},flux_ratio,standard_error_mean,cv );
 
         if flux_aperture=99 then
 
@@ -2039,7 +2019,7 @@ begin
                            flux≈snr*r*sqrt(pi)*sd
                            flux≈snr*(hfd*0.8)*sqrt(pi)*sd   assuming star diameter is 2*hfd, so radius is hfd
                            flux≈snr*sqrt(pi)*sd*hfd*0.8  }
-          flux_snr_7:=7*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length}){*0.8{fiddle factor} ;{Assuming minimum SNR is 10 and the aperture is reduced to about hfd for the faintest stars.}
+          flux_snr_7:=7*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length}){*0.8{fiddle factor} ;{Assuming minimum SNR is 7 and the aperture is reduced to about hfd for the faintest stars.}
           apert:=strtofloat2(stackmenu1.flux_aperture1.text);{aperture diamater expressed in HFD's. If aperture diameter is HFD, half of the star flux is lost}
           if apert=0 then apert:=10; {aperture is zero if is set at max text. Set very high}
 
@@ -2047,24 +2027,25 @@ begin
           //encircled flux =1-EXP(-0.5*((apert*HFD/2)/(HFD/2.3548))^2)
           //encircled flux =1-EXP(-0.5*(apert*2.3548/2))^2)
           flux_snr_7:=flux_snr_7*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
-          magn_limit:=flux_magn_offset-ln(flux_snr_7)*2.511886432/ln(10); {global variable}
-          mess:='Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   (7σ, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
 
-          memo2_message(mess);
-          mainwindow.caption:='Photometry calibration successful. '+mess;
+          magn_limit:=ln(flux_ratio/flux_snr_7)/ln(2.511886432); //global variable.
+          magn_limit_min:=ln( (flux_ratio-standard_error_mean)/flux_snr_7)/ln(2.511886432); {global variable}
+          magn_limit_max:=ln( (flux_ratio+standard_error_mean)/flux_snr_7)/ln(2.511886432); {global variable}
+          magn_limit_str:='Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   ('+floattostrF(magn_limit_min,ffgeneral,3,1)+'< m <'+floattostrF(magn_limit_max,ffgeneral,3,1)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
+
+          memo2_message(magn_limit_str);
+          mainwindow.caption:='Photometry calibration successful. '+magn_limit_str;
         end;
-
-
       end
       else
       begin
-        flux_magn_offset:=0;
-        mess:='Calibration failure!';
-        mainwindow.caption:=mess;
-        memo2_message(mess);
+        flux_ratio:=0;
+        magn_limit_str:='Calibration failure!';
+        mainwindow.caption:=magn_limit_str;
+        memo2_message(magn_limit_str);
       end;
 
-      mag_offset_array:=nil;
+      flux_ratio_array:=nil;
       hfd_x_sd:=nil;
     end;
 
@@ -2236,7 +2217,7 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
@@ -2440,7 +2421,7 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass; {$ifdef linux} application.processmessages; {$endif} // Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     counter_flux_measured:=0;
 

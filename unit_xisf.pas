@@ -237,9 +237,14 @@ begin
 
   {update memo keywords and variables for floats}
   extract_double_keyword('CD1_1',head.cd1_1);{extract float value from XML header and add keyword to FITS memo header, ignoring comments.}
-  extract_double_keyword('CD1_2',head.cd1_2);
-  extract_double_keyword('CD2_1',head.cd2_1);
-  extract_double_keyword('CD2_2',head.cd2_2);
+  if head.cd1_1<>0 then
+  begin
+    extract_double_keyword('CD1_2',head.cd1_2);
+    extract_double_keyword('CD2_1',head.cd2_1);
+    extract_double_keyword('CD2_2',head.cd2_2);
+    extract_double_keyword('CRPIX1',head.crpix1);
+    extract_double_keyword('CRPIX2',head.crpix2);
+  end;
 
   extract_double_keyword('CCD-TEMP',set_temp);
   extract_double_keyword('SET-TEMP',set_temp);
@@ -248,10 +253,13 @@ begin
   extract_double_keyword('EXPTIME ',head.exposure);
   extract_double_keyword('EXPOSURE',head.exposure);
 
-  extract_double_keyword('CROTA1',head.crota1);
-  extract_double_keyword('CROTA2',head.crota2);
-  extract_double_keyword('CDELT1',head.cdelt1);
   extract_double_keyword('CDELT2',head.cdelt2);
+  if head.cdelt2<>0 then
+  begin
+    extract_double_keyword('CROTA1',head.crota1);
+    extract_double_keyword('CROTA2',head.crota2);
+    extract_double_keyword('CDELT1',head.cdelt1);
+  end;
 
   extract_double_keyword('FOCALLEN',focallen);
   extract_double_keyword('PRESSURE',pressure);
@@ -390,7 +398,7 @@ begin
     setlength(img_loaded2,head.naxis3,head.width,head.height);
     for k:=1 to head.naxis3 do {do all colors}
     begin
-      For i:=0 to head.height-1 do
+      For i:=head.height-1 downto 0 do //XISF is top-down
       begin
         try reader.read(fitsbuffer,head.width*round(abs(nrbits/8)));except; head.naxis:=0;{failure} end; {read file info}
 
