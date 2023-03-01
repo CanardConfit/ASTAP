@@ -854,7 +854,7 @@ type
   tstarlistpackage = record {for photometry tab}
     Width: integer;
     Height: integer;
-    flux_magn_offset: double;
+    flux_ratio: double;
     starlist: star_list;
   end;
 
@@ -7751,7 +7751,7 @@ var
   stepnr, x_new, y_new, c, i, j, nr_images, smallest, w, h, w2, h2: integer;
   stars_mean, stars_sd, stars_count: array of array of single;
   created: boolean;
-  sd, xc, yc: double;
+  sd, xc, yc      : double;
 const
   factor = 10; {div factor to get small variations at the same location}
 begin
@@ -7830,16 +7830,20 @@ begin
                 if stepnr = 1 then
                 begin {CALCULATE MEAN of stars}
                   stars_mean[x_new, y_new] := stars_mean[x_new, y_new] +
-                    starlistpack[c].flux_magn_offset - ln(starlistpack[c].starlist[3, i]{flux}) *
-                    2.511886432 / ln(10); {magnitude}
+                  ln(starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432); {magnitude}
+
+
                   stars_count[x_new, y_new] := stars_count[x_new, y_new] + 1;{counter}
                 end
                 else {CALCULATE SD of stars}
                 if stepnr = 2 then
+                begin
                   stars_sd[x_new, y_new] :=
                     stars_sd[x_new, y_new] + sqr((stars_mean[x_new, y_new] / stars_count[x_new, y_new]) -
-                    (starlistpack[c].flux_magn_offset - ln(starlistpack[c].starlist[3, i]{flux}) *
-                    2.511886432 / ln(10))); {sd calculate by sqr magnitude difference from mean}
+                    ln( starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432) ); {sd calculate by sqr magnitude difference from mean}
+                end;
+
+
               end;
             end;{for loop}
           except
@@ -7966,12 +7970,15 @@ var
         (img_loaded[0, round(xc + 1), round(yc + 1)] < saturation_level)) then
         {not saturated star}
       begin
-        magn := starlistpack[c].flux_magn_offset - ln(flux) * 2.511886432 / ln(10);
+//        magn := starlistpack[c].flux_ratio - ln(flux) * 2.511886432 / ln(10);
+        magn := ln(starlistpack[c].flux_ratio/flux)/ln(2.511886432);
+
+
         Result := floattostrf(magn, ffFixed, 5, 3);
         {write measured magnitude to list}
         //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
         //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
-        //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_magn_offset, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
+        //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_ratio, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
 
         //        if Flipvertical=false then  starY:=(head.height-yc) else starY:=(yc);
         //        if Fliphorizontal     then starX:=(head.width-xc)  else starX:=(xc);
@@ -8260,7 +8267,7 @@ begin
             {store found stars in memory for finding outlier later}
             starlistpack[c].Width := head.Width;
             starlistpack[c].Height := head.Height;
-            starlistpack[c].flux_magn_offset := flux_ratio;
+            starlistpack[c].flux_ratio := flux_ratio;
           end
           else
             starlistpack[c].Height := 0; {mark as not valid measurement}
@@ -8306,7 +8313,7 @@ begin
         listview7.Items.item[c].subitems.Strings[P_magn2] := ''; {MAGN, always blank}
         listview7.Items.item[c].subitems.Strings[P_magn3] := ''; {MAGN, always blank}
 
-        if starlistpack[c].flux_magn_offset <> 0 then {valid flux calibration}
+        if starlistpack[c].flux_ratio <> 0 then {valid flux calibration}
         begin // do var star
           if mainwindow.shape_alignment_marker1.Visible then
           begin
@@ -8409,7 +8416,7 @@ begin
 
 
         {plot the aperture and annulus}
-        if starlistpack[c].flux_magn_offset <> 0 then {valid flux calibration}
+        if starlistpack[c].flux_ratio <> 0 then {valid flux calibration}
         begin
           mainwindow.image1.Canvas.Pen.mode := pmCopy;
 
@@ -8455,11 +8462,9 @@ begin
               starX := (x_new);
 
             mainwindow.image1.Canvas.Rectangle(starX - size, starY - size,
-              starX + size, starY + size);{indicate hfd with rectangle}
-            magn := starlistpack[c].flux_magn_offset - ln(
-              starlistpack[c].starlist[3, i]{flux}) * 2.511886432 / ln(10);
-            mainwindow.image1.Canvas.textout(starX + size, starY - size,
-              floattostrf(magn * 10, ffgeneral, 3, 0));{add magnitude as text}
+            starX + size, starY + size);{indicate hfd with rectangle}
+            magn:=ln(starlistpack[c].flux_ratio /starlistpack[c].starlist[3, i]{flux})/ln(2.511886432);
+            mainwindow.image1.Canvas.textout(starX + size, starY - size,floattostrf(magn * 10, ffgeneral, 3, 0));{add magnitude as text}
           end;{measure marked stars}
 
 

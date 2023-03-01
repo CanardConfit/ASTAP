@@ -272,7 +272,7 @@ object mainwindow: Tmainwindow
       Visible = False
     end
     object error_label1: TLabel
-      Left = 19
+      Left = 24
       Height = 28
       Top = 40
       Width = 158

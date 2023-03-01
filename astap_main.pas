@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.02.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -9368,7 +9368,8 @@ begin
       if value>65000 then inc(saturation_counter);{keep track of number of saturated pixels}
     end;
     if flux<1 then flux:=1;
-    str(flux_ratio-ln(flux)*2.511886432/ln(10):0:1,mag_str);
+    str(ln(flux_ratio/flux)/ln(2.511886432):0:1,mag_str);
+
     if (saturation_counter*65500/flux)<0.01 then mag_str:='MAGN='+mag_str {allow about 1% saturation}
                                             else mag_str:='MAGN <'+mag_str+', '+inttostr(saturation_counter) +' saturated pixels !';
 
@@ -9489,7 +9490,7 @@ begin
 
     HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-    if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+    if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
     begin //lock
       shapetype:=1;{circle}
       shape_marker1_fitsX:=xc+1;{store fits value for zoom}
@@ -9858,7 +9859,7 @@ begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack> detection_level)) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+        if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
         begin
           {for testing}
           //if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
@@ -10034,7 +10035,7 @@ const
                         (img_loaded[0,xci+1,yci+1]<head.datamax_org-1)  )
         else saturated:=false;
 
-        if (((hfd1<hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=hfd_median*0.75) and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+        if (((hfd1<hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=hfd_median*0.75) and (snr>10)) then {star detected in img_loaded}
         begin
                       {for testing}
               //      if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
@@ -10055,9 +10056,7 @@ const
               if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
               img_sa[0,i,j]:=+1;{mark as star area}
             end;
-
-           measured_magn:=(flux_ratio-ln(flux)*2.511886432/ln(10))*10; {magnitude x 10}
-
+           measured_magn:=round(10*(ln(flux_ratio/flux)/ln(2.511886432)));{magnitude x 10}
            if measured_magn<magn_limit-10 then {bright enough to be in the database}
            begin
              magn_database:=default;{1000}
@@ -13515,7 +13514,10 @@ begin
     sd_bg_e:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
   end;
 
-  snr:=flux_e /sqrt(flux_e +sqr(radius)*pi*sqr(sd_bg_e));
+  if flux>=1 then
+    snr:=flux_e /sqrt(flux_e +sqr(radius)*pi*sqr(sd_bg_e))
+  else
+    snr:=0;//rare but happens. Prevent runtime errors  by /flux
   {For both bright stars (shot-noise limited) or skybackground limited situations
     snr := signal/noise
     snr := star_signal/sqrt(total_signal)
@@ -13867,8 +13869,8 @@ begin
 
      if flux_ratio<>0 then {offset calculated in star annotation call}
      begin
-        str(flux_ratio-ln(flux)*2.511886432/ln(10):0:2,mag_str);
-        mag_str:=', MAGN='+mag_str;
+       str(ln(flux_ratio/flux)/ln(2.511886432):0:2,mag_str);
+       mag_str:=', MAGN='+mag_str;
      end
      else mag_str:='';
 

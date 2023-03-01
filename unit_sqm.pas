@@ -139,7 +139,8 @@ begin
       pedestal2:=0; {prevent errors}
     end;
 
-    sqmfloat:=flux_ratio-ln((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
+    sqmfloat:=( ln(flux_ratio/((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec}) )/ln(2.511886432) );
+
     calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,alt);
 
     centalt:=inttostr(round(alt));{for reporting in menu sqm1}
