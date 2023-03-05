@@ -99,11 +99,12 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 interface
 
 uses   Classes,SysUtils,controls,forms,math,
-       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field;
+       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field,unit_online_gaia;
 
 function solve_image(img :image_array;var hd: Theader; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height :double) : integer;{select the binning}
+procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
 
 
 var
@@ -200,7 +201,7 @@ begin
 
   SetLength(starlist1,2,nrstars_required);{set array length}
 
-  if database_type<>001 then {1476 or 290 files}
+  if database_type>1 then {1476 or 290 files}
   begin
     {Assume the search field is at a crossing of four tiles. The search field area, by definition 100% is split in 8%, 15%, 20%, 57% area for each tile.
      There are 500 stars required. It will then retrieve 8% x 500, 15% x 500, 20% x 500, 57% x 500 stars from each tile under the condition these stars are within the green area.
@@ -257,7 +258,8 @@ begin
     end;
   end
   else
-  begin {wide field database}
+  if database_type=1 then {W08 single file wide field database}
+  begin {wide field database, database_type=0}
     if wide_database<>name_database then read_stars_wide_field;{load wide field stars array}
     count:=0;
     cos_telescope_dec:=cos(telescope_dec);
@@ -274,9 +276,22 @@ begin
       inc(count);
     end;
     mag2:=wide_field_stars[(count-1)*3];{for reporting of highest magnitude used for solving}
-  end;
+  end
+  else //Database_type=0, Vizier online, Gaia
+  begin
+    count:=0;
+    if read_stars_online(telescope_ra,telescope_dec,search_field, 99 {max_magnitude}, nrstars_required,{out} nrstars,mag2{limiting magn}){retrieve brightest stars online} then
 
-//  memo2_message('testareas'+#9+floattostr4(telescope_ra*12/pi)+#9+floattostr4(telescope_dec*180/pi)+#9+inttostr(maga)+#9+inttostr(magb)+#9+inttostr(magc)+#9+inttostr(magd)+#9+floattostr4(frac1)+#9+floattostr4(frac2)+#9+floattostr4(frac3)+#9+floattostr4(frac4)+#9+inttostr(area1)+#9+inttostr(area2)+#9+inttostr(area3)+#9+inttostr(area4));
+    while ((count<nrstars) and  (count<length(online_database[0])) ) do {read stars}
+    begin
+      ra2:=online_database[0,count];
+      dec2:=online_database[1,count];
+      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,count]{x},starlist1[1,count]{y});{store star CCD x,y position}
+      inc(count);
+    end;
+    online_database:=nil; // free mem
+  end;
+  //  memo2_message('testareas'+#9+floattostr4(telescope_ra*12/pi)+#9+floattostr4(telescope_dec*180/pi)+#9+inttostr(maga)+#9+inttostr(magb)+#9+inttostr(magc)+#9+inttostr(magd)+#9+floattostr4(frac1)+#9+floattostr4(frac2)+#9+floattostr4(frac3)+#9+floattostr4(frac4)+#9+inttostr(area1)+#9+inttostr(area2)+#9+inttostr(area3)+#9+inttostr(area4));
 
   if nrstars<nrstars_required then
        SetLength(starlist1,2,nrstars); {fix array length on data for case less stars are found}

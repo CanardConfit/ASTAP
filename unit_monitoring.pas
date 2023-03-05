@@ -96,7 +96,7 @@ var
   wdiv2,hdiv2,x,y,rx,ry : integer;
   direction : string;
 begin
-  if head.naxis=0 then exit;
+  if ((head.naxis=0) or (head.cd1_1=0)) then exit;
   with stackmenu1 do
   begin
     raposition1.visible:=true;

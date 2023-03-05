@@ -1,5 +1,5 @@
 ﻿unit astap_main;
-{Copyright (C) 2017, 2022 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2023 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -120,6 +120,8 @@ type
     localcoloursmooth2: TMenuItem;
     fittowindow1: TMenuItem;
     flipVH1: TMenuItem;
+    Separator2: TMenuItem;
+    vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
@@ -406,6 +408,7 @@ type
     procedure localcoloursmooth2Click(Sender: TObject);
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -945,6 +948,7 @@ var {################# initialised variables #########################}
   font_style :   tFontStyles=[];
   font_color : tcolor= cldefault;
   freetext : string='';
+  annotation_magn: string='15';
 
 const
   crMyCursor = 5;
@@ -7262,12 +7266,9 @@ begin
       dec1.text:= Sett.ReadString('main','dec','0');
 
       stretch1.text:= Sett.ReadString('main','gamma','');
-
-
       if paramcount=0 then filename2:=Sett.ReadString('main','last_file','');{if used as viewer don't override paramstr1}
-//      image_store_path:=Sett.ReadString('main','image_store_path','');
-
       export_index:=Sett.ReadInteger('main','export_index',3);{tiff stretched}
+      annotation_magn:=Sett.ReadString('main', 'anno_magn',annotation_magn);
 
 
       dum:=Sett.ReadString('ast','mpcorb_path','');if dum<>'' then mpcorb_path:=dum;{asteroids}
@@ -7628,9 +7629,8 @@ begin
 
 
       sett.writestring('main','last_file',filename2);
-//      sett.writestring('main','image_store_path',image_store_path);
       sett.writeInteger('main','export_index',export_index);
-
+      sett.writestring('main','anno_magn',annotation_magn);
 
 
       sett.writestring('ast','mpcorb_path',mpcorb_path);{asteroids}
@@ -8037,6 +8037,11 @@ begin
   plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
   flip_vertical1.checked:=flip_vertical1.checked=false;
   flip_horizontal1.checked:=flip_horizontal1.checked=false;
+end;
+
+procedure Tmainwindow.Panel1Click(Sender: TObject);
+begin
+
 end;
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
@@ -9320,7 +9325,7 @@ begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       flux_aperture:=99;{calibrate for extended objects}
 
-      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
+      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude},'99' {max_magn});
     end;
     if flux_ratio=0 then begin beep; exit;end;
 
@@ -9922,7 +9927,7 @@ var
   apert,annul,backgr,hfd_med : double;
   hfd_counter                : integer;
 begin
-  if ((head.naxis=0) or (head.cd1_1=0)) then exit;
+ if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
   if ((flux_ratio=0) or (aperture_ratio<>apert){new calibration required})  then
@@ -9945,7 +9950,7 @@ begin
     else
     memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
 
-    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
+    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude},'99'{max_magn});
   end;
 end;
 
@@ -10230,12 +10235,22 @@ end;
 
 procedure Tmainwindow.annotations_visible1Click(Sender: TObject);
 begin
-  stackmenu1.annotations_visible1.enabled:=annotations_visible1.checked; {follow in stack menu}
+//  annotations_visible1.checked:= annotations_visible1.checked=false;
+  stackmenu1.annotations_visible2.checked:=annotations_visible1.checked; {follow in stack menu}
   if head.naxis=0 then exit;
   if annotations_visible1.checked=false then  {clear screen}
     plot_fits(mainwindow.image1,false,true)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
+
+
+//  stackmenu1.annotations_visible2.checked:=annotations_visible1.checked; {follow in stack menu}
+//  if head.naxis=0 then exit;
+//  if annotations_visible1.checked=false then  {clear screen}
+//    plot_fits(mainwindow.image1,false,true)
+//  else
+//    if annotated then plot_annotations(false {use solution vectors},false);
+
 end;
 
 
@@ -12168,9 +12183,11 @@ end;
 
 procedure Tmainwindow.star_annotation1Click(Sender: TObject);
 begin
-  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting}
+  annotation_magn :=inputbox('Annotate stars','Annotate up to magnitude:' ,annotation_magn);
+  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
-  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn});{plot stars}
+  calibrate_photometry; {measure hfd and calibrate for point or extended sources depending on the setting}
+  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn},annotation_magn);{plot stars}
 end;
 
 
@@ -13007,9 +13024,86 @@ begin
 end;
 
 
+procedure plot_vizier(info:string); //plot online info Gaia from Vizier
+var
+  regel,simobject,mag : string;
+  p1,p2,p3,count    : integer;
+  rad,decd,g,bp     : double;
+  datalines : boolean;
+  slist: TStringList;
+
+begin
+//--------------- --------------- --------- ---------
+//                                  G         BP
+//RA_ICRS (deg)   DE_ICRS (deg)   mag (mag) mag (mag)
+//--------------- --------------- --------- ---------
+//086.58690478866 -10.38175731298 20.486355 20.757553
+//086.57689784801 -10.37081756215 20.496525 21.346535
+//086.57543967588 -10.36071651144 20.726021 21.413324
+
+
+  slist := TStringList.Create;
+  deepstring.clear;
+  deepstring.add('');//add two lines blank comments
+  deepstring.add('');
+  datalines:=false;
+
+  try
+    slist.Text := info;
+    count:=35;{skip first part}
+    while count+1<=slist.count do
+    begin
+      regel:=ansistring(slist[count]);
+      inc(count);
+
+      if datalines then //Data from Vizier
+      begin
+        {magnitude}
+        p1:=pos(' ',regel);{first column changes in width}
+        p2:=posex(' ',regel,p1+1);
+        p3:=posex(' ',regel,p2+1);
+        if p3>0 then //this is a real line of the object list
+        begin
+          rad:=strtofloat1(copy(regel,1,p1-1));
+          decd:=strtofloat1(copy(regel,p1+1,p2-p1-1));
+          bp:=strtofloat1(copy(regel,p3+1,99));
+
+          if bp=0 then
+          begin
+            g:=strtofloat1(trim(copy(regel,p2+1,p3-p2-1)));
+            mag:='g:'+inttostr(round(g*10)); {magn}
+          end
+          else
+            mag:=inttostr(round(bp*10));{magn}
+
+          simobject:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+mag;
+
+          //RA[0..864000], DEC[-324000..324000], name(s), length [0.1 min], width[0.1 min], orientation[degrees]
+          //659250,-49674,M16/NGC6611/Eagle_Nebula,80
+          deepstring.add(simobject);
+        end;
+      end {correct line of object list}
+      else
+      if copy(regel,1,7)='RA_ICRS' then //data begins
+      begin
+        datalines:=true;
+        inc(count);//skip one more line containing --------------- --------------- --------- ---------
+      end;
+    end;
+
+  finally
+    slist.Free;
+  end;
+
+  database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
+  plot_deepsky;
+end;
+
+
+
 procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
-   url,ra8,dec8,sgn,window_size,magn,dec_degrees  : string;
+   url,ra8,dec8,sgn,window_size,dec_degrees  : string;
    ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
    radius,x1,y1                  : integer;
 begin
@@ -13029,11 +13123,11 @@ begin
     end;
   end
   else
-  begin
+  begin  //vizier
     ang_w:=abs((stopX-startX)*head.cdelt2*3600);{arc sec}
     ang_h:=abs((stopY-startY)*head.cdelt2*3600);{arc sec}
 
-    window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h)+'&-out.max=300&Gmag=<23';{square box}
+    window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h);{square box}
     {-c.geom=b  square box, -c.bs=10 box size 10arc
     else radius}
     sensor_coordinates_to_celestial(startX+1,startY+1,ra1,dec1);{first position}
@@ -13065,6 +13159,22 @@ begin
     Screen.Cursor:=crDefault;
     exit;
   end
+  else
+  if sender=vizier_gaia_annotation1 then //Plot Gaia stars
+  begin
+    annotation_magn:=inputbox('Chart request','Limiting magnitude chart:' ,annotation_magn);
+    annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
+    x1:=(stopX+startX) div 2;
+    y1:=(stopY+startY) div 2;
+    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=10000&Gmag=<'+trim(annotation_magn);
+//    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+'&-c.bs=533.293551/368.996043&-out.max=1000&Gmag=%3C23
+    plot_vizier(get_http(url));
+    Screen.Cursor:=crDefault;
+    exit;
+  end
+
+
+
 
   else
   if sender=simbad_annotation_deepsky_filtered1 then //Simbad deepsky with maintype filter
@@ -13090,11 +13200,12 @@ begin
   end
   else
 
-  if sender=mainwindow.gaia_star_position1 then //Gaia stars
+  if sender=mainwindow.gaia_star_position1 then //Browser Gaia stars
   begin
     plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'','');{rectangle, +1 to fits coordinates}
-    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
+    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=300&Gmag=<23';
     //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
+    //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=2x2&-out.max=1000000&BPmag=%3C21.5
   end
   else
 
@@ -13130,7 +13241,8 @@ begin
 
 
   begin {sender aavso_chart1}
-    magn:=inputbox('Chart request','Limiting magnitude chart:' ,'15');
+    annotation_magn:=inputbox('Chart request','Limiting magnitude chart:' ,annotation_magn);
+    annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
     radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
     x1:=(stopX+startX) div 2;
@@ -13141,7 +13253,7 @@ begin
     dec8:=prepare_dec(object_decM,' '); {radialen to text, format 90d 00 00}
 
     if dec8[1]='+' then dec_degrees:=copy(dec8,2,2) else dec_degrees:=copy(dec8,1,3);
-    url:='https://app.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+dec_degrees+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(magn)+'&resolution=150&north=up&east=left'
+    url:='https://app.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+dec_degrees+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(annotation_magn)+'&resolution=150&north=up&east=left'
 
     //  https://app.aavso.org/vsp/chart/?ra=08%3A40%3A29.63&dec=40%3A07%3A24.4&scale=C&orientation=visual&type=chart&fov=120.0&maglimit=12.0&resolution=150&north=up&east=left
   end;
@@ -14419,6 +14531,7 @@ begin
         if sender=save_to_tiff2 then
           fileDate := FileAge(fileName2);
         if load_image(false {recenter},false {plot}) then
+   //     if head.height*head.cdelt2<=0.2 then //remove !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         begin
           filename2:=ChangeFileExt(filename2,'.tif');
           if abs(nrbits)<=16 then

@@ -2782,6 +2782,13 @@ begin
     begin
       if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;exit; end
     end;
+    if typ in ['o'] then //Vizier online
+    begin
+      name_database:=database; {try preference}
+      database_type:=0;
+      exit;
+    end;
+
   end;{auto}
 
   if fov>20 then

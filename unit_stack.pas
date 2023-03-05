@@ -1,6 +1,6 @@
 unit unit_stack;
 
-{Copyright (C) 2017, 2022 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2023 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -38,6 +38,7 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    Annotations_visible2: TCheckBox;
     clear_result_list1: TButton;
     new_colour_luminance1: TTrackBar;
     save_settings_image_path1: TCheckBox;
@@ -620,9 +621,11 @@ type
     Viewimage4: TMenuItem;
     Viewimage5: TMenuItem;
     procedure add_noise1Click(Sender: TObject);
+    procedure alignment1Show(Sender: TObject);
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
+    procedure Annotations_visible2Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure calibrate_prior_solving1Change(Sender: TObject);
@@ -630,6 +633,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
+    procedure lightsShow(Sender: TObject);
     procedure listview1ItemChecked(Sender: TObject; Item: TListItem);
     procedure live_monitoring1Click(Sender: TObject);
     procedure auto_select1Click(Sender: TObject);
@@ -737,7 +741,12 @@ type
     procedure SpeedButton2Click(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
     procedure apply_box_filter2Click(Sender: TObject);
+    procedure tab_blink1Show(Sender: TObject);
     procedure tab_monitoring1Show(Sender: TObject);
+    procedure tab_photometry1Show(Sender: TObject);
+    procedure tab_Pixelmath1Show(Sender: TObject);
+    procedure tab_Pixelmath2Show(Sender: TObject);
+    procedure tab_stackmethod1Show(Sender: TObject);
     procedure test_osc_normalise_filter1Click(Sender: TObject);
 
     procedure test_pattern1Click(Sender: TObject);
@@ -916,7 +925,7 @@ procedure listview_add_xy(fitsX, fitsY: double);{add x,y position to listview}
 procedure update_equalise_background_step(pos1: integer);
 {update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
-procedure update_stackmenu;{update stackmenu1 menus}
+procedure update_tab_alignment;{update stackmenu1 menus}
 procedure box_blur(colors, range: integer;
   var img: image_array);{combine values of pixels, ignore zeros}
 procedure check_pattern_filter(var img: image_array);
@@ -1166,7 +1175,7 @@ begin
 end;
 
 
-procedure update_stackmenu;{update stackmenu1 menus, called onshow stackmenu1}
+procedure update_tab_alignment;{update stackmenu1 menus, called onshow stackmenu1}
 begin
   with stackmenu1 do
   begin
@@ -3547,31 +3556,8 @@ end;
 
 procedure Tstackmenu1.FormShow(Sender: TObject);
 begin
-  edit_background1.Text := '';
-  stackmenu1.stack_method1Change(nil);
-  {update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
   set_icon_stackbutton(classify_filter1.Checked);//update glyph stack button
 
-  stackmenu1.width_UpDown1.position :=
-    round(head.Width * strtofloat2(stackmenu1.resize_factor1.Caption));
-
-  stackmenu1.listview1.columns.Items[l_centaz + 1].Caption := centaz_key;
-  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
-  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := sqm_key;
-  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
-
-  stackmenu1.flux_aperture1change(nil);{disable annulus_radius1 if mode max flux}
-
-  hue_fuzziness1Change(nil);{show position}
-
-  annotations_visible1.Enabled := mainwindow.annotations_visible1.Checked;
-
-
-  {latitude, longitude}
-  stackmenu1.monitor_latitude1.Text := lat_default;
-  stackmenu1.monitor_longitude1.Text := long_default;
-
-  update_stackmenu;
   stackmenu1.pagecontrol1Change(Sender);//update stackbutton1.enabled
 end;
 
@@ -8255,8 +8241,7 @@ begin
           end;
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
-          plot_and_measure_stars(True {calibration}, False {plot stars},
-            True{report lim magnitude}); {get flux_ratio}
+          plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude},'99' {max_magn}); {get flux_ratio}
           listview7.Items.item[c].subitems.Strings[p_limmagn] :=
             floattostrF(magn_limit, FFgeneral, 4, 2);
 
@@ -9196,6 +9181,7 @@ begin
     end;
     SysUtils.FindClose(SearchRec);
     star_database1.items.add('auto');
+    star_database1.items.add('Online');
   end;
   flux_ratio := 0;{reset flux calibration. Required if V17 is selected instead of H17}
 end;
@@ -9220,9 +9206,45 @@ begin
   Screen.Cursor := crDefault;
 end;
 
+
+procedure Tstackmenu1.tab_blink1Show(Sender: TObject);
+begin
+  stackmenu1.annotations_visible2.checked:=mainwindow.annotations_visible1.checked; {follow in stack menu}
+end;
+
+
 procedure Tstackmenu1.tab_monitoring1Show(Sender: TObject);
 begin
   target_group1.Enabled := stackmenu1.monitor_action1.ItemIndex = 4;
+
+  {latitude, longitude}
+  stackmenu1.monitor_latitude1.Text := lat_default;
+  stackmenu1.monitor_longitude1.Text := long_default;
+end;
+
+procedure Tstackmenu1.tab_photometry1Show(Sender: TObject);
+begin
+  stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
+end;
+
+procedure Tstackmenu1.tab_Pixelmath1Show(Sender: TObject);
+begin
+  hue_fuzziness1Change(nil);{pixelmath 1, show position}
+end;
+
+procedure Tstackmenu1.tab_Pixelmath2Show(Sender: TObject);
+begin
+
+//  edit_background1.Text := '';
+
+  stackmenu1.width_UpDown1.position :=
+    round(head.Width * strtofloat2(stackmenu1.resize_factor1.Caption));
+end;
+
+procedure Tstackmenu1.tab_stackmethod1Show(Sender: TObject);
+begin
+  stackmenu1.stack_method1Change(nil);
+   {update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
 end;
 
 
@@ -9264,6 +9286,17 @@ procedure Tstackmenu1.annotate_mode1Change(Sender: TObject);
 begin
   vsx := nil;//clear downloaded database
   vsp := nil;
+end;
+
+
+procedure Tstackmenu1.Annotations_visible2Click(Sender: TObject);
+begin
+  mainwindow.annotations_visible1.checked:=annotations_visible2.checked; {follow in main menu viewer}
+  if head.naxis=0 then exit;
+  if annotations_visible2.checked=false then  {clear screen}
+    plot_fits(mainwindow.image1,false,true)
+  else
+    if annotated then plot_annotations(false {use solution vectors},false);
 end;
 
 
@@ -9320,6 +9353,14 @@ end;
 procedure Tstackmenu1.help_mount_tab1Click(Sender: TObject);
 begin
   openurl('http://www.hnsky.org/astap.htm#mount_tab');
+end;
+
+procedure Tstackmenu1.lightsShow(Sender: TObject);
+begin
+  stackmenu1.listview1.columns.Items[l_centaz + 1].Caption := centaz_key;
+  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
+  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := sqm_key;
+  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
 end;
 
 
@@ -10059,6 +10100,11 @@ begin
   {update for the noise, plot histogram, set sliders}
 end;
 
+procedure Tstackmenu1.alignment1Show(Sender: TObject);
+begin
+  update_tab_alignment;
+end;
+
 procedure Tstackmenu1.blink_stop1Click(Sender: TObject);
 begin
   esc_pressed := True;
@@ -10068,7 +10114,7 @@ end;
 procedure Tstackmenu1.blink_unaligned_multi_step1Click(Sender: TObject);
 var
   c, step: integer;
-  init, onestep: boolean;
+  init    : boolean;
 begin
   if listview1.items.Count <= 1 then exit; {no files}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -11132,7 +11178,7 @@ var
   i, c, over_size, over_sizeL, nrfiles, image_counter, object_counter,
   first_file, total_counter, counter_colours: integer;
   filter_name1, filter_name2, defilter, filename3,
-  extra1, extra2, object_to_process, stack_info, thefilters, mess: string;
+  extra1, extra2, object_to_process, stack_info, thefilters : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   mosaic_mode, sigma_mode, calibration_mode, calibration_mode2, skip_combine,
   success, classify_filter, classify_object, sender_photometry: boolean;
@@ -12417,25 +12463,25 @@ end;
 
 procedure Tstackmenu1.use_astrometry_internal1Change(Sender: TObject);
 begin
-  update_stackmenu;
+  update_tab_alignment;
 end;
 
 
 procedure Tstackmenu1.use_ephemeris_alignment1Change(Sender: TObject);
 begin
-  update_stackmenu;
+  update_tab_alignment;
 end;
 
 
 procedure Tstackmenu1.use_manual_alignment1Change(Sender: TObject);
 begin
-  update_stackmenu;
+  update_tab_alignment;
 end;
 
 
 procedure Tstackmenu1.use_star_alignment1Change(Sender: TObject);
 begin
-  update_stackmenu;
+  update_tab_alignment;
 end;
 
 
