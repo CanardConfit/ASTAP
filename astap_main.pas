@@ -9990,6 +9990,8 @@ const
   else
     magn_limit_database:=10*strtoint(copy(name_database,2,2)); {g18 => 180}
 
+  memo2_message('It it will be possible to detect up to magnitude='+floattostrF(min(magn_limit,0.1*magn_limit_database-1),ffGeneral,3,1));
+
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
   image1.Canvas.brush.Style:=bsClear;

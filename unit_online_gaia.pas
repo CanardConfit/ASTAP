@@ -165,7 +165,7 @@ begin
       application.processmessages;
       if esc_pressed then
       begin
-        slist.Free
+        slist.Free;
         exit;
       end;
     until ((x>nrstars_required) or (magli>=databaselimit+1));//40 is number of lines used by the header and end. Is not used for star data.
