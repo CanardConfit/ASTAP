@@ -10,7 +10,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 interface
 
 uses
-  Classes, SysUtils,strutils,math,astap_main,unit_download,unit_star_align,unit_stack;
+  Classes, SysUtils,strutils,forms,math,astap_main,unit_download,unit_star_align,unit_stack;
 
 function read_stars_online(telescope_ra,telescope_dec,search_field, magli: double; nrstars_required: integer; out nrstars: integer; out magmax:double): boolean;{read star from star database}
 
@@ -123,13 +123,15 @@ function read_stars_online(telescope_ra,telescope_dec,search_field, magli : doub
 var
   ra8,dec8,sgn,window_size,field,url,mag_lim, s : string;
   x, databaselimit: double;
-  maxstars : integer=50000;
+  maxstars : integer;
   slist: TStringList;
 begin
+  result:=false;
   str(abs(telescope_dec*180/pi) :3:10,dec8);
   if telescope_dec>=0 then sgn:='+'  else sgn:='-';
   if telescope_dec>=0 then sgn:='%2B'{+}  else sgn:='%2D'{-} ;
   str(abs(telescope_ra*180/pi) :3:10,ra8);
+  esc_pressed:=false;
 
   field:=floattostr6(search_field*3600*180/pi);
 
@@ -144,9 +146,13 @@ begin
     begin // limited by number of stars.
       magli:=12 - ln(sqr(search_field*180/pi))/ln(2.51);//to get the same amount of stars the limiting magnitude should decrease with the surface area (sqr function). ln()/ln(2.51) is the conversion to magnitude
       databaselimit:=21;
+      maxstars:=50000;//too large but doesn't matter
     end
     else //limited by magnitude
+    begin
       databaselimit:=0;// stop after first cycle
+      maxstars:=max(nrstars_required,50000);// Required for the large FOV and in the MilkyWay
+    end;
 
     repeat //adapt to the varying star density. Update mag_lim and placing new reqeust work faster then sorting later. sorting is pretty cpu intensive for 10000 or more stars
       mag_lim:=floattostrF(magli,ffGeneral,3,1);
@@ -156,6 +162,12 @@ begin
       slist.Text := get_http(url);//move info to Tstringlist
       x:=slist.count-40;//number of stars received from Vizier
       magli:=magli+1.0;//increase magnitude to avoid floading by Milky Way stars
+      application.processmessages;
+      if esc_pressed then
+      begin
+        slist.Free
+        exit;
+      end;
     until ((x>nrstars_required) or (magli>=databaselimit+1));//40 is number of lines used by the header and end. Is not used for star data.
 
     memo2_message('Extracting Gaia stars');

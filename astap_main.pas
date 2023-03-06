@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -9932,6 +9932,7 @@ begin
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
   if ((flux_ratio=0) or (aperture_ratio<>apert){new calibration required})  then
   begin
+    memo2_message('Photometric calibration of the measured stellar flux.');
     annulus_radius:=14;{calibrate for extended objects}
     flux_aperture:=99;{calibrate for extended objects}
 
@@ -9959,7 +9960,7 @@ procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
   size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
   Fliphorizontal, Flipvertical,saturated : boolean;
-  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit_database,
   sqr_radius, hfd_median,backgr : double;
   messg : string;
   img_temp3,img_sa :image_array;
@@ -9984,14 +9985,17 @@ const
 
   Flipvertical:=mainwindow.flip_vertical1.Checked;
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
-  magn_limit:=10*strtoint(copy(name_database,2,2)); {g18 => 180}
+  if database_type=0 then //Online Gaia via Vizier
+    magn_limit_database:=10*22//magn
+  else
+    magn_limit_database:=10*strtoint(copy(name_database,2,2)); {g18 => 180}
 
-   image1.Canvas.Pen.Mode := pmMerge;
-  image1.Canvas.Pen.width :=1; // round(1+head.height/image1.height);{thickness lines}
+  image1.Canvas.Pen.Mode := pmMerge;
+  image1.Canvas.Pen.width :=1;
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
   image1.Canvas.font.name:='default';
-  image1.Canvas.font.size:=10; //round(max(10,8*head.height/image1.height));{adapt font to image dimensions}
+  image1.Canvas.font.size:=10;
   mainwindow.image1.Canvas.Pen.Color := clred;
 
 
@@ -9999,7 +10003,7 @@ const
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_temp3[0,fitsX,fitsY]:=default;{clear}
-  plot_artificial_stars(img_temp3);{create artificial image with database stars as pixels}
+  plot_artificial_stars(img_temp3,magn_limit {measured});{create artificial image with database stars as pixels}
 //  img_loaded:=img_temp3;
 //  plot_fits(mainwindow.image1,true,true);
 //  exit;
@@ -10062,7 +10066,7 @@ const
               img_sa[0,i,j]:=+1;{mark as star area}
             end;
            measured_magn:=round(10*(ln(flux_ratio/flux)/ln(2.511886432)));{magnitude x 10}
-           if measured_magn<magn_limit-10 then {bright enough to be in the database}
+           if measured_magn<magn_limit_database-10 then {bright enough to be in the database}
            begin
              magn_database:=default;{1000}
              for i:=-3 to 3 do

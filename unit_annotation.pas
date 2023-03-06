@@ -18,7 +18,7 @@ procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean; max_magn:string);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
-procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
+procedure plot_artificial_stars(img: image_array;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
@@ -1976,7 +1976,6 @@ begin
       if wide_database<>name_database then
                               read_stars_wide_field;{load wide field stars array}
       count:=0;
-      cos_telescope_dec:=cos(telescope_dec);
       while ((star_total_counter<max_nr_stars) and  (count<length(wide_field_stars) div 3) ) do {star file 001 database read. Read up to nrstars_required}
       begin
         mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
@@ -1995,7 +1994,6 @@ begin
     else
     begin //Database_type=0, Vizier online, Gaia
        count:=0;
-       cos_telescope_dec:=cos(telescope_dec);
        if read_stars_online(telescope_ra,telescope_dec,fov_org,max_magnitude, max_nr_stars,{out} nrstars,mag2{limiting magn}){retrieve brightest stars online} then
        while ((count<nrstars) and  (count<length(online_database[0])) ) do {read stars}
        begin
@@ -2165,7 +2163,7 @@ var
   dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2,astrometric_error,sep   : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count    : integer;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count,nrstars            : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
   error_array                          : array of double;
 
@@ -2269,7 +2267,7 @@ begin
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
-    if database_type<>001 then {1476 or 290 files}
+    if database_type>1 then {1476 or 290 files}
     begin
       if  database_type=1476 then {.1476 files}
         fov:=min(fov_org,5.142857143*pi/180) {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
@@ -2315,11 +2313,11 @@ begin
       close_star_database;
     end
     else
-    begin {001 database}
+    if database_type=1 then {W08 database}
+    begin
       if wide_database<>name_database then
                               read_stars_wide_field;{load wide field stars array}
       count:=0;
-      cos_telescope_dec:=cos(telescope_dec);
       while ((star_total_counter<max_nr_stars) and  (count<length(wide_field_stars) div 3) ) do {star file 001 database read. Read up to nrstars_required}
       begin
         mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
@@ -2334,9 +2332,21 @@ begin
         end;
         inc(count);
       end;
-    end;
-
-
+    end
+    else
+    begin //Database_type=0, Vizier online, Gaia
+       count:=0;
+       if read_stars_online(telescope_ra,telescope_dec,fov_org,17 {max_magnitude}, max_nr_stars,{out} nrstars,mag2{limiting magn}){retrieve brightest stars online} then
+       while ((count<nrstars) and  (count<length(online_database[0])) ) do {read stars}
+       begin
+         ra2:=online_database[0,count];
+         dec2:=online_database[1,count];
+         mag2:=online_database[2,count]*10;
+         plot_star;{add star}
+         inc(count);
+       end;
+       online_database:=nil; // free mem
+     end;
 
     {$ifdef mswindows}
      mainwindow.image1.Canvas.Font.Name :='default';
@@ -2406,12 +2416,12 @@ begin
 end;{measure distortion}
 
 
-procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
+procedure plot_artificial_stars(img: image_array;magnlimit:double);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,sep      : double;
-  x,y, max_nr_stars, area1,area2,area3,area4,count                                  : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,sep,m_limit     : double;
+  x,y, max_nr_stars, area1,area2,area3,area4,count,nrstars                                     : integer;
 
     procedure plot_star;
     begin
@@ -2456,11 +2466,13 @@ begin
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view with 0% extra}
 
+    m_limit:=magnlimit+1;//go one magnitude fainter
+
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
-    if database_type<>001 then {1476 or 290 files}
+    if database_type>001 then {1476 or 290 files}
     begin
       if  database_type=1476 then {.1476 files}
         fov:=min(fov_org,5.142857143*pi/180) {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
@@ -2475,38 +2487,38 @@ begin
       if area1<>0 then {read 1th area}
       begin
         if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
-        while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+        while ((readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
       end;
 
       {read 2th area}
       if area2<>0 then {read 2th area}
       begin
         if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
-        while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+        while ((readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
       end;
 
       {read 3th area}
       if area3<>0 then {read 3th area}
       begin
         if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
-        while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+        while ((readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
       end;
       {read 4th area}
       if area4<>0 then {read 4th area}
       begin
         if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
-        while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+        while ((readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
       end;
 
       close_star_database;
 
     end
     else
-    begin {001 database}
+    if database_type=1 then {W08 database}
+    begin {W08, 001 database}
       if wide_database<>name_database then
                               read_stars_wide_field;{load wide field stars array}
       count:=0;
-      cos_telescope_dec:=cos(telescope_dec);
       while  (count<length(wide_field_stars) div 3)  do {star 001 database read.}
       begin
         mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
@@ -2519,7 +2531,22 @@ begin
         end;
         inc(count);
       end;
-    end;
+    end
+    else
+    begin //Database_type=0, Vizier online, Gaia
+       count:=0;
+       if read_stars_online(telescope_ra,telescope_dec,fov_org,m_limit {max_magnitude}, 150000{max_nr_stars},{out} nrstars,mag2{limiting magn}){retrieve brightest stars online} then
+       while ((count<nrstars) and  (count<length(online_database[0])) ) do {read stars}
+       begin
+         ra2:=online_database[0,count];
+         dec2:=online_database[1,count];
+         mag2:=online_database[2,count]*10;
+         plot_star;{add star}
+         inc(count);
+       end;
+       online_database:=nil; // free mem
+     end;
+
 
     Screen.Cursor:=crDefault;
 
