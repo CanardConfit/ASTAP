@@ -258,8 +258,7 @@ begin
     end;
   end
   else
-  if database_type=1 then {W08 single file wide field database}
-  begin {wide field database, database_type=0}
+  begin {wide field database, database_type=1}
     if wide_database<>name_database then read_stars_wide_field;{load wide field stars array}
     count:=0;
     cos_telescope_dec:=cos(telescope_dec);
@@ -276,20 +275,6 @@ begin
       inc(count);
     end;
     mag2:=wide_field_stars[(count-1)*3];{for reporting of highest magnitude used for solving}
-  end
-  else //Database_type=0, Vizier online, Gaia
-  begin
-    count:=0;
-    if read_stars_online(telescope_ra,telescope_dec,search_field, 99 {max_magnitude}, nrstars_required,{out} nrstars,mag2{limiting magn}){retrieve brightest stars online} then
-
-    while ((count<nrstars) and  (count<length(online_database[0])) ) do {read stars}
-    begin
-      ra2:=online_database[0,count];
-      dec2:=online_database[1,count];
-      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,count]{x},starlist1[1,count]{y});{store star CCD x,y position}
-      inc(count);
-    end;
-    online_database:=nil; // free mem
   end;
   //  memo2_message('testareas'+#9+floattostr4(telescope_ra*12/pi)+#9+floattostr4(telescope_dec*180/pi)+#9+inttostr(maga)+#9+inttostr(magb)+#9+inttostr(magc)+#9+inttostr(magd)+#9+floattostr4(frac1)+#9+floattostr4(frac2)+#9+floattostr4(frac3)+#9+floattostr4(frac4)+#9+inttostr(area1)+#9+inttostr(area2)+#9+inttostr(area3)+#9+inttostr(area4));
 
@@ -1001,6 +986,7 @@ begin
     update_text ('PLTSOLVD=','                   T / Astrometric solved by ASTAP v'+astap_version+'.       ');
     update_text ('COMMENT 7', solved_in+' Offset '+offset_found+mount_offset_str);
 
+    update_float('MZERO   =',' / temporary keyword for flux cal value            ' ,0);
 
     if solve_show_log then {global variable set in find stars}
     begin

@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1944,9 +1944,6 @@ begin
     reader_position:=reader_position+head.width*head.height*(abs(nrbits) div 8)
   end{image block}
 
-
-
-
   else
   if  ((head.naxis=2) and ((bintable) or (asciitable)) ) then
   begin {read table ############################################}
@@ -3269,7 +3266,7 @@ begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,resized,true);{restore image1}
 
-    stackmenu1.apply_dpp_button1.Enabled:=true;
+    //stackmenu1.apply_dpp_button1.Enabled:=true;
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
     if head.naxis=0 {due to stretch draw} then update_menu(true); {update menu and set fits_file:=true;}
@@ -5131,7 +5128,7 @@ begin
   begin
     OpenDialog1.Title := 'Select multiple RAW fits files to extract Bayer matrix position '+filtern+' from them';
     OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-    opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+    opendialog1.Filter := dialog_filter_fits_tif;
 
 //    fits_file:=true;
     esc_pressed:=false;
@@ -9325,7 +9322,7 @@ begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       flux_aperture:=99;{calibrate for extended objects}
 
-      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude},'99' {max_magn});
+      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
     end;
     if flux_ratio=0 then begin beep; exit;end;
 
@@ -9951,7 +9948,7 @@ begin
     else
     memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
 
-    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude},'99'{max_magn});
+    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
   end;
 end;
 
@@ -9971,7 +9968,7 @@ const
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting}
+  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting. Use local star databases only}
 
 
   if flux_ratio=0 then
@@ -9985,12 +9982,14 @@ const
 
   Flipvertical:=mainwindow.flip_vertical1.Checked;
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
-  if database_type=0 then //Online Gaia via Vizier
-    magn_limit_database:=10*22//magn
-  else
-    magn_limit_database:=10*strtoint(copy(name_database,2,2)); {g18 => 180}
+//  if database_type=0 then //Online Gaia via Vizier
+//    magn_limit_database:=10*21//magn
+//  else
+//    magn_limit_database:=10*strtoint(copy(name_database,2,2)); {g18 => 180}
 
-  memo2_message('It it will be possible to detect up to magnitude='+floattostrF(min(magn_limit,0.1*magn_limit_database-1),ffGeneral,3,1));
+  magn_limit_database:=10*21;//magn, Online Gaia via Vizier
+
+//  memo2_message('Using Gaia online database from Vizier. It it will be possible to detect up to magnitude='+floattostrF(min(magn_limit,0.1*magn_limit_database-1),ffGeneral,3,1));
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
@@ -12189,11 +12188,11 @@ end;
 
 procedure Tmainwindow.star_annotation1Click(Sender: TObject);
 begin
-  annotation_magn :=inputbox('Annotate stars','Annotate up to magnitude:' ,annotation_magn);
-  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
+//  annotation_magn :=inputbox('Annotate stars','Annotate up to magnitude:' ,annotation_magn);
+//  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
   calibrate_photometry; {measure hfd and calibrate for point or extended sources depending on the setting}
-  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn},annotation_magn);{plot stars}
+  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn});{plot stars}
 end;
 
 

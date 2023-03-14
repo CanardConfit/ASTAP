@@ -3292,7 +3292,7 @@ begin
           end;
           img_loaded[col, fitsX, fitsY] := colr;
         end;
-    apply_dpp_button1.Enabled := False;
+    //apply_dpp_button1.Enabled := False;
     use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1, True, True);{plot real}
 
@@ -8241,9 +8241,8 @@ begin
           end;
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
-          plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude},'99' {max_magn}); {get flux_ratio}
-          listview7.Items.item[c].subitems.Strings[p_limmagn] :=
-            floattostrF(magn_limit, FFgeneral, 4, 2);
+          plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude}); {get flux_ratio}
+          listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 2);
 
           if flux_ratio <> 0 then
           begin
@@ -9181,7 +9180,6 @@ begin
     end;
     SysUtils.FindClose(SearchRec);
     star_database1.items.add('auto');
-    star_database1.items.add('Online');
   end;
   flux_ratio := 0;{reset flux calibration. Required if V17 is selected instead of H17}
 end;

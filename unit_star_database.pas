@@ -2773,7 +2773,7 @@ begin
       if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;exit; end
     end
     else
-    if typ='h' then
+    if typ in ['d','h'] then
     begin
       if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  exit; end;
     end
@@ -2782,13 +2782,6 @@ begin
     begin
       if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;exit; end
     end;
-    if typ in ['o'] then //Vizier online
-    begin
-      name_database:=database; {try preference}
-      database_type:=0;
-      exit;
-    end;
-
   end;{auto}
 
   if fov>20 then
@@ -2799,6 +2792,8 @@ begin
   end;
 
   if ((fov>10) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; end //preference for V17 for large FOV
+  else
+  if fileexists( database_path+'d50_0101.1476') then begin name_database:='d50'; end
   else
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
   else
