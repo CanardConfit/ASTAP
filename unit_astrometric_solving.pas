@@ -991,8 +991,6 @@ begin
     update_text ('PLTSOLVD=','                   T / Astrometric solved by ASTAP v'+astap_version+'.       ');
     update_text ('COMMENT 7', solved_in+' Offset '+offset_found+mount_offset_str);
 
-    update_float('MZERO   =',' / temporary keyword for flux cal value            ' ,0);
-
     if solve_show_log then {global variable set in find stars}
     begin
       equatorial_standard(ra_database,dec_database,hd.ra0,hd.dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}

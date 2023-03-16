@@ -1492,6 +1492,14 @@ begin
                    focus_temp:=validate_double;{focus temperature}
           end;
 
+          if ((header[i]='M') and (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') and (header[i+5]=' ')) then
+          begin
+            mzero:=validate_double;{photmetry calibration}
+            //MZERO=2.5*ln(flux_ratio)/ln(10);
+            flux_ratio:=exp(mzero*ln(10)/2.5);
+          end;
+
+
           if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
              xbayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
 
@@ -9366,7 +9374,7 @@ begin
       if value>65000 then inc(saturation_counter);{keep track of number of saturated pixels}
     end;
     if flux<1 then flux:=1;
-    str(ln(flux_ratio/flux)/ln(2.511886432):0:1,mag_str);
+    str(MZERO - ln(flux)*2.5/ln(10):0:1,mag_str);
 
     if (saturation_counter*65500/flux)<0.01 then mag_str:='MAGN='+mag_str {allow about 1% saturation}
                                             else mag_str:='MAGN <'+mag_str+', '+inttostr(saturation_counter) +' saturated pixels !';
@@ -10062,7 +10070,7 @@ const
               if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
               img_sa[0,i,j]:=+1;{mark as star area}
             end;
-           measured_magn:=round(10*(ln(flux_ratio/flux)/ln(2.511886432)));{magnitude x 10}
+           measured_magn:=round(10*(MZERO - ln(flux)*2.5/ln(10)));{magnitude x 10}
            if measured_magn<magn_limit_database-10 then {bright enough to be in the database}
            begin
              magn_database:=default;{1000}
@@ -10214,7 +10222,7 @@ begin
       mainwindow.image1.Canvas.moveto(starX-2*size,starY);
       mainwindow.image1.Canvas.lineto(starX-size,starY);
 
-      lim_magn:=round(10*(ln(flux_ratio/stars[3,i]{flux})/ln(2.511886432)));
+      lim_magn:=round(10*(mzero - ln(stars[3,i]{flux})*2.5/ln(10)));
       image1.Canvas.textout(starX,starY-text_height,inttostr(lim_magn) );{add magnitude as text}
     end;
   end
@@ -13982,7 +13990,7 @@ begin
 
      if flux_ratio<>0 then {offset calculated in star annotation call}
      begin
-       str(ln(flux_ratio/flux)/ln(2.511886432):0:2,mag_str);
+       str(mzero -ln(flux)*2.5/ln(10):0:2,mag_str);
        mag_str:=', MAGN='+mag_str;
      end
      else mag_str:='';
@@ -13994,7 +14002,8 @@ begin
      else
        mainwindow.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str{+' '+floattostr4(flux)};
-     if display_adu then mainwindow.statusbar1.panels[7].text:='ADU='+floattostrF(flux,ffFixed,0,0);
+     if display_adu then
+               mainwindow.statusbar1.panels[7].text:='ADU='+floattostrF(flux,ffFixed,0,0);
    end
    else
    begin

@@ -139,7 +139,8 @@ begin
       pedestal2:=0; {prevent errors}
     end;
 
-    sqmfloat:=( ln(flux_ratio/((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec}) )/ln(2.511886432) );
+   // sqmfloat:=( ln(flux_ratio/((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec}) )/ln(2.511886432) );
+    sqmfloat:=mzero - ln((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;
 
     calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,alt);
 
