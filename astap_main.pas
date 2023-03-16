@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -898,7 +898,7 @@ var
   fitsbufferRGB16: array[0..trunc(bufwide/6)] of byteXX3 absolute fitsbuffer;{buffer for 16 bit RGB PPM file}
   fitsbufferRGB32: array[0..trunc(bufwide/12)] of byteXXXX3 absolute fitsbuffer;{buffer for -32 bit PFM file}
   fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
-  fitsbuffer8: array[0..trunc(bufwide/8)] of int64 absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
+  fitsbuffer8: array[0..trunc(bufwide/8)] of qword absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
   fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
 
@@ -1047,7 +1047,7 @@ var
   TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
-  dummy, ccd_temperature, jd2,jd_obs                   : double;
+  dummy, ccd_temperature, jd2,jd_obs,col_float2                : double;
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -1068,7 +1068,7 @@ var
   tfields,tform_counter,header_count,pointer,let  : integer;
   ttype,tform,tunit : array of string;
   tbcol,tform_nr    : array of integer;
-  simple,image,bintable,asciitable,compressed    : boolean;
+  simple,image,bintable,asciitable    : boolean;
   abyte                               : byte;
 
 var {################# initialised variables #########################}
@@ -1164,7 +1164,6 @@ begin
   header_count:=0;
   bintable:=false;
   asciitable:=false;
-  compressed:=false;
 
   reader_position:=0;
   repeat {header, 2880 bytes loop}
@@ -1448,9 +1447,13 @@ begin
               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd2_2:=validate_double;
             end
             else
-            if ((header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A') and (header[i+5]='L') and (header[i+6]='T')) then  {CENTALT, SBIG 1.0 standard}
+            if ((header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T')) then
             begin
-              centalt:=get_as_string; {universal for string and floats}
+              if ((header[i+4]='A') and (header[i+5]='L') and (header[i+6]='T')) then  {CENTALT, SBIG 1.0 standard}
+                centalt:=get_as_string {universal for string and floats}
+              else
+              if ((header[i+4]='A') and (header[i+5]='Z')) then  {CENTAZ, SBIG 1.0 standard}
+                centaz:=get_as_string; {universal for string and floats}
             end;
           end;
 
@@ -1550,16 +1553,12 @@ begin
             end;
           end;
 
-          {adjustable keywords}
+          {adjustable keyword}
           if ((header[i]=sqm_key[1]{S}) and (header[i+1]=sqm_key[2]{Q}) and (header[i+2]=sqm_key[3]{M})and (header[i+3]=sqm_key[4])and (header[i+4]=sqm_key[5])and (header[i+5]=sqm_key[6])and (header[i+6]=sqm_key[7]) and (header[i+7]=sqm_key[8])) then {adjustable keyword}
           begin
             sqm_value:=get_as_string; {universal for string and floats}{SQM, accept strings (standard) and floats}
           end;
 
-          if ((header[i]=centaz_key[1]) and (header[i+1]=centaz_key[2]) and (header[i+2]=centaz_key[3])and (header[i+3]=centaz_key[4])and (header[i+4]=centaz_key[5])and (header[i+5]=centaz_key[6])and (header[i+6]=centaz_key[7]) and (header[i+7]=centaz_key[8])) then {adjustable keyword}
-          begin
-            centaz:=get_as_string; {universal for string and floats} {SGP, older CCDCIEL}
-          end;
 
           if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
             if pos('T',get_as_string)>0 then last_extension:=false;{could be extensions, will be updated later }
@@ -1691,7 +1690,6 @@ begin
         end;
         if ((header[i]='Z') and (header[i+1]='C')  and (header[i+2]='M') and (header[i+3]='P') and (header[i+4]='T')) then  { ZCMPTYPE, compressed image in table Rice and others format}
         begin
-          compressed:=true;
           last_extension:=true;{give up}
         end;
 
@@ -1905,6 +1903,7 @@ begin
           col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
           img_loaded2[k,i,j]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+
         end;
       end;
     end; {colors head.naxis3 times}
@@ -2266,8 +2265,6 @@ begin
 
     {adjustable keywords}
     if key=sqm_key+'='    then sqm_value:=read_string;
-    if key=centaz_key+'=' then
-                  centaz:=read_string;
 
     if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
     if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
@@ -7687,7 +7684,6 @@ begin
       sett.writestring('stack','osc_sd',stackmenu1.osc_smart_colour_sd1.text);
 
       sett.writestring('stack','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
-      sett.writestring('stack','centaz_key',centaz_key+'*');{add a * to prevent the spaces are removed}
 
 
       sett.writeBool('stack','lrgb_al',stackmenu1.lrgb_auto_level1.checked);

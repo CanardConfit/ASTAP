@@ -2795,6 +2795,12 @@ begin
   else
   if fileexists( database_path+'d50_0101.1476') then begin name_database:='d50'; end
   else
+  if fileexists( database_path+'d20_0101.1476') then begin name_database:='d20'; end
+  else
+  if fileexists( database_path+'d10_0101.1476') then begin name_database:='d10'; end
+  else
+  if fileexists( database_path+'d05_0101.1476') then begin name_database:='d05'; end
+  else
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
   else
   if fileexists( database_path+'g18_0101.290') then begin name_database:='g18'; database_type:=290; end

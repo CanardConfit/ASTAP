@@ -40,6 +40,9 @@ type
     add_time1: TCheckBox;
     Annotations_visible2: TCheckBox;
     clear_result_list1: TButton;
+    column_fov1: TMenuItem;
+    column_sqm1: TMenuItem;
+    column_lim_magn1: TMenuItem;
     new_colour_luminance1: TTrackBar;
     save_settings_image_path1: TCheckBox;
     annotate_mode1: TComboBox;
@@ -97,7 +100,6 @@ type
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
     keywordchangelast1: TMenuItem;
-    keywordchangesecondtolast1: TMenuItem;
     calc_polar_alignment_error1: TButton;
     planetary_image1: TCheckBox;
     classify_dark_date1: TCheckBox;
@@ -630,6 +632,9 @@ type
     procedure Button1Click(Sender: TObject);
     procedure calibrate_prior_solving1Change(Sender: TObject);
     procedure clear_result_list1Click(Sender: TObject);
+    procedure column_fov1Click(Sender: TObject);
+    procedure column_lim_magn1Click(Sender: TObject);
+    procedure column_sqm1Click(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
@@ -2274,6 +2279,17 @@ begin
 
                 ListView1.Items.item[c].subitems.Strings[L_centalt] := centalt;
                 ListView1.Items.item[c].subitems.Strings[L_centaz] := centaz;
+
+
+                if SQM_key='FOV     ' then
+                begin
+                  if head_2.cdelt2<>0 then
+                  begin
+                    ListView1.Items.item[c].subitems.Strings[L_sqm]:=floattostrF(head_2.height*abs(head_2.cdelt2),ffFixed,0,2);
+                  end
+                  else ListView1.Items.item[c].subitems.Strings[L_sqm]:='';
+                end
+                else
                 ListView1.Items.item[c].subitems.Strings[L_sqm] := sqm_value;
 
                 if use_ephemeris_alignment1.Checked then {ephemeride based stacking}
@@ -9337,6 +9353,28 @@ begin
 end;
 
 
+procedure Tstackmenu1.column_fov1Click(Sender: TObject);
+begin
+  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'FOV';
+  sqm_key:='FOV     ';//does not exist, but will be calculated
+
+end;
+
+procedure Tstackmenu1.column_lim_magn1Click(Sender: TObject);
+begin
+  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'LIM_MAGN';
+  sqm_key:='LIM_MAGN';
+
+end;
+
+procedure Tstackmenu1.column_sqm1Click(Sender: TObject);
+begin
+  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'SQM';
+  sqm_key:='SQM     ';
+end;
+
+
+
 procedure Tstackmenu1.FormDestroy(Sender: TObject);
 begin
   bsolutions := nil;{just to be sure to clean up}
@@ -9476,16 +9514,9 @@ begin
   while length(sqm_key) < 8 do sqm_key := sqm_key + ' ';
 end;
 
-
-
 procedure Tstackmenu1.keywordchangesecondtolast1Click(Sender: TObject);
 begin
-  centaz_key := uppercase(InputBox(
-    'Type header keyword to display in the second to last column:', '', centaz_key));
-  new_analyse_required := True;
-  stackmenu1.listview1.columns.Items[l_centaz + 1].Caption := centaz_key;
-  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
-  while length(centaz_key) < 8 do centaz_key := centaz_key + ' ';
+
 end;
 
 

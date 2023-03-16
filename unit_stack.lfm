@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 27285
+    Left = 28203
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -457,13 +457,11 @@ object stackmenu1: Tstackmenu1
             Width = 60
           end        
           item
-            AutoSize = True
             Caption = 'CentAz'
             MinWidth = 60
             Width = 53
           end        
           item
-            AutoSize = True
             Caption = 'SQM'
             MinWidth = 60
             Width = 41
@@ -2546,9 +2544,8 @@ object stackmenu1: Tstackmenu1
                 BorderSpacing.Around = 5
                 DropDownCount = 20
                 ItemHeight = 15
-                ItemIndex = 4
+                ItemIndex = 3
                 Items.Strings = (
-                  'auto'
                   '200'
                   '300'
                   '400'
@@ -7386,14 +7383,31 @@ object stackmenu1: Tstackmenu1
     object menukeywordchange1: TMenuItem
       Caption = 'Change column keyword'
       object keywordchangelast1: TMenuItem
+        AutoCheck = True
         Caption = 'Change keyword last column'
         Hint = 'Change the key listed in this column'
+        RadioItem = True
         OnClick = keywordchangelast1Click
       end
-      object keywordchangesecondtolast1: TMenuItem
-        Caption = 'Change keyword second to last column'
-        Hint = 'Change the key listed in this column'
-        OnClick = keywordchangesecondtolast1Click
+      object column_fov1: TMenuItem
+        AutoCheck = True
+        Caption = 'FOV'
+        Hint = 'This value is calculated if the images are batch solved (in viewer menu tools).'
+        RadioItem = True
+        OnClick = column_fov1Click
+      end
+      object column_sqm1: TMenuItem
+        AutoCheck = True
+        Caption = 'SQM'
+        Hint = 'This key is available if the images are batch solved (in viewer menu tools) with option add SQM.'
+        RadioItem = True
+        OnClick = column_sqm1Click
+      end
+      object column_lim_magn1: TMenuItem
+        Caption = 'LIM_MAGN'
+        Hint = 'This keyword is available if the images are batch solved (in viewer menu tools) with option add limitng magnitude.'
+        RadioItem = True
+        OnClick = column_lim_magn1Click
       end
     end
     object MenuItem4: TMenuItem
