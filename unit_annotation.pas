@@ -32,7 +32,6 @@ var
   naam2,naam3,naam4: string;
 
 var  {################# initialised variables #########################}
-  flux_ratio             : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
   mzero                  : double=0;
   limiting_magnitude     : double=0;{magnitude where snr is 5}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
@@ -1775,6 +1774,9 @@ var
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                         : integer;
   flip_horizontal, flip_vertical        : boolean;
   flux_ratio_array,hfd_x_sd             : array of double;
+var
+  flux_ratio             : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
+
 
     procedure plot_star;
     begin
@@ -2017,11 +2019,14 @@ begin
         get_best_mean(flux_ratio_array,counter_flux_measured {length},flux_ratio,standard_error_mean,cv );
 
         mzero:=2.5*ln(flux_ratio)/ln(10);
-        update_float('MZERO   =',' / Magnitude Zero Point. Magn=-2.5*log(flux)+MZERO',mzero);
+        if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
+        update_float('MZERO   =',' / Magnitude Zero Point. Magn=-2.5*log(flux)+MZERO',mzero)
+        else
+        update_text('MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
 
          // The magnitude measured is
-         // fluxratio:=flux * 2.512^magn
-         // fluxratio/flux:=2.512^magn
+         // fluxratio:=flux * 2.511886432^magn   Should be the same for all stars
+         // fluxratio/flux:=2.511886432^magn
          // magn:=ln(flux_ratio/flux)/ln(2.511886432)
          // str(ln(flux_ratio/flux)/ln(2.511886432):0:1,mag_str);
          // equals  str(log(flux_ratio/flux)/log(2.511886432):0:1,mag_str);  ln() can be replaced by log() in a division
@@ -2036,6 +2041,8 @@ begin
          // test proves it:
          // x3:=ln(flux_ratio/flux)/ln(2.511886432);
          // y3:=MZERO - 2.5*ln(flux)/ln(10);
+
+         //flux_ratio:=exp(mzero*ln(10)/2.5);
 
         if flux_aperture=99 then
 

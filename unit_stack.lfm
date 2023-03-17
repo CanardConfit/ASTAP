@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 28203
+    Left = 29121
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -459,12 +459,12 @@ object stackmenu1: Tstackmenu1
           item
             Caption = 'CentAz'
             MinWidth = 60
-            Width = 53
+            Width = 60
           end        
           item
             Caption = 'SQM'
             MinWidth = 60
-            Width = 41
+            Width = 60
           end>
         GridLines = True
         HideSelection = False
@@ -2397,6 +2397,7 @@ object stackmenu1: Tstackmenu1
             Items.Strings = (
               ''
             )
+            OnChange = star_database1Change
             OnDropDown = star_database1DropDown
             ParentFont = False
             Sorted = True

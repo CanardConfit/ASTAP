@@ -29,6 +29,7 @@ uses
   Math, ExtCtrls, Menus, Buttons,
   LCLIntf,{for for getkeystate, selectobject, openURL}
   clipbrd, Types, strutils,
+  unit_star_database,
   astap_main;
 
 type
@@ -744,6 +745,7 @@ type
     procedure search_fov1Change(Sender: TObject);
     procedure solve_and_annotate1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
+    procedure star_database1Change(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
     procedure apply_box_filter2Click(Sender: TObject);
     procedure tab_blink1Show(Sender: TObject);
@@ -868,7 +870,7 @@ type
   tstarlistpackage = record {for photometry tab}
     Width: integer;
     Height: integer;
-    flux_ratio: double;
+    mzero: double;
     starlist: star_list;
   end;
 
@@ -5247,10 +5249,10 @@ begin
   {disable annulus_radius1 if mode max flux}
 
   {recalibrate}
-  if flux_ratio <> 0 then
+  if mzero <> 0 then
   begin
     memo2_message('Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
-    flux_ratio := 0;
+    mzero := 0;
   end;
 end;
 
@@ -7830,9 +7832,10 @@ begin
                 y_new := round(yc / factor);
 
                 if stepnr = 1 then
-                begin {CALCULATE MEAN of stars}
+                begin {CALCULATE MEAN magnitude of the stars}
                   stars_mean[x_new, y_new] := stars_mean[x_new, y_new] +
-                  ln(starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432); {magnitude}
+                  (MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10));{magnitude}
+                  //ln(starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432); {magnitude}
 
 
                   stars_count[x_new, y_new] := stars_count[x_new, y_new] + 1;{counter}
@@ -7842,7 +7845,8 @@ begin
                 begin
                   stars_sd[x_new, y_new] :=
                     stars_sd[x_new, y_new] + sqr((stars_mean[x_new, y_new] / stars_count[x_new, y_new]) -
-                    ln( starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432) ); {sd calculate by sqr magnitude difference from mean}
+                    (MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10)) );{sd calculate by sqr magnitude difference from mean}
+//                    ln( starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432) ); {sd calculate by sqr magnitude difference from mean}
                 end;
 
 
@@ -7973,7 +7977,8 @@ var
         {not saturated star}
       begin
 //        magn := starlistpack[c].flux_ratio - ln(flux) * 2.511886432 / ln(10);
-        magn := ln(starlistpack[c].flux_ratio/flux)/ln(2.511886432);
+//        magn := ln(starlistpack[c].flux_ratio/flux)/ln(2.511886432);
+        magn:=MZERO - ln(flux)*2.5/ln(10);
 
 
         Result := floattostrf(magn, ffFixed, 5, 3);
@@ -8260,14 +8265,14 @@ begin
           plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude}); {get flux_ratio}
           listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 2);
 
-          if flux_ratio <> 0 then
+          if mzero <> 0 then
           begin
             measure_magnitudes(annulus_radius, False {deep}, starlistx); {analyse}
             starlistpack[c].starlist := starlistX;
             {store found stars in memory for finding outlier later}
             starlistpack[c].Width := head.Width;
             starlistpack[c].Height := head.Height;
-            starlistpack[c].flux_ratio := flux_ratio;
+            starlistpack[c].mzero := mzero;
           end
           else
             starlistpack[c].Height := 0; {mark as not valid measurement}
@@ -8313,7 +8318,7 @@ begin
         listview7.Items.item[c].subitems.Strings[P_magn2] := ''; {MAGN, always blank}
         listview7.Items.item[c].subitems.Strings[P_magn3] := ''; {MAGN, always blank}
 
-        if starlistpack[c].flux_ratio <> 0 then {valid flux calibration}
+        if starlistpack[c].mzero <> 0 then {valid flux calibration}
         begin // do var star
           if mainwindow.shape_alignment_marker1.Visible then
           begin
@@ -8416,7 +8421,7 @@ begin
 
 
         {plot the aperture and annulus}
-        if starlistpack[c].flux_ratio <> 0 then {valid flux calibration}
+        if starlistpack[c].mzero <> 0 then {valid flux calibration}
         begin
           mainwindow.image1.Canvas.Pen.mode := pmCopy;
 
@@ -8463,7 +8468,10 @@ begin
 
             mainwindow.image1.Canvas.Rectangle(starX - size, starY - size,
             starX + size, starY + size);{indicate hfd with rectangle}
-            magn:=ln(starlistpack[c].flux_ratio /starlistpack[c].starlist[3, i]{flux})/ln(2.511886432);
+//            magn:=ln(starlistpack[c].flux_ratio /starlistpack[c].starlist[3, i]{flux})/ln(2.511886432);
+            magn:=MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10);
+
+
             mainwindow.image1.Canvas.textout(starX + size, starY - size,floattostrf(magn * 10, ffgeneral, 3, 0));{add magnitude as text}
           end;{measure marked stars}
 
@@ -9178,6 +9186,11 @@ begin
   if length(long_default) > 0 then save_settings2;
 end;
 
+procedure Tstackmenu1.star_database1Change(Sender: TObject);
+begin
+  close_star_database;{Close the tfilestream. Otherwise the frist search doesn't work always for D databasee. 2023}
+end;
+
 
 procedure Tstackmenu1.star_database1DropDown(Sender: TObject);
 var
@@ -9197,7 +9210,7 @@ begin
     SysUtils.FindClose(SearchRec);
     star_database1.items.add('auto');
   end;
-  flux_ratio := 0;{reset flux calibration. Required if V17 is selected instead of H17}
+  mzero := 0;{reset flux calibration. Required if V17 is selected instead of H17}
 end;
 
 

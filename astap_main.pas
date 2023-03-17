@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1004,7 +1004,7 @@ begin
     pressure:=1010; {mbar/hPa}
     annotated:=false; {any annotation in the file}
 
-    flux_ratio:=0;{factor to calculate magnitude from flux, new file so set to zero}
+    mzero:=0;{factor to calculate magnitude from flux, new file so set to zero}
     sqm_value:='';
     equinox:=2000;
     bandpass:=0;
@@ -1493,12 +1493,7 @@ begin
           end;
 
           if ((header[i]='M') and (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') and (header[i+5]=' ')) then
-          begin
-            mzero:=validate_double;{photmetry calibration}
-            //MZERO=2.5*ln(flux_ratio)/ln(10);
-            flux_ratio:=exp(mzero*ln(10)/2.5);
-          end;
-
+            mzero:=validate_double;{photometry calibration}
 
           if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
              xbayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
@@ -3025,7 +3020,7 @@ end;
 
 procedure update_text(inpt,comment1:string);{update or insert text in header}
 var
-   count1,ll: integer;
+   count1: integer;
 begin
 
   count1:=mainwindow.Memo1.Lines.Count-1;
@@ -3034,8 +3029,7 @@ begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
     begin
       mainwindow.Memo1.Lines[count1]:=inpt+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
-      ll:=length(inpt+' '+comment1);
-
+      //ll:=length(inpt+' '+comment1);
       exit;
     end;
     count1:=count1-1;
@@ -9321,14 +9315,14 @@ begin
   if ((head.cd1_1=0) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    if ((flux_ratio=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
+    if ((mzero=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
     begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       flux_aperture:=99;{calibrate for extended objects}
 
       plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
     end;
-    if flux_ratio=0 then begin beep; exit;end;
+    if mzero=0 then begin beep; exit;end;
 
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -9931,7 +9925,7 @@ begin
  if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
-  if ((flux_ratio=0) or (aperture_ratio<>apert){new calibration required})  then
+  if ((mzero=0) or (aperture_ratio<>apert){new calibration required})  then
   begin
     memo2_message('Photometric calibration of the measured stellar flux.');
     annulus_radius:=14;{calibrate for extended objects}
@@ -9975,7 +9969,7 @@ const
   calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting. Use local star databases only}
 
 
-  if flux_ratio=0 then
+  if mzero=0 then
   begin
     beep;
     img_sa:=nil;
@@ -10183,7 +10177,7 @@ begin
 
   calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting}
 
-  if flux_ratio=0 then
+  if mzero=0 then
   begin
     beep;
     Screen.Cursor:=crDefault;
@@ -11707,7 +11701,7 @@ begin
         '-fov height_field[degrees]'+#10+
         '-ra  center_right ascension[hours]'+#10+
         '-spd center_south_pole_distance[degrees]'+#10+
-        '-s  max_number_of_stars {typical 500, 0 is auto}'+#10+
+        '-s  max_number_of_stars {typical 500}'+#10+
         '-t  tolerance'+#10+
         '-m  minimum_star_size["]'+#10+
         '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
@@ -13988,7 +13982,7 @@ begin
      if adu_e=0 then snr_str:='SNR='+snr_str // noise based on ADU's
                 else snr_str:='SNR_e='+snr_str;// noise based on electrons
 
-     if flux_ratio<>0 then {offset calculated in star annotation call}
+     if mzero<>0 then {offset calculated in star annotation call}
      begin
        str(mzero -ln(flux)*2.5/ln(10):0:2,mag_str);
        mag_str:=', MAGN='+mag_str;

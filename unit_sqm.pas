@@ -100,14 +100,14 @@ begin
     form_sqm1.green_message1.caption:='';
   end;
 
-  if ((flux_ratio=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
+  if ((mzero=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
     flux_aperture:=99;{calibrate for extended objects}
     plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
   end;
   result:=false;
-  if flux_ratio>0 then
+  if mzero>0 then
   begin
     if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
 

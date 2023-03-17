@@ -63,7 +63,7 @@ begin
     '-fov diameter_field[degrees]'+#10+   {changed}
     '-ra  center_right ascension[hours]'+#10+
     '-spd center_south_pole_distance[degrees]'+#10+
-    '-s  max_number_of_stars  {default 500, 0 is auto}'+#10+
+    '-s  max_number_of_stars  {default 500}'+#10+
     '-t  tolerance  {default 0.007}'+#10+
     '-m  minimum_star_size["]  {default 1.5}'+#10+
     '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+

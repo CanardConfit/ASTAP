@@ -1018,7 +1018,7 @@ begin
 
   if nrstars_required>database_stars+4 then
   begin
-    memo2_message('Warning, reached maximum magnitude of star database!');
+    memo2_message('Warning, reached the limit of the star database!');
     warning_str:=warning_str+'Star database limit was reached! ';
   end;
 
