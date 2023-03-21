@@ -9210,7 +9210,7 @@ begin
     SysUtils.FindClose(SearchRec);
     star_database1.items.add('auto');
   end;
-  mzero := 0;{reset flux calibration. Required if V17 is selected instead of H17}
+  mzero := 0;{reset flux calibration. Required if V50 is selected instead of D50}
 end;
 
 

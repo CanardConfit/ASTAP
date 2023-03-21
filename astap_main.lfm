@@ -1739,9 +1739,9 @@ object mainwindow: Tmainwindow
       OnClick = add_marker_position1Click
     end
     object measuretotalmagnitude1: TMenuItem
-      Caption = 'Measure total magnitude within rectangle'
+      Caption = 'Measure total magnitude within shape'
       Enabled = False
-      Hint = 'This will report the total magnitude within the pulled rectangle. Flux is measured relative to median background up to five pixels outside the rectangle. Best accuracy is  achieved by using monochrome images.'
+      Hint = 'This will report the total magnitude within the pulled shape. Press ctrl or shift for ellipse shape. Flux is measured relative to median background up to five pixels outside the shape. Best accuracy is  achieved by using monochrome images.'
       OnClick = measuretotalmagnitude1Click
     end
     object angular_distance1: TMenuItem
@@ -1750,8 +1750,8 @@ object mainwindow: Tmainwindow
       OnClick = angular_distance1Click
     end
     object show_statistics1: TMenuItem
-      Caption = 'Show statistics within rectangle'
-      Hint = 'Calculate mean, median standard deviation, minimum and maximum values within the rectangle.'
+      Caption = 'Show statistics within shape'
+      Hint = 'Calculate mean, median standard deviation, minimum and maximum values within the shape. Press ctrl or shift for ellipse shape.'
       ImageIndex = 34
       OnClick = show_statistics1Click
     end
@@ -1905,7 +1905,7 @@ object mainwindow: Tmainwindow
     end
     object copy_paste_tool1: TMenuItem
       Caption = 'Copy paste tool'
-      Hint = 'Copy the selected area to the next mouse click. Use this for small corrections in the background. Hold alt, ctrl, shift key for multi paste'
+      Hint = 'Copy the selected area to the next mouse click. Use this for small corrections in the background. Press ctrl of shift for ellipse shape. Hold alt, ctrl, shift key for multi paste'
       ImageIndex = 32
       OnClick = copy_paste_tool1Click
     end

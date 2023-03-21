@@ -1919,7 +1919,7 @@ begin
     {sets file290 so do before fov selection}
     if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then
     begin
-      application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
+      application.messagebox(pchar('No star database found!'+#13+'Download and install one star database.'), pchar('No star database!'),0);
       exit;
     end;
     memo2_message('Using star database '+uppercase(name_database));
@@ -2286,7 +2286,7 @@ begin
     {sets file290 so do before fov selection}
     if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then
     begin
-      application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
+      application.messagebox(pchar('No star database found!'+#13+'Download and install one star database.'), pchar('No star database!'),0);
       exit;
     end;
 
@@ -2476,7 +2476,7 @@ begin
 
     if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then {sets file290 so do before fov selection}
     begin
-      application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
+      application.messagebox(pchar('No star database found!'+#13+'Download and install one star database.'), pchar('No star database!'),0);
       exit;
     end;
 

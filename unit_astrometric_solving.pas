@@ -508,7 +508,7 @@ var
   current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio   : double;
   solution, go_ahead, autoFOV,use_triples,yes_use_triples         : boolean;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message,popup_warningV17,popup_warningSample,suggest_str, solved_in,
+  distancestr,oversize_mess,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
   offset_found,ra_offset_str,dec_offset_str,mount_info_str,mount_offset_str,warning_downsample                                         : string;
 var {with value}
   quads_str: string=' quads';
@@ -522,7 +522,7 @@ begin
   esc_pressed:=false;
   warning_str:='';{for header}
   startTick := GetTickCount64;
-  popup_warningV17:='';
+  popup_warningG05:='';
 
   if stackmenu1.calibrate_prior_solving1.checked then
   begin
@@ -557,7 +557,7 @@ begin
   if select_star_database(stackmenu1.star_database1.text,fov_org)=false then {select database prior to cropping selection}
   begin
     result:=false;
-    application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the h18 (or h17, v17) and install'), pchar('ASTAP error:'),0);
+    application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download and install one star database.'), pchar('ASTAP error:'),0);
     errorlevel:=32;{no star database}
     exit;
   end
@@ -569,10 +569,10 @@ begin
       warning_str:=warning_str+'Very large FOV, use W08 database! '
     else
     if ((fov_org>6) and (database_type=1476)) then
-      warning_str:=warning_str+'Large FOV, use V17 database! ';
+      warning_str:=warning_str+'Large FOV, use G05 database! ';
 
     if warning_str<>'' then memo2_message(warning_str);
-     popup_warningV17:=#10+warning_str;
+     popup_warningG05:=#10+warning_str;
   end;
 
   if  database_type=1476  then {.1476 database}
@@ -665,7 +665,7 @@ begin
     if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
     info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+info_message+#9+inttostr(nrstars)+' 🟊' +
                     #10+'↕ '+floattostrf(fov_org,ffFixed,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(hd.width)+'x'+inttostr(hd.height)+
-                    popup_warningV17+popup_warningSample+
+                    popup_warningG05+popup_warningSample+
                     #10+mainwindow.ra1.text+'h, '+mainwindow.dec1.text+'° '+#9+{for tray icon} extractfilename(filename2)+
                     #10+extractfileDir(filename2);
 
@@ -821,7 +821,9 @@ begin
                 extrastars:=extrastars*1.1;
                 if read_stars(ra_database,dec_database,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
                 begin
-                  application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the h18 (or h17, v17) and install'), pchar('ASTAP error:'),0);
+                  application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download and install one star database.'), pchar('ASTAP error:'),0);
+
+
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;

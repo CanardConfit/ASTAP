@@ -166,7 +166,7 @@ type
 // is preceding containing the DEC9 value stored at location DEC7. Since the stars are already sorted in 290 areas, the number of DEC9 values is already limited by a factor 18.
 // 1476-5 header-record example: FF FF FF 20 06 This indicates the following records have a DEC9 value of 20 -128 offset and a magnitude of (06 - 16)/10 equals -1.0 (new method, +16 offset).
 //
-//The shorter records methods become only space efficient for very large star collection of a few million stars. In these large collections many stars can be found with the same magnitude and DEC9 shortint. The Gaia database is only issued in the 1476-5 format of 5 bytes per star. or in an older format 290-6 (V17) or 290-5. The 290-6 has one more byte for the colour information. This is documented in the HNSKY planetarium program help file.
+//The shorter records methods become only space efficient for very large star collection of a few million stars. In these large collections many stars can be found with the same magnitude and DEC9 shortint. The Gaia database is only issued in the 1476-5 format of 5 bytes per star. or in an older format 290-6 (G05) or 290-5. The 290-6 has one more byte for the colour information. This is documented in the HNSKY planetarium program help file.
 
 //So the record sequence will be as follows:
 //
@@ -2791,25 +2791,29 @@ begin
     memo2_message('Could not find w08 star database. Will try with an other database.');
   end;
 
+  if ((fov>10) and (fileexists( database_path+'G05_0101.290'))) then begin name_database:='g05'; database_type:=290; end //preference for G05 for large FOV
+  else
   if ((fov>10) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; end //preference for V17 for large FOV
+  else
+  if fileexists( database_path+'v50_0101.1476') then begin name_database:='v50'; end //photometry database
   else
   if fileexists( database_path+'d50_0101.1476') then begin name_database:='d50'; end
   else
   if fileexists( database_path+'d20_0101.1476') then begin name_database:='d20'; end
   else
-  if fileexists( database_path+'d10_0101.1476') then begin name_database:='d10'; end
-  else
   if fileexists( database_path+'d05_0101.1476') then begin name_database:='d05'; end
   else
-  if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
+  if fileexists( database_path+'g05_0101.1476') then begin name_database:='g05'; end
   else
-  if fileexists( database_path+'g18_0101.290') then begin name_database:='g18'; database_type:=290; end
+  if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end //old database sorted on magnitude
   else
-  if fileexists( database_path+'h17_0101.1476') then begin name_database:='h17'; end
+  if fileexists( database_path+'g18_0101.290') then begin name_database:='g18'; database_type:=290; end //old database sorted on magnitude
   else
-  if fileexists( database_path+'v17_0101.290') then begin name_database:='v17'; database_type:=290; end
+  if fileexists( database_path+'h17_0101.1476') then begin name_database:='h17'; end // old database sorted on magnitude
   else
-  if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290; end
+  if fileexists( database_path+'v17_0101.290') then begin name_database:='v17'; database_type:=290; end //old database sorted on magnitude
+  else
+  if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290; end //old database sorted on magnitude
   else
   result:=false;
 end;

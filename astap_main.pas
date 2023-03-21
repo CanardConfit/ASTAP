@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -695,6 +695,8 @@ var {################# initialised variables #########################}
   flux_aperture : double=99;{circle where flux is measured}
   annulus_radius  : integer=14;{inner of square where background is measured. Square has width and height twice annulus_radius}
   copy_paste :boolean=false;
+  copy_paste_shape :integer=0;//rectangle
+
   shape_fitsX: double=0;
   shape_fitsY: double=0;
   shape_fitsX2: double=0;
@@ -952,6 +954,7 @@ var {################# initialised variables #########################}
 
 const
   crMyCursor = 5;
+  ctrlbutton: boolean=false;
 
 
 procedure reset_fits_global_variables(light :boolean;out head:theader); {reset the global variable}
@@ -3714,7 +3717,7 @@ procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area gray
 var
    fitsX,fitsY,dum    : integer;
    val  : single;
-   center_x,center_y,a,b,angle_from_center,mean_value,old_value : double;
+   center_x,center_y,a,b : double;
 
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;
@@ -3735,8 +3738,7 @@ begin
     for fitsY:=startY to stopY-1 do
     for fitsX:=startX to stopX-1 do
     begin
-      angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
-      if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
+      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse
       begin
         val:=(img_loaded[0,fitsX,fitsY]+img_loaded[1,fitsX,fitsY]+img_loaded[2,fitsX,fitsY])/3;
         img_loaded[0,fitsX,fitsY]:=val;
@@ -4483,6 +4485,7 @@ begin
      if shape_type=1 then {circle}
      begin {good lock on object}
        shape:=stcircle;
+       shape:=stellipse;
        visible:=true;
      end
      else
@@ -4546,7 +4549,7 @@ begin
 
      if copy_paste then
      begin
-       show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
+       show_marker_shape(mainwindow.shape_paste1,copy_paste_shape {rectangle or ellipse},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
      end;
 
     {reference point manual alignment}
@@ -4611,7 +4614,7 @@ procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e : double;
+   sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b : double;
    Save_Cursor              : TCursor;
    info_message             : string;
    median_array             : array of double;
@@ -4660,26 +4663,35 @@ begin
     counter:=0;
     counter_median:=0;
     total_flux:=0;
+
+    center_x:=(startx+stopX-1)/2;
+    center_y:=(startY+stopY-1)/2;
+    a:=(stopX-1-startx)/2;
+    b:=(stopY-1-startY)/2;
+
     for fitsY:=startY+1 to stopY-1 do {within rectangle}
     for fitsX:=startX+1 to stopX-1 do
     begin
-      value:=img_loaded[col,fitsX+1,fitsY+1];
-      median_position:=counter*stepsize;
-      total_flux:=total_flux+value; {total flux}
-      if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
+      if ((CtrlButton=false {use no ellipse}) or (sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
       begin
-        inc(counter_median);
-        median_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
-      end;
-      inc(counter);
-      if value=maximum then max_counter:=max_counter+1; {counter at max}
-      if value>maximum then maximum:=value; {max}
-      if value<minimum then minimum:=value; {min}
-      if value>=64000 then saturated:=saturated+1;{saturation counter}
-      if col=0 then
-      begin
-        delta:=abs(value-most_common);
-        if ((delta>0.00000001){not the same} and (delta<minstep)) then minstep:=delta;
+        value:=img_loaded[col,fitsX+1,fitsY+1];
+        median_position:=counter*stepsize;
+        total_flux:=total_flux+value; {total flux}
+        if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
+        begin
+          inc(counter_median);
+          median_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+        end;
+        inc(counter);
+        if value=maximum then max_counter:=max_counter+1; {counter at max}
+        if value>maximum then maximum:=value; {max}
+        if value<minimum then minimum:=value; {min}
+        if value>=64000 then saturated:=saturated+1;{saturation counter}
+        if col=0 then
+        begin
+          delta:=abs(value-most_common);
+          if ((delta>0.00000001){not the same} and (delta<minstep)) then minstep:=delta;
+        end;
       end;
     end;{filter outliers}
 
@@ -4719,7 +4731,10 @@ begin
 
   info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
   if head.Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
-  info_message:=info_message+#10+'Rectangle: '+inttostr(startX+1)+', '+inttostr(startY+1)+',    '+inttostr(stopX+1)+', '+inttostr(stopY+1);
+  if CTRLbutton=false then info_message:=info_message+#10+'Rectangle: '
+                      else info_message:=info_message+#10+'Ellipse: ';
+
+  info_message:=info_message+#10+inttostr(startX+1)+', '+inttostr(startY+1)+',    '+inttostr(stopX+1)+', '+inttostr(stopY+1);
   info_message:=info_message+#10+'Filename: '+extractfilename(filename2);
 
 
@@ -5202,7 +5217,7 @@ var
    fitsX,fitsY,dum,k,bsize  : integer;
    mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,
-   center_x,center_y,a,b,angle_from_center,new_value,new_value_noise      : double;
+   center_x,center_y,a,b,new_value,new_value_noise      : double;
    line_bottom, line_top,line_bottom_noise, line_top_noise : double;
 begin
   if head.naxis=0 then exit;
@@ -5242,8 +5257,7 @@ begin
       for fitsY:=startY to stopY-1 do
       for fitsX:=startX to stopX-1 do
       begin
-        angle_from_center:=arctan(abs(fitsY-center_Y)/max(1,abs(fitsX-center_X)));
-        if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
+        if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse
         begin
           line_bottom:=mode_left_bottom*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom *(fitsx-startX)/(stopX-startx);{median value at bottom line}
           line_top:=  mode_left_top *   (stopX-fitsx)/(stopX-startx)+ mode_right_top*(fitsx-startX)/(stopX-startx);{median value at top line}
@@ -9308,7 +9322,7 @@ end;
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,tx,ty,saturation_counter : integer;
-   flux,bg_median,value  : double;
+   flux,bg_median,value,center_x,center_y,a,b  : double;
    mag_str               : string;
    bg_array              : array of double;
 begin
@@ -9360,17 +9374,27 @@ begin
 
     saturation_counter:=0;
     flux:=0;
+    {ellipse parameters}
+    center_x:=(startx+stopX-1)/2;
+    center_y:=(startY+stopY-1)/2;
+    a:=(stopX-1-startx)/2;
+    b:=(stopY-1-startY)/2;
+
     for fitsY:=startY+1 to stopY-1 do {within rectangle}
     for fitsX:=startX+1 to stopX-1 do
     begin
-      value:=img_loaded[0,fitsX+1,fitsY+1]- bg_median;
-      flux:=flux+value;{add all flux. Without stars it should average zero. Detecting flux using >3*sd misses too much signal comets}
-      if value>65000 then inc(saturation_counter);{keep track of number of saturated pixels}
+      if ((CtrlButton=false {use no ellipse}) or (sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
+      begin
+        value:=img_loaded[0,fitsX+1,fitsY+1];
+        if value>65000 then inc(saturation_counter);{keep track of number of saturated pixels}
+        flux:=flux+(value-bg_median);{add all flux. Without stars it should average zero. Detecting flux using >3*sd misses too much signal comets}
+      end;
     end;
+
     if flux<1 then flux:=1;
     str(MZERO - ln(flux)*2.5/ln(10):0:1,mag_str);
 
-    if (saturation_counter*65500/flux)<0.01 then mag_str:='MAGN='+mag_str {allow about 1% saturation}
+    if (saturation_counter*65500/flux)<0.03 then mag_str:='MAGN='+mag_str {allow about 3% saturation}
                                             else mag_str:='MAGN <'+mag_str+', '+inttostr(saturation_counter) +' saturated pixels !';
 
     image1.Canvas.brush.Style:=bsClear;
@@ -9392,6 +9416,7 @@ begin
     bg_array:=nil;{free mem}
 
     Screen.Cursor:=crDefault;
+
   end{fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
@@ -9467,6 +9492,8 @@ begin
     copy_paste_w:=stopX2-copy_paste_x;
     copy_paste_h:=stopY2-copy_paste_y;
     copy_paste:=true;
+    if CTRLbutton then copy_paste_shape:=1 //ellipse
+                  else copy_paste_shape:=0;//rectangle
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
@@ -13320,9 +13347,10 @@ end;
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  width5,height5, xf,yf,k, fx,fy, shapetype  : integer;
-  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf     : double;
+  width5,height5, xf,yf,k, fx,fy, shapetype                     : integer;
+  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b  : double;
 begin
+
   if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
   if flip_vertical1.Checked then yf:=image1.height-1-y else yf:=y;
 
@@ -13398,6 +13426,8 @@ begin
   down_y:=y;
   down_xy_valid := True;
 
+  ctrlbutton :=((ssCtrl in shift) or ((ssShift in shift)));//generic variable for rectangle shape
+
   if ssleft in shift then
   begin
     Screen.Cursor:=crhandpoint;
@@ -13411,12 +13441,20 @@ begin
     begin
       width5:=Length(img_loaded[0]);    {width}
       height5:=Length(img_loaded[0][0]); {height}
+
+      {ellipse parameters}
+      center_x:=(copy_paste_x + copy_paste_x+copy_paste_w-1)/2;
+      center_y:=(copy_paste_y + copy_paste_y+copy_paste_h-1)/2;
+      a:=(copy_paste_w-1)/2;
+      b:=(copy_paste_h-1)/2;
+
       for k:=0 to head.naxis3-1 do {do all colors}
       begin
         for fy:=copy_paste_y to copy_paste_y+copy_paste_h-1 do
         for fX:=copy_paste_x to copy_paste_x+copy_paste_w-1 do
         begin
-          img_loaded[k,max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
+          if ((copy_paste_shape=0 {use no ellipse}) or (sqr(fx-center_X)/sqr(a) +sqr(fy-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
+             img_loaded[k,max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
         end;
       end;{k color}
       plot_fits(mainwindow.image1,false,true);
@@ -13896,6 +13934,9 @@ begin
      boxshape1.Pen.width :=max(1,round(image1.width/width5));
      boxshape1.visible:=true;
 
+     if ctrlbutton then boxshape1.shape:=STellipse else boxshape1.shape:=STrectangle;
+
+
      if head.cdelt2<>0 then
      begin
        pixel_distance:= 3600*sqrt (sqr((box_LX)*head.cdelt1)+sqr((box_LY)*head.cdelt2));{pixel distance in arcsec}
@@ -13930,7 +13971,7 @@ begin
 
    if copy_paste then
    begin
-      show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
+      show_marker_shape(mainwindow.shape_paste1,copy_paste_shape {rectangle or ellipse},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
    end;
    try color1:=ColorToRGB(mainwindow.image1.canvas.pixels[trunc(x*width5/image1.width),trunc(y*height5/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
 
@@ -14854,9 +14895,7 @@ begin
     for fitsY:=startY to stopY-1 do
     for fitsX:=startX to stopX-1 do
     begin
-      angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
-      distance:=-sqr(fitsX-center_X)+sqr(fitsY-center_Y) + sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)); //distance outside ellipse
-
+      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
       if ((distance>=0) and (distance<=2)) then
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
@@ -14871,8 +14910,7 @@ begin
     for fitsY:=startY to stopY-1 do
     for fitsX:=startX to stopX-1 do
     begin
-      angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
-      if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
+      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
         begin
@@ -14886,8 +14924,7 @@ begin
     for fitsY:=startY to stopY-1 do
     for fitsX:=startX to stopX-1 do
     begin
-      angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
-      if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
+      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
       begin
         flux:=(img_loaded[0,fitsX,fitsY]-mean[0]
               +img_loaded[1,fitsX,fitsY]-mean[1]
