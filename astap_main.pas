@@ -4616,7 +4616,7 @@ var
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
    sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b : double;
    Save_Cursor              : TCursor;
-   info_message             : string;
+   info_message,shapeform,shapeform2   : string;
    median_array             : array of double;
 const
   median_max_size=5000;
@@ -4731,10 +4731,10 @@ begin
 
   info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
   if head.Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
-  if CTRLbutton=false then info_message:=info_message+#10+'Rectangle: '
-                      else info_message:=info_message+#10+'Ellipse: ';
 
-  info_message:=info_message+#10+inttostr(startX+1)+', '+inttostr(startY+1)+',    '+inttostr(stopX+1)+', '+inttostr(stopY+1);
+  if CTRLbutton=false then begin shapeform:='Rectangle: ';shapeform2:='rectangle'; end else begin shapeform:='Ellipse: '; shapeform2:='ellipse'; end;
+
+  info_message:=info_message+#10+shapeform+inttostr(startX+1)+', '+inttostr(startY+1)+',    '+inttostr(stopX+1)+', '+inttostr(stopY+1);
   info_message:=info_message+#10+'Filename: '+extractfilename(filename2);
 
 
@@ -4750,7 +4750,7 @@ begin
                                             'Flux = total flux above median background | '+
                                             '≥64E3 = number of values equal or above 64000';
 
-  case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY)),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
+  case  QuestionDlg (pchar('Statistics within '+shapeform2+' '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY)),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
            mrYes: Clipboard.AsText:=info_message;
   end;
 

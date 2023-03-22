@@ -147,7 +147,7 @@ object form_aavso1: Tform_aavso1
     Height = 15
     Top = 104
     Width = 143
-    Caption = 'Comparison stars (use V17)'
+    Caption = 'Comparison stars (use V50)'
     ParentColor = False
   end
   object report_to_file1: TButton
