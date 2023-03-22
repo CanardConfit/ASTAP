@@ -1765,7 +1765,7 @@ object mainwindow: Tmainwindow
       Caption = '-'
     end
     object solvebytwopositions1: TMenuItem
-      Caption = 'Solve by providing two positions'
+      Caption = 'Solve manually by providing two positions'
       Hint = 'Add a solution to image by providing two positions '
       object enterposition1: TMenuItem
         Caption = 'Enter position 1'

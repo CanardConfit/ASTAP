@@ -99,7 +99,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 interface
 
 uses   Classes,SysUtils,controls,forms,math,
-       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field,unit_online_gaia;
+       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field;
 
 function solve_image(img :image_array;var hd: Theader; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
