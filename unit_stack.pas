@@ -39,6 +39,7 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    reference_database1: TComboBox;
     Annotations_visible2: TCheckBox;
     clear_result_list1: TButton;
     column_fov1: TMenuItem;
@@ -1117,7 +1118,7 @@ uses
   unit_image_sharpness, unit_gaussian_blur, unit_star_align,
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
-  unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration;
+  unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia;
 
 type
   blink_solution = record
@@ -7941,11 +7942,10 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
   medianCheck, medianThree, backgr, hfd_med, apert, annul,
-  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e: double;
-  saturation_level:
-  single;
+  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep,fov: double;
+  saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree: integer;
+  countCheck, countThree,max_nr_stars,nrstars_required,nrstars : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
   warned, success: boolean;
   starlistx: star_list;
@@ -8262,7 +8262,37 @@ begin
           end;
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
-          plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude}); {get flux_ratio}
+          if reference_database1.itemindex>0 then
+          begin
+
+            ang_sep(gaia_ra,gaia_dec,head.ra0,head.dec0,sep);
+            fov:=(max(head.height,head.width)*abs(head.cdelt2))*pi/180;
+            if ((sep>0.1*fov) or (online_database=nil)) then  //update Gaia database online
+
+            //if read_stars_online(telescope_ra,telescope_dec,fov_org,m_limit {max_magnitude}) then
+            // online_database:=nil; // free mem
+            begin
+              nrstars_required:=round(head.width*head.height*(730/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
+              if select_star_database(stackmenu1.star_database1.text,fov {fov})=false then exit;
+              if read_stars(head.ra0,head.dec0,fov, database_type,nrstars_required,{out} nrstars) then {read star from star database to find the maximum magnitude required for this.Max magnitude is stored in mag2}
+              begin //maximum magnitude mag2 is known for the amount of stars for calibration using online stars
+                memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFgeneral,3,1)+ ' for '+inttostr(nrstars_required)+' stars')  ;
+                if read_stars_online(head.ra0,head.dec0,fov, mag2/10 {max_magnitude})= false then
+                begin
+                  memo2_message('Error. failure accessing Vizier for Gaia star database!');
+                  break;
+                end;
+              end
+              else
+              begin
+                memo2_message('Error 1476');
+                break;
+              end;
+            end;
+            if pos('V',reference_database1.text)>0 then convert_magnitudes('V'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+            if pos('R',reference_database1.text)>0 then convert_magnitudes('R'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+          end;
+          plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude},reference_database1.itemindex>0 {online?}); {get flux_ratio}
           listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 2);
 
           if mzero <> 0 then
@@ -8472,7 +8502,7 @@ begin
             magn:=MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10);
 
 
-            mainwindow.image1.Canvas.textout(starX + size, starY - size,floattostrf(magn * 10, ffgeneral, 3, 0));{add magnitude as text}
+            mainwindow.image1.Canvas.textout(starX + size, starY - size,inttostr(round(magn * 10)) );{add magnitude as text}
           end;{measure marked stars}
 
 
@@ -8531,6 +8561,7 @@ begin
 
     plot_graph; {aavso report}
   until ((esc_pressed) or (Sender <> photometry_repeat1 {single run}));
+
 
   nil_all;{nil all arrays and restore cursor}
 end;

@@ -16,7 +16,7 @@ procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
-procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
+procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn,online: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
@@ -1629,6 +1629,7 @@ begin
                   mainwindow.Shape_alignment_marker2.HINT:=name;
             if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';
             if vsp[count].Bmag<>'?' then name:=name+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+            if vsp[count].Rmag<>'?' then name:=name+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
           end;
 
           if flip_horizontal then begin x:=(head.width-1)-x;  end;
@@ -1766,12 +1767,12 @@ begin
 end;
 
 
-procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
+procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn, online: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   dra,ddec, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,xx,yy,magn_limit_min,magn_limit_max,cv,x3,y3 : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                         : integer;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
   flip_horizontal, flip_vertical        : boolean;
   flux_ratio_array,hfd_x_sd             : array of double;
 var
@@ -1818,7 +1819,6 @@ var
           if Bp_Rp<>999 then {colour version}
           begin
             mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(mag2))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
-
             mainwindow.image1.canvas.pen.color:=Gaia_star_color(round(Bp_Rp));{color circel}
           end
           else
@@ -1828,14 +1828,13 @@ var
           mainwindow.image1.canvas.ellipse(round(x2-len),round(y2-len),round(x2+1+len),round(y2+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
 
-        if flux_calibration then
+        if ((flux_calibration) and (Bp_Rp<>-128 {if -128 then unreliable Johnson-V magnitude, either Bp or Rp is missing in Gaia})) then
         begin
           HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
-            if ((flux_calibration){calibrate flux} and
-                (img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
+            if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
                 (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
                 (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
                 (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
@@ -1917,12 +1916,16 @@ begin
     end;
 
     {sets file290 so do before fov selection}
-    if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then
+    if online=false then
+      begin
+      if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
+      memo2_message('Using star database '+uppercase(name_database));
+    end
+    else
     begin
-      application.messagebox(pchar('No star database found!'+#13+'Download and install one star database.'), pchar('No star database!'),0);
-      exit;
+      memo2_message('Using Online Gaia database');
+      database_type:=0;
     end;
-    memo2_message('Using star database '+uppercase(name_database));
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
@@ -1975,7 +1978,7 @@ begin
       close_star_database;
     end
     else
- //   if database_type=1 then
+    if database_type=1 then
     begin {W08 single file wide field database}
       if wide_database<>name_database then
                               read_stars_wide_field;{load wide field stars array}
@@ -1994,23 +1997,21 @@ begin
         end;
         inc(count);
       end;
-    end;
-
-//    else
-//    begin //Database_type=0, Vizier online, Gaia
-//       count:=0;
-//       if read_stars_online(telescope_ra,telescope_dec,fov_org,max_magnitude, max_nr_stars,{out} nrstars,mag2{limiting magn}){retrieve brightest stars online} then
-//       while ((count<nrstars) and  (count<length(online_database[0])) ) do {read stars}
-//       begin
-//         ra2:=online_database[0,count];
-//         dec2:=online_database[1,count];
-//         mag2:=online_database[2,count]*10;
-//         plot_star;{add star}
-//         inc(count);
-//       end;
-//       online_database:=nil; // free mem
-//     end;
-
+    end
+    else
+    begin //Database_type=0, Vizier online, Gaia
+       count:=0;
+       //database should all ready been filled
+       while (count<length(online_database[0])) do {read stars}
+       begin
+         ra2:=online_database[0,count];
+         dec2:=online_database[1,count];
+         mag2:=online_database[5,count]*10;//magnitude
+         if mag2<>0 then
+           plot_star;{add star}
+         inc(count);
+       end;
+     end;
 
     if flux_calibration then {flux calibration}
     begin
@@ -2284,11 +2285,7 @@ begin
     setlength(error_array,max_nr_stars);
 
     {sets file290 so do before fov selection}
-    if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then
-    begin
-      application.messagebox(pchar('No star database found!'+#13+'Download and install one star database.'), pchar('No star database!'),0);
-      exit;
-    end;
+    if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then exit;
 
     if plot=false then setlength(distortion_data,4,max_nr_stars);
     stars_measured:=0;{star number}
@@ -2474,11 +2471,7 @@ begin
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
     coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
-    if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then {sets file290 so do before fov selection}
-    begin
-      application.messagebox(pchar('No star database found!'+#13+'Download and install one star database.'), pchar('No star database!'),0);
-      exit;
-    end;
+    if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then exit; {sets file290 so do before fov selection}
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view with 0% extra}
 
@@ -2556,7 +2549,9 @@ begin
        begin
          ra2:=online_database[0,count];
          dec2:=online_database[1,count];
-         mag2:=online_database[2,count]*10;
+         mag2:=online_database[3,count]*10; // BP magnitude
+         if mag2=0 then
+                mag2:=(online_database[2,count]+0.5)*10; //use G magnitude instead, {BP~GP+0.5}
          plot_star;{add star}
          inc(count);
        end;

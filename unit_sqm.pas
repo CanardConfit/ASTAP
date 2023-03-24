@@ -104,7 +104,7 @@ begin
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
     flux_aperture:=99;{calibrate for extended objects}
-    plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
+    plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude},false{online});
   end;
   result:=false;
   if mzero>0 then

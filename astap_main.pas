@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.22';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -598,6 +598,8 @@ type
               Verr: string;
               Bmag: string;
               Berr: string;
+              Rmag: string;
+              Rerr: string;
             end;
 
   theVar = record
@@ -951,6 +953,7 @@ var {################# initialised variables #########################}
   font_color : tcolor= cldefault;
   freetext : string='';
   annotation_magn: string='15';
+  magn_type : string='BP';
 
 const
   crMyCursor = 5;
@@ -7456,7 +7459,8 @@ begin
       dum:=Sett.ReadString('stack','mark_outliers_upto',''); if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
       dum:=Sett.ReadString('stack','flux_aperture',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
-      c:=Sett.ReadInteger('stack','annotate_m',987654321);if c<>987654321 then stackmenu1.annotate_mode1.itemindex:=c;
+      c:=Sett.ReadInteger('stack','annotate_m',0); stackmenu1.annotate_mode1.itemindex:=c;
+      c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
 
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
@@ -7817,7 +7821,7 @@ begin
       sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
       sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
       sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
-
+      sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
 
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
@@ -8858,6 +8862,7 @@ begin
 
     vsp[count].Vmag:='?';
     vsp[count].Bmag:='?';
+    vsp[count].Rmag:='?';
     repeat //read optional "bands"
       inc(j);
       val:=s[j];
@@ -8878,14 +8883,28 @@ begin
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
-         j:=posex(',',s,i);
-         vsp[count].Bmag:=copy(s,i,j-i);
+        j:=posex(',',s,i);
+        vsp[count].Bmag:=copy(s,i,j-i);
 
-         i:=posex('error":',s,j);
-         i:=i+length('error":');
-         j:=posex('}',s,i);
-         vsp[count].Berr:=copy(s,i,j-i);
+        i:=posex('error":',s,j);
+        i:=i+length('error":');
+        j:=posex('}',s,i);
+        vsp[count].Berr:=copy(s,i,j-i);
+      end
+      else
+      if val='R' then //R mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+        j:=posex(',',s,i);
+        vsp[count].Rmag:=copy(s,i,j-i);
+
+        i:=posex('error":',s,j);
+        i:=i+length('error":');
+        j:=posex('}',s,i);
+        vsp[count].Rerr:=copy(s,i,j-i);
       end;
+
      until ((val=']') or (j>=length(s)));
     inc(count);//number of entries/stars
   until count>=length(vsp);//normally will stop at above break
@@ -9334,7 +9353,7 @@ begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       flux_aperture:=99;{calibrate for extended objects}
 
-      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
+      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude},false{online});
     end;
     if mzero=0 then begin beep; exit;end;
 
@@ -9973,7 +9992,7 @@ begin
     else
     memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
 
-    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
+    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude},false{online});
   end;
 end;
 
@@ -12217,7 +12236,7 @@ begin
 //  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
   calibrate_photometry; {measure hfd and calibrate for point or extended sources depending on the setting}
-  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn});{plot stars}
+  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn},false{online});{plot stars}
 end;
 
 
@@ -13054,22 +13073,22 @@ begin
 end;
 
 
-procedure plot_vizier(info:string); //plot online info Gaia from Vizier
+procedure plot_vizier(info,magn_type:string); //plot online info Gaia from Vizier
 var
-  regel,simobject,mag : string;
-  p1,p2,p3,count    : integer;
-  rad,decd,g,bp     : double;
+  regel,simobject,mag        : string;
+  p1,p2,p3,p4,count          : integer;
+  rad,decd,G,Bp,Rp,BminR,R,B,V,Vt,Bt  : double;
   datalines : boolean;
   slist: TStringList;
 
 begin
 //--------------- --------------- --------- ---------
-//                                  G         BP
+//                                  G         BP        RP
 //RA_ICRS (deg)   DE_ICRS (deg)   mag (mag) mag (mag)
-//--------------- --------------- --------- ---------
-//086.58690478866 -10.38175731298 20.486355 20.757553
-//086.57689784801 -10.37081756215 20.496525 21.346535
-//086.57543967588 -10.36071651144 20.726021 21.413324
+//--------------- --------------- --------- --------- -------
+//086.58690478866 -10.38175731298 20.486355 20.757553 .......
+//086.57689784801 -10.37081756215 20.496525 21.346535 .......
+//086.57543967588 -10.36071651144 20.726021 21.413324 .......
 
 
   slist := TStringList.Create;
@@ -13090,23 +13109,64 @@ begin
       begin
         {magnitude}
         p1:=pos(' ',regel);{first column changes in width}
-        p2:=posex(' ',regel,p1+1);
-        p3:=posex(' ',regel,p2+1);
+        p2:=posex(' ',regel,p1+3);//there could be two spaces instead of one
+        p3:=posex(' ',regel,p2+3);
+        p4:=posex(' ',regel,p3+3);
         if p3>0 then //this is a real line of the object list
         begin
           rad:=strtofloat1(copy(regel,1,p1-1));
           decd:=strtofloat1(copy(regel,p1+1,p2-p1-1));
-          bp:=strtofloat1(copy(regel,p3+1,99));
+          g:=strtofloat1(copy(regel,p2+1,p3-p2-1));
+          Bp:=strtofloat1(copy(regel,p3+1,p4-p3-1));
+          Rp:=strtofloat1(copy(regel,p4+1,99));
 
-          if bp=0 then
-          begin
-            g:=strtofloat1(trim(copy(regel,p2+1,p3-p2-1)));
-            mag:='g:'+inttostr(round(g*10)); {magn}
-          end
+          mag:='';
+
+          if magn_type='G' then
+            mag:=inttostr(round(G*10)) {magn}
           else
-            mag:=inttostr(round(bp*10));{magn}
+          if magn_type='BP' then
+            mag:=inttostr(round(Bp*10)) {magn}
+          else
+          begin //transformations
+            if ((G>0) and (BP>0) and (RP>0)) then //transformation is possible
+            begin
+              BminR:=Bp-Rp;
+              if magn_type='V' then
+              begin
+                if ((BminR>=-0.5) and (BminR<=5.0)) then {formula valid edr3, about 99% of stars}
+                begin
+                  V:=G + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;  {edr3}
+                  mag:=inttostr(round(V*10));
+                end;
+              end
+              else
+              if magn_type='B' then
+              begin
+                if ((BminR>-0.3) and (BminR<3.0)) then
+                begin
+                  Vt:=G + 0.01077 + 0.0682*(BminR) + 0.2387*sqr(BminR) -0.02342*sqr(BminR)*(BminR) ;
+                  Bt:=G + 0.004288 + 0.8547*(BminR) -0.1244*sqr(BminR)+ 0.9085*sqr(BminR)*(BminR) - 0.4843*sqr(sqr(BminR))+ 0.06814*sqr(sqr(BminR))*BminR ;
+                  V:=G + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;
+                  //B - V = 0.850 * (BT - VT)
+                  B:=0.850 * (Bt-Vt)+V; //from Tycho catalog
+                  mag:=inttostr(round(B*10));
+                end;
+              end
+              else
+              if magn_type='R' then
+              begin
+                if ((BminR>0 {{remark J, could be 0.2}) and (BminR<4.0)) then
+                begin
+                  R:=G + 0.02275 - 0.3961*(BminR) + 0.1243*sqr(BminR)+ 0.01396*sqr(BminR)*(BminR) - 0.003775*sqr(sqr(BminR)) ;  {edr3}
+                  mag:=inttostr(round(R*10));
+                end;
+              end;
+            end;//transformation is possible
+          end;
 
-          simobject:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+mag;
+          if mag<>'' then //valid value
+             simobject:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+mag;
 
           //RA[0..864000], DEC[-324000..324000], name(s), length [0.1 min], width[0.1 min], orientation[degrees]
           //659250,-49674,M16/NGC6611/Eagle_Nebula,80
@@ -13194,17 +13254,16 @@ begin
   begin
     annotation_magn:=inputbox('Chart request','Limiting magnitude chart:' ,annotation_magn);
     annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
+    magn_type:=uppercase(inputbox('Chart request','Magnitude type [G, BP, V, B, R]:' , magn_type));
+
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
-    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=10000&Gmag=<'+trim(annotation_magn);
+    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=10000&Gmag=<'+trim(annotation_magn);
 //    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+'&-c.bs=533.293551/368.996043&-out.max=1000&Gmag=%3C23
-    plot_vizier(get_http(url));
+    plot_vizier(get_http(url),magn_type);
     Screen.Cursor:=crDefault;
     exit;
   end
-
-
-
 
   else
   if sender=simbad_annotation_deepsky_filtered1 then //Simbad deepsky with maintype filter

@@ -138,7 +138,7 @@ begin
   end;
   aavso_report:= '#TYPE='+detype+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version 1.0.1'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version 1.0.2'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -171,7 +171,10 @@ begin
        airmass_str:=listview7.Items.item[c].subitems.Strings[P_airmass];
        if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
 
-       if pos('v',name_database)>0 then magn_type:=', photometry transformed to Johnson-V. ' else magn_type:=' using BM magnitude. ';
+       if reference_database1.itemindex=0 then //local database
+         if pos('v',name_database)>0 then magn_type:=', transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
+       else  //online database
+         magn_type:=', transformed '+stackmenu1.reference_database1.text;
 
        if snr_str<>'' then
        begin
@@ -193,7 +196,7 @@ begin
                        airmass_str+delim+
                        'na'+delim+ {group}
                        abbreviation_var_IAU+delim+
-                       'Ensemble of Gaia eDR3 stars'+magn_type+err_message+#13+#10;
+                       'Ensemble of Gaia DR3 stars'+magn_type+' '+err_message+#13+#10;
 
        end;
      end;
@@ -502,7 +505,11 @@ begin
 
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
-  Comparison1.Text:=name_database;
+  if stackmenu1.reference_database1.itemindex=0 then
+    Comparison1.Text:=name_database
+  else
+  Comparison1.Text:=stackmenu1.reference_database1.text;
+
   filter1.itemindex:=aavso_filter_index;
 
   aavso_report:='';
