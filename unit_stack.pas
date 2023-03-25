@@ -707,6 +707,7 @@ type
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: integer);
     procedure rainbow_Panel1Paint(Sender: TObject);
+    procedure reference_database1Change(Sender: TObject);
     procedure remove_luminance1Change(Sender: TObject);
     procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
@@ -5250,10 +5251,10 @@ begin
   {disable annulus_radius1 if mode max flux}
 
   {recalibrate}
-  if mzero <> 0 then
+  if head.mzero <> 0 then
   begin
     memo2_message('Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
-    mzero := 0;
+    head.mzero := 0;
   end;
 end;
 
@@ -5520,7 +5521,7 @@ begin
             end
             else
             begin
-              mainwindow.Caption := filename2 + ' Working on star solutions, be patient.';
+              mainwindow.Caption := filename2 + ' Working on star solutions........';
               get_background(0, img_loaded, False {no histogram already done}
                 , True {unknown, calculate also noise_level}, {var} cblack, star_level);
               find_stars(img_loaded, hfd_min, max_stars, starlist2);
@@ -7072,6 +7073,17 @@ begin
   end;
 end;
 
+procedure Tstackmenu1.reference_database1Change(Sender: TObject);
+begin
+  if reference_database1.itemindex=0 then gaia_type:=''; //for image1mousemove magnitude indication
+
+  if head.mzero <> 0 then
+  begin
+    memo2_message('Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
+    head.mzero := 0;
+  end;
+end;
+
 
 procedure Tstackmenu1.remove_luminance1Change(Sender: TObject);
 begin
@@ -7835,7 +7847,7 @@ begin
                 if stepnr = 1 then
                 begin {CALCULATE MEAN magnitude of the stars}
                   stars_mean[x_new, y_new] := stars_mean[x_new, y_new] +
-                  (MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10));{magnitude}
+                  (head.MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10));{magnitude}
                   //ln(starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432); {magnitude}
 
 
@@ -7846,7 +7858,7 @@ begin
                 begin
                   stars_sd[x_new, y_new] :=
                     stars_sd[x_new, y_new] + sqr((stars_mean[x_new, y_new] / stars_count[x_new, y_new]) -
-                    (MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10)) );{sd calculate by sqr magnitude difference from mean}
+                    (head.MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10)) );{sd calculate by sqr magnitude difference from mean}
 //                    ln( starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432) ); {sd calculate by sqr magnitude difference from mean}
                 end;
 
@@ -7954,8 +7966,6 @@ var
   astr, memo2_text, filename1: string;
 
   function measure_star(deX, deY: double): string;{measure position and flux}
-    //var
-    //starX,starY :double;
   begin
     HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius
       {14, annulus radius}, flux_aperture, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);
@@ -7978,7 +7988,7 @@ var
       begin
 //        magn := starlistpack[c].flux_ratio - ln(flux) * 2.511886432 / ln(10);
 //        magn := ln(starlistpack[c].flux_ratio/flux)/ln(2.511886432);
-        magn:=MZERO - ln(flux)*2.5/ln(10);
+        magn:=starlistpack[c].MZERO - ln(flux)*2.5/ln(10);
 
 
         Result := floattostrf(magn, ffFixed, 5, 3);
@@ -8262,47 +8272,17 @@ begin
           end;
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
-          if reference_database1.itemindex>0 then
-          begin
-
-            ang_sep(gaia_ra,gaia_dec,head.ra0,head.dec0,sep);
-            fov:=(max(head.height,head.width)*abs(head.cdelt2))*pi/180;
-            if ((sep>0.1*fov) or (online_database=nil)) then  //update Gaia database online
-
-            //if read_stars_online(telescope_ra,telescope_dec,fov_org,m_limit {max_magnitude}) then
-            // online_database:=nil; // free mem
-            begin
-              nrstars_required:=round(head.width*head.height*(730/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
-              if select_star_database(stackmenu1.star_database1.text,fov {fov})=false then exit;
-              if read_stars(head.ra0,head.dec0,fov, database_type,nrstars_required,{out} nrstars) then {read star from star database to find the maximum magnitude required for this.Max magnitude is stored in mag2}
-              begin //maximum magnitude mag2 is known for the amount of stars for calibration using online stars
-                memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFgeneral,3,1)+ ' for '+inttostr(nrstars_required)+' stars')  ;
-                if read_stars_online(head.ra0,head.dec0,fov, mag2/10 {max_magnitude})= false then
-                begin
-                  memo2_message('Error. failure accessing Vizier for Gaia star database!');
-                  break;
-                end;
-              end
-              else
-              begin
-                memo2_message('Error 1476');
-                break;
-              end;
-            end;
-            if pos('V',reference_database1.text)>0 then convert_magnitudes('V'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
-            if pos('R',reference_database1.text)>0 then convert_magnitudes('R'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
-          end;
-          plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude},reference_database1.itemindex>0 {online?}); {get flux_ratio}
+          plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
           listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 2);
 
-          if mzero <> 0 then
+          if head.mzero <> 0 then
           begin
             measure_magnitudes(annulus_radius, False {deep}, starlistx); {analyse}
             starlistpack[c].starlist := starlistX;
             {store found stars in memory for finding outlier later}
-            starlistpack[c].Width := head.Width;
-            starlistpack[c].Height := head.Height;
-            starlistpack[c].mzero := mzero;
+            starlistpack[c].Width :=head.Width;
+            starlistpack[c].Height:=head.Height;
+            starlistpack[c].mzero :=head.mzero;
           end
           else
             starlistpack[c].Height := 0; {mark as not valid measurement}
@@ -8498,9 +8478,7 @@ begin
 
             mainwindow.image1.Canvas.Rectangle(starX - size, starY - size,
             starX + size, starY + size);{indicate hfd with rectangle}
-//            magn:=ln(starlistpack[c].flux_ratio /starlistpack[c].starlist[3, i]{flux})/ln(2.511886432);
-            magn:=MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10);
-
+            magn:=starlistpack[c].MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10);
 
             mainwindow.image1.Canvas.textout(starX + size, starY - size,inttostr(round(magn * 10)) );{add magnitude as text}
           end;{measure marked stars}
@@ -9219,7 +9197,7 @@ end;
 
 procedure Tstackmenu1.star_database1Change(Sender: TObject);
 begin
-  close_star_database;{Close the tfilestream. Otherwise the frist search doesn't work always for D databasee. 2023}
+  close_star_database;{Close the tfilestream. Otherwise the first search doesn't work always for D databasee. 2023}
 end;
 
 
@@ -9241,7 +9219,7 @@ begin
     SysUtils.FindClose(SearchRec);
     star_database1.items.add('auto');
   end;
-  mzero := 0;{reset flux calibration. Required if V50 is selected instead of D50}
+  head.mzero := 0;{reset flux calibration. Required if V50 is selected instead of D50}
 end;
 
 
@@ -9279,6 +9257,7 @@ begin
   stackmenu1.monitor_latitude1.Text := lat_default;
   stackmenu1.monitor_longitude1.Text := long_default;
 end;
+
 
 procedure Tstackmenu1.tab_photometry1Show(Sender: TObject);
 begin

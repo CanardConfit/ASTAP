@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 267
+  Left = 538
   Height = 795
   Hint = ' '
-  Top = 152
+  Top = 165
   Width = 1275
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -147,7 +147,7 @@ object mainwindow: Tmainwindow
   object image_north_arrow1: TImage
     Left = 475
     Height = 49
-    Hint = 'Long axis is north, small axis is east.'
+    Hint = 'Long axis is north, small axis is east,  F indicates flipped image.'
     Top = 116
     Width = 49
     ParentShowHint = False
@@ -1807,13 +1807,13 @@ object mainwindow: Tmainwindow
       Enabled = False
       ImageIndex = 37
       object simbad_annotation_deepsky1: TMenuItem
-        Caption = 'Simbad, deepsky annotation'
+        Caption = 'Deepsky annotation (Simbad)'
         Hint = 'Annotate the selected area with deepsky object info from Simbad'
         ImageIndex = 38
         OnClick = gaia_star_position1Click
       end
       object simbad_annotation_deepsky_filtered1: TMenuItem
-        Caption = 'Simbad, deepsky annotion filtered'
+        Caption = 'Deepsky annotion filtered (Simbad)'
         Hint = 'Annotate the selected area with deepsky object info from Simbad. A input will be shown to filter on object type.'
         ImageIndex = 38
         OnClick = simbad_annotation_deepsky_filtered1Click
@@ -1822,14 +1822,14 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object simbad_annotation_star1: TMenuItem
-        Caption = 'Simbad, star annotation'
+        Caption = 'Star annotation (Simbad)'
         Hint = 'Annotate the selected area with star info from Simbad'
         ImageIndex = 18
         OnClick = gaia_star_position1Click
       end
       object vizier_gaia_annotation1: TMenuItem
-        Caption = 'Vizier, Gaia star annotation'
-        Hint = 'Annotate the selected area with Gaia star info from Simbad'
+        Caption = 'Magnitude annotation (transformed Gaia, Vizier)'
+        Hint = 'Annotate the selected area with transformed Gaia magnitudes from Vizier'
         ImageIndex = 18
         OnClick = gaia_star_position1Click
       end
@@ -1837,23 +1837,23 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object simbad_query1: TMenuItem
-        Caption = 'Simbad, browser query'
+        Caption = 'Browser query (Simbad)'
         Hint = 'Retrieve online info of the select area in the default browser.  To select an area, first hold the right mouse down and pull a rectangle.'
         ImageIndex = 38
         OnClick = gaia_star_position1Click
       end
       object hyperleda_guery1: TMenuItem
-        Caption = 'HyperLeda, browser query'
+        Caption = 'Browser query (HyperLeda)'
         Hint = 'Retrieve online info of the select area in the default browser. To select an area, first hold the right mouse down and pull a rectangle.'
         OnClick = gaia_star_position1Click
       end
       object ned_query1: TMenuItem
-        Caption = 'NED, browser query'
+        Caption = 'Browser query (Ned)'
         Hint = 'Retrieve online info of the select area in the default browser.  To select an area, first hold the right mouse down and pull a rectangle.'
         OnClick = gaia_star_position1Click
       end
       object gaia_star_position1: TMenuItem
-        Caption = 'Gaia, browser query'
+        Caption = 'Browser query (Gaia)'
         Hint = 'Will display the online information for any star within 5 arc seconds of the centroid. The Gaia BP (blue) magnitude matches the best with visual.'
         ImageIndex = 36
         OnClick = gaia_star_position1Click

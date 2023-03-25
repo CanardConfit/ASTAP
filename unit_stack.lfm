@@ -3750,6 +3750,7 @@ object stackmenu1: Tstackmenu1
           'Online Gaia->B'
           'Online Gaia->R'
         )
+        OnChange = reference_database1Change
         ParentFont = False
         TabOrder = 16
         Text = 'Local star database'

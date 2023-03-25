@@ -100,14 +100,14 @@ begin
     form_sqm1.green_message1.caption:='';
   end;
 
-  if ((mzero=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
+  if ((head.mzero=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
     flux_aperture:=99;{calibrate for extended objects}
-    plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude},false{online});
+    plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
   end;
   result:=false;
-  if mzero>0 then
+  if head.mzero>0 then
   begin
     if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
 
@@ -140,7 +140,7 @@ begin
     end;
 
    // sqmfloat:=( ln(flux_ratio/((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec}) )/ln(2.511886432) );
-    sqmfloat:=mzero - ln((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;
+    sqmfloat:=head.mzero - ln((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;
 
     calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,alt);
 

@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -570,6 +570,7 @@ type
     ybinning      : double;//binning for noise calculations
     xpixsz        : double;//Pixel Width in microns (after binning)
     ypixsz        : double;//Pixel height in microns (after binning)
+    mzero         : double;//flux calibration factor
     set_temperature : integer;
     dark_count      : integer;
     light_count     : integer;
@@ -735,6 +736,8 @@ var {################# initialised variables #########################}
   pedestal            : integer=0;
   egain_extra_factor  : integer=16;
   egain_default       : double=1;
+  gaia_type: string=''; //which type of database in use for photometry
+
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
@@ -910,7 +913,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
-     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides;
+     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -952,7 +955,7 @@ var {################# initialised variables #########################}
   font_style :   tFontStyles=[];
   font_color : tcolor= cldefault;
   freetext : string='';
-  annotation_magn: string='15';
+  annotation_magn: string='12';
   magn_type : string='BP';
 
 const
@@ -1001,6 +1004,7 @@ begin
 
     head.xbinning:=1;{normal}
     head.ybinning:=1;
+    head.mzero:=0;{factor to calculate magnitude from flux, new file so set to zero}
 
     date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';siteelev:='';
@@ -1010,7 +1014,6 @@ begin
     pressure:=1010; {mbar/hPa}
     annotated:=false; {any annotation in the file}
 
-    mzero:=0;{factor to calculate magnitude from flux, new file so set to zero}
     sqm_value:='';
     equinox:=2000;
     bandpass:=0;
@@ -1018,7 +1021,7 @@ begin
 
   head.date_obs:='';
   head.calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
-  head.filter_name:='';
+  head.filter_name:='CV';//none
   head.naxis:=-1;{assume failure}
   head.naxis3:=1;
   head.datamin_org:=0;
@@ -1499,7 +1502,7 @@ begin
           end;
 
           if ((header[i]='M') and (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') and (header[i+5]=' ')) then
-            mzero:=validate_double;{photometry calibration}
+            head.mzero:=validate_double;{photometry calibration}
 
           if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
              xbayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
@@ -9024,7 +9027,7 @@ begin
     repeat
       if aavso_update_required then
       begin
-        memo2_message('Downloading data from AAVSO.');
+        memo2_message('Downloading online data from AAVSO as set in tab Photometry.');
         if download_vsx(lim_magn)=false then begin memo2_message('Error!');break; end;
         if download_vsp(lim_magn)=false then begin memo2_message('Error!');break; end;
       end;
@@ -9033,6 +9036,7 @@ begin
   end
   else
   begin //local version
+    memo2_message('Using local variable database. Online version can be set in tab Photometry');
     load_variable;{Load the database once. If loaded no action}
     plot_deepsky; {Plot the deep sky object on the image}
   end;
@@ -9348,14 +9352,14 @@ begin
   if ((head.cd1_1=0) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    if ((mzero=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
+    if ((head.mzero=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
     begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       flux_aperture:=99;{calibrate for extended objects}
 
-      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude},false{online});
+      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
     end;
-    if mzero=0 then begin beep; exit;end;
+    if head.mzero=0 then begin beep; exit;end;
 
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -9411,7 +9415,7 @@ begin
     end;
 
     if flux<1 then flux:=1;
-    str(MZERO - ln(flux)*2.5/ln(10):0:1,mag_str);
+    str(head.MZERO - ln(flux)*2.5/ln(10):0:1,mag_str);
 
     if (saturation_counter*65500/flux)<0.03 then mag_str:='MAGN='+mag_str {allow about 3% saturation}
                                             else mag_str:='MAGN <'+mag_str+', '+inttostr(saturation_counter) +' saturated pixels !';
@@ -9971,7 +9975,7 @@ begin
  if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
-  if ((mzero=0) or (aperture_ratio<>apert){new calibration required})  then
+  if ((head.mzero=0) or (aperture_ratio<>apert){new calibration required})  then
   begin
     memo2_message('Photometric calibration of the measured stellar flux.');
     annulus_radius:=14;{calibrate for extended objects}
@@ -9992,7 +9996,7 @@ begin
     else
     memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
 
-    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude},false{online});
+    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
   end;
 end;
 
@@ -10015,7 +10019,7 @@ const
   calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting. Use local star databases only}
 
 
-  if mzero=0 then
+  if head.mzero=0 then
   begin
     beep;
     img_sa:=nil;
@@ -10110,7 +10114,7 @@ const
               if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
               img_sa[0,i,j]:=+1;{mark as star area}
             end;
-           measured_magn:=round(10*(MZERO - ln(flux)*2.5/ln(10)));{magnitude x 10}
+           measured_magn:=round(10*(head.MZERO - ln(flux)*2.5/ln(10)));{magnitude x 10}
            if measured_magn<magn_limit_database-10 then {bright enough to be in the database}
            begin
              magn_database:=default;{1000}
@@ -10223,7 +10227,7 @@ begin
 
   calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting}
 
-  if mzero=0 then
+  if head.mzero=0 then
   begin
     beep;
     Screen.Cursor:=crDefault;
@@ -10262,7 +10266,7 @@ begin
       mainwindow.image1.Canvas.moveto(starX-2*size,starY);
       mainwindow.image1.Canvas.lineto(starX-size,starY);
 
-      lim_magn:=round(10*(mzero - ln(stars[3,i]{flux})*2.5/ln(10)));
+      lim_magn:=round(10*(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10)));
       image1.Canvas.textout(starX,starY-text_height,inttostr(lim_magn) );{add magnitude as text}
     end;
   end
@@ -10833,6 +10837,7 @@ begin
   wide_field_stars:=nil; {free wide_field_database}
   recent_files.free;
   vsp:=nil;
+  online_database:=nil; // free mem
 end;
 
 
@@ -12236,7 +12241,7 @@ begin
 //  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
   calibrate_photometry; {measure hfd and calibrate for point or extended sources depending on the setting}
-  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn},false{online});{plot stars}
+  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn});{plot stars}
 end;
 
 
@@ -13073,11 +13078,11 @@ begin
 end;
 
 
-procedure plot_vizier(info,magn_type:string); //plot online info Gaia from Vizier
+procedure plot_vizier(info,filter:string); //plot online info Gaia from Vizier
 var
-  regel,simobject,mag        : string;
-  p1,p2,p3,p4,count          : integer;
-  rad,decd,G,Bp,Rp,BminR,R,B,V,Vt,Bt  : double;
+  regel,simobject           : string;
+  p1,p2,p3,p4,count         : integer;
+  rad,decd,G,Bp,Rp,themagn  : double;
   datalines : boolean;
   slist: TStringList;
 
@@ -13120,53 +13125,10 @@ begin
           Bp:=strtofloat1(copy(regel,p3+1,p4-p3-1));
           Rp:=strtofloat1(copy(regel,p4+1,99));
 
-          mag:='';
+          themagn:=transform_gaia(filter,g,bp,rp);//transformation of Gaia magnitudes
 
-          if magn_type='G' then
-            mag:=inttostr(round(G*10)) {magn}
-          else
-          if magn_type='BP' then
-            mag:=inttostr(round(Bp*10)) {magn}
-          else
-          begin //transformations
-            if ((G>0) and (BP>0) and (RP>0)) then //transformation is possible
-            begin
-              BminR:=Bp-Rp;
-              if magn_type='V' then
-              begin
-                if ((BminR>=-0.5) and (BminR<=5.0)) then {formula valid edr3, about 99% of stars}
-                begin
-                  V:=G + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;  {edr3}
-                  mag:=inttostr(round(V*10));
-                end;
-              end
-              else
-              if magn_type='B' then
-              begin
-                if ((BminR>-0.3) and (BminR<3.0)) then
-                begin
-                  Vt:=G + 0.01077 + 0.0682*(BminR) + 0.2387*sqr(BminR) -0.02342*sqr(BminR)*(BminR) ;
-                  Bt:=G + 0.004288 + 0.8547*(BminR) -0.1244*sqr(BminR)+ 0.9085*sqr(BminR)*(BminR) - 0.4843*sqr(sqr(BminR))+ 0.06814*sqr(sqr(BminR))*BminR ;
-                  V:=G + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;
-                  //B - V = 0.850 * (BT - VT)
-                  B:=0.850 * (Bt-Vt)+V; //from Tycho catalog
-                  mag:=inttostr(round(B*10));
-                end;
-              end
-              else
-              if magn_type='R' then
-              begin
-                if ((BminR>0 {{remark J, could be 0.2}) and (BminR<4.0)) then
-                begin
-                  R:=G + 0.02275 - 0.3961*(BminR) + 0.1243*sqr(BminR)+ 0.01396*sqr(BminR)*(BminR) - 0.003775*sqr(sqr(BminR)) ;  {edr3}
-                  mag:=inttostr(round(R*10));
-                end;
-              end;
-            end;//transformation is possible
-          end;
-
-          if mag<>'' then //valid value
-             simobject:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+mag;
+          if themagn<>0 then //valid value
+             simobject:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+inttostr(round(10*themagn));
 
           //RA[0..864000], DEC[-324000..324000], name(s), length [0.1 min], width[0.1 min], orientation[degrees]
           //659250,-49674,M16/NGC6611/Eagle_Nebula,80
@@ -14082,10 +14044,15 @@ begin
      if adu_e=0 then snr_str:='SNR='+snr_str // noise based on ADU's
                 else snr_str:='SNR_e='+snr_str;// noise based on electrons
 
-     if mzero<>0 then {offset calculated in star annotation call}
+     if head.mzero<>0 then {offset calculated in star annotation call}
      begin
-       str(mzero -ln(flux)*2.5/ln(10):0:2,mag_str);
-       mag_str:=', MAGN='+mag_str;
+       str(head.mzero -ln(flux)*2.5/ln(10):0:2,mag_str);
+       if gaia_type='' then
+         mag_str:=', MAGN='+mag_str
+       else
+         mag_str:=', '+gaia_type+'='+mag_str
+
+
      end
      else mag_str:='';
 

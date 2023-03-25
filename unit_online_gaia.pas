@@ -15,13 +15,12 @@ uses
 
 function read_stars_online(telescope_ra,telescope_dec,search_field, magli: double): boolean;{read star from star database}
 procedure convert_magnitudes(filter : string); //convert gaia magnitude to a new magnitude
+function transform_gaia(filter : string; magG,magBP,magRP: double):double;//transformation of Gaia magnitudes
 
 var
   online_database : star_list;//The output. Filled with ra,dec,magn
   gaia_ra: double=0;
   gaia_dec: double=0;
-  gaia_type: string='BP';
-
 
 implementation
 
@@ -29,88 +28,78 @@ uses
   unit_astrometric_solving;
 
 
+function transform_gaia(filter : string; magG,magBP,magRP: double):double;//transformation of Gaia magnitudes
+var
+  Gflux,BPflux,RPflux,c,BminR,Bt,Vt,V : double;
+begin
+  if filter='BP' then result:=magBP
+  else
+  begin
+    result:=0;//assume failure
+
+    if ((magG<>0) and
+        (magBP<>0) and
+        (magRP<>0))then
+    begin
+      {quality check by flux ratio}
+
+      //C:=(BPflux +RPflux)/Gflux  is normally a little above 1 so about 1.15.. So chapter 6 "Gaia Early Data Release 3 Photometric content and validation"
+      //if flux is calculated from the magnitudes it is a little above 2}
+
+      //De flux kan ik ook terugrekenen van de magnitude. Dat is gemakkelijker want de flux heb ik nog niet in de database.
+      //Het blijkt als je de flux uitrekend dan is de ratio (BPflux+RPflux)/Gflux meestal iets boven circa 2. Maar loopt voor de
+      //slechte waarden op tot wel 27. Het idee is nu wanneer deze ratio groter dan 4 en G>BP de G magnitude te gebruiken, anders BP.
+      //De conditie G>BP is nodig voor hele rode sterren om te voorkomen dat je een infrarood magnitude neemt.
+      Gflux:=power(10,(22-magG)/2.5);
+      BPflux:=power(10,(22-magBP)/2.5);
+      RPflux:=power(10,(22-magRP)/2.5);
+      c:=(BPflux+RPflux)/Gflux;
+      if ((c>4) and (magG>magBP))=false then {no straylight do not rely on BP and RP. C is normally a little above 2}
+      begin
+        BminR:=magBP-magRP;
+        if filter='V' then //Johnson-Cousins-V
+        begin
+          if ((BminR>=-0.5) and (BminR<=5.0)) then {formula valid edr3, about 99% of stars}
+            result:=magG + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;  {edr3}
+        end
+        else
+        if filter='R' then //Johnson-Cousins R
+        begin
+          if ((BminR>0 {remark J, could be 0.2}) and (BminR<4.0)) then
+            result:=magG + 0.02275 - 0.3961*(BminR) + 0.1243*sqr(BminR)+ 0.01396*sqr(BminR)*(BminR) - 0.003775*sqr(sqr(BminR)) ;  {edr3}
+        end
+        else
+        if filter='B' then //Johnson-B
+        begin
+          if ((BminR>-0.3) and (BminR<3.0)) then
+          begin
+            Vt:=magG + 0.01077 + 0.0682*(BminR) + 0.2387*sqr(BminR) -0.02342*sqr(BminR)*(BminR) ;
+            Bt:=magG + 0.004288 + 0.8547*(BminR) -0.1244*sqr(BminR)+ 0.9085*sqr(BminR)*(BminR) - 0.4843*sqr(sqr(BminR))+ 0.06814*sqr(sqr(BminR))*BminR ;
+            V:=magG + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;
+
+            result:=V + 0.850*(Bt-Vt); //from Tycho catalog, B - V = 0.850 * (BT - VT)
+          end;
+        end;
+      end;
+    end;
+  end;
+end;
+
+
 procedure convert_magnitudes(filter : string); //convert gaia magnitude to a new magnitude
 var
   i : integer;
-  magG,magBP,magRP,Gflux,BPflux,RPflux,c,BminR,Bt,Vt,B,V : double;
 begin
   if filter=gaia_type then exit;//no action. Already the correct type
   for i:=0 to length(online_database[0])-1 do
-  begin
-    magG:=online_database[2,i];
-    magBP:=online_database[3,i];
-    magRP:=online_database[4,i];
-
-    if filter='BP' then online_database[5,i]:=online_database[3,i]
-    else
-    begin
-      online_database[5,i]:=0;//clear the calculated magnitude
-
-      if ((magG<>0) and
-          (magBP<>0) and
-          (magRP<>0))then
-      begin
-        {quality check by flux ratio}
-        //SELECT gaia_source.ra,gaia_source.dec, gaia_source.pmra, gaia_source.pmdec, gaia_source.phot_g_mean_mag, gaia_source.phot_bp_mean_mag, gaia_source.phot_rp_mean_mag, phot_g_mean_flux, phot_bp_mean_flux, phot_rp_mean_flux
-        //FROM gaiaedr3.gaia_source
-        //WHERE (gaiaedr3.gaia_source.phot_bp_mean_mag>=12.7 AND gaiaedr3.gaia_source.phot_bp_mean_mag<12.8)
-        //
-        //C:=(BPflux +RPflux)/Gflux  is normally a little above 1 so about 1.15.. So chapter 6 "Gaia Early Data Release 3 Photometric content and validation"
-        //if flux is calculated from the magnitudes it is a little above 2}
-
-        //De flux kan ik ook terugrekenen van de magnitude. Dat is gemakkelijker want de flux heb ik nog niet in de database.
-        //Het blijkt als je de flux uitrekend dan is de ratio (BPflux+RPflux)/Gflux meestal iets boven circa 2. Maar loopt voor de
-        //slechte waarden op tot wel 27. Het idee is nu wanneer deze ratio groter dan 4 en G>BP de G magnitude te gebruiken, anders BP.
-        //De conditie G>BP is nodig voor hele rode sterren om te voorkomen dat je een infrarood magnitude neemt.
-        Gflux:=power(10,(20-magG)/2.5);
-        BPflux:=power(10,(20-magBP)/2.5);
-        RPflux:=power(10,(20-magRP)/2.5);
-        c:=(BPflux+RPflux)/Gflux;
-        if ((c>4) and (magG>magBP))=false then {no straylight do not rely on BP and RP. C is normally a little above 2}
-        begin
-          BminR:=magBP-magRP;
-          if filter='V' then //Johnson-Cousins-V
-          begin
-            if ((BminR>=-0.5) and (BminR<=5.0)) then {formula valid edr3, about 99% of stars}
-              online_database[5,i]:=magG + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;  {edr3}
-          end
-          else
-          if filter='R' then //Johnson-Cousins R
-          begin
-            if ((BminR>0 {remark J, could be 0.2}) and (BminR<4.0)) then
-              online_database[5,i]:=magG + 0.02275 - 0.3961*(BminR) + 0.1243*sqr(BminR)+ 0.01396*sqr(BminR)*(BminR) - 0.003775*sqr(sqr(BminR)) ;  {edr3}
-          end
-          else
-          if filter='B' then //Johnson-B
-          begin
-            if ((BminR>-0.3) and (BminR<3.0)) then
-            begin
-              //-0.01077 	-0.0682 	-0.2387 	0.02342
-              Vt:=magG + 0.01077 + 0.0682*(BminR) + 0.2387*sqr(BminR) -0.02342*sqr(BminR)*(BminR) ;
-              //-0.004288 	-0.8547 	0.1244 	-0.9085 	0.4843 	-0.06814
-              Bt:=magG + 0.004288 + 0.8547*(BminR) -0.1244*sqr(BminR)+ 0.9085*sqr(BminR)*(BminR) - 0.4843*sqr(sqr(BminR))+ 0.06814*sqr(sqr(BminR))*BminR ;
-
-              V:=magG + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;
-
-              //B - V = 0.850 * (BT - VT)
-              B:=0.850 * (Bt-Vt)+V; //from Tycho catalog
-              online_database[5,i]:=B;
-            end;
-          end;
-
-        end;
-      end;
-
-    end;
-  end;
-
-  gaia_type:=filter;//store magnitude system
-
+    online_database[5,i]:=transform_gaia(filter,online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
+  gaia_type:=filter;//remember last transformation
 end;
+
 
 procedure extract_stars(slist:Tstringlist); //extract stars
 var
-  regel,s  : string;
+  regel  : string;
   p1,p2,p3,p4,count,count2,err : integer;
   g,bp,rp,ra,dec   : double;
   datalines : boolean;
@@ -194,7 +183,7 @@ begin
     slist := TStringList.Create;
 
     mag_lim:=floattostrF(magli,ffGeneral,3,1);
-    memo2_message('Downloading Gaia stars from Vizier down to magnitude '+mag_lim+'. Be patient. This can take 20 seconds or more ....');
+    memo2_message('Downloading Gaia stars from Vizier down to magnitude '+mag_lim+'. This can take 20 seconds or more ......');
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=200000&Gmag=<'+mag_lim;
        // url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+'&-c.bs=533.293551/368.996043&-out.max=1000&Gmag=%3C23
     slist.Text := get_http(url);//move info to Tstringlist

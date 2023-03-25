@@ -16,7 +16,7 @@ procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
-procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn,online: boolean);{flux calibration,  annotate, report limiting magnitude}
+procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
@@ -32,7 +32,6 @@ var
   naam2,naam3,naam4: string;
 
 var  {################# initialised variables #########################}
-  mzero                  : double=0;
   limiting_magnitude     : double=0;{magnitude where snr is 5}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
   database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
@@ -40,7 +39,7 @@ var  {################# initialised variables #########################}
 implementation
 
 uses
-  unit_star_database, unit_stack, unit_star_align, unit_online_gaia;
+  unit_star_database, unit_stack, unit_star_align, unit_online_gaia, unit_astrometric_solving;
 
 const font_5x9 : packed array[33..126,0..8,0..4] of byte=  {ASTAP native font for part of code page 437}
 ((
@@ -1767,10 +1766,10 @@ begin
 end;
 
 
-procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn, online: boolean);{flux calibration,  annotate, report limiting magnitude}
+procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   dra,ddec, telescope_ra,telescope_dec,fov,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,
+  magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,xx,yy,magn_limit_min,magn_limit_max,cv,x3,y3 : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
   flip_horizontal, flip_vertical        : boolean;
@@ -1818,13 +1817,13 @@ var
         begin {annotate}
           if Bp_Rp<>999 then {colour version}
           begin
-            mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(mag2))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
+            mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
             mainwindow.image1.canvas.pen.color:=Gaia_star_color(round(Bp_Rp));{color circel}
           end
           else
-            mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(mag2)) );
+            mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn)) );
 
-          len:=round((200-mag2)/5.02);
+          len:=round((200-magn)/5.02);
           mainwindow.image1.canvas.ellipse(round(x2-len),round(y2-len),round(x2+1+len),round(y2+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
 
@@ -1852,7 +1851,7 @@ var
               end;
 
 
-              flux_ratio_array[counter_flux_measured]:=flux*power(2.511886432,(mag2/10));//flux ratio measured. Note mag increased, flux decreased. So product should be constant/
+              flux_ratio_array[counter_flux_measured]:=flux*power(2.511886432,(magn/10));//flux ratio measured. Note mag increased, flux decreased. So product should be constant/
 
               if report_lim_magn then
               begin
@@ -1907,6 +1906,7 @@ begin
     counter_flux_measured:=0;
 
     max_nr_stars:=round(head.width*head.height*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
+    fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
     if flux_calibration then
     begin
@@ -1916,18 +1916,49 @@ begin
     end;
 
     {sets file290 so do before fov selection}
-    if online=false then
+    if stackmenu1.reference_database1.itemindex=0 then //local database as specified in Photometry tab
       begin
       if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
       memo2_message('Using star database '+uppercase(name_database));
+      if copy(name_database,1,1)='V' then gaia_type:='V local' else gaia_type:='BP local';// for reporting
     end
     else
-    begin
-      memo2_message('Using Online Gaia database');
-      database_type:=0;
+    begin  //Reading online database. Update if required
+      memo2_message('Using Online Gaia database as set in tab Photometry.');
+
+      ang_sep(gaia_ra,gaia_dec,head.ra0,head.dec0,sep);
+      if ((sep>0.15*fov_org) or (online_database=nil)) then  //other sky area, update Gaia database online
+      begin
+        if select_star_database(stackmenu1.star_database1.text,fov_org {fov})=false then exit;
+
+     //  max_nr_stars:=20;
+        if read_stars(head.ra0,head.dec0,fov_org, database_type, max_nr_stars,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this.Max magnitude is stored in mag2}
+        begin //maximum magnitude mag2 is known for the amount of stars for calibration using online stars
+          memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFgeneral,3,1)+ ' for '+inttostr( max_nr_stars)+' stars')  ;
+          if read_stars_online(head.ra0,head.dec0,fov_org, mag2/10 {max_magnitude})= false then
+          begin
+            memo2_message('Error. failure accessing Vizier for Gaia star database!');
+            Screen.Cursor:=crDefault;
+            exit;
+          end;
+        end
+        else
+        begin
+          memo2_message('Error 1476');
+          Screen.Cursor:=crDefault;
+          exit;
+        end;
+      end;
+      database_type:=0;//online
+      if pos('BP',stackmenu1.reference_database1.text)>0 then convert_magnitudes('BP') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      else
+      if pos('V',stackmenu1.reference_database1.text)>0 then convert_magnitudes('V') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      else
+      if pos('R',stackmenu1.reference_database1.text)>0 then convert_magnitudes('R') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      else
+      if pos('B',stackmenu1.reference_database1.text)>0 then convert_magnitudes('B'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
     end;
 
-    fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
@@ -1938,8 +1969,7 @@ begin
       else {.290 files}
       fov:=min(fov_org,9.53*pi/180); {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
 
-
-      if fov_org>fov then max_nr_stars:=round(max_nr_stars*fov/fov_org);{reduce number of stars for very large FOV}
+      if fov_org>fov then max_nr_stars:=round(max_nr_stars*sqr(fov)/sqr(fov_org));{reduce number of stars for very large FOV}
 
       find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
 
@@ -1948,7 +1978,7 @@ begin
       begin
         if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * frac1);
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
       end;
 
       {read 2th area}
@@ -1956,7 +1986,7 @@ begin
       begin
         if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
       end;
 
       {read 3th area}
@@ -1964,14 +1994,14 @@ begin
       begin
         if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
       end;
       {read 4th area}
       if area4<>0 then {read 4th area}
       begin
         if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
       end;
 
 
@@ -1985,7 +2015,7 @@ begin
       count:=0;
       while ((star_total_counter<max_nr_stars) and  (count<length(wide_field_stars) div 3) ) do {star file 001 database read. Read up to nrstars_required}
       begin
-        mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
+        magn:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, magn,ra2,dec2,mag3........}
         ra2:=wide_field_stars[count*3+1];
         dec2:=wide_field_stars[count*3+2];
         ang_sep(ra2,dec2,telescope_ra,telescope_dec, sep);{angular seperation}
@@ -2006,8 +2036,8 @@ begin
        begin
          ra2:=online_database[0,count];
          dec2:=online_database[1,count];
-         mag2:=online_database[5,count]*10;//magnitude
-         if mag2<>0 then
+         magn:=online_database[5,count]*10;//magnitude
+         if magn<>0 then
            plot_star;{add star}
          inc(count);
        end;
@@ -2019,9 +2049,9 @@ begin
       begin
         get_best_mean(flux_ratio_array,counter_flux_measured {length},flux_ratio,standard_error_mean,cv );
 
-        mzero:=2.5*ln(flux_ratio)/ln(10);
+        head.mzero:=2.5*ln(flux_ratio)/ln(10);
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
-        update_float('MZERO   =',' / Magnitude Zero Point. Magn=-2.5*log(flux)+MZERO',mzero)
+        update_float('MZERO   =',' / Magnitude Zero Point. Magn=-2.5*log(flux)+MZERO',head.mzero)
         else
         update_text('MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
 
@@ -2057,6 +2087,8 @@ begin
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+' pixels.'+
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
+
+        memo2_message('Photometric calibration is only valid if current filter passband ('+head.filter_name+ ') is similar as used the reference database ('+gaia_type+'). CV≈BP,  TG≈V');
 
         if report_lim_magn then
         begin
