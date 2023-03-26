@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -650,7 +650,7 @@ var
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
   focus_temp,cblack,cwhite,sqmfloat,pressure   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
-  date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value   : string;
+  date_avg,telescop,instrum,origin,sqm_value   : string;
 
   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
@@ -1006,7 +1006,7 @@ begin
     head.ybinning:=1;
     head.mzero:=0;{factor to calculate magnitude from flux, new file so set to zero}
 
-    date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+    date_avg:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';siteelev:='';
 
     focus_temp:=999;{assume no data available}
@@ -1016,7 +1016,6 @@ begin
 
     sqm_value:='';
     equinox:=2000;
-    bandpass:=0;
   end;
 
   head.date_obs:='';
@@ -1540,8 +1539,6 @@ begin
             end;
           end;
 
-          if ((header[i]='U') and (header[i+1]='T')) then
-                   UT:=get_string;
           if ((header[i]='T') and (header[i+1]='E')  and (header[i+2]='L') and (header[i+3]='E') and (header[i+4]='S') and (header[i+5]='C') and (header[i+6]='O')) then
                    TELESCOP:=get_string;
           if ((header[i]='O') and (header[i+1]='R')  and (header[i+2]='I') and (header[i+3]='G') and (header[i+4]='I') and (header[i+5]='N')) then
@@ -1679,11 +1676,6 @@ begin
           if ((header[i]='S') and (header[i+1]='U')  and (header[i+2]='B') and (header[i+3]='S') and (header[i+4]='A') and (header[i+5]='M')) then
                   subsamp:=round(validate_double);{subsampling value}
          {end using DSS polynome plate fit}
-
-          if ((header[i]='P') and (header[i+1]='L')  and (header[i+2]='T') and (header[i+3]='L') and (header[i+4]='A') and (header[i+5]='B') and (header[i+6]='E')) then {Deep sky survey}
-                   PLTLABEL:=get_string;
-          if ((header[i]='P') and (header[i+1]='L')  and (header[i+2]='A') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='I') and (header[i+6]='D')) then
-                   PLATEID:=get_string;
 
 
         end;{read as light #####################################################################################################################################3#############################}
@@ -5497,8 +5489,6 @@ end;
 
 
 procedure old_to_new_WCS(var head:theader);{ convert old WCS to new, revision 2022}
-var
-  sign  : integer;
 begin
   // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
   // Representations of World Coordinates in FITS paper II aah3860
@@ -8834,7 +8824,7 @@ function download_vsp(limiting_mag: double) : boolean;//AAVSO API access
 var
   s   : string;
   val : char;
-  count,i,j,m,er,fov,dummy : integer;
+  count,i,j,fov,dummy : integer;
   errorRA,errorDEC :boolean;
 begin
   result:=false;
@@ -11140,14 +11130,11 @@ begin
   'Origin: '+origin+#13+#10+
   'Telescope: '+ telescop+#13+#10+
   'Instrument: '+instrum+#13+#10+
+  'Filter: '+head.filter_name+#13+#10+
+  'Calibration-status: '+head.calstat+#13+#10+
   'Date-obs: '+head.date_obs+#13+#10+
-  'UT-time: '+UT+#13+#10+
-  'Plt-label: '+Pltlabel+#13+#10+
-  'Plate-id: '+plateid+#13+#10+
-  'Bandpass: '+floattostr(bandpass)+#13+#10+
-  'Equinox: '+floattostr(equinox)+#13+#10+
   'Exposure-time: '+floattostr(head.exposure));
-  messagebox(mainwindow.handle,bericht,'FITS HEADER',MB_OK);
+  messagebox(mainwindow.handle,bericht,'Basic fits header',MB_OK);
 end;
 
 
@@ -14047,12 +14034,7 @@ begin
      if head.mzero<>0 then {offset calculated in star annotation call}
      begin
        str(head.mzero -ln(flux)*2.5/ln(10):0:2,mag_str);
-       if gaia_type='' then
-         mag_str:=', MAGN='+mag_str
-       else
-         mag_str:=', '+gaia_type+'='+mag_str
-
-
+       mag_str:=', '+gaia_type+'='+mag_str
      end
      else mag_str:='';
 

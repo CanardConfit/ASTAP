@@ -1532,12 +1532,11 @@ begin
 
   warning_str:=warning_str + warning_downsample; {add the last warning from loop autoFOV}
 
-// this does not happen anymore with new database with fixed density.
-//  if nrstars_required>database_stars+4 then
-//  begin
-//    memo2_message('Warning, reached the limit of the star database!');
-//    warning_str:=warning_str+' Star database limit was reached!';
-//  end;
+  if nrstars_required>database_stars+4 then
+  begin
+    memo2_message('Warning, reached the limit of the star database!');
+    warning_str:=warning_str+' Star database limit was reached!';
+  end;
 
   if warning_str<>'' then
   begin

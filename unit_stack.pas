@@ -7075,7 +7075,7 @@ end;
 
 procedure Tstackmenu1.reference_database1Change(Sender: TObject);
 begin
-  if reference_database1.itemindex=0 then gaia_type:=''; //for image1mousemove magnitude indication
+ // if reference_database1.itemindex=0 then gaia_type:=''; //for image1mousemove magnitude indication
 
   if head.mzero <> 0 then
   begin

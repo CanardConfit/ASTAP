@@ -1657,7 +1657,7 @@ object mainwindow: Tmainwindow
     object Help: TMenuItem
       Caption = '&Help'
       object ShowFITSheader1: TMenuItem
-        Caption = 'Show FITS header'
+        Caption = 'Show basic FITS header'
         Enabled = False
         OnClick = ShowFITSheader1Click
       end

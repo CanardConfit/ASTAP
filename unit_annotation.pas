@@ -1324,7 +1324,7 @@ var
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,x,y : integer;
   overlap,sip  :boolean;
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
@@ -1520,13 +1520,13 @@ type
      x1,y1,x2,y2 : integer;
   end;
 var
-  dra,ddec, telescope_ra,telescope_dec,length1,width1,pa,flipped,
-  delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec : double;
+  dra,ddec, telescope_ra,telescope_dec, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,
+  COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec : double;
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y,count,counts,mode : integer;
-  overlap,sip  :boolean;
+  i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode : integer;
+  overlap          : boolean;
 
 
 begin
@@ -1543,7 +1543,7 @@ begin
     coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     cos_telescope_dec:=cos(telescope_dec);
-    if head.cdelt1*head.cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+//  if head.cdelt1*head.cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
 
     {$ifdef mswindows}
      mainwindow.image1.Canvas.Font.Name :='default';
@@ -1734,7 +1734,7 @@ end;
 procedure get_best_mean(list: array of double; leng : integer; out mean,standard_error_mean,cv : double);{Remove outliers from polulation using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   i,count         : integer;
-  median, mad,sd,confidence1,confidence2     : double;
+  median, mad,sd  : double;
 
 begin
  cv:=0;
@@ -1770,7 +1770,7 @@ procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: b
 var
   dra,ddec, telescope_ra,telescope_dec,fov,ra2,dec2,
   magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,xx,yy,magn_limit_min,magn_limit_max,cv,x3,y3 : double;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,magn_limit_min,magn_limit_max,cv : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
   flip_horizontal, flip_vertical        : boolean;
   flux_ratio_array,hfd_x_sd             : array of double;
@@ -1920,7 +1920,7 @@ begin
       begin
       if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
       memo2_message('Using star database '+uppercase(name_database));
-      if copy(name_database,1,1)='V' then gaia_type:='V local' else gaia_type:='BP local';// for reporting
+      if uppercase(copy(name_database,1,1))='V' then gaia_type:='magV' else gaia_type:='magBP';// for reporting
     end
     else
     begin  //Reading online database. Update if required
@@ -2225,15 +2225,14 @@ end;
 procedure measure_distortion(plot: boolean; out stars_measured : integer);{measure or plot distortion}
 var
   dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2,astrometric_error,sep   : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count,nrstars            : integer;
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,det,SIN_dec_ref,COS_dec_ref,
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error,sep   : double;
+  star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count                : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
   error_array                          : array of double;
 
     procedure plot_star;
     begin
-
      {5. Conversion (RA,DEC) -> (x,y)}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
       delta_ra:=ra2-head.ra0;
@@ -2465,8 +2464,8 @@ procedure plot_artificial_stars(img: image_array;magnlimit:double);{plot stars a
 var
   fitsX,fitsY, dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,sep,m_limit     : double;
-  x,y, max_nr_stars, area1,area2,area3,area4,count,nrstars                                     : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,m_limit     : double;
+  x,y,count                                                        : integer;
 
     procedure plot_star;
     begin
