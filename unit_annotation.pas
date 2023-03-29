@@ -2513,7 +2513,9 @@ begin
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view with 0% extra}
 
-    m_limit:=magnlimit+1;//go one magnitude fainter
+    m_limit:=magnlimit+1-0.5;//go one magnitude fainter
+    //since G magnitude is used to retrieve which about 0.5 magnitude fainter then mag limit. {BP~GP+0.5}
+
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 

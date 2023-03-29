@@ -10026,7 +10026,7 @@ var
   star_fwhm,snr,flux,magnd, hfd_median,max_radius,
   backgrR,backgrG,backgrB,delta                           : double;
   img_temp3 :image_array;
-
+  old_aperture : string;
 
 const
    default=1000;
@@ -10061,8 +10061,8 @@ const
         if counter>2 then
         begin
           backgrR:=Smedian(backgroundR,counter);
-          backgrG:=Smedian(backgroundG,counter);
-          backgrB:=Smedian(backgroundB,counter);
+          if head.naxis3>1 then backgrG:=Smedian(backgroundG,counter);
+          if head.naxis3>2 then backgrB:=Smedian(backgroundB,counter);
         end;
      finally
      end;
@@ -10075,7 +10075,12 @@ begin
 
   backup_img;{preserve img array and fits header of the viewer}
 
-  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting.}
+  old_aperture:=stackmenu1.flux_aperture1.text;
+  stackmenu1.flux_aperture1.text:='max';//full flux is here required
+
+  calibrate_photometry;
+
+  stackmenu1.flux_aperture1.text:=old_aperture;
 
 
   if head.mzero=0 then
@@ -10102,8 +10107,7 @@ begin
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_temp3[0,fitsX,fitsY]:=default;{clear}
-  plot_artificial_stars(img_temp3,1+magn_limit {measured});{create artificial image with database stars as pixels}
-  //since G magnitude is used it retrieves about 0.5 magnitude fainter then mag limit. {BP~GP+0.5}
+  plot_artificial_stars(img_temp3,magn_limit {measured});{create artificial image with database stars as pixels}
 
    analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
 
@@ -10121,7 +10125,7 @@ begin
           flux:=power(10,0.4*(head.mzero-magnd/10));
 
           flux:=flux*1.1;//compensate for flux errors
-           max_radius:=99999;
+          max_radius:=99999;
 
           for position:=0 to length(disk)-1 do //remove star flux
           begin
@@ -10185,7 +10189,7 @@ const
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting.}
+  calibrate_photometry;
 
 
   if head.mzero=0 then
@@ -10396,7 +10400,7 @@ begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting}
+  calibrate_photometry;
 
   if head.mzero=0 then
   begin
@@ -12254,7 +12258,7 @@ begin
                mainwindow.sip1Click(nil);{add sip coefficients}
             if add_lim_magn then
             begin
-              calibrate_photometry;{calibrate}
+              calibrate_photometry;
               update_float('LIM_MAGN=',' / estimated limiting magnitude for point sources',false ,magn_limit);
 
               mess:='';
@@ -12382,7 +12386,7 @@ begin
 //  annotation_magn :=inputbox('Annotate stars','Annotate up to magnitude:' ,annotation_magn);
 //  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
-  calibrate_photometry; {measure hfd and calibrate for point or extended sources depending on the setting}
+  calibrate_photometry;
   plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn});{plot stars}
 end;
 
