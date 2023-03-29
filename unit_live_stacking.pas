@@ -75,7 +75,7 @@ begin
   update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
   update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
   update_text ('DATE-OBS=',#39+JdToDate(jd_stop)+#39);{give end point exposures}
-  update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
+  update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum/counterL);{give midpoint of exposures}
   date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
   update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
   update_integer('LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}

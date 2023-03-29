@@ -1924,7 +1924,7 @@ begin
     end
     else
     begin  //Reading online database. Update if required
-      memo2_message('Using Online Gaia database as set in tab Photometry.');
+      memo2_message('Using Online Gaia database as set in tab Photometry. '+stackmenu1.reference_database1.text);
 
       ang_sep(gaia_ra,gaia_dec,head.ra0,head.dec0,sep);
       if ((sep>0.15*fov_org) or (online_database=nil)) then  //other sky area, update Gaia database online
@@ -1950,13 +1950,17 @@ begin
         end;
       end;
       database_type:=0;//online
-      if pos('BP',stackmenu1.reference_database1.text)>0 then convert_magnitudes('BP') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      if pos('BP',stackmenu1.reference_database1.text)>0 then
+        convert_magnitudes('BP') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
       else
-      if pos('V',stackmenu1.reference_database1.text)>0 then convert_magnitudes('V') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      if pos('V',stackmenu1.reference_database1.text)>0 then
+        convert_magnitudes('V') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
       else
-      if pos('R',stackmenu1.reference_database1.text)>0 then convert_magnitudes('R') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      if pos('R',stackmenu1.reference_database1.text)>0 then
+        convert_magnitudes('R') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
       else
-      if pos('B',stackmenu1.reference_database1.text)>0 then convert_magnitudes('B'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      if pos('B',stackmenu1.reference_database1.text)>0 then
+        convert_magnitudes('B'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
     end;
 
 
@@ -2051,7 +2055,7 @@ begin
 
         head.mzero:=2.5*ln(flux_ratio)/ln(10);
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
-        update_float('MZERO   =',' / Magnitude Zero Point. Magn=-2.5*log(flux)+MZERO',head.mzero)
+        update_float('MZERO   =',' / Magnitude Zero Point. Magn=-2.5*log(flux)+MZERO',false,head.mzero)
         else
         update_text('MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
 
@@ -2070,8 +2074,8 @@ begin
          // str(MZERO - 2.5*ln(flux)/ln(10)):0:1,mag_str);
          //
          // test proves it:
-         // x3:=ln(flux_ratio/flux)/ln(2.511886432);
-         // y3:=MZERO - 2.5*ln(flux)/ln(10);
+         // mag:=ln(flux_ratio/flux)/ln(2.511886432);
+         // mag:=MZERO - 2.5*ln(flux)/ln(10);
 
          //flux_ratio:=exp(mzero*ln(10)/2.5);
 
@@ -2088,7 +2092,7 @@ begin
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 
-        memo2_message('Photometric calibration is only valid if current filter passband ('+head.filter_name+ ') is similar as used the reference database ('+gaia_type+'). CV≈BP,  TG≈V');
+        memo2_message('Photometric calibration is only valid if current filter passband ('+head.filter_name+ ') is similar as passband reference database ('+gaia_type+'). CV≈BP,  TG≈V');
 
         if report_lim_magn then
         begin
@@ -2107,7 +2111,7 @@ begin
           //encircled flux =1-EXP(-0.5*(apert*2.3548/2))^2)
           flux_snr_7:=flux_snr_7*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
 
-          magn_limit:=ln(flux_ratio/flux_snr_7)/ln(2.511886432); //global variable.  same as:  mzero-ln(flux*2.5/ln(10)
+          magn_limit:=ln(flux_ratio/flux_snr_7)/ln(2.511886432); //global variable.  same as:  mzero-ln(flux)*2.5/ln(10)
           magn_limit_min:=ln( (flux_ratio-standard_error_mean)/flux_snr_7)/ln(2.511886432); {global variable}
           magn_limit_max:=ln( (flux_ratio+standard_error_mean)/flux_snr_7)/ln(2.511886432); {global variable}
           magn_limit_str:='Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   ('+floattostrF(magn_limit_min,ffgeneral,3,1)+'< m <'+floattostrF(magn_limit_max,ffgeneral,3,1)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
@@ -2202,12 +2206,12 @@ begin
     head.cdelt1:=head.cdelt1*factor;
     head.cdelt2:=head.cdelt2*factor;
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
 
     if factor<1 then memo2_message('Assuming barrel distortion.') else memo2_message('Assuming pincushion distortion.');
     memo2_message('Measured the undisturbed image scale in center and corrected image scale with factor '+floattostr6(factor)+'. Used '+inttostr(round(range*100))+'% of image');
@@ -2484,7 +2488,10 @@ var
 
       if ((x>=0) and (x<=head.width-1) and (y>=0) and (y<=head.height-1)) then {within image1}
       begin
-        img[0,x,y]:=min(img[0,x,y],mag2);{take brightest star}
+        if img[0,x,y]>=1000 then //empthy
+          img[0,x,y]:=mag2 //no star at this location
+        else
+          img[0,x,y]:=-2.5*ln(power(10,-0.4*img[0,x,y]) + power(10,-0.4*mag2))/ln(10);//combine magnitudes
       end;
     end;
 
@@ -2576,20 +2583,33 @@ begin
     begin //Database_type=0, Vizier online, Gaia
        count:=0;
        if read_stars_online(telescope_ra,telescope_dec,fov_org,m_limit {max_magnitude}) then
+       begin
+         if pos('BP',stackmenu1.reference_database1.text)>0 then
+           convert_magnitudes('BP') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+         else
+         if pos('V',stackmenu1.reference_database1.text)>0 then
+           convert_magnitudes('V') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+         else
+         if pos('R',stackmenu1.reference_database1.text)>0 then
+           convert_magnitudes('R') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+         else
+         if pos('B',stackmenu1.reference_database1.text)>0 then
+           convert_magnitudes('B'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+        end;
        while count<length(online_database[0]) do {read stars}
        begin
          ra2:=online_database[0,count];
          dec2:=online_database[1,count];
-         mag2:=online_database[3,count]*10; // BP magnitude
+         mag2:=online_database[5,count]*10; // transformed magnitude
          if mag2=0 then
-                mag2:=(online_database[2,count]+0.5)*10; //use G magnitude instead, {BP~GP+0.5}
+           mag2:=online_database[3,count]*10; // use BP magnitude
+         if mag2=0 then
+            mag2:=(online_database[2,count]+0.5)*10; //use G magnitude instead, {BP~GP+0.5}
          plot_star;{add star}
          inc(count);
        end;
        online_database:=nil; // free mem
      end;
-
-
     Screen.Cursor:=crDefault;
 
   end;{fits file}

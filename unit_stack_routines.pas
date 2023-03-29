@@ -261,34 +261,40 @@ begin
 
             if c=1 then
             begin
-               get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
-               cblack:=round( background_r);
+               get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
+               background_r:=bck.backgr;
+               //cblack:=round( background_r);
                counterR:=head.light_count ;counterRdark:=head.dark_count; counterRflat:=head.flat_count; counterRbias:=head.flatdark_count; exposureR:=round(head.exposure);temperatureR:=head.set_temperature;{for historical reasons}
             end;
             if c=2 then
             begin
-              get_background(0,img_loaded,true,false, {var} background_g,star_level);{unknown, do not calculate noise_level}
-              cblack:=round( background_g);
+              get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
+              background_g:=bck.backgr;
+              //cblack:=round( background_g);
               counterG:=head.light_count;counterGdark:=head.dark_count; counterGflat:=head.flat_count; counterGbias:=head.flatdark_count; exposureG:=round(head.exposure);temperatureG:=head.set_temperature;
             end;
             if c=3 then
             begin
-              get_background(0,img_loaded,true,false, {var} background_b,star_level);{unknown, do not calculate noise_level}
-              cblack:=round( background_b);
+              get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
+              background_b:=bck.backgr;
+              //cblack:=round( background_b);
               counterB:=head.light_count; counterBdark:=head.dark_count; counterBflat:=head.flat_count; counterBbias:=head.flatdark_count; exposureB:=round(head.exposure);temperatureB:=head.set_temperature;
             end;
             if c=4 then
             begin
-              get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
-              cblack:=round( background_r);
+              get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
+              background_r:=bck.backgr;
+
+              //cblack:=round( background_r);
               background_g:=background_r;
               background_b:=background_r;
               counterRGB:=head.light_count; counterRGBdark:=head.dark_count; counterRGBflat:=head.flat_count; counterRGBbias:=head.flatdark_count; exposureRGB:=round(head.exposure);;temperatureRGB:=head.set_temperature;
             end;
             if c=5 then {Luminance}
             begin
-              get_background(0,img_loaded,true,false, {var} background_L,star_level);{unknown, do not calculate noise_level}
-              cblack:=round( background_L);
+              get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
+              background_L:=bck.backgr;
+              //cblack:=round( background_L);
               counterL:=head.light_count; counterLdark:=head.dark_count; counterLflat:=head.flat_count; counterLbias:=head.flatdark_count; exposureL:=round(head.exposure);temperatureL:=head.set_temperature;
             end;
 
@@ -653,9 +659,9 @@ begin
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
               find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image}
-              pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
+              pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
               if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
-              background_correction:=pedestal_s-cblack;
+              background_correction:=pedestal_s-bck.backgr;
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
             end;
           end;
@@ -708,7 +714,7 @@ begin
               begin{internal alignment}
                 bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
-                background_correction:=pedestal_s-cblack;
+                background_correction:=pedestal_s-bck.backgr;
                 head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
 
                 find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
@@ -1160,9 +1166,9 @@ begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
 
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
-            pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
+            pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
-            background_correction:=pedestal_s-cblack;
+            background_correction:=pedestal_s-bck.backgr;
             head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
           end;
         end;
@@ -1209,7 +1215,7 @@ begin
                 begin{internal alignment}
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
-                  background_correction:=pedestal_s-cblack;{correct later for difference in background}
+                  background_correction:=pedestal_s-bck.backgr;{correct later for difference in background}
                   head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
 
                   find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
@@ -1221,7 +1227,7 @@ begin
 
                     solutions[c].solution_vectorX:= solution_vectorX;{store solutions}
                     solutions[c].solution_vectorY:= solution_vectorY;
-                    solutions[c].cblack:=cblack;
+                    solutions[c].cblack:=bck.backgr;
 
 
                   end
@@ -1240,7 +1246,7 @@ begin
                 reset_solution_vectors(1);{no influence on the first image}
                 solutions[c].solution_vectorX:= solution_vectorX; {store solutions for later}
                 solutions[c].solution_vectorY:= solution_vectorY;
-                solutions[c].cblack:=cblack;
+                solutions[c].cblack:=bck.backgr;
                end;
 
         end;
@@ -1363,8 +1369,8 @@ begin
             begin  {reuse solution from first step average}
               solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
               solution_vectorY:=solutions[c].solution_vectorY;
-              cblack:=solutions[c].cblack;
-              background_correction:=pedestal_s-cblack;{correction for difference in background}
+              bck.backgr:=solutions[c].cblack;
+              background_correction:=pedestal_s-bck.backgr;{correction for difference in background}
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
             end;
           end;
@@ -1473,8 +1479,8 @@ begin
             begin  {reuse solution from first step average}
               solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
               solution_vectorY:=solutions[c].solution_vectorY;
-              cblack:=solutions[c].cblack;
-              background_correction:=pedestal_s-cblack;{correct for difference in background}
+              bck.backgr:=solutions[c].cblack;
+              background_correction:=pedestal_s-bck.backgr;{correct for difference in background}
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
             end;
           end;
@@ -1642,9 +1648,9 @@ begin
           begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
-            pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
+            pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
-            background_correction:=pedestal_s-cblack;
+            background_correction:=pedestal_s-bck.backgr;
             head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
           end;
         end;
@@ -1704,7 +1710,7 @@ begin
             begin{internal alignment}
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
-              background_correction:=pedestal_s-cblack;
+              background_correction:=pedestal_s-bck.backgr;
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
@@ -1792,8 +1798,8 @@ begin
           {quick and dirty method to roughly correct existing solutions}
           head.crpix1:=solution_vectorX[0]*(head.crpix1-1)+solution_vectorX[1]*(head.crpix2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
           head.crpix2:=solution_vectorY[0]*(head.crpix1-1)+solution_vectorY[1]*(head.crpix2-1)+solution_vectorY[2];
-          update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
-          update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
+          update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+          update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
           update_text   ('COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
         end;
 

@@ -165,6 +165,7 @@ function read_stars_online(telescope_ra,telescope_dec,search_field, magli : doub
 var
   ra8,dec8,sgn,window_size,field,url,mag_lim : string;
   slist: TStringList;
+  x :integer;
 begin
   result:=false;
   str(abs(telescope_dec*180/pi) :3:10,dec8);
@@ -182,10 +183,10 @@ begin
   try
     slist := TStringList.Create;
 
-    mag_lim:=floattostrF(magli,ffGeneral,3,1);
+    mag_lim:=floattostrF(magli,ffGeneral,3,1); {BP~GP+0.5}
     memo2_message('Downloading Gaia stars from Vizier down to magnitude '+mag_lim+'. This can take 20 seconds or more ......');
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=200000&Gmag=<'+mag_lim;
-       // url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+'&-c.bs=533.293551/368.996043&-out.max=1000&Gmag=%3C23
+       //'http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c=10.6722703144%2B41.2237647285&-c.bs=7862.054205/7862.054205&-out.max=200000&Gmag=<12.6'
     slist.Text := get_http(url);//move info to Tstringlist
     application.processmessages;
     if esc_pressed then
@@ -193,6 +194,9 @@ begin
       slist.Free;
       exit;
     end;
+    if slist.count<=31 then
+    memo2_message('List received is empthy! url: '+url)
+    else
     memo2_message('Stars list received');
     gaia_ra:=telescope_ra; //store to test if data is still valid
     gaia_dec:=telescope_dec;

@@ -163,7 +163,7 @@ begin
 end;
 
 
-//procedure give_spiral_position(position : integer; var x,y : integer); {give x,y position of square spiral as function of input value}
+//procedure give_spiral_position(position : integer; out x,y : integer); {give x,y position of square spiral as function of input value}
 //var i,dx,dy,t,count: integer;
 //begin
 //  x :=0;{star position}
@@ -449,7 +449,7 @@ begin
     //    plot_fits(mainwindow.image1,true);{plot real}
     //    exit;
 
-    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
+    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{out}bck {cblack,star_level} );{get back ground}
     find_stars(img_binned,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
     nrstars:=Length(starlist3[0]);
 
@@ -480,7 +480,7 @@ begin
       memo2_message('█ █ █ █ █ █ Warning, small image dimensions!');
     end;
 
-    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
+    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {out}bck{ cblack,star_level});{get back ground}
     find_stars(img,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
   end;
 end;
@@ -972,23 +972,23 @@ begin
 
     update_text ('EQUINOX =','              2000.0 / Equinox of coordinates                         ');{the equinox is 2000 since the database is in 2000}
 
-    update_float('CRPIX1  =',' / X of reference pixel                           ' ,hd.crpix1);
-    update_float('CRPIX2  =',' / Y of reference pixel                           ' ,hd.crpix2);
+    update_float('CRPIX1  =',' / X of reference pixel                           ',false,hd.crpix1);
+    update_float('CRPIX2  =',' / Y of reference pixel                           ',false ,hd.crpix2);
 
-    update_float('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,hd.ra0*180/pi);
-    update_float('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,hd.dec0*180/pi);
+    update_float('CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,hd.ra0*180/pi);
+    update_float('CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,hd.dec0*180/pi);
 
-    update_float('CDELT1  =',' / X pixel size (deg)                             ' ,hd.cdelt1);
-    update_float('CDELT2  =',' / Y pixel size (deg)                             ' ,hd.cdelt2);
+    update_float('CDELT1  =',' / X pixel size (deg)                             ',false ,hd.cdelt1);
+    update_float('CDELT2  =',' / Y pixel size (deg)                             ',false ,hd.cdelt2);
 
-    update_float('CROTA1  =',' / Image twist X axis (deg)                       ' ,hd.crota1);
-    update_float('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,hd.crota2);
+    update_float('CROTA1  =',' / Image twist X axis (deg)                       ',false ,hd.crota1);
+    update_float('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,hd.crota2);
 
 
-    update_float('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd1_1);
-    update_float('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd1_2);
-    update_float('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd2_1);
-    update_float('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd2_2);
+    update_float('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd1_1);
+    update_float('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd1_2);
+    update_float('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd2_1);
+    update_float('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd2_2);
     update_text ('PLTSOLVD=','                   T / Astrometric solved by ASTAP v'+astap_version+'.       ');
     update_text ('COMMENT 7', solved_in+' Offset '+offset_found+mount_offset_str);
 

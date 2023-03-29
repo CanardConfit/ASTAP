@@ -203,9 +203,9 @@ begin
     setlength(img_sa,1,head.width,head.height);{set length of image array}
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-    get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+    get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
-    detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
+    detection_level:=max(3.5*bck.noise_level,bck.star_level); {level above background. Start with a high value}
     retries:=2; {try up to three times to get enough stars from the image}
     repeat
       nhfd:=0;{set counters at zero}
@@ -218,7 +218,7 @@ begin
       begin
         for fitsX:=0 to head.width-1-1 do
         begin
-          if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
+          if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star}  and (img_loaded[0,fitsX,fitsY]- bck.backgr>detection_level){star}) then {new star}
           begin
             HFD(img_loaded,fitsX,fitsY,14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
@@ -267,9 +267,9 @@ begin
       end;
 
       dec(retries);{prepare for trying with lower detection level}
-      if detection_level<=7*noise_level[0] then retries:= -1 {stop}
+      if detection_level<=7*bck.noise_level then retries:= -1 {stop}
       else
-      detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
+      detection_level:=max(6.999*bck.noise_level,min(30*bck.noise_level,detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
     until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -704,7 +704,7 @@ begin
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-  cblack:=min_value-5;
+  bck.backgr:=min_value-5;
   cwhite:=max_value+5;
   mainwindow.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
   mainwindow.maximum1.position:=round(max_value+5);
@@ -771,7 +771,7 @@ begin
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-  cblack:=min_value-5;
+  bck.backgr:=min_value-5;
   cwhite:=max_value+5;
   mainwindow.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
   mainwindow.maximum1.position:=round(max_value+5);
@@ -922,9 +922,9 @@ begin
   SetLength(hfd_values,4,4000);{will contain x,y,hfd}
   setlength(img_sa,1,head.width,head.height);{set length of image array}
 
-  get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+  get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
-  detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
+  detection_level:=max(3.5*bck.noise_level,bck.star_level); {level above background. Start with a high value}
 
   retries:=2; {try up to three times to get enough stars from the image}
   repeat
@@ -938,7 +938,7 @@ begin
     begin
       for fitsX:=0 to head.width-1-1 do
       begin
-        if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
+        if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- bck.backgr>detection_level){star}) then {new star}
         begin
           HFD(img_loaded,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if (hfd1>=1.3) {not a hotpixel} and (snr>30) and (hfd1<99) then
@@ -990,9 +990,9 @@ begin
     end;
 
     dec(retries);{prepare for trying with lower detection level}
-    if detection_level<=7*noise_level[0] then retries:= -1 {stop}
+    if detection_level<=7*bck.noise_level then retries:= -1 {stop}
     else
-    detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
+    detection_level:=max(6.999*bck.noise_level,min(30*bck.noise_level,detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -1010,7 +1010,7 @@ begin
      font_luminance:=100;
   end
   else
-  font_luminance:=round((cwhite-cblack)/4+cblack);
+  font_luminance:=round((cwhite-bck.backgr)/4+bck.backgr);
 
 
   if detype='V' then voronoi_plot(min_value,max_value,nhfd,hfd_values)
@@ -1027,7 +1027,7 @@ begin
    begin
      if values then
      begin
-       if Fliphorizontal     then starX:=head.width-hfd_values[0,i]   else starX:=hfd_values[0,i];
+       if Fliphorizontal     then starX:=head.width-hfd_values[0,i]  else starX:=hfd_values[0,i];
        if Flipvertical       then starY:=head.height-hfd_values[1,i] else starY:=hfd_values[1,i];
        annotation_to_array(floattostrf(hfd_values[2,i]/100 {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
      end;

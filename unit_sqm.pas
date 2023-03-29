@@ -109,7 +109,7 @@ begin
   result:=false;
   if head.mzero>0 then
   begin
-    if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
+    if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}bck);
 
     if (pos('D',head.calstat)>0) then
     begin
@@ -128,7 +128,7 @@ begin
          warning_str:=warning_str+'Pedestal value missing!';
        end;
 
-    if pedestal2>=cblack then
+    if pedestal2>=bck.backgr then
     begin
       if form_exist then form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'Too high pedestal value!'+#10 else
       begin
@@ -139,8 +139,7 @@ begin
       pedestal2:=0; {prevent errors}
     end;
 
-   // sqmfloat:=( ln(flux_ratio/((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec}) )/ln(2.511886432) );
-    sqmfloat:=head.mzero - ln((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;
+    sqmfloat:=head.mzero - ln((bck.backgr-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;
 
     calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,alt);
 
@@ -215,7 +214,7 @@ begin
     end;
 
     {report}
-    background1.caption:=inttostr(round(cblack));
+    background1.caption:=inttostr(round(bck.backgr));
     altitude1.caption:=centalt;
     sqm1.caption:=floattostrF(sqmfloat,ffFixed,0,2)
   end;

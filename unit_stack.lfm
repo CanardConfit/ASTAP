@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 61
+  Left = 205
   Height = 681
-  Top = 208
+  Top = 220
   Width = 2163
   HorzScrollBar.Page = 2008
   VertScrollBar.Page = 558
@@ -2248,7 +2248,7 @@ object stackmenu1: Tstackmenu1
         object apply_normalise_filter1: TCheckBox
           Left = 0
           Height = 19
-          Hint = 'Colour shift by not using a white light source for the flat frames is compensated. The flat shall be raw image.'
+          Hint = 'Colour shift by not using a white light source for the flat frames is compensated. The flat shall be a raw image.'
           Top = 72
           Width = 120
           Caption = 'Normalise OSC flat'
@@ -3745,7 +3745,7 @@ object stackmenu1: Tstackmenu1
         ItemIndex = 0
         Items.Strings = (
           'Local star database'
-          'Online Gaia GBp'
+          'Online Gaia BP'
           'Online Gaia->V'
           'Online Gaia->B'
           'Online Gaia->R'

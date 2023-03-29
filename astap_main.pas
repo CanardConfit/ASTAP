@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.03.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -120,6 +120,7 @@ type
     localcoloursmooth2: TMenuItem;
     fittowindow1: TMenuItem;
     flipVH1: TMenuItem;
+    remove_stars1: TMenuItem;
     Separator2: TMenuItem;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
@@ -408,7 +409,7 @@ type
     procedure localcoloursmooth2Click(Sender: TObject);
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
+    procedure remove_stars1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -591,6 +592,14 @@ type
      img     : image_array;
    end;
 
+   Tbackground = record
+                   backgr : double;//background value
+                   star_level: double;//star level
+                   noise_level: double;///noise level background
+                end;
+
+
+
   theauid = record
               auid: string;
               ra  : double;
@@ -623,6 +632,7 @@ var
   head_2,  {for analysing lights and dark, flats}
   head_ref {for reference light in stacking}
     : Theader;{contains the most important header info}
+  bck : Tbackground;
 
   settingstring :tstrings; {settings for save and loading}
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
@@ -642,13 +652,13 @@ var
 
   histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
   his_total_red, his_total_green,his_total_blue,extend_type,r_aperture : integer; {histogram number of values}
-  his_mean,noise_level : array[0..2] of integer;
+  his_mean             : array[0..2] of integer;
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
-  star_level,star_bg,sd_bg, magn_limit  : double;
+  {star_level,}star_bg,sd_bg, magn_limit  : double;
   object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
-  focus_temp,cblack,cwhite,sqmfloat,pressure   :double; {from FITS}
+  focus_temp,{cblack,}cwhite,sqmfloat,pressure   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
   date_avg,telescop,instrum,origin,sqm_value   : string;
 
@@ -759,7 +769,7 @@ procedure add_long_comment(descrip:string);{add long text to header memo. Split 
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
 procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
 procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
-procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
+procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
 procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
 function fnmodulo (x,range: double):double;
@@ -803,7 +813,9 @@ function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
 function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
+//procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
+
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 function extract_temperature_from_filename(filename8: string): integer; {try to extract temperature from filename}
@@ -913,7 +925,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
-     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia;
+     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia, unit_disk;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -1940,7 +1952,7 @@ begin
     else {16 bit}
     head.datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
 
-    cblack:=head.datamin_org;{for case histogram is not called}
+    bck.backgr:=head.datamin_org;{for case histogram is not called}
     cwhite:=head.datamax_org;
 
     result:=head.naxis<>0;{success};
@@ -2467,7 +2479,7 @@ begin
 
     head.datamin_org:=0;
 
-    cblack:=head.datamin_org;{for case histogram is not called}
+    bck.backgr:=head.datamin_org;{for case histogram is not called}
     cwhite:=head.datamax_org;
 
     if color7 then
@@ -2587,8 +2599,8 @@ begin
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                           ' ,round(head.datamax_org));
 
-  if head.exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,head.exposure);
-  if head.gain<>'' then    update_integer('GAIN    =',' / iso speed                                      ' ,strtoint(head.gain));
+  if head.exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ',false ,head.exposure);
+  if head.gain<>'' then    update_integer('GAIN    =',' / iso speed                                      ',strtoint(head.gain));
 
   if head.date_obs<>'' then update_text   ('DATE-OBS=',#39+head.date_obs+#39);
   if instrum<>''  then update_text   ('INSTRUME=',#39+INSTRUM+#39);
@@ -2697,7 +2709,7 @@ begin
   nrbits:=16;
   head.datamin_org:=0;
   head.datamax_org:=$FFFF;
-  cblack:=head.datamin_org;{for case histogram is not called}
+  bck.backgr:=head.datamin_org;{for case histogram is not called}
   cwhite:=head.datamax_org;
 
 
@@ -2820,14 +2832,15 @@ end;
 
 
 
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
+//procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above,his_total, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
   value,sd, sd_old : double;
 begin
   if calc_hist then  get_hist(colour,img);{get histogram of img_loaded and his_total}
 
-  background:=img[0,0,0];{define something for images containing 0 or 65535 only}
+  back.backgr:=img[0,0,0];{define something for images containing 0 or 65535 only}
 
   {find peak in histogram which should be the average background}
   pixels:=0;
@@ -2836,14 +2849,14 @@ begin
     if histogram[colour,i]>pixels then {find colour peak}
     begin
       pixels:= histogram[colour,i];
-      background:=i;
+      back.backgr:=i;
     end;
 
   {check alternative mean value}
-  if his_mean[colour]>1.5*background {1.5* most common} then  {changed from 2 to 1.5 on 2021-5-29}
+  if his_mean[colour]>1.5*back.backgr {1.5* most common} then  {changed from 2 to 1.5 on 2021-5-29}
   begin
-    memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(background)));
-    background:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}
+    memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(back.backgr)));
+    back.backgr:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}
   end;
 
   if calc_noise_level then  {find star level and background noise level}
@@ -2851,7 +2864,7 @@ begin
     {calculate star level}
     if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
     i:=max_range;
-    starlevel:=0;
+    back.star_level:=0;
     above:=0;
 
     if colour=1 then his_total:=his_total_green
@@ -2860,15 +2873,15 @@ begin
     else
     his_total:=his_total_red;
 
-    while ((starlevel=0) and (i>background+1)) do {find star level 0.003 of values}
+    while ((back.star_level=0) and (i>back.backgr+1)) do {find star level 0.003 of values}
     begin
        dec(i);
        above:=above+histogram[colour,i];
-       if above>0.001*his_total then starlevel:=i;
+       if above>0.001*his_total then back.star_level:=i;
     end;
-    if starlevel<= background then starlevel:=background+1 {no or very few stars}
+    if back.star_level<= back.backgr then back.star_level:=back.backgr+1 {no or very few stars}
     else
-    starlevel:=starlevel-background-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
+    back.star_level:=back.star_level-back.backgr-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
 
     {calculate noise level}
     stepsize:=round(head.height/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
@@ -2889,11 +2902,11 @@ begin
         while fitsY<=height5-1-15 do
         begin
           value:=img[colour,fitsX,fitsY];
-          if ((value<background*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
+          if ((value<back.backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
           begin
-            if ((iterations=0) or (abs(value-background)<=3*sd_old)) then {ignore outliers after first run}
+            if ((iterations=0) or (abs(value-back.backgr)<=3*sd_old)) then {ignore outliers after first run}
             begin
-              sd:=sd+sqr(value-background); {sd}
+              sd:=sd+sqr(value-back.backgr); {sd}
               inc(counter);{keep record of number of pixels processed}
             end;
           end;
@@ -2904,7 +2917,7 @@ begin
       sd:=sqrt(sd/counter); {standard deviation}
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
-    noise_level[colour]:= round(sd);   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
+    back.noise_level:= sd;   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
   end;
 end;
 
@@ -2926,7 +2939,7 @@ begin
 end;
 
 
-procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
+procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
  var
    s,aline  : string;
    count1: integer;
@@ -2939,7 +2952,7 @@ begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
     begin
       aline:=mainwindow.Memo1.Lines[count1];
-      if copy(aline,32,1)='/' then
+      if ((preserve_comment) and (copy(aline,32,1)='/')) then
         delete(aline,11,20) {preserve comment}
       else
         delete(aline,11,80);  {delete all}
@@ -3223,12 +3236,9 @@ begin
     if img_backup=nil then setlength(img_backup,size_backup+1);{create memory for size_backup backup images}
     inc(index_backup,1);
     if index_backup>size_backup then index_backup:=0;
-
     img_backup[index_backup].head_val:=head;
-
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
     img_backup[index_backup].filen:=filename2;{backup filename}
-
     img_backup[index_backup].img:=img_loaded;
     setlength(img_backup[index_backup].img,head.naxis3,head.width,head.height);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
@@ -3252,9 +3262,7 @@ begin
     old_height2:=head.height;
 
     head:=img_backup[index_backup].head_val;{restore main header values}
-
     resized:=((head.width<>old_width2) or ( head.height<>old_height2));
-
     mainwindow.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
     filename2:=img_backup[index_backup].filen;{backup filename}
     mainwindow.caption:=filename2; //show old filename is case image was binned
@@ -3266,7 +3274,6 @@ begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,resized,true);{restore image1}
 
-    //stackmenu1.apply_dpp_button1.Enabled:=true;
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
     if head.naxis=0 {due to stretch draw} then update_menu(true); {update menu and set fits_file:=true;}
@@ -3475,11 +3482,11 @@ begin
   update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-  if head.crpix1<>0 then begin head.crpix1:=head.crpix1/binfactor; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;
-  if head.crpix2<>0 then begin head.crpix2:=head.crpix2/binfactor; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
+  if head.crpix1<>0 then begin head.crpix1:=head.crpix1/binfactor; update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
+  if head.crpix2<>0 then begin head.crpix2:=head.crpix2/binfactor; update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
 
-  if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1*binfactor; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);end;
-  if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2*binfactor; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);end;
+  if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1*binfactor; update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
+  if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2*binfactor; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
 
   if head.cd1_1<>0 then
   begin
@@ -3487,10 +3494,10 @@ begin
     head.cd1_2:=head.cd1_2*binfactor;
     head.cd2_1:=head.cd2_1*binfactor;
     head.cd2_2:=head.cd2_2*binfactor;
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
   end;
   head.XBINNING:=head.XBINNING*binfactor;
   head.YBINNING:=head.YBINNING*binfactor;
@@ -3500,10 +3507,10 @@ begin
   begin
     head.XPIXSZ:=head.XPIXSZ*binfactor;
     head.YPIXSZ:=head.YPIXSZ*binfactor;
-    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,head.XPIXSZ);
-    update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,head.YPIXSZ);
-    update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,head.XPIXSZ);
-    update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,head.YPIXSZ);
+    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,false,head.XPIXSZ);
+    update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,false,head.YPIXSZ);
+    update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,false,head.XPIXSZ);
+    update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,false,head.YPIXSZ);
   end;
   fact:=inttostr(binfactor);
   fact:=fact+'x'+fact;
@@ -4774,6 +4781,7 @@ procedure update_menu_related_to_solver(yes :boolean); {update menu section rela
 begin
   if mainwindow.deepsky_annotation1.enabled=yes then exit;{no need to update}
 
+  mainwindow.remove_stars1.enabled:=yes;
   mainwindow.annotate_with_measured_magnitudes1.enabled:=yes;{enable menu}
   mainwindow.annotate_unknown_stars1.enabled:=yes;{enable menu}
   mainwindow.variable_star_annotation1.enabled:=yes;{enable menu}
@@ -4787,7 +4795,6 @@ begin
   mainwindow.sqm1.enabled:=yes;{enable menu}
   mainwindow.add_marker_position1.enabled:=yes;{enable popup menu}
   mainwindow.measuretotalmagnitude1.enabled:=yes;{enable popup menu}
- // mainwindow.writeposition1.enabled:=yes;{enable popup menu}
   mainwindow.writepositionshort1.enabled:=yes;{enable popup menu}
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
@@ -5078,11 +5085,11 @@ begin
 
 
 
-    if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;
-    if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
+    if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
+    if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
 
-    if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);end;
-    if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);end;
+    if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
+    if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
 
     if head.cd1_1<>0 then
     begin
@@ -5090,26 +5097,26 @@ begin
       head.cd1_2:=head.cd1_2/ratio;
       head.cd2_1:=head.cd2_1/ratio;
       head.cd2_2:=head.cd2_2/ratio;
-      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
     end;
 
     head.XBINNING:=head.XBINNING/ratio;
     head.YBINNING:=head.YBINNING/ratio;
-    update_float  ('XBINNING=',' / Binning factor in width                         ' ,head.XBINNING);
-    update_float  ('YBINNING=',' / Binning factor in height                        ' ,head.YBINNING);
+    update_float  ('XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
+    update_float  ('YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
 
 
     if head.XPIXSZ<>0 then
     begin
       head.XPIXSZ:=head.XPIXSZ/ratio;
       head.YPIXSZ:=head.YPIXSZ/ratio;
-      update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,head.XPIXSZ);{note: comment will be never used since it is an existing keyword}
-      update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,head.YPIXSZ);
-      update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,head.XPIXSZ);
-      update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,head.YPIXSZ);
+      update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);{note: comment will be never used since it is an existing keyword}
+      update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
+      update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);
+      update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
 
     end;
 
@@ -6603,9 +6610,9 @@ begin
   sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
 
 
-  cblack:=mainwindow.minimum1.position;
+  bck.backgr:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
-  if cwhite<=cblack then cwhite:=cblack+1;
+  if cwhite<=bck.backgr then cwhite:=bck.backgr+1;
 
   flipv:=mainwindow.flip_vertical1.Checked;
   fliph:=mainwindow.Flip_horizontal1.Checked;
@@ -6618,12 +6625,12 @@ begin
     begin
       if fliph then columnr:=(head.width-1)-j else columnr:=j;{flip horizontal?}
       col:=round(img_loaded[0,columnr,i]);
-      colrr:=(col-cblack)/(cwhite-cblack);{scale to 1}
+      colrr:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
 
       if head.naxis3>=2 then {at least two colours}
       begin
         col:=round(img_loaded[1,columnr,i]);
-        colgg:=(col-cblack)/(cwhite-cblack);{scale to 1}
+        colgg:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
       end
       else
       colgg:=colrr;
@@ -6631,7 +6638,7 @@ begin
       if head.naxis3>=3 then {at least three colours}
       begin
         col:=round(img_loaded[2,columnr,i]);
-        colbb:=(col-cblack)/(cwhite-cblack);{scale to 1}
+        colbb:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
 
         if sat_factor<>1 then {adjust saturation}
         begin  {see same routine as stretch_img}
@@ -8045,10 +8052,6 @@ begin
   flip_horizontal1.checked:=flip_horizontal1.checked=false;
 end;
 
-procedure Tmainwindow.Panel1Click(Sender: TObject);
-begin
-
-end;
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
 begin
@@ -9193,52 +9196,52 @@ begin
 
 
 
-        update_float  ('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ' ,3);
+        update_float  ('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',false,3);
         remove_key    ('A_0_0   =',false{all});
         remove_key    ('A_0_1   =',false{all});
         remove_key    ('A_0_2   =',false{all});
         remove_key    ('A_0_3   =',false{all});
         remove_key    ('A_1_0   =',false{all});
         remove_key    ('A_1_1   =',false{all});
-        update_float  ('A_1_2   =',' / SIP coefficient                                ' ,A_1_2);
+        update_float  ('A_1_2   =',' / SIP coefficient                                ',false,A_1_2);
         remove_key    ('A_2_0   =',false{all});
         remove_key    ('A_2_1   =',false{all});
-        update_float  ('A_3_0   =',' / SIP coefficient                                ' ,A_3_0);
+        update_float  ('A_3_0   =',' / SIP coefficient                                ',false,A_3_0);
 
-        update_float  ('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ' ,3);
+        update_float  ('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',false,3);
         remove_key    ('B_0_0   =',false{all});
         remove_key    ('B_0_1   =',false{all});
         remove_key    ('B_0_2   =',false{all});
-        update_float  ('B_0_3   =',' / SIP coefficient                                ' ,B_0_3);
+        update_float  ('B_0_3   =',' / SIP coefficient                                ',false,B_0_3);
         remove_key    ('B_1_0   =',false{all});
         remove_key    ('B_1_1   =',false{all});
         remove_key    ('B_1_2   =',false{all});
         remove_key    ('B_2_0   =',false{all});
-        update_float  ('B_2_1   =',' / SIP coefficient                                ' ,B_2_1);
+        update_float  ('B_2_1   =',' / SIP coefficient                                ',false,B_2_1);
         remove_key    ('B_3_0   =',false{all});
 
-        update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ' ,3);
+        update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',false,3);
         remove_key  ('AP_0_0  =',false{all});
         remove_key  ('AP_0_1  =',false{all});
         remove_key  ('AP_0_2  =',false{all});
         remove_key  ('AP_0_3  =',false{all});
         remove_key  ('AP_1_0  =',false{all});
         remove_key  ('AP_1_1  =',false{all});
-        update_float('AP_1_2  =',' / SIP coefficient                                ' ,AP_1_2);
+        update_float('AP_1_2  =',' / SIP coefficient                                ',false,AP_1_2);
         remove_key  ('AP_2_0  =',false{all});
         remove_key  ('AP_2_1  =',false{all});
-        update_float('AP_3_0  =',' / SIP coefficient                                ' ,AP_3_0);
+        update_float('AP_3_0  =',' / SIP coefficient                                ',false,AP_3_0);
 
-        update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ' ,3);
+        update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',false,3);
         remove_key  ('BP_0_0  =',false{all});
         remove_key  ('BP_0_1  =',false{all});
         remove_key  ('BP_0_2  =',false{all});
-        update_float('BP_0_3  =',' / SIP coefficient                                ' ,BP_0_3);
+        update_float('BP_0_3  =',' / SIP coefficient                                ',false ,BP_0_3);
         remove_key  ('BP_1_0  =',false{all});
         remove_key  ('BP_1_1  =',false{all});
         remove_key  ('BP_1_2  =',false{all});
         remove_key  ('BP_2_0  =',false{all});
-        update_float('BP_2_1  =',' / SIP coefficient                                ' ,BP_2_1);
+        update_float('BP_2_1  =',' / SIP coefficient                                ',false ,BP_2_1);
         remove_key  ('BP_3_0  =',false{all});
 
         mainwindow.Polynomial1.color:=clform;
@@ -9881,9 +9884,9 @@ begin
 
   setlength(img_sa,1,head.width,head.height);{set length of image array}
 
-  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
-  if deep then detection_level:=5*noise_level[0] else detection_level:=star_level;
+  if deep then detection_level:=5*bck.noise_level else detection_level:=bck.star_level;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   nrstars:=0;{set counters at zero}
@@ -9896,7 +9899,7 @@ begin
   begin
     for fitsX:=0 to head.width-1-1  do
     begin
-      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack> detection_level)) then {new star}
+      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- bck.backgr> detection_level)) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
@@ -9959,7 +9962,7 @@ end;
 
 procedure calibrate_photometry;
 var
-  apert,annul,backgr,hfd_med : double;
+  apert,annul,hfd_med : double;
   hfd_counter                : integer;
 begin
  if ((head.naxis=0) or (head.cd1_1=0)) then exit;
@@ -9974,7 +9977,7 @@ begin
     aperture_ratio:=apert;{remember setting}
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
-      analyse_image(img_loaded,head,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
+      analyse_image(img_loaded,head,30,false {report}, hfd_counter,bck,hfd_med); {find background, number of stars, median HFD}
       if hfd_med<>0 then
       begin
         memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
@@ -9991,12 +9994,188 @@ begin
 end;
 
 
+procedure give_spiral_position(position : integer; out x,y : integer); {give x,y position of square spiral as function of input value}
+var i,dx,dy,t,count: integer;
+begin
+  x :=0;{star position}
+  y :=0;
+  dx := 0;{first step size x}
+  dy := -1;{first step size y}
+  count:=0;
+
+  for i:=0 to 10000*10000  {maximum width*height} do
+  begin
+    if  count>=position then exit; {exit and give x and y position}
+    inc(count);
+    if ( (x = y) or ((x < 0) and (x = -y)) or ((x > 0) and (x = 1-y))) then {turning point}
+    begin {swap dx by negative dy and dy by negative dx}
+       t:=dx;
+      dx := -dy;
+      dy := t;
+    end;
+     x :=x+ dx;{walk through square}
+     y :=y+ dy;{walk through square}
+  end;{for loop}
+end;
+
+
+
+procedure Tmainwindow.remove_stars1Click(Sender: TObject);
+var
+  fitsX,fitsY,hfd_counter,position,x,y,x1,y1  : integer;
+  star_fwhm,snr,flux,magnd, hfd_median,max_radius,
+  backgrR,backgrG,backgrB,delta                           : double;
+  img_temp3 :image_array;
+
+
+const
+   default=1000;
+
+
+   procedure star_background(rs {radius},x1,y1 :integer);
+   var
+     backgroundR,backgroundG,backgroundB : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
+     r1_square,r2_square,distance : double;
+     r1,r2,i,j,counter : integer;
+   begin
+     r1_square:=rs*rs;{square radius}
+     r2:=rs+3 {annulus_width};
+     r2_square:=r2*r2;
+     try
+       counter:=0;
+       for i:=-r2 to r2 do {calculate the mean outside the the detection area}
+       for j:=-r2 to r2 do
+       begin
+         if ((x1-r2>=0) and (x1+r2<=head.width-1) and
+          (y1-r2>=0) and (y1+r2<=head.height-1) ) then
+
+           distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
+           if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
+           begin
+             backgroundR[counter]:=img_loaded[0,x1+i,y1+j];
+             if head.naxis3>1 then backgroundG[counter]:=img_loaded[1,x1+i,y1+j];
+             if head.naxis3>2 then backgroundB[counter]:=img_loaded[2,x1+i,y1+j];
+             inc(counter);
+           end;
+        end;
+        if counter>2 then
+        begin
+          backgrR:=Smedian(backgroundR,counter);
+          backgrG:=Smedian(backgroundG,counter);
+          backgrB:=Smedian(backgroundB,counter);
+        end;
+     finally
+     end;
+
+   end;
+
+begin
+  if head.naxis=0 then exit; {file loaded?}
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  backup_img;{preserve img array and fits header of the viewer}
+
+  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting.}
+
+
+  if head.mzero=0 then
+  begin
+    beep;
+    img_temp3:=nil;
+    Screen.Cursor:=crDefault;
+    exit;
+  end;
+
+  memo2_message('Passband setting: '+stackmenu1.reference_database1.text);
+
+
+  image1.Canvas.Pen.Mode := pmMerge;
+  image1.Canvas.Pen.width :=1;
+  image1.Canvas.brush.Style:=bsClear;
+  image1.Canvas.font.color:=clyellow;
+  image1.Canvas.font.name:='default';
+  image1.Canvas.font.size:=10;
+  mainwindow.image1.Canvas.Pen.Color := clred;
+
+
+  setlength(img_temp3,1,head.width,head.height);{set size of image array}
+  for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1  do
+      img_temp3[0,fitsX,fitsY]:=default;{clear}
+  plot_artificial_stars(img_temp3,1+magn_limit {measured});{create artificial image with database stars as pixels}
+  //since G magnitude is used it retrieves about 0.5 magnitude fainter then mag limit. {BP~GP+0.5}
+
+   analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
+
+   backgrR:=bck.backgr;//defaults
+   backgrG:=bck.backgr;
+   backgrB:=bck.backgr;
+
+   for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1  do
+    begin
+      magnd:=img_temp3[0,fitsX,fitsY];
+      if magnd<default then {a star from the database}
+      begin
+          star_background(round(4*hfd_median) {radius},fitsX,fitsY);//calculate background(s)
+          flux:=power(10,0.4*(head.mzero-magnd/10));
+
+          flux:=flux*1.1;//compensate for flux errors
+           max_radius:=99999;
+
+          for position:=0 to length(disk)-1 do //remove star flux
+          begin
+            begin
+              x1:=disk[position,0]; // disk, disk positions starting from center moving outwards
+              y1:=disk[position,1];
+              x:=fitsX+x1; // disk, disk positions starting from center moving outwards
+              y:=fitsY+y1;
+              if ((x>=0) and (x<head.width) and (y>=0) and (y<head.height)) then //within image
+              begin
+                if max_radius>100 then
+                begin
+                  if img_loaded[0,x,y]-backgrR<=0 then //reached outside of star
+                    max_radius:=1+sqrt(sqr(x1)+sqr(y1));//allow to continue for one pixel ring max
+                end
+                else
+                if sqrt(sqr(x1)+sqr(y1))>=max_radius then
+                  break;
+
+                delta:=min(flux,(img_loaded[0,x,y]-backgrR));//all photometry is only done in the red channel
+                img_loaded[0,x,y]:=img_loaded[0,x,y]-delta;
+                flux:=flux-delta;
+
+                if delta>0 then //follow the red channel
+                begin
+                  if head.naxis3>1 then img_loaded[1,x,y]:=img_loaded[0,x,y]*backgrG/backgrR;
+                  if head.naxis3>2 then img_loaded[2,x,y]:=img_loaded[0,x,y]*backgrB/backgrR;
+                end;
+              end;
+
+            end;
+          end;
+      end;
+    end;
+
+  img_temp3:=nil;{free mem}
+
+  mainwindow.image1.Canvas.font.size:=10;
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.Canvas.textout(20,head.height-20,stackmenu1.reference_database1.text);//show which database was used
+
+  plot_fits(mainwindow.image1,false,true);//refresh screen
+  memo2_message('Stars removed');
+  Screen.Cursor:=crDefault;
+end;
+
+
+
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
   size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
   Fliphorizontal, Flipvertical,saturated : boolean;
   hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit_database,
-  sqr_radius, hfd_median,backgr : double;
+  sqr_radius, hfd_median : double;
   messg : string;
   img_temp3,img_sa :image_array;
 const
@@ -10006,7 +10185,7 @@ const
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting. Use local star databases only}
+  calibrate_photometry;{measure hfd and calibrate for point or extended sources depending on the setting.}
 
 
   if head.mzero=0 then
@@ -10020,13 +10199,10 @@ const
 
   Flipvertical:=mainwindow.flip_vertical1.Checked;
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
-//  if database_type=0 then //Online Gaia via Vizier
-//    magn_limit_database:=10*21//magn
-//  else
-//    magn_limit_database:=10*strtoint(copy(name_database,2,2)); {g18 => 180}
 
   magn_limit_database:=10*21;//magn, Online Gaia via Vizier
 
+  memo2_message('Passband setting: '+stackmenu1.reference_database1.text);
 //  memo2_message('Using Gaia online database from Vizier. It it will be possible to detect up to magnitude='+floattostrF(min(magn_limit,0.1*magn_limit_database-1),ffGeneral,3,1));
 
   image1.Canvas.Pen.Mode := pmMerge;
@@ -10048,20 +10224,18 @@ const
 //  exit;
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
+  analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
 
   setlength(img_sa,1,head.width,head.height);{set length of image array}
    for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-
-
   for fitsY:=0 to head.height-1 do
   begin
     for fitsX:=0 to head.width-1  do
     begin
-      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- {cblack}backgr>5*noise_level[0] {star_level} ){star}) then {new star}
+      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- bck.backgr>5*bck.noise_level {star_level} ){star}) then {new star}
       begin
 
         HFD(img_loaded,fitsX,fitsY,round(1.5* hfd_median){annulus radius},3.0*hfd_median {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
@@ -10108,12 +10282,15 @@ const
            if measured_magn<magn_limit_database-10 then {bright enough to be in the database}
            begin
              magn_database:=default;{1000}
-             for i:=-3 to 3 do
+             for i:=-3 to 3 do  //search for database star within 3x3 pixels
                for j:=-3 to 3 do
                begin {database star available?}
                  magnd:=img_temp3[0,round(xc)+i,round(yc)+j];
                  if magnd<default then {a star from the database}
-                   magn_database:=min(magnd,magn_database);{take brightest}
+                   if magn_database=default then //empthy
+                      magn_database:=magnd //no star at this location
+                    else
+                      magn_database:=-2.5*ln(power(10,-0.4*magn_database) + power(10,-0.4*magnd))/ln(10);//combine magnitudes
                end;
 
              delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
@@ -10138,6 +10315,10 @@ const
 
   img_temp3:=nil;{free mem}
   img_sa:=nil;{free mem}
+
+  mainwindow.image1.Canvas.font.size:=10;
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.Canvas.textout(20,head.height-20,stackmenu1.reference_database1.text);
 
   Screen.Cursor:=crDefault;
 end;
@@ -10370,31 +10551,6 @@ begin
 end;
 
 
-procedure give_spiral_position(position : integer; var x,y : integer); {give x,y position of square spiral as function of input value}
-var i,dx,dy,t,count: integer;
-begin
-  x :=0;{star position}
-  y :=0;
-  dx := 0;{first step size x}
-  dy := -1;{first step size y}
-  count:=0;
-
-  for i:=0 to 10000*10000  {maximum width*height} do
-  begin
-    if  count>=position then exit; {exit and give x and y position}
-    inc(count);
-    if ( (x = y) or ((x < 0) and (x = -y)) or ((x > 0) and (x = 1-y))) then {turning point}
-    begin {swap dx by negative dy and dy by negative dx}
-       t:=dx;
-      dx := -dy;
-      dy := t;
-    end;
-     x :=x+ dx;{walk through square}
-     y :=y+ dy;{walk through square}
-  end;{for loop}
-end;
-
-
 procedure standard_equatorial2(ra0,dec0,x,y,cdelt: double; var ra,dec : double); inline;{transformation from CCD coordinates into equatorial coordinates}
 var sin_dec0 ,cos_dec0 : double;
 begin
@@ -10407,8 +10563,6 @@ begin
   if ra<0 then ra:=ra+pi*2;
   dec := arcsin ( (sin_dec0+y*cos_dec0)/sqrt(1.0+x*x+y*y) );
 end;
-
-
 
 
 procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
@@ -10536,11 +10690,11 @@ begin
       update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
 
 
-      if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;
-      if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
+      if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
+      if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
 
-      if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);end;
-      if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);end;
+      if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
+      if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
 
       if head.cd1_1<>0 then
       begin
@@ -10548,25 +10702,25 @@ begin
         head.cd1_2:=head.cd1_2/ratio;
         head.cd2_1:=head.cd2_1/ratio;
         head.cd2_2:=head.cd2_2/ratio;
-        update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-        update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-        update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-        update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+        update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+        update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+        update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+        update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
       end;
 
       head.XBINNING:=head.XBINNING/ratio;
       head.YBINNING:=head.YBINNING/ratio;
-      update_float  ('XBINNING=',' / Binning factor in width                         ' ,head.XBINNING);
-      update_float  ('YBINNING=',' / Binning factor in height                        ' ,head.YBINNING);
+      update_float  ('XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
+      update_float  ('YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
 
       if head.XPIXSZ<>0 then
       begin
         head.XPIXSZ:=head.XPIXSZ/ratio;
         head.YPIXSZ:=head.YPIXSZ/ratio;
-        update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,head.XPIXSZ);
-        update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,head.YPIXSZ);
-        update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ' ,head.XPIXSZ);
-        update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ' ,head.YPIXSZ);
+        update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
+        update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
+        update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
+        update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
       end;
 
       add_text   ('HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
@@ -11030,7 +11184,7 @@ begin
    deltaY:=stopY-startY;
    len:=round(sqrt(sqr(deltaX)+sqr(deltaY)));
    for i:=0 to len-1 do
-      img_loaded[0,startX+round(i*deltaX/len),startY+round(i*deltaY/len) ]:=round((cwhite+cblack)/2);
+      img_loaded[0,startX+round(i*deltaX/len),startY+round(i*deltaY/len) ]:=round((cwhite+bck.backgr)/2);
 
   {convert to screen coordinates. Screen coordinates are used to have the font with the correct orientation}
   if mainwindow.flip_horizontal1.checked then begin startX:=head.width-startX; stopX:=head.width-stopX;  end;
@@ -11044,7 +11198,7 @@ begin
       x2:=3-length(value)*7*fontsize;{place the first pixel or last pixel of the text at the location}
   if deltaY>=0 then y2:=8*fontsize else y2:=0;
 
-  annotation_to_array(value, true{transparant},round((cwhite+cblack)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+  annotation_to_array(value, true{transparant},round((cwhite+bck.backgr)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 
   plot_fits(mainwindow.image1,false,true);
 end;
@@ -11703,8 +11857,9 @@ procedure Tmainwindow.FormShow(Sender: TObject);
 var
   s      : string;
   histogram_done,file_loaded,debug,filespecified,analysespecified,analysespecified2,extractspecified,focusrequest : boolean;
-  backgr,snr_min           : double;
+  snr_min                  : double;
   binning,focus_count      : integer;
+  bck                      : Tbackground;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -11864,14 +12019,14 @@ begin
             if ((analysespecified) or (analysespecified2)) then snr_min:=strtofloat2(getoptionvalue('analyse'));
             if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
             if snr_min=0 then snr_min:=30;
-            analyse_image(img_loaded,head,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+            analyse_image(img_loaded,head,snr_min,extractspecified, hfd_counter,bck,hfd_median); {find background, number of stars, median HFD}
             if isConsole then {stdout available, compile targe option -wh used}
             begin
               writeln('HFD_MEDIAN='+floattostrF(hfd_median,ffFixed,0,1));
               writeln('STARS='+inttostr(hfd_counter));
             end;
-            update_float('HFD     =',' / Median Half Flux Diameter' ,hfd_median);
-            update_float('STARS   =',' / Number of stars detected' ,hfd_counter);
+            update_float('HFD     =',' / Median Half Flux Diameter     ',false ,hfd_median);
+            update_float('STARS   =',' / Number of stars detected      ',false ,hfd_counter);
 
 
             if analysespecified2=false then {-analyse -extract}
@@ -11901,7 +12056,7 @@ begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
               if calculate_sqm(false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
               begin
-                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
+                update_float('SQM     =',' / Sky background [magn/arcsec^2]',false ,sqmfloat);
                 update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
               end;
             end;
@@ -12100,7 +12255,7 @@ begin
             if add_lim_magn then
             begin
               calibrate_photometry;{calibrate}
-              update_float('LIM_MAGN=',' / estimated limiting magnitude for point sources' ,magn_limit);
+              update_float('LIM_MAGN=',' / estimated limiting magnitude for point sources',false ,magn_limit);
 
               mess:='';
               if pedestal<>0 then
@@ -12109,7 +12264,7 @@ begin
                 pedestal2:=pedestal; {protect pedestal setting}
                 if calculate_sqm(true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
-                  update_float('SQM     =',' / Sky background [magn/arcsec^2]',sqmfloat);
+                  update_float('SQM     =',' / Sky background [magn/arcsec^2]',false,sqmfloat);
                   update_text('COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
                   mess:=' and SQM'
                 end;
@@ -12384,19 +12539,19 @@ begin
 
       new_to_old_WCS(head);
 
-      update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
-      update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
+      update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
+      update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
 
-      update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
-      update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
+      update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
+      update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-      update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ' ,head.crota1);
-      update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,head.crota2);
+      update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+      update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
 
-      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
       //   Alternative method keeping the old center poistion. Images center outside the image causes problems for image selection in planetarium program
       //   if head.crpix1<>0 then begin head.crpix1:=head.crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
@@ -12609,23 +12764,23 @@ begin
     update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
     update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
 
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
+    update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+    update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
-    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
+    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
+    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
 
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,head.crota2);
+    update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
     update_text   ('PLTSOLVD=','                   T / ASTAP manual with two positions');
 
     update_menu_related_to_solver(true); {update menu section related to solver succesfull}
@@ -12713,17 +12868,17 @@ begin
     head.crpix2:=head.height/2;
     old_to_new_WCS(head);{convert old style FITS to newd style}
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
 
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
+    update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+    update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-    update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,head.crota2);
+    update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
   end;
   remove_key('ANNOTATE',true{all});{this all will be invalid}
   add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
@@ -13358,7 +13513,7 @@ var
   width5,height5, xf,yf,k, fx,fy, shapetype                     : integer;
   hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b  : double;
 begin
-
+  if head.naxis=0 then exit;
   if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
   if flip_vertical1.Checked then yf:=image1.height-1-y else yf:=y;
 
@@ -13986,8 +14141,8 @@ begin
    if head.naxis3=3 then {for star temperature}
    begin
      try
-       r:=img_loaded[0,round(mouse_fitsx)-1,round(mouse_fitsy)-1]-cblack;
-       b:=img_loaded[2,round(mouse_fitsx)-1,round(mouse_fitsy)-1]-cblack;
+       r:=img_loaded[0,round(mouse_fitsx)-1,round(mouse_fitsy)-1]-bck.backgr;
+       b:=img_loaded[2,round(mouse_fitsx)-1,round(mouse_fitsy)-1]-bck.backgr;
      except
        {some rounding error, just outside dimensions}
      end;
@@ -14198,9 +14353,9 @@ begin
         col_g:=img[1,fitsx,fitsy];
         col_b:=img[2,fitsx,fitsy];
 
-        colrr:=(col_r-cblack)/(cwhite-cblack);{scale to 0..1}
-        colgg:=(col_g-cblack)/(cwhite-cblack);{scale to 0..1}
-        colbb:=(col_b-cblack)/(cwhite-cblack);{scale to 0..1}
+        colrr:=(col_r-bck.backgr)/(cwhite-bck.backgr);{scale to 0..1}
+        colgg:=(col_g-bck.backgr)/(cwhite-bck.backgr);{scale to 0..1}
+        colbb:=(col_b-bck.backgr)/(cwhite-bck.backgr);{scale to 0..1}
 
         if sat_factor<>1 then {adjust saturation}
         begin
@@ -14248,7 +14403,7 @@ begin
       else
       begin {mono, naxis3=1}
         col_r:=img[0,fitsx,fitsy];
-        colrr:=(col_r-cblack)/(cwhite-cblack);{scale to 1}
+        colrr:=(col_r-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
         if colrr<=0.00000000001 then colrr:=0.00000000001;
         if colrr>1 then colrr:=1;
         if stretch_on then
@@ -14742,16 +14897,16 @@ begin
     end;
     new_to_old_WCS(head);{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ',false ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ',false ,head.crota2);
 
     remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
     add_text     ('HISTORY   ','Flipped.                                                           ');
@@ -15313,7 +15468,7 @@ begin
         begin
           update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
           update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
-          update_integer('CBLACK  =',' / Black point used for displaying image.         ' ,round(cblack) ); {2019-4-9}
+          update_integer('CBLACK  =',' / Black point used for displaying image.         ' ,round(bck.backgr) ); {2019-4-9}
           update_integer('CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
         end
         else

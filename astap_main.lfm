@@ -221,7 +221,6 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
-    OnClick = Panel1Click
     OnMouseDown = Panel1MouseDown
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
@@ -1370,6 +1369,12 @@ object mainwindow: Tmainwindow
         Hint = 'Balances RGB to remove green and purple.'
         OnClick = removegreenpurple1Click
       end
+      object remove_stars1: TMenuItem
+        Caption = 'Remove stars from image'
+        Hint = 'Remove stars for extended source photometry using Gaia online database'
+        ImageIndex = 46
+        OnClick = remove_stars1Click
+      end
       object inversimage1: TMenuItem
         Caption = 'Inverse image'
         Enabled = False
@@ -1973,7 +1978,7 @@ object mainwindow: Tmainwindow
     Left = 1024
     Top = 207
     Bitmap = {
-      4C7A2E00000010000000100000003F0B00000000000078DAED5D49A81549164D
+      4C7A2F00000010000000100000006A0B00000000000078DAED5D49A81549164D
       E8EE656DBB37DD05422F9A06A1A13F88D6C661A1A80B11150BE70147149C67FD
       8EA8DFFFC5795838FD7640C519A785A83850501F17BAD1467B2388DA56415559
       4A3944E70D5FBC8E172F867B23225FBEF77FC6E39243DC73EF8D1B37E2456646
@@ -2063,7 +2068,8 @@ object mainwindow: Tmainwindow
       C7F09BCE3620902F74C0563E27F65DBE51B7583FE9F042A7BC9F957EB9DCAAAF
       4D7A29F58F893F9B3C5D9E6C972DBEB0B16EF36FECD8BB75EB5605B9FA15951F
       8BB3C911C714AC2C433D8FC19AF86D32B03652E5FAD849F1B1EF182E041F627F
-      88FFA8F5171A3F31E237B4FD84B4DFFF01C65E37AE
+      88FFA8F5171A3F31E237B4FD84B45F1B2FCCF5A21CBB6498F6B132D46DD609F4
+      0852F5CBE729B242ECA0FA5E87A5D4414CBDD49889E9AB026B4EFF039B09976C
     }
   end
   object TrayIcon1: TTrayIcon

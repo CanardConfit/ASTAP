@@ -296,7 +296,7 @@ begin
   head.ra0:=head.ra0*pi/180; {degrees -> radians}
   head.dec0:=head.dec0*pi/180;
 
-  cblack:=head.datamin_org;{for case histogram is not called}
+  bck.backgr:=head.datamin_org;{for case histogram is not called}
   cwhite:=head.datamax_org;
 
 

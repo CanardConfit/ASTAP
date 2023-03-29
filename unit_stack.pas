@@ -931,52 +931,34 @@ const
 
 procedure listview_add(tl: tlistview; s0: string; is_checked: boolean; Count: integer);
 procedure listview_add_xy(fitsX, fitsY: double);{add x,y position to listview}
-procedure update_equalise_background_step(pos1: integer);
-{update equalise background menu}
+procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 procedure update_tab_alignment;{update stackmenu1 menus}
-procedure box_blur(colors, range: integer;
-  var img: image_array);{combine values of pixels, ignore zeros}
-procedure check_pattern_filter(var img: image_array);
-{normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
-procedure black_spot_filter(var img: image_array);
-{remove black spots with value zero}{execution time about 0.4 sec}
+procedure box_blur(colors, range: integer;  var img: image_array);{combine values of pixels, ignore zeros}
+procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
+procedure black_spot_filter(var img: image_array); {remove black spots with value zero}{execution time about 0.4 sec}
 
-function create_internal_solution(img: image_array; hd: theader): boolean;
-{plate solving, image should be already loaded create internal solution using the internal solver}
-function apply_dark_and_flat(var img: image_array): boolean; inline;
-{apply dark and flat if required, renew if different head.exposure or ccd temp}
+function create_internal_solution(img: image_array; hd: theader): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
+function apply_dark_and_flat(var img: image_array): boolean; inline;{apply dark and flat if required, renew if different head.exposure or ccd temp}
 
-procedure smart_colour_smooth(var img: image_array; wide, sd: double;
-  preserve_r_nebula, measurehist: boolean);
-{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
-procedure green_purple_filter(var img: image_array);
-{Balances RGB to remove green and purple. For e.g. Hubble palette}
-procedure date_to_jd(date_time: string; exp: double);
-{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+procedure smart_colour_smooth(var img: image_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure green_purple_filter(var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
+procedure date_to_jd(date_time: string; exp: double); {convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio: double); {resize img_loaded in free ratio}
-function median_background(var img: image_array; color, sizeX, sizeY, x, y: integer): double;
-{find median value of an area at position x,y with sizeX,sizeY}
-procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean;
-  out star_counter: integer; out backgr, hfd_median: double);
-{find background, number of stars, median HFD}
+function median_background(var img: image_array; color, sizeX, sizeY, x, y: integer): double; {find median value of an area at position x,y with sizeX,sizeY}
+procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean;  out star_counter: integer; out bck :Tbackground;out hfd_median: double);{find background, number of stars, median HFD}
 
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
-procedure apply_most_common(sourc, dest: image_array; radius: integer);
-{apply most common filter on first array and place result in second array}
+procedure apply_most_common(sourc, dest: image_array; radius: integer); {apply most common filter on first array and place result in second array}
 
-procedure report_results(object_to_process, stack_info: string;
-  object_counter, colorinfo: integer);{report on tab results}
+procedure report_results(object_to_process, stack_info: string; object_counter, colorinfo: integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
 procedure listviews_begin_update; {speed up making stackmenu visible having a many items}
 procedure listviews_end_update;{speed up making stackmenu visible having a many items}
-procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);
-{analyse list of FITS files}
-function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): double;
-{##### calculate julian day, revised 2017}
-function RemoveSpecialChars(const STR: string): string;
-{remove ['.','\','/','*','"',':','|','<','>']}
+procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);{analyse list of FITS files}
+function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): double;{##### calculate julian day, revised 2017}
+function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*','"',':','|','<','>']}
 
 const
   L_object = 0; {lights, position in listview1}
@@ -1503,14 +1485,11 @@ begin
 end;
 
 
-procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean;
-  out star_counter: integer; out backgr, hfd_median: double);
-{find background, number of stars, median HFD}
+procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean; out star_counter: integer; out bck:Tbackground; out hfd_median: double);//find background, number of stars, median HFD
 var
   width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, m,
   xci, yci, sqr_radius: integer;
-  hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min,
-  min_background: double;
+  hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background: double;
   hfd_list:
   array of double;
   img_sa: image_array;
@@ -1525,21 +1504,18 @@ begin
   max_stars := 500;
   SetLength(hfd_list, len);{set array length to len}
 
-  get_background(0, img, True, True
-    {calculate background and also star level end noise level},{var}backgr, star_level);
-  detection_level := max(3.5 * noise_level[0], star_level);
-  {level above background. Start with a high value}
+  get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
+  detection_level := max(3.5 * bck.noise_level, bck.star_level); {level above background. Start with a high value}
 
   retries := 2; {try up to three times to get enough stars from the image}
 
   hfd_min := max(0.8 {two pixels}, strtofloat2(
-    stackmenu1.min_star_size_stacking1.Caption){hfd});
-  {to ignore hot pixels which are too small}
+  stackmenu1.min_star_size_stacking1.Caption){hfd});  {to ignore hot pixels which are too small}
 
   if ((nrbits = 8) or (head.datamax_org <= 255)) then min_background := 0
   else
     min_background := 8;
-  if ((backgr < 60000) and (backgr > min_background)) then {not an abnormal file}
+  if ((bck.backgr < 60000) and (bck.backgr > min_background)) then {not an abnormal file}
   begin
     repeat {try three time to find enough stars}
       star_counter := 0;
@@ -1547,8 +1523,7 @@ begin
       if report then {write values to file}
       begin
         assignfile(f, ChangeFileExt(filename2, '.csv'));
-        rewrite(f);
-        {this could be done 3 times due to the repeat but it is the most simple code}
+        rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
         writeln(f, 'x,y,hfd,snr,flux');
       end;
 
@@ -1562,7 +1537,7 @@ begin
         for fitsX := 0 to width5 - 1 do
         begin
           if ((img_sa[0, fitsX, fitsY] <= 0){area not occupied by a star} and
-            (img[0, fitsX, fitsY] - backgr > detection_level)) then
+            (img[0, fitsX, fitsY] - bck.backgr > detection_level)) then
             {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0
@@ -1578,13 +1553,11 @@ begin
                 SetLength(hfd_list, len);{increase size}
               end;
 
-              radius := round(3.0 * hfd1);
-              {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+              radius := round(3.0 * hfd1); {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
               sqr_radius := sqr(radius);
               xci := round(xc);{star center as integer}
               yci := round(yc);
-              for n := -radius to +radius do
-                {mark the whole circular star area as occupied to prevent double detection's}
+              for n := -radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
                 for m := -radius to +radius do
                 begin
                   j := n + yci;
@@ -1595,71 +1568,56 @@ begin
                 end;
 
               if report then
-              begin
-                writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +
-                  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux)));
-                {+1 to convert 0... to FITS 1... coordinates}
-              end;
-
+                writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))); {+1 to convert 0... to FITS 1... coordinates}
             end;
           end;
         end;
       end;
 
       Dec(retries);{In principle not required. Try again with lower detection level}
-      if detection_level <= 7 * noise_level[0] then retries := -1 {stop}
+      if detection_level <= 7 * bck.noise_level then
+        retries := -1 {stop}
       else
-        detection_level := max(6.999 * noise_level[0], min(
-          30 * noise_level[0], detection_level * 6.999 / 30));
-      {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
+        detection_level := max(6.999 * bck.noise_level, min(30 * bck.noise_level, detection_level * 6.999 / 30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
       if report then closefile(f);
 
-    until ((star_counter >= max_stars) or (retries < 0));
-    {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+    until ((star_counter >= max_stars) or (retries < 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-    if star_counter > 0 then
-      hfd_median := SMedian(hfd_List, star_counter)
-    else
-      hfd_median := 99;
+    if star_counter > 0 then hfd_median := SMedian(hfd_List, star_counter) else  hfd_median := 99;
   end {backgr is normal}
   else
-    hfd_median := 99;
-  {Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
+    hfd_median := 99; {Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
 
   img_sa := nil;{free mem}
 end;
 
 
-procedure analyse_image_extended(img: image_array; head: Theader;
-  out nr_stars, hfd_median, median_outer_ring, median_11, median_21, median_31,
-  median_12, median_22, median_32, median_13, median_23, median_33: double);
-{analyse several areas}
+procedure analyse_image_extended(img: image_array; head: Theader; out nr_stars, hfd_median, median_outer_ring, median_11, median_21, median_31,  median_12, median_22, median_32, median_13, median_23, median_33: double);{analyse several areas}
 var
   heeadwidth, headheight, fitsX, fitsY, radius, i, j,
   retries, max_stars, n, m, xci, yci, sqr_radius, nhfd, nhfd_outer_ring,
   nhfd_11, nhfd_21, nhfd_31, nhfd_12, nhfd_22, nhfd_32,
   nhfd_13, nhfd_23, nhfd_33: integer;
-  hfd1, star_fwhm, snr, flux, xc, yc, backgr, detection_level: double;
+  hfd1, star_fwhm, snr, flux, xc, yc, detection_level: double;
   img_sa: image_array;
   hfdlist, hfdlist_11, hfdlist_21, hfdlist_31, hfdlist_12, hfdlist_22, hfdlist_32,
   hfdlist_13, hfdlist_23, hfdlist_33, hfdlist_outer_ring: array of double;
   starlistXY: array of array of integer;
   len, starX, starY: integer;
+  bck : tbackground;
 
 begin
   if head.naxis3 > 1 then {colour image}
   begin
     convert_mono(img, head);
-    get_hist(0, img);
-    {get histogram of img_loaded and his_total. Required to get correct background value}
+    get_hist(0, img);    {get histogram of img_loaded and his_total. Required to get correct background value}
   end
   else
   if (bayerpat <> '') then {raw Bayer image}
   begin
     check_pattern_filter(img);
-    get_hist(0, img);
-    {get histogram of img_loaded and his_total. Required to get correct background value}
+    get_hist(0, img);    {get histogram of img_loaded and his_total. Required to get correct background value}
   end;
 
   max_stars := 500; //fixed value
@@ -1670,16 +1628,14 @@ begin
 
   setlength(img_sa, 1, head.Width, head.Height);{set length of image array}
 
-  get_background(0, img, True, True
-    {calculate background and also star level end noise level},{var}backgr, star_level);
+  get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
 
-  detection_level := max(3.5 * noise_level[0], star_level);
-  {level above background. Start with a high value}
+  detection_level := max(3.5 * bck.noise_level, bck.star_level);  {level above background. Start with a high value}
   retries := 2; {try three times to get enough stars from the image}
   repeat
     nhfd := 0;{set counter at zero}
 
-    if backgr > 8 then
+    if bck.backgr > 8 then
     begin
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
@@ -1695,22 +1651,17 @@ begin
         for fitsX := 0 to head.Width - 1 do
         begin
           if ((img_sa[0, fitsX, fitsY] <= 0){area not occupied by a star} and
-            (img[0, fitsX, fitsY] - backgr > detection_level){star}) then
-            {new star. For analyse used sigma is 5, so not too low.}
+            (img[0, fitsX, fitsY] - bck.backgr > detection_level){star}) then   {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99
-              {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
+            HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99  {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
             {star HFD and FWHM}
             if ((hfd1 <= 35) and (snr > 30) and (hfd1 > 0.8) {two pixels minimum}) then
-            begin
-              {store values}
-              radius := round(3.0 * hfd1);
-              {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+            begin    {store values}
+              radius := round(3.0 * hfd1);  {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
               sqr_radius := sqr(radius);
               xci := round(xc);{star center as integer}
               yci := round(yc);
-              for n := -radius to +radius do
-                {mark the whole circular star area as occupied to prevent double detection's}
+              for n := -radius to +radius do  {mark the whole circular star area as occupied to prevent double detection's}
                 for m := -radius to +radius do
                 begin
                   j := n + yci;
@@ -1729,18 +1680,15 @@ begin
                 (img[0, xci - 1, yci + 1] < head.datamax_org - 1) and
                 (img[0, xci + 1, yci - 1] < head.datamax_org - 1) and
                 (img[0, xci + 1, yci + 1] < head.datamax_org - 1)) then {not saturated}
-              begin
-                {store values}
+              begin  {store values}
                 hfdlist[nhfd] := hfd1;
 
-                starlistXY[0, nhfd] := xci;
-                {store star position in image coordinates, not FITS coordinates}
+                starlistXY[0, nhfd] := xci;  {store star position in image coordinates, not FITS coordinates}
                 starlistXY[1, nhfd] := yci;
                 Inc(nhfd);
                 if nhfd >= length(hfdlist) then
                 begin
-                  SetLength(hfdlist, nhfd + max_stars);
-                  {adapt length if required and store hfd value}
+                  SetLength(hfdlist, nhfd + max_stars); {adapt length if required and store hfd value}
                   SetLength(starlistXY, 2, nhfd + max_stars);{adapt array size if required}
                 end;
 
@@ -1753,14 +1701,11 @@ begin
     end;
 
     Dec(retries);{In principle not required. Try again with lower detection level}
-    if detection_level <= 7 * noise_level[0] then retries := -1 {stop}
+    if detection_level <= 7 * bck.noise_level then retries := -1 {stop}
     else
-      detection_level := max(6.999 * noise_level[0], min(30 * noise_level[0],
-        detection_level * 6.999 / 30));
-    {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
+      detection_level := max(6.999 * bck.noise_level, min(30 * bck.noise_level, detection_level * 6.999 / 30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
-  until ((nhfd >= max_stars) or (retries < 0));
-  {reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
+  until ((nhfd >= max_stars) or (retries < 0)); {reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
   nhfd_11 := 0;
   nhfd_21 := 0;
@@ -1831,32 +1776,27 @@ begin
         if nhfd_13 >= length(hfdlist_13) then SetLength(hfdlist_13, nhfd_13 + 500);
       end;
 
-      if ((starX > (head.Width * 1 / 3)) and (starX < (head.Width * 2 / 3)) and
-        (starY > (head.Height * 2 / 3))) then
+      if ((starX > (head.Width * 1 / 3)) and (starX < (head.Width * 2 / 3)) and (starY > (head.Height * 2 / 3))) then
       begin
         hfdlist_23[nhfd_23] := hfd1;
         Inc(nhfd_23);
       end;{store corner HFD values}
-      if ((starX < (head.Width * 1 / 3)) and
-        (starY > (head.Height * 1 / 3)) and (starY < (head.Height * 2 / 3))) then
+      if ((starX < (head.Width * 1 / 3)) and (starY > (head.Height * 1 / 3)) and (starY < (head.Height * 2 / 3))) then
       begin
         hfdlist_12[nhfd_12] := hfd1;
         Inc(nhfd_12);
       end;{store corner HFD values}
-      if ((starX > (head.Width * 1 / 3)) and (starX < (head.Width * 2 / 3)) and
-        (starY > (head.Height * 1 / 3)) and (starY < (head.Height * 2 / 3))) then
+      if ((starX > (head.Width * 1 / 3)) and (starX < (head.Width * 2 / 3)) and (starY > (head.Height * 1 / 3)) and (starY < (head.Height * 2 / 3))) then
       begin
         hfdlist_22[nhfd_22] := hfd1;
         Inc(nhfd_22);
       end;{square center}
-      if ((starX > (head.Width * 2 / 3)) and (starY >
-        (head.Height * 1 / 3)) and (starY < (head.Height * 2 / 3))) then
+      if ((starX > (head.Width * 2 / 3)) and (starY > (head.Height * 1 / 3)) and (starY < (head.Height * 2 / 3))) then
       begin
         hfdlist_32[nhfd_32] := hfd1;
         Inc(nhfd_32);
       end;{store corner HFD values}
-      if ((starX > (head.Width * 1 / 3)) and (starX < (head.Width * 2 / 3)) and
-        (starY < (head.Height * 1 / 3))) then
+      if ((starX > (head.Width * 1 / 3)) and (starX < (head.Width * 2 / 3)) and (starY < (head.Height * 1 / 3))) then
       begin
         hfdlist_21[nhfd_21] := hfd1;
         Inc(nhfd_21);
@@ -1866,42 +1806,19 @@ begin
   end;
 
   nr_stars := nhfd;
-  if nhfd > 0 then  hfd_median := SMedian(hfdList, nhfd)
-  else
-    hfd_median := 99;
-  if nhfd_outer_ring > 0 then  median_outer_ring :=
-      SMedian(hfdlist_outer_ring, nhfd_outer_ring)
-  else
-    median_outer_ring := 99;
-  if nhfd_11 > 0 then median_11 := SMedian(hfdlist_11, nhfd_11)
-  else
-    median_11 := 99;
-  if nhfd_21 > 0 then median_21 := SMedian(hfdlist_21, nhfd_21)
-  else
-    median_21 := 99;
-  if nhfd_31 > 0 then median_31 := SMedian(hfdlist_31, nhfd_31)
-  else
-    median_31 := 99;
+  if nhfd > 0 then  hfd_median := SMedian(hfdList, nhfd) else  hfd_median := 99;
+  if nhfd_outer_ring > 0 then  median_outer_ring := SMedian(hfdlist_outer_ring, nhfd_outer_ring) else median_outer_ring := 99;
+  if nhfd_11 > 0 then median_11 := SMedian(hfdlist_11, nhfd_11) else median_11 := 99;
+  if nhfd_21 > 0 then median_21 := SMedian(hfdlist_21, nhfd_21) else median_21 := 99;
+  if nhfd_31 > 0 then median_31 := SMedian(hfdlist_31, nhfd_31) else median_31 := 99;
 
-  if nhfd_12 > 0 then median_12 := SMedian(hfdlist_12, nhfd_12)
-  else
-    median_12 := 99;
-  if nhfd_22 > 0 then median_22 := SMedian(hfdlist_22, nhfd_22)
-  else
-    median_22 := 99;
-  if nhfd_32 > 0 then median_32 := SMedian(hfdlist_32, nhfd_32)
-  else
-    median_32 := 99;
+  if nhfd_12 > 0 then median_12 := SMedian(hfdlist_12, nhfd_12) else median_12 := 99;
+  if nhfd_22 > 0 then median_22 := SMedian(hfdlist_22, nhfd_22) else median_22 := 99;
+  if nhfd_32 > 0 then median_32 := SMedian(hfdlist_32, nhfd_32) else median_32 := 99;
 
-  if nhfd_13 > 0 then median_13 := SMedian(hfdlist_13, nhfd_13)
-  else
-    median_13 := 99;
-  if nhfd_23 > 0 then median_23 := SMedian(hfdlist_23, nhfd_23)
-  else
-    median_23 := 99;
-  if nhfd_33 > 0 then median_33 := SMedian(hfdlist_33, nhfd_33)
-  else
-    median_33 := 99;
+  if nhfd_13 > 0 then median_13 := SMedian(hfdlist_13, nhfd_13) else median_13 := 99;
+  if nhfd_23 > 0 then median_23 := SMedian(hfdlist_23, nhfd_23) else median_23 := 99;
+  if nhfd_33 > 0 then median_33 := SMedian(hfdlist_33, nhfd_33) else median_33 := 99;
 
   hfdlist := nil;{release memory}
   hfdlist_outer_ring := nil;
@@ -1949,8 +1866,7 @@ begin
             y1 := strtofloat2(list[1]);
             x2 := strtofloat2(list[2]);
             y2 := strtofloat2(list[3]);
-            listview_add_xy((x1 + x2) / 2, (y1 + y2) / 2);
-            {add center annotation to x,y for stacking}
+            listview_add_xy((x1 + x2) / 2, (y1 + y2) / 2); {add center annotation to x,y for stacking}
           end;
         end;
       end;
@@ -1965,18 +1881,18 @@ end;
 procedure analyse_tab_lights(full: boolean);
 var
   c, star_counter, i, counts: integer;
-  backgr, hfd_median, alt, az, sharpness: double;
+  hfd_median, alt, az, sharpness: double;
   red, green, blue, planetary: boolean;
   key, filename1, rawstr: string;
   img: image_array;
+  bck :Tbackground;
 begin
   with stackmenu1 do
   begin
     counts := ListView1.items.Count - 1;
     if counts < 0 then {zero files}
     begin
-      memo2_message(
-        'Abort, no images to analyse! Browse for images, darks and flats. They will be sorted automatically.');
+      memo2_message('Abort, no images to analyse! Browse for images, darks and flats. They will be sorted automatically.');
       exit;
     end;
 
@@ -1990,8 +1906,6 @@ begin
     red := False;
     green := False;
     blue := False;
-
-
     c := 0;
     {convert any non FITS file}
     while c <= counts {check all} do
@@ -2028,7 +1942,7 @@ begin
         if ListView1.items[i].Caption = ListView1.items[c].Caption then {double file name}
         begin
           memo2_message('Removed second entry of same file ' +
-            ListView1.items[i].Caption);
+          ListView1.items[i].Caption);
           listview1.Items.Delete(i);
           Dec(counts); {compensate for delete}
         end
@@ -2061,9 +1975,7 @@ begin
         end;
 
 
-        if load_fits(filename2, True { update head_2.ra0..}, True, False
-          {update memo}, 0, head_2, img) = False then
-          {load in memory. Use head_2 to protect head against overwriting head}
+        if load_fits(filename2, True { update head_2.ra0..}, True, False  {update memo}, 0, head_2, img) = False then {oad in memory. Use head_2 to protect head against overwriting head}
         begin {failed to load}
           ListView1.Items.item[c].Checked := False;
           ListView1.Items.item[c].subitems.Strings[L_result] := 'No FITS!';
@@ -2106,14 +2018,12 @@ begin
           begin {light frame}
 
             if ((planetary = False) and (full = True)) then
-              analyse_image(img, head_2, 10 {snr_min}, False, star_counter, backgr,
-                hfd_median) {find background, number of stars, median HFD}
+              analyse_image(img, head_2, 10 {snr_min}, False, star_counter, bck, hfd_median) {find background, number of stars, median HFD}
             else
             begin
               star_counter := 0;
-              backgr := 0;
-              star_level := 0;
-              backgr := 0;
+              bck.backgr := 0;
+              bck.star_level:= 0;
               hfd_median := -1;
             end;
 
@@ -2196,7 +2106,7 @@ begin
                   ListView1.Items.item[c].subitems.Strings[L_nrstars] :=
                     inttostr5(round(star_counter {star_level}));//nr of stars
                   ListView1.Items.item[c].subitems.Strings[L_background] :=
-                    inttostr5(round(backgr));
+                    inttostr5(round(bck.backgr));
                   if full then sharpness := image_sharpness(img)
                   else
                     sharpness := 0;
@@ -2245,10 +2155,8 @@ begin
                 {$endif}
 
 
-                ListView1.Items.item[c].subitems.Strings[L_datetime] :=
-                  copy(StringReplace(head_2.date_obs, 'T', ' ', []), 1, 23);{date/time up to ms}
-                ListView1.Items.item[c].subitems.Strings[L_position] :=
-                  prepare_ra5(head_2.ra0, ': ') + ', ' + prepare_dec4(head_2.dec0, '° ');
+                ListView1.Items.item[c].subitems.Strings[L_datetime] := copy(StringReplace(head_2.date_obs, 'T', ' ', []), 1, 23);{date/time up to ms}
+                ListView1.Items.item[c].subitems.Strings[L_position] := prepare_ra5(head_2.ra0, ': ') + ', ' + prepare_dec4(head_2.dec0, '° ');
                 {give internal position}
 
                 {is internal solution available?}
@@ -2309,17 +2217,14 @@ begin
     until c > counts;
 
     if ((green) and (blue) and (classify_filter1.Checked = False)) then
-      memo2_message(
-        '■■■■■■■■■■■■■ Hint, colour filters detected in light. For colour stack set the check-mark classify by Image filter! ■■■■■■■■■■■■■');
+      memo2_message( '■■■■■■■■■■■■■ Hint, colour filters detected in light. For colour stack set the check-mark classify by Image filter! ■■■■■■■■■■■■■');
 
     if (stackmenu1.uncheck_outliers1.Checked) then
     begin
       {give list an indentification key label based on object, filter and head_2.exposure time}
       for c := 0 to ListView1.items.Count - 1 do
       begin
-
-        if ListView1.Items.item[c].SubitemImages[L_quality] = icon_thumb_down then
-          {marked at outlier}
+        if ListView1.Items.item[c].SubitemImages[L_quality] = icon_thumb_down then  {marked at outlier}
         begin
           ListView1.Items.item[c].Checked := True;{recheck outliers from previous session}
         end;
@@ -2458,32 +2363,32 @@ begin
     save_as_new_file1.Enabled := False;
 
     case pos1 of
-      1: begin
-        save_as_new_file1.Enabled := True;
-        save_result1.Enabled := True;
-        remove_deepsky_label1.Enabled := True;
-        undo_button_equalise_background1.Caption := '';
-      end;{step 1,6}
-      2: begin
-        most_common_filter_tool1.Enabled := True;
-        {step 3}most_common_mono1.Enabled := head.naxis3 > 1;
-        {colour}remove_deepsky_label1.Enabled := True;
-        undo_button_equalise_background1.Caption := '1';
-      end;
-      3: begin
-        apply_gaussian_filter1.Enabled := True;
-        {step 4}correct_gradient_label1.Enabled := True;
-        undo_button_equalise_background1.Caption := '3';
-      end;
-      4: begin
-        subtract_background1.Enabled := True;
-        {step 5}undo_button_equalise_background1.Caption := '4';
-      end;
-      5: begin
-        save_result1.Enabled := True;
-        {step 5}undo_button_equalise_background1.Caption := '1';
-      end;
-    end;{case}
+       1: begin
+            save_as_new_file1.Enabled := True;
+            save_result1.Enabled := True;
+            remove_deepsky_label1.Enabled := True;
+            undo_button_equalise_background1.Caption := '';
+          end;{step 1,6}
+       2: begin
+            most_common_filter_tool1.Enabled := True; {step 3}
+            most_common_mono1.Enabled := head.naxis3 > 1;{colour}
+            remove_deepsky_label1.Enabled := True;
+            undo_button_equalise_background1.Caption := '1';
+         end;
+       3: begin
+            apply_gaussian_filter1.Enabled := True; {step 4}
+            correct_gradient_label1.Enabled := True;
+            undo_button_equalise_background1.Caption := '3';
+          end;
+       4: begin
+            subtract_background1.Enabled := True; {step 5}
+            undo_button_equalise_background1.Caption := '4';
+          end;
+       5: begin
+            save_result1.Enabled := True; {step 5}
+            undo_button_equalise_background1.Caption := '1';
+          end;
+     end;{case}
   end;
 end;
 
@@ -2643,8 +2548,7 @@ begin
   if Sender = removeselected4 then listview_removeselect(listview4);{from popup menu}
   if Sender = removeselected5 then listview_removeselect(listview5);{from popup menu}
   if Sender = removeselected6 then listview_removeselect(listview6);{from popup menu blink}
-  if Sender = removeselected7 then listview_removeselect(listview7);
-  {from popup menu photometry}
+  if Sender = removeselected7 then listview_removeselect(listview7);{from popup menu photometry}
   if Sender = removeselected8 then listview_removeselect(listview8);{inspector}
   if Sender = removeselected9 then listview_removeselect(listview9);{mount analyse}
 end;
@@ -2678,34 +2582,20 @@ procedure update_stackmenu_mac;//Update menu shortcuts for Mac
 begin
   with stackmenu1 do
   begin
-    with selectall1 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard1 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall2 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall3 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall4 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall5 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall6 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard6 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall7 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard7 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall8 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard8 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall9 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard9 do shortcut := (shortcut and $BFFF) or $1000;
-    //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall1 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard1 do shortcut := (shortcut and $BFFF) or $1000; //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall2 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall3 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall4 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall5 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall6 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard6 do shortcut := (shortcut and $BFFF) or $1000;  //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall7 do shortcut := (shortcut and $BFFF) or $1000;          //replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard7 do shortcut := (shortcut and $BFFF) or $1000;  //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall8 do shortcut := (shortcut and $BFFF) or $1000;          //replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard8 do shortcut := (shortcut and $BFFF) or $1000;  //replace Ctrl equals $4000 by Meta equals $1000
+    with selectall9 do shortcut := (shortcut and $BFFF) or $1000;          //replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard9 do shortcut := (shortcut and $BFFF) or $1000;  //replace Ctrl equals $4000 by Meta equals $1000
   end;
 end;
 
@@ -2954,8 +2844,9 @@ var
   fitsx, fitsy, dist, col, centerX, centerY, colors, w, h, leng, angle,
   Count, largest_distX, largest_distY: integer;
   offset, oldoffset: single;
-  bg, sn, cs: double;
+  sn, cs: double;
   median, test: array of double;
+  bck : Tbackground;
 begin
   colors := Length(img); {colors}
   w := Length(img[0]); {width}
@@ -2977,7 +2868,6 @@ begin
     centerY := (areay1 + areay2) div 2;
   end;
 
-
   centrum_diameter := round(h * centrum_diameter / 100);{transfer percentage to pixels}
 
   largest_distX := max(centerX, w - centerX);
@@ -2988,7 +2878,7 @@ begin
 
   for col := 0 to colors - 1 do {do all colours}
   begin
-    get_background(col, img, True, False{do not calculate noise_level}, bg, star_level);
+    get_background(col, img, True, False{do not calculate noise_level}, bck);
     {should be about 500 for mosaic since that is the target value}
     oldoffset := 0;
     for dist := leng downto 0 do
@@ -3006,12 +2896,12 @@ begin
             {within the image}
           begin
             //memo2_message(inttostr(angle)+'    ' +floattostr(fitsX)+'     '+floattostr(fitsY) );
-            offset := img[col, fitsX, fitsY] - bg;
+            offset := img[col, fitsX, fitsY] - bck.backgr;
 
             if oldoffset <> 0 then offset := 0.1 * offset + 0.9 * oldoffset;{smoothing}
             oldoffset := offset;
 
-            test[Count] := img[col, fitsX, fitsY] - bg;
+            test[Count] := img[col, fitsX, fitsY] - bck.backgr;
             Inc(Count, 1);
           end;
         end;
@@ -3267,7 +3157,7 @@ var
   Save_Cursor: TCursor;
   fitsx, fitsy, col: integer;
   a_factor, k_factor, bf, min, colr: single;
-  bg: double;
+  bck : tbackground;
 begin
   if head.naxis <> 0 then
   begin
@@ -3280,9 +3170,8 @@ begin
     {find background}
     if auto_background1.Checked then
     begin
-      get_background(0, img_loaded, True, False{do not calculate noise_level},
-        bg, star_level);
-      min := bg * 0.9;
+      get_background(0, img_loaded, True, False{do not calculate noise_level}, bck);
+      min := bck.backgr * 0.9;
       edit_background1.Text := floattostrf(min, ffgeneral, 4, 1); //floattostr6(min);
 
       for col := 0 to head.naxis3 - 1 do {all colors}
@@ -3345,8 +3234,7 @@ begin
           begin
             x2 := x + i;
             y2 := y + j;
-            if ((x2 >= 0) and (x2 < width3) and (y2 >= 0) and (y2 < height3)) then
-              dest[k, x2, y2] := most_common;
+            if ((x2 >= 0) and (x2 < width3) and (y2 >= 0) and (y2 < height3)) then  dest[k, x2, y2] := most_common;
           end;
       end;
   end;{K}
@@ -3451,7 +3339,7 @@ begin
             update_text(keyw + '=', #39 + Value + #39);//spaces will be added later
           end
           else
-            update_float(keyw + '=', ' /                                                '
+            update_float(keyw + '=', ' /                                                ',true
               , waarde);
 
           {update listview}
@@ -3741,7 +3629,6 @@ begin
       exit;{done, can display only one image}
     end;
   end;
-//  stackmenu1.cursor:=crDefault;//required for some MacOS versions?
   Screen.Cursor:=crDefault;//required sometimes for MacOS
 end;
 
@@ -3767,14 +3654,15 @@ procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);
 {analyse list of FITS files}
 var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
-  backgr, hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,
+  hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,
   dec_mount_jnow, ram, decm, rax, decx, adu_e: double;
-  filename1: string;
+  filename1,filterstr: string;
   Save_Cursor: TCursor;
   loaded, red, green, blue: boolean;
   img: image_array;
   nr_stars, hfd_outer_ring, median_11, median_21, median_31,
   median_12, median_22, median_32, median_13, median_23, median_33: double;
+  bck : Tbackground;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -3855,7 +3743,6 @@ begin
     Inc(c);
   until c > counts;
 
-
   for c := 0 to lv.items.Count - 1 do
   begin
     if ((lv.Items.item[c].Checked) and ((refresh) or
@@ -3916,11 +3803,10 @@ begin
                 {get background for dark, flats, flat-darks, photometry}
               begin {analyse background and noise}
 
-                get_background(0, img, True {update_hist}, False {calculate noise level},
-                  {var} backgr, star_level);
+                get_background(0, img, True {update_hist}, False {calculate noise level}, {var} bck);
 
                 lv.Items.item[c].subitems.Strings[D_background] :=
-                  inttostr5(round(backgr));
+                  inttostr5(round(bck.backgr));
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
@@ -4042,6 +3928,20 @@ begin
                 StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []);
               {date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[P_filter] := head_2.filter_name;
+
+              filterstr:=uppercase(head_2.filter_name);// G or V or TG
+              if ((length(filterstr)=0) or (pos('CV',filterstr)>0))  then lv.Items.item[c].SubitemImages[P_filter]:=-1 //unknown
+              else
+              if pos('R',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //red
+              else
+              if pos('V',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
+              else
+              if pos('G',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
+              else
+              if pos('B',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //blue
+              else
+              lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
+
               date_to_jd(head_2.date_obs, head_2.exposure);
               {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
               lv.Items.item[c].subitems.Strings[P_jd_mid] :=
@@ -4052,10 +3952,8 @@ begin
                 floattostrF(Hjd, ffFixed, 0, 5);{helio julian day}
 
 
-              calculate_az_alt(0 {try to use header values}, head_2,{out}az, alt);
-              {try to get  a value for alt}
-              if ((centalt = '') and (alt <> 0)) then
-                centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
+              calculate_az_alt(0 {try to use header values}, head_2,{out}az, alt);  {try to get  a value for alt}
+              if ((centalt = '') and (alt <> 0)) then  centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
 
               lv.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
               if alt <> 0 then lv.Items.item[c].subitems.Strings[P_airmass] :=
@@ -4076,11 +3974,10 @@ begin
               if full {amode=3} then {listview7 photometry plus mode}
               begin
 
-                analyse_image(img, head_2, 10 {snr_min}, False, hfd_counter, backgr,
-                  hfd_median);
+                analyse_image(img, head_2, 10 {snr_min}, False, hfd_counter, bck, hfd_median);
                 {find background, number of stars, median HFD}
                 lv.Items.item[c].subitems.Strings[P_background] :=
-                  inttostr5(round(backgr));
+                  inttostr5(round(bck.backgr));
                 lv.Items.item[c].subitems.Strings[P_hfd] :=
                   floattostrF(hfd_median, ffFixed, 0, 1);
                 lv.Items.item[c].subitems.Strings[P_stars] := inttostr5(hfd_counter);
@@ -4804,14 +4701,14 @@ end;
 procedure Tstackmenu1.dark_spot_filter1Click(Sender: TObject);
 var
   fitsx, fitsy, i, j, k, x2, y2, radius, most_common, progress_value: integer;
-  neg_noise_level, bg: double;
+  neg_noise_level: double;
+  bck : tbackground;
 begin
   if head.naxis <> 0 then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-    get_background(0, img_loaded, True, False{do not calculate noise_level},
-      {var} bg, star_level); {should be about 500 for mosaic since that is the target value}
+    get_background(0, img_loaded, True, False{do not calculate noise_level}, bck); {should be about 500 for mosaic since that is the target value}
 
     backup_img;  {store array in img_backup}
     {equalize background}
@@ -4850,7 +4747,7 @@ begin
                 y2 := fitsY + j;
                 if ((x2 >= 0) and (x2 < head.Width) and (y2 >= 0) and
                   (y2 < head.Height)) then
-                  if img_loaded[k, x2, y2] < bg then {below global most common level}
+                  if img_loaded[k, x2, y2] < bck.backgr then {below global most common level}
                     if img_loaded[k, x2, y2] < most_common - neg_noise_level then
                       {local dark spot}
                       img_loaded[k, x2, y2] := most_common - neg_noise_level;
@@ -4966,56 +4863,56 @@ begin
   if head.cdelt1 <> 0 then
   begin
     head.cdelt1 := head.cdelt1 / ratio;
-    update_float('CDELT1  =', ' / X pixel size (deg)                             '
+    update_float('CDELT1  =', ' / X pixel size (deg)                             ',false
       , head.cdelt1);
   end;
   if head.cdelt2 <> 0 then
   begin
     head.cdelt2 := head.cdelt2 / ratio;
-    update_float('CDELT2  =', ' / Y pixel size (deg)                             '
+    update_float('CDELT2  =', ' / Y pixel size (deg)                             ',false
       , head.cdelt2);
   end;
 
   if head.cd1_1 <> 0 then
   begin
     head.crpix1 := head.crpix1 * ratio;
-    update_float('CRPIX1  =', ' / X of reference pixel                           '
+    update_float('CRPIX1  =', ' / X of reference pixel                           ',false
       , head.crpix1);
     head.crpix2 := head.crpix2 * ratio;
-    update_float('CRPIX2  =', ' / Y of reference pixel                           '
+    update_float('CRPIX2  =', ' / Y of reference pixel                           ',false
       , head.crpix2);
     head.cd1_1 := head.cd1_1 / ratio;
     head.cd1_2 := head.cd1_2 / ratio;
     head.cd2_1 := head.cd2_1 / ratio;
     head.cd2_2 := head.cd2_2 / ratio;
-    update_float('CD1_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        '
+    update_float('CD1_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false
       , head.cd1_1);
-    update_float('CD1_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        '
+    update_float('CD1_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false
       , head.cd1_2);
-    update_float('CD2_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        '
+    update_float('CD2_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false
       , head.cd2_1);
-    update_float('CD2_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        '
+    update_float('CD2_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false
       , head.cd2_2);
   end;
 
   head.XBINNING := head.XBINNING / ratio;
   head.YBINNING := head.YBINNING / ratio;
-  update_float('XBINNING=', ' / Binning factor in width                         '
+  update_float('XBINNING=', ' / Binning factor in width                         ',false
     , head.XBINNING);
-  update_float('YBINNING=', ' / Binning factor in height                        '
+  update_float('YBINNING=', ' / Binning factor in height                        ',false
     , head.YBINNING);
 
   if head.XPIXSZ <> 0 then
   begin
     head.XPIXSZ := head.XPIXSZ / ratio;
     head.YPIXSZ := head.YPIXSZ / ratio;
-    update_float('XPIXSZ  =', ' / Pixel width in microns (after stretching)       '
+    update_float('XPIXSZ  =', ' / Pixel width in microns (after stretching)       ',false
       , head.XPIXSZ);
-    update_float('YPIXSZ  =', ' / Pixel height in microns (after stretching)      '
+    update_float('YPIXSZ  =', ' / Pixel height in microns (after stretching)      ',false
       , head.YPIXSZ);
-    update_float('PIXSIZE1=', ' / Pixel width in microns (after stretching)       '
+    update_float('PIXSIZE1=', ' / Pixel width in microns (after stretching)       ',false
       , head.XPIXSZ);
-    update_float('PIXSIZE2=', ' / Pixel height in microns (after stretching)      '
+    update_float('PIXSIZE2=', ' / Pixel height in microns (after stretching)      ',false
       , head.YPIXSZ);
   end;
   add_text('HISTORY   ', 'Image resized with factor ' + floattostr6(ratio));
@@ -5502,7 +5399,7 @@ begin
               memo2_message(
                 'Working on star alignment solutions. Blink frequency will increase after completion.');
               get_background(0, img_loaded, False {no histogram already done},
-                True {unknown, calculate also datamax}, {var} cblack, star_level);
+                True {unknown, calculate also datamax}, {out} bck);
               find_stars(img_loaded, hfd_min, max_stars, starlist1);
               {find stars and put them in a list}
               find_quads(starlist1, 0, quad_smallest, quad_star_distances1);
@@ -5522,8 +5419,7 @@ begin
             else
             begin
               mainwindow.Caption := filename2 + ' Working on star solutions........';
-              get_background(0, img_loaded, False {no histogram already done}
-                , True {unknown, calculate also noise_level}, {var} cblack, star_level);
+              get_background(0, img_loaded, False {no histogram already done}, True {unknown, calculate also noise_level}, {out} bck);
               find_stars(img_loaded, hfd_min, max_stars, starlist2);
               {find stars and put them in a list}
               find_quads(starlist2, 0, quad_smallest, quad_star_distances2);
@@ -5691,7 +5587,7 @@ begin
 
   head.datamin_org := 1000;{for case histogram is not called}
   head.datamax_org := 65535;
-  cblack := head.datamin_org;{for case histogram is not called}
+  bck.backgr := head.datamin_org;{for case histogram is not called}
   cwhite := head.datamax_org;
 
   gradient := stackmenu1.artificial_image_gradient1.Checked;
@@ -6498,9 +6394,9 @@ begin
       end;
     end;
   if counter = 0 then exit;
-  colrr := ((colrr / counter) - cblack) / (cwhite - cblack);{scale to 0..1}
-  colgg := ((colgg / counter) - cblack) / (cwhite - cblack);{scale to 0..1}
-  colbb := ((colbb / counter) - cblack) / (cwhite - cblack);{scale to 0..1}
+  colrr := ((colrr / counter) - bck.backgr) / (cwhite - bck.backgr);{scale to 0..1}
+  colgg := ((colgg / counter) - bck.backgr) / (cwhite - bck.backgr);{scale to 0..1}
+  colbb := ((colbb / counter) - bck.backgr) / (cwhite - bck.backgr);{scale to 0..1}
 
   if colrr <= 0.00000000001 then colrr := 0.00000000001;
   if colgg <= 0.00000000001 then colgg := 0.00000000001;
@@ -7199,8 +7095,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img; {move copy to img_backup}
 
-  get_background(0, img_loaded, False {do not calculate hist}, False
-    {do not calculate noise_level}, {var} cblack, star_level);
+  get_background(0, img_loaded, False {do not calculate hist}, False {do not calculate noise_level}, {out} bck);
 
   try
     radius := StrToInt(stackmenu1.filter_artificial_colouring1.Text);
@@ -7246,9 +7141,9 @@ begin
       begin
         img_loaded[0, fitsX, fitsY] := org_value;
         img_loaded[1, fitsX, fitsY] :=
-          cblack + (org_value - cblack) * Value / star_level_colouring;
+          bck.backgr + (org_value - bck.backgr) * Value / star_level_colouring;
         img_loaded[2, fitsX, fitsY] :=
-          cblack + (org_value - cblack) * Value / star_level_colouring;
+          bck.backgr + (org_value - bck.backgr) * Value / star_level_colouring;
       end;
 
     end;
@@ -7953,17 +7848,18 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
-  medianCheck, medianThree, backgr, hfd_med, apert, annul,
+  medianCheck, medianThree, hfd_med, apert, annul,
   rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep,fov: double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree,max_nr_stars,nrstars_required,nrstars : integer;
+  countCheck, countThree, filtercolour : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
   warned, success: boolean;
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   outliers: array of array of double;
-  astr, memo2_text, filename1: string;
+  astr, memo2_text, filename1,filterstr: string;
+  bck :tbackground;
 
   function measure_star(deX, deY: double): string;{measure position and flux}
   begin
@@ -8074,9 +7970,20 @@ begin
 
   save_settings2;{too many lost selected files . so first save settings}
 
-  if ((pos('V', star_database1.Text) = 0) and (pos('v', star_database1.Text) = 0)) then
+  if pos('V', uppercase(star_database1.Text)) = 0 then
     memo2_message(star_database1.Text +
       ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
+
+  //icon for used database passband
+  if pos('V',reference_database1.text)>0 then  filtercolour:= 1 //green
+  else
+  if pos('R',reference_database1.text)>0 then  filtercolour:= 0 //red
+  else
+  if pos('B',reference_database1.text)>0 then  filtercolour:= 2 //blue
+  else
+  if pos('V',uppercase(star_database1.Text)) > 0 then filtercolour:=1 //green
+  else
+  filtercolour :=-1; //disable
 
 
   {check is analyse is done}
@@ -8206,6 +8113,7 @@ begin
 
         filename2 := listview7.items[c].Caption;
         mainwindow.Caption := filename2;
+        ListView7.Items.item[c].SubitemImages[P_magn1]:= filtercolour ; //show selected database passband
 
         Application.ProcessMessages;
 
@@ -8254,7 +8162,7 @@ begin
         begin
           if apert <> 0 then {aperture<>auto}
           begin
-            analyse_image(img_loaded, head, 30, False {report}, hfd_counter, backgr, hfd_med);
+            analyse_image(img_loaded, head, 30, False {report}, hfd_counter, bck, hfd_med);
             {find background, number of stars, median HFD}
             if hfd_med <> 0 then
             begin
@@ -8711,16 +8619,16 @@ begin
 end;
 
 
-procedure smart_colour_smooth(var img: image_array; wide, sd: double;
-  preserve_r_nebula, measurehist: boolean);
+procedure smart_colour_smooth(var img: image_array; wide, sd: double;  preserve_r_nebula, measurehist: boolean);
 {Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 var
   fitsX, fitsY, x, y, step, x2, y2, Count, width5, height5: integer;
   img_temp2: image_array;
   flux, red, green, blue, rgb, r, g, b, sqr_dist, strongest_colour_local,
-  top, bg, r2, g2, b2, noise_level1, peak, bgR2, bgB2, bgG2, highest_colour, lumr: single;
-  bgR, bgB, bgG: double;
+  top, bg, r2, g2, b2, {noise_level1,} peak, bgR2, bgB2, bgG2, highest_colour, lumr: single;
+  bgR, bgB, bgG, star_level: double;
   copydata, red_nebula: boolean;
+  bckR,bckG,bckB : Tbackground;
 begin
   if length(img) < 3 then exit;{not a three colour image}
 
@@ -8731,13 +8639,19 @@ begin
 
   step := round(wide) div 2;
 
-  get_background(0, img, measurehist {hist}, True  {noise level},{var} bgR, star_level);
-  {calculate red background, noise_level and star_level}
-  get_background(1, img, measurehist {hist}, False{noise level},{var} bgG, star_level);
-  {calculate green background}
-  get_background(2, img, measurehist {hist}, False {noise level},{var} bgB, star_level);
+  get_background(0, img, measurehist {hist}, True  {noise level},bckR);
+  bgR:=bckR.backgr;
+ // noise_level1 := bckR.noise_level;{red noise}
 
-  noise_level1 := noise_level[0];{red noise}
+  {calculate red background, noise_level and star_level}
+  get_background(1, img, measurehist {hist}, False{noise level},bckG);
+  bgG:=bckG.backgr;
+  {calculate green background}
+  get_background(2, img, measurehist {hist}, False {noise level},bckB);
+  bgB:=bckB.backgr;
+
+  star_level:=max(bckR.star_level,max(bckG.star_level,bckB.star_level));
+
   bg := (bgR + bgG + bgB) / 3; {average background}
 
   for fitsY := 0 to height5 - 1 do
@@ -8757,7 +8671,7 @@ begin
       b2 := img[2, fitsX, fitsY] - bgB;
 
 
-      if ((r2 > sd * noise_level1) or (g2 > sd * noise_level1) or (b2 > sd * noise_level1)) then
+      if ((r2 > sd * bckR.noise_level) or (g2 > sd * bckG.noise_level) or (b2 > sd * bckB.noise_level)) then
         {some relative flux}
       begin
         for y := -step to step do
@@ -8815,7 +8729,7 @@ begin
           highest_colour := max(r2, max(g2, b2));
           if preserve_r_nebula then
             red_nebula := ((highest_colour = r2) and (r2 - (bgR2 - bgR) < 150){not the star} and
-              (bgR2 - bgR > 3 * noise_level1))
+              (bgR2 - bgR > 3 * bckR.noise_level))
           else
             red_nebula := False;
 
@@ -9114,6 +9028,7 @@ var
   fitsX, fitsY: integer;
   background_r, background_g, background_b, red, green, blue, signal_R,
   signal_G, signal_B, sigma, lumn: double;
+  bckR,bckG,bckB : Tbackground;
 begin
   if head.naxis3 < 3 then exit;{prevent run time error mono lights}
   //  if head.naxis=0 then exit;
@@ -9122,13 +9037,10 @@ begin
   backup_img;
   sigma := strtofloat2(sigma_decolour1.Text);{standard deviation factor used}
 
-  get_background(1, img_loaded, True {hist}, True {noise level},{var}background_G,
-    star_level);{calculate background and noise_level}
-  get_background(2, img_loaded, True {hist}, True {noise level},
-    {var}background_B, star_level);{calculate background and noise_level}
+  get_background(1, img_loaded, True {hist}, True {noise level},bckG);{calculate background and noise_level}
+  get_background(2, img_loaded, True {hist}, True {noise level},bckB);{calculate background and noise_level}
   {red at last since all brigthness/contrast display is based on red}
-  get_background(0, img_loaded, True {hist}, True {noise level},
-    {var}background_R, star_level);{calculate background and noise_level}
+  get_background(0, img_loaded, True {hist}, True {noise level}, bckR);{calculate background and noise_level}
 
 
 
@@ -9139,17 +9051,17 @@ begin
       green := img_loaded[1, fitsX, fitsY];
       blue := img_loaded[2, fitsX, fitsY];
 
-      if ((red - background_r < sigma * noise_level[0]) and
-        (green - background_G < sigma * noise_level[1]) and (blue - background_B < sigma * noise_level[2]))
+      if ((red - bckR.backgr < sigma * bckR.noise_level) and
+        (green - bckG.backgr < sigma * bckG.noise_level) and (blue - bckB.backgr < sigma * bckB.noise_level))
       then {low luminance signal}
       begin {distribute the colour to luminance}
-        signal_R := red - background_R;
-        signal_G := green - background_G;
-        signal_B := blue - background_B;
+        signal_R := red - bckR.backgr;
+        signal_G := green - bckG.backgr;
+        signal_B := blue - bckB.backgr;
         lumn := (signal_R + signal_G + signal_B) / 3;{make mono}
-        red := background_r + lumn;
-        green := background_G + lumn;
-        blue := background_B + lumn;
+        red := bckR.backgr + lumn;
+        green := bckG.backgr + lumn;
+        blue := bckB.backgr + lumn;
       end;
       img_loaded[0, fitsX, fitsY] := red;
       img_loaded[1, fitsX, fitsY] := green;
@@ -9916,9 +9828,9 @@ begin
     for fitsX := areax1 to areax2 do
     begin
 
-      RGB2HSV(max(0, img_loaded[0, fitsX, fitsY] - cblack),
-        max(0, img_loaded[1, fitsX, fitsY] - cblack),
-        max(0, img_loaded[2, fitsX, fitsY] - cblack), h, s, v);
+      RGB2HSV(max(0, img_loaded[0, fitsX, fitsY] - bck.backgr),
+        max(0, img_loaded[1, fitsX, fitsY] - bck.backgr),
+        max(0, img_loaded[2, fitsX, fitsY] - bck.backgr), h, s, v);
       {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 
       dhue := abs(oldhue - h);
@@ -9929,9 +9841,9 @@ begin
         HSV2RGB(newhue, min(1, s_new * saturation_factor) {s 0..1}, v * v_adjust{v 0..1}, r, g, b);
         {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 
-        img_loaded[0, fitsX, fitsY] := r + cblack;
-        img_loaded[1, fitsX, fitsY] := g + cblack;
-        img_loaded[2, fitsX, fitsY] := b + cblack;
+        img_loaded[0, fitsX, fitsY] := r + bck.backgr;
+        img_loaded[1, fitsX, fitsY] := g + bck.backgr;
+        img_loaded[2, fitsX, fitsY] := b + bck.backgr;
       end;
     end;
   plot_fits(mainwindow.image1, False, True);{plot real}
@@ -9944,25 +9856,25 @@ end;
 
 procedure Tstackmenu1.auto_background_level1Click(Sender: TObject);
 var
-  r, g, b, star_levelR, star_levelG, star_levelB: double;
+  bckR,bckG,bckB : tbackground;
 begin
   if length(img_loaded) < 3 then exit;{not a three colour image}
 
   apply_factor1.Enabled := False;{block apply button temporary}
   application.ProcessMessages;
 
-  get_background(1, img_loaded, True {get hist}, True {get noise},{var} G, star_levelG);
-  get_background(2, img_loaded, True {get hist}, True {get noise},{var} B, star_levelB);
+  get_background(1, img_loaded, True {get hist}, True {get noise},{var} bckG);
+  get_background(2, img_loaded, True {get hist}, True {get noise},{var} bckB);
   {Do red last to maintain current histogram}
-  get_background(0, img_loaded, True {get hist}, True {get noise},{var} R, star_levelR);
+  get_background(0, img_loaded, True {get hist}, True {get noise},{var} bckR);
 
   add_valueR1.Text := floattostrf(0, ffgeneral, 5, 0);
-  add_valueG1.Text := floattostrf(R * (star_levelG / star_levelR) - G, ffgeneral, 5, 0);
-  add_valueB1.Text := floattostrf(R * (star_levelB / star_levelR) - B, ffgeneral, 5, 0);
+  add_valueG1.Text := floattostrf(bckR.backgr * (bckG.star_level / bckR.star_level) - bckG.backgr, ffgeneral, 5, 0);
+  add_valueB1.Text := floattostrf(bckR.backgr * (bckB.star_level / bckR.star_level) - bckB.backgr, ffgeneral, 5, 0);
 
-  multiply_green1.Text := floattostrf(star_levelR / star_levelG, ffgeneral, 5, 0);
+  multiply_green1.Text := floattostrf(bckR.star_level / bckG.star_level, ffgeneral, 5, 0);
   {make stars white}
-  multiply_blue1.Text := floattostrf(star_levelR / star_levelB, ffgeneral, 5, 0);
+  multiply_blue1.Text := floattostrf(bckR.star_level / bckB.star_level, ffgeneral, 5, 0);
   multiply_red1.Text := '1';
 
   apply_factor1.Enabled := True;{enable apply button}
@@ -11235,7 +11147,7 @@ var
   mosaic_mode, sigma_mode, calibration_mode, calibration_mode2, skip_combine,
   success, classify_filter, classify_object, sender_photometry: boolean;
   startTick: qword;{for timing/speed purposes}
-  min_background, max_background, backgr: double;
+  min_background, max_background,back_gr    : double;
   filters_used: array [0..4] of string;
 begin
   save_settings2;{too many lost selected files, so first save settings}
@@ -11298,11 +11210,9 @@ begin
     if process_as_osc > 0 then
     begin
       if process_as_osc = 2 then
-        memo2_message('Colour stack. Forced processing as OSC images. Demosaic method ' +
-          demosaic_method1.Text)
+        memo2_message('Colour stack. Forced processing as OSC images. Demosaic method ' +   demosaic_method1.Text)
       else
-        memo2_message('Colour stack. OSC images detected. Demosaic method ' +
-          demosaic_method1.Text);
+        memo2_message('Colour stack. OSC images detected. Demosaic method ' +  demosaic_method1.Text);
 
       if classify_filter{1.checked} then
       begin
@@ -11316,10 +11226,7 @@ begin
     else
       memo2_message('Grayscale stack (classify by light filter unchecked)');
 
-    set_icon_stackbutton((process_as_osc > 0) or (classify_filter{1.checked}));
-    //update glyph stack button to colour or gray
-
-
+    set_icon_stackbutton((process_as_osc > 0) or (classify_filter{1.checked}));  //update glyph stack button to colour or gray
     memo2_message('Stacking (' + stack_method1.Text + '), HOLD ESC key to abort.');
   end
   else
@@ -11361,8 +11268,7 @@ begin
   begin
     calibration_only;
     if process_as_osc > 0 then Memo2_message('OSC images are converted to colour.');
-    Memo2_message(
-      'Ready. Resulting files are available in tab Results and can be copied to the Blink, Photometry  or Lights tab.');
+    Memo2_message('Ready. Resulting files are available in tab Results and can be copied to the Blink, Photometry  or Lights tab.');
     exit;
   end;
 
@@ -11428,8 +11334,7 @@ begin
           end;
 
           {load file}
-          if load_fits(filename2, True {light}, True, True {update memo},
-            0, head, img_loaded){important required to check head.cd1_1} = False then
+          if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded){important required to check head.cd1_1} = False then
           begin
             memo2_message('Error loading file ' + filename2);
             {failed to load} Screen.Cursor := crDefault;
@@ -11449,9 +11354,8 @@ begin
             memo2_message('Astrometric solution for: "' + filename2 + '"');
           if solution then
           begin
-            stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] := '✓';
-            stackmenu1.ListView1.Items.item[c].subitems.Strings[L_position] :=
-              prepare_ra5(head.ra0, ': ') + ', ' + prepare_dec4(head.dec0, '° ');{give internal position}
+            stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:='✓';
+            stackmenu1.ListView1.Items.item[c].subitems.Strings[L_position]:= prepare_ra5(head.ra0, ': ') + ', ' + prepare_dec4(head.dec0, '° ');{give internal position}
           end
           else
             stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] := '';
@@ -11473,9 +11377,7 @@ begin
   begin
     memo2_message('Checking orientations');
     for c := 0 to ListView1.items.Count - 1 do
-      if ((ListView1.items[c].Checked = True) and
-        (stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] =
-        '✓' {solution})) then
+      if ((ListView1.items[c].Checked = True) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]='✓' {solution})) then
       begin
         try { Do some lengthy operation }
           ListView1.Selected := nil; {remove any selection}
@@ -11496,8 +11398,7 @@ begin
           end;
 
           {load file}
-          if load_fits(filename2, True {light}, True, True {update memo},
-            0, head, img_loaded){important required to check head.cd1_1} = False then
+          if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded){important required to check head.cd1_1} = False then
           begin
             memo2_message('Error loading file ' + filename2);
             {failed to load} Screen.Cursor := crDefault;
@@ -11512,10 +11413,7 @@ begin
             //mainwindow.imageflipv1Click(sender);{vertical flip}
             raster_rotate(180, head.Width / 2, head.Height / 2, img_loaded);
             {fast rotation 180 degrees}
-            if nrbits = 16 then
-              save_fits(img_loaded, filename2, 16, True)
-            else
-              save_fits(img_loaded, filename2, -32, True);
+            if nrbits = 16 then save_fits(img_loaded, filename2, 16, True) else save_fits(img_loaded, filename2, -32, True);
           end;
 
         finally
@@ -11529,11 +11427,8 @@ begin
     memo2_message('Checking annotations');
     for c := 0 to ListView1.items.Count - 1 do
       //   and (stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓')and ( length(stackmenu1.ListView1.Items.item[c].subitems.Strings[I_X])<=1){no annotation yet}
-      if ((ListView1.items[c].Checked = True) and
-        (stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] = '✓' {solution}) and
-        ((stackmenu1.update_annotations1.Checked) or (stackmenu1.auto_rotate1.Checked) or
-        (length(stackmenu1.ListView1.Items.item[c].subitems.Strings[L_X]) <=
-        1)){no annotation yet}) then
+      if ((ListView1.items[c].Checked = True) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] = '✓' {solution}) and
+         ((stackmenu1.update_annotations1.Checked) or (stackmenu1.auto_rotate1.Checked) or (length(stackmenu1.ListView1.Items.item[c].subitems.Strings[L_X]) <= 1)){no annotation yet}) then
       begin
         try { Do some lengthy operation }
           ListView1.Selected := nil; {remove any selection}
@@ -11544,8 +11439,7 @@ begin
           {indicate 0 to 10% for plate solving}
 
           filename2 := ListView1.items[c].Caption;
-          memo2_message('Adding annotations to FITS header and X,Y positions of selected object to list for '
-            + filename2);
+          memo2_message('Adding annotations to FITS header and X,Y positions of selected object to list for ' + filename2);
 
           Application.ProcessMessages;
           if esc_pressed then
@@ -11667,10 +11561,7 @@ begin
           if object_to_process = '' then
             object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]);
           {get a object name to stack}
-          if ((classify_object{1.checked} = False) or
-            (mosaic_mode){ignore object name in mosaic} or
-            ((object_to_process <> '') and
-            (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
+          if ((classify_object{1.checked} = False) or (mosaic_mode){ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
           then
             {correct object?}
           begin {correct object}
@@ -11692,10 +11583,9 @@ begin
             Inc(nrfiles);
             if mosaic_mode then
             begin
-              backgr := strtofloat2(
-                ListView1.Items.item[c].subitems.Strings[L_background]);
-              min_background := min(backgr, min_background);
-              max_background := max(backgr, max_background);
+              back_gr := strtofloat2(ListView1.Items.item[c].subitems.Strings[L_background]);
+              min_background := min(back_gr, min_background);
+              max_background := max(back_gr, max_background);
             end;
           end;
         end;
@@ -11707,25 +11597,19 @@ begin
 
         if sigma_mode then
         begin
-          if length(files_to_process) <= 5 then
-            memo2_message(
-              '█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
+          if length(files_to_process) <= 5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
           stack_sigmaclip(over_size, process_as_osc,{var}files_to_process, counterL);
           {sigma clip combining}
         end
         else
 
         if mosaic_mode then
-          stack_mosaic(over_size,{var}files_to_process, abs(
-            max_background - min_background), counterL)
-        {mosaic combining}
+          stack_mosaic(over_size,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
         else
         if cal_and_align then {calibration & alignment only}
         begin
-          memo2_message('---------- Calibration & alignment for object: ' +
-            object_to_process + ' -----------');
-          calibration_and_alignment(over_size, process_as_osc,
-            {var}files_to_process, counterL);{saturation clip average}
+          memo2_message('---------- Calibration & alignment for object: ' + object_to_process + ' -----------');
+          calibration_and_alignment(over_size, process_as_osc, {var}files_to_process, counterL);{saturation clip average}
         end
         else
           stack_average(over_size, process_as_osc,{var}files_to_process, counterL);
@@ -11792,11 +11676,7 @@ begin
           files_to_process[c].Name := '';{mark as empthy}
           files_to_process[c].listviewindex := c;
           {use same index as listview except when later put lowest HFD first}
-          if ((ListView1.items[c].Checked = True) and
-            (ListView1.Items.item[c].SubitemImages[L_result] < 0){not yet done} and
-            (length(ListView1.Items.item[c].subitems.Strings[L_filter]) >
-            0)  {skip any file without a filter name}
-            ) then
+          if ((ListView1.items[c].Checked = True) and (ListView1.Items.item[c].SubitemImages[L_result]<0){not yet done} and (length(ListView1.Items.item[c].subitems.Strings[L_filter])>0) {skip any file without a filter name}) then
           begin  {not done yet}
             if object_to_process = '' then
               object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]);
@@ -11817,19 +11697,16 @@ begin
                 Inc(image_counter);{one image more}
                 ListView1.Items.item[c].SubitemImages[L_result] := 5;
                 {mark 3th columns as done using a stacked icon}
-                ListView1.Items.item[c].subitems.Strings[L_result] :=
-                  IntToStr(object_counter) + '  ';{show image result number}
+                ListView1.Items.item[c].subitems.Strings[L_result] := IntToStr(object_counter) + '  ';{show image result number}
                 Inc(nrfiles);
                 first_file := c; {remember first found for case it is the only file}
-                head.exposure :=
-                  strtofloat2(ListView1.Items.item[c].subitems.Strings[L_exposure]);
+                head.exposure := strtofloat2(ListView1.Items.item[c].subitems.Strings[L_exposure]);
                 {remember head.exposure time in case only one file, so no stack so unknown}
                 if mosaic_mode then
                 begin
-                  backgr := strtofloat2(
-                    ListView1.Items.item[c].subitems.Strings[L_background]);
-                  min_background := min(backgr, min_background);
-                  max_background := max(backgr, max_background);
+                  back_gr := strtofloat2( ListView1.Items.item[c].subitems.Strings[L_background]);
+                  min_background := min(back_gr, min_background);
+                  max_background := max(back_gr, max_background);
                 end;
               end;
             end;
@@ -11847,12 +11724,9 @@ begin
             {sigma clip combining}
             else
             if mosaic_mode then
-              stack_mosaic(over_size,{var}files_to_process, abs(
-                max_background - min_background), counterL)
-            {mosaic combining}
+              stack_mosaic(over_size,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
             else
-              stack_average(
-                over_size, process_as_osc,{var}files_to_process, counterL);{average}
+              stack_average(over_size, process_as_osc,{var}files_to_process, counterL);{average}
             over_sizeL := 0; {do oversize only once. Not again in 'L' mode !!}
             if esc_pressed then
             begin
@@ -11872,9 +11746,9 @@ begin
                 head.crpix2 := head.crpix2 + round(over_size * head.Height / head.Width);
               {if oversize is negative then shrinking is done in ratio. Y shrinkage is done with factor round(oversize*height/width. Adapt head.crpix2 accordingly.}
               update_float('CRPIX1  =',
-                ' / X of reference pixel                           ', head.crpix1);
+                ' / X of reference pixel                           ',false, head.crpix1);
               update_float('CRPIX2  =',
-                ' / Y of reference pixel                           ', head.crpix2);
+                ' / Y of reference pixel                           ',false, head.crpix2);
             end;
 
             update_text('COMMENT 1', '  Written by ASTAP. www.hnsky.org');
@@ -11940,11 +11814,7 @@ begin
             report_results(object_to_process, stack_info, object_counter, i {color icon});
             {report result in tab result using modified filename2}
             filename2 := filename3;{restore last filename}
-
-
-
             extra1 := extra1 + head.filter_name;
-
           end{nrfiles>1}
           else
           begin
@@ -11965,22 +11835,12 @@ begin
           end;
 
           case i of
-            0: begin
-              extra2 := extra2 + 'R';
-            end;
-            1: begin
-              extra2 := extra2 + 'G';
-            end;
-            2: begin
-              extra2 := extra2 + 'B';
-            end;
-            3: begin
-              extra2 := extra2 + '-';
-            end;
+            0: begin extra2 := extra2 + 'R'; end;
+            1: begin extra2 := extra2 + 'G'; end;
+            2: begin extra2 := extra2 + 'B'; end;
+            3: begin extra2 := extra2 + '-'; end;
             else
-            begin
-              extra2 := extra2 + 'L';
-            end;
+            begin extra2 := extra2 + 'L'; end;
           end;{case}
 
           //   extra1:=extra1+head.filter_name;
@@ -12141,7 +12001,7 @@ begin
           if ((head.naxis3 = 1) and (counterL > 0)) then {works only for mono}
           begin
             update_float('JD-AVG  =',
-              ' / Julian Day of the observation mid-point.       ',
+              ' / Julian Day of the observation mid-point.       ',false,
               jd_sum / counterL);{give midpoint of exposures}
             date_avg := JdToDate(jd_sum / counterL);
             {update date_avg for asteroid annotation}
@@ -12197,9 +12057,9 @@ begin
               head.crpix2 := head.crpix2 + round(over_size * head.Height / head.Width);
             {if oversize is negative then shrinking is done in ratio. Y shrinkage is done with factor round(oversize*height/width. Adapt head.crpix2 accordingly.}
             update_float('CRPIX1  =',
-              ' / X of reference pixel                           ', head.crpix1);
+              ' / X of reference pixel                           ',false, head.crpix1);
             update_float('CRPIX2  =',
-              ' / Y of reference pixel                           ', head.crpix2);
+              ' / Y of reference pixel                           ',false, head.crpix2);
           end;
 
           head.exposure := sum_exp;{for annotation asteroid}
