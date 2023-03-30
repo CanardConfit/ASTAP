@@ -6762,7 +6762,7 @@ end;
 procedure Tstackmenu1.photom_green1Click(Sender: TObject);
 var
   c: integer;
-  fn, col, ff: string;
+  fn, ff: string;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed := False;
@@ -6811,7 +6811,6 @@ procedure Tstackmenu1.photom_stack1Click(Sender: TObject);
 var
   index, counter, oldindex, position, i: integer;
   ListItem: TListItem;
-  oldmakeosc, oldclassify_filter, oldclassify_object: boolean;
 begin
 
   position := -1;
@@ -7849,7 +7848,7 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
   medianCheck, medianThree, hfd_med, apert, annul,
-  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep,fov: double;
+  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
   countCheck, countThree, filtercolour : integer;
@@ -7858,7 +7857,7 @@ var
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   outliers: array of array of double;
-  astr, memo2_text, filename1,filterstr: string;
+  astr, memo2_text, filename1 : string;
   bck :tbackground;
 
   function measure_star(deX, deY: double): string;{measure position and flux}
@@ -7882,8 +7881,6 @@ var
         (img_loaded[0, round(xc + 1), round(yc + 1)] < saturation_level)) then
         {not saturated star}
       begin
-//        magn := starlistpack[c].flux_ratio - ln(flux) * 2.511886432 / ln(10);
-//        magn := ln(starlistpack[c].flux_ratio/flux)/ln(2.511886432);
         magn:=starlistpack[c].MZERO - ln(flux)*2.5/ln(10);
 
 
@@ -7975,15 +7972,17 @@ begin
       ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
 
   //icon for used database passband
-  if pos('V',reference_database1.text)>0 then  filtercolour:= 1 //green
+  if pos('V',reference_database1.text)>0 then  filtercolour:= 1 //green, online
   else
-  if pos('R',reference_database1.text)>0 then  filtercolour:= 0 //red
+  if pos('R',reference_database1.text)>0 then  filtercolour:= 0 //red, online
   else
-  if pos('B',reference_database1.text)>0 then  filtercolour:= 2 //blue
+  if pos('BP',reference_database1.text)>0 then  filtercolour:= 4 //Gray, online
   else
-  if pos('V',uppercase(star_database1.Text)) > 0 then filtercolour:=1 //green
+  if pos('B',reference_database1.text)>0 then  filtercolour:= 2 //blue, online
   else
-  filtercolour :=-1; //disable
+  if pos('V',uppercase(star_database1.Text)) > 0 then filtercolour:=1 //green, local V50, V17
+  else
+  filtercolour :=4; //gray, local D50,.....
 
 
   {check is analyse is done}
@@ -9026,12 +9025,12 @@ end;
 procedure Tstackmenu1.apply_remove_background_colour1Click(Sender: TObject);
 var
   fitsX, fitsY: integer;
-  background_r, background_g, background_b, red, green, blue, signal_R,
+  red, green, blue, signal_R,
   signal_G, signal_B, sigma, lumn: double;
   bckR,bckG,bckB : Tbackground;
 begin
   if head.naxis3 < 3 then exit;{prevent run time error mono lights}
-  //  if head.naxis=0 then exit;
+
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   backup_img;

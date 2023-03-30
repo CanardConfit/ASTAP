@@ -2763,8 +2763,7 @@ begin
   result:=true;
   database_type:=1476;{type .1476 database}
   database:=lowercase(database);
-
-  typ:=database[1];
+  if length(database)>0 then typ:=database[1] else typ:='a';
 
   if typ<>'a' then {manual setting}
   begin

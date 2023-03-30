@@ -2092,7 +2092,7 @@ begin
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 
-        memo2_message('Photometric calibration is only valid if current filter passband ('+head.filter_name+ ') is similar as passband reference database ('+gaia_type+'). CV≈BP,  TG≈V');
+        memo2_message('Photometric calibration is only valid if the filter passband is similar as the passband reference database. This is indicated by the coloured square icons');
 
         if report_lim_magn then
         begin
