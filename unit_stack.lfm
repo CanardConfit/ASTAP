@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 681
   Top = 220
   Width = 2163
-  HorzScrollBar.Page = 1701
+  HorzScrollBar.Page = 2008
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
