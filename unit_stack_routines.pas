@@ -120,7 +120,7 @@ begin
   solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
   solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
 
-  flipped:=head.CD1_1*head.CD2_2>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+  flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   flipped_reference:=head_ref.CD1_1*head_ref.CD2_2>0; {flipped reference image}
   if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
   begin

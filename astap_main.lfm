@@ -1369,13 +1369,6 @@ object mainwindow: Tmainwindow
         Hint = 'Balances RGB to remove green and purple.'
         OnClick = removegreenpurple1Click
       end
-      object remove_stars1: TMenuItem
-        Caption = 'Remove stars from image'
-        Enabled = False
-        Hint = 'Remove stars for extended source photometry using Gaia online database'
-        ImageIndex = 46
-        OnClick = remove_stars1Click
-      end
       object inversimage1: TMenuItem
         Caption = 'Inverse image'
         Enabled = False

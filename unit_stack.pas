@@ -39,6 +39,10 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    increase_nebulosity3: TEdit;
+    GroupBox19: TGroupBox;
+    remove_stars1: TBitBtn;
+    GroupBox18: TGroupBox;
     reference_database1: TComboBox;
     Annotations_visible2: TCheckBox;
     clear_result_list1: TButton;
@@ -46,6 +50,7 @@ type
     column_sqm1: TMenuItem;
     column_lim_magn1: TMenuItem;
     new_colour_luminance1: TTrackBar;
+    increase_nebulosity1: TBitBtn;
     save_settings_image_path1: TCheckBox;
     annotate_mode1: TComboBox;
     apply_normalise_filter1: TCheckBox;
@@ -70,6 +75,8 @@ type
     label_longitude1: TLabel;
     monitor_latitude1: TEdit;
     monitor_longitude1: TEdit;
+    undo_button17: TBitBtn;
+    undo_button18: TBitBtn;
     use_triples1: TCheckBox;
     MenuItem33: TMenuItem;
     target_distance1: TLabel;
@@ -186,6 +193,7 @@ type
     GroupBox17: TGroupBox;
     bin_factor1: TComboBox;
     undo_button12: TBitBtn;
+    UpDown_nebulosity1: TUpDown;
     write_video1: TButton;
     Label36: TLabel;
     Label49: TLabel;
@@ -630,6 +638,7 @@ type
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
+    procedure remove_stars1Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure calibrate_prior_solving1Change(Sender: TObject);
@@ -645,6 +654,7 @@ type
     procedure live_monitoring1Click(Sender: TObject);
     procedure auto_select1Click(Sender: TObject);
     procedure make_osc_color1Click(Sender: TObject);
+    procedure manipulate1Click(Sender: TObject);
     procedure monitoring_stop1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
     procedure keywordchangelast1Click(Sender: TObject);
@@ -1101,7 +1111,7 @@ uses
   unit_image_sharpness, unit_gaussian_blur, unit_star_align,
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
-  unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia;
+  unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk;
 
 type
   blink_solution = record
@@ -9182,9 +9192,6 @@ end;
 
 procedure Tstackmenu1.tab_Pixelmath2Show(Sender: TObject);
 begin
-
-//  edit_background1.Text := '';
-
   stackmenu1.width_UpDown1.position :=
     round(head.Width * strtofloat2(stackmenu1.resize_factor1.Caption));
 end;
@@ -9245,6 +9252,183 @@ begin
     plot_fits(mainwindow.image1,false,true)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
+end;
+
+
+procedure remove_stars;
+var
+  fitsX,fitsY,hfd_counter,position,x,y,x1,y1  : integer;
+  star_fwhm,snr,flux,magnd, hfd_median,max_radius,
+  backgrR,backgrG,backgrB,delta                           : double;
+  img_temp3 :image_array;
+  old_aperture : string;
+
+const
+   default=1000;
+
+
+   procedure star_background(rs {radius},x1,y1 :integer);
+   var
+     backgroundR,backgroundG,backgroundB : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
+     r1_square,r2_square,distance : double;
+     r1,r2,i,j,counter : integer;
+   begin
+     r1_square:=rs*rs;{square radius}
+     r2:=rs+3 {annulus_width};
+     r2_square:=r2*r2;
+     try
+       counter:=0;
+       for i:=-r2 to r2 do {calculate the mean outside the the detection area}
+       for j:=-r2 to r2 do
+       begin
+         if ((x1-r2>=0) and (x1+r2<=head.width-1) and
+          (y1-r2>=0) and (y1+r2<=head.height-1) ) then
+
+           distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
+           if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
+           begin
+             backgroundR[counter]:=img_loaded[0,x1+i,y1+j];
+             if head.naxis3>1 then backgroundG[counter]:=img_loaded[1,x1+i,y1+j];
+             if head.naxis3>2 then backgroundB[counter]:=img_loaded[2,x1+i,y1+j];
+             inc(counter);
+           end;
+        end;
+        if counter>2 then
+        begin
+          backgrR:=Smedian(backgroundR,counter);
+          if head.naxis3>1 then backgrG:=Smedian(backgroundG,counter);
+          if head.naxis3>2 then backgrB:=Smedian(backgroundB,counter);
+        end;
+     finally
+     end;
+
+   end;
+
+begin
+  old_aperture:=stackmenu1.flux_aperture1.text;
+  stackmenu1.flux_aperture1.text:='max';//full flux is here required
+
+  calibrate_photometry;
+
+  stackmenu1.flux_aperture1.text:=old_aperture;
+
+
+  if head.mzero=0 then
+  begin
+    beep;
+    img_temp3:=nil;
+    Screen.Cursor:=crDefault;
+    exit;
+  end;
+
+  memo2_message('Passband setting: '+stackmenu1.reference_database1.text);
+
+
+//  image1.Canvas.Pen.Mode := pmMerge;
+//  image1.Canvas.Pen.width :=1;
+//  image1.Canvas.brush.Style:=bsClear;
+//  image1.Canvas.font.color:=clyellow;
+//  image1.Canvas.font.name:='default';
+//  image1.Canvas.font.size:=10;
+//  mainwindow.image1.Canvas.Pen.Color := clred;
+
+
+  setlength(img_temp3,1,head.width,head.height);{set size of image array}
+  for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1  do
+      img_temp3[0,fitsX,fitsY]:=default;{clear}
+  plot_artificial_stars(img_temp3,magn_limit {measured});{create artificial image with database stars as pixels}
+
+   analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
+
+   backgrR:=bck.backgr;//defaults
+   backgrG:=bck.backgr;
+   backgrB:=bck.backgr;
+
+   for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1  do
+    begin
+      magnd:=img_temp3[0,fitsX,fitsY];
+      if magnd<default then {a star from the database}
+      begin
+          star_background(round(4*hfd_median) {radius},fitsX,fitsY);//calculate background(s)
+          flux:=power(10,0.4*(head.mzero-magnd/10));
+
+          flux:=flux*1.1;//compensate for flux errors
+          max_radius:=99999;
+
+          for position:=0 to length(disk)-1 do //remove star flux
+          begin
+            begin
+              x1:=disk[position,0]; // disk, disk positions starting from center moving outwards
+              y1:=disk[position,1];
+              x:=fitsX+x1; // disk, disk positions starting from center moving outwards
+              y:=fitsY+y1;
+              if ((x>=0) and (x<head.width) and (y>=0) and (y<head.height)) then //within image
+              begin
+                if max_radius>100 then
+                begin
+                  if img_loaded[0,x,y]-backgrR<=0 then //reached outside of star
+                    max_radius:=1+sqrt(sqr(x1)+sqr(y1));//allow to continue for one pixel ring max
+                end
+                else
+                if sqrt(sqr(x1)+sqr(y1))>=max_radius then
+                  break;
+
+                delta:=min(flux,(img_loaded[0,x,y]-backgrR));//all photometry is only done in the red channel
+                img_loaded[0,x,y]:=img_loaded[0,x,y]-delta;
+                flux:=flux-delta;
+
+                if delta>0 then //follow the red channel
+                begin
+                  if head.naxis3>1 then img_loaded[1,x,y]:=img_loaded[0,x,y]*backgrG/backgrR;
+                  if head.naxis3>2 then img_loaded[2,x,y]:=img_loaded[0,x,y]*backgrB/backgrR;
+                end;
+              end;
+
+            end;
+          end;
+      end;
+    end;
+
+  img_temp3:=nil;{free mem}
+end;
+
+
+procedure Tstackmenu1.remove_stars1Click(Sender: TObject);
+var
+  gain: single;
+  fitsX,fitsY,col   : integer;
+begin
+  if head.naxis=0 then exit; {file loaded?}
+  if head.cd1_1=0 then begin memo2_message('Abort, solve the image first!');exit; end;
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  backup_img;{preserve img array and fits header of the viewer}
+  bck.backgr:=0;
+
+  remove_stars;
+  memo2_message('Stars removed.');
+  gain:=UpDown_nebulosity1.position;
+
+  if sender=increase_nebulosity1 then
+  begin
+    for col:=0 to head.naxis3-1 do //all colour
+      for fitsX:=0 to head.width-1 do
+        for fitsY:=0 to head.height-1 do
+          img_loaded[col, fitsX, fitsY]:=img_backup[index_backup].img[col, fitsX, fitsY] + (img_loaded[col, fitsX, fitsY]-bck.backgr {reduce background})*gain;
+
+  //  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+    memo2_message('Nebulosity signal increased.');
+  end;
+
+  mainwindow.image1.Canvas.font.size:=10;
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.Canvas.textout(20,head.height-20,stackmenu1.reference_database1.text);//show which database was used
+
+  plot_fits(mainwindow.image1,false,true);//refresh screen
+
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -9415,6 +9599,11 @@ procedure Tstackmenu1.make_osc_color1Click(Sender: TObject);
 begin
   stackmenu1.stack_method1Change(nil);
   {update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
+end;
+
+procedure Tstackmenu1.manipulate1Click(Sender: TObject);
+begin
+
 end;
 
 

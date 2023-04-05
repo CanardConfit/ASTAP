@@ -39,6 +39,7 @@ type
     help_uncheck_outliers1: TLabel;
     hfd_button1: TButton;
     rectangle1: TRadioButton;
+    to_clipboard2: TCheckBox;
     triangle1: TRadioButton;
     roundness_button1: TButton;
     measuring_angle1: TComboBox;
@@ -60,6 +61,7 @@ type
     procedure measuring_angle1Change(Sender: TObject);
     procedure show_distortion1Click(Sender: TObject);
     procedure tilt1Click(Sender: TObject);
+    procedure to_clipboard2Click(Sender: TObject);
     procedure triangle1Change(Sender: TObject);
     procedure undo_button1Click(Sender: TObject);
     procedure values1Change(Sender: TObject);
@@ -98,6 +100,8 @@ implementation
 var
    executed : integer; {1 image changed (refresh required), 2 array changed(restore required)}
 
+   toClipboard1: boolean=false;
+   toClipboard2: boolean=false;
 
 function fnmodulo2(x,range: double):double;   {specifiy range=2*pi fore -pi..pi or range=360 for -180.. 180}
 begin
@@ -126,7 +130,7 @@ var
  x_13,x_23,x_33,y_13,y_23,y_33         : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
- hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,
+ hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
  hfd_median, median_outer_ring,
  median_11, median_21, median_31,
  median_12, median_22, median_32,
@@ -136,8 +140,8 @@ var
  hfdlist_12,hfdlist_22,hfdlist_32,
  hfdlist_13,hfdlist_23,hfdlist_33     : array of double;
 
- starlistXY    :array of array of integer;
- mess1,mess2,hfd_value,hfd_arcsec      : string;
+ starlistXY    :array of array of double;
+ mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr  : string;
 
  Fliph, Flipv,restore_req  : boolean;
  img_bk,img_sa                         : image_array;
@@ -198,7 +202,7 @@ begin
     median_33:=0;
 
     SetLength(hfdlist,len);{set array length on a starting value}
-    SetLength(starlistXY,2,len);{x,y positions}
+    SetLength(starlistXY,3,len);{x,y positions}
 
     setlength(img_sa,1,head.width,head.height);{set length of image array}
 
@@ -252,12 +256,13 @@ begin
               begin
                 {store values}
                 hfdlist[nhfd]:=hfd1;
-                starlistXY[0,nhfd]:=xci; {store star position in image coordinates, not FITS coordinates}
-                starlistXY[1,nhfd]:=yci;
+                starlistXY[0,nhfd]:=xc; {store star position in image coordinates, not FITS coordinates}
+                starlistXY[1,nhfd]:=yc;
+                starlistXY[2,nhfd]:=flux;
                 inc(nhfd); if nhfd>=length(hfdlist) then
                 begin
                   SetLength(hfdlist,nhfd+max_stars); {adapt length if required and store hfd value}
-                  SetLength(starlistXY,2,nhfd+max_stars);{adapt array size if required}
+                  SetLength(starlistXY,3,nhfd+max_stars);{adapt array size if required}
                 end;
 
               end;
@@ -324,8 +329,8 @@ begin
         hfd1:=hfdlist[i];
         size:=round(5*hfd1);
 
-        starX:=starlistXY[0,i];
-        starY:=starlistXY[1,i];
+        starX:=round(starlistXY[0,i]);
+        starY:=round(starlistXY[1,i]);
 
         starX2:=starX;
         starY2:=starY;
@@ -572,6 +577,28 @@ begin
     else
       image1.Canvas.textout(round(fontsize*2),head.height- round(fontsize*4),'No stars detected');
   end;{with mainwindow}
+
+  if toClipboard2 then
+  begin
+    report:='fitsX'+#9+'fitsY'+#9+'HFD'+#9+'RA[°]'+#9+'DEC[°]'+#9+'ADU'+#9+'Magnitude'+#10;
+    rastr:='?';
+    decstr:='?';
+    magstr:='?';
+    for i:=0 to nhfd-1 do
+    begin
+      if head.cd1_1<>0 then
+      begin
+       sensor_coordinates_to_celestial(1+starlistXY[0,i],1+starlistXY[1,i],raM,decM);//+1 to get fits coordinated
+       rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
+       decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
+      end;
+      if head.mzero<>0 then
+        magstr:=floattostrF(-2.5*ln(starlistXY[2,i])/ln(10)+head.MZERO,FFfixed,5,3);//flux to magnitude
+
+      report:=report+floattostrF(1+starlistXY[0,i],FFfixed,6,2)+#9+floattostrF(1+starlistXY[1,i],FFfixed,6,2)+#9+floattostrF(hfdlist[i],FFfixed,5,3)+#9+rastr+#9+decstr+#9+floattostrF(1+starlistXY[2,i],FFfixed,8,0)+#9+magstr+#10;
+    end;
+    Clipboard.AsText:=report;
+  end;
 
   hfdlist:=nil;{release memory}
 
@@ -1139,15 +1166,16 @@ var
   stars_measured,i :integer;
   report : string;
 begin
+  toClipboard1:=to_Clipboard1.checked;
   form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
 
   if calculate_undisturbed_image_scale then
     measure_distortion(true {plot},stars_measured);{measure or plot distortion}
 
-  if to_clipboard1.checked then
+  if toClipboard1 then
   begin
-    report:='x database'+#9+'y database'+#9+'x measured'#9+'y measured'+#10;
+    report:='x database'+#9+'y database'+#9+'x measured'+#9+'y measured'+#10;
     for i:=0 to length(distortion_data[0])-1 do
     report:=report+floattostr(distortion_data[0,i])+#9+floattostr(distortion_data[1,i])+#9+floattostr(distortion_data[2,i])+#9+floattostr(distortion_data[3,i])+#10;
     Clipboard.AsText:=report;
@@ -1165,6 +1193,11 @@ begin
     CCDinspector(30,three_corners,strtofloat(measuring_angle))
   else
     CCDinspector(10,three_corners,strtofloat(measuring_angle));
+end;
+
+procedure Tform_inspection1.to_clipboard2Click(Sender: TObject);
+begin
+  toClipboard2:=to_clipboard2.checked;
 end;
 
 
@@ -1228,6 +1261,9 @@ begin
   insp_left:=left;
   insp_top:=top;
   mainwindow.setfocus;
+  toclipboard1:=to_clipboard1.checked;
+  toClipboard2:=to_clipboard2.checked;
+
 end;
 
 
@@ -1489,6 +1525,9 @@ begin
   triangle1.checked:=three_corners;
   extra_stars1.checked:=extra_stars;
   measuring_angle1.text:=measuring_angle;
+
+  to_clipboard1.checked:=toclipboard1;
+  to_clipboard2.checked:=toclipboard2;
 end;
 
 

@@ -216,6 +216,17 @@ object form_inspection1: Tform_inspection1
         TabOrder = 4
         Text = '0'
       end
+      object to_clipboard2: TCheckBox
+        Left = 160
+        Height = 19
+        Hint = 'Data to clipboard'
+        Top = -8
+        Width = 20
+        OnClick = to_clipboard2Click
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 5
+      end
     end
     object GroupBox1: TGroupBox
       Left = 200

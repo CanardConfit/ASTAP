@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.03.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.04.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -120,7 +120,6 @@ type
     localcoloursmooth2: TMenuItem;
     fittowindow1: TMenuItem;
     flipVH1: TMenuItem;
-    remove_stars1: TMenuItem;
     Separator2: TMenuItem;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
@@ -409,7 +408,6 @@ type
     procedure localcoloursmooth2Click(Sender: TObject);
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
-    procedure remove_stars1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -864,6 +862,8 @@ function find_reference_star(img : image_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 function noise_to_electrons(adu_e, binning, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
+procedure calibrate_photometry;
+
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -3934,7 +3934,7 @@ begin
     end;
 
     mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
-    mainwindow.flip_indication1.Visible:=head.cd1_1*head.cd2_2>0;// flipped?
+    mainwindow.flip_indication1.Visible:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0;// flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
 
     Canvas.Pen.Color := clred;
 
@@ -4781,7 +4781,6 @@ procedure update_menu_related_to_solver(yes :boolean); {update menu section rela
 begin
   if mainwindow.deepsky_annotation1.enabled=yes then exit;{no need to update}
 
-  mainwindow.remove_stars1.enabled:=yes;
   mainwindow.annotate_with_measured_magnitudes1.enabled:=yes;{enable menu}
   mainwindow.annotate_unknown_stars1.enabled:=yes;{enable menu}
   mainwindow.variable_star_annotation1.enabled:=yes;{enable menu}
@@ -10019,161 +10018,6 @@ begin
 end;
 
 
-
-procedure Tmainwindow.remove_stars1Click(Sender: TObject);
-var
-  fitsX,fitsY,hfd_counter,position,x,y,x1,y1  : integer;
-  star_fwhm,snr,flux,magnd, hfd_median,max_radius,
-  backgrR,backgrG,backgrB,delta                           : double;
-  img_temp3 :image_array;
-  old_aperture : string;
-
-const
-   default=1000;
-
-
-   procedure star_background(rs {radius},x1,y1 :integer);
-   var
-     backgroundR,backgroundG,backgroundB : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
-     r1_square,r2_square,distance : double;
-     r1,r2,i,j,counter : integer;
-   begin
-     r1_square:=rs*rs;{square radius}
-     r2:=rs+3 {annulus_width};
-     r2_square:=r2*r2;
-     try
-       counter:=0;
-       for i:=-r2 to r2 do {calculate the mean outside the the detection area}
-       for j:=-r2 to r2 do
-       begin
-         if ((x1-r2>=0) and (x1+r2<=head.width-1) and
-          (y1-r2>=0) and (y1+r2<=head.height-1) ) then
-
-           distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
-           if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
-           begin
-             backgroundR[counter]:=img_loaded[0,x1+i,y1+j];
-             if head.naxis3>1 then backgroundG[counter]:=img_loaded[1,x1+i,y1+j];
-             if head.naxis3>2 then backgroundB[counter]:=img_loaded[2,x1+i,y1+j];
-             inc(counter);
-           end;
-        end;
-        if counter>2 then
-        begin
-          backgrR:=Smedian(backgroundR,counter);
-          if head.naxis3>1 then backgrG:=Smedian(backgroundG,counter);
-          if head.naxis3>2 then backgrB:=Smedian(backgroundB,counter);
-        end;
-     finally
-     end;
-
-   end;
-
-begin
-  if head.naxis=0 then exit; {file loaded?}
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-  backup_img;{preserve img array and fits header of the viewer}
-
-  old_aperture:=stackmenu1.flux_aperture1.text;
-  stackmenu1.flux_aperture1.text:='max';//full flux is here required
-
-  calibrate_photometry;
-
-  stackmenu1.flux_aperture1.text:=old_aperture;
-
-
-  if head.mzero=0 then
-  begin
-    beep;
-    img_temp3:=nil;
-    Screen.Cursor:=crDefault;
-    exit;
-  end;
-
-  memo2_message('Passband setting: '+stackmenu1.reference_database1.text);
-
-
-  image1.Canvas.Pen.Mode := pmMerge;
-  image1.Canvas.Pen.width :=1;
-  image1.Canvas.brush.Style:=bsClear;
-  image1.Canvas.font.color:=clyellow;
-  image1.Canvas.font.name:='default';
-  image1.Canvas.font.size:=10;
-  mainwindow.image1.Canvas.Pen.Color := clred;
-
-
-  setlength(img_temp3,1,head.width,head.height);{set size of image array}
-  for fitsY:=0 to head.height-1 do
-    for fitsX:=0 to head.width-1  do
-      img_temp3[0,fitsX,fitsY]:=default;{clear}
-  plot_artificial_stars(img_temp3,magn_limit {measured});{create artificial image with database stars as pixels}
-
-   analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
-
-   backgrR:=bck.backgr;//defaults
-   backgrG:=bck.backgr;
-   backgrB:=bck.backgr;
-
-   for fitsY:=0 to head.height-1 do
-    for fitsX:=0 to head.width-1  do
-    begin
-      magnd:=img_temp3[0,fitsX,fitsY];
-      if magnd<default then {a star from the database}
-      begin
-          star_background(round(4*hfd_median) {radius},fitsX,fitsY);//calculate background(s)
-          flux:=power(10,0.4*(head.mzero-magnd/10));
-
-          flux:=flux*1.1;//compensate for flux errors
-          max_radius:=99999;
-
-          for position:=0 to length(disk)-1 do //remove star flux
-          begin
-            begin
-              x1:=disk[position,0]; // disk, disk positions starting from center moving outwards
-              y1:=disk[position,1];
-              x:=fitsX+x1; // disk, disk positions starting from center moving outwards
-              y:=fitsY+y1;
-              if ((x>=0) and (x<head.width) and (y>=0) and (y<head.height)) then //within image
-              begin
-                if max_radius>100 then
-                begin
-                  if img_loaded[0,x,y]-backgrR<=0 then //reached outside of star
-                    max_radius:=1+sqrt(sqr(x1)+sqr(y1));//allow to continue for one pixel ring max
-                end
-                else
-                if sqrt(sqr(x1)+sqr(y1))>=max_radius then
-                  break;
-
-                delta:=min(flux,(img_loaded[0,x,y]-backgrR));//all photometry is only done in the red channel
-                img_loaded[0,x,y]:=img_loaded[0,x,y]-delta;
-                flux:=flux-delta;
-
-                if delta>0 then //follow the red channel
-                begin
-                  if head.naxis3>1 then img_loaded[1,x,y]:=img_loaded[0,x,y]*backgrG/backgrR;
-                  if head.naxis3>2 then img_loaded[2,x,y]:=img_loaded[0,x,y]*backgrB/backgrR;
-                end;
-              end;
-
-            end;
-          end;
-      end;
-    end;
-
-  img_temp3:=nil;{free mem}
-
-  mainwindow.image1.Canvas.font.size:=10;
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.textout(20,head.height-20,stackmenu1.reference_database1.text);//show which database was used
-
-  plot_fits(mainwindow.image1,false,true);//refresh screen
-  memo2_message('Stars removed');
-  Screen.Cursor:=crDefault;
-end;
-
-
-
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
   size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
@@ -12897,8 +12741,8 @@ var
 begin
   flipped_view:=+1;//not flipped
 
-  if head.CD1_1*head.CD2_2>0 then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-    flipped_image:=-1  //change rotation for flipped image
+  if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
+    flipped_image:=-1  //change rotation for flipped image,  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   else
     flipped_image:=+1;//not flipped
 
@@ -12965,7 +12809,8 @@ begin
       Application.ProcessMessages;
       if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin break;end;
 
-      if head.CD1_1*head.CD2_2>0 then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+      if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
+                                                               // Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped
         flipped_image:=-1  // change rotation for flipped image
       else
         flipped_image:=+1; // not flipped
