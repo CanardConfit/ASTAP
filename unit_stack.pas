@@ -8648,16 +8648,18 @@ begin
 
   step := round(wide) div 2;
 
-  get_background(0, img, measurehist {hist}, True  {noise level},bckR);
+  get_background(0, img, measurehist {hist}, True  {noise level},bckR);{calculate red background, noise_level and star_level}
   bgR:=bckR.backgr;
- // noise_level1 := bckR.noise_level;{red noise}
 
-  {calculate red background, noise_level and star_level}
-  get_background(1, img, measurehist {hist}, False{noise level},bckG);
+  get_background(1, img, measurehist {hist}, True{noise level},bckG);{calculate green background, noise_level and star_level}
   bgG:=bckG.backgr;
-  {calculate green background}
-  get_background(2, img, measurehist {hist}, False {noise level},bckB);
+
+  get_background(2, img, measurehist {hist}, True {noise level},bckB);{calculate blue background, noise_level and star_level}
   bgB:=bckB.backgr;
+
+
+
+
 
   star_level:=max(bckR.star_level,max(bckG.star_level,bckB.star_level));
 
@@ -8854,22 +8856,22 @@ begin
     memo2_message('Error, no three colour image loaded!');
     exit;
   end;
+  memo2_message('Start colour smooth.');
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
-  smart_colour_smooth(img_loaded, strtofloat2(smart_smooth_width1.Text),
-    strtofloat2(smart_colour_sd1.Text), preserve_red_nebula1.Checked, False);
+  smart_colour_smooth(img_loaded, strtofloat2(smart_smooth_width1.Text), strtofloat2(smart_colour_sd1.Text), preserve_red_nebula1.Checked, False);
 
   plot_fits(mainwindow.image1, False, True);{plot real}
 
   Screen.Cursor := crDefault;
+  memo2_message('Ready colour smooth.');
 end;
 
 
 procedure Tstackmenu1.classify_filter1Click(Sender: TObject);
 begin
-  stackmenu1.stack_method1Change(nil);
-  {update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
+  stackmenu1.stack_method1Change(nil); {update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
 end;
 
 
@@ -8885,8 +8887,7 @@ begin
       radius := StrToInt(extract_background_box_size1.Text);
     except
     end;
-    apply_most_common(img_backup[index_backup].img, img_loaded, radius);
-    {apply most common filter on first array and place result in second array}
+    apply_most_common(img_backup[index_backup].img, img_loaded, radius);  {apply most common filter on first array and place result in second array}
     plot_fits(mainwindow.image1, True, True);{plot real}
     Screen.Cursor := crDefault;
   end;
@@ -12117,8 +12118,7 @@ begin
           end
           else
           begin
-            memo2_message(
-              'Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
+            memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
             use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
           end;
         end
@@ -12144,8 +12144,7 @@ begin
             end
             else
             begin
-              memo2_message(
-                'Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
+              memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
               use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
             end;
           end
@@ -12155,22 +12154,15 @@ begin
 
         plot_fits(mainwindow.image1, True, True);{plot real}
 
-        remove_key('DATE    ', False{all});
-        {no purpose anymore for the original date written}
+        remove_key('DATE    ', False{all});{no purpose anymore for the original date written}
         remove_key('EXPTIME', False{all}); {remove, will be added later in the header}
-        remove_key('EXPOSURE', False{all});
-        {remove, will be replaced by LUM_EXP, RED_EXP.....}
+        remove_key('EXPOSURE', False{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
         remove_key('CCD-TEMP', False{all});{remove, will be replaced by SET-TEMP.....}
-        remove_key('SET-TEMP', False{all});
-        {remove, will be added later in mono or for colour as LUM_TEMP, RED_TEMP.....}
-        remove_key('LIGH_CNT', False{all});
-        {remove, will be replaced by LUM_CNT, RED_CNT.....}
-        remove_key('DARK_CNT', False{all});
-        {remove, will be replaced by LUM_DARK, RED_DARK.....}
-        remove_key('FLAT_CNT', False{all});
-        {remove, will be replaced by LUM_FLAT, RED_FLAT.....}
-        remove_key('BIAS_CNT', False{all});
-        {remove, will be replaced by LUM_BIAS, RED_BIAS.....}
+        remove_key('SET-TEMP', False{all});{remove, will be added later in mono or for colour as LUM_TEMP, RED_TEMP.....}
+        remove_key('LIGH_CNT', False{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
+        remove_key('DARK_CNT', False{all});{remove, will be replaced by LUM_DARK, RED_DARK.....}
+        remove_key('FLAT_CNT', False{all});{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
+        remove_key('BIAS_CNT', False{all});{remove, will be replaced by LUM_BIAS, RED_BIAS.....}
 
         { ASTAP keyword standard:}
         { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
@@ -12188,17 +12180,11 @@ begin
           update_text('DATE-OBS=', #39 + head.date_obs + #39);{give start point exposures}
           if ((head.naxis3 = 1) and (counterL > 0)) then {works only for mono}
           begin
-            update_float('JD-AVG  =',
-              ' / Julian Day of the observation mid-point.       ',false,
-              jd_sum / counterL);{give midpoint of exposures}
-            date_avg := JdToDate(jd_sum / counterL);
-            {update date_avg for asteroid annotation}
+            update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum / counterL);{give midpoint of exposures}
+            date_avg := JdToDate(jd_sum / counterL);  {update date_avg for asteroid annotation}
             update_text('DATE-AVG=', #39 + date_avg + #39);{give midpoint of exposures}
-            head.date_obs := JdToDate((jd_sum / counterL) - head.exposure / (2 * 24 * 60 * 60));
-            {estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
-            update_text('DATE-OBS=', #39 + head.date_obs + #39 +
-              '/ Calculated for stack JD_AVG - EXPTIME/(2*86400)');
-            //add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
+            head.date_obs := JdToDate((jd_sum / counterL) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
+            update_text('DATE-OBS=', #39 + head.date_obs + #39 + '/ Calculated for stack JD_AVG - EXPTIME/(2*86400)'); //add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
           end;
         end
         else;{keep head.date_obs from reference image for accurate asteroid annotation}
@@ -12221,10 +12207,8 @@ begin
             remove_key('BAYERPAT', False{all});{remove key word in header}
             remove_key('XBAYROFF', False{all});{remove key word in header}
             remove_key('YBAYROFF', False{all});{remove key word in header}
-            update_text('HISTORY 2', '  De-mosaic bayer pattern used ' +
-              bayer_pattern[bayerpattern_final]);
-            update_text('HISTORY 3', '  Colour conversion: ' +
-              stackmenu1.demosaic_method1.Text + ' interpolation.');
+            update_text('HISTORY 2', '  De-mosaic bayer pattern used ' + bayer_pattern[bayerpattern_final]);
+            update_text('HISTORY 3', '  Colour conversion: ' + stackmenu1.demosaic_method1.Text + ' interpolation.');
           end
           else
             update_text('HISTORY 2', '  Combined to colour image.');
@@ -12233,8 +12217,7 @@ begin
           update_text('HISTORY 2', '  Processed as gray scale images.');
 
         if lrgb = False then {monochrome}
-        begin
-          {adapt astrometric solution. For colour this is already done during luminance stacking}
+        begin {adapt astrometric solution. For colour this is already done during luminance stacking}
           if ((over_size <> 0) and (head.cd1_1 <> 0){solution}) then
             {adapt astrometric solution for intermediate file}
           begin {adapt reference pixels of plate solution due to oversize}
@@ -12251,10 +12234,8 @@ begin
           end;
 
           head.exposure := sum_exp;{for annotation asteroid}
-          update_integer('EXPTIME =', ' / Total luminance exposure time in seconds.      '
-            , round(head.exposure));
-          update_integer('SET-TEMP=', ' / Average set temperature used for luminance.    '
-            , temperatureL);
+          update_integer('EXPTIME =', ' / Total luminance exposure time in seconds.      ', round(head.exposure));
+          update_integer('SET-TEMP=', ' / Average set temperature used for luminance.    ', temperatureL);
           add_integer('LUM_EXP =', ' / Average luminance exposure time.               '
             , exposureL);
           add_integer('LUM_CNT =', ' / Luminance images combined.                     '

@@ -1,0 +1,253 @@
+******deep_sky.csv*******
+
+This is a free to use deepsky database of 30000 objects for non commercial use only. A compilation by Han Kleijn developed between 1997 and 2020 for the Hallo Northern Sky program and heavilly based on the work of these people:  
+
+SAC81, Saguaro Astronomy Club Database version 8.1, March 22, 2010 Steve Coe Database manager Saguaro Astronomy Club. Webpage https://www.saguaroastro.org/sac-downloads
+
+Wolfgang Steinicke's REV NGC&IC, webpage http://www.klima-luft.de/steinicke/index_e.htm.  Any non-commercial use of my data is free! If a commercial use is planned, please contact me! Please inform the author Dr. Wolfgang Steinicke (also in case of non-commercial use, e.g. in a free software). In any case, a proper acknowledgment of the source, including an answer-back to the author is necessary. These data are part of a scientific project and subject to copyright!
+
+HyperLeda, see Hyperleda acknowledgement below
+
+Sh2,  A catalogue of HII regions. SHARPLESS S. 1959ApJS....4..257S - Astrophys. J., Suppl. Ser., 4, 257-279 (1959) 
+
+vdB, A study of reflection nebulae. VAN DEN BERGH S. 968AJ.....73..233R - Astron. J., 73, 233-245 (1968) 
+
+HCG, A revised catalog of CfA1 galaxy groups in the Virgo/Great Attractor flow field. NOLTHENIUS R. 1993ApJS...85....1N - Astrophys. J., Suppl. Ser., 85, 1-25 (1993/March-0) 
+
+LDN, Catalogue of dark nebulae. LYNDS B.T. 1962ApJS....7....1L - Astrophys. J., Suppl. Ser., 7, 1-52 (1962) 
+
+PK, Accurate coordinates of planetary nebulae. KOHOUTEK L. and KUHL D. 2002AN....323..484K - Astron. Nachr., 323, 484-487 (2002) 
+
+Furthermore SIMBAD Astronomical Database - Centre de Données astronomiques de Strasbourg was heavilly used for the compilation. 
+
+
+
+******variable_stars.csv******
+
+Selection from GCVS, the General Catalogue of Variable Stars, version 5.1 by Samus N.N., Kazarovets E.V., Durlevich O.V., Kireeva N.N., Pastukhova E.N. Astronomy Reports, 2017, vol. 61, No. 1, pp. 80-88 {2017ARep...61...80S}  Compiled 2019-6-6.
+
+
+
+******Hyperleda.csv large galaxy database******
+
+ This is an extract from HyperLEDA  database from  http://leda.univ-lyon1.fr 
+
+ HyperLEDA is a database and a collection of tools to study the physics of galaxies and cosmology. The project, started in 1983, is currently maintained by a collaboration between Observatoire de Lyon (France) and the Special Astrophysical Observatory (Russia).
+
+The principle behind HyperLEDA is to collect measurements published in literature and modern surveys, and to combine them into a unique homogeneous description of the astronomical objects. This enables the researcher to compare objects located at very different distances. This approach is a continuation of the famous series of Bright Galaxy Catalogues (RC1, RC2, RC3) by de Vaucouleurs and co-workers. The result of the homogenization is the Leda catalogue.
+
+HyperLeda is not only used by researchers, but also by sky lovers or amateur astronomers interested to learn more about galaxies, by students, and by professors. HyperLeda is developed in the frame of the Virtual Observatory, an initiative intended to facilitate the exchange and usage of the data at the global scale. All the data and the software is publicly available in open-source for non-commercial purposes. 
+
+- Paper: Makarov et al. http://adsabs.harvard.edu/abs/2014A%26A...570A..13M 
+- We acknowledge the usage of the HyperLeda database (http://leda.univ-lyon1.fr
+
+
+
+******D05, D20, D50, V50, G05 star databases******
+
+These are an extract of the Gaia star catalog release DR3 by European Space Agency  Science & Technology in a special format developed for the HNSKY planetarium program and ASTAP program . We acknowledge the usage of the Gaia database
+
+This work has made use of data from the European Space Agency (ESA) mission Gaia (https://www.cosmos.esa.int/gaia), processed by the Gaia Data Processing and Analysis Consortium (DPAC, https://www.cosmos.esa.int/web/gaia/dpac/consortium). Funding for the DPAC has been provided by national institutions, in particular the institutions participating in the Gaia Multilateral Agreement.
+
+The Gaia data are open and free to use, provided credit is given to ’ESA/Gaia/DPAC’. In general, access to, and use of, ESA’s Gaia archive (hereafter called ’the website’) constitutes acceptance of the following, general terms and conditions. Neither ESA nor any other party involved in creating, producing, or delivering the website shall be liable for any direct, incidental, consequential, indirect, or punitive damages arising out of user access to, or use of, the website. The website does not guarantee the accuracy of information provided by external sources and accepts no responsibility or liability for any consequences arising from the use of such data.
+   
+
+GAIA DATA RELEASE DOCUMENTATION
+Gaia Data Release 2 Documentation release 1.2
+
+    [-] Gaia Data Release 2 Documentation release 1.2
+        I Introduction to Gaia DR2
+        II Gaia data processing
+        III Gaia data analysis
+        IV Gaia catalogue
+        V Gaia archive
+        Miscellaneous
+            Acknowledgements
+            Credit and citation instructions
+            Colophon
+            Acronyms
+            Documentation change log
+        Bibliography
+
+Miscellaneous
+Miscellaneous
+Credit and citation instructions
+Acknowledgements
+
+This work presents results from the European Space Agency (ESA) space mission Gaia. Gaia data are being processed by the Gaia Data Processing and Analysis Consortium (DPAC). Funding for the DPAC is provided by national institutions, in particular the institutions participating in the Gaia MultiLateral Agreement (MLA). The Gaia mission website is https://www.cosmos.esa.int/gaia. The Gaia archive website is https://archives.esac.esa.int/gaia.
+
+The Gaia mission and data processing have financially been supported by, in alphabetical order by country:
+
+    •
+
+    the Algerian Centre de Recherche en Astronomie, Astrophysique et Géophysique of Bouzareah Observatory;
+    •
+
+    the Austrian Fonds zur Förderung der wissenschaftlichen Forschung (FWF) Hertha Firnberg Programme through grants T359, P20046, and P23737;
+    •
+
+    the BELgian federal Science Policy Office (BELSPO) through various PROgramme de Développement d’Expériences scientifiques (PRODEX) grants and the Polish Academy of Sciences - Fonds Wetenschappelijk Onderzoek through grant VS.091.16N;
+    •
+
+    the Brazil-France exchange programmes Fundação de Amparo à Pesquisa do Estado de São Paulo (FAPESP) and Coordenação de Aperfeicoamento de Pessoal de Nível Superior (CAPES) - Comité Français d’Evaluation de la Coopération Universitaire et Scientifique avec le Brésil (COFECUB);
+    •
+
+    the Chilean Dirección de Gestión de la Investigación (DGI) at the University of Antofagasta and the Comité Mixto ESO-Chile;
+    •
+
+    the National Science Foundation of China (NSFC) through grants 11573054 and 11703065;
+    •
+
+    the Czech-Republic Ministry of Education, Youth, and Sports through grant LG 15010, the Czech Space Office through ESA PECS contract 98058, and Charles University Prague through grant PRIMUS/SCI/17;
+    •
+
+    the Danish Ministry of Science;
+    •
+
+    the Estonian Ministry of Education and Research through grant IUT40-1;
+    •
+
+    the European Commission’s Sixth Framework Programme through the European Leadership in Space Astrometry (ELSA) Marie Curie Research Training Network (MRTN-CT-2006-033481), through Marie Curie project PIOF-GA-2009-255267 (Space AsteroSeismology & RR Lyrae stars, SAS-RRL), and through a Marie Curie Transfer-of-Knowledge (ToK) fellowship (MTKD-CT-2004-014188); the European Commission’s Seventh Framework Programme through grant FP7-606740 (FP7-SPACE-2013-1) for the Gaia European Network for Improved data User Services (GENIUS) and through grant 264895 for the Gaia Research for European Astronomy Training (GREAT-ITN) network;
+    •
+
+    the European Research Council (ERC) through grants 320360 and 647208 and through the European Union’s Horizon 2020 research and innovation programme through grants 670519 (Mixing and Angular Momentum tranSport of massIvE stars – MAMSIE) and 687378 (Small Bodies: Near and Far);
+    •
+
+    the European Science Foundation (ESF), in the framework of the Gaia Research for European Astronomy Training Research Network Programme (GREAT-ESF);
+    •
+
+    the European Space Agency (ESA) in the framework of the Gaia project, through the Plan for European Cooperating States (PECS) programme through grants for Slovenia, through contracts C98090 and 4000106398/12/NL/KML for Hungary, and through contract 4000115263/15/NL/IB for Germany;
+    •
+
+    the European Union (EU) through a European Regional Development Fund (ERDF) for Galicia, Spain;
+    •
+
+    the Academy of Finland and the Magnus Ehrnrooth Foundation;
+    •
+
+    the French Centre National de la Recherche Scientifique (CNRS) through action ’Défi MASTODONS’, the Centre National d’Etudes Spatiales (CNES), the L’Agence Nationale de la Recherche (ANR) ’Investissements d’avenir’ Initiatives D’EXcellence (IDEX) programme Paris Sciences et Lettres (PSL∗
+
+    ) through grant ANR-10-IDEX-0001-02, the ANR ’Défi de tous les savoirs’ (DS10) programme through grant ANR-15-CE31-0007 for project ’Modelling the Milky Way in the Gaia era’ (MOD4Gaia), the Région Aquitaine, the Université de Bordeaux, and the Utinam Institute of the Université de Franche-Comté, supported by the Région de Franche-Comté and the Institut des Sciences de l’Univers (INSU);
+    •
+
+    the German Aerospace Agency (Deutsches Zentrum für Luft- und Raumfahrt e.V., DLR) through grants 50QG0501, 50QG0601, 50QG0602, 50QG0701, 50QG0901, 50QG1001, 50QG1101, 50QG1401, 50QG1402, 50QG1403, and 50QG1404 and the Centre for Information Services and High Performance Computing (ZIH) at the Technische Universität (TU) Dresden for generous allocations of computer time;
+    •
+
+    the Hungarian Academy of Sciences through the Lendület Programme LP2014-17 and the János Bolyai Research Scholarship (L. Molnár and E. Plachy) and the Hungarian National Research, Development, and Innovation Office through grants NKFIH K-115709, PD-116175, and PD-121203;
+    •
+
+    the Science Foundation Ireland (SFI) through a Royal Society - SFI University Research Fellowship (M. Fraser);
+    •
+
+    the Israel Science Foundation (ISF) through grant 848/16;
+    •
+
+    the Agenzia Spaziale Italiana (ASI) through contracts I/037/08/0, I/058/10/0, 2014-025-R.0, and 2014-025-R.1.2015 to the Italian Istituto Nazionale di Astrofisica (INAF), contract 2014-049-R.0/1/2 to INAF dedicated to the Space Science Data Centre (SSDC, formerly known as the ASI Sciece Data Centre, ASDC), and contracts I/008/10/0, 2013/030/I.0, 2013-030-I.0.1-2015, and 2016-17-I.0 to the Aerospace Logistics Technology Engineering Company (ALTEC S.p.A.), and INAF;
+    •
+
+    the Netherlands Organisation for Scientific Research (NWO) through grant NWO-M-614.061.414 and through a VICI grant (A. Helmi) and the Netherlands Research School for Astronomy (NOVA);
+    •
+
+    the Polish National Science Centre through HARMONIA grant 2015/18/M/ST9/00544 and ETIUDA grants 2016/20/S/ST9/00162 and 2016/20/T/ST9/00170;
+    •
+
+    the Portugese Fundação para a Ciência e a Tecnologia (FCT) through grant SFRH/BPD/74697/2010; the Strategic Programmes UID/FIS/00099/2013 for CENTRA and UID/EEA/00066/2013 for UNINOVA;
+    •
+
+    the Slovenian Research Agency through grant P1-0188;
+    •
+
+    the Spanish Ministry of Economy (MINECO/FEDER, UE) through grants ESP2014-55996-C2-1-R, ESP2014-55996-C2-2-R, ESP2016-80079-C2-1-R, and ESP2016-80079-C2-2-R, the Spanish Ministerio de Economía, Industria y Competitividad through grant AyA2014-55216, the Spanish Ministerio de Educación, Cultura y Deporte (MECD) through grant FPU16/03827, the Institute of Cosmos Sciences University of Barcelona (ICCUB, Unidad de Excelencia ’María de Maeztu’) through grant MDM-2014-0369, the Xunta de Galicia and the Centros Singulares de Investigación de Galicia for the period 2016-2019 through the Centro de Investigación en Tecnologías de la Información y las Comunicaciones (CITIC), the Red Española de Supercomputación (RES) computer resources at MareNostrum, and the Barcelona Supercomputing Centre - Centro Nacional de Supercomputación (BSC-CNS) through activities AECT-2016-1-0006, AECT-2016-2-0013, AECT-2016-3-0011, and AECT-2017-1-0020;
+    •
+
+    the Swedish National Space Board (SNSB/Rymdstyrelsen);
+    •
+
+    the Swiss State Secretariat for Education, Research, and Innovation through the ESA PRODEX programme, the Mesures d’Accompagnement, the Swiss Activités Nationales Complémentaires, and the Swiss National Science Foundation;
+    •
+
+    the United Kingdom Rutherford Appleton Laboratory, the United Kingdom Science and Technology Facilities Council (STFC) through grant ST/L006553/1, the United Kingdom Space Agency (UKSA) through grant ST/N000641/1 and ST/N001117/1, as well as a Particle Physics and Astronomy Research Council Grant PP/C503703/1.
+
+The Gaia project and data processing have made use of:
+
+    •
+
+    the Set of Identifications, Measurements, and Bibliography for Astronomical Data (SIMBAD, Wenger et al. 2000), the ’Aladin sky atlas’ (Bonnarel et al. 2000; Boch and Fernique 2014), and the VizieR catalogue access tool (Ochsenbein et al. 2000), all operated at the Centre de Données astronomiques de Strasbourg (CDS);
+    •
+
+    the National Aeronautics and Space Administration (NASA) Astrophysics Data System (ADS);
+    •
+
+    the SPace ENVironment Information System (SPENVIS), initiated by the Space Environment and Effects Section (TEC-EES) of ESA and developed by the Belgian Institute for Space Aeronomy (BIRA-IASB) under ESA contract through ESA’s General Support Technologies Programme (GSTP), administered by the BELgian federal Science Policy Office (BELSPO);
+    •
+
+    the software products TOPCAT, STIL, and STILTS (Taylor 2005, 2006);
+    •
+
+    Matplotlib (Hunter 2007);
+    •
+
+    IPython (Pérez and Granger 2007);
+    •
+
+    Astropy, a community-developed core Python package for Astronomy (The Astropy Collaboration et al. 2018);
+    •
+
+    R (R Core Team 2013);
+    •
+
+    Vaex (Breddels and Veljanoski 2018);
+    •
+
+    the Hipparcos-2 catalogue (van Leeuwen 2007). The Hipparcos and Tycho catalogues were constructed under the responsibility of large scientific teams collaborating with ESA. The Consortia Leaders were Lennart Lindegren (Lund, Sweden: NDAC) and Jean Kovalevsky (Grasse, France: FAST), together responsible for the Hipparcos Catalogue; Erik Høg (Copenhagen, Denmark: TDAC) responsible for the Tycho Catalogue; and Catherine Turon (Meudon, France: INCA) responsible for the Hipparcos Input Catalogue (HIC);
+    •
+
+    the Tycho-2 catalogue (Høg et al. 2000), the construction of which was supported by the Velux Foundation of 1981 and the Danish Space Board;
+    •
+
+    data products from the Two Micron All Sky Survey (2MASS, Skrutskie et al. 2006), which is a joint project of the University of Massachusetts and the Infrared Processing and Analysis Center (IPAC) / California Institute of Technology, funded by the National Aeronautics and Space Administration (NASA) and the National Science Foundation (NSF) of the USA;
+    •
+
+    the ninth data release of the AAVSO Photometric All-Sky Survey (APASS, Henden et al. 2016), funded by the Robert Martin Ayers Sciences Fund;
+    •
+
+    the first data release of the Pan-STARRS survey (Chambers et al. 2016; Magnier et al. 2016a; Waters et al. 2016; Magnier et al. 2016c, b; Flewelling et al. 2016). The Pan-STARRS1 Surveys (PS1) and the PS1 public science archive have been made possible through contributions by the Institute for Astronomy, the University of Hawaii, the Pan-STARRS Project Office, the Max-Planck Society and its participating institutes, the Max Planck Institute for Astronomy, Heidelberg and the Max Planck Institute for Extraterrestrial Physics, Garching, The Johns Hopkins University, Durham University, the University of Edinburgh, the Queen’s University Belfast, the Harvard-Smithsonian Center for Astrophysics, the Las Cumbres Observatory Global Telescope Network Incorporated, the National Central University of Taiwan, the Space Telescope Science Institute, the National Aeronautics and Space Administration (NASA) through grant NNX08AR22G issued through the Planetary Science Division of the NASA Science Mission Directorate, the National Science Foundation through grant AST-1238877, the University of Maryland, Eotvos Lorand University (ELTE), the Los Alamos National Laboratory, and the Gordon and Betty Moore Foundation;
+    •
+
+    the second release of the Guide Star Catalogue (GSC2.3, Lasker et al. 2008). The Guide Star Catalogue II is a joint project of the Space Telescope Science Institute (STScI) and the Osservatorio Astrofisico di Torino (OATo). STScI is operated by the Association of Universities for Research in Astronomy (AURA), for the National Aeronautics and Space Administration (NASA) under contract NAS5-26555. OATo is operated by the Italian National Institute for Astrophysics (INAF). Additional support was provided by the European Southern Observatory (ESO), the Space Telescope European Coordinating Facility (STECF), the International GEMINI project, and the European Space Agency (ESA) Astrophysics Division (nowadays SCI-S);
+    •
+
+    the eXtended, Large (XL) version of the catalogue of Positions and Proper Motions (PPM-XL, Roeser et al. 2010);
+    •
+
+    data products from the Wide-field Infrared Survey Explorer (WISE), which is a joint project of the University of California, Los Angeles, and the Jet Propulsion Laboratory/California Institute of Technology, and NEOWISE, which is a project of the Jet Propulsion Laboratory/California Institute of Technology. WISE and NEOWISE are funded by the National Aeronautics and Space Administration (NASA);
+    •
+
+    the first data release of the United States Naval Observatory (USNO) Robotic Astrometric Telescope (URAT-1, Zacharias et al. 2015);
+    •
+
+    the fourth data release of the United States Naval Observatory (USNO) CCD Astrograph Catalogue (UCAC-4, Zacharias et al. 2013);
+    •
+
+    the fifth data release of the Radial Velocity Experiment (RAVE DR5, Kunder et al. 2017). Funding for RAVE has been provided by the Australian Astronomical Observatory, the Leibniz-Institut für Astrophysik Potsdam (AIP), the Australian National University, the Australian Research Council, the French National Research Agency, the German Research Foundation (SPP 1177 and SFB 881), the European Research Council (ERC-StG 240271 Galactica), the Istituto Nazionale di Astrofisica at Padova, The Johns Hopkins University, the National Science Foundation of the USA (AST-0908326), the W. M. Keck foundation, the Macquarie University, the Netherlands Research School for Astronomy, the Natural Sciences and Engineering Research Council of Canada, the Slovenian Research Agency, the Swiss National Science Foundation, the Science & Technology Facilities Council of the UK, Opticon, Strasbourg Observatory, and the Universities of Groningen, Heidelberg, and Sydney. The RAVE website is at https://www.rave-survey.org/;
+    •
+
+    the first data release of the Large sky Area Multi-Object Fibre Spectroscopic Telescope (LAMOST DR1, Luo et al. 2015);
+    •
+
+    the K2 Ecliptic Plane Input Catalogue (EPIC, Huber et al. 2016);
+    •
+
+    the ninth data release of the Sloan Digitial Sky Survey (SDSS DR9, Ahn et al. 2012). Funding for SDSS-III has been provided by the Alfred P. Sloan Foundation, the Participating Institutions, the National Science Foundation, and the United States Department of Energy Office of Science. The SDSS-III website is http://www.sdss3.org/. SDSS-III is managed by the Astrophysical Research Consortium for the Participating Institutions of the SDSS-III Collaboration including the University of Arizona, the Brazilian Participation Group, Brookhaven National Laboratory, Carnegie Mellon University, University of Florida, the French Participation Group, the German Participation Group, Harvard University, the Instituto de Astrofísica de Canarias, the Michigan State/Notre Dame/JINA Participation Group, Johns Hopkins University, Lawrence Berkeley National Laboratory, Max Planck Institute for Astrophysics, Max Planck Institute for Extraterrestrial Physics, New Mexico State University, New York University, Ohio State University, Pennsylvania State University, University of Portsmouth, Princeton University, the Spanish Participation Group, University of Tokyo, University of Utah, Vanderbilt University, University of Virginia, University of Washington, and Yale University.
+
+The GBOT programme (Section 3.2.2) uses observations collected at (i) the European Organisation for Astronomical Research in the Southern Hemisphere (ESO) with the VLT Survey Telescope (VST), under ESO programmes 092.B-0165, 093.B-0236, 094.B-0181, 095.B-0046, 096.B-0162, 097.B-0304, 098.B-0034, 099.B-0030, 0100.B-0131, and 0101.B-0156, and (ii) the Liverpool Telescope, which is operated on the island of La Palma by Liverpool John Moores University in the Spanish Observatorio del Roque de los Muchachos of the Instituto de Astrofísica de Canarias with financial support from the United Kingdom Science and Technology Facilities Council, and (iii) telescopes of the Las Cumbres Observatory Global Telescope Network.
+
+In addition to the currently active DPAC (and ESA science) authors of the peer-reviewed papers accompanying Gaia DR2, there are large numbers of former DPAC members who made significant contributions to the (preparations of the) data processing. Among those are, in alphabetical order: Christopher Agard, Juan José Aguado, Alexandra Alecu, Peter Allan, France Allard, Walter Allasia, Carlos Allende Prieto, Antonio Amorim, Kader Amsif, Guillem Anglada-Escudé, Sonia Antón, Vladan Arsenijevic, Rajesh Kumar Bachchan, Angelique Barbier, Mickael Batailler, Duncan Bates, Mathias Beck, Antonio Bello García, Vasily Belokurov, Philippe Bendjoya, Hans Bernstein†
+, Lionel Bigot, Albert Bijaoui, Françoise Billebaud, Nadejda Blagorodnova, Thierry Bloch, Klaas de Boer, Marco Bonfigli, Giuseppe Bono, François Bouchy, Steve Boudreault, Guy Boutonnet, Pascal Branet, Elme Breedt Lategan, Scott Brown, Pierre-Marie Brunet, Peter Bunclark†, Roberto Buonanno, Robert Butorafuchs, Joan Cambras, Heather Campbell, Christophe Carret, Manuel Carrillo, César Carrión, Fabien Chéreau, Jonathan Charnas, Ross Collins, Leonardo Corcione, Nick Cross, Jean-Charles Damery, Eric Darmigny, Peter De Cat, Céline Delle Luche, Markus Demleitner, Sékou Diakite, Carla Domingues, Sandra Dos Anjos, Laurent Douchy, Pierre Dubath, Yifat Dzigan, Sebastian Els, Wyn Evans, Guillaume Eynard Bontemps, Fernando de Felice, Agnès Fienga, Florin Fodor, Aidan Fries, Jan Fuchs, Flavio Fusi Pecci, Diego Fustes, Duncan Fyfe, Emilien Gaudin, Yoann Gérard, Anita Gómez, Ana González-Marcos, Andres Gúrpide, Eva Gallardo, Daniele Gardiol, Marwan Gebran, Nathalie Gerbier, Andreja Gomboc, Eva Grebel, Michel Grenon, Eric Grux, Pierre Guillout, Erik Høg, Gordon Hopkinson†, Albert Heyrovsky, Andrew Holland, Claude Huc, Jason Hunt, Brigitte Huynh, Giacinto Iannicola, Mike Irwin, Yago Isasi Parache, Thierry Jacq, Laurent Jean-Rigaud, Isabelle Jégouzo-Giroux, Asif Jan, Anne-Marie Janotto, François Jocteur-Monrozier, Paula Jofré, Anthony Jonckheere, Antoine Jorissen, Ralf Keil, Dae-Won Kim, Peter Klagyivik, Jonas Klüter, Jens Knude, Oleg Kochukhov, Indrek Kolka, Janez Kos, Irina Kovalenko, Maria Kudryashova, Ilya Kull, Alex Kutka, Frédéric Lacoste-Seris, Valéry Lainey, Claudia Lavalley, David LeBouquin, Vassili Lemaitre, Thierry Levoir, Chao Liu, Davide Loreggia, Denise Lorenz, Ian MacDonald, Marc Madaule, Tiago Magalhães Fernandes, Valeri Makarov, Jean-Christophe Malapert, Hervé Manche, Mathieu Marseille, Christophe Martayan, Oscar Martinez-Rubi, Paul Marty, Benjamin Massart, Emmanuel Mercier, Frédéric Meynadier, Shan Mignot, Bruno Miranda, Marco Molinaro, Marc Moniez, Alain Montmory, Stephan Morgenthaler, Ulisse Munari, Jérôme Narbonne, Anne-Thérèse Nguyen, Thomas Nordlander, Markus Nullmeier, Derek O’Callaghan, Pierre Ocvirk, Joaquín Ordieres-Meré, Patricio Ortiz, Jose Osorio, Dagmara Oszkiewicz, Alex Ouzounis, Fabien Péturaud, Max Palmer, Peregrine Park, Ester Pasquato, Xavier Passot, Marco Pecoraro, Roselyne Pedrosa, Christian Peltzer, Hanna Pentikäinen, Jordi Peralta, Bernard Pichon, Tuomo Pieniluoma, Enrico Pigozzi, Bertrand Plez, Joel Poels†
+
+, Ennio Poretti Merate, Arnaud Poulain, Guylaine Prat, Thibaut Prod’homme, Adrien Raffy, Serena Rago, Piero Ranalli, Gregory Rauw, Andrew Read, José Rebordao, Philippe Redon, Rita Ribeiro, Pascal Richard, Daniel Risquez, Brigitte Rocca-Volmerange, Nicolas de Roll, Siv Rosén, Idoia Ruiz-Fuertes, Federico Russo, Jan Rybizki, Damien Segransan, Arnaud Siebert, Helder Silva, Dimitris Sinachopoulos, Eric Slezak, Riccardo Smareglia, Michael Soffel, Danuta Sosnowska, Maxime Spano, Vytautas Straižys, Dirk Terrell, Stephan Theil, Carola Tiede, Brandon Tingley, Scott Trager, Licia Troisi, Paraskevi Tsalmantza, David Tur, Mattia Vaccari, Frédéric Vachier, Pau Vallès, Walter Van Hamme, Mihaly Varadi, Sjoert van Velzen, Lionel Veltz, Teresa Via, Jenni Virtanen, Antonio Volpicelli, Jean-Marie Wallut, Rainer Wichmann, Mark Wilkinson, Patrick Yvard, and Tim de Zeeuw.
+
+In addition to the DPAC consortium, past and present, there are numerous people, mostly in ESA and in industry, who have made or continue to make essential contributions to Gaia, for instance those employed in science and mission operations or in the design, manufacturing, integration, and testing of the spacecraft and its modules, subsystems, and units. Many of those will remain unnamed yet spent countless hours, occasionally during nights, weekends, and public holidays, in cold offices and dark clean rooms. At the risk of being incomplete, we specifically acknowledge, in alphabetical order, from Airbus DS (Toulouse): Alexandre Affre, Marie-Thérèse Aimé, Audrey Albert, Aurélien Albert-Aguilar, Hania Arsalane, Arnaud Aurousseau, Denis Bassi, Franck Bayle, Pierre-Luc Bazin, Emmanuelle Benninger, Philippe Bertrand, Jean-Bernard Biau, François Binter, Cédric Blanc, Eric Blonde, Patrick Bonzom, Bernard Bories, Jean-Jacques Bouisset, Joël Boyadjian, Isabelle Brault, Corinne Buge, Bertrand Calvel, Jean-Michel Camus, France Canton, Lionel Carminati, Michel Carrie, Didier Castel, Philippe Charvet, François Chassat, Fabrice Cherouat, Ludovic Chirouze, Michel Choquet, Claude Coatantiec, Emmanuel Collados, Philippe Corberand, Christelle Dauga, Robert Davancens, Catherine Deblock, Eric Decourbey, Charles Dekhtiar, Michel Delannoy, Michel Delgado, Damien Delmas, Emilie Demange, Victor Depeyre, Isabelle Desenclos, Christian Dio, Kevin Downes, Marie-Ange Duro, Eric Ecale, Omar Emam, Elizabeth Estrada, Coralie Falgayrac, Benjamin Farcot, Claude Faubert, Frédéric Faye, Sébastien Finana, Grégory Flandin, Loic Floury, Gilles Fongy, Michel Fruit, Florence Fusero, Christophe Gabilan, Jérémie Gaboriaud, Cyril Gallard, Damien Galy, Benjamin Gandon, Patrick Gareth, Eric Gelis, André Gellon, Laurent Georges, Philippe-Marie Gomez, José Goncalves, Frédéric Guedes, Vincent Guillemier, Thomas Guilpain, Stéphane Halbout, Marie Hanne, Grégory Hazera, Daniel Herbin, Tommy Hercher, Claude Hoarau le Papillon, Matthias Holz, Philippe Humbert, Sophie Jallade, Grégory Jonniaux, Frédéric Juillard, Philippe Jung, Charles Koeck, Marc Labaysse, Réné Laborde, Anouk Laborie, Jérôme Lacoste-Barutel, Baptiste Laynet, Virginie Le Gall, Julien L’Hermitte, Marc Le Roy, Christian Lebranchu, Didier Lebreton, Patrick Lelong, Jean-Luc Leon, Stephan Leppke, Franck Levallois, Philippe Lingot, Laurant Lobo, Céline Lopez, Jean-Michel Loupias, Carlos Luque, Sébastien Maes, Bruno Mamdy, Denis Marchais, Alexandre Marson, Benjamin Massart, Rémi Mauriac, Philippe Mayo, Caroline Meisse, Hervé Mercereau, Olivier Michel, Florent Minaire, Xavier Moisson, David Monteiro ,Denis Montperrus, Boris Niel, Cédric Papot, Jean-François Pasquier, Gareth Patrick, Pascal Paulet, Martin Peccia, Sylvie Peden, Sonia Penalva, Michel Pendaries, Philippe Peres, Grégory Personne, Dominique Pierot, Jean-Marc Pillot, Lydie Pinel, Fabien Piquemal, Vincent Poinsignon, Maxime Pomelec, André Porras, Pierre Pouny, Severin Provost, Sébastien Ramos, Fabienne Raux, Florian Reuscher, Nicolas Riguet, Mickael Roche, Gilles Rougier, Bruno Rouzier, Stephane Roy, Jean-Paul Ruffie, Frédéric Safa, Heloise Scheer, Claudie Serris, André Sobeczko, Jean-François Soucaille, Philippe Tatry, Théo Thomas, Pierre Thoral, Dominique Torcheux, Vincent Tortel, Stephane Touzeau, Didier Trantoul, Cyril Vétel, Jean-Axel Vatinel, Jean-Paul Vormus, and Marc Zanoni; from Airbus DS (Friedrichshafen): Jan Beck, Frank Blender, Volker Hashagen, Armin Hauser, Bastian Hell, Cosmas Heller, Matthias Holz, Heinz-Dieter Junginger, Klaus-Peter Koeble, Karin Pietroboni, Ulrich Rauscher, Rebekka Reichle, Florian Reuscher, Ariane Stephan, Christian Stierle, Riccardo Vascotto, Christian Hehr, Markus Schelkle, Rudi Kerner, Udo Schuhmacher, Peter Moeller, Rene Stritter, Jürgen Frank, Wolfram Beckert, Evelyn Walser, Steffen Roetzer, Fritz Vogel, and Friedbert Zilly; from Airbus DS (Stevenage): Mohammed Ali, David Bibby, Leisha Carratt, Veronica Carroll, Clive Catley, Patrick Chapman, Chris Chetwood, Tom Colegrove, Andrew Davies, Denis Di Filippantonio, Andy Dyne, Alex Elliot, Omar Emam, Colin Farmer, Steve Farrington, Nick Francis, Albert Gilchrist, Brian Grainger, Yann Le Hiress, Vicky Hodges, Jonathan Holroyd, Haroon Hussain, Roger Jarvis, Lewis Jenner, Steve King, Chris Lloyd, Neil Kimbrey, Alessandro Martis, Bal Matharu, Karen May, Florent Minaire, Katherine Mills, James Myatt, Chris Nicholas, Paul Norridge, David Perkins, Michael Pieri, Matthew Pigg, Angelo Povoleri, Robert Purvinskis, Phil Robson, Julien Saliege, Satti Sangha, Paramijt Singh, John Standing, Dongyao Tan, Keith Thomas, Rosalind Warren, Andy Whitehouse, Robert Wilson, Hazel Wood, Steven Danes, Scott Englefield, Juan Flores-Watson, Chris Lord, Allan Parry, Juliet Morris, Nick Gregory, and Ian Mansell.
+
+From ESA, in alphabetical order: Ricard Abello, Ivan Aksenov, Matthew Allen, Salim Ansari, Philippe Armbruster, Alessandro Atzei, Liesse Ayache, Samy Azaz, Jean-Pierre Balley, Manuela Baroni, Rainer Bauske, Thomas Beck, Gabriele Bellei, Carlos Bielsa, Gerhard Billig, Carmen Blasco, Andreas Boosz, Bruno Bras, Julia Braun, Thierry Bru, Frank Budnik, Joe Bush, Marco Butkovic, Jacques Candeé, David Cano, Carlos Casas, Francesco Castellini, David Chapmann, Nebil Cinar, Mark Clements, Giovanni Colangelo, Peter Collins, Ana Colorado McEvoy, Vincente Companys, Federico Cordero, Sylvain Damiani, Fabienne Delhaise, Gianpiero Di Girolamo, Yannis Diamantidis, John Dodsworth, Ernesto Dölling, Jane Douglas, Jean Doutreleau, Dominic Doyle, Mark Drapes, Frank Dreger, Peter Droll, Gerhard Drolshagen, Bret Durrett, Christina Eilers, Yannick Enginger, Alessandro Ercolani, Matthias Erdmann, Orcun Ergincan, Robert Ernst, Daniel Escolar, Maria Espina, Hugh Evans, Fabio Favata, Stefano Ferreri, Daniel Firre, Michael Flegel, Melanie Flentge, Alan Flowers, Steve Foley, Jens Freihöfer, Rob Furnell, Julio Gallegos, Philippe Garé, Wahida Gasti, José Gavira, Frank Geerling, Franck Germes, Gottlob Gienger, Bénédicte Girouart, Bernard Godard, Nick Godfrey, César Gómez Hernández, Roy Gouka, Cosimo Greco, Robert Guilanya, Kester Habermann, Manfred Hadwiger, Ian Harrison, Angela Head, Martin Hechler, Kjeld Hjortnaes, John Hoar, Jacolien Hoek, Frank Hoffmann, Justin Howard, Arjan Hulsbosch, Christopher Hunter, Premysl Janik, José Jiménez, Emmanuel Joliet, Helma van de Kamp-Glasbergen, Simon Kellett, Andrea Kerruish, Kevin Kewin, Oliver Kiddle, Sabine Kielbassa, Volker Kirschner, Kees van ’t Klooster, Jan Kolmas, Oliver El Korashy, Arek Kowalczyk, Holger Krag, Benoît Lainé, Markus Landgraf, Sven Landstroem, Mathias Lauer, Robert Launer, Laurence Tu-Mai Levan, Mark ter Linden, Santiago Llorente, Tim Lock, Alejandro Lopez-Lozano, Guillermo Lorenzo, Tiago Loureiro, James Madison, Juan Manuel Garcia, Federico di Marco, Jonas Marie, Filip Marinic, Pier Mario Besso, Arturo Martín Polegre, Ander Martínez, Monica Martínez Fernández, Marco Massaro, Paolo de Meo, Ana Mestre, Luca Michienzi, David Milligan, Ali Mohammadzadeh, David Monteiro, Richard Morgan-Owen, Trevor Morley, Prisca Mühlmann, Jana Mulacova, Michael Müller, Pablo Munoz, Petteri Nieminen, Alfred Nillies, Wilfried Nzoubou, Alistair O’Connell, Karen O’Flaherty, Alfonso Olias Sanz, Oscar Pace, Mohini Parameswaran, Ramon Pardo, Taniya Parikh, Paul Parsons, Panos Partheniou, Torgeir Paulsen, Dario Pellegrinetti, José-Louis Pellon-Bailon, Joe Pereira, Michael Perryman, Christian Philippe, Alex Popescu, Frédéric Raison, Riccardo Rampini, Florian Renk, Alfonso Rivero, Andrew Robson, Gerd Rössling, Martina Rossmann, Markus Rückert, Andreas Rudolph, Frédéric Safa, Jamie Salt, Giovanni Santin, Fabio de Santis, Rui Santos, Giuseppe Sarri, Stefano Scaglioni, Melanie Schabe, Dominic Schäfer, Micha Schmidt, Rudolf Schmidt, Ared Schnorhk, Klaus-Jürgen Schulz, Jean Schütz, Julia Schwartz, Andreas Scior, Jörg Seifert, Christopher Semprimoschnig, Ed Serpell, Iñaki Serraller Vizcaino, Gunther Sessler, Felicity Sheasby, Alex Short, Heike Sillack, Swamy Siram, Christopher Smith, Claudio Sollazzo, Steven Straw, Pilar de Teodoro, Mark Thompson, Giulio Tonelloto, Felice Torelli, Raffaele Tosellini, Cecil Tranquille, Irren Tsu-Silva, Livio Tucci, Aileen Urwin, Jean-Baptiste Valet, Martin Vannier, Enrico Vassallo, David Verrier, Sam Verstaen, Rüdiger Vetter, José Villalvilla, Raffaele Vitulli, Mildred Vögele, Sergio Volonté, Catherine Watson, Karsten Weber, Daniel Werner, Gary Whitehead, Gavin Williams, Alistair Winton, Michael Witting, Peter Wright, Karlie Yeung, Marco Zambianchi, and Igor Zayer, and finally Vincenzo Innocente from CERN.
+
