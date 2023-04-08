@@ -1172,7 +1172,7 @@ begin
   if select_star_database(star_database1,fov_org)=false then {select database prior to cropping selection}
   begin
     result:=false;
-    memo2_message('Error, no star database found at '+database_path+' ! Download the h18 (or h17, v17) and install.');
+    memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');
     errorlevel:=32;{no star database}
     exit;
   end
@@ -1185,7 +1185,7 @@ begin
       warning_str:=warning_str+'Wide field image, use W08 database! '
     else
     if ((fov_org>6) and (database_type=1476)) then
-      warning_str:=warning_str+'Large FOV, use V17 or G17 database! ';
+      warning_str:=warning_str+'Large FOV, use G05 database! ';
 
     if warning_str<>'' then memo2_message(warning_str);
   end;
@@ -1380,7 +1380,7 @@ begin
                 extrastars:=extrastars*1.1;
                 if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
                 begin
-                  memo2_message('Error, no star database found at '+database_path+' ! Download the h18 (or h17, v17) and install.');
+                  memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;
@@ -1532,7 +1532,7 @@ begin
 
   warning_str:=warning_str + warning_downsample; {add the last warning from loop autoFOV}
 
-// this does not happen anymore with new database with fixed density.
+//No longer required for the new D50.. databases
 //  if nrstars_required>database_stars+4 then
 //  begin
 //    memo2_message('Warning, reached the limit of the star database!');
