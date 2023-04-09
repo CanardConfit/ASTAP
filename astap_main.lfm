@@ -2132,9 +2132,8 @@ object mainwindow: Tmainwindow
       0000000000000000
     }
     Text = 'Text'
-    TextFont.Height = -24
+    TextFont.Height = -11
     Title = 'ASTAP astrometric solver'
-    TitleFont.Height = -24
     TitleFont.Style = [fsBold]
     Visible = False
     Left = 1128

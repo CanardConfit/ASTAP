@@ -228,7 +228,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 2163
-    ActivePage = lights
+    ActivePage = tab_blink1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -236,7 +236,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 7
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -1238,7 +1238,7 @@ object stackmenu1: Tstackmenu1
         OnClick = help_stack_menu3Click
       end
       object add_time1: TCheckBox
-        Left = 824
+        Left = 800
         Height = 19
         Hint = 'Add time to stack file name. This allow comparison of different settings.'
         Top = 8
@@ -3263,18 +3263,8 @@ object stackmenu1: Tstackmenu1
         OnClick = browse_blink1Click
         TabOrder = 14
       end
-      object annotations_visible1: TLabel
-        Left = 1104
-        Height = 15
-        Hint = 'Annotation are visible if set in the viewer menu VIEW'
-        Top = 17
-        Width = 101
-        Caption = 'Annotations visible'
-        Enabled = False
-        ParentColor = False
-      end
       object Annotations_visible2: TCheckBox
-        Left = 1216
+        Left = 1192
         Height = 19
         Hint = 'Same option as in the viewer under View.'
         Top = 16
@@ -3348,7 +3338,7 @@ object stackmenu1: Tstackmenu1
       end
       object clear_photometry_list1: TButton
         Left = 1488
-        Height = 26
+        Height = 25
         Hint = 'Clear image list'
         Top = 5
         Width = 53
@@ -3544,7 +3534,7 @@ object stackmenu1: Tstackmenu1
       end
       object photometry_binx2: TButton
         Left = 1416
-        Height = 26
+        Height = 25
         Hint = 'Bin the images for better photometric detection.  Original files will not be affected.'
         Top = 5
         Width = 61
@@ -6342,7 +6332,7 @@ object stackmenu1: Tstackmenu1
       object GroupBox3: TGroupBox
         Left = 775
         Height = 104
-        Top = 120
+        Top = 152
         Width = 256
         Caption = 'Add noise'
         ClientHeight = 84
@@ -6508,12 +6498,12 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox_test_images1: TGroupBox
         Left = 776
-        Height = 104
+        Height = 120
         Hint = 'Create artificial test image for testing star detection. This tool is intendent for developpers only.'
         Top = 8
         Width = 255
         Caption = 'Create test image for star detection'
-        ClientHeight = 84
+        ClientHeight = 100
         ClientWidth = 251
         ParentBackground = False
         ParentFont = False
@@ -7326,12 +7316,12 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox18: TGroupBox
-        Left = 775
-        Height = 56
-        Top = 248
+        Left = 776
+        Height = 64
+        Top = 272
         Width = 256
         Caption = 'Remove stars'
-        ClientHeight = 36
+        ClientHeight = 44
         ClientWidth = 252
         ParentBackground = False
         ParentFont = False
@@ -7396,11 +7386,11 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox19: TGroupBox
         Left = 776
-        Height = 56
-        Top = 312
+        Height = 72
+        Top = 352
         Width = 256
         Caption = 'Increase nebulosity signal'
-        ClientHeight = 36
+        ClientHeight = 52
         ClientWidth = 252
         ParentBackground = False
         ParentFont = False

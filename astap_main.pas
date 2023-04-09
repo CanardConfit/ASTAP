@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.04.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.04.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -925,7 +925,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
-     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia, unit_disk;
+     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -7246,7 +7246,7 @@ begin
 
       bool:=Sett.ReadBool('main','annotations',false);
       mainwindow.annotations_visible1.checked:=bool;{set both indicators}
-      stackmenu1.annotations_visible1.enabled:=bool;{set both indicators}
+      stackmenu1.annotations_visible2.checked:=bool;{set both indicators}
 
       northeast1.checked:=Sett.ReadBool('main','north_east',false);
       mountposition1.checked:=Sett.ReadBool('main','mount_position',false);
@@ -8050,6 +8050,7 @@ begin
   flip_vertical1.checked:=flip_vertical1.checked=false;
   flip_horizontal1.checked:=flip_horizontal1.checked=false;
 end;
+
 
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);

@@ -93,7 +93,6 @@ type
     browse_bias1: TBitBtn;
     browse_flats1: TBitBtn;
     browse_inspector1: TBitBtn;
-    annotations_visible1: TLabel;
     classify_flat_date1: TCheckBox;
     classify_flat_exposure1: TCheckBox;
     hours_and_minutes1: TCheckBox;
