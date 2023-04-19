@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.04.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.04.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -5508,22 +5508,24 @@ end;
 
 
 procedure new_to_old_WCS(var head : theader);{convert new style FITS to old style, revison 2022}
+var
+  crota_1, crota_2 : double;
 begin
   // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
   // Representations of World Coordinates in FITS paper II aah3860
 
   // formula 191
-  if head.cd2_1>0 then head.crota1:=arctan2(-head.cd2_1,-head.cd1_1)*180/pi
+  if head.cd2_1>0 then crota_1:=arctan2(-head.cd2_1,-head.cd1_1)
   else
-  if head.cd2_1<0 then head.crota1:=arctan2(+head.cd2_1,+head.cd1_1)*180/pi
+  if head.cd2_1<0 then crota_1:=arctan2(+head.cd2_1,+head.cd1_1)
   else
-  head.crota1:=0;
+  crota_1:=0;
 
-  if head.cd1_2>0 then head.crota2:=arctan2(-head.cd1_2,head.cd2_2)*180/pi
+  if head.cd1_2>0 then crota_2:=arctan2(-head.cd1_2,head.cd2_2)  //arctan2 returns arctangent of (y/x)
   else
-  if head.cd1_2<0 then head.crota2:=arctan2(head.cd1_2,-head.cd2_2)*180/pi
+  if head.cd1_2<0 then crota_2:=arctan2(head.cd1_2,-head.cd2_2)  //arctan2 returns arctangent of (y/x)
   else
-  head.crota2:=0;
+  crota_2:=0;
 
   // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
   // Representations of World Coordinates in FITS paper II aah3860
@@ -5531,14 +5533,17 @@ begin
   // Calculate cdelt1, cdelt2 values using the longest side of the triangle
   if abs(head.cd1_1)>abs(head.cd2_1) then
   begin
-    head.cdelt1:=+head.cd1_1/cos(head.crota1*pi/180);
-    head.cdelt2:=+head.cd2_2/cos(head.crota2*pi/180);
+    head.cdelt1:=+head.cd1_1/cos(crota_1);//Note crota_1, 2 are in radians
+    head.cdelt2:=+head.cd2_2/cos(crota_2);
   end
   else
   begin
-    head.cdelt1:=+head.cd2_1/sin(head.crota1*pi/180);
-    head.cdelt2:=-head.cd1_2/sin(head.crota2*pi/180);
+    head.cdelt1:=+head.cd2_1/sin(crota_1);//Note crota_1, 2 are in radians
+    head.cdelt2:=-head.cd1_2/sin(crota_2);
   end;
+
+  head.crota1:=crota_1*180/pi;//Note crota1, 2 are now in degrees
+  head.crota2:=crota_2*180/pi;
 
   //Solutions for CROTA2 come in pairs separated by 180degr. The other solution is obtained by subtracting 180 from CROTA2 and negating CDELT1 and CDELT2.
   //While each solution is equally valid, if one makes CDELT1 < 0 and CDELT2 > 0 then it would normally be the one chosen.
@@ -8055,7 +8060,7 @@ end;
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
 begin
-  maintype:=InputBox('Simbad search with criteria.','Enter the object main type (E.g. star=*, galaxy=G, quasar=QSO):',maintype);
+  maintype:=InputBox('Simbad search by criteria.','Enter the object main type (E.g. star=*, galaxy=G, quasar=QSO):',maintype);
   gaia_star_position1Click(sender);
 end;
 
@@ -9994,31 +9999,6 @@ begin
 end;
 
 
-procedure give_spiral_position(position : integer; out x,y : integer); {give x,y position of square spiral as function of input value}
-var i,dx,dy,t,count: integer;
-begin
-  x :=0;{star position}
-  y :=0;
-  dx := 0;{first step size x}
-  dy := -1;{first step size y}
-  count:=0;
-
-  for i:=0 to 10000*10000  {maximum width*height} do
-  begin
-    if  count>=position then exit; {exit and give x and y position}
-    inc(count);
-    if ( (x = y) or ((x < 0) and (x = -y)) or ((x > 0) and (x = 1-y))) then {turning point}
-    begin {swap dx by negative dy and dy by negative dx}
-       t:=dx;
-      dx := -dy;
-      dy := t;
-    end;
-     x :=x+ dx;{walk through square}
-     y :=y+ dy;{walk through square}
-  end;{for loop}
-end;
-
-
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
   size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
@@ -10398,6 +10378,101 @@ begin
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
+
+
+
+{type
+   adata = array of word;
+function rice_encoding(inp : adata; k,bitdepth : integer; out  outp : adata ; out compressedSize : integer) : boolean;
+var
+   i,j,m,m2,s,r,r2, q,x,bitpointer,len : longword;
+   res,res_sum : longword;
+
+         procedure put_bit( value : byte);
+         var
+           y,rest : longint;
+               val : word;
+         begin
+           y:=bitpointer div bitdepth;
+           rest:=bitpointer - y * bitdepth;
+
+           if y>compressedSize then
+           begin
+             inc(compressedSize);//compressedSize:=y
+             outp[y]:=0; //clear the byte
+           end;
+           outp[y]:=outp[y] or (value shl rest); //store right to left. Else use shl (bitdepth-1-rest)
+
+           inc(bitpointer);
+         end;
+begin
+  result:=true;
+  len:=length(inp);
+  setlength(outp,len);//allow maximum same size as input
+
+  m := 1 shl k;//calculate 2^k
+  dec(m);//special. See remark 1
+
+  compressedSize:=0;
+  bitpointer:=0;
+
+  for j:=0 to len-1 do
+  begin
+    q:= inp[j] shr k; // quotient part, equivalent as inp[j]/2^k
+    r:=inp[j] and m;  // remainder part, fast way. Remark 1, Other solution would be  r:=inp[j] - q*m if dec(m) is not applied.
+
+    for i:=1 to q do
+       put_bit(1);
+    put_bit(0);
+
+    for i:=k-1 downto 0 do put_bit( (r shr i) and 1 ); // remainder part
+
+    if compressedSize>=len-1 then
+    begin
+      result:=false;
+      break;
+    end;//compression larger then orginal
+  end;//for loop
+  inc(compressedSize);
+end;      }
+
+//procedure Tmainwindow.Button1Click(Sender: TObject);
+//var
+//   inp,outp : array of word;
+//   i,j,k,bestK,compressedSize:  integer;
+//   com,bestcompression : double;
+//begin
+//  setlength(inp,head.Width*head.height);
+//  setlength(inp,head.Width);
+//  for i:=0 to head.Width-1 do
+//  inp[i]:=round(img_loaded[0,i,(head.height div 3)]{/16});
+//  bestcompression:=999;
+//  bestK:=0;
+//  for k:=1 to 15 do //find best K factor for one line
+//  begin
+//    if rice_encoding(inp, k,16,outp,compressedSize) = true then
+//       if compressedSize/head.Width<bestcompression then begin bestk:=k; bestcompression:=compressedSize/head.Width; end;
+//  end;
+//  if bestk=0 then exit;
+
+//  inp:=nil;
+//  setlength(inp,head.Width*head.height);
+//  for i:=0 to head.Width-1 do
+//  for j:=0 to head.height-1 do
+//  begin
+//    inp[i*j]:=round(img_loaded[0,i,j]{/16});
+//    img_loaded[0,i,j]:=inp[i*j];
+
+//  end;
+//  if rice_encoding(inp, bestk,16,outp,compressedSize) = false then
+//   beep;
+//  com:=compressedSize/(head.Width*head.height);
+//  beep;
+
+//  inp:=nil;
+//  outp:=nil;
+
+//end;
 
 
 procedure standard_equatorial2(ra0,dec0,x,y,cdelt: double; var ra,dec : double); inline;{transformation from CCD coordinates into equatorial coordinates}

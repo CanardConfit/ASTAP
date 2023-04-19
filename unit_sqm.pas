@@ -22,6 +22,7 @@ type
 
   Tform_sqm1 = class(TForm)
     green_message1: TLabel;
+    bortle1: TLabel;
     sqm_applydf1: TCheckBox;
     error_message1: TLabel;
     sqm1: TEdit;
@@ -160,6 +161,31 @@ begin
 end;
 
 
+function bortle(sqm: double): string;
+begin
+  //https://en.wikipedia.org/wiki/Bortle_scale
+  //https://www.cleardarksky.com/lp/ChrSprPkPAlp.html
+  if sqm>21.99 then result:='Bortle 1, excellent dark-sky site'
+  else
+  if sqm>21.89 then result:='Bortle 2, truly dark site'
+  else
+  if sqm>21.69 then result:='Bortle 3, dark rural sky'
+  else
+  if sqm>21.25 then result:='Bortle 4, rural sky'
+  else
+  if sqm>20.49 then result:='Bortle 4.5, rural/suburban sky'
+  else
+  if sqm>19.50 then result:='Bortle 5, suburban sky'
+  else
+  if sqm>18.94 then result:='Bortle 6, bright suburban sky'
+  else
+  if sqm>18.38 then result:='Bortle=7, suburban/urban sky'
+  else
+  if sqm>17.80 then result:='Bortle 8, city sky'
+  else
+  result:='Bortle 9, inner-city sky';
+end;
+
 procedure display_sqm;
 var
   update_hist : boolean;
@@ -176,6 +202,7 @@ begin
     begin
       error_message1.caption:='Error converting DATE-OBS.'+#10;
       sqm1.caption:='?';
+      bortle1.caption:='';
       exit;
     end;
 
@@ -183,6 +210,7 @@ begin
     begin
       error_message1.caption:=error_message1.caption+'Can not process colour images!!'+#10;
       sqm1.caption:='?';
+      bortle1.caption:='';
       exit;
     end;
 
@@ -210,13 +238,15 @@ begin
     begin
       if centalt='0' then error_message1.caption:=error_message1.caption+'Could not retrieve or calculate altitude. Enter the default geographic location'+#10;
       sqm1.caption:='?';
+      bortle1.caption:='';
       exit;
     end;
 
     {report}
     background1.caption:=inttostr(round(bck.backgr));
     altitude1.caption:=centalt;
-    sqm1.caption:=floattostrF(sqmfloat,ffFixed,0,2)
+    sqm1.caption:=floattostrF(sqmfloat,ffFixed,0,2);
+    bortle1.caption:=bortle(sqmfloat);
   end;
 end;
 

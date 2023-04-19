@@ -135,11 +135,11 @@ object form_sqm1: Tform_sqm1
     ParentFont = False
   end
   object Label1: TLabel
-    Left = 9
+    Left = 8
     Height = 195
     Top = 360
     Width = 547
-    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved. (For flux-calibration against the star database)'#13#10'2) The image background value has measurable increased above the pedestal value or mean dark value. '#13#10'    If not expose longer. This increase is caused by the sky glow.'#13#10'3) Apply on single unprocessed raw images only. '#13#10'4) Providing dark image(s) in tab darks (ctrl+A) or entering a pedestal value  (mean value of a dark) '#13#10'     increases the accuracy. If possible provide also a flat(s) in tab flats. Calibrated images are also fine.'#13#10'5) DSLR/OSC raw images require 2x2 binning. For DSLR images this is done automatically.'#13#10'6)  No very large bright nebula is visible. Most of the image shall contain empty sky filled with stars.'#13#10'7) The calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction of the star light. The altitude is calculated based on time, latitude, '#13#10'    longitude. Note that poor transparency will result in lower values compared with'#13#10'    handheld meters.'
+    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved. (For flux-calibration against the star database)'#13#10'2) The image background value has measurable increased above the pedestal value or mean dark value. '#13#10'    If not expose longer. This increase is caused by the sky glow.'#13#10'3) Apply on a single unprocessed raw image only. '#13#10'4) Providing dark image(s) in tab darks (ctrl+A) or entering a pedestal value  (mean value of a dark) '#13#10'     increases the accuracy. If possible provide also a flat(s) in tab flats. Calibrated images are also fine.'#13#10'5) DSLR/OSC raw images require 2x2 binning. For DSLR images this is done automatically.'#13#10'6)  No very large bright nebula is visible. Most of the image shall contain empty sky filled with stars.'#13#10'7) The calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction of the star light. The altitude is calculated based on time, latitude, '#13#10'    longitude. Note that poor transparency will result in lower values compared with'#13#10'    handheld meters.'
     ParentColor = False
   end
   object Label4: TLabel
@@ -248,5 +248,16 @@ object form_sqm1: Tform_sqm1
     ParentColor = False
     ParentFont = False
     WordWrap = True
+  end
+  object bortle1: TLabel
+    Left = 280
+    Height = 15
+    Hint = 'The Bortle scale is a nine-level numeric scale of the night sky''s brightness.'
+    Top = 280
+    Width = 15
+    Caption = '---'
+    ParentColor = False
+    ParentShowHint = False
+    ShowHint = True
   end
 end

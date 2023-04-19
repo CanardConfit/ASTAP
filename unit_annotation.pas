@@ -1401,7 +1401,8 @@ begin
                     mainwindow.Shape_alignment_marker2.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
         end;
 
-        gx_orientation:=pa*flipped+head.crota2;
+        gx_orientation:=(pa+head.crota2)*flipped;
+
         if flip_horizontal then begin x:=(head.width-1)-x; gx_orientation:=-gx_orientation; end;
         if flip_vertical then gx_orientation:=-gx_orientation else y:=(head.height-1)-y;
         len:=length1/(abs(head.cdelt2)*60*10*2); {Length in pixels}
