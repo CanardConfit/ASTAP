@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.04.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.04.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2199,6 +2199,14 @@ begin
   while index<=count1 do {read keys}
   begin
     key:=copy(mainwindow.Memo1.Lines[index],1,9);
+
+    if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
+    if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
+    if index=3 then if key<>'NAXIS1  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
+    if index=4 then if key<>'NAXIS2  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
+    if ((index=5) and (head.naxis>1)) then if key<>'NAXIS3  =' then
+                                             begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
+
     if key='CD1_1   =' then head.cd1_1:=read_float else
     if key='CD1_2   =' then head.cd1_2:=read_float else
     if key='CD2_1   =' then head.cd2_1:=read_float else
@@ -2262,6 +2270,10 @@ begin
     if key='DATE-OBS=' then head.date_obs:=read_string else
 
     if key='BAYERPAT=' then bayerpat:=read_string;
+    if key='ROWORDER=' then roworder:=read_string;
+    if key='XBAYROFF=' then Xbayroff:=round(read_float) else
+    if key='YBAYROFF=' then Ybayroff:=round(read_float) else
+
 
     if key='PRESSURE=' then pressure:=round(read_float) else
     if key='AOCBAROM=' then pressure:=round(read_float) else
@@ -2273,21 +2285,15 @@ begin
     if key='AMB-TEMP=' then focus_temp:=round(read_float) else
     if key='AOCAMBT =' then focus_temp:=round(read_float) else
 
-    if key='TELESCOP=' then telescop:=read_string;
-    if key='INSTRUME=' then instrum:=read_string;
-    if key='CENTALT =' then centalt:=read_string;
-    if key='SITELAT =' then sitelat:=read_string;
+    if key='TELESCOP=' then telescop:=read_string else
+    if key='INSTRUME=' then instrum:=read_string else
+    if key='CENTALT =' then centalt:=read_string else
+    if key='SITELAT =' then sitelat:=read_string else
     if key='SITELONG=' then sitelong:=read_string;
 
     {adjustable keywords}
     if key=sqm_key+'='    then sqm_value:=read_string;
 
-    if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
-    if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
-    if index=3 then if key<>'NAXIS1  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
-    if index=4 then if key<>'NAXIS2  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
-    if ((index=5) and (head.naxis>1)) then if key<>'NAXIS3  =' then
-                                             begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
     index:=index+1;
   end;
 
@@ -13930,9 +13936,9 @@ end;
 function noise_to_electrons(adu_e, binning, sd : double): string;
 begin
   if adu_e<>0 then
-    result:=floattostrF(sd*adu_e*binning,FFgeneral,3,3)+' e-' // in electrons
+    result:=floattostrF(sd*adu_e*binning,FFfixed,6,1)+' e-' // in electrons
   else
-    result:=floattostrF(sd,FFgeneral,3,3);//in adu's
+    result:=floattostrF(sd,FFfixed,6,1);//in adu's
 
 end;
 

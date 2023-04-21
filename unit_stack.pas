@@ -1396,7 +1396,7 @@ begin
 
 
             {$ifdef darwin} {MacOS}
-               quality:=strtoint(add_unicode('',stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]));//remove all crowns
+            quality:=strtoint(add_unicode('',stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]));//remove all crowns
             {$else}
             quality := StrToInt(ListView1.Items.item[c].subitems.Strings[L_quality]);
             {$endif}
@@ -2106,7 +2106,7 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_hfd] :=
                   floattostrF(hfd_median, ffFixed, 0, 1);
                 ListView1.Items.item[c].subitems.Strings[L_quality] :=
-                  inttostr5(round(star_counter / sqr(hfd_median))); {quality number of stars divided by hfd}
+                  inttostr5(round(star_counter / sqr(hfd_median*head_2.Xbinning))); {quality number of stars divided by hfd, binning neutral}
 
                 if hfd_median >= 99 then
                   ListView1.Items.item[c].Checked := False {no stars, can't process this image}
@@ -3811,23 +3811,19 @@ begin
               if ((full = True) and (tabnr in [2, 3, 4, 7])) then
                 {get background for dark, flats, flat-darks, photometry}
               begin {analyse background and noise}
-
                 get_background(0, img, True {update_hist}, False {calculate noise level}, {var} bck);
 
-                lv.Items.item[c].subitems.Strings[D_background] :=
-                  inttostr5(round(bck.backgr));
+                lv.Items.item[c].subitems.Strings[D_background] := inttostr5(round(bck.backgr));
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
                   local_sd((head_2.Width div 2) - 50, (head_2.Height div 2) - 50,
-                    (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img,
-                    sd, dummy {mean}, iterations);
+                    (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean}, iterations);
                   {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
                   adu_e := retrieve_ADU_to_e_unbinned(head_2.egain);
                   //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
-                  lv.Items.item[c].subitems.Strings[D_sigma] :=
-                    noise_to_electrons(adu_e, head_2.Xbinning, sd);
+                  lv.Items.item[c].subitems.Strings[D_sigma] := noise_to_electrons(adu_e, head_2.Xbinning, sd);
                   //reports noise in ADU's (adu_e=0) or electrons
                 end;
               end;
