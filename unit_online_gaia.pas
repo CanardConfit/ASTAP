@@ -185,6 +185,10 @@ begin
 
     mag_lim:=floattostrF(magli,ffGeneral,3,1); {BP~GP+0.5}
     memo2_message('Downloading Gaia stars from Vizier down to magnitude '+mag_lim+'. This can take 20 seconds or more ......');
+
+    if search_field*180/pi>=3.5 then
+      memo2_message('Warning, for this large FOV the star retrieval from Vizier will likely take minutes of fail!!!');
+
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=200000&Gmag=<'+mag_lim;
        //'http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c=10.6722703144%2B41.2237647285&-c.bs=7862.054205/7862.054205&-out.max=200000&Gmag=<12.6'
     slist.Text := get_http(url);//move info to Tstringlist

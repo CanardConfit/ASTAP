@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.04.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.04.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2160,11 +2160,11 @@ begin
 end;
 
 
-procedure read_keys_memo(light: boolean; out head : theader);{for tiff, header in the describtion decoding}
+procedure read_keys_memo(light: boolean; var {var because it is set at default values} head : theader);{for tiff header in the describtion decoding}
 var
   key                             : string;
   count1,index                    : integer;
-  ra2,dec2,ccd_temperature,jd_obs : double;
+  ccd_temperature,jd_obs : double;
 
   function read_float: double;
   var

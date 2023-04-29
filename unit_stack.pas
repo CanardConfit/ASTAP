@@ -480,7 +480,6 @@ type
     MenuItem21: TMenuItem;
     MenuItem22: TMenuItem;
     ColorDialog1: TColorDialog;
-    extend_object_name_with_time_observation1: TMenuItem;
     MenuItem19: TMenuItem;
     list_to_clipboard6: TMenuItem;
     PopupMenu7: TPopupMenu;
@@ -725,7 +724,6 @@ type
     procedure refresh_astrometric_solutions1click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
     procedure export_aligned_files1Click(Sender: TObject);
-    procedure extend_object_name_with_time_observation1Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of string);
     procedure FormPaint(Sender: TObject);
     procedure help_blink1Click(Sender: TObject);
@@ -1437,7 +1435,7 @@ begin
         until c > counts;
         quality_sd := sqrt(quality_sd / nr_good_images);
         memo2_message('Analysing group ' + key + ' for outliers.' + #9 +
-          #9 + ' Average image quality (nrstars/sqr(hfd))=' + floattostrF(quality_mean, ffFixed, 0, 0) +
+          #9 + ' Average image quality (nrstars/sqr(hfd*binning))=' + floattostrF(quality_mean, ffFixed, 0, 0) +
           ', σ=' + floattostrF(quality_sd, ffFixed, 0, 1));
 
         {remove outliers}
@@ -7428,59 +7426,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.extend_object_name_with_time_observation1Click(Sender: TObject);
-var
-  index, counter, error2: integer;
-  interval, jd: double;
-  timestr, inp: string;
-begin
-  inp := InputBox('Extend value keyword OBJECT with rounded Julian day',
-    'Hit cancel to abort. Type the rounding interval in seconds:', '');
-  if length(inp) <= 0 then exit;
-  val(inp, interval, error2);
-  if interval < 1 then interval := 1;
-  if error2 <> 0 then
-  begin
-    beep;
-    exit;
-  end;
-
-  index := 0;
-  counter := listview1.Items.Count;
-  while index < counter do
-  begin
-    if listview1.Items[index].Selected then
-    begin
-      filename2 := listview1.items[index].Caption;
-      if load_image(False, False {plot}) then {load only}
-      begin
-        date_to_jd(head.date_obs, head.exposure);
-        {convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
-        jd := round(jd_start * 24 * 3600 / interval) * interval / (24 * 3600);
-        {round to time to interval }
-        str(jd: 1: 5, timestr);
-        if pos('-JD', object_name) = 0 then
-          object_name := object_name + '-JD' + timestr {add head.date_obs without seconds}
-        else
-          object_name := copy(object_name, 1, length(object_name) - 16) + '-JD' + timestr;
-
-        update_text('OBJECT  =', #39 + object_name + #39);
-        {spaces will be added/corrected later}
-
-        new_analyse_required := True;{allow reanalyse}
-
-        if nrbits = 16 then
-          save_fits(img_loaded, filename2, 16, True)
-        else
-          save_fits(img_loaded, filename2, -32, True);
-      end
-      else
-        beep;{image not found}
-    end;
-    Inc(index); {go to next file}
-  end;
-end;
-
 procedure Tstackmenu1.FormDropFiles(Sender: TObject; const FileNames: array of string);
 var
   i, pageindex: integer;
@@ -11262,7 +11207,7 @@ begin
    {$endif}
 
 
-    memo2_message('Reference image selected based on quality (star_detections/hfd) is: ' +
+    memo2_message('Reference image selected based on quality (star_detections/sqr(hfd)) is: ' +
       files_to_process[best_index].Name);
   end;
 end;

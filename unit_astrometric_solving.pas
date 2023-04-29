@@ -583,15 +583,13 @@ begin
     max_fov:=180;
 
   if max_stars=0 then max_stars:=500;// temporary. Remove in 2024;
-  if copy(name_database,1,1)='d' then
-  begin
-    val(copy(name_database,2,2),database_density,err);
-    if err<>0 then database_density:=9999
-    else
-    database_density:=database_density*100;
-  end
+
+  val(copy(name_database,2,2),database_density,err);
+  if ((err<>0) or
+      (database_density=17) or (database_density=18)) then //old databases V17, G17, G18, H17, H18
+    database_density:=9999
   else
-  database_density:=9999;//unlimited for H18, H17
+    database_density:=database_density*100;
 
 
   min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.text); {arc sec};

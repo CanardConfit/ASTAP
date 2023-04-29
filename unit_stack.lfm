@@ -7632,11 +7632,6 @@ object stackmenu1: Tstackmenu1
       object MenuItem19: TMenuItem
         Caption = '-'
       end
-      object extend_object_name_with_time_observation1: TMenuItem
-        Caption = 'Extend value of keyword OBJECT with rounded Julian day'
-        Hint = 'This allows to split an image series in groups of similar observation time.'
-        OnClick = extend_object_name_with_time_observation1Click
-      end
     end
     object MenuItem33: TMenuItem
       Caption = '-'
