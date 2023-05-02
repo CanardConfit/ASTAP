@@ -3,12 +3,12 @@ object stackmenu1: Tstackmenu1
   Height = 681
   Top = 222
   Width = 1707
-  HorzScrollBar.Page = 1701
+  HorzScrollBar.Page = 1707
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 681
+  ClientHeight = 664
   ClientWidth = 1707
   Color = clForm
   Icon.Data = {
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.2.4.0'
   object Memo2: TMemo
     Left = 0
-    Height = 121
+    Height = 104
     Top = 560
-    Width = 1707
+    Width = 2008
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 32471
+    Left = 32772
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1707
+    Width = 2008
     ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
@@ -244,7 +244,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 22
       OnShow = lightsShow
       ParentFont = False
@@ -309,7 +309,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -604,7 +604,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
@@ -638,7 +638,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -784,7 +784,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 2
       ParentFont = False
       object replace_by_master_flat1: TButton
@@ -830,7 +830,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -988,7 +988,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 3
       ParentFont = False
       object clear_selection3: TButton
@@ -1020,7 +1020,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1138,7 +1138,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1146,7 +1146,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1276,7 +1276,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 5
       OnShow = tab_stackmethod1Show
       ParentFont = False
@@ -2070,10 +2070,10 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
         end
         object undo_button7: TBitBtn
-          Left = 410
+          Left = 408
           Height = 30
           Hint = 'Undo last action'
-          Top = 61
+          Top = 96
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -2184,7 +2184,7 @@ object stackmenu1: Tstackmenu1
           Left = 0
           Height = 19
           Hint = 'Apply colour smooth after stacking.'
-          Top = 100
+          Top = 72
           Width = 100
           Caption = 'Colour smooth'
           Checked = True
@@ -2198,7 +2198,7 @@ object stackmenu1: Tstackmenu1
           Left = 219
           Height = 23
           Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
-          Top = 100
+          Top = 72
           Width = 60
           ItemHeight = 15
           ItemIndex = 2
@@ -2218,7 +2218,7 @@ object stackmenu1: Tstackmenu1
           Left = 128
           Height = 23
           Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
-          Top = 100
+          Top = 72
           Width = 60
           ItemHeight = 15
           ItemIndex = 2
@@ -2238,36 +2238,12 @@ object stackmenu1: Tstackmenu1
           Left = 296
           Height = 19
           Hint = 'Preserve red nebula around bright stars'
-          Top = 100
+          Top = 72
           Width = 117
           Caption = 'preserve_R_nebula'
           Checked = True
           State = cbChecked
           TabOrder = 10
-        end
-        object apply_normalise_filter1: TCheckBox
-          Left = 0
-          Height = 19
-          Hint = 'Colour shift by not using a white light source for the flat frames is compensated. The flat shall be a raw image.'
-          Top = 72
-          Width = 120
-          Caption = 'Normalise OSC flat'
-          Color = clDefault
-          ParentColor = False
-          ParentFont = False
-          TabOrder = 11
-        end
-        object test_osc_normalise_filter1: TButton
-          Left = 224
-          Height = 25
-          Hint = 'Test on the current displayed image. Colour shifts by not using a white light source for the flat frames are compensated. The flat should be a raw with preferable a dark-flat is subtracted (master flat), Use CTRL-Z to undo.'
-          Top = 66
-          Width = 138
-          AutoSize = True
-          Caption = '<- Test flat normalise'
-          OnClick = test_osc_normalise_filter1Click
-          ParentFont = False
-          TabOrder = 12
         end
       end
     end
@@ -2275,7 +2251,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 7
       OnShow = alignment1Show
       ParentFont = False
@@ -2967,7 +2943,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 11
       OnShow = tab_blink1Show
       ParentFont = False
@@ -2976,7 +2952,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3278,7 +3254,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Photometry of variable stars.'
       Caption = 'Photometry'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 19
       OnShow = tab_photometry1Show
       ParentFont = False
@@ -3354,7 +3330,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3750,7 +3726,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 17
       object analyse_inspector1: TButton
         Left = 136
@@ -3768,7 +3744,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4009,14 +3985,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1699
+        Width = 2000
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4282,7 +4258,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       ParentFont = False
       object live_stacking1: TButton
         Left = 16
@@ -4452,7 +4428,7 @@ object stackmenu1: Tstackmenu1
     object tab_monitoring1: TTabSheet
       Caption = 'Monitoring'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       OnShow = tab_monitoring1Show
       object Label3: TLabel
         Left = 128
@@ -4747,7 +4723,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       Enabled = False
       ImageIndex = 4
       OnShow = tab_Pixelmath1Show
@@ -6116,7 +6092,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 1699
+      ClientWidth = 2000
       Enabled = False
       ImageIndex = 4
       OnShow = tab_Pixelmath2Show
@@ -6372,130 +6348,6 @@ object stackmenu1: Tstackmenu1
           TabOrder = 2
         end
       end
-      object GroupBox14: TGroupBox
-        Left = 512
-        Height = 112
-        Hint = 'Artificial colouring of H-alpha images. Clouds will be made red. Stars white.'
-        Top = 74
-        Width = 200
-        Caption = 'Artificial colouring'
-        ClientHeight = 92
-        ClientWidth = 196
-        ParentBackground = False
-        ParentFont = False
-        TabOrder = 2
-        object colournebula1: TButton
-          Left = 7
-          Height = 30
-          Top = 48
-          Width = 136
-          Caption = 'Colour nebula'
-          OnClick = colournebula1Click
-          ParentFont = False
-          TabOrder = 0
-        end
-        object star_level_colouring1: TComboBox
-          Left = 8
-          Height = 23
-          Hint = 'Star level above background'
-          Top = 17
-          Width = 80
-          ItemHeight = 15
-          ItemIndex = 3
-          Items.Strings = (
-            '1000'
-            '2000'
-            '3000'
-            '4000'
-            '5000'
-          )
-          ParentFont = False
-          TabOrder = 1
-          Text = '4000'
-        end
-        object filter_artificial_colouring1: TComboBox
-          Left = 104
-          Height = 23
-          Hint = 'Filter factor to separate stars from nebula.'
-          Top = 17
-          Width = 80
-          ItemHeight = 15
-          ItemIndex = 1
-          Items.Strings = (
-            '5'
-            '10'
-            '20'
-            '30'
-          )
-          ParentFont = False
-          TabOrder = 2
-          Text = '10'
-        end
-        object Label4: TLabel
-          Left = 8
-          Height = 15
-          Top = 0
-          Width = 50
-          Caption = 'Star level:'
-          ParentColor = False
-          ParentFont = False
-        end
-        object Label16: TLabel
-          Left = 104
-          Height = 15
-          Top = 0
-          Width = 63
-          Caption = 'Filter factor:'
-          ParentColor = False
-          ParentFont = False
-        end
-        object undo_button8: TBitBtn
-          Left = 154
-          Height = 30
-          Hint = 'Undo last action'
-          Top = 48
-          Width = 30
-          Glyph.Data = {
-            36040000424D3604000000000000360000002800000010000000100000000100
-            2000000000000004000000000000000000000000000000000000FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
-            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          }
-          OnClick = undo_button2Click
-          ParentFont = False
-          TabOrder = 3
-        end
-      end
       object GroupBox_test_images1: TGroupBox
         Left = 776
         Height = 120
@@ -6507,7 +6359,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 251
         ParentBackground = False
         ParentFont = False
-        TabOrder = 3
+        TabOrder = 2
         object create_test_image_stars1: TButton
           Left = 128
           Height = 30
@@ -6574,7 +6426,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 208
         ParentBackground = False
         ParentFont = False
-        TabOrder = 4
+        TabOrder = 3
         object apply_get_background1: TButton
           Left = 80
           Height = 30
@@ -6662,7 +6514,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 208
         ParentBackground = False
         ParentFont = False
-        TabOrder = 5
+        TabOrder = 4
         object apply_gaussian_blur_button1: TButton
           Left = 80
           Height = 30
@@ -6757,7 +6609,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 421
         ParentBackground = False
         ParentFont = False
-        TabOrder = 6
+        TabOrder = 5
         object add_substract1: TComboBox
           Left = 87
           Height = 23
@@ -6869,7 +6721,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 198
         ParentBackground = False
         ParentFont = False
-        TabOrder = 7
+        TabOrder = 6
         object splitRGB1: TButton
           Left = 7
           Height = 30
@@ -6892,7 +6744,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 422
         ParentBackground = False
         ParentFont = False
-        TabOrder = 8
+        TabOrder = 7
         object Button_free_resize_fits1: TButton
           Left = 296
           Height = 30
@@ -7037,7 +6889,7 @@ object stackmenu1: Tstackmenu1
         ClientHeight = 140
         ClientWidth = 332
         ParentBackground = False
-        TabOrder = 9
+        TabOrder = 8
         object Label24: TLabel
           Left = 8
           Height = 40
@@ -7142,15 +6994,15 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox17: TGroupBox
-        Left = 288
+        Left = 287
         Height = 72
         Top = 352
-        Width = 424
+        Width = 177
         Caption = 'Binning'
         ClientHeight = 52
-        ClientWidth = 420
+        ClientWidth = 173
         ParentBackground = False
-        TabOrder = 10
+        TabOrder = 9
         object bin_factor1: TComboBox
           Left = 8
           Height = 23
@@ -7237,7 +7089,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 208
         ParentBackground = False
         ParentFont = False
-        TabOrder = 11
+        TabOrder = 10
         object undo_button6: TBitBtn
           Left = 168
           Height = 30
@@ -7325,7 +7177,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 252
         ParentBackground = False
         ParentFont = False
-        TabOrder = 12
+        TabOrder = 11
         object remove_stars1: TBitBtn
           Left = 128
           Height = 30
@@ -7394,7 +7246,7 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 252
         ParentBackground = False
         ParentFont = False
-        TabOrder = 13
+        TabOrder = 12
         object increase_nebulosity1: TBitBtn
           Left = 128
           Height = 30
@@ -7476,6 +7328,256 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           TabOrder = 3
           Text = '3'
+        end
+      end
+      object GroupBox14: TGroupBox
+        Left = 512
+        Height = 112
+        Hint = 'Artificial colouring of H-alpha images. Clouds will be made red. Stars white.'
+        Top = 80
+        Width = 200
+        Caption = 'Artificial colouring'
+        ClientHeight = 92
+        ClientWidth = 196
+        ParentBackground = False
+        ParentFont = False
+        TabOrder = 13
+        object colournebula1: TButton
+          Left = 7
+          Height = 30
+          Top = 48
+          Width = 136
+          Caption = 'Colour nebula'
+          OnClick = colournebula1Click
+          ParentFont = False
+          TabOrder = 0
+        end
+        object star_level_colouring1: TComboBox
+          Left = 8
+          Height = 23
+          Hint = 'Star level above background'
+          Top = 17
+          Width = 80
+          ItemHeight = 15
+          ItemIndex = 3
+          Items.Strings = (
+            '1000'
+            '2000'
+            '3000'
+            '4000'
+            '5000'
+          )
+          ParentFont = False
+          TabOrder = 1
+          Text = '4000'
+        end
+        object filter_artificial_colouring1: TComboBox
+          Left = 104
+          Height = 23
+          Hint = 'Filter factor to separate stars from nebula.'
+          Top = 17
+          Width = 80
+          ItemHeight = 15
+          ItemIndex = 1
+          Items.Strings = (
+            '5'
+            '10'
+            '20'
+            '30'
+          )
+          ParentFont = False
+          TabOrder = 2
+          Text = '10'
+        end
+        object Label4: TLabel
+          Left = 8
+          Height = 15
+          Top = 0
+          Width = 50
+          Caption = 'Star level:'
+          ParentColor = False
+          ParentFont = False
+        end
+        object Label16: TLabel
+          Left = 104
+          Height = 15
+          Top = 0
+          Width = 63
+          Caption = 'Filter factor:'
+          ParentColor = False
+          ParentFont = False
+        end
+        object undo_button8: TBitBtn
+          Left = 154
+          Height = 30
+          Hint = 'Undo last action'
+          Top = 48
+          Width = 30
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = undo_button2Click
+          ParentFont = False
+          TabOrder = 3
+        end
+      end
+      object GroupBox20: TGroupBox
+        Left = 480
+        Height = 72
+        Top = 352
+        Width = 234
+        Caption = 'Normalise raw OSC image'
+        ClientHeight = 52
+        ClientWidth = 230
+        ParentBackground = False
+        TabOrder = 14
+        object undo_button19: TBitBtn
+          Left = 383
+          Height = 30
+          Hint = 'Undo last action'
+          Top = 5
+          Width = 30
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = undo_button2Click
+          ParentFont = False
+          TabOrder = 0
+        end
+        object bin_image2: TButton
+          Left = 296
+          Height = 30
+          Hint = 'Bin current image in the viewer. Noise will be reduced.'
+          Top = 5
+          Width = 80
+          Caption = 'Apply'
+          OnClick = bin_image1Click
+          ParentFont = False
+          TabOrder = 1
+        end
+        object test_osc_normalise_filter2: TButton
+          Left = 8
+          Height = 25
+          Hint = 'Normalise flux of RGGB pixels as if recieved light was white and all pixels have same sensitivity. Use CTRL-Z to undo.'
+          Top = 5
+          Width = 80
+          AutoSize = True
+          Caption = 'Normalise'
+          OnClick = test_osc_normalise_filter1Click
+          ParentFont = False
+          TabOrder = 2
+        end
+        object undo_button20: TBitBtn
+          Left = 191
+          Height = 30
+          Hint = 'Undo last action'
+          Top = 5
+          Width = 30
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = undo_button2Click
+          ParentFont = False
+          TabOrder = 3
         end
       end
     end

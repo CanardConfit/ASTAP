@@ -39,8 +39,15 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    bin_image2: TButton;
+    colournebula1: TButton;
+    filter_artificial_colouring1: TComboBox;
+    GroupBox14: TGroupBox;
+    GroupBox20: TGroupBox;
     increase_nebulosity3: TEdit;
     GroupBox19: TGroupBox;
+    Label16: TLabel;
+    Label4: TLabel;
     remove_stars1: TBitBtn;
     GroupBox18: TGroupBox;
     reference_database1: TComboBox;
@@ -53,7 +60,6 @@ type
     increase_nebulosity1: TBitBtn;
     save_settings_image_path1: TCheckBox;
     annotate_mode1: TComboBox;
-    apply_normalise_filter1: TCheckBox;
     browse1: TBitBtn;
     browse_blink1: TBitBtn;
     browse_monitoring1: TBitBtn;
@@ -68,6 +74,7 @@ type
     photom_calibrate1: TMenuItem;
     photom_green1: TMenuItem;
     Separator1: TMenuItem;
+    star_level_colouring1: TComboBox;
     target_altitude1: TLabel;
     target_azimuth1: TLabel;
     direction_arrow1: TImage;
@@ -75,8 +82,12 @@ type
     label_longitude1: TLabel;
     monitor_latitude1: TEdit;
     monitor_longitude1: TEdit;
+    test_osc_normalise_filter2: TButton;
     undo_button17: TBitBtn;
     undo_button18: TBitBtn;
+    undo_button19: TBitBtn;
+    undo_button20: TBitBtn;
+    undo_button8: TBitBtn;
     use_triples1: TCheckBox;
     MenuItem33: TMenuItem;
     target_distance1: TLabel;
@@ -169,7 +180,6 @@ type
     apply_box_filter2: TButton;
     tab_monitoring1: TTabSheet;
     target1: TLabel;
-    test_osc_normalise_filter1: TButton;
     undo_button6: TBitBtn;
     unselect9: TMenuItem;
     Viewimage9: TMenuItem;
@@ -275,7 +285,6 @@ type
     clear_photometry_list1: TButton;
     clear_selection2: TButton;
     clear_selection3: TButton;
-    colournebula1: TButton;
     colourShape1: TShape;
     colourShape2: TShape;
     colourShape3: TShape;
@@ -297,7 +306,6 @@ type
     export_aligned_files1: TButton;
     extract_background_box_size1: TComboBox;
     files_live_stacked1: TLabel;
-    filter_artificial_colouring1: TComboBox;
     filter_groupbox1: TGroupBox;
     Flats: TTabSheet;
     force_oversize1: TCheckBox;
@@ -312,7 +320,6 @@ type
     GroupBox10: TGroupBox;
     GroupBox11: TGroupBox;
     GroupBox12: TGroupBox;
-    GroupBox14: TGroupBox;
     GroupBox16: TGroupBox;
     GroupBox2: TGroupBox;
     GroupBox3: TGroupBox;
@@ -351,7 +358,6 @@ type
     Label12: TLabel;
     Label14: TLabel;
     Label15: TLabel;
-    Label16: TLabel;
     Label17: TLabel;
     Label18: TLabel;
     Label2: TLabel;
@@ -366,7 +372,6 @@ type
     Label35: TLabel;
     Label37: TLabel;
     Label38: TLabel;
-    Label4: TLabel;
     Label41: TLabel;
     Label42: TLabel;
     Label44: TLabel;
@@ -524,7 +529,6 @@ type
     select6: TMenuItem;
     stack_method1: TComboBox;
     star_database1: TComboBox;
-    star_level_colouring1: TComboBox;
     subtract_background1: TButton;
     TabSheet1: TTabSheet;
     tab_blink1: TTabSheet;
@@ -548,7 +552,6 @@ type
     undo_button4: TBitBtn;
     undo_button5: TBitBtn;
     undo_button7: TBitBtn;
-    undo_button8: TBitBtn;
     undo_button9: TBitBtn;
     undo_button_equalise_background1: TBitBtn;
     unselect6: TMenuItem;
@@ -10489,13 +10492,6 @@ begin
       end;
 
       if head_2.flat_count = 0 then head_2.flat_count := 1; {not required for astap master}
-
-      if ((process_as_osc > 0) and (stackmenu1.apply_normalise_filter1.Checked)) then
-      begin
-        memo2_message('Applying normalise filter on master (OSC) flat.');
-        check_pattern_filter(img_flat);
-      end;
-
     end;
   end
   else
@@ -10929,11 +10925,10 @@ begin
     if head_2.dark_count > 0 then   {dark and flat use head_2 for status}
     begin
       dark_norm_value := 0;
-      for fitsY := -4 to 5 do {do even times, 10x10 for bayer matrix}
-        for fitsX := -4 to 5 do
-          dark_norm_value := dark_norm_value + img_dark[0, fitsX +
-            (head.Width div 2), fitsY + (head.Height div 2)];
-      dark_norm_value := round(dark_norm_value / 100);
+      for fitsY := (head.Width div 2)-7 to (head.Width div 2)+8 do {do even times, 16x16 for bayer matrix}
+        for fitsX := (head.Height div 2)-7 to (head.Height div 2)+8 do
+          dark_norm_value := dark_norm_value + img_dark[0, fitsX,fitsY];
+      dark_norm_value := dark_norm_value /(16*16);
       {scale factor to apply flat. The norm value will result in a factor one for the center.}
 
       for fitsY := 0 to head.Height - 1 do  {apply the dark}
@@ -10943,7 +10938,6 @@ begin
           {Darks are always made mono when making master dark}
           for k := 0 to head.naxis3 - 1 do {do all colors}
             img[k, fitsX, fitsY] := img[k, fitsX, fitsY] - Value;
-
         end;
 
       {for stacking}
@@ -10976,41 +10970,79 @@ begin
       flat21 := 0;
       flat22 := 0;
 
-      for fitsY := -4 to 5 do {do even times, 10x10 for Bay matrix}
-        for fitsX := -4 to 5 do
+      for fitsY:=(head_2.Width div 2)-7 to (head_2.Width div 2)+8 do {do even times, 16x16 for Bay matrix. For OSC 8x8 pixels for each colour}
+        for fitsX:=(head_2.Height div 2)-7 to (head_2.Height div 2)+8 do
         begin
-          Value := img_flat[0, fitsX + (head_2.Width div 2), fitsY + (head_2.Height div 2)];
+          Value := img_flat[0,fitsX, fitsY];
           flat_norm_value := flat_norm_value + Value;
-          if ((odd(fitsX)) and (odd(fitsY))) then
-            flat11 := flat11 + Value;
-          if ((odd(fitsX) = False) and (odd(fitsY))) then
-            flat12 := flat12 + Value;
-          if ((odd(fitsX)) and (odd(fitsY) = False)) then
-            flat21 := flat21 + Value;
-          if ((odd(fitsX) = False) and (odd(fitsY) = False)) then
-            flat22 := flat22 + Value;
+          if odd(fitsX) then
+          begin
+            if odd(fitsY) then
+              flat11 := flat11 + Value
+            else
+              flat12 := flat12 + Value
+          end
+          else
+          begin
+            if odd(fitsY) then
+              flat21 := flat21 + Value
+            else
+              flat22 := flat22 + Value
+          end;
         end;
-      flat_norm_value := round(flat_norm_value / 100);
-      {scale factor to apply flat. The norm value will result in a factor one for the center.}
+
+      flat_norm_value := flat_norm_value/(16*16); {scale factor to apply flat. The norm value will result in a factor one for the center.}
 
       if process_as_osc > 0 then
-        {give only warning when converting to colour. Not when calibrating for green channel and used for photometry}
-        if max(max(flat11, flat12), max(flat21, flat22)) / min(
-          min(flat11, flat12), min(flat21, flat22)) > 2.0 then
-          memo2_message(
-            '█ █ █ █ █ █ Warning flat pixels differ too much. Use white light for OSC flats or consider using option "Normalise OSC flat" █ █ █ █ █ █ ');
+      begin  {give only warning when converting to colour. Not when calibrating for green channel and used for photometry}
+        if max(max(flat11, flat12), max(flat21, flat22)) / min( min(flat11, flat12), min(flat21, flat22)) > 2.0 then
+          memo2_message('█ █ █ █ █ █ Warning flat pixel colour values differ too much. Use white light for OSC flats!!. Will compensate accordingly." █ █ █ █ █ █ ');
 
-      for fitsY := 1 to head.Height do  {apply the flat}
-        for fitsX := 1 to head.Width do
-        begin
-          flat_factor := flat_norm_value / (img_flat[0, fitsX - 1, fitsY - 1] + 0.001);
-          {bias is already combined in flat in combine_flat}
-          if abs(flat_factor) > 3 then
-            flat_factor := 1;
-          {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
-          for k := 0 to head.naxis3 - 1 do {do all colors}
-            img[k, fitsX - 1, fitsY - 1] := img[k, fitsX - 1, fitsY - 1] * flat_factor;
-        end;
+        flat11 :=flat_norm_value/ (flat11 /(8*8));//calculate average corection value for each colour.
+        flat12 :=flat_norm_value/ (flat12 /(8*8));
+        flat21 :=flat_norm_value/ (flat21 /(8*8));
+        flat22 :=flat_norm_value/ (flat22 /(8*8));
+
+        for fitsY := 1 to head.Height do  {apply the OSC flat}
+          for fitsX := 1 to head.Width do
+          begin //thread the red, green and blue pixels seperately
+
+            flat_factor := flat_norm_value / (img_flat[0, fitsX - 1, fitsY - 1] + 0.001); //bias is already combined in flat in combine_flat
+
+            if odd(fitsX) then
+            begin
+              if odd(fitsY) then
+                flat_factor :=  flat_factor*flat11  //normalise flat for colour 11
+              else
+                flat_factor :=  flat_factor*flat12  //normalise flat for colour 12
+            end
+            else
+            begin
+              if odd(fitsY) then
+                flat_factor :=  flat_factor*flat21  //normalise flat for colour 21
+              else
+                flat_factor :=  flat_factor*flat22  //normalise flat for colour 22
+            end;
+
+            flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
+
+            for k := 0 to head.naxis3 - 1 do {do all colors}
+              img[k, fitsX - 1, fitsY - 1] := img[k, fitsX - 1, fitsY - 1] * flat_factor;
+          end;
+      end
+      else //monochrome images
+      begin
+
+        for fitsY := 1 to head.Height do  {apply the flat}
+          for fitsX := 1 to head.Width do
+          begin
+            flat_factor := flat_norm_value / (img_flat[0, fitsX - 1, fitsY - 1] + 0.001);  {bias is already combined in flat in combine_flat}
+            flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
+
+            for k := 0 to head.naxis3 - 1 do {do all colors}
+              img[k, fitsX - 1, fitsY - 1] := img[k, fitsX - 1, fitsY - 1] * flat_factor;
+          end;
+      end;
       {for stacking}
       head_ref.calstat := head_ref.calstat + 'F' + head_2.calstat{B from flat};
       {mark that flat and bias have been applied. Store in the header of the reference file since it is not modified while stacking}

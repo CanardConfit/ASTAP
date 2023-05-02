@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.04.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -7411,7 +7411,6 @@ begin
 
       dum:=Sett.ReadString('stack','downsample',''); if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
 
-      stackmenu1.apply_normalise_filter1.checked:=Sett.ReadBool('stack','normalise_f',true);{apply normalise filter on (OSC) flat prior to stacking}
       dum:=Sett.ReadString('stack','oversize','');if dum<>'' then stackmenu1.oversize1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor',''); if dum<>'' then stackmenu1.sd_factor1.text:=dum;
 
@@ -7775,7 +7774,6 @@ begin
       sett.writestring('stack','downsample',stackmenu1.downsample_for_solving1.text);
 
       sett.writestring('stack','oversize',stackmenu1.oversize1.text);
-      sett.writebool('stack','normalise_f',stackmenu1.apply_normalise_filter1.checked);
 
       sett.writestring('stack','sd_factor',stackmenu1.sd_factor1.text);
       sett.writestring('stack','blur_factor',stackmenu1.blur_factor1.text);
