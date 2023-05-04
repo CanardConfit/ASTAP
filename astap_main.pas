@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -120,6 +120,7 @@ type
     localcoloursmooth2: TMenuItem;
     fittowindow1: TMenuItem;
     flipVH1: TMenuItem;
+    dust_spot_removal1: TMenuItem;
     Separator2: TMenuItem;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
@@ -138,7 +139,6 @@ type
     MenuItem22: TMenuItem;
     flip_v1: TMenuItem;
     flip_H1: TMenuItem;
-    halo_removal1: TMenuItem;
     maintain_date1: TMenuItem;
     batch_rotate_1801: TMenuItem;
     hyperleda_guery1: TMenuItem;
@@ -403,11 +403,11 @@ type
     procedure bin_2x2menu1Click(Sender: TObject);
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
-    procedure halo_removal1Click(Sender: TObject);
     procedure display_adu1Click(Sender: TObject);
     procedure localcoloursmooth2Click(Sender: TObject);
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
+    procedure dust_spot_removal1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -788,7 +788,7 @@ procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
 procedure execute_unix(const execut:string; param: TStringList; show_output: boolean);{execute linux program and report output}
 procedure execute_unix2(s:string);
 {$endif}
-function mode(img :image_array;colorm,xmin,xmax,ymin,ymax,max1:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function mode(img :image_array;ellipse:  boolean;colorm,xmin,xmax,ymin,ymax,max1:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 function get_negative_noise_level(img :image_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
 function prepare_ra6(rax:double; sep:string):string; {radialen to text  format 24h 00 00}
@@ -3169,10 +3169,11 @@ begin
 end;
 
 
-function mode(img :image_array;colorm,xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function mode(img :image_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 var
    i,j,val,value_count,width3,height3  :integer;
    histogram : array of integer;
+   centerX,centerY,a,b : double;
 begin
   height3:=length(img[0,0]);{height}
   width3:=length(img[0]);{width}
@@ -3183,13 +3184,24 @@ begin
   if ymax>height3-1 then ymax:=height3-1;
   setlength(histogram,max1+1);
   for i := 0 to max1 do  histogram[i] := 0;{clear histogram}
+
+
+  centerX:=(xmax+xmin)/2;
+  centerY:=(ymax+ymin)/2;
+  a:=(xmax-xmin-1)/2;
+  b:=(ymax-ymin-1)/2;
+
+
   for i:=ymin to  ymax do
     begin
       for j:=xmin to xmax do
       begin
-        val:=round(img[colorM,j,i]);{get one color value}
-        if ((val>=1) and (val<max1)) then {ignore black areas and bright stars}
-        inc(histogram[val],1);{calculate histogram}
+        if ((ellipse=false {use no ellipse}) or (sqr(j-centerX)/sqr(a) +sqr(i-centerY)/sqr(b)<1)) then // standard equation of the ellipse
+        begin
+          val:=round(img[colorM,j,i]);{get one color value}
+          if ((val>=1) and (val<max1)) then {ignore black areas and bright stars}
+          inc(histogram[val],1);{calculate histogram}
+        end;
       end;{j}
     end; {i}
   result:=0; {for case histogram is empthy due to black area}
@@ -3574,7 +3586,7 @@ begin
        with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
-        progress_indicator(100*i/(count),' Solving');{show progress}
+        progress_indicator(100*i/(count),' Binning');{show progress}
         filename2:=Strings[I];
         {load fits}
         Application.ProcessMessages;
@@ -4663,7 +4675,7 @@ begin
     local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
 
-    most_common:=mode(img_loaded,col,startx,stopX,starty,stopY,32000);
+    most_common:=mode(img_loaded,CtrlButton {ellipse},col,startx,stopX,starty,stopY,32000);
 
     {median sampling and min , max}
     max_counter:=1;
@@ -4732,10 +4744,10 @@ begin
   end;
   if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
   begin
-    mc_1:=mode(img_loaded,0,          0{x1},      50{x2},           0{y1},       50{y2},32000);{for this area get most common value equals peak in histogram}
-    mc_2:=mode(img_loaded,0,          0{x1},      50{x2},head.height-1-50{y1},head.height-1{y2},32000);
-    mc_3:=mode(img_loaded,0,head.width-1-50{x1},head.width-1{x2},head.height-1-50{y1},head.height-1{y2},32000);
-    mc_4:=mode(img_loaded,0,head.width-1-50{x1},head.width-1{x2},           0{y1},50       {y2},32000);
+    mc_1:=mode(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},           0{y1},       50{y2},32000);{for this area get most common value equals peak in histogram}
+    mc_2:=mode(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},head.height-1-50{y1},head.height-1{y2},32000);
+    mc_3:=mode(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},head.height-1-50{y1},head.height-1{y2},32000);
+    mc_4:=mode(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},           0{y1},50       {y2},32000);
 
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
   end;
@@ -5253,11 +5265,11 @@ begin
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
 
-      mode_left_bottom:=mode(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top:=   mode(img_loaded,k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_left_bottom:=mode(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   mode(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom:=mode(img_loaded,k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top:=   mode(img_loaded,k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_bottom:=mode(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   mode(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
 
       noise_left_bottom:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize, mode_left_bottom);{find the negative noise level below most_common_level of a local area}
       noise_left_top:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize, mode_left_top);{find the negative noise level below most_common_level of a local area}
@@ -5275,7 +5287,7 @@ begin
           line_bottom_noise:=noise_left_bottom*(stopX-fitsx)/(stopX-startx)+ noise_right_bottom *(fitsx-startX)/(stopX-startx);{median noise value at bottom line}
           line_top_noise:=  noise_left_top *   (stopX-fitsx)/(stopX-startx)+ noise_right_top*(fitsx-startX)/(stopX-startx);{median noise value at top line}
 
-          new_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median noise value at position FitsX, fitsY}
+          new_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{expected value based on the four corners measurements}
           new_value_noise:=line_bottom_noise*(stopY-fitsY)/(stopY-startY)+line_top_noise*(fitsY-startY)/(stopY-startY);{median noise value at position FitsX, fitsY}
 
           img_loaded[k,fitsX,fitsY]:=randg(new_value,new_value_noise);
@@ -8061,6 +8073,78 @@ begin
 end;
 
 
+procedure Tmainwindow.dust_spot_removal1Click(Sender: TObject);
+var
+  fitsX,fitsY,dum,k,w,h : integer;
+  center_X, center_Y, line_bottom,line_top,expected_value, mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,a,b         : double;
+  img_delta : image_array;
+
+begin
+  if head.naxis=0 then exit;
+
+  if  ((abs(stopX-startX)>3)and (abs(stopY-starty)>3)) then
+  begin
+    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+    Randomize; {initialise}
+
+
+    backup_img;
+
+    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
+
+    {ellipse parameters}
+    center_x:=(startx+stopX)/2;
+    center_y:=(startY+stopY)/2;
+    a:=(stopX-1-startx)/2;
+    b:=(stopY-1-startY)/2;
+
+    w:=stopX-startX;
+    h:=StopY-startY;
+
+    setlength(img_delta,1,w,h);
+
+    for k:=0 to head.naxis3-1 do {do all colors}
+    begin
+      mode_left_bottom:=mode(img_loaded,false{ellipse shape},k,startX-20,startX,startY-20,startY,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top:=mode(img_loaded,false{ellipse shape},k,startX-20,startX,stopY,stopY+20,32000);{for this area get most common value equals peak in histogram}
+
+      mode_right_bottom:=mode(img_loaded,false{ellipse shape},k,stopX,stopX+20,startY-20,startY,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top:=mode(img_loaded,false{ellipse shape},k,stopX,stopX+20,stopY,stopY+20,32000);{for this area get most common value equals peak in histogram}
+
+
+      for fitsY:=startY to stopY-1 do
+      begin
+        for fitsX:=startX to stopX-1 do
+        begin
+          line_bottom:=mode_left_bottom*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom *(fitsx-startX)/(stopX-startx);{median value at bottom line}
+          line_top:=  mode_left_top *   (stopX-fitsx)/(stopX-startx)+ mode_right_top*(fitsx-startX)/(stopX-startx);{median value at top line}
+          expected_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{expected value based on the four corners measurements}
+
+          img_delta[0,fitsX-startX,fitsY-startY]:=max(0,expected_value-img_loaded[k,fitsX,fitsY]);//max for star ignorance
+        end;
+      end;{fits loop}
+
+      gaussian_blur2(img_delta,5);
+
+      for fitsY:=startY to stopY-1 do
+      begin
+        for fitsX:=startX to stopX-1 do
+        begin
+          if ((CtrlButton=false {use no ellipse}) or (sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
+            img_loaded[k,fitsX,fitsY]:= img_loaded[k,fitsX,fitsY]+img_delta[0,fitsX-startX,fitsY-startY];
+        end;
+      end;{fits loop}
+
+    end;
+
+    plot_fits(mainwindow.image1,false,true);
+    Screen.Cursor:=crDefault;
+  end {usefull area}
+  else
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
+end;
+
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
 begin
@@ -9699,13 +9783,13 @@ begin
     backup_img;
 
     bsize:=20;
-    colrr1:=mode(img_loaded,0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
-    if head.naxis3>1 then colgg1:=mode(img_loaded,1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
-    if head.naxis3>2 then colbb1:=mode(img_loaded,2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    colrr1:=mode(img_loaded,false{ellipse shape},0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    if head.naxis3>1 then colgg1:=mode(img_loaded,false{ellipse shape},1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    if head.naxis3>2 then colbb1:=mode(img_loaded,false{ellipse shape},2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
 
-    colrr2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
-    if head.naxis3>1 then colgg2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
-    if head.naxis3>2 then colbb2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
+    colrr2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
+    if head.naxis3>1 then colgg2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
+    if head.naxis3>2 then colbb2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
 
     a:=sqrt(sqr(stopX-startX)+sqr(stopY-startY)); {distance between bright and dark area}
 
@@ -13333,7 +13417,7 @@ begin
 
   if sender=mainwindow.simbad_query1 then
   begin {sender simbad_query1}
-    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
+    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert ellipse to circle}
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
@@ -13352,7 +13436,7 @@ begin
   else
   if sender=mainwindow.ned_query1 then
   begin {sender ned_query1}
-    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
+    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert ellipse to circle}
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
@@ -13366,7 +13450,7 @@ begin
     annotation_magn:=inputbox('Chart request','Limiting magnitude chart:' ,annotation_magn);
     annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
-    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
+    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert ellipse to circle}
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     plot_the_annotation(x1-radius+1,y1-radius+1,x1+radius+1,y1+radius+1,0,'','');{square}
@@ -13440,7 +13524,7 @@ procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   width5,height5, xf,yf,k, fx,fy, shapetype                     : integer;
-  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b  : double;
+  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b : double;
 begin
   if head.naxis=0 then exit;
   if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
@@ -13546,7 +13630,7 @@ begin
         for fX:=copy_paste_x to copy_paste_x+copy_paste_w-1 do
         begin
           if ((copy_paste_shape=0 {use no ellipse}) or (sqr(fx-center_X)/sqr(a) +sqr(fy-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
-             img_loaded[k,max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
+            img_loaded[k,max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
         end;
       end;{k color}
       plot_fits(mainwindow.image1,false,true);
@@ -14870,83 +14954,6 @@ begin
   ,inttostr(egain_extra_factor))));
 end;
 
-procedure Tmainwindow.halo_removal1Click(Sender: TObject);
-var
-  fitsX,fitsY,dum,k,startX2,startY2,stopX2,stopY2 : integer;
-  centerX, centerY,distance_center,range,factor   : double;
-
-  mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,mode_halo,noise_level,
-  noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,required_bg     : array[0..2] of double;
-  red_halo,green_halo,blue_halo : boolean;
-begin
-  if head.naxis=0 then exit;
-
-  if  ((abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
-  begin
-    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-    Randomize; {initialise}
-
-    startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
-    startY2:=startY;
-    stopX2:=stopX;
-    stopY2:=stopY;
-    backup_img;
-    if startX2>stopX2 then begin dum:=stopX2; stopX2:=startX2; startX2:=dum; end;{swap}
-    if startY2>stopY2 then begin dum:=stopY2; stopY2:=startY2; startY2:=dum; end;
-
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      mode_left_bottom[k]:=mode(img_loaded,k,startX2-10,startX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top[k]:=   mode(img_loaded,k,startX2-10,startX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
-
-      mode_right_bottom[k]:=mode(img_loaded,k,stopX2-10,stopX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top[k]:=   mode(img_loaded,k,stopX2-10,stopX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
-
-      mode_halo[k]:=mode(img_loaded,k,startX2,stopX2,startY2,stopY2,32000);{for this area get most common value equals peak in histogram}
-
-      required_bg[k]:=(mode_left_bottom[k] + mode_left_top[k] + mode_right_bottom[k] +mode_right_top[k])/4;
-
-      noise_left_bottom[k]:=get_negative_noise_level(img_loaded,k,startx-10,startx+10,starty-10,starty+10, mode_left_bottom[k]);{find the negative noise level below most_common_level of a local area}
-      noise_left_top[k]:=get_negative_noise_level(img_loaded,k,startx-10,startx+10,stopY-10,stopY+10, mode_left_top[k]);{find the negative noise level below most_common_level of a local area}
-      noise_right_bottom[k]:=get_negative_noise_level(img_loaded,k,stopX-10,stopX+10,starty-10,starty+10, mode_right_bottom[k]);{find the negative noise level below most_common_level of a local area}
-      noise_right_top[k]:=get_negative_noise_level(img_loaded,k,stopX-10,stopX+10,stopY-10,stopY+10, mode_right_top[k]);{find the negative noise level below most_common_level of a local area}
-      noise_level[k]:=(noise_left_bottom[k] + noise_left_top[k] + noise_right_top[k] + noise_right_bottom[k])/4;
-    end;
-
-  centerX:=(startX2+stopX2-1)/2;
-  centerY:=(startY2+stopY2-1)/2;
-  range:=(stopX2-startX2)/2;
-
-  for fitsY:=startY2 to stopY2-1 do
-  begin
-    if frac(fitsY/50)=0 then
-    begin
-      Application.ProcessMessages;{this could change startX, startY}
-      if esc_pressed then  begin  Screen.Cursor:=crDefault;    { back to normal }  exit;  end;
-    end;
-
-    for fitsX:=startX2 to stopX2-1 do
-    begin
-      distance_center:=sqrt(sqr(fitsX-centerX)+sqr(fitsY-centerY));
-      factor:=30*(range-distance_center)/range;
-      red_halo:=((img_loaded[0,fitsX,fitsY]<mode_halo[0]+ noise_level[0]*factor) and (img_loaded[0,fitsX,fitsY]>required_bg[0] + noise_level[0]*2));
-      if head.naxis3-1>=1 then green_halo:=((img_loaded[1,fitsX,fitsY]<mode_halo[1]+ noise_level[1]*factor) and (img_loaded[1,fitsX,fitsY]>required_bg[1] + noise_level[1]*2)) else green_halo:=false;
-      if head.naxis3-1>=2 then blue_halo :=((img_loaded[2,fitsX,fitsY]<mode_halo[2]+ noise_level[2]*factor) and (img_loaded[2,fitsX,fitsY]>required_bg[2] + noise_level[2]*2)) else blue_halo:=false;
-
-      if ((red_halo) or (green_halo) or (blue_halo))  then
-       begin
-         img_loaded[0,fitsX,fitsY]:= randg(required_bg[0],noise_level[0]);
-         if head.naxis3-1>=1 then img_loaded[1,fitsX,fitsY]:= randg(required_bg[1],noise_level[1]);
-         if head.naxis3-1>=2 then img_loaded[2,fitsX,fitsY]:= randg(required_bg[2],noise_level[2]);
-       end;
-    end;
-  end;{fits loop}
-  plot_fits(mainwindow.image1,false,true);
-  Screen.Cursor:=crDefault;
-  end {fits file}
-  else
-  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
-end;
 
 procedure Tmainwindow.display_adu1Click(Sender: TObject);
 begin
@@ -14966,8 +14973,8 @@ begin
 
     backup_img;
 
-    center_x:=(startx+stopX-1)/2;
-    center_y:=(startY+stopY-1)/2;
+    center_x:=(startx+stopX)/2;
+    center_y:=(startY+stopY)/2;
     a:=(stopX-1-startx)/2;
     b:=(stopY-1-startY)/2;
 

@@ -903,7 +903,7 @@ begin
           begin
             if equalise_background then
             begin
-                background[col]:=mode(img_loaded,col,round(0.2*head.width),round(0.8*head.width),round(0.2*head.height),round(0.8*head.height),32000); {most common 80% center}
+                background[col]:=mode(img_loaded,false{ellipse shape},col,round(0.2*head.width),round(0.8*head.width),round(0.2*head.height),round(0.8*head.height),32000); {most common 80% center}
                 background_correction_center[col]:=1000 - background[col] ;
               end
             else

@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 32772
+    Left = 33675
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -7524,7 +7524,7 @@ object stackmenu1: Tstackmenu1
         object test_osc_normalise_filter2: TButton
           Left = 8
           Height = 25
-          Hint = 'Normalise flux of RGGB pixels as if recieved light was white and all pixels have same sensitivity. Use CTRL-Z to undo.'
+          Hint = 'Normalise flux of RGGB pixels as if recieved light was white and all pixels have same sensitivity. Preferable after dark has been applied. Use CTRL-Z to undo.'
           Top = 5
           Width = 80
           AutoSize = True

@@ -2809,8 +2809,7 @@ begin
   {create artificial flat}
   for col := 0 to colors - 1 do {do all colours}
   begin
-    bg := mode(img_loaded, col, round(0.2 * head.Width), round(0.8 * head.Width),
-      round(0.2 * head.Height), round(0.8 * head.Height), 32000) - bg;
+    bg := mode(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000) - bg;
     {mode finds most common value for the 60% center }
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
@@ -2819,14 +2818,12 @@ begin
 
         if ((frac(fitsX / box_size) = 0) and (frac(fitsy / box_size) = 0)) then
         begin
-          offset := mode(img_loaded, col, fitsX - step, fitsX + step, fitsY -
-            step, fitsY + step, 32000) - bg; {mode finds most common value}
+          offset := mode(img_loaded,false{ellipse shape}, col, fitsX - step, fitsX + step, fitsY - step, fitsY + step, 32000) - bg; {mode finds most common value}
           if ((offset < 0) {and (offset>-200)}) then
           begin
             for j := fitsy - step to fitsy + step do
               for i := fitsx - step to fitsx + step do
-                if ((i >= 0) and (i < w) and (j >= 0) and (j < h)) then
-                  {within the boundaries of the image array}
+                if ((i >= 0) and (i < w) and (j >= 0) and (j < h)) then {within the boundaries of the image array}
                   img_temp2[col, i, j] := -offset;
           end;
         end;
@@ -3238,7 +3235,7 @@ begin
       begin
         x := fitsX * diameter;
         y := fitsY * diameter;
-        most_common := mode(sourc, k, x - radius, x + radius - 1, y - radius, y + radius - 1, 32000);
+        most_common := mode(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, 32000);
         for i := -radius to +radius - 1 do
           for j := -radius to +radius - 1 do
           begin
@@ -4740,11 +4737,8 @@ begin
         begin
           if ((frac(fitsx / 10) = 0) and (frac(fitsY / 10) = 0)) then
           begin
-            most_common := mode(img_backup[index_backup].img, k, fitsX -
-              radius, fitsX + radius - 1, fitsY - radius, fitsY + radius - 1, 32000);
-            neg_noise_level :=
-              get_negative_noise_level(img_backup[index_backup].img, k, fitsX - radius,
-              fitsX + radius, fitsY - radius, fitsY + radius, most_common);
+            most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, fitsX - radius, fitsX + radius - 1, fitsY - radius, fitsY + radius - 1, 32000);
+            neg_noise_level := get_negative_noise_level(img_backup[index_backup].img, k, fitsX - radius, fitsX + radius, fitsY - radius, fitsY + radius, most_common);
             {find the most common value of a local area and calculate negative noise level}
             for i := -radius to +radius - 1 do
               for j := -radius to +radius - 1 do
@@ -12563,7 +12557,7 @@ begin
       begin
         y1 := (step + 1) * fitsY - (step div 2);
         y2 := (step + 1) * fitsY + (step div 2);
-        most_common := mode(img_backup[index_backup].img, k, 0, head.Width - 1, y1, y2, 32000);
+        most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, 0, head.Width - 1, y1, y2, 32000);
         mean := mean + most_common;
         Inc(counter);
         for i := y1 to y2 do
@@ -12583,7 +12577,7 @@ begin
       begin
         x1 := (step + 1) * fitsX - (step div 2);
         x2 := (step + 1) * fitsX + (step div 2);
-        most_common := mode(img_backup[index_backup].img, k, x1, x2, 0, head.Height - 1, 32000);
+        most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, x1, x2, 0, head.Height - 1, 32000);
         mean := mean + most_common;
         Inc(counter);
         for i := x1 to x2 do
