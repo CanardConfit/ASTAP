@@ -1,7 +1,7 @@
 unit unit_star_database;
 {HNSKY reads star databases type .290 and 1476}
 
-{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2023 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -137,7 +137,7 @@ function open_database(telescope_dec: double; area290: integer): boolean; {open 
 {Magnitude: The stars are sorted with an accuracy of 0.1 magnitude. Prior to each group a special record is written where RA is $FFFFFF and DEC contains the magnitude}
 
 type
-  hnskyhdr290_6 = packed record  {G16 for storing Rp-Bp. This format is the same as 290_5 but Gaia color information added in an extra shortint}
+  hnskyhdr1476_6 = packed record  {G16 for storing Rp-Bp. This format is the same as 290_5 but Gaia color information added in an extra shortint}
              ra7 : byte; {The RA is stored as a 3 bytes word. The DEC position is stored as a two's complement (=standard), three bytes integer. The resolution of this three byte storage will be for RA: 360*60*60/((256*256*256)-1) = 0.077 arc seconds. For the DEC value it will be: 90*60*60/((128*256*256)-1) = 0.039 arc seconds.}
              ra8 : byte;
              ra9 : byte;
@@ -145,7 +145,7 @@ type
              dec8: byte;
              B_R: shortint;{Gaia Bp-Rp}
    end;
-  hnskyhdr290_5 = packed record  {Most compact format, used for Gaia}
+  hnskyhdr1476_5 = packed record  {Most compact format, used for Gaia}
               ra7 : byte;
               ra8 : byte;
               ra9 : byte;
@@ -2121,8 +2121,8 @@ var {################# initialised variables #########################}
 var {################# initialised variables #########################}
    record_size:integer=11;{default}
 var
-  p6        : ^hnskyhdr290_6;       { pointer to hnsky record }
-  p5        : ^hnskyhdr290_5;       { pointer to hnsky record }
+  p6        : ^hnskyhdr1476_6;       { pointer to hnsky record }
+  p5        : ^hnskyhdr1476_5;       { pointer to hnsky record }
   dec9_storage: shortint;
 
   buf2: array[1..11] of byte;  {read buffer stars}
