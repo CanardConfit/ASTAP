@@ -127,7 +127,8 @@ var
  nhfd_13,nhfd_23,nhfd_33,
  x_11,x_21,x_31,y_11,y_21,y_31,
  x_12,x_22,x_32,y_12,y_22,y_32,
- x_13,x_23,x_33,y_13,y_23,y_33         : integer;
+ x_13,x_23,x_33,y_13,y_23,y_33,
+ oldNaxis3                            : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
@@ -151,12 +152,15 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   restore_req:=false;
+  oldNaxis3:=head.naxis3;//for case it is converted to mono
+
   if head.naxis3>1 then {colour image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
     convert_mono(img_loaded,head);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+
     restore_req:=true;
   end
   else
@@ -283,6 +287,7 @@ begin
       memo2_message('Restoring image');
       img_loaded:=nil;
       img_loaded:=img_bk; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+      head.naxis3:=oldNaxis3;
       get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
     end;
 

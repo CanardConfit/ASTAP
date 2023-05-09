@@ -1140,7 +1140,6 @@ begin
         end;
 
         apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
-        {these global variables are passed-on in procedure to protect against overwriting}
 
         memo2_message('Adding light file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
@@ -1325,7 +1324,6 @@ begin
           end;
 
           apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
-          {these global variables are passed-on in procedure to protect against overwriting}
 
           memo2_message('Calculating pixels σ of light file '+inttostr(c+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
@@ -1620,7 +1618,6 @@ begin
         end;
 
         apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
-        {these global variables are passed-on in procedure to protect against overwriting}
 
         memo2_message('Calibrating and aligning file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;

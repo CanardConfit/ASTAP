@@ -165,7 +165,6 @@ function read_stars_online(telescope_ra,telescope_dec,search_field, magli : doub
 var
   ra8,dec8,sgn,window_size,field,url,mag_lim : string;
   slist: TStringList;
-  x :integer;
 begin
   result:=false;
   str(abs(telescope_dec*180/pi) :3:10,dec8);

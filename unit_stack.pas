@@ -10346,9 +10346,7 @@ begin
 
   dark_exposure := round(head.exposure);{remember the requested head.exposure time}
   dark_temperature := head.set_temperature;
-  if head.egain <> '' then  dark_gain := head.egain
-  else
-    dark_gain := head.gain;
+  if head.egain <> '' then  dark_gain := head.egain  else dark_gain := head.gain;
 
 
   while c < stackmenu1.listview2.items.Count do
@@ -10365,8 +10363,7 @@ begin
           if ((stackmenu1.classify_dark_temperature1.Checked = False) or
             (dark_gain = stackmenu1.listview2.Items.item[c].subitems.Strings[D_gain])) then
             {gain correct}
-            if head.Width = StrToInt(
-              stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
+            if head.Width = StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
             begin
               d := strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
               if abs(d - jd_int) < day_offset then {find flat with closest date}

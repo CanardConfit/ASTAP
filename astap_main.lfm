@@ -1178,7 +1178,7 @@ object mainwindow: Tmainwindow
         end
         object batch_solve_astrometry_net: TMenuItem
           Caption = 'Batch solve images using local astrometry.net'
-          Hint = 'Solve the image using a local vesion of astrometry.net'
+          Hint = 'Solve the image using a local version of astrometry.net'
           OnClick = batch_solve_astrometry_netClick
         end
         object MenuItem28: TMenuItem
@@ -1500,7 +1500,7 @@ object mainwindow: Tmainwindow
       object annotate_unknown_stars1: TMenuItem
         Caption = 'Unknown star annotation'
         Enabled = False
-        Hint = 'Annotate nova and minor planets using the star database. It will annotate any star like object one magnitude brighter or missing from the star database. For the H18 star database it will detect object up to magnitude 17.'
+        Hint = 'Annotate nova and minor planets using the online Gaia database up to about magnitude 20.'
         ShortCut = 16575
         OnClick = annotate_unknown_stars1Click
       end
