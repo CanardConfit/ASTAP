@@ -811,7 +811,6 @@ function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
 function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
-//procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
 
 
@@ -2837,8 +2836,6 @@ begin
 end;
 
 
-
-//procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above,his_total, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
@@ -2879,7 +2876,7 @@ begin
     else
     his_total:=his_total_red;
 
-    while ((back.star_level=0) and (i>back.backgr+1)) do {find star level 0.003 of values}
+    while ((back.star_level=0) and (i>back.backgr+1)) do {find star level 0.001 of values}
     begin
        dec(i);
        above:=above+histogram[colour,i];

@@ -2759,8 +2759,10 @@ end;
 function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
 var
   typ : ansichar;
+  warning : boolean;
 begin
   result:=true;
+  warning:=false; //warning for old database
   database_type:=1476;{type .1476 database}
   database:=lowercase(database);
   if length(database)>0 then typ:=database[1] else typ:='a';
@@ -2790,9 +2792,11 @@ begin
     memo2_message('Could not find w08 star database. Will try with an other database.');
   end;
 
-  if ((fov>10) and (fileexists( database_path+'G05_0101.290'))) then begin name_database:='g05'; database_type:=290; end //preference for G05 for large FOV
+  if ((fov>10) and (fileexists( database_path+'g05_0101.290'))) then begin name_database:='g05'; database_type:=290; end //preference for G05 for large FOV
   else
-  if ((fov>10) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; end //preference for V17 for large FOV
+  if ((fov>10) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; warning:=true; end //preference for V17 for large FOV
+  else
+  if ((fov<=0.5) and (fileexists( database_path+'d80_0101.1476'))) then begin name_database:='d80'; end //for tiny field of view
   else
   if fileexists( database_path+'v50_0101.1476') then begin name_database:='v50'; end //photometry database
   else
@@ -2802,22 +2806,26 @@ begin
   else
   if fileexists( database_path+'d05_0101.1476') then begin name_database:='d05'; end
   else
-  if fileexists( database_path+'g05_0101.1476') then begin name_database:='g05'; end
+  if fileexists( database_path+'d80_0101.1476') then begin name_database:='d80'; end //for somebody wo installs the d80 for large FOV, >0.5 degrees
   else
-  if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end //old database sorted on magnitude
+  if fileexists( database_path+'g05_0101.290') then begin name_database:='g05'; database_type:=290; end
   else
-  if fileexists( database_path+'g18_0101.290') then begin name_database:='g18'; database_type:=290; end //old database sorted on magnitude
+  if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18';warning:=true; end //old database sorted on magnitude
   else
-  if fileexists( database_path+'h17_0101.1476') then begin name_database:='h17'; end // old database sorted on magnitude
+  if fileexists( database_path+'g18_0101.290') then begin name_database:='g18';warning:=true; database_type:=290; end //old database sorted on magnitude
   else
-  if fileexists( database_path+'v17_0101.290') then begin name_database:='v17'; database_type:=290; end //old database sorted on magnitude
+  if fileexists( database_path+'h17_0101.1476') then begin name_database:='h17'; warning:=true;end // old database sorted on magnitude
   else
-  if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290; end //old database sorted on magnitude
+  if fileexists( database_path+'v17_0101.290') then begin name_database:='v17'; database_type:=290;warning:=true; end //old database sorted on magnitude
+  else
+  if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290;warning:=true; end //old database sorted on magnitude
   else
   begin
     application.messagebox(pchar('No star database found!'+#13+'Download and install one star database.'), pchar('ASTAP error:'),0);
     result:=false;
   end;
+
+  if warning then warning_str:='Old database!'; //first potential warning. No add required
 end;
 
 

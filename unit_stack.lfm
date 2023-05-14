@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 33675
+    Left = 33976
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -228,7 +228,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 2008
-    ActivePage = lights
+    ActivePage = tab_Pixelmath2
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -236,7 +236,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 14
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
