@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2876,15 +2876,12 @@ begin
     else
     his_total:=his_total_red;
 
-    while ((back.star_level=0) and (i>back.backgr+1)) do {find star level 0.001 of values}
+    while ((back.star_level=0) and (i>back.backgr+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
     begin
        dec(i);
        above:=above+histogram[colour,i];
        if above>0.001*his_total then back.star_level:=i;
     end;
-    if back.star_level<= back.backgr then back.star_level:=back.backgr+1 {no or very few stars}
-    else
-    back.star_level:=back.star_level-back.backgr-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
 
     {calculate noise level}
     stepsize:=round(head.height/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
@@ -2920,7 +2917,13 @@ begin
       sd:=sqrt(sd/counter); {standard deviation}
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
-    back.noise_level:= sd;   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
+    back.noise_level:= sd;   {this noise level could be too high if no flat is applied. So for images where center is brighter then the corners.}
+
+    // Clip calculated star level:
+    // 1) above 3.5*noise minimum, but also above background value when there is no noise so minimum is 1
+    // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
+    back.star_level:=max(max(3.5*sd,1 {1})  ,back.star_level-back.backgr-1 {2) below saturation});
+
   end;
 end;
 

@@ -869,7 +869,8 @@ begin
 
   setlength(img_sa,1,width2,height2);{set length of image array}
 
-  detection_level:=max(3.5*bck.noise_level,bck.star_level); {level above background. Start with a high value}
+  detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
+
   retries:=2; {try up to three times to get enough stars from the image}
   repeat
     highest_snr:=0;
@@ -932,7 +933,11 @@ begin
     dec(retries);{In principle not required. Try again with lower detection level}
     if detection_level<=7*bck.noise_level then retries:= -1 {stop}
     else
-    detection_level:=max(6.999*bck.noise_level,min(30*bck.noise_level,detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
+    detection_level:=max(6.999*bck.noise_level,min(30*bck.noise_level,detection_level*6.999/30));
+    // Star rich image. Star_level=18000, noise is 40      Detection level: 18000 --> 1200=30*40         --> 280=6.999*40 {Max three steps to get enough stars}
+    //                  Star_level= 3000, noise is 40      Detection level:  3000 -->  700=3000*6.999/30 --> 280=6.999*40 {Max three steps to get enough stars}
+    //                  Star_level=  900, noise is 40      Detection level:   900 -->  280=6.999*40 {Max two steps to get enough stars}
+    // Star poor image  Star_level=  140, noise is 40      Detection level:   140                   {One step. Star level is at minimum=3.5*noise. Minimum 3.5*noise is defined in procedure get_background}
 
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 

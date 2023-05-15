@@ -1515,7 +1515,7 @@ begin
   SetLength(hfd_list, len);{set array length to len}
 
   get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
-  detection_level := max(3.5 * bck.noise_level, bck.star_level); {level above background. Start with a high value}
+  detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
 
   retries := 2; {try up to three times to get enough stars from the image}
 
@@ -1640,7 +1640,8 @@ begin
 
   get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
 
-  detection_level := max(3.5 * bck.noise_level, bck.star_level);  {level above background. Start with a high value}
+  detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
+
   retries := 2; {try three times to get enough stars from the image}
   repeat
     nhfd := 0;{set counter at zero}

@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2023.05.14';
+  astap_version: string='2023.05.15';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -2083,15 +2083,12 @@ begin
     else
     his_total:=his_total_red;
 
-    while ((starlevel=0) and (i>background+1)) do {find star level 0.003 of values}
+    while ((starlevel=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
     begin
        dec(i);
        above:=above+histogram[colour,i];
        if above>0.001*his_total then starlevel:=i;
     end;
-    if starlevel<= background then starlevel:=background+1 {no or very few stars}
-    else
-    starlevel:=starlevel-background-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
 
     {calculate noise level}
     stepsize:=round(height2/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
@@ -2128,6 +2125,12 @@ begin
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
     noise_level[colour]:= round(sd);   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
+
+    // Clip calculated star level:
+    // 1) above 3.5*noise minimum, but also above background value when there is no noise so minimum is 1
+    // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
+    starlevel:=max(max(3.5*sd,1 {1}), starlevel-background-1 {2) below saturation});
+
   end;
 end;
 
@@ -2375,7 +2378,8 @@ begin
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
 
-  detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
+  detection_level:=star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
+
   retries:=2; {try up to three times to get enough stars from the image}
 
   if ((backgr<60000) and (backgr>8)) then {not an abnormal file}
@@ -2437,7 +2441,12 @@ begin
       dec(retries);{In principle not required. Try again with lower detection level}
       if detection_level<=7*noise_level[0] then retries:= -1 {stop}
       else
-      detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
+      detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30));
+      // Star rich image. Star_level=18000, noise is 40      Detection level: 18000 --> 1200=30*40         --> 280=6.999*40 {Max three steps to get enough stars}
+      //                  Star_level= 3000, noise is 40      Detection level:  3000 -->  700=3000*6.999/30 --> 280=6.999*40 {Max three steps to get enough stars}
+      //                  Star_level=  900, noise is 40      Detection level:   900 -->  280=6.999*40 {Max two steps to get enough stars}
+      // Star poor image  Star_level=  140, noise is 40      Detection level:   140                   {One step. Star level is at minimum=3.5*noise. Minimum 3.5*noise is defined in procedure get_background}
+
 
       if report then closefile(f);
 
