@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -4635,23 +4635,27 @@ end;
 
 procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i : integer;
+   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i,band,flux_counter,ttt : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b : double;
+   sd,mean,median,bg_median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b : double;
    Save_Cursor              : TCursor;
    info_message,shapeform,shapeform2   : string;
-   median_array             : array of double;
+   median_array                        : array of double;
+   full_image                          : boolean;
 const
   median_max_size=5000;
 
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  if ((abs(stopX-startX)>2)and (abs(stopY-starty)>2))=false then {do statistics on whole image}
+  if ((abs(stopX-startX)>1)and (abs(stopY-starty)>1))=false then {do statistics on whole image}
   begin
     startx:=0;stopX:=head.width-1;
     starty:=0;stopY:=head.height-1;
-  end;
+    full_image:=true
+  end
+  else
+  full_image:=false;
 
   if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
   if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -4684,6 +4688,7 @@ begin
     minimum:=999999999;
     maximum:=0;
     counter:=0;
+    flux_counter:=0;
     counter_median:=0;
     total_flux:=0;
 
@@ -4692,20 +4697,22 @@ begin
     a:=(stopX-1-startx)/2;
     b:=(stopY-1-startY)/2;
 
-    for fitsY:=startY+1 to stopY-1 do {within rectangle}
+    for fitsY:=startY+1 to stopY-1 do {within rectangle.  StartX,StopX are in 0...width-1,0..height-1 range}
     for fitsX:=startX+1 to stopX-1 do
     begin
       if ((CtrlButton=false {use no ellipse}) or (sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
       begin
-        value:=img_loaded[col,fitsX+1,fitsY+1];
-        median_position:=counter*stepsize;
+        value:=img_loaded[col,fitsX,fitsY];
+        median_position:=flux_counter*stepsize;
         total_flux:=total_flux+value; {total flux}
-        if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
+        inc(flux_counter);
+
+        if  trunc(median_position)>=counter_median then {pixels will be skippped. Limit sampling to median_max_size}
         begin
-          inc(counter_median);
           median_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+          inc(counter_median);
         end;
-        inc(counter);
+
         if value=maximum then max_counter:=max_counter+1; {counter at max}
         if value>maximum then maximum:=value; {max}
         if value<minimum then minimum:=value; {min}
@@ -4719,11 +4726,40 @@ begin
     end;{filter outliers}
 
     median:=smedian(median_array,counter_median);
-    total_flux:=total_flux-counter*median; {total flux above background}
 
-    for i:=0 to counter_median do median_array[i]:=abs(median_array[i] - median);{fill median_array with offsets}
+    for i:=0 to counter_median-1 do median_array[i]:=abs(median_array[i] - median);{fill median_array with offsets}
     mad:=smedian(median_array,counter_median); //median absolute deviation (MAD)
 
+    {measure the median of the suroundings}
+    median_array:=nil;{free mem}
+    setlength(median_array,(5+5+1+stopY-startY)*5*2+(5+5+1+stopX-startX)*5*2);//surface used for background. Overlap not counted for simplicity
+    counter:=0;
+    if full_image then
+      band:=+5 //measure inside box so at the boundaries of the image
+    else
+      band:=0;//measure only outside box
+    for fitsY:=startY+ 1-5 to stopY-1+5 do {calculate mean at square boundaries of detection box.  StartX,StopX are in 0...width-1,0..height-1 range}
+    for fitsX:=startX+1-5 to stopX-1+5 do
+    begin
+      if ( (fitsX<startX+band) or  (fitsX>stopX-band) or (fitsY<startY+band) or  (fitsY>stopY-band) ) then {measure only outside the box unless band>0 for full image}
+        if ( (fitsX>=0) and  (fitsX<head.width) and (fitsY>=0) and  (fitsY<head.height) ) then {do not measure outside the image}
+        begin
+          if counter>=length(median_array) then
+             SetLength(median_array,counter+5000);{increase length}
+          median_array[counter]:=img_loaded[0,fitsX,fitsY];
+          inc(counter);
+        end;
+      end;
+    if counter>0 then
+    begin
+      bg_median:=Smedian(median_array,counter);
+      total_flux:=total_flux-bg_median*flux_counter; {total flux above background}
+    end
+    else
+    begin
+      bg_median:=9999999;{something went wrong}
+      total_flux:=0;
+    end;
 
     if col=0 then range:=maximum-minimum;
 
@@ -4739,7 +4775,8 @@ begin
                                  'mad:   '+floattostrf(mad,ffgeneral, 4, 4)+#10+
                                  'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
-                                 'Flux: '+floattostrf(total_flux,ffExponent, 3, 2)+#10+
+                                 'Flux: '+floattostrf(total_flux,ffExponent, 4, 2)+ '  (Counts '+inttostr(flux_counter)+ ', Average '+inttostr(round(total_flux/flux_counter))+'/px)'+#10+
+                                 'BG :   '+floattostrf(bg_median,ffgeneral, 5, 5)+#10+ {median}
                                  '≥64E3 :  '+inttostr(round(saturated));
   end;
   if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
@@ -4752,7 +4789,7 @@ begin
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
   end;
 
-  info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
+  if range>0 then info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
   if head.Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
 
   if CTRLbutton=false then begin shapeform:='Rectangle: ';shapeform2:='rectangle'; end else begin shapeform:='Ellipse: '; shapeform2:='ellipse'; end;
@@ -4770,7 +4807,8 @@ begin
                                             'σ_2 = standard deviation background using values below Mo only | '+
                                             'mad = median absolute deviation | '+
                                             'm = minimum value image | M = maximum value image | '+
-                                            'Flux = total flux above median background | '+
+                                            'Flux = total flux inside shape above BG | '+
+                                            'BG = median background outside the shape | '+
                                             '≥64E3 = number of values equal or above 64000';
 
   case  QuestionDlg (pchar('Statistics within '+shapeform2+' '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY)),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
@@ -9462,16 +9500,15 @@ begin
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
-    setlength(bg_array,5000);
+    setlength(bg_array,(5+5+1+stopY-startY)*5*2+(5+5+1+stopX-startX)*5*2);//surface used for background. Overlap not counted for simplicity
 
     {measure the median of the suroundings}
     counter:=0;
-    for fitsY:=startY+1-5 to stopY-1+5 do {calculate mean at square boundaries of detection box}
+    for fitsY:=startY+1-5 to stopY-1+5 do {calculate mean at square boundaries of detection box. StartX,StopX are in 0...width-1,0..height-1 range}
     for fitsX:=startX+1-5 to stopX-1+5 do
     begin
-      if ( (fitsX<startX) or  (fitsX>stopX-1) or (fitsY<startY) or  (fitsY>stopY-1) ) then {measure only outside the box}
+      if ( (fitsX<startX) or  (fitsX>stopX) or (fitsY<startY) or  (fitsY>stopY) ) then {measure only outside the box}
       begin
-        if counter>=length(bg_array) then  SetLength(bg_array,counter+5000);{increase length}
         bg_array[counter]:=img_loaded[0,fitsX,fitsY];
         inc(counter);
       end;
@@ -9489,12 +9526,12 @@ begin
     a:=(stopX-1-startx)/2;
     b:=(stopY-1-startY)/2;
 
-    for fitsY:=startY+1 to stopY-1 do {within rectangle}
+    for fitsY:=startY+1 to stopY-1 do {within rectangle.  StartX,StopX are in 0...width-1,0..height-1 range}
     for fitsX:=startX+1 to stopX-1 do
     begin
       if ((CtrlButton=false {use no ellipse}) or (sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
       begin
-        value:=img_loaded[0,fitsX+1,fitsY+1];
+        value:=img_loaded[0,fitsX,fitsY];
         if value>65000 then inc(saturation_counter);{keep track of number of saturated pixels}
         flux:=flux+(value-bg_median);{add all flux. Without stars it should average zero. Detecting flux using >3*sd misses too much signal comets}
       end;
@@ -9504,7 +9541,7 @@ begin
     str(head.MZERO - ln(flux)*2.5/ln(10):0:1,mag_str);
 
     if (saturation_counter*65500/flux)<0.03 then mag_str:='MAGN='+mag_str {allow about 3% saturation}
-                                            else mag_str:='MAGN <'+mag_str+', '+inttostr(saturation_counter) +' saturated pixels !';
+                                            else mag_str:='MAGN <'+mag_str+', ('+inttostr(saturation_counter) +' saturated pixels !)';
 
     image1.Canvas.brush.Style:=bsClear;
     image1.Canvas.font.color:=$00AAFF; {orange}
