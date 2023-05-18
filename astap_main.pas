@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.18';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -121,6 +121,7 @@ type
     fittowindow1: TMenuItem;
     flipVH1: TMenuItem;
     dust_spot_removal1: TMenuItem;
+    export_star_info1: TMenuItem;
     Separator2: TMenuItem;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
@@ -365,6 +366,7 @@ type
     procedure calibrate_photometry1Click(Sender: TObject);
     procedure Constellations1Click(Sender: TObject);
     procedure convert_to_ppm1Click(Sender: TObject);
+    procedure export_star_info1Click(Sender: TObject);
     procedure flip_H1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure freetext1Click(Sender: TObject);
@@ -580,6 +582,7 @@ type
     date_obs   : string;
     calstat    : string;
     filter_name: string;
+    database_colour: string;
   end;
 
 type
@@ -819,7 +822,7 @@ function extract_temperature_from_filename(filename8: string): integer; {try to 
 function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
-procedure measure_magnitudes(annulus_rad:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
+procedure measure_magnitudes(annulus_rad,x1,y1,x2,y2:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; out dec : double; out errorDEC :boolean); {convert ra in text to double in radians}
@@ -1040,6 +1043,7 @@ begin
   head.set_temperature:=999;
   head.gain:='';
   head.egain:='';{assume no data available}
+  head.database_colour:='';//used to measure MZERO
 end;{reset global variables}
 
 
@@ -4853,6 +4857,7 @@ begin
   mainwindow.writepositionshort1.enabled:=yes;{enable popup menu}
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
+  mainwindow.export_star_info1.enabled:=yes;{enable popup menu}
   mainwindow.online_query1.enabled:=yes;{enable popup menu}
 
   mainwindow.sip1.enabled:=yes; {allow adding sip coefficients}
@@ -10002,7 +10007,7 @@ begin
 end;
 
 
-procedure measure_magnitudes(annulus_rad:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
+procedure measure_magnitudes(annulus_rad,x1,y1,x2,y2:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 var
   fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min  : double;
@@ -10025,9 +10030,9 @@ begin
     for fitsX:=0 to head.width-1  do
       img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-  for fitsY:=0 to head.height-1-1 do
+  for fitsY:=y1 to y2-1 do
   begin
-    for fitsX:=0 to head.width-1-1  do
+    for fitsX:=x1 to x2-1  do
     begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- bck.backgr> detection_level)) then {new star}
       begin
@@ -10343,12 +10348,17 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
-  size, i, starX, starY,lim_magn,fontsize,text_height,text_width     : integer;
+  size, i, starX, starY,magn,fontsize,text_height,text_width,dum     : integer;
   Fliphorizontal, Flipvertical  : boolean;
+  magnitude,raM,decM : double;
   stars  : star_list;
+  subframe : boolean;
+  report,rastr,decstr : string;
 begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  subframe:=(sender=export_star_info1); //full frame or sub section
 
   calibrate_photometry;
 
@@ -10375,7 +10385,23 @@ begin
 
   mainwindow.image1.Canvas.Pen.Color := clred;
 
-  measure_magnitudes(14,true {deep},stars);
+  if subframe then
+  begin
+    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
+    measure_magnitudes(14,startX,startY,stopX,stopY,true {deep},stars);
+    report:=magn_limit_str+#10;
+    report:=report+'Passband filter used: '+head.filter_name+#10;
+    report:=report+'Passband database='+head.database_colour+#10;
+    report:=report+'Magnitudes are only valid if passband filter and passband database are compatible. E.g. CV=BP, G=V, R=R, B=B.'+#10;
+    report:=report+'Option 1) Select in tab photometry a local database and in tab alignment the local database (standard=BP or V50=V)'+#10;
+    report:=report+'Option 2) Select an online database in tab photometry.'+#10+#10;
+    report:=report+'Saturated stars are excluded. To retrieve the positions of saturated stars use the "Image inspection" menu (F5).'+#10+#10;
+    report:=report+'fitsX'+#9+'fitsY'+#9+'HFD'+#9+'α[°]'+#9+'δ[°]'+#9+'ADU'+#9+'Magnitude'+#10;
+  end
+  else
+    measure_magnitudes(14,0,0,head.width-1,head.height-1,true {deep},stars);
+
 
   if length(stars[0])>0 then
   begin
@@ -10391,21 +10417,39 @@ begin
       mainwindow.image1.Canvas.moveto(starX-2*size,starY);
       mainwindow.image1.Canvas.lineto(starX-size,starY);
 
-      lim_magn:=round(10*(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10)));
-      image1.Canvas.textout(starX,starY-text_height,inttostr(lim_magn) );{add magnitude as text}
+      magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
+      magn:=round(10*magnitude);
+      image1.Canvas.textout(starX,starY-text_height,inttostr(magn) );{add magnitude as text}
+
+      if subframe then
+      begin
+        sensor_coordinates_to_celestial(1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
+        rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
+        decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
+        report:=report+floattostrF(1+stars[0,i],FFfixed,6,2)+#9+floattostrF(1+stars[1,i],FFfixed,6,2)+#9+floattostrF(stars[2,i],FFfixed,5,3)+#9+rastr+#9+decstr+#9+floattostrF(1+stars[3,i],FFfixed,8,0)+#9+floattostrF(magnitude,FFfixed,5,3)+#10;
+      end;
     end;
   end
   else
   memo2_message('No stars found!');
 
 
-  text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
-  fontsize:=trunc(fontsize*(head.width-2*fontsize)/text_width);{use full width for 80 characters}
-  image1.Canvas.font.size:=fontsize;
-  image1.Canvas.font.color:=clwhite;
-  text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-//  image1.Canvas.textout(round(fontsize*2),head.height-text_height,'Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   (7σ, aperture ⌀'+stackmenu1.flux_aperture1.text+')');{magn_limit global variable calculate in plot_and_measure_stars}
-  image1.Canvas.textout(round(fontsize*2),head.height-text_height,magn_limit_str);  {magn_limit global variable calculate in plot_and_measure_stars}
+
+  if subframe=false then
+  begin
+    text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
+    fontsize:=trunc(fontsize*(head.width-2*fontsize)/text_width);{use full width for 80 characters}
+    image1.Canvas.font.size:=fontsize;
+    image1.Canvas.font.color:=clwhite;
+    text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+    image1.Canvas.textout(round(fontsize*2),head.height-text_height,magn_limit_str);  {magn_limit global variable calculate in plot_and_measure_stars}
+  end
+  else
+  begin// to Clipboard
+    Clipboard.AsText:=report;
+  end;
+
+  stars:=nil;
 
   Screen.Cursor:=crDefault;
 end;
@@ -11941,7 +11985,7 @@ begin
         '-f  filename'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
         '-fov height_field[degrees]'+#10+
-        '-ra  center_right ascension[hours]'+#10+
+        '-ra  center_right_ascension[hours]'+#10+
         '-spd center_south_pole_distance[degrees]'+#10+
         '-s  max_number_of_stars {typical 500}'+#10+
         '-t  tolerance'+#10+
@@ -14906,6 +14950,30 @@ begin
   end;
 end;
 
+
+procedure Tmainwindow.export_star_info1Click(Sender: TObject);
+var
+  dum : integer;
+begin
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  form_inspection1.undo_button1Click(nil);{undo if required}
+  backup_img;
+
+  if ((abs(stopX-startX)>1)and (abs(stopY-starty)>1))=false then {do statistics on whole image}
+  begin
+    startx:=0;stopX:=head.width-1;
+    starty:=0;stopY:=head.height-1;
+  end;
+
+  if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+  if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
+
+  mainwindow.annotate_with_measured_magnitudes1Click(Sender);
+
+  Screen.Cursor:=crDefault;  { Always restore to normal }
+end;
+
 procedure Tmainwindow.flip_H1Click(Sender: TObject);
 var
   col,fitsX,fitsY : integer;
@@ -15000,7 +15068,7 @@ end;
 procedure Tmainwindow.localcoloursmooth2Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,counter    : integer;
-   flux,center_x,center_y,a,b,angle_from_center,rgb,distance,lumr : single;
+   flux,center_x,center_y,a,b,rgb,distance,lumr : single;
    colour,mean : array[0..2] of single;
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;

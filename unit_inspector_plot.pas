@@ -94,6 +94,7 @@ var
 
 procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double);
 
+
 implementation
 {$R *.lfm}
 
@@ -118,7 +119,7 @@ end;
 
 
 
-procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double);
+procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double{;x1,y1,x2,y2 : integer});
 var
  fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,len,
  nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
@@ -128,7 +129,7 @@ var
  x_11,x_21,x_31,y_11,y_21,y_31,
  x_12,x_22,x_32,y_12,y_22,y_32,
  x_13,x_23,x_33,y_13,y_23,y_33,
- oldNaxis3                            : integer;
+ oldNaxis3, dummy                       : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
@@ -142,7 +143,7 @@ var
  hfdlist_13,hfdlist_23,hfdlist_33     : array of double;
 
  starlistXY    :array of array of double;
- mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr  : string;
+ mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr : string;
 
  Fliph, Flipv,restore_req  : boolean;
  img_bk,img_sa                         : image_array;
@@ -591,7 +592,16 @@ begin
 
   if toClipboard2 then
   begin
-    report:='fitsX'+#9+'fitsY'+#9+'HFD'+#9+'RA[°]'+#9+'DEC[°]'+#9+'ADU'+#9+'Magnitude'+#10;
+
+    report:='Passband filter used: '+head.filter_name+#10;
+    report:=report+'Passband database='+head.database_colour+#10;
+    report:=report+'Magnitudes are only valid if passband filter and passband database are compatible. E.g. CV=BP, G=V, R=R, B=B.'+#10;
+    report:=report+'Option 1) Select in tab photometry a local database and in tab alignment the local database (standard=BP or V50=V)'+#10;
+    report:=report+'Option 2) Select an online database in tab photometry.'+#10+#10;
+    if head.mzero=0 then report:=report+'To get magnitudes in the report do a "calibration photometry" first.';
+    if head.cd1_1=0 then report:=report+' To get the α, δ positions, solve the image first.';
+
+    report:=report+'fitsX'+#9+'fitsY'+#9+'HFD'+#9+'α[°]'+#9+'δ[°]'+#9+'ADU'+#9+'Magnitude'+#10;
     rastr:='?';
     decstr:='?';
     magstr:='?';
@@ -599,9 +609,9 @@ begin
     begin
       if head.cd1_1<>0 then
       begin
-       sensor_coordinates_to_celestial(1+starlistXY[0,i],1+starlistXY[1,i],raM,decM);//+1 to get fits coordinated
-       rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
-       decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
+        sensor_coordinates_to_celestial(1+starlistXY[0,i],1+starlistXY[1,i],raM,decM);//+1 to get fits coordinated
+        rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
+        decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
       end;
       if head.mzero<>0 then
         magstr:=floattostrF(-2.5*ln(starlistXY[2,i])/ln(10)+head.MZERO,FFfixed,5,3);//flux to magnitude
@@ -943,8 +953,8 @@ end;
 
 procedure CCDinspector_analyse(detype: char; aspect,values,vectors: boolean);
 var
- fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,n,m,xci,yci,sqr_radius,orientation,starX,starY,x2,y2,font_luminance     : integer;
- hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med                                                                : double;
+ fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,n,m,xci,yci,sqr_radius,orientation,starX,starY,x2,y2,font_luminance : integer;
+ hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med : double;
  mean, min_value,max_value : single;
  hfd_values  : hfd_array; {array of integers}
  hfds        : array of double;

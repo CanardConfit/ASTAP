@@ -1764,6 +1764,26 @@ begin
 end;
 
 
+function get_database_colour :string;//report the star database colour
+var
+  datab :string;
+begin
+  datab:=stackmenu1.reference_database1.text;
+
+  if pos('V',datab)>0 then result:='V'  //green, online
+  else
+  if pos('R',datab)>0 then result:='R'  //red, online
+  else
+  if pos('BP',datab)>0 then result:='BP' //Gray, online
+  else
+  if pos('B',datab)>0 then  result:='B'  //blue, online
+  else
+  if pos('V',uppercase(stackmenu1.star_database1.Text)) > 0 then result:='V' //green, local V50, V17
+  else
+    result:='BP';//gray, local D50,.....
+end;
+
+
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   dra,ddec, telescope_ra,telescope_dec,fov,ra2,dec2,
@@ -2052,8 +2072,12 @@ begin
         get_best_mean(flux_ratio_array,counter_flux_measured {length},flux_ratio,standard_error_mean,cv );
 
         head.mzero:=2.5*ln(flux_ratio)/ln(10);
+
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
-        update_float('MZERO   =',' / Magnitude Zero Point. Magn=-2.5*log(flux)+MZERO',false,head.mzero)
+        begin
+          head.database_colour:=get_database_colour;;  //String for used database passband
+          update_float('MZERO   =',' / Magnitude Zero Point. Magn'+head.database_colour+'=-2.5*log(flux)+MZERO',false,head.mzero);
+        end
         else
         update_text('MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
 
@@ -2090,7 +2114,7 @@ begin
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 
-        memo2_message('Photometric calibration is only valid if the filter passband is similar as the passband reference database. This is indicated by the coloured square icons');
+        memo2_message('Photometric calibration is only valid if the filter passband is similar as the passband reference database '+head.database_colour+'. This is indicated by the coloured square icons');
 
         if report_lim_magn then
         begin

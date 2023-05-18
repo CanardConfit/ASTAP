@@ -970,6 +970,7 @@ procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);{analys
 function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): double;{##### calculate julian day, revised 2017}
 function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*','"',':','|','<','>']}
 
+
 const
   L_object = 0; {lights, position in listview1}
   L_filter = 1;
@@ -7799,13 +7800,13 @@ var
   rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree, filtercolour : integer;
+  countCheck, countThree, database_col : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
   warned, success: boolean;
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   outliers: array of array of double;
-  astr, memo2_text, filename1 : string;
+  astr, memo2_text, filename1,dummy : string;
   bck :tbackground;
 
   function measure_star(deX, deY: double): string;{measure position and flux}
@@ -7920,18 +7921,15 @@ begin
       ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
 
   //icon for used database passband
-  if pos('V',reference_database1.text)>0 then  filtercolour:= 1 //green, online
+  if head.database_colour='BP' then database_col:=4 //gray
   else
-  if pos('R',reference_database1.text)>0 then  filtercolour:= 0 //red, online
+  if head.database_colour='R' then database_col:=0 //red
   else
-  if pos('BP',reference_database1.text)>0 then  filtercolour:= 4 //Gray, online
+  if head.database_colour='V' then database_col:=1 //green
   else
-  if pos('B',reference_database1.text)>0 then  filtercolour:= 2 //blue, online
+  if head.database_colour='B' then database_col:=2 //blue icon
   else
-  if pos('V',uppercase(star_database1.Text)) > 0 then filtercolour:=1 //green, local V50, V17
-  else
-  filtercolour :=4; //gray, local D50,.....
-
+  database_col:=-1; // unknown. Should not happen
 
   {check is analyse is done}
   analysedP := True;
@@ -8060,7 +8058,7 @@ begin
 
         filename2 := listview7.items[c].Caption;
         mainwindow.Caption := filename2;
-        ListView7.Items.item[c].SubitemImages[P_magn1]:= filtercolour ; //show selected database passband
+        ListView7.Items.item[c].SubitemImages[P_magn1]:= database_col ; //show selected database passband
 
         Application.ProcessMessages;
 
@@ -8132,7 +8130,7 @@ begin
 
           if head.mzero <> 0 then
           begin
-            measure_magnitudes(annulus_radius, False {deep}, starlistx); {analyse}
+            measure_magnitudes(annulus_radius,0,0,head.width-1,head.height-1, False {deep}, starlistx); {analyse}
             starlistpack[c].starlist := starlistX;
             {store found stars in memory for finding outlier later}
             starlistpack[c].Width :=head.Width;
