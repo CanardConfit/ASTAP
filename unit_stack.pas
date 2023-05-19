@@ -1606,7 +1606,7 @@ end;
 
 procedure analyse_image_extended(img: image_array; head: Theader; out nr_stars, hfd_median, median_outer_ring, median_11, median_21, median_31,  median_12, median_22, median_32, median_13, median_23, median_33: double);{analyse several areas}
 var
-  heeadwidth, headheight, fitsX, fitsY, radius, i, j,
+  fitsX, fitsY, radius, i, j,
   retries, max_stars, n, m, xci, yci, sqr_radius, nhfd, nhfd_outer_ring,
   nhfd_11, nhfd_21, nhfd_31, nhfd_12, nhfd_22, nhfd_32,
   nhfd_13, nhfd_23, nhfd_33: integer;
@@ -1757,8 +1757,7 @@ begin
       //12   22   32
       //11   21   31
 
-      if sqr(starX - (heeadwidth div 2)) + sqr(starY - (headheight div 2)) > sqr(0.75) *
-        (sqr(heeadwidth div 2) + sqr(headheight div 2)) then
+      if sqr(starX - (head.width div 2)) + sqr(starY - (head.height div 2)) > sqr(0.75) *  (sqr(head.width div 2) + sqr(head.height div 2)) then
       begin
         hfdlist_outer_ring[nhfd_outer_ring] := hfd1;
         Inc(nhfd_outer_ring);
@@ -3989,10 +3988,8 @@ begin
 
                 analyse_image(img, head_2, 10 {snr_min}, False, hfd_counter, bck, hfd_median);
                 {find background, number of stars, median HFD}
-                lv.Items.item[c].subitems.Strings[P_background] :=
-                  inttostr5(round(bck.backgr));
-                lv.Items.item[c].subitems.Strings[P_hfd] :=
-                  floattostrF(hfd_median, ffFixed, 0, 1);
+                lv.Items.item[c].subitems.Strings[P_background]:= inttostr5(round(bck.backgr));
+                lv.Items.item[c].subitems.Strings[P_hfd] := floattostrF(hfd_median, ffFixed, 0, 1);
                 lv.Items.item[c].subitems.Strings[P_stars] := inttostr5(hfd_counter);
                 {number of stars}
               end;
@@ -4001,18 +3998,14 @@ begin
 
             if tabnr = 8 then {listview8 inspector tab}
             begin
-              lv.Items.item[c].subitems.Strings[I_date] :=
-                StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []);
+              lv.Items.item[c].subitems.Strings[I_date] := StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []);
               {date/time for blink. Remove fractions of seconds}
 
               lv.Items.item[c].subitems.Strings[I_focus_pos] := IntToStr(focus_pos);
 
-              analyse_image_extended(img, head_2, nr_stars, hfd_median,
-                hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32,
-                median_13, median_23, median_33); {analyse several areas}
+              analyse_image_extended(img, head_2, nr_stars, hfd_median, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33); {analyse several areas}
 
-              if ((hfd_median > 25) or (median_22 > 25) or (hfd_outer_ring > 25) or
-                (median_11 > 25) or (median_31 > 25) or (median_13 > 25) or (median_33 > 25)) then
+              if ((hfd_median > 25) or (median_22 > 25) or (hfd_outer_ring > 25) or (median_11 > 25) or (median_31 > 25) or (median_13 > 25) or (median_33 > 25)) then
               begin
                 lv.Items.item[c].Checked := False; {uncheck}
                 lv.Items.item[c].subitems.Strings[I_nr_stars] := '❌';
@@ -4021,39 +4014,27 @@ begin
                 lv.Items.item[c].subitems.Strings[I_nr_stars] :=
                   floattostrF(nr_stars, ffFixed, 0, 0);
 
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 2] :=
-                floattostrF(hfd_median, ffFixed, 0, 3);
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 3] :=
-                floattostrF(median_22, ffFixed, 0, 3);
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 4] :=
-                floattostrF(hfd_outer_ring, ffFixed, 0, 3);
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 5] :=
-                floattostrF(median_11, ffFixed, 0, 3);
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 6] :=
-                floattostrF(median_21, ffFixed, 0, 3);
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 7] :=
-                floattostrF(median_31, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 2] := floattostrF(hfd_median, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 3] := floattostrF(median_22, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 4] := floattostrF(hfd_outer_ring, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 5] := floattostrF(median_11, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 6] := floattostrF(median_21, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 7] := floattostrF(median_31, ffFixed, 0, 3);
 
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 8] :=
-                floattostrF(median_12, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 8] := floattostrF(median_12, ffFixed, 0, 3);
 
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 9] :=
-                floattostrF(median_32, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 9] := floattostrF(median_32, ffFixed, 0, 3);
 
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 10] :=
-                floattostrF(median_13, ffFixed, 0, 3);
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 11] :=
-                floattostrF(median_23, ffFixed, 0, 3);
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 12] :=
-                floattostrF(median_33, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 10] := floattostrF(median_13, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 11] := floattostrF(median_23, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 12] := floattostrF(median_33, ffFixed, 0, 3);
             end
             else
 
             if tabnr = 9 then {mount analyse tab}
             begin
 
-              lv.Items.item[c].subitems.Strings[M_date] :=
-                date_obs_regional(head_2.date_obs);
+              lv.Items.item[c].subitems.Strings[M_date] := date_obs_regional(head_2.date_obs);
               date_to_jd(head_2.date_obs, head_2.exposure);
               {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
 
@@ -4079,24 +4060,20 @@ begin
               //jd:=2456385.46875;
 
 
-              lv.Items.item[c].subitems.Strings[M_jd_mid] :=
-                floattostrF(jd_mid, ffFixed, 0, 7);{julian day}
+              lv.Items.item[c].subitems.Strings[M_jd_mid] :=floattostrF(jd_mid, ffFixed, 0, 7);{julian day}
 
               if ra_mount < 99 then {mount position known and specified}
               begin
                 if stackmenu1.hours_and_minutes1.Checked then
                 begin
-                  lv.Items.item[c].subitems.Strings[M_ra_m] := prepare_ra8(ra_mount, ':');
+                  lv.Items.item[c].subitems.Strings[M_ra_m]:=prepare_ra8(ra_mount, ':');
                   {radialen to text, format 24: 00 00.00 }
-                  lv.Items.item[c].subitems.Strings[M_dec_m] :=
-                    prepare_dec2(dec_mount, ':');{radialen to text, format 90d 00 00.1}
+                  lv.Items.item[c].subitems.Strings[M_dec_m]:=prepare_dec2(dec_mount, ':');{radialen to text, format 90d 00 00.1}
                 end
                 else
                 begin
-                  lv.Items.item[c].subitems.Strings[M_ra_m] :=
-                    floattostrf(ra_mount * 180 / pi, ffFixed, 9, 6);
-                  lv.Items.item[c].subitems.Strings[M_dec_m] :=
-                    floattostrf(dec_mount * 180 / pi, ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount * 180 / pi, ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount * 180 / pi, ffFixed, 9, 6);
                 end;
 
                 if jd_mid > 2400000 then {valid JD}
@@ -4105,10 +4082,8 @@ begin
                   dec_mount_jnow := dec_mount;
                   J2000_to_apparent(jd_mid, ra_mount_jnow, dec_mount_jnow);
                   {without refraction}
-                  lv.Items.item[c].subitems.Strings[M_ra_m_jnow] :=
-                    floattostrf(ra_mount_jnow * 180 / pi, ffFixed, 9, 6);
-                  lv.Items.item[c].subitems.Strings[M_dec_m_jnow] :=
-                    floattostrf(dec_mount_jnow * 180 / pi, ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_ra_m_jnow] := floattostrf(ra_mount_jnow * 180 / pi, ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec_m_jnow] := floattostrf(dec_mount_jnow * 180 / pi, ffFixed, 9, 6);
                 end;
               end;
 
@@ -4119,24 +4094,20 @@ begin
                 begin
                   lv.Items.item[c].subitems.Strings[M_ra] := prepare_ra8(head_2.ra0, ':');
                   {radialen to text, format 24: 00 00.00 }
-                  lv.Items.item[c].subitems.Strings[M_dec] :=
-                    prepare_dec2(head_2.dec0, ':');{radialen to text, format 90d 00 00.1}
+                  lv.Items.item[c].subitems.Strings[M_dec] := prepare_dec2(head_2.dec0, ':');{radialen to text, format 90d 00 00.1}
                 end
                 else
                 begin
                   lv.Items.item[c].subitems.Strings[M_ra] :=
                     floattostrf(head_2.ra0 * 180 / pi, ffFixed, 9, 6);
-                  lv.Items.item[c].subitems.Strings[M_dec] :=
-                    floattostrf(head_2.dec0 * 180 / pi, ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec] := floattostrf(head_2.dec0 * 180 / pi, ffFixed, 9, 6);
                 end;
 
 
                 if ra_mount < 99 then {mount position known and specified}
                 begin
-                  lv.Items.item[c].subitems.Strings[M_ra_e] :=
-                    floattostrf((head_2.ra0 - ra_mount) * cos(head_2.dec0) * 3600 * 180 / pi, ffFixed, 6, 1);
-                  lv.Items.item[c].subitems.Strings[M_dec_e] :=
-                    floattostrf((head_2.dec0 - dec_mount) * 3600 * 180 / pi, ffFixed, 6, 1);
+                  lv.Items.item[c].subitems.Strings[M_ra_e] := floattostrf((head_2.ra0 - ra_mount) * cos(head_2.dec0) * 3600 * 180 / pi, ffFixed, 6, 1);
+                  lv.Items.item[c].subitems.Strings[M_dec_e] := floattostrf((head_2.dec0 - dec_mount) * 3600 * 180 / pi, ffFixed, 6, 1);
                 end
                 else
                 begin
@@ -4155,10 +4126,8 @@ begin
                   //   nutation_aberration_correction_equatorial_classic(jd_mid,ra_jnow,dec_jnow);{Input mean equinox.  M&P page 208}
                   //   memo2_message(#9+filename2+#9+floattostr(jd_mid)+#9+floattostr((ra_jnow-rax)*180/pi)+#9+floattostr((dec_jnow-decx)*180/pi));
 
-                  lv.Items.item[c].subitems.Strings[M_ra_jnow] :=
-                    floattostrf(ra_jnow * 180 / pi, ffFixed, 9, 6);
-                  lv.Items.item[c].subitems.Strings[M_dec_jnow] :=
-                    floattostrf(dec_jnow * 180 / pi, ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_ra_jnow] := floattostrf(ra_jnow * 180 / pi, ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec_jnow]:=floattostrf(dec_jnow * 180 / pi, ffFixed, 9, 6);
 
                   calculate_az_alt(2 {force accurate calculation from ra, dec},
                     head_2,{out}az, alt); {call it with J2000 values. Precession will be applied in the routine}
@@ -4176,13 +4145,11 @@ begin
                   head_2, ram, decm);
                 {fitsX, Y to ra,dec}{Step one pixel in Y}
                 J2000_to_apparent(jd_mid, ram, decm);{without refraction}
-                lv.Items.item[c].subitems.Strings[M_crota_jnow] :=
-                  floattostrf(arctan2((ram - ra_jnow) * cos(dec_jnow), decm - dec_jnow) * 180 / pi, ffFixed, 7, 4);
+                lv.Items.item[c].subitems.Strings[M_crota_jnow] := floattostrf(arctan2((ram - ra_jnow) * cos(dec_jnow), decm - dec_jnow) * 180 / pi, ffFixed, 7, 4);
               end;
               if focus_temp <> 999 then
                 Lv.Items.item[c].subitems.Strings[M_foctemp] := floattostrF(focus_temp, ffFixed, 0, 1);
-              Lv.Items.item[c].subitems.Strings[M_pressure] :=
-                floattostrF(pressure, ffFixed, 0, 1);
+              Lv.Items.item[c].subitems.Strings[M_pressure] :=  floattostrF(pressure, ffFixed, 0, 1);
 
             end;
           end;
@@ -4198,8 +4165,7 @@ begin
   end;
 
   if ((green) and (blue) and (stackmenu1.classify_flat_filter1.Checked = False)) then
-    memo2_message(
-      '■■■■■■■■■■■■■ Hint, colour filters detected in the flat. For colour stacking set the check-mark classify by Flat Filter! ■■■■■■■■■■■■■');
+    memo2_message( '■■■■■■■■■■■■■ Hint, colour filters detected in the flat. For colour stacking set the check-mark classify by Flat Filter! ■■■■■■■■■■■■■');
 
   if full = False then lv.Items.EndUpdate;{can update now}
   progress_indicator(-100, '');{progresss done}
