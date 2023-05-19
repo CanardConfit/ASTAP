@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.18';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -582,7 +582,7 @@ type
     date_obs   : string;
     calstat    : string;
     filter_name: string;
-    database_colour: string;
+    passband_database: string;
   end;
 
 type
@@ -1043,7 +1043,7 @@ begin
   head.set_temperature:=999;
   head.gain:='';
   head.egain:='';{assume no data available}
-  head.database_colour:='';//used to measure MZERO
+  head.passband_database:='';//used to measure MZERO
 end;{reset global variables}
 
 
@@ -10392,7 +10392,7 @@ begin
     measure_magnitudes(14,startX,startY,stopX,stopY,true {deep},stars);
     report:=magn_limit_str+#10;
     report:=report+'Passband filter used: '+head.filter_name+#10;
-    report:=report+'Passband database='+head.database_colour+#10;
+    report:=report+'Passband database='+head.passband_database+#10;
     report:=report+'Magnitudes are only valid if passband filter and passband database are compatible. E.g. CV=BP, G=V, R=R, B=B.'+#10;
     report:=report+'Option 1) Select in tab photometry a local database and in tab alignment the local database (standard=BP or V50=V)'+#10;
     report:=report+'Option 2) Select an online database in tab photometry.'+#10+#10;
@@ -10405,7 +10405,7 @@ begin
 
   if length(stars[0])>0 then
   begin
-    for i:=0 to  length(stars[0])-2 do
+    for i:=0 to  length(stars[0])-1 do
     begin
       if Flipvertical=false then  starY:=round(head.height-1-stars[1,i]) else starY:=round(stars[1,i]);
       if Fliphorizontal     then starX:=round(head.width-1-stars[0,i])  else starX:=round(stars[0,i]);

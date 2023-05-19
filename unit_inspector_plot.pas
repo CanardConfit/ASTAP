@@ -594,7 +594,7 @@ begin
   begin
 
     report:='Passband filter used: '+head.filter_name+#10;
-    report:=report+'Passband database='+head.database_colour+#10;
+    report:=report+'Passband database='+head.passband_database+#10;
     report:=report+'Magnitudes are only valid if passband filter and passband database are compatible. E.g. CV=BP, G=V, R=R, B=B.'+#10;
     report:=report+'Option 1) Select in tab photometry a local database and in tab alignment the local database (standard=BP or V50=V)'+#10;
     report:=report+'Option 2) Select an online database in tab photometry.'+#10+#10;

@@ -1325,7 +1325,7 @@ var
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y : integer;
-  overlap,sip  :boolean;
+  overlap          : boolean;
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
@@ -1764,23 +1764,44 @@ begin
 end;
 
 
-function get_database_colour :string;//report the star database colour
+procedure get_database_passband(out local:boolean;out passband :string);//report local or online database and the database passband
 var
-  datab :string;
+  datab,datab_local :string;
 begin
-  datab:=stackmenu1.reference_database1.text;
 
-  if pos('V',datab)>0 then result:='V'  //green, online
+  if stackmenu1.reference_database1.itemindex=0 then  //local database
+  begin
+    local:=true;
+    datab_local:=uppercase(stackmenu1.star_database1.Text);
+    if pos('V',datab_local) > 0 then passband:='V' //Johnson-V, local V50, V17
+    else
+    if pos('R',datab_local) > 0 then passband:='R' //Cousins-R, local R50
+    else
+    if pos('B',datab_local) > 0 then passband:='B' //Johnson-B, local B50
+    else
+      passband:='BP';//gray, local D50,.....
+    exit;
+  end
   else
-  if pos('R',datab)>0 then result:='R'  //red, online
-  else
-  if pos('BP',datab)>0 then result:='BP' //Gray, online
-  else
-  if pos('B',datab)>0 then  result:='B'  //blue, online
-  else
-  if pos('V',uppercase(stackmenu1.star_database1.Text)) > 0 then result:='V' //green, local V50, V17
-  else
-    result:='BP';//gray, local D50,.....
+  begin //online databases
+    local:=false;
+    datab:=stackmenu1.reference_database1.text;
+    if pos('V',datab)>0 then passband:='V'  //Johnson-V, online
+    else
+    if pos('B',datab)>0 then  passband:='B'  //Johnson-B, online
+    else
+    if pos('R',datab)>0 then passband:='R'  //Cousins-R, online
+    else
+    if pos('BP',datab)>0 then passband:='BP' //Gaia blue=CV=Gray, online
+    else
+    if pos('-g',datab)>0 then  passband:='g'  //SDSS-g, online
+    else
+    if pos('-r',datab)>0 then  passband:='r'  //SDSS-r, online
+    else
+    if pos('-i',datab)>0 then  passband:='i'  //SDSS-i, online
+    else
+      passband:='x';
+  end;
 end;
 
 
@@ -1790,8 +1811,9 @@ var
   magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,magn_limit_min,magn_limit_max,cv : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
-  flip_horizontal, flip_vertical        : boolean;
+  flip_horizontal, flip_vertical,local   : boolean;
   flux_ratio_array,hfd_x_sd             : array of double;
+  database_passband : string;
 var
   flux_ratio             : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
 
@@ -1933,8 +1955,10 @@ begin
       if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
     end;
 
+    get_database_passband(local,database_passband);//report local or online database and the database passband
+
     {sets file290 so do before fov selection}
-    if stackmenu1.reference_database1.itemindex=0 then //local database as specified in Photometry tab
+    if local then //local database as specified in Photometry tab
       begin
       if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
       memo2_message('Using star database '+uppercase(name_database));
@@ -1968,17 +1992,8 @@ begin
         end;
       end;
       database_type:=0;//online
-      if pos('BP',stackmenu1.reference_database1.text)>0 then
-        convert_magnitudes('BP') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
-      else
-      if pos('V',stackmenu1.reference_database1.text)>0 then
-        convert_magnitudes('V') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
-      else
-      if pos('R',stackmenu1.reference_database1.text)>0 then
-        convert_magnitudes('R') //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
-      else
-      if pos('B',stackmenu1.reference_database1.text)>0 then
-        convert_magnitudes('B'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+
+      convert_magnitudes(database_passband {set in call to get_database_passband}) //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
     end;
 
 
@@ -2075,8 +2090,8 @@ begin
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
         begin
-          head.database_colour:=get_database_colour;;  //String for used database passband
-          update_float('MZERO   =',' / Magnitude Zero Point. Magn'+head.database_colour+'=-2.5*log(flux)+MZERO',false,head.mzero);
+          head.passband_database:=database_passband;
+          update_float('MZERO   =',' / Magnitude Zero Point. Magn'+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero);
         end
         else
         update_text('MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
@@ -2114,7 +2129,7 @@ begin
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 
-        memo2_message('Photometric calibration is only valid if the filter passband is similar as the passband reference database '+head.database_colour+'. This is indicated by the coloured square icons');
+        memo2_message('Photometric calibration is only valid if the filter passband ('+head.filter_name+') is compatible with the passband reference database ('+head.passband_database+'). This is indicated by the coloured square icons');
 
         if report_lim_magn then
         begin
@@ -2254,7 +2269,7 @@ var
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error,sep   : double;
   star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count                : integer;
-  flip_horizontal, flip_vertical,sip   : boolean;
+  flip_horizontal, flip_vertical       : boolean;
   error_array                          : array of double;
 
     procedure plot_star;
@@ -2489,7 +2504,7 @@ end;{measure distortion}
 procedure plot_artificial_stars(img: image_array;magnlimit:double);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
-  mag2,Bp_Rp, delta_ra,det,SIN_dec_ref,COS_dec_ref,
+  mag2, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,m_limit     : double;
   x,y,count                                                        : integer;
 
@@ -2524,8 +2539,6 @@ begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     counter_flux_measured:=0;
-
-    bp_rp:=999;{not defined in mono versions}
 
     {find middle of the image}
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }

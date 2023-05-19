@@ -3665,7 +3665,7 @@ var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
   hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,
   dec_mount_jnow, ram, decm, rax, decx, adu_e: double;
-  filename1,filterstr: string;
+  filename1,filterstr,filterstrUP: string;
   Save_Cursor: TCursor;
   loaded, red, green, blue: boolean;
   img: image_array;
@@ -3934,16 +3934,24 @@ begin
               {date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[P_filter] := head_2.filter_name;
 
-              filterstr:=uppercase(head_2.filter_name);// G or V or TG
+
+              filterstr:=head_2.filter_name;// R, G or V, B or TG
+              filterstrUP:=uppercase(filterstr);
               if ((length(filterstr)=0) or (pos('CV',filterstr)>0))  then lv.Items.item[c].SubitemImages[P_filter]:=-1 //unknown
               else
               if pos('R',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //red
               else
-              if pos('V',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
+              if pos('V',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
               else
               if pos('G',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
               else
-              if pos('B',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //blue
+              if pos('B',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //blue
+              else
+              if pos('i',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=21 //SDSS-i
+              else
+              if pos('r',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=22 //SDSS-r
+              else
+              if pos('g',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=23 //SDSS-g
               else
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 
@@ -7921,13 +7929,19 @@ begin
       ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
 
   //icon for used database passband
-  if head.database_colour='BP' then database_col:=4 //gray
+  if head.passband_database='BP' then database_col:=4 //gray
   else
-  if head.database_colour='R' then database_col:=0 //red
+  if head.passband_database='R' then database_col:=24 //Cousins-R
   else
-  if head.database_colour='V' then database_col:=1 //green
+  if head.passband_database='V' then database_col:=1 //green
   else
-  if head.database_colour='B' then database_col:=2 //blue icon
+  if head.passband_database='B' then database_col:=2 //blue icon
+  else
+  if head.passband_database='i' then database_col:=21 //SDSS-i dark red
+  else
+  if head.passband_database='r' then database_col:=22 //SDSS-r orange
+  else
+  if head.passband_database='g' then database_col:=23 //SDSS-g blue/green
   else
   database_col:=-1; // unknown. Should not happen
 

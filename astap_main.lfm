@@ -1698,12 +1698,12 @@ object mainwindow: Tmainwindow
     Left = 856
     Top = 296
     object Enter_annotation1: TMenuItem
-      Caption = 'Add annotation'
+      Caption = 'Add annotation (▭)'
       Hint = 'Add annotation text to current mouse position. Hold left mouse button down and pull a rectangle with mouse to extend connecting line. Add @ to the text for persistent annotations.'
       OnClick = Enter_annotation1Click
     end
     object Enter_rectangle_with_label1: TMenuItem
-      Caption = 'Add rectangle with annotation'
+      Caption = 'Add rectangle with annotation (▭)'
       Hint = 'Add rectangle. Hold left mouse button down and pull a rectangle with mouse.'
       OnClick = Enter_annotation1Click
     end
@@ -1737,27 +1737,27 @@ object mainwindow: Tmainwindow
       Hint = 'Place marker at specified α, δ position. '
       OnClick = add_marker_position1Click
     end
+    object angular_distance1: TMenuItem
+      Caption = 'Angular distance (▭)'
+      ImageIndex = 35
+      OnClick = angular_distance1Click
+    end
     object measuretotalmagnitude1: TMenuItem
-      Caption = 'Measure total magnitude within shape'
+      Caption = 'Measure total magnitude (▭, ⬭)'
       Enabled = False
       Hint = 'This will report the total magnitude within the pulled shape. Press ctrl or shift for ellipse shape. Flux is measured relative to median background up to five pixels outside the shape. Best accuracy is  achieved by using monochrome images.'
       OnClick = measuretotalmagnitude1Click
     end
-    object angular_distance1: TMenuItem
-      Caption = 'Angular distance'
-      ImageIndex = 35
-      OnClick = angular_distance1Click
-    end
     object show_statistics1: TMenuItem
-      Caption = 'Show statistics within shape'
-      Hint = 'Calculate mean, median standard deviation, minimum and maximum values within the shape. Press ctrl or shift for ellipse shape.'
+      Caption = 'Show statistics (▭, ⬭)'
+      Hint = 'Within selection shape. Calculate mean, median standard deviation, minimum and maximum values within the shape. Press ctrl or shift for ellipse shape.'
       ImageIndex = 34
       OnClick = show_statistics1Click
     end
     object export_star_info1: TMenuItem
-      Caption = 'Star info to clipboard within shape'
+      Caption = 'Star info to clipboard (▭)'
       Enabled = False
-      Hint = 'To clipboard the x,y positions, HFD, and if available α, δ and measured magnitude'
+      Hint = 'Within slection shape. To clipboard the x,y positions, HFD, and if available α, δ and measured magnitude'
       ImageIndex = 48
       OnClick = export_star_info1Click
     end
@@ -1792,7 +1792,7 @@ object mainwindow: Tmainwindow
       Caption = '-'
     end
     object copy_to_clipboard1: TMenuItem
-      Caption = 'Copy image (selection) to clipboard'
+      Caption = 'Copy image (selection) to clipboard (▭)'
       Hint = 'Copies the image or a image selection to the clipboard. Selection orientation is dependent on the selection direction used.'
       OnClick = copy_to_clipboard1Click
     end
@@ -1813,13 +1813,13 @@ object mainwindow: Tmainwindow
       Enabled = False
       ImageIndex = 37
       object simbad_annotation_deepsky1: TMenuItem
-        Caption = 'Deepsky annotation (Simbad)'
+        Caption = 'Deepsky annotation (▭) (Simbad)'
         Hint = 'Annotate the selected area with deepsky object info from Simbad'
         ImageIndex = 38
         OnClick = gaia_star_position1Click
       end
       object simbad_annotation_deepsky_filtered1: TMenuItem
-        Caption = 'Deepsky annotion filtered (Simbad)'
+        Caption = 'Deepsky annotion filtered (▭) (Simbad)'
         Hint = 'Annotate the selected area with deepsky object info from Simbad. A input will be shown to filter on object type.'
         ImageIndex = 38
         OnClick = simbad_annotation_deepsky_filtered1Click
@@ -1828,13 +1828,13 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object simbad_annotation_star1: TMenuItem
-        Caption = 'Star annotation (Simbad)'
+        Caption = 'Star annotation (▭) (Simbad)'
         Hint = 'Annotate the selected area with star info from Simbad'
         ImageIndex = 18
         OnClick = gaia_star_position1Click
       end
       object vizier_gaia_annotation1: TMenuItem
-        Caption = 'Magnitude annotation (transformed Gaia, Vizier)'
+        Caption = 'Magnitude annotation (▭) (transformed Gaia, Vizier)'
         Hint = 'Annotate the selected area with transformed Gaia magnitudes from Vizier'
         ImageIndex = 18
         OnClick = gaia_star_position1Click
@@ -1843,23 +1843,23 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object simbad_query1: TMenuItem
-        Caption = 'Browser query (Simbad)'
+        Caption = 'Browser query (▭) (Simbad)'
         Hint = 'Retrieve online info of the select area in the default browser.  To select an area, first hold the right mouse down and pull a rectangle.'
         ImageIndex = 38
         OnClick = gaia_star_position1Click
       end
       object hyperleda_guery1: TMenuItem
-        Caption = 'Browser query (HyperLeda)'
+        Caption = 'Browser query (▭) (HyperLeda)'
         Hint = 'Retrieve online info of the select area in the default browser. To select an area, first hold the right mouse down and pull a rectangle.'
         OnClick = gaia_star_position1Click
       end
       object ned_query1: TMenuItem
-        Caption = 'Browser query (Ned)'
+        Caption = 'Browser query (▭) (Ned)'
         Hint = 'Retrieve online info of the select area in the default browser.  To select an area, first hold the right mouse down and pull a rectangle.'
         OnClick = gaia_star_position1Click
       end
       object gaia_star_position1: TMenuItem
-        Caption = 'Browser query (Gaia)'
+        Caption = 'Browser query (▭) (Gaia)'
         Hint = 'Will display the online information for any star within 5 arc seconds of the centroid. The Gaia BP (blue) magnitude matches the best with visual.'
         ImageIndex = 36
         OnClick = gaia_star_position1Click
@@ -1868,7 +1868,7 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object aavso_chart1: TMenuItem
-        Caption = 'AAVSO, browser chart request'
+        Caption = 'AAVSO, browser chart request (▭)'
         Hint = 'Retrieve an AAVSO chart'
         OnClick = gaia_star_position1Click
       end
@@ -1881,16 +1881,16 @@ object mainwindow: Tmainwindow
       Hint = 'Local adjustments'
       ImageIndex = 42
       object localcoloursmooth2: TMenuItem
-        Caption = 'Local colour smooth stars'
+        Caption = 'Local colour smooth stars (▭, ⬭)'
         OnClick = localcoloursmooth2Click
       end
       object remove_colour1: TMenuItem
-        Caption = 'Local remove colour'
+        Caption = 'Local remove colour (▭, ⬭)'
         Hint = 'Intended for some ugly coloured stars in OSC images'
         OnClick = remove_colour1Click
       end
       object localgaussian1: TMenuItem
-        Caption = 'Local Gaussian blur'
+        Caption = 'Local Gaussian blur (▭, ⬭)'
         Hint = 'Local Gaussian blur with factor as set in pixel math'
         OnClick = localgaussian1Click
       end
@@ -1899,19 +1899,19 @@ object mainwindow: Tmainwindow
       end
     end
     object gradient_removal1: TMenuItem
-      Caption = 'Gradient removal tool'
+      Caption = 'Gradient removal tool (▭)'
       Hint = 'Remove the light pollution gradient in whole image based on two positions. The greater the distance the better it works.'
       ImageIndex = 33
       OnClick = gradient_removal1Click
     end
     object dust_spot_removal1: TMenuItem
-      Caption = 'Dark dust spot removal'
+      Caption = 'Dark dust spot removal (▭)'
       Hint = 'To remove a dark spot caused by a dust particle. Select an ellipse shaped area by holding the CTRL key.'
       ImageIndex = 47
       OnClick = dust_spot_removal1Click
     end
     object copy_paste_tool1: TMenuItem
-      Caption = 'Copy paste tool'
+      Caption = 'Copy paste tool (▭, ⬭)'
       Hint = 'Copy the selected area to the next mouse click. Use this for small corrections in the background. Press ctrl of shift for ellipse shape. Hold alt, ctrl, shift key for multi paste'
       ImageIndex = 32
       OnClick = copy_paste_tool1Click
@@ -1920,7 +1920,7 @@ object mainwindow: Tmainwindow
       Caption = '-'
     end
     object set_area1: TMenuItem
-      Caption = 'Set area'
+      Caption = 'Set area (▭)'
       Hint = 'Set area for colour replace in tab pixel math 1.'
       OnClick = set_area1Click
     end
@@ -1928,7 +1928,7 @@ object mainwindow: Tmainwindow
       Caption = '-'
     end
     object Remove_deep_sky_object1: TMenuItem
-      Caption = 'Remove deep sky object (Ellipse shape)'
+      Caption = 'Remove deep sky object ( ⬭)'
       Hint = 'Remove the deep sky object within the pulled rectangle'
       ImageIndex = 24
       OnClick = Remove_deep_sky_object1Click
@@ -1966,7 +1966,7 @@ object mainwindow: Tmainwindow
       end
     end
     object CropFITSimage1: TMenuItem
-      Caption = 'Crop FITS image'
+      Caption = 'Crop FITS image (▭)'
       Hint = 'Pull first rectangle with mouse while holding right mouse button down.'
       ImageIndex = 9
       OnClick = CropFITSimage1Click

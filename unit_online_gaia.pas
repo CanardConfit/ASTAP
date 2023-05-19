@@ -57,7 +57,7 @@ begin
       if ((c>4) and (magG>magBP))=false then {no straylight do not rely on BP and RP. C is normally a little above 2}
       begin
         BminR:=magBP-magRP;
-        if filter='V' then //Johnson-Cousins-V
+        if filter='V' then //Johnson-Cousins-V. See https://gea.esac.esa.int/archive/documentation/GDR3/Data_processing/chap_cu5pho/cu5pho_sec_photSystem/cu5pho_ssec_photRelations.html
         begin
           if ((BminR>=-0.5) and (BminR<=5.0)) then {formula valid edr3, about 99% of stars}
             result:=magG + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;  {edr3}
@@ -79,7 +79,26 @@ begin
 
             result:=V + 0.850*(Bt-Vt); //from Tycho catalog, B - V = 0.850 * (BT - VT)
           end;
+        end
+        else
+        if filter='r' then //SDSS-r
+        begin
+          if ((BminR>0.0) and (BminR<3.0)) then
+            result:=magG + 0.09837 - 0.08592*(BminR) - 0.1907*sqr(BminR) + 0.1701*sqr(BminR)*(BminR) - 0.02263*sqr(sqr(BminR)) ;  {dr3}
+        end
+        else
+        if filter='i' then //SDSS-i
+        begin
+          if ((BminR>0.5) and (BminR<2.0)) then
+            result:=magG + 0.293 - 0.6404*(BminR) + 0.09609*sqr(BminR) + 0.002104*sqr(BminR)*(BminR);  {dr3}
+        end
+        else
+        if filter='g' then //SDSS-g
+        begin
+          if ((BminR>0.3) and (BminR<3.0)) then
+            result:=magG - 0.2199 + 0.6365*(BminR) + 0.1548*sqr(BminR) - 0.0064*sqr(BminR)*(BminR);  {dr3}
         end;
+
       end;
     end;
   end;
@@ -198,18 +217,18 @@ begin
       exit;
     end;
     if slist.count<=31 then
-    memo2_message('List received is empthy! url: '+url)
+      memo2_message('List received is empthy! url: '+url)
     else
-    memo2_message('Stars list received');
-    gaia_ra:=telescope_ra; //store to test if data is still valid
-    gaia_dec:=telescope_dec;
-
-    extract_stars(slist );
+    begin
+      memo2_message('Stars list received');
+      gaia_ra:=telescope_ra; //store to test if data is still valid
+      gaia_dec:=telescope_dec;
+      extract_stars(slist );
+      result:=true;{no errors}
+    end;
   finally
     slist.Free;
   end;
-
-  result:=true;{no errors}
 end;
 
 end.

@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 96
+  Left = 173
   Height = 681
-  Top = 174
+  Top = 221
   Width = 1707
-  HorzScrollBar.Page = 1707
+  HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 664
+  ClientHeight = 681
   ClientWidth = 1707
   Color = clForm
   Icon.Data = {
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.2.4.0'
   object Memo2: TMemo
     Left = 0
-    Height = 104
+    Height = 121
     Top = 560
-    Width = 2008
+    Width = 1707
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 35481
+    Left = 36083
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 2008
+    Width = 1707
     ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
@@ -244,7 +244,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 22
       OnShow = lightsShow
       ParentFont = False
@@ -309,7 +309,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -604,7 +604,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
@@ -638,7 +638,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -784,7 +784,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 2
       ParentFont = False
       object replace_by_master_flat1: TButton
@@ -830,7 +830,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -988,7 +988,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 3
       ParentFont = False
       object clear_selection3: TButton
@@ -1020,7 +1020,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1138,7 +1138,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1146,7 +1146,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1276,7 +1276,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 5
       OnShow = tab_stackmethod1Show
       ParentFont = False
@@ -2251,7 +2251,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 7
       OnShow = alignment1Show
       ParentFont = False
@@ -2943,7 +2943,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 11
       OnShow = tab_blink1Show
       ParentFont = False
@@ -2952,7 +2952,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3254,7 +3254,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Photometry of variable stars.'
       Caption = 'Photometry'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 19
       OnShow = tab_photometry1Show
       ParentFont = False
@@ -3330,7 +3330,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3715,6 +3715,9 @@ object stackmenu1: Tstackmenu1
           'Online Gaia->V'
           'Online Gaia->B'
           'Online Gaia->R'
+          'Online Gaia->SDSS-g'
+          'Online Gaia->SDSS-r'
+          'Online Gaia->SDSS-i'
         )
         OnChange = reference_database1Change
         ParentFont = False
@@ -3726,7 +3729,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 17
       object analyse_inspector1: TButton
         Left = 136
@@ -3744,7 +3747,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3985,14 +3988,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2000
+        Width = 1699
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4258,7 +4261,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       ParentFont = False
       object live_stacking1: TButton
         Left = 16
@@ -4428,7 +4431,7 @@ object stackmenu1: Tstackmenu1
     object tab_monitoring1: TTabSheet
       Caption = 'Monitoring'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       OnShow = tab_monitoring1Show
       object Label3: TLabel
         Left = 128
@@ -4723,7 +4726,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       Enabled = False
       ImageIndex = 4
       OnShow = tab_Pixelmath1Show
@@ -6092,7 +6095,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 2000
+      ClientWidth = 1699
       Enabled = False
       ImageIndex = 4
       OnShow = tab_Pixelmath2Show
@@ -7757,45 +7760,46 @@ object stackmenu1: Tstackmenu1
     Left = 1416
     Top = 592
     Bitmap = {
-      4C7A150000001000000010000000CA0400000000000078DAED9A7F6C535514C7
-      5F06C8602BA2C40D4D4C2426C6CCB9B090358046C1B9B2ADEB46BB755228639B
-      AB8C6CCE860A0A09AC6916026E2E31A2515144FED018031A5D024A744DBA3137
-      377F20434442A2C4E03F54333106CBFAF53EF36A9ECFD7F6FDDABAB5E736DF2D
-      7DEF7EEE393DF7DC77CFEB2BC781E348245246CAEFE7482452868AAE802452E6
-      8AFD8554ECBA202BC874269E78E2672F1F0C0639128994B1422271495AA23E6A
-      79A96DBFDF9FD42729AFD6DF787CBC78C8F9A4C717E2F5F3E2B9998A5C50C3CB
-      F9321D6B27596CB4AEEF696AFFDC8EF04D63DFFFDCD6241827D1F9646328F551
-      6E0CA59F4DD6170D3C6714AB610CD9CFAF23764AE3AF68FE75F29C8EF10D5D2F
-      46D9419ABE3A3B3B21955A36D931A5AC9A31F4F27AFDD7637726B146F046E5E0
-      4CF67F2ADB635B9FCC757ADACA6B5BB6ED723EF5ECCB8EB6ED07AB1B9F7049FB
-      B56E29CB6A715BF29C8ECA227B5DAD65639BD7B375FF8B273B8E7E78DD17BA08
-      EF85BFE0F901D8F03D60ED3B03AB6BB347CC77F91E1A3ED65B8CC3816234B9CA
-      D035F633023F023B2E01AD1701F705A0E63BC0727C14963DCFA3DCDDEC15F3FB
-      7CAB5FFFEDE412FCDA978B4087193BCE4EA09D715B18E738CFB87160D5B740E1
-      37C05D639358FDCCFEB0986F7197765C399683ABC7B3D0B3BD08CDE723A8675C
-      C539E0C1B3C072C6DDFD1570FBD09FB8AFFB6D585C0D57D6D56F2A8CF11B9D96
-      87832FDC865FDEE1707057116CCCD7358C5B7106B8E76BE08E31C0F40570D370
-      14D903112C7D771CD69AF587637CBDA3FC969776DE1BBD7C84C36B7B0BB1EA74
-      18058CBBF34B60F128903DCCD821C60E46B1ECD5204A76F6A0BCCE75BAD25EBB
-      303646D386477EDAD75E74C9D7F240B7F5714FCFB2F7CF61C108E33E8F623EE3
-      168426B1303889DCCF26613A7503C57B0E311FEC2B637CB5AD6AA938268F6E6A
-      FAC0742A8CEC50148B3EF91DE6A70F0C9A7D0706577ABBC6D736B60F57389C7B
-      2BD7D766C5CB9D0A7B9DF9FEAE23C8E967F63EBD01B3EFB9F7D4E45E5575CD9C
-      35CD1D9145CCD79B3FE6FD7DE35A99AB698E9A31588CFE587C22825BFB228C7F
-      938F59BE52D666B3E5AF73BAB1E4237EBEC228DDBC2D5C69AF9BA7826F60F145
-      69431B589CAE5A6B1C7635BE333E876905D3F22A9B6D7E0A6A7AFEB3BE25689E
-      06BE4454939568E0F9B91E159468DE5B998E3249E7368FE99AA03CC9B97C81E1
-      D9EB828F5E499F6E91FFDD92735EE138CFEE66BACC1490B11DE3A53E040466B7
-      F0BE51E8F70AD35C896DB10F73853E1098582B10F50B4A6C8B7D088ADE178878
-      7E1D4FA878EC342130E2D6AF82EF8F338F2714AA55863709F3AA442619BE5785
-      FFBD32FC5AA601A6A1241A10FA72E950FFCBD5E96A3515F5D54CA9F5B5DA5012
-      27B5BC9A7B0AA3EDA722FED355DFA722F763AF919111E895F49AA2E6583AF032
-      F19095D2F8FDFBD38C24C7D285373A7E999E7F2AD7AE313F2312B55028A4E858
-      3C5EA99D38C791C03E92F050E0FFFF9E3BC4C6E6FF2B9198118D0715F1838CFF
-      B39637287E9AE7CFC0FC31227FB5AC1FCDA2FD3FB5D7DF4C8F9FDEBC54536B24
-      B03FDBF92959D794BFB4FEE9FE29FDEF9F287F69FDCFF4F825CA6925B6E2ADA9
-      74E0F5C68FF297EAD7D95CBFD2F533B5A2F8D3FE95CAFD8BF2CFF8EFFF69FFA2
-      FD8BEE9F3273FFA7EF5FE8F935AD7FAAFFA97EA5FA95D67F7AC7EF6FE0A9380A
+      4C7A190000001000000010000000E70400000000000078DAED9A7F6C136518C7
+      2F0364B01551C2862626121363E65C58C8968146C1B9B25FDD68B74E0A656C73
+      9391CDD95001218135CD42C0CE2546342A8AB83F24C480469780125D936E8CCD
+      CD1FC80091902831F80FD54C8C9963FDFA9EB99AF3BCB677BDDBBAF59EB7F96C
+      E9F5FDBCEFD3E77DDFBBF7DA721C388E200843E2F170044118143A0312847161
+      7F21859D1764814C65F2C9277FF6FA7EBF9F2308C2B0201A5C8C12AD8E5A5FDA
+      B7C7E3891993D4571B6F243F523EE462D2120BF9DA7DF1D84CC55C50E3CBC532
+      1D6B27566EE25DDFD354FEB91DE14B9C75FF735B13A59D68AFC76A43698C726D
+      287D6FB2B1C4E1737AB971B421FBFE35E44E69FE158DBF469FD3D0BEAEEB45AF
+      7E90A48FF6F6764851EBC63AA6D455D386565F6BFC5AFA9D49AE1EBE5E737026
+      C73F95E5E9ADCFA5DB9B5A8AAB1AB7EDB63FFFE2EBB696ED872AEA9E7548EB35
+      6F294A69749A33ECB6D21C6B759579638BAB69EB81574FB7757F3CEE0E5C85EB
+      CA5F68FA01D8F03D50D6731E658ECD4D62BFC3FDF8E089AE5C1CF1E6A2DE5184
+      8E919FE1FD11D8710D68BE0A38AF00959700F3C96198F7BE8C6267834BECEF77
+      AF7EFBB7D34BF06B4F3ABC6DF9D871610CADCCDBC23CDB65E68D02ABBE03B2BF
+      05EE1F99C4EA5D078262BFD159D876E3441A6E9E4C41E7F61C345C9E400DF34A
+      2E028F5D005630EF81AF817B06FEC4C3BEF76176D4DE5857B3293BEC6FB49B9F
+      F0BFB214BF1CE37068770E2C2CD635CC5B791E78F01BE0DE11C0F42570C76008
+      A97D1358767C146595EB8F84FD1A5BF15DAFED7C2874FD2887B7F66563D5D920
+      B29877DF57C0E261207590B903CCED0F61F99B7EE4EDEC4471B5E36CA9B56A61
+      B88DFA0D4FFEB4BF35E79ABBF1515FD9334D9DCB3FBC880543CC3B17C27CE62D
+      084C62A17F12E95F4CC274E63672F71E6631580BC27E85A57C9938274F6DAAFF
+      C8742688D440088B3EFB1DF92F1CECCF771FEC2F70758CAEAD6B1D2CB1D9F795
+      AEAF4A8934774AACD5F98F741C455A2FEBEFF3DBC877BFF4819AB9575E513967
+      4D43DBC42216EB9D9FF2F1BE73ABC8513F474D1B2C477F2C3E3581BB7B2698FF
+      2E9FB34CA5AEC562C95C677762C927FC780551B8795BB0D45A3D4F855FCBF28B
+      C2DA16B03CDD2CABB459D5C4CEFC34C64AC68A728B657E02F6F4FC7B7D4F605E
+      1C7E9E684F961787CF8FF5B040B4716F667433A4639BC1B8259021792D537078
+      775C88D125A9E313C5EF93BCE6128EF3EE1EC6758657A6EFB02F8DC12B387B84
+      E77542BD371873257D8B63982BD481E0844B96A89E5FD2B73806BFE87996C8E7
+      D7F1988AAF9DC604475C7A55F8BD11C6F194429A657C9330AE4A30C9F85D2AE2
+      EF92F1D732FA180331E813EA72C9B0FF97DBA7AB652AF6573365AF1F6F1F4AF2
+      A4D657734FA177FF89C8FF74EDEF1331F7C38FA1A12168457A4E51732C197C99
+      7CC8A2347FFFFE3423C6B164F1F5CE9FD1E79FCAB5ABCFCF8844251008283A16
+      C957DA4F84E388D23F62F85010FFFFBE7708B7CDFF5782D811B50715F9834CFC
+      B3D6D7297F718F9F8EF3478FF91BCFFA891BBAFE27F6FC6BF4FC699D976AF61A
+      51FA9FEDFE94AC6B9ABFB4FEE9FE29F9EF9F68FED2FA9FE9F98B36A795F41569
+      4D2583AF357F347F69FF3A9BF7AF74FE4C2C947FBA7E25F2FA45F34FFFCFFFE9
+      FA45D72FBA7F32E6F59F3E7FA1EFAF69FDD3FE9FF6AFB47FA5F59FECFBFF6E82
+      200CCA52DF38411006C5738E2308C2A014ECBA44108441F91B11223D91
     }
   end
   object PopupMenu2: TPopupMenu
