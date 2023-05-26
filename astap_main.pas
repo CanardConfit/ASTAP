@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.19a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8968,7 +8968,11 @@ var
 begin
   result:=false;
   fov:=round(sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2*60)); //arcmin. cdelt2 can be negative for other solvers
-  s:=get_http('https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag));{get webpage}
+
+ s:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);
+
+
+  s:=get_http('https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag){+'&special=std_field'});{get webpage}
   if length(s)<50 then begin beep; exit end;;
 
   setlength(vsp,1000);
@@ -10162,7 +10166,6 @@ const
   magn_limit_database:=10*21;//magn, Online Gaia via Vizier
 
   memo2_message('Passband setting: '+stackmenu1.reference_database1.text);
-//  memo2_message('Using Gaia online database from Vizier. It it will be possible to detect up to magnitude='+floattostrF(min(magn_limit,0.1*magn_limit_database-1),ffGeneral,3,1));
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
@@ -10177,7 +10180,7 @@ const
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_temp3[0,fitsX,fitsY]:=default;{clear}
-  plot_artificial_stars(img_temp3,magn_limit {measured});{create artificial image with database stars as pixels}
+  plot_artificial_stars(img_temp3,head,magn_limit {measured});{create artificial image with database stars as pixels}
 //  img_loaded:=img_temp3;
 //  plot_fits(mainwindow.image1,true,true);
 //  exit;

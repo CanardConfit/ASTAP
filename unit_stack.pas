@@ -3936,21 +3936,28 @@ begin
 
               filterstr:=head_2.filter_name;// R, G or V, B or TG
               filterstrUP:=uppercase(filterstr);
-              if ((length(filterstr)=0) or (pos('CV',filterstr)>0))  then lv.Items.item[c].SubitemImages[P_filter]:=-1 //unknown
+              if ((length(filterstr)=0) or (pos('CV',filterstrUP)>0))  then lv.Items.item[c].SubitemImages[P_filter]:=-1 //unknown
               else
-              if pos('R',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //red
+              if pos('S',filterstrUP)>0 then //sloan
+              begin
+                if pos('I',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=21 //SDSS-i
+                else
+                if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=22 //SDSS-r
+                else
+                if pos('G',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=23 //SDSS-g
+                else
+                lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
+              end
+              else //Johnson-Cousins
+              if pos('TR',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //Red
+              else
+              if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red
               else
               if pos('V',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
               else
-              if pos('G',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
+              if pos('G',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
               else
               if pos('B',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //blue
-              else
-              if pos('i',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=21 //SDSS-i
-              else
-              if pos('r',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=22 //SDSS-r
-              else
-              if pos('g',filterstr)>0  then lv.Items.item[c].SubitemImages[P_filter]:=23 //SDSS-g
               else
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 
@@ -7894,22 +7901,6 @@ begin
     memo2_message(star_database1.Text +
       ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
 
-  //icon for used database passband
-  if head.passband_database='BP' then database_col:=4 //gray
-  else
-  if head.passband_database='R' then database_col:=24 //Cousins-R
-  else
-  if head.passband_database='V' then database_col:=1 //green
-  else
-  if head.passband_database='B' then database_col:=2 //blue icon
-  else
-  if head.passband_database='i' then database_col:=21 //SDSS-i dark red
-  else
-  if head.passband_database='r' then database_col:=22 //SDSS-r orange
-  else
-  if head.passband_database='g' then database_col:=23 //SDSS-g blue/green
-  else
-  database_col:=-1; // unknown. Should not happen
 
   {check is analyse is done}
   analysedP := True;
@@ -8038,7 +8029,6 @@ begin
 
         filename2 := listview7.items[c].Caption;
         mainwindow.Caption := filename2;
-        ListView7.Items.item[c].SubitemImages[P_magn1]:= database_col ; //show selected database passband
 
         Application.ProcessMessages;
 
@@ -8106,6 +8096,25 @@ begin
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
           plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
+
+          //icon for used database passband. Database selection could be in auto mode so do this after calibration
+          if head.passband_database='BP' then database_col:=4 //gray
+          else
+          if head.passband_database='R' then database_col:=24 //Cousins-R
+          else
+          if head.passband_database='V' then database_col:=1 //green
+          else
+          if head.passband_database='B' then database_col:=2 //blue icon
+          else
+          if head.passband_database='SI' then database_col:=21 //SDSS-i red/infrared
+          else
+          if head.passband_database='SR' then database_col:=22 //SDSS-r red/orange
+          else
+          if head.passband_database='SG' then database_col:=23 //SDSS-g blue/green
+          else
+          database_col:=-1; // unknown. Should not happen
+          ListView7.Items.item[c].SubitemImages[P_magn1]:= database_col ; //show selected database passband
+
           listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 2);
 
           if head.mzero <> 0 then
@@ -9188,7 +9197,7 @@ const
    var
      backgroundR,backgroundG,backgroundB : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
      r1_square,r2_square,distance : double;
-     r1,r2,i,j,counter : integer;
+     r2,i,j,counter : integer;
    begin
      r1_square:=rs*rs;{square radius}
      r2:=rs+3 {annulus_width};
@@ -9254,7 +9263,7 @@ begin
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_temp3[0,fitsX,fitsY]:=default;{clear}
-  plot_artificial_stars(img_temp3,magn_limit {measured});{create artificial image with database stars as pixels}
+  plot_artificial_stars(img_temp3,head,magn_limit {measured});{create artificial image with database stars as pixels}
 
    analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
 

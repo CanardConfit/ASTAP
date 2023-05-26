@@ -18,7 +18,7 @@ procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
-procedure plot_artificial_stars(img: image_array;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
+procedure plot_artificial_stars(img: image_array;head:theader;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
@@ -1423,7 +1423,7 @@ begin
 
           mainwindow.image1.Canvas.font.size:=round(min(20,max(8,len /2)));
 
-          if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star}
+          if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star, Plot green}
 
           {get text dimensions}
           th:=mainwindow.image1.Canvas.textheight(name);
@@ -1764,9 +1764,9 @@ begin
 end;
 
 
-procedure get_database_passband(out local:boolean;out passband :string);//report local or online database and the database passband
+procedure get_database_passband(filterstr: string; out local:boolean; out passband :string);//report local or online database and the database passband
 var
-  datab,datab_local :string;
+  datab,datab_local,filterstrUP :string;
 begin
 
   if stackmenu1.reference_database1.itemindex=0 then  //local database
@@ -1786,19 +1786,40 @@ begin
   begin //online databases
     local:=false;
     datab:=stackmenu1.reference_database1.text;
+    if pos('auto',datab)>0 then
+    begin  //auto
+      filterstrUP:=uppercase(filterstr);
+      if ((length(filterstrUP)=0) or (pos('CV',filterstrUP)>0))  then passband:='BP'  //Johnson-V, online
+      else
+      if pos('S',filterstrUP)>0 then //sloan
+      begin
+        if pos('G',filterstrUP)>0  then passband:='SG'  //SDSS-g
+        else
+        if pos('R',filterstrUP)>0  then passband:='SR'  //SDSS-r
+        else
+        if pos('I',filterstrUP)>0  then passband:='SI'  //SDSS-i
+        else
+        passband:='BP'  //online ; //unknown
+      end
+      else //Johnson-Cousins
+      if pos('G',filterstrUP)>0  then passband:='V'  //TG, Johnson-V, online
+      else
+      if pos('V',filterstrUP)>0  then passband:='V'  //Johnson-V, online
+      else
+      if pos('B',filterstrUP)>0  then passband:='B'  //Johnson-V, online Blue
+      else
+      if pos('R',filterstrUP)>0  then passband:='R'  //Johnson-V, online red
+      else
+      passband:='BP'  //online take clear view
+    end
+    else  //manual
+    if pos('BP',datab)>0 then passband:='BP' //Gaia blue=CV=Gray, online
+    else
     if pos('V',datab)>0 then passband:='V'  //Johnson-V, online
     else
     if pos('B',datab)>0 then  passband:='B'  //Johnson-B, online
     else
     if pos('R',datab)>0 then passband:='R'  //Cousins-R, online
-    else
-    if pos('BP',datab)>0 then passband:='BP' //Gaia blue=CV=Gray, online
-    else
-    if pos('-g',datab)>0 then  passband:='g'  //SDSS-g, online
-    else
-    if pos('-r',datab)>0 then  passband:='r'  //SDSS-r, online
-    else
-    if pos('-i',datab)>0 then  passband:='i'  //SDSS-i, online
     else
       passband:='x';
   end;
@@ -1955,7 +1976,7 @@ begin
       if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
     end;
 
-    get_database_passband(local,database_passband);//report local or online database and the database passband
+    get_database_passband(head.filter_name,local,database_passband);//report local or online database and the database passband
 
     {sets file290 so do before fov selection}
     if local then //local database as specified in Photometry tab
@@ -1966,18 +1987,18 @@ begin
     end
     else
     begin  //Reading online database. Update if required
-      memo2_message('Using Online Gaia database as set in tab Photometry. '+stackmenu1.reference_database1.text);
+      memo2_message('Using Online Gaia database as set in tab Photometry. '+stackmenu1.reference_database1.text +' ->'+database_passband);
 
-      ang_sep(gaia_ra,gaia_dec,head.ra0,head.dec0,sep);
+      ang_sep(telescope_ra,telescope_dec,gaia_ra,gaia_dec,sep);
       if ((sep>0.15*fov_org) or (online_database=nil)) then  //other sky area, update Gaia database online
       begin
         if select_star_database(stackmenu1.star_database1.text,fov_org {fov})=false then exit;
 
      //  max_nr_stars:=20;
-        if read_stars(head.ra0,head.dec0,fov_org, database_type, max_nr_stars,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this.Max magnitude is stored in mag2}
+        if read_stars(telescope_ra,telescope_dec,fov_org, database_type, max_nr_stars,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this.Max magnitude is stored in mag2}
         begin //maximum magnitude mag2 is known for the amount of stars for calibration using online stars
           memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFgeneral,3,1)+ ' for '+inttostr( max_nr_stars)+' stars')  ;
-          if read_stars_online(head.ra0,head.dec0,fov_org, mag2/10 {max_magnitude})= false then
+          if read_stars_online(telescope_ra,telescope_dec,fov_org, mag2/10 {max_magnitude})= false then
           begin
             memo2_message('Error. failure accessing Vizier for Gaia star database!');
             Screen.Cursor:=crDefault;
@@ -2129,7 +2150,7 @@ begin
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 
-        memo2_message('Photometric calibration is only valid if the filter passband ('+head.filter_name+') is compatible with the passband reference database ('+head.passband_database+'). This is indicated by the coloured square icons');
+        memo2_message('Photometric calibration is only valid if the filter passband ('+head.filter_name+') is compatible with the passband reference database ('+head.passband_database+'). This is indicated by the coloured square icons in tab photometry.');
 
         if report_lim_magn then
         begin
@@ -2501,11 +2522,11 @@ begin
 end;{measure distortion}
 
 
-procedure plot_artificial_stars(img: image_array;magnlimit:double);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
+procedure plot_artificial_stars(img: image_array;head: theader; magnlimit:double);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,m_limit     : double;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,m_limit,sep : double;
   x,y,count                                                        : integer;
 
     procedure plot_star;
@@ -2618,7 +2639,10 @@ begin
       //    end
       //    else
     begin //Database_type=0, Vizier online, Gaia
-       count:=0;
+
+       ang_sep(telescope_ra,telescope_dec,gaia_ra,gaia_dec,sep);
+       if ((sep>0.15*fov_org) or (online_database=nil)) then  //other sky area, update Gaia database online
+       begin
        if read_stars_online(telescope_ra,telescope_dec,fov_org,m_limit {max_magnitude}) then
        begin
          if pos('BP',stackmenu1.reference_database1.text)>0 then
@@ -2633,6 +2657,10 @@ begin
          if pos('B',stackmenu1.reference_database1.text)>0 then
            convert_magnitudes('B'); //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
         end;
+
+       end;
+       count:=0;
+
        while count<length(online_database[0]) do {read stars}
        begin
          ra2:=online_database[0,count];
@@ -2645,7 +2673,6 @@ begin
          plot_star;{add star}
          inc(count);
        end;
-       online_database:=nil; // free mem
      end;
     Screen.Cursor:=crDefault;
 

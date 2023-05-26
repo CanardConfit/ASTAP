@@ -81,24 +81,23 @@ begin
           end;
         end
         else
-        if filter='r' then //SDSS-r
+        if filter='SR' then //SDSS-r
         begin
           if ((BminR>0.0) and (BminR<3.0)) then
             result:=magG + 0.09837 - 0.08592*(BminR) - 0.1907*sqr(BminR) + 0.1701*sqr(BminR)*(BminR) - 0.02263*sqr(sqr(BminR)) ;  {dr3}
         end
         else
-        if filter='i' then //SDSS-i
+        if filter='SI' then //SDSS-i
         begin
           if ((BminR>0.5) and (BminR<2.0)) then
             result:=magG + 0.293 - 0.6404*(BminR) + 0.09609*sqr(BminR) + 0.002104*sqr(BminR)*(BminR);  {dr3}
         end
         else
-        if filter='g' then //SDSS-g
+        if filter='SG' then //SDSS-g
         begin
           if ((BminR>0.3) and (BminR<3.0)) then
             result:=magG - 0.2199 + 0.6365*(BminR) + 0.1548*sqr(BminR) - 0.0064*sqr(BminR)*(BminR);  {dr3}
         end;
-
       end;
     end;
   end;
@@ -205,7 +204,7 @@ begin
     memo2_message('Downloading Gaia stars from Vizier down to magnitude '+mag_lim+'. This can take 20 seconds or more ......');
 
     if search_field*180/pi>=3.5 then
-      memo2_message('Warning, for this large FOV the star retrieval from Vizier will likely take minutes of fail!!!');
+      memo2_message('Warning, for this large FOV the star retrieval from Vizier will likely take minutes or fail!!!');
 
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=200000&Gmag=<'+mag_lim;
        //'http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c=10.6722703144%2B41.2237647285&-c.bs=7862.054205/7862.054205&-out.max=200000&Gmag=<12.6'

@@ -31,7 +31,7 @@ will need only one database. Is your field of view 0.6 degree or larger
 you can download either the D05 or D20 or D50. The D05 is the smallest.
 The D50 is the largest. Using the D50 has no drawback accept it is
 larger, about one gbyte.&nbsp; The H17,&nbsp; H18, V17 G17, G18&nbsp;can
-be uninstalled</span><span style="font-family: Calibri;">/deleted.&nbsp;</span><span style="font-family: Calibri;"></span><span style="font-family: Calibri;">For&nbsp;tiny field-of-view there is a D80. The D80 can be found here </span><span style="font-family: Calibri;"><a href="https://drive.google.com/file/d/1HJZQU7BXHc-OvS0BNi_b3Cu8ARy2px2K">here</a></span><br><span style="font-family: Calibri;"><br>Star databases usability:<br style="font-family: Calibri;"></span><big><big><img style="width: 1553px; height: 252px;" alt="" src="astap_database_range3.png"><br></big></big><br>Instead of a
+be uninstalled</span><span style="font-family: Calibri;">/deleted.&nbsp;</span><span style="font-family: Calibri;"></span><span style="font-family: Calibri;">For&nbsp;tiny field-of-view there is a D80. The D80 can be found here </span><span style="font-family: Calibri;"><a href="https://drive.google.com/file/d/1HJZQU7BXHc-OvS0BNi_b3Cu8ARy2px2K">here</a></span><br><span style="font-family: Calibri;"><br><a name="database_usability"></a>Star databases usability:<br style="font-family: Calibri;"></span><big><big><img style="width: 1553px; height: 252px;" alt="" src="astap_database_range3.png"><br></big></big><br>Instead of a
 magnitude limit the new databases have a density limit.&nbsp; These
 databases have been sorted on star density up 500, 2000, 5000 or 8000
 stars per square degree. This should guarantee that in star-poor-areas
@@ -155,7 +155,7 @@ work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family:
               </big></li>
             <ul>
               <li><big><a href="astap.htm#add_sip">Add SIP coefficients to the header</a></big></li><li><big><a href="astap.htm#batch_conversion">Batch
-                    conversion</a></big></li><li><big><a href="astap.htm#inspector">Image inspection</a></big></li><ul><li><big><a href="astap.htm#inspector">Tilt measurement</a></big></li><li><big><a href="astap.htm#astap.htm#inspector">Tilt measurement, data export</a><br></big></li><li><big><a href="astap.htm#hfd_2d_contour">HFD_2d_contour</a></big></li><li><big><a href="astap.htm#hfd_diagram">HFD_diagram</a></big></li><li><big><a href="astap.htm#median_background_values">Median_background_values</a></big></li><li><big><a href="astap.htm#hfd_values">HFD values</a></big></li><li><big><a href="astap.htm#unroundness">Unroundness of the imaged stars.</a><br></big></li><li><big><a href="astap.htm#show_distortion">Show distortion</a><br></big></li><li><big><a href="astap.htm#aberration_inspector">Aberration Inspector</a><br></big></li></ul>
+                    conversion</a></big></li><li><big><a href="astap.htm#inspector">Image inspection</a></big></li><ul><li><big><a href="astap.htm#inspector">F5 menu</a></big></li><li><big><a href="astap.htm#curvature">Curvature and tilt indication</a><br></big></li><li><big><a href="astap.htm#hfd_2d_contour">HFD_2d_contour</a></big></li><li><big><a href="astap.htm#hfd_diagram">HFD_diagram</a></big></li><li><big><a href="astap.htm#median_background_values">Median_background_values</a></big></li><li><big><a href="astap.htm#hfd_values">HFD values</a></big></li><li><big><a href="astap.htm#unroundness">Unroundness of the imaged stars.</a><br></big></li><li><big><a href="astap.htm#show_distortion">Show distortion</a><br></big></li><li><big><a href="astap.htm#aberration_inspector">Aberration Inspector</a><br></big></li></ul>
               <li><big><a href="astap.htm#photometry_calibration">Photometry calibration</a></big></li><li><big><a href="astap.htm#sqm">SQM measurement</a></big></li>
               <li><big><a href="#star_annotation">Star
                     annotation and photometry</a></big></li><li><big><a href="#asteroid_annotation">Asteroid
@@ -993,8 +993,7 @@ images have poor borders, set option crop images larger then 0%.</big></li><li><
         </big><big><span style="text-decoration: underline; font-weight: bold;">&nbsp;<a name="internal_alignment"></a></span><span style="text-decoration: underline;">Internal star alignment</span><span style="text-decoration: underline; font-weight: bold;"><br>
             <br>
           </span></big><big><span style="text-decoration: underline; font-weight: bold;"><img style="width: 1569px; height: 651px;" alt="" src="astap_stack_menu3.png"><br>
-          </span></big><big><br>
-          This
+          </span></big><big><br>This
           internal star matching alignment is the best and fastest
           option to
           stack images. It is not
@@ -1725,14 +1724,13 @@ HFD value. The lower this value the better the optics. This value could
 &nbsp;be a help to adjust the optimal distance between the field
 flattener and the camera. This measurement is only a valid if the focus
 for the center area is perfect. A more advanced measuring
-method&nbsp;is available in <a href="astap.htm#inspector_tab">tab CCD Inspector</a>.
-          </big></li></ul>
-        <br><big>An
+method&nbsp;is available in <a href="astap.htm#inspector_tab">tab CCD Inspector</a>.</big></li></ul><big></big><big></big>
+        <a name="curvature"></a><br><big>It is possible to automate the loading and tilt measurement using tab&nbsp;<a href="astap.htm#monitoring">monitoring</a>&nbsp; <br><br></big><big>An
 irregular octagon figure is displayed using the median HFD value of
 eight areas. If your optics is good and there is hardly any tilt or
 curvature the figure will form a square:. The yellow values indicate
-the median values of nine square areas:</big><br><br><big>The figure of a good optical system:</big><br>
-        <img src="astap_ccd_inspector.jpg" alt="" style="width: 878px; height: 666px;"><br><br><br><big>A system suffering from severe curvature:<br><img style="width: 880px; height: 666px;" alt="" src="astap_ccd_inspector2.jpg"><br></big><big><br>A system with severe tilt:<br><img style="width: 879px; height: 665px;" alt="" src="astap_ccd_inspector3.jpg"><br></big><br><big>It is possible to automate the loading and tilt measurement using <a href="astap.htm#live_stacking">live stacking</a><br><br></big><br><big>CCD inspector c</big><big>alculation method explained:<br><br></big><div style="margin-left: 40px;"><big>HFD_out =&nbsp;median HFD value of all stars 75% or more from center. </big><big>(100% is the distance to&nbsp;a corner.)</big><br><big><br></big><big>HFD_center =&nbsp;&nbsp;median HFD value&nbsp;area 2B<br><br>The OFF axis aberration = HFD_out - HFD_center</big><br></div><br><br><big>The tilt is calculated as follows:<br><br></big><big></big><br><div style="margin-left: 40px;"><big>Best HFD value = min(HFD area 1A, HFD area 3A, </big><big>HFD area 1C, HFD area 3C)</big><br><br><big>Worst HFD value = max(HFD area 1A, HFD area 3A, </big><big>HFD area 1C, HFD area 3C)</big><br><br><big>Tilt = </big><big>"Worst_HFD value" minus&nbsp;"</big><big>Best HFD value" </big><br></div><big><br><br></big><big><img style="width: 514px; height: 389px;" alt="" src="astap_hfd_areas.png"><br><br></big><big><br></big><big><span style="text-decoration: underline;">Triangle:</span> The triangle based tilt indication </big><big>is intended for adjusting your tilt adapter with three adjustment screws.
+the median HFD values of nine square areas:</big><br><br><big>The figure of a good optical system:</big><br>
+        <img src="astap_ccd_inspector.jpg" alt="" style="width: 878px; height: 666px;"><br><br><br><big>A system suffering from severe curvature:<br><img style="width: 880px; height: 666px;" alt="" src="astap_ccd_inspector2.jpg"><br></big><big><br>A system with severe tilt:<br><img style="width: 879px; height: 665px;" alt="" src="astap_ccd_inspector3.jpg"><br></big><br><big>It is possible to automate the loading and tilt measurement using tab&nbsp;<a href="astap.htm#monitoring">monitoring</a>&nbsp; <br><br></big><br><big>CCD inspector c</big><big>alculation method explained:<br><br></big><div style="margin-left: 40px;"><big>HFD_out =&nbsp;median HFD value of all stars 75% or more from center. </big><big>(100% is the distance to&nbsp;a corner.)</big><br><big><br></big><big>HFD_center =&nbsp;&nbsp;median HFD value&nbsp;area 2B<br><br>The OFF axis aberration = HFD_out - HFD_center</big><br></div><br><br><big>The tilt is calculated as follows:<br><br></big><big></big><br><div style="margin-left: 40px;"><big>Best HFD value = min(HFD area 1A, HFD area 3A, </big><big>HFD area 1C, HFD area 3C)</big><br><br><big>Worst HFD value = max(HFD area 1A, HFD area 3A, </big><big>HFD area 1C, HFD area 3C)</big><br><br><big>Tilt = </big><big>"Worst_HFD value" minus&nbsp;"</big><big>Best HFD value" </big><br></div><big><br><br></big><big><img style="width: 514px; height: 389px;" alt="" src="astap_hfd_areas.png"><br><br></big><big><br></big><big><span style="text-decoration: underline;">Triangle:</span> The triangle based tilt indication </big><big>is intended for adjusting your tilt adapter with three adjustment screws.
 First solve an image, then flip the image in the viewer such that north
 is up and east is left (northern hemisphere). Then apply the adjustable three corner&nbsp;angle such
 that the orientation of the adapter screw matches with the three
@@ -2151,17 +2149,17 @@ size settings or try FOV=auto once)" You can set/force a "Field of view (height)
 stars are visible. For small field-of-view (&lt;0.6°) and away from
 the Milky-Way-plane expose longer up to 30 seconds and install the D20 or&nbsp;D50
 star database.</big></li><li><big>
-Reasonable round stars and camera in focus.</big></li><li><big>
+The stars are reasonable round&nbsp;and the camera is in focus.</big></li><li><big>
 Image dimensions at least 1280x960 pixels. For smaller dimensions solving is still possible if the image&nbsp;quality is good.
 </big></li><li><big>
 Image is not stretched, very saturated or heavily photo-shopped.</big></li><li><big>Try&nbsp;<a href="astap.htm#solvable">test if an image is blind solvable.</a></big></li></ol></div>If
 you still have problems with solving, you could send me a link to
 the&nbsp;file involved (FITS is preferred) and if I have time I
-could&nbsp;have a look. Upload it e.g. to <a href="http://nova.astrometry.net/">http://nova.astrometry.net</a> or <a href="https://ufile.io/">https://ufile.io/</a> and
-give me the link. For privacy reasons, prior to uploading you
+could&nbsp;have a look. Upload it e.g. to <a href="http://nova.astrometry.net/">http://nova.astrometry.net</a>&nbsp;and
+share the link. For privacy reasons, prior to uploading you
 could&nbsp;remove your latitude/longitude information from the header
 using the viewer "Tools", "Batch processing", "Remove longitude
-latitude information" menu.<a href="astap.htm#solvable"></a><br><br><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span>
+latitude information" menu.<br><br><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span>
           The
           internal
           astrometric solver works best with raw unstretched and
@@ -2193,15 +2191,15 @@ latitude information" menu.<a href="astap.htm#solvable"></a><br><br><big><span s
         <ol>
           <li>An approximate  &#945; and &#948;
             celestial position is specified (for a spiral search).&nbsp;For FITS file
-            this is
+            this position is
             normally read from the FITS file header and set
-            automatically. The position can also be passed by the command-line. In case
-            you view an&nbsp;JPEG, TIFF image, double click
+            automatically. The position can also be passed by the command-line from your favorite imaging program. In case
+            you view an&nbsp;JPEG, TIFF image the approximate&nbsp; position can be entered by a&nbsp;double click
             on&nbsp;&#945;
             input to search for a know deep sky object position from the
             database.</li>
           <li>
-Correct image height in degrees specified within preferable 5% accuracy.&nbsp; See &#8721; window, tab alignment,
+Correct image height in degrees specified within preferable 5% accuracy.&nbsp; See&nbsp;<span style="background-color: rgb(153, 153, 153);"></span><a href="astap.htm#internal_alignment"><span style="background-color: rgb(153, 153, 153);"></span></a><span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);">&nbsp;</span><a href="#solvable"><span style="background-color: rgb(153, 153, 153);">&#8721;</span></a><span style="background-color: rgb(153, 153, 153);">&nbsp;</span> window, tab alignment,
             group-box&nbsp;astrometric
             settings, "Field of
             view (height)". For FITS images this is normally automatic
@@ -2209,15 +2207,13 @@ Correct image height in degrees specified within preferable 5% accuracy.&nbsp; S
             view (height)"=AUTO</li><li>At least 30 stars&nbsp;are visible in the image. They can
 be very faint, barely visible in the noise.&nbsp;For large
 field-of-view (&gt;1°) expose 5 to 10 seconds but for
-small&nbsp;field-of-view (&lt;0.5°) far away from the Milky-Way plane
-you have to exposure longer up to 60 seconds and use the D50 star
+small&nbsp;field-of-view (&lt;0.5°) expose longer up to 60 seconds and use the D50 star
 database.</li>
-          <li>
-Reasonable round stars&nbsp;and the camera in focus. You
+          <li>The visible stars are reasonable round&nbsp;and the camera is in focus. You
             could
             verify the star
             detection
-            by the <a href="ccd_inspector">CCD inspector</a> or&nbsp;by&nbsp; the <span style="background-color: rgb(153, 153, 153);">&nbsp;Test button to show quads&nbsp;</span>&nbsp;in the&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab alignment). Most
+            by the <a href="ccd_inspector">CCD inspector</a> or&nbsp;by&nbsp; the <span style="background-color: rgb(153, 153, 153);">&nbsp;Test button to show quads&nbsp;</span>&nbsp;in the&nbsp;<span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);">&nbsp;</span><a href="astap.htm#internal_alignment"><span style="background-color: rgb(153, 153, 153);"></span></a><span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);"></span><a href="astap.htm#solvable"><span style="background-color: rgb(153, 153, 153);">&#8721;</span></a><span style="background-color: rgb(153, 153, 153);">&nbsp;</span> window, tab alignment). Most
             stars
             should be
             detected.</li><li>
@@ -2226,11 +2222,11 @@ automatically.&nbsp;Image
 height in pixels&nbsp;after ASTAP dowsampling should be somewhere
 between 1000 and 3000 pixels.&nbsp;ASI120MC camera image are problemetic to solve. </li>
           <li>Image is not stretched, very saturated or heavily photo-shopped.&nbsp;The
-            total exposure time could be hours as long it is possible to
+            total exposure time could be hours (stacked) as long it is possible to
             separate
             the
             brightest stars from the faint&nbsp;by intensity.</li><li>Search
-            radius should be set large enough.&nbsp;See&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab
+            radius should be set large enough.&nbsp;See&nbsp;<span style="background-color: rgb(153, 153, 153);"></span><a href="astap.htm#internal_alignment"><span style="background-color: rgb(153, 153, 153);"></span></a><span style="background-color: rgb(153, 153, 153);"></span><a href="astap.htm#astrometric_alignment"><span style="background-color: rgb(153, 153, 153);"></span></a><span style="background-color: rgb(153, 153, 153);">&nbsp;</span><a href="astap.htm#solvable"><span style="background-color: rgb(153, 153, 153);">&#8721;</span></a><span style="background-color: rgb(153, 153, 153);">&nbsp;</span>&nbsp;window, tab
             alignment,
             group-box&nbsp;astrometric settings. &nbsp;You could set
             this
@@ -2239,43 +2235,30 @@ between 1000 and 3000 pixels.&nbsp;ASI120MC camera image are problemetic to solv
           
           
           
-          <li>Use downsample factor 0 (auto) or 2 for
-raw DSLR/OSC&nbsp;images. See&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab alignment,
-group-box&nbsp;astrometric settings. Save settings if modified (Viewer
-pull down menu, file, exit (and save settings).&nbsp;</li>
+          <li>Use downsample factor 0 (auto). See&nbsp;<span style="background-color: rgb(153, 153, 153);"></span><a href="astap.htm#astrometric_alignment"><span style="background-color: rgb(153, 153, 153);"></span></a><span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);">&nbsp;</span><a href="astap.htm#solvable"><span style="background-color: rgb(153, 153, 153);">&#8721;</span></a><span style="background-color: rgb(153, 153, 153);">&nbsp;</span> window, tab alignment,
+group-box&nbsp;astrometric settings.&nbsp;</li>
           <li>If
 your image is full of hot pixels you could adjust the "Ignore stars
-less then["]"&nbsp; in tab Alignment. This is set default&nbsp;at 1.5" but
-could be set higher for a long focal length.</li><li>An other option for&nbsp;hot pixels is option "calibrate
-prior to solving". Select in the darks tab, a dark or darks with
-similar exposure duration as the lights you trying to solve. If your
-select several darks with&nbsp; different exposure length, check-mark
-the option classify, "Dark exposure time".&nbsp;</li><li>The maximum
+less then ["]"&nbsp; in tab Alignment. This is set default&nbsp;at 1.5" but
+could be set higher for a long focal length.</li><li>The maximum
 number of stars to use should be defined. Typical set at 500.&nbsp;See
 &#8721;&nbsp;window, tab alignment.</li>
           <li>Hash
 code&nbsp;tolerance should be defined. Typical set at 0.007. See tab
 alignment.</li>
           <li>For
-            some solver failures you could force in
-            ASTAP the option "slow" (-speed)&nbsp; for
-            more reliable solving. The
-            reliability will be very high but solving will be slower.</li><li>In
-case of excellent seeing the imaged star
-could be smaller then 1.5". &nbsp;Reduce the setting "Ignore stars
-less then 1.5"&nbsp;in tab "Alignment". Star size should 2 pixels or
-more. Adapt downsampling accordingly. Improvements will be reported by
-a increased number of quad matches.</li><li>For
-a&nbsp;field of view&nbsp;less then&nbsp;40 arc minutes (long focal
-length) it is recommend to install the D20 or D50 star database.&nbsp;</li><li>If a global cluster fills the whole field,&nbsp;ASTAP could
+a&nbsp;field-of-view&nbsp;less then&nbsp;40 arc minutes (long focal
+length) it is recommend to install the D20,&nbsp;D50 or even the D80 star database. &nbsp;See <a href="#database_usability">star database usability</a></li><li>If a global cluster fills the whole field,&nbsp;ASTAP could
 struggle to solve.&nbsp;Forcing option "slow" could
-&nbsp;help.</li><li>Best input format is FITS, RAW or 16 bit PNG, TIFF.&nbsp;JPEG compression or 8 bit PNG, TIFF files are a disadvantage.</li>
+&nbsp;help.</li><li>Best
+input format is FITS, RAW or 16 bit PNG, TIFF. Images in 8
+bit&nbsp;PNG, TIFF and especially in the JPEG format are a disadvantage.</li>
         </ol><br><big><span style="text-decoration: underline;"><a name="solvable"></a><span style="font-weight: bold;">Test if an image is solvable (full blind solving)</span></span></big><big><span style="text-decoration: underline;"><span style="font-weight: bold;">:<br></span></span></big><p><big>To test if an image is solvable, follow this procedure:</big></p>
 
 <p style="margin-left: 40px;"><big>A) Load an image in ASTAP</big></p>
 <p style="margin-left: 40px;"><big>B) Check star detection by hitting button F4. Only stars should be 
 annotated and not the hot pixels. If hot pixels are annotated see <span style="font-weight: bold;">E) Hot pixels seen as stars</span></big></p>
-<p style="margin-left: 40px;"><big>C) Go to ASTAP settings by CTRL+A or &#931; button. Select tab Alignment. Set ASTAP to blind solving by 1) in screen shot</big></p><div style="margin-left: 40px;"><big>D) Hit the ASTAP solve button<br></big></div><div style="text-align: left;"><big>This 
+<p style="margin-left: 40px;"><big>C) Go to ASTAP settings by CTRL+A or &#931; button. Select tab Alignment. Set ASTAP to blind solving by 1) in screen shot</big></p><div style="margin-left: 40px;"><big>D) Hit the ASTAP solve button<br><br></big></div><div style="text-align: left;"><big>This 
 should solve any image in a few minutes max. After solving the image 
 height in degrees is reported.&nbsp;Further field of view (FOV) calculations can be done in tab
  <a href="astap.htm#fov_calculator">Pixelmath, FOV calculator</a>.<br><br></big><big>E) Hot pixels seen as stars</big></div><p><big>If
