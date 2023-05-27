@@ -65,7 +65,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -10135,7 +10135,7 @@ end;
 
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
-  size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
+  size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter,search_radius,countN,countO     : integer;
   Fliphorizontal, Flipvertical,saturated : boolean;
   hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit_database,
   sqr_radius, hfd_median : double;
@@ -10165,8 +10165,6 @@ const
 
   magn_limit_database:=10*21;//magn, Online Gaia via Vizier
 
-  memo2_message('Passband setting: '+stackmenu1.reference_database1.text);
-
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
   image1.Canvas.brush.Style:=bsClear;
@@ -10181,17 +10179,24 @@ const
     for fitsX:=0 to head.width-1  do
       img_temp3[0,fitsX,fitsY]:=default;{clear}
   plot_artificial_stars(img_temp3,head,magn_limit {measured});{create artificial image with database stars as pixels}
+
 //  img_loaded:=img_temp3;
 //  plot_fits(mainwindow.image1,true,true);
 //  exit;
+
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
+  search_radius:=max(3,round(hfd_median));
 
   setlength(img_sa,1,head.width,head.height);{set length of image array}
    for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+
+
+  countN:=0;
+  countO:=0;
 
   for fitsY:=0 to head.height-1 do
   begin
@@ -10244,15 +10249,16 @@ const
            if measured_magn<magn_limit_database-10 then {bright enough to be in the database}
            begin
              magn_database:=default;{1000}
-             for i:=-3 to 3 do  //search for database star within 3x3 pixels
-               for j:=-3 to 3 do
+             for i:=-search_radius to search_radius do  //search for database star within circle with a diameter of 5 pixels
+               for j:=-search_radius to search_radius do
+               if sqr(i)+sqr(j)<=sqr(search_radius) then //circle tolerance area
                begin {database star available?}
                  magnd:=img_temp3[0,round(xc)+i,round(yc)+j];
                  if magnd<default then {a star from the database}
                    if magn_database=default then //empthy
                       magn_database:=magnd //no star at this location
                     else
-                      magn_database:=-2.5*ln(power(10,-0.4*magn_database) + power(10,-0.4*magnd))/ln(10);//combine magnitudes
+                      magn_database:=-2.5*ln(power(10,-0.4*magn_database) + power(10,-0.4*magnd))/ln(10);//combine magnitudes of the stars
                end;
 
              delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
@@ -10260,9 +10266,16 @@ const
              begin {mark}
                if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
                if Fliphorizontal     then starX:=round(head.width-xc)  else starX:=round(xc);
-               if magn_database=1000 then messg:='' {unknown star}
+               if magn_database=1000 then
+               begin
+                  messg:=''; {unknown star}
+                  inc(countN);
+               end
                else
-               messg:=' Δ'+inttostr(round(delta_magn)); {star but wrong magnitude}
+               begin
+                 messg:=' Δ'+inttostr(round(delta_magn)); {star but wrong magnitude}
+                 inc(countO);
+               end;
                size:=round(5*hfd1); {for rectangle annotation}
                image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
                image1.Canvas.textout(starX+size,starY,inttostr(round(measured_magn))  +messg );{add magnitude as text}
@@ -10280,7 +10293,7 @@ const
 
   mainwindow.image1.Canvas.font.size:=10;
   mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.textout(20,head.height-20,stackmenu1.reference_database1.text);
+  mainwindow.image1.Canvas.textout(20,head.height-20,inttostr(countN)+' unknown stars, '+inttostr(countO)+' magnitude offsets.' );
 
   Screen.Cursor:=crDefault;
 end;
