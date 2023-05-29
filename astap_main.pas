@@ -19,6 +19,9 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 }
 
 {open compiler issues:
+
+https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
+
 MacOS
 Listview smallimages are not displayed.
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39193
@@ -65,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3164,11 +3167,11 @@ end;
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
-var sin_dec1,cos_dec1,sin_dec2,cos_dec2,cos_sep:double;
+var sin_dec1,cos_dec1,sin_dec2,cos_dec2,cos_sep,t:double;
 begin
   sincos(dec1,sin_dec1,cos_dec1);{use sincos function for speed}
   sincos(dec2,sin_dec2,cos_dec2);
-  cos_sep:=min(1,sin_dec1*sin_dec2+ cos_dec1*cos_dec2*cos(ra1-ra2));{min function to prevent run time errors for 1.000000000002}
+  cos_sep:=min(1.0,sin_dec1*sin_dec2+ cos_dec1*cos_dec2*cos(ra1-ra2));{min function to prevent run time errors for 1.000000000002.  For correct compiling use 1.0 instead of 1. See https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html}
   sep:=arccos(cos_sep);
 end;
 
@@ -10366,7 +10369,8 @@ procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
   size, i, starX, starY,magn,fontsize,text_height,text_width,dum     : integer;
   Fliphorizontal, Flipvertical  : boolean;
-  magnitude,raM,decM : double;
+  magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
+
   stars  : star_list;
   subframe : boolean;
   report,rastr,decstr : string;
@@ -10413,7 +10417,7 @@ begin
     report:=report+'Option 1) Select in tab photometry a local database and in tab alignment the local database (standard=BP or V50=V)'+#10;
     report:=report+'Option 2) Select an online database in tab photometry.'+#10+#10;
     report:=report+'Saturated stars are excluded. To retrieve the positions of saturated stars use the "Image inspection" menu (F5).'+#10+#10;
-    report:=report+'fitsX'+#9+'fitsY'+#9+'HFD'+#9+'α[°]'+#9+'δ[°]'+#9+'ADU'+#9+'Magnitude'+#10;
+    report:=report+'fitsX'+#9+'fitsY'+#9+'HFD'+#9+'α[°]'+#9+'δ[°]'+#9+'ADU'+#9+'Magn_measured'+#9+'|'+#9+'Gaia-V'+#9+'Gaia-B'+#9+'Gaia-R'+#9+'Gaia-SG'+#9+'Gaia-SR'+#9+'Gaia-SI'+#9+'Gaia-G'+#9+'Gaia-BP'+#9+'Gaia-RP'+#10;
   end
   else
     measure_magnitudes(14,0,0,head.width-1,head.height-1,true {deep},stars);
@@ -10442,7 +10446,12 @@ begin
         sensor_coordinates_to_celestial(1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
         rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
         decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
-        report:=report+floattostrF(1+stars[0,i],FFfixed,6,2)+#9+floattostrF(1+stars[1,i],FFfixed,6,2)+#9+floattostrF(stars[2,i],FFfixed,5,3)+#9+rastr+#9+decstr+#9+floattostrF(1+stars[3,i],FFfixed,8,0)+#9+floattostrF(magnitude,FFfixed,5,3)+#10;
+
+        report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple
+
+        report:=report+floattostrF(1+stars[0,i],FFfixed,6,2)+#9+floattostrF(1+stars[1,i],FFfixed,6,2)+#9+floattostrF(stars[2,i],FFfixed,5,3)+#9+rastr+#9+decstr+#9+floattostrF(1+stars[3,i],FFfixed,8,0)+#9+floattostrF(magnitude,FFfixed,5,3)+#9+'|'
+                      +#9+floattostrF(v,FFfixed,5,3)+#9+floattostrF(b,FFfixed,5,3)+#9+floattostrF(r,FFfixed,5,3)+#9+floattostrF(sg,FFfixed,5,3)+#9+floattostrF(sr,FFfixed,5,3)+#9+floattostrF(si,FFfixed,5,3)
+                      +#9+floattostrF(g,FFfixed,5,3)+#9+floattostrF(bp,FFfixed,5,3)+#9+floattostrF(rp,FFfixed,5,3)+ #10;
       end;
     end;
   end
@@ -14973,7 +14982,7 @@ var
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  form_inspection1.undo_button1Click(nil);{undo if required}
+  //form_inspection1.undo_button1Click(nil);{undo if required}
   backup_img;
 
   if ((abs(stopX-startX)>1)and (abs(stopY-starty)>1))=false then {do statistics on whole image}

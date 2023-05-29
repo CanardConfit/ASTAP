@@ -16,6 +16,7 @@ uses
 function read_stars_online(telescope_ra,telescope_dec,search_field, magli: double): boolean;{read star from star database}
 procedure convert_magnitudes(filter : string); //convert gaia magnitude to a new magnitude
 function transform_gaia(filter : string; magG,magBP,magRP: double):double;//transformation of Gaia magnitudes
+procedure report_one_star_magnitudes(ra,dec : double; out b,v,r,sg,sr,si,g,bp,rp :double); //report the database magnitudes for a specfic position. Not efficient but simple
 
 var
   online_database : star_list;//The output. Filled with ra,dec,magn
@@ -113,6 +114,45 @@ begin
     online_database[5,i]:=transform_gaia(filter,online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
   gaia_type:=filter;//remember last transformation
 end;
+
+
+procedure report_one_star_magnitudes(ra,dec : double; out b,v,r,sg,sr,si,g,bp,rp :double); //report the database magnitudes for a specfic position. Not efficient but simple
+var
+  i : integer;
+  sep : double;
+begin
+  if online_database=nil then
+  begin
+    b:=0;
+    v:=0;
+    r:=0;
+    sg:=0;
+    sr:=0;
+    si:=0;
+    g:=0;
+    bp:=0;
+    rp:=0;
+    exit;
+  end;
+  for i:=0 to length(online_database[0])-1 do
+  begin
+    ang_sep(ra,dec,online_database[0,i],online_database[1,i],sep);
+    if sep<5*pi/(180*60*60) then //within 5 arcsec
+    begin
+      b:=transform_gaia('B',online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});//BVR Johnson-Cousins
+      v:=transform_gaia('V',online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
+      r:=transform_gaia('R',online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
+      sg:=transform_gaia('SG',online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});//sloan mangitudes
+      sr:=transform_gaia('SR',online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
+      si:=transform_gaia('SI',online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
+      g:=online_database[2,i]{G};
+      bp:=online_database[3,i]{BP};
+      rp:=online_database[4,i]{RP};
+      break;
+    end;
+  end;
+end;
+
 
 
 procedure extract_stars(slist:Tstringlist); //extract stars
