@@ -1,10 +1,10 @@
 object form_aavso1: Tform_aavso1
   Left = 177
-  Height = 398
+  Height = 452
   Top = 113
   Width = 1385
   Caption = 'AAVSO report'
-  ClientHeight = 398
+  ClientHeight = 452
   ClientWidth = 1385
   OnClose = FormClose
   OnResize = FormResize
@@ -31,7 +31,7 @@ object form_aavso1: Tform_aavso1
   object Label3: TLabel
     Left = 243
     Height = 15
-    Top = 152
+    Top = 208
     Width = 88
     Caption = 'Name check star'
     ParentColor = False
@@ -40,7 +40,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 25
     Hint = 'Copies the report to the clipboard. Paste it into a text editor, save it and upload it to the AAVSO WebObs.'
-    Top = 360
+    Top = 416
     Width = 168
     Caption = 'Report to clipboard'
     OnClick = report_to_clipboard1Click
@@ -50,7 +50,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'The filter used for the observation.'
-    Top = 200
+    Top = 256
     Width = 208
     ItemHeight = 15
     ItemIndex = 0
@@ -67,9 +67,9 @@ object form_aavso1: Tform_aavso1
     Text = 'Take from file header'
   end
   object Label6: TLabel
-    Left = 242
+    Left = 240
     Height = 15
-    Top = 200
+    Top = 256
     Width = 54
     Caption = 'Filter used'
     ParentColor = False
@@ -85,7 +85,7 @@ object form_aavso1: Tform_aavso1
   object name_variable1: TEdit
     Left = 16
     Height = 23
-    Hint = ': The star''s identifier. It can be the AAVSO Designation, the AAVSO Name, or the AAVSO Unique Identifier, but NOT more than one of these. Limit: 30 characters.'
+    Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name, or the AAVSO Unique Identifier, but NOT more than one of these. Limit: 30 characters.'
     Top = 56
     Width = 208
     OnChange = name_variable1Change
@@ -96,7 +96,7 @@ object form_aavso1: Tform_aavso1
   object Label2: TLabel
     Left = 16
     Height = 15
-    Top = 320
+    Top = 376
     Width = 365
     Caption = 'For 1 to 4 images the MERR will be calculated by 2/SNR else by StDev.'
     ParentColor = False
@@ -105,7 +105,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'The delimiter used to separate fields in the report. Any will do. '
-    Top = 248
+    Top = 304
     Width = 88
     ItemHeight = 15
     ItemIndex = 0
@@ -124,7 +124,7 @@ object form_aavso1: Tform_aavso1
   object Label4: TLabel
     Left = 243
     Height = 15
-    Top = 250
+    Top = 306
     Width = 48
     Caption = 'Delimiter'
     ParentColor = False
@@ -133,7 +133,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'Fixed. Comparison stars. Will use all available Gaia stars. Select V17.  '
-    Top = 104
+    Top = 160
     Width = 208
     Enabled = False
     ParentShowHint = False
@@ -145,7 +145,7 @@ object form_aavso1: Tform_aavso1
   object Label5: TLabel
     Left = 243
     Height = 15
-    Top = 104
+    Top = 160
     Width = 92
     Caption = 'Comparison stars'
     ParentColor = False
@@ -154,7 +154,7 @@ object form_aavso1: Tform_aavso1
     Left = 218
     Height = 25
     Hint = 'Writes report to file in the same directory as the input files.'
-    Top = 360
+    Top = 416
     Width = 168
     Caption = 'Report to file'
     OnClick = report_to_clipboard1Click
@@ -164,7 +164,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = ' Check star  AUID  (much preferred) or designation. Alternatively you could select the IAU designation using the position.'
-    Top = 152
+    Top = 208
     Width = 208
     ItemHeight = 15
     OnChange = name_check1Change
@@ -177,7 +177,7 @@ object form_aavso1: Tform_aavso1
   object Image_photometry1: TImage
     Cursor = crCross
     Left = 400
-    Height = 398
+    Height = 452
     Top = 0
     Width = 980
     Align = alClient
@@ -191,7 +191,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 19
     Hint = 'Extras report lines will added conform BAA. Info is taken from FITS header.'
-    Top = 288
+    Top = 344
     Width = 70
     Caption = 'BAA style'
     ParentShowHint = False
@@ -210,6 +210,56 @@ object form_aavso1: Tform_aavso1
     ParentColor = False
     ParentFont = False
     Visible = False
+    WordWrap = True
+  end
+  object delta_bv1: TEdit
+    Left = 16
+    Height = 23
+    Hint = 'Colour difference between variable and check star.  This will be used for differential magnitude correction for variable star based on the slope. '
+    Top = 84
+    Width = 64
+    OnChange = name_variable1Change
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 9
+    Text = '0'
+  end
+  object Label9: TLabel
+    Left = 88
+    Height = 15
+    Top = 84
+    Width = 43
+    Caption = '∆(b-v)   '
+    ParentColor = False
+  end
+  object magnitude_slope1: TEdit
+    Left = 16
+    Height = 23
+    Hint = 'Slope of magnitude difference caused by the colour difference between variable and check star. A differential correction will be applied on the variable magnitude in the final report. Enter here the slope found by pressing button "Transformation". '
+    Top = 112
+    Width = 64
+    OnChange = name_variable1Change
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 10
+    Text = '0'
+  end
+  object Label10: TLabel
+    Left = 88
+    Height = 15
+    Top = 112
+    Width = 28
+    Caption = 'slope'
+    ParentColor = False
+  end
+  object Label11: TLabel
+    Left = 243
+    Height = 60
+    Top = 84
+    Width = 133
+    AutoSize = False
+    Caption = 'Optional differential magnitude correction of the var.'
+    ParentColor = False
     WordWrap = True
   end
   object PopupMenu1: TPopupMenu

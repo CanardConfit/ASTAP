@@ -48,6 +48,9 @@ type
     GroupBox19: TGroupBox;
     Label16: TLabel;
     Label4: TLabel;
+    photom_blue1: TMenuItem;
+    photom_red1: TMenuItem;
+    transformation1: TButton;
     remove_stars1: TBitBtn;
     GroupBox18: TGroupBox;
     reference_database1: TComboBox;
@@ -151,7 +154,6 @@ type
     MenuItem30: TMenuItem;
     MenuItem31: TMenuItem;
     mount_ignore_solutions1: TCheckBox;
-    extract_green1: TButton;
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
     annulus_radius1: TComboBox;
@@ -682,7 +684,6 @@ type
     procedure browse_photometry1Click(Sender: TObject);
     procedure aavso_button1Click(Sender: TObject);
     procedure clear_mount_list1Click(Sender: TObject);
-    procedure extract_green1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure copy_to_blink1Click(Sender: TObject);
     procedure copy_to_photometry1Click(Sender: TObject);
@@ -841,6 +842,7 @@ type
     procedure listview1DblClick(Sender: TObject);
     procedure apply_dpp_button1Click(Sender: TObject);
     procedure most_common_filter_tool1Click(Sender: TObject);
+    procedure transformation1Click(Sender: TObject);
     procedure undo_button2Click(Sender: TObject);
     procedure edit_background1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -3274,6 +3276,128 @@ begin
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
 end;
+
+
+procedure trendline(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd : double); //find linear trendline Y = magnitude_slope*X + intercept
+var                                                                   //idea from https://stackoverflow.com/questions/43224/how-do-i-calculate-a-trendline-for-a-graph
+  sumX,sumX2,sumY, sumXY,mean  : double;
+  count, i                      : integer;
+begin
+ //first remove the outliers in the delta magnitudes (Y values)
+ //calculate the mean of Y values
+  mean:=0;
+  count:=0;
+  for i:=0 to  len-1 do
+  begin
+     mean:=mean+xylist[1,i];//mean Y values
+  end;
+  mean:=mean/len;
+
+  //calculate standard deviation of Y values
+  sd:=0;
+  for i:=0 to  len-1 do
+  begin
+     sd:=sd+sqr(mean-xylist[1,i]); //mean Y values (delta magnitudes)
+  end;
+  sd:=sqrt(sd/len);
+
+  //calculate the trendline but ignore outliers in Y
+  count:=0;
+  sumX:=0;
+  sumX2:=0;
+  sumY:=0;
+  sumXY:=0;
+
+  for i:=0 to  len-1 do
+  begin
+    if abs(mean-xylist[1,i])<=sd then // not an outlier in Y
+    begin
+      inc(count);
+      //memo2_message(#9+floattostr(xylist[0,i])+#9+floattostr(xylist[1,i]));
+      sumX:=sumX+xylist[0,i]; //sum X= sum B_V values = sum star colours;
+      sumX2:=sumx2+sqr(xylist[0,i]);
+      sumY:=sumY+xylist[1,i]; //sum Y, sum delta magnitudes;
+      sumXY:=sumXY+xylist[0,i]*xylist[1,i];
+    end;
+  end;
+
+  Slope:=(count*sumXY - sumX*sumY) / (count*sumX2 - sqr(sumX));   // b = (n*Σ(xy) - ΣxΣy) / (n*Σ(x^2) - (Σx)^2)
+  Intercept:= (sumY - Slope * sumX)/count;                        // a = (Σy - bΣx)/n
+end;
+
+
+procedure Tstackmenu1.transformation1Click(Sender: TObject);
+var
+  i, countxy     : integer;
+  magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
+
+  stars,xylist  : star_list;
+  slope, intercept, sd : double;
+
+
+begin
+  if head.naxis=0 then exit; {file loaded?}
+
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  calibrate_photometry;
+
+  if head.passband_database='V'=false then
+  begin
+    memo2_message('Abort, transformation is only possible for Gaia database=V (filter V of TG)');
+    exit;
+  end;
+
+
+  if head.mzero=0 then
+  begin
+    beep;
+    Screen.Cursor:=crDefault;
+    exit;
+  end;
+
+  measure_magnitudes(14,0,0,head.width-1,head.height-1,true {deep},stars);
+
+  setlength(xylist,2, length(stars[0]));
+  countxy:=0;
+
+  if length(stars[0])>0 then
+  begin
+    for i:=0 to  length(stars[0])-1 do
+    begin
+      magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
+      sensor_coordinates_to_celestial(1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
+
+      report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple
+
+      if ((stars[4,i]{SNR}>30) and (v>0) and (abs(magnitude-v)<0.3){filter}) then
+      begin
+        xylist[0,countxy]:=b-v; //gaiaB-gaiaV, star colour
+        xylist[1,countxy]:=magnitude-v; //V- gaiaV, delta magnitude
+        inc(countXY);
+      end;
+    end;
+
+    //   setlength(xylist,2, 189);
+    //   for countxy:=0 to 188 do
+    //   begin
+    //     xylist[0,countxy]:=countxy-10; //V- gaiaV
+    //     xylist[1,countxy]:=50+countxy*1.75; //gaiaB-gaiaV
+    //   end;
+
+
+    trendline(xylist,countXY,slope, intercept,sd);
+     memo2_message('Slope is '+floattostrF(slope,FFfixed,5,3)+ '. Calculated required absolute transformation correction  ∆ V = '+floattostrF(intercept,FFfixed,5,3)+' + '+floattostrF(slope,FFfixed,5,3)+'*(B-V). Standard deviation of measured magnitude vs Gaia transformed for stars with SNR>30 and without B-V correction is '+floattostrF(sd,FFfixed,5,3)+ #10);
+
+  end
+  else
+  memo2_message('No stars found!');
+
+  stars:=nil;
+  xylist:=nil;
+  Screen.Cursor:=crDefault;
+end;
+
 
 
 procedure Tstackmenu1.edit_background1Click(Sender: TObject);
@@ -5860,66 +5984,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.extract_green1Click(Sender: TObject);
-var
-  c: integer;
-  fn, col, ff: string;
-begin
-  case QuestionDlg(PChar('Raw colour separation'), PChar(
-      'This will extract the green, blue or red pixels from the (calibrated) raw files and write to result to new files. Select colour:'),
-      mtCustom,
-      [20, 'Red pixels', 21, 'Green pixels', 'IsDefault', 22, 'Blue pixels',
-      23, 'Cancel'], '') of
-    20: col := 'TR';
-    21: col := 'TG';
-    22: col := 'TB';
-    else
-      exit;
-  end;{case}
-
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  esc_pressed := False;
-
-  if listview7.items.Count > 0 then
-  begin
-    for c := 0 to listview7.items.Count - 1 do
-      if listview7.Items.item[c].Checked then
-      begin
-        ff := ListView7.items[c].Caption;
-        if fits_tiff_file_name(ff) = False then
-        begin
-          memo2_message('█ █ █ █ █ █ Can' + #39 +
-            't extract. First analyse file list !! █ █ █ █ █ █');
-          beep;
-          exit;
-        end;
-        fn := extract_raw_colour_to_file(ff, col{'TG' or 'TB'}, 1, 1);
-        {extract green red or blue channel}
-        if fn <> '' then
-        begin
-          ListView7.items[c].Caption := fn;
-        end;
-
-        {scroll}
-        listview7.Selected := nil; {remove any selection}
-        listview7.ItemIndex := c;
-        {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-        listview7.Items[c].MakeVisible(False);{scroll to selected item}
-
-        application.ProcessMessages;
-        if esc_pressed then
-        begin
-          Screen.Cursor := crDefault;
-          exit;
-        end;
-      end;
-  end;
-  analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
-  {refresh list}
-  Screen.Cursor := crDefault;  { Always restore to normal }
-
-end;
-
 
 procedure Tstackmenu1.clear_inspector_list1Click(Sender: TObject);
 begin
@@ -6763,7 +6827,13 @@ begin
           beep;
           exit;
         end;
-        fn := extract_raw_colour_to_file(ff, 'TG', 1, 1); {extract green red or blue channel}
+        if sender=photom_blue1 then
+          fn := extract_raw_colour_to_file(ff, 'TB', 1, 1) {extract green red or blue channel}
+        else
+        if sender=photom_red1 then
+          fn := extract_raw_colour_to_file(ff, 'TR', 1, 1) {extract green red or blue channel}
+        else
+          fn := extract_raw_colour_to_file(ff, 'TG', 1, 1); {extract green red or blue channel}
 
         if fn <> '' then
         begin
@@ -9179,6 +9249,7 @@ begin
   else
     if annotated then plot_annotations(false {use solution vectors},false);
 end;
+
 
 
 procedure remove_stars;

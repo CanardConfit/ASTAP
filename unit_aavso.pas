@@ -19,7 +19,13 @@ type
 
   Tform_aavso1 = class(TForm)
     baa_style1: TCheckBox;
+    delta_bv1: TEdit;
     Image_photometry1: TImage;
+    Label10: TLabel;
+    Label11: TLabel;
+    Label9: TLabel;
+    name_variable2: TEdit;
+    magnitude_slope1: TEdit;
     report_error1: TLabel;
     MenuItem1: TMenuItem;
     name_check1: TComboBox;
@@ -57,7 +63,7 @@ type
 var
   form_aavso1: Tform_aavso1;
 
-const
+var
   obscode       : string='';
   abbreviation_check : string='';
   name_check_IAU : string='';
@@ -67,6 +73,8 @@ const
   to_clipboard  : boolean=true;
   baa_style  : boolean=true;
   aavso_filter_index: integer=0;
+  delta_bv : double=0;
+  magnitude_slope    : double=0;
 
 var
   aavso_report : string;
@@ -101,6 +109,8 @@ begin
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
     aavso_filter_index:=filter1.itemindex;
+    delta_bv:=strtofloat2(form_aavso1.delta_bv1.text);
+    magnitude_slope:=strtofloat2(form_aavso1.magnitude_slope1.text);
   end;
 end;
 
@@ -110,8 +120,18 @@ var
     c  : integer;
     err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type,filter_used: string;
     stdev_valid : boolean;
-    snr_value,err_by_snr   : double;
+    snr_value,err_by_snr  : double;
     PNG: TPortableNetworkGraphic;{FPC}
+
+
+    function transform_magn(mag: string):string;
+    var
+       m : double;
+    begin
+      m:=strtofloat2(mag);
+      str(m+delta_bv*magnitude_slope:5:3,result);
+    end;
+
 begin
   get_info;
 
@@ -120,6 +140,10 @@ begin
     err_message:='max(StDev:2/SNR) used for MERR.'
   else
     err_message:='2/SNR used for MERR.';
+
+  delta_bv:=strtofloat2(form_aavso1.delta_bv1.text);
+  magnitude_slope:=strtofloat2(form_aavso1.magnitude_slope1.text);
+
 
   delim:=delimiter1.text;
   if delim='tab' then delim:=#9;
@@ -138,7 +162,7 @@ begin
   end;
   aavso_report:= '#TYPE='+detype+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version 1.0.2'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version 1.0.3'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -184,7 +208,8 @@ begin
            filter_used:=copy(filter1.text,1,2);//manual input
          aavso_report:= aavso_report+ name_var+delim+
                         StringReplace(listview7.Items.item[c].subitems.Strings[P_jd_mid],',','.',[])+delim+
-                        StringReplace(listview7.Items.item[c].subitems.Strings[P_magn1],',','.',[])+delim+
+//                        StringReplace(listview7.Items.item[c].subitems.Strings[P_magn1],',','.',[])+delim+
+                        transform_magn(listview7.Items.item[c].subitems.Strings[P_magn1])+delim+
                         err+
                         delim+filter_used+delim+
                        'NO'+delim+
@@ -239,7 +264,7 @@ begin
   if jd_min=0 then exit;
   w2:=image_photometry1.width;
   h2:=image_photometry1.height;
-  form_aavso1.caption:= floattostrf(jd_min+(jd_max-jd_min)*((x*w/w2)-bspace)/(w-bspace*2),ffFixed,12,5)+', '+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
+  form_aavso1.caption:= floattostrF(jd_min+(jd_max-jd_min)*((x*w/w2)-bspace)/(w-bspace*2),ffFixed,12,5)+', '+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
 end;
 
 procedure Tform_aavso1.MenuItem1Click(Sender: TObject);
@@ -438,7 +463,7 @@ begin
       y1:= round(bspace+(h-bspace*2)*c/nrmarkY); {y scale has bspace pixels below and above space}
       bmp.canvas.moveto(x1,y1);
       bmp.canvas.lineto(x1-5,y1);
-      bmp.canvas.textout(5,y1,floattostrf(magn_min+(magn_max-magn_min)*c/nrmarkY,ffFixed,5,3));
+      bmp.canvas.textout(5,y1,floattostrF(magn_min+(magn_max-magn_min)*c/nrmarkY,ffFixed,5,3));
     end;
 
 
@@ -512,8 +537,11 @@ begin
 
   filter1.itemindex:=aavso_filter_index;
 
-  aavso_report:='';
+  form_aavso1.delta_bv1.text:=floattostrF(delta_bv,ffFixed,5,3);
+  form_aavso1.magnitude_slope1.text:=floattostrF(magnitude_slope,ffFixed,5,3);
 
+
+  aavso_report:='';
   plot_graph;
 
 end;

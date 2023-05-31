@@ -1729,7 +1729,7 @@ begin
 end;
 
 
-procedure get_best_mean(list: array of double; leng : integer; out mean,standard_error_mean,cv : double);{Remove outliers from polulation using MAD. }
+procedure get_best_mean(list: array of double; leng : integer; out mean,standard_error_mean,cv : double);{Remove outliers from population using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   i,count         : integer;
   median, mad,sd  : double;
@@ -2102,10 +2102,10 @@ begin
         get_best_mean(flux_ratio_array,counter_flux_measured {length},flux_ratio,standard_error_mean,cv );
 
         head.mzero:=2.5*ln(flux_ratio)/ln(10);
+        head.passband_database:=gaia_type; //gaia_type is global variable
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
         begin
-          head.passband_database:=gaia_type; //gaia_type is global variable
           update_float('MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero);
         end
         else

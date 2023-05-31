@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.05.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.05.31';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -5988,7 +5988,7 @@ begin
                    a4:=img[0,x+1,y  ];
                    average3:=(a3+a4)/2; {blue neighbor pixels }
 
-                   if ((a1>average1+signal) or (a2>average1+signal) or (a3>average2+signal) or (a4>average2+signal)) {severe slope} then
+                   if ((a1>average1+signal) or (a2>average1+signal) or (a3>average2+signal) or (a4>average2+signal)) {severe magnitude_slope} then
                    begin
                      luminance:=(average1+average2+average3)/3;
                      img_temp2[0,x,y]:=luminance;{remove color info, keep luminace}
@@ -6016,7 +6016,7 @@ begin
                       a4:=img[0,x  ,y+1];
                       average3:=(a3+a4)/2; {blue neighbor pixels };
 
-                      if ((a1>average1+signal) or (a2>average1+signal) or (a3>average2+signal) or (a4>average2+signal)) {severe slope} then
+                      if ((a1>average1+signal) or (a2>average1+signal) or (a3>average2+signal) or (a4>average2+signal)) {severe magnitude_slope} then
                      begin
                        luminance:=(average1+average2+average3)/3;
                        img_temp2[0,x,y]:=luminance;{remove color info, keep luminace}
@@ -6049,7 +6049,7 @@ begin
                    average3:=(a5+a6+a7+a8)/4;
 
                    if ((a1>average2+signal2) or (a2>average2+signal2) or (a3>average2+signal2) or (a4>average2+signal2) or
-                       (a5>average3+signal2) or (a6>average3+signal2) or (a7>average3+signal2) or (a8>average3+signal2) ) then {severe slope}
+                       (a5>average3+signal2) or (a6>average3+signal2) or (a7>average3+signal2) or (a8>average3+signal2) ) then {severe magnitude_slope}
                    begin
                      luminance:=(average1+average2+average3)/3;
                      img_temp2[0,x,y]:=luminance;{remove color info, keep luminace}
@@ -6085,7 +6085,7 @@ begin
                    average3:=img[0,x,  y  ];
 
                    if ((a1>average1+signal2) or (a2>average1+signal2) or (a3>average1+signal2) or (a4>average1+signal2) or
-                       (a5>average2+signal2) or (a6>average2+signal2) or (a7>average2+signal2) or (a8>average2+signal2) ) then {severe slope}
+                       (a5>average2+signal2) or (a6>average2+signal2) or (a7>average2+signal2) or (a8>average2+signal2) ) then {severe magnitude_slope}
                    begin
                      luminance:=(average1+average2+average3)/3;
                      img_temp2[0,x,y]:=luminance;{remove color info, keep luminace}
@@ -7547,17 +7547,11 @@ begin
       c:=Sett.ReadInteger('stack','video_index',987654321);if c<>987654321 then video_index:=c;{blink menu, video}
       dum:=Sett.ReadString('stack','frame_rate',''); if dum<>'' then frame_rate:=dum;
 
-      {remove after 2024-1-1}obscode:=Sett.ReadString('stack','obscode',''); {photometry}
-      {remove after 2024-1-1}c:=Sett.ReadInteger('stack','delim_pos',987654321);if c<>987654321 then delim_pos:=c;
-      {remove after 2024-1-1}baa_style:=Sett.ReadBool('stack','baa_style',false);{aavso report}
-
-      {remove this line after 2024-1-1}if obscode='' then
-      begin
-        obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
-        delim_pos:=Sett.ReadInteger('aavso','delim_pos',0);
-        baa_style:=Sett.ReadBool('aavso','baa_style',false);{aavso report}
-        aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
-      end;
+      obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
+      delim_pos:=Sett.ReadInteger('aavso','delim_pos',0);
+      baa_style:=Sett.ReadBool('aavso','baa_style',false);{aavso report}
+      aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
+      magnitude_slope:=Sett.ReadFloat('aavso','slope',0);
 
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('live','live_stack_dir','');
       stackmenu1.monitoring_path1.caption:=Sett.ReadString('live','monitor_dir','');
@@ -7910,8 +7904,7 @@ begin
       sett.writeInteger('aavso','delim_pos',delim_pos);
       sett.writeBool('aavso','baa_style',baa_style);{AAVSO report}
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
-
-
+      sett.writeFloat('aavso','slope', magnitude_slope);
 
       sett.writestring('live','live_stack_dir',stackmenu1.live_stacking_path1.caption);{live stacking}
       sett.writestring('live','monitor_dir',stackmenu1.monitoring_path1.caption);
@@ -10022,7 +10015,7 @@ var
 
 begin
 
-  SetLength(stars,4,5000);{set array length}
+  SetLength(stars,5,5000);{set array length}
 
   setlength(img_sa,1,head.width,head.height);{set length of image array}
 
@@ -10081,12 +10074,13 @@ begin
             inc(nrstars);
             if nrstars>=length(stars[0]) then
             begin
-              SetLength(stars,4,nrstars+5000);{adapt array size if required}
+              SetLength(stars,5,nrstars+5000);{adapt array size if required}
             end;
             stars[0,nrstars-1]:=xc; {store star position}
             stars[1,nrstars-1]:=yc;
             stars[2,nrstars-1]:=hfd1;
             stars[3,nrstars-1]:=flux;
+            stars[4,nrstars-1]:=snr;
 
      //       IF ((abs(xc-1635)<10) and (abs(yc-885)<10)) then
      //       beep;
@@ -10098,7 +10092,7 @@ begin
 
   img_sa:=nil;{free mem}
 
-  SetLength(stars,4,nrstars);{set length correct}
+  SetLength(stars,5,nrstars);{set length correct}
 end;
 
 
@@ -10367,11 +10361,11 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
-  size, i, starX, starY,magn,fontsize,text_height,text_width,dum     : integer;
+  size, i, starX, starY,magn,fontsize,text_height,text_width,dum,countxy     : integer;
   Fliphorizontal, Flipvertical  : boolean;
   magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
 
-  stars  : star_list;
+  stars : star_list;
   subframe : boolean;
   report,rastr,decstr : string;
 begin
@@ -10416,8 +10410,8 @@ begin
     report:=report+'Magnitudes are only valid if passband filter and passband database are compatible. E.g. CV=BP, G=V, R=R, B=B.'+#10;
     report:=report+'Option 1) Select in tab photometry a local database and in tab alignment the local database (standard=BP or V50=V)'+#10;
     report:=report+'Option 2) Select an online database in tab photometry.'+#10+#10;
-    report:=report+'Saturated stars are excluded. To retrieve the positions of saturated stars use the "Image inspection" menu (F5).'+#10+#10;
-    report:=report+'fitsX'+#9+'fitsY'+#9+'HFD'+#9+'α[°]'+#9+'δ[°]'+#9+'ADU'+#9+'Magn_measured'+#9+'|'+#9+'Gaia-V'+#9+'Gaia-B'+#9+'Gaia-R'+#9+'Gaia-SG'+#9+'Gaia-SR'+#9+'Gaia-SI'+#9+'Gaia-G'+#9+'Gaia-BP'+#9+'Gaia-RP'+#10;
+    report:=report+'Saturated stars are excluded to avoid photometric errors. For photometry purposes ignore stars with a low SNR value (SNR<30).'+#10+#10;
+    report:=report+'fitsX'+#9+'fitsY'+#9+'HFD'+#9+'α[°]'+#9+'δ[°]'+#9+'ADU'+#9+'SNR'+#9+'Magn_measured'+#9+'|'+#9+'Gaia-V'+#9+'Gaia-B'+#9+'Gaia-R'+#9+'Gaia-SG'+#9+'Gaia-SR'+#9+'Gaia-SI'+#9+'Gaia-G'+#9+'Gaia-BP'+#9+'Gaia-RP'+#10;
   end
   else
     measure_magnitudes(14,0,0,head.width-1,head.height-1,true {deep},stars);
@@ -10449,7 +10443,7 @@ begin
 
         report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple
 
-        report:=report+floattostrF(1+stars[0,i],FFfixed,6,2)+#9+floattostrF(1+stars[1,i],FFfixed,6,2)+#9+floattostrF(stars[2,i],FFfixed,5,3)+#9+rastr+#9+decstr+#9+floattostrF(1+stars[3,i],FFfixed,8,0)+#9+floattostrF(magnitude,FFfixed,5,3)+#9+'|'
+        report:=report+floattostrF(1+stars[0,i],FFfixed,6,2)+#9+floattostrF(1+stars[1,i],FFfixed,6,2)+#9+floattostrF(stars[2,i],FFfixed,5,3)+#9+rastr+#9+decstr+#9+floattostrF(1+stars[3,i],FFfixed,8,0)+#9+floattostrF(stars[4,i]{SNR},FFfixed,5,0)+#9+floattostrF(magnitude,FFfixed,5,3)+#9+'|'
                       +#9+floattostrF(v,FFfixed,5,3)+#9+floattostrF(b,FFfixed,5,3)+#9+floattostrF(r,FFfixed,5,3)+#9+floattostrF(sg,FFfixed,5,3)+#9+floattostrF(sr,FFfixed,5,3)+#9+floattostrF(si,FFfixed,5,3)
                       +#9+floattostrF(g,FFfixed,5,3)+#9+floattostrF(bp,FFfixed,5,3)+#9+floattostrF(rp,FFfixed,5,3)+ #10;
       end;
@@ -10468,6 +10462,8 @@ begin
     image1.Canvas.font.color:=clwhite;
     text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
     image1.Canvas.textout(round(fontsize*2),head.height-text_height,magn_limit_str);  {magn_limit global variable calculate in plot_and_measure_stars}
+
+
   end
   else
   begin// to Clipboard

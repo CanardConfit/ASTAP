@@ -39,7 +39,6 @@ type
     help_uncheck_outliers1: TLabel;
     hfd_button1: TButton;
     rectangle1: TRadioButton;
-    to_clipboard2: TCheckBox;
     triangle1: TRadioButton;
     roundness_button1: TButton;
     measuring_angle1: TComboBox;
@@ -61,7 +60,6 @@ type
     procedure measuring_angle1Change(Sender: TObject);
     procedure show_distortion1Click(Sender: TObject);
     procedure tilt1Click(Sender: TObject);
-    procedure to_clipboard2Click(Sender: TObject);
     procedure triangle1Change(Sender: TObject);
     procedure undo_button1Click(Sender: TObject);
     procedure values1Change(Sender: TObject);
@@ -102,7 +100,6 @@ var
    executed : integer; {1 image changed (refresh required), 2 array changed(restore required)}
 
    toClipboard1: boolean=false;
-   toClipboard2: boolean=false;
 
 function fnmodulo2(x,range: double):double;   {specifiy range=2*pi fore -pi..pi or range=360 for -180.. 180}
 begin
@@ -589,37 +586,6 @@ begin
     else
       image1.Canvas.textout(round(fontsize*2),head.height- round(fontsize*4),'No stars detected');
   end;{with mainwindow}
-
-  if toClipboard2 then
-  begin
-
-    report:='Passband filter used: '+head.filter_name+#10;
-    report:=report+'Passband database='+head.passband_database+#10;
-    report:=report+'Magnitudes are only valid if passband filter and passband database are compatible. E.g. CV=BP, G=V, R=R, B=B.'+#10;
-    report:=report+'Option 1) Select in tab photometry a local database and in tab alignment the local database (standard=BP or V50=V)'+#10;
-    report:=report+'Option 2) Select an online database in tab photometry.'+#10+#10;
-    if head.mzero=0 then report:=report+'To get magnitudes in the report do a "calibration photometry" first.';
-    if head.cd1_1=0 then report:=report+' To get the α, δ positions, solve the image first.';
-
-    report:=report+'fitsX'+#9+'fitsY'+#9+'HFD'+#9+'α[°]'+#9+'δ[°]'+#9+'ADU'+#9+'Magnitude'+#10;
-    rastr:='?';
-    decstr:='?';
-    magstr:='?';
-    for i:=0 to nhfd-1 do
-    begin
-      if head.cd1_1<>0 then
-      begin
-        sensor_coordinates_to_celestial(1+starlistXY[0,i],1+starlistXY[1,i],raM,decM);//+1 to get fits coordinated
-        rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
-        decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
-      end;
-      if head.mzero<>0 then
-        magstr:=floattostrF(-2.5*ln(starlistXY[2,i])/ln(10)+head.MZERO,FFfixed,5,3);//flux to magnitude
-
-      report:=report+floattostrF(1+starlistXY[0,i],FFfixed,6,2)+#9+floattostrF(1+starlistXY[1,i],FFfixed,6,2)+#9+floattostrF(hfdlist[i],FFfixed,5,3)+#9+rastr+#9+decstr+#9+floattostrF(1+starlistXY[2,i],FFfixed,8,0)+#9+magstr+#10;
-    end;
-    Clipboard.AsText:=report;
-  end;
 
   hfdlist:=nil;{release memory}
 
@@ -1221,11 +1187,6 @@ begin
     CCDinspector(10,three_corners,strtofloat(measuring_angle));
 end;
 
-procedure Tform_inspection1.to_clipboard2Click(Sender: TObject);
-begin
-  toClipboard2:=to_clipboard2.checked;
-end;
-
 
 procedure Tform_inspection1.triangle1Change(Sender: TObject);
 begin
@@ -1288,8 +1249,6 @@ begin
   insp_top:=top;
   mainwindow.setfocus;
   toclipboard1:=to_clipboard1.checked;
-  toClipboard2:=to_clipboard2.checked;
-
 end;
 
 
@@ -1553,7 +1512,6 @@ begin
   measuring_angle1.text:=measuring_angle;
 
   to_clipboard1.checked:=toclipboard1;
-  to_clipboard2.checked:=toclipboard2;
 end;
 
 
