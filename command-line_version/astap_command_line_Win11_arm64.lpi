@@ -17,8 +17,10 @@
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
+      <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
-      <StringTable CompanyName="www.hnsky.org" FileDescription="astap command line astrometric solver" LegalCopyright="Han Kleijn" OriginalFilename="astap_cli" ProductName="astap_cli"/>
+      <Attributes pvaSpecialBuild="True"/>
+      <StringTable CompanyName="www.hnsky.org" FileDescription="astap command line astrometric solver" LegalCopyright="Han Kleijn" OriginalFilename="astap_cli.exe" ProductName="astap_cli"/>
     </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
@@ -70,17 +72,4 @@
 -vh"/>
     </Other>
   </CompilerOptions>
-  <Debugging>
-    <Exceptions Count="3">
-      <Item1>
-        <Name Value="EAbort"/>
-      </Item1>
-      <Item2>
-        <Name Value="ECodetoolError"/>
-      </Item2>
-      <Item3>
-        <Name Value="EFOpenError"/>
-      </Item3>
-    </Exceptions>
-  </Debugging>
 </CONFIG>

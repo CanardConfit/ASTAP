@@ -60,8 +60,8 @@ begin
     '-f  filename  {fits, tiff, png, jpg files}'+#10+
     '-r  radius_area_to_search[degrees]'+#10+      {changed}
     '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
-    '-fov diameter_field[degrees]'+#10+   {changed}
-    '-ra  center_right ascension[hours]'+#10+
+    '-fov diameter_field[degrees] {enter zero for auto}'+#10+   {changed}
+    '-ra  center_right_ascension[hours]'+#10+
     '-spd center_south_pole_distance[degrees]'+#10+
     '-s  max_number_of_stars  {default 500}'+#10+
     '-t  tolerance  {default 0.007}'+#10+
@@ -236,6 +236,8 @@ var
   Application: Tastap;
 
 //{$R *.res}
+
+{$R *.res}
 
 begin
   Application:=Tastap.Create(nil);

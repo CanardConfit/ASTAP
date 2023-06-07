@@ -18,7 +18,8 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <StringTable CompanyName="www.hnsky.org" FileDescription="astap command line astrometric solver" LegalCopyright="Han Kleijn" OriginalFilename="astap_cli.exe" ProductName="astap_cli"/>
+      <Attributes pvaSpecialBuild="True"/>
+      <StringTable CompanyName="www.hnsky.org" FileDescription="astap command line astrometric solver" LegalCopyright="Han Kleijn" OriginalFilename="astap_cli.exe" ProductName="ASTAP command line version"/>
     </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
@@ -57,6 +58,7 @@
     </SearchPaths>
     <Linking>
       <Debugging>
+        <GenerateDebugInfo Value="False"/>
         <DebugInfoType Value="dsDwarf2Set"/>
       </Debugging>
     </Linking>
