@@ -1624,9 +1624,22 @@ begin
             name:=vsp[count].auid;
             if ((abs(x-shape_fitsX2)<5) and  (abs(y-shape_fitsy2)<5)) then  // note shape_fitsX/Y are in sensor coordinates
                   mainwindow.Shape_alignment_marker2.HINT:=name;
-            if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';
-            if vsp[count].Bmag<>'?' then name:=name+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-            if vsp[count].Rmag<>'?' then name:=name+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+
+            if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
+
+            if ((pos('S',gaia_type)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check gaia_type in case auto selection is used.
+            begin //Sloan filters used
+              if vsp[count].SGmag<>'?' then name:=name+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
+              if vsp[count].SRmag<>'?' then name:=name+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+              if vsp[count].SImag<>'?' then name:=name+'_SI='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+            end
+            else
+            begin //UBVR
+              if vsp[count].Bmag<>'?' then name:=name+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+              if vsp[count].Rmag<>'?' then name:=name+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+            end
+
+
           end;
 
           if flip_horizontal then begin x:=(head.width-1)-x;  end;

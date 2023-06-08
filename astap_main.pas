@@ -614,6 +614,12 @@ type
               Berr: string;
               Rmag: string;
               Rerr: string;
+              SGmag: string;
+              SGerr: string;
+              SRmag: string;
+              SRerr: string;
+              SImag: string;
+              SIerr: string;
             end;
 
   theVar = record
@@ -8957,18 +8963,16 @@ end;
 
 function download_vsp(limiting_mag: double) : boolean;//AAVSO API access
 var
-  s   : string;
-  val : char;
+  s,url   : string;
+  val,val2 : char;
   count,i,j,fov,dummy : integer;
   errorRA,errorDEC :boolean;
 begin
   result:=false;
   fov:=round(sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2*60)); //arcmin. cdelt2 can be negative for other solvers
 
- s:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);
-
-
-  s:=get_http('https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag){+'&special=std_field'});{get webpage}
+  url:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
+  s:=get_http(url);{get webpage}
   if length(s)<50 then begin beep; exit end;;
 
   setlength(vsp,1000);
@@ -8995,10 +8999,14 @@ begin
     vsp[count].Vmag:='?';
     vsp[count].Bmag:='?';
     vsp[count].Rmag:='?';
+    vsp[count].SGmag:='?';
+    vsp[count].SRmag:='?';
+    vsp[count].SImag:='?';
     repeat //read optional "bands"
-      inc(j);
       val:=s[j];
-      if val='V' then //V mag found, could be missing
+      inc(j);
+      val2:=s[j];
+      if ((val='"') and (val2='V')) then //V mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
@@ -9011,7 +9019,7 @@ begin
          vsp[count].Verr:=copy(s,i,j-i);
       end
       else
-      if val='B' then //B mag found, could be missing
+      if ((val='"') and (val2='B')) then //B mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
@@ -9024,7 +9032,7 @@ begin
         vsp[count].Berr:=copy(s,i,j-i);
       end
       else
-      if val='R' then //R mag found, could be missing
+      if ((val='"') and (val2='R')) then //R mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
@@ -9036,6 +9044,43 @@ begin
         j:=posex('}',s,i);
         vsp[count].Rerr:=copy(s,i,j-i);
       end;
+      if ((val='S') and (val2='G')) then //SG mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+        j:=posex(',',s,i);
+        vsp[count].SGmag:=copy(s,i,j-i);
+
+        i:=posex('error":',s,j);
+        i:=i+length('error":');
+        j:=posex('}',s,i);
+        vsp[count].SGerr:=copy(s,i,j-i);
+      end;
+      if ((val='S') and (val2='R')) then //SR mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+        j:=posex(',',s,i);
+        vsp[count].SRmag:=copy(s,i,j-i);
+
+        i:=posex('error":',s,j);
+        i:=i+length('error":');
+        j:=posex('}',s,i);
+        vsp[count].SRerr:=copy(s,i,j-i);
+      end;
+      if ((val='S') and (val2='I')) then //SI mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+        j:=posex(',',s,i);
+        vsp[count].SImag:=copy(s,i,j-i);
+
+        i:=posex('error":',s,j);
+        i:=i+length('error":');
+        j:=posex('}',s,i);
+        vsp[count].SIerr:=copy(s,i,j-i);
+      end;
+
 
      until ((val=']') or (j>=length(s)));
     inc(count);//number of entries/stars
