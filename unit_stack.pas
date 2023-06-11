@@ -3280,28 +3280,27 @@ end;
 
 procedure trendline(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd : double); //find linear trendline Y = magnitude_slope*X + intercept
 var                                                                   //idea from https://stackoverflow.com/questions/43224/how-do-i-calculate-a-trendline-for-a-graph
-  sumX,sumX2,sumY, sumXY,mean  : double;
-  count, i                      : integer;
+  sumX,sumX2,sumY, sumXY,median,mad  : double;
+  count, i                           : integer;
+
+  median_array                  : array of double;
+
 begin
- //first remove the outliers in the delta magnitudes (Y values)
- //calculate the mean of Y values
-  mean:=0;
-  count:=0;
+  //first remove the outliers in the delta magnitudes (Y values). Use median and MAD to ignore large outliers
+  setlength(median_array,len);
   for i:=0 to  len-1 do
   begin
-     mean:=mean+xylist[1,i];//mean Y values
+     median_array[i]:=xylist[1,i];
   end;
-  mean:=mean/len;
+  median:=smedian(median_array,len);//median b-v
 
-  //calculate standard deviation of Y values
-  sd:=0;
-  for i:=0 to  len-1 do
-  begin
-     sd:=sd+sqr(mean-xylist[1,i]); //mean Y values (delta magnitudes)
-  end;
-  sd:=sqrt(sd/len);
+  for i:=0 to len-1 do median_array[i]:=abs(median_array[i] - median);{fill median_array with offsets}
+  mad:=smedian(median_array,len); //median absolute deviation (MAD)
+  sd:=mad*1.4826;//standard deviation for the Y=b-v values calculated from mad
+  median_array:=nil;//release memory
 
-  //calculate the trendline but ignore outliers in Y
+
+  //calculate the trendline but ignore outliers in Y (b-v)
   count:=0;
   sumX:=0;
   sumX2:=0;
@@ -3310,7 +3309,7 @@ begin
 
   for i:=0 to  len-1 do
   begin
-    if abs(mean-xylist[1,i])<=sd then // not an outlier in Y
+    if abs(median-xylist[1,i])<=1.5*sd then // not an outlier in Y
     begin
       inc(count);
       //memo2_message(#9+floattostr(xylist[0,i])+#9+floattostr(xylist[1,i]));
@@ -3336,7 +3335,11 @@ var
 
 
 begin
-  if head.naxis=0 then exit; {file loaded?}
+  if head.naxis=0 then
+  begin
+    memo2_message('Abort, no image in the viewer! Load an image first by double clicking on one of the files in the list.');
+    exit; {file loaded?}
+  end;
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -3344,7 +3347,7 @@ begin
 
   if head.passband_database='V'=false then
   begin
-    memo2_message('Abort, transformation is only possible for Gaia database=V (filter V of TG)');
+    memo2_message('Abort, transformation is only possible using online Gaia database=V (filter V of TG). Select "Online Gaia -> auto" or  "Online Gaia -> V"');
     exit;
   end;
 
@@ -3361,20 +3364,25 @@ begin
   setlength(xylist,2, length(stars[0]));
   countxy:=0;
 
-  if length(stars[0])>0 then
+  if length(stars[0])>9 then
   begin
     for i:=0 to  length(stars[0])-1 do
     begin
-      magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
-      sensor_coordinates_to_celestial(1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
-
-      report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple
-
-      if ((stars[4,i]{SNR}>30) and (v>0) and (abs(magnitude-v)<0.3){filter}) then
+      if stars[4,i]{SNR}>40 then
       begin
-        xylist[0,countxy]:=b-v; //gaiaB-gaiaV, star colour
-        xylist[1,countxy]:=magnitude-v; //V- gaiaV, delta magnitude
-        inc(countXY);
+        magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
+        sensor_coordinates_to_celestial(1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
+        report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
+
+        if ((v>0) and (b>0)) then
+        begin
+          xylist[0,countxy]:=b-v; //gaiaB-gaiaV, star colour
+          xylist[1,countxy]:=magnitude-v; //V- gaiaV, delta magnitude
+          inc(countXY);
+
+         // memo2_message(#9+floattostr(b-v)+#9+floattostr(magnitude-v));
+        end;
+
       end;
     end;
 
@@ -3386,12 +3394,13 @@ begin
     //   end;
 
 
-    trendline(xylist,countXY,slope, intercept,sd);
-     memo2_message('Slope is '+floattostrF(slope,FFfixed,5,3)+ '. Calculated required absolute transformation correction  ∆ V = '+floattostrF(intercept,FFfixed,5,3)+' + '+floattostrF(slope,FFfixed,5,3)+'*(B-V). Standard deviation of measured magnitude vs Gaia transformed for stars with SNR>30 and without B-V correction is '+floattostrF(sd,FFfixed,5,3)+ #10);
+     memo2_message('Using '+inttostr(countXY)+' detected stars.');
+     trendline(xylist,countXY,slope, intercept,sd);
+     memo2_message('Slope is '+floattostrF(slope,FFfixed,5,3)+ '. Calculated required absolute transformation correction  ∆ V = '+floattostrF(intercept,FFfixed,5,3)+' + '+floattostrF(slope,FFfixed,5,3)+'*(B-V). Standard deviation of measured magnitude vs Gaia transformed for stars with SNR>40 and without B-V correction is '+floattostrF(sd,FFfixed,5,3)+ #10);
 
   end
   else
-  memo2_message('No stars found!');
+  memo2_message('Not enough stars found!');
 
   stars:=nil;
   xylist:=nil;
