@@ -101,10 +101,10 @@ begin
     form_sqm1.green_message1.caption:='';
   end;
 
-  if ((head.mzero=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
+  if ((head.mzero=0) or (head.mzero_radius<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
-    flux_aperture:=99;{calibrate for extended objects}
+    head.mzero_radius:=99;{calibrate for extended objects}
     plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
   end;
   result:=false;
@@ -118,6 +118,13 @@ begin
       begin
         if form_exist then form_sqm1.green_message1.caption:=form_sqm1.error_message1.caption+'Dark already applied! Pedestal value ignored.'+#10 else memo2_message('Dark already applied! Pedestal value ignored.');
         pedestal2:=0; {prevent wrong values}
+      end;
+      if pos('P',head.calstat)>0 then
+      begin
+        result:=false;//invalid
+        if form_exist then form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'During calibration a pedestal was added. CALSTAT=P. Invalid result!!'+#10;
+        warning_str:=warning_str+'Invalid result, CALSTAT=P';
+        exit;
       end;
     end
     else

@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.06.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.06.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -384,7 +384,6 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure histogram_values_to_clipboard1Click(Sender: TObject);
     procedure Image1Paint(Sender: TObject);
-    procedure imageflipv1Click(Sender: TObject);
     procedure annotate_unknown_stars1Click(Sender: TObject);
     procedure import_auid1Click(Sender: TObject);
     procedure inspector1Click(Sender: TObject);
@@ -574,7 +573,8 @@ type
     ybinning      : double;//binning for noise calculations
     xpixsz        : double;//Pixel Width in microns (after binning)
     ypixsz        : double;//Pixel height in microns (after binning)
-    mzero         : double;//flux calibration factor
+    mzero         : double;//flux calibration factor for all flux
+    mzero_radius    : double;//mzero diameter (aperture)
     set_temperature : integer;
     dark_count      : integer;
     light_count     : integer;
@@ -715,7 +715,7 @@ var {################# initialised variables #########################}
   hfd_median : double=0;{median hfd, use in reporting in write_ini}
   hfd_counter: integer=0;{star counter (for hfd_median), use in reporting in write_ini}
   aperture_ratio: double=0; {ratio flux_aperture/hfd_median}
-  flux_aperture : double=99;{circle where flux is measured}
+//  flux_aperture : double=99;{circle where flux is measured}
   annulus_radius  : integer=14;{inner of square where background is measured. Square has width and height twice annulus_radius}
   copy_paste :boolean=false;
   copy_paste_shape :integer=0;//rectangle
@@ -756,12 +756,12 @@ var {################# initialised variables #########################}
   pedestal            : integer=0;
   egain_extra_factor  : integer=16;
   egain_default       : double=1;
-  gaia_type: string=''; //which type of database in use for photometry
+  passband_active: string=''; //Indicates current Gaia conversion active
 
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
-function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small, adu_e {unbinned}:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
@@ -1027,7 +1027,8 @@ begin
 
     head.xbinning:=1;{normal}
     head.ybinning:=1;
-    head.mzero:=0;{factor to calculate magnitude from flux, new file so set to zero}
+    head.mzero:=0;{factor to calculate magnitude from full flux, new file so set to zero}
+    head.mzero_radius:=99;{circle where flux is measured}
 
     date_avg:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';siteelev:='';
@@ -1071,7 +1072,7 @@ end;{reset global variables}
 //end;
 
 
-function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
 {if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
@@ -1524,8 +1525,12 @@ begin
                    focus_temp:=validate_double;{focus temperature}
           end;
 
-          if ((header[i]='M') and (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') and (header[i+5]=' ')) then
-            head.mzero:=validate_double;{photometry calibration}
+          if ((header[i]='M') and (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O')) then
+          begin
+            if (header[i+5]='R') then head.mzero:=validate_double;//ZEROR photometry calibration for restricted aperture
+            if (header[i+5]='A') then head.mzero_radius:=validate_double;//MZEROAPT photometry calibration
+            if (header[i+5]='P') then head.passband_database:=get_string; //MZEROPAS
+          end;
 
           if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
              xbayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
@@ -2290,18 +2295,22 @@ begin
     if key='PRESSURE=' then pressure:=round(read_float) else
     if key='AOCBAROM=' then pressure:=round(read_float) else
 
-
-
     if key='FOCUSTEM=' then focus_temp:=round(read_float) else
     if key='FOCTEMP =' then focus_temp:=round(read_float) else
     if key='AMB-TEMP=' then focus_temp:=round(read_float) else
     if key='AOCAMBT =' then focus_temp:=round(read_float) else
+
+    if key='MZEROR  =' then head.mzero:=read_float else
+    if key='MZEROAPT=' then head.mzero_radius:=read_float else
+    if key='MZEROPAS=' then head.passband_database:=read_string else
+
 
     if key='TELESCOP=' then telescop:=read_string else
     if key='INSTRUME=' then instrum:=read_string else
     if key='CENTALT =' then centalt:=read_string else
     if key='SITELAT =' then sitelat:=read_string else
     if key='SITELONG=' then sitelong:=read_string;
+
 
     {adjustable keywords}
     if key=sqm_key+'='    then sqm_value:=read_string;
@@ -2972,11 +2981,16 @@ begin
     begin
       aline:=mainwindow.Memo1.Lines[count1];
       if ((preserve_comment) and (copy(aline,32,1)='/')) then
-        delete(aline,11,20) {preserve comment}
+      begin
+        delete(aline,11,20); {preserve comment}
+        insert(s,aline,11);
+      end
       else
-        delete(aline,11,80);  {delete all}
+      begin
+        delete(aline,11,120);  {delete all including above position 80}
+        aline:=aline+s+comment1;
+      end;
 
-      insert(s,aline,11);
       mainwindow.Memo1.Lines[count1]:=aline;
       exit;
     end;
@@ -5065,9 +5079,10 @@ var
   get_green                         : boolean;
   val                               : single;
 begin
+  result:='';
   if load_fits(filename7,true {light},true,true {update memo},0,head,img_loaded)=false then
   begin
-    beep; result:='';
+    beep;
     exit;
   end;
 
@@ -5191,7 +5206,7 @@ begin
 
     add_text   ('HISTORY   ','One raw colour extracted.');
 
-    update_text   ('FILTER  =',#39+filtern+#39+'           / Filter name                                    ');
+    update_text   ('FILTER  =',copy(#39+filtern+#39+'                   ',1,21)+'/ Filter name');
     img_loaded:=img_temp11;
     result:=ChangeFileExt(FileName7,'_'+filtern+'.fit');
     if save_fits(img_loaded,result,16,true{overwrite}) =false then result:='';
@@ -9510,11 +9525,6 @@ begin
    mainwindow.statusbar1.panels[8].text:=inttostr(round(100*mainwindow.image1.width/ (mainwindow.image1.picture.width)))+'%'; {zoom factor}
 end;
 
-procedure Tmainwindow.imageflipv1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var
@@ -9526,10 +9536,10 @@ begin
   if ((head.cd1_1=0) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    if ((head.mzero=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
+    if ((head.mzero=0) or (head.mzero_radius<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
     begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
-      flux_aperture:=99;{calibrate for extended objects}
+      head.mzero_radius:=99;{calibrate for extended objects}
 
       plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
     end;
@@ -10081,7 +10091,7 @@ begin
     begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- bck.backgr> detection_level)) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},head.mzero_radius,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
         begin
           {for testing}
@@ -10146,14 +10156,14 @@ var
   apert,annul,hfd_med : double;
   hfd_counter                : integer;
 begin
- if ((head.naxis=0) or (head.cd1_1=0)) then exit;
+  if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
-  if ((head.mzero=0) or (aperture_ratio<>apert){new calibration required})  then
+  if ((head.mzero=0) or (aperture_ratio<>apert){new calibration required} or (passband_active<>head.passband_database))  then
   begin
     memo2_message('Photometric calibration of the measured stellar flux.');
     annulus_radius:=14;{calibrate for extended objects}
-    flux_aperture:=99;{calibrate for extended objects}
+    head.mzero_radius:=99;{calibrate for extended objects}
 
     aperture_ratio:=apert;{remember setting}
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
@@ -10162,7 +10172,7 @@ begin
       if hfd_med<>0 then
       begin
         memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
-        flux_aperture:=hfd_med*apert/2;{radius}
+        head.mzero_radius:=hfd_med*apert/2;{radius}
         annul:=strtofloat2(stackmenu1.annulus_radius1.text);
         annulus_radius:=min(50,round(hfd_med*annul/2)-1);{Radius. Limit to 50 to prevent runtime errors}
       end;
@@ -14333,7 +14343,7 @@ begin
    adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 
    hfd2:=999;
-   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},flux_aperture,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
+   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},head.mzero_radius,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
    if ((hfd2<99) and (hfd2>0)) then
    begin
@@ -14349,7 +14359,7 @@ begin
      if head.mzero<>0 then {offset calculated in star annotation call}
      begin
        str(head.mzero -ln(flux)*2.5/ln(10):0:2,mag_str);
-       mag_str:=', '+gaia_type+'='+mag_str
+       mag_str:=', '+head.passband_database+'='+mag_str
      end
      else mag_str:='';
 

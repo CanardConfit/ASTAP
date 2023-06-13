@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
   OnResize = FormResize
   OnShow = FormShow
   LCLVersion = '2.2.4.0'
-  object Memo2: TMemo
+  object memo2: TMemo
     Left = 0
     Height = 104
     Top = 560
@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 38169
+    Left = 38979
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -8199,14 +8199,25 @@ object stackmenu1: Tstackmenu1
     object photom_blue1: TMenuItem
       Caption = '   or extract Blue channel of selected raw files'
       Hint = 'For raw OSC images only. Not for images converted to colour. The routine will  extract the blue sensitive pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method.'
-      ImageIndex = 28
+      ImageIndex = 29
       OnClick = photom_green1Click
     end
     object photom_red1: TMenuItem
       Caption = '   or extract Red channel of selected raw files'
       Hint = 'For raw OSC images only. Not for images converted to colour. The routine will  extract the red sensitive pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method.'
-      ImageIndex = 29
+      ImageIndex = 28
       OnClick = photom_green1Click
+    end
+    object Separator3: TMenuItem
+      Caption = '-'
+    end
+    object photometric_calibration1: TMenuItem
+      Caption = 'Photometric calibration selected files'
+      Hint = 'Photometric calibration and save it to the file header.'
+      OnClick = photometric_calibration1Click
+    end
+    object Separator2: TMenuItem
+      Caption = '-'
     end
     object photom_stack1: TMenuItem
       Caption = 'Stack selected files in mode average'

@@ -109,10 +109,10 @@ procedure convert_magnitudes(filter : string); //convert gaia magnitude to a new
 var
   i : integer;
 begin
-  if filter=gaia_type then exit;//no action. Already the correct type
+  if filter=passband_active then exit;//no action. Already the correct type
   for i:=0 to length(online_database[0])-1 do
     online_database[5,i]:=transform_gaia(filter,online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
-  gaia_type:=filter;//remember last transformation
+  passband_active:=filter;//remember last transformation
 end;
 
 

@@ -1627,7 +1627,7 @@ begin
 
             if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
 
-            if ((pos('S',gaia_type)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check gaia_type in case auto selection is used.
+            if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
             begin //Sloan filters used
               if vsp[count].SGmag<>'?' then name:=name+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
               if vsp[count].SRmag<>'?' then name:=name+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
@@ -1899,7 +1899,7 @@ var
 
         if ((flux_calibration) and (Bp_Rp<>-128 {if -128 then unreliable Johnson-V magnitude, either Bp or Rp is missing in Gaia})) then
         begin
-          HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
@@ -1990,7 +1990,7 @@ begin
       begin
         if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
         memo2_message('Using star database '+uppercase(name_database));
-        if uppercase(copy(name_database,1,1))='V' then gaia_type:='magV' else gaia_type:='magBP';// for reporting
+        if uppercase(copy(name_database,1,1))='V' then passband_active:='magV' else passband_active:='magBP';// for reporting
     end
     else
     begin  //Reading online database. Update if required
@@ -2022,7 +2022,8 @@ begin
       database_type:=0;//online
 
       convert_magnitudes(database_passband {set in call to get_database_passband}) //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
-    end;
+                        //database_passband will be stored in passband_active
+    end; //online
 
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
@@ -2115,14 +2116,19 @@ begin
         get_best_mean(flux_ratio_array,counter_flux_measured {length},flux_ratio,standard_error_mean,cv );
 
         head.mzero:=2.5*ln(flux_ratio)/ln(10);
-        head.passband_database:=gaia_type; //gaia_type is global variable
+        head.passband_database:=passband_active; //passband_active is global variable. Now store in the header. head.passband_database can also be retrieved using keyword MZEROPAS
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
-        begin
-          update_float('MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero);
-        end
+          update_float('MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero)
         else
-        update_text('MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
+          update_text ('MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
+
+        update_float('MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
+        update_float('MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
+        update_text ('MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used.');
+
+
+
 
          // The magnitude measured is
          // fluxratio:=flux * 2.511886432^magn   Should be the same for all stars
@@ -2144,7 +2150,7 @@ begin
 
          //flux_ratio:=exp(mzero*ln(10)/2.5);
 
-        if flux_aperture=99 then
+        if head.mzero_radius=99 then
 
           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
@@ -2153,7 +2159,7 @@ begin
 
         else
           memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+
-                        ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+' pixels.'+
+                        ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(head.mzero_radius*2, ffgeneral, 2,2)+' pixels.'+
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 

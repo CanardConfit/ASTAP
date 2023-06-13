@@ -204,7 +204,7 @@ object form_aavso1: Tform_aavso1
     Top = 168
     Width = 700
     AutoSize = False
-    Caption = 'Invalid report! View the first image in the list and click both on the variable & check star to mark them for measurement. Then press the ▶| button to measure the stars.'
+    Caption = 'Invalid report! View the first image in the list and click both on the variable && check star to mark them for measurement. Then press the ▶| button to measure the stars.'
     Font.Color = clRed
     Font.Height = -24
     ParentColor = False
