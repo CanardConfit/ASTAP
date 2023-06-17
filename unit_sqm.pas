@@ -76,7 +76,7 @@ implementation
 
 var
   site_lat_radians,site_long_radians  : double;
-
+  backup_made                         : boolean;
 
 
 function calculate_sqm(get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
@@ -94,11 +94,15 @@ begin
     begin
       form_sqm1.green_message1.caption:='This OSC image is automatically binned 2x2.'+#10;
       application.processmessages;
-      backup_img; {move viewer data to img_backup}
-      bin_X2X3X4(2);
+      if backup_made=false then //else the backup is already made in applyDF1
+      begin
+        backup_img; {move viewer data to img_backup}
+        backup_made:=true;
+      end;
+      bin_X2X3X4(2); //bin 2x2
     end
     else
-    form_sqm1.green_message1.caption:='';
+      form_sqm1.green_message1.caption:='';
   end;
 
   if ((head.mzero=0) or (head.mzero_radius<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
@@ -161,9 +165,10 @@ begin
     end;
   end;
 
-  if bayer then
+  if backup_made then
   begin
     restore_img;
+    backup_made:=false;
   end;
 end;
 
@@ -226,6 +231,12 @@ begin
     begin
       analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
       analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
+
+      if  form_sqm1<>nil then   {see form_sqm1.FormClose action to make this working reliable}
+      begin
+        backup_img;
+        backup_made:=true;//required in calculateSQM for 2x2 bining OSC
+      end;
       apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
       if pos('D',head.calstat)>0  then {status of dark application}
@@ -352,7 +363,6 @@ end;
 procedure Tform_sqm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   set_some_defaults;
-
   CloseAction := caFree; {required for later testing if form exists, https://wiki.freepascal.org/Testing,_if_form_exists}
   Form_sqm1 := nil;
 end;
@@ -361,6 +371,7 @@ end;
 procedure Tform_sqm1.FormShow(Sender: TObject);{han.k}
 begin
   esc_pressed:=false;{reset from cancel}
+  backup_made:=false;
 
   sqm_applyDF1.checked:=sqm_applyDF;
   date_obs1.Text:=head.date_obs;

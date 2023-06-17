@@ -573,11 +573,11 @@ end;
 
 procedure stack_average(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars    : integer;
-  background_correction, weightF,hfd_min                                                                   : double;
-  init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
-  tempval  : single;
-  warning  : string;
+    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars            : integer;
+    background_correction, weightF,hfd_min                                                                           : double;
+    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
+    tempval, sumpix,newpix                                                                                           : single;
+    warning  : string;
 
 begin
   with stackmenu1 do
@@ -772,7 +772,7 @@ begin
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to head.naxis3-1 do {all colors}
-                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ (img_loaded[col,fitsX-1,fitsY-1] +background_correction)*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                  img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ (img_loaded[col,fitsX-1,fitsY-1] +background_correction)*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                 img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
             end;
@@ -792,7 +792,7 @@ begin
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
 
-        For fitsY:=0 to head.height-1 do
+        for fitsY:=0 to head.height-1 do
         for fitsX:=0 to head.width-1 do
         begin {pixel loop}
           tempval:=img_temp[0,fitsX,fitsY];
@@ -810,8 +810,6 @@ begin
           end;{colour loop}
         end;{pixel loop}
       end; {counter<>0}
-
-     // restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
     end;{simple average}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
@@ -1078,12 +1076,11 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars         : integer;
-    background_correction, variance_factor, value,weightF,hfd_min                                                   : double;
-    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars               : integer;
+    background_correction, variance_factor, value,weightF,hfd_min                                                         : double;
+    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based     : boolean;
+    tempval, sumpix, newpix                                                                                               : single;
     warning  : string;
-
-
 begin
   with stackmenu1 do
   begin
@@ -1202,13 +1199,14 @@ begin
 
           setlength(img_average,head.naxis3,width_max,height_max);
           setlength(img_temp,head.naxis3,width_max,height_max);
-            for fitsY:=0 to height_max-1 do
-             for fitsX:=0 to width_max-1 do
-               for col:=0 to head.naxis3-1 do
-               begin
-                 img_average[col,fitsX,fitsY]:=0; {clear img_average}
-                 img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
-               end;
+          for fitsY:=0 to height_max-1 do
+            for fitsX:=0 to width_max-1 do
+              for col:=0 to head.naxis3-1 do
+              begin
+                img_average[col,fitsX,fitsY]:=0; {clear img_average}
+                img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
+              end;
+
         end;{init, c=0}
 
         solution:=true;
@@ -1304,7 +1302,7 @@ begin
         end;
       end;{try}
       if counter<>0 then
-      For fitsY:=0 to height_max-1 do
+      for fitsY:=0 to height_max-1 do
         for fitsX:=0 to width_max-1 do
             for col:=0 to head.naxis3-1 do
             if img_temp[col,fitsX,fitsY]<>0 then
@@ -1406,6 +1404,7 @@ begin
               for col:=0 to head.naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( (img_loaded[col,fitsX-1,fitsY-1]+ background_correction)*weightF - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
             end;
           end;
+
           progress_indicator(10+30+round(0.33333*90*(counter)/length(files_to_process){(ListView1.items.count)}),' ■■□');{show progress}
         finally
         end;
@@ -1544,20 +1543,23 @@ begin
         for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
           For fitsY:=0 to head.height-1 do
             for fitsX:=0 to head.width-1 do
-            if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_final[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
-            else
-            begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
-              if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
-              begin
-                if ((img_temp[col,fitsX-1,fitsY]<>0){and (img_temp[col,fitsX,fitsY-1]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
-                else
-                if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+            begin
+              tempval:=img_temp[col,fitsX,fitsY];
+              if tempval<>0 then img_loaded[col,fitsX,fitsY]:=img_final[col,fitsX,fitsY]/tempval {scale to one image by diving by the number of pixels added}
+              else
+              begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
+                if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
+                begin
+                  if img_temp[col,fitsX-1,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+                  else
+                  if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+                  else
+                  img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+                end {fill black spots}
                 else
                 img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
-              end {fill black spots}
-              else
-              img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
-            end; {black spot filter}
+              end; {black spot filter}
+            end;
       end;{counter<>0}
 
       //restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}

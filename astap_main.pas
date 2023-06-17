@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.06.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.06.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -637,7 +637,7 @@ var
   vsp : array of theauid;//for comparison stars AUID
   vsx : array of thevar;//for variable stars AUID
   img_backup      : array of timgbackup;{dynamic so memory can be freed}
-  img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
+  img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final :image_array;
   head,    {for lights}
   head_2,  {for analysing lights and dark, flats}
   head_ref {for reference light in stacking}
@@ -7031,8 +7031,8 @@ begin
   filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
   if  save_tiff16(img,filename_tmp,false {flip H},false {flip V}) then
   begin
-    if deletefile(filename2) then
-      result:=renamefile(filename_tmp,filename2);
+    if deletefile(filen2) then
+      result:=renamefile(filename_tmp,filen2);
   end;
 end;
 

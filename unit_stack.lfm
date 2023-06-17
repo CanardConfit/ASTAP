@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = -240
+  Left = 33
   Height = 681
-  Top = 139
+  Top = 166
   Width = 1887
   HorzScrollBar.Page = 1887
   VertScrollBar.Page = 558
@@ -55,7 +55,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 104
     Top = 560
-    Width = 2022
+    Width = 1902
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -209,7 +209,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 38979
+    Left = 39279
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 2022
+    Width = 1902
     ActivePage = tab_photometry1
     Align = alClient
     Constraints.MaxHeight = 498
@@ -244,7 +244,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 22
       OnShow = lightsShow
       ParentFont = False
@@ -309,7 +309,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -604,7 +604,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
@@ -638,7 +638,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -784,7 +784,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 2
       ParentFont = False
       object replace_by_master_flat1: TButton
@@ -830,7 +830,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -988,7 +988,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 3
       ParentFont = False
       object clear_selection3: TButton
@@ -1020,7 +1020,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1138,7 +1138,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1146,7 +1146,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1276,7 +1276,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 5
       OnShow = tab_stackmethod1Show
       ParentFont = False
@@ -1286,6 +1286,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Select stack method.'
         Top = 24
         Width = 222
+        DropDownCount = 20
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
@@ -1299,6 +1300,7 @@ object stackmenu1: Tstackmenu1
           'Sigma clip, skip LRGB combine'
         )
         OnChange = stack_method1Change
+        OnDropDown = stack_method1DropDown
         ParentFont = False
         Style = csDropDownList
         TabOrder = 0
@@ -2250,7 +2252,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 7
       OnShow = alignment1Show
       ParentFont = False
@@ -2942,7 +2944,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 11
       OnShow = tab_blink1Show
       ParentFont = False
@@ -2951,7 +2953,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3253,7 +3255,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Photometry of variable stars.'
       Caption = 'Photometry'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 19
       OnShow = tab_photometry1Show
       ParentFont = False
@@ -3312,7 +3314,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 3
       end
       object clear_photometry_list1: TButton
-        Left = 1344
+        Left = 1224
         Height = 25
         Hint = 'Clear image list'
         Top = 5
@@ -3329,7 +3331,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3493,10 +3495,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_photometry1: TLabel
         Cursor = crHandPoint
-        Left = 1248
+        Left = 1128
         Height = 30
         Hint = 'Online help'
-        Top = 0
+        Top = -1
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -3508,7 +3510,7 @@ object stackmenu1: Tstackmenu1
         OnClick = help_photometry1Click
       end
       object photometry_binx2: TButton
-        Left = 1272
+        Left = 1152
         Height = 25
         Hint = 'Bin the images for better photometric detection.  Original files will not be affected.'
         Top = 5
@@ -3519,7 +3521,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 6
       end
       object mark_outliers_upto1: TComboBox
-        Left = 1808
+        Left = 1688
         Height = 23
         Hint = 'Mark outliers up to this magnitude'
         Top = 5
@@ -3540,22 +3542,8 @@ object stackmenu1: Tstackmenu1
         TabOrder = 7
         Text = '14'
       end
-      object refresh_astrometric_solutions1: TButton
-        Left = 896
-        Height = 25
-        Hint = 'This will renew the astrometric solutions and photometric calibration . Use this only for the rare case  the solutions are wrong and alignment is poor.'
-        Top = 5
-        Width = 179
-        AutoSize = True
-        Caption = 'Refresh astrometric solutions'
-        OnClick = refresh_astrometric_solutions1click
-        ParentFont = False
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 8
-      end
       object aavso_button1: TButton
-        Left = 1104
+        Left = 984
         Height = 25
         Hint = 'Generate AAVSO report'
         Top = 5
@@ -3563,13 +3551,13 @@ object stackmenu1: Tstackmenu1
         AutoSize = True
         Caption = 'AAVSO report'
         OnClick = aavso_button1Click
-        TabOrder = 9
+        TabOrder = 8
       end
       object flux_aperture1: TComboBox
         Left = 648
         Height = 23
         Hint = 'Flux measuring aperture [x HFD ].  Typical range 1 to max. With max all star flux is measured. Can be adjusted to find the lowest standard deviation in the results (check star). Typical values 1.5 or 2.0'
-        Top = 6
+        Top = 5
         Width = 80
         DropDownCount = 10
         ItemHeight = 15
@@ -3590,7 +3578,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 10
+        TabOrder = 9
         Text = '3.0'
       end
       object Label26: TLabel
@@ -3611,13 +3599,13 @@ object stackmenu1: Tstackmenu1
         Caption = '+'
         OnClick = analysephotometry1Click
         ParentFont = False
-        TabOrder = 11
+        TabOrder = 10
       end
       object annulus_radius1: TComboBox
         Left = 800
         Height = 23
         Hint = 'Annulus inner diameter [ x HFD]. The annulus diameter has to be larger then  the aperture diameter.'
-        Top = 6
+        Top = 5
         Width = 72
         DropDownCount = 17
         ItemHeight = 15
@@ -3633,7 +3621,7 @@ object stackmenu1: Tstackmenu1
         )
         OnChange = flux_aperture1change
         ParentFont = False
-        TabOrder = 12
+        TabOrder = 11
         Text = '6'
       end
       object Label27: TLabel
@@ -3646,7 +3634,7 @@ object stackmenu1: Tstackmenu1
         ParentColor = False
       end
       object SpeedButton2: TSpeedButton
-        Left = 1216
+        Left = 1096
         Height = 25
         Hint = 'Default observer location for the case it is not available in the file header. Use this for DSLR images.'
         Top = 5
@@ -3659,16 +3647,16 @@ object stackmenu1: Tstackmenu1
         Left = 16
         Height = 25
         Hint = 'Select images for photometry'
-        Top = 7
+        Top = 5
         Width = 92
         Caption = 'Browse'
         Images = ImageList2
         ImageIndex = 23
         OnClick = browse_photometry1Click
-        TabOrder = 13
+        TabOrder = 12
       end
       object annotate_mode1: TComboBox
-        Left = 1584
+        Left = 1464
         Height = 23
         Hint = 'Annotate variable and comparison stars'
         Top = 5
@@ -3685,11 +3673,11 @@ object stackmenu1: Tstackmenu1
         )
         OnChange = annotate_mode1Change
         ParentFont = False
-        TabOrder = 14
+        TabOrder = 13
         Text = 'Annotation local DB'
       end
       object reference_database1: TComboBox
-        Left = 1416
+        Left = 1296
         Height = 23
         Hint = 'Reference star database to be used. Set to '#13#10'1) Online , Gaia ->auto '#13#10'or'#13#10'2) Local star database and select in tab alignment V50 for Johnson-V.'
         Top = 5
@@ -3710,11 +3698,11 @@ object stackmenu1: Tstackmenu1
         )
         OnChange = reference_database1Change
         ParentFont = False
-        TabOrder = 15
+        TabOrder = 14
         Text = 'Local star database'
       end
       object transformation1: TButton
-        Left = 1872
+        Left = 1752
         Height = 25
         Hint = 'This will calculate the transformation equation  ∆ V = a + T*(B-V) using the image in the viewer'
         Top = 5
@@ -3725,14 +3713,27 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 16
+        TabOrder = 15
+      end
+      object Label19: TLabel
+        Left = 880
+        Height = 25
+        Hint = 'See popup menu for calibration && extraction'
+        Top = 5
+        Width = 99
+        AutoSize = False
+        Caption = 'See popup menu for calibration && extraction'
+        Font.Height = 8
+        ParentColor = False
+        ParentFont = False
+        WordWrap = True
       end
     end
     object TabSheet1: TTabSheet
       Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 17
       object analyse_inspector1: TButton
         Left = 136
@@ -3750,7 +3751,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3991,14 +3992,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 2014
+        Width = 1894
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4264,7 +4265,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       ParentFont = False
       object live_stacking1: TButton
         Left = 16
@@ -4434,7 +4435,7 @@ object stackmenu1: Tstackmenu1
     object tab_monitoring1: TTabSheet
       Caption = 'Monitoring'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       OnShow = tab_monitoring1Show
       object Label3: TLabel
         Left = 128
@@ -4729,7 +4730,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       Enabled = False
       ImageIndex = 4
       OnShow = tab_Pixelmath1Show
@@ -6098,7 +6099,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 2014
+      ClientWidth = 1894
       Enabled = False
       ImageIndex = 4
       OnShow = tab_Pixelmath2Show
@@ -8224,6 +8225,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack the selected files in mode AVERAGE and replace them by the stack.'
       ImageIndex = 6
       OnClick = photom_stack1Click
+    end
+    object Separator4: TMenuItem
+      Caption = '-'
+    end
+    object refresh_astrometric_solutions1: TMenuItem
+      Caption = 'Refresh astrometrical solutions of selected files'
+      Hint = 'This will renew the astrometric solutions and photometric calibration . Use this only for the rare case  the solutions are wrong and alignment is poor.'
+      OnClick = refresh_astrometric_solutions1Click
     end
     object Separator1: TMenuItem
       Caption = '-'
