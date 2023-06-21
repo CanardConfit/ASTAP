@@ -123,13 +123,13 @@ begin
         if form_exist then form_sqm1.green_message1.caption:=form_sqm1.error_message1.caption+'Dark already applied! Pedestal value ignored.'+#10 else memo2_message('Dark already applied! Pedestal value ignored.');
         pedestal2:=0; {prevent wrong values}
       end;
-      if pos('P',head.calstat)>0 then
-      begin
-        result:=false;//invalid
-        if form_exist then form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'During calibration a pedestal was added. CALSTAT=P. Invalid result!!'+#10;
-        warning_str:=warning_str+'Invalid result, CALSTAT=P';
-        exit;
-      end;
+//      if pos('P',head.calstat)>0 then
+//      begin
+//        result:=false;//invalid
+//        if form_exist then form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'During calibration a pedestal was added. CALSTAT=P. Invalid result!!'+#10;
+//        warning_str:=warning_str+'Invalid result, CALSTAT=P';
+//        exit;
+//      end;
     end
     else
     if pedestal2=0 then
@@ -151,7 +151,7 @@ begin
       pedestal2:=0; {prevent errors}
     end;
 
-    sqmfloat:=head.mzero - ln((bck.backgr-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;
+    sqmfloat:=head.mzero - ln((bck.backgr-pedestal2-head.pedestal)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;// +head.pedestal was the value added calibration calibration
 
     calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,alt);
 

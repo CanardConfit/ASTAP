@@ -26,7 +26,6 @@ function test_bayer_matrix(img: image_array) :boolean;  {test statistical if ima
 
 var
   pedestal_s : double;{target background value}
-  pedestal_used: boolean; //pedestal used
 
 var
   SIN_dec0,COS_dec0,x_new_float,y_new_float,SIN_dec_ref,COS_dec_ref,
@@ -595,7 +594,6 @@ begin
     sum_temp:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
-    pedestal_used:=false;
 
     init:=false;
 
@@ -663,12 +661,10 @@ begin
               find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image}
               pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
               if pedestal_s<500 then
-              begin
                 pedestal_s:=500;{prevent image noise could go below zero}
-                pedestal_used:=true;
-              end;
               background_correction:=pedestal_s-bck.backgr;
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
+              head.pedestal:=background_correction;
             end;
           end;
 
@@ -722,6 +718,8 @@ begin
 
                 background_correction:=pedestal_s-bck.backgr;
                 head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
+                head.pedestal:=background_correction;
+
 
                 find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -1101,7 +1099,6 @@ begin
     sum_temp:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
-    pedestal_used:=false;
 
 
     init:=false;
@@ -1172,10 +1169,7 @@ begin
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then
-            begin
               pedestal_s:=500;{prevent image noise could go below zero}
-              pedestal_used:=true;
-            end;
 
             background_correction:=pedestal_s-bck.backgr;
             head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
@@ -1492,6 +1486,7 @@ begin
               bck.backgr:=solutions[c].cblack;
               background_correction:=pedestal_s-bck.backgr;{correct for difference in background}
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
+              head.pedestal:=background_correction;
             end;
           end;
           init:=true;{initialize for first image done}
@@ -1611,7 +1606,6 @@ begin
         {load image}
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-        pedestal_used:=false;//for calibration reset for each image.
 
         if load_fits(filename2,true {light},true,true {init=false} {update memo for saving},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
@@ -1664,12 +1658,10 @@ begin
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then
-            begin
               pedestal_s:=500;{prevent image noise could go below zero}
-              pedestal_used:=true;
-            end;
             background_correction:=pedestal_s-bck.backgr;
             head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
+            head.pedestal:=background_correction;
           end;
         end;
 
@@ -1730,6 +1722,8 @@ begin
 
               background_correction:=pedestal_s-bck.backgr;
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
+              head.pedestal:=background_correction;
+
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -1824,8 +1818,7 @@ begin
 
 
         update_text   ('COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
-        if pedestal_used then head.calstat := head.calstat + 'P'; //pedestal used. Background can no longer be used for SQM measurement
-        update_text   ('CALSTAT =',#39+head.calstat+#39); {calibration status}
+        update_float  ('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
         add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
         add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
         add_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}

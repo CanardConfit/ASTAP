@@ -1339,6 +1339,11 @@ object mainwindow: Tmainwindow
         Visible = False
         OnClick = MenuItem22Click
       end
+      object MenuItem25: TMenuItem
+        Caption = 'MenuItem25'
+        Visible = False
+        OnClick = MenuItem25Click
+      end
       object MenuItem2: TMenuItem
         Caption = '-'
       end

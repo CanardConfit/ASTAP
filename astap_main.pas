@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.06.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.06.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -125,6 +125,7 @@ type
     flipVH1: TMenuItem;
     dust_spot_removal1: TMenuItem;
     export_star_info1: TMenuItem;
+    MenuItem25: TMenuItem;
     Separator2: TMenuItem;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
@@ -412,6 +413,7 @@ type
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
     procedure dust_spot_removal1Click(Sender: TObject);
+    procedure MenuItem25Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -575,6 +577,7 @@ type
     ypixsz        : double;//Pixel height in microns (after binning)
     mzero         : double;//flux calibration factor for all flux
     mzero_radius    : double;//mzero diameter (aperture)
+    pedestal        : double;//pedestal added during calibration or stacking
     set_temperature : integer;
     dark_count      : integer;
     light_count     : integer;
@@ -1029,6 +1032,7 @@ begin
     head.ybinning:=1;
     head.mzero:=0;{factor to calculate magnitude from full flux, new file so set to zero}
     head.mzero_radius:=99;{circle where flux is measured}
+    head.pedestal:=0; {value added during calibration or stacking}
 
     date_avg:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';siteelev:='';
@@ -1489,10 +1493,13 @@ begin
                 centaz:=get_as_string; {universal for string and floats}
             end;
           end;
-
-          if ((header[i]='P') and (header[i+1]='R')  and (header[i+2]='E') and (header[i+3]='S') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
+          if (header[i]='P') then
+          begin
+          if ((header[i+1]='R')  and (header[i+2]='E') and (header[i+3]='S') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
                pressure:=validate_double;{read double value}
-
+          if ((header[i+1]='E')  and (header[i+2]='D') and (header[i+3]='E') and (header[i+4]='S') and (header[i+5]='T') and (header[i+6]='A') and (header[i+7]='L')) then //full keyword since it is also written by raw to fits as pedestal, pedesta1....
+               head.pedestal:=validate_double;{read double value}
+          end;
           if (header[i]='A') then {A}
           begin
             if ((header[i+1]='M')  and (header[i+2]='B') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
@@ -8205,32 +8212,256 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+procedure Tmainwindow.MenuItem25Click(Sender: TObject);
+var
+ fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,len,
+ nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
+
+ oldNaxis3, dummy,x1,y1,w,h               : integer;
+
+ hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
+ hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM      : double;
+
+
+ starlistXY    :array of array of double;
+ mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr : string;
+
+ Fliph, Flipv,restore_req,ignore  : boolean;
+ img_bk,img_sa                         : image_array;
+ style: TTextStyle;
+
+      procedure mark_pixel(x,y : integer);{flip if required for plotting. From array to image1 coordinates}
+      begin
+        if Fliph       then x:=w-x;
+        if Flipv=false then y:=h-y;
+        image1.Canvas.pixels[x,y]:=clYellow;
+//        dc.pixels[x9,y9]
+//        image1.Canvas.moveto(x,y);
+//        image1.Canvas.lineto(x,y);{draw }
+      end;
+      procedure find_contour(fx,fy : integer);//mark counter according Theo Pavlidis' Algorithm, https://www.imageprocessingplace.com/downloads_V3/root_downloads/tutorials/contour_tracing_Abeer_George_Ghuneim/theo.html
+         function img_protected(xx,yy :integer) : boolean;//return true if pixel is above detection level but avoids errors by reading outside the image.
+         begin
+           if ((xx>=0) and (xx<w) and (yy>=0) and (yy<h)) then
+             result:=img_loaded[0,xx,yy]- bck.backgr>detection_level
+           else
+             result:=false;
+
+      //    if result then
+       //    beep;
+         end;
+      var north,east,west,south,detection : boolean;
+          counter,startX,startY,rotated : integer;
+
+      begin
+        //test p1,p2,p3
+        north:=true;
+        east:=false;
+        west:=false;
+        south:=false;
+        startX:=fx;
+        startY:=fy;
+        counter:=0;
+        rotated:=0;
+
+        if fx=31-1 then
+        if fy=22-1 then
+        beep;
+
+        repeat
+          detection:=false;
+          if north then
+          begin
+            if img_protected(fx-1,fy+1) then begin fx:=fx-1;fy:=fy+1; east:=true;detection:=true; end  //p1
+            else
+            if img_protected(fx,fy+1) then begin fx:=fx;fy:=fy+1;north:=true;detection:=true; end  //p2
+            else
+            if img_protected(fx+1,fy+1) then begin fx:=fx+1;fy:=fy+1;west:=true;detection:=true; end  //p3
+          end
+          else
+          if east then
+          begin
+            if img_protected(fx-1,fy-1) then begin fx:=fx-1;fy:=fy-1; south:=true;detection:=true; end  //p1
+            else
+            if img_protected(fx-1,fy) then begin fx:=fx-1;fy:=fy;east:=true;detection:=true; end  //p2
+            else
+            if img_protected(fx-1,fy+1) then begin fx:=fx-1;fy:=fy+1;north:=true;detection:=true; end  //p3
+          end
+          else
+          if west then
+          begin
+            if img_protected(fx+1,fy+1) then begin fx:=fx+1;fy:=fy+1; north:=true;detection:=true; end  //p1
+            else
+            if img_protected(fx+1,fy) then begin fx:=fx+1;fy:=fy;west:=true;detection:=true; end  //p2
+            else
+            if img_protected(fx+1,fy-1) then begin fx:=fx+1;fy:=fy-1;south:=true;detection:=true; end  //p3
+          end
+          else
+          if south then
+          begin
+            if img_protected(fx+1,fy-1) then begin fx:=fx+1;fy:=fy-1; west:=true;detection:=true; end  //p1
+            else
+            if img_protected(fx,fy-1) then begin fx:=fx;fy:=fy-1;south:=true;detection:=true; end  //p2
+            else
+            if img_protected(fx-1,fy-1) then begin fx:=fx-1;fy:=fy-1;east:=true;detection:=true; end  //p3
+          end;
+
+          if detection=false then
+          begin
+            if east then begin north:=true; east:=false; end //change direction
+            else
+            if north then begin west:=true; north:=false; end //change direction
+            else
+            if west then begin south:=true; west:=false; end //change direction
+            else
+            if south then begin east:=true; south:=false; end; //change direction
+            inc(rotated);//rotate 3 times max
+          end
+          else
+          begin
+            rotated:=0;
+            mark_pixel(fx,fy);
+          end;
+          img_sa[0,fx,fy]:=+1;//mark as inspected/used
+          inc(counter);
+        until (((fx=startX) and (fy=startY)) or (rotated>3) or (counter>10000))
+      end;
+
+
+begin
+  if head.naxis=0 then exit; {file loaded?}
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  restore_req:=false;
+  oldNaxis3:=head.naxis3;//for case it is converted to mono
+
+  if head.naxis3>1 then {colour image}
+  begin
+    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
+    convert_mono(img_loaded,head);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+
+    restore_req:=true;
+  end
+  else
+  if (bayerpat<>'') then {raw Bayer image}
+  begin
+    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
+    check_pattern_filter(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+    restore_req:=true;
+  end;
+
+  w:=head.Width-1;
+  h:=head.height-1;
+
+  with mainwindow do
+  begin
+    Flipv:=mainwindow.flip_vertical1.Checked;
+    Fliph:=mainwindow.Flip_horizontal1.Checked;
+
+
+//    image1.Canvas.Pen.Mode := pmMerge;
+    image1.Canvas.Pen.Mode := pmNotXor;
+    image1.Canvas.brush.Style:=bsClear;
+    image1.Canvas.font.color:=clyellow;
+    image1.Canvas.Pen.Color := clred;
+    image1.Canvas.Pen.width := round(1+head.height/image1.height);{thickness lines}
+    fontsize:=round(max(10,8*head.height/image1.height));{adapt font to image dimensions}
+    image1.Canvas.font.size:=fontsize;
+
+
+    setlength(img_sa,1,head.width,head.height);{set length of image array}
+
+    get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
+
+    detection_level:=50*bck.noise_level;
+
+
+    image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
+    image1.Canvas.pen.color:=clyellow;
+
+    for fitsY:=0 to head.height-1 do
+      for fitsX:=0 to head.width-1  do
+        img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+
+    ignore:=false;
+
+    for fitsY:=0 to head.height-1-1  do
+    begin
+      for fitsX:=0 to head.width-1-1 do
+      begin
+        if ((ignore) and (img_sa[0,fitsX,fitsY]>0)) then ignore:=false;//outside shape
+        if ((ignore=false) and (img_sa[0,fitsX,fitsY]>0)) then ignore:=true;//inside shape
+
+        if ((ignore=false) and ( img_sa[0,fitsX,fitsY]<=0){area not occupied by a shape}  and (img_loaded[0,fitsX,fitsY]- bck.backgr>detection_level){star}) then {new star}
+        begin
+          //mark_pixel(fitsX,fitsY);
+          find_contour(fitsX,fitsY);
+      //    exit;
+       //   if fitsX=70-1 then
+       //   if fitsY=34-1 then
+       //   exit;
+
+        end;
+      end;
+    end;
+
+    if restore_req then {raw Bayer image or colour image}
+    begin
+      memo2_message('Restoring image');
+      img_loaded:=nil;
+      img_loaded:=img_bk; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+      head.naxis3:=oldNaxis3;
+      get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
+    end;
+
+
+
+//        flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}
+//        flip_xy(fliph,flipv,x_21,y_21);
+//        flip_xy(fliph,flipv,x_31,y_31);
+
+        image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
+
+        image1.Canvas.pen.color:=clyellow;
+
+//        image1.Canvas.moveto(x_11,y_11);{draw triangle}
+//        image1.Canvas.lineto(x_21,y_21);{draw triangle}
+
+
+//      str(hfd_median:0:1,hfd_value);
+//      if head.cdelt2<>0 then begin str(hfd_median*abs(head.cdelt2)*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
+//      mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
+
+//      text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
+//      fontsize:=trunc(fontsize*(head.width*0.9)/text_width);{use 90% of width}
+//      image1.Canvas.font.size:=fontsize;
+//      image1.Canvas.font.color:=clwhite;
+//      text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+
+//      left_margin:=min(head.width div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
+
+//      mess:='';
+//      image1.Canvas.Brush.Style:=bssolid; //Bsclear;
+//      image1.Canvas.Brush.Color:=clBlack;
+//      image1.Canvas.textout(left_margin,head.height-text_height,mess2);{median HFD and tilt indication}
+
+    //  memo2_message(mess2);{for stacking live}
+    end;{with mainwindow}
+
+
+  img_sa:=nil;{free mem}
+  Screen.Cursor:=crDefault;
+end;
+
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
 begin
   maintype:=InputBox('Simbad search by criteria.','Enter the object main type (E.g. star=*, galaxy=G, quasar=QSO):',maintype);
   gaia_star_position1Click(sender);
-end;
-
-
-procedure Convert_to_BMP;
-var
- BMP : TBitmap;
-begin
-  BMP := TBitmap.Create;
-  try
-    Bmp.Width := mainwindow.image1.Picture.Width;{2017}
-    Bmp.Height := mainwindow.image1.Picture.Height;
-
-    Bmp.Canvas.Draw(0, 0, mainwindow.image1.Picture.Graphic);
-    mainwindow.image1.Picture.Bitmap := bmp; {Show the bitmap on form}
-
-//    following assign doesn't work for Nvidia 750ti
-//    BMP.assign(mainwindow.image1.Picture.Graphic);
-//    mainwindow.image1.Picture.Graphic := BMP;
-  finally
-    BMP.Free
-  end;
 end;
 
 
@@ -9259,7 +9490,6 @@ procedure Tmainwindow.removegreenpurple1Click(Sender: TObject);
 begin
   green_purple_filter(img_loaded);
 end;
-
 
 
 procedure Tmainwindow.roundness1Click(Sender: TObject);

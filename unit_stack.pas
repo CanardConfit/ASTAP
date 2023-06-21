@@ -3787,7 +3787,9 @@ begin
   listview_view(TListView(Sender));
   if ((pagecontrol1.tabindex = 8) {photometry} and (annotate_mode1.ItemIndex > 0)) then
     mainwindow.variable_star_annotation1Click(nil); //plot variable stars and comp star annotations
+  Screen.Cursor := crDefault;;//just to be sure for Mac.
 end;
+
 
 function date_obs_regional(thedate: string): string;
   {fits date but remote T and replace . by comma if that is the regional separator}
@@ -4588,97 +4590,6 @@ begin
 end;
 
 
-procedure black_spot_filterold(var img: image_array);
-{remove black spots with value zero}{execution time about 0.4 sec}
-var
-  fitsX, fitsY, k, x1, y1, col, w, h, i, j, counter, range, left, right, bottom, top: integer;
-  img_temp2: image_array;
-  Value, value2: single;
-  black: boolean;
-begin
-  col := length(img);{the real number of colours}
-  h := length(img[0, 0]);{height}
-  w := length(img[0]);{width}
-
-  {find the black borders.}
-  left := -1;
-  repeat
-    Inc(left);
-    black := ((img[0, left, h div 2] = 0) or ((col >= 1) and (img[1, left, h div 2] = 0)) or
-      ((col >= 2) and (img[2, left, h div 2] = 0)))
-  until ((black = False) or (left >= w - 1));
-
-  right := w;
-  repeat
-    Dec(right);
-    black := ((img[0, right, h div 2] = 0) or ((col >= 1) and (img[1, right, h div 2] = 0)) or
-      ((col >= 2) and (img[2, right, h div 2] = 0)))
-  until ((black = False) or (right <= 0));
-
-  bottom := -1;
-  repeat
-    Inc(bottom);
-    black := ((img[0, w div 2, bottom] = 0) or ((col >= 1) and (img[1, w div 2, bottom] = 0)) or
-      ((col >= 2) and (img[2, w div 2, bottom] = 0)))
-  until ((black = False) or (bottom >= h - 1));
-
-  top := h;
-  repeat
-    Dec(top);
-    black := ((img[0, w div 2, top] = 0) or ((col >= 1) and (img[1, w div 2, top] = 0)) or
-      ((col >= 2) and (img[2, w div 2, top] = 0)))
-  until ((black = False) or (top <= 0));
-
-
-  range := 1;
-  setlength(img_temp2, col, w, h);{set length of image array}
-  for k := 0 to col - 1 do
-  begin
-    for fitsY := 0 to h - 1 do
-      for fitsX := 0 to w - 1 do
-      begin
-        Value := img[k, fitsX, fitsY];
-        if Value <= 0 then {black spot or or -99999 saturation marker}
-          if ((fitsX >= left) and (fitsX <= right) and (fitsY >= bottom) and (fitsY <= top)) then
-            {not the incomplete borders}
-          begin
-            range := 1;
-            repeat
-              counter := 0;
-              for i := -range to range do
-                for j := -range to range do
-                begin
-                  if ((abs(i) = range) or (abs(j) = range)) then {square search range}
-                  begin
-                    x1 := fitsX + i;
-                    y1 := fitsY + j;
-                    if ((x1 >= left) and (x1 <= right) and (Y1 >= bottom) and (y1 <= top)) then
-                      {not the incomplete borders}
-                    begin
-                      value2 := img[k, x1, y1];
-                      if value2 > 0 then
-                      begin
-                        Value := Value + value2;
-                        Inc(counter);
-                      end;{ignore zeros or -99999 saturation markers}
-                    end;
-                  end;
-                end;
-              if counter <> 0 then
-                Value := Value / counter
-              else
-                Inc(range);
-            until ((counter <> 0) or (range >= 100));{try till 100 pixels away}
-          end;
-        img_temp2[k, fitsX, fitsY] := Value;
-      end;
-  end;{k}
-
-  img := img_temp2;{move pointer array}
-  img_temp2 := nil;
-end;
-
-
 procedure black_spot_filter(var img: image_array);
 {remove black spots with value zero}{execution time about 0.4 sec}
 var
@@ -4757,7 +4668,7 @@ begin
                 Value := Value / counter
               else
                 Inc(range);
-            until ((counter <> 0) or (range >= 100));{try till 100 pixels away}
+            until ((counter <> 0) or (range >= 10));{try till 10 pixels away}
           end;
         img_temp2[k, fitsX, fitsY] := Value;
       end;
@@ -6051,6 +5962,7 @@ var
   memo2, a, b, posit, center, hfd: double;
   c, img_counter, i, fields: integer;
   array_hfd: array of tdouble2;
+  center_str : string;
 var {################# initialised variables #########################}
   len: integer = 200;
 begin
@@ -6100,60 +6012,60 @@ begin
       find_best_hyperbola_fit(array_hfd, img_counter, memo2, a, b);
       {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=memo2, a, b of hyperbola}
 
-      if i = 1 then  memo2_message('full image' + #9 +
+      if i = 1 then  memo2_message(#9+'full image              ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
-          ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + '_____________' + #9 +
+          ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + '            ' + #9 +
           #9 + 'error=' + floattostrf(lowest_error, ffFixed, 0, 5) + #9 + ' iteration cycles=' +
           floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 2 then
       begin
-        memo2_message('center' + #9 + 'Focus=' + floattostrf(memo2, ffFixed, 0, 0) +
+        memo2_message(#9+'area 2,2 (center)       ' + #9 + 'Focus=' + floattostrf(memo2, ffFixed, 0, 0) +
           #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 + ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 +
-          '_____________' + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 0, 5) +
+          '           ' + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 0, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
         center := memo2;
       end;
-      if i = 3 then  memo2_message('outer ring' + #9 +
+      if i = 3 then  memo2_message(#9+'outer ring              ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-      if i = 4 then  memo2_message('area 1,1' + #9 +
+      if i = 4 then  memo2_message(#9+'area 1,1 (Bottom Left)  ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-      if i = 5 then  memo2_message('area 2,1' + #9 +
+      if i = 5 then  memo2_message(#9+'area 2,1 (Bottom Middle)' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-      if i = 6 then  memo2_message('area 3,1' + #9 +
+      if i = 6 then  memo2_message(#9+'area 3,1 (Bottom Right) ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-      if i = 7 then  memo2_message('area 1,2' + #9 +
+      if i = 7 then  memo2_message(#9+'area 1,2 (Middle left)  ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-      if i = 8 then  memo2_message('area 3,2' + #9 +
+      if i = 8 then  memo2_message(#9+'area 3,2 (Middle Right) ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-      if i = 9 then  memo2_message('area 1,3' + #9 +
+      if i = 9 then  memo2_message(#9+'area 1,3 (Top left)     ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-      if i = 10 then  memo2_message('area 2,3' + #9 +
+      if i = 10 then  memo2_message(#9+'area 2,3 (Top Middle)   ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-      if i = 11 then  memo2_message('area 3,3' + #9 +
+      if i = 11 then  memo2_message(#9+'area 3,3 (Top Right)    ' + #9 +
           'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
           memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
@@ -6747,6 +6659,12 @@ begin
   mainwindow.labelCheck1.Visible := (theindex = 8);
   mainwindow.labelThree1.Visible := (theindex = 8);
   stack_button1.Enabled := ((theindex <= 6) or (theindex >= 13));
+
+  if theindex=9 then
+    stackmenu1.Memo2.Font.name :='Courier New'
+  else
+    stackmenu1.Memo2.Font.name :='default'
+
 end;
 
 
@@ -6808,8 +6726,7 @@ begin
       ListItem.Checked := True;
       for i := 1 to P_nr do
         ListItem.SubItems.Add(''); // add the other columns
-      ListItem.subitems.Strings[P_calibration] :=
-        ListView1.Items.item[index].subitems.Strings[L_calibration];//copy calibration status
+      ListItem.subitems.Strings[P_calibration] := ListView1.Items.item[index].subitems.Strings[L_calibration];//copy calibration status
       Dec(index); {go to next file}
     end;
   end;
@@ -7990,8 +7907,7 @@ begin
   esc_pressed := False;
   warned := False;
 
-  memo2_message(
-    'Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
+  memo2_message( 'Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
 
   refresh_solutions := (Sender = stackmenu1.refresh_astrometric_solutions1);
   {refresh astrometric solutions}
@@ -8023,8 +7939,7 @@ begin
         listview7.ItemIndex := c;
         {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
-        memo2_message(filename1 +
-          ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
+        memo2_message(filename1 + ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
         Application.ProcessMessages;
 
         if solve_image(img_temp, head_2, True  {get hist}) then
@@ -11108,8 +11023,8 @@ begin
                 begin
                   img_loaded[col, X, Y] := img_loaded[col, X, Y] + 500; {add pedestal to prevent values around zero for very dark skies}
                 end;
-            head.calstat:=head.calstat+'P';{calibration status. Add memo2=pedestal to indicate pedestal adjustment. Invalid for SQM measurement }
 
+            head.pedestal:=500;
 
             if esc_pressed then exit;
 
@@ -11118,6 +11033,7 @@ begin
             {head.naxis3 is now 3}
 
             update_text('COMMENT 1', '  Calibrated by ASTAP. www.hnsky.org');
+            update_float('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
             update_text('CALSTAT =', #39 + head.calstat+#39); {calibration status.}
             add_integer('DARK_CNT=', ' / Darks used for luminance.               '
               , head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
@@ -11237,7 +11153,7 @@ end;
 
 
 
-function RemoveSpecialChars(const STR: string): string;
+function RemoveSpecialChars(const str: string): string;
   {remove ['.','\','/','*','"',':','|','<','>']}
 var {################# initialised variables #########################}
   InvalidChars: set of char = ['.', '\', '/', '*', '"', ':', '|', '<', '>'];
@@ -11880,7 +11796,7 @@ begin
             { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
             { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-            stack_info := ' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' +  IntToStr(counterL) + 'x' + head.filter_name;
+            stack_info := ' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' +  IntToStr(counterL) + 'x' + RemoveSpecialChars(head.filter_name);//filter filter_name for e.g. G/Oiii
 
             filename3 := filename2;
             filename2 := StringReplace(ChangeFileExt(filename2, '.fit'),'.fit', '@ ' + stack_info + '_stacked.fit', []); {give new file name for any extension, FIT, FTS, fits}
@@ -12048,7 +11964,7 @@ begin
         update_text('COMMENT 1', '  Written by ASTAP. www.hnsky.org');
 
         head.calstat := head.calstat + 'S'; {status stacked}
-        if pedestal_used then head.calstat:=head.calstat + 'P'; {pedestal used, can't be used for SQM anymore}
+        update_float  ('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
         update_text('CALSTAT =', #39 + head.calstat + #39); {calibration status}
 
         if use_manual_alignment1.Checked = False then
