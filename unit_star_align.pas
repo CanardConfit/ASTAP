@@ -12,7 +12,6 @@ uses
    Classes, SysUtils,Graphics,math,
    astap_main, unit_stack;
 type
-   star_list= array of array of double;
    solution_vector   = array[0..2] of double;
 
 

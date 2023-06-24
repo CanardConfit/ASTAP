@@ -39,15 +39,22 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    apply_gaussian_blur_button2: TButton;
     bin_image2: TButton;
+    Button2: TButton;
+    ClearButton1: TButton;
+    contour_gaussian1: TComboBox;
     colournebula1: TButton;
     filter_artificial_colouring1: TComboBox;
     GroupBox14: TGroupBox;
     GroupBox20: TGroupBox;
+    GroupBox21: TGroupBox;
     increase_nebulosity3: TEdit;
     GroupBox19: TGroupBox;
     Label16: TLabel;
     Label19: TLabel;
+    label_gaussian1: TLabel;
+    Label39: TLabel;
     Label4: TLabel;
     refresh_astrometric_solutions1: TMenuItem;
     photometric_calibration1: TMenuItem;
@@ -56,6 +63,7 @@ type
     Separator2: TMenuItem;
     Separator3: TMenuItem;
     Separator4: TMenuItem;
+    contour_sigma1: TComboBox;
     transformation1: TButton;
     remove_stars1: TBitBtn;
     GroupBox18: TGroupBox;
@@ -646,6 +654,9 @@ type
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
+    procedure apply_gaussian_blur_button2Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure ClearButton1Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
     procedure remove_stars1Click(Sender: TObject);
@@ -977,6 +988,8 @@ procedure listviews_end_update;{speed up making stackmenu visible having a many 
 procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);{analyse list of FITS files}
 function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): double;{##### calculate julian day, revised 2017}
 function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*','"',':','|','<','>']}
+procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+
 
 
 const
@@ -1120,7 +1133,8 @@ uses
   unit_image_sharpness, unit_gaussian_blur, unit_star_align,
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
-  unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk;
+  unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
+  unit_contour;
 
 type
   blink_solution = record
@@ -3285,7 +3299,7 @@ begin
 end;
 
 
-procedure trendline(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd : double); //find linear trendline Y = magnitude_slope*X + intercept
+procedure trendline(xylist: star_list; len{length xylist} : integer; out  slope, intercept:double); //find linear trendline Y = magnitude_slope*X + intercept
 var                                                                   //idea from https://stackoverflow.com/questions/43224/how-do-i-calculate-a-trendline-for-a-graph
   sumX,sumX2,sumY, sumXY,median,mad  : double;
   count, i                           : integer;
@@ -3293,21 +3307,6 @@ var                                                                   //idea fro
   median_array                  : array of double;
 
 begin
-  //first remove the outliers in the delta magnitudes (Y values). Use median and MAD to ignore large outliers
-  setlength(median_array,len);
-  for i:=0 to  len-1 do
-  begin
-     median_array[i]:=xylist[1,i];
-  end;
-  median:=smedian(median_array,len);//median b-v
-
-  for i:=0 to len-1 do median_array[i]:=abs(median_array[i] - median);{fill median_array with offsets}
-  mad:=smedian(median_array,len); //median absolute deviation (MAD)
-  sd:=mad*1.4826;//standard deviation for the Y=b-v values calculated from mad
-  median_array:=nil;//release memory
-
-
-  //calculate the trendline but ignore outliers in Y (b-v)
   count:=0;
   sumX:=0;
   sumX2:=0;
@@ -3316,19 +3315,51 @@ begin
 
   for i:=0 to  len-1 do
   begin
-    if abs(median-xylist[1,i])<=1.5*sd then // not an outlier in Y
-    begin
-      inc(count);
-      //memo2_message(#9+floattostr(xylist[0,i])+#9+floattostr(xylist[1,i]));
-      sumX:=sumX+xylist[0,i]; //sum X= sum B_V values = sum star colours;
-      sumX2:=sumx2+sqr(xylist[0,i]);
-      sumY:=sumY+xylist[1,i]; //sum Y, sum delta magnitudes;
-      sumXY:=sumXY+xylist[0,i]*xylist[1,i];
-    end;
+    inc(count);
+    //memo2_message(#9+floattostr(xylist[0,i])+#9+floattostr(xylist[1,i]));
+    sumX:=sumX+xylist[0,i]; //sum X= sum B_V values = sum star colours;
+    sumX2:=sumx2+sqr(xylist[0,i]);
+    sumY:=sumY+xylist[1,i]; //sum Y, sum delta magnitudes;
+    sumXY:=sumXY+xylist[0,i]*xylist[1,i];
   end;
 
   Slope:=(count*sumXY - sumX*sumY) / (count*sumX2 - sqr(sumX));   // b = (n*Σ(xy) - ΣxΣy) / (n*Σ(x^2) - (Σx)^2)
   Intercept:= (sumY - Slope * sumX)/count;                        // a = (Σy - bΣx)/n
+end;
+
+procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+var
+  e        : double;
+  xylist2  : star_list;
+  counter,i  : integer;
+begin
+  trendline(xylist, len{length xylist}, {out}  slope, intercept);
+
+  // find standard deviation
+  sd:=0;
+  setlength(xylist2,2,len);
+  for i:=0 to len-1 do
+  begin
+    sd:=sd+ sqr(xylist[1,i]{y original} - (slope * xylist[0,i]+intercept){y mean});
+  end;
+  sd:=sqrt(sd/len); //sd
+
+  //calculate the trendline but ignore outliers in Y (b-v)
+  setlength(xylist2,2,len);
+  counter:=0;
+  for i:=0 to len-1 do
+  begin
+    e:=abs(xylist[1,i]{y original} - (slope * xylist[0,i]+intercept{y mean}));  //calculate absolute error
+    if e<1.5 *sd then //not an outlier keep 86.64%
+    begin
+      xylist2[0,counter]:=xylist[0,i];// xy list without outliers
+      xylist2[1,counter]:=xylist[1,i];
+      inc(counter)
+    end;
+  end;
+
+  trendline(xylist2, counter{length xylist2}, {out}  slope, intercept);
+  xylist2:=nil;
 end;
 
 
@@ -3394,16 +3425,23 @@ begin
       end;
     end;
 
-    //   setlength(xylist,2, 189);
-    //   for countxy:=0 to 188 do
-    //   begin
-    //     xylist[0,countxy]:=countxy-10; //V- gaiaV
-    //     xylist[1,countxy]:=50+countxy*1.75; //gaiaB-gaiaV
-    //   end;
+      {Test for y=1.75*x+ 67.5
+       setlength(xylist,2, 189);
+       for countxy:=0 to 188 do
+       begin
+         xylist[0,countxy]:=countxy-10; //V- gaiaV
+         xylist[1,countxy]:=50+countxy*1.75; //gaiaB-gaiaV
+       end;
+       // x     y         slope 1.75, intercept=67.5
+       //-10    50
+       // -9    51.75
+       // -8    53.50
+
+      //  xylist[0,1]:=100; //outlier y=100 instead of 51.75}
 
 
      memo2_message('Using '+inttostr(countXY)+' detected stars.');
-     trendline(xylist,countXY,slope, intercept,sd);
+     trendline_without_outliers(xylist,countXY,slope, intercept,sd);
      memo2_message('Slope is '+floattostrF(slope,FFfixed,5,3)+ '. Calculated required absolute transformation correction  ∆ V = '+floattostrF(intercept,FFfixed,5,3)+' + '+floattostrF(slope,FFfixed,5,3)+'*(B-V). Standard deviation of measured magnitude vs Gaia transformed for stars with SNR>40 and without B-V correction is '+floattostrF(sd,FFfixed,5,3)+ #10);
 
   end
@@ -9166,6 +9204,23 @@ begin
     plot_fits(mainwindow.image1,false,true)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
+end;
+
+procedure Tstackmenu1.apply_gaussian_blur_button2Click(Sender: TObject);
+begin
+  plot_fits(mainwindow.image1,false,true);//clear
+  contour(img_loaded,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));
+end;
+
+procedure Tstackmenu1.Button2Click(Sender: TObject);
+begin
+  wipe_streaks(img_loaded);
+  plot_fits(mainwindow.image1,false,true);
+end;
+
+procedure Tstackmenu1.ClearButton1Click(Sender: TObject);
+begin
+  plot_fits(mainwindow.image1,false,true);
 end;
 
 

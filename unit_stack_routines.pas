@@ -573,7 +573,7 @@ end;
 procedure stack_average(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
     fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars            : integer;
-    background_correction, weightF,hfd_min                                                                           : double;
+    background_correction, weightF,hfd_min,value                                                                     : double;
     init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
     tempval, sumpix,newpix                                                                                           : single;
     warning  : string;
@@ -770,8 +770,14 @@ begin
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to head.naxis3-1 do {all colors}
-                  img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ (img_loaded[col,fitsX-1,fitsY-1] +background_correction)*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
+                begin
+                   value:=img_loaded[col,fitsX-1,fitsY-1];
+                   if value<>0 then //2023, filter out zero values
+                   begin
+                     img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ (value +background_correction)*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                     if col=0 then img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
+                   end;
+                end;
               end;
             end;
           end;
@@ -1509,11 +1515,15 @@ begin
             begin
               for col:=0 to head.naxis3-1 do {do all colors}
               begin
-                value:=(img_loaded[col,fitsX-1,fitsY-1]+ background_correction)*weightF;
-                if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
+                value:=img_loaded[col,fitsX-1,fitsY-1];
+                if value<>0 then  //2023 filter out zero values
                 begin
-                  img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                  img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
+                  value:=(value+ background_correction)*weightF;
+                  if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
+                  begin
+                    img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
+                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
+                  end;
                 end;
               end;
             end;

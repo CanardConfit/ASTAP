@@ -2792,9 +2792,9 @@ begin
     memo2_message('Could not find w08 star database. Will try with an other database.');
   end;
 
-  if ((fov>10) and (fileexists( database_path+'g05_0101.290'))) then begin name_database:='g05'; database_type:=290; end //preference for G05 for large FOV
+  if ((fov>6) and (fileexists( database_path+'g05_0101.290'))) then begin name_database:='g05'; database_type:=290; end //preference for G05 for large FOV
   else
-  if ((fov>10) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; warning:=true; end //preference for V17 for large FOV
+  if ((fov>6) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; warning:=true; end //preference for V17 for large FOV
   else
   if ((fov<=0.5) and (fileexists( database_path+'d80_0101.1476'))) then begin name_database:='d80'; end //for tiny field of view
   else
