@@ -17,7 +17,7 @@ interface
 uses
   astap_main;
 
-procedure gaussian_blur2(img :image_array; radius: double);{apply gaussian blur on array}
+procedure gaussian_blur2(var img :image_array; radius: double);{apply gaussian blur on array}
 
 
 implementation
@@ -135,13 +135,14 @@ begin
 end;
 
 
-procedure gaussian_blur2(img :image_array; radius: double);{apply gaussian blur on array}
+procedure gaussian_blur2(var img :image_array; radius: double);{apply gaussian blur on array}
 var
   K: TKernel;
   img_temp2 : image_array;
   w,h,colors  :integer;
 
 begin
+  if radius<0.001 then exit;//prevent runtime error for radius 0
 
   MakeGaussianKernel(K, radius, 255, 1);
 

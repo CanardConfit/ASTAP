@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.06.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.06.28';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1039,7 +1039,6 @@ begin
     focus_pos:=0;{assume no data available}
     pressure:=1010; {mbar/hPa}
     annotated:=false; {any annotation in the file}
-    nr_streak_lines:=0;
 
     sqm_value:='';
     equinox:=2000;
@@ -1333,7 +1332,6 @@ begin
         if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
                try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
 
-
         if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
            imagetype:=get_string;{trim is already applied}
 
@@ -1416,6 +1414,7 @@ begin
             end;
           end; {C}
 
+
           if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpi  x1/2}
                ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
                ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
@@ -1423,6 +1422,7 @@ begin
             if head.cdelt2=0 then
                 begin head.cdelt2:=validate_double/3600; {deg/pixel for RA} head.cdelt1:=head.cdelt2; end; {no head.cdelt1/2 found yet, use alternative}
           end;
+
 
           if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Xpixsz}
                  head.xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
@@ -1547,14 +1547,17 @@ begin
           if ((header[i]='R') and (header[i+1]='O')  and (header[i+2]='W') and (header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D') and (header[i+6]='E')) then
                      roworder:=get_string;
 
-          if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') ) then  {site latitude, longitude}
+          if (header[i]='S') then
           begin
-            if ((header[i+4]='L') and (header[i+5]='A') and (header[i+6]='T')) then
-              sitelat:=get_as_string;{universal, site latitude as string}
-            if ((header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
-               sitelong:=get_as_string;{universal, site longitude as string}
-            if ((header[i+4]='E') and (header[i+5]='L') and (header[i+6]='E')) then
-               siteelev:=get_as_string;{universal, site elevation as string}
+            if ((header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') ) then  {site latitude, longitude}
+            begin
+              if ((header[i+4]='L') and (header[i+5]='A') and (header[i+6]='T')) then
+                sitelat:=get_as_string;{universal, site latitude as string}
+              if ((header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
+                 sitelong:=get_as_string;{universal, site longitude as string}
+              if ((header[i+4]='E') and (header[i+5]='L') and (header[i+6]='E')) then
+                 siteelev:=get_as_string;{universal, site elevation as string}
+            end;
           end;
 
           if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='S'))  then  {OBS    site latitude, longitude}
@@ -1687,26 +1690,37 @@ begin
             if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='1')) then bp_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='3') and (header[i+4]='_') and (header[i+5]='0')) then bp_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
           end;
-          if ((header[i]='C') and (header[i+1]='N')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X') and (header[i+5]='1')) then
-                  x_pixel_offset:=round(validate_double);{rotation, read double value}
-          if ((header[i]='C') and (header[i+1]='N')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X') and (header[i+5]='2')) then
-                  y_pixel_offset:=round(validate_double);{rotation, read double value}
+
+          if ((header[i]='C') and (header[i+1]='N')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then
+          begin
+            if  (header[i+5]='1') then x_pixel_offset:=round(validate_double){rotation, read double value}
+            else
+            if  (header[i+5]='2') then y_pixel_offset:=round(validate_double);{rotation, read double value}
+          end;
+
+
           if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='E') and (header[i+5]='L')) then
                   x_pixel_size:=validate_double;{rotation, read double value}
           if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='E') and (header[i+5]='L')) then
                   y_pixel_size:=validate_double;{rotation, read double value}
-          if ((header[i]='P') and (header[i+1]='L')  and (header[i+2]='T') and (header[i+3]='R') and (header[i+4]='A')) then
+
+
+          if ((header[i]='P') and (header[i+1]='L')  and (header[i+2]='T')) then
           begin
-            if (header[i+5]='H') then   plate_ra:=validate_double*pi/12;
-            if (header[i+5]='M') then   plate_ra:=plate_ra+validate_double*pi/(60*12);
-            if (header[i+5]='S') then   plate_ra:=plate_ra+validate_double*pi/(60*60*12);;
-          end;
-          if ((header[i]='P') and (header[i+1]='L')  and (header[i+2]='T') and (header[i+3]='D') and (header[i+4]='E')) then
-          begin
-            if (header[i+7]='N') then  begin if (header[i+11]='-') then  dec_sign:=-1 else dec_sign:=+1;end; {dec sign}
-            if (header[i+6]='D') then   plate_dec:=validate_double*pi/180;
-            if (header[i+6]='M') then   plate_dec:=plate_dec+validate_double*pi/(60*180);
-            if (header[i+6]='S') then   plate_dec:=dec_sign*(plate_dec+validate_double*pi/(60*60*180));
+            if ((header[i+3]='R') and (header[i+4]='A')) then
+            begin
+              if (header[i+5]='H') then   plate_ra:=validate_double*pi/12;
+              if (header[i+5]='M') then   plate_ra:=plate_ra+validate_double*pi/(60*12);
+              if (header[i+5]='S') then   plate_ra:=plate_ra+validate_double*pi/(60*60*12);;
+            end
+            else
+            if ((header[i+3]='D') and (header[i+4]='E')) then
+            begin
+              if (header[i+7]='N') then  begin if (header[i+11]='-') then  dec_sign:=-1 else dec_sign:=+1;end; {dec sign}
+              if (header[i+6]='D') then   plate_dec:=validate_double*pi/180;
+              if (header[i+6]='M') then   plate_dec:=plate_dec+validate_double*pi/(60*180);
+              if (header[i+6]='S') then   plate_dec:=dec_sign*(plate_dec+validate_double*pi/(60*60*180));
+            end;
           end;
           if ((header[i]='S') and (header[i+1]='U')  and (header[i+2]='B') and (header[i+3]='S') and (header[i+4]='A') and (header[i+5]='M')) then
                   subsamp:=round(validate_double);{subsampling value}
@@ -7577,6 +7591,9 @@ begin
       dum:=Sett.ReadString('stack','contour_gaus',''); if dum<>'' then stackmenu1.contour_gaussian1.text:=dum;
       dum:=Sett.ReadString('stack','contour_sd',''); if dum<>'' then stackmenu1.contour_sigma1.text:=dum;
 
+      stackmenu1.streak_filter1.Checked:=Sett.ReadBool('stack','streak_filter',false);
+
+
 
       obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
       delim_pos:=Sett.ReadInteger('aavso','delim_pos',0);
@@ -7933,6 +7950,9 @@ begin
 
       sett.writestring('stack','contour_gaus',stackmenu1.contour_gaussian1.text);
       sett.writestring('stack','contour_sd',stackmenu1.contour_sigma1.text);
+
+      sett.writeBool('stack','streak_filter',stackmenu1.streak_filter1.Checked);
+
 
       sett.writestring('aavso','obscode',obscode);
       sett.writeInteger('aavso','delim_pos',delim_pos);
@@ -11143,6 +11163,7 @@ begin
   vsp:=nil;
   online_database:=nil; // free mem
   streak_lines:=nil;
+  all_streak_lines:=nil;
 end;
 
 
@@ -11262,7 +11283,7 @@ end;
 
 procedure plot_annotations(use_solution_vectors,fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
-  count1,x1,y1,x2,y2 : integer;
+  count1,x1,y1,x2,y2,i : integer;
   typ     : double;
   List: TStrings;
   name,magn : string;
@@ -11321,6 +11342,13 @@ begin
       end;
       count1:=count1-1;
     end;
+
+//   if nr_streak_lines>0 then
+//   begin
+//     mainwindow.image1.Canvas.Pen.Color := clred;
+//     for i:=0 to nr_streak_lines-1 do
+//        draw_streak_line(streak_lines[i,0]{slope},streak_lines[i,1]{intercept});//draw satellite streak
+//   end;
 
   finally
     List.Free;

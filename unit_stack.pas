@@ -39,9 +39,8 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
-    apply_gaussian_blur_button2: TButton;
+    detect_contour1: TButton;
     bin_image2: TButton;
-    Button2: TButton;
     ClearButton1: TButton;
     contour_gaussian1: TComboBox;
     colournebula1: TButton;
@@ -56,6 +55,7 @@ type
     label_gaussian1: TLabel;
     Label39: TLabel;
     Label4: TLabel;
+    streak_filter1: TCheckBox;
     refresh_astrometric_solutions1: TMenuItem;
     photometric_calibration1: TMenuItem;
     photom_blue1: TMenuItem;
@@ -654,10 +654,11 @@ type
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
-    procedure apply_gaussian_blur_button2Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
+    procedure contour_gaussian1Change(Sender: TObject);
+    procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
+    procedure pixelsize1Change(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
     procedure remove_stars1Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
@@ -1001,7 +1002,7 @@ const
   L_quality = 5;
   L_background = 6;
   L_nrstars = 7;
-  L_sharpness = 8;
+  L_streaks = 8;
   L_exposure = 9;
   L_temperature = 10;
   L_width = 11;
@@ -1907,12 +1908,12 @@ begin
 end;
 
 
-procedure analyse_tab_lights(full: boolean);
+procedure analyse_tab_lights(analyse_level : integer);
 var
-  c, star_counter, i, counts: integer;
-  hfd_median, alt, az, sharpness: double;
-  red, green, blue, planetary: boolean;
-  key, filename1, rawstr: string;
+  c, star_counter, i, counts,dummy: integer;
+  hfd_median, alt, az           : double;
+  red, green, blue, planetary, restore_req,success : boolean;
+  key, filename1, rawstr           : string;
   img: image_array;
   bck :Tbackground;
 begin
@@ -1929,13 +1930,30 @@ begin
 
     esc_pressed := False;
 
+
     if ((process_as_osc=2) and (make_osc_color1.Checked=false)) then process_as_osc:=0
     else
     if ((process_as_osc=0) and (make_osc_color1.Checked)) then process_as_osc:=2;
     //else it is set automatically below during analysing.
 
+    if classify_filter1.checked then  process_as_osc:=0;
+
     jd_sum := 0;{for sigma clip advanced average}
     planetary := planetary_image1.Checked;
+
+    if analyse_level=2 then
+    begin
+      listview1.columns[9].caption:='Streaks';
+      memo2_message('Advanced satellite streak filter active. Check filter setting in tab pixel math 2');
+    end
+    else
+    begin
+      if planetary then
+      listview1.columns[9].caption:='Sharpness'
+      else
+      listview1.columns[9].caption:='-';
+    end;
+
     red := False;
     green := False;
     blue := False;
@@ -1989,8 +2007,11 @@ begin
     c := 0;
     repeat {check all files, remove darks, bias}
       if ((ListView1.Items.item[c].Checked) and
-        ((length(ListView1.Items.item[c].subitems.Strings[L_hfd]) <= 1){hfd} or
-        (new_analyse_required))) then {hfd unknown, only update blank rows}
+      (
+      ((analyse_level<=1) and  (length(ListView1.Items.item[c].subitems.Strings[L_hfd]) <= 0){hfd empthy}) or
+      ((analyse_level=2) and  (length(ListView1.Items.item[c].subitems.Strings[L_streaks]) <= 0){streak/sharpness}) or
+       (new_analyse_required))
+       ) then
       begin {checked}
 
         if counts <> 0 then progress_indicator(100 * c / counts, ' Analysing');
@@ -2008,7 +2029,7 @@ begin
         end;
 
 
-        if load_fits(filename2, True { update head_2.ra0..}, True, False  {update memo}, 0, head_2, img) = False then {oad in memory. Use head_2 to protect head against overwriting head}
+        if load_fits(filename2, True { update head_2.ra0..}, True, False  {update memo}, 0, head_2, img) = False then {load in memory. Use head_2 to protect head against overwriting head}
         begin {failed to load}
           ListView1.Items.item[c].Checked := False;
           ListView1.Items.item[c].subitems.Strings[L_result] := 'No FITS!';
@@ -2050,7 +2071,7 @@ begin
           else
           begin {light frame}
 
-            if ((planetary = False) and (full = True)) then
+            if ((planetary = False) and (analyse_level>0)) then
               analyse_image(img, head_2, 10 {snr_min}, False, star_counter, bck, hfd_median) {find background, number of stars, median HFD}
             else
             begin
@@ -2140,11 +2161,26 @@ begin
                     inttostr5(round(star_counter {star_level}));//nr of stars
                   ListView1.Items.item[c].subitems.Strings[L_background] :=
                     inttostr5(round(bck.backgr));
-                  if full then sharpness := image_sharpness(img)
+                  if planetary then
+                    ListView1.Items.item[c].subitems.Strings[L_streaks] :=floattostrF(image_sharpness(img), ffFixed, 0, 3)  {sharpness test}
                   else
-                    sharpness := 0;
-                  ListView1.Items.item[c].subitems.Strings[L_sharpness] :=
-                    floattostrF(sharpness, ffFixed, 0, 3); {sharpness test}
+                  if analyse_level>1 then
+                  begin
+
+                    contour(false,img, head_2,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text), restore_req);//find contour and satellite lines in an image
+                    if nr_streak_lines>0 then
+                    begin
+                      ListView1.Items.item[c].subitems.Strings[L_streaks] :=inttostr(nr_streak_lines);
+                      add_to_storage;//add streaks to storage
+                      ListView1.Items.item[c].SubitemImages[L_streaks] :=(100+streak_index_start);//store index position here. Normally used for icon index but it can be used
+                    //  dummy:=ListView1.Items.item[c].SubitemImages[L_streaks];
+
+                    end
+                    else
+                    ListView1.Items.item[c].subitems.Strings[L_streaks] :='-';
+                  end
+                  else
+                  ListView1.Items.item[c].subitems.Strings[L_streaks] :='';
                 end;
 
                 if head_2.exposure >= 10 then
@@ -2313,7 +2349,20 @@ end;
 
 procedure Tstackmenu1.Analyse1Click(Sender: TObject);
 begin
-  analyse_tab_lights(True {full});
+  if streak_filter1.Checked then
+  begin
+    listview1.columns[9].caption:='Streaks';
+    analyse_tab_lights(2 {full});
+  end
+  else
+  begin
+    if planetary_image1.Checked then
+    listview1.columns[9].caption:='Sharpness'
+    else
+    listview1.columns[9].caption:='-';
+
+    analyse_tab_lights(1 {medium});
+  end;
   {temporary fix for CustomDraw not called}
   {$ifdef darwin} {MacOS}
   stackmenu1.nr_total1.caption:=inttostr(listview1.items.count);{update counting info}
@@ -2598,6 +2647,8 @@ begin
   esc_pressed:=true; //stop any scrolling and prevent run time errors
   ListView1.Clear;
   stackmenu1.ephemeris_centering1.Clear;
+
+  clear_storage;//clear streak storage
 
   //temporary till MACOS customdraw is fixed
   {$ifdef darwin} {MacOS}
@@ -6859,7 +6910,7 @@ begin
   end;
   listview1.Items.endUpdate;
 
-  analyse_tab_lights(False {full});//update also process_as_osc
+  analyse_tab_lights(0 {analyse_level});//update also process_as_osc
   if process_as_osc > 0 then
   begin
     memo2_message(
@@ -9206,20 +9257,48 @@ begin
     if annotated then plot_annotations(false {use solution vectors},false);
 end;
 
-procedure Tstackmenu1.apply_gaussian_blur_button2Click(Sender: TObject);
+procedure Tstackmenu1.contour_gaussian1Change(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false,true);//clear
-  contour(img_loaded,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));
+  new_analyse_required:=true;
 end;
 
-procedure Tstackmenu1.Button2Click(Sender: TObject);
+procedure Tstackmenu1.detect_contour1Click(Sender: TObject);
+var
+  img_bk                           : image_array;
+  oldNaxis3                        : integer;
+  restore_req                      : boolean;
 begin
-  wipe_streaks(img_loaded);
-  plot_fits(mainwindow.image1,false,true);
+  if head.naxis=0 then exit; {file loaded?}
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  plot_fits(mainwindow.image1,false,true);//clear
+
+  img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+  setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
+
+  oldNaxis3:=head.naxis3;//for case it is converted to mono
+
+  memo2_message('Satellite streak detection started.');
+  contour(true {plot}, img_bk,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text),{out} restore_req);
+
+  img_bk:=nil;
+
+
+  if restore_req then {raw Bayer image or colour image}
+  begin
+    head.naxis3:=oldNaxis3;
+    get_hist(0,img_loaded);{get histogram of img and his_total}
+  end;
+
+  Screen.Cursor:=crDefault;
+  memo2_message('Ready.');
+
 end;
+
 
 procedure Tstackmenu1.ClearButton1Click(Sender: TObject);
 begin
+  memo2_message('Removing streak annotations from header');
   plot_fits(mainwindow.image1,false,true);
 end;
 
@@ -9288,6 +9367,11 @@ begin
   analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
   {refresh list}
   Screen.Cursor := crDefault;  { Always restore to normal }
+end;
+
+procedure Tstackmenu1.pixelsize1Change(Sender: TObject);
+begin
+  new_analyse_required:=true;
 end;
 
 
@@ -11261,7 +11345,7 @@ procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
 
   i, c, over_size, over_sizeL, nrfiles, image_counter, object_counter,
-  first_file, total_counter, counter_colours: integer;
+  first_file, total_counter, counter_colours,analyse_level: integer;
   filter_name1, filter_name2, defilter, filename3,
   extra1, extra2, object_to_process, stack_info, thefilters                : string;
   lrgb, solution, monofile, ignore, cal_and_align,
@@ -11311,7 +11395,14 @@ begin
   if ListView1.items.Count <> 0 then
   begin
     memo2_message('Analysing lights.');
-    analyse_tab_lights(calibration_mode = False); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
+
+    if streak_filter1.Checked then analyse_level:=2  //full
+    else
+    if calibration_mode then analyse_level:=0 // almost none
+    else
+    analyse_level:=1; //medium
+
+    analyse_tab_lights(analyse_level); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
 
     if ((calibration_mode2) or (sender_photometry)) then process_as_osc := 0;// do not process as OSC
@@ -11658,6 +11749,7 @@ begin
           begin {correct object}
             files_to_process[c].Name := ListView1.items[c].Caption;
             Inc(image_counter);{one image more}
+//            inc(total_counter);
 
             ListView1.Items.item[c].SubitemImages[L_result] := 5; {mark 3th columns as done using a stacked icon}
             ListView1.Items.item[c].subitems.Strings[L_result] := IntToStr(object_counter) + '  ';{show image result number}
@@ -11776,6 +11868,8 @@ begin
                 filters_used[i] := defilter;
                 files_to_process[c].Name := ListView1.items[c].Caption;
                 Inc(image_counter);{one image more}
+//                inc(total_counter);
+
                 ListView1.Items.item[c].SubitemImages[L_result] := 5;
                 {mark 3th columns as done using a stacked icon}
                 ListView1.Items.item[c].subitems.Strings[L_result] := IntToStr(object_counter) + '  ';{show image result number}
@@ -12192,10 +12286,10 @@ begin
   until ((counterL = 0){none lrgb loop} and (extra1 = ''){lrgb loop});{do all names}
 
 
-  if ((total_counter = 0) and (image_counter = 0)) then {somehow nothing was stacked}
+  if total_counter=0 then {somehow nothing was stacked}
   begin
     memo2.Lines.add('No images in tab lights to stack.');
-    if classify_filter{1.checked} then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required.');
+    if classify_filter{1.checked} then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
     if classify_object{1.checked} then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
     if use_astrometry_internal1.Checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
   end

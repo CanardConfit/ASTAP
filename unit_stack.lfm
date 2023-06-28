@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 24
+  Left = 102
   Height = 681
-  Top = 184
+  Top = 163
   Width = 1887
   HorzScrollBar.Page = 1887
   VertScrollBar.Page = 558
@@ -213,7 +213,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 39339
+    Left = 39399
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -253,7 +253,7 @@ object stackmenu1: Tstackmenu1
       OnShow = lightsShow
       ParentFont = False
       object nr_selected1: TLabel
-        Left = 372
+        Left = 440
         Height = 15
         Top = 10
         Width = 6
@@ -262,7 +262,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
       end
       object nr_total1: TLabel
-        Left = 420
+        Left = 488
         Height = 15
         Hint = 'Total number of images in the list'
         Top = 10
@@ -286,7 +286,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 0
       end
       object Label9: TLabel
-        Left = 396
+        Left = 464
         Height = 15
         Top = 10
         Width = 5
@@ -373,9 +373,8 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Alignment = taRightJustify
-            Caption = 'Sharpness'
-            MinWidth = 80
-            Width = 80
+            Caption = '-'
+            MinWidth = 50
           end        
           item
             Alignment = taRightJustify
@@ -492,7 +491,7 @@ object stackmenu1: Tstackmenu1
         OnKeyDown = listview1KeyDown
       end
       object uncheck_outliers1: TCheckBox
-        Left = 464
+        Left = 532
         Height = 19
         Hint = 'Uncheck files with abnormal HFD or abnormal amount number of stars detected.'
         Top = 8
@@ -502,7 +501,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 3
       end
       object sd_factor_list1: TComboBox
-        Left = 735
+        Left = 803
         Height = 23
         Hint = 'Sigma factor (or percentage to keep) to identify statistically low quality images.'
         Top = 5
@@ -531,10 +530,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_uncheck_outliers1: TLabel
         Cursor = crHandPoint
-        Left = 1136
+        Left = 1248
         Height = 30
         Hint = 'Online help about analyse'
-        Top = 2
+        Top = 0
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -559,7 +558,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 5
       end
       object lights_blink_pause1: TButton
-        Left = 1176
+        Left = 1288
         Height = 25
         Hint = 'Pause blinking'
         Top = 5
@@ -602,6 +601,15 @@ object stackmenu1: Tstackmenu1
         ImageIndex = 23
         OnClick = browse1Click
         TabOrder = 9
+      end
+      object streak_filter1: TCheckBox
+        Left = 1000
+        Height = 19
+        Hint = 'Advance staellite streak filter.  Checkmark this option to remove streaks while stacking. See tab pixelmath 2 for filter settings.'
+        Top = 8
+        Width = 79
+        Caption = 'Streak filter'
+        TabOrder = 10
       end
     end
     object Darks: TTabSheet
@@ -6950,6 +6958,7 @@ object stackmenu1: Tstackmenu1
           Top = 48
           Width = 48
           BorderSpacing.Around = 5
+          OnChange = pixelsize1Change
           OnExit = focallength1Exit
           ParentFont = False
           TabOrder = 1
@@ -7607,8 +7616,9 @@ object stackmenu1: Tstackmenu1
           Top = 16
           Width = 63
           ItemHeight = 15
-          ItemIndex = 6
+          ItemIndex = 5
           Items.Strings = (
+            '0'
             '0.5 '
             '0.6'
             '0.7'
@@ -7620,18 +7630,19 @@ object stackmenu1: Tstackmenu1
             '4'
             '5'
           )
+          OnChange = contour_gaussian1Change
           ParentFont = False
           TabOrder = 0
-          Text = '2'
+          Text = '1'
         end
-        object apply_gaussian_blur_button2: TButton
+        object detect_contour1: TButton
           Left = 32
           Height = 30
           Hint = 'Detect object contours and write streak formula to header'
           Top = 120
           Width = 80
           Caption = 'Detect'
-          OnClick = apply_gaussian_blur_button2Click
+          OnClick = detect_contour1Click
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
@@ -7663,7 +7674,7 @@ object stackmenu1: Tstackmenu1
           )
           ParentFont = False
           TabOrder = 2
-          Text = '3.0'
+          Text = '2.0'
         end
         object Label39: TLabel
           Left = 105
@@ -7675,22 +7686,12 @@ object stackmenu1: Tstackmenu1
         end
         object ClearButton1: TButton
           Left = 232
-          Height = 25
+          Height = 30
           Top = 120
           Width = 75
           Caption = 'Clear'
           OnClick = ClearButton1Click
           TabOrder = 3
-        end
-        object Button2: TButton
-          Left = 232
-          Height = 25
-          Hint = 'Make streak and pixels nearby black. Image will still be usable for stacking.'
-          Top = 77
-          Width = 75
-          Caption = 'Wipe streak'
-          OnClick = Button2Click
-          TabOrder = 4
         end
       end
     end
