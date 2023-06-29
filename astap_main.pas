@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.06.28';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.06.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -7590,9 +7590,10 @@ begin
 
       dum:=Sett.ReadString('stack','contour_gaus',''); if dum<>'' then stackmenu1.contour_gaussian1.text:=dum;
       dum:=Sett.ReadString('stack','contour_sd',''); if dum<>'' then stackmenu1.contour_sigma1.text:=dum;
+      dum:=Sett.ReadString('stack','contour_grid',''); if dum<>'' then stackmenu1.detection_grid1.text:=dum;
+
 
       stackmenu1.streak_filter1.Checked:=Sett.ReadBool('stack','streak_filter',false);
-
 
 
       obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
@@ -7950,6 +7951,7 @@ begin
 
       sett.writestring('stack','contour_gaus',stackmenu1.contour_gaussian1.text);
       sett.writestring('stack','contour_sd',stackmenu1.contour_sigma1.text);
+      sett.writestring('stack','contour_grid',stackmenu1.detection_grid1.text);
 
       sett.writeBool('stack','streak_filter',stackmenu1.streak_filter1.Checked);
 

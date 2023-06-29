@@ -213,7 +213,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 39399
+    Left = 39429
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -232,7 +232,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1902
-    ActivePage = tab_Pixelmath2
+    ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -240,7 +240,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 14
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -530,7 +530,7 @@ object stackmenu1: Tstackmenu1
       end
       object help_uncheck_outliers1: TLabel
         Cursor = crHandPoint
-        Left = 1248
+        Left = 1088
         Height = 30
         Hint = 'Online help about analyse'
         Top = 0
@@ -545,7 +545,7 @@ object stackmenu1: Tstackmenu1
         OnClick = help_uncheck_outliers1Click
       end
       object blink_unaligned_multi_step1: TButton
-        Left = 1368
+        Left = 1208
         Height = 25
         Hint = 'Un-aligned blink. Note: For single step blink use the keyboard left and right arrows.'
         Top = 5
@@ -558,7 +558,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 5
       end
       object lights_blink_pause1: TButton
-        Left = 1288
+        Left = 1128
         Height = 25
         Hint = 'Pause blinking'
         Top = 5
@@ -569,7 +569,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 6
       end
       object blink_unaligned_multi_step_backwards1: TButton
-        Left = 1432
+        Left = 1272
         Height = 25
         Hint = 'Un-aligned blink. Note: For single step blink use the keyboard left and right arrows.'
         Top = 5
@@ -582,7 +582,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 7
       end
       object planetary_image1: TCheckBox
-        Left = 1624
+        Left = 1464
         Height = 19
         Hint = 'Checkmark this option for analysing planetary images on sharpness. Note the stack routine is not suitable for stacking of planetary images.'
         Top = 8
@@ -601,15 +601,6 @@ object stackmenu1: Tstackmenu1
         ImageIndex = 23
         OnClick = browse1Click
         TabOrder = 9
-      end
-      object streak_filter1: TCheckBox
-        Left = 1000
-        Height = 19
-        Hint = 'Advance staellite streak filter.  Checkmark this option to remove streaks while stacking. See tab pixelmath 2 for filter settings.'
-        Top = 8
-        Width = 79
-        Caption = 'Streak filter'
-        TabOrder = 10
       end
     end
     object Darks: TTabSheet
@@ -1429,10 +1420,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_stack_menu1: TLabel
         Cursor = crHandPoint
-        Left = 125
+        Left = 56
         Height = 28
         Hint = 'Help'
-        Top = 72
+        Top = 55
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -2258,6 +2249,15 @@ object stackmenu1: Tstackmenu1
           State = cbChecked
           TabOrder = 10
         end
+      end
+      object streak_filter1: TCheckBox
+        Left = 125
+        Height = 19
+        Hint = 'Remove selective satellite streaks from the stack but preserves most of the effected image. See tab pixel math 2 for settings. This will increase the stack time.'
+        Top = 64
+        Width = 122
+        Caption = 'Satellite streak filter'
+        TabOrder = 6
       end
     end
     object alignment1: TTabSheet
@@ -7602,11 +7602,11 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox21: TGroupBox
         Left = 1047
-        Height = 185
+        Height = 224
         Top = 200
         Width = 337
         Caption = 'Satellite streak detection'
-        ClientHeight = 165
+        ClientHeight = 204
         ClientWidth = 333
         TabOrder = 15
         object contour_gaussian1: TComboBox
@@ -7635,19 +7635,6 @@ object stackmenu1: Tstackmenu1
           TabOrder = 0
           Text = '1'
         end
-        object detect_contour1: TButton
-          Left = 32
-          Height = 30
-          Hint = 'Detect object contours and write streak formula to header'
-          Top = 120
-          Width = 80
-          Caption = 'Detect'
-          OnClick = detect_contour1Click
-          ParentFont = False
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 1
-        end
         object label_gaussian1: TLabel
           Left = 105
           Height = 15
@@ -7673,7 +7660,7 @@ object stackmenu1: Tstackmenu1
             '5'
           )
           ParentFont = False
-          TabOrder = 2
+          TabOrder = 1
           Text = '2.0'
         end
         object Label39: TLabel
@@ -7687,11 +7674,49 @@ object stackmenu1: Tstackmenu1
         object ClearButton1: TButton
           Left = 232
           Height = 30
-          Top = 120
+          Top = 152
           Width = 75
           Caption = 'Clear'
           OnClick = ClearButton1Click
+          TabOrder = 2
+        end
+        object detect_contour1: TBitBtn
+          Left = 24
+          Height = 30
+          Hint = 'Detect object contours and write streak formula to header'
+          Top = 152
+          Width = 77
+          Caption = 'Detect'
+          Images = ImageList2
+          ImageIndex = 27
+          OnClick = detect_contour1Click
           TabOrder = 3
+        end
+        object detection_grid1: TComboBox
+          Left = 32
+          Height = 23
+          Hint = 'Distance between vertical and horizontal grid lines in pixels. Will only test at the grid lines to speed up.'
+          Top = 96
+          Width = 64
+          ItemHeight = 15
+          ItemIndex = 2
+          Items.Strings = (
+            '0'
+            '100'
+            '200'
+            '400'
+          )
+          ParentFont = False
+          TabOrder = 4
+          Text = '200'
+        end
+        object Label40: TLabel
+          Left = 105
+          Height = 15
+          Top = 96
+          Width = 75
+          Caption = 'Detection grid'
+          ParentColor = False
         end
       end
     end

@@ -39,23 +39,24 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
-    detect_contour1: TButton;
     bin_image2: TButton;
     ClearButton1: TButton;
     contour_gaussian1: TComboBox;
     colournebula1: TButton;
+    detection_grid1: TComboBox;
     filter_artificial_colouring1: TComboBox;
     GroupBox14: TGroupBox;
     GroupBox20: TGroupBox;
     GroupBox21: TGroupBox;
+    detect_contour1: TBitBtn;
     increase_nebulosity3: TEdit;
     GroupBox19: TGroupBox;
     Label16: TLabel;
     Label19: TLabel;
+    Label40: TLabel;
     label_gaussian1: TLabel;
     Label39: TLabel;
     Label4: TLabel;
-    streak_filter1: TCheckBox;
     refresh_astrometric_solutions1: TMenuItem;
     photometric_calibration1: TMenuItem;
     photom_blue1: TMenuItem;
@@ -64,6 +65,7 @@ type
     Separator3: TMenuItem;
     Separator4: TMenuItem;
     contour_sigma1: TComboBox;
+    streak_filter1: TCheckBox;
     transformation1: TButton;
     remove_stars1: TBitBtn;
     GroupBox18: TGroupBox;
@@ -657,10 +659,10 @@ type
     procedure contour_gaussian1Change(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
+    procedure increase_nebulosity1Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure pixelsize1Change(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
-    procedure remove_stars1Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure calibrate_prior_solving1Change(Sender: TObject);
@@ -740,6 +742,7 @@ type
     procedure rainbow_Panel1Paint(Sender: TObject);
     procedure reference_database1Change(Sender: TObject);
     procedure remove_luminance1Change(Sender: TObject);
+    procedure remove_stars1Click(Sender: TObject);
     procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
@@ -1944,7 +1947,7 @@ begin
     if analyse_level=2 then
     begin
       listview1.columns[9].caption:='Streaks';
-      memo2_message('Advanced satellite streak filter active. Check filter setting in tab pixel math 2');
+      memo2_message('Advanced satellite streak filter active. Filter settings are in tab pixel math 2');
     end
     else
     begin
@@ -5964,7 +5967,7 @@ begin
   else
     memo2_message(
       'No object locations found in image. Modify limiting count and limiting magnitude in Asteroid & Comet annotation menu, CTRL+R');
-  memo2_message('Ready. Select the object to align on.');
+  memo2_message('Completed. Select the object to align on.');
   Screen.Cursor := crDefault;    { back to normal }
 end;
 
@@ -9257,10 +9260,12 @@ begin
     if annotated then plot_annotations(false {use solution vectors},false);
 end;
 
+
 procedure Tstackmenu1.contour_gaussian1Change(Sender: TObject);
 begin
   new_analyse_required:=true;
 end;
+
 
 procedure Tstackmenu1.detect_contour1Click(Sender: TObject);
 var
@@ -9291,7 +9296,7 @@ begin
   end;
 
   Screen.Cursor:=crDefault;
-  memo2_message('Ready.');
+  memo2_message('Satellite streak detection completed.');
 
 end;
 
@@ -9302,6 +9307,10 @@ begin
   plot_fits(mainwindow.image1,false,true);
 end;
 
+procedure Tstackmenu1.increase_nebulosity1Click(Sender: TObject);
+begin
+
+end;
 
 
 procedure Tstackmenu1.photometric_calibration1Click(Sender: TObject);
@@ -11468,7 +11477,7 @@ begin
   begin
     calibration_only;
     if process_as_osc > 0 then Memo2_message('OSC images are converted to colour.');
-    Memo2_message('Ready. Resulting files are available in tab Results and can be copied to the Blink, Photometry  or Lights tab.');
+    Memo2_message('Completed. Resulting files are available in tab Results and can be copied to the Blink, Photometry  or Lights tab.');
     exit;
   end;
 

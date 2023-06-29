@@ -98,8 +98,8 @@ end;
 
 function line_distance(fitsX,fitsY,slope,intercept: double) : double;
 begin
-  //y:=ax+c
-  //0:=-y+ax+c   b=-1
+  //y:=ax+c   => 0=by+ax+c
+  //0:=-y+ax+c and  b=-1
   //distance:=abs(a.fitsX+b.fitsY+c)/sqrt(sqr(a)+sqr(b))        See https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
   result:=abs(slope*fitsX -fitsY + intercept)/sqrt(sqr(slope)+1);
 end;
@@ -129,8 +129,8 @@ end;
 
 procedure contour( plot : boolean;img_bk : image_array; var head: theader; blur, sigmafactor : double; out restore_req: boolean);//find contour and satellite lines in an image
 var
-  fitsX,fitsY,w,h,fontsize,minX,minY,maxX,maxY                                   : integer;
-  detection_level,surface,{leng,}maxleng,slope, intercept,sd    : double;
+  fitsX,fitsY,w,h,fontsize,minX,minY,maxX,maxY,x,y,detection_grid  : integer;
+  detection_level,surface,{leng,}maxleng,slope, intercept,sd       : double;
 
   Fliph, Flipv                     : boolean;
   img_sa                           : image_array;
@@ -203,11 +203,12 @@ var
             result:=false;
         end;
      var detection                                               : boolean;
-         direction, counter,counterC,startX,startY,rotated,i,j,k,offset: integer;
+         direction, counter,counterC,startX,startY,i,j,k,offset  : integer;
 
      const
-        directions : array[0..7,0..1] of integer=((-1,-1), //3 south east, direction
-                                                  (-1,0),  //0 east
+       newdirection : array[0..7] of integer=(-1,0,0,+1,+1,+2,+2,-1);//delta directions
+       directions : array[0..7,0..1] of integer=((-1,-1), //3 south east, direction
+                                                 (-1,0),  //0 east
                                                   (-1,+1), //0 north east
                                                   (0,+1),  //1, north
                                                   (+1,+1), //1 north west
@@ -215,117 +216,112 @@ var
                                                   (+1,-1), //2 south west
                                                   (0,-1)); //3 south
 
-        newdirection : array[0..7] of integer=(-1,0,0,+1,+1,+2,+2,-1);//delta directions
+      begin
+        direction:=1;// , north=0, west=1, south=2. east=3
+        startX:=fx;
+        startY:=fy;
+        counter:=0;
+        counterC:=0;
+        setlength(contour_array,2,4*w+1);
 
+        repeat
+         detection:=false;
 
-     begin
-       direction:=1;// , north=0, west=1, south=2. east=3
-       startX:=fx;
-       startY:=fy;
-       counter:=0;
-       counterC:=0;
-       rotated:=0;
-       setlength(contour_array,2,4*w+1);
-
-       repeat
-        detection:=false;
-
-        for i:=0 to 7 do
-        begin
-          j:=((i+direction*2) and $7);
-          if img_protected(fx+directions[j,0],fy+directions[j,1])then //pixel detected
-          begin
-            fx:=fx+directions[j,0];
-            fy:=fy+directions[j,1];
-            detection:=true;
-            direction:=direction+newdirection[i]; //new direction
-            break;
-          end;
-         end;
-
-         if detection=false then
-           break
-         else
+         for i:=0 to 7 do
          begin
-           if plot then mark_pixel(fx,fy);
-           contour_array[0,counterC]:=fx;
-           contour_array[1,counterC]:=fy;
-           inc(counterC);
-         end;
+           j:=((i+direction*2) and $7);
+           if img_protected(fx+directions[j,0],fy+directions[j,1])then //pixel detected
+           begin
+             fx:=fx+directions[j,0];
+             fy:=fy+directions[j,1];
+             detection:=true;
+             direction:=direction+newdirection[i]; //new direction
+             break;
+           end;
+          end;
 
-         img_sa[0,fx,fy]:=img_sa[0,fx,fy]+1;//mark as inspected/used
-         if img_sa[0,fx,fy]>1 then break;//is looping local
-         inc(counter);
+          if detection=false then
+            break
+          else
+          begin
+            if plot then mark_pixel(fx,fy);
+            contour_array[0,counterC]:=fx;
+            contour_array[1,counterC]:=fy;
+            inc(counterC);
+          end;
+
+          img_sa[0,fx,fy]:=img_sa[0,fx,fy]+1;//mark as inspected/used
+          if img_sa[0,fx,fy]>1 then break;//is looping local
+          inc(counter);
 
 
 
-       until (((fx=startX) and (fy=startY)) or (rotated>3) or (counter>4*w));
+        until (((fx=startX) and (fy=startY)) or (counter>4*w));
 
       //mark inner of contour
-       surface:=0;
-       maxX:=0;
-       minX:=999999;
-       maxY:=0;
-       minY:=999999;
-       for i:=0 to counterC-1 do
-       begin
-         minX:=min(contour_array[0,i],minX);
-         maxX:=max(contour_array[0,i],maxX);
-         minY:=min(contour_array[1,i],minY);
-         maxY:=max(contour_array[1,i],maxY);
+        surface:=0;
+        maxX:=0;
+        minX:=999999;
+        maxY:=0;
+        minY:=999999;
+        for i:=0 to counterC-1 do
+        begin
+          minX:=min(contour_array[0,i],minX);
+          maxX:=max(contour_array[0,i],maxX);
+          minY:=min(contour_array[1,i],minY);
+          maxY:=max(contour_array[1,i],maxY);
 
-         for j:=0 to counterC-1 do
-         begin //mark inner of contour
-           if contour_array[1,i]=contour_array[1,j] then //y position the same
-           begin
+          for j:=0 to counterC-1 do
+          begin //mark inner of contour
+            if contour_array[1,i]=contour_array[1,j] then //y position the same
+            begin
+              for k:=min(contour_array[0,i],contour_array[0,j]) to max(contour_array[0,i],contour_array[0,j]) do //mark space between the mininum and maximum x values. With two pixel extra overlap.
+              begin
+                img_sa[0,k,contour_array[1,i]]:=+1;//mark as inspected/used
+                surface:=surface+1;
+               //mark_pixelCustom(k,contour_array[1,i],clblue);
+              // application.processmessages;
+              end;
+            end;
+          end;
+        end;
+        if surface>100 then
+        begin
+          maxleng:=sqrt(sqr(maxY-minY)+sqr(maxX-minX));
+          if ((maxleng>300) and (sqr(maxleng)/surface>10)) then
+          begin
+            setlength(contour_array2,2,counterC);
+            for i:=0 to counterC-1 do //convert to an array of singles instead of integers
+            begin
+              contour_array2[0,i]:=contour_array[0,i];
+              contour_array2[1,i]:=contour_array[1,i];
+            end;
 
-             for k:=min(contour_array[0,i],contour_array[0,j]) to max(contour_array[0,i],contour_array[0,j]) do //mark space between the mininum and maximum x values. With two pixel extra overlap.
-             begin
-               img_sa[0,k,contour_array[1,i]]:=+1;//mark as inspected/used
-               surface:=surface+1;
-             // mark_pixelCustom(k,contour_array[1,i],clblue);
-             // application.processmessages;
-             end;
-           end;
-         end;
-       end;
-       if surface>100 then
-       begin
-         maxleng:=sqrt(sqr(maxY-minY)+sqr(maxX-minX));
-         if ((maxleng>300) and (sqr(maxleng)/surface>10)) then
-         begin
-           setlength(contour_array2,2,counterC);
-           for i:=0 to counterC-1 do //convert to an array of singles instead of integers
-           begin
-             contour_array2[0,i]:=contour_array[0,i];
-             contour_array2[1,i]:=contour_array[1,i];
-           end;
+            trendline_without_outliers(contour_array2,counterC,slope, intercept,sd);
 
-           trendline_without_outliers(contour_array2,counterC,slope, intercept,sd);
+            if plot then writetext(min(w-600,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,4,4));
+            memo2_message('Streak found: '+filename2+',  Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,5,5));
 
-           if plot then writetext(min(w-600,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,4,4));
-           memo2_message('Streak found: '+filename2+',  Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,5,5));
+            contour_array2:=nil;
 
-           contour_array2:=nil;
+            streak_lines[nr_streak_lines,0]:=slope;
+            streak_lines[nr_streak_lines,1]:=intercept;
+            inc(nr_streak_lines);
 
-           streak_lines[nr_streak_lines,0]:=slope;
-           streak_lines[nr_streak_lines,1]:=intercept;
-           inc(nr_streak_lines);
+            if nr_streak_lines>=length(streak_lines) then
+                 setlength(streak_lines,nr_streak_lines+20,2); //get more memory
 
-           if nr_streak_lines>=length(streak_lines) then
-                 setlength(streak_lines,nr_streak_lines+10,2); //get more memory
+            if plot then
+            begin
+              mainwindow.image1.Canvas.Pen.Color := clred;
+              draw_streak_line(slope,intercept);//draw satellite streak
 
-           if plot then
-           begin
-             mainwindow.image1.Canvas.Pen.Color := clred;
-             draw_streak_line(slope,intercept);//draw satellite streak
-             mainwindow.image1.Canvas.pen.color:=clyellow;
-           end;
+              mainwindow.image1.Canvas.pen.color:=clyellow;
+            end;
 
-         end;
-       end;
-     end;
-
+          end;
+        end;
+      end;
 begin
   if head.naxis3>1 then {colour image}
   begin
@@ -373,6 +369,7 @@ begin
     get_background(0,img_bk,{cblack=0} false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
     detection_level:=sigmafactor*bck.noise_level+ bck.backgr;
+    detection_grid:=strtoint2(stackmenu1.detection_grid1.text);
 
     for fitsY:=0 to h do
       for fitsX:=0 to w  do
@@ -383,6 +380,7 @@ begin
     begin
       for fitsX:=0 to w do
       begin
+        if ((detection_grid<=0) or (frac(fitsX/detection_grid)=0) or (frac(fitsy/detection_grid)=0)) then //overlay of vertical and horizontal lines
         if (( img_sa[0,fitsX,fitsY]<0){untested area}  and (img_bk[0,fitsX,fitsY]>detection_level){star}) then {new star}
         begin
           find_contour(fitsX,fitsY);
