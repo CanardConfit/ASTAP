@@ -10545,7 +10545,7 @@ begin
   end
   else
   begin
-    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for exposure "' + IntToStr(round(head.exposure)) + ' and temperature ' + IntToStr( head.set_temperature) + ' and gain ' + head.gain+'"! De-classify temperature or exposure time or add correct darks. █ █ █ █ █ █ ');
+    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for exposure ' + IntToStr(round(head.exposure)) + ' sec and temperature ' + IntToStr( head.set_temperature) + ' and gain ' + head.gain+'! De-classify temperature or exposure time or add correct darks. █ █ █ █ █ █ ');
     head_2.dark_count := 0;{set back to zero}
   end;
 end;

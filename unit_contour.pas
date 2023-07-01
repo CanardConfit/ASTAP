@@ -148,6 +148,16 @@ var
     //   application.processmessages;
 
      end;
+     procedure mark_pixel_blue(x,y : integer);{flip if required for plotting. From array to image1 coordinates}
+     begin
+   //    show_marker_shape(mainwindow.shape_alignment_marker1,1,10,10,10{minimum},X,Y);
+       if Fliph       then x:=w-x;
+       if Flipv=false then y:=h-y;
+       mainwindow.image1.Canvas.pixels[x,y]:=clBlue;
+    //   application.processmessages;
+
+     end;
+
 
      procedure writetext(x,y : integer; tex :string);
      begin
@@ -277,18 +287,23 @@ var
             begin
               for k:=min(contour_array[0,i],contour_array[0,j]) to max(contour_array[0,i],contour_array[0,j]) do //mark space between the mininum and maximum x values. With two pixel extra overlap.
               begin
-                img_sa[0,k,contour_array[1,i]]:=+1;//mark as inspected/used
-                surface:=surface+1;
-               //mark_pixelCustom(k,contour_array[1,i],clblue);
-              // application.processmessages;
+                if img_sa[0,k,contour_array[1,i]]<0 then
+                begin
+                  surface:=surface+1;
+                  img_sa[0,k,contour_array[1,i]]:=+1;//mark as inspected/used
+                end;
+
+            //   mark_pixel_blue(k,contour_array[1,i]);
+               //application.processmessages;
               end;
             end;
           end;
         end;
-        if surface>100 then
+        if surface>200*2 then
         begin
           maxleng:=sqrt(sqr(maxY-minY)+sqr(maxX-minX));
-          if ((maxleng>300) and (sqr(maxleng)/surface>10)) then
+                    //writetext(contour_array[0,i],contour_array[1,i],floattostr(surface)+ ', '+floattostr(maxleng)+ ', '+floattostr(sqr(maxleng)/surface));
+          if ((maxleng>200) and (sqr(maxleng)/surface>10)) then
           begin
             setlength(contour_array2,2,counterC);
             for i:=0 to counterC-1 do //convert to an array of singles instead of integers
@@ -298,25 +313,28 @@ var
             end;
 
             trendline_without_outliers(contour_array2,counterC,slope, intercept,sd);
+            if sd<15 then
+            begin  // A real line, sd max is about line thickness plus a nearby star.
+              if plot then writetext(min(w-600,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,4,4));
+              memo2_message('Streak found: '+filename2+',  Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,5,5));
 
-            if plot then writetext(min(w-600,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,4,4));
-            memo2_message('Streak found: '+filename2+',  Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,5,5));
+              contour_array2:=nil;
 
-            contour_array2:=nil;
+              streak_lines[nr_streak_lines,0]:=slope;
+              streak_lines[nr_streak_lines,1]:=intercept;
+              inc(nr_streak_lines);
 
-            streak_lines[nr_streak_lines,0]:=slope;
-            streak_lines[nr_streak_lines,1]:=intercept;
-            inc(nr_streak_lines);
+              if nr_streak_lines>=length(streak_lines) then
+                   setlength(streak_lines,nr_streak_lines+20,2); //get more memory
 
-            if nr_streak_lines>=length(streak_lines) then
-                 setlength(streak_lines,nr_streak_lines+20,2); //get more memory
+              if plot then
+              begin
+                mainwindow.image1.Canvas.Pen.Color := clred;
+                draw_streak_line(slope,intercept);//draw satellite streak
 
-            if plot then
-            begin
-              mainwindow.image1.Canvas.Pen.Color := clred;
-              draw_streak_line(slope,intercept);//draw satellite streak
+                mainwindow.image1.Canvas.pen.color:=clyellow;
+              end;
 
-              mainwindow.image1.Canvas.pen.color:=clyellow;
             end;
 
           end;

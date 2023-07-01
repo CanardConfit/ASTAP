@@ -59,7 +59,6 @@ uses
   fpreadTIFF, {all part of fcl-image}
   fpreadPNG,fpreadBMP,fpreadJPEG,
   fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
-  GraphType, {fastbitmap}
   LCLVersion, InterfaceBase, LCLPlatformDef,
   SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
@@ -68,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.06.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.07.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
