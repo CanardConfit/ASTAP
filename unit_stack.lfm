@@ -2254,7 +2254,7 @@ object stackmenu1: Tstackmenu1
       object streak_filter1: TCheckBox
         Left = 125
         Height = 19
-        Hint = 'Remove selective satellite streaks from the stack but preserves most of the effected image. See tab pixel math 2 for settings. This will increase the stack time.'
+        Hint = 'Remove selective satellite streaks from the stack but preserves most of the effected image. This will only work if the background of the images is equal. See tab pixel math 2 for settings. This will increase the stack time.'
         Top = 64
         Width = 122
         Caption = 'Satellite streak filter'

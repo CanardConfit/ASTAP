@@ -14,9 +14,10 @@ uses
   astap_main;
 
 
-procedure contour(plot : boolean; img_bk : image_array; var head: theader; blur, sigmafactor : double; out restore_req: boolean);//find contour and satellite lines in an image
+procedure contour( plot : boolean;img : image_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
 //procedure draw_streak_line(slope,intercept: double);//draw line y = slope * x + intercept
 function line_distance(fitsX,fitsY,slope,intercept: double) : double;
+procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 
 procedure add_to_storage;//add streaks to storage
 procedure clear_storage;//clear streak storage
@@ -30,7 +31,7 @@ var
 
 implementation
 
-uses unit_stack,unit_gaussian_blur;
+uses unit_stack,unit_gaussian_blur,unit_astrometric_solving;
 
 
 
@@ -105,6 +106,68 @@ begin
 end;
 
 
+procedure trendline(xylist: star_list; len{length xylist} : integer; out  slope, intercept:double); //find linear trendline Y = magnitude_slope*X + intercept
+var                                                                   //idea from https://stackoverflow.com/questions/43224/how-do-i-calculate-a-trendline-for-a-graph
+  sumX,sumX2,sumY, sumXY,median,mad  : double;
+  count, i                           : integer;
+
+  median_array                  : array of double;
+
+begin
+  count:=0;
+  sumX:=0;
+  sumX2:=0;
+  sumY:=0;
+  sumXY:=0;
+
+  for i:=0 to  len-1 do
+  begin
+    inc(count);
+    //memo2_message(#9+floattostr(xylist[0,i])+#9+floattostr(xylist[1,i]));
+    sumX:=sumX+xylist[0,i]; //sum X= sum B_V values = sum star colours;
+    sumX2:=sumx2+sqr(xylist[0,i]);
+    sumY:=sumY+xylist[1,i]; //sum Y, sum delta magnitudes;
+    sumXY:=sumXY+xylist[0,i]*xylist[1,i];
+  end;
+
+  Slope:=(count*sumXY - sumX*sumY) / (count*sumX2 - sqr(sumX));   // b = (n*Σ(xy) - ΣxΣy) / (n*Σ(x^2) - (Σx)^2)
+  Intercept:= (sumY - Slope * sumX)/count;                        // a = (Σy - bΣx)/n
+end;
+
+
+procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+var
+  e        : double;
+  xylist2  : star_list;
+  counter,i  : integer;
+begin
+  trendline(xylist, len{length xylist}, {out}  slope, intercept);
+
+  // find standard deviation
+  sd:=0;
+  for i:=0 to len-1 do
+    sd:=sd + sqr(slope*xylist[0,i] - xylist[1,i] + intercept)/(sqr(slope)+1);// sum the sqr line distance. Note the line distance is abs(slope*fitsX -fitsY + intercept)/sqrt(sqr(slope)+1), See https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+  sd:=sqrt(sd/len); //sd
+
+  //calculate the trendline but ignore outliers in Y (b-v)
+  setlength(xylist2,2,len);
+  counter:=0;
+  for i:=0 to len-1 do
+  begin
+    e:=abs(xylist[1,i]{y original} - (slope * xylist[0,i]+intercept{y mean}));  //calculate absolute error
+    if e<1.5 *sd then //not an outlier keep 86.64%
+    begin
+      xylist2[0,counter]:=xylist[0,i];// xy list without outliers
+      xylist2[1,counter]:=xylist[1,i];
+      inc(counter)
+    end;
+  end;
+
+  trendline(xylist2, counter{length xylist2}, {out}  slope, intercept);
+  xylist2:=nil;
+end;
+
+
 procedure add_to_storage;//add streaks to storage
 var
   i,len :integer;
@@ -127,13 +190,12 @@ begin
   streak_index_start:=0;
 end;
 
-procedure contour( plot : boolean;img_bk : image_array; var head: theader; blur, sigmafactor : double; out restore_req: boolean);//find contour and satellite lines in an image
+procedure contour( plot : boolean;img : image_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
 var
-  fitsX,fitsY,w,h,fontsize,minX,minY,maxX,maxY,x,y,detection_grid  : integer;
-  detection_level,surface,{leng,}maxleng,slope, intercept,sd       : double;
-
-  Fliph, Flipv                     : boolean;
-  img_sa                           : image_array;
+  fitsX,fitsY,ww,hh,fontsize,minX,minY,maxX,maxY,x,y,detection_grid,binning  : integer;
+  detection_level,surface,{leng,}maxleng,slope, intercept,sd                 : double;
+  restore_his, Fliph, Flipv            : boolean;
+  img_sa,img_bk                        : image_array;
   contour_array                    : array of array of integer;
   contour_array2                   : star_list;
   bg,sd_bg                         : double;
@@ -142,18 +204,18 @@ var
      procedure mark_pixel(x,y : integer);{flip if required for plotting. From array to image1 coordinates}
      begin
    //    show_marker_shape(mainwindow.shape_alignment_marker1,1,10,10,10{minimum},X,Y);
-       if Fliph       then x:=w-x;
-       if Flipv=false then y:=h-y;
-       mainwindow.image1.Canvas.pixels[x,y]:=clYellow;
+       if Fliph       then x:=ww-1-x;
+       if Flipv=false then y:=hh-1-y;
+       mainwindow.image1.Canvas.pixels[x*binning,y*binning]:=clYellow;
     //   application.processmessages;
 
      end;
      procedure mark_pixel_blue(x,y : integer);{flip if required for plotting. From array to image1 coordinates}
      begin
    //    show_marker_shape(mainwindow.shape_alignment_marker1,1,10,10,10{minimum},X,Y);
-       if Fliph       then x:=w-x;
-       if Flipv=false then y:=h-y;
-       mainwindow.image1.Canvas.pixels[x,y]:=clBlue;
+       if Fliph       then x:=ww-1-x;
+       if Flipv=false then y:=hh-1-y;
+       mainwindow.image1.Canvas.pixels[x*binning,y*binning]:=clBlue;
     //   application.processmessages;
 
      end;
@@ -161,9 +223,9 @@ var
 
      procedure writetext(x,y : integer; tex :string);
      begin
-       if Fliph       then x:=w-x;
-       if Flipv=false then y:=h-y;
-       mainwindow.image1.Canvas.textout(x,y,tex);{}
+       if Fliph       then x:=ww-1-x;
+       if Flipv=false then y:=hh-1-y;
+       mainwindow.image1.Canvas.textout(min(ww*binning-600,x*binning),y*binning,tex);{}
      end;
 
 //    procedure local_background(x1,y1:integer; out bg,sd: double);
@@ -207,7 +269,7 @@ var
         function img_protected(xx,yy :integer) : boolean;//return true if pixel is above detection level but avoids errors by reading outside the image.
         begin
 
-          if ((xx>=0) and (xx<w) and (yy>=0) and (yy<h)) then
+          if ((xx>=0) and (xx<ww-1) and (yy>=0) and (yy<hh-1)) then
             result:=img_bk[0,xx,yy]>detection_level
           else
             result:=false;
@@ -232,7 +294,7 @@ var
         startY:=fy;
         counter:=0;
         counterC:=0;
-        setlength(contour_array,2,4*w+1);
+        setlength(contour_array,2,4*ww);
 
         repeat
          detection:=false;
@@ -266,7 +328,7 @@ var
 
 
 
-        until (((fx=startX) and (fy=startY)) or (counter>4*w));
+        until (((fx=startX) and (fy=startY)) or (counter>4*ww));
 
       //mark inner of contour
         surface:=0;
@@ -310,13 +372,25 @@ var
             begin
               contour_array2[0,i]:=contour_array[0,i];
               contour_array2[1,i]:=contour_array[1,i];
+              //memo2_message(#9+floattostr(contour_array[0,i])+#9+floattostr(contour_array[1,i]));
             end;
 
+
             trendline_without_outliers(contour_array2,counterC,slope, intercept,sd);
-            if sd<15 then
+            intercept:=intercept*binning;
+            sd:=sd*binning;
+
+            if sd<10 then
             begin  // A real line, sd max is about line thickness plus a nearby star.
-              if plot then writetext(min(w-600,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,4,4));
-              memo2_message('Streak found: '+filename2+',  Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  sd='+ Floattostrf(sd,ffgeneral,5,5));
+              if plot then
+              begin
+                mainwindow.image1.Canvas.Pen.Color := clred;
+                draw_streak_line(slope,intercept);//draw satellite streak
+
+                mainwindow.image1.Canvas.pen.color:=clyellow;
+              end;
+               if plot then writetext(min(ww*binning,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  σ='+ Floattostrf(sd,ffgeneral,3,3));
+              memo2_message('Streak found: '+filename2+',     Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  σ='+ Floattostrf(sd,ffgeneral,3,3));
 
               contour_array2:=nil;
 
@@ -327,13 +401,6 @@ var
               if nr_streak_lines>=length(streak_lines) then
                    setlength(streak_lines,nr_streak_lines+20,2); //get more memory
 
-              if plot then
-              begin
-                mainwindow.image1.Canvas.Pen.Color := clred;
-                draw_streak_line(slope,intercept);//draw satellite streak
-
-                mainwindow.image1.Canvas.pen.color:=clyellow;
-              end;
 
             end;
 
@@ -341,22 +408,37 @@ var
         end;
       end;
 begin
+  restore_his:=false;
+  binning:=1;
   if head.naxis3>1 then {colour image}
   begin
-    convert_mono(img_bk,head);
+//    convert_mono(img_bk,head);
+    memo2_message('Converting image to mono');
+    binX1_crop(1, img, img_bk);{crop image, make mono, no binning}
     get_hist(0,img_bk);{get histogram of img and his_total. Required to get correct background value}
-
-    restore_req:=true;
+    restore_his:=true;
   end
   else
   if (bayerpat<>'') then {raw Bayer image}
   begin
-    check_pattern_filter(img_bk);
-    restore_req:=true;
-  end;
+//    check_pattern_filter(img_bk);
+   // bin_X2X3X4(2);
+    memo2_message('Binning raw image for streak detection');
+    binX2_crop(1, img {out}, img_bk);{combine values of 4 pixels and crop is required, Result is mono}
+    get_hist(0,img_bk);{get histogram of img and his_total. Required to get correct background value}
+    restore_his:=true;
+    binning:=2;
+  end
+  else
+    img_bk:=img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
-  w:=head.Width-1;
-  h:=head.height-1;
+//  oldNaxis3:=head.naxis3;//for case it is converted to mono
+
+  ww:=Length(img_bk[0]);    {width}
+  hh:=Length(img_bk[0][0]); {height}
+
+//  ww:=head.Width-1;
+//  hh:=head.height-1;
 
 
   streak_lines:=nil;
@@ -380,23 +462,23 @@ begin
 
     end;
 
-    setlength(img_sa,1,head.width,head.height);{set length of image array}
+    setlength(img_sa,1,ww,hh);{set length of image array}
 
     gaussian_blur2(img_bk, blur);{apply gaussian blur }
     // get_hist(0,img_bk);{get histogram of img_bk and his_total. Required to get correct background value}
     get_background(0,img_bk,{cblack=0} false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
     detection_level:=sigmafactor*bck.noise_level+ bck.backgr;
-    detection_grid:=strtoint2(stackmenu1.detection_grid1.text);
+    detection_grid:=strtoint2(stackmenu1.detection_grid1.text) div binning;
 
-    for fitsY:=0 to h do
-      for fitsX:=0 to w  do
+    for fitsY:=0 to hh-1 do
+      for fitsX:=0 to ww-1  do
         img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
 
-    for fitsY:=0 to h  do
+    for fitsY:=0 to hh-1  do
     begin
-      for fitsX:=0 to w do
+      for fitsX:=0 to ww-1 do
       begin
         if ((detection_grid<=0) or (frac(fitsX/detection_grid)=0) or (frac(fitsy/detection_grid)=0)) then //overlay of vertical and horizontal lines
         if (( img_sa[0,fitsX,fitsY]<0){untested area}  and (img_bk[0,fitsX,fitsY]>detection_level){star}) then {new star}
@@ -412,6 +494,13 @@ begin
     end;
 
   end;{with mainwindow}
+
+  if restore_his then
+  begin
+    img_bk:=nil;
+    get_hist(0,img);{get histogram of img and his_total}
+  end;
+
 
   img_sa:=nil;{free mem}
 end;

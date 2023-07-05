@@ -992,7 +992,6 @@ procedure listviews_end_update;{speed up making stackmenu visible having a many 
 procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);{analyse list of FITS files}
 function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): double;{##### calculate julian day, revised 2017}
 function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*','"',':','|','<','>']}
-procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 
 
 
@@ -1915,7 +1914,7 @@ procedure analyse_tab_lights(analyse_level : integer);
 var
   c, star_counter, i, counts,dummy: integer;
   hfd_median, alt, az           : double;
-  red, green, blue, planetary, restore_req,success : boolean;
+  red, green, blue, planetary, success : boolean;
   key, filename1, rawstr           : string;
   img: image_array;
   bck :Tbackground;
@@ -1947,7 +1946,7 @@ begin
     if analyse_level=2 then
     begin
       listview1.columns[9].caption:='Streaks';
-      memo2_message('Advanced satellite streak filter active. Filter settings are in tab pixel math 2');
+      memo2_message('Advanced satellite streak filter active. This will only work well if the background values of the lights are pretty equal. Filter settings are in tab pixel math 2');
     end
     else
     begin
@@ -2170,7 +2169,7 @@ begin
                   if analyse_level>1 then
                   begin
 
-                    contour(false,img, head_2,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text), restore_req);//find contour and satellite lines in an image
+                    contour(false,img, head_2,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));//find contour and satellite lines in an image
                     if nr_streak_lines>0 then
                     begin
                       ListView1.Items.item[c].subitems.Strings[L_streaks] :=inttostr(nr_streak_lines);
@@ -3350,70 +3349,6 @@ begin
   plot_fits(mainwindow.image1, False, True);{plot real}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
-end;
-
-
-procedure trendline(xylist: star_list; len{length xylist} : integer; out  slope, intercept:double); //find linear trendline Y = magnitude_slope*X + intercept
-var                                                                   //idea from https://stackoverflow.com/questions/43224/how-do-i-calculate-a-trendline-for-a-graph
-  sumX,sumX2,sumY, sumXY,median,mad  : double;
-  count, i                           : integer;
-
-  median_array                  : array of double;
-
-begin
-  count:=0;
-  sumX:=0;
-  sumX2:=0;
-  sumY:=0;
-  sumXY:=0;
-
-  for i:=0 to  len-1 do
-  begin
-    inc(count);
-    //memo2_message(#9+floattostr(xylist[0,i])+#9+floattostr(xylist[1,i]));
-    sumX:=sumX+xylist[0,i]; //sum X= sum B_V values = sum star colours;
-    sumX2:=sumx2+sqr(xylist[0,i]);
-    sumY:=sumY+xylist[1,i]; //sum Y, sum delta magnitudes;
-    sumXY:=sumXY+xylist[0,i]*xylist[1,i];
-  end;
-
-  Slope:=(count*sumXY - sumX*sumY) / (count*sumX2 - sqr(sumX));   // b = (n*Σ(xy) - ΣxΣy) / (n*Σ(x^2) - (Σx)^2)
-  Intercept:= (sumY - Slope * sumX)/count;                        // a = (Σy - bΣx)/n
-end;
-
-procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
-var
-  e        : double;
-  xylist2  : star_list;
-  counter,i  : integer;
-begin
-  trendline(xylist, len{length xylist}, {out}  slope, intercept);
-
-  // find standard deviation
-  sd:=0;
-  setlength(xylist2,2,len);
-  for i:=0 to len-1 do
-  begin
-    sd:=sd+ sqr(xylist[1,i]{y original} - (slope * xylist[0,i]+intercept){y mean});
-  end;
-  sd:=sqrt(sd/len); //sd
-
-  //calculate the trendline but ignore outliers in Y (b-v)
-  setlength(xylist2,2,len);
-  counter:=0;
-  for i:=0 to len-1 do
-  begin
-    e:=abs(xylist[1,i]{y original} - (slope * xylist[0,i]+intercept{y mean}));  //calculate absolute error
-    if e<1.5 *sd then //not an outlier keep 86.64%
-    begin
-      xylist2[0,counter]:=xylist[0,i];// xy list without outliers
-      xylist2[1,counter]:=xylist[1,i];
-      inc(counter)
-    end;
-  end;
-
-  trendline(xylist2, counter{length xylist2}, {out}  slope, intercept);
-  xylist2:=nil;
 end;
 
 
@@ -9269,8 +9204,8 @@ end;
 
 procedure Tstackmenu1.detect_contour1Click(Sender: TObject);
 var
-  img_bk                           : image_array;
-  oldNaxis3                        : integer;
+//  img_bk                           : image_array;
+//  oldNaxis3                        : integer;
   restore_req                      : boolean;
 begin
   if head.naxis=0 then exit; {file loaded?}
@@ -9278,22 +9213,22 @@ begin
 
   plot_fits(mainwindow.image1,false,true);//clear
 
-  img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-  setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
+//  img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+//  setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
 
-  oldNaxis3:=head.naxis3;//for case it is converted to mono
+//  oldNaxis3:=head.naxis3;//for case it is converted to mono
 
   memo2_message('Satellite streak detection started.');
-  contour(true {plot}, img_bk,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text),{out} restore_req);
+  contour(true {plot}, img_loaded,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));
 
-  img_bk:=nil;
+//  img_bk:=nil;
 
 
-  if restore_req then {raw Bayer image or colour image}
-  begin
-    head.naxis3:=oldNaxis3;
-    get_hist(0,img_loaded);{get histogram of img and his_total}
-  end;
+//  if restore_req then {raw Bayer image or colour image}
+//  begin
+//    head.naxis3:=oldNaxis3;
+//    get_hist(0,img_loaded);{get histogram of img and his_total}
+//  end;
 
   Screen.Cursor:=crDefault;
   memo2_message('Satellite streak detection completed.');
@@ -11071,8 +11006,8 @@ begin
         flatNorm21 :={flat_norm_value/} (flatNorm21 /(8*8));
         flatNorm22 :={flat_norm_value/} (flatNorm22 /(8*8));
 
-        for fitsY := 1 to head.Height do  {apply the OSC flat}
-          for fitsX := 1 to head.Width do
+        for fitsY := 0 to head.Height-1 do  {apply the OSC flat}
+          for fitsX := 0 to head.Width-1 do
           begin //thread the red, green and blue pixels seperately
 
 
@@ -11080,33 +11015,33 @@ begin
             if odd(fitsX) then
             begin
               if odd(fitsY) then
-                flat_factor :=  flatNorm11 / (img_flat[0, fitsX - 1, fitsY - 1] + 0.001)  //normalise flat for colour 11
+                flat_factor :=  flatNorm11 / (img_flat[0, fitsX , fitsY] + 0.001)  //normalise flat for colour 11
               else
-                flat_factor :=  flatNorm12 / (img_flat[0, fitsX - 1, fitsY - 1] + 0.001)  //normalise flat for colour 11  //normalise flat for colour 12
+                flat_factor :=  flatNorm12 / (img_flat[0, fitsX , fitsY] + 0.001)  //normalise flat for colour 12
             end
             else
             begin
               if odd(fitsY) then
-                flat_factor :=  flatNorm21 / (img_flat[0, fitsX - 1, fitsY - 1] + 0.001)  //normalise flat for colour 11  //normalise flat for colour 21
+                flat_factor :=  flatNorm21 / (img_flat[0, fitsX , fitsY] + 0.001) //normalise flat for colour 21
               else
-                flat_factor :=  flatNorm22 / (img_flat[0, fitsX - 1, fitsY - 1] + 0.001)  //normalise flat for colour 11  //normalise flat for colour 22
+                flat_factor :=  flatNorm22 / (img_flat[0, fitsX , fitsY] + 0.001) //normalise flat for colour 22
             end;
 
             flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
 
-            img[k, fitsX - 1, fitsY - 1] := img[k, fitsX - 1, fitsY - 1] * flat_factor;
+            img[k, fitsX, fitsY] := img[k, fitsX, fitsY] * flat_factor;
           end;
       end
       else //monochrome images (or weird images already in colour)
       begin
         for k := 0 to head.naxis3 - 1 do {do all colors}
-        for fitsY := 1 to head.Height do  {apply the flat}
-          for fitsX := 1 to head.Width do
+        for fitsY := 0 to head.Height-1 do  {apply the flat}
+          for fitsX := 0 to head.Width-1 do
           begin
-            flat_factor := flat_norm_value / (img_flat[0, fitsX - 1, fitsY - 1] + 0.001);  {bias is already combined in flat in combine_flat}
+            flat_factor := flat_norm_value / (img_flat[0, fitsX, fitsY] + 0.001);  {bias is already combined in flat in combine_flat}
             flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
 
-            img[k, fitsX - 1, fitsY - 1] := img[k, fitsX - 1, fitsY - 1] * flat_factor;
+            img[k, fitsX, fitsY] := img[k, fitsX, fitsY] * flat_factor;
           end;
       end;
       {for stacking}
