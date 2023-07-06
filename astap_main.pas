@@ -479,6 +479,7 @@ type
     procedure show_statistics1Click(Sender: TObject);
     procedure SimpleIPCServer1MessageQueued(Sender: TObject);
     procedure StatusBar1MouseEnter(Sender: TObject);
+    procedure stretch1Exit(Sender: TObject);
     procedure stretch_draw_fits1Click(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
     procedure variable_star_annotation1Click(Sender: TObject);
@@ -530,7 +531,7 @@ type
     procedure Export_image1Click(Sender: TObject);
     procedure CropFITSimage1Click(Sender: TObject);
     procedure maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
-    procedure stretch1Change(Sender: TObject);
+    procedure stretch1CloseUp(Sender: TObject);
     procedure histogram1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure maximum1Change(Sender: TObject);
     procedure minimum1Change(Sender: TObject);
@@ -10824,6 +10825,12 @@ begin
 end;
 
 
+procedure Tmainwindow.stretch1Exit(Sender: TObject);
+begin
+  do_stretching;
+end;
+
+
 procedure Tmainwindow.stretch_draw_fits1Click(Sender: TObject);
 var
   tmpbmp: TBitmap;
@@ -12340,7 +12347,7 @@ begin
           stackmenu1.visible:=true;
           stackmenu1.setfocus;
 
-          Mainwindow.stretch1Change(nil);{create gamma curve}
+          do_stretching; ;{create gamma curve}
           exit;
         end;
       end;{-f option}
@@ -12348,7 +12355,7 @@ begin
 
 
     {filename as parameter 1}
-    Mainwindow.stretch1Change(nil);{create gamma curve}
+    do_stretching; ;{create gamma curve}
 
     if application.hasoption('stack') then //for Ekos
     begin
@@ -12360,7 +12367,7 @@ begin
     load_image(true,true {plot});{show image of parameter1}
   end {paramcount>0}
   else
-  Mainwindow.stretch1Change(nil);{create gamma curve for image if loaded later and set gamma_on}
+  do_stretching; {create gamma curve for image if loaded later and set gamma_on}
 
 
   {$IfDef Darwin}// for OS X,
@@ -12502,7 +12509,7 @@ begin
 end;
 
 
-procedure Tmainwindow.stretch1Change(Sender: TObject);
+procedure Tmainwindow.stretch1CloseUp(Sender: TObject);
 begin
   do_stretching;
 end;

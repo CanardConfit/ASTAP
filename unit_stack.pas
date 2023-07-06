@@ -1940,8 +1940,8 @@ begin
 
     if classify_filter1.checked then  process_as_osc:=0;
 
-    jd_sum := 0;{for sigma clip advanced average}
-    planetary := planetary_image1.Checked;
+    jd_sum:= 0;{for sigma clip advanced average}
+    planetary:= planetary_image1.Checked;
 
     if analyse_level=2 then
     begin
@@ -2159,12 +2159,9 @@ begin
                   ListView1.Items.item[c].Checked := False {no stars, can't process this image}
                 else
                 begin {image can be futher analysed}
-                  ListView1.Items.item[c].subitems.Strings[L_nrstars] :=
-                    inttostr5(round(star_counter {star_level}));//nr of stars
-                  ListView1.Items.item[c].subitems.Strings[L_background] :=
-                    inttostr5(round(bck.backgr));
-                  if planetary then
-                    ListView1.Items.item[c].subitems.Strings[L_streaks] :=floattostrF(image_sharpness(img), ffFixed, 0, 3)  {sharpness test}
+                  ListView1.Items.item[c].subitems.Strings[L_nrstars]:= inttostr5(round(star_counter {star_level}));//nr of stars
+                  ListView1.Items.item[c].subitems.Strings[L_background]:=inttostr5(round(bck.backgr));
+                  if planetary then ListView1.Items.item[c].subitems.Strings[L_streaks] :=floattostrF(image_sharpness(img), ffFixed, 0, 3)  {sharpness test}
                   else
                   if analyse_level>1 then
                   begin
@@ -2172,50 +2169,40 @@ begin
                     contour(false,img, head_2,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));//find contour and satellite lines in an image
                     if nr_streak_lines>0 then
                     begin
-                      ListView1.Items.item[c].subitems.Strings[L_streaks] :=inttostr(nr_streak_lines);
+                      ListView1.Items.item[c].subitems.Strings[L_streaks]:=inttostr(nr_streak_lines);
                       add_to_storage;//add streaks to storage
-                      ListView1.Items.item[c].SubitemImages[L_streaks] :=(100+streak_index_start);//store index position here. Normally used for icon index but it can be used
-                    //  dummy:=ListView1.Items.item[c].SubitemImages[L_streaks];
-
+                      ListView1.Items.item[c].SubitemImages[L_streaks]:=(100+streak_index_start);//store index position here. Normally used for icon index but it can be used
                     end
                     else
-                    ListView1.Items.item[c].subitems.Strings[L_streaks] :='-';
+                    ListView1.Items.item[c].subitems.Strings[L_streaks]:='-';
                   end
                   else
-                  ListView1.Items.item[c].subitems.Strings[L_streaks] :='';
+                  ListView1.Items.item[c].subitems.Strings[L_streaks]:='';
                 end;
 
                 if head_2.exposure >= 10 then
                   ListView1.Items.item[c].subitems.Strings[L_exposure] := IntToStr(round(head_2.exposure))
                 {round values above 10 seconds}
                 else
-                  ListView1.Items.item[c].subitems.Strings[L_exposure] :=
-                    floattostrf(head_2.exposure, ffgeneral, 6, 6);
+                  ListView1.Items.item[c].subitems.Strings[L_exposure]:=floattostrf(head_2.exposure, ffgeneral, 6, 6);
 
-                if head_2.set_temperature <> 999 then
-                  ListView1.Items.item[c].subitems.Strings[L_temperature] :=
-                    IntToStr(head_2.set_temperature);
-                ListView1.Items.item[c].subitems.Strings[L_width] :=
-                  IntToStr(head_2.Width); {width}
-                ListView1.Items.item[c].subitems.Strings[L_height] :=
-                  IntToStr(head_2.Height);{height}
+                if head_2.set_temperature <> 999 then ListView1.Items.item[c].subitems.Strings[L_temperature]:= IntToStr(head_2.set_temperature);
+                ListView1.Items.item[c].subitems.Strings[L_width]:=IntToStr(head_2.Width); {width}
+                ListView1.Items.item[c].subitems.Strings[L_height]:=IntToStr(head_2.Height);{height}
 
-                if stackmenu1.make_osc_color1.Checked then
-                  process_as_osc := 2//forced process as OSC images
+                if raw_box1.enabled=false then  process_as_osc:=0 //classify_filter1 is checked
+                else
+                if stackmenu1.make_osc_color1.Checked then process_as_osc:= 2//forced process as OSC images
                 else
                 if ((head_2.naxis3 = 1) and (head_2.Xbinning = 1) and (bayerpat <> '')) then
                   //auto process as OSC images
-                  process_as_osc := 1
+                  process_as_osc:=1
                 else
-                  process_as_osc := 0;//disable demosaicing
+                  process_as_osc:=0;//disable demosaicing
 
-                if ((head_2.naxis3 = 1) and (head_2.Xbinning = 1) and (bayerpat <> '')) then
-                  rawstr := ' raw'
-                else
-                  rawstr := '';
+                if ((head_2.naxis3 = 1) and (head_2.Xbinning = 1) and (bayerpat <> '')) then rawstr:=' raw' else rawstr:= '';
 
-                ListView1.Items.item[c].subitems.Strings[L_type] :=
-                  copy(imagetype, 1, 5) + IntToStr(nrbits) + rawstr;{type}
+                ListView1.Items.item[c].subitems.Strings[L_type]:= copy(imagetype, 1, 5) + IntToStr(nrbits) + rawstr;{type}
 
                 {$ifdef darwin} {MacOS, fix missing icons by coloured unicode. Place in column "type" to avoid problems with textual filter selection}
                  if red then ListView1.Items.item[c].subitems.Strings[L_type]:='🔴' +ListView1.Items.item[c].subitems.Strings[L_type]
@@ -2226,8 +2213,8 @@ begin
                 {$endif}
 
 
-                ListView1.Items.item[c].subitems.Strings[L_datetime] := copy(StringReplace(head_2.date_obs, 'T', ' ', []), 1, 23);{date/time up to ms}
-                ListView1.Items.item[c].subitems.Strings[L_position] := prepare_ra5(head_2.ra0, ': ') + ', ' + prepare_dec4(head_2.dec0, '° ');
+                ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(head_2.date_obs, 'T', ' ', []), 1, 23);{date/time up to ms}
+                ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(head_2.ra0, ': ') + ', ' + prepare_dec4(head_2.dec0, '° ');
                 {give internal position}
 
                 {is internal solution available?}
@@ -2239,24 +2226,23 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_calibration] := head_2.calstat;
                 {status calibration}
                 if focus_pos <> 0 then
-                  ListView1.Items.item[c].subitems.Strings[L_focpos] := IntToStr(focus_pos);
+                  ListView1.Items.item[c].subitems.Strings[L_focpos]:= IntToStr(focus_pos);
                 if focus_temp <> 999 then
-                  ListView1.Items.item[c].subitems.Strings[L_foctemp] :=
-                    floattostrF(focus_temp, ffFixed, 0, 1);
+                  ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF(focus_temp, ffFixed, 0, 1);
 
                 if head_2.egain <> '' then
-                  ListView1.Items.item[c].subitems.Strings[L_gain] := head_2.egain {e-/adu}
+                  ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.egain {e-/adu}
                 else
                 if head_2.gain <> '' then
-                  ListView1.Items.item[c].subitems.Strings[L_gain] := head_2.gain;
+                  ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.gain;
 
                 if centalt = '' then
                 begin
                   calculate_az_alt(0 {try to use header values}, head_2,{out}az, alt);
                   if alt <> 0 then
                   begin
-                    centalt := floattostrf(alt, ffgeneral, 3, 1); {altitude}
-                    centaz := floattostrf(az, ffgeneral, 3, 1); {azimuth}
+                    centalt:=floattostrf(alt, ffgeneral, 3, 1); {altitude}
+                    centaz :=floattostrf(az, ffgeneral, 3, 1); {azimuth}
                   end;
                 end;
 
@@ -3624,23 +3610,32 @@ begin
 end;
 
 
-procedure set_icon_stackbutton(col: boolean);
+procedure set_icon_stackbutton;
 //update glyph stack button to colour or gray
 var
   bmp: tbitmap;
 begin
   bmp := TBitmap.Create;
-  if col then stackmenu1.ImageList2.GetBitmap(12, bmp){colour stack}
-  else
-    stackmenu1.ImageList2.GetBitmap(6, bmp);{gray stack}
-  stackmenu1.stack_button1.glyph.Assign(bmp);
+
+  with stackmenu1 do
+  begin
+    if classify_filter1.checked then
+      ImageList2.GetBitmap(12, bmp){colour stack}
+    else
+    if ((process_as_osc > 0) or (make_osc_color1.Checked)) then
+      ImageList2.GetBitmap(30, bmp){OSC colour stack}
+    else
+      ImageList2.GetBitmap(6, bmp);{gray stack}
+
+    stack_button1.glyph.Assign(bmp);
+  end;
   FreeAndNil(bmp);
 end;
 
 
 procedure Tstackmenu1.FormShow(Sender: TObject);
 begin
-  set_icon_stackbutton(classify_filter1.Checked);//update glyph stack button
+  set_icon_stackbutton;//update glyph stack button
 
   stackmenu1.pagecontrol1Change(Sender);//update stackbutton1.enabled
 end;
@@ -11349,7 +11344,8 @@ begin
     analyse_tab_lights(analyse_level); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
 
-    if ((calibration_mode2) or (sender_photometry)) then process_as_osc := 0;// do not process as OSC
+    if ((calibration_mode2) or (sender_photometry)) then
+                process_as_osc:= 0;// do not process as OSC
 
     if process_as_osc > 0 then
     begin
@@ -11370,7 +11366,7 @@ begin
     else
       memo2_message('Grayscale stack (classify by light filter unchecked)');
 
-    set_icon_stackbutton((process_as_osc > 0) or (classify_filter{1.checked}));  //update glyph stack button to colour or gray
+    set_icon_stackbutton;  //update glyph stack button to colour or gray
     memo2_message('Stacking (' + stack_method1.Text + '), HOLD ESC key to abort.');
   end
   else
@@ -12214,6 +12210,7 @@ begin
         memo2_message('█ █ █  Saving result ' + IntToStr(image_counter) + ' as ' + filename2);
 
         if save_fits(img_loaded, filename2, -32, True) = False then exit;
+        inc(total_counter);
         if save_settings_image_path1.Checked then save_settings(changefileext(filename2, '.cfg'));
 
 
@@ -12342,7 +12339,7 @@ begin
     (classify_filter1.Checked = False)) then
     memo2_message( '█ █ █ █ █ █ Warning, classify on Light Filter is not check marked !!! █ █ █ █ █ █ ');
 
-  set_icon_stackbutton((classify_filter1.Checked) or (make_osc_color1.Checked));  //update glyph stack button to colour or gray
+  set_icon_stackbutton;  //update glyph stack button to colour or gray
 end;
 
 

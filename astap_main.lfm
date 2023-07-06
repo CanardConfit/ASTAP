@@ -650,7 +650,8 @@ object mainwindow: Tmainwindow
         '400'
         '800'
       )
-      OnChange = stretch1Change
+      OnCloseUp = stretch1CloseUp
+      OnExit = stretch1Exit
       ParentColor = True
       ParentShowHint = False
       ShowHint = True

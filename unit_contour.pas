@@ -412,7 +412,6 @@ begin
   binning:=1;
   if head.naxis3>1 then {colour image}
   begin
-//    convert_mono(img_bk,head);
     memo2_message('Converting image to mono');
     binX1_crop(1, img, img_bk);{crop image, make mono, no binning}
     get_hist(0,img_bk);{get histogram of img and his_total. Required to get correct background value}
