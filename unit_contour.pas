@@ -15,19 +15,16 @@ uses
 
 
 procedure contour( plot : boolean;img : image_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
-//procedure draw_streak_line(slope,intercept: double);//draw line y = slope * x + intercept
 function line_distance(fitsX,fitsY,slope,intercept: double) : double;
 procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 
-procedure add_to_storage;//add streaks to storage
-procedure clear_storage;//clear streak storage
+//procedure add_to_storage;//add streaks to storage
+//procedure clear_storage;//clear streak storage
 
 var
   streak_lines : array of array of double; // storage for streaks of one image
   nr_streak_lines : integer;
 
-  all_streak_lines: array of array of double; //extra storage for all streaks for stacking;
-  streak_index_start  : integer;
 
 implementation
 
@@ -168,27 +165,6 @@ begin
 end;
 
 
-procedure add_to_storage;//add streaks to storage
-var
-  i,len :integer;
-begin
-  len:=length(all_streak_lines);
-
-  streak_index_start:=len;
-
-  setlength(all_streak_lines,len+ nr_streak_lines,2);
-  for i:=0 to nr_streak_lines-1 do
-  begin
-    all_streak_lines[i+len]:= streak_lines[i];
-  end;
-end;
-
-
-procedure clear_storage; //clear streak storage
-begin
-  all_streak_lines:=nil;
-  streak_index_start:=0;
-end;
 
 procedure contour( plot : boolean;img : image_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
 var

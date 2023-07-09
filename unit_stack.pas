@@ -39,6 +39,7 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    analyse_lights_extra1: TButton;
     bin_image2: TButton;
     ClearButton1: TButton;
     contour_gaussian1: TComboBox;
@@ -65,7 +66,6 @@ type
     Separator3: TMenuItem;
     Separator4: TMenuItem;
     contour_sigma1: TComboBox;
-    streak_filter1: TCheckBox;
     transformation1: TButton;
     remove_stars1: TBitBtn;
     GroupBox18: TGroupBox;
@@ -1946,7 +1946,7 @@ begin
     if analyse_level=2 then
     begin
       listview1.columns[9].caption:='Streaks';
-      memo2_message('Advanced satellite streak filter active. This will only work well if the background values of the lights are pretty equal. Filter settings are in tab pixel math 2');
+      memo2_message('Streak detection active. Detection settings are in tab pixel math 2');
     end
     else
     begin
@@ -2168,11 +2168,7 @@ begin
 
                     contour(false,img, head_2,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));//find contour and satellite lines in an image
                     if nr_streak_lines>0 then
-                    begin
-                      ListView1.Items.item[c].subitems.Strings[L_streaks]:=inttostr(nr_streak_lines);
-                      add_to_storage;//add streaks to storage
-                      ListView1.Items.item[c].SubitemImages[L_streaks]:=(100+streak_index_start);//store index position here. Normally used for icon index but it can be used
-                    end
+                      ListView1.Items.item[c].subitems.Strings[L_streaks]:=inttostr(nr_streak_lines)
                     else
                     ListView1.Items.item[c].subitems.Strings[L_streaks]:='-';
                   end
@@ -2337,7 +2333,8 @@ end;
 
 procedure Tstackmenu1.Analyse1Click(Sender: TObject);
 begin
-  if streak_filter1.Checked then
+  memo2_message('Analysing lights');
+  if sender=analyse_lights_extra1 then
   begin
     listview1.columns[9].caption:='Streaks';
     analyse_tab_lights(2 {full});
@@ -2355,7 +2352,7 @@ begin
   {$ifdef darwin} {MacOS}
   stackmenu1.nr_total1.caption:=inttostr(listview1.items.count);{update counting info}
   {$endif}
-
+  memo2_message('Analysing lights done.');
 end;
 
 
@@ -2635,8 +2632,6 @@ begin
   esc_pressed:=true; //stop any scrolling and prevent run time errors
   ListView1.Clear;
   stackmenu1.ephemeris_centering1.Clear;
-
-  clear_storage;//clear streak storage
 
   //temporary till MACOS customdraw is fixed
   {$ifdef darwin} {MacOS}
@@ -9604,10 +9599,15 @@ begin
   openurl('http://www.hnsky.org/astap.htm#mount_tab');
 end;
 
+
 procedure Tstackmenu1.lightsShow(Sender: TObject);
 begin
-  stackmenu1.listview1.columns.Items[l_centaz + 1].Caption := centaz_key; {lv.items[l_sqm].caption:=sqm_key; doesn't work}
-  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := sqm_key;  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
+  with stackmenu1 do
+  begin
+    listview1.columns.Items[l_centaz + 1].Caption := centaz_key; {lv.items[l_sqm].caption:=sqm_key; doesn't work}
+    listview1.columns.Items[l_sqm + 1].Caption := sqm_key;  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
+    analyse_lights_extra1.left:=Analyse1.left+analyse1.width;//align button analyse_lights_extra1 to analyse1
+  end;
 end;
 
 
@@ -11335,8 +11335,6 @@ begin
   begin
     memo2_message('Analysing lights.');
 
-    if streak_filter1.Checked then analyse_level:=2  //full
-    else
     if calibration_mode then analyse_level:=0 // almost none
     else
     analyse_level:=1; //medium

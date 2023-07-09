@@ -34,11 +34,6 @@ Mac
 Listview event OnCustomDrawItem is never triggered/fired in Mac, widget Cocoa
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/40065
-
-Cursor  macOS Ventura
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/40078
-https://forum.lazarus.freepascal.org/index.php/topic,61595.0.html
-Lazarus 2.3.0 (rev main-2_3-3114-g5719672f) FPC 3.3.1 x86_64-darwin-cocoa
 }
 
 interface
@@ -67,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.07.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.07.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -7593,7 +7588,7 @@ begin
       dum:=Sett.ReadString('stack','contour_grid',''); if dum<>'' then stackmenu1.detection_grid1.text:=dum;
 
 
-      stackmenu1.streak_filter1.Checked:=Sett.ReadBool('stack','streak_filter',false);
+//      stackmenu1.streak_filter1.Checked:=Sett.ReadBool('stack','streak_filter',false);
 
 
       obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
@@ -7953,9 +7948,6 @@ begin
       sett.writestring('stack','contour_sd',stackmenu1.contour_sigma1.text);
       sett.writestring('stack','contour_grid',stackmenu1.detection_grid1.text);
 
-      sett.writeBool('stack','streak_filter',stackmenu1.streak_filter1.Checked);
-
-
       sett.writestring('aavso','obscode',obscode);
       sett.writeInteger('aavso','delim_pos',delim_pos);
       sett.writeBool('aavso','baa_style',baa_style);{AAVSO report}
@@ -8162,9 +8154,9 @@ begin
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
 
-  plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
   flip_vertical1.checked:=flip_vertical1.checked=false;
   flip_horizontal1.checked:=flip_horizontal1.checked=false;
+  plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
 end;
 
 
@@ -11171,7 +11163,6 @@ begin
   vsp:=nil;
   online_database:=nil; // free mem
   streak_lines:=nil;
-  all_streak_lines:=nil;
 end;
 
 
@@ -11350,13 +11341,6 @@ begin
       end;
       count1:=count1-1;
     end;
-
-//   if nr_streak_lines>0 then
-//   begin
-//     mainwindow.image1.Canvas.Pen.Color := clred;
-//     for i:=0 to nr_streak_lines-1 do
-//        draw_streak_line(streak_lines[i,0]{slope},streak_lines[i,1]{intercept});//draw satellite streak
-//   end;
 
   finally
     List.Free;

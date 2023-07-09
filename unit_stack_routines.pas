@@ -573,10 +573,10 @@ end;
 
 procedure stack_average(oversize,process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars,i,nrstreaks,streaksindex       : integer;
+    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars                                : integer;
     background_correction, weightF,hfd_min                                                                                               : double;
-    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,nearby,streak_filter : boolean;
-    tempval                                                                                                                               : single;
+    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based                     : boolean;
+    tempval                                                                                                                              : single;
     warning  : string;
 
 begin
@@ -586,7 +586,6 @@ begin
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
-    streak_filter:=streak_filter1.checked;
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
@@ -764,54 +763,17 @@ begin
               vector_based:=true;
             end;
 
-            if streak_filter then
-              nrstreaks:=strtoint2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_streaks])
-            else
-              nrstreaks:=0;
-
-            if nrstreaks=0 then
+            for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
+            for fitsX:=1 to head.width  do
             begin
-              for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
-              for fitsX:=1 to head.width  do
+              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+              x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversizeV;
+              x_new:=round(x_new_float);y_new:=round(y_new_float);
+              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
-                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversizeV;
-                x_new:=round(x_new_float);y_new:=round(y_new_float);
-                if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-                begin
-                  for col:=0 to head.naxis3-1 do {all colors}
-                    img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                  img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
-                end;
-              end;
-            end
-            else
-            begin //combine but remove streaks
-              streaksindex:=-100+ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_streaks];//streakindex is hidden in SubitemImages[L_streaks]
-
-              for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
-              for fitsX:=1 to head.width  do
-              begin
-                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversizeV;
-                x_new:=round(x_new_float);y_new:=round(y_new_float);
-                if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-                begin
-                  nearby:=false;
-                  for i:=streaksindex to streaksindex+nrstreaks-1 do
-                  begin
-                    nearby:=(abs(line_distance(fitsX-1,fitsY-1,all_streak_lines[i,0] {slope},all_streak_lines[i,1]{intercept}))<=5);
-                    if nearby then
-                       break;
-                  end;
-
-                  if nearby=false then
-                  begin
-                    for col:=0 to head.naxis3-1 do {all colors}
-                      img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+img_loaded[col,fitsX-1,fitsY-1]*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                    img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
-                  end;
-                end;
+                for col:=0 to head.naxis3-1 do {all colors}
+                  img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
             end;
 
@@ -1116,9 +1078,9 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars,nrstreaks,streaksindex,i               : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars                                        : integer;
     background_correction, variance_factor, value,weightF,hfd_min                                                                                  : double;
-    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,nearby,streak_filter         : boolean;
+    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based                              : boolean;
     tempval, sumpix, newpix                                                                                                                        : single;
     warning  : string;
 begin
@@ -1135,7 +1097,6 @@ begin
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
-    streak_filter:=streak_filter1.checked;
 
     counter:=0;
     sum_exp:=0;
@@ -1318,59 +1279,21 @@ begin
             vector_based:=true;
           end;
 
-          if streak_filter then
-               nrstreaks:=strtoint2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_streaks])
-             else
-               nrstreaks:=0;
-
-          if nrstreaks=0 then  //phase 1
+          for fitsY:=1 to head.height do {average}
+          for fitsX:=1 to head.width  do
           begin
-            for fitsY:=1 to head.height do {average}
-            for fitsX:=1 to head.width  do
+            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+
+            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
-
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+              for col:=0 to head.naxis3-1 do
               begin
-                for col:=0 to head.naxis3-1 do
-                begin
-                  img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]*weightF;{Note fits count from 1, image from zero}
-                  img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
-                end;
-              end;
-            end;
-            end
-          else
-          begin  //filter out streaks
-            streaksindex:=-100+ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_streaks];//streakindex is hidden in SubitemImages[L_streaks]
-
-            for fitsY:=1 to head.height do {average}
-            for fitsX:=1 to head.width  do
-            begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
-
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-              begin
-                nearby:=false;
-                for i:=streaksindex to streaksindex+nrstreaks-1 do
-                begin
-                  nearby:=(abs(line_distance(fitsX-1,fitsY-1,all_streak_lines[i,0] {slope},all_streak_lines[i,1]{intercept}))<=5);
-                  if nearby then
-                      break;
-                end;
-
-                if nearby=false then //no streak nearby
-                for col:=0 to head.naxis3-1 do
-                begin
-                  img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]*weightF;{Note fits count from 1, image from zero}
-                  img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
-                end;
+                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]*weightF;{Note fits count from 1, image from zero}
+                img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
               end;
             end;
           end;
-
 
         end;
         progress_indicator(10+round(0.3333*90*(counter)/length(files_to_process){(ListView1.items.count)}),' ■□□');{show progress}
@@ -1470,46 +1393,15 @@ begin
             vector_based:=true;
           end;
 
-          if streak_filter then
-               nrstreaks:=strtoint2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_streaks])
-             else
-               nrstreaks:=0;
 
-
-          if nrstreaks=0 then  //phase 2
+          for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
+          for fitsX:=1 to head.width  do
           begin
-            for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
-            for fitsX:=1 to head.width  do
+            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-              begin
-                for col:=0 to head.naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( img_loaded[col,fitsX-1,fitsY-1]*weightF - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
-              end;
-            end;
-          end
-          else
-          begin //filter out streaks
-            streaksindex:=-100+ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_streaks];//streakindex is hidden in SubitemImages[L_streaks]
-            for fitsY:=1 to head.height do
-            for fitsX:=1 to head.width  do
-            begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-              begin
-                nearby:=false;
-                for i:=streaksindex to streaksindex+nrstreaks-1 do
-                begin
-                  nearby:=(abs(line_distance(fitsX-1,fitsY-1,all_streak_lines[i,0] {slope},all_streak_lines[i,1]{intercept}))<=5);
-                  if nearby then
-                    break;
-                end;
-
-                if nearby=false then //no streak nearby
-                  for col:=0 to head.naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( img_loaded[col,fitsX-1,fitsY-1]*weightF - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
-              end;
+              for col:=0 to head.naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( img_loaded[col,fitsX-1,fitsY-1]*weightF - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
             end;
           end;
 
@@ -1614,64 +1506,25 @@ begin
             vector_based:=true;
           end;
 
-          if streak_filter then
-               nrstreaks:=strtoint2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_streaks])
-             else
-               nrstreaks:=0;
-
-          if nrstreaks=0 then  //phase 3
+           //phase 3
+          for fitsY:=1 to head.height do
+          for fitsX:=1 to head.width  do
           begin
-            for fitsY:=1 to head.height do
-            for fitsX:=1 to head.width  do
+            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+              for col:=0 to head.naxis3-1 do {do all colors}
               begin
-                for col:=0 to head.naxis3-1 do {do all colors}
+                value:=img_loaded[col,fitsX-1,fitsY-1]*weightF;
+                if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
                 begin
-                  value:=img_loaded[col,fitsX-1,fitsY-1]*weightF;
-                  if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
-                  begin
-                    img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
-                  end;
-                end;
-              end;
-            end;
-          end
-          else
-          begin //filter out streaks
-            streaksindex:=-100+ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_streaks];//streakindex is hidden in SubitemImages[L_streaks]
-            for fitsY:=1 to head.height do
-            for fitsX:=1 to head.width  do
-            begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-              begin
-                nearby:=false;
-                for i:=streaksindex to streaksindex+nrstreaks-1 do
-                begin
-                  nearby:=(abs(line_distance(fitsX-1,fitsY-1,all_streak_lines[i,0] {slope},all_streak_lines[i,1]{intercept}))<=5);
-                  if nearby then
-                    break;
-                end;
-
-                if nearby=false then
-                for col:=0 to head.naxis3-1 do {do all colors}
-                begin
-                  value:=img_loaded[col,fitsX-1,fitsY-1]*weightF;
-                  if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
-                  begin
-                    img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
-                  end;
+                  img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
+                  img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
                 end;
               end;
             end;
           end;
-
 
           progress_indicator(10+60+round(0.33333*90*(counter)/length(files_to_process){(ListView1.items.count)}),' ■■■');{show progress}
           finally
