@@ -14,7 +14,7 @@ object form_inspection1: Tform_inspection1
   Position = poDesktopCenter
   LCLVersion = '2.2.4.0'
   object undo_button1: TBitBtn
-    Left = 464
+    Left = 456
     Height = 30
     Hint = 'Restore image'
     Top = 208
@@ -78,12 +78,14 @@ object form_inspection1: Tform_inspection1
     OnClick = help_uncheck_outliers1Click
   end
   object show_distortion1: TBitBtn
-    Left = 464
+    Left = 448
     Height = 26
     Hint = 'Show image distortion using the star positions and solution. Lines a 50x larger then distortion.'
     Top = 96
-    Width = 173
+    Width = 186
+    AutoSize = True
     Caption = 'Show distortion'
+    Constraints.MinWidth = 186
     Images = mainwindow.ImageList1
     ImageIndex = 40
     OnClick = show_distortion1Click
@@ -92,12 +94,14 @@ object form_inspection1: Tform_inspection1
     TabOrder = 1
   end
   object aberration_inspector1: TBitBtn
-    Left = 464
+    Left = 448
     Height = 26
     Hint = 'Makes a compilation of the image corners and the center for a closer inspection.'
     Top = 136
-    Width = 173
+    Width = 186
+    AutoSize = True
     Caption = 'Aberration inspector  F6'
+    Constraints.MinWidth = 186
     Images = mainwindow.ImageList1
     ImageIndex = 39
     OnClick = aberration_inspector1Click
@@ -106,12 +110,14 @@ object form_inspection1: Tform_inspection1
     TabOrder = 2
   end
   object background_values1: TBitBtn
-    Left = 464
+    Left = 448
     Height = 25
     Hint = 'Annotate the image with the median background values relative to the center.'
     Top = 56
-    Width = 173
+    Width = 186
+    AutoSize = True
     Caption = 'Background values'
+    Constraints.MinWidth = 186
     Images = mainwindow.ImageList1
     OnClick = background_values1Click
     ParentShowHint = False
@@ -139,7 +145,8 @@ object form_inspection1: Tform_inspection1
         Height = 26
         Hint = 'Calculate tilt and curvature. The absolute font size will be smaller if you zoom in.'
         Top = 144
-        Width = 122
+        Width = 86
+        AutoSize = True
         Caption = 'Tilt    F4'
         Images = mainwindow.ImageList1
         ImageIndex = 41
@@ -280,7 +287,8 @@ object form_inspection1: Tform_inspection1
         Height = 25
         Hint = 'Creates a diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars.'
         Top = 144
-        Width = 72
+        Width = 49
+        AutoSize = True
         Caption = 'HFD'
         OnClick = roundness1Click
         ParentShowHint = False

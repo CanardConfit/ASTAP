@@ -1,16 +1,16 @@
 object stackmenu1: Tstackmenu1
-  Left = 66
-  Height = 681
-  Top = 121
-  Width = 1630
-  HorzScrollBar.Page = 1630
-  HorzScrollBar.Range = 1630
-  VertScrollBar.Page = 558
-  VertScrollBar.Range = 558
+  Left = 30
+  Height = 720
+  Top = 128
+  Width = 1716
+  HorzScrollBar.Page = 300
+  HorzScrollBar.Range = 640
+  VertScrollBar.Range = 300
+  VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 681
-  ClientWidth = 1630
+  ClientHeight = 703
+  ClientWidth = 1716
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -54,9 +54,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.2.4.0'
   object memo2: TMemo
     Left = 0
-    Height = 121
+    Height = 143
     Top = 560
-    Width = 1630
+    Width = 1716
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -214,7 +214,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 39716
+    Left = 41703
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -232,9 +232,10 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1630
+    Width = 1716
     ActivePage = lights
     Align = alClient
+    AutoSize = True
     Constraints.MaxHeight = 498
     Images = ImageList2
     ParentBiDiMode = False
@@ -247,14 +248,15 @@ object stackmenu1: Tstackmenu1
     OnMouseMove = pagecontrol1MouseMove
     object lights: TTabSheet
       Hint = 'Select here the raw light frames'
+      AutoSize = True
       Caption = 'Lights'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 22
       OnShow = lightsShow
       ParentFont = False
       object nr_selected1: TLabel
-        Left = 440
+        Left = 424
         Height = 15
         Top = 10
         Width = 6
@@ -263,7 +265,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
       end
       object nr_total1: TLabel
-        Left = 488
+        Left = 472
         Height = 15
         Hint = 'Total number of images in the list'
         Top = 10
@@ -273,7 +275,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
       end
       object Analyse1: TButton
-        Left = 136
+        Left = 120
         Height = 25
         Hint = 'Analyse and move dark, flat or bias images to the corresponding tabs. To analyse planetary image on sharpness set in tab alignment max stars on 0.'
         Top = 5
@@ -287,7 +289,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 0
       end
       object Label9: TLabel
-        Left = 464
+        Left = 448
         Height = 15
         Top = 10
         Width = 5
@@ -296,7 +298,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
       end
       object clear_image_list1: TButton
-        Left = 920
+        Left = 904
         Height = 25
         Hint = 'Clear image list'
         Top = 5
@@ -314,7 +316,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -363,8 +365,8 @@ object stackmenu1: Tstackmenu1
           item
             Alignment = taRightJustify
             Caption = 'Background'
-            MinWidth = 90
-            Width = 90
+            MinWidth = 110
+            Width = 110
           end        
           item
             Alignment = taRightJustify
@@ -492,7 +494,7 @@ object stackmenu1: Tstackmenu1
         OnKeyDown = listview1KeyDown
       end
       object uncheck_outliers1: TCheckBox
-        Left = 532
+        Left = 516
         Height = 19
         Hint = 'Uncheck files with abnormal HFD or abnormal amount number of stars detected.'
         Top = 8
@@ -502,7 +504,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 3
       end
       object sd_factor_list1: TComboBox
-        Left = 803
+        Left = 787
         Height = 23
         Hint = 'Sigma factor (or percentage to keep) to identify statistically low quality images.'
         Top = 5
@@ -531,7 +533,7 @@ object stackmenu1: Tstackmenu1
       end
       object help_uncheck_outliers1: TLabel
         Cursor = crHandPoint
-        Left = 1088
+        Left = 1072
         Height = 30
         Hint = 'Online help about analyse'
         Top = 0
@@ -546,12 +548,14 @@ object stackmenu1: Tstackmenu1
         OnClick = help_uncheck_outliers1Click
       end
       object blink_unaligned_multi_step1: TButton
-        Left = 1208
+        Left = 1192
         Height = 25
         Hint = 'Un-aligned blink. Note: For single step blink use the keyboard left and right arrows.'
         Top = 5
         Width = 50
+        AutoSize = True
         Caption = '▶▶'
+        Constraints.MinWidth = 50
         OnClick = blink_unaligned_multi_step1Click
         ParentFont = False
         ParentShowHint = False
@@ -559,23 +563,27 @@ object stackmenu1: Tstackmenu1
         TabOrder = 5
       end
       object lights_blink_pause1: TButton
-        Left = 1128
+        Left = 1112
         Height = 25
         Hint = 'Pause blinking'
         Top = 5
         Width = 50
+        AutoSize = True
         Caption = '||'
+        Constraints.MinWidth = 50
         OnClick = blink_stop1Click
         ParentFont = False
         TabOrder = 6
       end
       object blink_unaligned_multi_step_backwards1: TButton
-        Left = 1272
+        Left = 1256
         Height = 25
         Hint = 'Un-aligned blink. Note: For single step blink use the keyboard left and right arrows.'
         Top = 5
         Width = 50
+        AutoSize = True
         Caption = '◀◀'
+        Constraints.MinWidth = 50
         OnClick = blink_unaligned_multi_step1Click
         ParentFont = False
         ParentShowHint = False
@@ -583,7 +591,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 7
       end
       object planetary_image1: TCheckBox
-        Left = 1464
+        Left = 1448
         Height = 19
         Hint = 'Checkmark this option for analysing planetary images on sharpness. Note the stack routine is not suitable for stacking of planetary images.'
         Top = 8
@@ -592,19 +600,21 @@ object stackmenu1: Tstackmenu1
         TabOrder = 8
       end
       object browse1: TBitBtn
-        Left = 16
-        Height = 25
+        Left = 0
+        Height = 26
         Hint = 'Browse and select lights to stack'
         Top = 5
         Width = 92
+        AutoSize = True
         Caption = 'Browse'
+        Constraints.MinWidth = 92
         Images = ImageList2
         ImageIndex = 23
         OnClick = browse1Click
         TabOrder = 9
       end
       object analyse_lights_extra1: TButton
-        Left = 344
+        Left = 328
         Height = 25
         Hint = 'Report satellite streaks. For streak detection settings see tab "pixel math 2"'
         Top = 5
@@ -618,16 +628,17 @@ object stackmenu1: Tstackmenu1
     end
     object Darks: TTabSheet
       Hint = 'Select here the dark frames.'
+      AutoSize = True
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
-        Left = 312
+        Left = 296
         Height = 25
         Hint = 'Combine to check-marked files to master dark. The other files are not affected.'
-        Top = 5
+        Top = 0
         Width = 295
         AutoSize = True
         Caption = 'Replace check-marked by one or more master dark'
@@ -636,10 +647,10 @@ object stackmenu1: Tstackmenu1
         TabOrder = 0
       end
       object clear_dark_list1: TButton
-        Left = 1000
+        Left = 984
         Height = 25
         Hint = 'Clear image list'
-        Top = 5
+        Top = 0
         Width = 71
         AutoSize = True
         Caption = 'Clear list'
@@ -654,7 +665,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -709,8 +720,8 @@ object stackmenu1: Tstackmenu1
           item
             Alignment = taRightJustify
             Caption = 'Background'
-            MinWidth = 110
-            Width = 110
+            MinWidth = 90
+            Width = 90
           end        
           item
             Caption = 'σ centre'
@@ -726,6 +737,11 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'JD'
             Width = 27
+          end        
+          item
+            AutoSize = True
+            Caption = 'Issues'
+            Width = 46
           end>
         GridLines = True
         HideSelection = False
@@ -748,22 +764,23 @@ object stackmenu1: Tstackmenu1
         OnKeyDown = listview1KeyDown
       end
       object analysedarksButton2: TButton
-        Left = 136
+        Left = 120
         Height = 25
         Hint = 'Analyse image files'
-        Top = 5
+        Top = 0
         Width = 67
         AutoSize = True
         Caption = 'Analyse'
+        Constraints.MinWidth = 67
         OnClick = analysedarksButton2Click
         ParentFont = False
         TabOrder = 3
       end
       object nr_total_darks1: TLabel
-        Left = 272
+        Left = 256
         Height = 15
         Hint = 'Number of images in the list'
-        Top = 10
+        Top = 5
         Width = 6
         Caption = '0'
         Color = clBtnFace
@@ -772,10 +789,10 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object classify_dark_date1: TCheckBox
-        Left = 720
+        Left = 704
         Height = 19
         Hint = 'Combine darks within 12 hour time range to master'
-        Top = 8
+        Top = 3
         Width = 205
         Caption = 'Classify by date for master creation'
         ParentFont = False
@@ -784,12 +801,14 @@ object stackmenu1: Tstackmenu1
         TabOrder = 4
       end
       object browse_dark1: TBitBtn
-        Left = 16
-        Height = 25
+        Left = 0
+        Height = 26
         Hint = 'Browse and select darks'
-        Top = 5
+        Top = 0
         Width = 92
+        AutoSize = True
         Caption = 'Browse'
+        Constraints.MinWidth = 92
         Images = ImageList2
         ImageIndex = 23
         OnClick = browse_dark1Click
@@ -800,7 +819,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 2
       ParentFont = False
       object replace_by_master_flat1: TButton
@@ -846,7 +865,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -930,6 +949,11 @@ object stackmenu1: Tstackmenu1
             Caption = 'Calibration'
             MinWidth = 80
             Width = 80
+          end        
+          item
+            AutoSize = True
+            Caption = 'Issues'
+            Width = 46
           end>
         GridLines = True
         HideSelection = False
@@ -965,11 +989,13 @@ object stackmenu1: Tstackmenu1
       end
       object browse_flats1: TBitBtn
         Left = 16
-        Height = 25
+        Height = 26
         Hint = 'Browse and select flats'
         Top = 5
         Width = 92
+        AutoSize = True
         Caption = 'Browse'
+        Constraints.MinWidth = 92
         Images = ImageList2
         ImageIndex = 23
         OnClick = browse_flats1Click
@@ -1004,7 +1030,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 3
       ParentFont = False
       object clear_selection3: TButton
@@ -1036,7 +1062,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1139,11 +1165,13 @@ object stackmenu1: Tstackmenu1
       end
       object browse_bias1: TBitBtn
         Left = 16
-        Height = 25
+        Height = 26
         Hint = 'Browse and select flat-darks (bias)'
         Top = 6
         Width = 92
+        AutoSize = True
         Caption = 'Browse'
+        Constraints.MinWidth = 92
         Images = ImageList2
         ImageIndex = 23
         OnClick = browse_bias1Click
@@ -1154,7 +1182,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1162,7 +1190,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1292,7 +1320,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 5
       OnShow = tab_stackmethod1Show
       ParentFont = False
@@ -2268,7 +2296,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 7
       OnShow = alignment1Show
       ParentFont = False
@@ -2960,7 +2988,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 11
       OnShow = tab_blink1Show
       ParentFont = False
@@ -2969,7 +2997,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3271,7 +3299,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Photometry of variable stars.'
       Caption = 'Photometry'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 19
       OnShow = tab_photometry1Show
       ParentFont = False
@@ -3347,7 +3375,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3739,17 +3767,17 @@ object stackmenu1: Tstackmenu1
         Width = 99
         AutoSize = False
         Caption = 'See popup menu for calibration && extraction'
-        Font.Height = 8
+        Font.Height = -9
         ParentColor = False
         ParentFont = False
         WordWrap = True
       end
     end
-    object TabSheet1: TTabSheet
+    object tab_inspector1: TTabSheet
       Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 17
       object analyse_inspector1: TButton
         Left = 136
@@ -3767,7 +3795,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4004,18 +4032,18 @@ object stackmenu1: Tstackmenu1
         TabOrder = 4
       end
     end
-    object mount1: TTabSheet
+    object tab_mount1: TTabSheet
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1622
+        Width = 1708
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4281,7 +4309,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       ParentFont = False
       object live_stacking1: TButton
         Left = 16
@@ -4451,7 +4479,7 @@ object stackmenu1: Tstackmenu1
     object tab_monitoring1: TTabSheet
       Caption = 'Monitoring'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       OnShow = tab_monitoring1Show
       object Label3: TLabel
         Left = 128
@@ -4746,7 +4774,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       Enabled = False
       ImageIndex = 4
       OnShow = tab_Pixelmath1Show
@@ -4955,10 +4983,11 @@ object stackmenu1: Tstackmenu1
         TabOrder = 1
         object apply_artificial_flat_correction1: TButton
           Left = 64
-          Height = 30
+          Height = 25
           Hint = 'Equalise corners of the image below the average background. '
           Top = 12
-          Width = 111
+          Width = 109
+          AutoSize = True
           Caption = 'Raise dark areas'
           OnClick = apply_artificial_flat_correction1Click
           ParentFont = False
@@ -5031,10 +5060,11 @@ object stackmenu1: Tstackmenu1
         end
         object apply_artificial_flat_correctionV2: TButton
           Left = 272
-          Height = 30
+          Height = 25
           Hint = 'Equalise all. There should be no object in the center of the image and deepsky objects should be small.. '
           Top = 12
           Width = 96
+          AutoSize = True
           Caption = 'Ring equalise'
           OnClick = apply_artificial_flat_correction1Click
           ParentFont = False
@@ -5735,11 +5765,13 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object apply_background_noise_filter1: TButton
-          Left = 72
-          Height = 30
-          Top = 40
-          Width = 184
+          Left = 115
+          Height = 25
+          Top = 44
+          Width = 150
+          AutoSize = True
           Caption = 'Apply'
+          Constraints.MinWidth = 150
           OnClick = apply_background_noise_filter1Click
           ParentFont = False
           TabOrder = 2
@@ -5917,11 +5949,13 @@ object stackmenu1: Tstackmenu1
         end
         object apply_hue1: TButton
           Left = 96
-          Height = 30
+          Height = 25
           Hint = 'Add noise to the image in the viewer'
           Top = 328
           Width = 184
+          AutoSize = True
           Caption = 'Apply'
+          Constraints.MinWidth = 184
           OnClick = apply_hue1Click
           ParentFont = False
           TabOrder = 2
@@ -6115,7 +6149,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 1622
+      ClientWidth = 1708
       Enabled = False
       ImageIndex = 4
       OnShow = tab_Pixelmath2Show

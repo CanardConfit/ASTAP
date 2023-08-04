@@ -155,8 +155,8 @@ var
       jd_sum:=0;{sum of Julian midpoints}
       jd_stop:=0;{end observations in Julian day}
 
-      dark_exposure:=987654321;{not done indication}
-      dark_temperature:=987654321;
+      light_exposure:=987654321;{not done indication}
+      light_temperature:=987654321;
       flat_filter:='987654321';{not done indication}
     end;
 

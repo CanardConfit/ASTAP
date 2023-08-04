@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.07.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.08.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -379,7 +379,6 @@ type
     procedure histogram_values_to_clipboard1Click(Sender: TObject);
     procedure Image1Paint(Sender: TObject);
     procedure annotate_unknown_stars1Click(Sender: TObject);
-    procedure import_auid1Click(Sender: TObject);
     procedure inspector1Click(Sender: TObject);
     procedure j2000d1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
@@ -796,7 +795,7 @@ procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
 procedure execute_unix(const execut:string; param: TStringList; show_output: boolean);{execute linux program and report output}
 procedure execute_unix2(s:string);
 {$endif}
-function mode(img :image_array;ellipse:  boolean;colorm,xmin,xmax,ymin,ymax,max1:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function mode(img :image_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 function get_negative_noise_level(img :image_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
 function prepare_ra6(rax:double; sep:string):string; {radialen to text  format 24h 00 00}
@@ -842,7 +841,7 @@ procedure log_to_file(logf,mess : string);{for testing}
 procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
-procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; out sd,mean,hotpixels :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 function fits_file_name(inp : string): boolean; {fits file name?}
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
@@ -3212,7 +3211,7 @@ begin
 end;
 
 
-function mode(img :image_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function mode(img :image_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 var
    i,j,val,value_count,width3,height3  :integer;
    histogram : array of integer;
@@ -3248,15 +3247,19 @@ begin
       end;{j}
     end; {i}
   result:=0; {for case histogram is empthy due to black area}
+
+
+  greylevels:=0;
   value_count:=0;
   for i := 1 to max1 do {get most common but ignore 0}
   begin
     val:=histogram[i];
+    if val<>0 then inc(greylevels);
     if  val>value_count then
     begin
       value_count:=val; {find most common in histogram}
       result:=i;
-    end;
+    end
   end;
   histogram:=nil;{free mem}
 end;
@@ -4678,9 +4681,9 @@ end;
 
 procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i,band,flux_counter,ttt : integer;
+   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i,band,flux_counter,ttt,greylevels,greylevels2 : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,mean,median,bg_median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b : double;
+   sd,mean,median,bg_median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b,hotpixels : double;
    Save_Cursor              : TCursor;
    info_message,shapeform,shapeform2   : string;
    median_array                        : array of double;
@@ -4719,10 +4722,10 @@ begin
   {measure the median of the suroundings}
   for col:=0 to head.naxis3-1 do  {do all colours}
   begin
-    local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+    local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,hotpixels,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
 
-    most_common:=mode(img_loaded,CtrlButton {ellipse},col,startx,stopX,starty,stopY,32000);
+    most_common:=mode(img_loaded,CtrlButton {ellipse},col,startx,stopX,starty,stopY,65535,greylevels);
 
     {median sampling and min , max}
     max_counter:=1;
@@ -4810,8 +4813,8 @@ begin
     if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
     if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
 
-    info_message:=info_message+  'x̄ :    '+floattostrf(mean,ffgeneral, 5, 5)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+             {mean}
-                                 'x̃  :   '+floattostrf(median,ffgeneral, 5, 5)+#10+ {median}
+    info_message:=info_message+  'x̄ :    '+floattostrf(mean,ffFixed, 0, 2)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+             {mean}
+                                 'x̃  :   '+floattostrf(median,ffFixed, 0, 2)+#10+ {median}
                                  'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
                                  'σ :   '+noise_to_electrons(adu_e,head.xbinning,sd)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
                                  'σ_2:   '+noise_to_electrons(adu_e,head.xbinning,get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common))+#10+
@@ -4820,19 +4823,24 @@ begin
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
                                  'Flux: '+floattostrf(total_flux,ffExponent, 4, 2)+ '  (Counts '+inttostr(flux_counter)+ ', Average '+inttostr(round(total_flux/flux_counter))+'/px)'+#10+
                                  'BG :   '+floattostrf(bg_median,ffgeneral, 5, 5)+#10+ {median}
+                                 'Hot pixels: '+floattostrf(100*hotpixels,ffgeneral, 0, 5)+'%'+#10+
                                  '≥64E3 :  '+inttostr(round(saturated));
   end;
   if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
   begin
-    mc_1:=mode(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},           0{y1},       50{y2},32000);{for this area get most common value equals peak in histogram}
-    mc_2:=mode(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},head.height-1-50{y1},head.height-1{y2},32000);
-    mc_3:=mode(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},head.height-1-50{y1},head.height-1{y2},32000);
-    mc_4:=mode(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},           0{y1},50       {y2},32000);
+    mc_1:=mode(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},           0{y1},       50{y2},32000,greylevels2);{for this area get most common value equals peak in histogram}
+    mc_2:=mode(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},head.height-1-50{y1},head.height-1{y2},32000,greylevels2);
+    mc_3:=mode(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},head.height-1-50{y1},head.height-1{y2},32000,greylevels2);
+    mc_4:=mode(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},           0{y1},50       {y2},32000,greylevels2);
 
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
   end;
 
   if range>0 then info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
+
+
+  if ((nrbits=16) or (nrbits=8)) then info_message:=info_message+#10+'Greyscale levels: '+ inttostr(greylevels);
+
   if head.Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
 
   if CTRLbutton=false then begin shapeform:='Rectangle: ';shapeform2:='rectangle'; end else begin shapeform:='Ellipse: '; shapeform2:='ellipse'; end;
@@ -4852,6 +4860,7 @@ begin
                                             'm = minimum value image | M = maximum value image | '+
                                             'Flux = total flux inside shape above BG | '+
                                             'BG = median background outside the shape | '+
+                                            'Hot pixels = percentage of pixels with a value above Gaussian noise | '+
                                             '≥64E3 = number of values equal or above 64000';
 
   case  QuestionDlg (pchar('Statistics within '+shapeform2+' '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY)),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
@@ -5319,7 +5328,7 @@ end;
 
 procedure Tmainwindow.Remove_deep_sky_object1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k,bsize  : integer;
+   fitsX,fitsY,dum,k,bsize,greylevels  : integer;
    mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,
    center_x,center_y,a,b,new_value,new_value_noise      : double;
@@ -5348,11 +5357,11 @@ begin
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
 
-      mode_left_bottom:=mode(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top:=   mode(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_left_bottom:=mode(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   mode(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize,32000,greylevels);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom:=mode(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top:=   mode(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_bottom:=mode(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   mode(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,32000,greylevels);{for this area get most common value equals peak in histogram}
 
       noise_left_bottom:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize, mode_left_bottom);{find the negative noise level below most_common_level of a local area}
       noise_left_top:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize, mode_left_top);{find the negative noise level below most_common_level of a local area}
@@ -7164,7 +7173,6 @@ var
   tmpStartupInfo: TStartupInfo;
   tmpProcessInformation: TProcessInformation;
   tmpProgram: String;
-  console :longint;
 
 begin
   tmpProgram := trim(aCommando);
@@ -7172,15 +7180,17 @@ begin
   with tmpStartupInfo do
   begin
     cb := SizeOf(TStartupInfo);
+    if show_console=false then
+    begin
+      dwFlags := STARTF_USESHOWWINDOW;
+      wShowWindow := SW_SHOWMINIMIZED;
+    end
+    else
     wShowWindow := SW_HIDE;
   end;
-  if show_console then console:=CREATE_NEW_CONSOLE else console:=CREATE_NO_WINDOW;
-
-  if CreateProcess(nil, pchar(tmpProgram), nil, nil, true, console ,
-    nil, nil, tmpStartupInfo, tmpProcessInformation) then
-  begin
-    // loop every 50 ms
-    while WaitForSingleObject(tmpProcessInformation.hProcess, 50) > 0 do
+  if CreateProcess(nil, pchar(tmpProgram), nil, nil, true,CREATE_DEFAULT_ERROR_MODE or CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS,  nil, nil, tmpStartupInfo, tmpProcessInformation) then
+  begin // loop every 100 ms
+    while WaitForSingleObject(tmpProcessInformation.hProcess, 100) > 0 do
     begin
       Application.ProcessMessages;
     end;
@@ -7193,6 +7203,7 @@ begin
   end;
 end;
 {$else} {unix}
+
 
 procedure execute_unix(const execut:string; param: TStringList; show_output: boolean);{execute linux program and report output}
 var
@@ -8162,7 +8173,7 @@ end;
 
 procedure Tmainwindow.dust_spot_removal1Click(Sender: TObject);
 var
-  fitsX,fitsY,dum,k,w,h : integer;
+  fitsX,fitsY,dum,k,w,h,greylevels : integer;
   center_X, center_Y, line_bottom,line_top,expected_value, mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,a,b         : double;
   img_delta : image_array;
 
@@ -8193,11 +8204,11 @@ begin
 
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      mode_left_bottom:=mode(img_loaded,false{ellipse shape},k,startX-20,startX,startY-20,startY,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top:=mode(img_loaded,false{ellipse shape},k,startX-20,startX,stopY,stopY+20,32000);{for this area get most common value equals peak in histogram}
+      mode_left_bottom:=mode(img_loaded,false{ellipse shape},k,startX-20,startX,startY-20,startY,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_left_top:=mode(img_loaded,false{ellipse shape},k,startX-20,startX,stopY,stopY+20,32000,greylevels);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom:=mode(img_loaded,false{ellipse shape},k,stopX,stopX+20,startY-20,startY,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top:=mode(img_loaded,false{ellipse shape},k,stopX,stopX+20,stopY,stopY+20,32000);{for this area get most common value equals peak in histogram}
+      mode_right_bottom:=mode(img_loaded,false{ellipse shape},k,stopX,stopX+20,startY-20,startY,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_right_top:=mode(img_loaded,false{ellipse shape},k,stopX,stopX+20,stopY,stopY+20,32000,greylevels);{for this area get most common value equals peak in histogram}
 
 
       for fitsY:=startY to stopY-1 do
@@ -9875,7 +9886,7 @@ procedure Tmainwindow.gradient_removal1Click(Sender: TObject);
 var
    colrr1,colgg1,colbb1,colrr2,colgg2,colbb2                      : single;
    a,b,c,p : double;
-   fitsX,fitsY,bsize  : integer;
+   fitsX,fitsY,bsize,greylevels  : integer;
 begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>100) OR (abs(stopY-starty)>100)) then {or function since it could be parallel to x or y axis}
@@ -9885,13 +9896,13 @@ begin
     backup_img;
 
     bsize:=20;
-    colrr1:=mode(img_loaded,false{ellipse shape},0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
-    if head.naxis3>1 then colgg1:=mode(img_loaded,false{ellipse shape},1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
-    if head.naxis3>2 then colbb1:=mode(img_loaded,false{ellipse shape},2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    colrr1:=mode(img_loaded,false{ellipse shape},0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535,greylevels);{find most common colour of a local area}
+    if head.naxis3>1 then colgg1:=mode(img_loaded,false{ellipse shape},1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535,greylevels);{find most common colour of a local area}
+    if head.naxis3>2 then colbb1:=mode(img_loaded,false{ellipse shape},2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535,greylevels);{find most common colour of a local area}
 
-    colrr2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
-    if head.naxis3>1 then colgg2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
-    if head.naxis3>2 then colbb2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
+    colrr2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535,greylevels);{find most common colour of a local area}
+    if head.naxis3>1 then colgg2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535,greylevels);{find most common colour of a local area}
+    if head.naxis3>2 then colbb2:=mode(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535,greylevels);{find most common colour of a local area}
 
     a:=sqrt(sqr(stopX-startX)+sqr(stopY-startY)); {distance between bright and dark area}
 
@@ -10353,11 +10364,6 @@ const
   mainwindow.image1.Canvas.textout(20,head.height-20,inttostr(countN)+' unknown stars, '+inttostr(countO)+' magnitude offsets.' );
 
   Screen.Cursor:=crDefault;
-end;
-
-procedure Tmainwindow.import_auid1Click(Sender: TObject);
-begin
-
 end;
 
 
@@ -14080,7 +14086,7 @@ begin
 end;
 
 
-procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; out sd,mean,hotpixels :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 var i,j,counter,w,h : integer;
     value, sd_old,meanx   : double;
 
@@ -14130,9 +14136,9 @@ begin
       end;
     end;
     if counter<>0 then sd:=sqrt(sd/counter);
-
     inc(iterations);
   until (((sd_old-sd)<0.03*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
+  hotpixels:=0.997 - counter/((1+y2-y1)*(1+x2-x1));//percentage hot pixels. Within sigma 3.0,  99.73% remains.
 end;
 
 
@@ -14195,8 +14201,7 @@ end;
 
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor,
-  adu_e                                                                       : double;
+  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor, adu_e,hotpixels  : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str                  : string;
   width5,height5,box_SX,box_SY,flipH,flipV,iterations, box_LX,box_LY                   : integer;
   color1:tcolor;
@@ -14392,7 +14397,7 @@ begin
      object_decM:=decM; {use mouse position instead}
      mainwindow.statusbar1.panels[1].text:='';
 
-     local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+     local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},hotpixels,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
      mainwindow.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, head.Xbinning, sd); //reports noise in ADU's (adu_e=0) or electrons
    end;

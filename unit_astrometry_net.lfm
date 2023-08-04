@@ -1,7 +1,7 @@
 object form_astrometry_net1: Tform_astrometry_net1
-  Left = 298
+  Left = 686
   Height = 164
-  Top = 87
+  Top = 156
   Width = 795
   Caption = 'Solving using local astrometry.net. '
   ClientHeight = 164
@@ -9,7 +9,7 @@ object form_astrometry_net1: Tform_astrometry_net1
   KeyPreview = True
   OnKeyPress = FormKeyPress
   OnShow = FormShow
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.2.4.0'
   object cygwin1: TComboBox
     Left = 112
     Height = 23
@@ -73,6 +73,7 @@ object form_astrometry_net1: Tform_astrometry_net1
     Width = 120
     BorderSpacing.Around = 5
     Caption = 'Keep console open'
+    OnChange = keep_console_open1Change
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
@@ -83,14 +84,13 @@ object form_astrometry_net1: Tform_astrometry_net1
     Height = 19
     Hint = 'If grayed show only minimised.'
     Top = 92
-    Width = 90
+    Width = 93
     BorderSpacing.Around = 5
-    Caption = 'Show solving'
-    Checked = True
+    Caption = 'Show console'
+    OnChange = show_console1Change
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    State = cbChecked
     TabOrder = 3
   end
   object Button1: TButton
@@ -104,7 +104,7 @@ object form_astrometry_net1: Tform_astrometry_net1
     TabOrder = 4
   end
   object solved1: TLabel
-    Left = 448
+    Left = 544
     Height = 15
     Top = 128
     Width = 47
@@ -112,7 +112,7 @@ object form_astrometry_net1: Tform_astrometry_net1
     ParentColor = False
   end
   object failed1: TLabel
-    Left = 640
+    Left = 672
     Height = 15
     Top = 128
     Width = 43
@@ -136,5 +136,18 @@ object form_astrometry_net1: Tform_astrometry_net1
     AutoSize = False
     Caption = 'Command line:'
     ParentColor = False
+  end
+  object Button2: TButton
+    Left = 384
+    Height = 25
+    Hint = 'Stop after finishing current image'
+    Top = 128
+    Width = 50
+    AutoSize = True
+    Caption = 'Stop'
+    OnClick = Button2Click
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 5
   end
 end

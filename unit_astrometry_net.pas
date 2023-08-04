@@ -22,6 +22,7 @@ type
   Tform_astrometry_net1 = class(TForm)
     astrometry_extra_options1: TComboBox;
     Button1: TButton;
+    Button2: TButton;
     cygwin1: TComboBox;
     keep_console_open1: TCheckBox;
     failed1: TLabel;
@@ -31,10 +32,13 @@ type
     Label22: TLabel;
     show_console1: TCheckBox;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
     procedure cygwin1Change(Sender: TObject);
     procedure cygwin1DropDown(Sender: TObject);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
+    procedure keep_console_open1Change(Sender: TObject);
+    procedure show_console1Change(Sender: TObject);
   private
 
   public
@@ -240,6 +244,7 @@ var
   I: integer;
   failed, solved :integer;
 begin
+  button2.caption:='Stop';
   show_console:=show_console1.checked;
   keep_console_open:=keep_console_open1.checked;
   cygwin_path:=cygwin1.text;
@@ -285,11 +290,20 @@ begin
   end;
 end;
 
+
+procedure Tform_astrometry_net1.Button2Click(Sender: TObject);
+begin
+  esc_pressed:=true;
+  button2.caption:='Stop pressed';
+end;
+
+
 procedure Tform_astrometry_net1.cygwin1Change(Sender: TObject);
 begin
   if fileexists({$ifdef mswindows} cygwin1.text {$else} {unix} cygwin1.text+'/solve-field' {$endif} ) then
     cygwin1.color:=$AAFFAA {green} else cygwin1.color:=$AAAAFF;{red}
 end;
+
 
 procedure Tform_astrometry_net1.cygwin1DropDown(Sender: TObject);
 var u_path : string;
@@ -318,6 +332,16 @@ begin
   keep_console_open1.checked:= keep_console_open;
   cygwin1.text:=cygwin_path;
   astrometry_extra_options1.text:=astrometry_extra_options;
+end;
+
+procedure Tform_astrometry_net1.keep_console_open1Change(Sender: TObject);
+begin
+  keep_console_open:=keep_console_open1.checked;
+end;
+
+procedure Tform_astrometry_net1.show_console1Change(Sender: TObject);
+begin
+  show_console:=show_console1.checked;
 end;
 
 end.

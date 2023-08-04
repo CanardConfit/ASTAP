@@ -58,6 +58,10 @@ type
     label_gaussian1: TLabel;
     Label39: TLabel;
     Label4: TLabel;
+    listview2: TListView;
+    listview5: TListView;
+    listview6: TListView;
+    listview7: TListView;
     refresh_astrometric_solutions1: TMenuItem;
     photometric_calibration1: TMenuItem;
     photom_blue1: TMenuItem;
@@ -194,7 +198,7 @@ type
     selectall5: TMenuItem;
     selectall9: TMenuItem;
     SpeedButton2: TSpeedButton;
-    mount1: TTabSheet;
+    tab_mount1: TTabSheet;
     apply_box_filter2: TButton;
     tab_monitoring1: TTabSheet;
     target1: TLabel;
@@ -417,12 +421,8 @@ type
     Label9: TLabel;
     Label_results1: TLabel;
     listview1: TListView;
-    listview2: TListView;
     listview3: TListView;
     listview4: TListView;
-    listview5: TListView;
-    listview6: TListView;
-    listview7: TListView;
     listview8: TListView;
     list_to_clipboard8: TMenuItem;
     live_stacking1: TButton;
@@ -547,7 +547,7 @@ type
     stack_method1: TComboBox;
     star_database1: TComboBox;
     subtract_background1: TButton;
-    TabSheet1: TTabSheet;
+    tab_inspector1: TTabSheet;
     tab_blink1: TTabSheet;
     tab_live_stacking1: TTabSheet;
     tab_photometry1: TTabSheet;
@@ -939,8 +939,8 @@ var
 var  {################# initialised variables #########################}
   areaX1: integer = 0; {for set area}
   areaX2: integer = 0;
-  dark_exposure: integer = 987654321;{not done indication}
-  dark_temperature: integer = 987654321;
+  light_exposure: integer = 987654321;{not done indication}
+  light_temperature: integer = 987654321;
   dark_gain: string = '987654321';
   flat_filter: string = '987654321';{not done indication}
   last_light_jd: integer = 987654321;
@@ -1037,13 +1037,15 @@ const
   D_sigma = 8;
   D_gain = 9;
   D_jd = 10;
-  D_nr = 11;{number of fields}
+  D_issues=11;
+  D_nr = 12;{number of fields}
 
   F_exposure = 0;  {flats}
   F_filter = 10;
   F_jd = 11;
   F_calibration = 12;
-  F_nr = 13;{number of fields}
+  F_issues = 13;
+  F_nr = 14;{number of fields}
 
   FD_exposure = 0;  {flat_darks}
   FD_nr = 10;{flat darks}
@@ -2845,7 +2847,7 @@ end;
 
 procedure artificial_flatV1(var img: image_array; box_size: integer);
 var
-  fitsx, fitsy, i, j, col, step, colors, w, h: integer;
+  fitsx, fitsy, i, j, col, step, colors, w, h,greylevels: integer;
   offset: single;
   bg: double;
   img_temp2: image_array;
@@ -2867,7 +2869,7 @@ begin
   {create artificial flat}
   for col := 0 to colors - 1 do {do all colours}
   begin
-    bg := mode(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000) - bg;
+    bg := mode(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels) - bg;
     {mode finds most common value for the 60% center }
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
@@ -2876,7 +2878,7 @@ begin
 
         if ((frac(fitsX / box_size) = 0) and (frac(fitsy / box_size) = 0)) then
         begin
-          offset := mode(img_loaded,false{ellipse shape}, col, fitsX - step, fitsX + step, fitsY - step, fitsY + step, 32000) - bg; {mode finds most common value}
+          offset := mode(img_loaded,false{ellipse shape}, col, fitsX - step, fitsX + step, fitsY - step, fitsY + step, 32000,greylevels) - bg; {mode finds most common value}
           if ((offset < 0) {and (offset>-200)}) then
           begin
             for j := fitsy - step to fitsy + step do
@@ -3278,7 +3280,7 @@ end;
 procedure apply_most_common(sourc, dest: image_array; radius: integer);
 {apply most common filter on first array and place result in second array}
 var
-  fitsX, fitsY, i, j, k, x, y, x2, y2, diameter, most_common, colors3, height3, width3: integer;
+  fitsX, fitsY, i, j, k, x, y, x2, y2, diameter, most_common, colors3, height3, width3,greylevels: integer;
 begin
   diameter := radius * 2;
   colors3 := length(sourc);{nr colours}
@@ -3293,7 +3295,7 @@ begin
       begin
         x := fitsX * diameter;
         y := fitsY * diameter;
-        most_common := mode(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, 32000);
+        most_common := mode(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, 32000,greylevels);
         for i := -radius to +radius - 1 do
           for j := -radius to +radius - 1 do
           begin
@@ -3822,8 +3824,7 @@ procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);
 {analyse list of FITS files}
 var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
-  hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,
-  dec_mount_jnow, ram, decm, rax, decx, adu_e: double;
+  hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, rax, decx, adu_e,hotpixels: double;
   filename1,filterstr,filterstrUP: string;
   Save_Cursor: TCursor;
   loaded, red, green, blue: boolean;
@@ -3976,8 +3977,7 @@ begin
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
-                  local_sd((head_2.Width div 2) - 50, (head_2.Height div 2) - 50,
-                    (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean}, iterations);
+                  local_sd((head_2.Width div 2) - 50, (head_2.Height div 2) - 50, (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean},hotpixels, iterations);
                   {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
                   adu_e := retrieve_ADU_to_e_unbinned(head_2.egain);
@@ -3995,10 +3995,12 @@ begin
               {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
               lv.Items.item[c].subitems.Strings[D_jd] := floattostrF(jd_start, ffFixed, 0, 1);
               {julian day, 1/10 day accuracy}
+              lv.Items.item[c].subitems.Strings[D_issues]:='';//clear issues
             end
             else
             if tabnr = 3 then {flat tab}
             begin
+              lv.Items.item[c].subitems.Strings[F_issues]:='';//clear old issues
               lv.Items.item[c].subitems.Strings[F_filter] := head_2.filter_name;
               {filter name, without spaces}
               if AnsiCompareText(stackmenu1.red_filter1.Text, head_2.filter_name) = 0 then
@@ -4048,7 +4050,10 @@ begin
               if head_2.naxis3 = 3 then  lv.Items.item[c].SubitemImages[F_filter] := 3
               else {RGB color}
               if head_2.filter_name <> '' then
-                lv.Items.item[c].SubitemImages[F_filter] := 7 {question mark}
+              begin
+                lv.Items.item[c].SubitemImages[F_filter] := 7; {question mark}
+                lv.Items.item[c].subitems.Strings[F_issues]:='Filter=?';//display issue
+              end
               else
                 lv.Items.item[c].SubitemImages[F_filter] := -1;{blank}
 
@@ -4755,7 +4760,7 @@ end;
 
 procedure Tstackmenu1.dark_spot_filter1Click(Sender: TObject);
 var
-  fitsx, fitsy, i, j, k, x2, y2, radius, most_common, progress_value: integer;
+  fitsx, fitsy, i, j, k, x2, y2, radius, most_common, progress_value,greylevels: integer;
   neg_noise_level: double;
   bck : tbackground;
 begin
@@ -4789,7 +4794,7 @@ begin
         begin
           if ((frac(fitsx / 10) = 0) and (frac(fitsY / 10) = 0)) then
           begin
-            most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, fitsX - radius, fitsX + radius - 1, fitsY - radius, fitsY + radius - 1, 32000);
+            most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, fitsX - radius, fitsX + radius - 1, fitsY - radius, fitsY + radius - 1, 32000,greylevels);
             neg_noise_level := get_negative_noise_level(img_backup[index_backup].img, k, fitsX - radius, fitsX + radius, fitsY - radius, fitsY + radius, most_common);
             {find the most common value of a local area and calculate negative noise level}
             for i := -radius to +radius - 1 do
@@ -10420,7 +10425,7 @@ procedure load_master_dark(jd_int: integer);
 var
   c: integer;
   d, day_offset: double;
-  filen: string;
+  filen        : string;
 
 begin
   //  analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{find dimensions, head_2.exposure and temperature}
@@ -10428,17 +10433,20 @@ begin
   day_offset := 99999999;
   filen := '';
 
-  dark_exposure := round(head.exposure);{remember the requested head.exposure time}
-  dark_temperature := head.set_temperature;
+  light_exposure := round(head.exposure);{remember the requested head.exposure time}
+  light_temperature := head.set_temperature;
   if head.egain <> '' then  dark_gain := head.egain  else dark_gain := head.gain;
 
 
   while c < stackmenu1.listview2.items.Count do
   begin
     if stackmenu1.listview2.items[c].Checked = True then
-      if ((stackmenu1.classify_dark_exposure1.Checked = False) or (dark_exposure = round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {head_2.exposure correct}
-        if ((stackmenu1.classify_dark_temperature1.Checked = False) or (abs(dark_temperature - StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature])) <= 1)) then {temperature correct within one degree}
+      if ((stackmenu1.classify_dark_exposure1.Checked = False) or (light_exposure = round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {head_2.exposure correct}
+      begin
+        if ((stackmenu1.classify_dark_temperature1.Checked = False) or (abs(light_temperature - StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature])) <= 1)) then {temperature correct within one degree}
+        begin
           if ((stackmenu1.classify_dark_temperature1.Checked = False) or (dark_gain = stackmenu1.listview2.Items.item[c].subitems.Strings[D_gain])) then {gain correct}
+          begin
             if head.Width = StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
             begin
               d := strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
@@ -10447,7 +10455,19 @@ begin
                 filen := stackmenu1.ListView2.items[c].Caption;
                 day_offset := abs(d - jd_int);
               end;
-            end;
+              stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='';//clear issue
+            end
+            else
+            stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='width<>'+inttostr(head.width);
+          end
+          else
+          stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='gain<>'+dark_gain;
+        end
+        else
+        stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='temperature<>'+floattostrF(light_temperature,FFfixed,0,0);
+      end
+      else
+      stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='exposure time<>'+floattostrF(light_exposure,FFfixed,0,0);
     Inc(c);
   end;
 
@@ -10475,7 +10495,7 @@ begin
   end
   else
   begin
-    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for exposure ' + IntToStr(round(head.exposure)) + ' sec and temperature ' + IntToStr( head.set_temperature) + ' and gain ' + head.gain+'! De-classify temperature or exposure time or add correct darks. █ █ █ █ █ █ ');
+    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for ' + IntToStr(round(head.exposure)) + ' sec, temperature ' + IntToStr( head.set_temperature) + '°, gain ' + head.gain+' and width '+inttostr(head.width)+'! De-classify temperature or exposure time or add correct darks. See report in column ISSUES in tab dark.█ █ █ █ █ █ ');
     head_2.dark_count := 0;{set back to zero}
   end;
 end;
@@ -10494,9 +10514,8 @@ begin
   begin
     if stackmenu1.listview3.items[c].Checked = True then
     begin
-      if ((stackmenu1.classify_flat_filter1.Checked = False) or
-        (AnsiCompareText(head.filter_name, stackmenu1.listview3.Items.item[
-        c].subitems.Strings[F_filter]) = 0)) then {filter correct?  ignoring case}
+      if ((stackmenu1.classify_flat_filter1.Checked = False) or (AnsiCompareText(head.filter_name, stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter]) = 0)) then {filter correct?  ignoring case}
+      begin
         if head.Width = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct, matches with the light width}
         begin
           d := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
@@ -10505,7 +10524,12 @@ begin
             filen := stackmenu1.ListView3.items[c].Caption;
             day_offset := abs(d - jd_int);
           end;
-        end;
+          stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='';//clear issues
+        end
+        else
+        stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='width<>'+inttostr(head.width);
+      end;
+      // else, filter issues are handled in analyse_listview
     end;
     Inc(c);
   end;
@@ -10527,10 +10551,7 @@ begin
 
       if pos('B', head_2.calstat) = 0 then
       begin
-        if head_2.flatdark_count = 0 then {not an older flat}
-          memo2_message('█ █ █ █ █ █ Warning: Flat not calibrated with a flat-dark/bias (keywords CALSTAT or BIAS_CNT). █ █ █ █ █ █')
-        else
-          head_2.calstat := head_2.calstat + 'B'; {older flat temporary till 2022-12 till all flats have "B" in in calstat. Remove 2022-12}
+        memo2_message('█ █ █ █ █ █ Warning: Flat not calibrated with a flat-dark/bias (keywords CALSTAT or BIAS_CNT). █ █ █ █ █ █')
       end;
 
       if head_2.flat_count = 0 then head_2.flat_count := 1; {not required for astap master}
@@ -10538,7 +10559,7 @@ begin
   end
   else
   begin
-    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable flat for "' + head.filter_name + '"! De-classify flat filter or add correct flat. █ █ █ █ █ █ ');
+    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable flat for "' + head.filter_name + '"! De-classify flat filter or add correct flat. See report in column ISSUES in tab flats. █ █ █ █ █ █ ');
     head_2.flat_count := 0;{set back to zero}
   end;
 end;
@@ -11394,8 +11415,8 @@ begin
     end;
   end;
 
-  dark_exposure := 987654321;{not done indication}
-  dark_temperature := 987654321;
+  light_exposure := 987654321;{not done indication}
+  light_temperature := 987654321;
   dark_gain := '987654321';
   flat_filter := '987654321';{not done indication}
 
@@ -11936,6 +11957,7 @@ begin
       begin {combine colours}
         if length(extra2) >= 2 then {at least two colors required}
         begin
+          memo2_message('Combine method '+extra2);
           files_to_process_LRGB[0] := files_to_process_LRGB[5]; {use luminance as reference for alignment}{contains, REFERENCE, R,G,B,RGB,L}
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0] := files_to_process_LRGB[1]; {use red channel as reference if no luminance is available}
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0] := files_to_process_LRGB[2]; {use green channel as reference if no luminance is available}
@@ -12367,7 +12389,7 @@ end;
 
 procedure Tstackmenu1.apply_vertical_gradient1Click(Sender: TObject);
 var
-  fitsX, fitsY, i, k, most_common, y1, y2, x1, x2, counter, step: integer;
+  fitsX, fitsY, i, k, most_common, y1, y2, x1, x2, counter, step,greylevels: integer;
   mean: double;
 begin
   if head.naxis = 0 then exit;
@@ -12390,7 +12412,7 @@ begin
       begin
         y1 := (step + 1) * fitsY - (step div 2);
         y2 := (step + 1) * fitsY + (step div 2);
-        most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, 0, head.Width - 1, y1, y2, 32000);
+        most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, 0, head.Width - 1, y1, y2, 32000,greylevels);
         mean := mean + most_common;
         Inc(counter);
         for i := y1 to y2 do
@@ -12410,7 +12432,7 @@ begin
       begin
         x1 := (step + 1) * fitsX - (step div 2);
         x2 := (step + 1) * fitsX + (step div 2);
-        most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, x1, x2, 0, head.Height - 1, 32000);
+        most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, x1, x2, 0, head.Height - 1, 32000,greylevels);
         mean := mean + most_common;
         Inc(counter);
         for i := x1 to x2 do
