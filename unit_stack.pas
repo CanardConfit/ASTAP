@@ -3585,7 +3585,8 @@ end;
 
 procedure Tstackmenu1.FormResize(Sender: TObject);
 var
-  newtop: integer;
+  newtop,fpos: integer;
+//  scroll1, scroll7 : boolean;
 begin
   pagecontrol1.Height := classify_groupbox1.top;{make it High-DPI robust}
 
@@ -3604,6 +3605,19 @@ begin
   memo2.top := classify_groupbox1.top + classify_groupbox1.Height + 4;
   {make it High-DPI robust}
   memo2.Height := stackmenu1.Height - memo2.top;{make it High-DPI robust}
+
+
+
+//  scroll1:=
+//   ((pagecontrol1.pageindex=0) and
+//   ((GetWindowlong(listview1.Handle, GWL_STYLE) and WS_HSCROLL) <> 0)  );
+
+//  scroll7:=
+//   ((pagecontrol1.pageindex=6) and
+//   ((GetWindowlong(listview7.Handle, GWL_STYLE) and WS_HSCROLL) <> 0)  );
+
+//  stackmenu1.horzScrollbar.visible:=scroll1 or scroll7;
+
 end;
 
 
