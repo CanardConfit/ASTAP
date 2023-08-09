@@ -405,6 +405,7 @@ type
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
     procedure dust_spot_removal1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -841,7 +842,7 @@ procedure log_to_file(logf,mess : string);{for testing}
 procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
-procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; out sd,mean,hotpixels :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 function fits_file_name(inp : string): boolean; {fits file name?}
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
@@ -869,6 +870,7 @@ function aavso_update_required : boolean; //update of downloaded database requir
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 function noise_to_electrons(adu_e, binning, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
 procedure calibrate_photometry;
+procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixels, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -4683,7 +4685,7 @@ procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i,band,flux_counter,ttt,greylevels,greylevels2 : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,mean,median,bg_median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b,hotpixels : double;
+   sd,mean,median,bg_median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b,hotpixel_adu,hotpixel_perc : double;
    Save_Cursor              : TCursor;
    info_message,shapeform,shapeform2   : string;
    median_array                        : array of double;
@@ -4722,8 +4724,8 @@ begin
   {measure the median of the suroundings}
   for col:=0 to head.naxis3-1 do  {do all colours}
   begin
-    local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,hotpixels,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-
+    local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+    measure_hotpixels(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,sd,mean,img_loaded,{out}hotpixel_perc,hotpixel_adu);{calculate the hotpixel_adu ratio and average value}
 
     most_common:=mode(img_loaded,CtrlButton {ellipse},col,startx,stopX,starty,stopY,65535,greylevels);
 
@@ -4823,7 +4825,8 @@ begin
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
                                  'Flux: '+floattostrf(total_flux,ffExponent, 4, 2)+ '  (Counts '+inttostr(flux_counter)+ ', Average '+inttostr(round(total_flux/flux_counter))+'/px)'+#10+
                                  'BG :   '+floattostrf(bg_median,ffgeneral, 5, 5)+#10+ {median}
-                                 'Hot pixels: '+floattostrf(100*hotpixels,ffgeneral, 0, 5)+'%'+#10+
+                                 'Hot pixels: '+floattostrf(100*hotpixel_perc,FFfixed, 0, 1)+'%'+#10+
+                                 'Hot pixels RMS: '+floattostrf({100*}hotpixel_adu,FFfixed, 0, 1)+' adu'+#10+
                                  '≥64E3 :  '+inttostr(round(saturated));
   end;
   if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
@@ -8242,6 +8245,8 @@ begin
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
+
+
 
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
@@ -14086,9 +14091,51 @@ begin
 end;
 
 
-procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; out sd,mean,hotpixels :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-var i,j,counter,w,h : integer;
-    value, sd_old,meanx   : double;
+
+
+
+procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixels, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
+var i,j,counter,counter2,w,h : integer;
+    value, sd_old,meanx             : double;
+
+begin
+  w:=Length(img[0]); {width}
+  h:=Length(img[0,0]); {height}
+
+  x1:=max(x1,0);{protect against values outside the array}
+  x2:=min(x2,w-1);
+
+  y1:=max(y1,0);
+  y2:=min(y2,h-1);
+
+  if ((y1>y2) or (x1>x2)) then exit;
+
+  hotpixel_adu:=0;
+  counter:=0;
+  counter2:=0;
+  for j:=y1 to y2  do {calculate standard deviation  of region of interest}
+  for i:=x1 to x2 do {calculate standard deviation  of region of interest}
+  begin
+    value:=abs(img[col,i,j]-mean);
+    if value<=3*sd then {ignore outliers}
+      inc(counter)
+    else
+    begin
+      hotpixel_adu:=hotpixel_adu+sqr(value);
+      inc(counter2);
+    end;
+  end;
+  if counter2>0 then
+    hotpixel_adu:=sqrt(hotpixel_adu/counter2)
+  else
+    hotpixel_adu:=0;
+    hotpixels:=0.997 - counter2/(counter+counter2);//percentage hot pixels. Within sigma 3.0,  99.73% remains.
+end;
+
+
+procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; out sd,mean : double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+var i,j,counter,counter2,w,h : integer;
+    value, sd_old,meanx             : double;
 
 begin
   w:=Length(img[0]); {width}
@@ -14124,21 +14171,20 @@ begin
     {sd}
     sd_old:=sd;
     counter:=0;
+    counter2:=0;
     for j:=y1 to y2  do {calculate standard deviation  of region of interest}
     for i:=x1 to x2 do {calculate standard deviation  of region of interest}
     begin
-      value:=img[col,i,j];
-      if value<2*mean then {not a large outlier}
-      if ((iterations=0) or (abs(value-mean)<=3*sd_old)) then {ignore outliers after first run}
+      value:=img[col,i,j]-mean;
+      if ((value<mean {not a large outlier}) and ((iterations=0) or (abs(value)<=3*sd_old)) )  then {ignore outliers after first run}
       begin
-        sd:=sd+sqr(mean-value);
+        sd:=sd+sqr(value);
         inc(counter);
       end;
     end;
     if counter<>0 then sd:=sqrt(sd/counter);
     inc(iterations);
   until (((sd_old-sd)<0.03*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
-  hotpixels:=0.997 - counter/((1+y2-y1)*(1+x2-x1));//percentage hot pixels. Within sigma 3.0,  99.73% remains.
 end;
 
 
@@ -14201,7 +14247,7 @@ end;
 
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor, adu_e,hotpixels  : double;
+  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor, adu_e : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str                  : string;
   width5,height5,box_SX,box_SY,flipH,flipV,iterations, box_LX,box_LY                   : integer;
   color1:tcolor;
@@ -14397,7 +14443,7 @@ begin
      object_decM:=decM; {use mouse position instead}
      mainwindow.statusbar1.panels[1].text:='';
 
-     local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},hotpixels,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+     local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
      mainwindow.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, head.Xbinning, sd); //reports noise in ADU's (adu_e=0) or electrons
    end;
