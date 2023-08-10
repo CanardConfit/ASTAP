@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.08.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.08.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -405,7 +405,6 @@ type
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
     procedure dust_spot_removal1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -870,7 +869,7 @@ function aavso_update_required : boolean; //update of downloaded database requir
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 function noise_to_electrons(adu_e, binning, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
 procedure calibrate_photometry;
-procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixels, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
+procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -4826,7 +4825,7 @@ begin
                                  'Flux: '+floattostrf(total_flux,ffExponent, 4, 2)+ '  (Counts '+inttostr(flux_counter)+ ', Average '+inttostr(round(total_flux/flux_counter))+'/px)'+#10+
                                  'BG :   '+floattostrf(bg_median,ffgeneral, 5, 5)+#10+ {median}
                                  'Hot pixels: '+floattostrf(100*hotpixel_perc,FFfixed, 0, 1)+'%'+#10+
-                                 'Hot pixels RMS: '+floattostrf({100*}hotpixel_adu,FFfixed, 0, 1)+' adu'+#10+
+                                 'Hot pixels RMS: '+noise_to_electrons(adu_e,head.xbinning,hotpixel_adu)+#10+
                                  '≥64E3 :  '+inttostr(round(saturated));
   end;
   if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
@@ -4863,7 +4862,8 @@ begin
                                             'm = minimum value image | M = maximum value image | '+
                                             'Flux = total flux inside shape above BG | '+
                                             'BG = median background outside the shape | '+
-                                            'Hot pixels = percentage of pixels with a value above Gaussian noise | '+
+                                            'Hot pixels = percentage of pixels with a value above 3 sigma Gaussian noise | '+
+                                            'Hot pixels RMS = the root mean square value of the hotpixels | '+
                                             '≥64E3 = number of values equal or above 64000';
 
   case  QuestionDlg (pchar('Statistics within '+shapeform2+' '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY)),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
@@ -7478,7 +7478,9 @@ begin
       stackmenu1.classify_object1.checked:= Sett.ReadBool('stack','classify_object',false);
       stackmenu1.classify_filter1.checked:= Sett.ReadBool('stack','classify_filter',false);
 
-      stackmenu1.classify_dark_temperature1.checked:= Sett.ReadBool('stack','classify_dark_temperature',false);
+      stackmenu1.classify_dark_temperature1.checked:= Sett.ReadBool('stack','classify_dark_temp',false);
+      stackmenu1.delta_temp1.caption:=Sett.ReadString('stack','delta_temp','1');
+      stackmenu1.classify_dark_gain1.checked:= Sett.ReadBool('stack','classify_dark_gain',false);
       stackmenu1.classify_dark_exposure1.checked:= Sett.ReadBool('stack','classify_dark_exposure',false);
       stackmenu1.classify_flat_filter1.checked:= Sett.ReadBool('stack','classify_flat_filter',false);
       stackmenu1.classify_dark_date1.checked:= Sett.ReadBool('stack','classify_dark_date',false);
@@ -7841,7 +7843,10 @@ begin
       sett.writeBool('stack','classify_object',stackmenu1.classify_object1.Checked);
       sett.writeBool('stack','classify_filter',stackmenu1.classify_filter1.Checked);
 
-      sett.writeBool('stack','classify_dark_temperature',stackmenu1.classify_dark_temperature1.Checked);
+      sett.writeBool('stack','classify_dark_temp',stackmenu1.classify_dark_temperature1.Checked);
+      sett.writeString('stack','delta_temp',stackmenu1.delta_temp1.caption);
+      sett.writeBool('stack','classify_dark_gain',stackmenu1.classify_dark_gain1.Checked);
+
       sett.writeBool('stack','classify_dark_exposure',stackmenu1.classify_dark_exposure1.Checked);
       sett.writeBool('stack','classify_flat_filter',stackmenu1.classify_flat_filter1.Checked);
       sett.writeBool('stack','classify_dark_date',stackmenu1.classify_dark_date1.Checked);
@@ -14094,9 +14099,9 @@ end;
 
 
 
-procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixels, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
+procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels percentage and RMS value}
 var i,j,counter,counter2,w,h : integer;
-    value, sd_old,meanx             : double;
+    value                    : double;
 
 begin
   w:=Length(img[0]); {width}
@@ -14129,7 +14134,7 @@ begin
     hotpixel_adu:=sqrt(hotpixel_adu/counter2)
   else
     hotpixel_adu:=0;
-    hotpixels:=0.997 - counter2/(counter+counter2);//percentage hot pixels. Within sigma 3.0,  99.73% remains.
+    hotpixel_perc:=0.997 - counter/(counter+counter2);//percentage hot pixels. Within sigma 3.0,  99.73% remains.
 end;
 
 

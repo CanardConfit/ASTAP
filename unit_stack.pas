@@ -41,9 +41,12 @@ type
     add_time1: TCheckBox;
     analyse_lights_extra1: TButton;
     bin_image2: TButton;
+    classify_dark_gain1: TCheckBox;
     ClearButton1: TButton;
     contour_gaussian1: TComboBox;
     colournebula1: TButton;
+    delta_temp1: TEdit;
+    delta_temp_updown1: TUpDown;
     detection_grid1: TComboBox;
     filter_artificial_colouring1: TComboBox;
     GroupBox14: TGroupBox;
@@ -55,6 +58,8 @@ type
     Label16: TLabel;
     Label19: TLabel;
     Label40: TLabel;
+    Label60: TLabel;
+    Label63: TLabel;
     label_gaussian1: TLabel;
     Label39: TLabel;
     Label4: TLabel;
@@ -62,6 +67,7 @@ type
     listview5: TListView;
     listview6: TListView;
     listview7: TListView;
+    mount1: TTabSheet;
     refresh_astrometric_solutions1: TMenuItem;
     photometric_calibration1: TMenuItem;
     photom_blue1: TMenuItem;
@@ -70,6 +76,21 @@ type
     Separator3: TMenuItem;
     Separator4: TMenuItem;
     contour_sigma1: TComboBox;
+    most_right1: TStaticText;
+    most_right10: TStaticText;
+    most_right11: TStaticText;
+    most_right12: TStaticText;
+    most_right13: TStaticText;
+    most_right14: TStaticText;
+    most_right15: TStaticText;
+    most_right2: TStaticText;
+    most_right3: TStaticText;
+    most_right4: TStaticText;
+    most_right5: TStaticText;
+    most_right6: TStaticText;
+    most_right7: TStaticText;
+    most_right8: TStaticText;
+    most_right9: TStaticText;
     transformation1: TButton;
     remove_stars1: TBitBtn;
     GroupBox18: TGroupBox;
@@ -390,7 +411,7 @@ type
     Label32: TLabel;
     Label33: TLabel;
     Label34: TLabel;
-    Label35: TLabel;
+    Label_masterflat1: TLabel;
     Label37: TLabel;
     Label38: TLabel;
     Label41: TLabel;
@@ -496,7 +517,6 @@ type
     MenuItem25: TMenuItem;
     rename_result1: TMenuItem;
     MenuItem24: TMenuItem;
-    more_indication1: TLabel;
     list_to_clipboard7: TMenuItem;
     MenuItem20: TMenuItem;
     MenuItem21: TMenuItem;
@@ -656,6 +676,7 @@ type
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
+    procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
@@ -717,11 +738,8 @@ type
     procedure help_live_stacking1Click(Sender: TObject);
     procedure help_pixel_math2Click(Sender: TObject);
     procedure hue_fuzziness1Change(Sender: TObject);
-    procedure listview8CustomDrawItem(Sender: TCustomListView;
-      Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
-    procedure listview8CustomDrawSubItem(Sender: TCustomListView;
-      Item: TListItem; SubItem: integer; State: TCustomDrawState;
-      var DefaultDraw: boolean);
+    procedure listview8CustomDrawItem(Sender: TCustomListView;  Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
+    procedure listview8CustomDrawSubItem(Sender: TCustomListView;  Item: TListItem; SubItem: integer; State: TCustomDrawState;  var DefaultDraw: boolean);
     procedure live_stacking1Click(Sender: TObject);
     procedure copy_files_to_clipboard1Click(Sender: TObject);
     procedure most_common_mono1Click(Sender: TObject);
@@ -730,15 +748,13 @@ type
     procedure new_saturation1Change(Sender: TObject);
     procedure check_pattern_filter1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
-    procedure pagecontrol1MouseMove(Sender: TObject; Shift: TShiftState;
-      X, Y: integer);
+    procedure pagecontrol1MouseMove(Sender: TObject; Shift: TShiftState;  X, Y: integer);
     procedure photom_calibrate1Click(Sender: TObject);
     procedure photom_green1Click(Sender: TObject);
     procedure photom_stack1Click(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
     procedure press_esc_to_abort1Click(Sender: TObject);
-    procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: integer);
+    procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;   Shift: TShiftState; X, Y: integer);
     procedure rainbow_Panel1Paint(Sender: TObject);
     procedure reference_database1Change(Sender: TObject);
     procedure remove_luminance1Change(Sender: TObject);
@@ -750,13 +766,10 @@ type
     procedure clear_photometry_list1Click(Sender: TObject);
     procedure export_aligned_files1Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of string);
-    procedure FormPaint(Sender: TObject);
     procedure help_blink1Click(Sender: TObject);
     procedure help_photometry1Click(Sender: TObject);
-    procedure listview7CustomDraw(Sender: TCustomListView; const ARect: TRect;
-      var DefaultDraw: boolean);
-    procedure listview7CustomDrawItem(Sender: TCustomListView;
-      Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
+    procedure listview7CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: boolean);
+    procedure listview7CustomDrawItem(Sender: TCustomListView;      Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
     procedure live_stacking_pause1Click(Sender: TObject);
     procedure live_stacking_restart1Click(Sender: TObject);
     procedure more_indication1Click(Sender: TObject);
@@ -770,8 +783,7 @@ type
     procedure apply_get_background1Click(Sender: TObject);
     procedure help_osc_menu1Click(Sender: TObject);
     procedure help_uncheck_outliers1Click(Sender: TObject);
-    procedure listview6CustomDrawItem(Sender: TCustomListView;
-      Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
+    procedure listview6CustomDrawItem(Sender: TCustomListView; Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
     procedure list_to_clipboard1Click(Sender: TObject);
     procedure selectall1Click(Sender: TObject);
     procedure apply_remove_background_colour1Click(Sender: TObject);
@@ -3121,82 +3133,71 @@ procedure Tstackmenu1.apply_file1Click(Sender: TObject);
 var
   fitsX, fitsY, col: integer;
   flat_norm_value, flat_factor: single;
-  idx, old_naxis3: integer;
+  idx : integer;
 begin
   if head.naxis <> 0 then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
     backup_img; {move viewer data to img_backup}
-    old_naxis3 := head.naxis3;
-
     idx := add_substract1.ItemIndex;
     {add, multiply image}
     if length(image_to_add1.Caption) > 3 then {file name available}
     begin
-      if load_fits(image_to_add1.Caption, False {dark/flat}, True
-        {load data}, True {update memo}, 0, head, img_temp) then {succes load}
+      if load_fits(image_to_add1.Caption, False {dark/flat}, True {load data}, False {update memo}, 0,  head_2, img_temp) then {succes load}
       begin
-        if ((idx = 5) or (idx = 6)) then {apply file as flat or multiply}
+        if ((length(img_temp)=length(img_loaded)) and  (length(img_temp[0])=length(img_loaded[0])) ) then //equal format
         begin
+          if ((idx = 5) or (idx = 6)) then {apply file as flat or multiply}
+          begin
 
-          flat_norm_value := 0;
-          for fitsY := -14 to 15 do {do even times, 30x30}
-            for fitsX := -14 to 15 do
-              flat_norm_value :=
-                flat_norm_value + img_temp[0, fitsX + (head.Width div 2), fitsY + (head.Height div 2)];
-          flat_norm_value := round(flat_norm_value / (30 * 30));
+            flat_norm_value := 0;
+            for fitsY := -14 to 15 do {do even times, 30x30}
+              for fitsX := -14 to 15 do
+                flat_norm_value :=
+                  flat_norm_value + img_temp[0, fitsX + (head.Width div 2), fitsY + (head.Height div 2)];
+            flat_norm_value := round(flat_norm_value / (30 * 30));
 
-          for fitsY := 1 to head.Height do
-            for fitsX := 1 to head.Width do
-            begin
-              for col := 0 to old_naxis3 - 1 do
-                {do all colors. Viewer colours are stored in old_naxis3 by backup}
+            for fitsY := 1 to head.Height do
+              for fitsX := 1 to head.Width do
               begin
-                if idx = 5 then {as flat=divide}
+                for col := 0 to head.naxis3 - 1 do  {do all colors. Viewer colours are stored in old_naxis3 by backup}
                 begin
-                  flat_factor :=
-                    flat_norm_value / (img_temp[min(col, head.naxis3 - 1), fitsX - 1, fitsY - 1] + 0.0001);
-                  {This works both for color and mono flats. Bias should be combined in flat}
-                end
-                else
-                begin {multiply}
-                  flat_factor :=
-                    img_temp[min(col, head.naxis3 - 1), fitsX - 1, fitsY - 1] / flat_norm_value;
-                  {This works both for color and mono flats. Bias should be combined in flat}
+                  if idx = 5 then {as flat=divide}
+                  begin
+                    flat_factor :=flat_norm_value / (img_temp[min(col, head.naxis3 - 1), fitsX - 1, fitsY - 1] + 0.0001);  {This works both for color and mono flats. Bias should be combined in flat}
+                  end
+                  else
+                  begin {multiply}
+                    flat_factor := img_temp[min(col, head.naxis3 - 1), fitsX - 1, fitsY - 1] / flat_norm_value;  {This works both for color and mono flats. Bias should be combined in flat}
+                  end;
+                  img_loaded[col, fitsX - 1, fitsY - 1] := img_loaded[col, fitsX - 1, fitsY - 1] * flat_factor;
                 end;
-                img_loaded[col, fitsX - 1, fitsY - 1] :=
-                  img_loaded[col, fitsX - 1, fitsY - 1] * flat_factor;
               end;
-            end;
-          head.naxis3 := old_naxis3;{could be changed by load file}
-        end {apply file as flat}
+          end {apply file as flat}
+          else
+            for col := 0 to head.naxis3 - 1 do {all colors}
+              for fitsY := 0 to head.Height - 1 do
+                for fitsX := 0 to head.Width - 1 do
+                begin
+                  if idx = 0 then {add}
+                    img_loaded[col, fitsX, fitsY] := img_temp[col, fitsX, fitsY] + img_loaded[col, fitsX, fitsY]
+                  else
+                  if idx = 1 then {viewer minus file}
+                    img_loaded[col, fitsX, fitsY] :=  img_loaded[col, fitsX, fitsY]{viewer} - img_temp[col, fitsX, fitsY]{file}
+                  else
+                  if idx = 2 then {viewer minus file +1000}
+                    img_loaded[col, fitsX, fitsY] :=  img_loaded[col, fitsX, fitsY]{viewer} - img_temp[col, fitsX, fitsY]{file} + 1000
+                  else
+                  if idx = 3 then {file minus viewer}
+                    img_loaded[col, fitsX, fitsY] :=  img_temp[col, fitsX, fitsY]{file} - img_loaded[col, fitsX, fitsY]{viewer}
+                  else
+                  if idx = 4 then {file minus viewer}
+                    img_loaded[col, fitsX, fitsY] :=  img_temp[col, fitsX, fitsY]{file} - img_loaded[col, fitsX, fitsY]{viewer} + 1000;
 
+                end;
+        end
         else
-          for col := 0 to head.naxis3 - 1 do {all colors}
-            for fitsY := 0 to head.Height - 1 do
-              for fitsX := 0 to head.Width - 1 do
-              begin
-                if idx = 0 then {add}
-                  img_loaded[col, fitsX, fitsY] :=
-                    img_temp[col, fitsX, fitsY] + img_loaded[col, fitsX, fitsY]
-                else
-                if idx = 1 then {viewer minus file}
-                  img_loaded[col, fitsX, fitsY] :=
-                    img_loaded[col, fitsX, fitsY]{viewer} - img_temp[col, fitsX, fitsY]{file}
-                else
-                if idx = 2 then {viewer minus file +1000}
-                  img_loaded[col, fitsX, fitsY] :=
-                    img_loaded[col, fitsX, fitsY]{viewer} - img_temp[col, fitsX, fitsY]{file} + 1000
-                else
-                if idx = 3 then {file minus viewer}
-                  img_loaded[col, fitsX, fitsY] :=
-                    img_temp[col, fitsX, fitsY]{file} - img_loaded[col, fitsX, fitsY]{viewer}
-                else
-                if idx = 4 then {file minus viewer}
-                  img_loaded[col, fitsX, fitsY] :=
-                    img_temp[col, fitsX, fitsY]{file} - img_loaded[col, fitsX, fitsY]{viewer} + 1000;
-
-              end;
+        memo2_message('Error, files of different format!');
       end;{file loaded}
     end;
     img_temp := nil;
@@ -3582,16 +3583,54 @@ begin
   end;
 end;
 
+procedure update_stackmenu_scrollbar;
+var
+  scroll : boolean;
+  w      : integer;
+begin
+  with stackmenu1 do
+  begin
+    case pagecontrol1.pageindex of
+      0:  scroll:=stackmenu1.width<most_right1.left;//marker for indication most right controls
+      1:  scroll:=stackmenu1.width<most_right2.left;
+      2:  scroll:=stackmenu1.width<most_right3.left;
+      3:  scroll:=stackmenu1.width<most_right4.left;
+      4:  scroll:=stackmenu1.width<most_right5.left;
+      5:  scroll:=stackmenu1.width<most_right6.left;
+      6:  scroll:=stackmenu1.width<most_right7.left;
+      7:  scroll:=stackmenu1.width<most_right8.left;
+      8:  scroll:=stackmenu1.width<most_right9.left;
+      9:  scroll:=stackmenu1.width<most_right10.left;
+     10:  scroll:=stackmenu1.width<most_right11.left;
+     11:  scroll:=stackmenu1.width<most_right12.left;
+     12:  scroll:=stackmenu1.width<most_right13.left;
+     13:  scroll:=stackmenu1.width<most_right14.left;
+     14:  scroll:=stackmenu1.width<most_right15.left;
+    end;
+    stackmenu1.horzScrollbar.visible:=scroll;//show scrollbar;
+    if scroll=false then horzScrollbar.position:=0;
+
+  if scroll then
+     w := GetSystemMetrics(SM_CXVSCROLL) //horz scroll bar width
+  else
+     w:=0;
+  memo2.top := classify_groupbox1.top + classify_groupbox1.Height + 4;  {make it High-DPI robust}
+  memo2.Height := stackmenu1.Height - memo2.top-w;{make it High-DPI robust}
+  memo2.width:=stackmenu1.width-2;
+
+  end;
+
+end;
+
 
 procedure Tstackmenu1.FormResize(Sender: TObject);
 var
-  newtop,fpos: integer;
-//  scroll1, scroll7 : boolean;
+  newtop : integer;
+
 begin
   pagecontrol1.Height := classify_groupbox1.top;{make it High-DPI robust}
 
   newtop := browse1.top + browse1.Height + 5;
-  ;
 
   listview1.top := newtop;
   listview2.top := newtop;
@@ -3602,22 +3641,17 @@ begin
   listview7.top := newtop;
   listview8.top := newtop;
 
-  memo2.top := classify_groupbox1.top + classify_groupbox1.Height + 4;
-  {make it High-DPI robust}
-  memo2.Height := stackmenu1.Height - memo2.top;{make it High-DPI robust}
+  listview1.constraints.maxWidth:=stackmenu1.width-6;
+  listview2.constraints.maxWidth:=stackmenu1.width-6;
+  listview3.constraints.maxWidth:=stackmenu1.width-6;
+  listview4.constraints.maxWidth:=stackmenu1.width-6;
+  listview5.constraints.maxWidth:=stackmenu1.width-6;
+  listview6.constraints.maxWidth:=stackmenu1.width-6;
+  listview7.constraints.maxWidth:=stackmenu1.width-6;
+  listview8.constraints.maxWidth:=stackmenu1.width-6;
+  listview9.constraints.maxWidth:=stackmenu1.width-6;
 
-
-
-//  scroll1:=
-//   ((pagecontrol1.pageindex=0) and
-//   ((GetWindowlong(listview1.Handle, GWL_STYLE) and WS_HSCROLL) <> 0)  );
-
-//  scroll7:=
-//   ((pagecontrol1.pageindex=6) and
-//   ((GetWindowlong(listview7.Handle, GWL_STYLE) and WS_HSCROLL) <> 0)  );
-
-//  stackmenu1.horzScrollbar.visible:=scroll1 or scroll7;
-
+  update_stackmenu_scrollbar;
 end;
 
 
@@ -3644,11 +3678,25 @@ begin
 end;
 
 
+procedure delta_dark_temperature_visibility;
+var
+  showc: boolean;
+begin
+  with stackmenu1 do
+  begin
+    showc:=classify_dark_temperature1.checked;
+    delta_temp1.visible:=showc;
+    Label63.visible:=showc;
+    Label60.visible:=showc;
+  end;
+end;
+
+
 procedure Tstackmenu1.FormShow(Sender: TObject);
 begin
   set_icon_stackbutton;//update glyph stack button
-
   stackmenu1.pagecontrol1Change(Sender);//update stackbutton1.enabled
+  delta_dark_temperature_visibility;//update visibility
 end;
 
 
@@ -6699,14 +6747,14 @@ begin
   if theindex=9 then
     stackmenu1.Memo2.Font.name :='Courier New'
   else
-    stackmenu1.Memo2.Font.name :='default'
+    stackmenu1.Memo2.Font.name :='default';
 
+  update_stackmenu_scrollbar;
 end;
 
 
 var
   FLastHintTabIndex: integer;
-
 procedure Tstackmenu1.pagecontrol1MouseMove(Sender: TObject;
   {Show hints of each tab when mouse hovers above it}
   Shift: TShiftState; X, Y: integer);
@@ -7495,21 +7543,6 @@ begin
     end;
   end;
 
-end;
-
-
-procedure Tstackmenu1.FormPaint(Sender: TObject);
-begin
-  case pagecontrol1.tabindex of
-    7: more_indication1.Visible := stackmenu1.Width <= export_aligned_files1.left + 20;
-    8: more_indication1.Visible :=
-        stackmenu1.Width <= mark_outliers_upto1.left + 20;
-    9: more_indication1.Visible :=
-        stackmenu1.Width <= GroupBox_test_images1.left + 20;
-    else
-      more_indication1.Visible := False;
-
-  end;
 end;
 
 
@@ -9204,6 +9237,11 @@ begin
     if annotated then plot_annotations(false {use solution vectors},false);
 end;
 
+procedure Tstackmenu1.classify_dark_temperature1Change(Sender: TObject);
+begin
+  delta_dark_temperature_visibility;
+end;
+
 
 procedure Tstackmenu1.contour_gaussian1Change(Sender: TObject);
 begin
@@ -10451,37 +10489,37 @@ begin
   light_temperature := head.set_temperature;
   if head.egain <> '' then  dark_gain := head.egain  else dark_gain := head.gain;
 
-
-  while c < stackmenu1.listview2.items.Count do
+  with stackmenu1 do
+  while c < listview2.items.Count do
   begin
-    if stackmenu1.listview2.items[c].Checked = True then
-      if ((stackmenu1.classify_dark_exposure1.Checked = False) or (light_exposure = round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {head_2.exposure correct}
+    if listview2.items[c].Checked = True then
+      if ((classify_dark_exposure1.Checked = False) or (light_exposure = round(strtofloat2(listview2.Items.item[c].subitems.Strings[D_exposure])))) then {head_2.exposure correct}
       begin
-        if ((stackmenu1.classify_dark_temperature1.Checked = False) or (abs(light_temperature - StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature])) <= 1)) then {temperature correct within one degree}
+        if ((classify_dark_temperature1.Checked = False) or (abs(light_temperature - StrToInt(listview2.Items.item[c].subitems.Strings[D_temperature])) <= delta_temp_updown1.position)) then {temperature correct within one degree}
         begin
-          if ((stackmenu1.classify_dark_temperature1.Checked = False) or (dark_gain = stackmenu1.listview2.Items.item[c].subitems.Strings[D_gain])) then {gain correct}
+          if ((classify_dark_gain1.Checked = False) or (dark_gain = listview2.Items.item[c].subitems.Strings[D_gain])) then {gain correct}
           begin
-            if head.Width = StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
+            if head.Width = StrToInt(listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
             begin
-              d := strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
-              if abs(d - jd_int) < day_offset then {find flat with closest date}
+              d := strtofloat(listview2.Items.item[c].subitems.Strings[D_jd]);
+              if abs(d - jd_int) < day_offset then {find dark with closest date}
               begin
-                filen := stackmenu1.ListView2.items[c].Caption;
+                filen := ListView2.items[c].Caption;
                 day_offset := abs(d - jd_int);
               end;
-              stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='';//clear issue
+              listview2.Items.item[c].subitems.Strings[D_issues]:='';//clear issue
             end
             else
-            stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='width<>'+inttostr(head.width);
+            listview2.Items.item[c].subitems.Strings[D_issues]:='width<>'+inttostr(head.width);
           end
           else
-          stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='gain<>'+dark_gain;
+          listview2.Items.item[c].subitems.Strings[D_issues]:='gain<>'+dark_gain;
         end
         else
-        stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='temperature<>'+floattostrF(light_temperature,FFfixed,0,0);
+        listview2.Items.item[c].subitems.Strings[D_issues]:='temperature<>'+floattostrF(light_temperature,FFfixed,0,0);
       end
       else
-      stackmenu1.listview2.Items.item[c].subitems.Strings[D_issues]:='exposure time<>'+floattostrF(light_exposure,FFfixed,0,0);
+      listview2.Items.item[c].subitems.Strings[D_issues]:='exposure time<>'+floattostrF(light_exposure,FFfixed,0,0);
     Inc(c);
   end;
 
@@ -10499,9 +10537,9 @@ begin
       end; {load master in memory img_dark}
 
       {test compatibility}
-      if ((round(head_2.exposure) <> 0 {dark exposure is measured}) and (round(head.exposure){request} <> round(head_2.exposure))) then memo2_message('█ █ █ █ █ █ Warning above dark exposure time (' + floattostrF(head_2.exposure, ffFixed, 0, 0) + ') is different then the light exposure time (' + floattostrF(head.exposure, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
-      if ((head_2.set_temperature <> 999 {dark temperature is measured}) and (head.set_temperature{request} <> head_2.set_temperature)) then  memo2_message('█ █ █ █ █ █ Warning above dark sensor temperature (' + floattostrF(head_2.set_temperature, ffFixed, 0, 0) +') is different then the light sensor temperature (' + floattostrF(head.set_temperature, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
-      if ((head_2.gain <> '' {gain in header}) and (head.gain{request} <> head_2.gain)) then memo2_message('█ █ █ █ █ █ Warning above dark gain (' + head_2.gain + ') is different then the light gain (' + head.gain +')! █ █ █ █ █ █ ');
+      if ((round(head_2.exposure) <> 0 {dark exposure is measured}) and (round(head.exposure){request} <> round(head_2.exposure))) then memo2_message('█ █ █ █ █ █ Warning dark exposure time (' + floattostrF(head_2.exposure, ffFixed, 0, 0) + ') is different then the light exposure time (' + floattostrF(head.exposure, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
+      if ((head_2.set_temperature <> 999 {dark temperature is measured}) and (head.set_temperature{request} <> head_2.set_temperature)) then  memo2_message('█ █ █ █ █ █ Warning dark sensor temperature (' + floattostrF(head_2.set_temperature, ffFixed, 0, 0) +') is different then the light sensor temperature (' + floattostrF(head.set_temperature, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
+      if ((head_2.gain <> '' {gain in header}) and (head.gain{request} <> head_2.gain)) then memo2_message('█ █ █ █ █ █ Warning dark gain (' + head_2.gain + ') is different then the light gain (' + head.gain +')! █ █ █ █ █ █ ');
 
       last_dark_loaded := filen; {required for for change in light_jd}
       if head_2.dark_count = 0 then head_2.dark_count := 1; {store in head of reference file}
@@ -10582,10 +10620,10 @@ end;
 procedure replace_by_master_dark(full_analyse: boolean);
 var
   path1, filen, gain: string;
-  c, counter, i, file_count: integer;
+  c, counter, i, file_count,temperatureRound: integer;
   specified: boolean;
   exposure, temperature, width1: integer;
-  day: double;
+  day,temperature_avg: double;
   file_list: array of string;
 begin
   save_settings2;
@@ -10598,7 +10636,7 @@ begin
     repeat
       file_count := 0;
       specified := False;
-
+      temperature_avg:=0;
       for c := 0 to stackmenu1.listview2.items.Count - 1 do
         if stackmenu1.listview2.items[c].Checked = True then
         begin
@@ -10614,22 +10652,16 @@ begin
               day := strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
               specified := True;
             end;
-            if ((stackmenu1.classify_dark_exposure1.Checked = False) or
-              (exposure = round(strtofloat2(stackmenu1.listview2.Items.item[
-              c].subitems.Strings[D_exposure])))) then {exposure correct}
-              if ((stackmenu1.classify_dark_temperature1.Checked = False) or
-                (temperature = StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[
-                D_temperature])))
-              then {temperature correct}
-                if ((stackmenu1.classify_dark_temperature1.Checked = False) or
-                  (gain = stackmenu1.listview2.Items.item[c].subitems.Strings[D_gain])) then {gain correct}
-                  if width1 = StrToInt(
-                    stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
+            if ((stackmenu1.classify_dark_exposure1.Checked = False) or (exposure = round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {exposure correct}
+              if ((stackmenu1.classify_dark_temperature1.Checked = False) or (abs(temperature - StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))<=delta_temp_updown1.position)) then {temperature correct}
+                if ((stackmenu1.classify_dark_gain1.Checked = False) or (gain = stackmenu1.listview2.Items.item[c].subitems.Strings[D_gain])) then {gain correct}
+                  if width1 = StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
                     if ((classify_dark_date1.Checked = False) or
                       (abs(day - strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd])) <= 0.5))
                     then {within 12 hours made}
                     begin
                       file_list[file_count] := filen;
+                      temperature_avg:=temperature_avg+StrToInt(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]);
                       Inc(file_count);
                     end;
           end;
@@ -10643,15 +10675,18 @@ begin
       begin
         memo2_message('Averaging darks.');
         average('dark', file_list, file_count, img_dark); {the result will be mono so more suitable for raw lights without bayer applied. Not so suitable for commercial camera's image and converted to coloured FITS}
-        if esc_pressed then exit;
-
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if ((file_count <> 1) or (head.dark_count = 0)) then  head.dark_count := file_count; {else use the info from the keyword dark_cnt of the master file}
 
-        path1 := extractfilepath(file_list[0]) + 'master_dark_' + IntToStr(head.dark_count) + 'x' + IntToStr(round(exposure)) + 's_at_' + IntToStr( head.set_temperature) + 'C_' + copy(head.date_obs, 1, 10) + '.fit';
+        if ((file_count <> 1) or (head.dark_count = 0)) then  head.dark_count := file_count; {else use the info from the keyword dark_cnt of the master file}
+        temperatureRound:=round(temperature_avg/file_count);
+
+        path1 := extractfilepath(file_list[0]) + 'master_dark_' + IntToStr(head.dark_count) + 'x' + IntToStr(round(exposure)) + 's_at_' + IntToStr( temperatureRound) + 'C_' + copy(head.date_obs, 1, 10) + '.fit';
         update_integer('DARK_CNT=', ' / Number of dark image combined                  ' , head.dark_count);
+        update_integer('CCD-TEMP=', ' / Average sensor temperature (Celsius)           ' , temperatureRound);
+        add_text('COMMENT 7', '  Dark temperature tolerance setting was ' + IntToStr(stackmenu1.delta_temp_updown1.position)+ ' degrees Celsius' );
+
         { ASTAP keyword standard:}
         { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
