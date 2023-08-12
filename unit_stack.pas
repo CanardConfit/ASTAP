@@ -3132,8 +3132,9 @@ end;
 procedure Tstackmenu1.apply_file1Click(Sender: TObject);
 var
   fitsX, fitsY, col: integer;
-  flat_norm_value, flat_factor: single;
+  flat_norm_value, flat_factor,factor: single;
   idx : integer;
+  value : string='';
 begin
   if head.naxis <> 0 then
   begin
@@ -3147,8 +3148,10 @@ begin
       begin
         if ((length(img_temp)=length(img_loaded)) and  (length(img_temp[0])=length(img_loaded[0])) ) then //equal format
         begin
-          if ((idx = 5) or (idx = 6)) then {apply file as flat or multiply}
+          if idx >= 3 then //with norm factor
           begin
+            if idx=3 then
+               value:=InputBox('Scaled dark application','Enter the scale factor:',value );
 
             flat_norm_value := 0;
             for fitsY := -14 to 15 do {do even times, 30x30}
@@ -3157,23 +3160,32 @@ begin
                   flat_norm_value + img_temp[0, fitsX + (head.Width div 2), fitsY + (head.Height div 2)];
             flat_norm_value := round(flat_norm_value / (30 * 30));
 
-            for fitsY := 1 to head.Height do
-              for fitsX := 1 to head.Width do
+            for fitsY := 0 to head.Height-1 do
+              for fitsX := 0 to head.Width-1 do
               begin
                 for col := 0 to head.naxis3 - 1 do  {do all colors. Viewer colours are stored in old_naxis3 by backup}
                 begin
-                  if idx = 5 then {as flat=divide}
+                  if idx = 3 then {scaled dark }
                   begin
-                    flat_factor :=flat_norm_value / (img_temp[min(col, head.naxis3 - 1), fitsX - 1, fitsY - 1] + 0.0001);  {This works both for color and mono flats. Bias should be combined in flat}
+                    factor:=strtofloat2(value);
+                    img_loaded[col, fitsX, fitsY] :=  img_loaded[col, fitsX, fitsY]{viewer} - factor*(img_temp[col, fitsX, fitsY]{file}- flat_norm_value);
                   end
                   else
-                  begin {multiply}
-                    flat_factor := img_temp[min(col, head.naxis3 - 1), fitsX - 1, fitsY - 1] / flat_norm_value;  {This works both for color and mono flats. Bias should be combined in flat}
+                  begin //flat routines
+                    if idx = 4 then {as flat=divide}
+                    begin
+                      flat_factor :=flat_norm_value / (img_temp[min(col, head.naxis3), fitsX , fitsY - 1] + 0.0001);  {This works both for color and mono flats. Bias should be combined in flat}
+                    end
+                    else
+                    if idx = 5 then {as flat=divide}
+                    begin {multiply}
+                      flat_factor := img_temp[min(col, head.naxis3 - 1), fitsX, fitsY ] / flat_norm_value;  {This works both for color and mono flats. Bias should be combined in flat}
+                    end;
+                    img_loaded[col, fitsX, fitsY] := img_loaded[col, fitsX, fitsY] * flat_factor;
                   end;
-                  img_loaded[col, fitsX - 1, fitsY - 1] := img_loaded[col, fitsX - 1, fitsY - 1] * flat_factor;
                 end;
               end;
-          end {apply file as flat}
+          end {idx>=3}
           else
             for col := 0 to head.naxis3 - 1 do {all colors}
               for fitsY := 0 to head.Height - 1 do
@@ -3187,13 +3199,6 @@ begin
                   else
                   if idx = 2 then {viewer minus file +1000}
                     img_loaded[col, fitsX, fitsY] :=  img_loaded[col, fitsX, fitsY]{viewer} - img_temp[col, fitsX, fitsY]{file} + 1000
-                  else
-                  if idx = 3 then {file minus viewer}
-                    img_loaded[col, fitsX, fitsY] :=  img_temp[col, fitsX, fitsY]{file} - img_loaded[col, fitsX, fitsY]{viewer}
-                  else
-                  if idx = 4 then {file minus viewer}
-                    img_loaded[col, fitsX, fitsY] :=  img_temp[col, fitsX, fitsY]{file} - img_loaded[col, fitsX, fitsY]{viewer} + 1000;
-
                 end;
         end
         else

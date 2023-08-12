@@ -29,23 +29,12 @@ var
   latest_time : integer=0;
 
 
-
 function file_available(monitor_directory:string; out filen: string ) : boolean; {check if fits file is available and report the filename}
 Var
   Info : TSearchRec;
   Count : Longint;
   i     : integer;
   f     : file;
-  ex    : string;
-
-const
-  extensions : array[0..44] of string=
-                (('.fit'),('.fits'),('*.FIT'),('.FITS'),('.RAW'),('.raw'),('.CRW'),('.crw'),('.CR2'),('.cr2'),('.CR3'),('.cr3'),('.KDC'),('.kdc'),('.DCR'),
-                 ('.dcr'),('.MRW'),('.mrw'),('.ARW'),('.arw'),('.NEF'),('.nef'),('.NRW'),('.nrw'),('.DNG'),('.dng'),('.ORF'),('.orf'),('.PTX'),('.ptx'),('.PEF'),
-                 ('.pef'),('.RW2'),('.rw2'),('.SRW'),('.srw'),('.RAF'),('.raf'),
-                 ('*.png'),('.PNG'),('.jpg'),('(.JPG'),('.tif'),('.tiff'),('.TIF'));
-
-
 Begin
   result:=false;
   Count:=0;
@@ -56,15 +45,8 @@ Begin
       With Info do
       begin
       //  SR.FindData.ftLastWriteTime
-        if time>latest_time then
+        if ((time>latest_time) and (image_file_name(name){readable image name?} )) then
         begin
-          ex:=extractfileext(name);
-          i:=-1;
-          repeat
-            inc(i);
-          until ((i>44) or (ex=extensions[i]));
-          if i>44 then continue;{no know image extension, continue with repeat}
-
           result:=true;
           filen:=name;
           latest_time:=time;
@@ -73,7 +55,6 @@ Begin
     Until SysUtils.FindNext(info)<>0;
     SysUtils.FindClose(Info);
   end;
-
 
   if result then
   begin
