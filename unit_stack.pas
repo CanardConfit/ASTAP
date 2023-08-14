@@ -55,6 +55,7 @@ type
     detect_contour1: TBitBtn;
     increase_nebulosity3: TEdit;
     GroupBox19: TGroupBox;
+    Label15: TLabel;
     Label16: TLabel;
     Label19: TLabel;
     Label40: TLabel;
@@ -399,7 +400,6 @@ type
     Label11: TLabel;
     Label12: TLabel;
     Label14: TLabel;
-    Label15: TLabel;
     Label17: TLabel;
     Label18: TLabel;
     Label2: TLabel;

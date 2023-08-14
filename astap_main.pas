@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.08.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.08.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -374,8 +374,7 @@ type
     procedure extract_pixel_12Click(Sender: TObject);
     procedure extract_pixel_22Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
-    procedure histogram_range1MouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+    procedure histogram_range1MouseUp(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
     procedure histogram_values_to_clipboard1Click(Sender: TObject);
     procedure Image1Paint(Sender: TObject);
     procedure annotate_unknown_stars1Click(Sender: TObject);
@@ -407,8 +406,7 @@ type
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
-    procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+    procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure set_modified_date1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
@@ -459,17 +457,13 @@ type
     procedure clean_up1Click(Sender: TObject);
     procedure remove_colour1Click(Sender: TObject);
     procedure Returntodefaultsettings1Click(Sender: TObject);
-    procedure saturation_factor_plot1KeyUp(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
-    procedure saturation_factor_plot1MouseUp(Sender: TObject;
-      Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure saturation_factor_plot1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure saturation_factor_plot1MouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure savesettings1Click(Sender: TObject);
     procedure Polynomial1Change(Sender: TObject);
     procedure remove_markers1Click(Sender: TObject);
-    procedure Panel1MouseWheelDown(Sender: TObject; Shift: TShiftState;
-      MousePos: TPoint; var Handled: Boolean);
-    procedure Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState;
-      MousePos: TPoint; var Handled: Boolean);
+    procedure Panel1MouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+    procedure Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure show_statistics1Click(Sender: TObject);
     procedure SimpleIPCServer1MessageQueued(Sender: TObject);
     procedure StatusBar1MouseEnter(Sender: TObject);
@@ -502,12 +496,9 @@ type
     procedure Memo1Change(Sender: TObject);
     procedure SaveasJPGPNGBMP1Click(Sender: TObject);
     procedure LoadFITSPNGBMPJPEG1Click(Sender: TObject);
-    procedure Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
-      Y: Integer);
-    procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
-    procedure Image1MouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+    procedure Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure Image1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure Image1MouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure FormResize(Sender: TObject);
     procedure batch_add_solution1Click(Sender: TObject);
     procedure flip_horizontal1Click(Sender: TObject);
@@ -8748,56 +8739,32 @@ begin
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
   begin
     result:=load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded);
-    if ((result=false) or (head.naxis<2))  then {no image or failure.}
-    begin
-       update_menu(false);
-       exit; {WCS file}
-    end;
+    if head.naxis<2 then result:=false; {no image}
   end
-
   else
   if (ext1='.FZ') then {CFITSIO format}
   begin
-    if unpack_cfitsio(filename2)=false then begin beep; exit; end
-    else{successful conversion using funpack}
+    if unpack_cfitsio(filename2) then {successful conversion using funpack}
     result:=load_fits(filename2,true {light},true {load data},true {update memo},0,head,img_loaded); {load new fits file}
-
-    if result=false then begin update_menu(false);exit; end;
   end {fz}
-
   else
   if check_raw_file_extension(ext1) then {raw format}
   begin
-    if convert_raw(true{load},false{save},filename2,head,img_loaded)=false then
-      begin update_menu(false);beep; exit; end
-    else
-    result:=true;
-    {successful conversion using LibRaw}
-    filename2:=ChangeFileExt(FileName2,'.fits');{for the case you want to save it}
+    result:=convert_raw(true{load},false{save},filename2,head,img_loaded);
+    if result then {successful conversion using LibRaw}
+      filename2:=ChangeFileExt(FileName2,'.fits');{for the case you want to save it}
   end{raw}
-
   else
   if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM') or (ext1='.PBM')) then {PPM/PGM/ PFM}
-  begin
-    if load_PPM_PGM_PFM(filename2,head,img_loaded)=false then begin update_menu(false);exit; end {load the simple formats ppm color or pgm grayscale, exit on failure}
-    else
-      result:=true;
-  end
-
+    result:=load_PPM_PGM_PFM(filename2,head,img_loaded)
   else
   if ext1='.XISF' then {XISF}
-  begin
-    if load_xisf(filename2,head,img_loaded)=false then begin update_menu(false);exit; end {load XISF, exit on failure}
-    else
-      result:=true;
-  end
+    result:=load_xisf(filename2,head,img_loaded)
+  else
+  if ((ext1='.TIF') or (ext1='.TIFF') or (ext1='.PNG') or (ext1='.JPG') or (ext1='.JPEG') or (ext1='.BMP')) then {tif, png, bmp, jpeg}
+    result:=load_tiffpngJPEG(filename2,true {light},head,img_loaded);
 
-  else
-  {tif, png, bmp, jpeg}
-  if load_tiffpngJPEG(filename2,true {light},head,img_loaded)=false then
-        begin update_menu(false);exit; end  {load tif, exit on failure}
-  else
-    result:=true;
+  if result=false then begin update_menu(false);exit; end;
 
   if plot then
   begin
@@ -10437,7 +10404,7 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
-  size, i, starX, starY,magn,fontsize,text_height,text_width,dum,countxy     : integer;
+  size, i, starX, starY,magn,fontsize,text_height,text_width,dum    : integer;
   Fliphorizontal, Flipvertical  : boolean;
   magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
 
@@ -11298,7 +11265,7 @@ end;
 
 procedure plot_annotations(use_solution_vectors,fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
-  count1,x1,y1,x2,y2,i : integer;
+  count1,x1,y1,x2,y2 : integer;
   typ     : double;
   List: TStrings;
   name,magn : string;

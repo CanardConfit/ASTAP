@@ -18,7 +18,7 @@ uses
 procedure monitoring(path :string);{stack live average}
 procedure report_delta; {report delta error}
 
-const
+var
   live_monitoring: boolean=false; {used to inhibit solving while live_stacking}
 
 implementation
@@ -27,7 +27,6 @@ uses unit_stack, astap_main,unit_stack_routines,unit_astrometric_solving,unit_st
 
 var
   latest_time : integer=0;
-
 
 function file_available(monitor_directory:string; out filen: string ) : boolean; {check if fits file is available and report the filename}
 Var
@@ -68,7 +67,7 @@ Begin
     if result then
       close(f);
   end;
-End;
+end;
 
 
 procedure report_delta; {report delta error}
@@ -182,14 +181,14 @@ end;
 
 procedure monitoring(path :string);{monitoring a directory}
 var
-  counter :  integer;
-  solver  :   boolean;
+  counter       : integer;
+  count         : integer=0;
+  solver        :  boolean;
 begin
   with stackmenu1 do
   begin
 
     esc_pressed:=false;
-    latest_time:=0;{for finding files}
 
     if monitor_applydarkflat1.checked then   {Prepare for dark and flats}
     begin
@@ -205,8 +204,6 @@ begin
         try { Do some lengthy operation }
           Application.ProcessMessages;
           {load image}
-
-
           if ((esc_pressed) or (load_image(false,false {plot})=false)) then
           begin
 
@@ -272,7 +269,18 @@ begin
         end;
       end
       else
-      wait(1000);{wait 1 second unless something happens}
+      begin
+        wait(1000);{wait 1 second unless something happens}
+        if count=0 then live_monitoring1.caption:='  ▶'
+        else
+        if count=1 then live_monitoring1.caption:='▶  '
+        else
+        if count=2 then live_monitoring1.caption:=' ▶ ';
+
+        inc(count);
+        if count>2 then count:=0;
+
+      end;
 
     end;{live average}
 
@@ -280,7 +288,7 @@ begin
 
     live_monitoring:=false;
     live_monitoring1.font.style:=[];
-    memo2_message('Live stack stopped. Save result if required');
+    memo2_message('Monitoring stopped.');
 
     counterL:=counter;
   end;{with stackmenu1}

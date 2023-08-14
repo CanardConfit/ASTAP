@@ -88,22 +88,6 @@ begin
 end;
 
 
-function load_thefile(filen:string) : boolean;
-var
-   ext1 : string;
-begin
-  ext1:=uppercase(ExtractFileExt(filen));
-
-  if ((ext1='.FIT') or (ext1='.FITS')) then
-    result:= load_fits(filen,true {light},true,true {update memo},0,head,img_loaded)
-  else
-  if check_raw_file_extension(ext1) then {check if extension is from raw file}
-    result:=convert_raw(true{load},false{save},filen,head,img_loaded)
-  else
-    result:=load_tiffpngJPEG(filen,true {light},head,img_loaded);
-end;
-
-
 function date_string: string;
 Var YY,MO,DD : Word;
     HH,MM,SS,MS: Word;
@@ -144,6 +128,7 @@ var
     warning  : string;
 var
     rename_counter: integer=0;
+    count         : integer=0;
 
     procedure reset_var;{reset variables  including init:=false}
     begin
@@ -431,8 +416,8 @@ begin
       else
       begin  {pause or no files}
         if waiting=false then {do this only once}
-          begin
-            if ((pause_pressed) and (counter>0)) then
+        begin
+          if ((pause_pressed) and (counter>0)) then
           begin
             counterL:=counter;
             update_header;
@@ -444,6 +429,14 @@ begin
         waiting:=true;
         //Application.ProcessMessages;
         wait(1000);  {smart sleep}{no new files, wait some time}
+        if count=0 then live_stacking1.caption:='  ▶'
+        else
+        if count=1 then live_stacking1.caption:='▶  '
+        else
+        if count=2 then live_stacking1.caption:=' ▶ ';
+        inc(count);
+        if count>2 then count:=0;
+
       end;
 
     end;{live average}
