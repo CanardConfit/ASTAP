@@ -3646,6 +3646,18 @@ begin
   listview7.top := newtop;
   listview8.top := newtop;
 
+
+{  listview1.Width:=stackmenu1.width-6;
+  listview2.Width:=stackmenu1.width-6;
+  listview3.Width:=stackmenu1.width-6;
+  listview4.Width:=stackmenu1.width-6;
+  listview5.Width:=stackmenu1.width-6;
+  listview6.Width:=stackmenu1.width-6;
+  listview7.Width:=stackmenu1.width-6;
+  listview8.Width:=stackmenu1.width-6;
+  listview9.Width:=stackmenu1.width-6;}
+
+
   listview1.constraints.maxWidth:=stackmenu1.width-6;
   listview2.constraints.maxWidth:=stackmenu1.width-6;
   listview3.constraints.maxWidth:=stackmenu1.width-6;

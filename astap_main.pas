@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.08.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.08.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1346,7 +1346,9 @@ begin
              head.light_count:=round(validate_double);{read integer as double value}
 
         if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-                if head.date_obs='' then head.date_obs:=get_string;
+        begin
+          if head.date_obs<>'' then head.date_obs:=head.date_obs+'T'+get_string;
+        end;
 
         if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then //julian day
         if head.date_obs='' then {DATE-OBS overrules any JD value}
@@ -1360,7 +1362,7 @@ begin
           if ((header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-')) then {DATE-}
           begin
             if ((header[i+5]='O') and (header[i+6]='B')) then
-                  head.date_obs:=get_string
+              head.date_obs:=get_string
             else
             if ((header[i+5]='A') and (header[i+6]='V')) then
                   date_avg:=get_string;
