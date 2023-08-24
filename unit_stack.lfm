@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 45
+  Left = 212
   Height = 671
-  Top = 174
+  Top = 173
   Width = 1600
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -65,6 +65,7 @@ object stackmenu1: Tstackmenu1
     Lines.Strings = (
       ''
     )
+    OnChange = memo2Change
     ParentDoubleBuffered = False
     ParentFont = False
     ScrollBars = ssVertical
@@ -8583,6 +8584,11 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack the selected files in mode AVERAGE and replace them by the stack.'
       ImageIndex = 6
       OnClick = photom_stack1Click
+    end
+    object stack_groups1: TMenuItem
+      Caption = 'Stack selected files in groups, mode average'
+      ImageIndex = 6
+      OnClick = stack_groups1Click
     end
     object Separator4: TMenuItem
       Caption = '-'

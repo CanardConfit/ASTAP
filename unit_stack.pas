@@ -68,6 +68,7 @@ type
     listview5: TListView;
     listview6: TListView;
     listview7: TListView;
+    stack_groups1: TMenuItem;
     mount1: TTabSheet;
     refresh_astrometric_solutions1: TMenuItem;
     photometric_calibration1: TMenuItem;
@@ -681,6 +682,7 @@ type
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure increase_nebulosity1Click(Sender: TObject);
+    procedure memo2Change(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure pixelsize1Change(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
@@ -791,6 +793,7 @@ type
     procedure search_fov1Change(Sender: TObject);
     procedure solve_and_annotate1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
+    procedure stack_groups1Click(Sender: TObject);
     procedure stack_method1DropDown(Sender: TObject);
     procedure star_database1Change(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
@@ -6959,6 +6962,8 @@ begin
   {refresh list}
 end;
 
+
+
 procedure Tstackmenu1.PopupMenu1Popup(Sender: TObject);
 begin
   auto_select1.Enabled := stackmenu1.use_manual_alignment1.Checked;
@@ -9108,6 +9113,89 @@ begin
   if length(long_default) > 0 then save_settings2;
 end;
 
+procedure Tstackmenu1.stack_groups1Click(Sender: TObject);
+var
+  index, counter, oldindex, position, i,groupsize,count: integer;
+  ListItem: TListItem;
+  groupsizeStr : string;
+
+begin
+  groupsizeStr:=InputBox('Stack selected file in groups, mode average',
+  'The selected files should be sorted on date.'+#10+#10+
+  'How many images per stack?:','2');
+  if groupsizeStr=''  then exit; {cancel used}
+  groupsize:=strtoint2(groupsizeStr);
+  if groupsize=0 then exit;
+
+
+
+  position := -1;
+  index := 0;
+  listview1.Clear;
+  counter := listview7.Items.Count;
+
+  repeat
+    listview1.Items.beginUpdate;
+    count:=0;
+    while index < counter do
+    begin
+      if listview7.Items[index].Selected then
+      begin
+        if position < 0 then position := index;//store first position
+        listview_add(listview1, listview7.items[index].Caption, True, L_nr); // add to tab light
+
+        inc(count);
+        if count>=groupsize then
+        begin
+          Inc(index);
+          break;//group is ready
+        end;
+      end;
+      Inc(index); {go to next file}
+
+    end;
+    listview1.Items.endUpdate;
+
+    analyse_tab_lights(0 {analyse_level});//update also process_as_osc
+    if process_as_osc > 0 then
+    begin
+      memo2_message(
+        '█ █ █ █ █ █ Abort !! For photometry you can not stack OSC images. First extract the green channel. █ █ █ █ █ █');
+      beep;
+      exit;
+    end;
+
+    oldindex := stack_method1.ItemIndex;
+    stack_method1.ItemIndex := 0; //average
+
+    stack_button1Click(Sender);// stack the files in tab lights
+
+    // add calibrated files
+    listview7.Items.BeginUpdate;
+    with listview7 do
+    begin
+      ListItem := Items.add;
+      ListItem.Caption := filename2; // contains the stack file name
+      ListItem.Checked := True;
+      for i := 1 to P_nr do
+        ListItem.SubItems.Add(''); // add the other columns
+    end;
+    listview7.Items.EndUpdate;
+
+    listview1.Clear;
+    application.processmessages;
+
+  until index >=counter; //ready ??
+
+  listview_removeselect(listview7);
+
+  stack_method1.ItemIndex := oldindex;//return old setting
+  save_settings2;
+
+  analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
+  {refresh list}
+end;
+
 
 procedure Tstackmenu1.stack_method1DropDown(Sender: TObject);
 begin
@@ -9307,6 +9395,11 @@ begin
 end;
 
 procedure Tstackmenu1.increase_nebulosity1Click(Sender: TObject);
+begin
+
+end;
+
+procedure Tstackmenu1.memo2Change(Sender: TObject);
 begin
 
 end;
@@ -11331,7 +11424,7 @@ begin
 end;
 
 
-function propose_file_name(mosaic_mode, add_time: boolean;
+function propose_file_name(mosaic_mode,long_date, add_time: boolean;
   object_to_process, filters_used: string): string; {propose a file name}
 var
   hh, mm, ss, ms: word;
@@ -11339,7 +11432,14 @@ begin
   if object_to_process <> '' then Result := object_to_process
   else
     Result := 'no_object';
-  if head.date_obs <> '' then Result := Result + ', ' + copy(head.date_obs, 1, 10);
+  if head.date_obs <> '' then
+  begin
+    if long_date=false then
+       Result := Result + ', ' + copy(head.date_obs, 1, 10)
+    else
+       Result := Result + ', ' + head.date_obs;
+
+  end;
   Result := Result + ', ';
   if mosaic_mode then Result := Result + 'mosaic ';
   if counterR <> 0 then Result := Result + IntToStr(counterR) + 'x' + IntToStr(exposureR) + 'R ';
@@ -11376,7 +11476,7 @@ var
   extra1, extra2, object_to_process, stack_info, thefilters                : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   mosaic_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
-  success, classify_filter, classify_object, sender_photometry             : boolean;
+  success, classify_filter, classify_object, sender_photometry, sender_stack_groups      : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr    : double;
   filters_used: array [0..4] of string;
@@ -11391,6 +11491,8 @@ begin
   skip_combine := pos('skip', stackmenu1.stack_method1.Text) > 0;
   cal_and_align := pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
   sender_photometry := (Sender = photom_stack1);//stack instruction from photometry tab?
+  sender_stack_groups := (Sender =stack_groups1);//stack instruction from photometry tab?
+
   classify_filter := ((classify_filter1.Checked) and (sender_photometry = False));  //disable classify filter if sender is photom_stack1
   classify_object := ((classify_object1.Checked) and (sender_photometry = False));  //disable classify object if sender is photom_stack1
 
@@ -12290,7 +12392,7 @@ begin
           {head.exposure}
         end;
 
-        filename2 := extractfilepath(filename2) + propose_file_name(mosaic_mode, stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, thefilters);{give it a nice file name}
+        filename2 := extractfilepath(filename2) + propose_file_name(mosaic_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, thefilters);{give it a nice file name}
 
         if head.cd1_1 <> 0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result ' + IntToStr(image_counter) + ' as ' + filename2);
