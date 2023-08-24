@@ -9122,12 +9122,12 @@ var
 begin
   groupsizeStr:=InputBox('Stack selected file in groups, mode average',
   'The selected files should be sorted on date.'+#10+#10+
-  'How many images per stack?:','2');
+  'How many images per stack?:','8');
   if groupsizeStr=''  then exit; {cancel used}
   groupsize:=strtoint2(groupsizeStr);
   if groupsize=0 then exit;
 
-
+  esc_pressed:=false;
 
   position := -1;
   index := 0;
@@ -9169,6 +9169,7 @@ begin
     stack_method1.ItemIndex := 0; //average
 
     stack_button1Click(Sender);// stack the files in tab lights
+    if esc_pressed then break;
 
     // add calibrated files
     listview7.Items.BeginUpdate;
