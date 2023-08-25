@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.08.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.08.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -119,6 +119,7 @@ type
     flipVH1: TMenuItem;
     dust_spot_removal1: TMenuItem;
     export_star_info1: TMenuItem;
+    star_profile1: TMenuItem;
     Separator2: TMenuItem;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
@@ -743,7 +744,7 @@ var {################# initialised variables #########################}
   egain_extra_factor  : integer=16;
   egain_default       : double=1;
   passband_active: string=''; //Indicates current Gaia conversion active
-
+  star_profile_plotted: boolean=false;
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
@@ -4192,6 +4193,61 @@ begin
 end;
 
 
+procedure plot_star_profile(cX,cY : integer);
+const rs=24;
+      qrs=rs div 4; {1/4=6}
+var
+  i, j,distance,h      : integer;
+  val,valmax,valmin    : double;
+  profile: array[0..1,-rs..rs] of double;
+begin
+  with mainwindow.image_north_arrow1 do
+  begin
+    {clear}
+    canvas.brush.color:=clmenu;
+    Canvas.FillRect(rect(0,0,width,height));
+    Canvas.Pen.Color := clred;
+
+
+    // Build profile
+    valmax:=0;
+    valmin:=65535;
+    for i:=-rs to rs do
+    begin
+      profile[0,i]:=0;{clear profile}
+      profile[1,i]:=0;{clear profile}
+    end;
+
+    for i:=-qrs to qrs do begin
+      for j:=-qrs to qrs do
+      begin
+        distance:=round(4*sqrt(i*i + j*j)); {distance in resolution 1/4 pixel}
+        if distance<=rs then {build histogram for circel with radius qrs}
+        begin
+          if ((i<0) or ((i=0) and (j<0)) ) then distance:=-distance;//split star in two equal areas.
+          val:=img_loaded[0,cX+i,cY+j];
+          profile[0,distance]:=profile[0,distance]+val;{sum flux at distance}
+          profile[1,distance]:=profile[1,distance]+1;{calculate the number of counts}
+          if val>valmax then valmax:=val;{record the peak value of the star}
+          if val<valmin then valmin:=val;{record the min value of the star}
+        end;
+      end;
+    end;
+
+    for i:=-rs to rs do
+    begin
+      if profile[1,i]<>0 then
+      begin
+        h:=height-round((height/(valmax-valmin))*(-valmin+profile[0,i]/profile[1,i]) );//height
+        if i=-rs then
+          moveToex(Canvas.handle,(width div 2)+i,h,nil)
+        else
+          lineTo(Canvas.handle,(width div 2)+i,h);
+      end;
+    end;
+  end;
+end;
+
 procedure plot_text;
 var
   fontsize: double;
@@ -7361,7 +7417,9 @@ begin
       mainwindow.annotations_visible1.checked:=bool;{set both indicators}
       stackmenu1.annotations_visible2.checked:=bool;{set both indicators}
 
+
       northeast1.checked:=Sett.ReadBool('main','north_east',false);
+      star_profile1.checked:=Sett.ReadBool('main','star_profile',false);
       mountposition1.checked:=Sett.ReadBool('main','mount_position',false);
       Constellations1.checked:=Sett.ReadBool('main','constellations',false);
       grid1.checked:=Sett.ReadBool('main','grid',false);
@@ -7729,6 +7787,8 @@ begin
       sett.writeBool('main','flipvertical',flip_vertical1.checked);
       sett.writeBool('main','annotations',annotations_visible1.checked);
       sett.writeBool('main','north_east',northeast1.checked);
+      sett.writeBool('main','star_profile',star_profile1.checked);
+
       sett.writeBool('main','mount_position',mountposition1.checked);
       sett.writeBool('main','constellations',constellations1.checked);
       sett.writeBool('main','grid',grid1.checked);
@@ -14382,7 +14442,7 @@ begin
    hfd2:=999;
    HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},head.mzero_radius,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
-   if ((hfd2<99) and (hfd2>0)) then
+   if ((hfd2<99) and (hfd2>0)) then //star detected
    begin
      if ((hfd_arcseconds) and (head.cd1_1<>0)) then conv_factor:=abs(head.cdelt2)*3600{arc seconds} else conv_factor:=1;{pixels}
      if hfd2*conv_factor>1 then str(hfd2*conv_factor:0:1,hfd_str) else str(hfd2*conv_factor:0:2,hfd_str);
@@ -14409,6 +14469,11 @@ begin
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str{+' '+floattostr4(flux)};
      if display_adu then
                mainwindow.statusbar1.panels[7].text:='ADU='+floattostrF(flux,ffFixed,0,0);
+     if star_profile1.checked then
+     begin
+       plot_star_profile(round(object_xc),round(object_yc));
+       star_profile_plotted:=true;
+     end;
    end
    else
    begin
@@ -14420,6 +14485,9 @@ begin
      local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
      mainwindow.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, head.Xbinning, sd); //reports noise in ADU's (adu_e=0) or electrons
+
+     if star_profile_plotted then plot_north;
+     star_profile_plotted:=false;
    end;
 end;
 

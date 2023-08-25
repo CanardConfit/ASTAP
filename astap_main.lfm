@@ -1602,6 +1602,11 @@ object mainwindow: Tmainwindow
         Hint = 'Show a north-east indicator on the image.'
         OnClick = northeast1Click
       end
+      object star_profile1: TMenuItem
+        AutoCheck = True
+        Caption = 'Star profile'
+        Hint = 'Show the star profile for the star at the mouse cursor.'
+      end
       object mountposition1: TMenuItem
         AutoCheck = True
         Caption = 'Mount position'
