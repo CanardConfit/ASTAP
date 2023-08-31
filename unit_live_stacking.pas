@@ -74,7 +74,7 @@ begin
   update_text   ('HISTORY 1','  Stacking method LIVE STACKING');
   update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
   update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
-  update_text ('DATE-OBS=',#39+JdToDate(jd_stop)+#39);{give end point exposures}
+  update_text ('DATE-OBS=',#39+JdToDate(jd_start_first)+#39);{give begin date exposures}
   update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum/counterL);{give midpoint of exposures}
   date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
   update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
@@ -138,7 +138,8 @@ var
       sum_exp:=0;
       sum_temp:=0;
       jd_sum:=0;{sum of Julian midpoints}
-      jd_stop:=0;{end observations in Julian day}
+      jd_start_first:=1E99; {begin observations in Julian day}
+      jd_end_last:=0;{end observations in Julian day}
 
       light_exposure:=987654321;{not done indication}
       light_temperature:=987654321;
@@ -327,7 +328,7 @@ begin
               sum_temp:=sum_temp+head.set_temperature;
 
               date_to_jd(head.date_obs,head.exposure);{convert date-obs to jd}
-              if jd_mid>jd_stop then jd_stop:=jd_mid;
+              jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure.}
 
               vector_based:=true;{no astrometric alignment}

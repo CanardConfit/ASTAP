@@ -187,7 +187,8 @@ begin
 
     counter:=0;
     jd_sum:=0;{sum of Julian midpoints}
-    jd_stop:=0;{end observations in Julian day}
+    jd_start_first:=1E99;{begin observations in Julian day}
+    jd_end_last:=0;{end observations in Julian day}
 
     init:=false;
 
@@ -389,7 +390,8 @@ begin
             begin
               inc(counter);{count number of colour files involved}
               date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
-              if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
+              jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
+              jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
 
               vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
@@ -499,6 +501,7 @@ begin
         img_loaded:=img_average;
         head.width:=width_max;
         head.height:=height_max;
+        sum_exp:=exposureR+exposureG+exposureG+exposureL+exposureRGB;
       end;
     end;{LRGB}
   end;{with stackmenu1}
@@ -596,7 +599,8 @@ begin
     sum_exp:=0;
     sum_temp:=0;
     jd_sum:=0;{sum of Julian midpoints}
-    jd_stop:=0;{end observations in Julian day}
+    jd_start_first:=1E99;{begin observations in Julian day}
+    jd_end_last:=0;{end observations in Julian day}
 
     init:=false;
 
@@ -754,8 +758,9 @@ begin
             weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 
             date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
-            if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
-            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure}
+            jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
+            jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
+            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
 
             vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
             if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -847,7 +852,8 @@ begin
     sum_exp:=0;
     sum_temp:=0;
     jd_sum:=0;{sum of Julian midpoints}
-    jd_stop:=0;{end observations in Julian day}
+    jd_start_first:=1E99;{begin observations in Julian day}
+    jd_end_last:=0;{end observations in Julian day}
     init:=false;
 
     dummy:=0;
@@ -932,8 +938,9 @@ begin
             sum_temp:=sum_temp+head.set_temperature;
 
             date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
-            if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
-            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure}
+            jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
+            jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
+            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
 
             vector_based:=false;
             if a_order=0 then {no SIP from astronomy.net}
@@ -1107,7 +1114,8 @@ begin
     sum_exp:=0;
     sum_temp:=0;
     jd_sum:=0;{sum of Julian midpoints}
-    jd_stop:=0;{end observations in Julian day}
+    jd_start_first:=1E99;{begin observations in Julian day}
+    jd_end_last:=0;{end observations in Julian day}
 
 
     init:=false;
@@ -1275,8 +1283,9 @@ begin
           weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 
           date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
-          if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
-          jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure}
+          jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
+          jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
+          jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
 
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}

@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.08.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.08.31';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -4250,7 +4250,8 @@ end;
 
 procedure plot_text;
 var
-  fontsize: double;
+  fontsize : double;
+  letter_height,letter_width: integer;
   posanddate, freet : boolean;
 begin
   posanddate:=mainwindow.positionanddate1.checked;
@@ -4261,22 +4262,24 @@ begin
   mainwindow.image1.Canvas.font.name:='default';
   fontsize:=max(annotation_diameter,font_size);
   mainwindow.image1.Canvas.font.size:=round(fontsize);
+  letter_height:=mainwindow.image1.Canvas.textheight('M');
+  letter_width:=mainwindow.image1.Canvas.textwidth('M');
 
   mainwindow.image1.Canvas.font.color:=annotation_color; {default clyellow}
 
   if posanddate then
   begin
-    if head.cd1_1<>0 then  mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
+    if head.cd1_1<>0 then  mainwindow.image1.Canvas.textout(round(0.3*letter_width),head.height-2*letter_height,'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
 
     if date_avg<>'' then
       date_to_jd(date_avg,0 {head.exposure}){convert date-AVG to jd_mid be using head.exposure=0}
     else
       date_to_jd(head.date_obs,head.exposure);{convert date-OBS to jd_start and jd_mid}
 
-    mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
+    mainwindow.image1.Canvas.textout(round(0.3*letter_width),head.height-letter_height,'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
   end;
   if ((freet) and (freetext<>'')) then
-    mainwindow.image1.Canvas.textout(head.width -round(fontsize) -mainwindow.image1.canvas.textwidth(freetext),head.height-round(2*fontsize),freetext);{right bottom corner, right aligned}
+    mainwindow.image1.Canvas.textout(head.width -round(0.3*letter_width) -mainwindow.image1.canvas.textwidth(freetext),head.height-letter_height,freetext);{right bottom corner, right aligned}
 end;
 
 

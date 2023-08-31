@@ -941,7 +941,10 @@ var
   referenceX, referenceY: double;{reference position used stacking}
   jd_mid: double;{julian day of mid head.exposure}
   jd_sum: double;{sum of julian days}
-  jd_stop: double;{end observation in julian days}
+  jd_end: double;{end observation in julian days}
+  jd_start_first: double;{begin of observation in julian days}
+  jd_end_last: double;{end of observations in julian days}
+
   files_to_process, files_to_process_LRGB: array of
   TfileToDo;{contains names to process and index to listview1}
   areay1, areay2: integer;
@@ -7495,6 +7498,7 @@ begin
   if error2 <> 0 then exit;
   jd_start := julian_calc(yy, mm, dd, hh, min, ss);{calculate julian date}
   jd_mid := jd_start + exp / (2 * 24 * 3600);{Add half head.exposure in days to get midpoint}
+  jd_end := jd_start + exp / (24 * 3600);{Add head.exposure in days to get end date}
 end;
 
 
@@ -8930,7 +8934,7 @@ begin
   end;
 
   {get column names}
-  for c := 0 to lv.Items[0].SubItems.Count - 1 do
+  for c := 0 to lv.Items[0].SubItems.Count do
     try
       info := info + lv.columns[c].Caption + #9;
     except
@@ -9657,7 +9661,7 @@ end;
 procedure Tstackmenu1.remove_stars1Click(Sender: TObject);
 var
   gain: single;
-  fitsX,fitsY,col   : integer;
+  fitsX,fitsY,col,letter_height   : integer;
 begin
   if head.naxis=0 then exit; {file loaded?}
   if head.cd1_1=0 then begin memo2_message('Abort, solve the image first!');exit; end;
@@ -9682,7 +9686,9 @@ begin
 
   mainwindow.image1.Canvas.font.size:=10;
   mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.textout(20,head.height-20,stackmenu1.reference_database1.text);//show which database was used
+
+  letter_height:=mainwindow.image1.Canvas.textheight('M');
+  mainwindow.image1.Canvas.textout(20,head.height-letter_height,stackmenu1.reference_database1.text);//show which database was used
 
   plot_fits(mainwindow.image1,false,true);//refresh screen
 
@@ -9748,7 +9754,6 @@ begin
   stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'SQM';
   sqm_key:='SQM     ';
 end;
-
 
 
 procedure Tstackmenu1.FormDestroy(Sender: TObject);
@@ -12245,21 +12250,24 @@ begin
         update_float  ('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
         update_text('CALSTAT =', #39 + head.calstat + #39); {calibration status}
 
-        if use_manual_alignment1.Checked = False then
-          {don't do this for manual stacking and moving object. Keep the date of the reference image for correct annotation of asteroids}
+
+
+        head.date_obs := jdToDate(jd_start_first);
+        update_text('DATE-OBS=', #39 + head.date_obs + #39 + '/ Date and time of the start of the observation.'); //add_text
+        update_text('DATE-END=', #39 + jdToDate(jd_end_last) + #39 + '/ Date and time of the end of the observation.'); //add_text
+
+        if ((head.naxis3 = 1) and (counterL > 0)) then {works only for mono}
         begin
-          head.date_obs := jdToDate(jd_stop);
-          update_text('DATE-OBS=', #39 + head.date_obs + #39);{give start point exposures}
-          if ((head.naxis3 = 1) and (counterL > 0)) then {works only for mono}
-          begin
-            update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum / counterL);{give midpoint of exposures}
-            date_avg := JdToDate(jd_sum / counterL);  {update date_avg for asteroid annotation}
-            update_text('DATE-AVG=', #39 + date_avg + #39);{give midpoint of exposures}
-            head.date_obs := JdToDate((jd_sum / counterL) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
-            update_text('DATE-OBS=', #39 + head.date_obs + #39 + '/ Calculated for stack JD_AVG - EXPTIME/(2*86400)'); //add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
-          end;
-        end
-        else;{keep head.date_obs from reference image for accurate asteroid annotation}
+          update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum / counterL);{give midpoint of exposures}
+          date_avg := JdToDate(jd_sum / counterL);  {update date_avg for asteroid annotation}
+
+          update_text('DATE-AVG=', #39 + date_avg + #39);{give midpoint of exposures}
+          head.date_obs := JdToDate((jd_sum / counterL) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
+        end;
+
+        head.exposure := sum_exp;
+        update_integer('EXPTIME =', ' / Total exposure time in seconds.      ', round(head.exposure));
+
 
         if pos('D', head.calstat) > 0 then
           add_text('COMMENT ', '   D=' + ExtractFileName(last_dark_loaded));
@@ -12301,8 +12309,6 @@ begin
             update_float('CRPIX2  =', ' / Y of reference pixel                           ',false, head.crpix2);
           end;
 
-          head.exposure := sum_exp;{for annotation asteroid}
-          update_integer('EXPTIME =', ' / Total luminance exposure time in seconds.      ', round(head.exposure));
           update_integer('SET-TEMP=', ' / Average set temperature used for luminance.    ', temperatureL);
           add_integer('LUM_EXP =', ' / Average luminance exposure time.               ', exposureL);
           add_integer('LUM_CNT =', ' / Luminance images combined.                     ', counterL);
@@ -12319,9 +12325,6 @@ begin
           head.naxis := 3; {will be written in save routine}
           head.naxis3 := 3;{will be written in save routine, head.naxis3 is updated in  save_fits}
           if length(extra2) > 1 then update_text('FILTER  =', #39 + '        ' + #39); {wipe filter info}
-          head.exposure := exposureL * counterL;{for annotation asteroid}
-          update_integer('EXPTIME =', ' / Total luminance exposure time in seconds.      ' , round(head.exposure)); {could be used for midpoint. Download time are not included, so it is not perfect}
-
           if counterL > 0 then  //counter number of luminance used in LRGB stacking
           begin
             add_integer('LUM_EXP =', ' / Luminance exposure time.                       ' , exposureL);
