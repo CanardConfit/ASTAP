@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.08.31';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.09.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -938,7 +938,7 @@ uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, 
 var
   recent_files : tstringlist;
   export_index                                 : integer;
-  object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
+  object_xc,object_yc, object_raM,object_decM,object_hfd  : double; {near mouse auto centered object position}
 
 var {################# initialised variables #########################}
   SaveasJPGPNGBMP1filterindex : integer=4;
@@ -4197,8 +4197,8 @@ procedure plot_star_profile(cX,cY : integer);
 const rs=24;
       qrs=rs div 4; {1/4=6}
 var
-  i, j,distance,h      : integer;
-  val,valmax,valmin    : double;
+  i, j,distance,hh,diam1,diam2  : integer;
+  val,valmax,valmin  : double;
   profile: array[0..1,-rs..rs] of double;
 begin
   with mainwindow.image_north_arrow1 do
@@ -4207,6 +4207,7 @@ begin
     canvas.brush.color:=clmenu;
     Canvas.FillRect(rect(0,0,width,height));
     Canvas.Pen.Color := clred;
+    Canvas.Pen.style := psSolid;
 
 
     // Build profile
@@ -4238,13 +4239,29 @@ begin
     begin
       if profile[1,i]<>0 then
       begin
-        h:=height-round((height/(valmax-valmin))*(-valmin+profile[0,i]/profile[1,i]) );//height
+        hh:=height-round((height/(valmax-valmin))*(-valmin+profile[0,i]/profile[1,i]) );//height
         if i=-rs then
-          moveToex(Canvas.handle,(width div 2)+i,h,nil)
+          moveToex(Canvas.handle,(width div 2)+i,hh,nil)
         else
-          lineTo(Canvas.handle,(width div 2)+i,h);
+          lineTo(Canvas.handle,(width div 2)+i,hh);
       end;
     end;
+
+    diam1:=round((width/2 + object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));//in 1/4 pixel resolution
+    diam2:=round((width/2 - object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));
+
+
+    if diam2>=0 then  //show aperture
+    begin
+      Canvas.Pen.style := psdot;
+      Canvas.Pen.Color := clGreen;
+      moveToex(Canvas.handle,diam1,0,nil);
+      lineto(Canvas.handle,diam1,2*rs);
+      moveToex(Canvas.handle,diam2,0,nil);
+      lineto(Canvas.handle,diam2,2*rs);
+      Canvas.Pen.style := psSolid;
+    end;
+
   end;
 end;
 
@@ -13740,7 +13757,7 @@ end;
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  width5,height5, xf,yf,k, fx,fy, shapetype                     : integer;
+  width5,height5, xf,yf,k, fx,fy, shapetype                    : integer;
   hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b : double;
 begin
   if head.naxis=0 then exit;
@@ -14447,6 +14464,7 @@ begin
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
    if ((hfd2<99) and (hfd2>0)) then //star detected
    begin
+     object_hfd:=hfd2;
      if ((hfd_arcseconds) and (head.cd1_1<>0)) then conv_factor:=abs(head.cdelt2)*3600{arc seconds} else conv_factor:=1;{pixels}
      if hfd2*conv_factor>1 then str(hfd2*conv_factor:0:1,hfd_str) else str(hfd2*conv_factor:0:2,hfd_str);
      str(fwhm_star2*conv_factor:0:1,fwhm_str);
