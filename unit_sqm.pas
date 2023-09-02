@@ -208,7 +208,7 @@ begin
     update_hist:=false;
     error_message1.caption:='';
 
-    date_to_jd(head.date_obs,head.exposure);{convert date-OBS to jd_start and jd_mid}
+    date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-OBS to jd_start and jd_mid}
 
     if jd_start<=2400000 then {no date, found year <1858}
     begin

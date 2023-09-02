@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.09.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.09.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -570,6 +570,7 @@ type
     egain      : string; {gain in e-/adu}
      gain      : string; {gain in 0.1dB or else}
     date_obs   : string;
+    date_avg   : string;
     calstat    : string;
     filter_name: string;
     passband_database: string;
@@ -657,7 +658,7 @@ var
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
   focus_temp,{cblack,}cwhite,sqmfloat,pressure   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
-  date_avg,telescop,instrum,origin,sqm_value   : string;
+  telescop,instrum,origin,sqm_value   : string;
 
   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
@@ -686,7 +687,6 @@ var {################# initialised variables #########################}
   stopY: integer=0;
   width_radians : double=(140/60)*pi/180;
   height_radians: double=(100/60)*pi/180;
-//  mouse_enter : integer=0;{for crop function}
   application_path:string='';{to be set in main}
   database_path:string='';{to be set in main}
   bayerpat: string='';{bayer pattern}
@@ -702,7 +702,6 @@ var {################# initialised variables #########################}
   hfd_median : double=0;{median hfd, use in reporting in write_ini}
   hfd_counter: integer=0;{star counter (for hfd_median), use in reporting in write_ini}
   aperture_ratio: double=0; {ratio flux_aperture/hfd_median}
-//  flux_aperture : double=99;{circle where flux is measured}
   annulus_radius  : integer=14;{inner of square where background is measured. Square has width and height twice annulus_radius}
   copy_paste :boolean=false;
   copy_paste_shape :integer=0;//rectangle
@@ -1019,7 +1018,7 @@ begin
     head.mzero_radius:=99;{circle where flux is measured}
     head.pedestal:=0; {value added during calibration or stacking}
 
-    date_avg:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+    telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';siteelev:='';
 
     focus_temp:=999;{assume no data available}
@@ -1032,6 +1031,7 @@ begin
   end;
 
   head.date_obs:='';
+  head.date_avg:='';
   head.calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
   head.filter_name:='CV';//none
   head.naxis:=-1;{assume failure}
@@ -1348,25 +1348,37 @@ begin
 
         if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
         begin
-          if head.date_obs<>'' then head.date_obs:=head.date_obs+'T'+get_string;
+          if length(head.date_obs)=10 then head.date_obs:=head.date_obs+'T'+get_string;
         end;
 
-        if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then //julian day
-        if head.date_obs='' then {DATE-OBS overrules any JD value}
+        if ((header[i]='J') and (header[i+1]='D')) then
         begin
-          jd2:=validate_double;
-          head.date_obs:=JdToDate(jd2);
+          if ((header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then //julian day
+          begin
+            if head.date_obs='' then {DATE-OBS overrules any JD value}
+            begin
+              jd2:=validate_double;
+              head.date_obs:=JdToDate(jd2);
+            end;
+          end
+          else
+          if ((header[i+2]='-') and (header[i+3]='A') and (header[i+4]='G')) then //JD_AVG
+          begin
+            if head.date_avg='' then {DATE-AVG overrules any JD value}
+            begin
+              jd2:=validate_double;
+              head.date_avg:=JdToDate(jd2);
+            end;
+          end
         end;
 
         if ((header[i]='D') and (header[i+1]='A')) then {DA}
         begin
           if ((header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-')) then {DATE-}
           begin
-            if ((header[i+5]='O') and (header[i+6]='B')) then
-              head.date_obs:=get_string
+            if ((header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
             else
-            if ((header[i+5]='A') and (header[i+6]='V')) then
-                  date_avg:=get_string;
+            if ((header[i+5]='A') and (header[i+6]='V')) then head.date_avg:=get_string; //date-avg
           end
           else
           if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
@@ -4287,12 +4299,7 @@ begin
   if posanddate then
   begin
     if head.cd1_1<>0 then  mainwindow.image1.Canvas.textout(round(0.3*letter_width),head.height-2*letter_height,'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
-
-    if date_avg<>'' then
-      date_to_jd(date_avg,0 {head.exposure}){convert date-AVG to jd_mid be using head.exposure=0}
-    else
-      date_to_jd(head.date_obs,head.exposure);{convert date-OBS to jd_start and jd_mid}
-
+    date_to_jd(head.date_obs,head.date_avg, head.exposure);{convert jd_start and jd_mid}
     mainwindow.image1.Canvas.textout(round(0.3*letter_width),head.height-letter_height,'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
   end;
   if ((freet) and (freetext<>'')) then
@@ -7673,7 +7680,7 @@ begin
       dum:=Sett.ReadString('stack','contour_gaus',''); if dum<>'' then stackmenu1.contour_gaussian1.text:=dum;
       dum:=Sett.ReadString('stack','contour_sd',''); if dum<>'' then stackmenu1.contour_sigma1.text:=dum;
       dum:=Sett.ReadString('stack','contour_grid',''); if dum<>'' then stackmenu1.detection_grid1.text:=dum;
-
+      groupsizeStr:=Sett.ReadString('stack','groupsize','');
 
 //      stackmenu1.streak_filter1.Checked:=Sett.ReadBool('stack','streak_filter',false);
 
@@ -8039,6 +8046,7 @@ begin
       sett.writestring('stack','contour_gaus',stackmenu1.contour_gaussian1.text);
       sett.writestring('stack','contour_sd',stackmenu1.contour_sigma1.text);
       sett.writestring('stack','contour_grid',stackmenu1.detection_grid1.text);
+      sett.writestring('stack','groupsize',groupsizeStr);//stacking in tab photmetry
 
       sett.writestring('aavso','obscode',obscode);
       sett.writeInteger('aavso','delim_pos',delim_pos);
@@ -15395,7 +15403,7 @@ begin
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
         if load_fits(filename2,true{light},false {data},false {update memo},0,head_2,img_temp) then {load image success}
         begin
-          date_to_jd(head_2.date_obs,head_2.exposure);{convert date-obs to jd_start, jd_mid}
+          date_to_jd(head_2.date_obs,head_2.date_avg,head_2.exposure);{convert date-obs to jd_start, jd_mid}
 
           if jd_start>2400000 then {valid JD}
           begin
@@ -15470,7 +15478,7 @@ begin
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
         if load_fits(filename2,true{light},false {data},false {update memo},0,head_2,img_temp) then {load image success}
         begin
-          date_to_jd(head_2.date_obs,head_2.exposure);{convert date-obs to jd_start, jd_mid}
+          date_to_jd(head_2.date_obs,head_2.date_avg,head_2.exposure);{convert date-obs to jd_start, jd_mid}
           if jd_start>2400000 then {valid JD}
           begin
             jd_start:=jd_start-(GetLocalTimeOffset/(24*60))+head_2.exposure/(24*3600);//correct for timezone and exposure time

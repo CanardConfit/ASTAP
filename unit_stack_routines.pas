@@ -389,7 +389,7 @@ begin
             if ((c<>0) and (solution)) then  {do not add reference channel c=0, in most case luminance file.}
             begin
               inc(counter);{count number of colour files involved}
-              date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+              date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
               jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
               jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
@@ -757,7 +757,7 @@ begin
 
             weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 
-            date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+            date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
             jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
             jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
             jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
@@ -937,7 +937,7 @@ begin
             sum_exp:=sum_exp+head.exposure;
             sum_temp:=sum_temp+head.set_temperature;
 
-            date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+            date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
             jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
             jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
             jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
@@ -1282,7 +1282,7 @@ begin
 
           weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 
-          date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+          date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
           jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
           jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
           jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}

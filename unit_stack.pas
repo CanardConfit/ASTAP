@@ -922,6 +922,8 @@ type
     Width: integer;
     Height: integer;
     mzero: double;
+    apr  : double;
+    anr  : double;
     starlist: star_list;
   end;
 
@@ -972,6 +974,7 @@ var  {################# initialised variables #########################}
   ra_target: double = 999;
   dec_target: double = 999;
   jd_start: double = 0;{julian day of date-obs}
+  groupsizeStr : string='';
 
 
 const
@@ -994,7 +997,7 @@ function apply_dark_and_flat(var img: image_array): boolean; inline;{apply dark 
 
 procedure smart_colour_smooth(var img: image_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure green_purple_filter(var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
-procedure date_to_jd(date_time: string; exp: double); {convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio: double); {resize img_loaded in free ratio}
 function median_background(var img: image_array; color, sizeX, sizeY, x, y: integer): double; {find median value of an area at position x,y with sizeX,sizeY}
@@ -4076,10 +4079,8 @@ begin
             if tabnr = 2 then {dark tab}
             begin
               lv.Items.item[c].subitems.Strings[D_date] := copy(head_2.date_obs, 1, 10);
-              date_to_jd(head_2.date_obs, head_2.exposure);
-              {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
-              lv.Items.item[c].subitems.Strings[D_jd] := floattostrF(jd_start, ffFixed, 0, 1);
-              {julian day, 1/10 day accuracy}
+              date_to_jd(head_2.date_obs,head_2.date_avg, head_2.exposure); {convert to julian days}
+              lv.Items.item[c].subitems.Strings[D_jd] := floattostrF(jd_start, ffFixed, 0, 1);{julian day, 1/10 day accuracy}
               lv.Items.item[c].subitems.Strings[D_issues]:='';//clear issues
             end
             else
@@ -4151,10 +4152,9 @@ begin
               {$endif}
 
               lv.Items.item[c].subitems.Strings[D_date] := copy(head_2.date_obs, 1, 10);
-              date_to_jd(head_2.date_obs, head_2.exposure);
+              date_to_jd(head_2.date_obs,head_2.date_avg, head_2.exposure);
               {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
-              lv.Items.item[c].subitems.Strings[F_jd] := floattostrF(jd_start, ffFixed, 0, 1);
-              {julian day, 1/10 day accuracy}
+              lv.Items.item[c].subitems.Strings[F_jd] := floattostrF(jd_start, ffFixed, 0, 1); {julian day, 1/10 day accuracy}
               lv.Items.item[c].subitems.Strings[F_calibration] := head_2.calstat;
             end
             else
@@ -4211,10 +4211,8 @@ begin
               else
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 
-              date_to_jd(head_2.date_obs, head_2.exposure);
-              {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
-              lv.Items.item[c].subitems.Strings[P_jd_mid] :=
-                floattostrF(jd_mid, ffFixed, 0, 5);{julian day}
+              date_to_jd(head_2.date_obs,head_2.date_avg, head_2.exposure); {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
+              lv.Items.item[c].subitems.Strings[P_jd_mid] := floattostrF(jd_mid, ffFixed, 0, 5);{julian day}
 
               hjd := JD_to_HJD(jd_mid, head_2.ra0, head_2.dec0);{conversion JD to HJD}
               lv.Items.item[c].subitems.Strings[P_jd_helio] :=
@@ -4292,8 +4290,7 @@ begin
             begin
 
               lv.Items.item[c].subitems.Strings[M_date] := date_obs_regional(head_2.date_obs);
-              date_to_jd(head_2.date_obs, head_2.exposure);
-              {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
+              date_to_jd(head_2.date_obs,head_2.date_avg, head_2.exposure); {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
 
               //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
               //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
@@ -5648,13 +5645,10 @@ begin
 
         if timestamp1.Checked then
         begin
-          if date_avg = '' then
-            annotation_to_array('date_obs: ' + head.date_obs, False,
-              65535, 1{size}, left + 1, bottom + 10, img_loaded)
-          {head.date_obs to image array as font. Flicker free method}
+          if head.date_avg = '' then
+            annotation_to_array('date_obs: ' + head.date_obs, False, 65535, 1{size}, left + 1, bottom + 10, img_loaded)   {head.date_obs to image array as font. Flicker free method}
           else
-            annotation_to_array('date_avg: ' + date_avg, False, 65535,
-              1{size}, left + 1, bottom + 10, img_loaded);{head.date_obs to image array as font}
+            annotation_to_array('date_avg: ' + head.date_avg, False, 65535,  1{size}, left + 1, bottom + 10, img_loaded);{head.date_obs to image array as font}
         end;
 
 
@@ -7347,13 +7341,9 @@ begin
 
       if timestamp1.Checked then
       begin
-        if date_avg = '' then
-          annotation_to_array('date_obs: ' + head.date_obs, False, 65535,
-            1{size}, 1, 10, img_loaded) {head.date_obs to image array as annotation}
+        if head.date_avg = '' then annotation_to_array('date_obs: ' + head.date_obs, False, 65535, 1{size}, 1, 10, img_loaded) {head.date_obs to image array as annotation}
         else
-          annotation_to_array('date_avg: ' + date_avg, False, 65535,
-            1{size}, 1, 10, img_loaded);
-        {head.date_obs to image array as annotation}
+          annotation_to_array('date_avg: ' + head.date_avg, False, 65535, 1{size}, 1, 10, img_loaded);  {head.date_obs to image array as annotation}
       end;
       add_text('COMMENT ',
         ' Image aligned with other images.                                    ');
@@ -7476,29 +7466,54 @@ end;
 //end;
 
 
-procedure date_to_jd(date_time: string; exp: double);
+procedure date_to_jd(date_obs,date_avg: string; exp: double);
 {convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
 var
   yy, mm, dd, hh, min, error2: integer;
   ss: double;
 begin
   jd_start := 0;
-  val(copy(date_time, 18, 7), ss, error2);
-  if error2 <> 0 then exit; {read also milliseconds}
+  jd_end:=0;
+  jd_mid:=0;
+  if date_obs<>'' then
+  begin
+    val(copy(date_obs, 18, 7), ss, error2);
+    if error2 <> 0 then exit; {read also milliseconds}
+    val(copy(date_obs, 15, 2), min, error2);
+    if error2 <> 0 then exit;
+    val(copy(date_obs, 12, 2), hh, error2);
+    if error2 <> 0 then exit;
+    val(copy(date_obs, 09, 2), dd, error2);
+    if error2 <> 0 then exit;
+    val(copy(date_obs, 06, 2), mm, error2);
+    if error2 <> 0 then exit;
+    val(copy(date_obs, 01, 4), yy, error2);
+    if error2 <> 0 then exit;
 
-  val(copy(date_time, 15, 2), min, error2);
-  if error2 <> 0 then exit;
-  val(copy(date_time, 12, 2), hh, error2);
-  if error2 <> 0 then exit;
-  val(copy(date_time, 09, 2), dd, error2);
-  if error2 <> 0 then exit;
-  val(copy(date_time, 06, 2), mm, error2);
-  if error2 <> 0 then exit;
-  val(copy(date_time, 01, 4), yy, error2);
-  if error2 <> 0 then exit;
-  jd_start := julian_calc(yy, mm, dd, hh, min, ss);{calculate julian date}
-  jd_mid := jd_start + exp / (2 * 24 * 3600);{Add half head.exposure in days to get midpoint}
-  jd_end := jd_start + exp / (24 * 3600);{Add head.exposure in days to get end date}
+    jd_start := julian_calc(yy, mm, dd, hh, min, ss);{calculate julian date}
+    jd_end := jd_start + exp / (24 * 3600);{Add head.exposure in days to get end date}
+  end;
+
+  if date_avg='' then
+  begin
+    jd_mid := jd_start + exp / (2 * 24 * 3600);{Add half head.exposure in days to get midpoint}
+  end
+  else
+  begin
+    val(copy(date_avg, 18, 7), ss, error2);
+    if error2 <> 0 then exit; {read also milliseconds}
+    val(copy(date_avg, 15, 2), min, error2);
+    if error2 <> 0 then exit;
+    val(copy(date_avg, 12, 2), hh, error2);
+    if error2 <> 0 then exit;
+    val(copy(date_avg, 09, 2), dd, error2);
+    if error2 <> 0 then exit;
+    val(copy(date_avg, 06, 2), mm, error2);
+    if error2 <> 0 then exit;
+    val(copy(date_avg, 01, 4), yy, error2);
+    if error2 <> 0 then exit;
+    jd_mid := julian_calc(yy, mm, dd, hh, min, ss);{calculate julian date}
+  end;
 end;
 
 
@@ -7873,9 +7888,7 @@ var
 
   function measure_star(deX, deY: double): string;{measure position and flux}
   begin
-    HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius
-      {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);
-    {star HFD and FWHM}
+    HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
     if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
     begin
       if head.calstat = '' then saturation_level := 64000
@@ -7918,25 +7931,13 @@ var
       Result := '?';
   end;
 
-  procedure plot_annulus(x, y: integer); {plot the aperture and annulus}
+  procedure plot_annulus(x, y: integer; apr,anr :double); {plot the aperture and annulus}
   begin
-    if Flipvertical = False then  starY := (head.Height - y)
-    else
-      starY := (y);
-    if Fliphorizontal then starX := (head.Width - x)
-    else
-      starX := (x);
-    if head.mzero_radius < 99 {<>max setting} then
-      mainwindow.image1.canvas.ellipse(
-        round(starX - head.mzero_radius - 1), round(starY - head.mzero_radius - 1), round(
-        starX + head.mzero_radius + 1), round(starY + head.mzero_radius + 1));
-    {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-    mainwindow.image1.canvas.ellipse(round(starX - annulus_radius),
-      round(starY - annulus_radius), round(starX + annulus_radius), round(starY + annulus_radius));
-    {three pixels, 1,2,3}
-    mainwindow.image1.canvas.ellipse(round(starX - annulus_radius - 4),
-      round(starY - annulus_radius - 4), round(starX + annulus_radius + 4), round(
-      starY + annulus_radius + 4));
+    if Flipvertical = False then  starY := (head.Height - y) else starY := (y);
+    if Fliphorizontal then starX := (head.Width - x) else starX := (x);
+    if apr < 99 {<>max setting} then   mainwindow.image1.canvas.ellipse(round(starX - apr - 1), round(starY - apr - 1), round( starX +apr + 1), round(starY + apr + 1)); {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+    mainwindow.image1.canvas.ellipse(round(starX - anr), round(starY - anr), round(starX + anr), round(starY + anr)); {three pixels, 1,2,3}
+    mainwindow.image1.canvas.ellipse(round(starX - anr - 4), round(starY - anr - 4), round(starX + anr + 4), round( starY + anr + 4));
   end;
 
   procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
@@ -8204,10 +8205,14 @@ begin
             starlistpack[c].Width :=head.Width;
             starlistpack[c].Height:=head.Height;
             starlistpack[c].mzero :=head.mzero;
+            starlistpack[c].apr:=head.mzero_radius;
+            starlistpack[c].anr:=annulus_radius;
+
           end
           else
             starlistpack[c].Height := 0; {mark as not valid measurement}
         end;
+
 
 
         setlength(img_temp, head.naxis3, head.Width, head.Height);{new size}
@@ -8339,7 +8344,7 @@ begin
         if ((annotated) and (mainwindow.annotations_visible1.Checked)) then
           //header annotations
           plot_annotations(True {use solution vectors!!!!}, False);
-        {corrected annotations in case a part of the lights are flipped in the alignment routien}
+        {corrected annotations in case a part of the lights are flipped in the alignment routine}
 
         mainwindow.image1.Canvas.Pen.Width := 1;{thickness lines}
         mainwindow.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
@@ -8356,21 +8361,22 @@ begin
         begin
           mainwindow.image1.Canvas.Pen.mode := pmCopy;
 
+
           if mainwindow.shape_alignment_marker1.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clRed;
-            plot_annulus(round(shape_fitsX), round(shape_fitsY));
+            plot_annulus(round(shape_fitsX), round(shape_fitsY),starlistpack[c].apr,starlistpack[c].anr);
           end;
 
           if mainwindow.shape_alignment_marker2.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clGreen;
-            plot_annulus(round(shape_fitsX2), round(shape_fitsY2));
+            plot_annulus(round(shape_fitsX2), round(shape_fitsY2),starlistpack[c].apr,starlistpack[c].anr);
           end;
           if mainwindow.shape_alignment_marker3.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
-            plot_annulus(round(shape_fitsX3), round(shape_fitsY3));
+            plot_annulus(round(shape_fitsX3), round(shape_fitsY3),starlistpack[c].apr,starlistpack[c].anr);
           end;
         end;
 
@@ -9121,12 +9127,10 @@ procedure Tstackmenu1.stack_groups1Click(Sender: TObject);
 var
   index, counter, oldindex, position, i,groupsize,count: integer;
   ListItem: TListItem;
-  groupsizeStr : string;
-
 begin
   groupsizeStr:=InputBox('Stack selected file in groups, mode average',
   'The selected files should be sorted on date.'+#10+#10+
-  'How many images per stack?:','8');
+  'How many images per stack?:',groupsizeStr);
   if groupsizeStr=''  then exit; {cancel used}
   groupsize:=strtoint2(groupsizeStr);
   if groupsize=0 then exit;
@@ -11101,7 +11105,7 @@ var
 
 begin
   Result := False;
-  date_to_jd(head.date_obs, head.exposure {light}); {convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light}
+  date_to_jd(head.date_obs,'', head.exposure {light}); {convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light}
 
   if pos('D', head.calstat) <> 0 then {is the light already calibrated}
     memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
@@ -12259,9 +12263,9 @@ begin
         if ((head.naxis3 = 1) and (counterL > 0)) then {works only for mono}
         begin
           update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum / counterL);{give midpoint of exposures}
-          date_avg := JdToDate(jd_sum / counterL);  {update date_avg for asteroid annotation}
+          head.date_avg := JdToDate(jd_sum / counterL);  {update date_avg for asteroid annotation}
 
-          update_text('DATE-AVG=', #39 + date_avg + #39);{give midpoint of exposures}
+          update_text('DATE-AVG=', #39 + head.date_avg + #39);{give midpoint of exposures}
           head.date_obs := JdToDate((jd_sum / counterL) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
         end;
 

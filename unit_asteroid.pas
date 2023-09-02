@@ -606,10 +606,7 @@ begin
   mainwindow.image1.Canvas.font.size:=fontsize;
   str(max(1,fontsize/12):0:1,fontsize_str); {store font size for header annotations}
 
-  if date_avg<>'' then
-    date_to_jd(date_avg,0 {head.exposure}){convert date-AVG to jd_mid be using head.exposure=0}
-  else
-    date_to_jd(head.date_obs,head.exposure);{convert date-OBS to jd_start and jd_mid}
+  date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-OBS to jd_start and jd_mid}
 
   if jd_start<=2400000 then {no date, found year <1858}
   begin
@@ -723,7 +720,7 @@ begin
     if midpoint=false then
       head.date_obs:=date_obs1.Text
     else
-      date_avg:=date_obs1.Text;
+      head.date_avg:=date_obs1.Text;
 
     annotation_color:=ColorBox1.selected;
     annotation_diameter:=form_asteroids1.annotation_size2.Position div 2;
@@ -847,11 +844,11 @@ begin
   test_mpcorb;
   mpcorb_path2.caption:=cometels_path;
   test_cometels;
-  if date_avg<>'' then
+  if head.date_avg<>'' then
   begin
      date_label1.caption:='DATE_AVG';
      label_start_mid1.caption:='Midpoint of the observation';
-     date_obs1.Text:=date_avg;
+     date_obs1.Text:=head.date_avg;
      midpoint:=true;
   end
   else

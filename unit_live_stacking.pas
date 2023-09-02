@@ -76,8 +76,8 @@ begin
   update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
   update_text ('DATE-OBS=',#39+JdToDate(jd_start_first)+#39);{give begin date exposures}
   update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum/counterL);{give midpoint of exposures}
-  date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
-  update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
+  head.date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
+  update_text ('DATE-AVG=',#39+head.date_avg+#39);{give midpoint of exposures}
   update_integer('LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}
   update_integer('DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
   update_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
@@ -327,7 +327,7 @@ begin
               sum_exp:=sum_exp+head.exposure;
               sum_temp:=sum_temp+head.set_temperature;
 
-              date_to_jd(head.date_obs,head.exposure);{convert date-obs to jd}
+              date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd}
               jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure.}
 

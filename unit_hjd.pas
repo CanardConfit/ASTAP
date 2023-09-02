@@ -290,7 +290,7 @@ begin
         dec_text_to_radians(sitelong,site_long_radians,errordecode);
       if errordecode=false then
       begin
-        if jd_start=0 then date_to_jd(head.date_obs,head.exposure);{convert date-obs to jd_start, jd_mid}
+        if jd_start=0 then date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
         if jd_mid>2400000 then {valid JD}
         begin
           ra:=head.ra0; {duplicate to protect J2000 position}
