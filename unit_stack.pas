@@ -5616,8 +5616,7 @@ begin
               y_new := round(solution_vectorY[0] * (fitsx) + solution_vectorY[1] *
                 (fitsY) + solution_vectorY[2]); {correction y:=aX+bY+c}
 
-              if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and
-                (y_new <= head.Height - 1)) then
+              if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and (y_new <= head.Height - 1)) then
                 for col := 0 to head.naxis3 - 1 do {all colors}
                   img_temp[col, x_new, y_new] := img_loaded[col, fitsX, fitsY];
 
@@ -7321,13 +7320,10 @@ begin
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
         begin
-          x_new := round(solution_vectorX[0] * (fitsx) + solution_vectorX[1] *
-            (fitsY) + solution_vectorX[2]); {correction x:=aX+bY+c}
-          y_new := round(solution_vectorY[0] * (fitsx) + solution_vectorY[1] *
-            (fitsY) + solution_vectorY[2]); {correction y:=aX+bY+c}
+          x_new := round(solution_vectorX[0] * (fitsx) + solution_vectorX[1] * (fitsY) + solution_vectorX[2]); {correction x:=aX+bY+c}
+          y_new := round(solution_vectorY[0] * (fitsx) + solution_vectorY[1] * (fitsY) + solution_vectorY[2]); {correction y:=aX+bY+c}
 
-          if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and
-            (y_new <= head.Height - 1)) then
+          if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and (y_new <= head.Height - 1)) then
             for col := 0 to head.naxis3 - 1 do
               {all colors} img_temp[col, x_new, y_new] := img_loaded[col, fitsX, fitsY];
         end;
@@ -7751,34 +7747,23 @@ begin
             for i := 0 to min(length(starlistpack[c].starlist[0]) - 2, 5000) do
               {calculate mean of the found stars}
             begin
-              xc := (solution_vectorX[0] * (starlistpack[c].starlist[0, i]) +
-                solution_vectorX[1] * (starlistpack[c].starlist[1, i]) + solution_vectorX[2]);
-              {correction x:=aX+bY+c}
-              yc := (solution_vectorY[0] * (starlistpack[c].starlist[0, i]) +
-                solution_vectorY[1] * (starlistpack[c].starlist[1, i]) + solution_vectorY[2]);
-              {correction y:=aX+bY+c}
-              if ((xc >= factor) and (xc <= starlistpack[c].Width - 1 - factor) and
-                (yc >= factor) and (yc <= starlistpack[c].Height - 1 - factor)) then
-                {image could be shifted and very close to the boundaries. Prevent runtime errors}
+              xc := (solution_vectorX[0] * (starlistpack[c].starlist[0, i]) + solution_vectorX[1] * (starlistpack[c].starlist[1, i]) + solution_vectorX[2]); {correction x:=aX+bY+c}
+              yc := (solution_vectorY[0] * (starlistpack[c].starlist[0, i]) + solution_vectorY[1] * (starlistpack[c].starlist[1, i]) + solution_vectorY[2]); {correction y:=aX+bY+c}
+              if ((xc >= factor) and (xc <= starlistpack[c].Width - 1 - factor) and (yc >= factor) and (yc <= starlistpack[c].Height - 1 - factor)) then {image could be shifted and very close to the boundaries. Prevent runtime errors}
               begin
                 x_new := round(xc / factor);
                 y_new := round(yc / factor);
 
                 if stepnr = 1 then
                 begin {CALCULATE MEAN magnitude of the stars}
-                  stars_mean[x_new, y_new] := stars_mean[x_new, y_new] +
-                  (head.MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10));{magnitude}
+                  stars_mean[x_new, y_new] := stars_mean[x_new, y_new] + (head.MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10));{magnitude}
                   //ln(starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432); {magnitude}
-
-
                   stars_count[x_new, y_new] := stars_count[x_new, y_new] + 1;{counter}
                 end
                 else {CALCULATE SD of stars}
                 if stepnr = 2 then
                 begin
-                  stars_sd[x_new, y_new] :=
-                    stars_sd[x_new, y_new] + sqr((stars_mean[x_new, y_new] / stars_count[x_new, y_new]) -
-                    (head.MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10)) );{sd calculate by sqr magnitude difference from mean}
+                  stars_sd[x_new, y_new] :=stars_sd[x_new, y_new] + sqr((stars_mean[x_new, y_new] / stars_count[x_new, y_new]) - (head.MZERO - ln(starlistpack[c].starlist[3, i]{flux})*2.5/ln(10)) );{sd calculate by sqr magnitude difference from mean}
 //                    ln( starlistpack[c].flux_ratio/starlistpack[c].starlist[3, i]{flux})/ln(2.511886432) ); {sd calculate by sqr magnitude difference from mean}
                 end;
 
@@ -7874,7 +7859,7 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
   medianCheck, medianThree, hfd_med, apert, annul,
-  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e : double;
+  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, xn1, yn1,xn2, yn2,xn3, yn3,adu_e : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
   countCheck, countThree, database_col : integer;
@@ -8022,8 +8007,7 @@ begin
       Application.ProcessMessages;
 
       {load image}
-      if ((esc_pressed) or (load_fits(filename1, True {light}, True,
-        True {update memo}, 0, head_2, img_temp) = False)) then
+      if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0, head_2, img_temp) = False)) then
       begin
         nil_all;{nil all arrays and restore cursor}
         exit;
@@ -8119,8 +8103,7 @@ begin
         end;
 
         {load image}
-        if ((esc_pressed) or (load_fits(filename2, True {light}, True,
-          True {update memo}, 0, head, img_loaded) = False)) then
+        if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded) = False)) then
         begin
           esc_pressed := True;
           nil_all;
@@ -8134,11 +8117,9 @@ begin
           if warned = False then
           begin
             if pos('F', head.calstat) = 0 then
-              memo2_message(
-                '█ █ █ █ █ █ Warning: Image not calibrated with a flat field (keyword CALSTAT). Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu. █ █ █ █ █ █');
+              memo2_message('█ █ █ █ █ █ Warning: Image not calibrated with a flat field (keyword CALSTAT). Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu. █ █ █ █ █ █');
             if head.naxis3 > 1 then
-              memo2_message(
-                '█ █ █ █ █ █ Warning: Colour image!! Absolute photometric accuracy will be lower. Process only raw images. Set bayer pattern correctly in tab "Stack method" and extract the green pixels in tab photometry. █ █ █ █ █ █');
+              memo2_message('█ █ █ █ █ █ Warning: Colour image!! Absolute photometric accuracy will be lower. Process only raw images. Set bayer pattern correctly in tab "Stack method" and extract the green pixels in tab photometry. █ █ █ █ █ █');
           end;
           warned := True;{only one message}
           listview7.Items.item[c].subitems.Strings[P_photometric] := 'Poor';
@@ -8200,8 +8181,8 @@ begin
           if head.mzero <> 0 then
           begin
             measure_magnitudes(annulus_radius,0,0,head.width-1,head.height-1, False {deep}, starlistx); {analyse}
-            starlistpack[c].starlist := starlistX;
-            {store found stars in memory for finding outlier later}
+
+            starlistpack[c].starlist := starlistX; {store found stars in memory for finding outlier later}
             starlistpack[c].Width :=head.Width;
             starlistpack[c].Height:=head.Height;
             starlistpack[c].mzero :=head.mzero;
@@ -8213,28 +8194,22 @@ begin
             starlistpack[c].Height := 0; {mark as not valid measurement}
         end;
 
-
-
         setlength(img_temp, head.naxis3, head.Width, head.Height);{new size}
 
         {standard aligned blink}
         if init = False then {init}
         begin
-          initialise_var1;
-          {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
+          initialise_var1; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
 
           head_ref := head;{backup solution for deepsky annotation}
 
-          sensor_coordinates_to_celestial(shape_fitsX, shape_fitsY,
-            rax1, decx1 {fitsX, Y to ra,dec});
+          sensor_coordinates_to_celestial(shape_fitsX, shape_fitsY, rax1, decx1 {fitsX, Y to ra,dec});
           abbreviation_var_IAU := prepare_IAU_designation(rax1, decx1);
 
-          sensor_coordinates_to_celestial(shape_fitsX2, shape_fitsY2,
-            {var}   rax2, decx2 {position});
+          sensor_coordinates_to_celestial(shape_fitsX2, shape_fitsY2,{var} rax2, decx2 {position});
           name_check_iau := prepare_IAU_designation(rax2, decx2);
 
-          sensor_coordinates_to_celestial(shape_fitsX3, shape_fitsY3,
-            rax3, decx3 {fitsX, Y to ra,dec});
+          sensor_coordinates_to_celestial(shape_fitsX3, shape_fitsY3,rax3, decx3 {fitsX, Y to ra,dec});
 
           init := True;
         end;
@@ -8262,7 +8237,10 @@ begin
             //Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
             mainwindow.image1.Canvas.Pen.Color := clRed;
             celestial_to_pixel(rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY}
-            astr := measure_star(xn, yn); {var star}
+            astr := measure_star(xn, yn); {var star #####################################################################################################################}
+
+//            memo2_message('measuring star1 '+astr +'at '+floattostr(xn)+','+floattostr(yn));
+
             listview7.Items.item[c].subitems.Strings[P_magn1] := astr;
             listview7.Items.item[c].subitems.Strings[P_snr] := IntToStr(round(snr));
             if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
@@ -8301,7 +8279,6 @@ begin
           end;
         end;
 
-
         {calculate vectors from astrometric solution to speed up}
         sincos(head.dec0, SIN_dec0, COS_dec0);
         {do this in advance since it is for each pixel the same}
@@ -8311,26 +8288,20 @@ begin
         for fitsY := 1 to head.Height do
           for fitsX := 1 to head.Width do
           begin
-            x_new := round(solution_vectorX[0] * (fitsx - 1) + solution_vectorX[1] *
-              (fitsY - 1) + solution_vectorX[2]); {correction x:=aX+bY+c}
-            y_new := round(solution_vectorY[0] * (fitsx - 1) + solution_vectorY[1] *
-              (fitsY - 1) + solution_vectorY[2]); {correction y:=aX+bY+c}
+            x_new := round(solution_vectorX[0] * (fitsx - 1) + solution_vectorX[1] * (fitsY - 1) + solution_vectorX[2]); {correction x:=aX+bY+c}
+            y_new := round(solution_vectorY[0] * (fitsx - 1) + solution_vectorY[1] * (fitsY - 1) + solution_vectorY[2]); {correction y:=aX+bY+c}
 
-            if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and
-              (y_new <= head.Height - 1)) then
-              for col := 0 to head.naxis3 - 1 do
-                {all colors} img_temp[col, x_new, y_new] := img_loaded[col, fitsX - 1, fitsY - 1];
+            if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and  (y_new <= head.Height - 1)) then
+              for col := 0 to head.naxis3 - 1 do {all colors}
+                 img_temp[col, x_new, y_new] := img_loaded[col, fitsX - 1, fitsY - 1];
           end;
 
         img_loaded := nil;
         img_loaded := img_temp;
 
-
         {quick and dirty method to correct annotations for aligned lights}
-        head.crpix1 := solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] *
-          (head.crpix2 - 1) + solution_vectorX[2];{correct for marker_position at ra_dec position}
-        head.crpix2 := solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] *
-          (head.crpix2 - 1) + solution_vectorY[2];
+        head.crpix1 := solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] * (head.crpix2 - 1) + solution_vectorX[2];// correct for marker_position at ra_dec position
+        head.crpix2 := solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] * (head.crpix2 - 1) + solution_vectorY[2];
 
         head.cd1_1 := abs(head.cd1_1) * sign(head_ref.CD1_1);
         head.cd1_2 := abs(head.cd1_2) * sign(head_ref.CD1_2);
@@ -8341,10 +8312,8 @@ begin
         annotated := False;{prevent annotations are plotted in plot_fits}
         plot_fits(mainwindow.image1, False {re_center}, True);
         annotated := store_annotated;{restore anotated value}
-        if ((annotated) and (mainwindow.annotations_visible1.Checked)) then
-          //header annotations
-          plot_annotations(True {use solution vectors!!!!}, False);
-        {corrected annotations in case a part of the lights are flipped in the alignment routine}
+        if ((annotated) and (mainwindow.annotations_visible1.Checked)) then  //header annotations
+          plot_annotations(True {use solution vectors!!!!}, False); {corrected annotations in case a part of the lights are flipped in the alignment routine}
 
         mainwindow.image1.Canvas.Pen.Width := 1;{thickness lines}
         mainwindow.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
@@ -8365,18 +8334,25 @@ begin
           if mainwindow.shape_alignment_marker1.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clRed;
-            plot_annulus(round(shape_fitsX), round(shape_fitsY),starlistpack[c].apr,starlistpack[c].anr);
-          end;
+            celestial_to_pixel(rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
+            plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
+         end;
 
-          if mainwindow.shape_alignment_marker2.Visible then
+         if mainwindow.shape_alignment_marker2.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clGreen;
-            plot_annulus(round(shape_fitsX2), round(shape_fitsY2),starlistpack[c].apr,starlistpack[c].anr);
+            //plot_annulus(round(shape_fitsX2), round(shape_fitsY2),starlistpack[c].apr,starlistpack[c].anr);
+            celestial_to_pixel(rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
+            plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
+
           end;
+
           if mainwindow.shape_alignment_marker3.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
-            plot_annulus(round(shape_fitsX3), round(shape_fitsY3),starlistpack[c].apr,starlistpack[c].anr);
+           // plot_annulus(round(shape_fitsX3), round(shape_fitsY3),starlistpack[c].apr,starlistpack[c].anr);
+            celestial_to_pixel(rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
+            plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
           end;
         end;
 
@@ -8389,19 +8365,11 @@ begin
           for i := 0 to length(starlistpack[c].starlist[0]) - 2 do
           begin
             size := round(5 * starlistpack[c].starlist[2, i]);{5*hfd}
-            x_new := round(solution_vectorX[0] * (starlistpack[c].starlist[0, i]) +
-              solution_vectorX[1] * (starlistpack[c].starlist[1, i]) + solution_vectorX[2]);
-            {correction x:=aX+bY+c}
-            y_new := round(solution_vectorY[0] * (starlistpack[c].starlist[0, i]) +
-              solution_vectorY[1] * (starlistpack[c].starlist[1, i]) + solution_vectorY[2]);
-            {correction y:=aX+bY+c}
+            x_new := round(solution_vectorX[0] * (starlistpack[c].starlist[0, i]) +  solution_vectorX[1] * (starlistpack[c].starlist[1, i]) + solution_vectorX[2]); {correction x:=aX+bY+c}
+            y_new := round(solution_vectorY[0] * (starlistpack[c].starlist[0, i]) +  solution_vectorY[1] * (starlistpack[c].starlist[1, i]) + solution_vectorY[2]); {correction y:=aX+bY+c}
 
-            if flipvertical = False then  starY := (head.Height - y_new)
-            else
-              starY := (y_new);
-            if Fliphorizontal then starX := (head.Width - x_new)
-            else
-              starX := (x_new);
+            if flipvertical = False then  starY := (head.Height - y_new) else starY := (y_new);
+            if Fliphorizontal then starX := (head.Width - x_new) else starX := (x_new);
 
             mainwindow.image1.Canvas.Rectangle(starX - size, starY - size,
             starX + size, starY + size);{indicate hfd with rectangle}
@@ -8420,13 +8388,10 @@ begin
     end;
     if ((stepnr = 1) and (countvar > 4)) then {do it once after one cycle finished}
     begin
-      if mainwindow.noise_in_electron1.Checked then
-        //report SNR info based on the last checked file.
-        memo2_message('SNR reporting based on EGAIN= ' +
-          head.egain + '. Additional factor for unbinned images ' + IntToStr(egain_extra_factor))
+      if mainwindow.noise_in_electron1.Checked then //report SNR info based on the last checked file.
+        memo2_message('SNR reporting based on EGAIN= ' +  head.egain + '. Additional factor for unbinned images ' + IntToStr(egain_extra_factor))
       else
-        memo2_message(
-          'SNR reporting based on ADUs. Can be changed to electrons and factors can be set using the popup menu of the viewer statusbar');
+        memo2_message('SNR reporting based on ADUs. Can be changed to electrons and factors can be set using the popup menu of the viewer statusbar');
 
       find_star_outliers(strtofloat2(mark_outliers_upto1.Text), outliers);
       if outliers <> nil then plot_outliers;
@@ -8435,10 +8400,8 @@ begin
     {do statistics}
     if countVar >= 4 then
     begin
-      mad_median(starVar, countVar{length},{var}madVar, medianVar);
-      {calculate mad and median without modifying the data}
-      memo2_message('Var star, median: ' + floattostrf(medianVar,
-        ffgeneral, 4, 4) + ', σ: ' + floattostrf(1.4826 * madVar  {1.0*sigma}, ffgeneral, 4, 4));
+      mad_median(starVar, countVar{length},{var}madVar, medianVar); {calculate mad and median without modifying the data}
+      memo2_message('Var star, median: ' + floattostrf(medianVar, ffgeneral, 4, 4) + ', σ: ' + floattostrf(1.4826 * madVar  {1.0*sigma}, ffgeneral, 4, 4));
     end
     else
       madVar := 0;
@@ -8447,8 +8410,7 @@ begin
     begin
       mad_median(starCheck, countCheck{counter},{var}madCheck, medianCheck);
       {calculate mad and median without modifying the data}
-      memo2_message('Check star, median: ' + floattostrf(medianCheck,
-        ffgeneral, 4, 4) + ', σ: ' + floattostrf(1.4826 * madCheck  {1.0*sigma}, ffgeneral, 4, 4));
+      memo2_message('Check star, median: ' + floattostrf(medianCheck,ffgeneral, 4, 4) + ', σ: ' + floattostrf(1.4826 * madCheck  {1.0*sigma}, ffgeneral, 4, 4));
     end
     else
       madCheck := 0;
@@ -8456,8 +8418,7 @@ begin
     begin
       mad_median(starThree, countThree{counter},{var}madThree, medianThree);
       {calculate mad and median without modifying the data}
-      memo2_message('3 star, median: ' + floattostrf(medianThree,
-        ffgeneral, 4, 4) + ', σ: ' + floattostrf(1.4826 * madThree  {1.0*sigma}, ffgeneral, 4, 4));
+      memo2_message('3 star, median: ' + floattostrf(medianThree,  ffgeneral, 4, 4) + ', σ: ' + floattostrf(1.4826 * madThree  {1.0*sigma}, ffgeneral, 4, 4));
     end
     else
       madThree := 0;

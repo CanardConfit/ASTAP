@@ -265,7 +265,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1920
-    ActivePage = tab_photometry1
+    ActivePage = lights
     Align = alClient
     AutoSize = True
     Constraints.MaxHeight = 498
@@ -274,7 +274,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 8
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
