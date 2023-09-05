@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = -7
+  Left = 221
   Height = 541
   Hint = ' '
-  Top = 2
+  Top = 179
   Width = 1088
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -145,11 +145,11 @@ object mainwindow: Tmainwindow
     ShowHint = True
   end
   object image_north_arrow1: TImage
-    Left = 475
-    Height = 49
+    Left = 456
+    Height = 69
     Hint = 'Long axis is north, small axis is east,  F indicates flipped image.'
-    Top = 116
-    Width = 49
+    Top = 103
+    Width = 69
     ParentShowHint = False
     ShowHint = True
     Transparent = True
@@ -186,7 +186,7 @@ object mainwindow: Tmainwindow
     Left = 456
     Height = 19
     Hint = 'Inverse zoom action of the mouse wheel.'
-    Top = 89
+    Top = 78
     Width = 103
     Caption = 'Inverse 🖱️ wheel'
     Font.CharSet = ANSI_CHARSET
@@ -698,7 +698,7 @@ object mainwindow: Tmainwindow
     Left = 456
     Height = 23
     Hint = 'Use WCS, SIP or DSS polynomial for indicating the position. SIP is available for Astrometry.net solutions and DSS polynomial for images from the DSS survey. A red background is indicating "no valid" solution for this option.'
-    Top = 61
+    Top = 49
     Width = 125
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack

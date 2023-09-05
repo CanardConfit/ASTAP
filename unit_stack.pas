@@ -413,7 +413,6 @@ type
     Label33: TLabel;
     Label34: TLabel;
     Label_masterflat1: TLabel;
-    Label37: TLabel;
     Label38: TLabel;
     Label41: TLabel;
     Label42: TLabel;
@@ -464,8 +463,6 @@ type
     mosaic_box1: TGroupBox;
     mosaic_crop1: TUpDown;
     mosaic_crop2: TEdit;
-    mosaic_width1: TUpDown;
-    mosaic_width2: TEdit;
     most_common_filter_radius1: TEdit;
     most_common_filter_tool1: TButton;
     multiply_blue1: TEdit;
@@ -954,7 +951,7 @@ var
   asteroidlist: array of array of array of double;
   solve_show_log: boolean;
   process_as_osc: integer;//1=auto 2=forced process as OSC image
-
+  ra_min,ra_max,dec_min,dec_max : double; //for mosaic
 
 var  {################# initialised variables #########################}
   areaX1: integer = 0; {for set area}
@@ -11437,6 +11434,31 @@ begin
   Result := Result + '_stacked.fits';
 end;
 
+procedure calculate_required_dimensions;
+var
+  ra,dec : double;
+begin
+  sensor_coordinates_to_celestial(1,1 , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(head.width,1 , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(1,head.height , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(head.width,1, ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+end;
 
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
@@ -11463,6 +11485,12 @@ begin
   cal_and_align := pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
   sender_photometry := (Sender = photom_stack1);//stack instruction from photometry tab?
   sender_stack_groups := (Sender =stack_groups1);//stack instruction from photometry tab?
+
+  ra_min:=+99;//for mosaic mode
+  ra_max:=-99;
+  dec_min:=+99;
+  dec_max:=-99;
+
 
   classify_filter := ((classify_filter1.Checked) and (sender_photometry = False));  //disable classify filter if sender is photom_stack1
   classify_object := ((classify_object1.Checked) and (sender_photometry = False));  //disable classify object if sender is photom_stack1
@@ -11654,6 +11682,9 @@ begin
           end
           else
             stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] := ''; {report internal plate solve result}
+
+           if mosaic_mode then
+                         calculate_required_dimensions;
         finally
         end;
       end;
@@ -12484,7 +12515,6 @@ begin
   if mosa then memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
 
   classify_object1.Enabled := (mosa = False); {in mosaic mode ignore object name}
-  oversize1.Enabled := (mosa = False); {in mosaic mode ignore this oversize setting}
 
   classify_filter1.Enabled := ((cal_and_align = False) and (cal_only = False) and (mosa = False));
   classify_object1.Enabled := ((cal_only = False) and (mosa = False));

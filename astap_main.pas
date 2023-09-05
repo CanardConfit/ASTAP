@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.09.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.09.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3982,20 +3982,19 @@ end;
 
 
 procedure plot_north;{draw arrow north. If head.cd1_1=0 then clear north arrow}
-const xpos=25;{position arrow}
-      ypos=25;
-      leng=24;{half of length}
-
 var
       dra,ddec,
       cdelt1_a, det,x,y :double;
-      flipV, flipH : integer;
+      flipV, flipH,xpos,ypos,leng : integer;
 begin
   with mainwindow.image_north_arrow1 do
   begin
     {clear}
     canvas.brush.color:=clmenu;
     Canvas.FillRect(rect(0,0,width,height));
+    xpos:=width div 2;{position arrow}
+    ypos:=height div 2;
+    leng:=xpos-1;{half of length}
 
     if ((head.naxis=0) or (head.cd1_1=0)) then {No solution, remove rotation and flipped indication and exit}
     begin
@@ -4020,14 +4019,16 @@ begin
     dDec:=cdelt1_a*leng;
     x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
     y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
+
     lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+
     dRa:=cdelt1_a*-3;
-    dDec:=cdelt1_a*(leng-5);
+    dDec:=cdelt1_a*(leng-8);
     x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
     y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
     lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
     dRa:=cdelt1_a*+3;
-    dDec:=cdelt1_a*(leng-5);
+    dDec:=cdelt1_a*(leng-8);
     x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
     y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
     lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
@@ -4049,12 +4050,12 @@ end;
 
 procedure plot_north_on_image;{draw arrow north. If head.cd1_1=0 then clear north arrow}
 var
-      dra,ddec,
-      cdelt1_a, det,x,y :double;
-      xpos, ypos, {position arrow}
-      leng, {half of length}
-      wd,
-      flipV, flipH : integer;
+  dra,ddec,
+  cdelt1_a, det,x,y :double;
+  xpos, ypos, {position arrow}
+  leng, {half of length}
+  wd,
+  flipV, flipH : integer;
 begin
   if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.northeast1.checked=false)) then exit;
 
@@ -4081,13 +4082,13 @@ begin
 
 
   dRa:=cdelt1_a*-3*wd;
-  dDec:=cdelt1_a*(leng-5*wd);
+  dDec:=cdelt1_a*(leng-8*wd);
   x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=cdelt1_a*+3*wd;
-  dDec:=cdelt1_a*(leng-5*wd);
+  dDec:=cdelt1_a*(leng-8*wd);
   x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
@@ -4167,13 +4168,13 @@ begin
 
 
   dRa:=cdelt1_a*-6*wd;
-  dDec:=cdelt1_a*(leng-10*wd);
+  dDec:=cdelt1_a*(leng-16*wd);
   x :=-1+ (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=cdelt1_a*+6*wd;
-  dDec:=cdelt1_a*(leng-10*wd);
+  dDec:=cdelt1_a*(leng-16*wd);
   x :=-1+ (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
@@ -4206,8 +4207,9 @@ end;
 
 
 procedure plot_star_profile(cX,cY : integer);
-const rs=24;
-      qrs=rs div 4; {1/4=6}
+const resolution=6;
+      rs=68 div 2;//half size image_north
+      qrs=rs div resolution;
 var
   i, j,distance,hh,diam1,diam2  : integer;
   val,valmax,valmin  : double;
@@ -4220,6 +4222,7 @@ begin
     Canvas.FillRect(rect(0,0,width,height));
     Canvas.Pen.Color := clred;
     Canvas.Pen.style := psSolid;
+    canvas.pen.mode:=pmmask;
 
 
     // Build profile
@@ -4234,7 +4237,7 @@ begin
     for i:=-qrs to qrs do begin
       for j:=-qrs to qrs do
       begin
-        distance:=round(4*sqrt(i*i + j*j)); {distance in resolution 1/4 pixel}
+        distance:=round(resolution*sqrt(i*i + j*j)); {distance in resolution 1/6 pixel}
         if distance<=rs then {build histogram for circel with radius qrs}
         begin
           if ((i<0) or ((i=0) and (j<0)) ) then distance:=-distance;//split star in two equal areas.
@@ -4259,9 +4262,8 @@ begin
       end;
     end;
 
-    diam1:=round((width/2 + object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));//in 1/4 pixel resolution
-    diam2:=round((width/2 - object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));
-
+    diam1:=round((width/2 + (resolution/4) * object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));//in 1/6 pixel resolution
+    diam2:=round((width/2 - (resolution/4) * object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));
 
     if diam2>=0 then  //show aperture
     begin
@@ -4274,6 +4276,7 @@ begin
       Canvas.Pen.style := psSolid;
     end;
 
+    canvas.pen.mode:=pmcopy; //back to default
   end;
 end;
 
@@ -7521,7 +7524,6 @@ begin
       c:=Sett.ReadInteger('stack','stackmenu_height',987654321); if c<>987654321 then stackmenu1.height:=c;
       c:=Sett.ReadInteger('stack','stackmenu_width',987654321); if c<>987654321 then stackmenu1.width:=c;
 
-      c:=Sett.ReadInteger('stack','mosaic_width',987654321); if c<>987654321 then stackmenu1.mosaic_width1.position:=c;
       c:=Sett.ReadInteger('stack','mosaic_crop',987654321);if c<>987654321 then stackmenu1.mosaic_crop1.position:=c;
 
       c:=Sett.ReadInteger('stack','stack_method',987654321); if c<>987654321 then stackmenu1.stack_method1.itemindex:=c;
@@ -7886,7 +7888,6 @@ begin
 
       sett.writeInteger('stack','stack_method',stackmenu1.stack_method1.itemindex);
 
-      sett.writeInteger('stack','mosaic_width',stackmenu1.mosaic_width1.position);
       sett.writeInteger('stack','mosaic_crop',stackmenu1.mosaic_crop1.position);
 
       sett.writeInteger('stack','flat_combine_method',stackmenu1.flat_combine_method1.itemindex);

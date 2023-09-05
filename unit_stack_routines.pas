@@ -836,7 +836,8 @@ end;
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
 var
     fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels    : integer;
-    value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels : double;
+    value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels,
+    fx1,fx2,fy1,fy2, raMiddle,decMiddle: double;
     tempval                                                        : single;
     init, vector_based,merge_overlap,equalise_background           : boolean;
     background_correction,background_correction_center,background    : array[0..2] of double;
@@ -887,19 +888,25 @@ begin
           begin
             head_ref:=head;{backup solution}
             memo1_text:=mainwindow.Memo1.Text;{backup header of reference file as text}
-            initialise_var1;{set variables correct}
+            celestial_to_pixel(ra_min,dec_min, fx1,fy1);{ra,dec to fitsX,fitsY}
+            celestial_to_pixel(ra_max,dec_max, fx2,fy2);{ra,dec to fitsX,fitsY}
+            sensor_coordinates_to_celestial((fx1+fx2)/2,(fy1+fy2)/2, raMiddle, decMiddle);//find middle of mosaic
+            sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
+            head_ref.ra0:=raMiddle;// set middle of the mosaic
+            head_ref.crpix1:=(fx1+fx2)/2;
+            head_ref.crpix2:=(fy1+fy2)/2;
+
             initialise_var2;{set variables correct}
           end;
 
-          memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');             // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+          memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
           if init=false then {init}
           begin
-            oversize:=head.width*mosaic_width1.position div 2;{increase the oversize to have space for the tiles}
-            width_max:=head.width+oversize*2;
-            height_max:=head.height+oversize*2;
+            width_max:=abs(round(fx2-fx1))+oversize*2;
+            height_max:=abs(round(fy2-fy1))+oversize*2;
 
             setlength(img_average,head.naxis3,width_max,height_max);
             setlength(img_temp,1,width_max,height_max);{gray}
