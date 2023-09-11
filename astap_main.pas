@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.09.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.09.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -4917,7 +4917,8 @@ begin
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
   end;
 
-  if range>0 then info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
+  if range>0 then
+         info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
 
 
   if ((nrbits=16) or (nrbits=8)) then info_message:=info_message+#10+'Greyscale levels: '+ inttostr(greylevels);
@@ -7554,6 +7555,7 @@ begin
       stackmenu1.ignore_header_solution1.Checked:= Sett.ReadBool('stack','ignore_header_solution',true);
       stackmenu1.Equalise_background1.checked:= Sett.ReadBool('stack','equalise_background',true);{for mosaic mode}
       stackmenu1.merge_overlap1.checked:= Sett.ReadBool('stack','merge_overlap',true);{for mosaic mode}
+      stackmenu1.limit_background_correction1.checked:= Sett.ReadBool('stack','limit_bck_corr',false);{for mosaic mode}
 
       stackmenu1.classify_object1.checked:= Sett.ReadBool('stack','classify_object',false);
       stackmenu1.classify_filter1.checked:= Sett.ReadBool('stack','classify_filter',false);
@@ -7919,6 +7921,8 @@ begin
       sett.writeBool('stack','ignore_header_solution',stackmenu1.ignore_header_solution1.Checked);
       sett.writeBool('stack','equalise_background',stackmenu1.Equalise_background1.Checked);
       sett.writeBool('stack','merge_overlap',stackmenu1.merge_overlap1.Checked);
+      sett.writeBool('stack','limit_bck_corr',stackmenu1.limit_background_correction1.Checked);
+
 
 
       sett.writeBool('stack','classify_object',stackmenu1.classify_object1.Checked);
@@ -14102,7 +14106,7 @@ begin
     Assuming unity head.gain ADU/e-=1
     See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)
     https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
-    http://spiff.rit.edu/classes/phys373/lectures/signal/signal_illus.html}
+    http://spiff.rit.edu/classes/phys373.s2014/lectures/signal/signal_illus.html}
 
 //   memo2_message(#9+'######'+#9+inttostr(round(flux))+#9+ floattostr6(r_aperture)+#9+floattostr6(sd)+#9+floattostr6(snr)+#9+floattostr6(sqr(r_aperture)*pi*sqr(sd)));
 

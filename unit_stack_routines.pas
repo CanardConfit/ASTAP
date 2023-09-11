@@ -785,7 +785,7 @@ begin
 
           end;
 
-          progress_indicator(10+89*counter/(length(files_to_Process){ListView1.items.count}),' Stacking');{show progress}
+          progress_indicator(10+89*counter/images_selected,' Stacking');{show progress}
           finally
         end;
       end;
@@ -893,8 +893,8 @@ begin
             sensor_coordinates_to_celestial((fx1+fx2)/2,(fy1+fy2)/2, raMiddle, decMiddle);//find middle of mosaic
             sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
             head_ref.ra0:=raMiddle;// set middle of the mosaic
-            head_ref.crpix1:=(fx1+fx2)/2;
-            head_ref.crpix2:=(fy1+fy2)/2;
+            head_ref.crpix1:=abs(fx1-fx2)/2;
+            head_ref.crpix2:=abs(fy1-fy2)/2;
 
             initialise_var2;{set variables correct}
           end;
@@ -1050,7 +1050,7 @@ begin
             end;
 
           end;
-          progress_indicator(10+89*counter/length(files_to_process){(ListView1.items.count)},' Stacking');{show progress}
+          progress_indicator(10+89*counter/images_selected{length(files_to_process)}{(ListView1.items.count)},' Stacking');{show progress}
         finally
         end;
       end;
@@ -1318,7 +1318,7 @@ begin
           end;
 
         end;
-        progress_indicator(10+round(0.3333*90*(counter)/length(files_to_process){(ListView1.items.count)}),' ■□□');{show progress}
+        progress_indicator(10+round(0.3333*90*(counter)/images_selected),' ■□□');{show progress}
         finally
         end;
       end;{try}
@@ -1427,7 +1427,7 @@ begin
             end;
           end;
 
-          progress_indicator(10+30+round(0.33333*90*(counter)/length(files_to_process){(ListView1.items.count)}),' ■■□');{show progress}
+          progress_indicator(10+30+round(0.33333*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■□');{show progress}
         finally
         end;
       end;{try}
@@ -1548,7 +1548,7 @@ begin
             end;
           end;
 
-          progress_indicator(10+60+round(0.33333*90*(counter)/length(files_to_process){(ListView1.items.count)}),' ■■■');{show progress}
+          progress_indicator(10+60+round(0.33333*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■■');{show progress}
           finally
         end;
       end;
@@ -1867,7 +1867,7 @@ begin
         end;
          memo2_message('New aligned image created: '+filename2);
         report_results(object_name,inttostr(round(head.exposure)),0,999 {color icon});{report result in tab result using modified filename2}
-        progress_indicator(10+round(90*(counter)/length(files_to_process){(ListView1.items.count)}),'Cal');{show progress}
+        progress_indicator(10+round(90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),'Cal');{show progress}
         finally
         end;
       end;{try}

@@ -58,6 +58,7 @@ type
     Label15: TLabel;
     Label16: TLabel;
     Label19: TLabel;
+    Label35: TLabel;
     Label40: TLabel;
     Label60: TLabel;
     Label63: TLabel;
@@ -68,6 +69,9 @@ type
     listview5: TListView;
     listview6: TListView;
     listview7: TListView;
+    limit_background_correction1: TCheckBox;
+    MenuItem14: TMenuItem;
+    Separator5: TMenuItem;
     stack_groups1: TMenuItem;
     mount1: TTabSheet;
     refresh_astrometric_solutions1: TMenuItem;
@@ -678,8 +682,7 @@ type
     procedure contour_gaussian1Change(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
-    procedure increase_nebulosity1Click(Sender: TObject);
-    procedure memo2Change(Sender: TObject);
+    procedure MenuItem14Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure pixelsize1Change(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
@@ -972,6 +975,7 @@ var  {################# initialised variables #########################}
   dec_target: double = 999;
   jd_start: double = 0;{julian day of date-obs}
   groupsizeStr : string='';
+  images_selected: integer=0;
 
 
 const
@@ -1387,7 +1391,7 @@ end;
 procedure count_selected;
 {report the number of lights selected in images_selected and update menu indication}
 var
-  c, images_selected: integer;
+  c: integer;
 begin
   images_selected := 0;
   for c := 0 to stackmenu1.ListView1.items.Count - 1 do
@@ -1930,12 +1934,74 @@ begin
 end;
 
 
+
+function get_filter_icon(filter_name: string; out red,green, blue : boolean): integer;
+begin
+  red := False;
+  green := False;
+  blue := False;
+
+  {filter name, without spaces}
+  if AnsiCompareText(stackmenu1.red_filter1.Text, filter_name) = 0 then
+  begin
+    result := 0;
+    red := True;
+  end
+  else
+  if AnsiCompareText(stackmenu1.red_filter2.Text, filter_name) = 0 then
+  begin
+    result := 0;
+    red := True;
+  end
+  else
+  if AnsiCompareText(stackmenu1.green_filter1.Text, filter_name) = 0 then
+  begin
+    result := 1;
+    green := True;
+  end
+  else
+  if AnsiCompareText(stackmenu1.green_filter2.Text, filter_name) = 0 then
+  begin
+    result := 1;
+    green := True;
+  end
+  else
+  if AnsiCompareText(stackmenu1.blue_filter1.Text, filter_name) = 0 then
+  begin
+    result := 2;
+    blue := True;
+  end
+  else
+  if AnsiCompareText(stackmenu1.blue_filter2.Text, filter_name) = 0 then
+  begin
+    result := 2;
+    blue := True;
+  end
+  else
+  if AnsiCompareText(stackmenu1.luminance_filter1.Text,
+    filter_name) = 0 then
+    result := 4
+  else
+  if AnsiCompareText(stackmenu1.luminance_filter2.Text,
+    filter_name) = 0 then
+    result := 4
+  else
+  if filter_name <> '' then
+  begin
+    result := 7; {question mark}
+  end
+  else
+    result := -1;{blank}
+end;
+
+
+
 procedure analyse_tab_lights(analyse_level : integer);
 var
   c, star_counter, i, counts,dummy: integer;
   hfd_median, alt, az           : double;
   red, green, blue, planetary, success : boolean;
-  key, filename1, rawstr           : string;
+  key, filename1, rawstr,issue         : string;
   img: image_array;
   bck :Tbackground;
 begin
@@ -2115,59 +2181,12 @@ begin
                   ListView1.Items.item[c].subitems.Strings[L_filter] := 'colour';
                 {give RGB lights filter name colour}
 
-                if AnsiCompareText(red_filter1.Text, head_2.filter_name) = 0 then
-                begin
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 0;
-                  red := True;
-                end
+                if head_2.naxis3 = 3 then  ListView1.Items.item[c].SubitemImages[L_filter] := 3 {RGB colour}
                 else
-                if AnsiCompareText(red_filter2.Text, head_2.filter_name) = 0 then
-                begin
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 0;
-                  red := True;
-                end
-                else
-                if AnsiCompareText(green_filter1.Text, head_2.filter_name) = 0 then
-                begin
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 1;
-                  green := True;
-                end
-                else
-                if AnsiCompareText(green_filter2.Text, head_2.filter_name) = 0 then
-                begin
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 1;
-                  green := True;
-                end
-                else
-                if AnsiCompareText(blue_filter1.Text, head_2.filter_name) = 0 then
-                begin
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 2;
-                  blue := True;
-                end
-                else
-                if AnsiCompareText(blue_filter2.Text, head_2.filter_name) = 0 then
-                begin
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 2;
-                  blue := True;
-                end
-                else
-                if AnsiCompareText(luminance_filter1.Text, head_2.filter_name) = 0 then
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 4
-                else
-                if AnsiCompareText(luminance_filter2.Text, head_2.filter_name) = 0 then
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 4
-                else
-                if head_2.naxis3 = 3 then
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 3
-                else {RGB color}
-                if head_2.filter_name <> '' then
-                  ListView1.Items.item[c].SubitemImages[L_filter] := 7 {question mark}
-                else
-                  ListView1.Items.item[c].SubitemImages[L_filter] := -1;{blank}
+                ListView1.Items.item[c].SubitemImages[L_filter] :=get_filter_icon(head_2.filter_name,{out} red,green, blue);
 
-                ListView1.Items.item[c].subitems.Strings[L_bin] :=
-                  floattostrf(head_2.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf(
-                  head_2.Ybinning, ffgeneral, 0, 0);
+
+                ListView1.Items.item[c].subitems.Strings[L_bin] := floattostrf(head_2.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf( head_2.Ybinning, ffgeneral, 0, 0);
                 {Binning CCD}
 
                 ListView1.Items.item[c].subitems.Strings[L_hfd] :=
@@ -3905,12 +3924,13 @@ begin
 end;
 
 
+
 procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);
 {analyse list of FITS files}
 var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
   hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, rax, decx, adu_e :double;
-  filename1,filterstr,filterstrUP: string;
+  filename1,filterstr,filterstrUP,issue : string;
   Save_Cursor: TCursor;
   loaded, red, green, blue: boolean;
   img: image_array;
@@ -3926,9 +3946,7 @@ begin
   {stop updating to prevent flickering till finished}
 
   counts := lv.items.Count - 1;
-  red := False;
-  green := False;
-  blue := False;
+
 
   loaded := False;
   c := 0;
@@ -4083,62 +4101,15 @@ begin
             else
             if tabnr = 3 then {flat tab}
             begin
-              lv.Items.item[c].subitems.Strings[F_issues]:='';//clear old issues
+              issue:='';//clear old issues
               lv.Items.item[c].subitems.Strings[F_filter] := head_2.filter_name;
-              {filter name, without spaces}
-              if AnsiCompareText(stackmenu1.red_filter1.Text, head_2.filter_name) = 0 then
+
+              if head_2.naxis3 = 3 then  lv.Items.item[c].SubitemImages[F_filter] := 3 {RGB colour}
+              else
               begin
-                Lv.Items.item[c].SubitemImages[F_filter] := 0;
-                red := True;
-              end
-              else
-              if AnsiCompareText(stackmenu1.red_filter2.Text, head_2.filter_name) = 0 then
-              begin
-                Lv.Items.item[c].SubitemImages[F_filter] := 0;
-                red := True;
-              end
-              else
-              if AnsiCompareText(stackmenu1.green_filter1.Text, head_2.filter_name) = 0 then
-              begin
-                lv.Items.item[c].SubitemImages[F_filter] := 1;
-                green := True;
-              end
-              else
-              if AnsiCompareText(stackmenu1.green_filter2.Text, head_2.filter_name) = 0 then
-              begin
-                lv.Items.item[c].SubitemImages[F_filter] := 1;
-                green := True;
-              end
-              else
-              if AnsiCompareText(stackmenu1.blue_filter1.Text, head_2.filter_name) = 0 then
-              begin
-                lv.Items.item[c].SubitemImages[F_filter] := 2;
-                blue := True;
-              end
-              else
-              if AnsiCompareText(stackmenu1.blue_filter2.Text, head_2.filter_name) = 0 then
-              begin
-                lv.Items.item[c].SubitemImages[F_filter] := 2;
-                blue := True;
-              end
-              else
-              if AnsiCompareText(stackmenu1.luminance_filter1.Text,
-                head_2.filter_name) = 0 then
-                lv.Items.item[c].SubitemImages[F_filter] := 4
-              else
-              if AnsiCompareText(stackmenu1.luminance_filter2.Text,
-                head_2.filter_name) = 0 then
-                lv.Items.item[c].SubitemImages[F_filter] := 4
-              else
-              if head_2.naxis3 = 3 then  lv.Items.item[c].SubitemImages[F_filter] := 3
-              else {RGB color}
-              if head_2.filter_name <> '' then
-              begin
-                lv.Items.item[c].SubitemImages[F_filter] := 7; {question mark}
-                lv.Items.item[c].subitems.Strings[F_issues]:='Filter=?';//display issue
-              end
-              else
-                lv.Items.item[c].SubitemImages[F_filter] := -1;{blank}
+                Lv.Items.item[c].SubitemImages[F_filter] :=get_filter_icon(head_2.filter_name,{out} red,green, blue);
+                if Lv.Items.item[c].SubitemImages[F_filter]=7 then lv.Items.item[c].subitems.Strings[F_issues]:='Filter=?';//display issue
+              end;
 
               {$ifdef darwin} {MacOS, fix missing icons by coloured unicode. Place in column "type" to avoid problems with textual filter selection}
               if red then Lv.Items.item[c].subitems.Strings[D_type]:='🔴' +Lv.Items.item[c].subitems.Strings[D_type]
@@ -6245,9 +6216,9 @@ procedure Tstackmenu1.luminance_filter1exit(Sender: TObject);
 var
   err, mess, mess2: boolean;
   red1, red2, green1, green2, blue1, blue2, lum1, lum2: string;
+  red,green, blue : boolean;
+  c               : integer;
 begin
-  new_analyse_required := True;
-  new_analyse_required3 := True;{tab 3 flats}
   err := False;
   mess := False;
   mess2 := False;
@@ -6401,6 +6372,14 @@ begin
   if mess2 then luminance_filter2.font.Style := [fsbold]
   else
     luminance_filter2.font.Style := [];
+
+
+   //fast update listview icons
+   for c:=0 to ListView1.items.Count - 1 do
+        ListView1.Items.item[c].SubitemImages[L_filter] :=get_filter_icon(ListView1.Items.item[c].subitems.Strings[L_filter],{out} red,green, blue);
+
+   for c:=0 to ListView3.items.Count - 1 do
+        ListView3.Items.item[c].SubitemImages[F_filter] :=get_filter_icon(ListView3.Items.item[c].subitems.Strings[F_filter],{out} red,green, blue);
 end;
 
 
@@ -6718,10 +6697,8 @@ begin
 
   Screen.Cursor := crDefault;{back to normal }
 
-  update_menu(False);
-  //do not allow to save fits. img_load is still valid but memo1 is cleared. Could be recovered but is not done
-  stackmenu1.mount_analyse1Click(nil);
-  {update. Since it are WCS files with naxis,2 then image1 will be cleared in load_fits}
+  update_menu(False);  //do not allow to save fits. img_load is still valid but memo1 is cleared. Could be recovered but is not done
+  stackmenu1.mount_analyse1Click(nil);  {update. Since it are WCS files with naxis,2 then image1 will be cleared in load_fits}
 end;
 
 procedure Tstackmenu1.new_colour_luminance1Change(Sender: TObject);
@@ -7856,7 +7833,7 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
   medianCheck, medianThree, hfd_med, apert, annul,
-  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, xn1, yn1,xn2, yn2,xn3, yn3,adu_e : double;
+  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
   countCheck, countThree, database_col : integer;
@@ -9361,14 +9338,73 @@ begin
   plot_fits(mainwindow.image1,false,true);
 end;
 
-procedure Tstackmenu1.increase_nebulosity1Click(Sender: TObject);
+
+procedure solve_selected_files(lv: tlistview; refresh_solutions :boolean);
+var
+  c: integer;
+  success: boolean;
+  thefile, filename1: string;
 begin
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  esc_pressed := False;
+  {solve lights first to allow flux to magnitude calibration}
+  with stackmenu1 do
+    for c := 0 to lv.items.Count - 1 do {check for astrometric solutions}
+    begin
+      if lv.Items[c].Selected then
+      begin
+        filename1 := lv.items[c].Caption;
+        mainwindow.Caption := filename1;
+
+        Application.ProcessMessages;
+
+        {load image}
+        if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0, head_2, img_temp) = False)) then
+        begin
+          Screen.Cursor := crDefault;{back to normal }
+          exit;
+        end;
+        if ((head.cd1_1 = 0) or (refresh_solutions)) then
+        begin
+          lv.ItemIndex := c;
+          {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+          lv.Items[c].MakeVisible(False);{scroll to selected item}
+          memo2_message(filename1 + ' Adding astrometric solution to file.');
+          Application.ProcessMessages;
+
+          if solve_image(img_temp, head_2, True  {get hist}) then
+          begin{match between loaded image and star database}
+            if fits_file_name(filename1) then
+              success := savefits_update_header(filename1)
+            else
+              success := save_tiff16_secure(img_temp, filename1);{guarantee no file is lost}
+            if success = False then
+            begin
+              ShowMessage('Write error !!' + filename1);
+              Screen.Cursor := crDefault;
+              exit;
+            end;
+          end
+          else
+          begin
+            lv.Items[c].Checked := False;
+            memo2_message(filename1 + 'No astrometric solution found for this file!!');
+          end;
+        end;
+      end;
+    end;
+
+  Screen.Cursor := crDefault;{back to normal }
+
+  update_menu(False);  //do not allow to save fits. img_load is still valid but memo1 is cleared. Could be recovered but is not done
 
 end;
 
-procedure Tstackmenu1.memo2Change(Sender: TObject);
+procedure Tstackmenu1.MenuItem14Click(Sender: TObject);
 begin
-
+  solve_selected_files(listview1,true {refresh solutions});
+  stackmenu1.Analyse1Click(Sender);{refresh positions}
 end;
 
 
@@ -9446,8 +9482,6 @@ end;
 procedure Tstackmenu1.refresh_astrometric_solutions1Click(Sender: TObject);
 var
   c: integer;
-  fn, ff: string;
-  success: boolean;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed := False;
@@ -9483,8 +9517,7 @@ end;
 procedure remove_stars;
 var
   fitsX,fitsY,hfd_counter,position,x,y,x1,y1  : integer;
-  star_fwhm,snr,flux,magnd, hfd_median,max_radius,
-  backgrR,backgrG,backgrB,delta                           : double;
+  flux,magnd, hfd_median,max_radius, backgrR,backgrG,backgrB,delta                           : double;
   img_temp3 :image_array;
   old_aperture : string;
 
@@ -10860,8 +10893,7 @@ begin
   begin
     save_settings2;
     memo2_message('Analysing flats');
-    analyse_listview(listview3, False {light}, False {full fits},
-      new_analyse_required3{refresh});{update the tab information. Convert to FITS if required}
+    analyse_listview(listview3, False {light}, False {full fits},  new_analyse_required3{refresh});{update the tab information. Convert to FITS if required}
     if esc_pressed then exit;{esc could be pressed in analyse}
     new_analyse_required3 := False;
     flatdark_exposure := -99;
@@ -11893,9 +11925,12 @@ begin
             Inc(nrfiles);
             if mosaic_mode then
             begin
-              back_gr := strtofloat2(ListView1.Items.item[c].subitems.Strings[L_background]);
-              min_background := min(back_gr, min_background);
-              max_background := max(back_gr, max_background);
+              if stackmenu1.limit_background_correction1.checked then
+              begin
+                back_gr := strtofloat2(ListView1.Items.item[c].subitems.Strings[L_background]);
+                min_background := min(back_gr, min_background);
+                max_background := max(back_gr, max_background);
+              end;
             end;
           end;
         end;
@@ -12007,9 +12042,12 @@ begin
                 head.exposure := strtofloat2(ListView1.Items.item[c].subitems.Strings[L_exposure]); {remember head.exposure time in case only one file, so no stack so unknown}
                 if mosaic_mode then
                 begin
-                  back_gr := strtofloat2( ListView1.Items.item[c].subitems.Strings[L_background]);
-                  min_background := min(back_gr, min_background);
-                  max_background := max(back_gr, max_background);
+                  if stackmenu1.limit_background_correction1.checked then
+                  begin
+                    back_gr := strtofloat2( ListView1.Items.item[c].subitems.Strings[L_background]);
+                    min_background := min(back_gr, min_background);
+                    max_background := max(back_gr, max_background);
+                  end;
                 end;
               end;
             end;
@@ -12159,8 +12197,7 @@ begin
     end;
 
 
-    if ((cal_and_align = False) and (skip_combine = False)) then
-      {do not do this for calibration and alignment only, and skip combine}
+    if ((cal_and_align = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
     begin  //fits_file:=true;
       nrbits := -32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
@@ -12480,7 +12517,7 @@ begin
 
   //Average
   //Sigma clip average
-  //Image stiching mode
+  //Image stitching mode
   //Calibration and alignment only
   //Calibration only
   //Calibration only. No de-mosaic

@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
   Left = 221
-  Height = 541
+  Height = 699
   Hint = ' '
   Top = 179
-  Width = 1088
+  Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 521
-  ClientWidth = 1088
+  ClientHeight = 699
+  ClientWidth = 1333
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -52,7 +52,7 @@ object mainwindow: Tmainwindow
   OnShow = FormShow
   ParentFont = True
   Position = poDesktopCenter
-  LCLVersion = '2.2.4.0'
+  LCLVersion = '3.0.0.1'
   object Label1: TLabel
     Left = 54
     Height = 25
@@ -187,7 +187,7 @@ object mainwindow: Tmainwindow
     Height = 19
     Hint = 'Inverse zoom action of the mouse wheel.'
     Top = 78
-    Width = 103
+    Width = 101
     Caption = 'Inverse 🖱️ wheel'
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -202,14 +202,14 @@ object mainwindow: Tmainwindow
   end
   object Panel1: TPanel
     Left = -19
-    Height = 526
+    Height = 704
     Hint = 'hint'
     Top = 176
-    Width = 1113
+    Width = 1358
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 526
-    ClientWidth = 1113
+    ClientHeight = 704
+    ClientWidth = 1358
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -226,9 +226,9 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 9
+      Left = 78
       Height = 264
-      Top = 2
+      Top = 47
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -724,8 +724,8 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 498
-    Width = 1088
+    Top = 676
+    Width = 1333
     Panels = <    
       item
         Width = 200
@@ -840,7 +840,7 @@ object mainwindow: Tmainwindow
     Left = 595
     Height = 177
     Top = 0
-    Width = 496
+    Width = 741
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
@@ -848,12 +848,12 @@ object mainwindow: Tmainwindow
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
-      ClientWidth = 488
+      ClientWidth = 733
       object Memo1: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 488
+        Width = 733
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9
@@ -873,12 +873,12 @@ object mainwindow: Tmainwindow
     object TabSheet2: TTabSheet
       Caption = 'Table'
       ClientHeight = 149
-      ClientWidth = 488
+      ClientWidth = 733
       object Memo3: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 488
+        Width = 733
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9
