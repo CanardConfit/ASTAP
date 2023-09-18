@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.09.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.09.18';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1868,7 +1868,7 @@ begin
       exit;
     end;
 
-    setlength(img_loaded2,head.naxis3,head.width,head.height);
+    setlength(img_loaded2,head.naxis3,head.height,head.width);
 
     if nrbits=16 then
     for k:=0 to head.naxis3-1 do {do all colors}
@@ -1880,7 +1880,7 @@ begin
         begin
           word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
           col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
-          img_loaded2[k,i,j]:=col_float;
+          img_loaded2[k,j,i]:=col_float;
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
@@ -1897,7 +1897,7 @@ begin
           x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
           col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
           if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
+          img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
@@ -1911,7 +1911,7 @@ begin
         try reader.read(fitsbuffer,head.width);except; head.naxis:=0;{failure} end; {read file info}
         for i:=0 to head.width-1 do
         begin
-          img_loaded2[k,i,j]:=(fitsbuffer[i]*bscale + bzero);
+          img_loaded2[k,j,i]:=(fitsbuffer[i]*bscale + bzero);
         end;
       end;
     end {colors head.naxis3 times}
@@ -1923,9 +1923,9 @@ begin
       for i:=0 to head.width-1 do
       begin
         rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-        img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
-        img_loaded2[1,i,j]:=rgbdummy[1];{store in memory array}
-        img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
+        img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
+        img_loaded2[1,j,i]:=rgbdummy[1];{store in memory array}
+        img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
       end;
     end
     else
@@ -1939,7 +1939,7 @@ begin
         begin
           col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..65535}
                          {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
+          img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
@@ -1955,7 +1955,7 @@ begin
         begin
           x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
           col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
+          img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
 
         end;
@@ -1973,7 +1973,7 @@ begin
         for k:=0 to head.naxis3-1 do {do all colors}
           for j:=0 to head.height-1 do
             for i:=0 to head.width-1 do
-              img_loaded2[k,i,j]:= img_loaded2[k,i,j]*scalefactor;
+              img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
         head.datamax_org:=65535;
       end
       else  head.datamax_org:=measured_max;
@@ -2553,7 +2553,7 @@ begin
     end
     else
     begin {not too large}
-      setlength(img_loaded2,head.naxis3,head.width,head.height);
+      setlength(img_loaded2,head.naxis3,head.height,head.width);
       begin
         For i:=0 to head.height-1 do
         begin
@@ -2564,19 +2564,19 @@ begin
             if color7=false then {gray scale without bayer matrix applied}
             begin
               if nrbits=8 then  {8 BITS, mono 1x8bits}
-                img_loaded2[0,j,i]:=fitsbuffer[j]{RGB fits with naxis1=3, treated as 48 bits coded pixels}
+                img_loaded2[0,i,j]:=fitsbuffer[j]{RGB fits with naxis1=3, treated as 48 bits coded pixels}
               else
               if nrbits=16 then {big endian integer}
-                img_loaded2[0,j,i]:=swap(fitsbuffer2[j])
+                img_loaded2[0,i,j]:=swap(fitsbuffer2[j])
               else {PFM 32 bits grayscale}
               if pfm then
               begin
                 if range<0 then {little endian floats}
-                  img_loaded2[0,j,i]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+                  img_loaded2[0,i,j]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
                 else
                 begin {big endian floats}
                   x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-                  img_loaded2[0,j,i]:=x_single*65535/range;
+                  img_loaded2[0,i,j]:=x_single*65535/range;
                 end;
               end;
             end
@@ -2585,17 +2585,17 @@ begin
               if nrbits=8 then {24 BITS, colour 3x8bits}
               begin
                 rgbdummy:=fitsbufferRGB[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
-                img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
-                img_loaded2[1,j,i]:=rgbdummy[1];{store in memory array}
-                img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
+                img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
+                img_loaded2[1,i,j]:=rgbdummy[1];{store in memory array}
+                img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
               end
               else
               if nrbits=16 then {48 BITS colour, 3x16 big endian}
               begin {48 bits}
                 rgb16dummy:=fitsbufferRGB16[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
-                img_loaded2[0,j,i]:=swap(rgb16dummy[0]);{store in memory array}
-                img_loaded2[1,j,i]:=swap(rgb16dummy[1]);{store in memory array}
-                img_loaded2[2,j,i]:=swap(rgb16dummy[2]);{store in memory array}
+                img_loaded2[0,i,j]:=swap(rgb16dummy[0]);{store in memory array}
+                img_loaded2[1,i,j]:=swap(rgb16dummy[1]);{store in memory array}
+                img_loaded2[2,i,j]:=swap(rgb16dummy[2]);{store in memory array}
               end
               else
               if pfm then
@@ -2603,18 +2603,18 @@ begin
                 if range<0 then {little endian}
                 begin
                   rgb32dummy:=fitsbufferRGB32[j];{RGB fits with naxis1=3, treated as 96 bits coded pixels}
-                  img_loaded2[0,j,i]:=(rgb32dummy[0])*65535/(-range);{store in memory array}
-                  img_loaded2[1,j,i]:=(rgb32dummy[1])*65535/(-range);{store in memory array}
-                  img_loaded2[2,j,i]:=(rgb32dummy[2])*65535/(-range);{store in memory array}
+                  img_loaded2[0,i,j]:=(rgb32dummy[0])*65535/(-range);{store in memory array}
+                  img_loaded2[1,i,j]:=(rgb32dummy[1])*65535/(-range);{store in memory array}
+                  img_loaded2[2,i,j]:=(rgb32dummy[2])*65535/(-range);{store in memory array}
                 end
                 else
                 begin {PFM big-endian float 32 bit colour}
                   x_longword:=swapendian(fitsbuffer4[j*3]);
-                  img_loaded2[0,j,i]:=x_single*65535/(range);
+                  img_loaded2[0,i,j]:=x_single*65535/(range);
                   x_longword:=swapendian(fitsbuffer4[j*3+1]);
-                  img_loaded2[1,j,i]:=x_single*65535/(range);
+                  img_loaded2[1,i,j]:=x_single*65535/(range);
                   x_longword:=swapendian(fitsbuffer4[j*3+2]);
-                  img_loaded2[2,j,i]:=x_single*65535/(range);
+                  img_loaded2[2,i,j]:=x_single*65535/(range);
                 end;
               end;
             end;
@@ -2764,23 +2764,23 @@ begin
 
   head.width:=image.width;
   head.height:=image.height;
-  setlength(img_loaded2,head.naxis3,head.width,head.height);
+  setlength(img_loaded2,head.naxis3,head.height,head.width);
 
   if head.naxis3=3 then
   begin
     For i:=0 to head.height-1 do
       for j:=0 to head.width-1 do
       begin
-        img_loaded2[0,j,head.height-1-i]:=image.Colors[j,i].red;
-        img_loaded2[1,j,head.height-1-i]:=image.Colors[j,i].green;
-        img_loaded2[2,j,head.height-1-i]:=image.Colors[j,i].blue;
+        img_loaded2[0,head.height-1-i,j]:=image.Colors[j,i].red;
+        img_loaded2[1,head.height-1-i,j]:=image.Colors[j,i].green;
+        img_loaded2[2,head.height-1-i,j]:=image.Colors[j,i].blue;
       end;
   end
   else
   begin
     For i:=0 to head.height-1 do
       for j:=0 to head.width-1 do
-        img_loaded2[0,j,head.height-1-i]:=image.Colors[j,i].red;
+        img_loaded2[0,head.height-1-i,j]:=image.Colors[j,i].red;
   end;
 
   if tiff then
@@ -2931,8 +2931,8 @@ begin
     stepsize:=round(head.height/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
     if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
 
-    width5:=Length(img[0]);    {width}
-    height5:=Length(img[0][0]); {height}
+    width5:=Length(img[0,0]);    {width}
+    height5:=Length(img[0]); {height}
 
     sd:=99999;
     iterations:=0;
@@ -2945,7 +2945,7 @@ begin
         fitsY:=15;
         while fitsY<=height5-1-15 do
         begin
-          value:=img[colour,fitsX,fitsY];
+          value:=img[colour,fitsY,fitsX];
           if ((value<back.backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
           begin
             if ((iterations=0) or (abs(value-back.backgr)<=3*sd_old)) then {ignore outliers after first run}
@@ -3224,8 +3224,8 @@ var
    histogram : array of integer;
    centerX,centerY,a,b : double;
 begin
-  height3:=length(img[0,0]);{height}
-  width3:=length(img[0]);{width}
+  height3:=length(img[0]);{height}
+  width3:=length(img[0,0]);{width}
 
   if xmin<0 then xmin:=0;
   if xmax>width3-1 then xmax:=width3-1;
@@ -3247,7 +3247,7 @@ begin
       begin
         if ((ellipse=false {use no ellipse}) or (sqr(j-centerX)/sqr(a) +sqr(i-centerY)/sqr(b)<1)) then // standard equation of the ellipse
         begin
-          val:=round(img[colorM,j,i]);{get one color value}
+          val:=round(img[colorM,i,j]);{get one color value}
           if ((val>=1) and (val<max1)) then {ignore black areas and bright stars}
           inc(histogram[val],1);{calculate histogram}
         end;
@@ -3287,7 +3287,7 @@ begin
   begin
     for j:=xmin to xmax do
     begin
-      col:=round(img[colorM,j,i]);{get one color value}
+      col:=round(img[colorM,i,j]);{get one color value}
       if ((col>=1) and (col<=common_level))  then {ignore black areas }
       begin
           inc(count_neg);
@@ -3311,7 +3311,9 @@ begin
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
     img_backup[index_backup].filen:=filename2;{backup filename}
     img_backup[index_backup].img:=img_loaded;
-    setlength(img_backup[index_backup].img,head.naxis3,head.width,head.height);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+
+ // not required
+ //   setlength(img_backup[index_backup].img,head.naxis3,head.height,head.width);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
     mainwindow.Undo1.Enabled:=true;
   end;
@@ -3340,7 +3342,9 @@ begin
 
     stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{allow debayer if mono again}
     img_loaded:=img_backup[index_backup].img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_loaded,head.naxis3,head.width,head.height);{force a duplication}
+
+ //   not required
+//    setlength(img_loaded,1,head.naxis3,head.height,head.width);{force a duplication}
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,resized,true);{restore image1}
@@ -3490,17 +3494,17 @@ begin
   binfactor:=min(4,binfactor);{max factor is 4}
   w:=trunc(head.width/binfactor);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
   h:=trunc(head.height/binfactor);
-  setlength(img_temp2,head.naxis3,w,h);
+  setlength(img_temp2,head.naxis3,h,w);
   if binfactor=2 then
   begin
     for k:=0 to head.naxis3-1 do
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
-           img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsx*2,fitsY*2]+
-                                      img_loaded[k,fitsx*2 +1,fitsY*2]+
-                                      img_loaded[k,fitsx*2   ,fitsY*2+1]+
-                                      img_loaded[k,fitsx*2 +1,fitsY*2+1])/4;
+           img_temp2[k,fitsY,fitsX]:=(img_loaded[k,fitsY*2,fitsX*2]+
+                                      img_loaded[k,fitsY*2 +1,fitsX*2]+
+                                      img_loaded[k,fitsY*2   ,fitsX*2+1]+
+                                      img_loaded[k,fitsY*2 +1,fitsX*2+1])/4;
            end;
   end
   else
@@ -3510,15 +3514,15 @@ begin
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
-           img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsX*3   ,fitsY*3  ]+
-                                      img_loaded[k,fitsX*3   ,fitsY*3+1]+
-                                      img_loaded[k,fitsX*3   ,fitsY*3+2]+
-                                      img_loaded[k,fitsX*3 +1,fitsY*3  ]+
-                                      img_loaded[k,fitsX*3 +1,fitsY*3+1]+
-                                      img_loaded[k,fitsX*3 +1,fitsY*3+2]+
-                                      img_loaded[k,fitsX*3 +2,fitsY*3  ]+
-                                      img_loaded[k,fitsX*3 +2,fitsY*3+1]+
-                                      img_loaded[k,fitsX*3 +2,fitsY*3+2])/9;
+           img_temp2[k,fitsY,fitsX]:=(img_loaded[k,fitsY*3   ,fitsX*3  ]+
+                                      img_loaded[k,fitsY*3   ,fitsX*3+1]+
+                                      img_loaded[k,fitsY*3   ,fitsX*3+2]+
+                                      img_loaded[k,fitsY*3 +1,fitsX*3  ]+
+                                      img_loaded[k,fitsY*3 +1,fitsX*3+1]+
+                                      img_loaded[k,fitsY*3 +1,fitsX*3+2]+
+                                      img_loaded[k,fitsY*3 +2,fitsX*3  ]+
+                                      img_loaded[k,fitsY*3 +2,fitsX*3+1]+
+                                      img_loaded[k,fitsY*3 +2,fitsX*3+2])/9;
            end;
   end
   else
@@ -3527,22 +3531,22 @@ begin
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
-           img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsX*4   ,fitsY*4  ]+
-                                      img_loaded[k,fitsX*4   ,fitsY*4+1]+
-                                      img_loaded[k,fitsX*4   ,fitsY*4+2]+
-                                      img_loaded[k,fitsX*4   ,fitsY*4+3]+
-                                      img_loaded[k,fitsX*4 +1,fitsY*4  ]+
-                                      img_loaded[k,fitsX*4 +1,fitsY*4+1]+
-                                      img_loaded[k,fitsX*4 +1,fitsY*4+2]+
-                                      img_loaded[k,fitsX*4 +1,fitsY*4+3]+
-                                      img_loaded[k,fitsX*4 +2,fitsY*4  ]+
-                                      img_loaded[k,fitsX*4 +2,fitsY*4+1]+
-                                      img_loaded[k,fitsX*4 +2,fitsY*4+2]+
-                                      img_loaded[k,fitsX*4 +2,fitsY*4+3]+
-                                      img_loaded[k,fitsX*4 +3,fitsY*4  ]+
-                                      img_loaded[k,fitsX*4 +3,fitsY*4+1]+
-                                      img_loaded[k,fitsX*4 +3,fitsY*4+2]+
-                                      img_loaded[k,fitsX*4 +3,fitsY*4+3])/16;
+           img_temp2[k,fitsY,fitsX]:=(img_loaded[k,fitsY*4   ,fitsX*4  ]+
+                                      img_loaded[k,fitsY*4   ,fitsX*4+1]+
+                                      img_loaded[k,fitsY*4   ,fitsX*4+2]+
+                                      img_loaded[k,fitsY*4   ,fitsX*4+3]+
+                                      img_loaded[k,fitsY*4 +1,fitsX*4  ]+
+                                      img_loaded[k,fitsY*4 +1,fitsX*4+1]+
+                                      img_loaded[k,fitsY*4 +1,fitsX*4+2]+
+                                      img_loaded[k,fitsY*4 +1,fitsX*4+3]+
+                                      img_loaded[k,fitsY*4 +2,fitsX*4  ]+
+                                      img_loaded[k,fitsY*4 +2,fitsX*4+1]+
+                                      img_loaded[k,fitsY*4 +2,fitsX*4+2]+
+                                      img_loaded[k,fitsY*4 +2,fitsX*4+3]+
+                                      img_loaded[k,fitsY*4 +3,fitsX*4  ]+
+                                      img_loaded[k,fitsY*4 +3,fitsX*4+1]+
+                                      img_loaded[k,fitsY*4 +3,fitsX*4+2]+
+                                      img_loaded[k,fitsY*4 +3,fitsX*4+3])/16;
            end;
   end;
   img_loaded:=img_temp2;
@@ -3697,14 +3701,14 @@ begin
     backup_img;
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
-    setlength(img_temp,head.naxis3,stopX-startX,stopY-startY);
+    setlength(img_temp,head.naxis3,stopY-startY,stopX-startX);
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       for fitsY:=startY to stopY-1 do
       for fitsX:=startX to stopX-1 do
       begin
         begin
-          img_temp[k,fitsX-startX,fitsY-startY]:=img_loaded[k,fitsX,fitsY];{copy the area of interest to img_temp}
+          img_temp[k,fitsY-startY,fitsX-startX]:=img_loaded[k,fitsY,fitsX];{copy the area of interest to img_temp}
         end;
       end;
     end;{k color}
@@ -3716,7 +3720,7 @@ begin
       for fitsX:=startX to stopX-1 do
       begin
         begin
-          img_loaded[k,fitsX,fitsY]:=img_temp[k,fitsX-startX,fitsY-startY];{copy the area of interest back}
+          img_loaded[k,fitsY,fitsX]:=img_temp[k,fitsY-startY,fitsX-startX];{copy the area of interest back}
         end;
       end;
     end;{k color}
@@ -3816,10 +3820,10 @@ begin
     begin
       if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse
       begin
-        val:=(img_loaded[0,fitsX,fitsY]+img_loaded[1,fitsX,fitsY]+img_loaded[2,fitsX,fitsY])/3;
-        img_loaded[0,fitsX,fitsY]:=val;
-        img_loaded[1,fitsX,fitsY]:=val;
-        img_loaded[2,fitsX,fitsY]:=val;
+        val:=(img_loaded[0,fitsY,fitsX]+img_loaded[1,fitsY,fitsX]+img_loaded[2,fitsY,fitsX])/3;
+        img_loaded[0,fitsY,fitsX]:=val;
+        img_loaded[1,fitsY,fitsX]:=val;
+        img_loaded[2,fitsY,fitsX]:=val;
       end;
     end;
     plot_fits(mainwindow.image1,false,true);
@@ -4241,7 +4245,7 @@ begin
         if distance<=rs then {build histogram for circel with radius qrs}
         begin
           if ((i<0) or ((i=0) and (j<0)) ) then distance:=-distance;//split star in two equal areas.
-          val:=img_loaded[0,cX+i,cY+j];
+          val:=img_loaded[0,cY+j,cX+i];
           profile[0,distance]:=profile[0,distance]+val;{sum flux at distance}
           profile[1,distance]:=profile[1,distance]+1;{calculate the number of counts}
           if val>valmax then valmax:=val;{record the peak value of the star}
@@ -4828,7 +4832,7 @@ begin
     begin
       if ((CtrlButton=false {use no ellipse}) or (sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
       begin
-        value:=img_loaded[col,fitsX,fitsY];
+        value:=img_loaded[col,fitsY,fitsX];
         median_position:=flux_counter*stepsize;
         total_flux:=total_flux+value; {total flux}
         inc(flux_counter);
@@ -4872,7 +4876,7 @@ begin
         begin
           if counter>=length(median_array) then
              SetLength(median_array,counter+5000);{increase length}
-          median_array[counter]:=img_loaded[0,fitsX,fitsY];
+          median_array[counter]:=img_loaded[0,fitsY,fitsX];
           inc(counter);
         end;
       end;
@@ -5201,7 +5205,7 @@ begin
     w:=trunc(head.width/2);  {half size}
     h:=trunc(head.height/2);
 
-    setlength(img_temp11,1,w,h);
+    setlength(img_temp11,1,h,w);
 
     pattern:=get_demosaic_pattern; {analyse pattern}
     get_green:=false;
@@ -5260,9 +5264,9 @@ begin
     for fitsY:=0 to h-1 do
       for fitsX:=0 to w-1  do
       begin
-        val:=img_loaded[0,fitsx*2+xp-1,fitsY*2+yp-1];
-        if get_green then val:=(val+img_loaded[0,fitsx*2+xp2-1,fitsY*2+yp2-1])/2; {add second green pixel}
-        img_temp11[0,fitsX,fitsY]:=val;
+        val:=img_loaded[0,fitsY*2+yp-1,fitsx*2+xp-1];
+        if get_green then val:=(val+img_loaded[0,fitsY*2+yp2-1,fitsx*2+xp2-1])/2; {add second green pixel}
+        img_temp11[0,fitsY,fitsX]:=val;
       end;
 
     head.width:=w;
@@ -5465,7 +5469,7 @@ begin
           new_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{expected value based on the four corners measurements}
           new_value_noise:=line_bottom_noise*(stopY-fitsY)/(stopY-startY)+line_top_noise*(fitsY-startY)/(stopY-startY);{median noise value at position FitsX, fitsY}
 
-          img_loaded[k,fitsX,fitsY]:=randg(new_value,new_value_noise);
+          img_loaded[k,fitsY,fitsX]:=randg(new_value,new_value_noise);
 
         end;
       end;
@@ -5781,7 +5785,7 @@ begin
      else exit;
   end;
 
-  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
+  setlength(img_temp2,3,head.height,head.width);{set length of image array color}
 
   for y := 1 to head.height-2 do   {-2 = -1 -1}
   begin
@@ -5796,24 +5800,24 @@ begin
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
 
       if green_odd then begin
-                   img_temp2[0,x,y]:=     (img[0,x  ,y-1] + img[0,x  ,y+1])/2; {red neighbor pixels };
-                   img_temp2[1,x,y]:=     (img[0,x,  y  ] );
-                   img_temp2[2,x,y]:=     (img[0,x-1,y  ] + img[0,x+1,y  ])/2; {blue neighbor pixels }end
+                   img_temp2[0,y,x]:=     (img[0,y-1,x ] + img[0  ,y+1,x])/2; {red neighbor pixels };
+                   img_temp2[1,y,x]:=     (img[0,y  ,x  ] );
+                   img_temp2[2,y,x]:=     (img[0,y  ,x-1  ] + img[0,y,x+1  ])/2; {blue neighbor pixels }end
       else
       if green_even then begin
-                   img_temp2[0,x,y]:=     (img[0,x-1,y  ] + img[0,x+1,y  ])/2; {red neighbor pixels };
-                   img_temp2[1,x,y]:=     (img[0,x,  y  ] );
-                   img_temp2[2,x,y]:=     (img[0,x  ,y-1] + img[0,x  ,y+1])/2; {blue neighbor pixels }end
+                   img_temp2[0,y,x]:=     (img[0,y  ,x-1] + img[0,y,x+1  ])/2; {red neighbor pixels };
+                   img_temp2[1,y,x]:=     (img[0,y  ,x  ] );
+                   img_temp2[2,y,x]:=     (img[0,y-1,x  ] + img[0,y+1,x ])/2; {blue neighbor pixels }end
       else
       if red then begin
-                   img_temp2[0,x,y]:=     (img[0,x,  y  ]);
-                   img_temp2[1,x,y]:=     (img[0,x-1,y  ] + img[0,x+1,y  ] + img[0,x  ,y-1]+ img[0,x  ,y+1])/4;{green neighbours}
-                   img_temp2[2,x,y]:=     (img[0,x-1,y-1] + img[0,x-1,y+1] + img[0,x+1,y-1]+ img[0,x+1,y+1])/4 ; end {blue neighbor pixels }
+                   img_temp2[0,y,x]:=     (img[0,y  ,x  ]);
+                   img_temp2[1,y,x]:=     (img[0,y  ,x-1  ] + img[0,y,x+1  ] + img[0,y-1,x  ]+ img[0,y+1,x])/4;{green neighbours}
+                   img_temp2[2,y,x]:=     (img[0,y-1,x-1] + img[0,y+1,x-1] + img[0,y-1,x+1]+ img[0,y+1,x+1])/4 ; end {blue neighbor pixels }
       else
       if blue then begin
-                   img_temp2[0,x,y]:=     (img[0,x-1,y-1] + img[0,x-1,y+1]+ img[0,x+1,y-1]+ img[0,x+1,y+1])/4;
-                   img_temp2[1,x,y]:=     (img[0,x-1,y  ] + img[0,x+1,y  ]+ img[0,x  ,y-1]+ img[0,x,  y+1])/4;
-                   img_temp2[2,x,y]:=     (img[0,x,  y  ]  ); end;
+                   img_temp2[0,y,x]:=     (img[0,y-1,x-1] + img[0,y+1,x-1]+ img[0,y-1,x+1]+ img[0,y+1,x+1])/4;
+                   img_temp2[1,y,x]:=     (img[0,y  ,x-1] + img[0,y  ,x+1]+ img[0,y-1,x  ]+ img[0,y+1,x])/4;
+                   img_temp2[2,y,x]:=     (img[0,y  ,x  ] ); end;
       except
       end;
     end;{x loop}
@@ -5832,7 +5836,7 @@ var
     red,blue  : single;
     img_temp2 : image_array;
 begin
-  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
+  setlength(img_temp2,3,head.height,head.width);{set length of image array color}
 
   for y :=2 to  head.height-2 do   {-2 = -1 -1}
   begin
@@ -5849,52 +5853,52 @@ begin
       {use only one neighbour pixel with preference go right, go below, go left. Use only on neighbour pixel for maximum sharpness }
 
       if ((xpos=1) and (ypos=1)) then {green}begin
-                   red             :=   img[0,x  ,y+1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
-                   blue            :=   img[0,x+1,y  ]; {near blue pixel} end else
+                   red             :=   img[0,y+1,x ]; {near red pixel};
+                   img_temp2[1,y,x]:= img[0,y  ,x ] ;
+                   blue            :=   img[0,y  ,x+1  ]; {near blue pixel} end else
       if ((xpos=3) and (ypos=1)) then {green}begin
-                   red             :=   img[0,x  ,y+1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
-                   blue            :=   img[0,x-1,y  ]; {near blue pixel} end else
+                   red             :=   img[0,y+1,x  ]; {near red pixel};
+                   img_temp2[1,y,x]:= img[0,y  ,x  ] ;
+                   blue            :=   img[0,y,  x-1]; {near blue pixel} end else
       if ((xpos=2) and (ypos=2)) then {green}begin
-                   red             :=   img[0,x+1,y  ]; {near red pixel};
-                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
-                   blue:=   img[0,x  ,y+1]; {near blue pixel} end else
+                   red             :=   img[0,y,x+1  ]; {near red pixel};
+                   img_temp2[1,y,x]:= img[0,y,x  ] ;
+                   blue:=               img[0,y+1,x  ]; {near blue pixel} end else
       if ((xpos=1) and (ypos=3)) then {green}begin
-                   red             :=   img[0,x  ,y-1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
-                   blue:=   img[0,x+1,y  ]; {near blue pixel} end else
+                   red             :=   img[0,y-1,x  ]; {near red pixel};
+                   img_temp2[1,y,x]:= img[0,y,  x  ] ;
+                   blue:=               img[0,y,  x+1 ]; {near blue pixel} end else
       if ((xpos=3) and (ypos=3)) then {green}begin
-                   red             :=   img[0,x  ,y-1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
-                   blue            :=   img[0,x-1,y  ]; {near blue pixel} end else
+                   red             :=   img[0,y-1,x  ]; {near red pixel};
+                   img_temp2[1,y,x]:=  img[0,y  ,x  ] ;
+                   blue              :=  img[0,y  ,x-1]; {near blue pixel} end else
 
 
       if ((xpos=2) and (ypos=1)) then {blue}begin
-                   red             :=   img[0,x,y-1] ; {near red pixel};
-                   img_temp2[1,x,y]:=   img[0,x+1 ,y  ]; {near green pixel};
-                   blue            :=   img[0,x ,y  ]; end else
+                   red               := img[0,y-1,x  ] ; {near red pixel};
+                   img_temp2[1,y,x]:= img[0,y  ,x+1]; {near green pixel};
+                   blue              := img[0,y  ,x  ]; end else
       if ((xpos=2) and (ypos=3)) then {blue}begin
-                   red             :=   img[0,x ,y+1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img[0,x+1 ,y  ]; {near green pixel};
-                   blue            :=   img[0,x ,y  ]; end else
+                   red               := img[0,y+1,x  ]; {near red pixel};
+                   img_temp2[1,y,x]:= img[0,y  ,x+1]; {near green pixel};
+                   blue              := img[0,y  ,x  ]; end else
 
 
       if ((xpos=1) and (ypos=2)) then {red}begin
-                   red             :=   img[0,x  ,y  ];
-                   img_temp2[1,x,y]:=   img[0,x+1 ,y ];{near green pixel(s)};
-                   blue            :=   img[0,x-1,y ]; {near blue pixel(s)} end else
+                   red             :=   img[0,y,x   ];
+                   img_temp2[1,y,x]:=   img[0,y,x+1 ];{near green pixel(s)};
+                   blue            :=   img[0,y,x-1 ]; {near blue pixel(s)} end else
 
       if ((xpos=3) and (ypos=2)) then {red}begin
-                   red             :=   img[0,x  ,y  ];
-                   img_temp2[1,x,y]:=   img[0,x  ,y+1]; {near green pixel(s)};
-                   blue            :=   img[0,x+1,y  ]; {near blue pixel(s)} end;
+                   red             :=   img[0,y  ,x  ];
+                   img_temp2[1,y,x]:=   img[0,y+1,x  ]; {near green pixel(s)};
+                   blue            :=   img[0,y  ,x+1]; {near blue pixel(s)} end;
 
       {fix red and green swap}
-      if ((xpos6<=3) and (ypos6<=3)) then begin img_temp2[0,x,y]:=red;  img_temp2[2,x,y]:=blue;end else
-      if ((xpos6> 3) and (ypos6<=3)) then begin img_temp2[0,x,y]:=blue; img_temp2[2,x,y]:=red;end else
-      if ((xpos6<=3) and (ypos6> 3)) then begin img_temp2[0,x,y]:=blue; img_temp2[2,x,y]:=red;end else
-      if ((xpos6> 3) and (ypos6> 3)) then begin img_temp2[0,x,y]:=red;  img_temp2[2,x,y]:=blue;end;
+      if ((xpos6<=3) and (ypos6<=3)) then begin img_temp2[0,y,x]:=red;  img_temp2[2,y,x]:=blue;end else
+      if ((xpos6> 3) and (ypos6<=3)) then begin img_temp2[0,y,x]:=blue; img_temp2[2,y,x]:=red;end else
+      if ((xpos6<=3) and (ypos6> 3)) then begin img_temp2[0,y,x]:=blue; img_temp2[2,y,x]:=red;end else
+      if ((xpos6> 3) and (ypos6> 3)) then begin img_temp2[0,y,x]:=red;  img_temp2[2,y,x]:=blue;end;
 
       except
       end;
@@ -5924,12 +5928,12 @@ begin
      else exit;
   end;
 
-  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
+  setlength(img_temp2,3,head.height,head.width);{set length of image array color}
 
   for y := 0 to head.height-2 do   {-2 = -1 -1}
     for x:=0 to head.width-2 do
   begin {clear green}
-      img_temp2[1,x,y]:=0;
+      img_temp2[1,y,x]:=0;
   end;
 
   for y := 0 to head.height-2 do   {-2 = -1 -1}
@@ -5942,31 +5946,31 @@ begin
       red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
 
-      value:=img[0,x,  y  ];
+      value:=img[0,y,x];
 
       if ((green_odd) or (green_even)) then
       begin
         value:=value/2;
-        img_temp2[1,x,y]:=img_temp2[1,x,y]+value;
-        img_temp2[1,x,y+1]:=img_temp2[1,x,y+1]+value;
-        img_temp2[1,x+1,y]:=img_temp2[1,x+1,y]+value;
-        img_temp2[1,x+1,y+1]:=img_temp2[1,x+1,y+1]+value;
+        img_temp2[1,y  ,x]  :=img_temp2[1,y  ,x]+value;
+        img_temp2[1,y+1,x]  :=img_temp2[1,y+1,x]+value;
+        img_temp2[1,y  ,x+1]:=img_temp2[1,y  ,x+1]+value;
+        img_temp2[1,y+1,x+1]:=img_temp2[1,y+1,x+1]+value;
       end
       else
       if red then
       begin
-        img_temp2[0,x,y]:=value;
-        img_temp2[0,x+1,y]:=value;
-        img_temp2[0,x,y+1]:=value;
-        img_temp2[0,x+1,y+1]:=value;
+        img_temp2[0,y  ,x]:=value;
+        img_temp2[0,y  ,x+1]:=value;
+        img_temp2[0,y+1,x]:=value;
+        img_temp2[0,y+1,x+1]:=value;
       end
       else
       if blue then
       begin
-        img_temp2[2,x,y]:=value;
-        img_temp2[2,x+1,y]:=value;
-        img_temp2[2,x,y+1]:=value;
-        img_temp2[2,x+1,y+1]:=value;
+        img_temp2[2,y  ,x]:=value;
+        img_temp2[2,y  ,x+1]:=value;
+        img_temp2[2,y+1,x]:=value;
+        img_temp2[2,y+1,x+1]:=value;
       end;
       except
       end;
@@ -5995,12 +5999,12 @@ begin
      else exit;
   end;
 
-  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
+  setlength(img_temp2,3,head.height,head.width);{set length of image array color}
 
   for y := 0 to head.height-2 do   {-2 = -1 -1}
     for x:=0 to head.width-2 do
   begin {clear green}
-      img_temp2[1,x,y]:=0;
+      img_temp2[1,y,x]:=0;
   end;
 
   for y := 0 to head.height-2 do   {-2 = -1 -1}
@@ -6013,41 +6017,41 @@ begin
       red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
 
-      value:=img[0,x,  y  ];
+      value:=img[0, y, x ];
 
       if green_even then
       begin
         value:=value/2;
-        img_temp2[1,x,y]:=img_temp2[1,x,y]+value;
-        img_temp2[1,x-1,y]:=img_temp2[1,x-1,y]+value;
-        img_temp2[1,x,y-1]:=img_temp2[1,x,y-1]+value;
-        img_temp2[1,x-1,y-1]:=img_temp2[1,x-1,y-1]+value;
+        img_temp2[1,y  ,x  ]:=img_temp2[1,y,x]+value;
+        img_temp2[1,y  ,x-1]:=img_temp2[1,y,x-1]+value;
+        img_temp2[1,y-1,x  ]:=img_temp2[1,y-1,x]+value;
+        img_temp2[1,y-1,x-1]:=img_temp2[1,y-1,x-1]+value;
       end
       else
       if green_odd then
       begin
         value:=value/2;
-        img_temp2[1,x,y]:=img_temp2[1,x,y]+value;
-        img_temp2[1,x+1,y]:=img_temp2[1,x+1,y]+value;
-        img_temp2[1,x,y+1]:=img_temp2[1,x,y+1]+value;
-        img_temp2[1,x+1,y+1]:=img_temp2[1,x+1,y+1]+value;
+        img_temp2[1,y  ,x  ]:=img_temp2[1,y,x]+value;
+        img_temp2[1,y  ,x+1]:=img_temp2[1,y,x+1]+value;
+        img_temp2[1,y+1,x  ]:=img_temp2[1,y+1,x]+value;
+        img_temp2[1,y+1,x+1]:=img_temp2[1,y+1,x+1]+value;
       end
       else
 
       if red then
       begin
-        img_temp2[0,x,y]:=value;
-        img_temp2[0,x+1,y]:=value;
-        img_temp2[0,x,y-1]:=value;
-        img_temp2[0,x+1,y-1]:=value;
+        img_temp2[0,y  ,x  ]:=value;
+        img_temp2[0,y  ,x+1]:=value;
+        img_temp2[0,y-1,x  ]:=value;
+        img_temp2[0,y-1,x+1]:=value;
       end
       else
       if blue then
       begin
-        img_temp2[2,x,y]:=value;
-        img_temp2[2,x-1,y]:=value;
-        img_temp2[2,x,y+1]:=value;
-        img_temp2[2,x-1,y+1]:=value;
+        img_temp2[2,y  ,x  ]:=value;
+        img_temp2[2,y  ,x-1]:=value;
+        img_temp2[2,y+1,x  ]:=value;
+        img_temp2[2,y+1,x-1]:=value;
       end;
       except
       end;
@@ -6076,17 +6080,17 @@ begin
      3: begin offsetx:=1; offsety:=1; end;
      else exit;
   end;
-  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
+  setlength(img_temp2,3,head.height,head.width);{set length of image array color}
   {calculate mean background value}
   count:=0;
   bg:=0;
   for y:= 10 to (head.height-10) div 100  do
   for x:=10 to (head.width-10) div 100 do
   begin
-    bg:=bg+img[0,x  ,y  ]+
-    img[0,x+1,y  ]+
-    img[0,x  ,y+1]+
-    img[0,x+1,y+1];
+    bg:=bg+img[0,y,x]+
+    img[0,y  ,x+1  ]+
+    img[0,y+1,x  ]+
+    img[0,y+1,x+1];
     inc(count,4)
   end;
   bg:=bg/count;{average background value}
@@ -6107,89 +6111,89 @@ begin
 
       if green_odd then
                  begin
-                   a1:=img[0,x  ,y-1];
-                   a2:=img[0,x  ,y+1];
+                   a1:=img[0,y-1,x  ];
+                   a2:=img[0,y+1,x  ];
                    average1:=(a1+a2)/2;{red neighbor pixels };
 
-                   average2:=(img[0,x,  y  ] );
+                   average2:=(img[0,  y  ,x] );
 
-                   a3:=img[0,x-1,y  ];
-                   a4:=img[0,x+1,y  ];
+                   a3:=img[0,y  ,x-1];
+                   a4:=img[0,y  ,x+1];
                    average3:=(a3+a4)/2; {blue neighbor pixels }
 
                    if ((a1>average1+signal) or (a2>average1+signal) or (a3>average2+signal) or (a4>average2+signal)) {severe magnitude_slope} then
                    begin
                      luminance:=(average1+average2+average3)/3;
-                     img_temp2[0,x,y]:=luminance;{remove color info, keep luminace}
-                     img_temp2[1,x,y]:=luminance;
-                     img_temp2[2,x,y]:=luminance;
+                     img_temp2[0,y,x]:=luminance;{remove color info, keep luminace}
+                     img_temp2[1,y,x]:=luminance;
+                     img_temp2[2,y,x]:=luminance;
                    end
                    else
                    begin
-                     img_temp2[0,x,y]:=average1;
-                     img_temp2[1,x,y]:=average2;
-                     img_temp2[2,x,y]:=average3;
+                     img_temp2[0,y,x]:=average1;
+                     img_temp2[1,y,x]:=average2;
+                     img_temp2[2,y,x]:=average3;
 
                    end;
                  end
       else
       if green_even then
                     begin
-                      a1:=img[0,x-1,y  ];
-                      a2:=img[0,x+1,y  ];
+                      a1:=img[0,y  ,x-1];
+                      a2:=img[0,y  ,x+1];
                       average1:=(a1+a2)/2;{red neighbor pixels };
 
-                      average2:=     (img[0,x,  y  ] );
+                      average2:=     (img[0,  y  ,x] );
 
-                      a3:=img[0,x  ,y-1];
-                      a4:=img[0,x  ,y+1];
+                      a3:=img[0,y-1,x  ];
+                      a4:=img[0,y+1,x  ];
                       average3:=(a3+a4)/2; {blue neighbor pixels };
 
                       if ((a1>average1+signal) or (a2>average1+signal) or (a3>average2+signal) or (a4>average2+signal)) {severe magnitude_slope} then
                      begin
                        luminance:=(average1+average2+average3)/3;
-                       img_temp2[0,x,y]:=luminance;{remove color info, keep luminace}
-                       img_temp2[1,x,y]:=luminance;
-                       img_temp2[2,x,y]:=luminance;
+                       img_temp2[0,y,x]:=luminance;{remove color info, keep luminace}
+                       img_temp2[1,y,x]:=luminance;
+                       img_temp2[2,y,x]:=luminance;
                      end
                      else
                      begin
-                       img_temp2[0,x,y]:=average1;
-                       img_temp2[1,x,y]:=average2;
-                       img_temp2[2,x,y]:=average3;
+                       img_temp2[0,y,x]:=average1;
+                       img_temp2[1,y,x]:=average2;
+                       img_temp2[2,y,x]:=average3;
 
                      end;
                    end
       else
       if red then begin
-                   average1:=(img[0,x,  y  ]);
+                   average1:=(img[0,  y  ,x]);
 
-                   a1:= img[0,x-1,y  ];
-                   a2:= img[0,x+1,y  ];
-                   a3:= img[0,x  ,y-1];
-                   a4:= img[0,x  ,y+1];{green neighbours}
+                   a1:= img[0,y  ,x-1];
+                   a2:= img[0,y  ,x+1];
+                   a3:= img[0,y-1,x  ];
+                   a4:= img[0,y+1,x  ];{green neighbours}
                    average2:=(a1+a2+a3+a4)/4;
 
 
-                   a5:= img[0,x-1,y-1];
-                   a6:= img[0,x-1,y+1];
-                   a7:= img[0,x+1,y-1];
-                   a8:= img[0,x+1,y+1];{blue neighbours}
+                   a5:= img[0,y-1,x-1];
+                   a6:= img[0,y+1,x-1];
+                   a7:= img[0,y-1,x+1];
+                   a8:= img[0,y+1,x+1];{blue neighbours}
                    average3:=(a5+a6+a7+a8)/4;
 
                    if ((a1>average2+signal2) or (a2>average2+signal2) or (a3>average2+signal2) or (a4>average2+signal2) or
                        (a5>average3+signal2) or (a6>average3+signal2) or (a7>average3+signal2) or (a8>average3+signal2) ) then {severe magnitude_slope}
                    begin
                      luminance:=(average1+average2+average3)/3;
-                     img_temp2[0,x,y]:=luminance;{remove color info, keep luminace}
-                     img_temp2[1,x,y]:=luminance;
-                     img_temp2[2,x,y]:=luminance;
+                     img_temp2[0,y,x]:=luminance;{remove color info, keep luminace}
+                     img_temp2[1,y,x]:=luminance;
+                     img_temp2[2,y,x]:=luminance;
                    end
                    else
                    begin
-                     img_temp2[0,x,y]:=average1;
-                     img_temp2[1,x,y]:=average2;
-                     img_temp2[2,x,y]:=average3;
+                     img_temp2[0,y,x]:=average1;
+                     img_temp2[1,y,x]:=average2;
+                     img_temp2[2,y,x]:=average3;
                    end;
 
       end
@@ -6197,35 +6201,35 @@ begin
       else
       if blue then
                  begin
-                   average1:=(img[0,x,  y  ]);
+                   average1:=(img[0,  y  ,x]);
 
-                   a1:= img[0,x-1,y-1];
-                   a2:= img[0,x-1,y+1];
-                   a3:= img[0,x+1,y-1];
-                   a4:= img[0,x+1,y+1];{red neighbours}
+                   a1:= img[0,y-1,x-1];
+                   a2:= img[0,y+1,x-1];
+                   a3:= img[0,y-1,x+1];
+                   a4:= img[0,y+1,x+1];{red neighbours}
                    average1:=(a1+a2+a3+a4)/4;
 
-                   a5:= img[0,x-1,y  ];
-                   a6:= img[0,x+1,y  ];
-                   a7:= img[0,x  ,y-1];
-                   a8:= img[0,x  ,y+1];{green neighbours}
+                   a5:= img[0,y  ,x-1];
+                   a6:= img[0,y  ,x+1];
+                   a7:= img[0,y-1,x  ];
+                   a8:= img[0,y+1,x  ];{green neighbours}
                    average2:=(a5+a6+a7+a8)/4;
 
-                   average3:=img[0,x,  y  ];
+                   average3:=img[0,  y  ,x];
 
                    if ((a1>average1+signal2) or (a2>average1+signal2) or (a3>average1+signal2) or (a4>average1+signal2) or
                        (a5>average2+signal2) or (a6>average2+signal2) or (a7>average2+signal2) or (a8>average2+signal2) ) then {severe magnitude_slope}
                    begin
                      luminance:=(average1+average2+average3)/3;
-                     img_temp2[0,x,y]:=luminance;{remove color info, keep luminace}
-                     img_temp2[1,x,y]:=luminance;
-                     img_temp2[2,x,y]:=luminance;
+                     img_temp2[0,y,x]:=luminance;{remove color info, keep luminace}
+                     img_temp2[1,y,x]:=luminance;
+                     img_temp2[2,y,x]:=luminance;
                    end
                    else
                    begin
-                     img_temp2[0,x,y]:=average1;
-                     img_temp2[1,x,y]:=average2;
-                     img_temp2[2,x,y]:=average3;
+                     img_temp2[0,y,x]:=average1;
+                     img_temp2[1,y,x]:=average2;
+                     img_temp2[2,y,x]:=average3;
 
 
                    end;
@@ -6260,7 +6264,7 @@ begin
      else exit;
   end;
 
-  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
+  setlength(img_temp2,3,head.height,head.width);{set length of image array color}
 
   bg:=0;
   counter:=0;{prevent divide by zero for fully saturated images}
@@ -6277,83 +6281,83 @@ begin
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
       if green_odd then
                  begin
-                   a1:=img[0,x  ,y-1];
-                   a2:=img[0,x  ,y+1];
+                   a1:=img[0,y-1,x  ];
+                   a2:=img[0,y+1,x  ];
                    average1:=(a1+a2)/2;{red neighbor pixels };
 
-                   average2:=(img[0,x,  y  ] );
+                   average2:=(img[0,  y  ,x] );
 
-                   a3:=img[0,x-1,y  ];
-                   a4:=img[0,x+1,y  ];
+                   a3:=img[0,y  ,x-1];
+                   a4:=img[0,y  ,x+1];
                    average3:=(a3+a4)/2; {blue neighbor pixels }
 
                    if ((a1>saturation) or (a2>saturation) or (a3>saturation) or (a4>saturation)) {saturation} then
                    begin
-                     img_temp2[0,x,y]:=(average1+average2+average3)/3;{store luminance}
-                     img_temp2[1,x,y]:=$FFFFFF;{marker pixel as saturated}
+                     img_temp2[0,y,x]:=(average1+average2+average3)/3;{store luminance}
+                     img_temp2[1,y,x]:=$FFFFFF;{marker pixel as saturated}
                    end
                    else
                    begin
-                     img_temp2[0,x,y]:=average1;
-                     img_temp2[1,x,y]:=average2;
-                     img_temp2[2,x,y]:=average3;
+                     img_temp2[0,y,x]:=average1;
+                     img_temp2[1,y,x]:=average2;
+                     img_temp2[2,y,x]:=average3;
                    end;
                  end
       else
       if green_even then
                     begin
-                      a1:=img[0,x-1,y  ];
-                      a2:=img[0,x+1,y  ];
+                      a1:=img[0,y  ,x-1];
+                      a2:=img[0,y  ,x+1];
                       average1:=(a1+a2)/2;{red neighbor pixels };
 
-                      average2:=     (img[0,x,  y  ] );
+                      average2:=     (img[0,  y  ,x] );
 
-                      a3:=img[0,x  ,y-1];
-                      a4:=img[0,x  ,y+1];
+                      a3:=img[0,y-1,x  ];
+                      a4:=img[0,y+1,x  ];
                       average3:=(a3+a4)/2; {blue neighbor pixels };
 
                      if ((a1>saturation) or (a2>saturation) or (a3>saturation) or (a4>saturation)) {saturation} then
                      begin
-                       img_temp2[0,x,y]:=(average1+average2+average3)/3;{store luminance}
-                       img_temp2[1,x,y]:=$FFFFFF;{marker pixel as saturated}
+                       img_temp2[0,y,x]:=(average1+average2+average3)/3;{store luminance}
+                       img_temp2[1,y,x]:=$FFFFFF;{marker pixel as saturated}
                      end
                      else
                      begin
-                       img_temp2[0,x,y]:=average1;
-                       img_temp2[1,x,y]:=average2;
-                       img_temp2[2,x,y]:=average3;
+                       img_temp2[0,y,x]:=average1;
+                       img_temp2[1,y,x]:=average2;
+                       img_temp2[2,y,x]:=average3;
 
                      end;
                    end
       else
       if red then begin
-                   average1:=(img[0,x,  y  ]);
+                   average1:=(img[0,  y  ,x]);
 
-                   a1:= img[0,x-1,y  ];
-                   a2:= img[0,x+1,y  ];
-                   a3:= img[0,x  ,y-1];
-                   a4:= img[0,x  ,y+1];{green neighbours}
+                   a1:= img[0,y  ,x-1];
+                   a2:= img[0,y  ,x+1];
+                   a3:= img[0,y-1,x  ];
+                   a4:= img[0,y+1,x  ];{green neighbours}
                    average2:=(a1+a2+a3+a4)/4;
 
 
-                   a5:= img[0,x-1,y-1];
-                   a6:= img[0,x-1,y+1];
-                   a7:= img[0,x+1,y-1];
-                   a8:= img[0,x+1,y+1];{blue neighbours}
+                   a5:= img[0,y-1,x-1];
+                   a6:= img[0,y+1,x-1];
+                   a7:= img[0,y-1,x+1];
+                   a8:= img[0,y+1,x+1];{blue neighbours}
                    average3:=(a5+a6+a7+a8)/4;
 
                    if ((a1>saturation) or (a2>saturation) or (a3>saturation) or (a4>saturation) or
                        (a5>saturation) or (a6>saturation) or (a7>saturation) or (a8>saturation) ) then {saturation}
                    begin
-                     img_temp2[0,x,y]:=(average1+average2+average3)/3;{store luminance}
-                     img_temp2[1,x,y]:=$FFFFFF;{marker pixel as saturated}
+                     img_temp2[0,y,x]:=(average1+average2+average3)/3;{store luminance}
+                     img_temp2[1,y,x]:=$FFFFFF;{marker pixel as saturated}
 
                    end
                    else
                    begin
-                     img_temp2[0,x,y]:=average1;
-                     img_temp2[1,x,y]:=average2;
-                     img_temp2[2,x,y]:=average3;
+                     img_temp2[0,y,x]:=average1;
+                     img_temp2[1,y,x]:=average2;
+                     img_temp2[2,y,x]:=average3;
 
                      {calculate background}
                      bg:=bg+average1+average2+average3;
@@ -6363,33 +6367,33 @@ begin
       else
       if blue then
                  begin
-                   average1:=(img[0,x,  y  ]);
+                   average1:=(img[0,  y  ,x]);
 
-                   a1:= img[0,x-1,y-1];
-                   a2:= img[0,x-1,y+1];
-                   a3:= img[0,x+1,y-1];
-                   a4:= img[0,x+1,y+1];{red neighbours}
+                   a1:= img[0,y-1,x-1];
+                   a2:= img[0,y+1,x-1];
+                   a3:= img[0,y-1,x+1];
+                   a4:= img[0,y+1,x+1];{red neighbours}
                    average1:=(a1+a2+a3+a4)/4;
 
-                   a5:= img[0,x-1,y  ];
-                   a6:= img[0,x+1,y  ];
-                   a7:= img[0,x  ,y-1];
-                   a8:= img[0,x  ,y+1];{green neighbours}
+                   a5:= img[0,y  ,x-1];
+                   a6:= img[0,y  ,x+1];
+                   a7:= img[0,y-1,x  ];
+                   a8:= img[0,y+1,x  ];{green neighbours}
                    average2:=(a5+a6+a7+a8)/4;
 
-                   average3:=img[0,x,  y  ];
+                   average3:=img[0,  y  ,x];
 
                    if ((a1>saturation) or (a2>saturation) or (a3>saturation) or (a4>saturation) or
                        (a5>saturation) or (a6>saturation) or (a7>saturation) or (a8>saturation) ) then {saturation}
                    begin
-                     img_temp2[0,x,y]:=(average1+average2+average3)/3;{store luminance}
-                     img_temp2[1,x,y]:=$FFFFFF;{marker pixel as saturated}
+                     img_temp2[0,y,x]:=(average1+average2+average3)/3;{store luminance}
+                     img_temp2[1,y,x]:=$FFFFFF;{marker pixel as saturated}
                    end
                    else
                    begin
-                     img_temp2[0,x,y]:=average1;
-                     img_temp2[1,x,y]:=average2;
-                     img_temp2[2,x,y]:=average3;
+                     img_temp2[0,y,x]:=average1;
+                     img_temp2[1,y,x]:=average2;
+                     img_temp2[2,y,x]:=average3;
 
                    end;
                  end;
@@ -6409,14 +6413,14 @@ begin
     sat_counter:=0;
     for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1 do
-    if img_temp2[1,fitsX,fitsY]=$FFFFFF {marker saturated} then
+    if img_temp2[1,fitsY,fitsX]=$FFFFFF {marker saturated} then
     begin
       colred:=0;
       colgreen:=0;
       colblue:=0;
       counter:=0;
       inc(sat_counter);
-      luminance:=img_temp2[0,fitsX,fitsY];
+      luminance:=img_temp2[0,fitsY,fitsX];
       luminance:=luminance-bg;{luminance above background}
       begin
         for y:=-step to step do
@@ -6431,11 +6435,12 @@ begin
              sqr_dist:=x*x+y*y;
              if sqr_dist<=step*step then {circle only}
              begin
-               g:= img_temp2[1,x2,y2];
+               g:= img_temp2[1,y2,x2];
                if g<>$FFFFFF {not saturated pixel} then
                begin
-                 r:= img_temp2[0,x2,y2];
-                 B:= img_temp2[2,x2,y2];
+                 r:= img_temp2[0,y2,x2];
+                 B:= img_temp2[2,y2,x2];
+
                  if (r-bg)>0 {signal} then colred  :=colred+   (r-bg); {bg=average red and will be little above the background since stars are included in the average}
                  if (g-bg)>0 then colgreen:=colgreen+ (g-bg);
                  if (b-bg)>0 then colblue:= colblue + (b-bg);
@@ -6455,14 +6460,14 @@ begin
         if colred>colblue then lowest:=colblue else lowest:=colred;
         if colgreen<lowest {purple} then colgreen:=lowest; {prevent purple stars, purple stars are physical not possible}
         rgb:=(colred+colgreen+colblue+0.00001)/3; {0.00001, prevent dividing by zero}
-        img[0,fitsX  ,  fitsY  ]:=bg+ luminance*colred/rgb;
-        img[1,fitsX  ,  fitsY  ]:=bg+ luminance*colgreen/rgb;
-        img[2,fitsX  ,  fitsY  ]:=bg+ luminance*colblue/rgb;
+        img[0,  fitsY  ,fitsX  ]:=bg+ luminance*colred/rgb;
+        img[1,  fitsY  ,fitsX  ]:=bg+ luminance*colgreen/rgb;
+        img[2,  fitsY  ,fitsX  ]:=bg+ luminance*colblue/rgb;
       end
       else
       begin
-       img[1,fitsX  ,  fitsY  ]:=img_temp2[0,fitsX  ,  fitsY  ];
-       img[2,fitsX  ,  fitsY  ]:=img_temp2[0,fitsX  ,  fitsY  ];
+       img[1,  fitsY  ,fitsX  ]:=img_temp2[0,  fitsY  ,fitsX  ];
+       img[2,  fitsY  ,fitsX  ]:=img_temp2[0,  fitsY  ,fitsX  ];
 
       end;
     end;
@@ -6472,11 +6477,12 @@ begin
     for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1 do
     begin
-      img[0,fitsX  ,  fitsY  ]:=saturation;
-      img[1,fitsX  ,  fitsY  ]:=saturation;
-      img[2,fitsX  ,  fitsY  ]:=saturation;
+      img[0,  fitsY  ,fitsX  ]:=saturation;
+      img[1,  fitsY  ,fitsX  ]:=saturation;
+      img[2,  fitsY  ,fitsX  ]:=saturation;
     end;
   end;
+
   if sat_counter/(head.width*head.height)>0.1 then memo2_message('█ █ █ █ █ █  More than 10% of the image is saturated and will give poor results!! Try demosaic method AstroSimple and exposure shorter next time. █ █ █ █ █ █ ');
   img_temp2:=nil;{free temp memory}
   head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
@@ -6491,7 +6497,7 @@ var
 begin
   w:=head.width div 2;
   h:=head.height div 2;
-  setlength(img_temp2,3,w,h);{set length of image array color}
+  setlength(img_temp2,3,h,w);{set length of image array color}
 
   if pattern=0 then {GRBG}
   for y := 0 to h-1 do
@@ -6501,9 +6507,9 @@ begin
       try
       x2:=x+x;
       y2:=y+y;
-      img_temp2[0,x,y]:= img[0,x2+1,y2  ];
-      img_temp2[1,x,y]:=(img[0,x2  ,y2  ] + img[0,x2+1,y2+1  ])/2;
-      img_temp2[2,x,y]:= img[0,x2  ,y2+1];
+      img_temp2[0,y,x]:= img[0,y2  ,x2+1];
+      img_temp2[1,y,x]:=(img[0,y2  ,x2  ] + img[0,y2+1  ,x2+1])/2;
+      img_temp2[2,y,x]:= img[0,y2+1,x2  ];
       except
       end;
     end;{x loop}
@@ -6517,9 +6523,9 @@ begin
       try
       x2:=x+x;
       y2:=y+y;
-      img_temp2[0,x,y]:= img[0,x2+1,y2+1];
-      img_temp2[1,x,y]:=(img[0,x2+1,y2  ] + img[0,x2,y2+1  ])/2;
-      img_temp2[2,x,y]:= img[0,x2  ,y2  ];
+      img_temp2[0,y,x]:= img[0,y2+1,x2+1];
+      img_temp2[1,y,x]:=(img[0,y2  ,x2+1] + img[0,y2+1  ,x2])/2;
+      img_temp2[2,y,x]:= img[0,y2  ,x2  ];
       except
       end;
     end;{x loop}
@@ -6534,9 +6540,9 @@ begin
       try
       x2:=x+x;
       y2:=y+y;
-      img_temp2[0,x,y]:= img[0,x2,  y2  ];
-      img_temp2[1,x,y]:=(img[0,x2+1,y2  ] + img[0,x2,y2+1  ])/2;
-      img_temp2[2,x,y]:= img[0,x2+1,y2+1];
+      img_temp2[0,y,x]:= img[0,y2  ,x2];
+      img_temp2[1,y,x]:=(img[0,y2  ,x2+1] + img[0,y2+1  ,x2])/2;
+      img_temp2[2,y,x]:= img[0,y2+1,x2+1];
       except
       end;
     end;{x loop}
@@ -6551,9 +6557,9 @@ begin
       try
       x2:=x+x;
       y2:=y+y;
-      img_temp2[0,x,y]:= img[0,x2,  y2+1];
-      img_temp2[1,x,y]:=(img[0,x2  ,y2  ] + img[0,x2+1,y2+1  ])/2;
-      img_temp2[2,x,y]:= img[0,x2+1,y2  ];
+      img_temp2[0,y,x]:= img[0,y2+1,x2];
+      img_temp2[1,y,x]:=(img[0,y2  ,x2  ] + img[0,y2+1  ,x2+1])/2;
+      img_temp2[2,y,x]:= img[0,y2  ,x2+1];
       except
       end;
     end;{x loop}
@@ -6582,19 +6588,20 @@ begin
   for fitsY:=0 to h-1 do {go through all 2x2 and replace and if saturated replace with previous 2x2}
    for fitsX:=1 to w-1  do
     begin
-      if ((img[0,fitsx*2  ,fitsY*2  ]>65500) or
-          (img[0,fitsx*2+1,fitsY*2  ]>65500) or
-          (img[0,fitsx*2  ,fitsY*2+1]>65500) or
-          (img[0,fitsx*2+1,fitsY*2+1]>65500) )   then {saturation}
+      if ((img[0,fitsY*2  ,fitsx*2  ]>65500) or
+          (img[0,fitsY*2  ,fitsx*2+1]>65500) or
+          (img[0,fitsY*2+1,fitsx*2  ]>65500) or
+          (img[0,fitsY*2+1,fitsx*2+1]>65500) )   then {saturation}
       begin
-       img[0,fitsx*2  ,fitsY*2  ]:=img[0,(fitsx-1)*2  ,fitsY*2  ];
-       img[0,fitsx*2+1,fitsY*2  ]:=img[0,(fitsx-1)*2+1,fitsY*2  ];
-       img[0,fitsx*2  ,fitsY*2+1]:=img[0,(fitsx-1)*2  ,fitsY*2+1];
-       img[0,fitsx*2+1,fitsY*2+1]:=img[0,(fitsx-1)*2+1,fitsY*2+1];
+       img[0,fitsY*2  ,fitsx*2  ]:=img[0,fitsY*2  ,(fitsx-1)*2  ];
+       img[0,fitsY*2  ,fitsx*2+1]:=img[0,fitsY*2  ,(fitsx-1)*2+1];
+       img[0,fitsY*2+1,fitsx*2  ]:=img[0,fitsY*2+1,(fitsx-1)*2  ];
+       img[0,fitsY*2+1,fitsx*2+1]:=img[0,fitsY*2+1,(fitsx-1)*2+1];
 
       end;
     end;
 end;
+
 
 
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
@@ -6821,12 +6828,12 @@ begin
     for j:=0 to head.width-1 do
     begin
       if fliph then columnr:=(head.width-1)-j else columnr:=j;{flip horizontal?}
-      col:=round(img_loaded[0,columnr,i]);
+      col:=round(img_loaded[0,i,columnr]);
       colrr:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
 
       if head.naxis3>=2 then {at least two colours}
       begin
-        col:=round(img_loaded[1,columnr,i]);
+        col:=round(img_loaded[1,i,columnr]);
         colgg:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
       end
       else
@@ -6834,7 +6841,7 @@ begin
 
       if head.naxis3>=3 then {at least three colours}
       begin
-        col:=round(img_loaded[2,columnr,i]);
+        col:=round(img_loaded[2,i,columnr]);
         colbb:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
 
         if sat_factor<>1 then {adjust saturation}
@@ -6959,8 +6966,8 @@ begin
   his_total:=0;
   total_value:=0;
   count:=1;{prevent divide by zero}
-  width5:=Length(img[0]);    {width}
-  height5:=Length(img[0][0]); {height}
+  width5:=Length(img[0,0]);    {width}
+  height5:=Length(img[0]); {height}
 
   offsetW:=trunc(width5*0.042); {if Libraw is used, ignored unused sensor areas up to 4.2%}
   offsetH:=trunc(height5*0.015); {if Libraw is used, ignored unused sensor areas up to 1.5%}
@@ -6970,7 +6977,7 @@ begin
   begin
     for j:=0+offsetW to width5-1-offsetW do
     begin
-      col:=round(img[colour,j,i]);{red}
+      col:=round(img[colour,i,j]);{red}
       if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
       begin
         inc(histogram[colour,col],1);{calculate histogram}
@@ -8294,7 +8301,7 @@ begin
     w:=stopX-startX;
     h:=StopY-startY;
 
-    setlength(img_delta,1,w,h);
+    setlength(img_delta,1,h,w);
 
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
@@ -8304,7 +8311,6 @@ begin
       mode_right_bottom:=mode(img_loaded,false{ellipse shape},k,stopX,stopX+20,startY-20,startY,32000,greylevels);{for this area get most common value equals peak in histogram}
       mode_right_top:=mode(img_loaded,false{ellipse shape},k,stopX,stopX+20,stopY,stopY+20,32000,greylevels);{for this area get most common value equals peak in histogram}
 
-
       for fitsY:=startY to stopY-1 do
       begin
         for fitsX:=startX to stopX-1 do
@@ -8313,7 +8319,7 @@ begin
           line_top:=  mode_left_top *   (stopX-fitsx)/(stopX-startx)+ mode_right_top*(fitsx-startX)/(stopX-startx);{median value at top line}
           expected_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{expected value based on the four corners measurements}
 
-          img_delta[0,fitsX-startX,fitsY-startY]:=max(0,expected_value-img_loaded[k,fitsX,fitsY]);//max for star ignorance
+          img_delta[0,fitsY-startY,fitsX-startX]:=max(0,expected_value-img_loaded[k,fitsY,fitsX]);//max for star ignorance
         end;
       end;{fits loop}
 
@@ -8324,10 +8330,9 @@ begin
         for fitsX:=startX to stopX-1 do
         begin
           if ((CtrlButton=false {use no ellipse}) or (sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
-            img_loaded[k,fitsX,fitsY]:= img_loaded[k,fitsX,fitsY]+img_delta[0,fitsX-startX,fitsY-startY];
+            img_loaded[k,fitsY,fitsX]:= img_loaded[k,fitsY,fitsX]+img_delta[0,fitsY-startY,fitsX-startX];
         end;
       end;{fits loop}
-
     end;
 
     plot_fits(mainwindow.image1,false,true);
@@ -8906,11 +8911,11 @@ var
 begin
   if head.naxis3<3 then exit;{prevent run time error mono images}
   memo2_message('Converting to mono.');
-  setlength(img_temp,1,head.width,head.height);{set length of image array mono}
+  setlength(img_temp,1,head.height,head.width);{set length of image array mono}
 
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1 do
-      img_temp[0,fitsx,fitsy]:=(img[0,fitsx,fitsy]+img[1,fitsx,fitsy]+img[2,fitsx,fitsy])/3;
+      img_temp[0,fitsY,fitsX]:=(img[0,fitsY,fitsX]+img[1,fitsY,fitsX]+img[2,fitsY,fitsX])/3;
 
   head.naxis:=2;{mono}
   head.naxis3:=1;
@@ -9074,6 +9079,7 @@ var
 begin
   result:=false;
   fov:=round(sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2*60)); //arcmin. cdelt2 can be negative for other solvers
+  fov:=min(fov,180);//limit radius to 3 degree. Else error the faintest magnitude limit allowed for charts larger than 180 arcminutes is 12. Please try a smaller field of view or a brighter magnitude limit."
 
   url:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
   s:=get_http(url);{get webpage}
@@ -9202,6 +9208,7 @@ var
 begin
   result:=false;
   radius:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //radius in degrees. Some solvers produce files with neagative cdelt2
+  radius:=min(radius,3);//limit radius to 3 degree
   url:='https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
   s:=get_http(url);
   if length(s)<25 then begin beep; exit end;;
@@ -9657,7 +9664,7 @@ begin
     begin
       if ( (fitsX<startX) or  (fitsX>stopX) or (fitsY<startY) or  (fitsY>stopY) ) then {measure only outside the box}
       begin
-        bg_array[counter]:=img_loaded[0,fitsX,fitsY];
+        bg_array[counter]:=img_loaded[0,fitsY,fitsX];
         inc(counter);
       end;
     end;
@@ -9679,7 +9686,7 @@ begin
     begin
       if ((CtrlButton=false {use no ellipse}) or (sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
       begin
-        value:=img_loaded[0,fitsX,fitsY];
+        value:=img_loaded[0,fitsY,fitsX];
         if value>65000 then inc(saturation_counter);{keep track of number of saturated pixels}
         flux:=flux+(value-bg_median);{add all flux. Without stars it should average zero. Detecting flux using >3*sd misses too much signal comets}
       end;
@@ -9985,9 +9992,9 @@ begin
         c:=sqrt(sqr(fitsX-stopX)+sqr(fitsY-stopY)); {distance from bright spot}
         p:=-((sqr(b)-sqr(a)-sqr(c))/(2*a)); {projectiestelling scheefhoekige driehoek (Dutch), polytechnisch zakboekje 42 edition, a2/24 3.2}
 
-        img_loaded[0,fitsX,fitsY]:=img_loaded[0,fitsX,fitsY]-(colrr2-colrr1)*(a-p)/a;
-        if head.naxis3>1 then img_loaded[1,fitsX,fitsY]:=img_loaded[1,fitsX,fitsY]-(colgg2-colgg1)*(a-p)/a;
-        if head.naxis3>2 then img_loaded[2,fitsX,fitsY]:=img_loaded[2,fitsX,fitsY]-(colbb2-colbb1)*(a-p)/a;
+        img_loaded[0,fitsY,fitsX]:=img_loaded[0,fitsY,fitsX]-(colrr2-colrr1)*(a-p)/a;
+        if head.naxis3>1 then img_loaded[1,fitsY,fitsX]:=img_loaded[1,fitsY,fitsX]-(colgg2-colgg1)*(a-p)/a;
+        if head.naxis3>2 then img_loaded[2,fitsY,fitsX]:=img_loaded[2,fitsY,fitsX]-(colbb2-colbb1)*(a-p)/a;
       end;
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -10160,7 +10167,7 @@ begin
 
   SetLength(stars,5,5000);{set array length}
 
-  setlength(img_sa,1,head.width,head.height);{set length of image array}
+  setlength(img_sa,1,head.height,head.width);{set length of image array}
 
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
@@ -10171,13 +10178,13 @@ begin
 
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
-      img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+      img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
   for fitsY:=y1 to y2-1 do
   begin
     for fitsX:=x1 to x2-1  do
     begin
-      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- bck.backgr> detection_level)) then {new star}
+      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- bck.backgr> detection_level)) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},head.mzero_radius,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
@@ -10199,19 +10206,19 @@ begin
               j:=n+yci;
               i:=m+xci;
               if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                img_sa[0,i,j]:=1;
+                img_sa[0,j,i]:=1;
             end;
 
-          if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
+          if ((img_loaded[0,round(yc),round(xc)]<head.datamax_org-1) and
+              (img_loaded[0,round(yc),round(xc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(yc),round(xc+1)]<head.datamax_org-1) and
+              (img_loaded[0,round(yc-1),round(xc)]<head.datamax_org-1) and
+              (img_loaded[0,round(yc+1),round(xc)]<head.datamax_org-1) and
 
-              (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
+              (img_loaded[0,round(yc-1),round(xc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(yc+1),round(xc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(yc-1),round(xc+1)]<head.datamax_org-1) and
+              (img_loaded[0,round(yc+1),round(xc+1)]<head.datamax_org-1)  ) then {not saturated}
           begin
             {store values}
             inc(nrstars);
@@ -10224,9 +10231,6 @@ begin
             stars[2,nrstars-1]:=hfd1;
             stars[3,nrstars-1]:=flux;
             stars[4,nrstars-1]:=snr;
-
-     //       IF ((abs(xc-1635)<10) and (abs(yc-885)<10)) then
-     //       beep;
           end;{not saturated}
         end;{HFD good}
       end;
@@ -10314,10 +10318,10 @@ const
   mainwindow.image1.Canvas.Pen.Color := clred;
 
 
-  setlength(img_temp3,1,head.width,head.height);{set size of image array}
+  setlength(img_temp3,1,head.height,head.width);{set size of image array}
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
-      img_temp3[0,fitsX,fitsY]:=default;{clear}
+      img_temp3[0,fitsY,fitsX]:=default;{clear}
   plot_artificial_stars(img_temp3,head,magn_limit {measured});{create artificial image with database stars as pixels}
 
 //  img_loaded:=img_temp3;
@@ -10329,10 +10333,10 @@ const
   analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
   search_radius:=max(3,round(hfd_median));
 
-  setlength(img_sa,1,head.width,head.height);{set length of image array}
+  setlength(img_sa,1,head.height,head.width);{set length of image array}
    for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
-      img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+      img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
 
   countN:=0;
@@ -10342,7 +10346,7 @@ const
   begin
     for fitsX:=0 to head.width-1  do
     begin
-      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- bck.backgr>5*bck.noise_level {star_level} ){star}) then {new star}
+      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- bck.backgr>5*bck.noise_level {star_level} ){star}) then {new star}
       begin
 
         HFD(img_loaded,fitsX,fitsY,round(1.5* hfd_median){annulus radius},3.0*hfd_median {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
@@ -10352,16 +10356,16 @@ const
         xci:=round(xc);{star center as integer}
         yci:=round(yc);
         if ((xci>0) and (xci<head.width-1) and (yci>0) and (yci<head.height-1)) then
-        saturated:=not ((img_loaded[0,xci,yci]<head.datamax_org-1) and
-                        (img_loaded[0,xci-1,yci]<head.datamax_org-1) and
-                        (img_loaded[0,xci+1,yci]<head.datamax_org-1) and
-                        (img_loaded[0,xci,  yci-1]<head.datamax_org-1) and
-                        (img_loaded[0,xci,  yci+1]<head.datamax_org-1) and
+        saturated:=not ((img_loaded[0,yci,xci]<head.datamax_org-1) and
+                        (img_loaded[0,yci,xci-1]<head.datamax_org-1) and
+                        (img_loaded[0,yci,xci+1]<head.datamax_org-1) and
+                        (img_loaded[0,yci-1,xci]<head.datamax_org-1) and
+                        (img_loaded[0,yci+1,xci]<head.datamax_org-1) and
 
-                        (img_loaded[0,xci-1,yci-1]<head.datamax_org-1) and
-                        (img_loaded[0,xci-1,yci+1]<head.datamax_org-1) and
-                        (img_loaded[0,xci+1,yci-1]<head.datamax_org-1) and
-                        (img_loaded[0,xci+1,yci+1]<head.datamax_org-1)  )
+                        (img_loaded[0,yci-1,xci-1]<head.datamax_org-1) and
+                        (img_loaded[0,yci+1,xci-1]<head.datamax_org-1) and
+                        (img_loaded[0,yci-1,xci+1]<head.datamax_org-1) and
+                        (img_loaded[0,yci+1,xci+1]<head.datamax_org-1)  )
         else saturated:=false;
 
         if (((hfd1<hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=hfd_median*0.75) and (snr>10)) then {star detected in img_loaded}
@@ -10383,7 +10387,7 @@ const
               j:=n+yci;
               i:=m+xci;
               if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-              img_sa[0,i,j]:=+1;{mark as star area}
+              img_sa[0,j,i]:=+1;{mark as star area}
             end;
            measured_magn:=round(10*(head.MZERO - ln(flux)*2.5/ln(10)));{magnitude x 10}
            if measured_magn<magn_limit_database-10 then {bright enough to be in the database}
@@ -10393,7 +10397,7 @@ const
                for j:=-search_radius to search_radius do
                if sqr(i)+sqr(j)<=sqr(search_radius) then //circle tolerance area
                begin {database star available?}
-                 magnd:=img_temp3[0,round(xc)+i,round(yc)+j];
+                 magnd:=img_temp3[0,round(yc)+j,round(xc)+i];
                  if magnd<default then {a star from the database}
                    if magn_database=default then //empthy
                       magn_database:=magnd //no star at this location
@@ -10929,7 +10933,7 @@ begin
       flipH:=mainwindow.flip_horizontal1.checked;
       flipV:=mainwindow.flip_vertical1.checked;
 
-      setlength(img_loaded,head.naxis3,head.width,head.height);
+      setlength(img_loaded,head.naxis3,head.height,head.width);
 
       for y := 0 to head.height -1 do begin {place in array}
         xLine := TmpBmp.ScanLine[y];
@@ -10937,9 +10941,9 @@ begin
         begin
           if flipH then x2:=head.width-1-x else x2:=x;
           if flipV=false then y2:=head.height-1-y else y2:=y;
-          img_loaded[0,x2,y2]:=xLine^[x*3];{red}
-          if head.naxis3>1 then img_loaded[1,x2,y2]:=xLine^[x*3+1];{green}
-          if head.naxis3>2 then img_loaded[2,x2,y2]:=xLine^[x*3+2];{blue}
+          img_loaded[0,y2,x2]:=xLine^[x*3];{red}
+          if head.naxis3>1 then img_loaded[1,y2,x2]:=xLine^[x*3+1];{green}
+          if head.naxis3>2 then img_loaded[2,y2,x2]:=xLine^[x*3+2];{blue}
         end;
       end;
 
@@ -11443,7 +11447,7 @@ begin
    deltaY:=stopY-startY;
    len:=round(sqrt(sqr(deltaX)+sqr(deltaY)));
    for i:=0 to len-1 do
-      img_loaded[0,startX+round(i*deltaX/len),startY+round(i*deltaY/len) ]:=round((cwhite+bck.backgr)/2);
+     img_loaded[0,startY+round(i*deltaY/len) ,startX+round(i*deltaX/len)]:=round((cwhite+bck.backgr)/2);
 
   {convert to screen coordinates. Screen coordinates are used to have the font with the correct orientation}
   if mainwindow.flip_horizontal1.checked then begin startX:=head.width-startX; stopX:=head.width-stopX;  end;
@@ -12754,13 +12758,13 @@ begin
 
    head.width:=stopX-startx+1;
    head.height:=stopY-starty+1;
-   setlength(img_temp,head.naxis3,head.width,head.height);{set length of image array}
+   setlength(img_temp,head.naxis3,head.height,head.width);{set length of image array}
 
 
    for col:=0 to head.naxis3-1 do
      for fitsY:=startY to stopY do
        for fitsX:=startX to stopX do {crop image EXCLUDING rectangle.}
-          img_temp[col,fitsX-startX,fitsY-startY]:=img_loaded[col,fitsX,fitsY];
+            img_temp[col,fitsY-startY,fitsX-startX]:=img_loaded[col,fitsY,fitsX];
 
    img_loaded:=nil;{release memory}
    img_loaded:=img_temp;
@@ -13065,7 +13069,7 @@ begin
     For fitsY:=0 to (head.height-1) do
       for fitsX:=0 to (head.width-1) do
       begin
-        img_loaded[col,fitsX,fitsY]:=max_range-img_loaded[col,fitsX,fitsY]
+        img_loaded[col,fitsY,fitsX]:=max_range-img_loaded[col,fitsY,fitsX]
       end;
   end;
 
@@ -13105,8 +13109,8 @@ begin
 
   raster_rotate(flipped_view*angle,centerxs,centerys ,img_loaded);
 
-  head.width:=length(img_loaded[0]);{update width}  ;
-  head.height:=length(img_loaded[0,0]);{update length};
+  head.width:=length(img_loaded[0,0]);{update width}  ;
+  head.height:=length(img_loaded[0]);{update length};
 
   update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
@@ -13303,17 +13307,17 @@ var
     x_frac :=frac(x1);
     y_frac :=frac(y1);
     try
-      result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-      result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
-      result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-      result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+      result:=         (img[0,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+      result:=result + (img[0,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+      result:=result + (img[0,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+      result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
     except
     end;
   end;
 
 begin
-  w:=Length(img[0]); {width}
-  h:=Length(img[0,0]); {height}
+  w:=Length(img[0,0]); {width}
+  h:=Length(img[0]); {height}
 
   if ((x1>=box) and (x1<w-box) and (y1>=box) and (y1<h-box))=false then begin {don't try too close to boundaries} xc:=x1; yc:=y1;  exit end;
 
@@ -13328,7 +13332,7 @@ begin
     for i:=round(xc)-box to round(xc)+box do
     for j:=round(yc)-box to round(yc)+box do
     begin
-        val:=img[0,i,j];
+        val:=img[0,j,i];
         if val>value then
         begin
           value:=val;
@@ -13862,8 +13866,8 @@ begin
 
     if copy_paste then {paste copied image part}
     begin
-      width5:=Length(img_loaded[0]);    {width}
-      height5:=Length(img_loaded[0][0]); {height}
+      width5:=Length(img_loaded[0,0]); {width}
+      height5:=Length(img_loaded[0]); {height}
 
       {ellipse parameters}
       center_x:=(copy_paste_x + copy_paste_x+copy_paste_w-1)/2;
@@ -13915,16 +13919,16 @@ var
       x_frac :=frac(x1);
       y_frac :=frac(y1);
       try
-        result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-        result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
-        result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-        result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+        result:=         (img[0,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+        result:=result + (img[0,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+        result:=result + (img[0,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+        result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
       except
       end;
     end;
 begin
-  width5:=Length(img[0]);    {width}
-  height5:=Length(img[0][0]); {height}
+  width5:=Length(img[0,0]);    {width}
+  height5:=Length(img[0]); {height}
 
   {rs should be <=50 to prevent runtime errors}
   if  aperture_small<99 then
@@ -13952,8 +13956,8 @@ begin
       distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
       if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
       begin
-        background[counter]:=img[0,x1+i,y1+j];
-        //for testing: mainwindow.image1.canvas.pixels[x1+i,y1+j]:=$AAAAAA;
+        background[counter]:=img[0,y1+j,x1+i];
+        //for testing: mainwindow.image1.canvas.pixels[y1+j,x1+i]:=$AAAAAA;
         inc(counter);
       end;
     end;
@@ -13975,7 +13979,7 @@ begin
       for i:=-rs to rs do
       for j:=-rs to rs do
       begin
-        val:=(img[0,x1+i,y1+j])- star_bg;
+        val:=(img[0,y1+j,x1+i])- star_bg;
         if val>3.0*sd_bg then
         begin
           SumVal:=SumVal+val;
@@ -14166,8 +14170,8 @@ var i,j,counter,counter2,w,h : integer;
     value                    : double;
 
 begin
-  w:=Length(img[0]); {width}
-  h:=Length(img[0,0]); {height}
+  w:=Length(img[0,0]); {width}
+  h:=Length(img[0]); {height}
 
   x1:=max(x1,0);{protect against values outside the array}
   x2:=min(x2,w-1);
@@ -14183,7 +14187,7 @@ begin
   for j:=y1 to y2  do {calculate standard deviation  of region of interest}
   for i:=x1 to x2 do {calculate standard deviation  of region of interest}
   begin
-    value:=abs(img[col,i,j]-mean);
+    value:=abs(img[col,j,i]-mean);
     if value<=3*sd then {ignore outliers}
       inc(counter)
     else
@@ -14205,8 +14209,8 @@ var i,j,counter,counter2,w,h : integer;
     value, sd_old,meanx             : double;
 
 begin
-  w:=Length(img[0]); {width}
-  h:=Length(img[0,0]); {height}
+  w:=Length(img[0,0]); {width}
+  h:=Length(img[0]); {height}
 
   x1:=max(x1,0);{protect against values outside the array}
   x2:=min(x2,w-1);
@@ -14226,7 +14230,7 @@ begin
     for j:=y1 to y2  do {calculate standard deviation  of region of interest}
     for i:=x1 to x2 do {calculate standard deviation  of region of interest}
     begin
-      value:=img[col,i,j];
+      value:=img[col,j,i];
       if  ((iterations=0) or (abs(value-mean)<=3*sd)) then  {ignore outliers after first run}
       begin
         inc(counter);
@@ -14242,7 +14246,7 @@ begin
     for j:=y1 to y2  do {calculate standard deviation  of region of interest}
     for i:=x1 to x2 do {calculate standard deviation  of region of interest}
     begin
-      value:=img[col,i,j]-mean;
+      value:=img[col,j,i]-mean;
       if ((value<mean {not a large outlier}) and ((iterations=0) or (abs(value)<=3*sd_old)) )  then {ignore outliers after first run}
       begin
         sd:=sd+sqr(value);
@@ -14366,8 +14370,8 @@ begin
    down_xy_valid := False; {every move without ssleft will invalidate down_xy}
 
    if img_loaded=nil then exit; {image load has failed, prevent runtime error}
-   width5:=Length(img_loaded[0]);    {width}
-   height5:=Length(img_loaded[0][0]); {height}
+   width5:=Length(img_loaded[0,0]);    {width}
+   height5:=Length(img_loaded[0]); {height}
 
    if flip_horizontal1.Checked then flipH:=-1 else flipH:=1;
    if flip_vertical1.Checked then  flipV:=-1 else flipV:=1;
@@ -14441,8 +14445,8 @@ begin
    if head.naxis3=3 then {for star temperature}
    begin
      try
-       r:=img_loaded[0,round(mouse_fitsx)-1,round(mouse_fitsy)-1]-bck.backgr;
-       b:=img_loaded[2,round(mouse_fitsx)-1,round(mouse_fitsy)-1]-bck.backgr;
+       r:=img_loaded[0,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-bck.backgr;
+       b:=img_loaded[2,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-bck.backgr;
      except
        {some rounding error, just outside dimensions}
      end;
@@ -14458,10 +14462,10 @@ begin
                                        + floattostrF(GetBValue(color1),ffgeneral,5,0)+
                                        '  '+rgb_kelvin(r,b) ;
    try
-     if head.naxis3=1 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+']' else
-     if head.naxis3=3 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+'/'+ {color}
-                                                                              floattostrF(img_loaded[1,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+'/'+
-                                                                              floattostrF(img_loaded[2,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+' '+']'
+     if head.naxis3=1 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+']' else
+     if head.naxis3=3 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+ {color}
+                                                                              floattostrF(img_loaded[1,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+
+                                                                              floattostrF(img_loaded[2,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+' '+']'
      else mainwindow.statusbar1.panels[3].text:='';
    except
 
@@ -14646,11 +14650,11 @@ var
  width5,height5,colours5,fitsX,fitsY :integer;
 begin
   colours5:=length(img);{nr colours}
-  width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{height}
+  width5:=length(img[0,0]);{width}
+  height5:=length(img[0]);{height}
 
 
-  setlength(result,colours5,width5,height5);
+  setlength(result,colours5,height5,width5);
   sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
 
   for fitsY:=0 to height5-1 do
@@ -14658,9 +14662,9 @@ begin
     begin
       if colours5=3 then
       begin
-        col_r:=img[0,fitsx,fitsy];
-        col_g:=img[1,fitsx,fitsy];
-        col_b:=img[2,fitsx,fitsy];
+        col_r:=img[0,fitsY,fitsX];
+        col_g:=img[1,fitsY,fitsX];
+        col_b:=img[2,fitsY,fitsX];
 
         colrr:=(col_r-bck.backgr)/(cwhite-bck.backgr);{scale to 0..1}
         colgg:=(col_g-bck.backgr)/(cwhite-bck.backgr);{scale to 0..1}
@@ -14705,13 +14709,13 @@ begin
           col_b:=round(65535*colbb);
         end;
 
-        result[0,fitsx,fitsy]:=col_r;
-        result[1,fitsx,fitsy]:=col_g;
-        result[2,fitsx,fitsy]:=col_b;
+        result[0,fitsY,fitsX]:=col_r;
+        result[1,fitsY,fitsX]:=col_g;
+        result[2,fitsY,fitsX]:=col_b;
       end {RGB fits with naxis3=3}
       else
       begin {mono, naxis3=1}
-        col_r:=img[0,fitsx,fitsy];
+        col_r:=img[0,fitsY,fitsX];
         colrr:=(col_r-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
         if colrr<=0.00000000001 then colrr:=0.00000000001;
         if colrr>1 then colrr:=1;
@@ -14723,7 +14727,7 @@ begin
         begin
           col_r:=round(65535*colrr);{sqrt is equivalent to gamma=0.5}
         end;
-        result[0,fitsx,fitsy] :=col_r;
+        result[0,fitsY,fitsX] :=col_r;
       end;
     end;
 end;
@@ -14746,8 +14750,8 @@ begin
   result:=false;
 
 //  colours5:=length(img);{nr colours}
-  width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{height}
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
 
 
   if colourdepth=48 then {colour}
@@ -14785,13 +14789,13 @@ begin
       for j:=0 to width2-1 do
       begin
         if flip_H=true then m:=width2-1-j else m:=j;
-        dum:=img[0,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
+        dum:=img[0,k,m]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
         ppmbuffer[m*6  ]  :=hi(dummy);
         ppmbuffer[m*6+1]  :=lo(dummy);
-        dum:=img[1,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
+        dum:=img[1,k,m]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
         ppmbuffer[m*6+2]  :=hi(dummy);
         ppmbuffer[m*6+3]  :=lo(dummy);
-        dum:=img[2,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
+        dum:=img[2,k,m]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
         ppmbuffer[m*6+4]  :=hi(dummy);
         ppmbuffer[m*6+5]  :=lo(dummy);
       end;
@@ -14807,7 +14811,7 @@ begin
       for j:=0 to width2-1 do
       begin
         if flip_H=true then m:=width2-1-j else m:=j;
-        dum:=img[0,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
+        dum:=img[0,k,m]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
         ppmbuffer[m*2  ]  :=hi(dummy);
         ppmbuffer[m*2+1]  :=lo(dummy);
       end;
@@ -14822,11 +14826,11 @@ begin
        for j:=0 to width2-1 do
        begin
          if flip_H=true then m:=width2-1-j else m:=j;
-         value1:=img[0,m,k]/65535;
+         value1:=img[0,k,m]/65535;
          ppmbuffer32[m*3]:=lw;
-         value1:=img[1,m,k]/65535;
+         value1:=img[1,k,m]/65535;
          ppmbuffer32[m*3+1]:=lw;
-         value1:=img[2,m,k]/65535;
+         value1:=img[2,k,m]/65535;
          ppmbuffer32[m*3+2]:=lw;
        end;
        thefile.writebuffer(ppmbuffer,width2*4*3{}) ;{works only for byte arrays}
@@ -14842,7 +14846,7 @@ begin
        begin
          if flip_H=true then m:=width2-1-j else m:=j;
 
-         value1:=img[0,m,k]/65535;
+         value1:=img[0,k,m]/65535;
          ppmbuffer32[m]:=lw;
        end;
        thefile.writebuffer(ppmbuffer,width2*4 {}) ;{works only for byte arrays}
@@ -14861,8 +14865,8 @@ var
   thecolor  :Tfpcolor;
 begin
   colours5:=length(img);{nr colours}
-  width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{height}
+  width5:=length(img[0,0]);{width}
+  height5:=length(img[0]);{height}
 
 
   Image := TFPMemoryImage.Create(width5, height5);
@@ -14881,9 +14885,9 @@ begin
     for j:=0 to width5-1 do
     begin
       if flip_H=true then m:=width5-1-j else m:=j;
-      thecolor.red:=min(round(img[0,m,k]), $FFFF);
-      if colours5>1 then thecolor.green:=min(round(img[1,m,k]), $FFFF)  else thecolor.green:=thecolor.red;
-      if colours5>2 then thecolor.blue:=min(round(img[2,m,k]), $FFFF)   else thecolor.blue:=thecolor.red;
+      thecolor.red:=min(round(img[0,k,m]), $FFFF);
+      if colours5>1 then thecolor.green:=min(round(img[1,k,m]), $FFFF)  else thecolor.green:=thecolor.red;
+      if colours5>2 then thecolor.blue:=min(round(img[2,k,m]), $FFFF)   else thecolor.blue:=thecolor.red;
       thecolor.alpha:=65535;
       image.Colors[j,i]:=thecolor;
     end;
@@ -14949,8 +14953,8 @@ var
   factor    : single;
 begin
   colours5:=length(img);{nr colours}
-  width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{height}
+  width5:=length(img[0,0]);{width}
+  height5:=length(img[0]);{height}
 
   Image := TFPMemoryImage.Create(width5, height5);
   Writer := TFPWriterTIFF.Create;
@@ -14992,13 +14996,14 @@ begin
     for j:=0 to width5-1 do
     begin
       if flip_H=true then m:=width5-1-j else m:=j;
-      thecolor.red:=min(round(img[0,m,k]*factor), $FFFF);
-      if colours5>1 then thecolor.green:=min(round(img[1,m,k]*factor), $FFFF)  else thecolor.green:=thecolor.red;
-      if colours5>2 then thecolor.blue:=min(round(img[2,m,k]*factor), $FFFF)   else thecolor.blue:=thecolor.red;
+      thecolor.red:=min(round(img[0,k,m]*factor), $FFFF);
+      if colours5>1 then thecolor.green:=min(round(img[1,k,m]*factor), $FFFF)  else thecolor.green:=thecolor.red;
+      if colours5>2 then thecolor.blue:=min(round(img[2,k,m]*factor), $FFFF)   else thecolor.blue:=thecolor.red;
       thecolor.alpha:=65535;
       image.Colors[j,i]:=thecolor;
     end;
   end;
+
 
   result:=true;
   try
@@ -15200,16 +15205,15 @@ begin
 
   vertical:= (sender=flip_V1);
 
-  setlength(img_temp,head.naxis3, head.width,head.height);
-
+  setlength(img_temp,head.naxis3,head.height,head.width);
   for col:=0 to head.naxis3-1 do {do all colours}
   begin
     For fitsY:=0 to (head.height-1) do
       for fitsX:=0 to (head.width-1) do
       begin
-        if vertical then img_temp[col, fitsX,(head.height-1)-fitsY]:=img_loaded[col,fitsX,fitsY]
+        if vertical then img_temp[col,(head.height-1)-fitsY, fitsX]:=img_loaded[col,fitsY,fitsX]
         else
-        img_temp[col,(head.width-1)-fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
+        img_temp[col,fitsY,(head.width-1)-fitsX]:=img_loaded[col,fitsY,fitsX];
       end;
   end;
 
@@ -15318,7 +15322,7 @@ begin
       if ((distance>=0) and (distance<=2)) then
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
-         mean[k]:=mean[k]+img_loaded[k,fitsX,fitsY];
+         mean[k]:=mean[k]+img_loaded[k,fitsY,fitsX];
          counter:=counter+1;
       end;
     end;
@@ -15333,7 +15337,7 @@ begin
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
         begin
-          colour[k]:=colour[k]+img_loaded[K,fitsX,fitsY]-mean[k];
+          colour[k]:=colour[k]+img_loaded[k,fitsY,fitsX]-mean[k];
         end;
       end;
     end;
@@ -15345,9 +15349,9 @@ begin
     begin
       if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
       begin
-        flux:=(img_loaded[0,fitsX,fitsY]-mean[0]
-              +img_loaded[1,fitsX,fitsY]-mean[1]
-              +img_loaded[2,fitsX,fitsY]-mean[2]);//flux of one pixel
+        flux:=(img_loaded[0,fitsY,fitsX]-mean[0]
+              +img_loaded[1,fitsY,fitsX]-mean[1]
+              +img_loaded[2,fitsY,fitsX]-mean[2]);//flux of one pixel
 
 
 //        strongest_colour_local:=max(red,max(green,blue));
@@ -15356,9 +15360,9 @@ begin
 
         {apply average colour to pixel}
         lumr:=flux/rgb;
-        img_loaded[0,fitsX,fitsY]:={new_noise[k]}+ mean[0]+colour[0]*lumr;
-        img_loaded[1,fitsX,fitsY]:={new_noise[k]}+ mean[1]+colour[1]*lumr;
-        img_loaded[2,fitsX,fitsY]:={new_noise[k]}+ mean[2]+colour[2]*lumr;
+        img_loaded[0,fitsY,fitsX]:={new_noise[k]}+ mean[0]+colour[0]*lumr;
+        img_loaded[1,fitsY,fitsX]:={new_noise[k]}+ mean[1]+colour[1]*lumr;
+        img_loaded[2,fitsY,fitsX]:={new_noise[k]}+ mean[2]+colour[2]*lumr;
 
       end;
     end;
@@ -15667,8 +15671,8 @@ begin
 
   {get dimensions directly from array}
   colours5:=length(img);{nr colours}
-  width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{height}
+  width5:=length(img[0,0]);{width}
+  height5:=length(img[0]);{height}
   if colours5=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
 
   if ((type1=24) and (colours5<3)) then
@@ -15783,7 +15787,7 @@ begin
 
           for j:=0 to width5-1 do
           begin
-            dd:=img[k,j,i];{save all colors}
+            dd:=img[k,i,j];{save all colors}
             dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
             if dum<0 then dum:=0;
             if dum>255 then dum:=255;
@@ -15812,7 +15816,7 @@ begin
           begin
             for k:=0 to 2 do {do all colors}
             begin
-              dd:=img[k,j,i];{save all colors}
+              dd:=img[k,i,j];{save all colors}
               dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
               if dum<0 then dum:=0;
               if dum>255 then dum:=255;
@@ -15840,7 +15844,7 @@ begin
 
           for j:=0 to width5-1 do
           begin
-            dum:=max(0,min(65535,round(img[k,j,i]))) - bzero2;{limit data between 0 and 65535 and shift it to -32768.. 32767}
+            dum:=max(0,min(65535,round(img[k,i,j]))) - bzero2;{limit data between 0 and 65535 and shift it to -32768.. 32767}
             { value  - bzero              result  shortint    word
              ($0000  - $8000) and $FFFF = $8000 (-32768       32768 )  note  $0000 - $8000 ==>  $FFFF8000. Highest bits are skipped
              ($0001  - $8000) and $FFFF = $8001 (-32767       32769 )  note  $0001 - $8000 ==>  $FFFF8001. Highest bits are skipped
@@ -15875,7 +15879,7 @@ begin
            // img[0,j,i]:=341.7177734375;  {equals non intel 3772492355}
          //  if img[k,j,i]>4100 then img[k,j,i]:=4100;
 
-            fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,j,i]);{in FITS file hi en low bytes are swapped}
+            fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,i,j]);{in FITS file hi en low bytes are swapped}
           end;
           thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
         end;

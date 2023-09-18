@@ -294,10 +294,10 @@ procedure binX1_crop(crop {0..1}:double; img : image_array; var img2: image_arra
   var fitsX,fitsY,k, w,h,  shiftX,shiftY: integer;
       val       : single;
 begin
-  w:=trunc(crop*length(img[0]{width}));  {cropped}
-  h:=trunc(crop*length(img[0,0]{height}));
+  w:=trunc(crop*length(img[0,0]{width}));  {cropped}
+  h:=trunc(crop*length(img[0]{height}));
 
-  setlength(img2,1,w,h); {set length of image array}
+  setlength(img2,1,h,w); {set length of image array}
 
   shiftX:=round(head.width*(1-crop)/2); {crop is 0.9, shift is 0.05*head.width}
   shiftY:=round(head.height*(1-crop)/2); {crop is 0.9, start at 0.05*head.height}
@@ -307,8 +307,8 @@ begin
     begin
       val:=0;
       for k:=0 to head.naxis3-1 do {all colors and make mono}
-         val:=val + img[k,shiftX+fitsx   ,shiftY+fitsY];
-      img2[0,fitsX,fitsY]:=val/head.naxis3;
+         val:=val + img[k ,shiftY+fitsY,shiftX+fitsx];
+      img2[0,fitsY,fitsX]:=val/head.naxis3;
     end;
 end;
 
@@ -318,13 +318,13 @@ procedure binX2_crop(crop {0..1}:double; img : image_array; out img2: image_arra
       val       : single;
 begin
    nrcolors:=Length(img);
-   width5:=Length(img[0]);    {width}
-   height5:=Length(img[0][0]); {height}
+   width5:=Length(img[0,0]);    {width}
+   height5:=Length(img[0]); {height}
 
    w:=trunc(crop*width5/2);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
    h:=trunc(crop*height5/2);
 
-   setlength(img2,1,w,h); {set length of image array}
+   setlength(img2,1,h,w); {set length of image array}
 
    shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*head.width}
    shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*head.height}
@@ -334,11 +334,11 @@ begin
      begin
        val:=0;
        for k:=0 to nrcolors-1 do {all colors}
-         val:=val+(img[k,shiftX+fitsx*2   ,shiftY+fitsY*2]+
-                   img[k,shiftX+fitsx*2 +1,shiftY+fitsY*2]+
-                   img[k,shiftX+fitsx*2   ,shiftY+fitsY*2+1]+
-                   img[k,shiftX+fitsx*2 +1,shiftY+fitsY*2+1])/4;
-       img2[0,fitsX,fitsY]:=val/nrcolors;
+         val:=val+(img[k,shiftY+fitsY*2   ,shiftX+fitsX*2]+
+                   img[k,shiftY+fitsY*2 +1,shiftX+fitsX*2]+
+                   img[k,shiftY+fitsY*2   ,shiftX+fitsX*2+1]+
+                   img[k,shiftY+fitsY*2 +1,shiftX+fitsX*2+1])/4;
+       img2[0,fitsY,fitsX]:=val/nrcolors;
      end;
  end;
 
@@ -347,13 +347,13 @@ procedure binX3_crop(crop {0..1}:double; img : image_array; out img2: image_arra
       val       : single;
 begin
   nrcolors:=Length(img);
-  width5:=Length(img[0]);    {width}
-  height5:=Length(img[0][0]); {height}
+  width5:=Length(img[0,0]);    {width}
+  height5:=Length(img[0]); {height}
 
   w:=trunc(crop*width5/3);  {1/3 size and cropped}
   h:=trunc(crop*height5/3);
 
-  setlength(img2,1,w,h); {set length of image array}
+  setlength(img2,1,h,w); {set length of image array}
 
   shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*head.width}
   shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*head.height}
@@ -363,16 +363,16 @@ begin
     begin
       val:=0;
       for k:=0 to nrcolors-1 do {all colors}
-                     val:=val+(img[k,shiftX+fitsX*3   ,shiftY+fitsY*3  ]+
-                               img[k,shiftX+fitsX*3   ,shiftY+fitsY*3+1]+
-                               img[k,shiftX+fitsX*3   ,shiftY+fitsY*3+2]+
-                               img[k,shiftX+fitsX*3 +1,shiftY+fitsY*3  ]+
-                               img[k,shiftX+fitsX*3 +1,shiftY+fitsY*3+1]+
-                               img[k,shiftX+fitsX*3 +1,shiftY+fitsY*3+2]+
-                               img[k,shiftX+fitsX*3 +2,shiftY+fitsY*3  ]+
-                               img[k,shiftX+fitsX*3 +2,shiftY+fitsY*3+1]+
-                               img[k,shiftX+fitsX*3 +2,shiftY+fitsY*3+2])/9;
-       img2[0,fitsX,fitsY]:=val/nrcolors;
+        val:=val+(img[k,shiftY+fitsY*3   ,shiftX+fitsX*3  ]+
+                  img[k,shiftY+fitsY*3   ,shiftX+fitsX*3+1]+
+                  img[k,shiftY+fitsY*3   ,shiftX+fitsX*3+2]+
+                  img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3  ]+
+                  img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3+1]+
+                  img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3+2]+
+                  img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3  ]+
+                  img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+1]+
+                  img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+2])/9;
+      img2[0,fitsY,fitsX]:=val/nrcolors;
     end;
 end;
 
@@ -382,13 +382,13 @@ procedure binX4_crop(crop {0..1}:double;img : image_array; out img2: image_array
       val       : single;
 begin
   nrcolors:=Length(img);
-  width5:=Length(img[0]);    {width}
-  height5:=Length(img[0][0]); {height}
+  width5:=Length(img[0,0]);    {width}
+  height5:=Length(img[0]); {height}
 
   w:=trunc(crop*width5/4);  {1/4 size and cropped}
   h:=trunc(crop*height5/4);
 
-  setlength(img2,1,w,h); {set length of image array}
+  setlength(img2,1,h,w); {set length of image array}
 
   shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*head.width}
   shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*head.height}
@@ -398,23 +398,23 @@ begin
     begin
       val:=0;
       for k:=0 to nrcolors-1 do {all colors}
-                     val:=val+(img[k,shiftX+fitsX*4   ,shiftY+fitsY*4  ]+
-                               img[k,shiftX+fitsX*4   ,shiftY+fitsY*4+1]+
-                               img[k,shiftX+fitsX*4   ,shiftY+fitsY*4+2]+
-                               img[k,shiftX+fitsX*4   ,shiftY+fitsY*4+3]+
-                               img[k,shiftX+fitsX*4 +1,shiftY+fitsY*4  ]+
-                               img[k,shiftX+fitsX*4 +1,shiftY+fitsY*4+1]+
-                               img[k,shiftX+fitsX*4 +1,shiftY+fitsY*4+2]+
-                               img[k,shiftX+fitsX*4 +1,shiftY+fitsY*4+3]+
-                               img[k,shiftX+fitsX*4 +2,shiftY+fitsY*4  ]+
-                               img[k,shiftX+fitsX*4 +2,shiftY+fitsY*4+1]+
-                               img[k,shiftX+fitsX*4 +2,shiftY+fitsY*4+2]+
-                               img[k,shiftX+fitsX*4 +2,shiftY+fitsY*4+3]+
-                               img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4  ]+
-                               img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4+1]+
-                               img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4+2]+
-                               img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4+3])/16;
-         img2[0,fitsX,fitsY]:=val/nrcolors;
+        val:=val+(img[k,shiftY+fitsY*4   ,shiftX+fitsX*4  ]+
+                  img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+1]+
+                  img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+2]+
+                  img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+3]+
+                  img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4  ]+
+                  img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+1]+
+                  img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+2]+
+                  img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+3]+
+                  img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4  ]+
+                  img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+1]+
+                  img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+2]+
+                  img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+3]+
+                  img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4  ]+
+                  img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+1]+
+                  img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+2]+
+                  img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+3])/16;
+      img2[0,fitsY,fitsX]:=val/nrcolors;
     end;
 end;
 
@@ -427,8 +427,9 @@ var
 begin
   short_warning:='';{clear string}
 
-  width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{height}
+
+  width5:=length(img[0,0]);{width}
+  height5:=length(img[0]);{height}
 
   if ((binning>1) or (cropping<1)) then
   begin
@@ -446,8 +447,8 @@ begin
     {test routine, to show bin result}
     //    img_loaded:=img_binned;
     //    head.naxis3:=1;
-    //    head.width:=length(img_binned[0]);{width} ;
-    //    head.height:=length(img_binned[0,0]);
+    //    head.width:=length(img_binned[0,0]);{width} ;
+    //    head.height:=length(img_binned[0]);
     //    plot_fits(mainwindow.image1,true);{plot real}
     //    exit;
 
@@ -455,7 +456,7 @@ begin
     find_stars(img_binned,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
     nrstars:=Length(starlist3[0]);
 
-    if length(img_binned[0,0])<960 then
+    if length(img_binned[0])<960 then
     begin
       short_warning:='Warning, remaining image dimensions too low! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
       memo2_message('█ █ █ █ █ █ Warning, remaining image dimensions too low! Try to REDUCE OR REMOVE DOWNSAMPLING. Set this option in stack menu, tab alignment.');

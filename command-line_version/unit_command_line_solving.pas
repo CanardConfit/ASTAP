@@ -517,34 +517,11 @@ var
 const
     buffersize=5000;{5000}
 begin
-  {for testing}
-//   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-//   mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
-//   mainwindow.image1.Canvas.brush.Style:=bsClear;
-//   mainwindow.image1.Canvas.font.color:=$FF;
-//   mainwindow.image1.Canvas.font.size:=10;
-//   mainwindow.image1.Canvas.Pen.Color := $FF;
-//   flip_vertical:=mainwindow.flip_vertical1.Checked;
-//   flip_horizontal:=mainwindow.Flip_horizontal1.Checked;
-
- // hfd_min:=4;
-
-
-//  max_stars:=strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
-//  solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details, global variable}
-//  if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
-
-//  max_stars:=strtoint(max_stars1);{maximum star to process, if so filter out brightest stars later}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
   SetLength(starlist1,2,buffersize);{set array length}
   setlength(snr_list,buffersize);{set array length}
 
-
-
-//  SetLength(starlist1,2,buffersize);{set array length}
-//  setlength(snr_list,buffersize);{set array length}
-
-  setlength(img_sa,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,height2,width2);{set length of image array}
 
   detection_level:=star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
 
@@ -555,29 +532,17 @@ begin
 
     for fitsY:=0 to height2-1 do
       for fitsX:=0 to width2-1  do
-        img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
     for fitsY:=0 to height2-1-1 do
     begin
       for fitsX:=0 to width2-1-1  do
       begin
-        if (( img_sa[0,fitsX,fitsY]<=0){star free area} and (img[0,fitsX,fitsY]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
+        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
           HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
-
-//          HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-//          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
-
           begin
-            {for testing}
-          //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
-          //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
-          //  size:=round(5*hfd1);
-          //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
-
             radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
             sqr_radius:=sqr(radius);
             xci:=round(xc);{star center as integer}
@@ -588,7 +553,7 @@ begin
                 j:=n+yci;
                 i:=m+xci;
                 if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,i,j]:=1;
+                  img_sa[0,j,i]:=1;
               end;
 
             {store values}
@@ -878,8 +843,8 @@ var
   oddx, oddy :boolean;
 begin
   col:=length(img);{the real number of colours}
-  h:=length(img[0,0]);{height}
-  w:=length(img[0]);{width}
+  h:=length(img[0]);{height}
+  w:=length(img[0,0]);{width}
 
   if col>1 then
   begin
@@ -897,10 +862,10 @@ begin
     begin
       oddX:=odd(fitsX);
       oddY:=odd(fitsY);
-      if ((oddX=false) and (oddY=false)) then begin value1:=value1+img[0,fitsX,fitsY]; inc(counter1) end else {separate counters for case odd() dimensions are used}
-      if ((oddX=true)  and (oddY=false)) then begin value2:=value2+img[0,fitsX,fitsY]; inc(counter2) end else
-      if ((oddX=false) and (oddY=true))  then begin value3:=value3+img[0,fitsX,fitsY]; inc(counter3) end else
-      if ((oddX=true)  and (oddY=true))  then begin value4:=value4+img[0,fitsX,fitsY]; inc(counter4) end;
+      if ((oddX=false) and (oddY=false)) then begin value1:=value1+img[0,fitsY,fitsX]; inc(counter1) end else {separate counters for case odd() dimensions are used}
+      if ((oddX=true)  and (oddY=false)) then begin value2:=value2+img[0,fitsY,fitsX]; inc(counter2) end else
+      if ((oddX=false) and (oddY=true))  then begin value3:=value3+img[0,fitsY,fitsX]; inc(counter3) end else
+      if ((oddX=true)  and (oddY=true))  then begin value4:=value4+img[0,fitsY,fitsX]; inc(counter4) end;
     end;
 
   {now normalise the bayer pattern pixels}
@@ -919,10 +884,10 @@ begin
     begin
       oddX:=odd(fitsX);
       oddY:=odd(fitsY);
-      if ((value1<>1) and (oddX=false) and (oddY=false)) then img[0,fitsX,fitsY]:=round(img[0,fitsX,fitsY]*value1) else
-      if ((value2<>1) and (oddX=true)  and (oddY=false)) then img[0,fitsX,fitsY]:=round(img[0,fitsX,fitsY]*value2) else
-      if ((value3<>1) and (oddX=false) and (oddY=true))  then img[0,fitsX,fitsY]:=round(img[0,fitsX,fitsY]*value3) else
-      if ((value4<>1) and (oddX=true)  and (oddY=true))  then img[0,fitsX,fitsY]:=round(img[0,fitsX,fitsY]*value4);
+      if ((value1<>1) and (oddX=false) and (oddY=false)) then img[0,fitsY,fitsX]:=round(img[0,fitsY,fitsX]*value1) else
+      if ((value2<>1) and (oddX=true)  and (oddY=false)) then img[0,fitsY,fitsX]:=round(img[0,fitsY,fitsX]*value2) else
+      if ((value3<>1) and (oddX=false) and (oddY=true))  then img[0,fitsY,fitsX]:=round(img[0,fitsY,fitsX]*value3) else
+      if ((value4<>1) and (oddX=true)  and (oddY=true))  then img[0,fitsY,fitsX]:=round(img[0,fitsY,fitsX]*value4);
     end;
 end;
 
@@ -934,7 +899,7 @@ begin
   w:=trunc(crop*width2);  {cropped}
   h:=trunc(crop*height2);
 
-  setlength(img2,1,w,h); {set length of image array}
+  setlength(img2,1,h,w); {set length of image array}
 
   shiftX:=round(width2*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
   shiftY:=round(height2*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
@@ -944,8 +909,8 @@ begin
     begin
       val:=0;
       for k:=0 to naxis3-1 do {all colors and make mono}
-         val:=val + img[k,shiftX+fitsx   ,shiftY+fitsY];
-      img2[0,fitsX,fitsY]:=val/naxis3;
+         val:=val + img[k,shiftY+fitsY   ,shiftX+fitsX];
+      img2[0,fitsY,fitsX]:=val/naxis3;
     end;
   width2:=w;
   height2:=h;
@@ -958,13 +923,13 @@ procedure binX2_crop(crop {0..1}:double; img : image_array; var img2: image_arra
       val       : single;
 begin
    nrcolors:=Length(img);
-   width5:=Length(img[0]);    {width}
-   height5:=Length(img[0][0]); {height}
+   width5:=Length(img[0,0]);    {width}
+   height5:=Length(img[0]); {height}
 
    w:=trunc(crop*width5/2);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
    h:=trunc(crop*height5/2);
 
-   setlength(img2,1,w,h); {set length of image array}
+   setlength(img2,1,h,w);{set length of image array}
 
    shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
    shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
@@ -974,11 +939,11 @@ begin
      begin
        val:=0;
        for k:=0 to nrcolors-1 do {all colors}
-         val:=val+(img[k,shiftX+fitsx*2   ,shiftY+fitsY*2]+
-                   img[k,shiftX+fitsx*2 +1,shiftY+fitsY*2]+
-                   img[k,shiftX+fitsx*2   ,shiftY+fitsY*2+1]+
-                   img[k,shiftX+fitsx*2 +1,shiftY+fitsY*2+1])/4;
-       img2[0,fitsX,fitsY]:=val/nrcolors;
+         val:=val+(img[k,shiftY+fitsY*2   ,shiftX+fitsX*2]+
+                   img[k,shiftY+fitsy*2 +1,shiftX+fitsX*2]+
+                   img[k,shiftY+fitsy*2   ,shiftX+fitsX*2+1]+
+                   img[k,shiftY+fitsy*2 +1,shiftX+fitsX*2+1])/4;
+       img2[0,fitsY,fitsX]:=val/nrcolors;
      end;
 
    width2:=w;
@@ -991,13 +956,13 @@ procedure binX3_crop(crop {0..1}:double; img : image_array; var img2: image_arra
       val       : single;
 begin
   nrcolors:=Length(img);
-  width5:=Length(img[0]);    {width}
-  height5:=Length(img[0][0]); {height}
+  width5:=Length(img[0,0]);    {width}
+  height5:=Length(img[0]); {height}
 
   w:=trunc(crop*width5/3);  {1/3 size and cropped}
   h:=trunc(crop*height5/3);
 
-  setlength(img2,1,w,h); {set length of image array}
+  setlength(img2,1,h,w); {set length of image array}
 
   shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
   shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
@@ -1007,16 +972,16 @@ begin
     begin
       val:=0;
       for k:=0 to nrcolors-1 do {all colors}
-                     val:=val+(img[k,shiftX+fitsX*3   ,shiftY+fitsY*3  ]+
-                               img[k,shiftX+fitsX*3   ,shiftY+fitsY*3+1]+
-                               img[k,shiftX+fitsX*3   ,shiftY+fitsY*3+2]+
-                               img[k,shiftX+fitsX*3 +1,shiftY+fitsY*3  ]+
-                               img[k,shiftX+fitsX*3 +1,shiftY+fitsY*3+1]+
-                               img[k,shiftX+fitsX*3 +1,shiftY+fitsY*3+2]+
-                               img[k,shiftX+fitsX*3 +2,shiftY+fitsY*3  ]+
-                               img[k,shiftX+fitsX*3 +2,shiftY+fitsY*3+1]+
-                               img[k,shiftX+fitsX*3 +2,shiftY+fitsY*3+2])/9;
-       img2[0,fitsX,fitsY]:=val/nrcolors;
+                     val:=val+(img[k,shiftY+fitsY*3   ,shiftX+fitsX*3  ]+
+                               img[k,shiftY+fitsY*3   ,shiftX+fitsX*3+1]+
+                               img[k,shiftY+fitsY*3   ,shiftX+fitsX*3+2]+
+                               img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3  ]+
+                               img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3+1]+
+                               img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3+2]+
+                               img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3  ]+
+                               img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+1]+
+                               img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+2])/9;
+       img2[0,fitsY,fitsX]:=val/nrcolors;
     end;
   width2:=w;
   height2:=h;
@@ -1029,13 +994,13 @@ procedure binX4_crop(crop {0..1}:double;img : image_array; var img2: image_array
       val       : single;
 begin
   nrcolors:=Length(img);
-  width5:=Length(img[0]);    {width}
-  height5:=Length(img[0][0]); {height}
+  width5:=Length(img[0,0]);    {width}
+  height5:=Length(img[0]); {height}
 
   w:=trunc(crop*width5/4);  {1/4 size and cropped}
   h:=trunc(crop*height5/4);
 
-  setlength(img2,1,w,h); {set length of image array}
+  setlength(img2,1,h,w); {set length of image array}
 
   shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
   shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
@@ -1045,23 +1010,23 @@ begin
     begin
       val:=0;
       for k:=0 to nrcolors-1 do {all colors}
-                     val:=val+(img[k,shiftX+fitsX*4   ,shiftY+fitsY*4  ]+
-                               img[k,shiftX+fitsX*4   ,shiftY+fitsY*4+1]+
-                               img[k,shiftX+fitsX*4   ,shiftY+fitsY*4+2]+
-                               img[k,shiftX+fitsX*4   ,shiftY+fitsY*4+3]+
-                               img[k,shiftX+fitsX*4 +1,shiftY+fitsY*4  ]+
-                               img[k,shiftX+fitsX*4 +1,shiftY+fitsY*4+1]+
-                               img[k,shiftX+fitsX*4 +1,shiftY+fitsY*4+2]+
-                               img[k,shiftX+fitsX*4 +1,shiftY+fitsY*4+3]+
-                               img[k,shiftX+fitsX*4 +2,shiftY+fitsY*4  ]+
-                               img[k,shiftX+fitsX*4 +2,shiftY+fitsY*4+1]+
-                               img[k,shiftX+fitsX*4 +2,shiftY+fitsY*4+2]+
-                               img[k,shiftX+fitsX*4 +2,shiftY+fitsY*4+3]+
-                               img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4  ]+
-                               img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4+1]+
-                               img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4+2]+
-                               img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4+3])/16;
-         img2[0,fitsX,fitsY]:=val/nrcolors;
+                     val:=val+(img[k,shiftY+fitsY*4   ,shiftX+fitsX*4  ]+
+                               img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+1]+
+                               img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+2]+
+                               img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+3]+
+                               img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4  ]+
+                               img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+1]+
+                               img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+2]+
+                               img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+3]+
+                               img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4  ]+
+                               img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+1]+
+                               img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+2]+
+                               img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+3]+
+                               img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4  ]+
+                               img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+1]+
+                               img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+2]+
+                               img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+3])/16;
+         img2[0,fitsY,fitsX]:=val/nrcolors;
     end;
   width2:=w;
   height2:=h;

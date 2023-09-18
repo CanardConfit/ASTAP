@@ -47,7 +47,6 @@ type
     vectors1: TCheckBox;
     voronoi1: TCheckBox;
     procedure aberration_inspector1Click(Sender: TObject);
-    procedure Action1Execute(Sender: TObject);
     procedure background_values1Click(Sender: TObject);
     procedure close_button1Click(Sender: TObject);
     procedure contour1Change(Sender: TObject);
@@ -155,7 +154,7 @@ begin
   if head.naxis3>1 then {colour image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
+    setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication}
     convert_mono(img_loaded,head);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
 
@@ -165,7 +164,7 @@ begin
   if (bayerpat<>'') then {raw Bayer image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
+    setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication}
     check_pattern_filter(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;
@@ -206,7 +205,7 @@ begin
     SetLength(hfdlist,len);{set array length on a starting value}
     SetLength(starlistXY,3,len);{x,y positions}
 
-    setlength(img_sa,1,head.width,head.height);{set length of image array}
+    setlength(img_sa,1,head.height,head.width);{set length of image array}
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
@@ -219,13 +218,13 @@ begin
 
       for fitsY:=0 to head.height-1 do
         for fitsX:=0 to head.width-1  do
-          img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+          img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
       for fitsY:=0 to head.height-1-1  do
       begin
         for fitsX:=0 to head.width-1-1 do
         begin
-          if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star}  and (img_loaded[0,fitsX,fitsY]- bck.backgr>detection_level){star}) then {new star}
+          if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star}  and (img_loaded[0,fitsY,fitsX]- bck.backgr>detection_level){star}) then {new star}
           begin
             HFD(img_loaded,fitsX,fitsY,14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
@@ -243,19 +242,19 @@ begin
                 j:=n+yci;
                 i:=m+xci;
                 if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,i,j]:=1;
+                  img_sa[0,j,i]:=1;
               end;
 
-              if ((img_loaded[0,xci  ,yci]<head.datamax_org-1) and
-                  (img_loaded[0,xci-1,yci]<head.datamax_org-1) and
-                  (img_loaded[0,xci+1,yci]<head.datamax_org-1) and
-                  (img_loaded[0,xci  ,yci-1]<head.datamax_org-1) and
-                  (img_loaded[0,xci  ,yci+1]<head.datamax_org-1) and
+              if ((img_loaded[0,yci,  xci  ]<head.datamax_org-1) and
+                  (img_loaded[0,yci,  xci-1]<head.datamax_org-1) and
+                  (img_loaded[0,yci,  xci+1]<head.datamax_org-1) and
+                  (img_loaded[0,yci-1,xci  ]<head.datamax_org-1) and
+                  (img_loaded[0,yci+1,xci  ]<head.datamax_org-1) and
 
-                  (img_loaded[0,xci-1,yci-1]<head.datamax_org-1) and
-                  (img_loaded[0,xci-1,yci+1]<head.datamax_org-1) and
-                  (img_loaded[0,xci+1,yci-1]<head.datamax_org-1) and
-                  (img_loaded[0,xci+1,yci+1]<head.datamax_org-1)  ) then {not saturated}
+                  (img_loaded[0,yci-1,xci-1]<head.datamax_org-1) and
+                  (img_loaded[0,yci+1,xci-1]<head.datamax_org-1) and
+                  (img_loaded[0,yci-1,xci+1]<head.datamax_org-1) and
+                  (img_loaded[0,yci+1,xci+1]<head.datamax_org-1)  ) then {not saturated}
               begin
                 {store values}
                 hfdlist[nhfd]:=hfd1;
@@ -678,10 +677,10 @@ begin
   w:=(head.width div scaledown)+1;
   h:=(head.height div scaledown)+1;
 
-  setlength(img_hfd,1,w,h);{set length of image array}
+  setlength(img_hfd,1,h,w);{set length of image array}
   for fitsY:=0 to h-1  do
     for fitsX:=0 to w-1 do
-      img_hfd[0,fitsX,fitsY]:=0;{clear array}
+      img_hfd[0,fitsY,fitsX]:=0;{clear array}
 
 
   size:=0;
@@ -698,9 +697,9 @@ begin
         x2:=hfd_values[0,i] div scaledown + x;
         y2:=hfd_values[1,i] div scaledown + y;
         if ((x2>=0) and (x2<w) and (y2>=0) and (y2<h)) then
-          if  img_hfd[ 0,x2,y2]=0 then {not used yet}
+          if  img_hfd[0,y2,x2]=0 then {not used yet}
           begin
-            img_hfd[ 0,x2,y2]:=col;
+            img_hfd[0,y2,x2]:=col;
             zeros_left:=true;
           end;
       end;
@@ -708,11 +707,11 @@ begin
     inc(size);
   until ((zeros_left=false) or (size>h/5));
 
-  if head.naxis>1 then setlength(img_loaded,1,head.width,head.height);
+  if head.naxis>1 then setlength(img_loaded,1,head.height,head.width);
   head.naxis3:=1;
   for fitsY:=0 to head.height-1  do
     for fitsX:=0 to head.width-1 do
-      img_loaded[0,fitsX,fitsY]:={img_loaded[0,fitsX,fitsY]}+img_hfd[0,fitsX div scaledown,fitsY div scaledown];
+      img_loaded[0,fitsY,fitsX]:={img_loaded[0,fitsY,fitsX]}+img_hfd[0,fitsY div scaledown,fitsX div scaledown];
 
   img_hfd:=nil;{free memory}
 
@@ -737,10 +736,10 @@ begin
   w:=(head.width div scaledown)+1;
   h:=(head.height div scaledown)+1;
 
-  setlength(img_hfd,1,w,h);{set length of image array}
+  setlength(img_hfd,1,h,w);{set length of image array}
   for fitsY:=0 to h-1  do
     for fitsX:=0 to w-1 do
-      img_hfd[0,fitsX,fitsY]:=0;{clear array}
+      img_hfd[0,fitsY,fitsX]:=0;{clear array}
 
   max_value:=0;
   min_value:=65535;
@@ -765,11 +764,11 @@ begin
     cols:=cols/sum_influence;
     if max_value<cols then max_value:=cols;
     if min_value>cols then min_value:=cols;
-    img_hfd[ 0,x,y]:=cols;
+    img_hfd[0,y,x]:=cols;
 
   end;
 
-  if head.naxis>1 then setlength(img_loaded,1,head.width,head.height);
+  if head.naxis>1 then setlength(img_loaded,1,head.height,head.width);
   head.naxis3:=1;
 
   {introduce rounding to show layers}
@@ -778,7 +777,7 @@ begin
   {convert back}
   for fitsY:=0 to head.height-1  do
     for fitsX:=0 to head.width-1 do
-      img_loaded[0,fitsX,fitsY]:=(1/step_adjust)*round(step_adjust*img_hfd[0,fitsX div scaledown,fitsY div scaledown]);
+      img_loaded[0,fitsY,fitsX]:=(1/step_adjust)*round(step_adjust*img_hfd[0,fitsY div scaledown,fitsX div scaledown]);
 
 
   img_hfd:=nil;{free memory}
@@ -808,10 +807,10 @@ var
     x_frac :=frac(x1);
     y_frac :=frac(y1);
     try
-      result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-      result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
-      result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-      result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+      result:=         (img[0,y_trunc  ,x_trunc   ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+      result:=result + (img[0,y_trunc  ,x_trunc+1 ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+      result:=result + (img[0,y_trunc+1,x_trunc   ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+      result:=result + (img[0,y_trunc+1,x_trunc+1 ]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
     except
     end;
   end;
@@ -934,7 +933,7 @@ begin
   max_stars:=1000;
 
   SetLength(hfd_values,4,4000);{will contain x,y,hfd}
-  setlength(img_sa,1,head.width,head.height);{set length of image array}
+  setlength(img_sa,1,head.height,head.width);{set length of image array}
 
   get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
@@ -946,13 +945,13 @@ begin
 
     for fitsY:=0 to head.height-1 do
       for fitsX:=0 to head.width-1  do
-        img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
     for fitsY:=0 to head.height-1-1  do
     begin
       for fitsX:=0 to head.width-1-1 do
       begin
-        if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- bck.backgr>detection_level){star}) then {new star}
+        if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- bck.backgr>detection_level){star}) then {new star}
         begin
           HFD(img_loaded,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if (hfd1>=1.3) {not a hotpixel} and (snr>30) and (hfd1<99) then
@@ -969,23 +968,23 @@ begin
                 j:=n+yci;
                 i:=m+xci;
                 if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,i,j]:=1;
+                  img_sa[0,j,i]:=1;
               end;
 
             if aspect then measure_star_aspect(img_loaded,xc,yc,round(hfd1*1.5),{out} hfd1 {aspect},orientation);{store the star aspect in hfd1}
 
             {store values}
             if hfd1<>999 then
-            if ( ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
+            if ( ((img_loaded[0,round(yc),round(xc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(yc-1),round(xc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(yc+1),round(xc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(yc),round(xc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(yc),round(xc+1)]<head.datamax_org-1) and
 
-                  (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)){not saturated}
+                  (img_loaded[0,round(yc-1),round(xc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(yc-1),round(xc+1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(yc+1),round(xc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(yc+1),round(xc+1)]<head.datamax_org-1)){not saturated}
                   or ((aspect))  )
                   then
             begin
@@ -1048,7 +1047,7 @@ begin
      begin
        if Fliphorizontal     then starX:=head.width-hfd_values[0,i]  else starX:=hfd_values[0,i];
        if Flipvertical       then starY:=head.height-hfd_values[1,i] else starY:=hfd_values[1,i];
-       annotation_to_array(floattostrf(hfd_values[2,i]/100 {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
+       annotation_to_array(floattostrf(hfd_values[2,i]/100 {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starY,starX]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
      end;
      hfds[i]:=hfd_values[2,i];
   end;
@@ -1270,7 +1269,7 @@ begin
   if head.naxis3>1 then {colour image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication to a backup image}
+    setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication to a backup image}
     convert_mono(img_loaded,head);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;{restore original image later}
@@ -1279,7 +1278,7 @@ begin
   if bayerpat<>'' then {raw Bayer image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication to a backup image}
+    setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication to a backup image}
     check_pattern_filter(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true; {restore original image later}
@@ -1352,7 +1351,8 @@ end;
 
 
 procedure Tform_inspection1.aberration_inspector1Click(Sender: TObject);
-var fitsX,fitsY,col, widthN,heightN                : integer;
+var
+   fitsX,fitsY,col, widthN,heightN                : integer;
 var  {################# initialised variables #########################}
    side :integer=250;
 const
@@ -1371,48 +1371,29 @@ begin
 
    widthN:=3*side+2*gap;
    heightN:=widthN;
-   setlength(img_temp,head.naxis3,widthN,heightN);{set length of image array}
+   setlength(img_temp,head.naxis3,heightN,widthN);{set length of image array}
 
    for col:=0 to head.naxis3-1 do
     for fitsY:=0 to heightN-1 do
       for fitsX:=0 to widthN-1 do {clear img_temp for the gaps}
-         img_temp[col,fitsX,fitsY]:=0;
+         img_temp[col,fitsY,fitsX]:=0;
 
 
    for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
+        img_temp[col,fitsY,fitsX]:=img_loaded[col,fitsY,fitsX];
 
    for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+side+gap,fitsY]:=img_loaded[col,fitsX+(head.width div 2)-(side div 2),fitsY];
-
-
-   for col:=0 to head.naxis3-1 do
-   for fitsY:=0 to side-1 do
-     for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+2*(side+gap),fitsY]:=img_loaded[col,fitsX+head.width-side,fitsY];
-
-
+        img_temp[col,fitsY,fitsX+side+gap]:=img_loaded[col,fitsY,fitsX+(head.width div 2)-(side div 2)];
 
 
    for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX,fitsY+(side+gap)]:=img_loaded[col,fitsX,fitsY +(head.height div 2) - (side div 2) ];
-
-   for col:=0 to head.naxis3-1 do
-   for fitsY:=0 to side-1 do
-     for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+side+gap,fitsY+(side+gap)]:=img_loaded[col,fitsX+(head.width div 2)-(side div 2),fitsY +(head.height div 2) - (side div 2) ];
-
-
-   for col:=0 to head.naxis3-1 do
-   for fitsY:=0 to side-1 do
-     for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+2*(side+gap),fitsY+(side+gap)]:=img_loaded[col,fitsX+head.width-side,fitsY +(head.height div 2) - (side div 2) ];
+        img_temp[col,fitsY,fitsX+2*(side+gap)]:=img_loaded[col,fitsY,fitsX+head.width-side];
 
 
 
@@ -1420,21 +1401,42 @@ begin
    for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX,fitsY+2*(side+gap)]:=img_loaded[col,fitsX,fitsY + head.height - side];
+        img_temp[col,fitsY+(side+gap),fitsX]:=img_loaded[col,fitsY +(head.height div 2) - (side div 2) ,fitsX];
 
    for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+side+gap,fitsY+2*(side+gap)]:=img_loaded[col,fitsX+(head.width div 2)-(side div 2),fitsY + head.height - side];
+        img_temp[col,fitsY+(side+gap),fitsX+side+gap]:=img_loaded[col,fitsY +(head.height div 2) - (side div 2) ,fitsX+(head.width div 2)-(side div 2)];
 
 
    for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+2*(side+gap),fitsY+2*(side+gap)]:=img_loaded[col,fitsX+head.width-side,fitsY + head.height - side];
+        img_temp[col,fitsY+(side+gap),fitsX+2*(side+gap)]:=img_loaded[col,fitsY +(head.height div 2) - (side div 2) ,fitsX+head.width-side];
 
 
-//   setlength(img_loaded,head.naxis3,head.width,head.height);{set length of image array}
+
+
+   for col:=0 to head.naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsY+2*(side+gap),fitsX]:=img_loaded[col,fitsY + head.height - side,fitsX];
+
+   for col:=0 to head.naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsY+2*(side+gap),fitsX+side+gap]:=img_loaded[col,fitsY + head.height - side,fitsX+(head.width div 2)-(side div 2)];
+
+
+   for col:=0 to head.naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsY+2*(side+gap),fitsX+2*(side+gap)]:=img_loaded[col,fitsY + head.height - side,fitsX+head.width-side];
+
+
+
+
+//   setlength(img_loaded,head.naxis3,head.height,head.width);{set length of image array}
 //   img_loaded[0]:=img_temp[0];
 //   if head.naxis3>1 then img_loaded[1]:=img_temp[1];
 //   if head.naxis3>2 then img_loaded[2]:=img_temp[2];
@@ -1468,12 +1470,6 @@ begin
    Screen.Cursor:=crDefault;
   end;
 end;
-
-procedure Tform_inspection1.Action1Execute(Sender: TObject);
-begin
-
-end;
-
 
 
 procedure Tform_inspection1.FormKeyPress(Sender: TObject; var Key: char);

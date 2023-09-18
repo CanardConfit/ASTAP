@@ -192,8 +192,7 @@ var
        if Fliph       then x:=ww-1-x;
        if Flipv=false then y:=hh-1-y;
        mainwindow.image1.Canvas.pixels[x*binning,y*binning]:=clBlue;
-    //   application.processmessages;
-
+   //   application.processmessages;
      end;
 
 
@@ -246,7 +245,7 @@ var
         begin
 
           if ((xx>=0) and (xx<ww-1) and (yy>=0) and (yy<hh-1)) then
-            result:=img_bk[0,xx,yy]>detection_level
+            result:=img_bk[0,yy,xx]>detection_level
           else
             result:=false;
         end;
@@ -257,12 +256,12 @@ var
        newdirection : array[0..7] of integer=(-1,0,0,+1,+1,+2,+2,-1);//delta directions
        directions : array[0..7,0..1] of integer=((-1,-1), //3 south east, direction
                                                  (-1,0),  //0 east
-                                                  (-1,+1), //0 north east
-                                                  (0,+1),  //1, north
-                                                  (+1,+1), //1 north west
-                                                  (+1,0),  //2 west
-                                                  (+1,-1), //2 south west
-                                                  (0,-1)); //3 south
+                                                 (-1,+1), //0 north east
+                                                 (0,+1),  //1, north
+                                                 (+1,+1), //1 north west
+                                                 (+1,0),  //2 west
+                                                 (+1,-1), //2 south west
+                                                 (0,-1)); //3 south
 
       begin
         direction:=1;// , north=0, west=1, south=2. east=3
@@ -298,8 +297,8 @@ var
             inc(counterC);
           end;
 
-          img_sa[0,fx,fy]:=img_sa[0,fx,fy]+1;//mark as inspected/used
-          if img_sa[0,fx,fy]>1 then break;//is looping local
+          img_sa[0,fy,fx]:=img_sa[0,fy,fx]+1;//mark as inspected/used
+          if img_sa[0,fy,fx]>1 then break;//is looping local
           inc(counter);
 
 
@@ -325,10 +324,10 @@ var
             begin
               for k:=min(contour_array[0,i],contour_array[0,j]) to max(contour_array[0,i],contour_array[0,j]) do //mark space between the mininum and maximum x values. With two pixel extra overlap.
               begin
-                if img_sa[0,k,contour_array[1,i]]<0 then
+                if img_sa[0,contour_array[1,i],k]<0 then
                 begin
                   surface:=surface+1;
-                  img_sa[0,k,contour_array[1,i]]:=+1;//mark as inspected/used
+                  img_sa[0,contour_array[1,i],k]:=+1;//mark as inspected/used
                 end;
 
             //   mark_pixel_blue(k,contour_array[1,i]);
@@ -409,8 +408,8 @@ begin
 
 //  oldNaxis3:=head.naxis3;//for case it is converted to mono
 
-  ww:=Length(img_bk[0]);    {width}
-  hh:=Length(img_bk[0][0]); {height}
+  ww:=Length(img_bk[0,0]);    {width}
+  hh:=Length(img_bk[0]); {height}
 
 //  ww:=head.Width-1;
 //  hh:=head.height-1;
@@ -437,7 +436,7 @@ begin
 
     end;
 
-    setlength(img_sa,1,ww,hh);{set length of image array}
+    setlength(img_sa,1,hh,ww);{set length of image array}
 
     gaussian_blur2(img_bk, blur);{apply gaussian blur }
     // get_hist(0,img_bk);{get histogram of img_bk and his_total. Required to get correct background value}
@@ -448,7 +447,7 @@ begin
 
     for fitsY:=0 to hh-1 do
       for fitsX:=0 to ww-1  do
-        img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
 
     for fitsY:=0 to hh-1  do
@@ -456,7 +455,7 @@ begin
       for fitsX:=0 to ww-1 do
       begin
         if ((detection_grid<=0) or (frac(fitsX/detection_grid)=0) or (frac(fitsy/detection_grid)=0)) then //overlay of vertical and horizontal lines
-        if (( img_sa[0,fitsX,fitsY]<0){untested area}  and (img_bk[0,fitsX,fitsY]>detection_level){star}) then {new star}
+        if (( img_sa[0,fitsY,fitsX]<0){untested area}  and (img_bk[0,fitsY,fitsX]>detection_level){star}) then {new star}
         begin
           find_contour(fitsX,fitsY);
           if frac(fitsY/300)= 0 then

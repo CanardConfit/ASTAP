@@ -263,12 +263,12 @@ begin
               width_max:=head.width+oversize*2;
               height_max:=head.height+oversize*2;
 
-              setlength(img_average,head.naxis3,width_max,height_max);
+              setlength(img_average,head.naxis3,height_max,width_max);
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
                   for col:=0 to head.naxis3-1 do
                   begin
-                    img_average[col,fitsX,fitsY]:=0; {clear img_average}
+                    img_average[col,fitsY,fitsX]:=0; {clear img_average}
                   end;
 
               if colour_correction then
@@ -346,7 +346,7 @@ begin
                     for col:=0 to head.naxis3-1 do {all colors}
                     begin
                       {serial stacking}
-                      img_average[col,x_new,y_new]:=(img_average[col,x_new,y_new]*(counter-1)+ img_loaded[col,fitsX-1,fitsY-1])/counter;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                      img_average[col,y_new,x_new]:=(img_average[col,y_new,x_new]*(counter-1)+ img_loaded[col,fitsY-1,fitsX-1])/counter;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                     end;
                   end;
                 end;
@@ -362,20 +362,20 @@ begin
                   x_new:=round(x_new_float);y_new:=round(y_new_float);
                   if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                   begin
-                    dum:=img_loaded[0,fitsX-1,fitsY-1];
+                    dum:=img_loaded[0,fitsY-1,fitsX-1];
                       if dum<>0 then {signal}
                       begin
                       dum:=(dum+add_valueR)*multiply_red/largest;
                         if dum<0 then dum:=0;
-                       img_average[0,x_new,y_new]:=(img_average[0,x_new,y_new]*(counter-1)+ dum)/counter;
+                       img_average[0,y_new,x_new]:=(img_average[0,y_new,x_new]*(counter-1)+ dum)/counter;
                       end;
                     if head.naxis3>1 then {colour}
                     begin
-                      dum:=img_loaded[1,fitsX-1,fitsY-1];   if dum<>0 then {signal} begin dum:=(dum+add_valueG)*multiply_green/largest; if dum<0 then dum:=0; img_average[1,x_new,y_new]:=(img_average[1,x_new,y_new]*(counter-1)+ dum)/counter;end;
+                      dum:=img_loaded[1,fitsY-1,fitsX-1];   if dum<>0 then {signal} begin dum:=(dum+add_valueG)*multiply_green/largest; if dum<0 then dum:=0; img_average[1,y_new,x_new]:=(img_average[1,y_new,x_new]*(counter-1)+ dum)/counter;end;
                     end;
                     if head.naxis3>2 then {colour}
                     begin
-                      dum:=img_loaded[2,fitsX-1,fitsY-1]; if dum<>0 then {signal} begin dum:=(dum+add_valueB)*multiply_blue/largest; if dum<0 then dum:=0; img_average[2,x_new,y_new]:=(img_average[2,x_new,y_new]*(counter-1)+ dum)/counter;end;
+                      dum:=img_loaded[2,fitsY-1,fitsX-1]; if dum<>0 then {signal} begin dum:=(dum+add_valueB)*multiply_blue/largest; if dum<0 then dum:=0; img_average[2,y_new,x_new]:=(img_average[2,y_new,x_new]*(counter-1)+ dum)/counter;end;
                     end;
                   end;
                 end;

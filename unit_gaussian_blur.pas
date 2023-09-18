@@ -80,7 +80,7 @@ begin
 end;
 
 
-procedure BlurH (scl, tcl :image_array; K: TKernel; w, h,colors : integer);
+procedure BlurH (scl, tcl :image_array; K: TKernel; h, w ,colors : integer);
 var i,j,jx, x : integer;
     valr,valg,valb,weight  : single;
 begin
@@ -97,17 +97,17 @@ begin
           if x>w then x:=w;
 
           weight := K.Weights[jx];
-          valr:=valr + scl[0,x,i]*weight;
-          if colors>=2 then valg:=valg + scl[1,x,i]*weight;
-          if colors>=3 then valb:=valb + scl[2,x,i]*weight;
+          valr:=valr + scl[0,i,x]*weight;
+          if colors>=2 then valg:=valg + scl[1,i,x]*weight;
+          if colors>=3 then valb:=valb + scl[2,i,x]*weight;
         end;
-         tcl[0,j,i] := valr;
-         if colors>=2 then tcl[1,j,i] := valg;
-         if colors>=3 then tcl[2,j,i] := valb;
+         tcl[0,i,j] := valr;
+         if colors>=2 then tcl[1,i,j] := valg;
+         if colors>=3 then tcl[2,i,j] := valb;
      end;
 end;
 
-procedure BlurV (scl, tcl :image_array; K: TKernel; w, h,colors : integer);
+procedure BlurV (scl, tcl :image_array; K: TKernel; h, w,colors : integer);
 var i,j,iy, y :integer;
     valr,valg,valb,weight  : single;
 
@@ -124,13 +124,13 @@ begin
           if y<0 then y:=0;
           if y>h then y:=h;
           weight := K.Weights[iy];
-          valr:=valr + scl[0,j,y]*weight;
-          if colors>=2 then valg:=valg + scl[1,j,y]*weight;
-          if colors>=3 then valb:=valb + scl[2,j,y]*weight;
+          valr:=valr + scl[0,y,j]*weight;
+          if colors>=2 then valg:=valg + scl[1,y,j]*weight;
+          if colors>=3 then valb:=valb + scl[2,y,j]*weight;
         end;
-        tcl[0,j,i] := valr;
-        if colors>=2 then tcl[1,j,i] := valg;
-        if colors>=3 then tcl[2,j,i] := valb;
+        tcl[0,i,j] := valr;
+        if colors>=2 then tcl[1,i,j] := valg;
+        if colors>=3 then tcl[2,i,j] := valb;
      end;
 end;
 
@@ -147,13 +147,13 @@ begin
   MakeGaussianKernel(K, radius, 255, 1);
 
   colors:=Length(img); {colors}
-  w:=Length(img[0]); {width}
-  h:=Length(img[0][0]); {height}
+  w:=Length(img[0,0]); {width}
+  h:=Length(img[0]); {height}
 
-  setlength(img_temp2,colors,w,h);{set length of image array}
+  setlength(img_temp2,colors,h,w);{set length of image array}
 
-  BlurH(img, img_temp2,k, w-1, h-1,colors);
-  BlurV(img_temp2, img,k, w-1, h-1,colors);
+  BlurH(img, img_temp2,k, h-1, w-1,colors);
+  BlurV(img_temp2, img,k, h-1, w-1,colors);
 
   img_temp2:=nil;
 end;

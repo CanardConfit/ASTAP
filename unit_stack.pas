@@ -1554,8 +1554,8 @@ var
 var   {################# initialised variables #########################}
   len: integer = 1000;
 begin
-  width5 := Length(img[0]);    {width}
-  height5 := Length(img[0][0]); {height}
+  width5 := Length(img[0,0]); {width}
+  height5 := Length(img[0]);  {height}
 
   max_stars := 500;
   SetLength(hfd_list, len);{set array length to len}
@@ -1583,17 +1583,17 @@ begin
         writeln(f, 'x,y,hfd,snr,flux');
       end;
 
-      setlength(img_sa, 1, width5, height5);{set length of image array}
+      setlength(img_sa, 1, height5, width5);{set length of image array}
       for fitsY := 0 to height5 - 1 do
         for fitsX := 0 to width5 - 1 do
-          img_sa[0, fitsX, fitsY] := -1;{mark as star free area}
+          img_sa[0, fitsY, fitsX] := -1;{mark as star free area}
 
       for fitsY := 0 to height5 - 1 do
       begin
         for fitsX := 0 to width5 - 1 do
         begin
-          if ((img_sa[0, fitsX, fitsY] <= 0){area not occupied by a star} and
-            (img[0, fitsX, fitsY] - bck.backgr > detection_level)) then
+          if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and
+            (img[0, fitsY, fitsX] - bck.backgr > detection_level)) then
             {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0
@@ -1620,7 +1620,7 @@ begin
                   i := memo2 + xci;
                   if ((j >= 0) and (i >= 0) and (j < height5) and (i < width5) and
                     (sqr(memo2) + sqr(n) <= sqr_radius)) then
-                    img_sa[0, i, j] := 1;
+                    img_sa[0, j, i] := 1;
                 end;
 
               if report then
@@ -1682,7 +1682,7 @@ begin
   SetLength(hfdlist, len * 4);{set array length on a starting value}
   SetLength(starlistXY, 2, len * 4);{x,y positions}
 
-  setlength(img_sa, 1, head.Width, head.Height);{set length of image array}
+  setlength(img_sa, 1, head.Height, head.Width);{set length of image array}
 
   get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
 
@@ -1696,7 +1696,7 @@ begin
     begin
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
-          img_sa[0, fitsX, fitsY] := -1;{mark as star free area}
+          img_sa[0,fitsY, fitsX] := -1;{mark as star free area}
 
       //the nine areas:
       //13     23   33
@@ -1707,8 +1707,8 @@ begin
       begin
         for fitsX := 0 to head.Width - 1 do
         begin
-          if ((img_sa[0, fitsX, fitsY] <= 0){area not occupied by a star} and
-            (img[0, fitsX, fitsY] - bck.backgr > detection_level){star}) then   {new star. For analyse used sigma is 5, so not too low.}
+          if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and
+            (img[0, fitsY, fitsX] - bck.backgr > detection_level){star}) then   {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99  {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
             {star HFD and FWHM}
@@ -1725,18 +1725,18 @@ begin
                   i := memo2 + xci;
                   if ((j >= 0) and (i >= 0) and (j < head.Height) and
                     (i < head.Width) and (sqr(memo2) + sqr(n) <= sqr_radius)) then
-                    img_sa[0, i, j] := 1;
+                    img_sa[0, j, i] := 1;
                 end;
 
-              if ((img[0, xci, yci] < head.datamax_org - 1) and
-                (img[0, xci - 1, yci] < head.datamax_org - 1) and
-                (img[0, xci + 1, yci] < head.datamax_org - 1) and
-                (img[0, xci, yci - 1] < head.datamax_org - 1) and
-                (img[0, xci, yci + 1] < head.datamax_org - 1) and
-                (img[0, xci - 1, yci - 1] < head.datamax_org - 1) and
-                (img[0, xci - 1, yci + 1] < head.datamax_org - 1) and
-                (img[0, xci + 1, yci - 1] < head.datamax_org - 1) and
-                (img[0, xci + 1, yci + 1] < head.datamax_org - 1)) then {not saturated}
+              if ((img[0, yci, xci] < head.datamax_org - 1) and
+                  (img[0, yci - 1, xci] < head.datamax_org - 1) and
+                  (img[0, yci + 1, xci] < head.datamax_org - 1) and
+                  (img[0, yci, xci - 1] < head.datamax_org - 1) and
+                  (img[0, yci, xci + 1] < head.datamax_org - 1) and
+                  (img[0, yci - 1, xci - 1] < head.datamax_org - 1) and
+                  (img[0, yci - 1, xci + 1] < head.datamax_org - 1) and
+                  (img[0, yci + 1, xci - 1] < head.datamax_org - 1) and
+                  (img[0, yci + 1, xci + 1] < head.datamax_org - 1)) then {not saturated}
               begin  {store values}
                 hfdlist[nhfd] := hfd1;
 
@@ -1998,10 +1998,10 @@ end;
 
 procedure analyse_tab_lights(analyse_level : integer);
 var
-  c, star_counter, i, counts,dummy: integer;
-  hfd_median, alt, az           : double;
+  c, star_counter, i, counts: integer;
+  hfd_median, alt, az       : double;
   red, green, blue, planetary, success : boolean;
-  key, filename1, rawstr,issue         : string;
+  key, filename1, rawstr    : string;
   img: image_array;
   bck :Tbackground;
 begin
@@ -2551,8 +2551,7 @@ begin
       col2 := min(nrcolours, col); {allow subtracting mono lights from colour}
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
-          img_temp[col, fitsX, fitsY] := img_temp[col, fitsX, fitsY] -
-            img_loaded[col2, fitsX, fitsY] + 1000;
+          img_temp[col, fitsY, fitsX] := img_temp[col, fitsY, fitsX] -  img_loaded[col2, fitsY, fitsX] + 1000;
       {use temp as temporary rather then img_loaded since img_loaded could be mono}
     end;
 
@@ -2570,7 +2569,7 @@ end;
 procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
   hfd_min: double;
-  max_stars, binning,x: integer;
+  max_stars, binning: integer;
   starlistquads: star_list;
   warning_downsample: string;
 begin
@@ -2853,8 +2852,8 @@ begin
   stepX := sizeX div 2;
   stepY := sizeY div 2;
   Count := 0;
-  w := Length(img[0]); {width}
-  h := Length(img[0, 0]); {height}
+  w := Length(img[0,0]); {width}
+  h := Length(img[0]);   {height}
 
   begin
     for j := y - stepY to y + stepY do
@@ -2863,7 +2862,7 @@ begin
         if ((i >= 0) and (i < w) and (j >= 0) and (j < h)) then
           {within the boundaries of the image array}
         begin
-          Value := img[color, i, j];
+          Value := img[color, j, i];
           if Value <> 0 then {ignore zero}
           begin
             pixArray[Count] := Value;
@@ -2890,15 +2889,15 @@ var
   img_temp2: image_array;
 begin
   colors := Length(img); {colors}
-  w := Length(img[0]); {width}
-  h := Length(img[0, 0]); {height}
+  w := Length(img[0,0]); {width}
+  h := Length(img[0]);   {height}
 
   {prepare img_temp2}
-  setlength(img_temp2, colors, w, h);
+  setlength(img_temp2, colors, h, w);
   for col := 0 to colors - 1 do {do all colours}
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
-        img_temp2[col, fitsX, fitsY] := 0;
+        img_temp2[col, fitsY, fitsX] := 0;
 
   if (box_size div 2) * 2 = box_size then box_size := box_size + 1;{requires odd 3,5,7....}
   step := box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
@@ -2911,7 +2910,7 @@ begin
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
       begin
-        img_temp2[col, fitsX, fitsY] := 0;
+        img_temp2[col, fitsY, fitsX] := 0;
 
         if ((frac(fitsX / box_size) = 0) and (frac(fitsy / box_size) = 0)) then
         begin
@@ -2921,7 +2920,7 @@ begin
             for j := fitsy - step to fitsy + step do
               for i := fitsx - step to fitsx + step do
                 if ((i >= 0) and (i < w) and (j >= 0) and (j < h)) then {within the boundaries of the image array}
-                  img_temp2[col, i, j] := -offset;
+                  img_temp2[col, j, i] := -offset;
           end;
         end;
       end;
@@ -2937,7 +2936,7 @@ begin
   for col := 0 to colors - 1 do {do all colours}
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
-        img[col, fitsX, fitsY] := img[col, fitsX, fitsY] + img_temp2[col, fitsX, fitsY];
+        img[col, fitsY, fitsX] := img[col, fitsY, fitsX] + img_temp2[col, fitsY, fitsX];
 
   img_temp2 := nil;
 end;
@@ -2953,8 +2952,8 @@ var
   bck : Tbackground;
 begin
   colors := Length(img); {colors}
-  w := Length(img[0]); {width}
-  h := Length(img[0, 0]); {height}
+  w := Length(img[0,0]); {width}
+  h := Length(img[0]);   {height}
 
   areax1 := startX;
   areay1 := startY;
@@ -3000,12 +2999,12 @@ begin
             {within the image}
           begin
             //memo2_message(inttostr(angle)+'    ' +floattostr(fitsX)+'     '+floattostr(fitsY) );
-            offset := img[col, fitsX, fitsY] - bck.backgr;
+            offset := img[col, fitsY, fitsX] - bck.backgr;
 
             if oldoffset <> 0 then offset := 0.1 * offset + 0.9 * oldoffset;{smoothing}
             oldoffset := offset;
 
-            test[Count] := img[col, fitsX, fitsY] - bck.backgr;
+            test[Count] := img[col, fitsY, fitsX] - bck.backgr;
             Inc(Count, 1);
           end;
         end;
@@ -3031,7 +3030,7 @@ begin
         if median[dist] <> 0 then
         begin
           offset := median[dist];
-          img[col, fitsX, fitsY] := img[col, fitsX, fitsY] - offset;
+          img[col, fitsY, fitsX] := img[col, fitsY, fitsX] - offset;
         end;
 
       end;
@@ -3106,32 +3105,32 @@ begin
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
       begin
-        dum := img_loaded[0, fitsX, fitsY];
+        dum := img_loaded[0, fitsY, fitsX];
         if ((acceptzero) or (dum > 0)) then {signal}
         begin
           dum := (dum + add_valueR) * multiply_red / largest;
           if dum < 0 then dum := 0;
-          img_loaded[0, fitsX, fitsY] := dum;
+          img_loaded[0, fitsY, fitsX] := dum;
         end;
 
         if head.naxis3 > 1 then {colour}
         begin
-          dum := img_loaded[1, fitsX, fitsY];
+          dum := img_loaded[1, fitsY, fitsX];
           if ((acceptzero) or (dum > 0)) then {signal}
           begin
             dum := (dum + add_valueG) * multiply_green / largest;
             if dum < 0 then dum := 0;
-            img_loaded[1, fitsX, fitsY] := dum;
+            img_loaded[1, fitsY, fitsX] := dum;
           end;
         end;
         if head.naxis3 > 2 then {colour}
         begin
-          dum := img_loaded[2, fitsX, fitsY];
+          dum := img_loaded[2, fitsY, fitsX];
           if ((acceptzero) or (dum > 0)) then {signal}
           begin
             dum := (dum + add_valueB) * multiply_blue / largest;
             if dum < 0 then dum := 0;
-            img_loaded[2, fitsX, fitsY] := dum;
+            img_loaded[2, fitsY, fitsX] := dum;
           end;
         end;
       end;
@@ -3182,7 +3181,7 @@ begin
             for fitsY := -14 to 15 do {do even times, 30x30}
               for fitsX := -14 to 15 do
                 flat_norm_value :=
-                  flat_norm_value + img_temp[0, fitsX + (head.Width div 2), fitsY + (head.Height div 2)];
+                  flat_norm_value + img_temp[0, fitsY + (head.Height div 2), fitsX + (head.Width div 2)];
             flat_norm_value := round(flat_norm_value / (30 * 30));
 
             for fitsY := 0 to head.Height-1 do
@@ -3193,20 +3192,20 @@ begin
                   if idx = 3 then {scaled dark }
                   begin
                     factor:=strtofloat2(value);
-                    img_loaded[col, fitsX, fitsY] :=  img_loaded[col, fitsX, fitsY]{viewer} - factor*(img_temp[col, fitsX, fitsY]{file}- flat_norm_value);
+                    img_loaded[col, fitsY, fitsX] :=  img_loaded[col, fitsY, fitsX]{viewer} - factor*(img_temp[col, fitsY, fitsX]{file}- flat_norm_value);
                   end
                   else
                   begin //flat routines
                     if idx = 4 then {as flat=divide}
                     begin
-                      flat_factor :=flat_norm_value / (img_temp[min(col, head.naxis3), fitsX , fitsY - 1] + 0.0001);  {This works both for color and mono flats. Bias should be combined in flat}
+                      flat_factor :=flat_norm_value / (img_temp[min(col, head.naxis3) , fitsY - 1, fitsX] + 0.0001);  {This works both for color and mono flats. Bias should be combined in flat}
                     end
                     else
                     if idx = 5 then {as flat=divide}
                     begin {multiply}
-                      flat_factor := img_temp[min(col, head.naxis3 - 1), fitsX, fitsY ] / flat_norm_value;  {This works both for color and mono flats. Bias should be combined in flat}
+                      flat_factor := img_temp[min(col, head.naxis3 - 1), fitsY, fitsX ] / flat_norm_value;  {This works both for color and mono flats. Bias should be combined in flat}
                     end;
-                    img_loaded[col, fitsX, fitsY] := img_loaded[col, fitsX, fitsY] * flat_factor;
+                    img_loaded[col, fitsY, fitsX] := img_loaded[col, fitsY, fitsX] * flat_factor;
                   end;
                 end;
               end;
@@ -3217,13 +3216,13 @@ begin
                 for fitsX := 0 to head.Width - 1 do
                 begin
                   if idx = 0 then {add}
-                    img_loaded[col, fitsX, fitsY] := img_temp[col, fitsX, fitsY] + img_loaded[col, fitsX, fitsY]
+                    img_loaded[col, fitsY, fitsX] := img_temp[col, fitsY, fitsX] + img_loaded[col, fitsY, fitsX]
                   else
                   if idx = 1 then {viewer minus file}
-                    img_loaded[col, fitsX, fitsY] :=  img_loaded[col, fitsX, fitsY]{viewer} - img_temp[col, fitsX, fitsY]{file}
+                    img_loaded[col, fitsY, fitsX] :=  img_loaded[col, fitsY, fitsX]{viewer} - img_temp[col, fitsY, fitsX]{file}
                   else
                   if idx = 2 then {viewer minus file +1000}
-                    img_loaded[col, fitsX, fitsY] :=  img_loaded[col, fitsX, fitsY]{viewer} - img_temp[col, fitsX, fitsY]{file} + 1000
+                    img_loaded[col, fitsY, fitsX] :=  img_loaded[col, fitsY, fitsX]{viewer} - img_temp[col, fitsY, fitsX]{file} + 1000
                 end;
         end
         else
@@ -3275,7 +3274,7 @@ begin
       for col := 0 to head.naxis3 - 1 do {all colors}
         for fitsY := 0 to head.Height - 1 do
           for fitsX := 0 to head.Width - 1 do
-            img_loaded[col, fitsX, fitsY] := img_loaded[col, fitsX, fitsY] - min;
+            img_loaded[col, fitsY, fitsX] := img_loaded[col, fitsY, fitsX] - min;
       {subtract background}
     end
     else
@@ -3288,16 +3287,16 @@ begin
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
         begin
-          bf := (img_loaded[0, fitsX, fitsY] + a_factor);
+          bf := (img_loaded[0, fitsY, fitsX] + a_factor);
           if bf < 0.00001 then colr := 0
           else
           begin
             colr := k_factor * a_factor *
-              (img_backup[index_backup].img[col, fitsX, fitsY] - min) / bf;
+              (img_backup[index_backup].img[col, fitsY, fitsX] - min) / bf;
             if colr > 65535 then colr := 65535;
             if colr < 0 then colr := 0;
           end;
-          img_loaded[col, fitsX, fitsY] := colr;
+          img_loaded[col, fitsY, fitsX] := colr;
         end;
     //apply_dpp_button1.Enabled := False;
     use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
@@ -3315,8 +3314,8 @@ var
 begin
   diameter := radius * 2;
   colors3 := length(sourc);{nr colours}
-  height3 := length(sourc[0, 0]);{height}
-  width3 := length(sourc[0]);{width}
+  height3 := length(sourc[0]);{height}
+  width3 := length(sourc[0,0]);{width}
 
   for k := 0 to colors3 - 1 do {do all colors}
   begin
@@ -3332,7 +3331,7 @@ begin
           begin
             x2 := x + i;
             y2 := y + j;
-            if ((x2 >= 0) and (x2 < width3) and (y2 >= 0) and (y2 < height3)) then  dest[k, x2, y2] := most_common;
+            if ((x2 >= 0) and (x2 < width3) and (y2 >= 0) and (y2 < height3)) then  dest[k, y2, x2] := most_common;
           end;
       end;
   end;{K}
@@ -4424,10 +4423,10 @@ begin
 
     if c = 0 then {init}
     begin
-      setlength(img2, 1, head.Width, head.Height);{set length of image array mono}
+      setlength(img2, 1, head.Height, head.Width);{set length of image array mono}
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
-          img2[0, fitsX, fitsY] := 0; {clear img}
+          img2[0, fitsY, fitsX] := 0; {clear img}
     end;
 
     if head.naxis3 = 3 then
@@ -4435,15 +4434,13 @@ begin
     begin {color average}
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
-          img2[0, fitsX, fitsY] :=
-            img2[0, fitsX, fitsY] + (img_tmp1[0, fitsX, fitsY] + img_tmp1[1, fitsX, fitsY] +
-            img_tmp1[2, fitsX, fitsY]) / 3;{fill with image}
+          img2[0, fitsY, fitsX] := img2[0, fitsY, fitsX] + (img_tmp1[0, fitsY, fitsX] + img_tmp1[1, fitsY, fitsX] +  img_tmp1[2, fitsY, fitsX]) / 3;{fill with image}
     end
     else
     begin {mono average}
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
-          img2[0, fitsX, fitsY] := img2[0, fitsX, fitsY] + img_tmp1[0, fitsX, fitsY];
+          img2[0, fitsY, fitsX] := img2[0, fitsY, fitsX] + img_tmp1[0, fitsY, fitsX];
       {fill with image}
 
     end;
@@ -4452,7 +4449,7 @@ begin
   if file_count > 1 then {not required for single/master files}
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
-        img2[0, fitsX, fitsY] := img2[0, fitsX, fitsY] / file_count;{scale to one image}
+        img2[0, fitsY, fitsX] := img2[0, fitsY, fitsX] / file_count;{scale to one image}
 
   img_tmp1 := nil;{free memo2}
   Screen.Cursor := crDefault;  { Always restore to normal }
@@ -4500,8 +4497,8 @@ var
   Value, value2: single;
 begin
   col := length(img);{the real number of colours}
-  h := length(img[0, 0]);{height}
-  w := length(img[0]);{width}
+  h := length(img[0]);{height}
+  w := length(img[0,0]);{width}
 
   if range = 2 then
   begin
@@ -4526,7 +4523,7 @@ begin
     maximum := +2;
   end; {combine values of 25 pixels}
 
-  setlength(img_temp2, col, w, h);{set length of image array}
+  setlength(img_temp2,col, h, w);{set length of image array}
   for k := 0 to col - 1 do
   begin
     for fitsY := 0 to h - 1 do
@@ -4541,7 +4538,7 @@ begin
             y1 := fitsY + j;
             if ((x1 >= 0) and (x1 <= w - 1) and (y1 >= 0) and (y1 <= h - 1)) then
             begin
-              value2 := img[k, x1, y1];
+              value2 := img[k, y1, x1];
               if value2 <> 0 then
               begin
                 Value := Value + value2;
@@ -4549,9 +4546,9 @@ begin
               end;{ignore zeros}
             end;
           end;
-        if counter <> 0 then img_temp2[k, fitsX, fitsY] := Value / counter
+        if counter <> 0 then img_temp2[k, fitsY, fitsX] := Value / counter
         else
-          img_temp2[k, fitsX, fitsY] := 0;
+          img_temp2[k, fitsY, fitsX] := 0;
       end;
   end;{k}
 
@@ -4561,8 +4558,7 @@ begin
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
         for k := 0 to col - 1 do
-          img[0, fitsx, fitsy] := (img_temp2[0, fitsx, fitsy] + img_temp2[1, fitsx, fitsy] +
-            img_temp2[2, fitsx, fitsy]) / 3;
+          img[0, fitsY, fitsX] := (img_temp2[0, fitsY, fitsX] + img_temp2[1, fitsY, fitsX] +  img_temp2[2, fitsY, fitsX]) / 3;
   end
   else
     img := img_temp2;{move pointer array}
@@ -4580,8 +4576,8 @@ var
   oddx, oddy: boolean;
 begin
   col := length(img);{the real number of colours}
-  h := length(img[0, 0]);{height}
-  w := length(img[0]);{width}
+  h := length(img[0]);{height}
+  w := length(img[0,0]);{width}
 
   if col > 1 then
   begin
@@ -4608,25 +4604,25 @@ begin
       oddY := odd(fitsY);
       if ((oddX = False) and (oddY = False)) then
       begin
-        value1 := value1 + img[0, fitsX, fitsY];
+        value1 := value1 + img[0, fitsY, fitsX];
         Inc(counter1);
       end
       else {separate counters for case odd() dimensions are used}
       if ((oddX = True) and (oddY = False)) then
       begin
-        value2 := value2 + img[0, fitsX, fitsY];
+        value2 := value2 + img[0, fitsY, fitsX];
         Inc(counter2);
       end
       else
       if ((oddX = False) and (oddY = True)) then
       begin
-        value3 := value3 + img[0, fitsX, fitsY];
+        value3 := value3 + img[0, fitsY, fitsX];
         Inc(counter3);
       end
       else
       if ((oddX = True) and (oddY = True)) then
       begin
-        value4 := value4 + img[0, fitsX, fitsY];
+        value4 := value4 + img[0, fitsY, fitsX];
         Inc(counter4);
       end;
     end;
@@ -4648,16 +4644,16 @@ begin
       oddX := odd(fitsX);
       oddY := odd(fitsY);
       if ((value1 <> 1) and (oddX = False) and (oddY = False)) then
-        img[0, fitsX, fitsY] := round(img[0, fitsX, fitsY] * value1)
+        img[0, fitsY, fitsX] := round(img[0, fitsY, fitsX] * value1)
       else
       if ((value2 <> 1) and (oddX = True) and (oddY = False)) then
-        img[0, fitsX, fitsY] := round(img[0, fitsX, fitsY] * value2)
+        img[0, fitsY, fitsX] := round(img[0, fitsY, fitsX] * value2)
       else
       if ((value3 <> 1) and (oddX = False) and (oddY = True)) then
-        img[0, fitsX, fitsY] := round(img[0, fitsX, fitsY] * value3)
+        img[0, fitsY, fitsX] := round(img[0, fitsY, fitsX] * value3)
       else
       if ((value4 <> 1) and (oddX = True) and (oddY = True)) then
-        img[0, fitsX, fitsY] := round(img[0, fitsX, fitsY] * value4);
+        img[0, fitsY, fitsX] := round(img[0, fitsY, fitsX] * value4);
     end;
 end;
 
@@ -4671,11 +4667,11 @@ var
   black: boolean;
 begin
   col := length(img);{the real number of colours}
-  h := length(img[0, 0]);{height}
-  w := length(img[0]);{width}
+  h := length(img[0]);{height}
+  w := length(img[0,0]);{width}
 
   range := 1;
-  setlength(img_temp2, col, w, h);{set length of image array}
+  setlength(img_temp2, col,h, w);{set length of image array}
 
   for k := 0 to col - 1 do
   begin
@@ -4683,25 +4679,25 @@ begin
     left := -1;
     repeat
       Inc(left);
-      black := img[k, left, h div 2] = 0;
+      black := img[k, h div 2, left] = 0;
     until ((black = False) or (left >= w - 1));
 
     right := w;
     repeat
       Dec(right);
-      black := img[k, right, h div 2] = 0;
+      black := img[k, h div 2, right] = 0;
     until ((black = False) or (right <= 0));
 
     bottom := -1;
     repeat
       Inc(bottom);
-      black := img[k, w div 2, bottom] = 0;
+      black := img[k, bottom, w div 2] = 0;
     until ((black = False) or (bottom >= h - 1));
 
     top := h;
     repeat
       Dec(top);
-      black := img[k, w div 2, top] = 0;
+      black := img[k, top, w div 2] = 0;
     until ((black = False) or (top <= 0));
 
 
@@ -4709,7 +4705,7 @@ begin
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
       begin
-        Value := img[k, fitsX, fitsY];
+        Value := img[k, fitsY, fitsX];
         if Value = 0 then {black spot or saturation marker}
           if ((fitsX >= left) and (fitsX <= right) and (fitsY >= bottom) and (fitsY <= top)) then
             {not the incomplete borders}
@@ -4727,7 +4723,7 @@ begin
                     if ((x1 >= left) and (x1 <= right) and (Y1 >= bottom) and (y1 <= top)) then
                       {not the incomplete borders}
                     begin
-                      value2 := img[k, x1, y1];
+                      value2 := img[k, y1, x1];
                       if value2 <> 0 then {ignore zeros due to black spot or saturation}
                       begin
                         Value := Value + value2;
@@ -4742,7 +4738,7 @@ begin
                 Inc(range);
             until ((counter <> 0) or (range >= 10));{try till 10 pixels away}
           end;
-        img_temp2[k, fitsX, fitsY] := Value;
+        img_temp2[k, fitsY, fitsX] := Value;
       end;
   end;{k}
 
@@ -4854,10 +4850,10 @@ begin
                 y2 := fitsY + j;
                 if ((x2 >= 0) and (x2 < head.Width) and (y2 >= 0) and
                   (y2 < head.Height)) then
-                  if img_loaded[k, x2, y2] < bck.backgr then {below global most common level}
-                    if img_loaded[k, x2, y2] < most_common - neg_noise_level then
+                  if img_loaded[k, y2, x2] < bck.backgr then {below global most common level}
+                    if img_loaded[k, y2, x2] < most_common - neg_noise_level then
                       {local dark spot}
-                      img_loaded[k, x2, y2] := most_common - neg_noise_level;
+                      img_loaded[k, y2, x2] := most_common - neg_noise_level;
               end;
           end;{/3}
         end;
@@ -4888,14 +4884,10 @@ begin
   y_frac := frac(y1);
 
   try
-    Result := (img_loaded[k2, x_trunc, y_trunc]) * (1 - x_frac) * (1 - y_frac);
-    {pixel left top, 1}
-    Result := Result + (img_loaded[k2, x_trunc + 1, y_trunc]) * (x_frac) * (1 - y_frac);
-    {pixel right top, 2}
-    Result := Result + (img_loaded[k2, x_trunc, y_trunc + 1]) * (1 - x_frac) * (y_frac);
-    {pixel left bottom, 3}
-    Result := Result + (img_loaded[k2, x_trunc + 1, y_trunc + 1]) * (x_frac) * (y_frac);
-    {pixel right bottom, 4}
+    Result := (img_loaded[k2, y_trunc, x_trunc]) * (1 - x_frac) * (1 - y_frac);  {pixel left top, 1}
+    Result := Result + (img_loaded[k2, y_trunc, x_trunc + 1]) * (x_frac) * (1 - y_frac);{pixel right top, 2}
+    Result := Result + (img_loaded[k2, y_trunc + 1, x_trunc]) * (1 - x_frac) * (y_frac);{pixel left bottom, 3}
+    Result := Result + (img_loaded[k2, y_trunc + 1, x_trunc + 1]) * (x_frac) * (y_frac);{pixel right bottom, 4}
   except
   end;
 
@@ -4915,7 +4907,7 @@ end;
 //  try
 //    for col:=0 to head.naxis3-1 do {all colors}
 //    begin {add the value in ration with pixel coverage}
-//      value:=img_loaded[col,fitsX-1,fitsY-1]; {pixel value to spread out over 4 pixels}
+//      value:=img_loaded[col,fitsY-1,fitsX-1]; {pixel value to spread out over 4 pixels}
 //      img_average[col,x_trunc  ,y_trunc  ]  :=img_average[col,x_trunc  ,y_trunc  ] + value * (1-x_frac)*(1-y_frac);{pixel left top, 1}
 //      img_average[col,x_trunc+1,y_trunc  ]  :=img_average[col,x_trunc+1,y_trunc  ] + value * (  x_frac)*(1-y_frac);{pixel right top, 2}
 //      img_average[col,x_trunc  ,y_trunc+1]  :=img_average[col,x_trunc  ,y_trunc+1] + value * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
@@ -4944,7 +4936,7 @@ begin
     w := max(w2, round(head.Width / 2));  {reduce in steps of two maximum to preserve stars}
     h := max(h2, round(head.Height / 2));  {reduce in steps of two maximum to preserve stars}
 
-    setlength(img_temp2, head.naxis3, w, h);
+    setlength(img_temp2,head.naxis3,h,w);
     ;
     for k := 0 to head.naxis3 - 1 do
       for fitsY := 0 to h - 1 do
@@ -4952,7 +4944,7 @@ begin
         begin
           X := (fitsX * head.Width / w);
           Y := (fitsY * head.Height / h);
-          img_temp2[k, fitsX, fitsY] := value_sub_pixel(k, x, y);
+          img_temp2[k, fitsY, fitsX] := value_sub_pixel(k, x, y);
         end;
     img_loaded := img_temp2;
     head.Width := w;
@@ -4970,57 +4962,43 @@ begin
   if head.cdelt1 <> 0 then
   begin
     head.cdelt1 := head.cdelt1 / ratio;
-    update_float('CDELT1  =', ' / X pixel size (deg)                             ',false
-      , head.cdelt1);
+    update_float('CDELT1  =', ' / X pixel size (deg)                             ',false, head.cdelt1);
   end;
   if head.cdelt2 <> 0 then
   begin
     head.cdelt2 := head.cdelt2 / ratio;
-    update_float('CDELT2  =', ' / Y pixel size (deg)                             ',false
-      , head.cdelt2);
+    update_float('CDELT2  =', ' / Y pixel size (deg)                             ',false, head.cdelt2);
   end;
 
   if head.cd1_1 <> 0 then
   begin
     head.crpix1 := head.crpix1 * ratio;
-    update_float('CRPIX1  =', ' / X of reference pixel                           ',false
-      , head.crpix1);
+    update_float('CRPIX1  =', ' / X of reference pixel                           ',false, head.crpix1);
     head.crpix2 := head.crpix2 * ratio;
-    update_float('CRPIX2  =', ' / Y of reference pixel                           ',false
-      , head.crpix2);
+    update_float('CRPIX2  =', ' / Y of reference pixel                           ',false, head.crpix2);
     head.cd1_1 := head.cd1_1 / ratio;
     head.cd1_2 := head.cd1_2 / ratio;
     head.cd2_1 := head.cd2_1 / ratio;
     head.cd2_2 := head.cd2_2 / ratio;
-    update_float('CD1_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false
-      , head.cd1_1);
-    update_float('CD1_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false
-      , head.cd1_2);
-    update_float('CD2_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false
-      , head.cd2_1);
-    update_float('CD2_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false
-      , head.cd2_2);
+    update_float('CD1_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd1_1);
+    update_float('CD1_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd1_2);
+    update_float('CD2_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd2_1);
+    update_float('CD2_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd2_2);
   end;
 
   head.XBINNING := head.XBINNING / ratio;
   head.YBINNING := head.YBINNING / ratio;
-  update_float('XBINNING=', ' / Binning factor in width                         ',false
-    , head.XBINNING);
-  update_float('YBINNING=', ' / Binning factor in height                        ',false
-    , head.YBINNING);
+  update_float('XBINNING=', ' / Binning factor in width                         ',false, head.XBINNING);
+  update_float('YBINNING=', ' / Binning factor in height                        ',false, head.YBINNING);
 
   if head.XPIXSZ <> 0 then
   begin
     head.XPIXSZ := head.XPIXSZ / ratio;
     head.YPIXSZ := head.YPIXSZ / ratio;
-    update_float('XPIXSZ  =', ' / Pixel width in microns (after stretching)       ',false
-      , head.XPIXSZ);
-    update_float('YPIXSZ  =', ' / Pixel height in microns (after stretching)      ',false
-      , head.YPIXSZ);
-    update_float('PIXSIZE1=', ' / Pixel width in microns (after stretching)       ',false
-      , head.XPIXSZ);
-    update_float('PIXSIZE2=', ' / Pixel height in microns (after stretching)      ',false
-      , head.YPIXSZ);
+    update_float('XPIXSZ  =', ' / Pixel width in microns (after stretching)       ',false, head.XPIXSZ);
+    update_float('YPIXSZ  =', ' / Pixel height in microns (after stretching)      ',false, head.YPIXSZ);
+    update_float('PIXSIZE1=', ' / Pixel width in microns (after stretching)       ',false, head.XPIXSZ);
+    update_float('PIXSIZE2=', ' / Pixel height in microns (after stretching)      ',false, head.YPIXSZ);
   end;
   add_text('HISTORY   ', 'Image resized with factor ' + floattostr6(ratio));
 end;
@@ -5188,11 +5166,11 @@ begin
 
   filename1 := ChangeFileExt(FileName2, '.fit');{make it lowercase fit also if FTS or FIT}
 
-  setlength(img_buffer, 1, head.Width, head.Height);{create a new mono image}
+  setlength(img_buffer,1, head.Height, head.Width);{create a new mono image}
 
   for fitsY := 0 to head.Height - 1 do
     for fitsX := 0 to head.Width - 1 do
-      img_buffer[0, fitsX, fitsY] := img_loaded[0, fitsX, fitsY];
+      img_buffer[0, fitsY, fitsX] := img_loaded[0, fitsY, fitsX];
   filename2 := StringReplace(filename1, '.fit', '_red.fit', []);{give new file name }
   update_text('FILTER  =',copy(#39+'Red     '+#39+'                   ',1,21)+'/ Filter name');
 
@@ -5201,7 +5179,7 @@ begin
 
   for fitsY := 0 to head.Height - 1 do
     for fitsX := 0 to head.Width - 1 do
-      img_buffer[0, fitsX, fitsY] := img_loaded[1, fitsX, fitsY];
+      img_buffer[0, fitsY, fitsX] := img_loaded[1, fitsY, fitsX];
   filename2 := StringReplace(filename1, '.fit', '_green.fit', []);{give new file name }
   update_text('FILTER  =',copy(#39+'Green   '+#39+'                   ',1,21)+'/ Filter name');
 
@@ -5209,7 +5187,7 @@ begin
 
   for fitsY := 0 to head.Height - 1 do
     for fitsX := 0 to head.Width - 1 do
-      img_buffer[0, fitsX, fitsY] := img_loaded[2, fitsX, fitsY];
+      img_buffer[0, fitsY, fitsX] := img_loaded[2, fitsY, fitsX];
   filename2 := StringReplace(filename1, '.fit', '_blue.fit', []);{give new file name }
   update_text('FILTER  =',copy(#39+'Blue    '+#39+'                   ',1,21)+'/ Filter name');
 
@@ -5571,22 +5549,20 @@ begin
             demosaic_advanced(img_loaded);{demosaic and set levels}
           end;
 
-          setlength(img_temp, head.naxis3, 0, 0);
+          setlength(img_temp,head.naxis3, 0, 0);
           {set to zero to clear old values (at the edges}
-          setlength(img_temp, head.naxis3, head.Width, head.Height);{new size}
+          setlength(img_temp,head.naxis3, head.Height, head.Width);{new size}
 
 
           for fitsY := 0 to head.Height - 1 do
             for fitsX := 0 to head.Width - 1 do
             begin
-              x_new := round(solution_vectorX[0] * (fitsx) + solution_vectorX[1] *
-                (fitsY) + solution_vectorX[2]); {correction x:=aX+bY+c}
-              y_new := round(solution_vectorY[0] * (fitsx) + solution_vectorY[1] *
-                (fitsY) + solution_vectorY[2]); {correction y:=aX+bY+c}
+              x_new := round(solution_vectorX[0] * (fitsx) + solution_vectorX[1] * (fitsY) + solution_vectorX[2]); {correction x:=aX+bY+c}
+              y_new := round(solution_vectorY[0] * (fitsx) + solution_vectorY[1] * (fitsY) + solution_vectorY[2]); {correction y:=aX+bY+c}
 
               if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and (y_new <= head.Height - 1)) then
                 for col := 0 to head.naxis3 - 1 do {all colors}
-                  img_temp[col, x_new, y_new] := img_loaded[col, fitsX, fitsY];
+                  img_temp[col, y_new, x_new] := img_loaded[col, fitsY, fitsX];
 
             end;
 
@@ -5709,41 +5685,31 @@ begin
       mainwindow.memo1.Lines.add(head1[j]); {add lines to empthy memo1}
   mainwindow.memo1.Lines.add(head1[27]); {add end}
 
-  update_integer('BITPIX  =', ' / Bits per entry                                 '
-    , nrbits);
-  update_integer('NAXIS1  =', ' / length of x axis                               '
-    , head.Width);
-  update_integer('NAXIS2  =', ' / length of y axis                               '
-    , head.Height);
-  if head.naxis3 = 1 then  remove_key('NAXIS3  ', False{all});
-  {remove key word in header. Some program don't like naxis3=1}
+  update_integer('BITPIX  =', ' / Bits per entry                                 ' , nrbits);
+  update_integer('NAXIS1  =', ' / length of x axis                               ' , head.Width);
+  update_integer('NAXIS2  =', ' / length of y axis                               ' , head.Height);
+  if head.naxis3 = 1 then  remove_key('NAXIS3  ', False{all});  {remove key word in header. Some program don't like naxis3=1}
   update_integer('DATAMIN =', ' / Minimum data value                             ', 0);
-  update_integer('DATAMAX =', ' / Maximum data value                             ',
-    round(head.datamax_org));
+  update_integer('DATAMAX =', ' / Maximum data value                             ',  round(head.datamax_org));
   add_text('COMMENT 1', '  Written by Astrometric Stacking Program. www.hnsky.org');
 
-  add_text('COMMENT A',
-    '  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
+  add_text('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
   add_text('COMMENT B', '  Top rows contain hotpixels with value 65535');
-  add_text('COMMENT C', '  Rows below have Gaussian stars with a sigma of ' +
-    floattostr6(sigma));
-  add_text('COMMENT D', '  Which will be measured as HFD ' +
-    stackmenu1.hfd_simulation1.Text);
+  add_text('COMMENT C', '  Rows below have Gaussian stars with a sigma of ' +  floattostr6(sigma));
+  add_text('COMMENT D', '  Which will be measured as HFD ' + stackmenu1.hfd_simulation1.Text);
   add_text('COMMENT E', '  Note that theoretical Gaussian stars with a sigma of 1 are');
   add_text('COMMENT F', '  equivalent to a HFD of 2.354 if subsampled enough.');
   add_text('COMMENT  ', ' ,Star_nr, X, Y, Flux                               ');
 
 
-  setlength(img_loaded, head.naxis3, head.Width, head.Height);{set length of image array}
+  setlength(img_loaded, head.naxis3, head.Height, head.Width);{set length of image array}
 
   for i := 0 to head.Height - 1 do
     for j := 0 to head.Width - 1 do
     begin
-      if gradient = False then img_loaded[0, j, i] :=
-          randg(1000, 100 {noise}){default background is 1000}
+      if gradient = False then img_loaded[0, i, j] := randg(1000, 100 {noise}){default background is 1000}
       else
-        img_loaded[0, j, i] := -500 * sqrt(sqr((i - head.Height / 2) / head.Height) + sqr(
-          (j - head.Width / 2) / head.Height)){circular gradient} +
+        img_loaded[0, i, j] := -500 * sqrt(sqr((i - head.Height / 2) / head.Height) + sqr((j - head.Width / 2) / head.Height)){circular gradient} +
           randg(1000, 100 {noise});{default background is 100}
     end;
 
@@ -5756,7 +5722,7 @@ begin
       if ((frac(i / 100) = 0) and (frac(j / 100) = 0)) then
         {reduce star density if HFD increases}
       begin
-        if i > head.Height - 300 then {hot pixels} img_loaded[0, j, i] := 65535 {hot pixel}
+        if i > head.Height - 300 then {hot pixels} img_loaded[0, i, j] := 65535 {hot pixel}
         else {create real stars}
         begin
           shiftX := -0.5 + random(1000) / 1000; {result between -0.5 and +0.5}
@@ -5778,15 +5744,11 @@ begin
                   subsampling * sigma){keep flux independent of HFD and subsmapling} *
                   exp(-0.5 * (sqr(memo2 / subsampling) + sqr(n / subsampling)) / sqr(sigma)));
                 flux_star := flux_star + flux;
-                img_loaded[0, j + round(shiftX + n / subsampling), i + round(shiftY + memo2 / subsampling)] :=
-                  img_loaded[0, j + round(shiftX + n / subsampling), i + round(shiftY + memo2 / subsampling)] + flux;
+                img_loaded[0, i + round(shiftY + memo2 / subsampling), j + round(shiftX + n / subsampling)] := img_loaded[0, i + round(shiftY + memo2 / subsampling), j + round(shiftX + n / subsampling)] + flux;
                 {gaussian shaped stars}
                 if frac(starcounter / 20) = 0 then
                 begin
-                  img_loaded[0, 180 + starcounter + round(shiftX + n / subsampling),
-                    130 + starcounter + round(shiftY + memo2 / subsampling)] :=
-                    img_loaded[0, 180 + starcounter + round(shiftX + n / subsampling), 130 + starcounter +
-                    round(shiftY + memo2 / subsampling)] + flux; {diagonal gaussian shaped stars}
+                  img_loaded[0, 130 + starcounter + round(shiftY + memo2 / subsampling),180 + starcounter + round(shiftX + n / subsampling)] := img_loaded[0, 130 + starcounter + round(shiftY + memo2 / subsampling), 180 + starcounter + round(shiftX + n / subsampling)] + flux; {diagonal gaussian shaped stars}
                   diagn_star := True;
                 end;
               end;
@@ -5803,18 +5765,13 @@ begin
                 begin
                   flux := 1000 * sqr(j / head.Width);
                   flux_star := flux_star + flux;
-                  img_loaded[0, j + n, i + memo2] := img_loaded[0, j + n, i + memo2] + flux;{DONUT SHAPED stars}
+                  img_loaded[0, i + memo2, j + n] := img_loaded[0, i + memo2, j + n] + flux;{DONUT SHAPED stars}
                 end;
               end;
           end;
-          add_text('COMMENT  ', ' ,star' + IntToStr(starcounter) + ', ' +
-            floattostr4(j + shiftX + 1) + ', ' + floattostr4(i + shiftY + 1) + ', ' + floattostr4(flux_star));
-          {add the star coordinates to the header}
+          add_text('COMMENT  ', ' ,star' + IntToStr(starcounter) + ', ' + floattostr4(j + shiftX + 1) + ', ' + floattostr4(i + shiftY + 1) + ', ' + floattostr4(flux_star)); {add the star coordinates to the header}
           if diagn_star then
-            add_text('COMMENT  ', ' ,star' + IntToStr(starcounter) + 'D, ' +
-              floattostr4(j + shiftX + 1 + 180 + starcounter) + ', ' + floattostr4(
-              i + shiftY + 1 + 130 + starcounter) + ', ' + floattostr4(flux_star)); {diagonal stars}
-
+            add_text('COMMENT  ', ' ,star' + IntToStr(starcounter) + 'D, ' + floattostr4(j + shiftX + 1 + 180 + starcounter) + ', ' + floattostr4( i + shiftY + 1 + 130 + starcounter) + ', ' + floattostr4(flux_star)); {diagonal stars}
         end;
       end;
 
@@ -6030,7 +5987,6 @@ var
   memo2, a, b, posit, center, hfd: double;
   c, img_counter, i, fields: integer;
   array_hfd: array of tdouble2;
-  center_str : string;
 var {################# initialised variables #########################}
   len: integer = 200;
 begin
@@ -6441,9 +6397,9 @@ begin
       if ((fx >= 0) and (fx < head.Width) and (fy >= 0) and (fy < head.Height)) then
       begin
         Inc(counter);
-        colrr := colrr + img_loaded[0, sX, sY];
-        colgg := colgg + img_loaded[1, sX, sY];
-        colbb := colbb + img_loaded[2, sX, sY];
+        colrr := colrr + img_loaded[0, sY, sX];
+        colgg := colgg + img_loaded[1, sY, sX];
+        colbb := colbb + img_loaded[2, sY, sX];
       end;
     end;
   if counter = 0 then exit;
@@ -7168,7 +7124,7 @@ begin
   memo2_message('Applying most common filter with factor ' +
     stackmenu1.filter_artificial_colouring1.Text);
 
-  setlength(img_temp, 3, head.Width, head.Height);{new size}
+  setlength(img_temp,3, head.Height, head.Width);{new size}
   apply_most_common(img_backup[index_backup].img, img_temp, radius);
   {apply most common filter on first array and place result in second array}
 
@@ -7176,7 +7132,7 @@ begin
   gaussian_blur2(img_temp, radius * 2);
 
 
-  setlength(img_loaded, 3, head.Width, head.Height);{new size}
+  setlength(img_loaded, 3, head.Height, head.Width);{new size}
 
   memo2_message('Separating stars and nebula. Making everything white with value ' +
     stackmenu1.star_level_colouring1.Text + ' above background.');
@@ -7186,28 +7142,26 @@ begin
   for fitsY := 0 to head.Height - 1 do
     for fitsX := 0 to head.Width - 1 do
     begin {subtract view from file}
-      org_value := img_backup[index_backup].img[0, fitsX, fitsY];  {stars+nebula}
+      org_value := img_backup[index_backup].img[0, fitsY, fitsX];  {stars+nebula}
       {smooth nebula}
-      Value := org_value - img_temp[0, fitsX, fitsY];
+      Value := org_value - img_temp[0, fitsY, fitsX];
       if Value > star_level_colouring then {star}
       begin
-        img_loaded[0, fitsX, fitsY] := org_value;
+        img_loaded[0, fitsY, fitsX] := org_value;
         if head.naxis3 > 1 then
-          img_loaded[1, fitsX, fitsY] := img_backup[index_backup].img[1, fitsX, fitsY]
+          img_loaded[1, fitsY, fitsX] := img_backup[index_backup].img[1, fitsY, fitsX]
         else
-          img_loaded[1, fitsX, fitsY] := org_value;
+          img_loaded[1, fitsY, fitsX] := org_value;
         if head.naxis3 > 2 then
-          img_loaded[2, fitsX, fitsY] := img_backup[index_backup].img[2, fitsX, fitsY]
+          img_loaded[2, fitsY, fitsX] := img_backup[index_backup].img[2, fitsY, fitsX]
         else
-          img_loaded[2, fitsX, fitsY] := org_value;
+          img_loaded[2, fitsY, fitsX] := org_value;
       end
       else {nebula}
       begin
-        img_loaded[0, fitsX, fitsY] := org_value;
-        img_loaded[1, fitsX, fitsY] :=
-          bck.backgr + (org_value - bck.backgr) * Value / star_level_colouring;
-        img_loaded[2, fitsX, fitsY] :=
-          bck.backgr + (org_value - bck.backgr) * Value / star_level_colouring;
+        img_loaded[0, fitsY, fitsX] := org_value;
+        img_loaded[1, fitsY, fitsX] := bck.backgr + (org_value - bck.backgr) * Value / star_level_colouring;
+        img_loaded[2, fitsY, fitsX] := bck.backgr + (org_value - bck.backgr) * Value / star_level_colouring;
       end;
 
     end;
@@ -7281,13 +7235,13 @@ begin
       solution_vectorY := bsolutions[ps].solution_vectorY;
 
 
-      setlength(img_temp, head.naxis3, head.Width, head.Height);{new size}
+      setlength(img_temp, head.naxis3, head.Height, head.Width);{new size}
 
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
         begin
           for col := 0 to head.naxis3 - 1 do
-            {all colors} img_temp[col, fitsX, fitsY] := 0;{clear memory}
+            {all colors} img_temp[col, fitsY, fitsX] := 0;{clear memory}
         end;
 
       {align}
@@ -7299,7 +7253,7 @@ begin
 
           if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and (y_new <= head.Height - 1)) then
             for col := 0 to head.naxis3 - 1 do
-              {all colors} img_temp[col, x_new, y_new] := img_loaded[col, fitsX, fitsY];
+              {all colors} img_temp[col, y_new, x_new] := img_loaded[col, fitsY, fitsX];
         end;
 
       {fix black holes}
@@ -7842,7 +7796,7 @@ var
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   outliers: array of array of double;
-  astr, memo2_text, filename1,dummy : string;
+  astr, memo2_text, filename1 : string;
   bck :tbackground;
 
   function measure_star(deX, deY: double): string;{measure position and flux}
@@ -7853,15 +7807,16 @@ var
       if head.calstat = '' then saturation_level := 64000
       else
         saturation_level := 60000; {could be dark subtracted changing the saturation level}
-      if ((img_loaded[0, round(xc), round(yc)] < saturation_level) and
-        (img_loaded[0, round(xc - 1), round(yc)] < saturation_level) and
-        (img_loaded[0, round(xc + 1), round(yc)] < saturation_level) and
-        (img_loaded[0, round(xc), round(yc - 1)] < saturation_level) and
-        (img_loaded[0, round(xc), round(yc + 1)] < saturation_level) and
-        (img_loaded[0, round(xc - 1), round(yc - 1)] < saturation_level) and
-        (img_loaded[0, round(xc - 1), round(yc + 1)] < saturation_level) and
-        (img_loaded[0, round(xc + 1), round(yc - 1)] < saturation_level) and
-        (img_loaded[0, round(xc + 1), round(yc + 1)] < saturation_level)) then
+      if
+       ((img_loaded[0, round(yc)    , round(xc)] < saturation_level) and
+        (img_loaded[0, round(yc - 1), round(xc)] < saturation_level) and
+        (img_loaded[0, round(yc + 1), round(xc)] < saturation_level) and
+        (img_loaded[0, round(yc)    , round(xc - 1)] < saturation_level) and
+        (img_loaded[0, round(yc)    , round(xc + 1)] < saturation_level) and
+        (img_loaded[0, round(yc - 1), round(xc - 1)] < saturation_level) and
+        (img_loaded[0, round(yc - 1), round(xc + 1)] < saturation_level) and
+        (img_loaded[0, round(yc + 1), round(xc - 1)] < saturation_level) and
+        (img_loaded[0, round(yc + 1), round(xc + 1)] < saturation_level)) then
         {not saturated star}
       begin
         magn:=starlistpack[c].MZERO - ln(flux)*2.5/ln(10);
@@ -8168,7 +8123,7 @@ begin
             starlistpack[c].Height := 0; {mark as not valid measurement}
         end;
 
-        setlength(img_temp, head.naxis3, head.Width, head.Height);{new size}
+        setlength(img_temp,head.naxis3, head.Height, head.Width);{new size}
 
         {standard aligned blink}
         if init = False then {init}
@@ -8267,7 +8222,7 @@ begin
 
             if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and  (y_new <= head.Height - 1)) then
               for col := 0 to head.naxis3 - 1 do {all colors}
-                 img_temp[col, x_new, y_new] := img_loaded[col, fitsX - 1, fitsY - 1];
+                 img_temp[col, y_new, x_new] := img_loaded[col, fitsY - 1, fitsX - 1];
           end;
 
         img_loaded := nil;
@@ -8474,7 +8429,7 @@ begin
         begin
           if ((abs(i) > rs) and (abs(j) > rs)) then {measure only outside the box}
           begin
-            val := img[col, x1 + i, y1 + j];
+            val := img[col, y1 + j, x1 + i];
             if val > 0 then
             begin
               bg_average := bg_average + val;
@@ -8496,7 +8451,7 @@ begin
         begin
           if ((abs(i) > rs) and (abs(j) > rs)) then {measure only outside the box}
           begin
-            val := img[col, x1 + i, y1 + j];
+            val := img[col, y1 + j, x1 + i];
             if ((val <= 2 * bg[col]) and (val > 0)) then {not an outlier}
             begin
               bg_standard_deviation[col] := bg_standard_deviation[col] + sqr(bg[col] - val);
@@ -8514,10 +8469,10 @@ begin
       counter := 0;
       for i := -k to k do {square around center}
       begin
-        val := val + img[col, x1 + i, y1 + k];
-        val := val + img[col, x1 + i, y1 - k];
-        val := val + img[col, x1 + k, y1 + i];
-        val := val + img[col, x1 - k, y1 + i];
+        val := val + img[col, y1 + k, x1 + i];
+        val := val + img[col, y1 - k, x1 + i];
+        val := val + img[col, y1 + i, x1 + k];
+        val := val + img[col, y1 + i, x1 - k];
         Inc(counter, 4);
       end;
       value_histogram[k] := val / counter;{add average value for distance k from center}
@@ -8540,9 +8495,9 @@ begin
           y2 := y1 + j;
           if sqr(drop_off) > i * i + j * j then {within star}
           begin
-            val := img[col, x2, y2] - bg[col];
+            val := img[col, y2, x2] - bg[col];
             if val < 60000 {not saturated} then
-              color[col] := color[col] + img[col, x2, y2] - bg[col];
+              color[col] := color[col] + img[col, y2, x2] - bg[col];
             {if written in separate term it would be 20% faster but having fixed steps}
 
           end;
@@ -8559,13 +8514,12 @@ begin
         y2 := y1 + j;
         if sqr(drop_off) > i * i + j * j then {within star}
         begin
-          luminance := (img[0, x2, y2] - bg[0] + img[1, x2, y2] -
-            bg[1] + img[2, x2, y2] - bg[2]) / 3;
-          img[0, x2, y2] := bg[0] + luminance * color[0] / rgb;
-          img[1, x2, y2] := bg[1] + luminance * color[1] / rgb;
-          img[2, x2, y2] := bg[2] + luminance * color[2] / rgb;
+          luminance := (img[0, y2, x2] - bg[0] + img[1, y2, x2] -  bg[1] + img[2, y2, x2] - bg[2]) / 3;
+          img[0, y2, x2] := bg[0] + luminance * color[0] / rgb;
+          img[1, y2, x2] := bg[1] + luminance * color[1] / rgb;
+          img[2, y2, x2] := bg[2] + luminance * color[2] / rgb;
 
-          img_temp[0, x2, y2] := 1; {mark as processed}
+          img_temp[0, y2, x2] := 1; {mark as processed}
         end;
       end;
   except
@@ -8586,10 +8540,10 @@ var
 begin
   if length(img) < 3 then exit;{not a three colour image}
 
-  width5 := Length(img[0]);    {width}
-  height5 := Length(img[0][0]); {height}
+  width5 := Length(img[0,0]);{width}
+  height5 := Length(img[0]); {height}
 
-  setlength(img_temp2, 3, width5, height5);{set length of image array}
+  setlength(img_temp2, 3, height5, width5);{set length of image array}
 
   step := round(wide) div 2;
 
@@ -8622,9 +8576,9 @@ begin
       bgG2 := 65535;
       bgB2 := 65535;
 
-      r2 := img[0, fitsX, fitsY] - bgR;
-      g2 := img[1, fitsX, fitsY] - bgG;
-      b2 := img[2, fitsX, fitsY] - bgB;
+      r2 := img[0, fitsY, fitsX] - bgR;
+      g2 := img[1, fitsY, fitsX] - bgG;
+      b2 := img[2, fitsY, fitsX] - bgB;
 
 
       if ((r2 > sd * bckR.noise_level) or (g2 > sd * bckG.noise_level) or (b2 > sd * bckB.noise_level)) then
@@ -8641,9 +8595,9 @@ begin
               sqr_dist := x * x + y * y;
               if sqr_dist <= step * step then {circle only}
               begin
-                r := img[0, x2, y2];
-                G := img[1, x2, y2];
-                B := img[2, x2, y2];
+                r := img[0, y2, x2];
+                G := img[1, y2, x2];
+                B := img[2, y2, x2];
 
                 {find peak value}
                 if r > peak then peak := r;
@@ -8706,10 +8660,9 @@ begin
               flux := flux - (top - 65534.99) * rgb / strongest_colour_local;{prevent values above 65535}
 
             lumr := flux / rgb;
-            img_temp2[0, fitsX, fitsY] := bg + red * lumr;
-            //usg average bg and not bgR. See "if copydata" below.
-            img_temp2[1, fitsX, fitsY] := bg + green * lumr;
-            img_temp2[2, fitsX, fitsY] := bg + blue * lumr;
+            img_temp2[0, fitsY, fitsX] := bg + red * lumr; //use average bg and not bgR. See "if copydata" below.
+            img_temp2[1, fitsY, fitsX] := bg + green * lumr;
+            img_temp2[2, fitsY, fitsX] := bg + blue * lumr;
 
             copydata := False;{data is already copied}
 
@@ -8718,10 +8671,10 @@ begin
       end;
       if copydata then {keep original data but adjust zero level}
       begin
-        img_temp2[0, fitsX, fitsY] := max(0, bg + r2);
+        img_temp2[0, fitsY, fitsX] := max(0, bg + r2);
         {copy data, but equalise background levels by using the same background value}
-        img_temp2[1, fitsX, fitsY] := max(0, bg + g2);
-        img_temp2[2, fitsX, fitsY] := max(0, bg + b2);
+        img_temp2[1, fitsY, fitsX] := max(0, bg + g2);
+        img_temp2[2, fitsY, fitsX] := max(0, bg + b2);
       end;
 
     end;
@@ -8741,9 +8694,9 @@ begin
   for fitsY := 0 to head.Height - 1 do
     for fitsX := 0 to head.Width - 1 do
     begin
-      r2 := img[0, fitsX, fitsY];
-      g2 := img[1, fitsX, fitsY];
-      b2 := img[2, fitsX, fitsY];
+      r2 := img[0, fitsY, fitsX];
+      g2 := img[1, fitsY, fitsX];
+      b2 := img[2, fitsY, fitsX];
 
 
       if ((g2 > r2) and (g2 > b2)) then
@@ -8763,9 +8716,9 @@ begin
           g2 := b2;
           r2 := lum * 1 / (ratio + ratio + 1);
         end;
-        img[0, fitsX, fitsY] := r2;
-        img[1, fitsX, fitsY] := g2;
-        img[2, fitsX, fitsY] := b2;
+        img[0, fitsY, fitsX] := r2;
+        img[1, fitsY, fitsX] := g2;
+        img[2, fitsY, fitsX] := b2;
       end;
 
 
@@ -8786,9 +8739,9 @@ begin
           g2 := b2;
           r2 := lum * ratio / (1 + 1 + ratio);
         end;
-        img[0, fitsX, fitsY] := r2;
-        img[1, fitsX, fitsY] := g2;
-        img[2, fitsX, fitsY] := b2;
+        img[0, fitsY, fitsX] := r2;
+        img[1, fitsY, fitsX] := g2;
+        img[2, fitsY, fitsX] := b2;
       end;
     end;
 end;
@@ -8964,15 +8917,15 @@ begin
     for fitsX := 2 to head.Width - 1 - 2 do
     begin
 
-      red := img[0, fitsX, fitsY];
-      green := img[1, fitsX, fitsY];
-      blue := img[2, fitsX, fitsY];
+      red := img[0, fitsY, fitsX];
+      green := img[1, fitsY, fitsX];
+      blue := img[2, fitsY, fitsX];
 
       luminance := red + blue + green + 0.00001; {0.00001, prevent dividing by zero}
 
-      img[0, fitsX, fitsY] := red / luminance;
-      img[1, fitsX, fitsY] := green / luminance;
-      img[2, fitsX, fitsY] := blue / luminance;
+      img[0, fitsY, fitsX] := red / luminance;
+      img[1, fitsY, fitsX] := green / luminance;
+      img[2, fitsY, fitsX] := blue / luminance;
     end;
 
 end;
@@ -9002,9 +8955,9 @@ begin
   for fitsY := 0 to head.Height - 1 do
     for fitsX := 0 to head.Width - 1 do
     begin
-      red := img_loaded[0, fitsX, fitsY];
-      green := img_loaded[1, fitsX, fitsY];
-      blue := img_loaded[2, fitsX, fitsY];
+      red := img_loaded[0, fitsY, fitsX];
+      green := img_loaded[1, fitsY, fitsX];
+      blue := img_loaded[2, fitsY, fitsX];
 
       if ((red - bckR.backgr < sigma * bckR.noise_level) and (green - bckG.backgr < sigma * bckG.noise_level) and (blue - bckB.backgr < sigma * bckB.noise_level)) then {low luminance signal}
       begin {distribute the colour to luminance}
@@ -9016,9 +8969,9 @@ begin
         green := bckG.backgr + lumn;
         blue := bckB.backgr + lumn;
       end;
-      img_loaded[0, fitsX, fitsY] := red;
-      img_loaded[1, fitsX, fitsY] := green;
-      img_loaded[2, fitsX, fitsY] := blue;
+      img_loaded[0, fitsY, fitsX] := red;
+      img_loaded[1, fitsY, fitsX] := green;
+      img_loaded[2, fitsY, fitsX] := blue;
     end;
   plot_fits(mainwindow.image1, False, True);{plot}
   Screen.cursor := crDefault;
@@ -9299,10 +9252,10 @@ end;
 
 
 procedure Tstackmenu1.detect_contour1Click(Sender: TObject);
-var
+//var
 //  img_bk                           : image_array;
 //  oldNaxis3                        : integer;
-  restore_req                      : boolean;
+//  restore_req                      : boolean;
 begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -9310,7 +9263,7 @@ begin
   plot_fits(mainwindow.image1,false,true);//clear
 
 //  img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-//  setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
+//  setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication}
 
 //  oldNaxis3:=head.naxis3;//for case it is converted to mono
 
@@ -9342,8 +9295,8 @@ end;
 procedure solve_selected_files(lv: tlistview; refresh_solutions :boolean);
 var
   c: integer;
-  success: boolean;
-  thefile, filename1: string;
+  success    : boolean;
+  filename1  : string;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -9410,9 +9363,9 @@ end;
 
 procedure Tstackmenu1.photometric_calibration1Click(Sender: TObject);
 var
-  c: integer;
-  fn, ff: string;
-  success: boolean;
+  c       : integer;
+  ff      : string;
+  success : boolean;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed := False;
@@ -9545,9 +9498,9 @@ const
            distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
            if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
            begin
-             backgroundR[counter]:=img_loaded[0,x1+i,y1+j];
-             if head.naxis3>1 then backgroundG[counter]:=img_loaded[1,x1+i,y1+j];
-             if head.naxis3>2 then backgroundB[counter]:=img_loaded[2,x1+i,y1+j];
+             backgroundR[counter]:=img_loaded[0,y1+j,x1+i];
+             if head.naxis3>1 then backgroundG[counter]:=img_loaded[1,y1+j,x1+i];
+             if head.naxis3>2 then backgroundB[counter]:=img_loaded[2,y1+j,x1+i];
              inc(counter);
            end;
         end;
@@ -9591,10 +9544,10 @@ begin
 //  mainwindow.image1.Canvas.Pen.Color := clred;
 
 
-  setlength(img_temp3,1,head.width,head.height);{set size of image array}
+  setlength(img_temp3,1,head.height,head.width);{set size of image array}
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
-      img_temp3[0,fitsX,fitsY]:=default;{clear}
+      img_temp3[0,fitsY,fitsX]:=default;{clear}
   plot_artificial_stars(img_temp3,head,magn_limit {measured});{create artificial image with database stars as pixels}
 
    analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
@@ -9606,7 +9559,7 @@ begin
    for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
     begin
-      magnd:=img_temp3[0,fitsX,fitsY];
+      magnd:=img_temp3[0,fitsY,fitsX];
       if magnd<default then {a star from the database}
       begin
           star_background(round(4*hfd_median) {radius},fitsX,fitsY);//calculate background(s)
@@ -9626,21 +9579,21 @@ begin
               begin
                 if max_radius>100 then
                 begin
-                  if img_loaded[0,x,y]-backgrR<=0 then //reached outside of star
+                  if img_loaded[0,y,x]-backgrR<=0 then //reached outside of star
                     max_radius:=1+sqrt(sqr(x1)+sqr(y1));//allow to continue for one pixel ring max
                 end
                 else
                 if sqrt(sqr(x1)+sqr(y1))>=max_radius then
                   break;
 
-                delta:=min(flux,(img_loaded[0,x,y]-backgrR));//all photometry is only done in the red channel
-                img_loaded[0,x,y]:=img_loaded[0,x,y]-delta;
+                delta:=min(flux,(img_loaded[0,y,x]-backgrR));//all photometry is only done in the red channel
+                img_loaded[0,y,x]:=img_loaded[0,y,x]-delta;
                 flux:=flux-delta;
 
                 if delta>0 then //follow the red channel
                 begin
-                  if head.naxis3>1 then img_loaded[1,x,y]:=img_loaded[0,x,y]*backgrG/backgrR;
-                  if head.naxis3>2 then img_loaded[2,x,y]:=img_loaded[0,x,y]*backgrB/backgrR;
+                  if head.naxis3>1 then img_loaded[1,y,x]:=img_loaded[0,y,x]*backgrG/backgrR;
+                  if head.naxis3>2 then img_loaded[2,y,x]:=img_loaded[0,y,x]*backgrB/backgrR;
                 end;
               end;
 
@@ -9674,7 +9627,7 @@ begin
     for col:=0 to head.naxis3-1 do //all colour
       for fitsX:=0 to head.width-1 do
         for fitsY:=0 to head.height-1 do
-          img_loaded[col, fitsX, fitsY]:=img_backup[index_backup].img[col, fitsX, fitsY] + (img_loaded[col, fitsX, fitsY]-bck.backgr {reduce background})*gain;
+          img_loaded[col, fitsY, fitsX]:=img_backup[index_backup].img[col, fitsY, fitsX] + (img_loaded[col, fitsY, fitsX]-bck.backgr {reduce background})*gain;
 
     memo2_message('Nebulosity signal increased.');
   end;
@@ -10224,15 +10177,15 @@ begin
   for fitsY := areay1 to areay2 do
     for fitsX := areax1 to areax2 do
     begin
-      RGB2HSV(max(0, img_loaded[0, fitsX, fitsY] - bck.backgr), max(0, img_loaded[1, fitsX, fitsY] - bck.backgr), max(0, img_loaded[2, fitsX, fitsY] - bck.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+      RGB2HSV(max(0, img_loaded[0, fitsY, fitsX] - bck.backgr), max(0, img_loaded[1, fitsY, fitsX] - bck.backgr), max(0, img_loaded[2, fitsY, fitsX] - bck.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
       dhue := abs(oldhue - h);
       if (((dhue <= fuzziness) or (dhue >= 360 - fuzziness)) and  (abs(s - s_old) < saturation_tol {saturation speed_tolerance1})) then {colour close enough, replace colour}
       begin
         HSV2RGB(newhue, min(1, s_new * saturation_factor) {s 0..1}, v * v_adjust{v 0..1}, r, g, b);   {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 
-        img_loaded[0, fitsX, fitsY] := r + bck.backgr;
-        img_loaded[1, fitsX, fitsY] := g + bck.backgr;
-        img_loaded[2, fitsX, fitsY] := b + bck.backgr;
+        img_loaded[0, fitsY, fitsX] := r + bck.backgr;
+        img_loaded[1, fitsY, fitsX] := g + bck.backgr;
+        img_loaded[2, fitsY, fitsX] := b + bck.backgr;
       end;
     end;
   plot_fits(mainwindow.image1, False, True);{plot real}
@@ -10276,7 +10229,7 @@ var
 const
   step = 100;
 begin
-  setlength(img_outliers, head.naxis3, head.Width, head.Height); {set length of image array mono}
+  setlength(img_outliers,head.naxis3, head.Height, head.Width); {set length of image array mono}
 
   for col := 0 to head.naxis3 - 1 do {do all colours}
   begin
@@ -10287,7 +10240,7 @@ begin
     for fitsY := 0 to (head.Height - 1) div step do
       for fitsX := 0 to (head.Width - 1) div step do
       begin
-        val := img[col, fitsX * step, fitsY * step];
+        val := img[col, fitsY * step, fitsX * step];
         if val < 32000 then average1 := average1 + val;
         Inc(Count);
       end;
@@ -10298,7 +10251,7 @@ begin
     for fitsY := 0 to (head.Height - 1) div step do
       for fitsX := 0 to (head.Width - 1) div step do
       begin
-        val := img[col, fitsX * step, fitsY * step];
+        val := img[col, fitsY * step, fitsX * step];
         if val < 32000 then sd1 := sd1 + sqr(average1 - val);
         Inc(Count);
       end;
@@ -10311,7 +10264,7 @@ begin
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
       begin
-        val := img[col, fitsX, fitsY];
+        val := img[col, fitsY, fitsX];
         if val < average1 + 5 * sd1 then average := average + val;
         Inc(Count);
       end;
@@ -10320,7 +10273,7 @@ begin
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
       begin
-        val := img[col, fitsX, fitsY];
+        val := img[col, fitsY, fitsX];
         if val < average1 + 5 * sd1 then sd := sd + sqr(average - val);
         Inc(Count);
       end;
@@ -10330,8 +10283,8 @@ begin
     for fitsY := 0 to head.Height - 1 do  {mark signal pixel and store in img_outliers}
       for fitsX := 0 to head.Width - 1 do
       begin
-        if (img[col, fitsX, fitsY] - average) > maxoffs then {signal}
-          img_outliers[col, fitsX, fitsY] := img[col, fitsX, fitsY] {store as signal}
+        if (img[col, fitsY, fitsX] - average) > maxoffs then {signal}
+          img_outliers[col, fitsY, fitsX] := img[col, fitsY, fitsX] {store as signal}
         else
         begin
           Count := 0; {find if signal nearby}
@@ -10341,7 +10294,7 @@ begin
               if ((fitsX + i >= 0) and (fitsX + i < head.Width) and (fitsY + j >= 0) and
                 (FitsY + j < head.Height)) then
               begin
-                if (img[col, fitsX + i, fitsY + j] - average) > maxoffs then {signal}
+                if (img[col, fitsY + j, fitsX + i] - average) > maxoffs then {signal}
                 begin
                   Inc(Count);
                 end;
@@ -10349,11 +10302,11 @@ begin
 
           if Count > 0 then {signal}
           begin
-            img_outliers[col, fitsX, fitsY] := img[col, fitsX, fitsY]; {store outlier for possible restoring}
-            img[col, fitsX, fitsY] := average;{change hot pixel to average}
+            img_outliers[col, fitsY, fitsX] := img[col, fitsY, fitsX]; {store outlier for possible restoring}
+            img[col, fitsY, fitsX] := average;{change hot pixel to average}
           end
           else
-            img_outliers[col, fitsX, fitsY] := 0;{not signal}
+            img_outliers[col, fitsY, fitsX] := 0;{not signal}
         end;
       end;
   end;{all colours}
@@ -10365,8 +10318,8 @@ begin
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
       begin
-        if img_outliers[col, fitsX, fitsY] <> 0 then
-          img[col, fitsX, fitsY] := img_outliers[col, fitsX, fitsY];
+        if img_outliers[col, fitsY, fitsX] <> 0 then
+          img[col, fitsY, fitsX] := img_outliers[col, fitsY, fitsX];
       end;
   img_outliers := nil;
 end;
@@ -10438,8 +10391,8 @@ begin
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
         for col := 0 to head.naxis3 - 1 do
-          img_loaded[col, fitsX, fitsY] :=
-            max(0, img_loaded[col, fitsX, fitsY] + randg(mean, noise){gaussian noise});
+          img_loaded[col, fitsY, fitsX] :=
+            max(0, img_loaded[col, fitsY, fitsX] + randg(mean, noise){gaussian noise});
 
     plot_fits(mainwindow.image1, False, True);{plot real}
     Screen.Cursor := crDefault;
@@ -10565,7 +10518,7 @@ procedure double_size(img: image_array; w, h: integer; var img2: image_array);{d
 var
   fitsX, fitsY, i, x, y: integer;
 begin
-  setlength(img_buffer, head.naxis3, w, h);{set length of image array}
+  setlength(img_buffer,head.naxis3, h, w);{set length of image array}
 
   for fitsY := 0 to h do
     for fitsX := 0 to w do
@@ -10984,7 +10937,7 @@ begin
             for fitsY := 0 to head.Height - 1 do
               for fitsX := 0 to head.Width - 1 do
               begin
-                img_flat[0, fitsX, fitsY] := img_flat[0, fitsX, fitsY] - img_bias[0, fitsX, fitsY]; {flats and bias already made mono in procedure average}
+                img_flat[0, fitsY, fitsX] := img_flat[0, fitsY, fitsX] - img_bias[0, fitsY, fitsX]; {flats and bias already made mono in procedure average}
               end;
           end;
         end;
@@ -11108,15 +11061,15 @@ begin
       dark_norm_value := 0;
       for fitsY := (head.Width div 2)-7 to (head.Width div 2)+8 do {do even times, 16x16 for bayer matrix}
         for fitsX := (head.Height div 2)-7 to (head.Height div 2)+8 do
-          dark_norm_value := dark_norm_value + img_dark[0, fitsX,fitsY];
+          dark_norm_value := dark_norm_value + img_dark[0, fitsY,fitsX];
       dark_norm_value := dark_norm_value /(16*16);  {scale factor to apply flat. The norm value will result in a factor one for the center.}
 
       for fitsY := 0 to head.Height - 1 do  {apply the dark}
         for fitsX := 0 to head.Width - 1 do
         begin
-          Value := img_dark[0, fitsX, fitsY];{Darks are always made mono when making master dark}
+          Value := img_dark[0, fitsY, fitsX];{Darks are always made mono when making master dark}
           for k := 0 to head.naxis3 - 1 do {do all colors}
-            img[k, fitsX, fitsY] := img[k, fitsX, fitsY] - Value;
+            img[k, fitsY, fitsX] := img[k, fitsY, fitsX] - Value;
         end;
 
       {for stacking}
@@ -11151,7 +11104,7 @@ begin
       for fitsY:=(head_2.Width div 2)-7 to (head_2.Width div 2)+8 do {do even times, 16x16 for Bay matrix. For OSC 8x8 pixels for each colour}
         for fitsX:=(head_2.Height div 2)-7 to (head_2.Height div 2)+8 do
         begin
-          Value := img_flat[0,fitsX, fitsY];
+          Value := img_flat[0,fitsY, fitsX];
           flat_norm_value := flat_norm_value + Value;
           if odd(fitsX) then
           begin
@@ -11190,21 +11143,21 @@ begin
             if odd(fitsX) then
             begin
               if odd(fitsY) then
-                flat_factor :=  flatNorm11 / (img_flat[0, fitsX , fitsY] + 0.001)  //normalise flat for colour 11
+                flat_factor :=  flatNorm11 / (img_flat[0, fitsY , fitsX] + 0.001)  //normalise flat for colour 11
               else
-                flat_factor :=  flatNorm12 / (img_flat[0, fitsX , fitsY] + 0.001)  //normalise flat for colour 12
+                flat_factor :=  flatNorm12 / (img_flat[0, fitsY , fitsX] + 0.001)  //normalise flat for colour 12
             end
             else
             begin
               if odd(fitsY) then
-                flat_factor :=  flatNorm21 / (img_flat[0, fitsX , fitsY] + 0.001) //normalise flat for colour 21
+                flat_factor :=  flatNorm21 / (img_flat[0, fitsY , fitsX] + 0.001) //normalise flat for colour 21
               else
-                flat_factor :=  flatNorm22 / (img_flat[0, fitsX , fitsY] + 0.001) //normalise flat for colour 22
+                flat_factor :=  flatNorm22 / (img_flat[0, fitsY , fitsX] + 0.001) //normalise flat for colour 22
             end;
 
             flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
 
-            img[k, fitsX, fitsY] := img[k, fitsX, fitsY] * flat_factor;
+            img[k, fitsY, fitsX] := img[k, fitsY, fitsX] * flat_factor;
           end;
       end
       else //monochrome images (or weird images already in colour)
@@ -11213,10 +11166,10 @@ begin
         for fitsY := 0 to head.Height-1 do  {apply the flat}
           for fitsX := 0 to head.Width-1 do
           begin
-            flat_factor := flat_norm_value / (img_flat[0, fitsX, fitsY] + 0.001);  {bias is already combined in flat in combine_flat}
+            flat_factor := flat_norm_value / (img_flat[0, fitsY, fitsX] + 0.001);  {bias is already combined in flat in combine_flat}
             flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
 
-            img[k, fitsX, fitsY] := img[k, fitsX, fitsY] * flat_factor;
+            img[k, fitsY, fitsX] := img[k, fitsY, fitsX] * flat_factor;
           end;
       end;
       {for stacking}
@@ -11279,7 +11232,7 @@ begin
               for X := 0 to head.Width - 1 do
                 for col := 0 to head.naxis3 - 1 do
                 begin
-                  img_loaded[col, X, Y] := img_loaded[col, X, Y] + 500; {add pedestal to prevent values around zero for very dark skies}
+                  img_loaded[col, Y, X] := img_loaded[col, Y, X] + 500; {add pedestal to prevent values around zero for very dark skies}
                 end;
 
             head.pedestal:=500;
@@ -11293,12 +11246,9 @@ begin
             update_text('COMMENT 1', '  Calibrated by ASTAP. www.hnsky.org');
             update_float('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
             update_text('CALSTAT =', #39 + head.calstat+#39); {calibration status.}
-            add_integer('DARK_CNT=', ' / Darks used for luminance.               '
-              , head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-            add_integer('FLAT_CNT=', ' / Flats used for luminance.               '
-              , head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-            add_integer('BIAS_CNT=', ' / Flat-darks used for luminance.          '
-              , head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+            add_integer('DARK_CNT=', ' / Darks used for luminance.               ' , head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+            add_integer('FLAT_CNT=', ' / Flats used for luminance.               ' , head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+            add_integer('BIAS_CNT=', ' / Flat-darks used for luminance.          ' , head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
             { ASTAP keyword standard:}
             { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
             { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
@@ -12623,7 +12573,7 @@ begin
           for fitsX := 0 to head.Width - 1 do
           begin
             if ((i >= 0) and (i <= head.Height - 1)) then
-              img_loaded[k, fitsX, i] := most_common;{store common vertical values}
+              img_loaded[k, i, fitsX] := most_common;{store common vertical values}
           end;
       end;
     end;{K}
@@ -12643,7 +12593,7 @@ begin
           for fitsY := 0 to head.Height - 1 do
           begin
             if ((i >= 0) and (i <= head.Width - 1)) then
-              img_loaded[k, i, fitsY] := most_common;{store common vertical values}
+              img_loaded[k, fitsY, i] := most_common;{store common vertical values}
           end;
       end;
     end;{K}
@@ -12656,7 +12606,7 @@ begin
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
       begin
-        img_loaded[k, fitsX, fitsY] := mean + img_backup[index_backup].img[k, fitsX, fitsY] - img_loaded[k, fitsX, fitsY];
+        img_loaded[k, fitsY, fitsX] := mean + img_backup[index_backup].img[k, fitsY, fitsX] - img_loaded[k, fitsY, fitsX];
       end;
   end;{k color}
 

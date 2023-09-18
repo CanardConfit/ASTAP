@@ -168,8 +168,8 @@ begin
     if MessageDlg('Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) <> 6 {mbYes} then
     Exit;
 
-  width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{height}
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
   description:=description+#0;{GIMP is complaining about this #0}
 
   try
@@ -233,9 +233,9 @@ begin
     for j:=0 to width2-1 do
     begin
       if flip_H=true then m:=width2-1-j else m:=j;
-      dum:=img[0,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
-       tiffbuffer[m+m]  :=lo(dummy);
-       tiffbuffer[m+m+1]:=hi(dummy);
+      dum:=img[0,k,m]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
+      tiffbuffer[m+m]  :=lo(dummy);
+      tiffbuffer[m+m+1]:=hi(dummy);
     end;
     thefile.writebuffer( tiffbuffer,width2*2{size 2x8}) ;{works only for byte arrays}
   end;
@@ -263,8 +263,8 @@ begin
       Exit;
 
   //colours2:=length(img);{nr colours}
-  width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{height}
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
   description:=description+#0;{GIMP is complaining about this #0}
 
 
@@ -326,7 +326,7 @@ begin
     for j:=0 to width2-1 do
     begin
       if flip_H=true then m:=width2-1-j else m:=j;
-      tiffbuffer32[m]:=img[0,m,k]/65535;{range 0..1}
+      tiffbuffer32[m]:=img[0,k,m]/65535;{range 0..1}
     end;
     thefile.writebuffer(tiffbuffer,width2*4{size 2x8}) ;{works only for byte arrays}
   end;
@@ -366,8 +366,8 @@ begin
     exit;
   end;
 
-  width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{height}
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
   description:=description+#0;{GIMP is complaining about this}
 
   Directoryrgb48[1]._Value := LongInt(width2);       { Image Width }
@@ -424,13 +424,13 @@ begin
     for j:=0 to width2-1 do
       begin
        if flip_H=true then m:=width2-1-j else m:=j;
-       dum:=img[0,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
+       dum:=img[0,k,m]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
        tiffbuffer[m*6  ]  :=lo(dummy);
        tiffbuffer[m*6+1]  :=hi(dummy);
-       dum:=img[1,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
+       dum:=img[1,k,m]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
        tiffbuffer[m*6+2]  :=lo(dummy);
        tiffbuffer[m*6+3]  :=hi(dummy);
-       dum:=img[2,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
+       dum:=img[2,k,m]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
        tiffbuffer[m*6+4]  :=lo(dummy);
        tiffbuffer[m*6+5]  :=hi(dummy);
      end;
@@ -489,8 +489,8 @@ begin
   end;
 
  //colours2:=length(img);{nr colours}
-  width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{height}
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
 
   description:=description+#0;{GIMP is complaining about this}
 
@@ -548,19 +548,19 @@ begin
     for j:=0 to width2-1 do
     begin
       if flip_H=true then m:=width2-1-j else m:=j;
-      buf32:=img[0,m,k]/65535;{range 0..1,  buf32 has absolute link to buffer}
+      buf32:=img[0,k,m]/65535;{range 0..1,  buf32 has absolute link to buffer}
       tiffbuffer[m*12 ]  :=buffer[0];
       tiffbuffer[m*12+1] :=buffer[1];
       tiffbuffer[m*12+2] :=buffer[2];
       tiffbuffer[m*12+3] :=buffer[3];
 
-      buf32:=img[1,m,k]/65535;{range 0..1,  buf32 has absolute link to buffer}
+      buf32:=img[1,k,m]/65535;{range 0..1,  buf32 has absolute link to buffer}
       tiffbuffer[m*12+4] :=buffer[0];
       tiffbuffer[m*12+5] :=buffer[1];
       tiffbuffer[m*12+6] :=buffer[2];
       tiffbuffer[m*12+7] :=buffer[3];
 
-      buf32:=img[2,m,k]/65535;{range 0..1,  buf32 has absolute link to buffer}
+      buf32:=img[2,k,m]/65535;{range 0..1,  buf32 has absolute link to buffer}
       tiffbuffer[m*12+8]  :=buffer[0];
       tiffbuffer[m*12+9]  :=buffer[1];
       tiffbuffer[m*12+10] :=buffer[2];

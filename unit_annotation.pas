@@ -991,8 +991,8 @@ var                                                                             
  w,h,i,j,k,value,flipV, flipH,len,x2,y2: integer;
  ch : pansichar;
 begin
-  w:=Length(img[0]); {width}
-  h:=Length(img[0,0]); {height}
+  w:=Length(img[0,0]); {width}
+  h:=Length(img[0]); {height}
 
   if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
@@ -1021,7 +1021,7 @@ begin
         x2:=x+(i+(k-1)*7*size)*flipH;
         y2:=y-(j*flipV);
         if ((x2>=0) and (x2<w) and (y2>=0) and (y2<h)) then {within image}
-        if (((transparant=false)) or (font_5x9[value,j div size ,i div size]<>0)) then img[0,x2,y2]:=font_5x9[value,j div size,i div size]*colour;{write the font to the array}
+        if (((transparant=false)) or (font_5x9[value,j div size ,i div size]<>0)) then img[0,y2,x2]:=font_5x9[value,j div size,i div size]*colour;{write the font to the array}
       end;
   end;
 end;
@@ -1903,16 +1903,16 @@ var
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
-            if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
-                (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
-                (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
-                (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
-                (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
+            if ((img_loaded[0,round(yc),round(xc)]<head.datamax_org-1) and
+                (img_loaded[0,round(yc-1),round(xc)]<head.datamax_org-1) and
+                (img_loaded[0,round(yc+1),round(xc)]<head.datamax_org-1) and
+                (img_loaded[0,round(yc),round(xc-1)]<head.datamax_org-1) and
+                (img_loaded[0,round(yc),round(xc+1)]<head.datamax_org-1) and
 
-                (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
-                (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
-                (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
-                (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
+                (img_loaded[0,round(yc-1),round(xc-1)]<head.datamax_org-1) and
+                (img_loaded[0,round(yc-1),round(xc+1)]<head.datamax_org-1) and
+                (img_loaded[0,round(yc+1),round(xc-1)]<head.datamax_org-1) and
+                (img_loaded[0,round(yc+1),round(xc+1)]<head.datamax_org-1)  ) then {not saturated}
             begin
               if counter_flux_measured>=length(flux_ratio_array) then
               begin
@@ -2560,10 +2560,10 @@ var
 
       if ((x>=0) and (x<=head.width-1) and (y>=0) and (y<=head.height-1)) then {within image1}
       begin
-        if img[0,x,y]>=1000 then //empthy
-          img[0,x,y]:=mag2 //no star at this location
+        if img[0,y,x]>=1000 then //empthy
+          img[0,y,x]:=mag2 //no star at this location
         else
-          img[0,x,y]:=-2.5*ln(power(10,-0.4*img[0,x,y]) + power(10,-0.4*mag2))/ln(10);//combine magnitudes
+          img[0,y,x]:=-2.5*ln(power(10,-0.4*img[0,y,x]) + power(10,-0.4*mag2))/ln(10);//combine magnitudes
       end;
     end;
 

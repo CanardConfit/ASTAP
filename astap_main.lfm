@@ -1891,7 +1891,7 @@ object mainwindow: Tmainwindow
         OnClick = localcoloursmooth2Click
       end
       object remove_colour1: TMenuItem
-        Caption = 'Local remove colour (▭, ⬭)'
+        Caption = 'Local remove colour (⬭)'
         Hint = 'Intended for some ugly coloured stars in OSC images'
         OnClick = remove_colour1Click
       end

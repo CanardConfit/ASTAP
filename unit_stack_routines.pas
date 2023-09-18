@@ -226,11 +226,11 @@ begin
           for fitsX:=0 to width_max-1 do
           for col:=0 to 2 do
           begin
-            tempval:=img_temp[col,fitsX,fitsY];
+            tempval:=img_temp[col,fitsY,fitsX];
             if tempval>0 then //Note tempval>1 is very very rare. In 99.99% cases tempval is 1 and no more then one pixel combined. Seen more then one pixel only for astrometric stacking
-               img_average[col,fitsX,fitsY]:=500+img_average[col,fitsX,fitsY]/tempval {scale to one image by diving by the number of pixels added}
+               img_average[col,fitsY,fitsX]:=500+img_average[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
              else
-             img_average[col,fitsX,fitsY]:=0;//This will set all colours of a single pixel to zero if one of the colour is saturated and marked by image_temp[]:=-9;
+             img_average[col,fitsY,fitsX]:=0;//This will set all colours of a single pixel to zero if one of the colour is saturated and marked by image_temp[]:=-9;
           end;
           memo2_message('Applying black spot filter on interim RGB image.');
           black_spot_filter(img_average); //Black spot filter and add bias. Note for 99,99% zero means black spot but it could also be coincidence
@@ -338,15 +338,15 @@ begin
               end;
               width_max:=head.width+oversize*2;
 
-              setlength(img_average,3,width_max,height_max);{will be color}
-              setlength(img_temp,3,width_max,height_max);
+              setlength(img_average,3,height_max,width_max);{will be color}
+              setlength(img_temp,3,height_max,width_max);
 
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
                   for col:=0 to 2 do
                   begin
-                    img_average[col,fitsX,fitsY]:=0; //clear img_average
-                    img_temp[col,fitsX,fitsY]:=0;//clear counter
+                    img_average[col,fitsY,fitsX]:=0; //clear img_average
+                    img_temp[col,fitsY,fitsX]:=0;//clear counter
                   end;
             end;{init, c=0}
 
@@ -411,64 +411,64 @@ begin
                 begin
                   if c=1 {red} then
                   begin
-                    value:=img_loaded[0,fitsX-1,fitsY-1];
+                    value:=img_loaded[0,fitsY-1,fitsX-1];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
                       for col:=0 to 2 do
-                        img_temp[col,x_new,y_new]:=-9;//mark all colours as saturated if one colour is saturated.
+                        img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
                     end
                     else
                     begin
                       value:=(value-background_r);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if rr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + rr_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1; end;
-                      if rg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + rg_factor*value; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1; end;
-                      if rb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + rb_factor*value; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1; end;
+                      if rr_factor>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + rr_factor*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1; end;
+                      if rg_factor>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + rg_factor*value; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
+                      if rb_factor>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + rb_factor*value; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
                     end;
                   end;
                   if c=2 {green} then
                   begin
-                    value:=img_loaded[0,fitsX-1,fitsY-1];
+                    value:=img_loaded[0,fitsY-1,fitsX-1];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
                       for col:=0 to 2 do
-                         img_temp[col,x_new,y_new]:=-9;//mark all colours as saturated if one colour is saturated.
+                         img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
                     end
                     else
                     begin
                       value:=(value-background_g);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if gr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + gr_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;  end;
-                      if gg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + gg_factor*value;img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1; end;
-                      if gb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + gb_factor*value;img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1; end;
+                      if gr_factor>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + gr_factor*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1;  end;
+                      if gg_factor>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + gg_factor*value;img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
+                      if gb_factor>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + gb_factor*value;img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
                     end;
                   end;
                   if c=3 {blue}  then
                   begin
-                    value:=img_loaded[0,fitsX-1,fitsY-1];
+                    value:=img_loaded[0,fitsY-1,fitsX-1];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
                       for col:=0 to 2 do
-                         img_temp[col,x_new,y_new]:=-9;//mark all colours as saturated if one colour is saturated.
+                         img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
                     end
                     else
                     begin
                       value:=(value-background_b);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if br_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + br_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;  end;
-                      if bg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + bg_factor*value; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;end;
-                      if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + bb_factor*value; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;end;
+                      if br_factor>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + br_factor*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1;  end;
+                      if bg_factor>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + bg_factor*value; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1;end;
+                      if bb_factor>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + bb_factor*value; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1;end;
                     end;
                   end;
                   if c=4 {RGB image, naxis3=3}   then
                   begin
-                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r; img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1; end;
-                    begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1; end;
-                    begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1; end;
+                    begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + img_loaded[0,fitsY-1,fitsX-1]-background_r; img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1; end;
+                    begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + img_loaded[1,fitsY-1,fitsX-1]-background_g; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
+                    begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + img_loaded[2,fitsY-1,fitsX-1]-background_b; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
                   end;
                   if c=5 {Luminance} then
                   begin
                     {r:=l*(0.33+r)/(r+g+b)}
-                    colr:=img_average[0,x_new,y_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
-                    colg:=img_average[1,x_new,y_new] - 475 + green_add;
-                    colb:=img_average[2,x_new,y_new] - 475 + blue_add;
+                    colr:=img_average[0,y_new,x_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
+                    colg:=img_average[1,y_new,x_new] - 475 + green_add;
+                    colb:=img_average[2,y_new,x_new] - 475 + blue_add;
 
                     rgbsum:=colr+colg+colb;
                     if rgbsum<0.1 then begin rgbsum:=0.1; red_f:=rgbsum/3; green_f:=red_f; blue_f:=red_f;end
@@ -479,9 +479,9 @@ begin
                       blue_f:=colb/rgbsum;  if blue_f<0  then blue_f:=0; if blue_f>1 then  blue_f:=1;
                     end;
 
-                    img_average[0,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(red_f);
-                    img_average[1,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(green_f);
-                    img_average[2,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(blue_f);
+                    img_average[0,y_new,x_new]:=1000+(img_loaded[0,fitsY-1,fitsX-1] - background_l)*(red_f);
+                    img_average[1,y_new,x_new]:=1000+(img_loaded[0,fitsY-1,fitsX-1] - background_l)*(green_f);
+                    img_average[2,y_new,x_new]:=1000+(img_loaded[0,fitsY-1,fitsX-1] - background_l)*(blue_f);
                   end;
                 end;
               end;
@@ -517,8 +517,8 @@ const
   steps=100;
 begin
   //  colors:=Length(img); {colors}
-  w:=Length(img[0]);    {width}
-  h:=Length(img[0][0]); {height}
+  w:=Length(img[0,0]);    {width}
+  h:=Length(img[0]); {height}
 
   middleY:=h div 2;
   step_size:=w div steps;
@@ -531,10 +531,10 @@ begin
 
   for fitsX:=0 to steps-1   do  {test one horizontal line and take 100 samples of the bayer matrix}
   begin
-    p11[fitsX]:=img[0,step_size*fitsX,middleY];
-    p12[fitsX]:=img[0,step_size*fitsX+1,middleY];
-    p21[fitsX]:=img[0,step_size*fitsX,middleY+1];
-    p22[fitsX]:=img[0,step_size*fitsX+1,middleY+1];
+    p11[fitsX]:=img[0,middleY,step_size*fitsX];
+    p12[fitsX]:=img[0,middleY,step_size*fitsX+1];
+    p21[fitsX]:=img[0,middleY+1,step_size*fitsX];
+    p22[fitsX]:=img[0,middleY+1,step_size*fitsX+1];
   end;
 
   m11:=Smedian(p11,steps);
@@ -622,7 +622,6 @@ begin
           {load image}
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
           if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-
           if init=false then
           begin {init is false, first image}
             old_width:=head.width;
@@ -690,14 +689,14 @@ begin
             end;
             width_max:=head.width+oversize*2;
 
-            setlength(img_average,head.naxis3,width_max,height_max);
-            setlength(img_temp,1,width_max,height_max);
+            setlength(img_average,head.naxis3,height_max,width_max);
+            setlength(img_temp,1,height_max,width_max);
             for fitsY:=0 to height_max-1 do
               for fitsX:=0 to width_max-1 do
               begin
                 for col:=0 to head.naxis3-1 do
-                  img_average[col,fitsX,fitsY]:=0; {clear img_average}
-                img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
+                  img_average[col,fitsY,fitsX]:=0; {clear img_average}
+                img_temp[0,fitsY,fitsX]:=0; {clear img_temp}
               end;
 
             if ((use_manual_align) or (use_ephemeris_alignment)) then
@@ -778,8 +777,8 @@ begin
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to head.naxis3-1 do {all colors}
-                  img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
+                  img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY-1,fitsX-1]*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
             end;
 
@@ -799,22 +798,22 @@ begin
         mainwindow.Memo1.Text:=memo1_text;{restore header of reference file for update and saving}
         head.height:=height_max;
         head.width:=width_max;
-        setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
+        setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
 
         for fitsY:=0 to head.height-1 do
         for fitsX:=0 to head.width-1 do
         begin {pixel loop}
-          tempval:=img_temp[0,fitsX,fitsY];
+          tempval:=img_temp[0,fitsY,fitsX];
           for col:=0 to head.naxis3-1 do
           begin {colour loop}
-            if tempval<>0 then img_loaded[col,fitsX,fitsY]:=background_correction+img_average[col,fitsX,fitsY]/tempval {scale to one image by diving by the number of pixels added}
+            if tempval<>0 then img_loaded[col,fitsY,fitsX]:=background_correction+img_average[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
             else
             begin { black spot filter or missing value filter due to image rotation}
-              if ((fitsX>0) and (img_temp[0,fitsX-1,fitsY]<>0)) then img_loaded[col,fitsX,fitsY]:=background_correction+img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+              if ((fitsX>0) and (img_temp[0,fitsY,fitsX-1]<>0)) then img_loaded[col,fitsY,fitsX]:=background_correction+img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
               else
-              if ((fitsY>0) and (img_temp[0,fitsX,fitsY-1]<>0)) then img_loaded[col,fitsX,fitsY]:=background_correction+img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+              if ((fitsY>0) and (img_temp[0,fitsY-1,fitsX]<>0)) then img_loaded[col,fitsY,fitsX]:=background_correction+img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
               else
-              img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+              img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
             end; {black spot}
           end;{colour loop}
         end;{pixel loop}
@@ -823,6 +822,7 @@ begin
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
 end;
+
 
 
 function minimum_distance_borders(fitsX,fitsY,w,h: integer): single;
@@ -908,17 +908,17 @@ begin
             width_max:=abs(round(fx2-fx1))+oversize*2;
             height_max:=abs(round(fy2-fy1))+oversize*2;
 
-            setlength(img_average,head.naxis3,width_max,height_max);
-            setlength(img_temp,1,width_max,height_max);{gray}
+            setlength(img_average,head.naxis3,height_max,width_max);
+            setlength(img_temp,1,height_max,width_max);{gray}
 
             for fitsY:=0 to height_max-1 do
               for fitsX:=0 to width_max-1 do
               begin
                 for col:=0 to head.naxis3-1 do
                 begin
-                  img_average[col,fitsX,fitsY]:=0; {clear img_average}
+                  img_average[col,fitsY,fitsX]:=0; {clear img_average}
                 end;
-                img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
+                img_temp[0,fitsY,fitsX]:=0; {clear img_temp}
               end;
           end;{init, c=0}
 
@@ -977,13 +977,13 @@ begin
                 x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
                 if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                 begin
-                  if img_loaded[0,fitsX-1,fitsY-1]>0.0001 then {not a black area around image}
+                  if img_loaded[0,fitsY-1,fitsX-1]>0.0001 then {not a black area around image}
                   begin
-                    if img_average[0,x_new,y_new]<>0 then {filled pixel}
+                    if img_average[0,y_new,x_new]<>0 then {filled pixel}
                     begin
                       for col:=0 to head.naxis3-1 do {all colors}
                       begin
-                        correction:=round(img_average[col,x_new,y_new]-(img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col]) );
+                        correction:=round(img_average[col,y_new,x_new]-(img_loaded[col,fitsY-1,fitsX-1]+background_correction_center[col]) );
                         if abs(correction)<max_dev_backgr*1.5 then {acceptable offset based on the lowest and highest background measured earlier}
                         begin
                            background_correction[col]:=background_correction[col]+correction;
@@ -1009,14 +1009,14 @@ begin
               x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
-                if img_loaded[0,fitsX-1,fitsY-1]>0.0001 then {not a black area around image}
+                if img_loaded[0,fitsY-1,fitsX-1]>0.0001 then {not a black area around image}
                 begin
                   dummy:=1+minimum_distance_borders(fitsX,fitsY,head.width,head.height);{minimum distance borders}
-                  if img_temp[0,x_new,y_new]=0 then {blank pixel}
+                  if img_temp[0,y_new,x_new]=0 then {blank pixel}
                   begin
                      for col:=0 to head.naxis3-1 do {all colors}
-                     img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col] +background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                     img_temp[0,x_new,y_new]:=dummy;
+                     img_average[col,y_new,x_new]:=img_loaded[col,fitsY-1,fitsX-1]+background_correction_center[col] +background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                     img_temp[0,y_new,x_new]:=dummy;
 
                   end
                   else
@@ -1029,21 +1029,21 @@ begin
                       begin
                         median2:=median_background(img_average,col,15,15,x_new,y_new);{find median value of the destignation img_average}
                         delta_median:=median-median2;
-                        img_average[col,x_new,y_new]:= img_average[col,x_new,y_new]+ delta_median*(1-img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new]));{adapt overlap}
+                        img_average[col,y_new,x_new]:= img_average[col,y_new,x_new]+ delta_median*(1-img_temp[0,y_new,x_new]{distance border}/(dummy+img_temp[0,y_new,x_new]));{adapt overlap}
                       end
                       else
                       begin {method 1}
-                        value:=img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col];
+                        value:=img_loaded[col,fitsY-1,fitsX-1]+background_correction_center[col];
                         local_sd(fitsX-1-15 ,fitsY-1-15, fitsX-1+15,fitsY-1+15,col,img_loaded, {var} noise,mean, iterations);{local noise recheck every 10 th pixel}
                         maxlevel:=median+noise*5;
                         if ((value<maxlevel) and
-                          (img_loaded[col,fitsX-1-1,fitsY-1]<maxlevel) and (img_loaded[col,fitsX-1+1,fitsY-1]<maxlevel) and (img_loaded[col,fitsX-1,fitsY-1-1]<maxlevel) and (img_loaded[col,fitsX-1,fitsY-1+1]<maxlevel) {check nearest pixels}
+                          (img_loaded[col,fitsY-1,fitsX-1-1]<maxlevel) and (img_loaded[col,fitsY-1,fitsX-1+1]<maxlevel) and (img_loaded[col,fitsY-1-1,fitsX-1]<maxlevel) and (img_loaded[col,fitsY-1+1,fitsX-1]<maxlevel) {check nearest pixels}
                            ) then {not a star, prevent double stars at overlap area}
-                           img_average[col,x_new,y_new]:=+img_average[col,x_new,y_new]*img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new])
-                                                        +(value+background_correction[col])*dummy/(dummy+img_temp[0,x_new,y_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
+                           img_average[col,y_new,x_new]:=+img_average[col,y_new,x_new]*img_temp[0,y_new,x_new]{distance border}/(dummy+img_temp[0,y_new,x_new])
+                                                        +(value+background_correction[col])*dummy/(dummy+img_temp[0,y_new,x_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
                        end;
                     end;
-                    img_temp[0,x_new,y_new]:=dummy;
+                    img_temp[0,y_new,x_new]:=dummy;
                   end;
                 end;
               end;
@@ -1061,22 +1061,22 @@ begin
         mainwindow.Memo1.Text:=memo1_text;{restore header of reference file for update and saving}
         head.height:=height_max;
         head.width:=width_max;
-        setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
+        setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
 
         For fitsY:=0 to head.height-1 do
         for fitsX:=0 to head.width-1 do
         begin {pixel loop}
-          tempval:=img_temp[0,fitsX,fitsY]; {if <>0 then something was written}
+          tempval:=img_temp[0,fitsY,fitsX]; {if <>0 then something was written}
           for col:=0 to head.naxis3-1 do
           begin {colour loop}
-            if tempval<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY] {no divide}
+            if tempval<>0 then img_loaded[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX] {no divide}
             else
             begin { black spot filter or missing value filter due to image rotation}
-              if ((fitsX>0) and (img_temp[0,fitsX-1,fitsY]<>0)) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+              if ((fitsX>0) and (img_temp[0,fitsY,fitsX-1]<>0)) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
               else
-              if ((fitsY>0) and (img_temp[0,fitsX,fitsY-1]<>0)) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+              if ((fitsY>0) and (img_temp[0,fitsY-1,fitsX]<>0)) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
               else
-              img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+              img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
             end; {black spot}
           end;{colour loop}
         end;{pixel loop}
@@ -1145,7 +1145,6 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
         if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-
         if init=false then {first image}
         begin
           old_width:=head.width;
@@ -1216,14 +1215,14 @@ begin
           end;
           width_max:=head.width+oversize*2;
 
-          setlength(img_average,head.naxis3,width_max,height_max);
-          setlength(img_temp,head.naxis3,width_max,height_max);
+          setlength(img_average,head.naxis3,height_max,width_max);
+          setlength(img_temp,head.naxis3,height_max,width_max);
           for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
               for col:=0 to head.naxis3-1 do
               begin
-                img_average[col,fitsX,fitsY]:=0; {clear img_average}
-                img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
+                img_average[col,fitsY,fitsX]:=0; {clear img_average}
+                img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
               end;
 
         end;{init, c=0}
@@ -1311,8 +1310,8 @@ begin
             begin
               for col:=0 to head.naxis3-1 do
               begin
-                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]*weightF;{Note fits count from 1, image from zero}
-                img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
+                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY-1,fitsX-1]*weightF;{Note fits count from 1, image from zero}
+                img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
               end;
             end;
           end;
@@ -1326,8 +1325,8 @@ begin
       for fitsY:=0 to height_max-1 do
         for fitsX:=0 to width_max-1 do
             for col:=0 to head.naxis3-1 do
-            if img_temp[col,fitsX,fitsY]<>0 then
-               img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY];{scale to one image by diving by the number of pixels added}
+            if img_temp[col,fitsY,fitsX]<>0 then
+               img_average[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX]/img_temp[col,fitsY,fitsX];{scale to one image by diving by the number of pixels added}
     end;  {light average}
 
     {standard deviation of light images}  {stack using sigma clip average}
@@ -1349,7 +1348,6 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
           if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-
           if init=false then
           begin
             {not required. Done in first step}
@@ -1370,11 +1368,11 @@ begin
           end;
           if init=false then {init (2) for standard deviation step}
           begin
-            setlength(img_variance,head.naxis3,width_max,height_max);{mono}
+            setlength(img_variance,head.naxis3,height_max,width_max);{mono}
             for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
             begin
-              for col:=0 to head.naxis3-1 do img_variance[col,fitsX,fitsY]:=0; {clear img_average}
+              for col:=0 to head.naxis3-1 do img_variance[col,fitsY,fitsX]:=0; {clear img_average}
             end;
           end;{c=0}
 
@@ -1423,7 +1421,7 @@ begin
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              for col:=0 to head.naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( img_loaded[col,fitsX-1,fitsY-1]*weightF - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
+              for col:=0 to head.naxis3-1 do img_variance[col,y_new,x_new]:=img_variance[col,y_new,x_new] +  sqr( img_loaded[col,fitsY-1,fitsX-1]*weightF - img_average[col,y_new,x_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
             end;
           end;
 
@@ -1435,8 +1433,8 @@ begin
         For fitsY:=0 to height_max-1 do
           for fitsX:=0 to width_max-1 do
             for col:=0 to head.naxis3-1 do
-              if img_temp[col,fitsX,fitsY]<>0 then {reuse the img_temp from light average}
-                 img_variance[col,fitsX,fitsY]:=1+img_variance[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY]; {the extra 1 is for saturated images giving a SD=0}{scale to one image by diving by the number of pixels tested}
+              if img_temp[col,fitsY,fitsX]<>0 then {reuse the img_temp from light average}
+                 img_variance[col,fitsY,fitsX]:=1+img_variance[col,fitsY,fitsX]/img_temp[col,fitsY,fitsX]; {the extra 1 is for saturated images giving a SD=0}{scale to one image by diving by the number of pixels tested}
     end; {standard deviation of light images}
 
 
@@ -1458,7 +1456,6 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
           if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-
           apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
           memo2_message('Combining '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
@@ -1475,15 +1472,15 @@ begin
 
           if init=false then {init, (3) step throw outliers out}
           begin
-            setlength(img_temp,head.naxis3,width_max,height_max);
-            setlength(img_final,head.naxis3,width_max,height_max);
+            setlength(img_temp,head.naxis3,height_max,width_max);
+            setlength(img_final,head.naxis3,height_max,width_max);
             for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
             begin
               for col:=0 to head.naxis3-1 do
               begin
-                img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
-                img_final[col,fitsX,fitsY]:=0; {clear img_temp}
+                img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
+                img_final[col,fitsY,fitsX]:=0; {clear img_temp}
               end;
             end;
             //old_width:=head.width;
@@ -1538,11 +1535,11 @@ begin
             begin
               for col:=0 to head.naxis3-1 do {do all colors}
               begin
-                value:=img_loaded[col,fitsX-1,fitsY-1]*weightF;
-                if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
+                value:=img_loaded[col,fitsY-1,fitsX-1]*weightF;
+                if sqr (value - img_average[col,y_new,x_new])< variance_factor*{sd sqr}( img_variance[col,y_new,x_new])  then {not an outlier}
                 begin
-                  img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                  img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
+                  img_final[col,y_new,x_new]:=img_final[col,y_new,x_new]+ value;{dark and flat, flat dark already applied}
+                  img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
                 end;
               end;
             end;
@@ -1563,26 +1560,26 @@ begin
         mainwindow.Memo1.Text:=memo1_text;{restore header of reference file for update and saving}
         head.height:=height_max;
         head.width:=width_max;
-        setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
+        setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
 
         for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
           For fitsY:=0 to head.height-1 do
             for fitsX:=0 to head.width-1 do
             begin
-              tempval:=img_temp[col,fitsX,fitsY];
-              if tempval<>0 then img_loaded[col,fitsX,fitsY]:=background_correction+img_final[col,fitsX,fitsY]/tempval {scale to one image by diving by the number of pixels added}
+              tempval:=img_temp[col,fitsY,fitsX];
+              if tempval<>0 then img_loaded[col,fitsY,fitsX]:=background_correction+img_final[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
               else
               begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
                 if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
                 begin
-                  if img_temp[col,fitsX-1,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=background_correction+img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+                  if img_temp[col,fitsY,fitsX-1]<>0 then img_loaded[col,fitsY,fitsX]:=background_correction+img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
                   else
-                  if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=background_correction+img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+                  if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:=background_correction+img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
                   else
-                  img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+                  img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
                 end {fill black spots}
                 else
-                img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+                img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
               end; {black spot filter}
             end;
       end;{counter<>0}
@@ -1713,8 +1710,8 @@ begin
           width_max:=head.width+oversize*2;
 
 
-          setlength(img_average,head.naxis3,width_max,height_max);
-          setlength(img_temp,head.naxis3,width_max,height_max);
+          setlength(img_average,head.naxis3,height_max,width_max);
+          setlength(img_temp,head.naxis3,height_max,width_max);
           {clearing image_average and img_temp is done for each image. See below}
 
 
@@ -1730,8 +1727,8 @@ begin
           for fitsX:=0 to width_max-1 do
             for col:=0 to head.naxis3-1 do
             begin
-              img_average[col,fitsX,fitsY]:=0; {clear img_average}
-              img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
+              img_average[col,fitsY,fitsX]:=0; {clear img_average}
+              img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
             end;
 
 
@@ -1799,8 +1796,8 @@ begin
             begin
               for col:=0 to head.naxis3-1 do
               begin
-                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]+background_correction;{Note fits count from 1, image from zero}
-                img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+1;{count the number of image pixels added=samples}
+                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY-1,fitsX-1]+background_correction;{Note fits count from 1, image from zero}
+                img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+1;{count the number of image pixels added=samples}
               end;
             end;
           end;
@@ -1810,25 +1807,25 @@ begin
         {scale to number of pixels}
         head.height:=height_max;
         head.width:=width_max;
-        setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
+        setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
 
         for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
           For fitsY:=0 to head.height-1 do
             for fitsX:=0 to head.width-1 do
             begin
-            if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
+            if img_temp[col,fitsY,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX]/img_temp[col,fitsY,fitsX] {scale to one image by diving by the number of pixels added}
             else
             begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
               if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
               begin
-                if ((img_temp[col,fitsX-1,fitsY]<>0){and (img_temp[col,fitsX,fitsY-1]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+                if ((img_temp[col,fitsY,fitsX-1]<>0){and (img_temp[col,fitsY-1,fitsX]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
                 else
-                if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+                if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
                 else
-                img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+                img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
               end {fill black spots}
               else
-              img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+              img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
             end; {black spot filter}
 
             end;

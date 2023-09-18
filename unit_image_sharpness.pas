@@ -35,8 +35,8 @@ begin
   average:=0;
 
  {for OSC and mono images}
-  for i:=0 to (w-4) div 4 do  {step in width}
-  for j:=0 to (h-4) div 4 do  {step 4 pixels in height}
+  for i:=0 to (h-4) div 4 do  {step 4 pixels in height}
+  for j:=0 to (w-4) div 4 do  {step in width}
   begin {process 16 pixels. Test 2x2x(R+G+G+B) pixels}
     v1:=(img[0,i*4   ,j*4]+
          img[0,i*4+1 ,j*4]+

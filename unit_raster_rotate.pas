@@ -16,7 +16,6 @@ uses
   Classes, SysUtils, Math,forms {application.processmessages},astap_main;
 
 procedure raster_rotate(angle, CX, CY: double; var img: image_array); {accurate raster rotation}
-procedure rotate_arbitraryold(angle: double; var img: image_array); {no longer used. Only for testing}
 
 
 implementation
@@ -1118,8 +1117,8 @@ begin
     exit;
   end;
   scolours := length(img);{nr colours}
-  swidth := length(img[0]);{width}
-  sheight := length(img[0, 0]);{height}
+  swidth := length(img[0,0]);{width}
+  sheight := length(img[0]);{height}
 
   angle := angle mod 360; {make 0..360}
   if angle < 0 then
@@ -1131,27 +1130,27 @@ begin
     case U90 of // flip the image for multiple of 90 degrees.
       1:begin  //90°
           temp_img := nil;
+          setlength(temp_img, scolours, swidth, sheight);
+          for k := 0 to scolours - 1 do
+            for j := 0 to sheight - 1 do
+              for i := 0 to swidth - 1 do
+                temp_img[k,i, sheight - 1 - j] := img[k, j,i];
+        end;
+      2:begin //180°
+          temp_img := nil;
           setlength(temp_img, scolours, sheight, swidth);
           for k := 0 to scolours - 1 do
             for j := 0 to sheight - 1 do
               for i := 0 to swidth - 1 do
-                temp_img[k, sheight - 1 - j, i] := img[k, i, j];
+                temp_img[k, sheight - 1 - j, swidth - 1 - i] := img[k, j, i];
         end;
-      2:begin //180°
+      3:begin   //270°
           temp_img := nil;
           setlength(temp_img, scolours, swidth, sheight);
           for k := 0 to scolours - 1 do
             for j := 0 to sheight - 1 do
               for i := 0 to swidth - 1 do
-                temp_img[k, swidth - 1 - i, sheight - 1 - j] := img[k, i, j];
-        end;
-      3:begin   //270°
-          temp_img := nil;
-          setlength(temp_img, scolours, sheight, swidth);
-          for k := 0 to scolours - 1 do
-            for j := 0 to sheight - 1 do
-              for i := 0 to swidth - 1 do
-                temp_img[k, j, swidth - 1 - i] := img[k, i, j];
+                temp_img[k, swidth - 1 - i, j] := img[k, j, i];
         end;
     end;
 
@@ -1226,7 +1225,7 @@ begin
   end;
 
   temp_img := nil;
-  setlength(temp_img, scolours, rw, rh);{set length of temp img. Larger then orginal due to rotation}
+  setlength(temp_img, scolours, rh, rw);{set length of temp img. Larger then orginal due to rotation}
 
   angle := 360 - angle; // Rotate backwards
   ug := angle - trunc(angle / 90) * 90;  // The angle of rotation of the point of the square of the pixel is the relative center of the pixel. Range 0 ° to 90 °
@@ -1266,19 +1265,19 @@ begin
         begin
           if (x[k].Y >= 0) and (x[k].X >= 0) and (x[k].Y < sheight) and  (x[k].X < swidth) then {got through X}
           begin
-            red := red + x[k].S * img[0,x[k].X,x[k].Y];// summation of the source flux
+            red := red + x[k].S * img[0,x[k].Y,x[k].X];// summation of the source flux
             if scolours > 2 then {colour image, do blue and green}
             begin
-              green:= green + x[k].S * img[1,x[k].X,x[k].Y];// summation of the source flux
-              blue := blue  + x[k].S * img[2,x[k].X,x[k].Y];// summation of the source flux
+              green:= green + x[k].S * img[1,x[k].Y,x[k].X];// summation of the source flux
+              blue := blue  + x[k].S * img[2,x[k].Y,x[k].X];// summation of the source flux
             end;
           end;
         end;
-      temp_img[0, j - xd,i - yd] := red; {store flux in destination}
+      temp_img[0,i - yd, j - xd] := red; {store flux in destination}
       if scolours > 2 then {colour image}
       begin
-        temp_img[1,j - xd, i - yd] := green;
-        temp_img[2,j - xd, i - yd] := blue;
+        temp_img[1, i - yd,j - xd] := green;
+        temp_img[2, i - yd,j - xd] := blue;
       end;
     end;
   end;
@@ -1286,102 +1285,6 @@ begin
   img := temp_img; {swap arrays}
 end;
 
-
-procedure rotate_arbitraryold(angle: double; var img: image_array); {no longer used. Only for testing}
-var
-  col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy,resolution                    : integer;
-  cosA,sinA,factor, centerx,centery,centerxs,centerys,factX,factY,Cos_div_res,Sin_div_res  : double;
-  value0,value1,value2 :single;
-  img_temp : image_array;
-begin
-  if angle = 0 then
-  begin
-    exit;
-  end;
-  scolours := length(img);{nr colours}
-  swidth := length(img[0]);{width}
-  sheight := length(img[0, 0]);{height}
-
-  if ((swidth<>sheight) or (img[0,0,0]<>0)  or (img[0,swidth-1,0]<>0) or (img[0,0,sheight-1]<>0) or (img[0,swidth-1,sheight-1]<>0))  then {fresh image}
-    maxsize:=round(1+sqrt(sqr(sheight)+sqr(swidth))) {add one pixel otherwise not enough resulting in runtime errors}
-  else {assume this image is already rotated. Enough space to rotate}
-    maxsize:=swidth;
-
-  centerX:=maxsize/2;
-  centerY:=maxsize/2;
-  centerxs:=swidth/2;
-  centerys:=sheight/2;
-
-  setlength(img_temp,scolours, maxsize,maxsize);{set length of new image}
-
-  {clear array}
-  for col:=0 to scolours-1 do {do all colours}
-  begin
-    For fitsY:=0 to (maxsize-1) do
-      for fitsX:=0 to (maxsize-1) do
-        img_temp[col,fitsX,fitsY]:=0
-  end;
-
-  sincos(angle*pi/180,sinA,cosA);
-  if ((sinA=0) or (cosA=0)) then resolution:=1 else resolution:=10;{for angle 0,90,180,270 degrees no need to sub sample}
-  factor:=1/sqr(resolution);{1/(number of subpixels), typical 1/(10x10)}
-  //one_div_res:=1/resolution;
-
-  Cos_div_res:=cosA/resolution;
-  Sin_div_res:=sinA/resolution;
-
-
-  progressC:=0;
-  For fitsY:=0 to sheight-1 do
-  begin
-    inc(progressC);{counter}
-    if frac(fitsY/100)=0 then
-      begin
-        Application.ProcessMessages;{this could change startX, startY}
-        if esc_pressed then  begin  img_temp:=nil;  exit;  end;
-        progress_value:=round(progressC*100/(head.height));{progress in %}
-        progress_indicator(progress_value,'');{report progress}
-      end;
-
-    for fitsX:=0 to swidth-1 do
-    begin
-      value0:=img_loaded[0,fitsX,fitsY];
-
-      if value0>=0.01 then {do only data. Use red for detection}
-      begin
-        if scolours>1 then value1:=img_loaded[1,fitsX,fitsY];{>=2 colour image}
-        if scolours>2 then value2:=img_loaded[2,fitsX,fitsY];{>=3 colour image}
-        begin
-          factX:=centerX+(fitsX-centerxs-0.5)*cosA - (fitsY-centerys-0.5)*sinA;
-          factY:=centerY+(fitsX-centerxs-0.5)*sinA + (fitsY-centerys-0.5)*cosA;
-
-          for i:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
-          for j:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
-          begin
-            {new position of subpixel}
-            xx:=trunc(factX+ i*Cos_div_res - j*Sin_div_res); // xx:=trunc(centerX +(fitsX-centerxs-0.5+i/resolution)*cosA - (fitsY-centerys-0.5+j/resolution)*sinA);
-            yy:=trunc(FactY +i*Sin_div_res + j*Cos_div_res); // yy:=trunc(centerY +(fitsX-centerxs-0.5+i/resolution)*sinA + (fitsY-centerys-0.5+j/resolution)*cosA);
-
-            {do all colours}
-            if ((xx>=0) and (xx<maxsize) and (yy>=0) and (yy<maxsize)) then {check required for small square images}
-            begin
-              img_temp[0,xx,yy ]:=img_temp[0,xx,yy] + value0*factor;{factor is typical 1/100 due to 10x10 subpixel}
-              if scolours>1 then img_temp[1,xx,yy]:=img_temp[1,xx,yy] + value1*factor; {this is the fastest way rather then for col:=0 to head.naxis3-1 loop}
-              if scolours>2 then img_temp[2,xx,yy]:=img_temp[2,xx,yy] + value2*factor;
-            end;
-          end;
-        end;
-      end;
-    end;
-  end;
-
-  head.width:=maxsize;
-  head.height:=maxsize;
-
-  img:=nil;
-  img:=img_temp;
-
-end;
 
 
 end.

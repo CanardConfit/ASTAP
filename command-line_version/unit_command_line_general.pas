@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2023.06.24';
+  astap_version: string='2023.09.17';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -595,8 +595,8 @@ begin
 
   {get dimensions directly from array}
   naxis3_local:=length(img);{nr colours}
-  width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{length}
+  width5:=length(img[0,0]);{width}
+  height5:=length(img[0]);{length}
   if naxis3_local=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
 
   filename2:=filen2;
@@ -648,7 +648,7 @@ begin
   begin
     for j:=0 to width5-1 do
     begin
-      dum:=round(img[k,j,i])-bzero2;{save all colors}
+      dum:=round(img[k,i,j])-bzero2;{save all colors}
       { value  - bzero              result  shortint    word
        ($0000  - $8000) and $FFFF = $8000 (-32768       32768 )  note  $0000 - $8000 ==>  $FFFF8000. Highest bits are skipped
        ($0001  - $8000) and $FFFF = $8001 (-32767       32769 )  note  $0001 - $8000 ==>  $FFFF8001. Highest bits are skipped
@@ -1024,7 +1024,7 @@ begin
       exit;
     end;
 
-    setlength(img_loaded2,naxis3,width2,height2);
+    setlength(img_loaded2,naxis3,height2,width2);
 
     if nrbits=16 then
     for k:=0 to naxis3-1 do {do all colors}
@@ -1036,7 +1036,7 @@ begin
         begin
           word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
           col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
-          img_loaded2[k,i,j]:=col_float;
+          img_loaded2[k,j,i]:=col_float;
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
@@ -1053,7 +1053,7 @@ begin
           x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
           col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
           if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
+          img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
@@ -1067,7 +1067,7 @@ begin
         try reader.read(fitsbuffer,width2);except; end; {read file info}
         for i:=0 to width2-1 do
         begin
-          img_loaded2[k,i,j]:=(fitsbuffer[i]*bscale + bzero);
+          img_loaded2[k,j,i]:=(fitsbuffer[i]*bscale + bzero);
         end;
       end;
     end {colors naxis3 times}
@@ -1079,9 +1079,9 @@ begin
       for i:=0 to width2-1 do
       begin
         rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-        img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
-        img_loaded2[1,i,j]:=rgbdummy[1];{store in memory array}
-        img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
+        img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
+        img_loaded2[1,j,i]:=rgbdummy[1];{store in memory array}
+        img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
       end;
     end
     else
@@ -1095,7 +1095,7 @@ begin
         begin
           col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
                          {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
+          img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
@@ -1111,7 +1111,7 @@ begin
         begin
           x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
           col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
+          img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
@@ -1128,7 +1128,7 @@ begin
         for k:=0 to naxis3-1 do {do all colors}
           for j:=0 to height2-1 do
             for i:=0 to width2-1 do
-              img_loaded2[k,i,j]:= img_loaded2[k,i,j]*scalefactor;
+              img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
         datamax_org:=65535;
       end
       else  datamax_org:=measured_max;
@@ -1689,7 +1689,7 @@ begin
     end
     else
     begin {not too large}
-      setlength(img_loaded2,naxis3,width2,height2);
+      setlength(img_loaded2,naxis3,height2,width2);
       begin
         For i:=0 to height2-1 do
         begin
@@ -1700,19 +1700,19 @@ begin
             if color7=false then {gray scale without bayer matrix applied}
             begin
               if nrbits=8 then  {8 BITS, mono 1x8bits}
-                img_loaded2[0,j,i]:=fitsbuffer[j]{RGB fits with naxis1=3, treated as 48 bits coded pixels}
+                img_loaded2[0,i,j]:=fitsbuffer[j]{RGB fits with naxis1=3, treated as 48 bits coded pixels}
               else
               if nrbits=16 then {big endian integer}
-                img_loaded2[0,j,i]:=swap(fitsbuffer2[j])
+                img_loaded2[0,i,j]:=swap(fitsbuffer2[j])
               else {PFM 32 bits grayscale}
               if pfm then
               begin
                 if range<0 then {little endian floats}
-                  img_loaded2[0,j,i]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+                  img_loaded2[0,i,j]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
                 else
                 begin {big endian floats}
                   x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-                  img_loaded2[0,j,i]:=x_single*65535/range;
+                  img_loaded2[0,i,j]:=x_single*65535/range;
                 end;
               end;
             end
@@ -1721,17 +1721,17 @@ begin
               if nrbits=8 then {24 BITS, colour 3x8bits}
               begin
                 rgbdummy:=fitsbufferRGB[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
-                img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
-                img_loaded2[1,j,i]:=rgbdummy[1];{store in memory array}
-                img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
+                img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
+                img_loaded2[1,i,j]:=rgbdummy[1];{store in memory array}
+                img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
               end
               else
               if nrbits=16 then {48 BITS colour, 3x16 big endian}
               begin {48 bits}
                 rgb16dummy:=fitsbufferRGB16[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
-                img_loaded2[0,j,i]:=swap(rgb16dummy[0]);{store in memory array}
-                img_loaded2[1,j,i]:=swap(rgb16dummy[1]);{store in memory array}
-                img_loaded2[2,j,i]:=swap(rgb16dummy[2]);{store in memory array}
+                img_loaded2[0,i,j]:=swap(rgb16dummy[0]);{store in memory array}
+                img_loaded2[1,i,j]:=swap(rgb16dummy[1]);{store in memory array}
+                img_loaded2[2,i,j]:=swap(rgb16dummy[2]);{store in memory array}
               end
               else
               if pfm then
@@ -1739,18 +1739,18 @@ begin
                 if range<0 then {little endian}
                 begin
                   rgb32dummy:=fitsbufferRGB32[j];{RGB fits with naxis1=3, treated as 96 bits coded pixels}
-                  img_loaded2[0,j,i]:=(rgb32dummy[0])*65535/(-range);{store in memory array}
-                  img_loaded2[1,j,i]:=(rgb32dummy[1])*65535/(-range);{store in memory array}
-                  img_loaded2[2,j,i]:=(rgb32dummy[2])*65535/(-range);{store in memory array}
+                  img_loaded2[0,i,j]:=(rgb32dummy[0])*65535/(-range);{store in memory array}
+                  img_loaded2[1,i,j]:=(rgb32dummy[1])*65535/(-range);{store in memory array}
+                  img_loaded2[2,i,j]:=(rgb32dummy[2])*65535/(-range);{store in memory array}
                 end
                 else
                 begin {PFM big-endian float 32 bit colour}
                   x_longword:=swapendian(fitsbuffer4[j*3]);
-                  img_loaded2[0,j,i]:=x_single*65535/(range);
+                  img_loaded2[0,i,j]:=x_single*65535/(range);
                   x_longword:=swapendian(fitsbuffer4[j*3+1]);
-                  img_loaded2[1,j,i]:=x_single*65535/(range);
+                  img_loaded2[1,i,j]:=x_single*65535/(range);
                   x_longword:=swapendian(fitsbuffer4[j*3+2]);
-                  img_loaded2[2,j,i]:=x_single*65535/(range);
+                  img_loaded2[2,i,j]:=x_single*65535/(range);
                 end;
               end;
             end;
@@ -1894,23 +1894,23 @@ begin
 
   width2:=image.width;
   height2:=image.height;
-  setlength(img_loaded2,naxis3,width2,height2);
+  setlength(img_loaded2,naxis3,height2,width2);
 
   if naxis3=3 then
   begin
     For i:=0 to height2-1 do
       for j:=0 to width2-1 do
       begin
-        img_loaded2[0,j,height2-1-i]:=image.Colors[j,i].red;
-        img_loaded2[1,j,height2-1-i]:=image.Colors[j,i].green;
-        img_loaded2[2,j,height2-1-i]:=image.Colors[j,i].blue;
+        img_loaded2[0,height2-1-i,j]:=image.Colors[j,i].red;
+        img_loaded2[1,height2-1-i,j]:=image.Colors[j,i].green;
+        img_loaded2[2,height2-1-i,j]:=image.Colors[j,i].blue;
       end;
   end
   else
   begin
     For i:=0 to height2-1 do
       for j:=0 to width2-1 do
-        img_loaded2[0,j,height2-1-i]:=image.Colors[j,i].red;
+        img_loaded2[0,height2-1-i,j]:=image.Colors[j,i].red;
   end;
 
   if tiff then
@@ -2009,8 +2009,8 @@ begin
   his_total:=0;
   total_value:=0;
   count:=1;{prevent divide by zero}
-  width5:=Length(img[0]);    {width}
-  height5:=Length(img[0][0]); {height}
+  width5:=Length(img[0,0]); {width}
+  height5:=Length(img[0]); {height}
 
   offsetW:=trunc(width5*0.042); {if Libraw is used, ignored unused sensor areas up to 4.2%}
   offsetH:=trunc(height5*0.015); {if Libraw is used, ignored unused sensor areas up to 1.5%}
@@ -2020,7 +2020,7 @@ begin
   begin
     for j:=0+offsetW to width5-1-offsetW do
     begin
-      col:=round(img[colour,j,i]);{red}
+      col:=round(img[colour,i,j]);{red}
       if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
       begin
         inc(histogram[colour,col],1);{calculate histogram}
@@ -2094,8 +2094,8 @@ begin
     stepsize:=round(height2/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
     if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
 
-    width5:=Length(img[0]);    {width}
-    height5:=Length(img[0][0]); {height}
+    width5:=Length(img[0,0]); {width}
+    height5:=Length(img[0]); {height}
 
     sd:=99999;
     iterations:=0;
@@ -2108,7 +2108,7 @@ begin
         fitsY:=15;
         while fitsY<=height5-1-15 do
         begin
-          value:=img[colour,fitsX,fitsY];
+          value:=img[colour,fitsY,fitsX];
           if ((value<background*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
           begin
             if ((iterations=0) or (abs(value-background)<=3*sd_old)) then {ignore outliers after first run}
@@ -2156,10 +2156,10 @@ var
       x_frac :=frac(x1);
       y_frac :=frac(y1);
       try
-        result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-        result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
-        result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-        result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+        result:=         (img[0,y_trunc,  x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+        result:=result + (img[0,y_trunc+1,x_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+        result:=result + (img[0,y_trunc  ,x_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+        result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
       except
       end;
     end;
@@ -2185,7 +2185,7 @@ begin
       distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
       if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
       begin
-        background[counter]:=img[0,x1+i,y1+j];
+        background[counter]:=img[0,y1+j,x1+i];
         //for testing: mainwindow.image1.canvas.pixels[x1+i,y1+j]:=$AAAAAA;
         inc(counter);
       end;
@@ -2208,7 +2208,7 @@ begin
       for i:=-rs to rs do
       for j:=-rs to rs do
       begin
-        val:=(img[0,x1+i,y1+j])- bg;
+        val:=(img[0,y1+j,x1+i])- bg;
         if val>3.0*sd_bg then
         begin
           SumVal:=SumVal+val;
@@ -2394,16 +2394,16 @@ begin
         writeln(f,'x,y,hfd,snr,flux');
       end;
 
-      setlength(img_sa,1,width2,height2);{set length of image array}
+      setlength(img_sa,1,height2,width2);{set length of image array}
       for fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1  do
-          img_sa[0,fitsX,fitsY]:=0;{mark as star free urveyed area}
+          img_sa[0,fitsY,fitsX]:=0;{mark as star free urveyed area}
 
       for fitsY:=0 to height2-1 do
       begin
         for fitsX:=0 to width2-1  do
         begin
-          if (( img_sa[0,fitsX,fitsY]<=0){star free area} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
+          if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=30) and (snr>snr_min) and (hfd1>0.8) {two pixels minimum} ) then
@@ -2422,7 +2422,7 @@ begin
                   j:=n+yci;
                   i:=m+xci;
                   if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
-                    img_sa[0,i,j]:=1;
+                    img_sa[0,j,i]:=1;
                 end;
 
 

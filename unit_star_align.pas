@@ -856,8 +856,8 @@ begin
 //   flip_vertical:=mainwindow.flip_vertical1.Checked;
 //   flip_horizontal:=mainwindow.Flip_horizontal1.Checked;
 
-  width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{height}
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
 
   solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details, global variable}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
@@ -866,7 +866,7 @@ begin
   SetLength(starlist1,2,buffersize);{set array length}
   setlength(snr_list,buffersize);{set array length}
 
-  setlength(img_sa,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,height2,width2);{set length of image array}
 
   detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
 
@@ -877,13 +877,13 @@ begin
 
     for fitsY:=0 to height2-1 do
       for fitsX:=0 to width2-1  do
-        img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
     for fitsY:=0 to height2-1-1 do
     begin
       for fitsX:=0 to width2-1-1  do
       begin
-        if (( img_sa[0,fitsX,fitsY]<=0){star free area} and (img[0,fitsX,fitsY]- bck.backgr{cblack}>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
+        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]- bck.backgr{cblack}>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
           HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
@@ -906,7 +906,7 @@ begin
                 j:=n+yci;
                 i:=m+xci;
                 if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,i,j]:=1;
+                  img_sa[0,j,i]:=1;
               end;
 
             {store values}

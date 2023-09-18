@@ -395,7 +395,7 @@ begin
   end
   else
   begin {buffer wide enough, read image data block}
-    setlength(img_loaded2,head.naxis3,head.width,head.height);
+    setlength(img_loaded2,head.naxis3,head.height,head.width);
     for k:=1 to head.naxis3 do {do all colors}
     begin
       For i:=head.height-1 downto 0 do //XISF is top-down
@@ -405,19 +405,19 @@ begin
         for j:=0 to head.width-1 do
         begin
           if nrbits=16 then {16 bit FITS}
-           img_loaded2[k-1,j,i]:=fitsbuffer2[j]
+           img_loaded2[k-1,i,j]:=fitsbuffer2[j]
           else
           if nrbits=-32 then {4 byte floating point  FITS image}
-            img_loaded2[k-1,j,i]:=65535*fitsbufferSINGLE[j]{store in memory array, scale from 0..1 to 0..65535}
+            img_loaded2[k-1,i,j]:=65535*fitsbufferSINGLE[j]{store in memory array, scale from 0..1 to 0..65535}
           else
           if nrbits=8  then
-            img_loaded2[k-1,j,i]:=(fitsbuffer[j])
+            img_loaded2[k-1,i,j]:=(fitsbuffer[j])
           else
           if nrbits=-64 then {8 byte, floating point bit FITS image}
-            img_loaded2[k-1,j,i]:=65535*fitsbufferDouble[j]{store in memory array, scale from 0..1 to 0..65535}
+            img_loaded2[k-1,i,j]:=65535*fitsbufferDouble[j]{store in memory array, scale from 0..1 to 0..65535}
           else
           if nrbits=+32 then {4 byte, +32 bit FITS image}
-            img_loaded2[k-1,j,i]:=fitsbuffer4[j]/65535;{scale to 0..64535 float}
+            img_loaded2[k-1,i,j]:=fitsbuffer4[j]/65535;{scale to 0..64535 float}
         end;
       end;
     end; {colors head.naxis3 times}
