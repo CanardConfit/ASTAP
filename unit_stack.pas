@@ -803,7 +803,6 @@ type
     procedure tab_photometry1Show(Sender: TObject);
     procedure tab_Pixelmath1Show(Sender: TObject);
     procedure tab_Pixelmath2Show(Sender: TObject);
-    procedure tab_stackmethod1Show(Sender: TObject);
     procedure test_osc_normalise_filter1Click(Sender: TObject);
 
     procedure test_pattern1Click(Sender: TObject);
@@ -3705,6 +3704,9 @@ begin
 
   with stackmenu1 do
   begin
+    if stackmenu1.stack_method1.ItemIndex>1 then
+      ImageList2.GetBitmap(6, bmp){gray stack}
+    else
     if classify_filter1.checked then
       ImageList2.GetBitmap(12, bmp){colour stack}
     else
@@ -3735,7 +3737,9 @@ end;
 
 procedure Tstackmenu1.FormShow(Sender: TObject);
 begin
-  set_icon_stackbutton;//update glyph stack button
+ // set_icon_stackbutton;//update glyph stack button
+  stackmenu1.stack_method1Change(nil);
+
   stackmenu1.pagecontrol1Change(Sender);//update stackbutton1.enabled
   delta_dark_temperature_visibility;//update visibility
 end;
@@ -9179,12 +9183,6 @@ procedure Tstackmenu1.tab_Pixelmath2Show(Sender: TObject);
 begin
   stackmenu1.width_UpDown1.position :=
     round(head.Width * strtofloat2(stackmenu1.resize_factor1.Caption));
-end;
-
-procedure Tstackmenu1.tab_stackmethod1Show(Sender: TObject);
-begin
-  stackmenu1.stack_method1Change(nil);
-   {update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
 end;
 
 

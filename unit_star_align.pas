@@ -38,6 +38,7 @@ implementation
 
 uses  unit_annotation;
 
+
 {   lsq_fit:                                                                                                                                     }
 {   Find the solution vector of an overdetermined system of linear equations according to the method of least squares using GIVENS rotations     }
 {                                                                                                                                                }
@@ -194,6 +195,18 @@ begin
   if Lo < iHi then QuickSort_starlist(A, Lo, iHi) ;  {executes itself recursively}
 end;
 
+
+//function duplicate2D(img:star_list; y :integer) :star_list;//fastest way to duplicate an array
+//var
+//  x,c,k: integer;
+//begin
+//  x:=length(img);
+//  y:=length(img[0]);
+
+//  setlength(result,x,y);
+//  for k:=0 to x-1 do
+//     result[k]:=copy(img[k],0,y);
+//end;
 
 procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
@@ -356,6 +369,7 @@ begin
     end;
   end;{i}
 
+//  quad_star_distances:=duplicate2D(quad_star_distances, nrquads);
   SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
 end;
 
@@ -830,6 +844,7 @@ begin
 
      end;
   setlength(starlist1,2,count);{reduce length to used length}
+//  starlist1:=duplicate2d(starlist1,count);
 end;
 
 

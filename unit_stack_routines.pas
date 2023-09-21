@@ -778,6 +778,7 @@ begin
               begin
                 for col:=0 to head.naxis3-1 do {all colors}
                   img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY-1,fitsX-1]*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+
                 img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
             end;

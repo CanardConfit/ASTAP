@@ -21,8 +21,14 @@ procedure trendline_without_outliers(xylist: star_list; len{length xylist} : int
 //procedure add_to_storage;//add streaks to storage
 //procedure clear_storage;//clear streak storage
 
+type
+   streak =record
+     slope     : double;
+     intercept : double;
+   end;
+
 var
-  streak_lines : array of array of double; // storage for streaks of one image
+  streak_lines : array of streak; // storage for streaks of one image
   nr_streak_lines : integer;
 
 
@@ -369,12 +375,12 @@ var
 
               contour_array2:=nil;
 
-              streak_lines[nr_streak_lines,0]:=slope;
-              streak_lines[nr_streak_lines,1]:=intercept;
+              streak_lines[nr_streak_lines].slope:=slope;
+              streak_lines[nr_streak_lines].intercept:=intercept;
               inc(nr_streak_lines);
 
               if nr_streak_lines>=length(streak_lines) then
-                   setlength(streak_lines,nr_streak_lines+20,2); //get more memory
+                   setlength(streak_lines,nr_streak_lines+20); //get more memory
 
 
             end;
@@ -395,8 +401,6 @@ begin
   else
   if (bayerpat<>'') then {raw Bayer image}
   begin
-//    check_pattern_filter(img_bk);
-   // bin_X2X3X4(2);
     memo2_message('Binning raw image for streak detection');
     binX2_crop(1, img {out}, img_bk);{combine values of 4 pixels and crop is required, Result is mono}
     get_hist(0,img_bk);{get histogram of img and his_total. Required to get correct background value}
@@ -406,18 +410,12 @@ begin
   else
     img_bk:=img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
-//  oldNaxis3:=head.naxis3;//for case it is converted to mono
-
   ww:=Length(img_bk[0,0]);    {width}
   hh:=Length(img_bk[0]); {height}
 
-//  ww:=head.Width-1;
-//  hh:=head.height-1;
-
-
   streak_lines:=nil;
   nr_streak_lines:=0;
-  setlength(streak_lines,20,2);//allow 20 streak lines
+  setlength(streak_lines,20);//allow 20 streak lines
 
   with mainwindow do
   begin

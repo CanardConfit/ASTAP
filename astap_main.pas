@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.09.18';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.09.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -532,7 +532,7 @@ type
 var
   mainwindow: Tmainwindow;
 type
-  image_array = array of array of array of Single;
+  image_array = array of array of array of Single;// note fasted processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
   star_list   = array of array of double;
 
   Theader =record    {contains the most important header info}
@@ -861,6 +861,7 @@ function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for un
 function noise_to_electrons(adu_e, binning, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
 procedure calibrate_photometry;
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
+function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -2164,6 +2165,26 @@ begin
     end;
 end;
 
+
+function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
+var
+  c,w,h,k,i: integer;
+begin
+  c:=length(img);
+  h:=length(img[0]);
+  w:=length(img[0,0]);
+
+  setlength(result,c,h,w);
+  for k:=0 to c-1 do
+    for i:=0 to h-1 do
+      result[k,i]:=copy(img[k,i],0,w);
+
+//  alternative solution slower. Takes about 75% more time.
+//  result:=img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+//  setlength(result,c,h,w);{force a duplication}
+end;
+
+
 function fits_file_name(inp : string): boolean; {fits file name?}
 begin
   inp:=uppercase(extractfileext(inp));
@@ -3310,10 +3331,8 @@ begin
     img_backup[index_backup].head_val:=head;
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
     img_backup[index_backup].filen:=filename2;{backup filename}
-    img_backup[index_backup].img:=img_loaded;
 
- // not required
- //   setlength(img_backup[index_backup].img,head.naxis3,head.height,head.width);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    img_backup[index_backup].img:=duplicate(img_loaded);//duplicate image fast
 
     mainwindow.Undo1.Enabled:=true;
   end;
@@ -3324,6 +3343,7 @@ procedure restore_img;
 var
    resized :boolean;
    old_width2,old_height2 : integer;
+   fitsx,fitsy: integer;
 begin
    if mainwindow.Undo1.Enabled=true then
   begin
@@ -3341,10 +3361,8 @@ begin
     mainwindow.caption:=filename2; //show old filename is case image was binned
 
     stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{allow debayer if mono again}
-    img_loaded:=img_backup[index_backup].img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
- //   not required
-//    setlength(img_loaded,1,head.naxis3,head.height,head.width);{force a duplication}
+    img_loaded:=duplicate(img_backup[index_backup].img);//duplicate image fast
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,resized,true);{restore image1}

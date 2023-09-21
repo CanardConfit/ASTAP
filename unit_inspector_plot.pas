@@ -151,10 +151,10 @@ begin
   restore_req:=false;
   oldNaxis3:=head.naxis3;//for case it is converted to mono
 
+
   if head.naxis3>1 then {colour image}
   begin
-    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication}
+    img_bk:=duplicate(img_loaded);//fastest way to duplicate an image
     convert_mono(img_loaded,head);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
 
@@ -163,8 +163,7 @@ begin
   else
   if (bayerpat<>'') then {raw Bayer image}
   begin
-    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication}
+    img_bk:=duplicate(img_loaded);//fastest way to duplicate an image
     check_pattern_filter(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;
@@ -288,9 +287,8 @@ begin
     if restore_req then {raw Bayer image or colour image}
     begin
       memo2_message('Restoring image');
-      img_loaded:=nil;
-      img_loaded:=img_bk; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-      head.naxis3:=oldNaxis3;
+      img_loaded:=duplicate(img_bk);//fastest way to duplicate an image
+      img_bk:=nil;
       get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
     end;
 
@@ -1255,7 +1253,7 @@ procedure Tform_inspection1.background_values1Click(Sender: TObject);
 var
   tx,ty,fontsize,halfstepX,halfstepY,stepX,stepY: integer;
   X,Y,stepsizeX,stepsizeY,median,median_center,factor          : double;
-  img_bk                                    : image_array;
+  img_bk                                     : image_array;
   Flipvertical, Fliphorizontal, restore_req  : boolean;
   detext  : string;
 begin
@@ -1266,10 +1264,11 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   restore_req:=false;
+
+
   if head.naxis3>1 then {colour image}
   begin
-    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication to a backup image}
+    img_bk:=duplicate(img_loaded);
     convert_mono(img_loaded,head);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;{restore original image later}
@@ -1277,8 +1276,7 @@ begin
   else
   if bayerpat<>'' then {raw Bayer image}
   begin
-    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication to a backup image}
+    img_bk:=duplicate(img_loaded);
     check_pattern_filter(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true; {restore original image later}
@@ -1341,9 +1339,9 @@ begin
     if restore_req then {restore backup image for raw Bayer image or colour image}
     begin
       memo2_message('Restoring image');
-      img_loaded:=nil;
-      img_loaded:=img_bk; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+      img_loaded:=duplicate(img_bk);//fastest way to duplicate an image
       get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
+      img_bk:=nil;//free mem
     end;
   end;
   Screen.Cursor:=crDefault;

@@ -427,7 +427,6 @@ var
 begin
   short_warning:='';{clear string}
 
-
   width5:=length(img[0,0]);{width}
   height5:=length(img[0]);{height}
 
