@@ -196,18 +196,6 @@ begin
 end;
 
 
-//function duplicate2D(img:star_list; y :integer) :star_list;//fastest way to duplicate an array
-//var
-//  x,c,k: integer;
-//begin
-//  x:=length(img);
-//  y:=length(img[0]);
-
-//  setlength(result,x,y);
-//  for k:=0 to x-1 do
-//     result[k]:=copy(img[k],0,y);
-//end;
-
 procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
    i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads,Sstart,Send,tolerance  : integer;
@@ -368,8 +356,6 @@ begin
       end;
     end;
   end;{i}
-
-//  quad_star_distances:=duplicate2D(quad_star_distances, nrquads);
   SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
 end;
 
@@ -844,7 +830,6 @@ begin
 
      end;
   setlength(starlist1,2,count);{reduce length to used length}
-//  starlist1:=duplicate2d(starlist1,count);
 end;
 
 
