@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.09.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.09.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2921,7 +2921,7 @@ begin
     end;
 
   {check alternative mean value}
-  if his_mean[colour]>1.5*back.backgr {1.5* most common} then  {changed from 2 to 1.5 on 2021-5-29}
+  if his_mean[colour]>1.5*back.backgr {1.5* most common} then
   begin
     memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(back.backgr)));
     back.backgr:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}

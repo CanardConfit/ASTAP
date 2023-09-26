@@ -1099,9 +1099,9 @@ type
 var
     solutions      : array of tsolution;
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars                                        : integer;
-    background_correction, variance_factor, value,weightF,hfd_min                                                                                  : double;
+    variance_factor, value,weightF,hfd_min                                                                                                         : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based                              : boolean;
-    tempval, sumpix, newpix                                                                                                                        : single;
+    tempval, sumpix, newpix,target_background,background_correction                                                                                    : single;
     warning,memo1_text  : string;
 begin
   with stackmenu1 do
@@ -1179,6 +1179,12 @@ begin
              demosaic_bayer(img_loaded); {convert OSC image to colour}
             {head.naxis3 is now 3}
         end;
+        if use_astrometry_internal then
+        begin //for making all background the same for better sigma clip function
+          get_background(0, img_loaded, True {update_hist}, False {calculate noise level}, {var} bck);
+          solutions[c].cblack:=bck.backgr;
+        end;
+
         if init=false then binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
@@ -1190,14 +1196,7 @@ begin
           else
           begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
-
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
-            pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
-            if pedestal_s<500 then
-              pedestal_s:=500;{prevent image noise could go below zero}
-
-            background_correction:=pedestal_s-bck.backgr;
-            head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
           end;
         end;
 
@@ -1225,7 +1224,11 @@ begin
                 img_average[col,fitsY,fitsX]:=0; {clear img_average}
                 img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
               end;
-
+//          if use_astrometry_internal then
+//            target_background:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_background])-dark_norm_value;//use raw background value from listview
+//          else
+            target_background:=max(500,bck.backgr); //target for all images. Background of reference image or when lower then 500 then 500.
+           memo2_message('Target background for all images is '+floattostrF(target_background,FFFixed,0,0));
         end;{init, c=0}
 
         solution:=true;
@@ -1243,10 +1246,6 @@ begin
                 else
                 begin{internal alignment}
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
-
-                  background_correction:=pedestal_s-bck.backgr;{correct later for difference in background}
-                  head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
-
                   find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                   begin
@@ -1288,6 +1287,9 @@ begin
           sum_temp:=sum_temp+head.set_temperature;
 
           weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
+          background_correction:=solutions[c].cblack - target_background;//for sigma clip. First try to get backgrounds equal for more effective sigma clip
+          head.datamax_org:=min($FFFF,head.datamax_org-background_correction);{note head.datamax_org is already corrected in apply dark}
+          {1}
 
           date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
           jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
@@ -1311,7 +1313,7 @@ begin
             begin
               for col:=0 to head.naxis3-1 do
               begin
-                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY-1,fitsX-1]*weightF;{Note fits count from 1, image from zero}
+                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ (img_loaded[col,fitsY-1,fitsX-1]- background_correction) *weightF;{Note fits count from 1, image from zero}
                 img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
               end;
             end;
@@ -1399,13 +1401,14 @@ begin
               solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
               solution_vectorY:=solutions[c].solution_vectorY;
               bck.backgr:=solutions[c].cblack;
-              background_correction:=pedestal_s-bck.backgr;{correction for difference in background}
-              head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
             end;
           end;
           init:=true;{initialize for first image done}
 
           weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
+          background_correction:=solutions[c].cblack - target_background;//for sigma clip. First try to get backgrounds equal for more effective sigma clip
+          head.datamax_org:=min($FFFF,head.datamax_org-background_correction);{note head.datamax_org is already corrected in apply dark}
+          {2}
 
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -1414,7 +1417,6 @@ begin
             vector_based:=true;
           end;
 
-
           for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
           for fitsX:=1 to head.width  do
           begin
@@ -1422,7 +1424,7 @@ begin
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              for col:=0 to head.naxis3-1 do img_variance[col,y_new,x_new]:=img_variance[col,y_new,x_new] +  sqr( img_loaded[col,fitsY-1,fitsX-1]*weightF - img_average[col,y_new,x_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
+              for col:=0 to head.naxis3-1 do img_variance[col,y_new,x_new]:=img_variance[col,y_new,x_new] +  sqr( (img_loaded[col,fitsY-1,fitsX-1]- background_correction)*weightF - img_average[col,y_new,x_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
             end;
           end;
 
@@ -1484,8 +1486,6 @@ begin
                 img_final[col,fitsY,fitsX]:=0; {clear img_temp}
               end;
             end;
-            //old_width:=head.width;
-            //old_height:=head.height;
           end;{init}
 
           inc(counter);
@@ -1510,14 +1510,14 @@ begin
               solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
               solution_vectorY:=solutions[c].solution_vectorY;
               bck.backgr:=solutions[c].cblack;
-              background_correction:=pedestal_s-bck.backgr;{correct for difference in background}
-              head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
-              head.pedestal:=background_correction;
             end;
           end;
           init:=true;{initialize for first image done}
 
           weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
+          background_correction:=solutions[c].cblack - target_background;//for sigma clip. First try to get backgrounds equal for more effective sigma clip
+          head.datamax_org:=min($FFFF,head.datamax_org-background_correction);
+          {3}
 
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -1536,7 +1536,7 @@ begin
             begin
               for col:=0 to head.naxis3-1 do {do all colors}
               begin
-                value:=img_loaded[col,fitsY-1,fitsX-1]*weightF;
+                value:=(img_loaded[col,fitsY-1,fitsX-1]- background_correction)*weightF;
                 if sqr (value - img_average[col,y_new,x_new])< variance_factor*{sd sqr}( img_variance[col,y_new,x_new])  then {not an outlier}
                 begin
                   img_final[col,y_new,x_new]:=img_final[col,y_new,x_new]+ value;{dark and flat, flat dark already applied}
@@ -1568,14 +1568,14 @@ begin
             for fitsX:=0 to head.width-1 do
             begin
               tempval:=img_temp[col,fitsY,fitsX];
-              if tempval<>0 then img_loaded[col,fitsY,fitsX]:=background_correction+img_final[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
+              if tempval<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_final[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
               else
               begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
                 if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
                 begin
-                  if img_temp[col,fitsY,fitsX-1]<>0 then img_loaded[col,fitsY,fitsX]:=background_correction+img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
+                  if img_temp[col,fitsY,fitsX-1]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
                   else
-                  if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:=background_correction+img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
+                  if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
                   else
                   img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
                 end {fill black spots}

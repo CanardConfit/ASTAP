@@ -975,6 +975,7 @@ var  {################# initialised variables #########################}
   jd_start: double = 0;{julian day of date-obs}
   groupsizeStr : string='';
   images_selected: integer=0;
+  dark_norm_value: double=0;
 
 
 const
@@ -11042,7 +11043,7 @@ end;
 function apply_dark_and_flat(var img: image_array): boolean; inline; {apply dark and flat if required, renew if different head.exposure or ccd temp}
 var
   fitsX, fitsY, k: integer;
-  Value, flat_factor, dark_norm_value, flatNorm11, flatNorm12, flatNorm21, flatNorm22, flat_norm_value: double;
+  Value, flat_factor, flatNorm11, flatNorm12, flatNorm21, flatNorm22, flat_norm_value: double;
 
 begin
   Result := False;
