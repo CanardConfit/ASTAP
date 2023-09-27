@@ -6024,10 +6024,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object apply_vertical_gradient1: TButton
-          Left = 209
+          Left = 212
           Height = 30
           Hint = 'This will remove any vertical gradient. For any other angle apply both.'
-          Top = 0
+          Top = -6
           Width = 65
           AutoSize = True
           Caption = 'Apply ↕'
@@ -6062,11 +6062,11 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox11: TGroupBox
         Left = 792
-        Height = 400
+        Height = 424
         Top = 8
         Width = 377
         Caption = 'Colour replace'
-        ClientHeight = 380
+        ClientHeight = 404
         ClientWidth = 373
         ParentBackground = False
         TabOrder = 7
@@ -6105,10 +6105,10 @@ object stackmenu1: Tstackmenu1
           Width = 25
         end
         object apply_hue1: TButton
-          Left = 96
+          Left = 104
           Height = 25
           Hint = 'Add noise to the image in the viewer'
-          Top = 328
+          Top = 368
           Width = 184
           AutoSize = True
           Caption = 'Apply'
@@ -6133,10 +6133,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object undo_button16: TBitBtn
-          Left = 296
+          Left = 304
           Height = 30
           Hint = 'Undo last action'
-          Top = 328
+          Top = 368
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -6299,6 +6299,18 @@ object stackmenu1: Tstackmenu1
           Position = 100
           TickStyle = tsNone
           TabOrder = 10
+        end
+        object blend1: TCheckBox
+          Left = 120
+          Height = 19
+          Hint = 'This option on  allows the removal of coloured hot pixels and streaks '
+          Top = 208
+          Width = 180
+          Caption = 'Blend in with the surroundings'
+          Checked = True
+          OnChange = blend1Change
+          State = cbChecked
+          TabOrder = 11
         end
       end
       object most_right14: TStaticText

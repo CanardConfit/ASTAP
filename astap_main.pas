@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.09.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.09.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -7698,6 +7698,7 @@ begin
 
       c:=Sett.ReadInteger('stack','hue_fuzziness',987654321); if c<>987654321 then stackmenu1.hue_fuzziness1.position:=c;
       c:=Sett.ReadInteger('stack','saturation_tolerance',987654321);  if c<>987654321 then stackmenu1.saturation_tolerance1.position:=c;
+      stackmenu1.blend1.checked:= Sett.ReadBool('stack','blend',true);
 
       c:=Sett.ReadInteger('stack','sample_size',987654321);if c<>987654321 then stackmenu1.sample_size1.itemindex:=c;
 
@@ -8064,10 +8065,9 @@ begin
 
       sett.writeInteger('stack','hue_fuzziness',stackmenu1.hue_fuzziness1.position);
       sett.writeInteger('stack','saturation_tolerance',stackmenu1.saturation_tolerance1.position);
+      sett.WriteBool('stack','blend', stackmenu1.blend1.checked);
 
       sett.writeInteger('stack','sample_size',stackmenu1.sample_size1.itemindex);
-
-
       sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
 
       sett.writeInteger('stack','video_index',video_index);

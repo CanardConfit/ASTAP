@@ -41,6 +41,7 @@ type
     add_time1: TCheckBox;
     analyse_lights_extra1: TButton;
     bin_image2: TButton;
+    blend1: TCheckBox;
     classify_dark_gain1: TCheckBox;
     ClearButton1: TButton;
     contour_gaussian1: TComboBox;
@@ -678,6 +679,7 @@ type
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
+    procedure blend1Change(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
@@ -9178,6 +9180,9 @@ end;
 procedure Tstackmenu1.tab_Pixelmath1Show(Sender: TObject);
 begin
   hue_fuzziness1Change(nil);{pixelmath 1, show position}
+  HueRadioButton2.Enabled:=blend1.checked=false;
+  new_saturation1.Enabled:=blend1.checked=false;
+  new_colour_luminance1.Enabled:=blend1.checked=false;
 end;
 
 procedure Tstackmenu1.tab_Pixelmath2Show(Sender: TObject);
@@ -9236,6 +9241,13 @@ begin
     plot_fits(mainwindow.image1,false,true)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
+end;
+
+procedure Tstackmenu1.blend1Change(Sender: TObject);
+begin
+  HueRadioButton2.Enabled:=blend1.checked=false;
+  new_saturation1.Enabled:=blend1.checked=false;
+  new_colour_luminance1.Enabled:=blend1.checked=false;
 end;
 
 procedure Tstackmenu1.classify_dark_temperature1Change(Sender: TObject);
@@ -10145,9 +10157,24 @@ end;
 
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var
-  fitsX, fitsY, fuzziness : integer;
-  r, g, b, h, s, s_new, v, oldhue, newhue, dhue, saturation_factor, s_old, saturation_tol, v_adjust: single;
+  fitsX, fitsY, fuzziness,col,counter,i,j : integer;
+  r, g, b, h, s, s_new, v, oldhue, newhue, dhue, saturation_factor, s_old, saturation_tol, v_adjust,lum: single;
   colour: tcolor;
+  blend,success : boolean;
+  close,close2 : double;
+          function colour_close(y,x : integer) : boolean;
+          begin
+            RGB2HSV(max(0, img_loaded[0, Y, X] - bck.backgr), max(0, img_loaded[1, Y, X] - bck.backgr), max(0, img_loaded[2, Y, X] - bck.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+            dhue := min(360-abs(oldhue - h),abs(oldhue - h)); //angular distance
+            result:=(((dhue <= fuzziness) or (dhue >= 360 - fuzziness)) and  (abs(s - s_old) < saturation_tol {saturation speed_tolerance1})) {colour close enough, replace colour}
+          end;
+
+          function colour_closeness(y,x : integer) : double;//calcualte how far the colour of pixel x,y  differs from the reference colour
+          begin
+            RGB2HSV(max(0, img_loaded[0, Y, X] - bck.backgr), max(0, img_loaded[1, Y, X] - bck.backgr), max(0, img_loaded[2, Y, X] - bck.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+            dhue := min(360-abs(oldhue - h),abs(oldhue - h));
+            result:=sqrt( sqr(dhue/360) + sqr(s - s_old));
+          end;
 begin
   if ((head.naxis = 0) or (head.naxis3 <> 3)) then exit;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -10162,12 +10189,14 @@ begin
   colour := colourShape3.brush.color;
   RGB2HSV(getRvalue(colour), getGvalue(colour), getBvalue(colour), newhue, s_new, v);
 
+  blend:=blend1.checked;
+
   if length(stackmenu1.area_set1.Caption)<=3  then {no area selected}
   begin
-    areax1 := 0;
-    areay1 := 0;
-    areax2 := head.Width - 1;
-    areaY2 := head.Height - 1;
+    areax1 := 1;
+    areay1 := 1;
+    areax2 := head.Width - 1-1;
+    areaY2 := head.Height - 1-1;
   end;
   {else set in astap_main}
 
@@ -10176,15 +10205,30 @@ begin
   for fitsY := areay1 to areay2 do
     for fitsX := areax1 to areax2 do
     begin
-      RGB2HSV(max(0, img_loaded[0, fitsY, fitsX] - bck.backgr), max(0, img_loaded[1, fitsY, fitsX] - bck.backgr), max(0, img_loaded[2, fitsY, fitsX] - bck.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-      dhue := abs(oldhue - h);
-      if (((dhue <= fuzziness) or (dhue >= 360 - fuzziness)) and  (abs(s - s_old) < saturation_tol {saturation speed_tolerance1})) then {colour close enough, replace colour}
+      if colour_close(fitsY,fitsX) then
       begin
-        HSV2RGB(newhue, min(1, s_new * saturation_factor) {s 0..1}, v * v_adjust{v 0..1}, r, g, b);   {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-
-        img_loaded[0, fitsY, fitsX] := r + bck.backgr;
-        img_loaded[1, fitsY, fitsX] := g + bck.backgr;
-        img_loaded[2, fitsY, fitsX] := b + bck.backgr;
+        if blend=false then
+        begin
+          HSV2RGB(newhue, min(1, s_new * saturation_factor) {s 0..1}, v * v_adjust{v 0..1}, r, g, b);   {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+          img_loaded[0, fitsY, fitsX] := r + bck.backgr;
+          img_loaded[1, fitsY, fitsX] := g + bck.backgr;
+          img_loaded[2, fitsY, fitsX] := b + bck.backgr;
+        end
+        else
+        begin //use nearby colour which differs the most.
+          close:=0;
+          for i:=-1 to 1 do
+          for j:=-1 to 1 do
+          if ((i<>0) or (j<>0)) then //test all 8 neighbour pixels for the largest colour offset and use this to replace the pixel colour
+          begin
+            close2:=colour_closeness(fitsY+i,fitsX+j);
+            if close2>close then //larger colour offset
+            begin
+               for col:=0 to 2 do img_loaded[col, fitsY, fitsX] :=img_loaded[col, fitsY+i, fitsX+j];//use new found colour
+               close:=close2;//record the largest colour offset
+            end;
+          end;
+        end;
       end;
     end;
   plot_fits(mainwindow.image1, False, True);{plot real}
