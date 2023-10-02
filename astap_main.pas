@@ -3407,10 +3407,20 @@ begin
 
  {$IFDEF fpc}
  {$MACRO ON} {required for FPC_fullversion info}
-  about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+'. Application path '+application_path;
+  about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+'.'+
+  #13+#10+
+  #13+#10+
+  'Application path '+application_path;
  {$ELSE} {delphi}
   about_message5:='';
  {$ENDIF}
+  if ord(database2[0])<>0 then
+    about_message5:=about_message5+
+    #13+#10+
+    #13+#10+
+    'Active star database:'+copy(database2,1,108)+ {primary star database. Do not display last byte (110) used for record type. Byte 109 is used for maximum magnitude}
+    #13+#10;
+
   about_message:=
   'ASTAP version '+astap_version+', '+about_message4+
   #13+#10+
