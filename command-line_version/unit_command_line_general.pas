@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2023.09.21';
+  astap_version: string='2023.10.11';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -2044,7 +2044,7 @@ end;
 
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 var
-  i, pixels,max_range,above,his_total, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
+  i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations, pixels_to_test : integer;
   value,sd, sd_old : double;
 begin
   if calc_hist then
@@ -2071,25 +2071,6 @@ begin
 
   if calc_noise_level then  {find star level and background noise level}
   begin
-    {calculate star level}
-    if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
-    i:=max_range;
-    starlevel:=0;
-    above:=0;
-
-    if colour=1 then his_total:=his_total_green
-    else
-    if colour=2 then his_total:=his_total_blue
-    else
-    his_total:=his_total_red;
-
-    while ((starlevel=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
-    begin
-       dec(i);
-       above:=above+histogram[colour,i];
-       if above>0.001*his_total then starlevel:=i;
-    end;
-
     {calculate noise level}
     stepsize:=round(height2/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
     if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
@@ -2126,10 +2107,25 @@ begin
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
     noise_level[colour]:= round(sd);   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
 
+
+    {calculate star level}
+    if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
+    i:=max_range;
+    starlevel:=0;
+    above:=0;
+
+    pixels_to_test:=6*max_stars;{emperical. Typical about 3 to 6 times more pixels then stars to find enough stars}
+    while ((starlevel=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
+    begin
+      dec(i);
+      above:=above+histogram[colour,i];//sum pixels above pixel level i
+      if above>pixels_to_test then star_level:=i;
+    end;
+
     // Clip calculated star level:
     // 1) above 3.5*noise minimum, but also above background value when there is no noise so minimum is 1
     // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
-    starlevel:=max(max(3.5*sd,1 {1}), starlevel-background-1 {2) below saturation});
+    starlevel:=max(max(3.5*sd,1 {1}), starlevel-background-1 {2) below saturation});//star_level is relative to background
 
   end;
 end;
@@ -2364,7 +2360,7 @@ end;
 
 procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer;out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
-   fitsX,fitsY,diam,i,j,retries,max_stars,m,n,xci,yci,sqr_diam : integer;
+   fitsX,fitsY,diam,i,j,retries,m,n,xci,yci,sqr_diam : integer;
    hfd1,star_fwhm,snr,flux,xc,yc,detection_level               : double;
    hfd_list                                                    : array of double;
    img_sa                                                      : image_array;
@@ -2373,7 +2369,6 @@ var
 const
    len: integer=1000;
 begin
-  max_stars:=500;
   SetLength(hfd_list,len);{set array length to len}
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);

@@ -3952,7 +3952,9 @@ begin
   {stop updating to prevent flickering till finished}
 
   counts := lv.items.Count - 1;
-
+  red := False;
+  green := False;
+  blue := False;
 
   loaded := False;
   c := 0;
