@@ -8,9 +8,8 @@
       <Unit0>
         <Filename Value="astap_command_line.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="155"/>
-        <CursorPos Y="180"/>
+        <TopLine Value="158"/>
+        <CursorPos Y="173"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -18,16 +17,17 @@
         <Filename Value="unit_command_line_solving.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="1202"/>
-        <CursorPos X="65" Y="1224"/>
+        <TopLine Value="1108"/>
+        <CursorPos X="47" Y="1127"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <CursorPos X="35" Y="18"/>
+        <CursorPos X="36" Y="18"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>
@@ -97,19 +97,19 @@
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="983" Column="36" TopLine="942"/>
+        <Caret Line="984" Column="13" TopLine="963"/>
       </Position1>
       <Position2>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="946" Column="13" TopLine="923"/>
+        <Caret Line="1029" Column="15" TopLine="991"/>
       </Position2>
       <Position3>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="984" Column="13" TopLine="963"/>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="173" TopLine="151"/>
       </Position3>
       <Position4>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1029" Column="15" TopLine="991"/>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="183" Column="66" TopLine="151"/>
       </Position4>
       <Position5>
         <Filename Value="astap_command_line.lpr"/>
@@ -117,103 +117,103 @@
       </Position5>
       <Position6>
         <Filename Value="astap_command_line.lpr"/>
-        <Caret Line="183" Column="66" TopLine="151"/>
+        <Caret Line="180" TopLine="151"/>
       </Position6>
       <Position7>
-        <Filename Value="astap_command_line.lpr"/>
-        <Caret Line="173" TopLine="151"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="2012" Column="29" TopLine="1989"/>
       </Position7>
       <Position8>
-        <Filename Value="astap_command_line.lpr"/>
-        <Caret Line="180" TopLine="151"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="10" Column="47"/>
       </Position8>
       <Position9>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2012" Column="29" TopLine="1989"/>
+        <Caret Line="18" Column="36"/>
       </Position9>
       <Position10>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="10" Column="47"/>
+        <Caret Line="2124" Column="54" TopLine="2100"/>
       </Position10>
       <Position11>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="18" Column="36"/>
+        <Caret Line="2379" Column="3" TopLine="2362"/>
       </Position11>
       <Position12>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2124" Column="54" TopLine="2100"/>
+        <Caret Line="23" Column="3" TopLine="4"/>
       </Position12>
       <Position13>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2379" Column="3" TopLine="2362"/>
+        <Caret Line="2370" Column="33" TopLine="2351"/>
       </Position13>
       <Position14>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="23" Column="3" TopLine="4"/>
+        <Caret Line="2379" Column="3" TopLine="2351"/>
       </Position14>
       <Position15>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2370" Column="33" TopLine="2351"/>
+        <Caret Line="2456" Column="27" TopLine="2375"/>
       </Position15>
       <Position16>
-        <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2379" Column="3" TopLine="2351"/>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="576" Column="102" TopLine="558"/>
       </Position16>
       <Position17>
-        <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2456" Column="27" TopLine="2375"/>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1181" Column="6" TopLine="1150"/>
       </Position17>
       <Position18>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="576" Column="102" TopLine="558"/>
+        <Caret Line="1221" Column="14" TopLine="1202"/>
       </Position18>
       <Position19>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1181" Column="6" TopLine="1150"/>
+        <Caret Line="1223" Column="8" TopLine="1202"/>
       </Position19>
       <Position20>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1221" Column="14" TopLine="1202"/>
-      </Position20>
-      <Position21>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1223" Column="8" TopLine="1202"/>
-      </Position21>
-      <Position22>
         <Filename Value="astap_command_line.lpr"/>
         <Caret Line="125" Column="32" TopLine="94"/>
+      </Position20>
+      <Position21>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="23" Column="3" TopLine="3"/>
+      </Position21>
+      <Position22>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="2370" Column="32" TopLine="2360"/>
       </Position22>
       <Position23>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="23" Column="3" TopLine="3"/>
+        <Caret Line="23" Column="3" TopLine="4"/>
       </Position23>
       <Position24>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2370" Column="32" TopLine="2360"/>
+        <Caret Line="2125" TopLine="2103"/>
       </Position24>
       <Position25>
-        <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="23" Column="3" TopLine="4"/>
-      </Position25>
-      <Position26>
-        <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2125" TopLine="2103"/>
-      </Position26>
-      <Position27>
         <Filename Value="astap_command_line.lpr"/>
         <Caret Line="173" TopLine="154"/>
-      </Position27>
-      <Position28>
+      </Position25>
+      <Position26>
         <Filename Value="astap_command_line.lpr"/>
         <Caret Line="176" TopLine="154"/>
+      </Position26>
+      <Position27>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="2119" Column="9" TopLine="2088"/>
+      </Position27>
+      <Position28>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="18" Column="35"/>
       </Position28>
       <Position29>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="2119" Column="9" TopLine="2088"/>
+        <Caret Line="2049" Column="74" TopLine="2038"/>
       </Position29>
       <Position30>
-        <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="18" Column="35"/>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="174" TopLine="158"/>
       </Position30>
     </JumpHistory>
     <RunParams>

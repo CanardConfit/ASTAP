@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.10.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.10.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -649,7 +649,7 @@ var
   bp_0_0, bp_0_1,bp_0_2, bp_0_3, bp_1_0, bp_1_1, bp_1_2, bp_2_0, bp_2_1, bp_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
 
   histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
-  his_total_red, his_total_green,his_total_blue,extend_type,r_aperture : integer; {histogram number of values}
+  his_total_red,extend_type,r_aperture : integer; {histogram number of values}
   his_mean             : array[0..2] of integer;
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
@@ -2903,8 +2903,8 @@ end;
 
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
 var
-  i, pixels,max_range,above,his_total, fitsX, fitsY,counter,stepsize,width5,height5, iterations, pixels_to_test : integer;
-  value,sd, sd_old : double;
+  i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
+  value,sd, sd_old,factor : double;
 begin
   if calc_hist then  get_hist(colour,img);{get histogram of img_loaded and his_total}
 
@@ -2968,23 +2968,24 @@ begin
 
     {calculate star level}
     if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
-    i:=max_range;
     back.star_level:=0;
     above:=0;
-
-    pixels_to_test:=6*strtoint2(stackmenu1.max_stars1.text);{emperical. Typical about 3 to 6 times more pixels then stars to find enough stars}
+    i:=max_range;
+    factor:=width5*height5*0.4/strtoint2(stackmenu1.max_stars1.text);
     while ((back.star_level=0) and (i>back.backgr+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
-       dec(i);
-       above:=above+histogram[colour,i];//sum pixels above pixel level i
-      if above>pixels_to_test then back.star_level:=i;
+      dec(i);
+      above:=above+histogram[colour,i];//sum pixels above pixel level i
+      if above>=factor then back.star_level:=i;
     end;
+
     //memo2_message('Above count [pixels]'+inttostr(above));
 
     // Clip calculated star level:
     // 1) above 3.5*noise minimum, but also above background value when there is no noise so minimum is 1
     // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
     back.star_level:=max(max(3.5*sd,1 {1})  ,back.star_level-back.backgr-1 {2) below saturation}); //star_level is relative to background
+  // beep;
   end;
 end;
 
@@ -7012,12 +7013,7 @@ begin
     end;{j}
   end; {i}
 
-  if colour=0 then his_total_red:=his_total
-  else
-  if colour=1 then his_total_green:=his_total
-  else
-  his_total_blue:=his_total;
-
+  if colour=0 then his_total_red:=his_total;
   his_mean[colour]:=round(total_value/count);
 
 end;

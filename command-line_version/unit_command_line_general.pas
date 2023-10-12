@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2023.10.11';
+  astap_version: string='2023.10.12';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -2044,8 +2044,8 @@ end;
 
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 var
-  i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations, pixels_to_test : integer;
-  value,sd, sd_old : double;
+  i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
+  value,sd, sd_old,factor : double;
 begin
   if calc_hist then
              get_hist(colour,img);{get histogram of img_loaded and his_total}
@@ -2114,12 +2114,12 @@ begin
     starlevel:=0;
     above:=0;
 
-    pixels_to_test:=6*max_stars;{emperical. Typical about 3 to 6 times more pixels then stars to find enough stars}
+    factor:=width5*height5*0.4/max_stars;{emperical}
     while ((starlevel=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
     begin
       dec(i);
       above:=above+histogram[colour,i];//sum pixels above pixel level i
-      if above>pixels_to_test then star_level:=i;
+      if above>factor then star_level:=i;
     end;
 
     // Clip calculated star level:
