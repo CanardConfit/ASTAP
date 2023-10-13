@@ -54,7 +54,7 @@ type
 
   var
      histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
-     his_total_red, his_total_green,his_total_blue,r_aperture : integer; {histogram number of values}
+     r_aperture : integer; {histogram number of values}
      histo_peak_position : integer;
      his_mean,noise_level : array[0..2] of integer;
      esc_pressed, fov_specified {, last_extension }: boolean;
@@ -2031,14 +2031,7 @@ begin
     end;{j}
   end; {i}
 
-  if colour=0 then his_total_red:=his_total
-  else
-  if colour=1 then his_total_green:=his_total
-  else
-  his_total_blue:=his_total;
-
   his_mean[colour]:=round(total_value/count);
-
 end;
 
 

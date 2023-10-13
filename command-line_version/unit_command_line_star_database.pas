@@ -2046,8 +2046,8 @@ var {################# initialised variables #########################}
 
 
 
-const {1476 boundaries}
-    Stepsize=90/17.5;{5.142857143 degrees}
+//const {1476 boundaries}
+//    Stepsize=90/17.5;{5.142857143 degrees}
 var {################# initialised variables #########################}
     dec_boundaries1476 : array[0..36] of double=
     (-90*pi/180,
