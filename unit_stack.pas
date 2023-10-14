@@ -11495,7 +11495,7 @@ var
   filter_name1, filter_name2, defilter, filename3,
   extra1, extra2, object_to_process, stack_info, thefilters                : string;
   lrgb, solution, monofile, ignore, cal_and_align,
-  mosaic_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
+  stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
   success, classify_filter, classify_object, sender_photometry, sender_stack_groups      : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr    : double;
@@ -11506,7 +11506,7 @@ begin
 
   memo2_message('Stack method ' + stack_method1.Text);
   memo2_message('Oversize ' + oversize1.Text + ' pixels');
-  mosaic_mode := pos('stich', stackmenu1.stack_method1.Text) > 0;
+  stitching_mode := pos('stitch', stackmenu1.stack_method1.Text) > 0;
   sigma_clip := pos('Sigma', stackmenu1.stack_method1.Text) > 0;
   skip_combine := pos('skip', stackmenu1.stack_method1.Text) > 0;
   cal_and_align := pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
@@ -11710,14 +11710,14 @@ begin
           else
             stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] := ''; {report internal plate solve result}
 
-           if mosaic_mode then
+           if stitching_mode then
                          calculate_required_dimensions;
         finally
         end;
       end;
     memo2_message('Astrometric solutions complete.');
 
-    if mosaic_mode then
+    if stitching_mode then
     begin
       SortedColumn := L_position + 1;
       listview1.sort;
@@ -11899,7 +11899,7 @@ begin
         if ((ListView1.items[c].Checked = True) and (ListView1.Items.item[c].SubitemImages[L_result] < 0)) then {not done yet}
         begin
           if object_to_process = '' then object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name to stack}
-          if ((classify_object{1.checked} = False) or (mosaic_mode){ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
+          if ((classify_object{1.checked} = False) or (stitching_mode){ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
           then
             {correct object?}
           begin {correct object}
@@ -11918,7 +11918,7 @@ begin
             {$endif}
 
             Inc(nrfiles);
-            if mosaic_mode then
+            if stitching_mode then
             begin
               if stackmenu1.limit_background_correction1.checked then
               begin
@@ -11932,7 +11932,7 @@ begin
       end;
       if nrfiles > 1 then {need at least two files to sort}
       begin
-        if mosaic_mode = False then put_best_quality_on_top(files_to_process);
+        if stitching_mode = False then put_best_quality_on_top(files_to_process);
         {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
         if sigma_clip then
@@ -11942,7 +11942,7 @@ begin
           {sigma clip combining}
         end
         else
-        if mosaic_mode then
+        if stitching_mode then
           stack_mosaic(over_size,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
         else
         if cal_and_align then {calibration & alignment only}
@@ -12018,7 +12018,7 @@ begin
           begin  {not done yet}
             if object_to_process = '' then object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a next object name to stack}
 
-            if ((classify_object{1.checked} = False) or (mosaic_mode) {ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object])))) {correct object?} then
+            if ((classify_object{1.checked} = False) or (stitching_mode) {ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object])))) {correct object?} then
             begin {correct object}
               defilter := ListView1.Items.item[c].subitems.Strings[L_filter];
               if ((AnsiCompareText(filter_name1, defilter) = 0) or
@@ -12035,7 +12035,7 @@ begin
                 Inc(nrfiles);
                 first_file := c; {remember first found for case it is the only file}
                 head.exposure := strtofloat2(ListView1.Items.item[c].subitems.Strings[L_exposure]); {remember head.exposure time in case only one file, so no stack so unknown}
-                if mosaic_mode then
+                if stitching_mode then
                 begin
                   if stackmenu1.limit_background_correction1.checked then
                   begin
@@ -12052,12 +12052,12 @@ begin
         begin
           if nrfiles > 1 then {more than one file}
           begin
-            if mosaic_mode = False then put_best_quality_on_top(files_to_process); {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
+            if stitching_mode = False then put_best_quality_on_top(files_to_process); {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
             if sigma_clip then
               stack_sigmaclip(over_size, process_as_osc,{var}files_to_process, counterL) {sigma clip combining}
             else
-            if mosaic_mode then
+            if stitching_mode then
               stack_mosaic(over_size,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
             else
               stack_average(over_size, process_as_osc,{var}files_to_process, counterL);{average}
@@ -12424,7 +12424,7 @@ begin
           {head.exposure}
         end;
 
-        filename2 := extractfilepath(filename2) + propose_file_name(mosaic_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, thefilters);{give it a nice file name}
+        filename2 := extractfilepath(filename2) + propose_file_name(stitching_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, thefilters);{give it a nice file name}
 
         if head.cd1_1 <> 0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result ' + IntToStr(image_counter) + ' as ' + filename2);

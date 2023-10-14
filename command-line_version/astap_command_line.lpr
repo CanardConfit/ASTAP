@@ -70,6 +70,7 @@ begin
     '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
     '-o  file {Name the output files with this base path & file name}'+#10+
     '-d  path {specify a path to the star database}'+#10+
+    '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
     '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
     '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
     '-log   {Write the solver log to file}'+#10+
@@ -149,7 +150,11 @@ begin
     end;{analyse fits and report HFD value}
 
     if hasoption('d') then
-         database_path:=GetOptionValue('d')+DirectorySeparator; {specify a different database path}
+      database_path:=GetOptionValue('d')+DirectorySeparator; {specify a different database path}
+    if hasoption('D') then
+      star_database1:=GetOptionValue('D'); {specify a different database}
+
+
 
     if ((file_loaded) and (solve_image(img_loaded ))) then {find plate solution, filename2 extension will change to .fit}
     begin

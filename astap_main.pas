@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.10.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.10.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -7076,7 +7076,7 @@ begin
     end;
   end;
 
-  hist_range:=round(min(head.datamax_org,2*maxm));{adapt histogram range}
+  hist_range:=min(65535,round(min(head.datamax_org,2*maxm)));{adapt histogram range}
   mainwindow.minimum1.max:= max(hist_range,1); {set minimum to 1 to prevent runtime failure for fully black image}
   mainwindow.maximum1.max:= max(hist_range,1);
 
@@ -7135,21 +7135,19 @@ begin
 
   for i := 0 to w-1 do {create histogram graph}
   begin
+    countR:= round(255*histogram2[0,i]/(histo_peakR+1));
+    if number_colors>1 then countG:= round(255*histogram2[1,i]/(histo_peakR+1)) else countG:=0;
+    if number_colors>2 then countB:= round(255*histogram2[2,i]/(histo_peakR+1)) else countB:=0;
+
+    if ((countR>0) or (countG>0) or (countB>0)) then {something to plot}
     begin
-      countR:= round(255*histogram2[0,i]/(histo_peakR+1));
-      if number_colors>1 then countG:= round(255*histogram2[1,i]/(histo_peakR+1)) else countG:=0;
-      if number_colors>2 then countB:= round(255*histogram2[2,i]/(histo_peakR+1)) else countB:=0;
+      max_color:=max(countR,max(countG,countB));
+      mainwindow.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);{set pen colour}
 
-      if ((countR>0) or (countG>0) or (countB>0)) then {something to plot}
-      begin
-        max_color:=max(countR,max(countG,countB));
-        mainwindow.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);{set pen colour}
+      max_color:=round(256*ln(max_color)/ln(256));{make scale logarithmic}
 
-        max_color:=round(256*ln(max_color)/ln(256));{make scale logarithmic}
-
-        moveToex(mainwindow.histogram1.Canvas.handle,i,h,nil);
-        lineTo(mainwindow.histogram1.Canvas.handle,i ,h-round(h*max_color/256) ); {draw vertical line}
-      end;
+      moveToex(mainwindow.histogram1.Canvas.handle,i,h,nil);
+      lineTo(mainwindow.histogram1.Canvas.handle,i ,h-round(h*max_color/256) ); {draw vertical line}
     end;
   end;
 
@@ -7582,7 +7580,7 @@ begin
       stackmenu1.ignore_header_solution1.Checked:= Sett.ReadBool('stack','ignore_header_solution',true);
       stackmenu1.Equalise_background1.checked:= Sett.ReadBool('stack','equalise_background',true);{for mosaic mode}
       stackmenu1.merge_overlap1.checked:= Sett.ReadBool('stack','merge_overlap',true);{for mosaic mode}
-      stackmenu1.limit_background_correction1.checked:= Sett.ReadBool('stack','limit_bck_corr',false);{for mosaic mode}
+      stackmenu1.limit_background_correction1.checked:= Sett.ReadBool('stack','limit_back_corr',true);{for mosaic mode}
 
       stackmenu1.classify_object1.checked:= Sett.ReadBool('stack','classify_object',false);
       stackmenu1.classify_filter1.checked:= Sett.ReadBool('stack','classify_filter',false);
@@ -7949,7 +7947,7 @@ begin
       sett.writeBool('stack','ignore_header_solution',stackmenu1.ignore_header_solution1.Checked);
       sett.writeBool('stack','equalise_background',stackmenu1.Equalise_background1.Checked);
       sett.writeBool('stack','merge_overlap',stackmenu1.merge_overlap1.Checked);
-      sett.writeBool('stack','limit_bck_corr',stackmenu1.limit_background_correction1.Checked);
+      sett.writeBool('stack','limit_back_corr',stackmenu1.limit_background_correction1.Checked);
 
 
 
@@ -12183,7 +12181,8 @@ begin
         '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
         #10+
         '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
-        '-d  path {specify a path to the star database}'+#10+
+        '-d  path {Specify a path to the star database}'+#10+
+        '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
         '-sqm pedestal  {add measured sqm value to the solution}'+#10+
@@ -12330,7 +12329,10 @@ begin
             end;
           end;{analyse fits and report HFD value}
 
-          if hasoption('d') then database_path:=GetOptionValue('d')+DirectorySeparator; {specify a different database path}
+          if hasoption('d') then
+             database_path:=GetOptionValue('d')+DirectorySeparator; {specify a different database path}
+          if hasoption('D') then
+             stackmenu1.star_database1.text:=GetOptionValue('D'); {specify a different database}
 
           if ((file_loaded) and (solve_image(img_loaded,head,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
           begin

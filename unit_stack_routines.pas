@@ -838,11 +838,12 @@ procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileTo
 var
     fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels    : integer;
     value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels,
-    fx1,fx2,fy1,fy2, raMiddle,decMiddle: double;
+    fx1,fx2,fy1,fy2, raMiddle,decMiddle                            : double;
     tempval                                                        : single;
     init, vector_based,merge_overlap,equalise_background           : boolean;
     background_correction,background_correction_center,background    : array[0..2] of double;
     counter_overlap                                                  : array[0..2] of integer;
+    bck                                                              : array[0..3] of double;
     memo1_text                                                       : string;
 begin
   with stackmenu1 do
@@ -926,10 +927,15 @@ begin
           for col:=0 to head.naxis3-1 do {calculate background and noise if required}
           begin
             if equalise_background then
-            begin
-                background[col]:=mode(img_loaded,false{ellipse shape},col,round(0.2*head.width),round(0.8*head.width),round(0.2*head.height),round(0.8*head.height),32000,greylevels); {most common 80% center}
-                background_correction_center[col]:=1000 - background[col] ;
-              end
+            begin //measure background in all four corners
+              bck[0]:=mode(img_loaded,false{ellipse shape},col,0,round(0.2*head.width),  0,round(0.2*head.height),32000,greylevels);
+              bck[1]:=mode(img_loaded,false{ellipse shape},col,0,round(0.2*head.width),  round(0.8*head.height),head.height-1,32000,greylevels) ;
+              bck[2]:=mode(img_loaded,false{ellipse shape},col,round(0.8*head.width),head.width-1,  0,round(0.2*head.height),32000,greylevels) ;
+              bck[3]:=mode(img_loaded,false{ellipse shape},col,round(0.8*head.width),head.width-1,  round(0.8*head.height),head.height-1,32000,greylevels) ;
+
+              background[col]:=smedian(bck,4);
+              background_correction_center[col]:=1000 - background[col] ;
+            end
             else
             begin
               background[col]:=0;
