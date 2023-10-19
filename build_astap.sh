@@ -42,13 +42,12 @@ tar -czvf astap_aarch64_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/
 #build armhf
 #use old compiler. New one has problems with triplets routine
 /home/h/fpcupdeluxe_stable/lazarus/lazbuild /home/h/astap.fpc/astap_linux_armhf.lpi  
-
-                
+               
 cp /home/h/astap.fpc/astap /home/h/astap_install/astap_armhf/opt/astap
 cd /home/h/astap_install
 sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_armhf
 sudo cp /home/h/astap.fpc/astap /opt/astap
-sudo cp /home/h/astap_install/astap_armhf/opt/unprocessed_raw-astap /opt/astap
+sudo cp /home/h/astap_install/astap_armhf/opt/astap/unprocessed_raw-astap /opt/astap
 # not dcraw-astap
 tar -czvf astap_armhf.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
 #build armhf qt5
