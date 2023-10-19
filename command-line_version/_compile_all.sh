@@ -1,7 +1,7 @@
 rm astap_cli
 
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_linux_arm64.lpi
-zip astap_command-line_version_Linux_arm64.zip astap_cli
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_linux_aarch64.lpi
+zip astap_command-line_version_Linux_aarch64.zip astap_cli
 rm astap_cli
 
 
@@ -24,7 +24,7 @@ zip astap_command-line_version_Android_armhf.zip astap_cli
 rm astap_cli
 
 
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_arm64.lpi
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_aarch64.lpi
 zip astap_command-line_version_Android_aarch64.zip astap_cli
 rm astap_cli
 
@@ -41,9 +41,10 @@ zip astap_command-line_version_Linux_amd64.zip astap_cli
 rm astap_cli
 
 
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_Win11_arm64.lpi
-zip astap_command-line_version_Win11_arm64 astap_cli.exe
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_win11_aarch64.lpi
+zip astap_command-line_version_win11_aarch64 astap_cli.exe
 rm astap_cli.exe
+
 
 
 
