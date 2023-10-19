@@ -144,6 +144,7 @@ var
  Fliph, Flipv,restore_req  : boolean;
  img_bk,img_sa                         : image_array;
  style: TTextStyle;
+ data_max: single;
 begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -211,6 +212,8 @@ begin
 
     detection_level:=bck.star_level; {level above background. Start with a potential high value but 3.5 times noise level minimum.}
 
+    data_max:=head.datamax_org-1;
+
     retries:=2; {try up to three times to get enough stars from the image}
     repeat
       nhfd:=0;{set counters at zero}
@@ -244,16 +247,16 @@ begin
                   img_sa[0,j,i]:=1;
               end;
 
-              if ((img_loaded[0,yci,  xci  ]<head.datamax_org-1) and
-                  (img_loaded[0,yci,  xci-1]<head.datamax_org-1) and
-                  (img_loaded[0,yci,  xci+1]<head.datamax_org-1) and
-                  (img_loaded[0,yci-1,xci  ]<head.datamax_org-1) and
-                  (img_loaded[0,yci+1,xci  ]<head.datamax_org-1) and
+              if ((img_loaded[0,yci,  xci  ]<data_max) and
+                  (img_loaded[0,yci,  xci-1]<data_max) and
+                  (img_loaded[0,yci,  xci+1]<data_max) and
+                  (img_loaded[0,yci-1,xci  ]<data_max) and
+                  (img_loaded[0,yci+1,xci  ]<data_max) and
 
-                  (img_loaded[0,yci-1,xci-1]<head.datamax_org-1) and
-                  (img_loaded[0,yci+1,xci-1]<head.datamax_org-1) and
-                  (img_loaded[0,yci-1,xci+1]<head.datamax_org-1) and
-                  (img_loaded[0,yci+1,xci+1]<head.datamax_org-1)  ) then {not saturated}
+                  (img_loaded[0,yci-1,xci-1]<data_max) and
+                  (img_loaded[0,yci+1,xci-1]<data_max) and
+                  (img_loaded[0,yci-1,xci+1]<data_max) and
+                  (img_loaded[0,yci+1,xci+1]<data_max)  ) then {not saturated}
               begin
                 {store values}
                 hfdlist[nhfd]:=hfd1;
@@ -918,7 +921,7 @@ procedure CCDinspector_analyse(detype: char; aspect,values,vectors: boolean);
 var
  fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,n,m,xci,yci,sqr_radius,orientation,starX,starY,x2,y2,font_luminance : integer;
  hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med : double;
- mean, min_value,max_value : single;
+ mean, min_value,max_value,data_max : single;
  hfd_values  : hfd_array; {array of integers}
  hfds        : array of double;
  Fliphorizontal, Flipvertical: boolean;
@@ -936,6 +939,7 @@ begin
   get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
   detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
+  data_max:=head.datamax_org-1;
 
   retries:=2; {try up to three times to get enough stars from the image}
   repeat
@@ -973,16 +977,16 @@ begin
 
             {store values}
             if hfd1<>999 then
-            if ( ((img_loaded[0,round(yc),round(xc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(yc-1),round(xc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(yc+1),round(xc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(yc),round(xc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(yc),round(xc+1)]<head.datamax_org-1) and
+            if ( ((img_loaded[0,round(yc),round(xc)]<data_max) and
+                  (img_loaded[0,round(yc-1),round(xc)]<data_max) and
+                  (img_loaded[0,round(yc+1),round(xc)]<data_max) and
+                  (img_loaded[0,round(yc),round(xc-1)]<data_max) and
+                  (img_loaded[0,round(yc),round(xc+1)]<data_max) and
 
-                  (img_loaded[0,round(yc-1),round(xc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(yc-1),round(xc+1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(yc+1),round(xc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(yc+1),round(xc+1)]<head.datamax_org-1)){not saturated}
+                  (img_loaded[0,round(yc-1),round(xc-1)]<data_max) and
+                  (img_loaded[0,round(yc-1),round(xc+1)]<data_max) and
+                  (img_loaded[0,round(yc+1),round(xc-1)]<data_max) and
+                  (img_loaded[0,round(yc+1),round(xc+1)]<data_max)){not saturated}
                   or ((aspect))  )
                   then
             begin

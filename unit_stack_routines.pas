@@ -182,8 +182,7 @@ begin
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
-    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
 
     counter:=0;
     jd_sum:=0;{sum of Julian midpoints}
@@ -592,8 +591,7 @@ begin
     use_astrometry_internal:=use_astrometry_internal1.checked;
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
-    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
 
     counter:=0;
     sum_exp:=0;
@@ -1116,8 +1114,7 @@ begin
     variance_factor:=sqr(strtofloat2(stackmenu1.sd_factor1.text));
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
-    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
@@ -1611,8 +1608,7 @@ begin
   begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
-    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;

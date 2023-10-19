@@ -1844,6 +1844,7 @@ var
   flip_horizontal, flip_vertical     : boolean;
   flux_ratio_array,hfd_x_sd          : array of double;
   database_passband : string;
+  data_max          : single;
 var
   flux_ratio             : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
 
@@ -1903,16 +1904,16 @@ var
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
-            if ((img_loaded[0,round(yc),round(xc)]<head.datamax_org-1) and
-                (img_loaded[0,round(yc-1),round(xc)]<head.datamax_org-1) and
-                (img_loaded[0,round(yc+1),round(xc)]<head.datamax_org-1) and
-                (img_loaded[0,round(yc),round(xc-1)]<head.datamax_org-1) and
-                (img_loaded[0,round(yc),round(xc+1)]<head.datamax_org-1) and
+            if ((img_loaded[0,round(yc),round(xc)]<data_max) and
+                (img_loaded[0,round(yc-1),round(xc)]<data_max) and
+                (img_loaded[0,round(yc+1),round(xc)]<data_max) and
+                (img_loaded[0,round(yc),round(xc-1)]<data_max) and
+                (img_loaded[0,round(yc),round(xc+1)]<data_max) and
 
-                (img_loaded[0,round(yc-1),round(xc-1)]<head.datamax_org-1) and
-                (img_loaded[0,round(yc-1),round(xc+1)]<head.datamax_org-1) and
-                (img_loaded[0,round(yc+1),round(xc-1)]<head.datamax_org-1) and
-                (img_loaded[0,round(yc+1),round(xc+1)]<head.datamax_org-1)  ) then {not saturated}
+                (img_loaded[0,round(yc-1),round(xc-1)]<data_max) and
+                (img_loaded[0,round(yc-1),round(xc+1)]<data_max) and
+                (img_loaded[0,round(yc+1),round(xc-1)]<data_max) and
+                (img_loaded[0,round(yc+1),round(xc+1)]<data_max)  ) then {not saturated}
             begin
               if counter_flux_measured>=length(flux_ratio_array) then
               begin
@@ -1974,6 +1975,7 @@ begin
 
     star_total_counter:=0;{total counter}
     counter_flux_measured:=0;
+    data_max:=head.datamax_org-1;
 
     max_nr_stars:=round(head.width*head.height*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}

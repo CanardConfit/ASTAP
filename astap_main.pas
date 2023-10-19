@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.10.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.10.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -769,7 +769,7 @@ procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{
 procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
 function fnmodulo (x,range: double):double;
-function strtoint2(s: string):integer; {str to integer, fault tolerant}
+function strtoint2(s: string;default:integer):integer; {str to integer, fault tolerant}
 function strtofloat1(s:string): double;{string to float, error tolerant}
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function TextfileSize(const name: string): LongInt;
@@ -2971,7 +2971,7 @@ begin
     back.star_level:=0;
     above:=0;
     i:=max_range;
-    factor:=width5*height5*0.4/strtoint2(stackmenu1.max_stars1.text);
+    factor:=width5*height5*0.4/strtoint2(stackmenu1.max_stars1.text,500);
     while ((back.star_level=0) and (i>back.backgr+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
       dec(i);
@@ -5531,14 +5531,14 @@ begin
 end;
 
 
-function strtoint2(s: string):integer; {str to integer, fault tolerant}
+function strtoint2(s: string;default:integer):integer; {str to integer, fault tolerant}
 var
   error1 : integer;
   value    : double;
 begin
   val(s,value,error1);
   if error1<>0 then
-    result:=0
+    result:=default
   else
     result:=round(value);
 end;
@@ -10180,6 +10180,7 @@ var
   fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min  : double;
   img_sa : image_array;
+  data_max : single;
 
 begin
 
@@ -10193,6 +10194,7 @@ begin
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   nrstars:=0;{set counters at zero}
+  data_max:=head.datamax_org-1;
 
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
@@ -10227,16 +10229,16 @@ begin
                 img_sa[0,j,i]:=1;
             end;
 
-          if ((img_loaded[0,round(yc),round(xc)]<head.datamax_org-1) and
-              (img_loaded[0,round(yc),round(xc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(yc),round(xc+1)]<head.datamax_org-1) and
-              (img_loaded[0,round(yc-1),round(xc)]<head.datamax_org-1) and
-              (img_loaded[0,round(yc+1),round(xc)]<head.datamax_org-1) and
+          if ((img_loaded[0,round(yc),round(xc)]<data_max) and
+              (img_loaded[0,round(yc),round(xc-1)]<data_max) and
+              (img_loaded[0,round(yc),round(xc+1)]<data_max) and
+              (img_loaded[0,round(yc-1),round(xc)]<data_max) and
+              (img_loaded[0,round(yc+1),round(xc)]<data_max) and
 
-              (img_loaded[0,round(yc-1),round(xc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(yc+1),round(xc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(yc-1),round(xc+1)]<head.datamax_org-1) and
-              (img_loaded[0,round(yc+1),round(xc+1)]<head.datamax_org-1)  ) then {not saturated}
+              (img_loaded[0,round(yc-1),round(xc-1)]<data_max) and
+              (img_loaded[0,round(yc+1),round(xc-1)]<data_max) and
+              (img_loaded[0,round(yc-1),round(xc+1)]<data_max) and
+              (img_loaded[0,round(yc+1),round(xc+1)]<data_max)  ) then {not saturated}
           begin
             {store values}
             inc(nrstars);
@@ -10303,6 +10305,7 @@ var
   sqr_radius, hfd_median : double;
   messg : string;
   img_temp3,img_sa :image_array;
+  data_max: single;
 const
    default=1000;
 
@@ -10359,6 +10362,7 @@ const
 
   countN:=0;
   countO:=0;
+  data_max:=head.datamax_org-1;
 
   for fitsY:=0 to head.height-1 do
   begin
@@ -10374,16 +10378,16 @@ const
         xci:=round(xc);{star center as integer}
         yci:=round(yc);
         if ((xci>0) and (xci<head.width-1) and (yci>0) and (yci<head.height-1)) then
-        saturated:=not ((img_loaded[0,yci,xci]<head.datamax_org-1) and
-                        (img_loaded[0,yci,xci-1]<head.datamax_org-1) and
-                        (img_loaded[0,yci,xci+1]<head.datamax_org-1) and
-                        (img_loaded[0,yci-1,xci]<head.datamax_org-1) and
-                        (img_loaded[0,yci+1,xci]<head.datamax_org-1) and
+        saturated:=not ((img_loaded[0,yci,xci]<data_max) and
+                        (img_loaded[0,yci,xci-1]<data_max) and
+                        (img_loaded[0,yci,xci+1]<data_max) and
+                        (img_loaded[0,yci-1,xci]<data_max) and
+                        (img_loaded[0,yci+1,xci]<data_max) and
 
-                        (img_loaded[0,yci-1,xci-1]<head.datamax_org-1) and
-                        (img_loaded[0,yci+1,xci-1]<head.datamax_org-1) and
-                        (img_loaded[0,yci-1,xci+1]<head.datamax_org-1) and
-                        (img_loaded[0,yci+1,xci+1]<head.datamax_org-1)  )
+                        (img_loaded[0,yci-1,xci-1]<data_max) and
+                        (img_loaded[0,yci+1,xci-1]<data_max) and
+                        (img_loaded[0,yci-1,xci+1]<data_max) and
+                        (img_loaded[0,yci+1,xci+1]<data_max)  )
         else saturated:=false;
 
         if (((hfd1<hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=hfd_median*0.75) and (snr>10)) then {star detected in img_loaded}

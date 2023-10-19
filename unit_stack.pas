@@ -2581,9 +2581,7 @@ begin
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-    max_stars := strtoint2(stackmenu1.max_stars1.Text);
-    {maximum star to process, if so filter out brightest stars later}
-    if max_stars = 0 then max_stars := 500;{0 is auto for solving. No auto for stacking}
+    max_stars := strtoint2(stackmenu1.max_stars1.Text,500);  {maximum star to process, if so filter out brightest stars later}
 
     if quads_displayed then
       plot_fits(mainwindow.image1, False, True); {remove quads}
@@ -5363,16 +5361,11 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   save_settings2;{too many lost selected files . so first save settings}
 
-  if listview6.Items.item[listview6.items.Count - 1].subitems.Strings[B_width] =
-    '' {width} then
-    stackmenu1.analyseblink1Click(nil);
+  if listview6.Items.item[listview6.items.Count - 1].subitems.Strings[B_width] ='' {width} then  stackmenu1.analyseblink1Click(nil);
 
   hfd_min := max(0.8 {two pixels}, strtofloat2(
-    stackmenu1.min_star_size_stacking1.Caption){hfd});
-  {to ignore hot pixels which are too small}
-  max_stars := strtoint2(stackmenu1.max_stars1.Text);
-  {maximum star to process, if so filter out brightest stars later}
-  if max_stars = 0 then max_stars := 500;{0 is auto for solving. No auto for stacking}
+    stackmenu1.min_star_size_stacking1.Caption){hfd}); {to ignore hot pixels which are too small}
+  max_stars := strtoint2(stackmenu1.max_stars1.Text,500);  {maximum star to process, if so filter out brightest stars later}
 
   mainwindow.image1.Canvas.brush.Style := bsClear;
   mainwindow.image1.canvas.font.color := $00B0FF;{orange}
@@ -5380,23 +5373,18 @@ begin
   esc_pressed := False;
   first_image := -1;
   cycle := 0;
-  if Sender = blink_button_contB1 then step := -1
-  else
-    step := 1;{forward/ backwards}
+  if Sender = blink_button_contB1 then step := -1  else step := 1;{forward/ backwards}
 
 
   nrrows := listview6.items.Count;
-  setlength(bsolutions, nrrows);
-  {for the solutions in memory. bsolutions is destroyed in formdestroy}
+  setlength(bsolutions, nrrows); {for the solutions in memory. bsolutions is destroyed in formdestroy}
 
   stepnr := 0;
   if ((Sender = blink_button1) or (solve_and_annotate1.Checked) or
-    (Sender = write_video1) or (Sender = nil){export aligned}) then
-    init := True {start at beginning for video}
+    (Sender = write_video1) or (Sender = nil){export aligned}) then  init := True {start at beginning for video}
   else
     init := False;{start at selection}
-  reference_done := False;
-  { check if reference image is loaded. Could be after first image if abort was given}
+  reference_done := False; { check if reference image is loaded. Could be after first image if abort was given}
   repeat
     stepnr := stepnr + 1; {first step is nr 1}
 
@@ -9029,7 +9017,7 @@ begin
   'The selected files should be sorted on date.'+#10+#10+
   'How many images per stack?:',groupsizeStr);
   if groupsizeStr=''  then exit; {cancel used}
-  groupsize:=strtoint2(groupsizeStr);
+  groupsize:=strtoint2(groupsizeStr,0);
   if groupsize=0 then exit;
 
   esc_pressed:=false;

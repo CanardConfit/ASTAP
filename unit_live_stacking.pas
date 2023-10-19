@@ -161,8 +161,7 @@ begin
 
     colour_correction:=((process_as_osc>0) and (stackmenu1.osc_auto_level1.checked));
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
-    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
 
     {Prepare for dark and flats}
     analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}

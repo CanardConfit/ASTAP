@@ -12,7 +12,7 @@ object form_inspection1: Tform_inspection1
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   Position = poDesktopCenter
-  LCLVersion = '2.2.4.0'
+  LCLVersion = '3.0.0.1'
   object undo_button1: TBitBtn
     Left = 456
     Height = 30
@@ -160,7 +160,7 @@ object form_inspection1: Tform_inspection1
         Height = 19
         Hint = ' Uses all stars with SNR >10 else use star with SNR >30 (more accurate)'
         Top = 8
-        Width = 73
+        Width = 71
         Caption = 'Extra stars'
         OnChange = extra_stars1Change
         ParentShowHint = False
@@ -172,7 +172,7 @@ object form_inspection1: Tform_inspection1
         Height = 19
         Hint = 'Octagon shape. For perfect optic the octagon will form a square'
         Top = 40
-        Width = 66
+        Width = 64
         Caption = 'Octagon'
         Checked = True
         ParentShowHint = False
@@ -185,7 +185,7 @@ object form_inspection1: Tform_inspection1
         Height = 19
         Hint = 'A round area is taken from the image and divided in three slices.'
         Top = 72
-        Width = 62
+        Width = 60
         Caption = 'Triangle'
         OnChange = triangle1Change
         ParentShowHint = False
@@ -237,7 +237,7 @@ object form_inspection1: Tform_inspection1
         Height = 19
         Hint = 'Show the orientation of the star unroundness.'
         Top = 104
-        Width = 155
+        Width = 153
         Caption = 'Add unroundness vectors'
         Checked = True
         OnChange = vectors1Change
@@ -251,7 +251,7 @@ object form_inspection1: Tform_inspection1
         Height = 19
         Hint = 'Add the star HFD value persistent to the fits file. No HFD filtering.'
         Top = 72
-        Width = 78
+        Width = 76
         Caption = 'Add values'
         OnChange = values1Change
         ParentShowHint = False
@@ -263,7 +263,7 @@ object form_inspection1: Tform_inspection1
         Height = 19
         Hint = 'Creates a diagram based on the values. The gray values represent the values *100. The values are local median filtered for each three stars'
         Top = 40
-        Width = 109
+        Width = 107
         Caption = 'Voronoi diagram'
         OnChange = voronoi1Change
         ParentShowHint = False
@@ -275,7 +275,7 @@ object form_inspection1: Tform_inspection1
         Height = 19
         Hint = 'Creates a 2D contour diagram based on the values. The gray values represent the values *100. The values are local median filtered for each three stars.'
         Top = 8
-        Width = 126
+        Width = 124
         Caption = '2D contour diagram'
         OnChange = contour1Change
         ParentShowHint = False
@@ -320,10 +320,10 @@ object form_inspection1: Tform_inspection1
   end
   object to_clipboard1: TCheckBox
     Left = 646
-    Height = 19
+    Height = 17
     Hint = 'Data to clipboard'
     Top = 96
-    Width = 20
+    Width = 18
     ParentShowHint = False
     ShowHint = True
     TabOrder = 5
