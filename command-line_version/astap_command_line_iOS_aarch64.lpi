@@ -52,7 +52,7 @@
     </SearchPaths>
     <CodeGeneration>
       <TargetCPU Value="aarch64"/>
-      <TargetOS Value="android"/>
+      <TargetOS Value="ios"/>
     </CodeGeneration>
     <Linking>
       <Debugging>
