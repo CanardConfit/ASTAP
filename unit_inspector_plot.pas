@@ -74,8 +74,8 @@ var
   form_inspection1: Tform_inspection1;
 
 
-type
-  hfd_array   = array of array of integer;
+//type
+//  hfd_array   = array of array of integer;
 
 var
   contour_check: boolean=false;
@@ -489,6 +489,7 @@ begin
         x_31:=round(+median_31*scale_factor+head.width/2);  y_31:=round(-median_31*scale_factor+head.height/2);
 
         x_12:=round(-median_12*scale_factor+head.width/2);  y_12:=round(+head.height/2);
+        x_22:=head.width div 2;                             y_22:=head.height div 2;
         x_32:=round(+median_32*scale_factor+head.width/2);  y_32:=round(+head.height/2);
 
         x_13:=round(-median_13*scale_factor+head.width/2);  y_13:=round(+median_13*scale_factor+head.height/2);
@@ -501,7 +502,7 @@ begin
         flip_xy(fliph,flipv,x_31,y_31);
 
         flip_xy(fliph,flipv,x_12,y_12); {from array to image coordinates}
-        flip_xy(fliph,flipv,x_22,y_22); {from array to image coordinates}
+        // flip x_22, y_22 is not required since they are in the middle.
         flip_xy(fliph,flipv,x_32,y_32); {from array to image coordinates}
 
         flip_xy(fliph,flipv,x_13,y_13); {from array to image coordinates}
@@ -557,8 +558,6 @@ begin
         image1.Canvas.textout(x_13,y_13,floattostrF(median_13,ffFixed,0,2));
         image1.Canvas.textout(x_23,y_23,floattostrF(median_23,ffFixed,0,2));
         image1.Canvas.textout(x_33,y_33,floattostrF(median_33,ffFixed,0,2));
-
-        image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_22,ffFixed,0,2));
       end
       else
       begin
@@ -607,10 +606,11 @@ begin
 end;
 
 
-procedure filter_hfd(var mean,min_value,max_value : single; nr : integer; hfd_values: hfd_array); {filter array of hfd values}
+procedure filter_hfd(var mean,min_value,max_value : single; nr : integer; hfd_values: star_list); {filter array of hfd values}
 var
-  i,j,nr_closest,nr_second_closest,a,b,c,dummy:  integer;
+  i,j,nr_closest,nr_second_closest  :  integer;
   closest_distance,second_closest_distance,distance_sqr   : single;
+  a,b,c,dummy : double;
 
 begin
 
@@ -667,11 +667,12 @@ begin
  {useful length is nr}
 end;
 
-procedure voronoi_plot(min_value,max_value : single; nr:integer;hfd_values: hfd_array);
+procedure voronoi_plot(min_value,max_value : single; nr:integer;hfd_values: star_list);
 var
-    i,size,fitsx,fitsY,col,x,y,x2,y2,w,h,scaledown:  integer;
+    i,size,fitsx,fitsY,x,y,x2,y2,w,h,scaledown:  integer;
     img_hfd: image_array;
     zeros_left : boolean;
+    col        : double;
 
 begin
   scaledown:=1+ head.width div 1000;
@@ -695,8 +696,8 @@ begin
       for y:=-size to size do
       if round(sqrt(sqr(x)+sqr(y)))=size then
       begin
-        x2:=hfd_values[0,i] div scaledown + x;
-        y2:=hfd_values[1,i] div scaledown + y;
+        x2:=round(hfd_values[0,i]/scaledown) + x;
+        y2:=round(hfd_values[1,i]/scaledown) + y;
         if ((x2>=0) and (x2<w) and (y2>=0) and (y2<h)) then
           if  img_hfd[0,y2,x2]=0 then {not used yet}
           begin
@@ -725,7 +726,7 @@ begin
  end;
 
 
-procedure contour_plot(mean: single; nr:integer;hfd_values: hfd_array);
+procedure contour_plot(mean: single; nr:integer;hfd_values: star_list);
 var
     i,fitsx,fitsY,x,y,w,h,x2,y2,scaledown : integer;
     img_hfd: image_array;
@@ -755,8 +756,8 @@ begin
     sum_influence:=0;
     for i:=0 to nr-1 do {go through all points}
     begin
-      x2:=hfd_values[0,i] div scaledown;
-      y2:=hfd_values[1,i] div scaledown;
+      x2:=round(hfd_values[0,i]/ scaledown);
+      y2:=round(hfd_values[1,i]/ scaledown);
       distance:=sqrt(sqr(x2-x)+sqr(y2-y));
       influence:=factor/(factor+distance);
       sum_influence:=sum_influence+influence;
@@ -922,7 +923,7 @@ var
  fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,n,m,xci,yci,sqr_radius,orientation,starX,starY,x2,y2,font_luminance : integer;
  hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med : double;
  mean, min_value,max_value,data_max : single;
- hfd_values  : hfd_array; {array of integers}
+ hfd_values  : star_list; {array of aray of doubles}
  hfds        : array of double;
  Fliphorizontal, Flipvertical: boolean;
  mess: string;
@@ -991,10 +992,10 @@ begin
                   then
             begin
               if nhfd>=length(hfd_values)-1 then
-                  SetLength(hfd_values,4,nhfd+500);{adapt length if required}
-              hfd_values[0,nhfd]:=round(xc);
-              hfd_values[1,nhfd]:=round(yc);
-              hfd_values[2,nhfd]:=trunc(hfd1*100);{star aspect}
+                  SetLength(hfd_values,4,nhfd+2000);{adapt length if required}
+              hfd_values[0,nhfd]:=xc;
+              hfd_values[1,nhfd]:=yc;
+              hfd_values[2,nhfd]:=hfd1;{star aspect}
               hfd_values[3,nhfd]:=orientation;    {star orientation 0..179}
               inc(nhfd);
 
@@ -1047,9 +1048,9 @@ begin
    begin
      if values then
      begin
-       if Fliphorizontal     then starX:=head.width-hfd_values[0,i]  else starX:=hfd_values[0,i];
-       if Flipvertical       then starY:=head.height-hfd_values[1,i] else starY:=hfd_values[1,i];
-       annotation_to_array(floattostrf(hfd_values[2,i]/100 {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starY,starX]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
+       if Fliphorizontal     then starX:=head.width-round(hfd_values[0,i])  else starX:=round(hfd_values[0,i]);
+       if Flipvertical       then starY:=head.height-round(hfd_values[1,i]) else starY:=round(hfd_values[1,i]);
+       annotation_to_array(floattostrf(hfd_values[2,i]{/100} {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starY,starX]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
      end;
      hfds[i]:=hfd_values[2,i];
   end;

@@ -244,7 +244,7 @@ type
     analyse_inspector1: TButton;
     add_bias1: TCheckBox;
     binning_for_solving_label3: TLabel;
-    analyse_objects_visibles1: TButton;
+    analyse_objects_visible1: TButton;
     binning_for_solving_label4: TLabel;
     bin_image1: TButton;
     ignorezero1: TCheckBox;
@@ -726,7 +726,7 @@ type
     procedure browse_dark1Click(Sender: TObject);
     procedure browse_inspector1Click(Sender: TObject);
     procedure browse_live_stacking1Click(Sender: TObject);
-    procedure analyse_objects_visibles1Click(Sender: TObject);
+    procedure analyse_objects_visible1Click(Sender: TObject);
     procedure browse_photometry1Click(Sender: TObject);
     procedure aavso_button1Click(Sender: TObject);
     procedure clear_mount_list1Click(Sender: TObject);
@@ -1155,6 +1155,7 @@ const
   video_index: integer = 1;
   frame_rate: string = '1';
 
+  var_lock:string='';
 
 implementation
 
@@ -1185,7 +1186,7 @@ var
 function ShutMeDown: string;
 var
   hToken: THandle;
-  tkp, memo2: TTokenPrivileges;
+  tkp, p: TTokenPrivileges;
   RetLen: DWord;
   ExReply: longbool;
   Reply: DWord;
@@ -1197,7 +1198,7 @@ begin
     begin
       tkp.PrivilegeCount := 1;
       tkp.Privileges[0].Attributes := SE_PRIVILEGE_ENABLED;
-      AdjustTokenPrivileges(hToken, False, tkp, SizeOf(TTokenPrivileges), memo2, RetLen);
+      AdjustTokenPrivileges(hToken, False, tkp, SizeOf(TTokenPrivileges), p, RetLen);
       Reply := GetLastError;
       if Reply = ERROR_SUCCESS then
       begin
@@ -1545,11 +1546,10 @@ end;
 
 procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean; out star_counter: integer; out bck:Tbackground; out hfd_median: double);//find background, number of stars, median HFD
 var
-  width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, memo2,
+  width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, m,
   xci, yci, sqr_radius: integer;
   hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background: double;
-  hfd_list:
-  array of double;
+  hfd_list:  array of double;
   img_sa: image_array;
 var
   f: textfile;
@@ -1616,12 +1616,12 @@ begin
               xci := round(xc);{star center as integer}
               yci := round(yc);
               for n := -radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-                for memo2 := -radius to +radius do
+                for m := -radius to +radius do
                 begin
                   j := n + yci;
-                  i := memo2 + xci;
+                  i := m + xci;
                   if ((j >= 0) and (i >= 0) and (j < height5) and (i < width5) and
-                    (sqr(memo2) + sqr(n) <= sqr_radius)) then
+                    (sqr(m) + sqr(n) <= sqr_radius)) then
                     img_sa[0, j, i] := 1;
                 end;
 
@@ -1647,14 +1647,14 @@ begin
   else
     hfd_median := 99; {Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
 
-  img_sa := nil;{free memo2}
+  img_sa := nil;{free m}
 end;
 
 
 procedure analyse_image_extended(img: image_array; head: Theader; out nr_stars, hfd_median, median_outer_ring, median_11, median_21, median_31,  median_12, median_22, median_32, median_13, median_23, median_33: double);{analyse several areas}
 var
   fitsX, fitsY, radius, i, j,
-  retries, max_stars, n, memo2, xci, yci, sqr_radius, nhfd, nhfd_outer_ring,
+  retries, max_stars, n, m, xci, yci, sqr_radius, nhfd, nhfd_outer_ring,
   nhfd_11, nhfd_21, nhfd_31, nhfd_12, nhfd_22, nhfd_32,
   nhfd_13, nhfd_23, nhfd_33: integer;
   hfd1, star_fwhm, snr, flux, xc, yc, detection_level: double;
@@ -1721,12 +1721,12 @@ begin
               xci := round(xc);{star center as integer}
               yci := round(yc);
               for n := -radius to +radius do  {mark the whole circular star area as occupied to prevent double detection's}
-                for memo2 := -radius to +radius do
+                for m := -radius to +radius do
                 begin
                   j := n + yci;
-                  i := memo2 + xci;
+                  i := m + xci;
                   if ((j >= 0) and (i >= 0) and (j < head.Height) and
-                    (i < head.Width) and (sqr(memo2) + sqr(n) <= sqr_radius)) then
+                    (i < head.Width) and (sqr(m) + sqr(n) <= sqr_radius)) then
                     img_sa[0, j, i] := 1;
                 end;
 
@@ -1890,7 +1890,7 @@ begin
   hfdlist_23 := nil;
   hfdlist_33 := nil;
 
-  img_sa := nil;{free memo2}
+  img_sa := nil;{free m}
 end;
 
 
@@ -5597,8 +5597,7 @@ begin
         plot_fits(mainwindow.image1, False {re_center}, True);
         annotated := store_annotated;{restore anotated value}
         if ((annotated) and (mainwindow.annotations_visible1.Checked)) then
-          plot_annotations(True {use solution vectors!!!!}, False);
-        {corrected annotations in case a part of the lights are flipped in the alignment routien}
+          plot_annotations(True {use solution vectors!!!!}, False);  {corrected annotations in case a part of the lights are flipped in the alignment routien}
 
         if Sender = write_video1 then {write video frame}
         begin
@@ -5642,7 +5641,7 @@ end;
 
 procedure Tstackmenu1.create_test_image_stars1Click(Sender: TObject);
 var
-  i, j, memo2, n, stepsize, stepsize2, starcounter, subsampling: integer;
+  i, j, m, n, stepsize, stepsize2, starcounter, subsampling: integer;
   sigma, hole_radius, donut_radius, hfd_diameter, shiftX, shiftY, flux,
   flux_star, diam, intensity: double;
   gradient, diagn_star: boolean;
@@ -5734,35 +5733,35 @@ begin
           if donutstars1.Checked = False then {gaussian stars}
           begin
             stepsize2 := stepsize * subsampling;
-            for memo2 := -stepsize2 to stepsize2 do for n := -stepsize2 to stepsize2 do
+            for m := -stepsize2 to stepsize2 do for n := -stepsize2 to stepsize2 do
               begin
-                //    flux:=(65000/power(starcounter,0.85)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(memo2/subsampling)+sqr(n/subsampling))));
+                //    flux:=(65000/power(starcounter,0.85)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))));
                 flux := Intensity * (1 / sqr(
                   subsampling * sigma){keep flux independent of HFD and subsmapling} *
-                  exp(-0.5 * (sqr(memo2 / subsampling) + sqr(n / subsampling)) / sqr(sigma)));
+                  exp(-0.5 * (sqr(m / subsampling) + sqr(n / subsampling)) / sqr(sigma)));
                 flux_star := flux_star + flux;
-                img_loaded[0, i + round(shiftY + memo2 / subsampling), j + round(shiftX + n / subsampling)] := img_loaded[0, i + round(shiftY + memo2 / subsampling), j + round(shiftX + n / subsampling)] + flux;
+                img_loaded[0, i + round(shiftY + m / subsampling), j + round(shiftX + n / subsampling)] := img_loaded[0, i + round(shiftY + m / subsampling), j + round(shiftX + n / subsampling)] + flux;
                 {gaussian shaped stars}
                 if frac(starcounter / 20) = 0 then
                 begin
-                  img_loaded[0, 130 + starcounter + round(shiftY + memo2 / subsampling),180 + starcounter + round(shiftX + n / subsampling)] := img_loaded[0, 130 + starcounter + round(shiftY + memo2 / subsampling), 180 + starcounter + round(shiftX + n / subsampling)] + flux; {diagonal gaussian shaped stars}
+                  img_loaded[0, 130 + starcounter + round(shiftY + m / subsampling),180 + starcounter + round(shiftX + n / subsampling)] := img_loaded[0, 130 + starcounter + round(shiftY + m / subsampling), 180 + starcounter + round(shiftX + n / subsampling)] + flux; {diagonal gaussian shaped stars}
                   diagn_star := True;
                 end;
               end;
           end
           else
           begin  {donut stars}
-            for memo2 := -stepsize to stepsize do for n := -stepsize to stepsize do
+            for m := -stepsize to stepsize do for n := -stepsize to stepsize do
               begin
                 hfd_diameter := sigma * 2.5;
                 hole_radius := trunc(hfd_diameter / 3);{Half outer donut diameter}
                 donut_radius := sqrt(2 * sqr(hfd_diameter / 2) - sqr(hole_radius));
-                diam := sqrt(n * n + memo2 * memo2);
+                diam := sqrt(n * n + m * m);
                 if ((diam <= donut_radius) and (diam >= hole_radius {hole})) then
                 begin
                   flux := 1000 * sqr(j / head.Width);
                   flux_star := flux_star + flux;
-                  img_loaded[0, i + memo2, j + n] := img_loaded[0, i + memo2, j + n] + flux;{DONUT SHAPED stars}
+                  img_loaded[0, i + m, j + n] := img_loaded[0, i + m, j + n] + flux;{DONUT SHAPED stars}
                 end;
               end;
           end;
@@ -5852,7 +5851,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.analyse_objects_visibles1Click(Sender: TObject);
+procedure Tstackmenu1.analyse_objects_visible1Click(Sender: TObject);
 begin
   if ListView1.items.Count = 0 then
   begin
@@ -5885,18 +5884,15 @@ begin
   end;
 
   memo2_message('Annotating file: ' + filename2 + ' and extracting objects.');
-  plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True
-    {add annotations});
+  plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations});
   if annotated then
   begin
     mainwindow.annotations_visible1.Checked := True;
     plot_annotations(False {use solution vectors}, True {fill combobox});
-    stackmenu1.ephemeris_centering1.ItemIndex :=
-      stackmenu1.ephemeris_centering1.items.Count - 1;{show first found in the list}
+    stackmenu1.ephemeris_centering1.ItemIndex :=  stackmenu1.ephemeris_centering1.items.Count - 1;{show first found in the list}
   end
   else
-    memo2_message(
-      'No object locations found in image. Modify limiting count and limiting magnitude in Asteroid & Comet annotation menu, CTRL+R');
+    memo2_message('No object locations found in the image. Modify limiting count and limiting magnitude in Asteroid & Comet annotation menu, CTRL+R');
   memo2_message('Completed. Select the object to align on.');
   Screen.Cursor := crDefault;    { back to normal }
 end;
@@ -5981,7 +5977,7 @@ end;
 
 procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
 var
-  memo2, a, b, posit, center, hfd: double;
+  m, a, b, posit, center, hfd: double;
   c, img_counter, i, fields: integer;
   array_hfd: array of tdouble2;
 var {################# initialised variables #########################}
@@ -6030,66 +6026,66 @@ begin
       end;
     if img_counter >= 4 then
     begin
-      find_best_hyperbola_fit(array_hfd, img_counter, memo2, a, b);
-      {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=memo2, a, b of hyperbola}
+      find_best_hyperbola_fit(array_hfd, img_counter, m, a, b);
+      {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=m, a, b of hyperbola}
 
       if i = 1 then  memo2_message(#9+'full image              ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + '            ' + #9 +
           #9 + 'error=' + floattostrf(lowest_error, ffFixed, 0, 5) + #9 + ' iteration cycles=' +
           floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 2 then
       begin
-        memo2_message(#9+'area 2,2 (center)       ' + #9 + 'Focus=' + floattostrf(memo2, ffFixed, 0, 0) +
+        memo2_message(#9+'area 2,2 (center)       ' + #9 + 'Focus=' + floattostrf(m, ffFixed, 0, 0) +
           #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 + ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 +
           '           ' + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 0, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
-        center := memo2;
+        center := m;
       end;
       if i = 3 then  memo2_message(#9+'outer ring              ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 4 then  memo2_message(#9+'area 1,1 (Bottom Left)  ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 5 then  memo2_message(#9+'area 2,1 (Bottom Middle)' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 6 then  memo2_message(#9+'area 3,1 (Bottom Right) ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 7 then  memo2_message(#9+'area 1,2 (Middle left)  ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 8 then  memo2_message(#9+'area 3,2 (Middle Right) ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 9 then  memo2_message(#9+'area 1,3 (Top left)     ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 10 then  memo2_message(#9+'area 2,3 (Top Middle)   ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 11 then  memo2_message(#9+'area 3,3 (Top Right)    ' + #9 +
-          'Focus=' + floattostrf(memo2, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
           ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + 'offset=' + floattostrf(
-          memo2 - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
+          m - center, ffFixed, 0, 0) + #9 + #9 + 'error=' + floattostrf(lowest_error, ffFixed, 5, 5) +
           #9 + ' iteration cycles=' + floattostrf(iteration_cycles, ffFixed, 0, 0));
     end
     else
@@ -7290,7 +7286,7 @@ end;
 
 function JdToDate(jd: double): string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
 var
-  A, B, C, D, E, F, G, J, memo2, T, Z: double;
+  A, B, C, D, E, F, G, J, M, T, Z: double;
   {!!! 2016 by purpose, otherwise with timezone 8, 24:00 midnigth becomes 15:59 UTC}
   HH, MM, SS: integer;
   year3: string[6];
@@ -7319,10 +7315,10 @@ begin
   E := trunc((B - D) / 30.6001);
   T := B - D - int(30.6001 * E) + F; {day of the month}
   if (E < 14) then
-    memo2 := E - 1
+    M := E - 1
   else
-    memo2 := E - 13;
-  if (memo2 > 2) then
+    M := E - 13;
+  if (M > 2) then
     J := C - 4716
   else
     J := C - 4715;
@@ -7337,7 +7333,7 @@ begin
 
   str(trunc(j): 4, year3);
 
-  Result := year3 + '-' + leadingzero(trunc(memo2)) + '-' + leadingzero(trunc(t)) +
+  Result := year3 + '-' + leadingzero(trunc(M)) + '-' + leadingzero(trunc(t)) +
     'T' + leadingzero(HH) + ':' + leadingzero(MM) + ':' + leadingzero(SS);
 end;
 
@@ -7345,18 +7341,18 @@ end;
 function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): double;
   {##### calculate julian day, revised 2017}
 var
-  Y, memo2: integer;
+  Y, M: integer;
   A, B, XX: double;
 begin
   if MM > 2 then
   begin
     Y := YYYY;
-    memo2 := MM;
+    M := MM;
   end
   else {MM=1 OR MM=2}
   begin
     Y := YYYY - 1;
-    memo2 := MM + 12;
+    M := MM + 12;
   end;
 
   DD := DD + HOURS / 24 + MINUTES / (24 * 60) + SECONDS / (24 * 60 * 60);
@@ -7373,7 +7369,7 @@ begin
   if Y < 0 then XX := 0.75
   else
     xx := 0;{correction for negative years}
-  Result := INT(365.25 * Y - XX) + INT(30.6001 * (memo2 + 1)) + DD +
+  Result := INT(365.25 * Y - XX) + INT(30.6001 * (M + 1)) + DD +
     B + 1720994.5;
 end;
 
@@ -8139,6 +8135,9 @@ begin
 
           init := True;
         end;
+
+        if var_lock<>'' then
+          annotation_position(var_lock, rax1, decx1 );// var follows annotation if locked
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.Width := 1;{thickness lines}
@@ -9212,7 +9211,6 @@ begin
    stackmenu1.nr_total_blink1.Caption := IntToStr(listview6.items.Count);
   {$endif}
   {update counting info}
-
 end;
 
 
@@ -9889,7 +9887,7 @@ end;
 
 {Polar error calculation based on two celestial reference points and the error of the telescope mount at these point(s).
  Based on formulas from Ralph Pass documented at https://rppass.com/align.pdf.
- They are based on the book “Telescope Control’ by Trueblood and Genet, memo2.111
+ They are based on the book “Telescope Control’ by Trueblood and Genet, p.111
  Ralph added sin(latitude) term in the equation for the error in RA.
 
 

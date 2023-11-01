@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.10.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.11.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -862,7 +862,7 @@ function noise_to_electrons(adu_e, binning, sd : double): string;//reports noise
 procedure calibrate_photometry;
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
 function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
-
+procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -11384,7 +11384,7 @@ begin
 end;
 
 
-procedure plot_annotations(use_solution_vectors,fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
+procedure plot_annotations(use_solution_vectors,fill_combo : boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
   count1,x1,y1,x2,y2 : integer;
   typ     : double;
@@ -11412,7 +11412,6 @@ begin
   try
     while count1>=0 do {plot annotations}
     begin
-      name:=mainwindow.Memo1.Lines[count1];
       if copy(mainwindow.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
       begin
         List.Clear;
@@ -11424,12 +11423,21 @@ begin
           x2:=round(strtofloat2(list[2]));
           y2:=round(strtofloat2(list[3]));
 
+          if (  ( abs(shape_fitsX-(x1+x2)/2) <30) and (abs(shape_fitsY-(y1+y2)/2)<30)) then
+          begin
+            memo2_message('Var locked on object: '+list[5]);
+            var_lock:=list[5];
+            mainwindow.Shape_alignment_marker1.HINT:=var_lock;
+          end;
+
+
           if use_solution_vectors then {for blink routine, images are aligned and possible flipped making the annotation position invalid}
           begin
             x1:=round(solution_vectorX[0]*(x1)+solution_vectorX[1]*(y1)+solution_vectorX[2]); {correction x:=aX+bY+c}
             y1:=round(solution_vectorY[0]*(x1)+solution_vectorY[1]*(y1)+solution_vectorY[2]); {correction y:=aX+bY+c}
             x2:=round(solution_vectorX[0]*(x2)+solution_vectorX[1]*(y2)+solution_vectorX[2]); {correction x:=aX+bY+c}
             y2:=round(solution_vectorY[0]*(x2)+solution_vectorY[1]*(y2)+solution_vectorY[2]); {correction y:=aX+bY+c}
+
           end;
 
 
@@ -11441,6 +11449,7 @@ begin
 
           if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
             stackmenu1.ephemeris_centering1.Additem(name,nil);
+
         end;
       end;
       count1:=count1-1;
@@ -11450,6 +11459,52 @@ begin
     List.Free;
   end;
 end;
+
+
+procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
+var
+  count1,x1,y1,x2,y2 : integer;
+  typ     : double;
+  List: TStrings;
+//  dummy : string;
+begin
+  if head.naxis=0 then exit; {file loaded?}
+  if head.cd1_1=0 then exit;
+
+  List := TStringList.Create;
+  list.StrictDelimiter:=true;
+
+  count1:=mainwindow.Memo1.Lines.Count-1;
+  try
+    while count1>=0 do {plot annotations}
+    begin
+      if copy(mainwindow.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
+      begin
+        List.Clear;
+        ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,posex(#39,mainwindow.Memo1.Lines[count1],20)-12)),List);
+        if list.count>=6  then {correct annotation}
+        begin
+         // dummy:=list[5];
+          if aname=list[5] then //object found
+          begin
+            x1:=round(strtofloat2(list[0]));
+            y1:=round(strtofloat2(list[1]));
+            x2:=round(strtofloat2(list[2]));
+            y2:=round(strtofloat2(list[3]));
+            sensor_coordinates_to_celestial((x1+x2)/2,(y1+y2)/2, ra,dec {RA, DEC position annotation});
+            count1:=-1; //stop
+          end;
+
+        end;
+      end;
+      count1:=count1-1;
+    end;
+
+  finally
+    List.Free;
+  end;
+end;
+
 
 
 procedure plot_persistent_annotation(value : string);{writes text in the image array data}
@@ -13869,7 +13924,13 @@ begin
       inc(shape_nr);
       if shape_nr>=4 then
       shape_nr:=1;
+
+      //check if Var is within an annotation
+      var_lock:='';//clear name
+      if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
+
     end;
+
   end;
  {end photometry}
 

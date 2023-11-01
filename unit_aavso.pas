@@ -392,7 +392,10 @@ begin
 
   magn_min:=trunc(magn_min*100)/100; {add some rounding}
   magn_max:=trunc(magn_max*100)/100;
+  if magn_max-magn_min<0.3 then begin magn_max:=0.15+(magn_max+magn_min)/2; magn_min:=-0.15+(magn_max+magn_min)/2;;end;//minimum range
+
   range:=magn_max-magn_min;
+
 
   if range<-98 then
   begin

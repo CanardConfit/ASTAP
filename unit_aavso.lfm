@@ -9,7 +9,7 @@ object form_aavso1: Tform_aavso1
   OnClose = FormClose
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '2.2.4.0'
+  LCLVersion = '3.0.0.1'
   object obscode1: TEdit
     Left = 16
     Height = 23
@@ -192,7 +192,7 @@ object form_aavso1: Tform_aavso1
     Height = 19
     Hint = 'Extras report lines will added conform BAA. Info is taken from FITS header.'
     Top = 344
-    Width = 70
+    Width = 68
     Caption = 'BAA style'
     ParentShowHint = False
     ShowHint = True

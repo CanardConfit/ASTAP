@@ -833,6 +833,7 @@ begin
 end;
 
 
+
 procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2 : integer;
