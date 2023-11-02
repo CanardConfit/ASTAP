@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.11.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.11.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -11425,9 +11425,7 @@ begin
 
           if (  ( abs(shape_fitsX-(x1+x2)/2) <30) and (abs(shape_fitsY-(y1+y2)/2)<30)) then
           begin
-            memo2_message('Var locked on object: '+list[5]);
             var_lock:=list[5];
-            mainwindow.Shape_alignment_marker1.HINT:=var_lock;
           end;
 
 
@@ -13927,7 +13925,15 @@ begin
 
       //check if Var is within an annotation
       var_lock:='';//clear name
-      if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
+      if ((annotated) and (mainwindow.annotations_visible1.checked)) then
+      begin
+        plot_annotations(false {use solution vectors},false);
+        if var_lock<>'' then
+        begin
+          memo2_message('Var locked on object: '+var_lock);
+          mainwindow.Shape_alignment_marker1.HINT:=var_lock;
+        end;
+      end;
 
     end;
 

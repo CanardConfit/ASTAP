@@ -8137,7 +8137,7 @@ begin
         end;
 
         if var_lock<>'' then
-          annotation_position(var_lock, rax1, decx1 );// var follows annotation if locked
+          annotation_position(var_lock, rax1, decx1 );// convert fitsX, fitsY to ra,dec
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.Width := 1;{thickness lines}
