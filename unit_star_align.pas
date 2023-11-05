@@ -297,19 +297,14 @@ begin
     yt:=(y1+y2+y3+y4)/4; {mean y position quad}
 
     identical_quad:=false;
-    if nrquads>=1 then {already a quad stored}
+    for k:=0 to nrquads-1 do // check for an identical quad
     begin
-     k:=0;
-     repeat {check for identical quads}
-       if ( (abs(xt-quad_star_distances[6,k])<1) and
-            (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
-           begin
-             identical_quad:=true;
-             k:=999999999;{stop}
-           end;
-
-       inc(k);
-     until k>=nrquads;
+      if ( (abs(xt-quad_star_distances[6,k])<1) and
+           (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
+      begin
+        identical_quad:=true;
+        break;//stop searching
+      end;
     end;
 
     if identical_quad=false then  {new quad found}
@@ -372,25 +367,22 @@ var
 
           procedure get_triple(x1,y1,x2,y2,x3,y3,dist1,dist2,dist3: double);
           var
-            j : integer;
+            j,k : integer;
           begin
             xt:=(x1+x2+x3)/3; {mean x position triple 123}
             yt:=(y1+y2+y3)/3; {mean y position triple 123}
-            identical_quad:=false;
-            if nrquads>=1 then {already a triple stored}
-            begin
-             k:=0;
-             repeat {check for identical quads}
-               if ( (abs(xt-quad_star_distances[6,k])<1) and
-                    (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
-                   begin
-                     identical_quad:=true;
-                     k:=999999999;{stop}
-                   end;
 
-               inc(k);
-             until k>=nrquads;
+            identical_quad:=false;
+            for k:=0 to nrquads-1 do // check for an identical quad
+            begin
+              if ( (abs(xt-quad_star_distances[6,k])<1) and
+                   (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
+              begin
+                identical_quad:=true;
+                break;//stop searching
+              end;
             end;
+
             if identical_quad=false then  {new triple found}
             begin //quad-triples method. sort the distances on length. Largest first and scale the others relative to largest distance}
 
@@ -509,21 +501,18 @@ begin
 
     xt:=(x1a+x2a+x3a+x4a)/4; {mean x position quad with stars 1234}
     yt:=(y1a+y2a+y3a+y4a)/4; {mean y position quad with stars 1234}
-    identical_quad:=false;
-    if nrrealquads>=1 then {already a quad stored}
-    begin
-     k:=0;
-     repeat {check for identical quads}
-       if ( (abs(xt-quad_centers[0,k])<1) and
-            (abs(yt-quad_centers[1,k])<1) ) then {same center position, found identical quad already in the list}
-           begin
-             identical_quad:=true;
-             k:=999999999;{stop}
-           end;
 
-       inc(k);
-     until k>=nrrealquads;
+    identical_quad:=false;
+    for k:=0 to nrrealquads-1 do // check for an identical quad
+    begin
+      if ( (abs(xt-quad_centers[0,k])<1) and
+           (abs(yt-quad_centers[1,k])<1) ) then //same center position, found identical quad already in the list
+      begin
+        identical_quad:=true;
+        break;//stop searching
+      end;
     end;
+
     if identical_quad=false then  {new quad found}
     begin //quad-triples method. Split the found quad in four triples and store as quad. This will help for below 30 faint stars where due magnitude differences the database show some different stars and therefore patterns}
 
@@ -584,35 +573,32 @@ begin
 
         distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
 
-  //      if distance>1 then {not an identical star. Mod 2021-6-25}
+        if distance<distance1 then
         begin
-          if distance<distance1 then
-          begin
-            distance3:=distance2;{distance third closest star}
-            j_used3:=j_used2;
+          distance3:=distance2;{distance third closest star}
+          j_used3:=j_used2;
 
-            distance2:=distance1;{distance second closest star}
-            j_used2:=j_used1;
+          distance2:=distance1;{distance second closest star}
+          j_used2:=j_used1;
 
-            distance1:=distance;{distance closest star}
-            j_used1:=j;{mark later as used}
-          end
-          else
-          if distance<distance2 then
-          begin
-            distance3:=distance2;{distance third closest star}
-            j_used3:=j_used2;
+          distance1:=distance;{distance closest star}
+          j_used1:=j;{mark later as used}
+        end
+        else
+        if distance<distance2 then
+        begin
+          distance3:=distance2;{distance third closest star}
+          j_used3:=j_used2;
 
-            distance2:=distance;{distance second closest star}
-            j_used2:=j;
-          end
-          else
-          if distance<distance3 then
-          begin
-            distance3:=distance;{third closest star}
-            j_used3:=j;
-          end;
-        end;{not an identical star. Mod 2021-6-25}
+          distance2:=distance;{distance second closest star}
+          j_used2:=j;
+        end
+        else
+        if distance<distance3 then
+        begin
+          distance3:=distance;{third closest star}
+          j_used3:=j;
+        end;
       end;
     end;{j}
 
@@ -632,19 +618,14 @@ begin
     yt:=(y1+y2+y3+y4)/4; {mean y position quad}
 
     identical_quad:=false;
-    if nrquads>=1 then {already a quad stored}
+    for k:=0 to nrquads-1 do // check for an identical quad
     begin
-     k:=0;
-     repeat {check for identical quads}
-       if ( (abs(xt-starlistquads[8,k])<1) and
-            (abs(yt-starlistquads[9,k])<1) ) then {same center position, found identical quad already in the list}
-           begin
-             identical_quad:=true;
-             k:=999999999;{stop}
-           end;
-
-       inc(k);
-     until k>=nrquads;
+      if ( (abs(xt-starlistquads[8,k])<1) and
+           (abs(yt-starlistquads[9,k])<1) ) then // same center position, found an identical quad already in the list
+      begin
+        identical_quad:=true;
+        break;//stop searching
+      end;
     end;
 
     if identical_quad=false then  {new quad found}

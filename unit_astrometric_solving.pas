@@ -48,8 +48,8 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //      figures of four  star called quads. Calculate the six distance between   | figures of four  star called quads. Calculate the six distance between
 //      the four stars and the mean x,y position of the quad                     | the four stars and the mean x,y position of the quad
 //                                                                               |
-//4) 	For each quad sort the six quad distances on size.                   	 | For each quad sort the six quad distances on size.
-//      d1 is the longest and d6 the shortest.                                   | d1 is the longest and d6 the shortest.
+//4) 	For each quad sort the six quad distances.                      	 | For each quad sort the six quad distances.
+//      Label them all where d1 is the longest and d6 the shortest distance.     | Label them all where d1 is the longest and d6 the shortest distance.
 //                                                                               |
 //5) 	Scale the six quad star distances as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1) | Scale the six quad star distances as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)
 //      These are the image hash codes.                                          | These are the database hash codes.
