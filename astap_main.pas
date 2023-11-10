@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.11.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.11.10a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -110,7 +110,7 @@ type
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
     copy_to_clipboard1: TMenuItem;
-    grid1: TMenuItem;
+    grid_ra_dec1: TMenuItem;
     freetext1: TMenuItem;
     MenuItem21: TMenuItem;
     display_adu1: TMenuItem;
@@ -119,6 +119,7 @@ type
     flipVH1: TMenuItem;
     dust_spot_removal1: TMenuItem;
     export_star_info1: TMenuItem;
+    grid_az_alt1: TMenuItem;
     star_profile1: TMenuItem;
     Separator2: TMenuItem;
     vizier_gaia_annotation1: TMenuItem;
@@ -368,6 +369,7 @@ type
     procedure flip_H1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure freetext1Click(Sender: TObject);
+    procedure grid_az_alt1Click(Sender: TObject);
     procedure hfd_arcseconds1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
@@ -396,7 +398,7 @@ type
     procedure extractred1Click(Sender: TObject);
     procedure extractblue1Click(Sender: TObject);
     procedure extractgreen1Click(Sender: TObject);
-    procedure grid1Click(Sender: TObject);
+    procedure grid_ra_dec1Click(Sender: TObject);
     procedure bin_2x2menu1Click(Sender: TObject);
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
@@ -4432,12 +4434,18 @@ begin
 end;
 
 
-procedure plot_grid;
+procedure plot_grid(radec: boolean);  //plot ra,dec or az,alt grid
 var
-  fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range : double;
+  fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0 : double;
+  site_lat_radians, site_long_radians,wtime2actual : double;
   x1,y1,x2,y2,k                                          : integer;
   flip_horizontal, flip_vertical: boolean;
   ra_text:             string;
+
+const
+  siderealtime2000=(280.46061837)*pi/180;{[radians],sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
+
 var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr system}
    ((45),{step RA 03:00}
     (30),{step RA 02:00}
@@ -4462,7 +4470,9 @@ var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr syste
      (1/48));{step RA 00:00:05}
 
 begin
-  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
+  if ((head.naxis=0) or (head.cd1_1=0)) then exit;
+  if ((radec) and (mainwindow.grid_ra_dec1.checked=false)) then exit;
+  if ((radec=false) and (mainwindow.grid_az_alt1.checked=false)) then exit;
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -4476,18 +4486,35 @@ begin
   mainwindow.image1.Canvas.Font.Name :='Helvetica';
   {$endif}
 
+
   flip_vertical:=mainwindow.flip_vertical1.Checked;
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
   mainwindow.image1.Canvas.Pen.Mode:= pmXor;
   mainwindow.image1.Canvas.Pen.width :=max(1,round(head.height/mainwindow.image1.height));
-  mainwindow.image1.Canvas.Pen.color:= $909000;
+
+  if radec then
+    mainwindow.image1.Canvas.Pen.color:= $909000
+  else
+    mainwindow.image1.Canvas.Pen.color:= $009090;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.color:= clgray;
   mainwindow.image1.Canvas.font.size:=8;
 
   range:=head.cdelt2*sqrt(sqr(head.width/2)+sqr(head.height/2));{range in degrees, FROM CENTER}
+
+  if radec=false then
+  begin
+    if get_lat_long(site_lat_radians, site_long_radians)=false then exit;//retrieve latitude and longitude
+    date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
+    if jd_mid>2400000 then {valid JD}
+    begin
+      wtime2actual:=fnmodulo(+site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
+    end
+    else memo2_message('Error decoding Julian day!');
+  end;
+
 
   {calculate DEC step size}
   if range>16 then
@@ -4529,8 +4556,19 @@ begin
     step:=1/12;{step DEC 00:05  }
   end;
 
+  dec0:=head.dec0;
+  ra0:=head.ra0;
+
+  if radec=false then //convert ra,dec to az/alt
+  begin
+    precession3(2451545 {J2000},jd_mid,ra0,dec0); {from J2000 to Jnow mean, precession only. without refraction}
+    ra_az(ra0,dec0,site_lat_radians,0,wtime2actual,{out} ra0,dec0);{conversion ra & dec to altitude,azimuth}
+  end;
+
+
+
   {calculate RA step size}
-  step2:=min(45,step/(cos(head.dec0)+0.000001)); {exact value for stepRA, but not well rounded}
+  step2:=min(45,step/(cos(dec0)+0.000001)); {exact value for stepRA, but not well rounded}
   k:=0;
   repeat {select nice rounded values for ra_step}
     stepRA:=ra_values[k];
@@ -4538,20 +4576,39 @@ begin
   until ((stepRA<=step2) or (k>=length(ra_values)));{repeat until comparible value is found in ra_values}
 
   {round image centers}
-  centra:=stepRA*round(head.ra0*180/(pi*stepRA)); {rounded image centers}
-  centdec:=step*round(head.dec0*180/(pi*step));
+  centra:=stepRA*round(ra0*180/(pi*stepRA)); {rounded image centers}
+  centdec:=step*round(dec0*180/(pi*step));
 
   {plot DEC grid}
   i:=centRA-6*stepRA;
   repeat{dec lines}
     j:=max(centDEC-6*step,-90);
     repeat
-      celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      ra:=i*pi/180;
+      dcr:=j*pi/180;
+      if radec=false then
+      begin
+        az_ra(ra,dcr,site_lat_radians,0,wtime2actual,{out} ra,dcr);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+        precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
+      end;
+
+      celestial_to_pixel(ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+
       if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
       if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
 
 
-      celestial_to_pixel(i*pi/180,(j+step)*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      ra:=i*pi/180;
+      dcr:=(j+step)*pi/180;
+      if radec=false then
+      begin
+        az_ra(ra,dcr,site_lat_radians,0,wtime2actual,{out} ra,dcr);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+        precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
+      end;
+
+      celestial_to_pixel(ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+
+
       if flip_horizontal then x2:=round((head.width-1)-(fitsX-1)) else x2:=round(fitsX-1);
       if flip_vertical=false then y2:=round((head.height-1)-(fitsY-1)) else y2:=round(fitsY-1);
 
@@ -4560,8 +4617,14 @@ begin
       begin {line is partly within image1. Strictly not necessary but more secure}
         if ((abs(i-centRA)<0.00001) or (abs(j-centDEC)<0.00001)) then
         begin
-          ra_text:=prepare_ra6(fnmodulo(i,360)*pi/180,' '); {24 00 00}
-          if copy(ra_text,7,2)='00' then delete(ra_text,6,3);{remove 00}
+          if radec then
+          begin
+            ra_text:=prepare_ra6(fnmodulo(i,360)*pi/180,' '); {24 00 00}
+            if copy(ra_text,7,2)='00' then delete(ra_text,6,3);{remove 00}
+
+          end
+          else ra_text:=inttostr(round(fnmodulo(i,360)));//az, alt grid
+
           mainwindow.image1.Canvas.textout(x1,y1,ra_text+','+prepare_dec4(j*pi/180,' '));
         end;
         mainwindow.image1.Canvas.moveto(x1,y1);
@@ -4578,10 +4641,30 @@ begin
   repeat{ra lines}
     i:=centRA-stepRA*6;
     repeat
-      celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+     ra:=i*pi/180;
+     dcr:=j*pi/180;
+     if radec=false then
+     begin
+       az_ra(ra,dcr,site_lat_radians,0,wtime2actual,{out} ra,dcr);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+       precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
+     end;
+
+      celestial_to_pixel(ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+
       if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
       if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
-      celestial_to_pixel((i+step)*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+
+      ra:=(i+step)*pi/180;
+      dcr:=j*pi/180;
+      if radec=false then
+      begin
+        az_ra(ra,dcr,site_lat_radians,0,wtime2actual,{out} ra,dcr);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+        precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
+      end;
+
+
+      celestial_to_pixel(ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+
       if flip_horizontal then x2:=round((head.width-1)-(fitsX-1)) else x2:=round(fitsX-1);
       if flip_vertical=false then y2:=round((head.height-1)-(fitsY-1)) else y2:=round(fitsY-1);
 
@@ -5131,7 +5214,8 @@ begin
     plot_north;
     plot_north_on_image;
     plot_large_north_indicator;
-    plot_grid;
+    plot_grid(true);//ra,dec
+    plot_grid(false);//az,alt
     plot_constellations;
     plot_text;
 
@@ -6967,7 +7051,8 @@ begin
     plot_large_north_indicator;
     if mainwindow.add_marker_position1.checked then
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
-    plot_grid;
+    plot_grid(true);
+    plot_grid(false);//az,alt
     plot_constellations;
     plot_text;
     if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
@@ -7491,7 +7576,8 @@ begin
       star_profile1.checked:=Sett.ReadBool('main','star_profile',false);
       mountposition1.checked:=Sett.ReadBool('main','mount_position',false);
       Constellations1.checked:=Sett.ReadBool('main','constellations',false);
-      grid1.checked:=Sett.ReadBool('main','grid',false);
+      grid_ra_dec1.checked:=Sett.ReadBool('main','grid',false);
+      grid_az_alt1.checked:=Sett.ReadBool('main','grid_az',false);
       positionanddate1.checked:=Sett.ReadBool('main','pos_date',false);
       freetext1.checked:=Sett.ReadBool('main','freetxt',false);
       freetext:=Sett.ReadString('main','f_text','');
@@ -7861,7 +7947,8 @@ begin
 
       sett.writeBool('main','mount_position',mountposition1.checked);
       sett.writeBool('main','constellations',constellations1.checked);
-      sett.writeBool('main','grid',grid1.checked);
+      sett.writeBool('main','grid',grid_ra_dec1.checked);
+      sett.writeBool('main','grid_az',grid_az_alt1.checked);
       sett.writeBool('main','pos_date',positionanddate1.checked);
       sett.writeBool('main','freetxt',freetext1.checked);
       sett.writestring('main','f_text',freetext);
@@ -9063,15 +9150,15 @@ begin
 end;
 
 
-procedure Tmainwindow.grid1Click(Sender: TObject);
+procedure Tmainwindow.grid_ra_dec1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit;
-  if grid1.checked=false then  {clear screen}
+  if grid_ra_dec1.checked=false then  {clear screen}
   begin
     plot_fits(mainwindow.image1,false,true);
   end
   else
-  plot_grid;
+  plot_grid(true);
 end;
 
 
@@ -10887,6 +10974,17 @@ begin
   end;
 end;
 
+procedure Tmainwindow.grid_az_alt1Click(Sender: TObject);
+begin
+  if head.naxis=0 then exit;
+  if grid_az_alt1.checked=false then  {clear screen}
+  begin
+    plot_fits(mainwindow.image1,false,true);
+  end
+  else
+  plot_grid(false);//az,alt grid
+end;
+
 
 procedure Tmainwindow.hfd_arcseconds1Click(Sender: TObject);
 begin
@@ -11159,7 +11257,7 @@ begin
 
     with fittowindow1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with zoomfactorone1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-    with grid1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with grid_ra_dec1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
 
     //headermemo
     with Menufind2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
@@ -12614,7 +12712,7 @@ begin
               mess:='';
               if pedestal<>0 then
               begin
-                jd_start:=0; { if altitude missing then force an date to jd conversion'}
+                //jd_start:=0; { if altitude missing then force an date to jd conversion'}
                 pedestal2:=pedestal; {protect pedestal setting}
                 if calculate_sqm(true {get backgr},true {get histogr},{var}pedestal2) then
                 begin

@@ -1619,12 +1619,18 @@ object mainwindow: Tmainwindow
         Hint = 'Add the constellations to the image.'
         OnClick = Constellations1Click
       end
-      object grid1: TMenuItem
+      object grid_az_alt1: TMenuItem
+        AutoCheck = True
+        Caption = 'A, h grid'
+        Hint = 'Adds an azimuth & altitude grid to image'
+        OnClick = grid_az_alt1Click
+      end
+      object grid_ra_dec1: TMenuItem
         AutoCheck = True
         Caption = 'α, δ grid'
         Hint = 'Adds a right ascension & declination grid to image'
         ShortCut = 16455
-        OnClick = grid1Click
+        OnClick = grid_ra_dec1Click
       end
       object MenuItem32: TMenuItem
         Caption = '-'

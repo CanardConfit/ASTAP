@@ -30,6 +30,9 @@ procedure calculate_az_alt(calc_mode : integer;head: Theader; out az,alt : doubl
 procedure altitude_and_refraction(lat,long,julian,temperature,pressure,ra3,dec3: double; out az,alt  : double);{altitude calculation and correction ra, dec for refraction}
 
 procedure polar2(x,y,z:double;out r,theta,phi:double);
+function get_lat_long(out site_lat_radians, site_long_radians : double): boolean;//retrieve latitude and longitude
+procedure az_ra(az,alt,lat,long,t:double;out ra,dcr: double);{conversion az,alt to ra,dec}
+procedure ra_az(ra,de,LAT,LONG,t:double;out azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
 
 implementation
 uses
@@ -198,7 +201,7 @@ begin
 end;
 
 
-PROCEDURE RA_AZ(RA,de,LAT,LONG,t:double;out azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
+procedure ra_az(ra,de,LAT,LONG,t:double;out azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
 {input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2*pi],time[0..2*pi]}
 begin
   EQUHOR2(de,ra-long-t,lat, {var:} altitude2,azimuth2);
@@ -207,7 +210,7 @@ begin
 end;
 
 
-PROCEDURE AZ_RA(AZ,ALT,LAT,LONG,t:double;out ra,dcr: double);{conversion az,alt to ra,dec}
+procedure az_ra(az,alt,lat,long,t:double;out ra,dcr: double);{conversion az,alt to ra,dec}
 {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
 begin
   EQUHOR2(alt,az,lat,{var:} dcr,ra);
@@ -256,6 +259,35 @@ begin
 //    beep;
 end;
 
+function get_lat_long(out site_lat_radians, site_long_radians : double): boolean;//retrieve latitude and longitude
+var
+  errordecode  : boolean;
+  err          : integer;
+begin
+  result:=false;
+  if sitelat='' then
+  begin
+    sitelat:=lat_default;
+    sitelong:=long_default;
+  end;
+  val(sitelat,site_lat_radians,err); {try to process  3.7E+01}
+  if err=0 then
+    begin site_lat_radians:=site_lat_radians*pi/180; errordecode:=false end
+  else  {try to process string 37 00 00}
+    dec_text_to_radians(sitelat,site_lat_radians,errordecode);
+  if errordecode=false then
+  begin
+    val(sitelong,site_long_radians,err); {try to process  3.7E+01}
+    if err=0 then
+      begin site_long_radians:=site_long_radians*pi/180; errordecode:=false end
+    else  {try to process string  37 00 00}
+      dec_text_to_radians(sitelong,site_long_radians,errordecode);
+
+    if errordecode=false then result:=true;
+  end;
+
+  if errordecode then memo2_message('Error decoding site longitude or latitude!');
+end;
 
 procedure calculate_az_alt(calc_mode : integer;head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
 var
@@ -271,41 +303,22 @@ begin
 
   if (((alt=0) or (calc_mode>0)) and (head.cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
   begin
-    if sitelat='' then
+    if get_lat_long(site_lat_radians, site_long_radians) then
     begin
-      sitelat:=lat_default;
-      sitelong:=long_default;
-    end;
-    val(sitelat,site_lat_radians,err); {try to process  3.7E+01}
-    if err=0 then
-      begin site_lat_radians:=site_lat_radians*pi/180; errordecode:=false end
-    else  {try to process string 37 00 00}
-      dec_text_to_radians(sitelat,site_lat_radians,errordecode);
-    if errordecode=false then
-    begin
-      val(sitelong,site_long_radians,err); {try to process  3.7E+01}
-      if err=0 then
-        begin site_long_radians:=site_long_radians*pi/180; errordecode:=false end
-      else  {try to process string  37 00 00}
-        dec_text_to_radians(sitelong,site_long_radians,errordecode);
-      if errordecode=false then
+      date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
+      if jd_mid>2400000 then {valid JD}
       begin
-        if jd_start=0 then date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
-        if jd_mid>2400000 then {valid JD}
-        begin
-          ra:=head.ra0; {duplicate to protect J2000 position}
-          dec:=head.dec0;
-          if calc_mode=2 then {high accuracy including nutation and aberration}
-            J2000_to_apparent(jd_mid,ra,dec)  {from J2000 to Jnow apparent, aberrration, precession nutation without refraction}
-          else
-            precession3(2451545 {J2000},jd_mid,ra,dec); {from J2000 to Jnow mean, precession only. without refraction}
+        ra:=head.ra0; {duplicate to protect J2000 position}
+        dec:=head.dec0;
+        if calc_mode=2 then {high accuracy including nutation and aberration}
+          J2000_to_apparent(jd_mid,ra,dec)  {from J2000 to Jnow apparent, aberrration, precession nutation without refraction}
+        else
+          precession3(2451545 {J2000},jd_mid,ra,dec); {from J2000 to Jnow mean, precession only. without refraction}
 
-          altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp,pressure,ra,dec,az,alt);{In formulas the longitude is positive to west!!!. }
-        end
-        else memo2_message('Error decoding Julian day!');
-      end;
+        altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp,pressure,ra,dec,az,alt);{In formulas the longitude is positive to west!!!. }
+      end
+      else memo2_message('Error decoding Julian day!');
     end;
-    if errordecode then memo2_message('Error decoding site longitude or latitude!');
   end;
 end;
 

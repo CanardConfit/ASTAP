@@ -7376,8 +7376,7 @@ begin
   if Y < 0 then XX := 0.75
   else
     xx := 0;{correction for negative years}
-  Result := INT(365.25 * Y - XX) + INT(30.6001 * (M + 1)) + DD +
-    B + 1720994.5;
+  Result := INT(365.25 * Y - XX) + INT(30.6001 * (M + 1)) + DD +  B + 1720994.5;
 end;
 
 
