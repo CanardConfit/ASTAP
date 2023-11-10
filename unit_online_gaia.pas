@@ -121,17 +121,17 @@ var
   i : integer;
   sep : double;
 begin
+  b:=0;
+  v:=0;
+  r:=0;
+  sg:=0;
+  sr:=0;
+  si:=0;
+  g:=0;
+  bp:=0;
+  rp:=0;
   if online_database=nil then
   begin
-    b:=0;
-    v:=0;
-    r:=0;
-    sg:=0;
-    sr:=0;
-    si:=0;
-    g:=0;
-    bp:=0;
-    rp:=0;
     exit;
   end;
   for i:=0 to length(online_database[0])-1 do
@@ -241,7 +241,7 @@ begin
     slist := TStringList.Create;
 
     mag_lim:=floattostrF(magli,ffGeneral,3,1); {BP~GP+0.5}
-    memo2_message('Downloading Gaia stars from Vizier down to magnitude '+mag_lim+'. This can take 20 seconds or more ......');
+    memo2_message('Downloading Gaia stars from Vizier down to magnitude '+mag_lim+'. This can take 60 seconds or more ......');
 
     if search_field*180/pi>=3.5 then
       memo2_message('Warning, for this large FOV the star retrieval from Vizier will likely take minutes or fail!!!');

@@ -198,7 +198,7 @@ end;
 
 procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
-   i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads,Sstart,Send,tolerance  : integer;
+   i,j,k,nrstars,j_distance1,j_distance2,j_distance3,nrquads,Sstart,Send,tolerance  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
    dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
    identical_quad : boolean;
@@ -225,9 +225,9 @@ begin
   nrquads:=0;
   SetLength(quad_star_distances,8,nrstars);{will contain the six distances and the central position}
 
-  j_used1:=0;{give it a default value}
-  j_used2:=0;
-  j_used3:=0;
+  j_distance1:=0;{give it a default value}
+  j_distance2:=0;
+  j_distance3:=0;
 
   for i:=0 to nrstars-1 do
   begin
@@ -252,28 +252,28 @@ begin
             if distance<distance1 then
             begin
               distance3:=distance2;{distance third closest star}
-              j_used3:=j_used2;{remember the star position in the list}
+              j_distance3:=j_distance2;{remember the star position in the list}
 
               distance2:=distance1;{distance second closest star}
-              j_used2:=j_used1;{remember the star position in the list}
+              j_distance2:=j_distance1;{remember the star position in the list}
 
               distance1:=distance;{distance closest star}
-              j_used1:=j;{mark later as used}
+              j_distance1:=j;{mark later as used}
             end
             else
             if distance<distance2 then
             begin
               distance3:=distance2;{distance third closest star}
-              j_used3:=j_used2;{remember the star position in the list}
+              j_distance3:=j_distance2;{remember the star position in the list}
 
               distance2:=distance;{distance second closest star}
-              j_used2:=j;
+              j_distance2:=j;
             end
             else
             if distance<distance3 then
             begin
               distance3:=distance;{third closest star}
-              j_used3:=j;{remember the star position in the list}
+              j_distance3:=j;{remember the star position in the list}
             end;
           end;{not an identical star. Mod 2021-6-25}
 
@@ -284,14 +284,14 @@ begin
     x1:=starlist[0,i]; {copy first star position to the quad array}
     y1:=starlist[1,i];
 
-    x2:=starlist[0,j_used1]; {copy the second star position to the quad array}
-    y2:=starlist[1,j_used1];
+    x2:=starlist[0,j_distance1]; {copy the second star position to the quad array}
+    y2:=starlist[1,j_distance1];
 
-    x3:=starlist[0,j_used2];
-    y3:=starlist[1,j_used2];
+    x3:=starlist[0,j_distance2];
+    y3:=starlist[1,j_distance2];
 
-    x4:=starlist[0,j_used3];
-    y4:=starlist[1,j_used3];
+    x4:=starlist[0,j_distance3];
+    y4:=starlist[1,j_distance3];
 
     xt:=(x1+x2+x3+x4)/4; {mean x position quad}
     yt:=(y1+y2+y3+y4)/4; {mean y position quad}
@@ -356,7 +356,7 @@ end;
 
 procedure find_triples_using_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
 var
-   i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads,Sstart,Send,tolerance, nrrealquads  : integer;
+   i,j,k,nrstars,j_distance1,j_distance2,j_distance3,nrquads,Sstart,Send,tolerance, nrrealquads  : integer;
    distance,distance1,distance2,distance3,x1a,x2a,x3a,x4a,xt,y1a,y2a,y3a,y4a,yt,
 
    {dist4,dist5,dist6,}dummy,disty,
@@ -433,9 +433,9 @@ begin
   SetLength(quad_star_distances,8,nrstars*4);{will contain the six distances and the central position of the triples stored as quads}
   SetLength(quad_centers,2,nrstars);{temporary storage for quad center to check for duplicates}
 
-  j_used1:=0;{give it a default value}
-  j_used2:=0;
-  j_used3:=0;
+  j_distance1:=0;{give it a default value}
+  j_distance2:=0;
+  j_distance3:=0;
 
   for i:=0 to nrstars-1 do
   begin
@@ -460,28 +460,28 @@ begin
             if distance<distance1 then
             begin
               distance3:=distance2;{distance third closest star}
-              j_used3:=j_used2;{remember the star position in the list}
+              j_distance3:=j_distance2;{remember the star position in the list}
 
               distance2:=distance1;{distance second closest star}
-              j_used2:=j_used1;{remember the star position in the list}
+              j_distance2:=j_distance1;{remember the star position in the list}
 
               distance1:=distance;{distance closest star}
-              j_used1:=j;{mark later as used}
+              j_distance1:=j;{mark later as used}
             end
             else
             if distance<distance2 then
             begin
               distance3:=distance2;{distance third closest star}
-              j_used3:=j_used2;{remember the star position in the list}
+              j_distance3:=j_distance2;{remember the star position in the list}
 
               distance2:=distance;{distance second closest star}
-              j_used2:=j;
+              j_distance2:=j;
             end
             else
             if distance<distance3 then
             begin
               distance3:=distance;{third closest star}
-              j_used3:=j;{remember the star position in the list}
+              j_distance3:=j;{remember the star position in the list}
             end;
           end;{not an identical star. Mod 2021-6-25}
 
@@ -491,12 +491,12 @@ begin
 
     x1a:=starlist[0,i]; {copy first star position to the quad array}
     y1a:=starlist[1,i];
-    x2a:=starlist[0,j_used1]; {copy the second star position to the quad array}
-    y2a:=starlist[1,j_used1];
-    x3a:=starlist[0,j_used2];
-    y3a:=starlist[1,j_used2];
-    x4a:=starlist[0,j_used3];
-    y4a:=starlist[1,j_used3];
+    x2a:=starlist[0,j_distance1]; {copy the second star position to the quad array}
+    y2a:=starlist[1,j_distance1];
+    x3a:=starlist[0,j_distance2];
+    y3a:=starlist[1,j_distance2];
+    x4a:=starlist[0,j_distance3];
+    y4a:=starlist[1,j_distance3];
 
 
     xt:=(x1a+x2a+x3a+x4a)/4; {mean x position quad with stars 1234}
@@ -541,7 +541,7 @@ end;
 
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 var
-   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads                 : integer;
+   i,j,k,nrstars_min_one,j_distance1,j_distance2,j_distance3,nrquads         : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
    identical_quad : boolean;
 begin
@@ -556,9 +556,9 @@ begin
   nrquads:=0;
   SetLength(starlistquads,10,nrstars_min_one);{number of quads will be lower}
 
-  j_used1:=0;{give it a default value}
-  j_used2:=0;
-  j_used3:=0;
+  j_distance1:=0;{give it a default value}
+  j_distance2:=0;
+  j_distance3:=0;
 
   for i:=0 to nrstars_min_one do
   begin
@@ -568,36 +568,35 @@ begin
 
     for j:=0 to nrstars_min_one do {find closest stars}
     begin
-      if j<>i{not the first star} then
+      if j<>i{not the first star} then // note the use of continue slows down loop
       begin
-
         distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
 
         if distance<distance1 then
         begin
           distance3:=distance2;{distance third closest star}
-          j_used3:=j_used2;
+          j_distance3:=j_distance2;
 
           distance2:=distance1;{distance second closest star}
-          j_used2:=j_used1;
+          j_distance2:=j_distance1;
 
           distance1:=distance;{distance closest star}
-          j_used1:=j;{mark later as used}
+          j_distance1:=j;{mark later as used}
         end
         else
         if distance<distance2 then
         begin
           distance3:=distance2;{distance third closest star}
-          j_used3:=j_used2;
+          j_distance3:=j_distance2;
 
           distance2:=distance;{distance second closest star}
-          j_used2:=j;
+          j_distance2:=j;
         end
         else
         if distance<distance3 then
         begin
           distance3:=distance;{third closest star}
-          j_used3:=j;
+          j_distance3:=j;
         end;
       end;
     end;{j}
@@ -605,14 +604,14 @@ begin
     x1:=starlist[0,i]; {1e star position}
     y1:=starlist[1,i];
 
-    x2:=starlist[0,j_used1]; {2e star positio}
-    y2:=starlist[1,j_used1];
+    x2:=starlist[0,j_distance1]; {2e star position}
+    y2:=starlist[1,j_distance1];
 
-    x3:=starlist[0,j_used2];
-    y3:=starlist[1,j_used2];
+    x3:=starlist[0,j_distance2];
+    y3:=starlist[1,j_distance2];
 
-    x4:=starlist[0,j_used3];
-    y4:=starlist[1,j_used3];
+    x4:=starlist[0,j_distance3];
+    y4:=starlist[1,j_distance3];
 
     xt:=(x1+x2+x3+x4)/4; {mean x position quad}
     yt:=(y1+y2+y3+y4)/4; {mean y position quad}
@@ -817,7 +816,7 @@ end;
 
 procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2 : integer;
+   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,k : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level : double;
    img_sa     : image_array;
    snr_list   : array of double;
@@ -850,10 +849,17 @@ begin
 
   setlength(img_sa,1,height2,width2);{set length of image array}
 
-  detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
-
-  retries:=2; {try up to three times to get enough stars from the image}
+  retries:=3; {try up to four times to get enough stars from the image}
   repeat
+    if retries=3 then
+      begin if bck.star_level >30*bck.noise_level then detection_level:=bck.star_level  else retries:=2;{skip} end;//stars are dominant
+    if retries=2 then
+      begin if bck.star_level2>30*bck.noise_level then detection_level:=bck.star_level2 else retries:=1;{skip} end;//stars are dominant
+    if retries=1 then
+      begin detection_level:=30*bck.noise_level; end;
+    if retries=0 then
+      begin detection_level:= 7*bck.noise_level; end;
+
     highest_snr:=0;
     nrstars:=0;{set counters at zero}
 
@@ -911,15 +917,7 @@ begin
     if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(bck.backgr))+ '. Detection level used '+inttostr( round(detection_level))
                                                           +' above background. Star level is '+inttostr(round(bck.star_level))+' above background. Noise level is '+floattostrF(bck.noise_level,ffFixed,0,0));
 
-    dec(retries);{In principle not required. Try again with lower detection level}
-    if detection_level<=7*bck.noise_level then retries:= -1 {stop}
-    else
-    detection_level:=max(6.999*bck.noise_level,min(30*bck.noise_level,detection_level*6.999/30));
-    // Star rich image. Star_level=18000, noise is 40      Detection level: 18000 --> 1200=30*40         --> 280=6.999*40 {Max three steps to get enough stars}
-    //                  Star_level= 3000, noise is 40      Detection level:  3000 -->  700=3000*6.999/30 --> 280=6.999*40 {Max three steps to get enough stars}
-    //                  Star_level=  900, noise is 40      Detection level:   900 -->  280=6.999*40 {Max two steps to get enough stars}
-    // Star poor image  Star_level=  140, noise is 40      Detection level:   140                   {One step. Star level is at minimum=3.5*noise. Minimum 3.5*noise is defined in procedure get_background}
-
+    dec(retries);{Try again with lower detection level}
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
   img_sa:=nil;{free mem}

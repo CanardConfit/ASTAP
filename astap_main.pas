@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.11.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.11.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -586,7 +586,8 @@ type
 
    Tbackground = record
                    backgr : double;//background value
-                   star_level: double;//star level
+                   star_level : double;//star level
+                   star_level2: double;//star level
                    noise_level: double;///noise level background
                 end;
 
@@ -2904,7 +2905,7 @@ end;
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
-  value,sd, sd_old,factor : double;
+  value,sd, sd_old,factor,factor2 : double;
 begin
   if calc_hist then  get_hist(colour,img);{get histogram of img_loaded and his_total}
 
@@ -2969,22 +2970,34 @@ begin
     {calculate star level}
     if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
     back.star_level:=0;
-    above:=0;
+    back.star_level2:=0;
     i:=max_range;
-    factor:=width5*height5*0.4/strtoint2(stackmenu1.max_stars1.text,500);
-    while ((back.star_level=0) and (i>back.backgr+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
+    factor:=  6*strtoint2(stackmenu1.max_stars1.text,500);// Number of pixels to test. This produces about 700 stars at hfd=2.25
+    factor2:=24*strtoint2(stackmenu1.max_stars1.text,500);// Number of pixels to test. This produces about 700 stars at hfd=4.5.
+    above:=0;
+    while ((back.star_level=0) and (i>back.backgr+1)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
       dec(i);
-      above:=above+histogram[colour,i];//sum pixels above pixel level i
-      if above>=factor then back.star_level:=i;
+      above:=above+histogram[colour,i];//sum of pixels above pixel level i
+      if above>=factor then
+        back.star_level:=i;//level found for stars with HFD=2.25.
     end;
+    while ((back.star_level2=0) and (i>back.backgr+1)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
+    begin
+      dec(i);
+      above:=above+histogram[colour,i];//sum of pixels above pixel level i
+      if above>=factor2 then
+        back.star_level2:=i;//level found for stars with HFD=4.5.
+    end;
+
 
     //memo2_message('Above count [pixels]'+inttostr(above));
 
     // Clip calculated star level:
     // 1) above 3.5*noise minimum, but also above background value when there is no noise so minimum is 1
     // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
-    back.star_level:=max(max(3.5*sd,1 {1})  ,back.star_level-back.backgr-1 {2) below saturation}); //star_level is relative to background
+    back.star_level:= max(max(3.5*sd,1 {1})  ,back.star_level-back.backgr-1 {2) below saturation}); //star_level is relative to background
+    back.star_level2:=max(max(3.5*sd,1 {1})  ,back.star_level2-back.backgr-1 {2) below saturation}); //star_level is relative to background
   // beep;
   end;
 end;
@@ -8359,7 +8372,6 @@ begin
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
-
 
 
 

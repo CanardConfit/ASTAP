@@ -1565,7 +1565,7 @@ begin
   get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
   detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
 
-  retries := 2; {try up to three times to get enough stars from the image}
+  retries:=3; {try up to four times to get enough stars from the image}
 
   hfd_min := max(0.8 {two pixels}, strtofloat2(
   stackmenu1.min_star_size_stacking1.Caption){hfd});  {to ignore hot pixels which are too small}
@@ -1576,6 +1576,15 @@ begin
   if ((bck.backgr < 60000) and (bck.backgr > min_background)) then {not an abnormal file}
   begin
     repeat {try three time to find enough stars}
+      if retries=3 then
+        begin if bck.star_level >30*bck.noise_level then detection_level:=bck.star_level  else retries:=2;{skip} end;//stars are dominant
+      if retries=2 then
+        begin if bck.star_level2>30*bck.noise_level then detection_level:=bck.star_level2 else retries:=1;{skip} end;//stars are dominant
+      if retries=1 then
+        begin detection_level:=30*bck.noise_level; end;
+      if retries=0 then
+        begin detection_level:= 7*bck.noise_level; end;
+
       star_counter := 0;
 
       if report then {write values to file}
@@ -1632,12 +1641,7 @@ begin
         end;
       end;
 
-      Dec(retries);{In principle not required. Try again with lower detection level}
-      if detection_level <= 7 * bck.noise_level then
-        retries := -1 {stop}
-      else
-        detection_level := max(6.999 * bck.noise_level, min(30 * bck.noise_level, detection_level * 6.999 / 30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
-
+      Dec(retries);{Try again with lower detection level}
       if report then closefile(f);
 
     until ((star_counter >= max_stars) or (retries < 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
@@ -1688,10 +1692,17 @@ begin
 
   get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
 
-  detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
-
-  retries := 2; {try three times to get enough stars from the image}
+  retries:=3; {try up to four times to get enough stars from the image}
   repeat
+    if retries=3 then
+      begin if bck.star_level >30*bck.noise_level then detection_level:=bck.star_level  else retries:=2;{skip} end;//stars are dominant
+    if retries=2 then
+      begin if bck.star_level2>30*bck.noise_level then detection_level:=bck.star_level2 else retries:=1;{skip} end;//stars are dominant
+    if retries=1 then
+      begin detection_level:=30*bck.noise_level; end;
+    if retries=0 then
+      begin detection_level:= 7*bck.noise_level; end;
+
     nhfd := 0;{set counter at zero}
 
     if bck.backgr > 8 then
@@ -1759,11 +1770,7 @@ begin
 
     end;
 
-    Dec(retries);{In principle not required. Try again with lower detection level}
-    if detection_level <= 7 * bck.noise_level then retries := -1 {stop}
-    else
-      detection_level := max(6.999 * bck.noise_level, min(30 * bck.noise_level, detection_level * 6.999 / 30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
-
+    Dec(retries);{Try again with lower detection level}
   until ((nhfd >= max_stars) or (retries < 0)); {reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
   nhfd_11 := 0;
@@ -2601,14 +2608,7 @@ begin
     {to ignore hot pixels which are too small}
 
     bin_and_find_stars(img_loaded, binning, 1 {cropping}, hfd_min, max_stars, False{update hist}, starlist1, warning_downsample);{bin, measure background}
-
-//    memo2_message('start');
-//   for i:=0 to 3000 do
-//    find_quads_xy2(starlist1,starlistquads );
-       find_quads_xy(starlist1, starlistquads);{find quads}
-
-//    memo2_message('stop');
-
+    find_quads_xy(starlist1, starlistquads);{find quads}
 
     display_quads(starlistquads);
     quads_displayed := True;

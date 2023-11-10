@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2023.10.13';
+  astap_version: string='2023.11.09';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -58,7 +58,7 @@ type
      histo_peak_position : integer;
      his_mean,noise_level : array[0..2] of integer;
      esc_pressed, fov_specified {, last_extension }: boolean;
-     star_level  : double;
+     star_level,star_level2  : double;
      exposure,focallen,equinox : double;
      cblack, cwhite,
      gain   :double; {from FITS}
@@ -143,7 +143,7 @@ function strtofloat2(s:string): double;{works with either dot or komma as decima
 function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
@@ -2035,10 +2035,10 @@ begin
 end;
 
 
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
-  value,sd, sd_old,factor : double;
+  value,sd, sd_old,factor,factor2 : double;
 begin
   if calc_hist then
              get_hist(colour,img);{get histogram of img_loaded and his_total}
@@ -2104,21 +2104,32 @@ begin
     {calculate star level}
     if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
     i:=max_range;
-    starlevel:=0;
+    star_level:=0;
+    star_level2:=0;
     above:=0;
 
-    factor:=width5*height5*0.4/max_stars;{emperical}
-    while ((starlevel=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
+    factor:=6*max_stars;//emperical. Number of pixels to test. This produces about 700 stars at hfd=2.25.
+    factor2:=24*max_stars;//emperical. Number of pixels to test. This produces about 700 stars at hfd=4.5.
+
+    while ((star_level=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
     begin
       dec(i);
       above:=above+histogram[colour,i];//sum pixels above pixel level i
       if above>factor then star_level:=i;
     end;
+    while ((star_level2=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
+    begin
+      dec(i);
+      above:=above+histogram[colour,i];//sum pixels above pixel level i
+      if above>factor2 then star_level2:=i;
+    end;
+
 
     // Clip calculated star level:
     // 1) above 3.5*noise minimum, but also above background value when there is no noise so minimum is 1
     // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
-    starlevel:=max(max(3.5*sd,1 {1}), starlevel-background-1 {2) below saturation});//star_level is relative to background
+    star_level:=max(max(3.5*sd,1 {1}), star_level-background-1 {2) below saturation});//star_level is relative to background
+    star_level2:=max(max(3.5*sd,1 {1}), star_level2-background-1 {2) below saturation});//star_level is relative to background
 
   end;
 end;
@@ -2364,15 +2375,22 @@ const
 begin
   SetLength(hfd_list,len);{set array length to len}
 
-  get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
+  get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level,star_level2);
 
-  detection_level:=star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
-
-  retries:=2; {try up to three times to get enough stars from the image}
+  retries:=3; {try up to four times to get enough stars from the image}
 
   if ((backgr<60000) and (backgr>8)) then {not an abnormal file}
   begin
     repeat {try three time to find enough stars}
+      if retries=3 then
+        begin if star_level >30*noise_level[0] then detection_level:=star_level  else retries:=2;{skip} end;//stars are dominant
+      if retries=2 then
+        begin if star_level2>30*noise_level[0] then detection_level:=star_level2 else retries:=1;{skip} end;//stars are dominant
+      if retries=1 then
+        begin detection_level:=30*noise_level[0]; end;
+      if retries=0 then
+        begin detection_level:= 7*noise_level[0]; end;
+
       star_counter:=0;
 
       if report then {write values to file}
@@ -2426,15 +2444,7 @@ begin
         end;
       end;
 
-      dec(retries);{In principle not required. Try again with lower detection level}
-      if detection_level<=7*noise_level[0] then retries:= -1 {stop}
-      else
-      detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30));
-      // Star rich image. Star_level=18000, noise is 40      Detection level: 18000 --> 1200=30*40         --> 280=6.999*40 {Max three steps to get enough stars}
-      //                  Star_level= 3000, noise is 40      Detection level:  3000 -->  700=3000*6.999/30 --> 280=6.999*40 {Max three steps to get enough stars}
-      //                  Star_level=  900, noise is 40      Detection level:   900 -->  280=6.999*40 {Max two steps to get enough stars}
-      // Star poor image  Star_level=  140, noise is 40      Detection level:   140                   {One step. Star level is at minimum=3.5*noise. Minimum 3.5*noise is defined in procedure get_background}
-
+      dec(retries);{Try again with lower detection level}
 
       if report then closefile(f);
 

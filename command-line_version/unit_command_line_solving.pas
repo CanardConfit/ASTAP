@@ -510,9 +510,6 @@ var
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level               : double;
    img_sa     : image_array;
    snr_list        : array of double;
-
-// flip_vertical,flip_horizontal  : boolean;
-// starX,starY :integer;
    startTick2  : qword;{for timing/speed purposes}
 const
     buffersize=5000;{5000}
@@ -523,10 +520,17 @@ begin
 
   setlength(img_sa,1,height2,width2);{set length of image array}
 
-  detection_level:=star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
-
-  retries:=2; {try up to three times to get enough stars from the image}
+  retries:=3; {try up to four times to get enough stars from the image}
   repeat
+    if retries=3 then
+      begin if star_level >30*noise_level[0] then detection_level:=star_level  else retries:=2;{skip} end;//stars are dominant
+    if retries=2 then
+      begin if star_level2>30*noise_level[0] then detection_level:=star_level2 else retries:=1;{skip} end;//stars are dominant
+    if retries=1 then
+      begin detection_level:=30*noise_level[0]; end;
+    if retries=0 then
+      begin detection_level:= 7*noise_level[0]; end;
+
     highest_snr:=0;
     nrstars:=0;{set counters at zero}
 
@@ -576,16 +580,7 @@ begin
     if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(cblack))+ '. Detection level used '+inttostr( round(detection_level))
                                                           +' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF(noise_level[0],ffFixed,0,0));
 
-    dec(retries);{In principle not required. Try again with lower detection level}
-    if detection_level<=7*noise_level[0] then retries:= -1 {stop}
-    else
-    detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30));
-    // Star rich image. Star_level=18000, noise is 40      Detection level: 18000 --> 1200=30*40         --> 280=6.999*40 {Max three steps to get enough stars}
-    //                  Star_level= 3000, noise is 40      Detection level:  3000 -->  700=3000*6.999/30 --> 280=6.999*40 {Max three steps to get enough stars}
-    //                  Star_level=  900, noise is 40      Detection level:   900 -->  280=6.999*40 {Max two steps to get enough stars}
-    // Star poor image  Star_level=  140, noise is 40      Detection level:   140                   {One step. Star level is at minimum=3.5*noise. Minimum 3.5*noise is defined in procedure get_background}
-
-
+    dec(retries);{Try again with lower detection level}
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
   img_sa:=nil;{free mem}
@@ -1064,7 +1059,7 @@ begin
     //    plot_fits(mainwindow.image1,true);{plot real}
     //    exit;
 
-    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
+    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level,star_level2 );{get back ground}
     find_stars(img_binned,hfd_min,starlist3); {find stars of the image and put them in a list}
     img_binned:=nil;
     nrstars:=Length(starlist3[0]);
@@ -1099,7 +1094,7 @@ begin
      memo2_message('█ █ █ █ █ █ Warning, small image dimensions!!');
     end;
 
-    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
+    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level,star_level2);{get back ground}
     find_stars(img,hfd_min,starlist3); {find stars of the image and put them in a list}
   end;
 end;
