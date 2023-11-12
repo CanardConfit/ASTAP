@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.11.10a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.11.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -4436,7 +4436,7 @@ end;
 
 procedure plot_grid(radec: boolean);  //plot ra,dec or az,alt grid
 var
-  fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0 : double;
+  fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0,r1,r2,d1,d2, fX1,fY1,fX2,fY2,angle: double;
   site_lat_radians, site_long_radians,wtime2actual : double;
   x1,y1,x2,y2,k                                          : integer;
   flip_horizontal, flip_vertical: boolean;
@@ -4499,8 +4499,7 @@ begin
     mainwindow.image1.Canvas.Pen.color:= $009090;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.font.color:= clgray;
-  mainwindow.image1.Canvas.font.size:=8;
+  mainwindow.image1.Canvas.font.color:= $909090;
 
   range:=head.cdelt2*sqrt(sqr(head.width/2)+sqr(head.height/2));{range in degrees, FROM CENTER}
 
@@ -4515,6 +4514,25 @@ begin
     else memo2_message('Error decoding Julian day!');
   end;
 
+  dec0:=head.dec0;
+  ra0:=head.ra0;
+
+  if radec=false then //convert ra,dec to az/alt
+  begin
+    precession3(2451545 {J2000},jd_mid,ra0,dec0); {from J2000 to Jnow mean, precession only. without refraction}
+    ra_az(ra0,dec0,site_lat_radians,0,wtime2actual,{out} ra0,dec0);{conversion ra & dec to altitude,azimuth}
+
+    {angle}
+    az_ra(ra0-0.01*pi/180 {az},dec0{alt},site_lat_radians,0,wtime2actual,{out} r1,d1);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+    celestial_to_pixel(r1,d1, fX1,fY1);{ra,dec to fitsX,fitsY}
+    az_ra(ra0+0.01*pi/180 {az},dec0{alt},site_lat_radians,0,wtime2actual,{out} r2,d2);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+    celestial_to_pixel(r2,d2, fX2,fY2);{ra,dec to fitsX,fitsY}
+    angle:=arctan2(fy2-fy1,fx2-fx1)*180/pi;
+    mainwindow.image1.Canvas.font.size:=14;
+    mainwindow.image1.Canvas.textout(10,head.height-25,'Angle: '+floattostrF(angle,FFfixed,0,2)+ '    ('+head.date_obs+', '+sitelong+', '+sitelat+')');
+  end;
+
+  mainwindow.image1.Canvas.font.size:=8;
 
   {calculate DEC step size}
   if range>16 then
@@ -4555,16 +4573,6 @@ begin
   begin
     step:=1/12;{step DEC 00:05  }
   end;
-
-  dec0:=head.dec0;
-  ra0:=head.ra0;
-
-  if radec=false then //convert ra,dec to az/alt
-  begin
-    precession3(2451545 {J2000},jd_mid,ra0,dec0); {from J2000 to Jnow mean, precession only. without refraction}
-    ra_az(ra0,dec0,site_lat_radians,0,wtime2actual,{out} ra0,dec0);{conversion ra & dec to altitude,azimuth}
-  end;
-
 
 
   {calculate RA step size}
@@ -9918,12 +9926,39 @@ begin
 end;
 
 
+procedure ang_sep_two_positions(fitsx1,fitsy1,fitsx2,fitsy2 : double; out seperation, pa : string);
+var
+  ra1,dec1,ra2,dec2,sep,DeltaRA : double;
+begin
+  if head.cdelt2<>0 then
+  begin
+    sensor_coordinates_to_celestial(fitsX1,fitsY1,ra1,dec1);{calculate the ra,dec position}
+    sensor_coordinates_to_celestial(fitsX2,fitsY2,ra2,dec2);{calculate the ra,dec position}
+    ang_sep(ra1,dec1,ra2,dec2, sep);
+    sep:=sep*180/pi; //convert to degrees
+    if sep<1/60 then seperation:=inttostr(round(sep*3600))+'"'
+    else
+    if sep<1 then seperation:=floattostrF(sep*60,FFfixed,0,2)+#39
+    else
+    seperation:=floattostrF(sep,FFfixed,0,2)+'°';
+
+    DeltaRA := ra2 - ra1;{ Calculate the difference in Right Ascension }
+    pa:=FloattostrF(arctan2(sin(DeltaRA),cos(dec2) * tan(dec1) - sin(dec2) * cos(DeltaRA))*180/pi,FFfixed,0,0)+'°';//PA angle
+  end
+  else
+  begin //no astrometric solution available
+    seperation:=floattostrf(sqrt(sqr(fitsX2-fitsX1)+sqr(fitsY2-fitsY1)),ffFixed,0,2)+' pixels';
+    pa:=FloattostrF(arctan2(fitsY2-fitsY1,fitsX2-fitsX1)*180/pi,FFfixed,0,0)+'°';
+  end;
+end;
+
+
 procedure Tmainwindow.angular_distance1Click(Sender: TObject);
 var
    shapetype                               : integer;
    hfd1,star_fwhm,snr,flux,xc,yc, hfd2,
-   star_fwhm2,snr2,flux2,xc2,yc2,angle     : double;
-   info_message,info_message2 : string;
+   star_fwhm2,snr2,flux2,xc2,yc2,angle,ra1,dec1,ra2,dec2,sep     : double;
+   info_message,info_message1, info_message2 : string;
 begin
   if head.naxis=0 then exit;
 
@@ -9968,14 +10003,9 @@ begin
     boxshape1.visible:=true;//show box
     show_marker_shape(mainwindow.shape_marker2,shapetype,20,20,10{minimum},shape_marker2_fitsX,shape_marker2_fitsY);
 
-    angle:=fnmodulo (arctan2(shape_marker1_fitsX-shape_marker2_fitsX,shape_marker2_fitsY-shape_marker1_fitsY)*180/pi - head.crota2,360);
-    if head.cdelt2<>0 then
-      info_message2:=floattostrf(sqrt(sqr(shape_marker2_fitsX-shape_marker1_fitsX)+sqr(shape_marker2_fitsY-shape_marker1_fitsY))*head.cdelt2*3600,ffFixed,0,2)+'"'
-    else
-      info_message2:=floattostrf(sqrt(sqr(shape_marker2_fitsX-shape_marker1_fitsX)+sqr(shape_marker2_fitsY-shape_marker1_fitsY)),ffFixed,0,2)+' pixels';
 
-
-    info_message2:=info_message2+#9+'        ∠ '+floattostrf(angle,ffFixed,0,2)+'°';
+    ang_sep_two_positions(shape_marker1_fitsX,shape_marker1_fitsY, shape_marker2_fitsX,shape_marker2_fitsY,info_message2,info_message1);
+    info_message2:=info_message2+#9+'        ∠ '+info_message1;
 
     case  QuestionDlg (pchar('Angular distance '),pchar(info_message+info_message2),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
              mrYes: Clipboard.AsText:=info_message2;
@@ -12922,8 +12952,8 @@ end;
 
 
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
-var fitsX,fitsY,col,dum       : integer;
-    ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
+var fitsX,fitsY,col,dum      : integer;
+    fxc,fyc, ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
 begin
   if ((head.naxis<>0) and (abs(stopX-startX)>3)and (abs(stopY-starty)>3)) then
   begin
@@ -12966,11 +12996,11 @@ begin
    if head.cd1_1<>0 then
    begin
      {do the rigid method.}
-     sensor_coordinates_to_celestial((startX+stopX)/2,(startY+stopY)/2 , ra_c,dec_c {new center RA, DEC position});
-     //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
-     sensor_coordinates_to_celestial(1+(startX+stopX)/2,(startY+stopY)/2 , ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});
-     //make 1 step in direction head.crpix2
-     sensor_coordinates_to_celestial((startX+stopX)/2,1+(startY+stopY)/2 , ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
+     fxc:=1+(startX+stopX)/2;//position of new center
+     fyc:=1+(startY+stopY)/2;
+     sensor_coordinates_to_celestial(fxc,fyc, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
+     sensor_coordinates_to_celestial(1+fxc,fyc, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
+     sensor_coordinates_to_celestial(fxc,fyc+1 , ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
 
      delta_ra:=ra_n-ra_c;
      if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
@@ -14522,7 +14552,7 @@ end;
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor, adu_e : double;
-  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str                  : string;
+  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str,pa_str                  : string;
   width5,height5,box_SX,box_SY,flipH,flipV,iterations, box_LX,box_LY                   : integer;
   color1:tcolor;
   r,b :single;
@@ -14607,18 +14637,8 @@ begin
      if ctrlbutton then boxshape1.shape:=STellipse else boxshape1.shape:=STrectangle;
 
 
-     if head.cdelt2<>0 then
-     begin
-       pixel_distance:= 3600*sqrt (sqr((box_LX)*head.cdelt1)+sqr((box_LY)*head.cdelt2));{pixel distance in arcsec}
-       if pixel_distance<60 then dist_str:=inttostr(round(pixel_distance))+'"'
-       else
-       if pixel_distance<3600 then dist_str:=floattostrF(pixel_distance/60,ffgeneral,3,2)+#39
-       else
-       dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
-     end
-     else dist_str:='';
-     if head.cdelt2<>0 then angle_str:='∠ '+inttostr(round(fnmodulo (arctan2(startX-stopX,stopY-startY)*180/pi - head.crota2,360)) )+'°' else  angle_str:=''; ;
-     mainwindow.statusbar1.panels[7].text:=inttostr(box_LX)+' x '+inttostr(box_LY)+'    '+dist_str+'    '+angle_str;{indicate rectangle size}
+     ang_sep_two_positions(startX+1,startY+1,mouse_fitsX,mouse_fitsY,dist_str,pa_str);
+     mainwindow.statusbar1.panels[7].text:=inttostr(box_LX)+' x '+inttostr(box_LY)+'    '+dist_str+'  ∠ '+pa_str;{indicate rectangle size}
    end
    else
    begin
