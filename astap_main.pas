@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.11.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.11.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -120,6 +120,7 @@ type
     dust_spot_removal1: TMenuItem;
     export_star_info1: TMenuItem;
     grid_az_alt1: TMenuItem;
+    az_alt1: TMenuItem;
     star_profile1: TMenuItem;
     Separator2: TMenuItem;
     vizier_gaia_annotation1: TMenuItem;
@@ -360,6 +361,7 @@ type
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
     procedure annotations_visible1Click(Sender: TObject);
     procedure autocorrectcolours1Click(Sender: TObject);
+    procedure az_alt1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
     procedure calibrate_photometry1Click(Sender: TObject);
@@ -1029,6 +1031,7 @@ begin
     focus_pos:=0;{assume no data available}
     pressure:=1010; {mbar/hPa}
     annotated:=false; {any annotation in the file}
+    site_lat_radians:=999;
 
     sqm_value:='';
     equinox:=2000;
@@ -4434,18 +4437,13 @@ begin
 end;
 
 
+
 procedure plot_grid(radec: boolean);  //plot ra,dec or az,alt grid
 var
-  fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0,r1,r2,d1,d2, fX1,fY1,fX2,fY2,angle: double;
-  site_lat_radians, site_long_radians,wtime2actual : double;
+  fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0,r1,r2,d1,d2, fX1,fY1,fX2,fY2,angle,az,alt: double;
   x1,y1,x2,y2,k                                          : integer;
   flip_horizontal, flip_vertical: boolean;
   ra_text:             string;
-
-const
-  siderealtime2000=(280.46061837)*pi/180;{[radians],sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
-  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
-
 var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr system}
    ((45),{step RA 03:00}
     (30),{step RA 02:00}
@@ -4503,36 +4501,28 @@ begin
 
   range:=head.cdelt2*sqrt(sqr(head.width/2)+sqr(head.height/2));{range in degrees, FROM CENTER}
 
-  if radec=false then
-  begin
-    if get_lat_long(site_lat_radians, site_long_radians)=false then exit;//retrieve latitude and longitude
-    date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
-    if jd_mid>2400000 then {valid JD}
-    begin
-      wtime2actual:=fnmodulo(+site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
-    end
-    else memo2_message('Error decoding Julian day!');
-  end;
-
   dec0:=head.dec0;
   ra0:=head.ra0;
 
-  if radec=false then //convert ra,dec to az/alt
+  if radec=false then
   begin
-    precession3(2451545 {J2000},jd_mid,ra0,dec0); {from J2000 to Jnow mean, precession only. without refraction}
-    ra_az(ra0,dec0,site_lat_radians,0,wtime2actual,{out} ra0,dec0);{conversion ra & dec to altitude,azimuth}
+    calculate_az_alt_basic(ra0,dec0,{out} az,alt);{calculate azimuth, altitude and initialize wtime2actual/sidereal time}
 
     {angle}
-    az_ra(ra0-0.01*pi/180 {az},dec0{alt},site_lat_radians,0,wtime2actual,{out} r1,d1);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+    az_ra(az-0.01*pi/180,alt,site_lat_radians,0,wtime2actual,{out} r1,d1);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
     celestial_to_pixel(r1,d1, fX1,fY1);{ra,dec to fitsX,fitsY}
-    az_ra(ra0+0.01*pi/180 {az},dec0{alt},site_lat_radians,0,wtime2actual,{out} r2,d2);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+    az_ra(az+0.01*pi/180,alt,site_lat_radians,0,wtime2actual,{out} r2,d2);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
     celestial_to_pixel(r2,d2, fX2,fY2);{ra,dec to fitsX,fitsY}
     angle:=arctan2(fy2-fy1,fx2-fx1)*180/pi;
     mainwindow.image1.Canvas.font.size:=14;
-    mainwindow.image1.Canvas.textout(10,head.height-25,'Angle: '+floattostrF(angle,FFfixed,0,2)+ '    ('+head.date_obs+', '+sitelong+', '+sitelat+')');
+    mainwindow.image1.Canvas.textout(10,head.height-25,'Angle: '+floattostrF(angle,FFfixed,0,2)+ '°    ('+head.date_obs+', '+sitelong+', '+sitelat+')');
+
+    ra0:=az;//make az,alt grid
+    dec0:=alt;
   end;
 
   mainwindow.image1.Canvas.font.size:=8;
+
 
   {calculate DEC step size}
   if range>16 then
@@ -10025,6 +10015,7 @@ begin
      coord_frame:=0;
      galactic1.checked:=false;
      j2000d1.checked:=false;
+     az_alt1.checked:=false;
    end;
 end;
 
@@ -10035,6 +10026,7 @@ begin
     coord_frame:=1;
     galactic1.checked:=false;
     j2000_1.checked:=false;
+    az_alt1.checked:=false;
   end;
 end;
 
@@ -10046,8 +10038,21 @@ begin
     coord_frame:=2;
     j2000_1.checked:=false;
     j2000d1.checked:=false;
+    az_alt1.checked:=false;
    end;
 end;
+
+procedure Tmainwindow.az_alt1Click(Sender: TObject);
+begin
+  if az_alt1.checked then
+  begin
+    coord_frame:=3;
+    j2000_1.checked:=false;
+    j2000d1.checked:=false;
+    galactic1.checked:=false;
+  end;
+end;
+
 
 
 procedure Tmainwindow.northeast1Click(Sender: TObject);
@@ -11772,7 +11777,7 @@ end;
 
 function position_to_string(sep:string; ra,dec:double):string;
 var
-  l, b : double;
+  l, b,az,alt : double;
 begin
   if coord_frame=0 then
     result:=prepare_ra8(ra,': ')+sep+prepare_dec2(dec,'° ')
@@ -11780,10 +11785,20 @@ begin
   if coord_frame=1 then
     result:=floattostrF(ra*180/pi, FFfixed, 0, 8)+'°, '+floattostrF(dec*180/pi, FFfixed, 0, 8)+'°'
   else
+  if coord_frame=2 then
   begin
     EQU_GAL(ra,dec,l,b);{equatorial to galactic coordinates}
     result:=floattostrF(l*180/pi, FFfixed, 0, 3)+sep+floattostrF(b*180/pi, FFfixed, 0, 3)+' ° gal';
-  end;
+  end
+  else
+  if coord_frame=3 then
+  begin
+    calculate_az_alt_basic(ra,dec,{out} az,alt);{calculate azimuth, altitude including refraction}
+    result:=floattostrF(az*180/pi, FFfixed, 0, 1)+'°, '+floattostrF(alt*180/pi, FFfixed, 0, 1)+'°';
+  end
+  else
+  result:='Error';
+
 end;
 
 

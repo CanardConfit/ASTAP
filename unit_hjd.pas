@@ -19,6 +19,8 @@ uses
 var
   ra_mean : double=0;
   dec_mean: double=0;
+  site_lat_radians, site_long_radians,wtime2actual : double;
+
 
 function calc_jd_now: double;  {get julian day for now}
 
@@ -28,6 +30,7 @@ function airmass_calc(h: double): double; // where h is apparent altitude in deg
 function atmospheric_absorption(airmass: double):double;{magnitudes}
 procedure calculate_az_alt(calc_mode : integer;head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
 procedure altitude_and_refraction(lat,long,julian,temperature,pressure,ra3,dec3: double; out az,alt  : double);{altitude calculation and correction ra, dec for refraction}
+procedure calculate_az_alt_basic(ra,dec : double; out az,alt : double);{calculate azimuth, altitude and  initialize wtime2actual/sidereal time if site_lat_radians>999. For mouse pointer}
 
 procedure polar2(x,y,z:double;out r,theta,phi:double);
 function get_lat_long(out site_lat_radians, site_long_radians : double): boolean;//retrieve latitude and longitude
@@ -220,7 +223,7 @@ begin
 end;
 
 
-function atmospheric_refraction(altitude_real {degrees},p {mbar},t {celsius} :double):double;  {atmospheric refraction correction, input output in degrees}
+function atmospheric_refraction(altitude_real {degrees},p {mbar},t {celsius} :double):double;  {atmospheric refraction correction, input and output in degrees}
 var  hn  :real;
 begin
   hn:=(altitude_real + 10.3/(altitude_real +5.11))*pi/180; {radians}
@@ -320,6 +323,34 @@ begin
       else memo2_message('Error decoding Julian day!');
     end;
   end;
+end;
+
+
+procedure calculate_az_alt_basic(ra,dec : double; out az,alt : double);{calculate azimuth, altitude and  initialize wtime2actual/sidereal time if site_lat_radians>999. For mouse pointer}
+const
+  siderealtime2000=(280.46061837)*pi/180;{[radians],sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
+var
+  temperature : double;
+begin
+  if site_lat_radians>998 then  //initialize wtime2actual/sidereal time
+  begin
+    if get_lat_long(site_lat_radians, site_long_radians)=false then exit;//retrieve latitude and longitude
+    date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
+    if jd_mid>2400000 then {valid JD}
+    begin
+      wtime2actual:=fnmodulo(+site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
+    end
+    else memo2_message('Error decoding Julian day!');
+  end;
+
+
+  precession3(2451545 {J2000},jd_mid,ra,dec); {from J2000 to Jnow mean, precession only. without refraction}
+  ra_az(ra,dec,site_lat_radians,0,wtime2actual,{out} az,alt);{conversion ra & dec to altitude,azimuth}
+
+  if focus_temp>=100 {999} then temperature:=10 {default temperature celsius} else temperature:=focus_temp;
+  alt:=alt*180/pi;
+  alt:=(alt+atmospheric_refraction(alt,pressure {mbar},temperature {celsius}))*pi/180;{astrometric to apparant altitude}
 end;
 
 

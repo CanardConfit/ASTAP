@@ -1391,115 +1391,117 @@ begin
 
       if ((x>-0.25*head.width) and (x<=1.25*head.width) and (y>-0.25*head.height) and (y<=1.25*head.height)) then {within image1 with some overlap}
       begin
-
-        if database_nr=3 then //variables
-        begin
-          if ((abs(x-shape_fitsX)<5) and  (abs(y-shape_fitsy)<5)) then // note shape_fitsX/Y are in sensor coordinates
-                mainwindow.Shape_alignment_marker1.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
-
-          if ((abs(x-shape_fitsX2)<5) and  (abs(y-shape_fitsy2)<5)) then  // note shape_fitsX/Y are in sensor coordinates
-                    mainwindow.Shape_alignment_marker2.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
-        end;
-
-        gx_orientation:=(pa+head.crota2)*flipped;
-
-        if flip_horizontal then begin x:=(head.width-1)-x; gx_orientation:=-gx_orientation; end;
-        if flip_vertical then gx_orientation:=-gx_orientation else y:=(head.height-1)-y;
         len:=length1/(abs(head.cdelt2)*60*10*2); {Length in pixels}
-
-        {Plot deepsky text labels on an empthy text space.}
-        { 1) If the center of the deepsky object is outside the image then don't plot text}
-        { 2) If the text space is occupied, then move the text down. If the text crosses the bottom then use the original text position.}
-        { 3) If the text crosses the right side of the image then move the text to the left.}
-        { 4) If the text is moved in y then connect the text to the deepsky object with a vertical line.}
-
-        if ( (x>=0) and (x<=head.width-1) and (y>=0) and (y<=head.height-1) and (naam2<>'') ) then {plot only text if center object is visible and has a name}
+        if ((head.cdelt2<0.25*1/60) or (len>=1) or (database_nr=3)) then//avoid too many object on images with a large FOV
         begin
-          if naam3='' then name:=naam2
-          else
-          if naam4='' then name:=naam2+'/'+naam3
-          else
-          name:=naam2+'/'+naam3+'/'+naam4;
-
-          mainwindow.image1.Canvas.font.size:=round(min(20,max(8,len /2)));
-
-          if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star, Plot green}
-
-          {get text dimensions}
-          th:=mainwindow.image1.Canvas.textheight(name);
-          tw:=mainwindow.image1.Canvas.textwidth(name);
-          x1:=x;
-          y1:=y;
-          x2:=x+ tw;
-          y2:=y+ th ;
-
-          if ((x1<=head.width) and (x2>head.width)) then begin x1:=x1-(x2-head.width);x2:=head.width;end; {if text is beyond right side, move left}
-
-          if text_counter>0 then {find free space in y for text}
+          if database_nr=3 then //variables
           begin
-            repeat {find free text area}
-              overlap:=false;
-              i:=0;
-              repeat {test overlap}
-                if ( ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {left top overlap} or
-                     ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {right top overlap} or
-                     ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {left bottom overlap} or
-                     ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {right bottom overlap} or
+            if ((abs(x-shape_fitsX)<5) and  (abs(y-shape_fitsy)<5)) then // note shape_fitsX/Y are in sensor coordinates
+                  mainwindow.Shape_alignment_marker1.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
 
-                     ((text_dimensions[i].x1>=x1) and (text_dimensions[i].x1<=x2) and (text_dimensions[i].y1>=y1) and (text_dimensions[i].y1<=y2)) {two corners of text_dimensions[i] within text} or
-                     ((text_dimensions[i].x2>=x1) and (text_dimensions[i].x2<=x2) and (text_dimensions[i].y2>=y1) and (text_dimensions[i].y2<=y2)) {two corners of text_dimensions[i] within text}
-                   ) then
-                begin
-                  overlap:=true; {text overlaps an existing text}
-                  y1:=y1+(th div 3);{try to shift text one third of the text height down}
-                  y2:=y2+(th div 3);
-                  if y2>=head.height then {no space left, use original position}
+            if ((abs(x-shape_fitsX2)<5) and  (abs(y-shape_fitsy2)<5)) then  // note shape_fitsX/Y are in sensor coordinates
+                      mainwindow.Shape_alignment_marker2.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
+          end;
+
+          gx_orientation:=(pa+head.crota2)*flipped;
+
+          if flip_horizontal then begin x:=(head.width-1)-x; gx_orientation:=-gx_orientation; end;
+          if flip_vertical then gx_orientation:=-gx_orientation else y:=(head.height-1)-y;
+
+          {Plot deepsky text labels on an empthy text space.}
+          { 1) If the center of the deepsky object is outside the image then don't plot text}
+          { 2) If the text space is occupied, then move the text down. If the text crosses the bottom then use the original text position.}
+          { 3) If the text crosses the right side of the image then move the text to the left.}
+          { 4) If the text is moved in y then connect the text to the deepsky object with a vertical line.}
+
+          if ( (x>=0) and (x<=head.width-1) and (y>=0) and (y<=head.height-1) and (naam2<>'') ) then {plot only text if center object is visible and has a name}
+          begin
+            if naam3='' then name:=naam2
+            else
+            if naam4='' then name:=naam2+'/'+naam3
+            else
+            name:=naam2+'/'+naam3+'/'+naam4;
+
+            mainwindow.image1.Canvas.font.size:=round(min(20,max(8,len /2)));
+
+            if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star, Plot green}
+
+            {get text dimensions}
+            th:=mainwindow.image1.Canvas.textheight(name);
+            tw:=mainwindow.image1.Canvas.textwidth(name);
+            x1:=x;
+            y1:=y;
+            x2:=x+ tw;
+            y2:=y+ th ;
+
+            if ((x1<=head.width) and (x2>head.width)) then begin x1:=x1-(x2-head.width);x2:=head.width;end; {if text is beyond right side, move left}
+
+            if text_counter>0 then {find free space in y for text}
+            begin
+              repeat {find free text area}
+                overlap:=false;
+                i:=0;
+                repeat {test overlap}
+                  if ( ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {left top overlap} or
+                       ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {right top overlap} or
+                       ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {left bottom overlap} or
+                       ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {right bottom overlap} or
+
+                       ((text_dimensions[i].x1>=x1) and (text_dimensions[i].x1<=x2) and (text_dimensions[i].y1>=y1) and (text_dimensions[i].y1<=y2)) {two corners of text_dimensions[i] within text} or
+                       ((text_dimensions[i].x2>=x1) and (text_dimensions[i].x2<=x2) and (text_dimensions[i].y2>=y1) and (text_dimensions[i].y2<=y2)) {two corners of text_dimensions[i] within text}
+                     ) then
                   begin
-                    y1:=y;
-                    y2:=y+th ;
-                    overlap:=false;{stop searching}
-                    i:=$FFFFFFF;{stop searching}
-                  end;
-               end;
-               inc(i);
-             until ((i>=text_counter) or (overlap) );{until all tested or found overlap}
-           until overlap=false;{continue till no overlap}
-         end;
+                    overlap:=true; {text overlaps an existing text}
+                    y1:=y1+(th div 3);{try to shift text one third of the text height down}
+                    y2:=y2+(th div 3);
+                    if y2>=head.height then {no space left, use original position}
+                    begin
+                      y1:=y;
+                      y2:=y+th ;
+                      overlap:=false;{stop searching}
+                      i:=$FFFFFFF;{stop searching}
+                    end;
+                 end;
+                 inc(i);
+               until ((i>=text_counter) or (overlap) );{until all tested or found overlap}
+             until overlap=false;{continue till no overlap}
+           end;
 
-         text_dimensions[text_counter].x1:=x1;{store text dimensions in array}
-         text_dimensions[text_counter].y1:=y1;
-         text_dimensions[text_counter].x2:=x2;
-         text_dimensions[text_counter].y2:=y2;
+           text_dimensions[text_counter].x1:=x1;{store text dimensions in array}
+           text_dimensions[text_counter].y1:=y1;
+           text_dimensions[text_counter].x2:=x2;
+           text_dimensions[text_counter].y2:=y2;
 
-         if y1<>y then {there was textual overlap}
+           if y1<>y then {there was textual overlap}
+           begin
+             mainwindow.image1.Canvas.moveto(x,round(y+th/4));
+             mainwindow.image1.Canvas.lineto(x,y1);
+           end;
+           mainwindow.image1.Canvas.textout(x1,y1,name);
+           inc(text_counter);
+           if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
+         end;{centre object visible}
+
+         {plot deepsky object}
+         if width1=0 then begin width1:=length1;pa:=999;end;
+         mainwindow.image1.Canvas.Pen.width :=min(4,max(1,round(len/70)));
+
+         {len is already calculated earlier for the font size}
+         if len<=2 then {too small to plot an elipse or circle, plot just four dots}
          begin
-           mainwindow.image1.Canvas.moveto(x,round(y+th/4));
-           mainwindow.image1.Canvas.lineto(x,y1);
-         end;
-         mainwindow.image1.Canvas.textout(x1,y1,name);
-         inc(text_counter);
-         if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
-       end;{centre object visible}
-
-       {plot deepsky object}
-       if width1=0 then begin width1:=length1;pa:=999;end;
-       mainwindow.image1.Canvas.Pen.width :=min(4,max(1,round(len/70)));
-
-       {len is already calculated earlier for the font size}
-       if len<=2 then {too small to plot an elipse or circle, plot just four dots}
-       begin
-         mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
-         mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
-         mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
-         mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
-       end
-       else
-       begin
-         if PA<>999 then
-           plot_glx(mainwindow.image1.canvas,x,y,len,width1/length1,gx_orientation*pi/180) {draw oval or galaxy}
+           mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
+           mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
+           mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
+           mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
+         end
          else
-         mainwindow.image1.canvas.ellipse(round(x-len),round(y-len),round(x+1+len),round(y+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-       end;
+         begin
+           if PA<>999 then
+             plot_glx(mainwindow.image1.canvas,x,y,len,width1/length1,gx_orientation*pi/180) {draw oval or galaxy}
+           else
+           mainwindow.image1.canvas.ellipse(round(x-len),round(y-len),round(x+1+len),round(y+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+         end;
+       end;//min size for large FOV
      end;
     end; {while loop};
 
