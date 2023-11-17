@@ -733,8 +733,8 @@ begin
       STEP_SIZE:=search_field;{fixed step size search spiral}
       if database_type=1 then
       begin {make small steps for wide field images. Much more reliable}
-        step_size:=step_size*0.25;
-        max_distance:=round(radius/(0.25*fov2+0.00001)); {expressed in steps}
+        step_size:=step_size*0.1;
+        max_distance:=round(radius/(0.1*fov2+0.00001)); {expressed in steps}
         memo2_message('Wide field, making small steps for reliable solving.');
       end
       else
@@ -849,7 +849,7 @@ begin
               // for testing purposes
               // for testing create supplement hnksy planetarium program
               //stackmenu1.memo2.lines.add(floattostr(ra_database*12/pi)+',,,'+floattostr(dec_database*180/pi)+',,,,'+inttostr(count)+',,-8,'+floattostr( step_size*600*180/pi)+',' +floattostr(step_size*600*180/pi));
-              //stackmenu1.memo2.lines.add(floattostr(ra_database*12/pi)+',,,'+floattostr(dec_database*180/pi)+',,,,'+inttostr(count)+',,-99');
+             // stackmenu1.memo2.lines.add(floattostr(ra_database*12/pi)+',,,'+floattostr(dec_database*180/pi)+',,,,'+inttostr(count)+',,-99');
 
               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
 

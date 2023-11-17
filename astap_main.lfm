@@ -1220,8 +1220,8 @@ object mainwindow: Tmainwindow
           Caption = '-'
         end
         object move_images1: TMenuItem
-          Caption = 'Move images to path "object, date"'
-          Hint = 'Move selected images to a new directory based in the header info object name and exposure date.'
+          Caption = 'Move images to path "object, date, filter"'
+          Hint = 'Move selected images to a new directory based in the header info object name, exposure date and filter.'
           OnClick = move_images1Click
         end
         object MenuItem27: TMenuItem
@@ -2284,7 +2284,7 @@ object mainwindow: Tmainwindow
     object az_alt1: TMenuItem
       AutoCheck = True
       Caption = 'A, h'
-      Hint = 'Azimuth and latitude at the mouse pointer. Geographic longitude, latitude and time of observation should be specified in header.'
+      Hint = 'Azimuth and altitude at the mouse pointer. Geographic longitude, latitude and time of observation should be specified in header.'
       OnClick = az_alt1Click
     end
     object MenuItem34: TMenuItem

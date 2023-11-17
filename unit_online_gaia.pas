@@ -61,7 +61,7 @@ begin
         if filter='V' then //Johnson-Cousins-V. See https://gea.esac.esa.int/archive/documentation/GDR3/Data_processing/chap_cu5pho/cu5pho_sec_photSystem/cu5pho_ssec_photRelations.html
         begin
           if ((BminR>=-0.5) and (BminR<=5.0)) then {formula valid edr3, about 99% of stars}
-            result:=magG + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;  {edr3}
+            result:=magG + 0.02704 - 0.01424*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;  {edr3}
         end
         else
         if filter='R' then //Johnson-Cousins R
@@ -76,7 +76,7 @@ begin
           begin
             Vt:=magG + 0.01077 + 0.0682*(BminR) + 0.2387*sqr(BminR) -0.02342*sqr(BminR)*(BminR) ;
             Bt:=magG + 0.004288 + 0.8547*(BminR) -0.1244*sqr(BminR)+ 0.9085*sqr(BminR)*(BminR) - 0.4843*sqr(sqr(BminR))+ 0.06814*sqr(sqr(BminR))*BminR ;
-            V:=magG + 0.02704 - 0.0124*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;
+            V:=magG + 0.02704 - 0.01424*(BminR) + 0.2156*sqr(BminR) -0.01426*sqr(BminR)*(BminR) ;
 
             result:=V + 0.850*(Bt-Vt); //from Tycho catalog, B - V = 0.850 * (BT - VT)
           end;

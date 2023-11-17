@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.11.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.11.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1824,6 +1824,7 @@ begin
     else
     if ((head.cd1_1=0) and (head.crota2<999) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
     begin
+      if head.crota1=999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
       old_to_new_WCS(head);{ convert old WCS to new}
     end;
 
@@ -1832,10 +1833,6 @@ begin
      if ((focallen<>0) and (head.xpixsz<>0)) then
         head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
     end;
-
-    if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
-    if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
-
 
     if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 
@@ -4440,7 +4437,7 @@ end;
 
 procedure plot_grid(radec: boolean);  //plot ra,dec or az,alt grid
 var
-  fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0,r1,r2,d1,d2, fX1,fY1,fX2,fY2,angle,az,alt: double;
+  fitsX,fitsY,step,stepA,stepB,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0,r1,r2,d1,d2, fX1,fY1,fX2,fY2,angle,az,alt,sep: double;
   x1,y1,x2,y2,k                                          : integer;
   flip_horizontal, flip_vertical: boolean;
   ra_text:             string;
@@ -4525,14 +4522,14 @@ begin
 
 
   {calculate DEC step size}
-  if range>16 then
+  if range>20 then
   begin
-    step:=8;{step DEC 08:00}
+    step:=10;{step DEC 10:00}
   end
   else
-  if range>8 then
+  if range>10 then
   begin
-    step:=4;{step DEC 04:00}
+    step:=5;{step DEC 05:00}
   end
   else
   if range>4 then {image FOV about >2*4/sqrt(2) so >5 degrees}
@@ -4565,13 +4562,21 @@ begin
   end;
 
 
-  {calculate RA step size}
-  step2:=min(45,step/(cos(dec0)+0.000001)); {exact value for stepRA, but not well rounded}
-  k:=0;
-  repeat {select nice rounded values for ra_step}
-    stepRA:=ra_values[k];
-    inc(k);
-  until ((stepRA<=step2) or (k>=length(ra_values)));{repeat until comparible value is found in ra_values}
+  sep:=pi/2 - abs(dec0);//approximation for closed distance to celestial pole either north south. Ignore sphere rounding
+  if ((radec) and (sep<range*pi/180)) then //celestial pole in the image
+  begin
+     stepRA:=30;
+  end
+  else
+  begin
+    {calculate RA step size}
+    stepA:=min(45,step/(cos(dec0)+0.000001)); {exact value for stepRA, but not well rounded}
+    k:=0;
+    repeat {select nice rounded values for ra_step}
+      stepRA:=ra_values[k];
+      inc(k);
+    until ((stepRA<=stepA) or (k>=length(ra_values)));{repeat until comparible value is found in ra_values}
+  end;
 
   {round image centers}
   centra:=stepRA*round(ra0*180/(pi*stepRA)); {rounded image centers}
@@ -4631,7 +4636,7 @@ begin
       j:=j+step;
     until j>=min(centDEC+6*step,90);
     i:=i+stepRA;
-  until ((i>=centRa+6*stepRA) or (i>=(centRA-6*stepRA)+360));
+    until ((i>=centRa+6*stepRA) or (i>=(centRA-6*stepRA)+360));
 
 
   {plot RA grid}
@@ -8459,7 +8464,6 @@ begin
 end;
 
 
-
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
 begin
   maintype:=InputBox('Simbad search by criteria.','Enter the object main type (E.g. star=*, galaxy=G, quasar=QSO):',maintype);
@@ -9932,8 +9936,10 @@ begin
     else
     seperation:=floattostrF(sep,FFfixed,0,2)+'°';
 
+    {see meeus new formula 46.5, angle of moon limb}
+    //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
     DeltaRA := ra2 - ra1;{ Calculate the difference in Right Ascension }
-    pa:=FloattostrF(arctan2(sin(DeltaRA),cos(dec2) * tan(dec1) - sin(dec2) * cos(DeltaRA))*180/pi,FFfixed,0,0)+'°';//PA angle
+    pa:=FloattostrF(arctan2(cos(dec2)*sin(ra2-ra1),sin(dec2)*cos(dec1) - cos(dec2)*sin(dec1)*cos(ra2-ra1))*180/pi,FFfixed,0,0)+'°';; {Accurate formula. Angle between line between the two stars and north as seen at ra1, dec1}
   end
   else
   begin //no astrometric solution available
@@ -11783,7 +11789,7 @@ begin
     result:=prepare_ra8(ra,': ')+sep+prepare_dec2(dec,'° ')
   else
   if coord_frame=1 then
-    result:=floattostrF(ra*180/pi, FFfixed, 0, 8)+'°, '+floattostrF(dec*180/pi, FFfixed, 0, 8)+'°'
+    result:=floattostrF(ra*180/pi, FFfixed, 0, 8)+'°'+sep+floattostrF(dec*180/pi, FFfixed, 0, 8)+'°'
   else
   if coord_frame=2 then
   begin
@@ -11794,11 +11800,20 @@ begin
   if coord_frame=3 then
   begin
     calculate_az_alt_basic(ra,dec,{out} az,alt);{calculate azimuth, altitude including refraction}
-    result:=floattostrF(az*180/pi, FFfixed, 0, 1)+'°, '+floattostrF(alt*180/pi, FFfixed, 0, 1)+'°';
+    result:=floattostrF(az*180/pi, FFfixed, 0, 1)+'°'+sep+floattostrF(alt*180/pi, FFfixed, 0, 1)+'°';
   end
   else
   result:='Error';
 
+end;
+
+
+function seperation : string;
+begin
+  if DefaultFormatSettings.DecimalSeparator<>'.' then
+    result:='  '
+  else
+    result:=', ';
 end;
 
 
@@ -11828,7 +11843,7 @@ begin
     if sender<>writepositionshort1 then
     begin
       if head.cd1_1<>0 then {solved}
-        image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+position_to_string(',',object_raM,object_decM))
+        image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+position_to_string(seperation,object_raM,object_decM))
       else
         image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+floattostrF(object_xc,ffFixed,0,2)+', '+floattostrF(object_yc,ffFixed,0,2));{write x,y position if not solved}
     end
@@ -11844,7 +11859,7 @@ begin
       x8:=round(3+down_x   /(image1.width/head.width));
       y8:=round(-font_height +(down_y)/(image1.height/head.height));
       if head.cd1_1<>0 then
-        image1.Canvas.textout(x8,y8,'_'+position_to_string(',',object_raM,object_decM))
+        image1.Canvas.textout(x8,y8,'_'+position_to_string(seperation,object_raM,object_decM))
       else
         image1.Canvas.textout(x8,y8,'_'+floattostrF(mouse_fitsX,ffFixed,0,2)+', '+floattostrF(mouse_fitsY,ffFixed,0,2));{write x,y position if not solved}
     end;
@@ -13186,16 +13201,88 @@ begin
 end;
 
 
+procedure find_star_center(img: image_array;box, x1,y1: integer; out xc,yc:double);{}
+var
+  i,j,k,w,h  : integer;
+  value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
+
+  function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
+  var
+    x_trunc,y_trunc: integer;
+    x_frac,y_frac  : double;
+  begin
+    x_trunc:=trunc(x1);
+    y_trunc:=trunc(y1);
+    if ((x_trunc<=0) or (x_trunc>=(head.width-2)) or (y_trunc<=0) or (y_trunc>=(head.height-2))) then begin result:=0; exit;end;
+    x_frac :=frac(x1);
+    y_frac :=frac(y1);
+    try
+      result:=         (img[0,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+      result:=result + (img[0,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+      result:=result + (img[0,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+      result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+    except
+    end;
+  end;
+
+begin
+  w:=Length(img[0,0]); {width}
+  h:=Length(img[0]); {height}
+
+  if ((x1>=box) and (x1<w-box) and (y1>=box) and (y1<h-box))=false then begin {don't try too close to boundaries} xc:=x1; yc:=y1;  exit end;
+
+  xc:=x1;
+  yc:=y1;
+
+  for k:=1 to 2 do {repeat for maximum accuracy}
+  begin
+
+    value:=-99999;
+    {find highest pixel}
+    for i:=round(xc)-box to round(xc)+box do
+    for j:=round(yc)-box to round(yc)+box do
+    begin
+        val:=img[0,j,i];
+        if val>value then
+        begin
+          value:=val;
+        end;
+    end;
+
+    {find center of gravity}
+    SumVal:=0;
+    SumValX:=0;
+    SumValY:=0;
+
+    for i:=-box to +box do
+    for j:=-box to +box do
+    begin
+      val:=value_subpixel(xc+i,yc+j) - value/2;{use only the brightest parts above half max}
+      if val>0 then val:=sqr(val);{sqr highest pixels}
+      SumVal:=SumVal+val;
+      SumValX:=SumValX+val*(i);
+      SumValY:=SumValY+val*(j);
+    end;
+    Xg:=SumValX/SumVal;{offset}
+    Yg:=SumValY/SumVal;
+    xc:=(xc+Xg);
+    yc:=(yc+Yg);
+  end;{repeat}
+ {center of gravity found}
+end;
+
+
 procedure Tmainwindow.enterposition1Click(Sender: TObject);
 var
-  ra2,dec2,pixeldistance,distance,angle,angle2,angle3   : double;
+  ra2,dec2,pixeldistance,distance,angle,angle2,angle3,xc,yc   : double;
   kommapos         : integer;
   error2,flipped   : boolean;
 begin
   if sender=enterposition1 then
   begin
-    shape_marker1_fitsX:=startX+1;
-    shape_marker1_fitsY:=startY+1;
+    find_star_center(img_loaded,10,startX,startY,xc,yc);//find center of gravity
+    shape_marker1_fitsX:=xc+1;//array to fits coordinates
+    shape_marker1_fitsY:=yc+1;
     show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
 
     mouse_positionRADEC1:=InputBox('Enter α, δ of mouse position separated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC1);
@@ -13205,8 +13292,9 @@ begin
   else
   if sender=enterposition2 then
   begin
-    shape_marker2_fitsX:=startX+1;
-    shape_marker2_fitsY:=startY+1;
+    find_star_center(img_loaded,10,startX,startY,xc,yc);//find center of gravity
+    shape_marker2_fitsX:=xc+1;//array to fits coordinates
+    shape_marker2_fitsY:=yc+1;
     show_marker_shape(mainwindow.shape_marker2,0 {rectangle},20,20,0 {minimum size},shape_marker2_fitsX, shape_marker2_fitsY);
 
     mouse_positionRADEC2:=InputBox('Enter α, δ of mouse position separated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC2);
@@ -13237,23 +13325,39 @@ begin
     ang_sep(head.ra0,head.dec0,ra2,dec2 ,distance);{calculate distance in radians}
 
     head.cdelt2:=distance*180/(pi*pixeldistance);
-    if flipped then head.cdelt1:=-head.cdelt2 else head.cdelt1:=head.cdelt2;
+    if flipped then
+      head.cdelt1:=head.cdelt2
+    else
+      head.cdelt1:=-head.cdelt2;
 
     {find head.crota2}
    {see meeus new formula 46.5, angle of moon limb}
-    angle2:=arctan2(cos(dec2)*sin(ra2-head.ra0),sin(dec2)*cos(head.dec0) - cos(dec2)*sin(head.dec0)*cos(ra2-head.ra0)); {angle between line between the two stars and north}
-    angle3:=arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
+   //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+   //   Confirmation by ChatGPT:
+   //   PA=arctan2(sin(δ1)cos(δ0)−sin(δ0)cos(δ1)cos(α1−α0),cos(δ0)sin(α1−α0))
+   //   is seen at point α0,δ0. This means you are calculating the angle at point α0,δ0 (the reference point) towards point α1,δ1 (the target point).
+   //   To clarify:
+   //     Point α0,δ0 (Reference Point): This is where the observation is made from, or the point of reference.
+   //     Point α1,δ1 (Target Point): This is the point towards which the position angle is being measured.
+   //     Position Angle (PA): This is the angle measured at the reference point α0,δ0, going from the direction of the North Celestial Pole towards the target point α1,δ1, measured eastward (or counter-clockwise).
+   //     So in your observational scenario, if you were at point α0,δ0 and wanted to determine the direction to point α1,δ1, the PA would tell you the angle to rotate from the north, moving eastward, to align with the target point.
+
+   angle2:=arctan2(cos(dec2)*sin(ra2-head.ra0),sin(dec2)*cos(head.dec0) - cos(dec2)*sin(head.dec0)*cos(ra2-head.ra0)); {angle between line between the two stars and north as seen at head.ra0, head.dec0}
+   angle3:=arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
 
     if flipped then
-      angle:=(angle2+angle3)  ELSE angle:=(-angle2+angle3);{swapped n-s or e-w image}
+      angle:=(-angle2+angle3){swapped n-s or e-w image}
+    else
+      angle:=(-angle2-angle3);
 
     angle:=fnmodulo(angle,2*pi);
 
     if angle< -pi then angle:=angle+2*pi;
     if angle>=+pi then angle:=angle-2*pi;
 
-    head.crota2:=-angle*180/pi;{head.crota2 is defined north to west, so reverse}
+    head.crota2:=angle*180/pi;
     head.crota1:=head.crota2;
+
 
     old_to_new_WCS(head);{new WCS missing, convert old WCS to new}
 
@@ -13281,9 +13385,7 @@ begin
     update_text   ('PLTSOLVD=','                   T / ASTAP manual with two positions');
 
     update_menu_related_to_solver(true); {update menu section related to solver succesfull}
-
-    plot_north;
-    plot_north_on_image;
+    plot_fits(mainwindow.image1,false,true);
   end;
 end;
 
@@ -13524,77 +13626,6 @@ begin
   result:=round(h)
 end;
 
-
-procedure find_highest_pixel_value(img: image_array;box, x1,y1: integer; out xc,yc:double);{}
-var
-  i,j,k,w,h  : integer;
-  value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
-
-  function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
-  var
-    x_trunc,y_trunc: integer;
-    x_frac,y_frac  : double;
-  begin
-    x_trunc:=trunc(x1);
-    y_trunc:=trunc(y1);
-    if ((x_trunc<=0) or (x_trunc>=(head.width-2)) or (y_trunc<=0) or (y_trunc>=(head.height-2))) then begin result:=0; exit;end;
-    x_frac :=frac(x1);
-    y_frac :=frac(y1);
-    try
-      result:=         (img[0,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-      result:=result + (img[0,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
-      result:=result + (img[0,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-      result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
-    except
-    end;
-  end;
-
-begin
-  w:=Length(img[0,0]); {width}
-  h:=Length(img[0]); {height}
-
-  if ((x1>=box) and (x1<w-box) and (y1>=box) and (y1<h-box))=false then begin {don't try too close to boundaries} xc:=x1; yc:=y1;  exit end;
-
-  xc:=x1;
-  yc:=y1;
-
-  for k:=1 to 2 do {repeat for maximum accuracy}
-  begin
-
-    value:=-99999;
-    {find highest pixel}
-    for i:=round(xc)-box to round(xc)+box do
-    for j:=round(yc)-box to round(yc)+box do
-    begin
-        val:=img[0,j,i];
-        if val>value then
-        begin
-          value:=val;
-        end;
-    end;
-
-    {find center of gravity}
-    SumVal:=0;
-    SumValX:=0;
-    SumValY:=0;
-
-    for i:=-box to +box do
-    for j:=-box to +box do
-    begin
-      val:=value_subpixel(xc+i,yc+j) - value/2;{use only the brightest parts above half max}
-      if val>0 then val:=sqr(val);{sqr highest pixels}
-      SumVal:=SumVal+val;
-      SumValX:=SumValX+val*(i);
-      SumValY:=SumValY+val*(j);
-    end;
-    Xg:=SumValX/SumVal;{offset}
-    Yg:=SumValY/SumVal;
-    xc:=(xc+Xg);
-    yc:=(yc+Yg);
-  end;{repeat}
-
- {center of gravity found}
-end;
 
 procedure plot_simbad(info:string);
 var
@@ -13973,17 +14004,17 @@ begin
   result:=false; {assume failure}
   if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
   begin
-    find_highest_pixel_value(img,10,startX,startY,xc,yc);
+    find_star_center(img,10,startX,startY,xc,yc);
   end
   else
   if pos('medium',stackmenu1.manual_centering1.text)<>0 then {comet}
   begin
-    find_highest_pixel_value(img,20,startX,startY,xc,yc);
+    find_star_center(img,20,startX,startY,xc,yc);
   end
   else
   if pos('large',stackmenu1.manual_centering1.text)<>0 then {comet}
   begin
-    find_highest_pixel_value(img,30,startX,startY,xc,yc);
+    find_star_center(img,30,startX,startY,xc,yc);
   end
 
   else
@@ -14566,9 +14597,9 @@ end;
 
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor, adu_e : double;
-  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str,pa_str                  : string;
-  width5,height5,box_SX,box_SY,flipH,flipV,iterations, box_LX,box_LY                   : integer;
+  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,sd,dummy,conv_factor, adu_e : double;
+  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,pa_str             : string;
+  width5,height5,box_SX,box_SY,flipH,flipV,iterations, box_LX,box_LY   : integer;
   color1:tcolor;
   r,b :single;
 begin
@@ -15656,7 +15687,7 @@ begin
           begin
             jd_start:=jd_start-(GetLocalTimeOffset/(24*60));//convert to local time.
             jd_start:=jd_start-0.5; //move 12 hour earlier to get date beginning night
-            thepath:=RemoveSpecialChars(object_name)+', '+copy(JDtoDate(jd_start),1,10);// the path without special characters
+            thepath:=RemoveSpecialChars(object_name)+', '+copy(JDtoDate(jd_start),1,10)+', '+head_2.filter_name;// the path without special characters
 
             {$ifdef mswindows}
             thepath:=SelectDirectoryDialog1.filename+'\'+thepath;

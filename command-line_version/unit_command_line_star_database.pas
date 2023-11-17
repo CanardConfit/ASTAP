@@ -2749,12 +2749,11 @@ begin
       if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;exit; end
     end
     else
-    if typ in ['d','h'] then
+    if typ in ['d','v','h'] then  //d80,v50, h18
     begin
       if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  exit; end;
-    end
-    else
-    if typ in ['v','g'] then
+    end;// no else since there is a v50 and v17!!
+    if typ in ['v','g'] then //v17, g18
     begin
       if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;exit; end
     end;

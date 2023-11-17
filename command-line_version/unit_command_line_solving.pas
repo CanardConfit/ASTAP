@@ -1279,8 +1279,8 @@ begin
       STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}
       if database_type=1 then
       begin {make smal steps for wide field images. Much more reliable}
-        step_size:=step_size*0.25;
-        max_distance:=round(radius/(0.25*fov2+0.00001)); {expressed in steps}
+        step_size:=step_size*0.1;
+        max_distance:=round(radius/(0.1*fov2+0.00001)); {expressed in steps}
         memo2_message('Wide field, making small steps for reliable solving.');
       end
       else
