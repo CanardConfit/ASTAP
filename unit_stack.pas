@@ -2274,10 +2274,10 @@ begin
                 if focus_temp <> 999 then
                   ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF(focus_temp, ffFixed, 0, 1);
 
-                if head_2.egain <> '' then
+                if head_2.egain<>'' then
                   ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.egain {e-/adu}
                 else
-                if head_2.gain <> '' then
+                if head_2.gain<>'' then
                   ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.gain;
 
                 if centalt = '' then
@@ -7882,6 +7882,10 @@ var
     outliers := nil;
     starCheck := nil;
     starThree := nil;
+
+    //remove following line at the end of 2025
+    if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
+
     Screen.Cursor := crDefault;{back to normal }
   end;
 
@@ -8358,7 +8362,6 @@ begin
 
     plot_graph; {aavso report}
   until ((esc_pressed) or (Sender <> photometry_repeat1 {single run}));
-
 
   nil_all;{nil all arrays and restore cursor}
 end;
@@ -10640,7 +10643,10 @@ begin
       {test compatibility}
       if ((round(head_2.exposure) <> 0 {dark exposure is measured}) and (round(head.exposure){request} <> round(head_2.exposure))) then memo2_message('█ █ █ █ █ █ Warning dark exposure time (' + floattostrF(head_2.exposure, ffFixed, 0, 0) + ') is different then the light exposure time (' + floattostrF(head.exposure, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
       if ((head_2.set_temperature <> 999 {dark temperature is measured}) and (head.set_temperature{request} <> head_2.set_temperature)) then  memo2_message('█ █ █ █ █ █ Warning dark sensor temperature (' + floattostrF(head_2.set_temperature, ffFixed, 0, 0) +') is different then the light sensor temperature (' + floattostrF(head.set_temperature, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
-      if ((head_2.gain <> '' {gain in header}) and (head.gain{request} <> head_2.gain)) then memo2_message('█ █ █ █ █ █ Warning dark gain (' + head_2.gain + ') is different then the light gain (' + head.gain +')! █ █ █ █ █ █ ');
+      if ((head_2.gain <> '' {gain in header}) and (head.gain{request} <> head_2.gain)) then
+        memo2_message('█ █ █ █ █ █ Warning dark gain (' + head_2.gain + ') is different then the light gain (' + head.gain +')! █ █ █ █ █ █ ');
+      if ((head_2.egain <> '' {gain in header}) and (head.egain{request} <> head_2.egain)) then
+        memo2_message('█ █ █ █ █ █ Warning dark egain (' + head_2.egain + ') is different then the light egain (' + head.egain +')! █ █ █ █ █ █ ');
 
       last_dark_loaded := filen; {required for for change in light_jd}
       if head_2.dark_count = 0 then head_2.dark_count := 1; {store in head of reference file}

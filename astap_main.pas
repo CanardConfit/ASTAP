@@ -173,7 +173,6 @@ type
     simbad_query1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
-    Shape1: TShape;
     sip1: TMenuItem;
     solve_button1: TButton;
     zoomfactorone1: TMenuItem;
@@ -9922,7 +9921,7 @@ end;
 
 procedure ang_sep_two_positions(fitsx1,fitsy1,fitsx2,fitsy2 : double; out seperation, pa : string);
 var
-  ra1,dec1,ra2,dec2,sep,DeltaRA : double;
+  ra1,dec1,ra2,dec2,sep : double;
 begin
   if head.cdelt2<>0 then
   begin
@@ -9938,7 +9937,6 @@ begin
 
     {see meeus new formula 46.5, angle of moon limb}
     //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-    DeltaRA := ra2 - ra1;{ Calculate the difference in Right Ascension }
     pa:=FloattostrF(arctan2(cos(dec2)*sin(ra2-ra1),sin(dec2)*cos(dec1) - cos(dec2)*sin(dec1)*cos(ra2-ra1))*180/pi,FFfixed,0,0)+'°';; {Accurate formula. Angle between line between the two stars and north as seen at ra1, dec1}
   end
   else

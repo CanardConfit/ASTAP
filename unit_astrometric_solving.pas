@@ -820,9 +820,13 @@ begin
                 extrastars:=extrastars*1.1;
                 if read_stars(ra_database,dec_database,search_field*oversize,database_type,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
                 begin
+                  {$IFDEF linux}
+                   //keep till 2026
+                   if ((name_database='d50') and (dec_database>pi*(90-15)/180)) then //Files 3502,3503 and 3601.1476 had permission error. Star database fixed on 2023-11-27
+                     application.messagebox(pchar('Star database file permission error near pole. Update the D50 database to crrect !!'), pchar('ASTAP error:'),0)
+                   else
+                  {$ENDIF}
                   application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download and install one star database.'), pchar('ASTAP error:'),0);
-
-
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;
