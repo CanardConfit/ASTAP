@@ -1,0 +1,232 @@
+name: mirror-astap-to-git
+run-name: Mirroring Mercury repo of ASTAP
+on:
+  #push:
+  #  branches: [ tmp ]
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+jobs:
+  mirror:
+    runs-on: self-hosted
+    container: 
+      image: canardconfit/hg-to-git:python3.9.18-alpine3.18
+    steps:
+      - name: Clear All
+        id: clear_all
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: "rm -rf git-repo hg-repo"
+        working-directory: data
+      - name: Check for folders
+        id: folders_check
+        run: |
+          if [ -d "data/hg-repo" ]; then
+            echo "hg_repo=true" >> $GITHUB_OUTPUT
+            echo "hg_repo=true"
+          else
+            echo "hg_repo=false" >> $GITHUB_OUTPUT
+            echo "hg_repo=false"
+          fi
+      - name: Clone Mercury Repo
+        run: hg clone http://hg.code.sf.net/p/astap-program/code data/hg-repo
+        if: steps.folders_check.outputs.hg_repo == 'false'
+      - name: Pull existing Mercury repo
+        run: hg pull
+        if: steps.folders_check.outputs.hg_repo == 'true'
+        working-directory: data/hg-repo
+      - name: Write author file for resolution
+        run: "echo '\"han59\"=\"Han59 <han.k@hnsky.org>\"' > data/authors"
+      - name: Checkout imported branch in git-repo
+        uses: actions/checkout@v4
+        with:
+          ref: imported
+          path: data/git-repo
+      - name: Process mirroring
+        run: /data/fast-export/hg-fast-export.sh -r ../hg-repo --force -A ../authors -M imported
+        working-directory: data/git-repo
+      - name: Push changes to imported
+        uses: ad-m/github-push-action@master
+        with:
+          force_with_lease: true
+          branch: imported
+          directory: data/git-repo
+  run-check: # Maybe utiliser github-script pour check correctement si on a besoin de faire un pR : Error: Unhandled error: HttpError: Validation Failed: {"resource":"PullRequest","code":"custom","message":"A pull request already exists for CanardConfit:imported."}
+    needs: [mirror]
+    runs-on: self-hosted
+    container: 
+      image: node:lts-alpine3.18
+    outputs:
+      needUpdate: ${{ steps.pre-val.outputs.needUpdate }}
+      firstCommitDate: ${{ steps.pre-val.outputs.firstCommitDate }}
+    steps:
+      - name: Checkout imported branch of git-repo
+        uses: actions/checkout@v4
+        with:
+          ref: imported
+          path: data/git-repo
+      - name: Install dependancies
+        run: npm install date-fns
+      - name: PR Approval Status
+        id: pre-val
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const { format } = require("date-fns");
+
+            const baseBranch = 'main';
+            const targetBranch = 'imported';
+
+            // Function to get the last commit of 'main' by the user 'han59'
+            const getLastCommitDate = async (branch, author) => {
+              const commits = await github.rest.repos.listCommits({
+                owner,
+                repo,
+                sha: branch,
+                per_page: 1,
+                author: author,
+              });
+
+              return commits.data.length > 0 ? commits.data[0].commit.author.date : null;
+            };
+
+            // Get the last commit date of 'main' by 'han59'
+            const mainCommitDate = await getLastCommitDate(baseBranch, 'han.k@hnsky.org');
+
+            if (!mainCommitDate) {
+              core.setFailed('Failed to retrieve main commit date by han59.');
+            }
+
+            const formattedMainCommitDate = mainCommitDate
+              ? format(new Date(mainCommitDate), 'yyyy-MM-dd')
+              : null;
+
+            core.setOutput('firstCommitDate', formattedMainCommitDate);
+
+            // Check if 'imported' is ahead of 'main'
+            const compareBranches = async () => {
+              const baseRef = await github.rest.git.getRef({
+                owner,
+                repo,
+                ref: `heads/${baseBranch}`
+              });
+
+              const targetRef = await github.rest.git.getRef({
+                owner,
+                repo,
+                ref: `heads/${targetBranch}`
+              });
+
+              const branchOrder = baseRef.data.object.sha.localeCompare(targetRef.data.object.sha) < 0;
+
+              // Check if there is an open pull request for these changes
+              const prs = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                head: `${owner}:${targetBranch}`,
+                base: baseBranch
+              });
+
+              const prExists = prs.data.length > 0;
+
+              return {
+                branchOrder: branchOrder,
+                prExists: prExists
+              };
+            };
+
+            const result = await compareBranches();
+
+            core.setOutput('needUpdate', result.branchOrder && !result.prExists);
+      - name: Display result
+        run: |
+          echo "Need Update: ${{ steps.pre-val.outputs.needUpdate }}"
+          echo "First Commit Date: ${{ steps.pre-val.outputs.firstCommitDate }}"
+  get-astap-news:
+    needs: [run-check]
+    runs-on: self-hosted
+    container:
+      image: node:latest
+    outputs:
+      content: ${{ steps.get-values.outputs.content }}
+    steps:
+      - name: Checkout main branch of git-repo
+        uses: actions/checkout@v4
+        with:
+          ref: tmp
+          path: git-repo
+      - name: Fetch all branches
+        run: git fetch --all
+        working-directory: git-repo
+      - name: Install npm pre-requises for script
+        run: "npm install"
+        working-directory: git-repo/.github/workflows/ASTAP-scripts
+      - name: Process script for news about ASTAP versions
+        id: get-values
+        run: echo "content=$(npm run start ${{ needs.run-check.outputs.firstCommitDate }} -s)" >> $GITHUB_OUTPUT
+        working-directory: git-repo/.github/workflows/ASTAP-scripts
+  createPullRequest:
+    needs: [run-check, get-astap-news]
+    if: needs.run-check.outputs.needUpdate == 'true'
+    runs-on: self-hosted
+    container: 
+      image: node:lts-alpine3.18
+    steps:
+      - name: Checkout imported branch
+        uses: actions/checkout@v4
+        with:
+          ref: imported
+      - name: Install dependancies
+        run: npm install date-fns
+      - name: Create Pull Request
+        id: cpr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const { format } = require("date-fns");
+            const versionsRaw = JSON.parse(${{needs.get-astap-news.outputs.content}});
+            let versions = {};
+
+            versionsRaw.forEach(function (a) {
+              let title = a.title.replace("v", "");
+              versions[title] = versions[title] || { commits: new Set(), content: a.content.trim() };
+              versions[title].commits.add(a.commit);
+            });
+
+            let ret = "";
+
+            for (var key in versions) {
+              let commits = Array.from(versions[key].commits).join(') (');
+              let content = versions[key].content;
+
+              ret += `### ASTAP_${key} (${commits})\n\n${content}\n\n`;
+            }
+
+            let currentDate = new Date();
+            let mergeDate = new Date();
+            const hours = 10;
+            mergeDate.setTime(mergeDate.getTime() + hours * 60 * 60 * 1000);
+
+            const result = await github.rest.pulls.create({
+              title: '[Automation] [' + format(currentDate, 'yyyy-MM-dd') + '] Mirroring from the Mercury repo',
+              owner,
+              repo,
+              head: 'imported',
+              base: 'main',
+              body: [
+                '## Changelog',
+                '',
+                ret,
+                '',
+                '',
+                '> **NOTE**: This PR is automatically generated and will be automatically merged on **' + format(mergeDate, 'yyyy-MM-dd HH:mm:ss') + '**.',
+              ].join('\n')
+            });
+            github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: result.data.number,
+              labels: ['mirror', 'automated pr']
+            });

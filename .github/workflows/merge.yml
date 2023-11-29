@@ -1,0 +1,81 @@
+name: auto-merge-astap-mirror
+run-name: Merge ASTAP auto Pull Request
+on:
+  #push:
+  #  branches: [ tmp ]
+  schedule:
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+jobs:
+  auto-merge:
+    runs-on: self-hosted
+    container:
+      image: alpine/git:latest
+    steps:
+      - name: Checkout imported branch
+        uses: actions/checkout@v4
+        with:
+          ref: imported
+      - name: List Pull Request
+        id: lpr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const listPulls = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: "open"
+            });
+            
+            for (let pull of listPulls.data) {
+              let create = new Date(pull.created_at);
+              let now = new Date();
+              let t = (now.getTime() - create.getTime()) / 3600000;
+              console.log(pull.title);
+              console.log(pull.html_url);
+              console.log(t + " hour(s).");
+              if (t < 10) {
+                console.log("-> Skipped");
+                continue;
+              }
+              let mirror = false;
+              let automation = false;
+              for (let label of pull.labels) {
+                if (label.name === "mirror") {
+                  mirror = true;
+                }
+                if (label.name === "automated pr") {
+                  automation = true;
+                }
+              }
+              console.log("Automation: " + automation);
+              console.log("Mirror: " + mirror);
+              if (!mirror || !automation) continue;
+            
+              const result = await github.rest.pulls.merge({
+                owner,
+                repo,
+                pull_number: pull.number
+              });
+            
+              console.log("MERGE");
+              console.log(result.status === 200 ? "Merged." : "Not Merged");
+            
+              console.log("CHECK");
+              try {
+                const resultCheck = await github.rest.pulls.checkIfMerged({
+                  owner,
+                  repo,
+                  pull_number: pull.number
+                });
+                console.log(resultCheck.status === 204 ? "Merged." : "Not Merged");
+            
+              } catch (error) {
+                switch (error.status) {
+                  case 404:
+                    core.error('Pull Request was not merged.');
+                    break;
+                }
+              }
+            }
