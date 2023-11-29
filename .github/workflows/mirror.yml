@@ -12,6 +12,10 @@ jobs:
     container: 
       image: canardconfit/hg-to-git:python3.9.18-alpine3.18
     steps:
+      - name: Create data
+        id: create_data
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: "mkdir data"
       - name: Clear All
         id: clear_all
         if: ${{ github.event_name == 'workflow_dispatch' }}
