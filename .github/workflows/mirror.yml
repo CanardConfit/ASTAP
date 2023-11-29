@@ -154,7 +154,7 @@ jobs:
       - name: Checkout main branch of git-repo
         uses: actions/checkout@v4
         with:
-          ref: tmp
+          ref: main
           path: git-repo
       - name: Fetch all branches
         run: git fetch --all
