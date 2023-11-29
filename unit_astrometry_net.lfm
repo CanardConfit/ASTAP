@@ -1,0 +1,153 @@
+object form_astrometry_net1: Tform_astrometry_net1
+  Left = 686
+  Height = 164
+  Top = 156
+  Width = 795
+  Caption = 'Solving using local astrometry.net. '
+  ClientHeight = 164
+  ClientWidth = 795
+  KeyPreview = True
+  OnKeyPress = FormKeyPress
+  OnShow = FormShow
+  LCLVersion = '2.2.4.0'
+  object cygwin1: TComboBox
+    Left = 112
+    Height = 23
+    Hint = 'Path to Astrometry.net. Change user_name to your real user name.'
+    Top = 16
+    Width = 672
+    BorderSpacing.Around = 5
+    ItemHeight = 15
+    ItemIndex = 0
+    Items.Strings = (
+      'C:\Users\user_name\AppData\Local\cygwin_ansvr\bin\bash.exe'
+      'C:\Users\user_name\AppData\Local\Astrometry\bin\bash.exe'
+      'C:\cygwin\bin\bash.exe'
+      'C:\Windows\System32\bash.exe'
+      '/usr/local/astrometry/bin'
+      '/usr/bin'
+    )
+    OnChange = cygwin1Change
+    OnDropDown = cygwin1DropDown
+    ParentColor = True
+    ParentFont = False
+    TabOrder = 0
+    Text = 'C:\Users\user_name\AppData\Local\cygwin_ansvr\bin\bash.exe'
+  end
+  object Label22: TLabel
+    Left = 0
+    Height = 15
+    Top = 56
+    Width = 105
+    Alignment = taRightJustify
+    AutoSize = False
+    BorderSpacing.Around = 5
+    Caption = 'Extra options:'
+    ParentColor = False
+    ParentFont = False
+  end
+  object astrometry_extra_options1: TComboBox
+    Left = 113
+    Height = 23
+    Hint = 'Here you could add additional conditions for Astrometery.net'
+    Top = 56
+    Width = 671
+    BorderSpacing.Around = 5
+    ItemHeight = 15
+    Items.Strings = (
+      '--downsample 2 --crpix-center'
+      '--downsample 2 --no-verify --crpix-center'
+      '--downsample 2 --no-verify --sigma 20 --crpix-center'
+      '--downsample 2 --no-verify --sigma 7 --crpix-center'
+    )
+    ParentColor = True
+    ParentFont = False
+    TabOrder = 1
+    Text = '--downsample 2'
+  end
+  object keep_console_open1: TCheckBox
+    Left = 25
+    Height = 19
+    Hint = 'Keep solver window open'
+    Top = 124
+    Width = 120
+    BorderSpacing.Around = 5
+    Caption = 'Keep console open'
+    OnChange = keep_console_open1Change
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 2
+  end
+  object show_console1: TCheckBox
+    Left = 25
+    Height = 19
+    Hint = 'If grayed show only minimised.'
+    Top = 92
+    Width = 93
+    BorderSpacing.Around = 5
+    Caption = 'Show console'
+    OnChange = show_console1Change
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 3
+  end
+  object Button1: TButton
+    Left = 184
+    Height = 25
+    Top = 128
+    Width = 173
+    AutoSize = True
+    Caption = 'Browse for files and execute'
+    OnClick = Button1Click
+    TabOrder = 4
+  end
+  object solved1: TLabel
+    Left = 544
+    Height = 15
+    Top = 128
+    Width = 47
+    Caption = 'Solved: 0'
+    ParentColor = False
+  end
+  object failed1: TLabel
+    Left = 672
+    Height = 15
+    Top = 128
+    Width = 43
+    Caption = 'Failed: 0'
+    ParentColor = False
+  end
+  object fileprocessed1: TLabel
+    Left = 184
+    Height = 15
+    Top = 96
+    Width = 15
+    Caption = '---'
+    ParentColor = False
+  end
+  object Label1: TLabel
+    Left = 0
+    Height = 15
+    Top = 16
+    Width = 104
+    Alignment = taRightJustify
+    AutoSize = False
+    Caption = 'Command line:'
+    ParentColor = False
+  end
+  object Button2: TButton
+    Left = 384
+    Height = 25
+    Hint = 'Stop after finishing current image'
+    Top = 128
+    Width = 50
+    AutoSize = True
+    Caption = 'Stop'
+    OnClick = Button2Click
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 5
+  end
+end

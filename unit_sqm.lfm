@@ -1,0 +1,263 @@
+object form_sqm1: Tform_sqm1
+  Left = 735
+  Height = 616
+  Top = 81
+  Width = 596
+  Caption = 'SQM measurement'
+  ClientHeight = 616
+  ClientWidth = 596
+  KeyPreview = True
+  OnClose = FormClose
+  OnKeyPress = FormKeyPress
+  OnShow = FormShow
+  Position = poScreenCenter
+  LCLVersion = '2.2.4.0'
+  object help_sqm_measurement1: TLabel
+    Cursor = crHandPoint
+    Left = 544
+    Height = 30
+    Hint = 'Help asteroid annotation'
+    Top = 568
+    Width = 9
+    Caption = '?'
+    Font.Color = clBlue
+    Font.Height = -21
+    ParentColor = False
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    OnClick = help_sqm_measurement1Click
+  end
+  object date_obs1: TEdit
+    Left = 144
+    Height = 23
+    Hint = 'Format YYYY-MM-DDTHH:MM:SS.SSS. Timezone 0, universal time'
+    Top = 24
+    Width = 249
+    BorderSpacing.Around = 5
+    OnExit = date_obs1Exit
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 1
+    Text = '2020-02-11T22:10:41.222'
+  end
+  object date_label1: TLabel
+    Left = 55
+    Height = 15
+    Top = 24
+    Width = 82
+    Anchors = [akTop, akRight]
+    Caption = 'DATE_OBS [UT]:'
+    ParentColor = False
+  end
+  object label_start_mid1: TLabel
+    Left = 408
+    Height = 15
+    Top = 24
+    Width = 123
+    Caption = 'Start of the observation'
+    ParentColor = False
+  end
+  object latitude1: TEdit
+    Left = 144
+    Height = 23
+    Hint = 'The latitude of the observatory in degrees.'
+    Top = 56
+    Width = 113
+    OnChange = latitude1Change
+    OnExit = latitude1Exit
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 2
+    Text = '0'
+  end
+  object Label2: TLabel
+    Left = 91
+    Height = 15
+    Top = 56
+    Width = 46
+    Anchors = [akTop, akRight]
+    Caption = 'Latitude:'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 80
+    Height = 15
+    Top = 88
+    Width = 57
+    Anchors = [akTop, akRight]
+    Caption = 'Longitude:'
+    ParentColor = False
+  end
+  object longitude1: TEdit
+    Left = 144
+    Height = 23
+    Hint = 'The longitude of the observatory in degrees. For east enter positive, for west enter negative values.'
+    Top = 88
+    Width = 113
+    OnChange = longitude1Change
+    OnExit = longitude1Exit
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 3
+    Text = '0'
+  end
+  object ok1: TButton
+    Left = 264
+    Height = 30
+    Hint = 'Ok'
+    Top = 568
+    Width = 86
+    Caption = '✔'
+    Default = True
+    OnClick = ok1Click
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 0
+  end
+  object altitude_label1: TLabel
+    Left = 19
+    Height = 15
+    Top = 248
+    Width = 118
+    Caption = 'Altitude calculated [°]:'
+    ParentColor = False
+  end
+  object sqm_label1: TLabel
+    Left = 20
+    Height = 15
+    Top = 280
+    Width = 117
+    Caption = 'SQM [magn/arcsec²]:'
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 195
+    Top = 360
+    Width = 547
+    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved. (For flux-calibration against the star database)'#13#10'2) The image background value has measurable increased above the pedestal value or mean dark value. '#13#10'    If not expose longer. This increase is caused by the sky glow.'#13#10'3) Apply on a single unprocessed raw image only. '#13#10'4) Providing dark image(s) in tab darks (ctrl+A) or entering a pedestal value  (mean value of a dark) '#13#10'     increases the accuracy. If possible provide also a flat(s) in tab flats. Calibrated images are also fine.'#13#10'5) DSLR/OSC raw images require 2x2 binning. For DSLR images this is done automatically.'#13#10'6)  No very large bright nebula is visible. Most of the image shall contain empty sky filled with stars.'#13#10'7) The calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction of the star light. The altitude is calculated based on time, latitude, '#13#10'    longitude. Note that poor transparency will result in lower values compared with'#13#10'    handheld meters.'
+    ParentColor = False
+  end
+  object Label4: TLabel
+    Left = 7
+    Height = 15
+    Top = 216
+    Width = 130
+    Caption = 'Background (measured):'
+    ParentColor = False
+  end
+  object Label5: TLabel
+    Left = 39
+    Height = 15
+    Top = 128
+    Width = 98
+    Anchors = [akTop, akRight]
+    Caption = 'Pedestal (manual):'
+    ParentColor = False
+  end
+  object pedestal1: TEdit
+    Left = 144
+    Height = 23
+    Hint = 'Enter camera pedestal correction to zero the background. Measure for the median or mean value of a dark frame and use that as pedestal value.'
+    Top = 128
+    Width = 113
+    OnExit = pedestal1Exit
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 4
+    Text = '0'
+  end
+  object background1: TEdit
+    Left = 144
+    Height = 23
+    Hint = 'Automatically measured from the light frame'
+    Top = 216
+    Width = 113
+    Color = clMenu
+    OnChange = longitude1Change
+    ParentShowHint = False
+    ReadOnly = True
+    ShowHint = True
+    TabOrder = 5
+    Text = '0'
+  end
+  object altitude1: TEdit
+    Left = 144
+    Height = 23
+    Hint = 'Calculated from light frame time, geographic location and celestial position'
+    Top = 248
+    Width = 113
+    Color = clMenu
+    OnChange = longitude1Change
+    ParentShowHint = False
+    ReadOnly = True
+    ShowHint = True
+    TabOrder = 6
+    Text = '0'
+  end
+  object sqm1: TEdit
+    Left = 144
+    Height = 23
+    Hint = 'The measured sky background expressed in magnitudes per square arcseconds.'
+    Top = 280
+    Width = 113
+    Color = clMenu
+    Font.Style = [fsBold]
+    OnChange = longitude1Change
+    ParentFont = False
+    ParentShowHint = False
+    ReadOnly = True
+    ShowHint = True
+    TabOrder = 7
+    Text = '0'
+  end
+  object error_message1: TLabel
+    Left = 16
+    Height = 56
+    Top = 312
+    Width = 567
+    AutoSize = False
+    Caption = 'Message: none'
+    Font.Color = clRed
+    ParentColor = False
+    ParentFont = False
+    WordWrap = True
+  end
+  object sqm_applydf1: TCheckBox
+    Left = 280
+    Height = 19
+    Hint = 'Use the darks & flats in the stack menu'
+    Top = 128
+    Width = 113
+    Caption = 'Apply dark && flat '
+    OnChange = sqm_applydf1Change
+    TabOrder = 8
+  end
+  object green_message1: TLabel
+    Left = 144
+    Height = 48
+    Top = 168
+    Width = 432
+    AutoSize = False
+    Caption = 'Message: none'
+    Font.Color = clGreen
+    ParentColor = False
+    ParentFont = False
+    WordWrap = True
+  end
+  object bortle1: TLabel
+    Left = 280
+    Height = 15
+    Hint = 'The Bortle scale is a nine-level numeric scale of the night sky''s brightness.'
+    Top = 280
+    Width = 15
+    Caption = '---'
+    ParentColor = False
+    ParentShowHint = False
+    ShowHint = True
+  end
+end
