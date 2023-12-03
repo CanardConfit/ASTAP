@@ -24,6 +24,7 @@ type
     Label10: TLabel;
     Label11: TLabel;
     Label9: TLabel;
+    name_variable1: TComboBox;
     name_variable2: TEdit;
     magnitude_slope1: TEdit;
     report_error1: TLabel;
@@ -37,7 +38,6 @@ type
     Label2: TLabel;
     Label4: TLabel;
     Label5: TLabel;
-    name_variable1: TEdit;
     Label6: TLabel;
     Label8: TLabel;
     Label3: TLabel;
@@ -51,6 +51,7 @@ type
     procedure name_check1Change(Sender: TObject);
     procedure name_check1DropDown(Sender: TObject);
     procedure name_variable1Change(Sender: TObject);
+    procedure name_variable1DropDown(Sender: TObject);
     procedure report_to_clipboard1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormShow(Sender: TObject);
@@ -91,7 +92,8 @@ uses astap_main,
 
 var
   jd_min,jd_max,magn_min,magn_max : double;
-  w,h,bspace  :integer;
+  w,h,bspace,column_var,column_check  :integer;
+
 
 
 function floattostr3(x:double):string;
@@ -162,7 +164,7 @@ begin
   end;
   aavso_report:= '#TYPE='+detype+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version 1.0.3'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version 1.1.0'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -175,7 +177,7 @@ begin
    begin
      if listview7.Items.item[c].checked then
      begin
-       snr_str:=listview7.Items.item[c].subitems.Strings[P_snr];
+       snr_str:=listview7.Items.item[c].subitems.Strings[column_var+1 {P_snr}];
        if snr_str<>'' then  snr_value:=strtoint(snr_str) else snr_value:=0;
        if snr_value<>0 then
          err_by_snr:=2 {1.087}/strtoint(snr_str)
@@ -209,7 +211,7 @@ begin
          aavso_report:= aavso_report+ name_var+delim+
                         StringReplace(listview7.Items.item[c].subitems.Strings[P_jd_mid],',','.',[])+delim+
 //                        StringReplace(listview7.Items.item[c].subitems.Strings[P_magn1],',','.',[])+delim+
-                        transform_magn(listview7.Items.item[c].subitems.Strings[P_magn1])+delim+
+                        transform_magn(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}])+delim+
                         err+
                         delim+filter_used+delim+
                        'NO'+delim+
@@ -217,7 +219,7 @@ begin
                        'ENSEMBLE'+delim+
                        'na'+delim+
                        abbreviation_check+delim+
-                       stringreplace(listview7.Items.item[c].subitems.Strings[P_magn2],',','.',[])+delim+
+                       stringreplace(listview7.Items.item[c].subitems.Strings[column_check{P_magn2}],',','.',[])+delim+
                        airmass_str+delim+
                        'na'+delim+ {group}
                        abbreviation_var_IAU+delim+
@@ -278,17 +280,72 @@ begin
 end;
 
 procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
+var
+  i: integer;
 begin
-  if name_check1.items.count=0 then
-  begin
-    name_check1.items.add(abbreviation_check);
-    name_check1.items.add(name_check_IAU);
-  end;
+  name_check1.items.clear;
+
+  name_check1.items.add(mainwindow.Shape_alignment_marker2.HINT);
+  name_check1.items.add(abbreviation_check);//the last name
+  name_check1.items.add(name_check_IAU);// created from position
+
+
+  for i:=p_nr_varmax+1 to p_nr do
+    if odd(i-p_nr_varmax) then
+      name_check1.items.add(stackmenu1.listview7.Column[i].Caption);
 end;
+
 
 procedure Tform_aavso1.name_variable1Change(Sender: TObject);
 begin
   plot_graph;
+end;
+
+
+procedure Tform_aavso1.name_variable1DropDown(Sender: TObject);
+var
+  i: integer;
+begin
+  name_variable1.items.clear;
+
+  name_variable1.items.add(mainwindow.Shape_alignment_marker1.HINT);
+  name_variable1.items.add(object_name);//from header
+  name_variable1.items.add(name_var);
+
+  for i:=p_nr_norm+1 to p_nr do
+    if odd(i-p_nr_norm) then
+      name_variable1.items.add(stackmenu1.listview7.Column[i].Caption);
+end;
+
+function find_correct_var_column : integer;
+var
+  i: integer;
+//  s1,s2: string;
+begin
+  for i:=p_nr_norm+1 to p_nr_varmax do
+  begin
+  //  s1:=form_aavso1.name_variable1.text;
+  //  s2:=stackmenu1.listview7.Column[i].Caption;
+    if ((odd(i-p_nr_norm)) and (form_aavso1.name_variable1.text=stackmenu1.listview7.Column[i].Caption)) then
+    begin
+      result:=i-1;
+      exit;
+    end;
+  end;
+  result:=P_magn1;
+end;
+
+function find_correct_check_column : integer;
+var
+  i: integer;
+begin
+  for i:=p_nr_varmax+1 to p_nr do
+    if ((odd(i-p_nr_varmax)) and (form_aavso1.name_check1.text=stackmenu1.listview7.Column[i].Caption)) then
+    begin
+      result:=i-1;
+      exit;
+    end;
+  result:=P_magn2;
 end;
 
 
@@ -344,6 +401,8 @@ begin
   bspace:=2*mainwindow.image1.Canvas.textheight('T');{{border space graph. Also for 4k with "make everything bigger"}
   wtext:=mainwindow.image1.Canvas.textwidth('12.3456');
 
+  column_var:= find_correct_var_column;
+  column_check:=find_correct_check_column;
   setlength(data,4, stackmenu1.listview7.items.count);
   with stackmenu1 do
   for c:=0 to listview7.items.count-1 do {retrieve data from listview}
@@ -358,7 +417,7 @@ begin
         jd_min:=min(jd_min,data[0,c]);
       end;
 
-      dum:=(listview7.Items.item[c].subitems.Strings[P_magn1]);{var star}
+      dum:=(listview7.Items.item[c].subitems.Strings[column_var]);{var star}
       if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[1,c]:=strtofloat(dum) else data[1,c]:=0;
       if data[1,c]<>0 then
       begin
@@ -366,7 +425,7 @@ begin
         magn_min:=min(magn_min,data[1,c]);
       end;
 
-      dum:=(listview7.Items.item[c].subitems.Strings[P_magn2]);{chk star}
+      dum:=(listview7.Items.item[c].subitems.Strings[column_check]);{chk star}
       if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[2,c]:=strtofloat(dum) else data[2,c]:=0;
       if data[2,c]<>0 then
       begin
@@ -528,7 +587,9 @@ begin
   else
   name_variable1.text:=name_var;
 
-  if length(mainwindow.Shape_alignment_marker2.HINT)>2 then abbreviation_check:=mainwindow.Shape_alignment_marker2.HINT;
+
+  if length(mainwindow.Shape_alignment_marker2.HINT)>2 then name_check1.text:=mainwindow.Shape_alignment_marker2.HINT
+  else
   name_check1.text:=abbreviation_check;
 
   delimiter1.itemindex:=delim_pos;
