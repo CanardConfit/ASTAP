@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.04b';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -14160,7 +14160,7 @@ begin
         for fX:=copy_paste_x to copy_paste_x+copy_paste_w-1 do
         begin
           if ((copy_paste_shape=0 {use no ellipse}) or (sqr(fx-center_X)/sqr(a) +sqr(fy-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
-            img_loaded[k,max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
+            img_loaded[k ,max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2)))),max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))) ]:=img_backup[index_backup].img[k,fy,fx];{use backup for case overlap occurs}
         end;
       end;{k color}
       plot_fits(mainwindow.image1,false,true);

@@ -7978,6 +7978,7 @@ begin
       {load image}
       if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0, head_2, img_temp) = False)) then
       begin
+        listview7.Items.EndUpdate;
         nil_all;{nil all arrays and restore cursor}
         exit;
       end;
@@ -8064,6 +8065,7 @@ begin
         mainwindow.Caption := filename2;
 
         Application.ProcessMessages;
+        listview7.Items.BeginUpdate;
 
         if starlistpack = nil then
         begin
@@ -8258,7 +8260,6 @@ begin
             if lvsx>0 then
             begin
               obj_count:=0;
-              listview7.Items.BeginUpdate;
               for j:=0 to lvsx-1 do
               begin
                 celestial_to_pixel(vsx[j].ra, vsx[j].dec, xn, yn);
@@ -8301,9 +8302,6 @@ begin
                   end;
                 end;
               end;
-
-
-              listview7.Items.EndUpdate;
             end;//vsx
           end;//measure AAVSO
 
@@ -8414,6 +8412,8 @@ begin
 
         if annotate_mode1.ItemIndex > 0 then
           mainwindow.variable_star_annotation1Click(nil); //vsp & vsx
+
+        listview7.Items.EndUpdate;
       end;{find star magnitudes}
     end;
     if ((stepnr = 1) and (countvar > 4)) then {do it once after one cycle finished}
