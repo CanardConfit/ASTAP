@@ -1364,8 +1364,7 @@ begin
     columns.add;
     Column[ColumnCount - 1].Caption :=s0;//title
 //    Column[ColumnCount - 1].autosize:=true;
-
-    fwidth:= Round((- GetFontData(stackmenu1.listview7.Font.Handle).height * 72*0.66 / stackmenu1.listview7.Font.PixelsPerInch));//approximate font width
+    fwidth:= Round((- GetFontData(stackmenu1.listview7.Font.Handle).height * 72*0.66 / stackmenu1.listview7.Font.PixelsPerInch));//approximate font width of column caption. Autosize works on the data not on caption
     Column[ColumnCount - 1].width:=20+length(s0)*fwidth;
 
     inc(p_nr);
@@ -7826,7 +7825,7 @@ var
   rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree, database_col,j, obj_count,lvsx,lvsp : integer;
+  countCheck, countThree, database_col,j, obj_count,lvsx,lvsp,nrvars : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
   warned, success: boolean;
   starlistx: star_list;
@@ -8278,9 +8277,11 @@ begin
                   inc(obj_count,2);
                 end;
               end;
+              memo2_message('Added the measuruments of '+inttostr(obj_count)+' variables to tab photometry.');
+              nrvars:=obj_count;
 
               p_nr_varmax:=obj_count+P_nr_norm;//where do the variables end;
-              lvsp:=length(vsx);
+              lvsp:=length(vsp);
               if lvsp>0 then
               begin
                 for j:=0 to lvsp-1 do
@@ -8302,7 +8303,14 @@ begin
                   end;
                 end;
               end;
+              memo2_message('Added the measuruments of '+inttostr(obj_count-nrvars)+' check stars to tab photometry.');
+
             end;//vsx
+
+            with listview7 do
+            while ColumnCount-1>obj_count+P_nr_norm do
+              columns.Delete(ColumnCount-1); //remove older columns if required by reduced database magnitude limit
+
           end;//measure AAVSO
 
         end;
