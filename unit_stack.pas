@@ -40,6 +40,7 @@ type
     add_substract1: TComboBox;
     add_time1: TCheckBox;
     analyse_lights_extra1: TButton;
+    bin_image1: TButton;
     bin_image2: TButton;
     blend1: TCheckBox;
     classify_dark_gain1: TCheckBox;
@@ -138,6 +139,7 @@ type
     undo_button18: TBitBtn;
     undo_button19: TBitBtn;
     undo_button20: TBitBtn;
+    undo_button21: TBitBtn;
     undo_button8: TBitBtn;
     use_triples1: TCheckBox;
     MenuItem33: TMenuItem;
@@ -246,7 +248,6 @@ type
     binning_for_solving_label3: TLabel;
     analyse_objects_visible1: TButton;
     binning_for_solving_label4: TLabel;
-    bin_image1: TButton;
     ignorezero1: TCheckBox;
     Equalise_background1: TCheckBox;
     GroupBox17: TGroupBox;
@@ -931,7 +932,6 @@ type
 var
   starlistpack: array of tstarlistpackage;{for photometry tab}
 
-
 var
   calc_scale: double;
   counterR, counterG, counterB, counterRGB, counterL, counterRdark, counterGdark,
@@ -1109,11 +1109,14 @@ const
   P_centalt = 20;
   P_airmass = 21;
   P_limmagn = 22;
-  P_nr = 23;{number of fields}
+  p_nr_norm = 23;
+  p_nr_varmax : integer=23;{adjustable number of columns. Column where extra var's end}
+  P_nr : integer = 23;{adjustable number of columns. Column where xtra check's end}
 
   I_date = 6;//inspector tab
   I_nr_stars = 7;
   I_focus_pos = 8;
+  I_nr = 20;
 
 
   M_exposure = 0;  {mount analyse}
@@ -1347,11 +1350,31 @@ begin
     ListItem.Checked := is_checked;
     for i := 1 to Count do
       ListItem.SubItems.Add('');
-    //    Items[items.Count-1].Checked:=true;
     {Items.EndUpdate; is set after calling this procedure}
   end;
 end;
 
+procedure listview7_add_column( s0: string);
+var
+  Li: TListItem;
+  i,fwidth: integer;
+begin
+  with stackmenu1.listview7 do
+  begin
+    columns.add;
+    Column[ColumnCount - 1].Caption :=s0;//title
+//    Column[ColumnCount - 1].autosize:=true;
+    fwidth:= Round((- GetFontData(stackmenu1.listview7.Font.Handle).height * 72*0.66 / stackmenu1.listview7.Font.PixelsPerInch));//approximate font width of column caption. Autosize works on the data not on caption
+    Column[ColumnCount - 1].width:=20+length(s0)*fwidth;
+
+    inc(p_nr);
+    for i:=0 to Items.Count - 1 do
+    begin
+      li:=Items.Item[i];
+      li.SubItems.Add('');// add cells
+    end;
+  end;
+end;
 
 procedure listview_add_xy(fitsX, fitsY: double);{add x,y position to listview}
 var
@@ -7178,9 +7201,22 @@ end;
 
 
 procedure Tstackmenu1.clear_photometry_list1Click(Sender: TObject);
+var
+  i: integer;
 begin
   esc_pressed := True; {stop any running action}
+
+  listview7.Items.BeginUpdate;
+
   listview7.Clear;
+
+  //clear added AAVSO columns
+  with stackmenu1.listview7 do
+  for i:=p_nr-1 downto p_nr_norm do
+    columns.Delete(ColumnCount-1);
+  p_nr:=p_nr_norm;//set variable for the number of columns correct;
+
+  listview7.Items.EndUpdate;
 end;
 
 procedure Tstackmenu1.export_aligned_files1Click(Sender: TObject);
@@ -7475,10 +7511,10 @@ begin
             listview7, FileNames[i], True, P_nr);
         {photometry}
         9: listview_add(
-            listview8, FileNames[i], True, P_nr);
+            listview8, FileNames[i], True, I_nr);
         {inspector}
         10: listview_add(
-            listview9, FileNames[i], True, P_nr);{mount}
+            listview9, FileNames[i], True, M_nr);{mount}
         else
         begin {lights}
           listview_add(listview1, FileNames[i], True, L_nr);
@@ -7789,7 +7825,7 @@ var
   rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree, database_col : integer;
+  countCheck, countThree, database_col,j, obj_count,lvsx,lvsp,nrvars : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
   warned, success: boolean;
   starlistx: star_list;
@@ -7941,6 +7977,7 @@ begin
       {load image}
       if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0, head_2, img_temp) = False)) then
       begin
+        listview7.Items.EndUpdate;
         nil_all;{nil all arrays and restore cursor}
         exit;
       end;
@@ -8027,6 +8064,7 @@ begin
         mainwindow.Caption := filename2;
 
         Application.ProcessMessages;
+        listview7.Items.BeginUpdate;
 
         if starlistpack = nil then
         begin
@@ -8212,6 +8250,69 @@ begin
               Inc(countThree);
             end;
           end;
+
+          //all AAVSO objects
+          if stackmenu1.annotate_mode1.itemindex>4 then //measure all AAVSO
+          begin
+            mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
+            lvsx:=length(vsx);
+            if lvsx>0 then
+            begin
+              obj_count:=0;
+              for j:=0 to lvsx-1 do
+              begin
+                celestial_to_pixel(vsx[j].ra, vsx[j].dec, xn, yn);
+                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                begin
+                  if obj_count+P_nr_norm>=p_nr then //add columns
+                  with listview7 do
+                  begin //add column
+                    listview7_add_column(vsx[j].name);
+                    listview7_add_column('SNR');
+                    memo2_message('Added a column for '+vsx[j].name);
+                  end;
+
+                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
+                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
+                  inc(obj_count,2);
+                end;
+              end;
+              memo2_message('Added the measuruments of '+inttostr(obj_count)+' variables to tab photometry.');
+              nrvars:=obj_count;
+
+              p_nr_varmax:=obj_count+P_nr_norm;//where do the variables end;
+              lvsp:=length(vsp);
+              if lvsp>0 then
+              begin
+                for j:=0 to lvsp-1 do
+                begin
+                  celestial_to_pixel(vsp[j].ra, vsp[j].dec, xn, yn);
+                  if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                  begin
+                    if obj_count+P_nr_norm>=p_nr then //add columns
+                    with listview7 do
+                    begin //add column
+                      listview7_add_column(vsp[j].auid);
+                      listview7_add_column('SNR');
+                      memo2_message('Added a column for '+vsp[j].auid);
+                    end;
+
+                    listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
+                    listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
+                    inc(obj_count,2);
+                  end;
+                end;
+              end;
+              memo2_message('Added the measuruments of '+inttostr(obj_count-nrvars)+' check stars to tab photometry.');
+
+            end;//vsx
+
+            with listview7 do
+            while ColumnCount-1>obj_count+P_nr_norm do
+              columns.Delete(ColumnCount-1); //remove older columns if required by reduced database magnitude limit
+
+          end;//measure AAVSO
+
         end;
 
         {calculate vectors from astrometric solution to speed up}
@@ -8318,7 +8419,9 @@ begin
         if outliers <> nil then plot_outliers;
 
         if annotate_mode1.ItemIndex > 0 then
-          mainwindow.variable_star_annotation1Click(nil);
+          mainwindow.variable_star_annotation1Click(nil); //vsp & vsx
+
+        listview7.Items.EndUpdate;
       end;{find star magnitudes}
     end;
     if ((stepnr = 1) and (countvar > 4)) then {do it once after one cycle finished}
@@ -9247,6 +9350,7 @@ begin
   new_colour_luminance1.Enabled:=blend1.checked=false;
 end;
 
+
 procedure Tstackmenu1.classify_dark_temperature1Change(Sender: TObject);
 begin
   delta_dark_temperature_visibility;
@@ -10108,9 +10212,21 @@ end;
 
 
 procedure Tstackmenu1.analysephotometry1Click(Sender: TObject);
+var
+  c: integer;
 begin
   if Sender = analysephotometrymore1 then
-    analyse_listview(listview7, True {light}, True {full fits}, True{refresh})
+  begin
+    analyse_listview(listview7, True {light}, True {full fits}, True{refresh});
+//    for c:=0 to listview7.items.Count - 1 do
+//    begin
+//      if listview7.Items.item[c].Checked then
+//      begin
+//        listview_view(listview7);// show image and plot annotations
+//        break;// stop for loop
+//      end;
+//    end;
+  end
   else
     analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
 
@@ -10397,7 +10513,8 @@ begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img; {move viewer data to img_backup}
-    if bin_factor1.ItemIndex = 0 then bin_X2X3X4(2)
+    if bin_factor1.ItemIndex = 0 then
+      bin_X2X3X4(2)
     else
       bin_X2X3X4(3);
 

@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.11.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -9419,8 +9419,9 @@ begin
 
   case stackmenu1.annotate_mode1.itemindex of
        0,1: lim_magn:=-99;//use local database
-       2:   lim_magn:=13;
-       3:   lim_magn:=15;
+       2,5:   lim_magn:=13;
+       3,6:   lim_magn:=15;
+       4,7:   lim_magn:=99;
        else
              lim_magn:=99;
      end; //case
@@ -9434,8 +9435,9 @@ begin
         if download_vsx(lim_magn)=false then begin memo2_message('Error!');break; end;
         if download_vsp(lim_magn)=false then begin memo2_message('Error!');break; end;
       end;
-      plot_vsx_vsp;
-    until true;
+      if sender<>stackmenu1.photometry_button1 then
+                   plot_vsx_vsp;
+    until true;//allow breaks to skip and go to cursor statement
   end
   else
   begin //local version
@@ -14097,7 +14099,7 @@ begin
         if ((abs(shape_fitsX2-xcf)<=3) and (abs(shape_fitsY2-ycf)<=3)) then begin shape_fitsX2:=shape_fitsX3;shape_fitsY2:=shape_fitsY3;end;
         shape_fitsX3:=xcf; shape_fitsY3:=ycf;
       end;
-      Shape_alignment_marker1.HINT:='? Refresh plotting';//reset any labels
+      Shape_alignment_marker1.HINT:='?';//reset any labels
       Shape_alignment_marker2.HINT:='?';
       show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
       show_marker_shape(mainwindow.shape_alignment_marker2,shapetype,20,20,10{minimum},shape_fitsX2, shape_fitsY2);
@@ -14158,7 +14160,7 @@ begin
         for fX:=copy_paste_x to copy_paste_x+copy_paste_w-1 do
         begin
           if ((copy_paste_shape=0 {use no ellipse}) or (sqr(fx-center_X)/sqr(a) +sqr(fy-center_Y)/sqr(b)<1)) then // standard equation of the ellipse
-            img_loaded[k,max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
+            img_loaded[k ,max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2)))),max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))) ]:=img_backup[index_backup].img[k,fy,fx];{use backup for case overlap occurs}
         end;
       end;{k color}
       plot_fits(mainwindow.image1,false,true);
