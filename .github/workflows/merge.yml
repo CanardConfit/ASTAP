@@ -6,6 +6,11 @@ on:
   schedule:
     - cron: '0 23 * * *'
   workflow_dispatch:
+    inputs:
+      forced:
+        description: 'Force merge without time checking?'
+        required: false
+        default: 'false'
 jobs:
   auto-merge:
     runs-on: self-hosted
@@ -35,9 +40,11 @@ jobs:
               console.log(pull.title);
               console.log(pull.html_url);
               console.log(t + " hour(s).");
-              if (t < 10) {
+              if (t < 10 && ${{ github.event.inputs.forced == 'false' }}) {
                 console.log("-> Skipped");
                 continue;
+              } else if (t < 10) {
+                console.log("-> Forced");
               }
               let mirror = false;
               let automation = false;
