@@ -40,11 +40,11 @@ jobs:
               console.log(pull.title);
               console.log(pull.html_url);
               console.log(t + " hour(s).");
-              if (t < 10 && ${{ github.event.inputs.forced == 'false' }}) {
-                console.log("-> Skipped");
-                continue;
-              } else if (t < 10) {
-                console.log("-> Forced");
+              if (${{ !github.event.inputs.forced || github.event.inputs.forced == 'false' }}) {
+                if (t < 10) {
+                  console.log("-> Skipped");
+                  continue;
+                }
               }
               let mirror = false;
               let automation = false;
