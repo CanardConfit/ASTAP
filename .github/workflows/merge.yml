@@ -45,6 +45,8 @@ jobs:
                   console.log("-> Skipped");
                   continue;
                 }
+              } else {
+                  console.log("-> Forced");
               }
               let mirror = false;
               let automation = false;
