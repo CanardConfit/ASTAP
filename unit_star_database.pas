@@ -2793,21 +2793,23 @@ begin
 
   if ((fov>6) and (fileexists( database_path+'g05_0101.290'))) then begin name_database:='g05'; database_type:=290; end //preference for G05 for large FOV
   else
+  if ((fov>6) and (fileexists( database_path+'v05_0101.290'))) then begin name_database:='v05'; database_type:=290; end
+  else
   if ((fov>6) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; warning:=true; end //preference for V17 for large FOV
   else
-  if ((fov<=0.5) and (fileexists( database_path+'d80_0101.1476'))) then begin name_database:='d80'; end //for tiny field of view
-  else
-  if fileexists( database_path+'v50_0101.1476') then begin name_database:='v50'; end //photometry database
+  if fileexists( database_path+'d80_0101.1476') then begin name_database:='d80'; end //for tiny field of view
   else
   if fileexists( database_path+'d50_0101.1476') then begin name_database:='d50'; end
+  else
+  if fileexists( database_path+'v50_0101.1476') then begin name_database:='v50'; end //photometry database
   else
   if fileexists( database_path+'d20_0101.1476') then begin name_database:='d20'; end
   else
   if fileexists( database_path+'d05_0101.1476') then begin name_database:='d05'; end
   else
-  if fileexists( database_path+'d80_0101.1476') then begin name_database:='d80'; end //for somebody wo installs the d80 for large FOV, >0.5 degrees
-  else
   if fileexists( database_path+'g05_0101.290') then begin name_database:='g05'; database_type:=290; end
+  else
+  if fileexists( database_path+'v05_0101.290') then begin name_database:='v05'; database_type:=290; end
   else
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18';warning:=true; end //old database sorted on magnitude
   else
