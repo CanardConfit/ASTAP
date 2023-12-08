@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -4747,7 +4747,7 @@ begin
      height:=hh;
      ww:= max(minimum,round(w*mainwindow.image1.width/head.width));
      width:=ww;
-     ll:=round(mainwindow.image1.left + x - width/2);
+     ll:=round(mainwindow.image1.left + x - (width)/2);
      left:=ll;
      tt:=round(mainwindow.image1.top   + y - height/2);
      top:=tt;
@@ -4779,7 +4779,6 @@ begin
   else
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker3) then
     begin mainwindow.labelThree1.left:=ll+ww; mainwindow.labelThree1.top:=tt+hh; mainwindow.labelThree1.font.size:=max(hh div 4,14); mainwindow.labelThree1.visible:=true;end;
-
 end;
 
 
@@ -9418,10 +9417,10 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   case stackmenu1.annotate_mode1.itemindex of
-       0,1: lim_magn:=-99;//use local database
-       2,5:   lim_magn:=13;
-       3,6:   lim_magn:=15;
-       4,7:   lim_magn:=99;
+       0,1,5: lim_magn:=-99;//use local database
+       2,6:   lim_magn:=13;
+       3,7:   lim_magn:=15;
+       4,8:   lim_magn:=99;
        else
              lim_magn:=99;
      end; //case
@@ -10702,6 +10701,8 @@ begin
   text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
   mainwindow.image1.Canvas.Pen.Color := clred;
+  mainwindow.image1.Canvas.Pen.mode := pmXor;
+
 
   if subframe then
   begin
@@ -11413,11 +11414,14 @@ procedure Tmainwindow.FormDestroy(Sender: TObject);
 begin
   settingstring.free;
   deepstring.free;{free deepsky}
-  wide_field_stars:=nil; {free wide_field_database}
   recent_files.free;
-  vsp:=nil;
-  online_database:=nil; // free mem
-  streak_lines:=nil;
+
+// arrays and string are automatic deallocated
+//  wide_field_stars:=nil; {free wide_field_database}
+//  vsp:=nil;
+//  vsx:=nil;
+//  online_database:=nil; // free mem
+//  streak_lines:=nil;
 end;
 
 

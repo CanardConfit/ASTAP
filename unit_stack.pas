@@ -3942,8 +3942,8 @@ end;
 procedure Tstackmenu1.listview1DblClick(Sender: TObject);
 begin
   listview_view(TListView(Sender));
-  if ((pagecontrol1.tabindex = 8) {photometry} and (annotate_mode1.ItemIndex > 0)) then
-    mainwindow.variable_star_annotation1Click(nil); //plot variable stars and comp star annotations
+//  if ((pagecontrol1.tabindex = 8) {photometry} and (annotate_mode1.ItemIndex > 0)) then
+//    mainwindow.variable_star_annotation1Click(nil); //plot variable stars and comp star annotations
   Screen.Cursor := crDefault;;//just to be sure for Mac.
 end;
 
@@ -7200,9 +7200,20 @@ begin
 end;
 
 
-procedure Tstackmenu1.clear_photometry_list1Click(Sender: TObject);
+
+procedure clear_added_AAVSO_columns;
 var
   i: integer;
+begin
+  //clear added AAVSO columns
+  with stackmenu1.listview7 do
+  for i:=p_nr-1 downto p_nr_norm do
+    columns.Delete(ColumnCount-1);
+  p_nr:=p_nr_norm;//set variable for the number of columns correct;
+
+end;
+
+procedure Tstackmenu1.clear_photometry_list1Click(Sender: TObject);
 begin
   esc_pressed := True; {stop any running action}
 
@@ -7210,11 +7221,7 @@ begin
 
   listview7.Clear;
 
-  //clear added AAVSO columns
-  with stackmenu1.listview7 do
-  for i:=p_nr-1 downto p_nr_norm do
-    columns.Delete(ColumnCount-1);
-  p_nr:=p_nr_norm;//set variable for the number of columns correct;
+  clear_added_AAVSO_columns;
 
   listview7.Items.EndUpdate;
 end;
@@ -7894,6 +7901,8 @@ var
     k: integer;
   begin
     mainwindow.image1.Canvas.Pen.Color := clyellow;
+    mainwindow.image1.Canvas.Pen.mode := pmXor;
+
     for k := 0 to length(outliers[0]) - 1 do
     begin
       if flipvertical = False then  starY := round(head.Height - (outliers[1, k]))
@@ -7918,6 +7927,7 @@ var
     outliers := nil;
     starCheck := nil;
     starThree := nil;
+    variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
 
     //remove following line at the end of 2025
     if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
@@ -8251,8 +8261,40 @@ begin
             end;
           end;
 
-          //all AAVSO objects
-          if stackmenu1.annotate_mode1.itemindex>4 then //measure all AAVSO
+          //measure all AAVSO objects
+          if stackmenu1.annotate_mode1.itemindex=5 then //measure all AAVSO stars using the position from the local database
+          begin
+            if length(variable_list)=0 then
+            begin
+              clear_added_AAVSO_columns;
+              setlength(variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
+              mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
+            end;
+            if variable_list_length>0 then
+            begin
+              obj_count:=0;
+              for j:=0 to variable_list_length do
+              begin
+                celestial_to_pixel(variable_list[j].ra, variable_list[j].dec, xn, yn);
+                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                begin
+                  if obj_count+P_nr_norm>=p_nr then //add columns
+                  with listview7 do
+                  begin //add column
+                    listview7_add_column(variable_list[j].abbr);
+                    listview7_add_column('SNR');
+                    memo2_message('Added a column for '+variable_list[j].abbr);
+                  end;
+                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
+                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
+                  inc(obj_count,2);
+                end;
+              end;
+            end;
+            memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
+          end
+          else
+          if stackmenu1.annotate_mode1.itemindex>5 then //measure all AAVSO using the online vsx, vsp
           begin
             mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
             lvsx:=length(vsx);
@@ -8277,7 +8319,7 @@ begin
                   inc(obj_count,2);
                 end;
               end;
-              memo2_message('Added the measuruments of '+inttostr(obj_count)+' variables to tab photometry.');
+              memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
               nrvars:=obj_count;
 
               p_nr_varmax:=obj_count+P_nr_norm;//where do the variables end;
@@ -8303,7 +8345,7 @@ begin
                   end;
                 end;
               end;
-              memo2_message('Added the measuruments of '+inttostr(obj_count-nrvars)+' check stars to tab photometry.');
+              memo2_message('Added the measuruments of '+inttostr((obj_count-nrvars) div 2)+' check stars to tab photometry.');
 
             end;//vsx
 
@@ -8311,7 +8353,9 @@ begin
             while ColumnCount-1>obj_count+P_nr_norm do
               columns.Delete(ColumnCount-1); //remove older columns if required by reduced database magnitude limit
 
-          end;//measure AAVSO
+          end //measure AAVSO
+          else
+          if p_nr>p_nr_norm then clear_added_AAVSO_columns;
 
         end;
 

@@ -36,6 +36,19 @@ var  {################# initialised variables #########################}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
   database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
 
+type
+  tvariable_list = record {for photometry tab}
+    ra  : double;
+    dec  : double;
+    abbr : string;
+  end;
+
+var
+  variable_list: array of tvariable_list;{for photometry tab}
+  variable_list_length : integer=0;
+
+
+
 implementation
 
 uses
@@ -1322,7 +1335,7 @@ var
   dra,ddec, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,
   gx_orientation, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0 : double;
   name: string;
-  flip_horizontal, flip_vertical: boolean;
+  flip_horizontal, flip_vertical,fill_variable_list: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y : integer;
   overlap          : boolean;
@@ -1333,6 +1346,12 @@ begin
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
+    fill_variable_list:=stackmenu1.annotate_mode1.itemindex=5;//for photometry tab
+    if fill_variable_list=false then
+    begin
+      variable_list:=nil; //for photometry tab
+      variable_list_length:=0;
+    end;
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     {find RA, DEC position of the middle of the image}
@@ -1356,6 +1375,7 @@ begin
 
 
     mainwindow.image1.canvas.pen.color:=annotation_color;
+    mainwindow.image1.canvas.pen.Mode:=pmXor;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.color:=annotation_color;
 
@@ -1478,6 +1498,15 @@ begin
              mainwindow.image1.Canvas.lineto(x,y1);
            end;
            mainwindow.image1.Canvas.textout(x1,y1,name);
+
+           if ((fill_variable_list) and (text_counter<length(variable_list))) then //special option to add objects to list for photometry
+           begin
+             variable_list[text_counter].ra:=ra2;
+             variable_list[text_counter].dec:=dec2;
+             variable_list[text_counter].abbr:=naam2;
+             variable_list_length:=text_counter;
+           end;
+
            inc(text_counter);
            if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
          end;{centre object visible}
@@ -1533,7 +1562,6 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
@@ -1557,13 +1585,12 @@ begin
 
 
     mainwindow.image1.canvas.pen.color:=annotation_color;
+    mainwindow.image1.canvas.pen.mode:=pmXor;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.size:=8;//round(min(20,max(8,len /2)));
 
-
     text_counter:=0;
     setlength(text_dimensions,200);
-
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
@@ -1706,10 +1733,14 @@ begin
           {plot deepsky object}
           mainwindow.image1.Canvas.Pen.width :=1;//min(4,max(1,round(len/70)));
 
+
+
           mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
           mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
           mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
           mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
+
+
         end;
         inc(count);
       end;//while loop
@@ -1956,6 +1987,7 @@ begin
     coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
+    mainwindow.image1.Canvas.Pen.mode:=pmCopy;
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
 
 
@@ -2384,6 +2416,7 @@ begin
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
     coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
+    mainwindow.image1.Canvas.Pen.mode:=pmCopy;
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
     if sip=false then mainwindow.image1.canvas.pen.color:=$00B0FF {orange}
                  else mainwindow.image1.canvas.pen.color:=$00FF00; {green}
@@ -2486,7 +2519,7 @@ begin
       astrometric_error:=smedian(error_array,sub_counter);
       memo2_message('The center median astrometric error is '+floattostr4(astrometric_error*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error)+' pixel using '+inttostr(sub_counter)+ ' stars.');
 
-
+      mainwindow.image1.Canvas.Pen.mode:=pmXor;
       mainwindow.image1.canvas.pen.color:=annotation_color;
       mainwindow.image1.Canvas.brush.Style:=bsClear;
       mainwindow.image1.Canvas.font.color:=annotation_color;

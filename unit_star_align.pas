@@ -144,6 +144,8 @@ begin
 
   nrquads:=Length(starlistquads[0])-1;
 
+  mainwindow.image1.Canvas.Pen.mode:=pmXor;
+
   for i:=0 to nrquads do
   begin
     mainwindow.image1.Canvas.Pen.Color :=$606060 +random($9F9F9F);

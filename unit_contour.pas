@@ -365,6 +365,7 @@ var
             begin  // A real line, sd max is about line thickness plus a nearby star.
               if plot then
               begin
+                mainwindow.image1.Canvas.Pen.mode:=pmXor;
                 mainwindow.image1.Canvas.Pen.Color := clred;
                 draw_streak_line(slope,intercept);//draw satellite streak
 
@@ -437,7 +438,6 @@ begin
     setlength(img_sa,1,hh,ww);{set length of image array}
 
     gaussian_blur2(img_bk, blur);{apply gaussian blur }
-    // get_hist(0,img_bk);{get histogram of img_bk and his_total. Required to get correct background value}
     get_background(0,img_bk,{cblack=0} false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
     detection_level:=sigmafactor*bck.noise_level+ bck.backgr;

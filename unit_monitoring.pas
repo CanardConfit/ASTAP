@@ -123,6 +123,7 @@ begin
       begin
         canvas.brush.color:=clmenu;
         Canvas.FillRect(rect(0,0,width,height));
+        mainwindow.image1.Canvas.Pen.mode:=pmXor;
         Canvas.Pen.Color := clred;
         canvas.pen.Width:=5;
         Canvas.brush.Style:=bsClear;
