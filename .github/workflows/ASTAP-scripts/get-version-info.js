@@ -49,6 +49,11 @@ axios.get('https://www.hnsky.org/history_astap').then(async response => {
     const commitsRaw = await git.log({ fs, dir: "../../../", ref: "refs/remotes/origin/imported", since: new Date(specificDate) })
     const commits = commitsRaw.map(commit => {
         let date = DateTime.fromSeconds(commit.commit.author.timestamp, {zone: `UTC${commit.commit.author.timezoneOffset/60}`});
+        
+        if (date >= DateTime.fromISO(specificDate, { zone: 'UTC' })) {
+            return null;
+        }
+        
         let title = commit.commit.message.replace("\n", "").replaceAll("'", "");
         let content = listDates.find(d => d.date === title.replace("v", "").replaceAll(".", "-"));
         return {
@@ -57,7 +62,7 @@ axios.get('https://www.hnsky.org/history_astap').then(async response => {
             title: title,
             content: content ? content.content : "Nothing found about this version"
         };
-    });
+    }).filter(commit => commit !== null);
 
     console.log(`${JSON.stringify(JSON.stringify(commits))}`);
 
