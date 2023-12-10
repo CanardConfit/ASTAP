@@ -378,9 +378,9 @@ begin
           begin
             if  sqrradius>=sqr(0.25)*(sqr(head.width div 2)+sqr(head.height div 2))  then {outside center}
             begin
-              if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+100);end;{sector 1}
-              if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+100);end;{sector 2}
-              if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+100);end;{sector 3}
+              if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+1000);end;{sector 1}
+              if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+1000);end;{sector 2}
+              if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+1000);end;{sector 3}
             end
             else
             begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22);end;{round center}
@@ -653,9 +653,6 @@ begin
 
     hfd_values[2,i]:=b;  {hfd*100, place median value in this cell}
 
-//    if b=701 then
-//     beep;
-
     if max_value<b then max_value:=b;
     if min_value>b then min_value:=b;
      mean:=mean+b;
@@ -689,8 +686,8 @@ begin
     begin
       col:=hfd_values[2,i];
 
-      for x:=-size to size do
       for y:=-size to size do
+      for x:=-size to size do
       if round(sqrt(sqr(x)+sqr(y)))=size then
       begin
         x2:=round(hfd_values[0,i]/scaledown) + x;
@@ -743,28 +740,27 @@ begin
   max_value:=0;
   min_value:=65535;
 
-  pixels_per_star:=w*h/nr;
+  pixels_per_star:=w*h/nr;// average surface per star in pixels
 
-  factor:=2*sqrt(pixels_per_star); {take the square root to get calculate the average distance in pixels between the stars/measuring points}
-  for x:=0 to w-1 do
-  for y:=0 to h-1 do
+  factor:=2*sqrt(pixels_per_star); //take the square root to get calculate the average distance in pixels between the stars/measuring points
+  for y:=0 to h-1 do  //move in y
+  for x:=0 to w-1 do  //move in x
   begin
-    cols:=mean;
+    cols:=mean; // background value
     sum_influence:=0;
-    for i:=0 to nr-1 do {go through all points}
+    for i:=0 to nr-1 do //go through all HFD points and adapt the local luminance depending on all HFD values of the stars. The closer HFD points have more influence
     begin
       x2:=round(hfd_values[0,i]/ scaledown);
       y2:=round(hfd_values[1,i]/ scaledown);
       distance:=sqrt(sqr(x2-x)+sqr(y2-y));
       influence:=factor/(factor+distance);
-      sum_influence:=sum_influence+influence;
-      cols:=cols+hfd_values[2,i]*influence;
+      sum_influence:=sum_influence+influence;// sum of all influences for position x,y.
+      cols:=cols+hfd_values[2,i]*influence; //adapt the luminance at position x, y by the HFD value at position i in list.
     end;
-    cols:=cols/sum_influence;
+    cols:=cols/sum_influence; //scale the luminance value.
     if max_value<cols then max_value:=cols;
     if min_value>cols then min_value:=cols;
-    img_hfd[0,y,x]:=cols;
-
+    img_hfd[0,y,x]:=cols; //set the pixel in the contour plot
   end;
 
   if head.naxis>1 then setlength(img_loaded,1,head.height,head.width);
@@ -889,7 +885,8 @@ procedure plot_vector(x,y,r,orientation : double);
 var sinO,cosO,xstep,ystep              : double;
     wd                                 : integer;
 begin
- wd:=max(1,head.height div 1000);
+  wd:=max(1,head.height div 1000);
+  mainwindow.image1.Canvas.Pen.mode:=pmXor;
   mainwindow.image1.canvas.Pen.Color := clred;
   mainwindow.image1.canvas.Pen.width := wd;
 
@@ -999,7 +996,7 @@ begin
                   SetLength(hfd_values,4,nhfd+2000);{adapt length if required}
               hfd_values[0,nhfd]:=xc;
               hfd_values[1,nhfd]:=yc;
-              hfd_values[2,nhfd]:=hfd1;{star aspect}
+              hfd_values[2,nhfd]:=hfd1*1000;{hfd or star aspect * 1000}
               hfd_values[3,nhfd]:=orientation;    {star orientation 0..179}
               inc(nhfd);
 
@@ -1045,7 +1042,7 @@ begin
      begin
        if Fliphorizontal     then starX:=head.width-round(hfd_values[0,i])  else starX:=round(hfd_values[0,i]);
        if Flipvertical       then starY:=head.height-round(hfd_values[1,i]) else starY:=round(hfd_values[1,i]);
-       annotation_to_array(floattostrf(hfd_values[2,i]{/100} {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starY,starX]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
+       annotation_to_array(floattostrf(hfd_values[2,i]/1000 {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starY,starX]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/300),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
      end;
      hfds[i]:=hfd_values[2,i];
   end;
@@ -1061,7 +1058,7 @@ begin
   else
   begin
      mess:='10% of the HFD measurements is worse or equal then ';
-     mess:=mess+floattostrf(med/100 , ffgeneral, 2,1);
+     mess:=mess+floattostrf(med/1000 , ffgeneral, 2,1);
   end;
   memo2_message(mess);
   annotation_to_array(mess,true {transparent},65535,size*2 {size},5,10+size*2*9,img_loaded); {report median value}
@@ -1071,7 +1068,7 @@ begin
   if ((aspect) and (vectors)) then
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
   begin
-    plot_vector(hfd_values[0,i],hfd_values[1,i],50*(hfd_values[2,i]/100-1) {aspect},hfd_values[3,i]*pi/180);
+    plot_vector(hfd_values[0,i],hfd_values[1,i],50*(hfd_values[2,i]/1000-1) {aspect},hfd_values[3,i]*pi/180);
   end;
   hfd_values:=nil;
 end;
@@ -1083,9 +1080,10 @@ var
   demode : char;
   aspect : boolean;
 begin
+  form_inspection1.undo_button1Click(nil);{undo if required}
+
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  form_inspection1.undo_button1Click(nil);{undo if required}
   backup_img;
   executed:=2;{restore required to undo}
 
@@ -1139,7 +1137,7 @@ begin
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-  if demode='V'  then update_text   ('COMMENT G','  Grey values indicate measured values * 100');
+  if demode='V'  then update_text   ('COMMENT G','  Grey values indicate measured values * 1000');
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
@@ -1260,6 +1258,7 @@ begin
   if head.naxis=0 then exit; {file loaded?}
 
   form_inspection1.undo_button1Click(nil);{undo if required}
+
   executed:=1;{only refresh required to undo}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
