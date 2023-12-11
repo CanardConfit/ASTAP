@@ -175,7 +175,7 @@ type
     calc_polar_alignment_error1: TButton;
     planetary_image1: TCheckBox;
     classify_dark_date1: TCheckBox;
-    flat_combine_method1: TComboBox;
+    box_blur_factor1: TComboBox;
     GroupBox8: TGroupBox;
     green_purple_filter1: TCheckBox;
     help_mount_tab1: TLabel;
@@ -991,7 +991,7 @@ procedure listview_add_xy(fitsX, fitsY: double);{add x,y position to listview}
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 procedure update_tab_alignment;{update stackmenu1 menus}
-procedure box_blur(colors, range: integer;  var img: image_array);{combine values of pixels, ignore zeros}
+procedure box_blur(colors, range : integer; var img: image_array);{blur by combining values of pixels, ignore zeros}
 procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter(var img: image_array); {remove black spots with value zero}{execution time about 0.4 sec}
 
@@ -2772,7 +2772,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
-  gaussian_blur2(img_loaded, 4 * strtofloat2(most_common_filter_radius1.Text));
+  gaussian_blur2(img_loaded, 2 * strtofloat2(most_common_filter_radius1.Text));
   plot_fits(mainwindow.image1, False, True);{plot}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
@@ -4526,8 +4526,7 @@ end;
 
 
 
-procedure box_blur(colors, range: integer;
-  var img: image_array);{combine values of pixels, ignore zeros}
+procedure box_blur(colors, range : integer; var img: image_array);{blur by combining values of pixels, ignore value above max_value and zeros}
 var
   fitsX, fitsY, k, x1, y1, col, w, h, i, j, counter, minimum, maximum: integer;
   img_temp2: image_array;
@@ -4556,9 +4555,9 @@ begin
   end {combine values of 16 pixels}
   else
   begin
-    minimum := -2;
-    maximum := +2;
-  end; {combine values of 25 pixels}
+    minimum := - range div 2;
+    maximum := + range div 2;
+  end; {if range is 5 then combine values of 25 pixels total}
 
   setlength(img_temp2,col, h, w);{set length of image array}
   for k := 0 to col - 1 do
@@ -9282,6 +9281,8 @@ end;
 
 
 procedure Tstackmenu1.apply_box_filter2Click(Sender: TObject);
+var
+  blur_factor : integer;
 begin
   if Length(img_loaded) = 0 then
   begin
@@ -9291,7 +9292,8 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
-  box_blur(1 {nr of colors}, 2, img_loaded);
+  blur_factor:=2+box_blur_factor1.ItemIndex;//box blur factor
+  box_blur(1 {nr of colors}, blur_factor, img_loaded);
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1, False, True);{plot real}
@@ -10557,10 +10559,11 @@ begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img; {move viewer data to img_backup}
-    if bin_factor1.ItemIndex = 0 then
-      bin_X2X3X4(2)
-    else
-      bin_X2X3X4(3);
+    case bin_factor1.ItemIndex of
+      0: bin_X2X3X4(2);
+      1: bin_X2X3X4(3);
+      2: bin_X2X3X4(4);
+    end;
 
     plot_fits(mainwindow.image1, True, True);{plot real}
     Screen.Cursor := crDefault;

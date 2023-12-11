@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -777,8 +777,9 @@ function strtoint2(s: string;default:integer):integer; {str to integer, fault to
 function strtofloat1(s:string): double;{string to float, error tolerant}
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function TextfileSize(const name: string): LongInt;
-function floattostr6(x:double):string;
-function floattostr4(x:double):string;
+function floattostr6(x:double):string;//always with dot decimal seperator
+function floattostr4(x:double):string;//always with dot decimal seperator
+function floattostr2(x:double):string;//always with dot decimal seperator
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 procedure get_hist(colour:integer;img :image_array);{get histogram of img_loaded}
 procedure save_settings2;
@@ -5605,17 +5606,22 @@ begin
 end;
 
 
-function floattostr6(x:double):string;{float to string with 6 decimals}
+function floattostr6(x:double):string;//always with dot decimal seperator. Float to string with 6 decimals
 begin
   str(x:0:6,result);
 end;
 
 
-function floattostr4(x:double):string;
+function floattostr4(x:double):string;//always with dot decimal seperator
 begin
   str(x:0:4,result);
 end;
 
+
+function floattostr2(x:double):string;//always with dot decimal seperator
+begin
+  str(x:0:2,result);
+end;
 
 function floattostrE(x:double):string;
 begin
@@ -7653,7 +7659,8 @@ begin
       c:=Sett.ReadInteger('stack','mosaic_crop',987654321);if c<>987654321 then stackmenu1.mosaic_crop1.position:=c;
 
       c:=Sett.ReadInteger('stack','stack_method',987654321); if c<>987654321 then stackmenu1.stack_method1.itemindex:=c;
-      c:=Sett.ReadInteger('stack','flat_combine_method',987654321);if c<>987654321 then stackmenu1.flat_combine_method1.itemindex:=c;
+      c:=Sett.ReadInteger('stack','box_blur_factor',987654321);if c<>987654321 then stackmenu1.box_blur_factor1.itemindex:=c;
+
       c:=Sett.ReadInteger('stack','stack_tab',987654321); if c<>987654321 then stackmenu1.pagecontrol1.tabindex:=c;
 
       c:=Sett.ReadInteger('stack','demosaic_method2',987654321); if c<>987654321 then stackmenu1.demosaic_method1.itemindex:=c;
@@ -7841,6 +7848,11 @@ begin
       three_corners:=Sett.ReadBool('insp','3corners',false);
       extra_stars:=Sett.ReadBool('insp','extra_stars',false);
 
+      c:=Sett.ReadInteger('insp','insp_binning',987654321);if c<>987654321 then inspector_binning:=c;
+
+      c:=Sett.ReadInteger('insp','insp_grid',987654321);if c<>987654321 then inspector_grid_size:=c;
+      c:=Sett.ReadInteger('insp','insp_grad',987654321);if c<>987654321 then inspector_gradations:=c;
+
       listviews_begin_update; {stop updating listviews}
 
       c:=0;
@@ -8019,7 +8031,7 @@ begin
 
       sett.writeInteger('stack','mosaic_crop',stackmenu1.mosaic_crop1.position);
 
-      sett.writeInteger('stack','flat_combine_method',stackmenu1.flat_combine_method1.itemindex);
+      sett.writeInteger('stack','box_blur_factor',stackmenu1.box_blur_factor1.itemindex);
       sett.writeInteger('stack','stack_tab',stackmenu1.pagecontrol1.tabindex);
 
       sett.writeString('stack','bayer_pat',stackmenu1.bayer_pattern1.text);
@@ -8203,6 +8215,12 @@ begin
       sett.writeBool('insp','vectors',vectors_check);
       sett.writebool('insp','3corners',three_corners);
       sett.writebool('insp','extra_stars',extra_stars);
+
+     sett.writeInteger('insp','insp_binning',inspector_binning);
+     sett.writeInteger('insp','insp_grid',inspector_grid_size);
+     sett.writeInteger('insp','insp_grad',inspector_gradations);
+
+
 
       {### save listview values ###}
       for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
@@ -9191,12 +9209,16 @@ function download_vsp(limiting_mag: double) : boolean;//AAVSO API access
 var
   s,url   : string;
   val,val2 : char;
-  count,i,j,fov,dummy : integer;
+  count,i,j,k,fov,dummy : integer;
   errorRA,errorDEC :boolean;
 begin
   result:=false;
   fov:=round(sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2*60)); //arcmin. cdelt2 can be negative for other solvers
-  fov:=min(fov,180);//limit radius to 3 degree. Else error the faintest magnitude limit allowed for charts larger than 180 arcminutes is 12. Please try a smaller field of view or a brighter magnitude limit."
+  if fov>180 {arcmin} then
+  begin
+    limiting_mag:=12; ////Required by AAVSO
+    memo2_message('FOV is larger then 3 degrees. Downloading from AAVSO VSX, VSP is then limited to magnitude 12.');
+  end;
 
   url:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
   s:=get_http(url);{get webpage}
@@ -9223,109 +9245,120 @@ begin
     j:=posex('"',s,i);
     dec_text_to_radians(copy(s,i,j-i),vsp[count].dec,errorDEC); {convert dec text to double in radians}
 
-    vsp[count].Vmag:='?';
     vsp[count].Bmag:='?';
+    vsp[count].Berr:='';
+    vsp[count].Vmag:='?';
+    vsp[count].Verr:='';
     vsp[count].Rmag:='?';
+    vsp[count].Rerr:='';
     vsp[count].SGmag:='?';
+    vsp[count].SGerr:='';
     vsp[count].SRmag:='?';
+    vsp[count].SRerr:='';
     vsp[count].SImag:='?';
+    vsp[count].SIerr:='';
+    k:=0;
+
     repeat //read optional "bands"
       val:=s[j];
       inc(j);
       val2:=s[j];
-      if ((val='"') and (val2='V')) then //V mag found, could be missing
-      begin
-        i:=posex('"mag":',s,j);
-        i:=i+length('"mag":');
-         j:=posex(',',s,i);
-         vsp[count].Vmag:=copy(s,i,j-i);
 
-         i:=posex('error":',s,j);
-         i:=i+length('error":');
-         j:=posex('}',s,i);
-         vsp[count].Verr:=copy(s,i,j-i);
-      end
-      else
       if ((val='"') and (val2='B')) then //B mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
-        j:=posex(',',s,i);
-        vsp[count].Bmag:=copy(s,i,j-i);
+        k:=posex(',',s,i);
+        vsp[count].Bmag:=copy(s,i,k-i);
 
-        i:=posex('error":',s,j);
+        i:=posex('error":',s,k);
         i:=i+length('error":');
-        j:=posex('}',s,i);
-        vsp[count].Berr:=copy(s,i,j-i);
+        k:=posex('}',s,i);
+        vsp[count].Berr:=copy(s,i,k-i);
+      end
+      else
+      if ((val='"') and (val2='V')) then //V mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+         k:=posex(',',s,i);
+         vsp[count].Vmag:=copy(s,i,k-i);
+
+         i:=posex('error":',s,k);
+         i:=i+length('error":');
+         k:=posex('}',s,i);
+         vsp[count].Verr:=copy(s,i,k-i);
       end
       else
       if ((val='"') and (val2='R')) then //R mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
-        j:=posex(',',s,i);
-        vsp[count].Rmag:=copy(s,i,j-i);
+        k:=posex(',',s,i);
+        vsp[count].Rmag:=copy(s,i,k-i);
 
-        i:=posex('error":',s,j);
+        i:=posex('error":',s,k);
         i:=i+length('error":');
-        j:=posex('}',s,i);
-        vsp[count].Rerr:=copy(s,i,j-i);
+        k:=posex('}',s,i);
+        vsp[count].Rerr:=copy(s,i,k-i);
       end;
-      if ((val='S') and (val2='G')) then //SG mag found, could be missing
+      if ((val='S') and (val2='G')) then //Sloan green
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
-        j:=posex(',',s,i);
-        vsp[count].SGmag:=copy(s,i,j-i);
+        k:=posex(',',s,i);
+        vsp[count].SGmag:=copy(s,i,k-i);
 
-        i:=posex('error":',s,j);
+        i:=posex('error":',s,k);
         i:=i+length('error":');
-        j:=posex('}',s,i);
-        vsp[count].SGerr:=copy(s,i,j-i);
+        k:=posex('}',s,i);
+        vsp[count].SGerr:=copy(s,i,k-i);
       end;
-      if ((val='S') and (val2='R')) then //SR mag found, could be missing
+      if ((val='S') and (val2='R')) then //Sloan red
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
-        j:=posex(',',s,i);
-        vsp[count].SRmag:=copy(s,i,j-i);
+        k:=posex(',',s,i);
+        vsp[count].SRmag:=copy(s,i,k-i);
 
-        i:=posex('error":',s,j);
+        i:=posex('error":',s,k);
         i:=i+length('error":');
-        j:=posex('}',s,i);
-        vsp[count].SRerr:=copy(s,i,j-i);
+        k:=posex('}',s,i);
+        vsp[count].SRerr:=copy(s,i,k-i);
       end;
-      if ((val='S') and (val2='I')) then //SI mag found, could be missing
+      if ((val='S') and (val2='I')) then //Sloan i
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
-        j:=posex(',',s,i);
-        vsp[count].SImag:=copy(s,i,j-i);
+        k:=posex(',',s,i);
+        vsp[count].SImag:=copy(s,i,k-i);
 
-        i:=posex('error":',s,j);
+        i:=posex('error":',s,k);
         i:=i+length('error":');
-        j:=posex('}',s,i);
-        vsp[count].SIerr:=copy(s,i,j-i);
+        k:=posex('}',s,i);
+        vsp[count].SIerr:=copy(s,i,k-i);
       end;
+      if j<k then j:=k;// for the case k is zero due to nothing found
 
+    until ((val=']') or (j>=length(s)));
 
-     until ((val=']') or (j>=length(s)));
     inc(count);//number of entries/stars
   until count>=length(vsp);//normally will stop at above break
   setlength(vsp,count);
   result:=true;
 end;
 
-
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access
 var
   s,dummy,url   : string;
-  count,i,j,errorRA,errorDEC : integer;
+  count,i,j,k,errorRA,errorDEC : integer;
   radius,ra,dec : double;
 begin
   result:=false;
   radius:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //radius in degrees. Some solvers produce files with neagative cdelt2
-  radius:=min(radius,3);//limit radius to 3 degree
+
+  if radius>3 {degrees} then limiting_mag:=12; ////Required by AAVSO
+
   url:='https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
   s:=get_http(url);
   if length(s)<25 then begin beep; exit end;;
@@ -9341,6 +9374,12 @@ begin
     i:=i+length('"Name":"');
     j:=posex('"',s,i);
     vsx[count].name:=copy(s,i,j-i);
+
+//    i:=posex('"AUID":"',s,j); //Name will be always available
+//    i:=i+length('"AUID":"');
+//    j:=posex('"',s,i);
+//    vsx[count].auid:=copy(s,i,j-i);
+
 
     i:=posex('"RA2000":"',s,j);//RA will be always available
     i:=i+length('"RA2000":"');
@@ -9360,38 +9399,40 @@ begin
     vsx[count].minmag:='?';
     vsx[count].period:='?';
     vsx[count].category:='?';
+    k:=0;// for case no optional fields
 
-    repeat //read optional field
+    repeat //read optional fields
       inc(j);
       if ((s[j]='M') and (s[j+1]='a') and (s[j+2]='x')) then //MaxMag found, could be missing
       begin
         i:=j+length('MaxMag":"');
-        j:=posex('"',s,i);
-        vsx[count].maxmag:=copy(s,i,j-i);
+        k:=posex('"',s,i);
+        vsx[count].maxmag:=copy(s,i,k-i);
       end
       else
       if ((s[j]='M') and (s[j+1]='i') and (s[j+2]='n')) then //MaxMag found, could be missing
       begin
         i:=j+length('MinMag":"');
-        j:=posex('"',s,i);
-        vsx[count].minmag:=copy(s,i,j-i);
+        k:=posex('"',s,i);
+        vsx[count].minmag:=copy(s,i,k-i);
       end
       else
       if ((s[j]='C') and (s[j+1]='a') and (s[j+2]='t')) then
       begin
         i:=j+length('Category":"');
-        j:=posex('"',s,i);
+        k:=posex('"',s,i);
         vsx[count].category:=copy(s,i,3);
       end
       else
       if ((s[j]='P') and (s[j+1]='e') and (s[j+2]='r')) then
       begin
         i:=j+length('Period":"');
-        j:=posex('"',s,i);
-        vsx[count].period:=copy(s,i,j-i);
+        k:=posex('"',s,i);
+        vsx[count].period:=copy(s,i,k-i);
       end;
 
-     until ((s[j]='}') or (j>=length(s)));
+      if j<k then j:=k; //k could be in very rare cases 0 resulting in an endless loop
+     until ((s[j]='}') or (j=length(s)-1));
     inc(count);//number of entries/stars
   until count>=length(vsx);//normally will stop at above break
   setlength(vsx,count);
@@ -10873,7 +10914,6 @@ begin
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
-
 
 
 {type
@@ -12572,7 +12612,7 @@ begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
               if calculate_sqm(false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
               begin
-                update_float('SQM     =',' / Sky background [magn/arcsec^2]',false ,sqmfloat);
+                update_text('SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                 update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
               end;
             end;
@@ -12780,7 +12820,7 @@ begin
                 pedestal2:=pedestal; {protect pedestal setting}
                 if calculate_sqm(true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
-                  update_float('SQM     =',' / Sky background [magn/arcsec^2]',false,sqmfloat);
+                  update_text('SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                   update_text('COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
                   mess:=' and SQM'
                 end;

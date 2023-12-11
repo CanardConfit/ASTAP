@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 125
+  Left = 458
   Height = 674
-  Top = 205
+  Top = 410
   Width = 2139
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -2699,12 +2699,16 @@ object stackmenu1: Tstackmenu1
                 BorderSpacing.Around = 5
                 DropDownCount = 20
                 ItemHeight = 15
-                ItemIndex = 2
+                ItemIndex = 4
                 Items.Strings = (
                   '0.003'
+                  '0.004'
                   '0.005'
+                  '0.006'
                   '0.007'
-                  '0.01'
+                  '0.008'
+                  '0.009'
+                  ''
                 )
                 ParentFont = False
                 TabOrder = 2
@@ -4708,6 +4712,7 @@ object stackmenu1: Tstackmenu1
           'Tilt, 3 point measurement & HFD'
           'Aberration view'
           'Solve image'
+          'Background Contour'
         )
         OnChange = monitor_action1Change
         ParentFont = False
@@ -5357,12 +5362,12 @@ object stackmenu1: Tstackmenu1
         object remove_deepsky_label1: TLabel
           Left = 24
           Height = 29
-          Hint = 'See viewer  popup menu'
+          Hint = 'To remove fuzzies use the viewer  popup menu "Remove deepsky object"'
           Top = 73
           Width = 278
           Alignment = taCenter
           AutoSize = False
-          Caption = 'Remove deep sky with right mouse button tool'
+          Caption = 'Remove fuzzies with right mouse button tool'
           Color = clBtnFace
           Enabled = False
           ParentColor = False
@@ -7254,6 +7259,7 @@ object stackmenu1: Tstackmenu1
           Items.Strings = (
             '2x2'
             '3x3'
+            '4x4'
           )
           OnChange = resize_factor1Change
           ParentFont = False
@@ -7433,10 +7439,10 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           TabOrder = 1
         end
-        object flat_combine_method1: TComboBox
+        object box_blur_factor1: TComboBox
           Left = 6
           Height = 23
-          Hint = 'Factor'
+          Hint = 'Factor of bluring'
           Top = 4
           Width = 63
           ItemHeight = 15
@@ -7446,6 +7452,11 @@ object stackmenu1: Tstackmenu1
             '3x3'
             '4x4'
             '5x5'
+            '6x6'
+            '7x7'
+            '8x8'
+            '9x9'
+            '10x10'
           )
           ParentFont = False
           Style = csDropDownList

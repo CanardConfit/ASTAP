@@ -14,18 +14,23 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLintf, StdCtrls,
   Buttons, math, astap_main, unit_stack, unit_annotation,
-  clipbrd, ActnList; {for copy to clipboard}
+  clipbrd, ExtCtrls,{for copy to clipboard}
+  unit_gaussian_blur ;
 
 type
 
   { Tform_inspection1 }
 
   Tform_inspection1 = class(TForm)
-    Action1: TAction;
-    Action2: TAction;
-    Action3: TAction;
-    ActionList1: TActionList;
+    background_contour1: TBitBtn;
     bayer_label1: TLabel;
+    bin_factor1: TComboBox;
+    gradations1: TComboBox;
+    GroupBox4: TGroupBox;
+    Label1: TLabel;
+    grid_size1: TComboBox;
+    Label2: TLabel;
+    Label3: TLabel;
     to_clipboard1: TCheckBox;
     show_distortion1: TBitBtn;
     aberration_inspector1: TBitBtn;
@@ -48,12 +53,16 @@ type
     voronoi1: TCheckBox;
     procedure aberration_inspector1Click(Sender: TObject);
     procedure background_values1Click(Sender: TObject);
+    procedure background_contour1Click(Sender: TObject);
+    procedure bin_factor1Change(Sender: TObject);
     procedure close_button1Click(Sender: TObject);
     procedure contour1Change(Sender: TObject);
     procedure extra_stars1Change(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
+    procedure gradations1Change(Sender: TObject);
+    procedure grid_size1Change(Sender: TObject);
     procedure help_uncheck_outliers1Click(Sender: TObject);
     procedure roundness1Click(Sender: TObject);
     procedure measuring_angle1Change(Sender: TObject);
@@ -87,6 +96,9 @@ var
   measuring_angle : string='0';
   insp_left: integer=100;
   insp_top: integer=100;
+  inspector_binning: integer=1; //index
+  inspector_grid_size: integer=30;
+  inspector_gradations: integer=10;
 
 
 procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double);
@@ -1249,8 +1261,8 @@ end;
 
 procedure Tform_inspection1.background_values1Click(Sender: TObject);
 var
-  tx,ty,fontsize,halfstepX,halfstepY,stepX,stepY: integer;
-  X,Y,stepsizeX,stepsizeY,median,median_center,factor          : double;
+  tx,ty,fontsize,halfstepX,halfstepY,stepX,stepY,fx,fy: integer;
+  X,Y,stepsizeX,stepsizeY,median,median_center,factor : double;
   img_bk                                     : image_array;
   Flipvertical, Fliphorizontal, restore_req  : boolean;
   detext  : string;
@@ -1307,13 +1319,13 @@ begin
     halfstepY:=round(stepsizeY/2);
 
     median_center:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),head.width div 2,head.height div 2);{find median value of an area at position x,y with sizeX,sizeY}
-
     Y:=halfstepY;
     repeat
 
       X:=halfstepX;
       repeat
         median:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),round(X),round(Y));{find median value of an area at position x,y with sizeX,sizeY}
+
         factor:=median/median_center;
         if abs(1-factor)>0.03 then image1.Canvas.font.color:=$00A5FF {dark orange} else image1.Canvas.font.color:=clYellow;
         detext:=floattostrf(factor, ffgeneral, 3,3);
@@ -1329,7 +1341,6 @@ begin
         mainwindow.image1.Canvas.textout(tX,tY,detext);{add as text}
 
         X:=X+stepsizeX;
-
       until X>=head.width-1;
 
       Y:=Y+stepsizeY;
@@ -1344,6 +1355,63 @@ begin
     end;
   end;
   Screen.Cursor:=crDefault;
+end;
+
+procedure Tform_inspection1.background_contour1Click(Sender: TObject);
+var
+  fx,fy                   : integer;
+  high_level,low_level    : double;
+  img_bk                                     : image_array;
+begin
+  if head.naxis=0 then exit; {file loaded?}
+
+  form_inspection1.undo_button1Click(nil);{undo if required}
+
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  backup_img;
+
+
+  case inspector_binning of
+    2: bin_X2X3X4(2);
+    3: bin_X2X3X4(3);
+    4: bin_X2X3X4(4);
+  end;
+
+  img_bk:=duplicate(img_loaded);
+
+  apply_most_common(img_bk, img_loaded,inspector_grid_size);  {apply most common filter on first array and place result in second array}
+
+  gaussian_blur2(img_loaded, inspector_grid_size *2 {4 * strtofloat2(most_common_filter_radius1.Text)});
+
+
+  //find low and high level
+  high_level:=0;
+  low_level:=9999999;
+  for fy:=0 to (head.height-1) div 100 do
+    for fx:=0 to (head.width-1) div 100 do
+   begin
+     high_level:=max(high_level,img_loaded[0,fy*100,fx*100]);
+     low_level:=min(low_level,img_loaded[0,fy*100,fx*100]);
+   end;
+
+  for fy:=0 to head.height-1 do
+    for fx:=0 to head.width-1 do
+      img_loaded[0,fy,fx]:= low_level +  ((high_level-low_level)/inspector_gradations)*round( (img_loaded[0,fy,fx]-low_level)*inspector_gradations/(high_level-low_level));
+
+  mainwindow.maximum1.position:=round(high_level);
+  mainwindow.minimum1.position:=round(low_level);
+
+  plot_fits(mainwindow.image1, False, True);{plot real}
+
+  img_bk:=nil;//free mem
+
+  Screen.Cursor:=crDefault;
+end;
+
+procedure Tform_inspection1.bin_factor1Change(Sender: TObject);
+begin
+  inspector_binning:=bin_factor1.itemindex+1;
 end;
 
 
@@ -1505,6 +1573,20 @@ begin
   measuring_angle1.text:=measuring_angle;
 
   to_clipboard1.checked:=toclipboard1;
+
+  bin_factor1.itemindex:=inspector_binning;
+  grid_size1.text:=inttostr(inspector_grid_size);
+  gradations1.text:=inttostr(inspector_gradations);
+end;
+
+procedure Tform_inspection1.gradations1Change(Sender: TObject);
+begin
+  inspector_gradations:=strtoint(gradations1.Text);
+end;
+
+procedure Tform_inspection1.grid_size1Change(Sender: TObject);
+begin
+  inspector_grid_size:=strtoint(grid_size1.Text);
 end;
 
 

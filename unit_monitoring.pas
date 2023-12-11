@@ -246,6 +246,7 @@ begin
                                                        2: CCDinspector(30,true,strtofloat(measuring_angle));
                                                        3: form_inspection1.aberration_inspector1Click(nil);
                                                        4: solver:=true;
+                                                       5: form_inspection1.background_contour1Click(nil);
           end;{case}
           if solver then
           begin

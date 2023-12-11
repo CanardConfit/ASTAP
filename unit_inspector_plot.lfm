@@ -3,10 +3,10 @@ object form_inspection1: Tform_inspection1
   Left = 213
   Height = 270
   Top = 219
-  Width = 663
+  Width = 948
   Caption = 'Image inspection'
   ClientHeight = 270
-  ClientWidth = 663
+  ClientWidth = 948
   KeyPreview = True
   OnClose = FormClose
   OnKeyPress = FormKeyPress
@@ -14,7 +14,7 @@ object form_inspection1: Tform_inspection1
   Position = poDesktopCenter
   LCLVersion = '3.0.0.1'
   object undo_button1: TBitBtn
-    Left = 456
+    Left = 712
     Height = 30
     Hint = 'Restore image'
     Top = 208
@@ -63,7 +63,7 @@ object form_inspection1: Tform_inspection1
   end
   object help_uncheck_outliers1: TLabel
     Cursor = crHandPoint
-    Left = 576
+    Left = 784
     Height = 30
     Hint = 'Online help about inspector'
     Top = 208
@@ -78,10 +78,10 @@ object form_inspection1: Tform_inspection1
     OnClick = help_uncheck_outliers1Click
   end
   object show_distortion1: TBitBtn
-    Left = 448
+    Left = 712
     Height = 26
     Hint = 'Show image distortion using the star positions and solution. Lines a 50x larger then distortion.'
-    Top = 96
+    Top = 88
     Width = 186
     AutoSize = True
     Caption = 'Show distortion'
@@ -94,10 +94,10 @@ object form_inspection1: Tform_inspection1
     TabOrder = 1
   end
   object aberration_inspector1: TBitBtn
-    Left = 448
+    Left = 712
     Height = 26
     Hint = 'Makes a compilation of the image corners and the center for a closer inspection.'
-    Top = 136
+    Top = 128
     Width = 186
     AutoSize = True
     Caption = 'Aberration inspector  F6'
@@ -110,10 +110,10 @@ object form_inspection1: Tform_inspection1
     TabOrder = 2
   end
   object background_values1: TBitBtn
-    Left = 448
+    Left = 712
     Height = 25
     Hint = 'Annotate the image with the median background values relative to the center.'
-    Top = 56
+    Top = 48
     Width = 186
     AutoSize = True
     Caption = 'Background values'
@@ -319,32 +319,121 @@ object form_inspection1: Tform_inspection1
     end
   end
   object to_clipboard1: TCheckBox
-    Left = 646
+    Left = 904
     Height = 17
     Hint = 'Data to clipboard'
-    Top = 96
+    Top = 88
     Width = 18
     ParentShowHint = False
     ShowHint = True
     TabOrder = 5
   end
-  object ActionList1: TActionList
-    Left = 384
-    Top = 26
-    object Action1: TAction
-      Caption = 'Action1'
-      OnExecute = roundness1Click
-      ShortCut = 114
+  object GroupBox4: TGroupBox
+    Left = 456
+    Height = 200
+    Top = 56
+    Width = 199
+    ClientHeight = 180
+    ClientWidth = 195
+    TabOrder = 6
+    object background_contour1: TBitBtn
+      Left = 8
+      Height = 25
+      Hint = 'Show the background values as a contour'
+      Top = 136
+      Width = 186
+      AutoSize = True
+      Caption = 'Background contour'
+      Constraints.MinWidth = 186
+      Images = mainwindow.ImageList1
+      OnClick = background_contour1Click
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 0
     end
-    object Action2: TAction
-      Caption = 'Action2'
-      OnExecute = tilt1Click
-      ShortCut = 115
+    object grid_size1: TComboBox
+      Left = 104
+      Height = 23
+      Hint = 'Grid used for median values.'
+      Top = 48
+      Width = 72
+      DropDownCount = 13
+      ItemHeight = 15
+      ItemIndex = 1
+      Items.Strings = (
+        '20'
+        '30'
+        '40'
+      )
+      OnChange = grid_size1Change
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 1
+      Text = '30'
     end
-    object Action3: TAction
-      Caption = 'Action3'
-      OnExecute = aberration_inspector1Click
-      ShortCut = 117
+    object Label1: TLabel
+      Left = 24
+      Height = 15
+      Top = 48
+      Width = 68
+      Caption = 'Grid size[px]:'
+    end
+    object gradations1: TComboBox
+      Left = 104
+      Height = 23
+      Hint = 'How many background shall be detected'
+      Top = 88
+      Width = 72
+      DropDownCount = 13
+      ItemHeight = 15
+      ItemIndex = 1
+      Items.Strings = (
+        '5'
+        '10'
+        '20'
+        '30'
+      )
+      OnChange = gradations1Change
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 2
+      Text = '10'
+    end
+    object Label2: TLabel
+      Left = 24
+      Height = 15
+      Top = 88
+      Width = 60
+      Caption = 'Gradations:'
+    end
+    object Label3: TLabel
+      Left = 24
+      Height = 15
+      Top = 8
+      Width = 41
+      Caption = 'Binning'
+    end
+    object bin_factor1: TComboBox
+      Left = 104
+      Height = 23
+      Hint = 'Bin current image in the viewer. Noise will be reduced.'
+      Top = 5
+      Width = 72
+      ItemHeight = 15
+      ItemIndex = 1
+      Items.Strings = (
+        '1x1'
+        '2x2'
+        '3x3'
+        '4x4'
+      )
+      OnChange = bin_factor1Change
+      ParentFont = False
+      Style = csDropDownList
+      TabOrder = 3
+      Text = '2x2'
     end
   end
 end
