@@ -14114,7 +14114,7 @@ begin
             listview_add_xy(c,shape_fitsX,shape_fitsY);{add to list of listview1}
             {$ifdef darwin} {MacOS}
             {bugfix darwin green red colouring}
-            stackmenu1.ListView1.Items.item[item.index].Subitems.strings[L_result]:='✓ star';
+            stackmenu1.ListView1.Items.item[c].Subitems.strings[L_result]:='✓ star';
             {$endif}
             break;
           end;
