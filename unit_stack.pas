@@ -1007,7 +1007,7 @@ function median_background(var img: image_array; color, sizeX, sizeY, x, y: inte
 procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean;  out star_counter: integer; out bck :Tbackground;out hfd_median: double);{find background, number of stars, median HFD}
 
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
-procedure apply_most_common(sourc, dest: image_array; radius: integer); {apply most common filter on first array and place result in second array}
+procedure apply_most_common(sourc, dest: image_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
 
 procedure report_results(object_to_process, stack_info: string; object_counter, colorinfo: integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
@@ -3337,7 +3337,7 @@ begin
 end;
 
 
-procedure apply_most_common(sourc, dest: image_array; radius: integer);
+procedure apply_most_common(sourc, dest: image_array; datamax: double; radius: integer);
 {apply most common filter on first array and place result in second array}
 var
   fitsX, fitsY, i, j, k, x, y, x2, y2, diameter, most_common, colors3, height3, width3,greylevels: integer;
@@ -3355,7 +3355,7 @@ begin
       begin
         x := fitsX * diameter;
         y := fitsY * diameter;
-        most_common := mode(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, 32000,greylevels);
+        most_common := mode(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, trunc(datamax),greylevels);
         for i := -radius to +radius - 1 do
           for j := -radius to +radius - 1 do
           begin
@@ -3386,7 +3386,7 @@ begin
   except
   end;
 
-  apply_most_common(img_backup[index_backup].img, img_loaded, radius);
+  apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
   plot_fits(mainwindow.image1, False, True);{plot real}
@@ -7147,7 +7147,7 @@ begin
     stackmenu1.filter_artificial_colouring1.Text);
 
   setlength(img_temp,3, head.Height, head.Width);{new size}
-  apply_most_common(img_backup[index_backup].img, img_temp, radius);
+  apply_most_common(img_backup[index_backup].img, img_temp,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
   memo2_message('Applying Gaussian blur of ' + floattostrF(radius * 2, ffFixed, 0, 1));
@@ -8936,7 +8936,7 @@ begin
       radius := StrToInt(extract_background_box_size1.Text);
     except
     end;
-    apply_most_common(img_backup[index_backup].img, img_loaded, radius);  {apply most common filter on first array and place result in second array}
+    apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);  {apply most common filter on first array and place result in second array}
     plot_fits(mainwindow.image1, True, True);{plot real}
     Screen.Cursor := crDefault;
   end;

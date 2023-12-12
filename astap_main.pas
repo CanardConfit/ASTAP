@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3260,6 +3260,7 @@ begin
   height3:=length(img[0]);{height}
   width3:=length(img[0,0]);{width}
 
+  max1:=max1-10; //do not measure saturated pixels
   if xmin<0 then xmin:=0;
   if xmax>width3-1 then xmax:=width3-1;
   if ymin<0 then ymin:=0;

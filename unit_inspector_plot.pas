@@ -1359,9 +1359,9 @@ end;
 
 procedure Tform_inspection1.background_contour1Click(Sender: TObject);
 var
-  fx,fy                   : integer;
-  high_level,low_level    : double;
-  img_bk                                     : image_array;
+  fx,fy                       : integer;
+  high_level,low_level,srange : double;
+  img_bk                      : image_array;
 begin
   if head.naxis=0 then exit; {file loaded?}
 
@@ -1373,34 +1373,37 @@ begin
 
 
   case inspector_binning of
-    2: bin_X2X3X4(2);
-    3: bin_X2X3X4(3);
-    4: bin_X2X3X4(4);
+    1: bin_X2X3X4(2);
+    2: bin_X2X3X4(3);
+    3: bin_X2X3X4(4);
   end;
 
   img_bk:=duplicate(img_loaded);
 
-  apply_most_common(img_bk, img_loaded,inspector_grid_size);  {apply most common filter on first array and place result in second array}
+  apply_most_common(img_bk, img_loaded,head.datamax_org,inspector_grid_size);  {apply most common filter on first array and place result in second array}
 
   gaussian_blur2(img_loaded, inspector_grid_size *2 {4 * strtofloat2(most_common_filter_radius1.Text)});
 
 
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+
   //find low and high level
   high_level:=0;
   low_level:=9999999;
-  for fy:=0 to (head.height-1) div 100 do
-    for fx:=0 to (head.width-1) div 100 do
+  for fy:=0 to (head.height-1) div 50 do
+    for fx:=0 to (head.width-1) div 50 do
    begin
-     high_level:=max(high_level,img_loaded[0,fy*100,fx*100]);
-     low_level:=min(low_level,img_loaded[0,fy*100,fx*100]);
+     high_level:=max(high_level,img_loaded[0,fy*50,fx*50]);
+     low_level:=min(low_level,img_loaded[0,fy*50,fx*50]);
    end;
 
   for fy:=0 to head.height-1 do
     for fx:=0 to head.width-1 do
       img_loaded[0,fy,fx]:= low_level +  ((high_level-low_level)/inspector_gradations)*round( (img_loaded[0,fy,fx]-low_level)*inspector_gradations/(high_level-low_level));
 
-  mainwindow.maximum1.position:=round(high_level);
-  mainwindow.minimum1.position:=round(low_level);
+  srange:=high_level-low_level;
+  mainwindow.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  use_histogram doesn't work that well for blurred image.
+  mainwindow.minimum1.position:=round(low_level-0.05*srange);
 
   plot_fits(mainwindow.image1, False, True);{plot real}
 
@@ -1411,7 +1414,7 @@ end;
 
 procedure Tform_inspection1.bin_factor1Change(Sender: TObject);
 begin
-  inspector_binning:=bin_factor1.itemindex+1;
+  inspector_binning:=bin_factor1.itemindex;
 end;
 
 
