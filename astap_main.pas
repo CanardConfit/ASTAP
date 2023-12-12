@@ -14084,7 +14084,7 @@ end;
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  width5,height5, xf,yf,k, fx,fy, shapetype                    : integer;
+  width5,height5, xf,yf,k, fx,fy, shapetype,c                  : integer;
   hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b : double;
 begin
   if head.naxis=0 then exit;
@@ -14107,7 +14107,17 @@ begin
     if find_reference_star(img_loaded) then
     begin
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
-      listview_add_xy(shape_fitsX,shape_fitsY);{add to list of listview1}
+      with stackmenu1 do
+        for c := 0 to listview1.Items.Count - 1 do
+          if listview1.Items[c].Selected then
+          begin
+            listview_add_xy(c,shape_fitsX,shape_fitsY);{add to list of listview1}
+            {$ifdef darwin} {MacOS}
+            {bugfix darwin green red colouring}
+            stackmenu1.ListView1.Items.item[item.index].Subitems.strings[L_result]:='✓ star';
+            {$endif}
+            break;
+          end;
       show_marker_shape(mainwindow.shape_manual_alignment1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
     end;
   end
