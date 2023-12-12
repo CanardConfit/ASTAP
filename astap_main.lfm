@@ -2189,7 +2189,7 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo1: TPopupMenu
-    Left = 776
+    Left = 736
     Top = 89
     object Menufind1: TMenuItem
       Caption = 'Find'
@@ -2224,7 +2224,7 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo2: TPopupMenu
-    Left = 912
+    Left = 960
     Top = 384
     object Menufind2: TMenuItem
       Caption = 'Find'

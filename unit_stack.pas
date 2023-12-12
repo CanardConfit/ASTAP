@@ -175,7 +175,7 @@ type
     calc_polar_alignment_error1: TButton;
     planetary_image1: TCheckBox;
     classify_dark_date1: TCheckBox;
-    flat_combine_method1: TComboBox;
+    box_blur_factor1: TComboBox;
     GroupBox8: TGroupBox;
     green_purple_filter1: TCheckBox;
     help_mount_tab1: TLabel;
@@ -991,7 +991,7 @@ procedure listview_add_xy(fitsX, fitsY: double);{add x,y position to listview}
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 procedure update_tab_alignment;{update stackmenu1 menus}
-procedure box_blur(colors, range: integer;  var img: image_array);{combine values of pixels, ignore zeros}
+procedure box_blur(colors, range : integer; var img: image_array);{blur by combining values of pixels, ignore zeros}
 procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter(var img: image_array); {remove black spots with value zero}{execution time about 0.4 sec}
 
@@ -1007,7 +1007,7 @@ function median_background(var img: image_array; color, sizeX, sizeY, x, y: inte
 procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean;  out star_counter: integer; out bck :Tbackground;out hfd_median: double);{find background, number of stars, median HFD}
 
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
-procedure apply_most_common(sourc, dest: image_array; radius: integer); {apply most common filter on first array and place result in second array}
+procedure apply_most_common(sourc, dest: image_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
 
 procedure report_results(object_to_process, stack_info: string; object_counter, colorinfo: integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
@@ -2772,7 +2772,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
-  gaussian_blur2(img_loaded, 4 * strtofloat2(most_common_filter_radius1.Text));
+  gaussian_blur2(img_loaded, 2 * strtofloat2(most_common_filter_radius1.Text));
   plot_fits(mainwindow.image1, False, True);{plot}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
@@ -3337,7 +3337,7 @@ begin
 end;
 
 
-procedure apply_most_common(sourc, dest: image_array; radius: integer);
+procedure apply_most_common(sourc, dest: image_array; datamax: double; radius: integer);
 {apply most common filter on first array and place result in second array}
 var
   fitsX, fitsY, i, j, k, x, y, x2, y2, diameter, most_common, colors3, height3, width3,greylevels: integer;
@@ -3355,7 +3355,7 @@ begin
       begin
         x := fitsX * diameter;
         y := fitsY * diameter;
-        most_common := mode(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, 32000,greylevels);
+        most_common := mode(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, trunc(datamax),greylevels);
         for i := -radius to +radius - 1 do
           for j := -radius to +radius - 1 do
           begin
@@ -3386,7 +3386,7 @@ begin
   except
   end;
 
-  apply_most_common(img_backup[index_backup].img, img_loaded, radius);
+  apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
   plot_fits(mainwindow.image1, False, True);{plot real}
@@ -4526,8 +4526,7 @@ end;
 
 
 
-procedure box_blur(colors, range: integer;
-  var img: image_array);{combine values of pixels, ignore zeros}
+procedure box_blur(colors, range : integer; var img: image_array);{blur by combining values of pixels, ignore value above max_value and zeros}
 var
   fitsX, fitsY, k, x1, y1, col, w, h, i, j, counter, minimum, maximum: integer;
   img_temp2: image_array;
@@ -4556,9 +4555,9 @@ begin
   end {combine values of 16 pixels}
   else
   begin
-    minimum := -2;
-    maximum := +2;
-  end; {combine values of 25 pixels}
+    minimum := - range div 2;
+    maximum := + range div 2;
+  end; {if range is 5 then combine values of 25 pixels total}
 
   setlength(img_temp2,col, h, w);{set length of image array}
   for k := 0 to col - 1 do
@@ -7148,7 +7147,7 @@ begin
     stackmenu1.filter_artificial_colouring1.Text);
 
   setlength(img_temp,3, head.Height, head.Width);{new size}
-  apply_most_common(img_backup[index_backup].img, img_temp, radius);
+  apply_most_common(img_backup[index_backup].img, img_temp,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
   memo2_message('Applying Gaussian blur of ' + floattostrF(radius * 2, ffFixed, 0, 1));
@@ -8937,7 +8936,7 @@ begin
       radius := StrToInt(extract_background_box_size1.Text);
     except
     end;
-    apply_most_common(img_backup[index_backup].img, img_loaded, radius);  {apply most common filter on first array and place result in second array}
+    apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);  {apply most common filter on first array and place result in second array}
     plot_fits(mainwindow.image1, True, True);{plot real}
     Screen.Cursor := crDefault;
   end;
@@ -9282,6 +9281,8 @@ end;
 
 
 procedure Tstackmenu1.apply_box_filter2Click(Sender: TObject);
+var
+  blur_factor : integer;
 begin
   if Length(img_loaded) = 0 then
   begin
@@ -9291,7 +9292,8 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
-  box_blur(1 {nr of colors}, 2, img_loaded);
+  blur_factor:=2+box_blur_factor1.ItemIndex;//box blur factor
+  box_blur(1 {nr of colors}, blur_factor, img_loaded);
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1, False, True);{plot real}
@@ -10557,10 +10559,11 @@ begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img; {move viewer data to img_backup}
-    if bin_factor1.ItemIndex = 0 then
-      bin_X2X3X4(2)
-    else
-      bin_X2X3X4(3);
+    case bin_factor1.ItemIndex of
+      0: bin_X2X3X4(2);
+      1: bin_X2X3X4(3);
+      2: bin_X2X3X4(4);
+    end;
 
     plot_fits(mainwindow.image1, True, True);{plot real}
     Screen.Cursor := crDefault;
