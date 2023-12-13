@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 458
+  Left = 481
   Height = 674
-  Top = 410
+  Top = 188
   Width = 2139
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -264,7 +264,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 2139
-    ActivePage = tab_Pixelmath1
+    ActivePage = lights
     Align = alClient
     AutoSize = True
     Constraints.MaxHeight = 498
@@ -273,7 +273,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 13
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -3784,7 +3784,7 @@ object stackmenu1: Tstackmenu1
         Caption = 'Annulus:'
         ParentColor = False
       end
-      object SpeedButton2: TSpeedButton
+      object speedButton_location1: TSpeedButton
         Left = 1080
         Height = 25
         Hint = 'Default observer location for the case it is not available in the file header. Use this for DSLR images.'
@@ -3792,7 +3792,7 @@ object stackmenu1: Tstackmenu1
         Width = 25
         Images = ImageList2
         ImageIndex = 20
-        OnClick = SpeedButton2Click
+        OnClick = speedButton_location1Click
       end
       object browse_photometry1: TBitBtn
         Left = 0

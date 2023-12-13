@@ -227,7 +227,7 @@ type
     select9: TMenuItem;
     selectall5: TMenuItem;
     selectall9: TMenuItem;
-    SpeedButton2: TSpeedButton;
+    speedButton_location1: TSpeedButton;
     tab_mount1: TTabSheet;
     apply_box_filter2: TButton;
     tab_monitoring1: TTabSheet;
@@ -795,7 +795,7 @@ type
     procedure reset_factors1Click(Sender: TObject);
     procedure search_fov1Change(Sender: TObject);
     procedure solve_and_annotate1Change(Sender: TObject);
-    procedure SpeedButton2Click(Sender: TObject);
+    procedure speedButton_location1Click(Sender: TObject);
     procedure stack_groups1Click(Sender: TObject);
     procedure stack_method1DropDown(Sender: TObject);
     procedure star_database1Change(Sender: TObject);
@@ -987,7 +987,7 @@ const
     '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;' + '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;' + '|JPEG, TIFF, PNG PPM files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;' + '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;';
 
 procedure listview_add(tl: tlistview; s0: string; is_checked: boolean; Count: integer);
-procedure listview_add_xy(fitsX, fitsY: double);{add x,y position to listview}
+procedure listview_add_xy(c:integer;fitsX, fitsY: double);{add x,y position to listview}
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 procedure update_tab_alignment;{update stackmenu1 menus}
@@ -1376,22 +1376,15 @@ begin
   end;
 end;
 
-procedure listview_add_xy(fitsX, fitsY: double);{add x,y position to listview}
+procedure listview_add_xy(c:integer; fitsX, fitsY: double);{add x,y position to listview}
 var
   i: integer;
 begin
   with stackmenu1 do
-    for i := 0 to listview1.Items.Count - 1 do
-      if listview1.Items[i].Selected then
-      begin
-        ListView1.Items.item[i].subitems.Strings[L_X] := floattostrF(fitsX, ffFixed, 0, 2);
-        ListView1.Items.item[i].subitems.Strings[L_Y] := floattostrF(fitsY, ffFixed, 0, 2);
-
-    {$ifdef darwin} {MacOS}
-    {bugfix darwin green red colouring}
-    stackmenu1.ListView1.Items.item[i].Subitems.strings[L_result]:='✓ star';
-    {$endif}
-      end;
+  begin
+        ListView1.Items.item[c].subitems.Strings[L_X] := floattostrF(fitsX, ffFixed, 0, 2);
+        ListView1.Items.item[c].subitems.Strings[L_Y] := floattostrF(fitsY, ffFixed, 0, 2);
+  end;
 end;
 
 
@@ -1925,12 +1918,12 @@ end;
 
 
 
-procedure get_annotation_position;
+procedure get_annotation_position(c:integer);
 {find the position of the specified asteroid annotation}
 var
   count1: integer;
   x1, y1, x2, y2: double;
-  Name: string;
+  Name,dummy: string;
   List: TStrings;
 begin
   List := TStringList.Create;
@@ -1940,8 +1933,11 @@ begin
   try
     while count1 >= 0 do {plot annotations}
     begin
+
       if copy(mainwindow.Memo1.Lines[count1], 1, 8) = 'ANNOTATE' then {found}
       begin
+        dummy:=mainwindow.Memo1.Lines[count1];
+
         List.Clear;
         ExtractStrings([';'], [],
           PChar(copy(mainwindow.Memo1.Lines[count1], 12, 80 - 12)), List);
@@ -1954,7 +1950,7 @@ begin
             y1 := strtofloat2(list[1]);
             x2 := strtofloat2(list[2]);
             y2 := strtofloat2(list[3]);
-            listview_add_xy((x1 + x2) / 2, (y1 + y2) / 2); {add center annotation to x,y for stacking}
+            listview_add_xy(c,(x1 + x2) / 2, (y1 + y2) / 2); {add center annotation to x,y for stacking}
           end;
         end;
       end;
@@ -2032,8 +2028,8 @@ procedure analyse_tab_lights(analyse_level : integer);
 var
   c, star_counter, i, counts: integer;
   hfd_median, alt, az       : double;
-  red, green, blue, planetary, success : boolean;
-  key, filename1, rawstr    : string;
+  red, green, blue, planetary : boolean;
+  key, filename1, rawstr ,memo1_text  : string;
   img: image_array;
   bck :Tbackground;
 begin
@@ -2123,6 +2119,9 @@ begin
       Inc(c);
     until c > counts;
 
+
+    if use_ephemeris_alignment1.Checked then memo1_text:=mainwindow.Memo1.Text;//backup current header
+
     counts := ListView1.items.Count - 1;
     c := 0;
     repeat {check all files, remove darks, bias}
@@ -2144,12 +2143,12 @@ begin
         Application.ProcessMessages;
         if esc_pressed then
         begin
-          Screen.Cursor := crDefault;
-          { back to normal }  exit;
+          Screen.Cursor := crDefault; { back to normal }
+          exit;
         end;
 
 
-        if load_fits(filename2, True { update head_2.ra0..}, True, False  {update memo}, 0, head_2, img) = False then {load in memory. Use head_2 to protect head against overwriting head}
+        if load_fits(filename2, True { update head_2.ra0..}, True, use_ephemeris_alignment1.Checked  {update memo}, 0, head_2, img) = False then {load in memory. Use head_2 to protect head against overwriting head}
         begin {failed to load}
           ListView1.Items.item[c].Checked := False;
           ListView1.Items.item[c].subitems.Strings[L_result] := 'No FITS!';
@@ -2329,7 +2328,7 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_sqm] := sqm_value;
 
                 if use_ephemeris_alignment1.Checked then {ephemeride based stacking}
-                  get_annotation_position;{fill the x,y with annotation position}
+                  get_annotation_position(c);{fill the x,y with annotation position}
               end;
             finally
               ListView1.Items.EndUpdate;
@@ -2391,11 +2390,8 @@ begin
     {back to normal, head_2.filter_name is not changed, so no re-analyse required}
     img := nil; {free memo2}
 
-    //    if ((minbackgr<>0) and (pos('Sigma',stackmenu1.stack_method1.text)>0)) then
-    //     if maxbackgr/(minbackgr)>1.3 then memo2_message('█ █ █ █ █ █ Warning, some images have a significant higher background value. Method sigma clip average will not be effective in removing satellite tracks. Suggest to unselect/remove images with a high background value!! █ █ █ █ █ █ ');
+    if use_ephemeris_alignment1.Checked then mainwindow.Memo1.Text:=memo1_text;//restore current header
 
-
-//    stackmenu1.cursor:=crDefault;//required for some MacOS versions?
     Screen.Cursor := crDefault;    { back to normal }
     progress_indicator(-100, '');{progresss done}
   end;
@@ -3896,7 +3892,6 @@ end;
 procedure listview_view(tl: tlistview); {show image double clicked on}
 var
   index: integer;
-  fitsX, fitsY: double;
   theext: string;
 begin
   for index := 0 to TL.Items.Count - 1 do
@@ -3917,9 +3912,10 @@ begin
       {for the first image set the width and length of image1 correct} then
       begin
         if ((tl = stackmenu1.listview1) and
-          (stackmenu1.use_manual_alignment1.Checked)) then
-          {manual alignment}
-          show_shape_manual_alignment(index){show the marker on the reference star}
+          (stackmenu1.use_manual_alignment1.Checked)) then {manual alignment}
+          begin
+            show_shape_manual_alignment(index){show the marker on the reference star}
+          end
         else
           mainwindow.shape_manual_alignment1.Visible := False;
         if ((tl = stackmenu1.listview7) and (stackmenu1.annotate_mode1.ItemIndex > 0)) then
@@ -3963,9 +3959,8 @@ procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);
 {analyse list of FITS files}
 var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
-  hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, rax, decx, adu_e :double;
+  hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, adu_e :double;
   filename1,filterstr,filterstrUP,issue : string;
-  Save_Cursor: TCursor;
   loaded, red, green, blue: boolean;
   img: image_array;
   nr_stars, hfd_outer_ring, median_11, median_21, median_31,
@@ -4227,8 +4222,7 @@ begin
               if ((centalt = '') and (alt <> 0)) then  centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
 
               lv.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
-              if alt <> 0 then lv.Items.item[c].subitems.Strings[P_airmass] :=
-                  floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+              if alt <> 0 then lv.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
 
               {magn is column 9 will be added separately}
               {solution is column 12 will be added separately}
@@ -5291,27 +5285,23 @@ begin
 end;
 
 
-procedure Tstackmenu1.listview1CustomDrawItem(Sender: TCustomListView;
-  Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
+procedure Tstackmenu1.listview1CustomDrawItem(Sender: TCustomListView; Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
 begin
   if stackmenu1.use_manual_alignment1.Checked then
   begin
-    if length(Sender.Items.item[Item.Index].subitems.Strings[L_X]) > 1 then
-      {manual position added, colour it}
+    if length(Sender.Items.item[Item.Index].subitems.Strings[L_X]) > 1 then  {manual position added, colour it}
       Sender.Canvas.Font.Color := clGreen
     else
       Sender.Canvas.Font.Color := clred;
   end
   else
   begin
-    Sender.Canvas.Font.Color := clmenutext;
-    {required for high contrast settings. Otherwise it is always black}
+    Sender.Canvas.Font.Color := clmenutext;  {required for high contrast settings. Otherwise it is always black}
   end;
 end;
 
 
-procedure Tstackmenu1.listview2CustomDraw(Sender: TCustomListView;
-  const ARect: TRect; var DefaultDraw: boolean);
+procedure Tstackmenu1.listview2CustomDraw(Sender: TCustomListView;  const ARect: TRect; var DefaultDraw: boolean);
 begin
   stackmenu1.nr_total_darks1.Caption := IntToStr(ListView2.items.Count);
   {update counting info}
@@ -5882,6 +5872,7 @@ end;
 
 procedure Tstackmenu1.analyse_objects_visible1Click(Sender: TObject);
 begin
+  esc_pressed:=false;
   if ListView1.items.Count = 0 then
   begin
     memo2_message('Abort, No files in tab IMAGES.');
@@ -5893,8 +5884,7 @@ begin
     ListView1.ItemIndex := 0;{show wich file is processed}
   filename2 := Listview1.selected.Caption;
 
-  if load_fits(filename2, True {light}, True, True {update memo}, 0, head,
-    img_loaded) = False then
+  if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded) = False then
   begin
     memo2_message('Abort, can' + #39 + 't load ' + filename2);
     Screen.Cursor := crDefault;    { back to normal }
@@ -9155,7 +9145,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);
+procedure Tstackmenu1.speedButton_location1Click(Sender: TObject);
 begin
   lat_default := InputBox('Default observer location:','Enter the default observer latitude in degrees [DD.DDD or DD MM]', lat_default);
   long_default := InputBox('Default observer location:','Enter the default observer longitude in degrees. East is positive, West is negative [DDD.DDD or DD MM]',long_default);
@@ -10258,8 +10248,8 @@ end;
 
 
 procedure Tstackmenu1.analysephotometry1Click(Sender: TObject);
-var
-  c: integer;
+//var
+//  c: integer;
 begin
   if Sender = analysephotometrymore1 then
   begin
@@ -10316,10 +10306,10 @@ end;
 
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var
-  fitsX, fitsY, fuzziness,col,counter,i,j : integer;
-  r, g, b, h, s, s_new, v, oldhue, newhue, dhue, saturation_factor, s_old, saturation_tol, v_adjust,lum: single;
+  fitsX, fitsY, fuzziness,col,i,j : integer;
+  r, g, b, h, s, s_new, v, oldhue, newhue, dhue, saturation_factor, s_old, saturation_tol, v_adjust : single;
   colour: tcolor;
-  blend,success : boolean;
+  blend : boolean;
   close,close2 : double;
           function colour_close(y,x : integer) : boolean;
           begin
@@ -11978,7 +11968,7 @@ begin
             exit;
           end;
 
-          get_annotation_position;{fill the x,y with annotation position}
+          get_annotation_position(c);{fill the x,y with annotation position}
         finally
         end;
       end;

@@ -11,7 +11,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
-  clipbrd, ExtCtrls, Menus;
+  clipbrd, ExtCtrls, Menus, Buttons;
 
 type
 
@@ -164,7 +164,7 @@ begin
   end;
   aavso_report:= '#TYPE='+detype+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version 1.1.0'+#13+#10+
+                 '#SOFTWARE=ASTAP, v'+astap_version+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -607,8 +607,8 @@ begin
 
   aavso_report:='';
   plot_graph;
-
 end;
+
 
 end.
 
