@@ -111,62 +111,68 @@ end;
 {   Find the solution vector of an overdetermined system of linear equations according to the method of least squares using GIVENS rotations     }
 {                                                                                                                                                }
 {   Solve x of A x = b with the least-squares method                                                                                             }
-{   In matrix calculations, b_matrix[0..nr_equations-1,0..nr_columns-1]:=solution_vector[0..2] * A_XYpositions[0..nr_equations-1,0..nr_columns-1]}
+{   In matrix calculations, b_matrix[0..nr_columns-1,0..nr_equations-1]:=solution_vector[0..2] * A_XYpositions[0..nr_columns-1,0..nr_equations-1]}
 {                                                                                                                              }
 {   see also Montenbruck & Pfleger, Astronomy on the personal computer}
-procedure lsq_fit( A_matrix: star_list; {[0..nr_equations-1, 0..3]}
-                       b_matrix  : array of double;{equations result, b=A*s}
-                       var x_matrix: array of double );
+procedure lsq_fit( A_matrix: star_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector );
   const tiny = 1E-10;  {accuracy}
-  var i,j,k, nr_equations,nr_columns  : integer;
+  var i,j,k, nr_equations,nr_columns,hhh  : integer;
       p,q,h                           : double;
       temp_matrix                     : star_list;
 
 begin
-  nr_equations:=length(A_matrix);
-  nr_columns:=length(A_matrix[nr_equations-1]);{should be 3 for this application}
+  nr_equations:=length(A_matrix[0]);
+  nr_columns:=length(A_matrix);{should be 3 for this application}
 
   temp_matrix:=A_matrix; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-  setlength(temp_matrix,nr_equations,nr_columns);{duplicate A_matrix to protect data in A_matrix}
+  setlength(temp_matrix,nr_columns,nr_equations);{duplicate A_matrix to protect data in A_matrix}
 
   for j:=0 to nr_columns-1 do {loop over columns of temp_matrix}
   {eliminate matrix elements A[i,j] with i>j from column j}
     for i:=j+1 to nr_equations-1 do
-      if temp_matrix[i,j]<>0 then
-      begin{calculate p, q and new temp_matrix[j,j]; set temp_matrix[i,j]=0}
-        if abs(temp_matrix[j,j])<tiny*abs(temp_matrix[i,j]) then
+      if temp_matrix[j,i]<>0 then
+      begin{calculate p, q and new temp_matrix[j,j]; set temp_matrix[j,i]=0}
+        if abs(temp_matrix[j,j])<tiny*abs(temp_matrix[j,i]) then
         begin
           p:=0;
           q:=1;
-          temp_matrix[j,j]:=-temp_matrix[i,j];
+          temp_matrix[j,j]:=-temp_matrix[j,i];
           temp_matrix[i,i]:=0;
+
         end
         else
         begin
-          h:=sqrt(temp_matrix[j,j]*temp_matrix[j,j]+temp_matrix[i,j]*temp_matrix[i,j]);
+          h:=sqrt(temp_matrix[j,j]*temp_matrix[j,j]+temp_matrix[j,i]*temp_matrix[j,i]);
           if temp_matrix[j,j]<0 then h:=-h;
           p:=temp_matrix[j,j]/h;
-          q:=-temp_matrix[i,j]/h;
+          q:=-temp_matrix[j,i]/h;
           temp_matrix[j,j]:=h;
-          temp_matrix[i,j]:=0;
+          temp_matrix[j,i]:=0;
+
         end;
         {calculate the rest of the line}
         for k:=j+1 to nr_columns-1 do
         begin
-          h:= p*temp_matrix[j,k] - q*temp_matrix[i,k];
-          temp_matrix[i,k] := q*temp_matrix[j,k] + p*temp_matrix[i,k];
-          temp_matrix[j,k] := h;
+          h:= p*temp_matrix[k,j] - q*temp_matrix[k,i];
+          temp_matrix[k,i] := q*temp_matrix[k,j] + p*temp_matrix[k,i];
+          temp_matrix[k,j] := h;
         end;
         h:= p*b_matrix[j] - q*b_matrix[i];
         b_matrix[i] := q*b_matrix[j] + p*b_matrix[i];
         b_matrix[j] := h;
       end;
 
+  for i:=0 to nr_columns-1 do x_matrix[i]:=0; //2022, extra precaution to zero x_matrix
+
   for i:= nr_columns-1 downto 0 do {back substitution}
   begin
     H:=b_matrix[i];
-    for k:=i+1 to nr_columns-1 do h:=h-temp_matrix[i,k]*x_matrix[k];
-    x_matrix[i] := h/temp_matrix[i,i];
+    for k:=i+1 to nr_columns-1 do
+            h:=h-temp_matrix[k,i]*x_matrix[k];
+    if temp_matrix[i,i]<>0 then x_matrix[i] := h/temp_matrix[i,i]
+    else
+    x_matrix[i]:=9999999999999999; //v2022. Prevent runtime error dividing by zero. Should normally not happen. In case of zero due to wrong double star detection by using triples force a failure
+
     {solution vector x:=x_matrix[0]x+x_matrix[1]y+x_matrix[2]}
   end;
 end; {lsq_fit}
@@ -434,21 +440,21 @@ begin
   if (nr_references>=3) then {use 3 quads center position}
   begin
     {fill equations}
-    setlength(A_XYpositions,nr_references,3);
+    setlength(A_XYpositions,3,nr_references);
     setlength(b_Xrefpositions,nr_references);
     setlength(b_Yrefpositions,nr_references);
 
     for k:=0 to nr_references-1 do
     begin
-      A_XYpositions[k,0]:=quad_star_distances2[6,matchlist1[1,k]]; {average x position of quad}
-      A_XYpositions[k,1]:=quad_star_distances2[7,matchlist1[1,k]]; {average y position of quad}
-      A_XYpositions[k,2]:=1;
+      A_XYpositions[0,k]:=quad_star_distances2[6,matchlist1[1,k]]; {average x position of quad}
+      A_XYpositions[1,k]:=quad_star_distances2[7,matchlist1[1,k]]; {average y position of quad}
+      A_XYpositions[2,k]:=1;
 
       b_Xrefpositions[k]:=quad_star_distances1[6,matchlist1[0,k]]; {x position of ref quad}
       b_Yrefpositions[k]:=quad_star_distances1[7,matchlist1[0,k]]; {Y position of ref quad}
 
-      {in matrix calculations, b_refpositionX[0..nr_equations-1,0..2]:=solution_vectorX[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
-      {                        b_refpositionY[0..nr_equations-1,0..2]:=solution_matrixY[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
+      {in matrix calculations, b_refpositionX[0..2,0..nr_equations-1]:=solution_vectorX[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
+      {                        b_refpositionY[0..2,0..nr_equations-1]:=solution_matrixY[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
     end;
     result:=true;{3 or more references}
   end;
@@ -620,17 +626,16 @@ begin
   end;
   result:=true;{2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
 
-  {in matrix calculations, b_refpositionX[0..nr_equations-1,0..2]:=solution_vectorX[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
-  {                        b_refpositionY[0..nr_equations-1,0..2]:=solution_vectorY[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
+  {in matrix calculations, b_refpositionX[0..2,0..nr_equations-1]:=solution_vectorX[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
+  {                        b_refpositionY[0..2,0..nr_equations-1]:=solution_matrixY[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
 
   {find solution vector for X:=ax+by+c  / b_Xref:=solution[0]x+solution[1]y+solution[2]}
-   lsq_fit( A_XYpositions {[0..nr_equations-1, 0..2]},b_Xrefpositions, solution_vectorX {[0..2]} );
+   lsq_fit( A_XYpositions {[0..2,0..nr_equations-1]},b_Xrefpositions, solution_vectorX {[0..2]} );
 
   {find solution vector for Y:=ax+by+c  / b_Yref:=solution[0]x+solution[1]y+solution[2]}
-  lsq_fit( A_XYpositions {[0..nr_equations-1, 0..2]},b_Yrefpositions, solution_vectorY {[0..2]} );
+  lsq_fit( A_XYpositions {0..2,[0..nr_equations-1]},b_Yrefpositions, solution_vectorY {[0..2]});
 
-
-  xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) );
+   xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) );
 
   if ((xy_sqr_ratio<0.9) or (xy_sqr_ratio>1.1)) then {dimensions x, y are not the same, something wrong.}
   begin

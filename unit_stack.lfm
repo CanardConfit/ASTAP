@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 481
+  Left = 80
   Height = 674
-  Top = 188
+  Top = 197
   Width = 2139
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -264,7 +264,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 2139
-    ActivePage = lights
+    ActivePage = tab_photometry1
     Align = alClient
     AutoSize = True
     Constraints.MaxHeight = 498
@@ -273,7 +273,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
