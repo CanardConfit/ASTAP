@@ -1918,7 +1918,7 @@ end;
 
 
 
-procedure get_annotation_position(c:integer);
+procedure get_annotation_position(c:integer; const memo : tstrings);
 {find the position of the specified asteroid annotation}
 var
   count1: integer;
@@ -1929,18 +1929,18 @@ begin
   List := TStringList.Create;
   list.StrictDelimiter := True;
   Name := stackmenu1.ephemeris_centering1.Text;{asteroid to center on}
-  count1 := mainwindow.Memo1.Lines.Count - 1;
+  count1 := memo.Count - 1;
   try
     while count1 >= 0 do {plot annotations}
     begin
 
-      if copy(mainwindow.Memo1.Lines[count1], 1, 8) = 'ANNOTATE' then {found}
+      if copy(memo[count1], 1, 8) = 'ANNOTATE' then {found}
       begin
-        dummy:=mainwindow.Memo1.Lines[count1];
+        dummy:=memo[count1];
 
         List.Clear;
         ExtractStrings([';'], [],
-          PChar(copy(mainwindow.Memo1.Lines[count1], 12, 80 - 12)), List);
+          PChar(copy(memo[count1], 12, 80 - 12)), List);
 
         if list.Count >= 6 then {correct annotation}
         begin
@@ -2029,9 +2029,18 @@ var
   c, star_counter, i, counts: integer;
   hfd_median, alt, az       : double;
   red, green, blue, planetary : boolean;
-  key, filename1, rawstr ,memo1_text  : string;
-  img: image_array;
-  bck :Tbackground;
+  key, filename1, rawstr      : string;
+  img             : image_array;
+  bck             : Tbackground;
+  header_2        : tstrings; {extra header}
+
+  procedure cleanup;
+  begin
+    img := nil; {free memo2}
+    if stackmenu1.use_ephemeris_alignment1.Checked then header_2.free;
+    Screen.Cursor := crDefault;    { back to normal }
+  end;
+
 begin
   with stackmenu1 do
   begin
@@ -2087,8 +2096,8 @@ begin
           Application.ProcessMessages;
           if esc_pressed then
           begin
-            Screen.Cursor := crDefault;
-            { back to normal }  exit;
+            cleanup; { release memory, set cursor back to normal}
+            exit;
           end;
           if convert_to_fits(filename1) {convert to fits} then
             ListView1.items[c].Caption := filename1 {change listview name to FITS.}
@@ -2119,8 +2128,8 @@ begin
       Inc(c);
     until c > counts;
 
-
-    if use_ephemeris_alignment1.Checked then memo1_text:=mainwindow.Memo1.Text;//backup current header
+    if use_ephemeris_alignment1.Checked then
+      header_2:=tstringlist.create;
 
     counts := ListView1.items.Count - 1;
     c := 0;
@@ -2143,12 +2152,12 @@ begin
         Application.ProcessMessages;
         if esc_pressed then
         begin
-          Screen.Cursor := crDefault; { back to normal }
+          cleanup; { release memory, set cursor back to normal}
           exit;
         end;
 
 
-        if load_fits(filename2, True { update head_2.ra0..}, True, use_ephemeris_alignment1.Checked  {update memo}, 0, head_2, img) = False then {load in memory. Use head_2 to protect head against overwriting head}
+        if load_fits(filename2, True { update head_2.ra0..}, True, use_ephemeris_alignment1.Checked  {update memo}, 0,header_2, head_2, img) = False then {load in memory. Use head_2 to protect head against overwriting head}
         begin {failed to load}
           ListView1.Items.item[c].Checked := False;
           ListView1.Items.item[c].subitems.Strings[L_result] := 'No FITS!';
@@ -2328,7 +2337,7 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_sqm] := sqm_value;
 
                 if use_ephemeris_alignment1.Checked then {ephemeride based stacking}
-                  get_annotation_position(c);{fill the x,y with annotation position}
+                  get_annotation_position(c,header_2);{fill the x,y with annotation position}
               end;
             finally
               ListView1.Items.EndUpdate;
@@ -2376,8 +2385,8 @@ begin
           end;
           if esc_pressed then
           begin
-            Screen.Cursor := crDefault;
-            { back to normal }  exit;
+            cleanup; { release memory, set cursor back to normal}
+            exit;
           end;
           Inc(c)
         until c > counts;
@@ -2386,13 +2395,8 @@ begin
 
     count_selected;
     {report the number of lights selected in images_selected and update menu indication}
-    new_analyse_required := False;
-    {back to normal, head_2.filter_name is not changed, so no re-analyse required}
-    img := nil; {free memo2}
-
-    if use_ephemeris_alignment1.Checked then mainwindow.Memo1.Text:=memo1_text;//restore current header
-
-    Screen.Cursor := crDefault;    { back to normal }
+    new_analyse_required := False; {back to normal, head_2.filter_name is not changed, so no re-analyse required}
+    cleanup;
     progress_indicator(-100, '');{progresss done}
   end;
 end;
@@ -2570,7 +2574,7 @@ begin
   backup_img;
 
 
-  if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_temp) then
+  if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_temp) then
     {success load}
   begin
     nrcolours := length(img_loaded) - 1;{nr colours - 1}
@@ -3194,7 +3198,7 @@ begin
     {add, multiply image}
     if length(image_to_add1.Caption) > 3 then {file name available}
     begin
-      if load_fits(image_to_add1.Caption, False {dark/flat}, True {load data}, False {update memo}, 0,  head_2, img_temp) then {succes load}
+      if load_fits(image_to_add1.Caption, False {dark/flat}, True {load data}, False {update memo}, 0,mainwindow.memo1.lines,  head_2, img_temp) then {succes load}
       begin
         if ((length(img_temp)=length(img_loaded)) and  (length(img_temp[0])=length(img_loaded[0])) ) then //equal format
         begin
@@ -3778,7 +3782,7 @@ begin
   begin
     if equalise_background_step = 5 then
     begin {restart from step 1}
-      if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded) then
+      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) then
         {succes load}
       begin
         use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
@@ -4068,8 +4072,7 @@ begin
         break;{leave loop}
       end;
 
-      loaded := load_fits(filename1, light {light or dark/flat}, full
-        {full fits}, False {update memo}, 0, head_2, img); {for background or background+hfd+star}
+      loaded := load_fits(filename1, light {light or dark/flat}, full  {full fits}, False {update memo}, 0,mainwindow.memo1.lines, head_2, img); {for background or background+hfd+star}
       if loaded then
       begin {success loading header only}
         try
@@ -4445,8 +4448,7 @@ begin
 
     {load image}
     Application.ProcessMessages;
-    if ((esc_pressed) or (load_fits(file_list[c], False {light}, True,
-      True {update memo}, 0, head, img_tmp1) = False)) then
+    if ((esc_pressed) or (load_fits(file_list[c], False {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_tmp1) = False)) then
     begin
       Screen.Cursor := crDefault;
       exit;
@@ -5133,8 +5135,7 @@ begin
       mainwindow.Caption := filename2;
 
       {load image}
-      if load_fits(filename2, True {light}, True, True {update memo}, 0, head,
-        img_loaded) = False then
+      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head,img_loaded) = False then
       begin
         memo2_message('repeat exit');
 
@@ -5431,8 +5432,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then break;
         {load image}
-        if load_fits(filename2, True {light}, True, True {update memo},
-          0, head, img_loaded) = False then
+        if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
         begin
           esc_pressed := True;
           break;
@@ -5884,7 +5884,7 @@ begin
     ListView1.ItemIndex := 0;{show wich file is processed}
   filename2 := Listview1.selected.Caption;
 
-  if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded) = False then
+  if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
   begin
     memo2_message('Abort, can' + #39 + 't load ' + filename2);
     Screen.Cursor := crDefault;    { back to normal }
@@ -6615,8 +6615,7 @@ begin
         Application.ProcessMessages;
 
         {load image}
-        if ((esc_pressed) or (load_fits(filename1, True {light}, True,
-          True {update memo}, 0, head_2, img_temp) = False)) then
+        if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head_2, img_temp) = False)) then
         begin
           Screen.Cursor := crDefault;{back to normal }
           exit;
@@ -7251,8 +7250,7 @@ begin
       {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
       listview6.Items[c].MakeVisible(False);{scroll to selected item}
 
-      if load_fits(filename2, True {light}, True, True {update memo}, 0,
-        head, img_loaded) = False then
+      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
       begin
         esc_pressed := True;
         break;
@@ -7669,8 +7667,7 @@ begin
       begin {read solution}
         {load file, and convert astrometric solution to vector solution}
         filename2 := stackmenu1.listview7.items[c].Caption;
-        if load_fits(filename2, True {light}, False {only read header},
-          False {update memo}, 0, head_2, img_temp) = False then
+        if load_fits(filename2, True {light}, False {only read header},False {update memo}, 0,mainwindow.memo1.lines, head_2, img_temp) = False then
         begin
           esc_pressed := True;
           exit;
@@ -7974,7 +7971,7 @@ begin
       Application.ProcessMessages;
 
       {load image}
-      if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0, head_2, img_temp) = False)) then
+      if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head_2, img_temp) = False)) then
       begin
         listview7.Items.EndUpdate;
         nil_all;{nil all arrays and restore cursor}
@@ -8072,7 +8069,7 @@ begin
         end;
 
         {load image}
-        if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded) = False)) then
+        if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False)) then
         begin
           esc_pressed := True;
           nil_all;
@@ -9461,7 +9458,7 @@ begin
         Application.ProcessMessages;
 
         {load image}
-        if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0, head_2, img_temp) = False)) then
+        if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head_2, img_temp) = False)) then
         begin
           Screen.Cursor := crDefault;{back to normal }
           exit;
@@ -9544,7 +9541,7 @@ begin
         end;
 
         filename2:=ff;
-        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded) then {load a fits or Astro-TIFF file}
+        if load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then {load a fits or Astro-TIFF file}
 
          // load_image(mainwindow.image1.Visible = False {recenter}, True {plot})       then
         begin
@@ -10252,17 +10249,7 @@ procedure Tstackmenu1.analysephotometry1Click(Sender: TObject);
 //  c: integer;
 begin
   if Sender = analysephotometrymore1 then
-  begin
-    analyse_listview(listview7, True {light}, True {full fits}, True{refresh});
-//    for c:=0 to listview7.items.Count - 1 do
-//    begin
-//      if listview7.Items.item[c].Checked then
-//      begin
-//        listview_view(listview7);// show image and plot annotations
-//        break;// stop for loop
-//      end;
-//    end;
-  end
+    analyse_listview(listview7, True {light}, True {full fits}, True{refresh})
   else
     analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
 
@@ -10643,8 +10630,7 @@ begin
         if esc_pressed then
           break;
         {load image}
-        if load_fits(filename2, True {light}, True, True {update memo},
-          0, head, img_loaded) = False then
+        if load_fits(filename2, True {light}, True, True {update memo},0,mainwindow.memo1.lines, head, img_loaded) = False then
         begin
           esc_pressed := True;
           break;
@@ -10787,7 +10773,7 @@ begin
     if ((head_ref.dark_count = 0){restart} or (filen <> last_dark_loaded)) then
     begin
       memo2_message('Loading master dark file ' + filen);
-      if load_fits(filen, False {light}, True, False {update memo}, 0, head_2, img_dark) = False then
+      if load_fits(filen, False {light}, True, False {update memo}, 0,mainwindow.memo1.lines, head_2, img_dark) = False then
       begin
         memo2_message('Error');
         head_ref.dark_count := 0;
@@ -10852,7 +10838,7 @@ begin
     if ((head_ref.flat_count = 0){restart} or (filen <> last_flat_loaded)) then {new file}
     begin
       memo2_message('Loading master flat file ' + filen);
-      if load_fits(filen, False {light}, True, False {update memo}, 0, head_2, img_flat) = False then
+      if load_fits(filen, False {light}, True, False {update memo}, 0,mainwindow.memo1.lines, head_2, img_flat) = False then
       begin
         memo2_message('Error');
         head_2.flat_count := 0;
@@ -11409,8 +11395,7 @@ begin
 
           {load image}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2, True {light}, True,
-            True {update memo, required for updates}, 0, head, img_loaded) = False)) then
+          if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo, required for updates}, 0,mainwindow.memo1.lines, head, img_loaded) = False)) then
           begin
             memo2_message('Error loading file ' + filename2);
             Screen.Cursor := crDefault;
@@ -11836,7 +11821,7 @@ begin
           end;
 
           {load file}
-          if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded){important required to check head.cd1_1} = False then
+          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
           begin
             memo2_message('Error loading file ' + filename2); {failed to load}
             Screen.Cursor := crDefault;
@@ -11901,7 +11886,7 @@ begin
           end;
 
           {load file}
-          if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded){important required to check head.cd1_1} = False then
+          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
           begin
             memo2_message('Error loading file ' + filename2);{failed to load}
             Screen.Cursor := crDefault;
@@ -11949,7 +11934,7 @@ begin
           end;
 
           {load file}
-          if load_fits(filename2, True {light}, True, True {update memo}, 0, head, img_loaded){important required to check head.cd1_1} = False then
+          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
           begin
             memo2_message('Error loading file ' + filename2); {failed to load}
             Screen.Cursor := crDefault;
@@ -11968,7 +11953,7 @@ begin
             exit;
           end;
 
-          get_annotation_position(c);{fill the x,y with annotation position}
+          get_annotation_position(c,mainwindow.Memo1.lines);{fill the x,y with annotation position}
         finally
         end;
       end;

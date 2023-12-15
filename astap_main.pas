@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -636,7 +636,7 @@ var
     : Theader;{contains the most important header info}
   bck : Tbackground;
 
-  settingstring :tstrings; {settings for save and loading}
+  settingstring : tstrings; {settings for save and loading}
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
   distortion_data : star_list;
   filename2: string;
@@ -751,7 +751,7 @@ var {################# initialised variables #########################}
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
-function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small, adu_e {unbinned}:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
@@ -1068,7 +1068,7 @@ end;{reset global variables}
 //end;
 
 
-function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo: tstrings;out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
 {if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
@@ -1076,7 +1076,7 @@ var
   TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
-  dummy, ccd_temperature, jd2,jd_obs,col_float2                : double;
+  dummy, ccd_temperature, jd2,jd_obs         : double;
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -1175,7 +1175,7 @@ begin
   if update_memo then
   begin
     mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
-    mainwindow.memo1.clear;{clear memo for new header}
+    memo.clear;{clear memo for new header}
   end;
 
   Reader := TReader.Create(TheFile,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
@@ -1246,7 +1246,7 @@ begin
       if load_data then
       begin
         SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
-        if update_memo then mainwindow.memo1.lines.add(aline); {add line to memo}
+        if update_memo then memo.add(aline); {add line to memo}
       end;
       if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {head.naxis}
       begin
@@ -3637,7 +3637,7 @@ end;
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
 begin
   result:=false;
-  if load_fits(filename2,true {light},true {load data},true {update memo},0,head,img_loaded)=false then exit;
+  if load_fits(filename2,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false then exit;
 
   bin_X2X3X4(binfactor);{bin img_loaded 2x or 3x}
 
@@ -5317,7 +5317,7 @@ var
   val                               : single;
 begin
   result:='';
-  if load_fits(filename7,true {light},true,true {update memo},0,head,img_loaded)=false then
+  if load_fits(filename7,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false then
   begin
     beep;
     exit;
@@ -5507,7 +5507,7 @@ begin
       mainwindow.caption:=opendialog1.filename;
       application.processmessages;{show file selection}
       {load image}
-      if load_fits(opendialog1.filename,true {light},true,true {update memo},0,head,img_loaded) then
+      if load_fits(opendialog1.filename,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then
       begin
         if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -8841,7 +8841,7 @@ begin
   begin {fits file created by modified unprocessed_raw}
     if loadfile then
     begin
-      result:=load_fits(filename4,true {light},true {load data},true {update memo},0,head,img); {load new fits file}
+      result:=load_fits(filename4,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img); {load new fits file}
       if ((result) and (savefile=false)) then
       begin
         deletefile(filename4);{delete temporary fits file}
@@ -8974,14 +8974,14 @@ begin
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
   begin
-    result:=load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded);
+    result:=load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded);
     if head.naxis<2 then result:=false; {no image}
   end
   else
   if (ext1='.FZ') then {CFITSIO format}
   begin
     if unpack_cfitsio(filename2) then {successful conversion using funpack}
-    result:=load_fits(filename2,true {light},true {load data},true {update memo},0,head,img_loaded); {load new fits file}
+    result:=load_fits(filename2,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img_loaded); {load new fits file}
   end {fz}
   else
   if check_raw_file_extension(ext1) then {raw format}
@@ -9376,11 +9376,18 @@ begin
     j:=posex('"',s,i);
     vsx[count].name:=copy(s,i,j-i);
 
-//    i:=posex('"AUID":"',s,j); //Name will be always available
-//    i:=i+length('"AUID":"');
-//    j:=posex('"',s,i);
-//    vsx[count].auid:=copy(s,i,j-i);
-
+    //optional field
+//     if s[j+3]='A' then
+//     begin
+//       i:=posex('"AUID":"',s,j); //AUID will NOT always available !!!
+//       if i=0 then
+//               break;//no more data
+//       i:=i+length('"AUID":"');
+//       j:=posex('"',s,i);
+//       vsx[count].auid:=copy(s,i,j-i);
+//     end
+//     else
+//     vsx[count].auid:='';
 
     i:=posex('"RA2000":"',s,j);//RA will be always available
     i:=i+length('"RA2000":"');
@@ -10881,7 +10888,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin break; end;
 
-          if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded) then {load image success}
+          if load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then {load image success}
           begin
             if head.cd1_1=0 then
             begin
@@ -11007,7 +11014,6 @@ end;      }
 
 //  inp:=nil;
 //  outp:=nil;
-
 //end;
 
 
@@ -11222,7 +11228,7 @@ begin
     UpDown1.position:=UpDown1.position-1; {no more extensions}
     exit;
   end;
-  if load_fits(filename2,true,true,true {update memo},updown1.position,head,img_loaded){load fits file } then
+  if load_fits(filename2,true,true,true {update memo},updown1.position,mainwindow.memo1.lines,head,img_loaded){load fits file } then
   begin
     if head.naxis<>0 then {not a bintable, compressed}
     begin
@@ -11802,7 +11808,7 @@ end;
 procedure FITS_BMP(filen:string);{save FITS to BMP file}
 var filename3:string;
 begin
-  if load_fits(filen,true {light},true,true {update memo},0,head,img_loaded) {load now normal} then
+  if load_fits(filen,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) {load now normal} then
   begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     filename3:=ChangeFileExt(Filen,'.bmp');
@@ -12784,7 +12790,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then  break;
         {load image and solve image}
-        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded) then {load image success}
+        if load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then {load image success}
         begin
           if ((head.cd1_1<>0) and (solution_overwrite=false)) then
           begin
@@ -13603,7 +13609,7 @@ begin
       filename2:=Strings[i];
       {load fits}
       Application.ProcessMessages;
-      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin break;end;
+      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false)) then begin break;end;
 
       if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
                                                                // Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped
@@ -15734,7 +15740,7 @@ begin
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
-        if load_fits(filename2,true{light},false {data},false {update memo},0,head_2,img_temp) then {load image success}
+        if load_fits(filename2,true{light},false {data},false {update memo},0,mainwindow.memo1.lines,head_2,img_temp) then {load image success}
         begin
           date_to_jd(head_2.date_obs,head_2.date_avg,head_2.exposure);{convert date-obs to jd_start, jd_mid}
 
@@ -15809,7 +15815,7 @@ begin
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
-        if load_fits(filename2,true{light},false {data},false {update memo},0,head_2,img_temp) then {load image success}
+        if load_fits(filename2,true{light},false {data},false {update memo},0,mainwindow.memo1.lines,head_2,img_temp) then {load image success}
         begin
           date_to_jd(head_2.date_obs,head_2.date_avg,head_2.exposure);{convert date-obs to jd_start, jd_mid}
           if jd_start>2400000 then {valid JD}

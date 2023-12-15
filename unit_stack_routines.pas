@@ -170,7 +170,7 @@ var
   saturated_level,hfd_min,tempval                           : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,
   use_astrometry_internal,vector_based :boolean;
-  warning,memo1_text  : string;
+  warning             : string;
 
 begin
   with stackmenu1 do
@@ -249,12 +249,11 @@ begin
             {load image}
             Application.ProcessMessages;
             if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-            if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+            if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
             if init=false then
             begin
               head_ref:=head;{backup solution}
-              memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file as text}
               initialise_var1;{set variables correct, do this before apply dark}
               initialise_var2;{set variables correct}
             end;
@@ -494,7 +493,6 @@ begin
       if counter<>0 then
       begin
         head:=head_ref; {restore solution. Works only if no oversize is used}
-        mainwindow.Memo1.Text:=memo1_text;{restore header of reference file for update and saving}
         head.naxis3:=3;{three colours}
         head.naxis :=3;{three dimensions. Header will be updated in the save routine}
         img_loaded:=img_average;
@@ -580,7 +578,7 @@ var
     background_correction, weightF,hfd_min                                                                                               : double;
     init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based                     : boolean;
     tempval                                                                                                                              : single;
-    warning,memo1_text  : string;
+    warning             : string;
 
 begin
   with stackmenu1 do
@@ -619,13 +617,12 @@ begin
           Application.ProcessMessages;
           {load image}
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
           if init=false then
           begin {init is false, first image}
             old_width:=head.width;
             old_height:=head.height;
             head_ref:=head;{backup solution}
-            memo1_text:=mainwindow.Memo1.Text;{backup header of reference file as text}
             initialise_var1;{set variables correct. Do this before apply dark}
             initialise_var2;{set variables correct}
             if ((bayerpat='') and (process_as_osc=2 {forced})) then
@@ -794,7 +791,6 @@ begin
         head_ref.naxis:=  head.naxis;  {store colour info in reference header}
         head_ref.datamax_org:= head.datamax_org;  {for 8 bit files, they are now 500 minimum}
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
-        mainwindow.Memo1.Text:=memo1_text;{restore header of reference file for update and saving}
         head.height:=height_max;
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
@@ -842,7 +838,6 @@ var
     background_correction,background_correction_center,background    : array[0..2] of double;
     counter_overlap                                                  : array[0..2] of integer;
     bck                                                              : array[0..3] of double;
-    memo1_text                                                       : string;
 begin
   with stackmenu1 do
   begin
@@ -876,7 +871,7 @@ begin
 
           {load image}
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           if init=true then
           begin
@@ -887,7 +882,6 @@ begin
           if init=false then
           begin
             head_ref:=head;{backup solution}
-            memo1_text:=mainwindow.Memo1.Text;{backup header of reference file as text}
             celestial_to_pixel(ra_min,dec_min, fx1,fy1);{ra,dec to fitsX,fitsY}
             celestial_to_pixel(ra_max,dec_max, fx2,fy2);{ra,dec to fitsX,fitsY}
             sensor_coordinates_to_celestial((fx1+fx2)/2,(fy1+fy2)/2, raMiddle, decMiddle);//find middle of mosaic
@@ -1063,7 +1057,6 @@ begin
       if counter<>0 then
       begin
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
-        mainwindow.Memo1.Text:=memo1_text;{restore header of reference file for update and saving}
         head.height:=height_max;
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
@@ -1106,7 +1099,7 @@ var
     variance_factor, value,weightF,hfd_min                                                                                                         : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based                              : boolean;
     tempval, sumpix, newpix,target_background,background_correction                                                                                    : single;
-    warning,memo1_text  : string;
+    warning     : string;
 begin
   with stackmenu1 do
   begin
@@ -1148,14 +1141,13 @@ begin
         {load image}
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
         if init=false then {first image}
         begin
           old_width:=head.width;
           old_height:=head.height;
 
           head_ref:=head;{backup solution}
-          memo1_text:=mainwindow.Memo1.Text;{backup header of reference file as text}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
@@ -1353,7 +1345,7 @@ begin
           {load image}
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
           if init=false then
           begin
             {not required. Done in first step}
@@ -1461,7 +1453,7 @@ begin
           {load file}
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
           apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
           memo2_message('Combining '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
@@ -1561,7 +1553,6 @@ begin
         head_ref.naxis:=  head.naxis;  {store colour info in reference header}
         head_ref.datamax_org:= head.datamax_org;  {for 8 bit files, they are now 500 minimum}
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not oversized}
-        mainwindow.Memo1.Text:=memo1_text;{restore header of reference file for update and saving}
         head.height:=height_max;
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
@@ -1602,7 +1593,7 @@ var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV,max_stars   : integer;
     background_correction, hfd_min      : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
-    warning, memo1_text  : string;
+    warning              : string;
 begin
   with stackmenu1 do
   begin
@@ -1637,7 +1628,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
 
-        if load_fits(filename2,true {light},true,true {init=false} {update memo for saving},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        if load_fits(filename2,true {light},true,true {init=false} {update memo for saving},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
         if init=false then {first image}
         begin
@@ -1645,7 +1636,6 @@ begin
           old_height:=head.height;
 
           head_ref:=head;{backup solution}
-          memo1_text:=mainwindow.Memo1.Text;{backup header of reference file as text}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
           if ((bayerpat='') and (process_as_osc=2 {forced})) then

@@ -139,9 +139,9 @@ begin
 
   stdev_valid:=(photometry_stdev>0.0001);
   if stdev_valid then
-    err_message:='max(StDev:2/SNR) used for MERR.'
+    err_message:='MERR:=max(StDev:2/SNR).'
   else
-    err_message:='2/SNR used for MERR.';
+    err_message:='MERR:=2/SNR.';
 
   delta_bv:=strtofloat2(form_aavso1.delta_bv1.text);
   magnitude_slope:=strtofloat2(form_aavso1.magnitude_slope1.text);
