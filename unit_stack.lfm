@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 80
-  Height = 674
-  Top = 197
+  Left = 596
+  Height = 735
+  Top = 126
   Width = 2139
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 657
+  ClientHeight = 718
   ClientWidth = 2139
   Color = clForm
   Icon.Data = {
@@ -52,9 +52,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '3.0.0.1'
   object memo2: TMemo
     Left = 0
-    Height = 164
+    Height = 225
     Top = 560
-    Width = 1729
+    Width = 2137
     Align = alCustom
     Anchors = [akTop, akLeft, akBottom]
     DoubleBuffered = True
@@ -236,10 +236,10 @@ object stackmenu1: Tstackmenu1
   object write_log1: TCheckBox
     Left = 1136
     Height = 19
-    Hint = 'Write the stack log to a file with extension .txt'
+    Hint = 'Write the stack log to a file with .txt extension at the light directory.'
     Top = 529
-    Width = 85
-    Caption = 'Write log file'
+    Width = 115
+    Caption = 'Write stack log file'
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
@@ -264,7 +264,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 2139
-    ActivePage = tab_photometry1
+    ActivePage = lights
     Align = alClient
     AutoSize = True
     Constraints.MaxHeight = 498
@@ -273,7 +273,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 8
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -2335,7 +2335,7 @@ object stackmenu1: Tstackmenu1
           Height = 23
           Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
           Top = 72
-          Width = 60
+          Width = 72
           ItemHeight = 15
           ItemIndex = 2
           Items.Strings = (
@@ -3482,8 +3482,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alCustom
-        Anchors = [akTop, akLeft, akRight, akBottom]
+        Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -3814,14 +3813,15 @@ object stackmenu1: Tstackmenu1
         Width = 272
         DropDownCount = 17
         ItemHeight = 15
-        ItemIndex = 1
         Items.Strings = (
           'No annotation'
-          'Annotation local DB'
+          'Annotation local DB mag 13'
+          'Annotation local DB mag 15'
           'Annotation online DB mag 13'
           'Annotation online DB mag 15'
           'Annotation online DB mag 99'
-          'Annotation local DB & measure all'
+          'Annotation local DB mag 13 & measure all'
+          'Annotation local DB mag 15 & measure all'
           'Annotation online DB mag 13 & measure all'
           'Annotation online DB mag 15 & measure all'
           'Annotation online DB mag 99 & measure all'

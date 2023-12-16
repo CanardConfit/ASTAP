@@ -16,6 +16,7 @@ procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
+procedure load_variable_15;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array;head:theader;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
@@ -1048,7 +1049,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'deep_sky.csv');{load deep sky data from file }
-       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
+       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
        except;
          clear;
          beep;
@@ -1066,7 +1067,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'variable_stars.csv');{load deep sky data from file }
-       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
+       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
        except;
          clear;
          beep;
@@ -1076,6 +1077,25 @@ begin
   end;
 end;
 
+procedure load_variable_15;{load the variable star database once. If loaded no action}
+begin
+  if database_nr<>4 then {load variable database}
+  begin
+    with deepstring do
+    begin
+       try
+       LoadFromFile(database_path+'variable_stars_15.csv');{load deep sky data from file }
+       database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
+       except;
+         clear;
+         beep;
+         application.messagebox(pchar('Variable star database not found!'),'',0);
+       end;
+    end;
+  end;
+end;
+
+
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 begin
   if database_nr<>2 then {load HyperLeda}
@@ -1084,7 +1104,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'hyperleda.csv');{load deep sky data from file }
-       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
+       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
        except;
          clear;
          beep;

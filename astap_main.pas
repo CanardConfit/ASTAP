@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1465,7 +1465,8 @@ begin
                 dec_mount:=dec_radians;
               end
               else {for older MaximDL5}
-              if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then centalt:=get_as_string {universal for string and floats}
+              if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then
+                                                                            centalt:=get_as_string {universal for string and floats}
               else {for older MaximDL5}
               if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then
                                    centaz:=get_as_string; {universal for string and floats}
@@ -9465,13 +9466,26 @@ var
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
+//0, No annotation
+//1, Annotation local DB mag 13
+//2, Annotation local DB mag 15
+//3, Annotation online DB mag 13
+//4, Annotation online DB mag 15
+//5, Annotation online DB mag 99
+//6, Annotation local DB mag 13 & measure all
+//7, Annotation local DB mag 15 & measure all
+//8, Annotation online DB mag 13 & measure all
+//9, Annotation online DB mag 15 & measure all
+//10,Annotation online DB mag 99 & measure all
+
   case stackmenu1.annotate_mode1.itemindex of
-       0,1,5: lim_magn:=-99;//use local database
-       2,6:   lim_magn:=13;
-       3,7:   lim_magn:=15;
-       4,8:   lim_magn:=99;
+       0,1,6: begin lim_magn:=-99; load_variable;{Load the database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+       2,7:   begin lim_magn:=-99; load_variable_15;{Load the database once. If loaded no action} end;//use local database
+       3,8: lim_magn:=13;
+       4,9: lim_magn:=15;
+       5,10:lim_magn:=99;
        else
-             lim_magn:=99;
+          lim_magn:=99;
      end; //case
 
   if lim_magn>0 then //online version
@@ -9490,8 +9504,7 @@ begin
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    load_variable;{Load the database once. If loaded no action}
-    plot_deepsky; {Plot the deep sky object on the image}
+    plot_deepsky; {Plot the variables on the image}
   end;
 
   Screen.Cursor:=crDefault;
@@ -13795,7 +13808,7 @@ begin
     slist.Free;
   end;
 
-  database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
+  database_nr:=5;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
   plot_deepsky;
 end;
 
@@ -13869,7 +13882,7 @@ begin
     slist.Free;
   end;
 
-  database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
+  database_nr:=5;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
   plot_deepsky;
 end;
 
