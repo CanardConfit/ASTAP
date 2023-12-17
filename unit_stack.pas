@@ -3967,8 +3967,7 @@ var
   filename1,filterstr,filterstrUP,issue : string;
   loaded, red, green, blue: boolean;
   img: image_array;
-  nr_stars, hfd_outer_ring, median_11, median_21, median_31,
-  median_12, median_22, median_32, median_13, median_23, median_33: double;
+  nr_stars, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33: double;
   bck : Tbackground;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -4041,7 +4040,6 @@ begin
       begin
         memo2_message('Removed second entry of same file ' + lv.items[i].Caption);
         lv.Items.Delete(i);
-        //dec(i); {compensate for delete}
         Dec(counts); {compensate for delete}
       end
       else
@@ -4060,8 +4058,7 @@ begin
     begin
       progress_indicator(100 * c / lv.items.Count - 1, ' Analysing');
       lv.Selected := nil; {remove any selection}
-      lv.ItemIndex := c;
-      {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+      lv.ItemIndex := c; {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
       lv.Items[c].MakeVisible(False);{scroll to selected item}
 
 
@@ -4078,22 +4075,15 @@ begin
         try
           begin
             if head_2.exposure >= 10 then
-              lv.Items.item[c].subitems.Strings[D_exposure] :=
-                IntToStr(round(head_2.exposure))
+              lv.Items.item[c].subitems.Strings[D_exposure] := IntToStr(round(head_2.exposure))
             else
-              lv.Items.item[c].subitems.Strings[D_exposure] :=
-                floattostrf(head_2.exposure, ffgeneral, 6, 6);
+              lv.Items.item[c].subitems.Strings[D_exposure] := floattostrf(head_2.exposure, ffgeneral, 6, 6);
 
-            lv.Items.item[c].subitems.Strings[D_temperature] :=
-              IntToStr(head_2.set_temperature);
-            lv.Items.item[c].subitems.Strings[D_binning] :=
-              floattostrf(head_2.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf(
-              head_2.Ybinning, ffgeneral, 0, 0);
-            {Binning CCD}
-            lv.Items.item[c].subitems.Strings[D_width] := IntToStr(head_2.Width);
-            {image width}
-            lv.Items.item[c].subitems.Strings[D_height] := IntToStr(head_2.Height);
-            {image height}
+            lv.Items.item[c].subitems.Strings[D_temperature] := IntToStr(head_2.set_temperature);
+            lv.Items.item[c].subitems.Strings[D_binning] := floattostrf(head_2.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf(
+              head_2.Ybinning, ffgeneral, 0, 0);  {Binning CCD}
+            lv.Items.item[c].subitems.Strings[D_width] := IntToStr(head_2.Width);  {image width}
+            lv.Items.item[c].subitems.Strings[D_height] := IntToStr(head_2.Height);  {image height}
             lv.Items.item[c].subitems.Strings[D_type] := imagetype;{image type}
 
 
@@ -4105,22 +4095,17 @@ begin
               if head_2.gain <> '' then
                 lv.Items.item[c].subitems.Strings[D_gain] := head_2.gain;
 
-              if ((full = True) and (tabnr in [2, 3, 4, 7])) then
-                {get background for dark, flats, flat-darks, photometry}
+              if ((full = True) and (tabnr in [2, 3, 4, 7])) then  {get background for dark, flats, flat-darks, photometry}
               begin {analyse background and noise}
                 get_background(0, img, True {update_hist}, False {calculate noise level}, {var} bck);
-
                 lv.Items.item[c].subitems.Strings[D_background] := inttostr5(round(bck.backgr));
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
-                  local_sd((head_2.Width div 2) - 50, (head_2.Height div 2) - 50, (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean},iterations);
-                  {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+                  local_sd((head_2.Width div 2) - 50, (head_2.Height div 2) - 50, (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean},iterations); {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
-                  adu_e := retrieve_ADU_to_e_unbinned(head_2.egain);
-                  //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
-                  lv.Items.item[c].subitems.Strings[D_sigma] := noise_to_electrons(adu_e, head_2.Xbinning, sd);
-                  //reports noise in ADU's (adu_e=0) or electrons
+                  adu_e := retrieve_ADU_to_e_unbinned(head_2.egain);  //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+                  lv.Items.item[c].subitems.Strings[D_sigma] := noise_to_electrons(adu_e, head_2.Xbinning, sd); //reports noise in ADU's (adu_e=0) or electrons
                 end;
               end;
             end;
@@ -4168,13 +4153,9 @@ begin
             if tabnr = 6 then {blink tab}
             begin
               lv.Items.item[c].subitems.Strings[B_date] :=
-                StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []);
-              {date/time for blink. Remove fractions of seconds}
-              lv.Items.item[c].subitems.Strings[B_calibration] := head_2.calstat;
-              {calibration head_2.calstat info DFB}
-              if annotated then lv.Items.item[c].subitems.Strings[B_annotated] := '✓'
-              else
-                lv.Items.item[c].subitems.Strings[B_annotated] := '';
+                StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []); {date/time for blink. Remove fractions of seconds}
+              lv.Items.item[c].subitems.Strings[B_calibration] := head_2.calstat;  {calibration head_2.calstat info DFB}
+              if annotated then lv.Items.item[c].subitems.Strings[B_annotated] := '✓' else lv.Items.item[c].subitems.Strings[B_annotated] := '';
             end
             else
 
@@ -4217,23 +4198,22 @@ begin
               lv.Items.item[c].subitems.Strings[P_jd_mid] := floattostrF(jd_mid, ffFixed, 0, 5);{julian day}
 
               hjd := JD_to_HJD(jd_mid, head_2.ra0, head_2.dec0);{conversion JD to HJD}
-              lv.Items.item[c].subitems.Strings[P_jd_helio] :=
-                floattostrF(Hjd, ffFixed, 0, 5);{helio julian day}
-
+              lv.Items.item[c].subitems.Strings[P_jd_helio] := floattostrF(Hjd, ffFixed, 0, 5);{helio julian day}
 
               calculate_az_alt(0 {try to use header values}, head_2,{out}az, alt);  {try to get  a value for alt}
-              if ((centalt = '') and (alt <> 0)) then  centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
-
-              lv.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
-              if alt <> 0 then lv.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+              if alt <> 0 then
+              begin
+                 centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
+                 lv.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
+                 lv.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+              end;
 
               {magn is column 9 will be added separately}
               {solution is column 12 will be added separately}
               if head_2.calstat <> '' then
                 lv.Items.item[c].subitems.Strings[P_calibration] := head_2.calstat
               else
-                lv.Items.item[c].subitems.Strings[P_calibration] := 'None';
-              {calibration head_2.calstat info DFB}
+                lv.Items.item[c].subitems.Strings[P_calibration] := 'None';  {calibration head_2.calstat info DFB}
 
               if head_2.cd1_1 = 0 then lv.Items.item[c].subitems.Strings[P_astrometric] := ''
               else
@@ -4384,8 +4364,7 @@ begin
                   lv.Items.item[c].subitems.Strings[M_ra_jnow] := floattostrf(ra_jnow * 180 / pi, ffFixed, 9, 6);
                   lv.Items.item[c].subitems.Strings[M_dec_jnow]:=floattostrf(dec_jnow * 180 / pi, ffFixed, 9, 6);
 
-                  calculate_az_alt(2 {force accurate calculation from ra, dec},
-                    head_2,{out}az, alt); {call it with J2000 values. Precession will be applied in the routine}
+                  calculate_az_alt(2 {force accurate calculation from ra, dec}, head_2,{out}az, alt); {call it with J2000 values. Precession will be applied in the routine}
                   if alt <> 0 then
                   begin
                     centalt := floattostrf(alt, ffFixed, 9, 6); {altitude}
@@ -8248,100 +8227,100 @@ begin
           end;
 
           //measure all AAVSO objects
-          if stackmenu1.annotate_mode1.itemindex=5 then //measure all AAVSO stars using the position from the local database
-          begin
-            if length(variable_list)=0 then
-            begin
-              clear_added_AAVSO_columns;
-              setlength(variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
-              mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
-            end;
-            if variable_list_length>0 then
-            begin
-              obj_count:=0;
-              for j:=0 to variable_list_length do
-              begin
-                celestial_to_pixel(variable_list[j].ra, variable_list[j].dec, xn, yn);
-                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+          case stackmenu1.annotate_mode1.itemindex of
+            6,7 : //measure all AAVSO stars using the position from the local database
                 begin
-                  if obj_count+P_nr_norm>=p_nr then //add columns
-                  with listview7 do
-                  begin //add column
-                    listview7_add_column(variable_list[j].abbr);
-                    listview7_add_column('SNR');
-                    memo2_message('Added a column for '+variable_list[j].abbr);
-                  end;
-                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                  inc(obj_count,2);
-                end;
-              end;
-            end;
-            memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
-          end
-          else
-          if stackmenu1.annotate_mode1.itemindex>5 then //measure all AAVSO using the online vsx, vsp
-          begin
-            mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
-            lvsx:=length(vsx);
-            if lvsx>0 then
-            begin
-              obj_count:=0;
-              for j:=0 to lvsx-1 do
-              begin
-                celestial_to_pixel(vsx[j].ra, vsx[j].dec, xn, yn);
-                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
-                begin
-                  if obj_count+P_nr_norm>=p_nr then //add columns
-                  with listview7 do
-                  begin //add column
-                    listview7_add_column(vsx[j].name);
-                    listview7_add_column('SNR');
-                    memo2_message('Added a column for '+vsx[j].name);
-                  end;
-
-                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                  inc(obj_count,2);
-                end;
-              end;
-              memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
-              nrvars:=obj_count;
-
-              p_nr_varmax:=obj_count+P_nr_norm;//where do the variables end;
-              lvsp:=length(vsp);
-              if lvsp>0 then
-              begin
-                for j:=0 to lvsp-1 do
-                begin
-                  celestial_to_pixel(vsp[j].ra, vsp[j].dec, xn, yn);
-                  if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                  if length(variable_list)=0 then
                   begin
-                    if obj_count+P_nr_norm>=p_nr then //add columns
-                    with listview7 do
-                    begin //add column
-                      listview7_add_column(vsp[j].auid);
-                      listview7_add_column('SNR');
-                      memo2_message('Added a column for '+vsp[j].auid);
-                    end;
-
-                    listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                    listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                    inc(obj_count,2);
+                    clear_added_AAVSO_columns;
+                    setlength(variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
+                    mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
                   end;
+                  if variable_list_length>0 then
+                  begin
+                    obj_count:=0;
+                    for j:=0 to variable_list_length do
+                    begin
+                      celestial_to_pixel(variable_list[j].ra, variable_list[j].dec, xn, yn);
+                      if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                      begin
+                        if obj_count+P_nr_norm>=p_nr then //add columns
+                        with listview7 do
+                        begin //add column
+                          listview7_add_column(variable_list[j].abbr);
+                          listview7_add_column('SNR');
+                          memo2_message('Added a column for '+variable_list[j].abbr);
+                        end;
+                        listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
+                        listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
+                        inc(obj_count,2);
+                      end;
+                    end;
+                  end;
+                  memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
                 end;
-              end;
-              memo2_message('Added the measuruments of '+inttostr((obj_count-nrvars) div 2)+' check stars to tab photometry.');
+            8,9,10:  //measure all AAVSO using the online vsx, vsp
+                begin
+                  mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
+                  lvsx:=length(vsx);
+                  if lvsx>0 then
+                  begin
+                    obj_count:=0;
+                    for j:=0 to lvsx-1 do
+                    begin
+                      celestial_to_pixel(vsx[j].ra, vsx[j].dec, xn, yn);
+                      if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                      begin
+                        if obj_count+P_nr_norm>=p_nr then //add columns
+                        with listview7 do
+                        begin //add column
+                          listview7_add_column(vsx[j].name);
+                          listview7_add_column('SNR');
+                          memo2_message('Added a column for '+vsx[j].name);
+                        end;
 
-            end;//vsx
+                        listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
+                        listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
+                        inc(obj_count,2);
+                      end;
+                    end;
+                    memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
+                    nrvars:=obj_count;
 
-            with listview7 do
-            while ColumnCount-1>obj_count+P_nr_norm do
-              columns.Delete(ColumnCount-1); //remove older columns if required by reduced database magnitude limit
+                    p_nr_varmax:=obj_count+P_nr_norm;//where do the variables end;
+                    lvsp:=length(vsp);
+                    if lvsp>0 then
+                    begin
+                      for j:=0 to lvsp-1 do
+                      begin
+                        celestial_to_pixel(vsp[j].ra, vsp[j].dec, xn, yn);
+                        if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                        begin
+                          if obj_count+P_nr_norm>=p_nr then //add columns
+                          with listview7 do
+                          begin //add column
+                            listview7_add_column(vsp[j].auid);
+                            listview7_add_column('SNR');
+                            memo2_message('Added a column for '+vsp[j].auid);
+                          end;
 
-          end //measure AAVSO
+                          listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
+                          listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
+                          inc(obj_count,2);
+                        end;
+                      end;
+                    end;
+                    memo2_message('Added the measuruments of '+inttostr((obj_count-nrvars) div 2)+' check stars to tab photometry.');
+
+                  end;//vsx
+
+                  with listview7 do
+                  while ColumnCount-1>obj_count+P_nr_norm do
+                    columns.Delete(ColumnCount-1); //remove older columns if required by reduced database magnitude limit
+                end;
           else
           if p_nr>p_nr_norm then clear_added_AAVSO_columns;
+          end; //case measure AAVSO
 
         end;
 
