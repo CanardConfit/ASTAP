@@ -1846,7 +1846,7 @@ object mainwindow: Tmainwindow
         OnClick = gaia_star_position1Click
       end
       object vizier_gaia_annotation1: TMenuItem
-        Caption = 'Magnitude annotation (▭) (transformed Gaia, Vizier)'
+        Caption = 'Magnitude annotation (▭) (Gaia, transformed)'
         Hint = 'Annotate the selected area with transformed Gaia magnitudes from Vizier'
         ImageIndex = 18
         OnClick = gaia_star_position1Click

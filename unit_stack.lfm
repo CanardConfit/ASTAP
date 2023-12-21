@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 596
+  Left = -662
   Height = 735
-  Top = 126
+  Top = 164
   Width = 2139
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -3673,7 +3673,7 @@ object stackmenu1: Tstackmenu1
       object mark_outliers_upto1: TComboBox
         Left = 1736
         Height = 23
-        Hint = 'Mark outliers up to this magnitude'
+        Hint = 'Mark in the image outliers down to this magnitude'
         Top = 6
         Width = 48
         ItemHeight = 15
@@ -3815,11 +3815,13 @@ object stackmenu1: Tstackmenu1
         ItemHeight = 15
         Items.Strings = (
           'No annotation'
+          'Annotation local DB mag 11'
           'Annotation local DB mag 13'
           'Annotation local DB mag 15'
           'Annotation online DB mag 13'
           'Annotation online DB mag 15'
           'Annotation online DB mag 99'
+          'Annotation local DB mag 11 & measure all'
           'Annotation local DB mag 13 & measure all'
           'Annotation local DB mag 15 & measure all'
           'Annotation online DB mag 13 & measure all'

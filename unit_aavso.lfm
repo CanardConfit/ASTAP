@@ -156,6 +156,7 @@ object form_aavso1: Tform_aavso1
     Hint = ' Check star  AUID  (much preferred) or designation. Alternatively you could select the IAU designation using the position.'
     Top = 208
     Width = 208
+    DropDownCount = 30
     ItemHeight = 15
     OnChange = name_check1Change
     OnDropDown = name_check1DropDown
@@ -259,6 +260,7 @@ object form_aavso1: Tform_aavso1
     Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier.  Limit: 30 characters.'
     Top = 48
     Width = 208
+    DropDownCount = 30
     ItemHeight = 15
     OnChange = name_check1Change
     OnDropDown = name_variable1DropDown
