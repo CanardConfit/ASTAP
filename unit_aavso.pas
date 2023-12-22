@@ -44,6 +44,7 @@ type
     obscode1: TEdit;
     Label1: TLabel;
     Filter1: TComboBox;
+    procedure delta_bv2Change(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState;
       X, Y: Integer);
@@ -192,7 +193,7 @@ begin
          err:='na';
        end
        else
-       str(max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of CK  star}
+       str(max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of Check  star}
 
        airmass_str:=listview7.Items.item[c].subitems.Strings[P_airmass];
        if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
@@ -281,7 +282,8 @@ end;
 
 procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
 var
-  i: integer;
+  i,start: integer;
+  abrv    : string;
 begin
   name_check1.items.clear;
 
@@ -290,9 +292,13 @@ begin
   name_check1.items.add(name_check_IAU);// created from position
 
 
-  for i:=p_nr_varmax+1 to p_nr do
-    if odd(i-p_nr_varmax) then
-      name_check1.items.add(stackmenu1.listview7.Column[i].Caption);
+  for i:=p_nr_norm+1+1 to p_nr do
+    if odd(i+1) then //not snr column
+    begin
+      abrv:=stackmenu1.listview7.Column[i].Caption;
+      if pos('000',abrv)>0 then //check star
+        name_check1.items.add(abrv);
+    end;
 end;
 
 
@@ -305,6 +311,7 @@ end;
 procedure Tform_aavso1.name_variable1DropDown(Sender: TObject);
 var
   i: integer;
+  abrv : string;
 begin
   name_variable1.items.clear;
 
@@ -313,20 +320,21 @@ begin
   name_variable1.items.add(name_var);
 
   for i:=p_nr_norm+1 to p_nr do
-    if odd(i-p_nr_norm) then
-      name_variable1.items.add(stackmenu1.listview7.Column[i].Caption);
+    if odd(i+1) then // not a snr column
+    begin
+      abrv:=stackmenu1.listview7.Column[i].Caption;
+      if pos('000',abrv)=0 then //not a check star
+         name_variable1.items.add(abrv);
+    end;
 end;
 
 function find_correct_var_column : integer;
 var
   i: integer;
-//  s1,s2: string;
 begin
-  for i:=p_nr_norm+1 to p_nr_varmax do
+  for i:=p_nr_norm+1 to p_nr do
   begin
-  //  s1:=form_aavso1.name_variable1.text;
-  //  s2:=stackmenu1.listview7.Column[i].Caption;
-    if ((odd(i-p_nr_norm)) and (form_aavso1.name_variable1.text=stackmenu1.listview7.Column[i].Caption)) then
+    if ((odd(i+1)) and (form_aavso1.name_variable1.text=stackmenu1.listview7.Column[i].Caption)) then
     begin
       result:=i-1;
       exit;
@@ -339,8 +347,8 @@ function find_correct_check_column : integer;
 var
   i: integer;
 begin
-  for i:=p_nr_varmax+1 to p_nr do
-    if ((odd(i-p_nr_varmax)) and (form_aavso1.name_check1.text=stackmenu1.listview7.Column[i].Caption)) then
+  for i:=p_nr_norm+1 to p_nr do
+    if ((odd(i+1)) and (form_aavso1.name_check1.text=stackmenu1.listview7.Column[i].Caption)) then
     begin
       result:=i-1;
       exit;
@@ -350,6 +358,11 @@ end;
 
 
 procedure Tform_aavso1.FormResize(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+procedure Tform_aavso1.delta_bv2Change(Sender: TObject);
 begin
   plot_graph;
 end;
@@ -433,7 +446,7 @@ begin
         magn_min:=min(magn_min,data[2,c]);
       end;
 
-      dum:=(listview7.Items.item[c].subitems.Strings[P_magn3]); {3}
+      dum:=(listview7.Items.item[c].subitems.Strings[P_magn3]); {3th star}
       try
       if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[3,c]:=strtofloat(dum) else data[3,c]:=0;
 
@@ -449,8 +462,11 @@ begin
 
   end;
 
+  if magn_min>magn_max then exit; //no info
+
   magn_min:=trunc(magn_min*100)/100; {add some rounding}
   magn_max:=trunc(magn_max*100)/100;
+
   if magn_max-magn_min<0.3 then begin magn_max:=0.15+(magn_max+magn_min)/2; magn_min:=-0.15+(magn_max+magn_min)/2;;end;//minimum range
 
   range:=magn_max-magn_min;
@@ -540,25 +556,23 @@ begin
     if jd_max=jd_min then jd_min:=jd_min-1; {prevent run time errors for one image where jd_max-jd_min}
 
     for c:=0 to length(data[0])-1 do
-    begin
-      plot_point(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[2,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
-    end;
+      if data[0,c]<>0 then //valid JD
+        plot_point(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[2,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
 
     bmp.Canvas.Pen.Color := clBlue;
     bmp.Canvas.brush.color :=clBlue;
     plot_point(textp3,len*3,0);
     for c:=0 to length(data[0])-1 do
-    begin
-      plot_point(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[3,c]-magn_min)/(magn_max-magn_min)   ),0); {3}
-    end;
+      if data[0,c]<>0 then //valid JD
+        plot_point(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[3,c]-magn_min)/(magn_max-magn_min)   ),0); {3}
 
     bmp.Canvas.Pen.Color := clRed;
     bmp.Canvas.brush.color :=clRed;
     plot_point(textp1,len*3,0);
+
     for c:=0 to length(data[0])-1 do
-    begin
-      plot_point( wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {var}
-    end;
+      if data[0,c]<>0 then //valid JD
+        plot_point( wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {var}
 
 
     Picture.Bitmap.SetSize(w,h);
@@ -579,6 +593,8 @@ end;
 
 
 procedure Tform_aavso1.FormShow(Sender: TObject);
+var
+  dum : string;
 begin
   obscode1.text:=obscode;
   if length(mainwindow.Shape_alignment_marker1.HINT)>2 then name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT

@@ -1109,9 +1109,8 @@ const
   P_centalt = 20;
   P_airmass = 21;
   P_limmagn = 22;
-  p_nr_norm = 23;
-  p_nr_varmax : integer=23;{adjustable number of columns. Column where extra var's end}
-  P_nr : integer = 23;{adjustable number of columns. Column where xtra check's end}
+  p_nr_norm = 23; //standard end of the columns
+  P_nr : integer = 23;{adapted end with extra columns}
 
   I_date = 6;//inspector tab
   I_nr_stars = 7;
@@ -7794,111 +7793,113 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
   medianCheck, medianThree, hfd_med, apert, annul,
-  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e : double;
+  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree, database_col,j, obj_count,lvsx,lvsp,nrvars : integer;
+  countCheck, countThree, database_col,j, lvsx,lvsp,nrvars : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
-  warned, success: boolean;
+  warned, success,new_object: boolean;
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   outliers: array of array of double;
   astr, memo2_text, filename1 : string;
   bck :tbackground;
+  oldra0 : double=0;
+  olddec0: double=-pi/2;
 
-  function measure_star(deX, deY: double): string;{measure position and flux}
-  begin
-    HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
-    if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
-    begin
-      if head.calstat = '' then saturation_level := 64000
-      else
-        saturation_level := 60000; {could be dark subtracted changing the saturation level}
-      if
-       ((img_loaded[0, round(yc)    , round(xc)] < saturation_level) and
-        (img_loaded[0, round(yc - 1), round(xc)] < saturation_level) and
-        (img_loaded[0, round(yc + 1), round(xc)] < saturation_level) and
-        (img_loaded[0, round(yc)    , round(xc - 1)] < saturation_level) and
-        (img_loaded[0, round(yc)    , round(xc + 1)] < saturation_level) and
-        (img_loaded[0, round(yc - 1), round(xc - 1)] < saturation_level) and
-        (img_loaded[0, round(yc - 1), round(xc + 1)] < saturation_level) and
-        (img_loaded[0, round(yc + 1), round(xc - 1)] < saturation_level) and
-        (img_loaded[0, round(yc + 1), round(xc + 1)] < saturation_level)) then
-        {not saturated star}
-      begin
-        magn:=starlistpack[c].MZERO - ln(flux)*2.5/ln(10);
-
-
-        Result := floattostrf(magn, ffFixed, 5, 3);
-        {write measured magnitude to list}
-        //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
-        //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
-        //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_ratio, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
-
-        //        if Flipvertical=false then  starY:=(head.height-yc) else starY:=(yc);
-        //        if Fliphorizontal     then starX:=(head.width-xc)  else starX:=(xc);
-        //        if flux_aperture<99 {<>max setting}then
-        //        begin
-        //          mainwindow.image1.Canvas.Pen.style:=psSolid;
-        //          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-        //        end;
-        //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
-        //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
-      end
-      else
-        Result := 'Saturated';
-    end
-    else
-      Result := '?';
-  end;
-
-  procedure plot_annulus(x, y: integer; apr,anr :double); {plot the aperture and annulus}
-  begin
-    if Flipvertical = False then  starY := (head.Height - y) else starY := (y);
-    if Fliphorizontal then starX := (head.Width - x) else starX := (x);
-    if apr < 99 {<>max setting} then   mainwindow.image1.canvas.ellipse(round(starX - apr - 1), round(starY - apr - 1), round( starX +apr + 1), round(starY + apr + 1)); {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-    mainwindow.image1.canvas.ellipse(round(starX - anr), round(starY - anr), round(starX + anr), round(starY + anr)); {three pixels, 1,2,3}
-    mainwindow.image1.canvas.ellipse(round(starX - anr - 4), round(starY - anr - 4), round(starX + anr + 4), round( starY + anr + 4));
-  end;
-
-  procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
-  var
-    k: integer;
-  begin
-    mainwindow.image1.Canvas.Pen.Color := clyellow;
-    mainwindow.image1.Canvas.Pen.mode := pmXor;
-
-    for k := 0 to length(outliers[0]) - 1 do
-    begin
-      if flipvertical = False then  starY := round(head.Height - (outliers[1, k]))
-      else
-        starY := round(outliers[1, k]);
-      if Fliphorizontal then starX := round(head.Width - outliers[0, k])
-      else
-        starX := round(outliers[0, k]);
-      mainwindow.image1.Canvas.ellipse(starX - 20, starY - 20, starX + 20, starY + 20);
-      {indicate outlier rectangle}
-      mainwindow.image1.Canvas.textout(starX + 20, starY + 20,
-        'σ ' + floattostrf(outliers[2, k], ffgeneral, 3, 0));{add hfd as text}
-    end;
-  end;
+            function measure_star(deX, deY: double): string;{measure position and flux}
+            begin
+              HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
+              if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
+              begin
+                if head.calstat = '' then saturation_level := 64000
+                else
+                  saturation_level := 60000; {could be dark subtracted changing the saturation level}
+                if
+                 ((img_loaded[0, round(yc)    , round(xc)] < saturation_level) and
+                  (img_loaded[0, round(yc - 1), round(xc)] < saturation_level) and
+                  (img_loaded[0, round(yc + 1), round(xc)] < saturation_level) and
+                  (img_loaded[0, round(yc)    , round(xc - 1)] < saturation_level) and
+                  (img_loaded[0, round(yc)    , round(xc + 1)] < saturation_level) and
+                  (img_loaded[0, round(yc - 1), round(xc - 1)] < saturation_level) and
+                  (img_loaded[0, round(yc - 1), round(xc + 1)] < saturation_level) and
+                  (img_loaded[0, round(yc + 1), round(xc - 1)] < saturation_level) and
+                  (img_loaded[0, round(yc + 1), round(xc + 1)] < saturation_level)) then
+                  {not saturated star}
+                begin
+                  magn:=starlistpack[c].MZERO - ln(flux)*2.5/ln(10);
 
 
-  procedure nil_all;
-  begin
-    //img_temp:=nil;{free memory}
-    starlistx := nil;{free memory}
-    starlistpack := nil; {release memory}
-    outliers := nil;
-    starCheck := nil;
-    starThree := nil;
-    variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
+                  Result := floattostrf(magn, ffFixed, 5, 3);
+                  {write measured magnitude to list}
+                  //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
+                  //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
+                  //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_ratio, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
 
-    //remove following line at the end of 2025
-    if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
+                  //        if Flipvertical=false then  starY:=(head.height-yc) else starY:=(yc);
+                  //        if Fliphorizontal     then starX:=(head.width-xc)  else starX:=(xc);
+                  //        if flux_aperture<99 {<>max setting}then
+                  //        begin
+                  //          mainwindow.image1.Canvas.Pen.style:=psSolid;
+                  //          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+                  //        end;
+                  //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
+                  //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
+                end
+                else
+                  Result := 'Saturated';
+              end
+              else
+                Result := '?';
+            end;
 
-    Screen.Cursor := crDefault;{back to normal }
-  end;
+            procedure plot_annulus(x, y: integer; apr,anr :double); {plot the aperture and annulus}
+            begin
+              if Flipvertical = False then  starY := (head.Height - y) else starY := (y);
+              if Fliphorizontal then starX := (head.Width - x) else starX := (x);
+              if apr < 99 {<>max setting} then   mainwindow.image1.canvas.ellipse(round(starX - apr - 1), round(starY - apr - 1), round( starX +apr + 1), round(starY + apr + 1)); {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+              mainwindow.image1.canvas.ellipse(round(starX - anr), round(starY - anr), round(starX + anr), round(starY + anr)); {three pixels, 1,2,3}
+              mainwindow.image1.canvas.ellipse(round(starX - anr - 4), round(starY - anr - 4), round(starX + anr + 4), round( starY + anr + 4));
+            end;
+
+            procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
+            var
+              k: integer;
+            begin
+              mainwindow.image1.Canvas.Pen.Color := clyellow;
+              mainwindow.image1.Canvas.Pen.mode := pmXor;
+
+              for k := 0 to length(outliers[0]) - 1 do
+              begin
+                if flipvertical = False then  starY := round(head.Height - (outliers[1, k]))
+                else
+                  starY := round(outliers[1, k]);
+                if Fliphorizontal then starX := round(head.Width - outliers[0, k])
+                else
+                  starX := round(outliers[0, k]);
+                mainwindow.image1.Canvas.ellipse(starX - 20, starY - 20, starX + 20, starY + 20);
+                {indicate outlier rectangle}
+                mainwindow.image1.Canvas.textout(starX + 20, starY + 20,
+                  'σ ' + floattostrf(outliers[2, k], ffgeneral, 3, 0));{add hfd as text}
+              end;
+            end;
+
+
+            procedure nil_all;
+            begin
+              //img_temp:=nil;{free memory}
+              starlistx := nil;{free memory}
+              starlistpack := nil; {release memory}
+              outliers := nil;
+              starCheck := nil;
+              starThree := nil;
+              variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
+
+              //remove following line at the end of 2025
+              if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
+
+              Screen.Cursor := crDefault;{back to normal }
+            end;
 
 begin
   if listview7.items.Count <= 0 then exit; {no files}
@@ -8155,8 +8156,7 @@ begin
           name_check_iau := prepare_IAU_designation(rax2, decx2);
 
           sensor_coordinates_to_celestial(shape_fitsX3, shape_fitsY3,rax3, decx3 {fitsX, Y to ra,dec});
-
-          init := True;
+          init:=true;//after measure the frist image
         end;
 
         if var_lock<>'' then
@@ -8228,66 +8228,105 @@ begin
 
           //measure all AAVSO objects
           case stackmenu1.annotate_mode1.itemindex of
-            6,7 : //measure all AAVSO stars using the position from the local database
+            7,8,9 : //measure all AAVSO stars using the position from the local database
                 begin
+               //   if pos('V645',filename2)>0 then
+               //   beep;
+
+
                   if length(variable_list)=0 then
                   begin
-                    clear_added_AAVSO_columns;
+                   // clear_added_AAVSO_columns;
                     setlength(variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
-                    mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
+                    mainwindow.variable_star_annotation1Click(sender {load local database and fill variable_list});
+                  end
+                  else
+                  begin
+                    ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
+                      if sep>head.width*head.cdelt2*2*pi/180 then //different area of the sky, update variable_list
+                          mainwindow.variable_star_annotation1Click(sender {new position, update variable list});
+
                   end;
+                  oldra0:=head.ra0;
+                  olddec0:=head.dec0;
+
+
                   if variable_list_length>0 then
                   begin
-                    obj_count:=0;
+                  //  obj_count:=0;
                     for j:=0 to variable_list_length do
                     begin
                       celestial_to_pixel(variable_list[j].ra, variable_list[j].dec, xn, yn);
                       if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
                       begin
-                        if obj_count+P_nr_norm>=p_nr then //add columns
-                        with listview7 do
-                        begin //add column
-                          listview7_add_column(variable_list[j].abbr);
-                          listview7_add_column('SNR');
-                          memo2_message('Added a column for '+variable_list[j].abbr);
-                        end;
-                        listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                        listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                        inc(obj_count,2);
+                        astr := measure_star(xn, yn);
+                        if snr>0 then
+                        begin
+                          new_object:=true;
+                          for i:=p_nr_norm+1 to p_nr-1 do
+                            if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=variable_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                            begin //existing object column
+                             listview7.Items.item[c].subitems.Strings[i-1]:= astr;
+                             listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
+                             new_object:=false;
+                             break;
+                            end;
+                          if new_object then
+                          begin
+                            with listview7 do
+                            begin //add column
+                              listview7_add_column(variable_list[j].abbr);
+                              listview7_add_column('SNR');
+                              memo2_message('Added a column for '+variable_list[j].abbr);
+                            end;
+                            listview7.Items.item[c].subitems.Strings[P_nr-2]:= astr;
+                            listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(snr));
+                          end;//new object
+                        end;//enough snr
                       end;
+
                     end;
                   end;
-                  memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
                 end;
-            8,9,10:  //measure all AAVSO using the online vsx, vsp
+            10,11,12 :  //measure all AAVSO using the online vsx, vsp
                 begin
-                  mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
+                  mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result in load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
                   lvsx:=length(vsx);
-                  if lvsx>0 then
+                  if lvsx>0 then //database is loaded
                   begin
-                    obj_count:=0;
                     for j:=0 to lvsx-1 do
                     begin
                       celestial_to_pixel(vsx[j].ra, vsx[j].dec, xn, yn);
                       if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
                       begin
-                        if obj_count+P_nr_norm>=p_nr then //add columns
-                        with listview7 do
-                        begin //add column
-                          listview7_add_column(vsx[j].name);
-                          listview7_add_column('SNR');
-                          memo2_message('Added a column for '+vsx[j].name);
-                        end;
+                        astr := measure_star(xn, yn);
+                        if snr>0 then
+                        begin
+                          new_object:=true;
+                          for i:=p_nr_norm+1 to p_nr-1 do
+                          if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vsx[j].name)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                          begin //existing object column
+                           listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
+                           listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
+                           new_object:=false;
+                           break;
+                          end;//test new object
 
-                        listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                        listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                        inc(obj_count,2);
+                          if new_object then
+                          begin
+                            with listview7 do
+                            begin //add column
+                              listview7_add_column(vsx[j].name);
+                              listview7_add_column('SNR');
+                              memo2_message('Added a column for '+vsx[j].name);
+                            end;
+                            listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
+                            listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
+                          end;//new object
+                        end;//enough snr
                       end;
                     end;
-                    memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
-                    nrvars:=obj_count;
 
-                    p_nr_varmax:=obj_count+P_nr_norm;//where do the variables end;
                     lvsp:=length(vsp);
                     if lvsp>0 then
                     begin
@@ -8296,27 +8335,35 @@ begin
                         celestial_to_pixel(vsp[j].ra, vsp[j].dec, xn, yn);
                         if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
                         begin
-                          if obj_count+P_nr_norm>=p_nr then //add columns
-                          with listview7 do
-                          begin //add column
-                            listview7_add_column(vsp[j].auid);
-                            listview7_add_column('SNR');
-                            memo2_message('Added a column for '+vsp[j].auid);
-                          end;
+                          astr := measure_star(xn, yn);
+                          if snr>0 then
+                          begin
+                            new_object:=true;
+                            for i:=p_nr_norm+1 to p_nr-1 do
+                            if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vsp[j].auid)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                            begin //existing object column
+                              listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
+                              listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
+                               new_object:=false;
+                              break;
+                            end;
 
-                          listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                          listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                          inc(obj_count,2);
-                        end;
+                            if new_object then
+                            begin
+                              with listview7 do
+                              begin //add column
+                                listview7_add_column(vsp[j].auid);
+                                listview7_add_column('SNR');
+                                memo2_message('Added a column for '+vsp[j].auid);
+                              end;
+                              listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
+                              listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
+                            end;//new object
+                          end;//enough snr
+                        end;//within the image
                       end;
                     end;
-                    memo2_message('Added the measuruments of '+inttostr((obj_count-nrvars) div 2)+' check stars to tab photometry.');
-
                   end;//vsx
-
-                  with listview7 do
-                  while ColumnCount-1>obj_count+P_nr_norm do
-                    columns.Delete(ColumnCount-1); //remove older columns if required by reduced database magnitude limit
                 end;
           else
           if p_nr>p_nr_norm then clear_added_AAVSO_columns;
@@ -11384,7 +11431,7 @@ begin
           if apply_dark_and_flat(img_loaded) {apply dark, flat if required, renew if different head.exposure or ccd temp} then
           begin //success added dark or flat
             memo2_message('Calibrating file: ' + IntToStr(c + 1) + '-' + IntToStr(
-              ListView1.items.Count - 1) + ' "' + filename2 + '"  to average. Using ' +
+              ListView1.items.Count) + ' "' + filename2 + '"  to average. Using ' +
               IntToStr(head.dark_count) + ' darks, ' + IntToStr(head.flat_count) +
               ' flats, ' + IntToStr(head.flatdark_count) + ' flat-darks');
             Application.ProcessMessages;

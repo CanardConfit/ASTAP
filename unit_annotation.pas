@@ -11,11 +11,12 @@ interface
 uses
    forms,Classes, SysUtils,strutils, math,graphics, Controls {for tcursor},astap_main,  unit_stars_wide_field;
 
-procedure plot_deepsky;{plot the deep sky object on the image}
+procedure plot_deepsky(fill_variable_list: boolean);{plot the deep sky object on the image}
 procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
+procedure load_variable_13;{load variable stars. If loaded no action}
 procedure load_variable_15;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
@@ -35,7 +36,7 @@ var
 var  {################# initialised variables #########################}
   limiting_magnitude     : double=0;{magnitude where snr is 5}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
-  database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
+  database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
 
 type
   tvariable_list = record {for photometry tab}
@@ -1049,11 +1050,11 @@ begin
     begin
        try
        LoadFromFile(database_path+'deep_sky.csv');{load deep sky data from file }
-       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
+       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
        except;
          clear;
          beep;
-         application.messagebox(pchar('Deep sky database not found. Download and unpack in program directory'),'',0);
+         application.messagebox(pchar('The deep sky database was not found. Download and unpack in program directory'),'',0);
        end;
     end;
   end;
@@ -1067,29 +1068,52 @@ begin
     begin
        try
        LoadFromFile(database_path+'variable_stars.csv');{load deep sky data from file }
-       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
+       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
        except;
          clear;
          beep;
-         application.messagebox(pchar('Variable star database not found!'),'',0);
+         application.messagebox(pchar('The variable star database not found!'),'',0);
+         esc_pressed:=true;
+
        end;
     end;
   end;
 end;
 
-procedure load_variable_15;{load the variable star database once. If loaded no action}
+procedure load_variable_13;{load the variable star database once. If loaded no action}
 begin
   if database_nr<>4 then {load variable database}
   begin
     with deepstring do
     begin
        try
-       LoadFromFile(database_path+'variable_stars_15.csv');{load deep sky data from file }
-       database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
+       LoadFromFile(database_path+'variable_stars_13.csv');{load deep sky data from file }
+       database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
        except;
          clear;
          beep;
-         application.messagebox(pchar('Variable star database not found!'),'',0);
+         application.messagebox(pchar('The additional variable star database was not found!  Download from the ASTAP webpage and install.'),'',0);
+         esc_pressed:=true;
+       end;
+    end;
+  end;
+end;
+
+
+procedure load_variable_15;{load the variable star database once. If loaded no action}
+begin
+  if database_nr<>5 then {load variable database}
+  begin
+    with deepstring do
+    begin
+       try
+       LoadFromFile(database_path+'variable_stars_15.csv');{load deep sky data from file }
+       database_nr:=5;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+       except;
+         clear;
+         beep;
+         application.messagebox(pchar('The additional variable star database was not found!  Download from the ASTAP webpage and install.'),'',0);
+         esc_pressed:=true;
        end;
     end;
   end;
@@ -1104,11 +1128,11 @@ begin
     begin
        try
        LoadFromFile(database_path+'hyperleda.csv');{load deep sky data from file }
-       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
+       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
        except;
          clear;
          beep;
-         application.messagebox(pchar('HyperLeda database not found. Download and unpack in program directory'),'',0);
+         application.messagebox(pchar('HyperLeda database not found! Download from the ASTAP webpage and install.'),'',0);
        end;
     end;
   end;
@@ -1346,7 +1370,7 @@ begin
 end;
 
 
-procedure plot_deepsky;{plot the deep sky object on the image}
+procedure plot_deepsky(fill_variable_list: boolean);{plot the deep sky object on the image}
 type
   textarea = record
      x1,y1,x2,y2 : integer;
@@ -1355,7 +1379,7 @@ var
   dra,ddec, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,
   gx_orientation, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0 : double;
   name: string;
-  flip_horizontal, flip_vertical,fill_variable_list: boolean;
+  flip_horizontal, flip_vertical                   : boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y : integer;
   overlap          : boolean;
@@ -1366,10 +1390,10 @@ begin
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
-    fill_variable_list:=stackmenu1.annotate_mode1.itemindex=5;//for photometry tab
-    if fill_variable_list=false then
+    if fill_variable_list=false then //for photometry
     begin
-      variable_list:=nil; //for photometry tab
+      fill_variable_list:=false;
+      variable_list:=nil;
       variable_list_length:=0;
     end;
 
@@ -1432,9 +1456,9 @@ begin
       if ((x>-0.25*head.width) and (x<=1.25*head.width) and (y>-0.25*head.height) and (y<=1.25*head.height)) then {within image1 with some overlap}
       begin
         len:=length1/(abs(head.cdelt2)*60*10*2); {Length in pixels}
-        if ((head.cdelt2<0.25*1/60) or (len>=1) or (database_nr=3)) then//avoid too many object on images with a large FOV
+        if ((head.cdelt2<0.25*1/60) or (len>=1) or (database_nr>=3)) then//avoid too many object on images with a large FOV
         begin
-          if database_nr=3 then //variables
+          if database_nr>=3 then //variables
           begin
             if ((abs(x-shape_fitsX)<5) and  (abs(y-shape_fitsy)<5)) then // note shape_fitsX/Y are in sensor coordinates
                   mainwindow.Shape_alignment_marker1.HINT:=copy(naam2,1,posex('_',naam2,4)-1);

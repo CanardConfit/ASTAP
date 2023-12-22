@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3523,7 +3523,7 @@ end;
 procedure Tmainwindow.deepsky_overlay1Click(Sender: TObject);
 begin
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky;
+  plot_deepsky(false);
 end;
 
 
@@ -3798,7 +3798,7 @@ procedure Tmainwindow.hyperleda_annotation1Click(Sender: TObject);
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   load_hyperleda;   { Load the database once. If loaded no action}
-  plot_deepsky;{plot the deep sky object on the image}
+  plot_deepsky(false);{plot the deep sky object on the image}
   Screen.Cursor:=crDefault;
 end;
 
@@ -9479,11 +9479,12 @@ begin
 //10,Annotation online DB mag 99 & measure all
 
   case stackmenu1.annotate_mode1.itemindex of
-       0,1,6: begin lim_magn:=-99; load_variable;{Load the database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
-       2,7:   begin lim_magn:=-99; load_variable_15;{Load the database once. If loaded no action} end;//use local database
-       3,8: lim_magn:=13;
-       4,9: lim_magn:=15;
-       5,10:lim_magn:=99;
+       0,1,7: begin lim_magn:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+       2,8:   begin lim_magn:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+       3,9:   begin lim_magn:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+       4,10: lim_magn:=13;
+       5,11: lim_magn:=15;
+       6,12:lim_magn:=99;
        else
           lim_magn:=99;
      end; //case
@@ -9504,7 +9505,7 @@ begin
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    plot_deepsky; {Plot the variables on the image}
+    plot_deepsky(sender=stackmenu1.photometry_button1); {Plot the variables on the image. If photmetry_button then only fill variable_list}
   end;
 
   Screen.Cursor:=crDefault;
@@ -11427,7 +11428,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky;{plot the deep sky object on the image}
+  plot_deepsky(false);{plot the deep sky object on the image}
   Screen.Cursor:=crDefault;
 end;
 
@@ -12062,7 +12063,7 @@ var
    JPG: TJPEGImage;
 begin
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky;{annotate}
+  plot_deepsky(false);{annotate}
   JPG := TJPEGImage.Create;
   try
     JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into jpg
@@ -13808,8 +13809,8 @@ begin
     slist.Free;
   end;
 
-  database_nr:=5;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
-  plot_deepsky;
+  database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  plot_deepsky(false);
 end;
 
 
@@ -13833,7 +13834,7 @@ begin
 
   slist := TStringList.Create;
   deepstring.clear;
-  deepstring.add('');//add two lines blank comments
+  deepstring.add('');//add two lines as blank comments
   deepstring.add('');
   datalines:=false;
 
@@ -13845,7 +13846,7 @@ begin
       regel:=ansistring(slist[count]);
       inc(count);
 
-      if datalines then //Data from Vizier
+      if ((datalines) and (length(regel)>10)) then //Data from Vizier
       begin
         {magnitude}
         p1:=pos(' ',regel);{first column changes in width}
@@ -13863,11 +13864,12 @@ begin
           themagn:=transform_gaia(filter,g,bp,rp);//transformation of Gaia magnitudes
 
           if themagn<>0 then //valid value
+          begin
              simobject:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+inttostr(round(10*themagn));
-
-          //RA[0..864000], DEC[-324000..324000], name(s), length [0.1 min], width[0.1 min], orientation[degrees]
-          //659250,-49674,M16/NGC6611/Eagle_Nebula,80
-          deepstring.add(simobject);
+             //RA[0..864000], DEC[-324000..324000], name(s), length [0.1 min], width[0.1 min], orientation[degrees]
+             //659250,-49674,M16/NGC6611/Eagle_Nebula,80
+             deepstring.add(simobject);
+          end;
         end;
       end {correct line of object list}
       else
@@ -13882,8 +13884,8 @@ begin
     slist.Free;
   end;
 
-  database_nr:=5;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4 is variable magn 15 loaded, 5=simbad}
-  plot_deepsky;
+  database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  plot_deepsky(false);
 end;
 
 
