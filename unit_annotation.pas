@@ -1094,8 +1094,11 @@ begin
          beep;
          application.messagebox(pchar('The additional variable star database was not found!  Download from the ASTAP webpage and install.'),'',0);
          esc_pressed:=true;
+         exit;
        end;
     end;
+    if copy(deepstring.strings[0],1,4)<>'V001' then
+      application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 end;
 
@@ -1114,9 +1117,13 @@ begin
          beep;
          application.messagebox(pchar('The additional variable star database was not found!  Download from the ASTAP webpage and install.'),'',0);
          esc_pressed:=true;
+         exit;
        end;
     end;
+    if copy(deepstring.strings[0],1,4)<>'V001' then
+      application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
+
 end;
 
 
@@ -1237,7 +1244,6 @@ begin
   repeat {until fout is 0}
     if linepos>=deepstring.count then
     begin
-//      linepos:=$FFFFFF;{mark as finished}
       result:=false;
       exit;
     end;
@@ -1406,7 +1412,6 @@ begin
     fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
     if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-                                                                      // flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
     {$ifdef mswindows}
      mainwindow.image1.Canvas.Font.Name :='default';
     {$endif}
@@ -1458,13 +1463,13 @@ begin
         len:=length1/(abs(head.cdelt2)*60*10*2); {Length in pixels}
         if ((head.cdelt2<0.25*1/60) or (len>=1) or (database_nr>=3)) then//avoid too many object on images with a large FOV
         begin
-          if database_nr>=3 then //variables
+          if ((database_nr>=3) and (database_nr<=5)) then //variables
           begin
             if ((abs(x-shape_fitsX)<5) and  (abs(y-shape_fitsy)<5)) then // note shape_fitsX/Y are in sensor coordinates
-                  mainwindow.Shape_alignment_marker1.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
+                  mainwindow.Shape_alignment_marker1.HINT:=copy(naam2,1,posex(' ',naam2,4)-1);
 
             if ((abs(x-shape_fitsX2)<5) and  (abs(y-shape_fitsy2)<5)) then  // note shape_fitsX/Y are in sensor coordinates
-                      mainwindow.Shape_alignment_marker2.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
+                      mainwindow.Shape_alignment_marker2.HINT:=copy(naam2,1,posex(' ',naam2,4)-1);
           end;
 
           gx_orientation:=(pa+head.crota2)*flipped;
@@ -2793,7 +2798,6 @@ begin
 
   {do database stars}
 
-  // flipped?  sign(CDELT1*CDELT2) =  sign(CD1_1*CD2_2 - CD1_2*CD2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
   if hd.cd1_1*hd.cd2_2 - hd.cd1_2*hd.cd2_1>0 then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
     flipped:=-1  //change rotation for flipped image
   else

@@ -8519,7 +8519,8 @@ begin
 
     photometry_stdev := madCheck * 1.4826;{mad to standard deviation}
 
-    plot_graph; {aavso report}
+    if form_aavso1 <> nil then
+        form_aavso1.FormShow(nil);{aavso report}
   until ((esc_pressed) or (Sender <> photometry_repeat1 {single run}));
 
   nil_all;{nil all arrays and restore cursor}
