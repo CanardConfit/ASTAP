@@ -116,7 +116,7 @@ end;
 {   see also Montenbruck & Pfleger, Astronomy on the personal computer}
 procedure lsq_fit( A_matrix: star_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector );
   const tiny = 1E-10;  {accuracy}
-  var i,j,k, nr_equations,nr_columns,hhh  : integer;
+  var i,j,k, nr_equations,nr_columns  : integer;
       p,q,h                           : double;
       temp_matrix                     : star_list;
 
@@ -176,7 +176,6 @@ begin
     {solution vector x:=x_matrix[0]x+x_matrix[1]y+x_matrix[2]}
   end;
 end; {lsq_fit}
-
 
 
 procedure QuickSort_starlist(var A: star_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
@@ -1121,9 +1120,9 @@ function solve_image(img :image_array) : boolean;{find match between image and s
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,database_density,limit,err                                       : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
+  search_field,step_size,ra_database,dec_database,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
   oversize,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
-  quad_tolerance,dummy, extrastars,flip,extra,distance                                                               : double;
+  quad_tolerance,dummy, extrastars,flip,extra,distance,flipped_image                                                 : double;
   solution, go_ahead ,autoFOV                                                                                        : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
@@ -1316,20 +1315,20 @@ begin
           end;{end spiral around [0 0]}
 
           {adapt search field to matrix position, +0+0/+1+0,+1+1,+0+1,-1+1,-1+0,-1-1,+0-1,+1-1..}
-          telescope_dec:=STEP_SIZE*spiral_y+dec_radians;
+          dec_database:=STEP_SIZE*spiral_y+dec_radians;
           flip:=0;
-          if telescope_dec>+pi/2 then  begin telescope_dec:=pi-telescope_dec; flip:=pi; end {crossed the pole}
+          if dec_database>+pi/2 then  begin dec_database:=pi-dec_database; flip:=pi; end {crossed the pole}
           else
-          if telescope_dec<-pi/2 then  begin telescope_dec:=-pi-telescope_dec; flip:=pi; end;
+          if dec_database<-pi/2 then  begin dec_database:=-pi-dec_database; flip:=pi; end;
 
-          if telescope_dec>0 then extra:=step_size/2 else extra:=-step_size/2;{use the distance furthest away from the pole}
+          if dec_database>0 then extra:=step_size/2 else extra:=-step_size/2;{use the distance furthest away from the pole}
 
-          telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec-extra));{step larger near pole. This telescope_ra is an offsett from zero}
+          telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(dec_database-extra));{step larger near pole. This ra_database is an offsett from zero}
           if ((telescope_ra_offset<=+pi/2+step_size/2) and (telescope_ra_offset>=-pi/2)) then  {step_size for overlap}
           begin
-            telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
+            ra_database:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
 
-            ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
+            ang_sep(ra_database,dec_database,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
             if seperation<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
             begin
 
@@ -1347,7 +1346,7 @@ begin
               extrastars:=1/1.1;{star with a factor of one}
               repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
                 extrastars:=extrastars*1.1;
-                if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
+                if read_stars(ra_database,dec_database,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
                 begin
                   memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');
                   errorlevel:=33;{read error star database}
@@ -1362,11 +1361,11 @@ begin
               if ((solve_show_log) and  (extrastars>1)) then memo2_message('Too many small quads excluded due to higher resolution database, increased the number of stars with '+inttostr(round((extrastars-1)*100))+'%');
 
               if solve_show_log then {global variable set in find stars}
-                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'], position: '+ prepare_ra(telescope_ra,': ')+prepare_dec(telescope_dec,'d ')+#9+' Down to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.');
+                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'], position: '+ prepare_ra(ra_database,': ')+prepare_dec(dec_database,'d ')+#9+' Down to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.');
 
               // for testing purposes
               // create supplement lines for sky coverage testing and write to log using -log
-              // memo2.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
+              // memo2.add(floattostr(ra_database*12/pi)+',,,'+floattostr(dec_database*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
                solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
             end; {within search circle. Otherwise the search is within a kind of square}
@@ -1381,7 +1380,7 @@ begin
           crpix1:=centerX+1;{center image in fits coordinate range 1..width2}
           crpix2:=centery+1;
 
-          standard_equatorial( telescope_ra,telescope_dec,
+          standard_equatorial( ra_database,dec_database,
               (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
               (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
               1, {CCD scale}
@@ -1411,34 +1410,43 @@ begin
     //    cd2_1:= + solution_vectorY[0]/3600;
     //    cd2_2:= + solution_vectorY[1]/3600;
 
-    // rather then using the solution vector directly, for maximum accuracy find the vector for the center of the image.
-    //make 1 step in direction crpix1
-    standard_equatorial( telescope_ra,telescope_dec,
-        (solution_vectorX[0]*(centerX+1) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
-        (solution_vectorY[0]*(centerX+1) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
-        1, {CCD scale}
-        ra7 ,dec7{center equatorial position});
+    //New 2023 method for correct rotation angle/annotation near to the celestial pole.
+    if solution_vectorX[0]*solution_vectorY[1] - solution_vectorX[1]*solution_vectorY[0] >0 then // flipped?
+    flipped_image:=-1 //change rotation for flipped image, {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+    else
+    flipped_image:=+1;//not flipped
 
-    delta_ra:=ra7-ra0;
-    if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
-    if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
-    cd1_1:=(delta_ra)*cos(dec0)*(180/pi);
-    cd2_1:=(dec7-dec0)*(180/pi);
+    // position +1 pixels in direction hd.crpix2
+    standard_equatorial( ra_database,dec_database, (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
+                                                   (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
+                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 10 pixels away
 
-    //make 1 step in direction crpix2
-    standard_equatorial( telescope_ra,telescope_dec,
-        (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
-        (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
-         1, {CCD scale}
-        ra7 ,dec7{center equatorial position});
+    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+    crota2:=-arctan2(cos(dec7)*sin(ra7-ra_radians),sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians));//Accurate formula. Angle between line between the two positions and north as seen at hd.ra0, hd.dec0
 
-    delta_ra:=ra7-ra0;
-    if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
-    if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
-    cd1_2:=(delta_ra)*cos(dec0)*(180/pi);
-    cd2_2:=(dec7-dec0)*(180/pi);
+    // position 1*flipped_image  pixels in direction hd.crpix1
+    standard_equatorial( ra_database,dec_database,(solution_vectorX[0]*(centerX+flipped_image) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
+                                                  (solution_vectorY[0]*(centerX+flipped_image) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
+                                                  1, {CCD scale} ra7 ,dec7{equatorial position});
 
-    new_to_old_WCS;
+    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+    crota1:=+arctan2(sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians),cos(dec7)*sin(ra7-ra_radians));//Accurate formula. See calculation hd.crota2, arguments arctan swapped
+
+    cdelt1:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]))/3600; // from unit arcsec to degrees
+    cdelt2:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]))/3600;
+
+
+
+    cd1_1:=+cdelt1*cos(crota1);
+    cd1_2:=-cdelt1*sin(crota1)*flipped_image;
+    cd2_1:=+cdelt2*sin(crota2)*flipped_image;
+    cd2_2:=+cdelt2*cos(crota2);
+
+    crota2:=crota2*180/pi;//convert to degrees
+    crota1:=crota1*180/pi;
+    //end new 2023 method
+
+
     solved_in:='Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec';{make string to report in FITS header.}
 
     offset_found:=distance_to_string(sep_search ,sep_search)+'.';
