@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = -662
+  Left = -365
   Height = 735
-  Top = 164
+  Top = 220
   Width = 2139
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -3886,7 +3886,7 @@ object stackmenu1: Tstackmenu1
         WordWrap = True
       end
       object most_right9: TStaticText
-        Left = 1952
+        Left = 1968
         Height = 16
         Top = 10
         Width = 3

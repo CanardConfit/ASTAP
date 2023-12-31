@@ -506,8 +506,10 @@ var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;
   search_field,step_size,ra_database,dec_database,ra_database_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
-  sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
-  current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio   : double;
+  sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,
+  current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio,
+  crota1,crota2,flipped_image   : double;
+
   solution, go_ahead, autoFOV,use_triples,yes_use_triples         : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
@@ -918,36 +920,47 @@ begin
     //    hd.cd2_1:= + solution_vectorY[0]/3600;
     //    hd.cd2_2:= + solution_vectorY[1]/3600;
 
-    // rather then using the solution vector directly, for maximum accuracy find the vector for the center of the image.
-    // make 1 step in direction hd.crpix1
-    standard_equatorial( ra_database,dec_database,
-        (solution_vectorX[0]*(centerX+pixel_aspect_ratio{normally 1}) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
-        (solution_vectorY[0]*(centerX+pixel_aspect_ratio{normally 1}) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
-        1, {CCD scale}
-        ra7 ,dec7{center equatorial position});
+    //New 2023 method for correct rotation angle/annotation near to the celestial pole.
 
-    delta_ra:=ra7-hd.ra0;
-    if delta_ra>+pi then delta_ra:=delta_ra-2*pi; {1 -> 359,    -2:=(359-1) -360 }{rev 2021}
-    if delta_ra<-pi then delta_ra:=delta_ra+2*pi; {359 -> 1,    +2:=(1-359) +360 }
+    if solution_vectorX[0]*solution_vectorY[1] - solution_vectorX[1]*solution_vectorY[0] >0 then // flipped?
+    flipped_image:=-1 //change rotation for flipped image, {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+    else
+    flipped_image:=+1;//not flipped
 
-    hd.cd1_1:=(delta_ra)*cos(hd.dec0)*(180/pi);
-    hd.cd2_1:=(dec7-hd.dec0)*(180/pi);
+    // position +1 pixels in direction hd.crpix2
+    standard_equatorial( ra_database,dec_database, (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
+                                                   (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
+                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 10 pixels away
 
-    //make 1 step in direction hd.crpix2
-    standard_equatorial( ra_database,dec_database,
-        (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
-        (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
-         1, {CCD scale}
-        ra7 ,dec7{center equatorial position});
+    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+    crota2:=-arctan2(cos(dec7)*sin(ra7-hd.ra0),sin(dec7)*cos(hd.dec0) - cos(dec7)*sin(hd.dec0)*cos(ra7-hd.ra0));//Accurate formula. Angle between line between the two positions and north as seen at hd.ra0, hd.dec0
 
-    delta_ra:=ra7-hd.ra0;
-    if delta_ra>+pi then delta_ra:=delta_ra-2*pi; {1 -> 359,    -2:=(359-1) -360 } {rev 2021}
-    if delta_ra<-pi then delta_ra:=delta_ra+2*pi; {359 -> 1,    +2:=(1-359) +360 }
+    // position 1*flipped_image  pixels in direction hd.crpix1
+    standard_equatorial( ra_database,dec_database,(solution_vectorX[0]*(centerX+flipped_image) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
+                                                  (solution_vectorY[0]*(centerX+flipped_image) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
+                                                  1, {CCD scale} ra7 ,dec7{equatorial position});
 
-    hd.cd1_2:=(delta_ra)*cos(hd.dec0)*(180/pi);
-    hd.cd2_2:=(dec7-hd.dec0)*(180/pi);
+    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+    crota1:=+arctan2(sin(dec7)*cos(hd.dec0) - cos(dec7)*sin(hd.dec0)*cos(ra7-hd.ra0),cos(dec7)*sin(ra7-hd.ra0));//Accurate formula. See calculation hd.crota2, arguments arctan swapped
+//    crota1:=-arctan2(cos(dec7)*sin(ra7-hd.ra0),sin(dec7)*cos(hd.dec0) - cos(dec7)*sin(hd.dec0)*cos(ra7-hd.ra0));//Accurate formula. Angle between line between the two positions and north as seen at hd.ra0, hd.dec0
 
-    new_to_old_WCS(hd);
+
+
+
+    hd.cdelt1:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]))/3600; // from unit arcsec to degrees
+    hd.cdelt2:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]))/3600;
+
+
+
+    hd.cd1_1:=+hd.cdelt1*cos(crota1);
+    hd.cd1_2:=-hd.cdelt1*sin(crota1)*flipped_image;
+    hd.cd2_1:=+hd.cdelt2*sin(crota2)*flipped_image;
+    hd.cd2_2:=+hd.cdelt2*cos(crota2);
+
+    hd.crota2:=crota2*180/pi;//convert to degrees
+    hd.crota1:=crota1*180/pi;
+    //end new 2023 method
+
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
     offset_found:={' Δ was '}distance_to_string(sep_search {scale selection},sep_search)+'.';
@@ -1020,14 +1033,6 @@ begin
   end;
 
   warning_str:=warning_str + warning_downsample; {add the last warning from loop autoFOV}
-
-// this does not happen anymore with new database with fixed density.
-//  if nrstars_required>database_stars+4 then
-//  begin
-//    memo2_message('Warning, reached the limit of the star database!');
-//    warning_str:=warning_str+'Star database limit was reached! ';
-//  end;
-
   if warning_str<>'' then
   begin
     update_longstr('WARNING =',warning_str);{update or insert long str including single quotes}

@@ -597,16 +597,18 @@ var
   dum : string;
 begin
   obscode1.text:=obscode;
-  if length(mainwindow.Shape_alignment_marker1.HINT)>2 then name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT
-  else
-  if object_name<>'' then name_variable1.text:=object_name
-  else
-  name_variable1.text:=name_var;
+//  if length(mainwindow.Shape_alignment_marker1.HINT)>0 then
+    name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT;
+//  else
+//    if object_name<>'' then name_variable1.text:=object_name
+//  else
+//  name_variable1.text:=name_var;
 
 
-  if length(mainwindow.Shape_alignment_marker2.HINT)>2 then name_check1.text:=mainwindow.Shape_alignment_marker2.HINT
-  else
-  name_check1.text:=abbreviation_check;
+//  if length(mainwindow.Shape_alignment_marker2.HINT)>0 then
+    name_check1.text:=mainwindow.Shape_alignment_marker2.HINT ;
+//  else
+//    name_check1.text:=abbreviation_check;
 
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;

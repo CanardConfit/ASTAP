@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2023.12.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1447,6 +1447,17 @@ begin
             dec_mount:=validate_double*pi/180;
             if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
           end;
+
+//          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='V')  and (header[i+3]='R') and (header[i+4]='A')) then  {ra}
+//          begin
+//            ra_mount:=validate_double*pi/180;
+//            if head.ra0=0 then head.ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
+//          end;
+//          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='V')  and (header[i+3]='D') and (header[i+4]='E')) then  {dec}
+//          begin
+//            dec_mount:=validate_double*pi/180;
+//            if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+//          end;
 
 
           if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J')) then {OBJ}
@@ -4050,7 +4061,7 @@ begin
     end;
 
     mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
-    mainwindow.flip_indication1.Visible:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0;// flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
+    mainwindow.flip_indication1.Visible:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0;// flipped image?
 
     Canvas.Pen.Color := clred;
 
@@ -9999,9 +10010,8 @@ begin
     else
     seperation:=floattostrF(sep,FFfixed,0,2)+'°';
 
-    {see meeus new formula 46.5, angle of moon limb}
-    //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-    pa:=FloattostrF(arctan2(cos(dec2)*sin(ra2-ra1),sin(dec2)*cos(dec1) - cos(dec2)*sin(dec1)*cos(ra2-ra1))*180/pi,FFfixed,0,0)+'°';; {Accurate formula. Angle between line between the two stars and north as seen at ra1, dec1}
+    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+    pa:=FloattostrF(arctan2(cos(dec2)*sin(ra2-ra1),sin(dec2)*cos(dec1) - cos(dec2)*sin(dec1)*cos(ra2-ra1))*180/pi,FFfixed,0,0)+'°';; {Accurate formula. Angle between line between the two positions and north as seen at ra1, dec1}
   end
   else
   begin //no astrometric solution available
@@ -13557,7 +13567,7 @@ var
 begin
   flipped_view:=+1;//not flipped
 
-  if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
+  if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?
     flipped_image:=-1  //change rotation for flipped image,  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   else
     flipped_image:=+1;//not flipped
@@ -13625,8 +13635,7 @@ begin
       Application.ProcessMessages;
       if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false)) then begin break;end;
 
-      if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
-                                                               // Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped
+      if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped
         flipped_image:=-1  // change rotation for flipped image
       else
         flipped_image:=+1; // not flipped
@@ -14846,7 +14855,8 @@ begin
      {centered coordinates}
      sensor_coordinates_to_celestial(object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
      if ((object_raM<>0) and (object_decM<>0)) then
-       mainwindow.statusbar1.panels[1].text:=prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
+       mainwindow.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
+                                               //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
      else
        mainwindow.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str{+' '+floattostr4(flux)};
