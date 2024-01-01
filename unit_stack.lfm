@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = -365
+  Left = 339
   Height = 735
-  Top = 220
+  Top = 132
   Width = 2139
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -47,6 +47,7 @@ object stackmenu1: Tstackmenu1
   OnDestroy = FormDestroy
   OnDropFiles = FormDropFiles
   OnKeyPress = FormKeyPress
+  OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
   LCLVersion = '3.0.0.1'
@@ -348,7 +349,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -503,6 +504,8 @@ object stackmenu1: Tstackmenu1
             MinWidth = 60
             Width = 60
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         GridLines = True
         HideSelection = False
         MultiSelect = True
@@ -708,7 +711,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -785,6 +788,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Issues'
             Width = 46
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         GridLines = True
         HideSelection = False
         MultiSelect = True
@@ -918,7 +923,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -1007,6 +1012,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Issues'
             Width = 46
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         GridLines = True
         HideSelection = False
         MultiSelect = True
@@ -1125,7 +1132,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -1193,6 +1200,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Gain'
             MinWidth = 50
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         GridLines = True
         HideSelection = False
         MultiSelect = True
@@ -1263,7 +1272,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Columns = <        
@@ -1307,6 +1316,8 @@ object stackmenu1: Tstackmenu1
             MinWidth = 73
             Width = 73
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         Font.Color = clHighlight
         GridLines = True
         HideSelection = False
@@ -3094,7 +3105,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -3165,6 +3176,8 @@ object stackmenu1: Tstackmenu1
             MinWidth = 90
             Width = 770
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         GridLines = True
         HideSelection = False
         MultiSelect = True
@@ -3482,7 +3495,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -3624,6 +3637,8 @@ object stackmenu1: Tstackmenu1
             MinWidth = 70
             Width = 71
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         GridLines = True
         HideSelection = False
         MultiSelect = True
@@ -3919,7 +3934,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -4060,6 +4075,8 @@ object stackmenu1: Tstackmenu1
             MinWidth = 80
             Width = 80
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         GridLines = True
         HideSelection = False
         MultiSelect = True
@@ -4176,7 +4193,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 36
         Width = 2131
-        Align = alClient
+        Align = alCustom
         AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
@@ -4307,6 +4324,8 @@ object stackmenu1: Tstackmenu1
             MinWidth = 65
             Width = 65
           end>
+        Constraints.MaxHeight = 434
+        Constraints.MinHeight = 434
         GridLines = True
         HideSelection = False
         MultiSelect = True
