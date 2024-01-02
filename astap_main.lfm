@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 276
+  Left = 92
   Height = 699
   Hint = ' '
-  Top = 116
+  Top = 90
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -53,34 +53,6 @@ object mainwindow: Tmainwindow
   ParentFont = True
   Position = poDesktopCenter
   LCLVersion = '3.0.0.1'
-  object Label1: TLabel
-    Left = 54
-    Height = 25
-    Hint = 'Right ascension'
-    Top = -4
-    Width = 12
-    Alignment = taRightJustify
-    Caption = 'α'
-    Font.Height = -19
-    ParentColor = False
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-  end
-  object Label2: TLabel
-    Left = 54
-    Height = 25
-    Hint = 'Declination'
-    Top = 24
-    Width = 11
-    Alignment = taRightJustify
-    Caption = 'δ'
-    Font.Height = -19
-    ParentColor = False
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-  end
   object error_get_it: TLabel
     Left = 217
     Height = 15
@@ -95,631 +67,6 @@ object mainwindow: Tmainwindow
     Font.Quality = fqDraft
     ParentColor = False
     ParentFont = False
-  end
-  object ra_label: TLabel
-    Left = 176
-    Height = 15
-    Top = 6
-    Width = 12
-    Caption = '00'
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentColor = False
-    ParentFont = False
-  end
-  object dec_label: TLabel
-    Left = 176
-    Height = 15
-    Top = 30
-    Width = 12
-    Caption = '00'
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentColor = False
-    ParentFont = False
-  end
-  object rotation1: TLabel
-    Left = 531
-    Height = 15
-    Hint = 'Orientation of the image north axis, independent of  flip settings.'
-    Top = 130
-    Width = 6
-    Caption = '0'
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentColor = False
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-  end
-  object image_north_arrow1: TImage
-    Left = 456
-    Height = 69
-    Hint = 'Long axis is north, small axis is east,  F indicates flipped image.'
-    Top = 103
-    Width = 69
-    ParentShowHint = False
-    ShowHint = True
-    Transparent = True
-  end
-  object ra1: TEdit
-    Left = 75
-    Height = 23
-    Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
-    Top = 0
-    Width = 95
-    OnChange = ra1Change
-    OnDblClick = radec_search1Click
-    ParentShowHint = False
-    PopupMenu = PopupMenu_ra_dec1
-    ShowHint = True
-    TabOrder = 0
-    Text = '00 00 00.0'
-  end
-  object dec1: TEdit
-    Left = 75
-    Height = 23
-    Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database.'
-    Top = 26
-    Width = 95
-    OnChange = dec1Change
-    OnDblClick = radec_search1Click
-    ParentShowHint = False
-    PopupMenu = PopupMenu_ra_dec1
-    ShowHint = True
-    TabOrder = 1
-    Text = '+00 00 00.00'
-  end
-  object inversemousewheel1: TCheckBox
-    Left = 456
-    Height = 19
-    Hint = 'Inverse zoom action of the mouse wheel.'
-    Top = 78
-    Width = 101
-    Caption = 'Inverse 🖱️ wheel'
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 2
-  end
-  object Panel1: TPanel
-    Left = -19
-    Height = 704
-    Hint = 'hint'
-    Top = 176
-    Width = 1358
-    Align = alCustom
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 704
-    ClientWidth = 1358
-    Color = 2105376
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentBackground = False
-    ParentColor = False
-    ParentFont = False
-    ParentShowHint = False
-    TabOrder = 3
-    OnMouseDown = Panel1MouseDown
-    OnMouseMove = Panel1MouseMove
-    OnMouseWheelDown = Panel1MouseWheelDown
-    OnMouseWheelUp = Panel1MouseWheelUp
-    object Image1: TImage
-      Left = 93
-      Height = 264
-      Top = 54
-      Width = 608
-      Anchors = []
-      OnMouseDown = Image1MouseDown
-      OnMouseEnter = Image1MouseEnter
-      OnMouseMove = Image1MouseMove
-      OnMouseUp = Image1MouseUp
-      OnPaint = Image1Paint
-      ParentShowHint = False
-      PopupMenu = PopupMenu1
-      Stretch = True
-      Visible = False
-    end
-    object Shape_alignment_marker1: TShape
-      Left = 32
-      Height = 11
-      Top = 112
-      Width = 11
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clLime
-      Pen.Mode = pmNotXor
-      Pen.Width = 3
-      Shape = stCircle
-      ShowHint = True
-      Visible = False
-    end
-    object shape_marker1: TShape
-      Left = 40
-      Height = 31
-      Hint = 'reference 1'
-      Top = 8
-      Width = 31
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clFuchsia
-      Pen.Mode = pmNotXor
-      Pen.Width = 2
-      ShowHint = True
-      Visible = False
-    end
-    object error_label1: TLabel
-      Left = 24
-      Height = 28
-      Top = 40
-      Width = 158
-      Caption = 'Error loading file!!'
-      Font.Color = clRed
-      Font.Height = -20
-      ParentColor = False
-      ParentFont = False
-      Visible = False
-    end
-    object shape_marker2: TShape
-      Left = 103
-      Height = 31
-      Hint = 'reference 2'
-      Top = 8
-      Width = 31
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clLime
-      Pen.Mode = pmNotXor
-      Pen.Width = 2
-      ShowHint = True
-      Visible = False
-    end
-    object shape_marker3: TShape
-      Left = 160
-      Height = 31
-      Top = 8
-      Width = 31
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clBlue
-      Pen.Mode = pmNotXor
-      Pen.Width = 2
-      ShowHint = True
-      Visible = False
-    end
-    object shape_paste1: TShape
-      Left = 216
-      Height = 31
-      Top = 8
-      Width = 31
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clBlue
-      Pen.Mode = pmNotXor
-      Pen.Width = 2
-      ShowHint = True
-      Visible = False
-    end
-    object shape_marker4: TShape
-      Left = 272
-      Height = 31
-      Hint = 'Mount'
-      Top = 8
-      Width = 31
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clGreen
-      Pen.Mode = pmNotXor
-      Pen.Width = 2
-      Shape = stCircle
-      ShowHint = True
-      Visible = False
-    end
-    object Shape_alignment_marker2: TShape
-      Left = 32
-      Height = 11
-      Top = 144
-      Width = 11
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clLime
-      Pen.Mode = pmNotXor
-      Pen.Width = 3
-      Shape = stDiamond
-      ShowHint = True
-      Visible = False
-    end
-    object Shape_alignment_marker3: TShape
-      Left = 32
-      Height = 11
-      Hint = '3'
-      Top = 176
-      Width = 11
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clLime
-      Pen.Mode = pmNotXor
-      Pen.Width = 3
-      Shape = stDiamond
-      ShowHint = True
-      Visible = False
-    end
-    object LabelVar1: TLabel
-      Left = 62
-      Height = 30
-      Top = 104
-      Width = 29
-      Caption = 'Var'
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clYellow
-      Font.Height = -21
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      ParentColor = False
-      ParentFont = False
-      Visible = False
-    end
-    object LabelCheck1: TLabel
-      Left = 62
-      Height = 30
-      Top = 136
-      Width = 56
-      Caption = 'Check'
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clYellow
-      Font.Height = -21
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      ParentColor = False
-      ParentFont = False
-      Visible = False
-    end
-    object LabelThree1: TLabel
-      Left = 62
-      Height = 30
-      Top = 168
-      Width = 11
-      Caption = '3'
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clYellow
-      Font.Height = -21
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      ParentColor = False
-      ParentFont = False
-      Visible = False
-    end
-    object shape_manual_alignment1: TShape
-      Left = 344
-      Height = 11
-      Hint = 'Lock unreliable, check position'
-      Top = 16
-      Width = 11
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clLime
-      Pen.Mode = pmNotXor
-      Pen.Width = 3
-      Shape = stCircle
-      ShowHint = True
-      Visible = False
-    end
-    object boxshape1: TShape
-      Left = 392
-      Height = 75
-      Hint = 'Select rectangle'
-      Top = 32
-      Width = 104
-      Brush.Color = clNone
-      Brush.Style = bsClear
-      Enabled = False
-      ParentShowHint = False
-      Pen.Color = clYellow
-      Pen.EndCap = pecSquare
-      Pen.JoinStyle = pjsMiter
-      Pen.Mode = pmXor
-      Visible = False
-    end
-  end
-  object data_range_groupBox1: TGroupBox
-    Left = 8
-    Height = 120
-    Hint = ' '
-    Top = 52
-    Width = 417
-    AutoSize = True
-    Caption = 'Data range'
-    ClientHeight = 100
-    ClientWidth = 413
-    Enabled = False
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentBackground = False
-    ParentFont = False
-    TabOrder = 4
-    object Label12: TLabel
-      Left = 0
-      Height = 15
-      Top = 57
-      Width = 53
-      Caption = 'Minimum'
-      Color = clBtnFace
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      ParentColor = False
-      ParentFont = False
-      Transparent = False
-    end
-    object Label13: TLabel
-      Left = 0
-      Height = 15
-      Top = 77
-      Width = 55
-      Caption = 'Maximum'
-      Color = clBtnFace
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      ParentColor = False
-      ParentFont = False
-      Transparent = False
-    end
-    object histogram1: TImage
-      Cursor = crCross
-      Left = 93
-      Height = 54
-      Top = 0
-      Width = 210
-      OnMouseMove = histogram1MouseMove
-      ParentShowHint = False
-      PopupMenu = PopupMenu_histogram1
-      ShowHint = True
-      StretchOutEnabled = False
-      StretchInEnabled = False
-    end
-    object Label5: TLabel
-      Left = 4
-      Height = 15
-      Top = 8
-      Width = 59
-      Caption = 'Histogram:'
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      ParentColor = False
-      ParentFont = False
-    end
-    object minimum1: TScrollBar
-      Left = 67
-      Height = 16
-      Hint = 'Adjust the black level'
-      Top = 57
-      Width = 261
-      Enabled = False
-      Max = 65535
-      PageSize = 0
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 0
-      OnChange = minimum1Change
-      OnScroll = maximum1Scroll
-    end
-    object maximum1: TScrollBar
-      Left = 67
-      Height = 16
-      Hint = 'Adjust the white level.'
-      Top = 80
-      Width = 261
-      Enabled = False
-      LargeChange = 5000
-      Max = 65535
-      Min = 1
-      PageSize = 0
-      ParentShowHint = False
-      Position = 65535
-      ShowHint = True
-      SmallChange = 1000
-      TabOrder = 1
-      OnChange = maximum1Change
-      OnScroll = maximum1Scroll
-    end
-    object min2: TEdit
-      Left = 340
-      Height = 23
-      Hint = 'At this level the pixels are displayed as black.'
-      Top = 56
-      Width = 49
-      Enabled = False
-      OnEditingDone = min2EditingDone
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 2
-      Text = '0'
-    end
-    object max2: TEdit
-      Left = 340
-      Height = 23
-      Hint = 'At this level the pixels are displayed as fully white.'
-      Top = 77
-      Width = 49
-      Enabled = False
-      OnEditingDone = max2EditingDone
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 3
-      Text = '65535'
-    end
-    object range1: TComboBox
-      Left = 313
-      Height = 23
-      Hint = 'Preset of the automatic data range adjustments.'
-      Top = 27
-      Width = 100
-      DropDownCount = 20
-      Enabled = False
-      ItemHeight = 15
-      ItemIndex = 2
-      Items.Strings = (
-        'Low'
-        'Low +'
-        'Medium'
-        'Medium +'
-        'High'
-        'High +'
-        'Range'
-        'Manual'
-        'Show saturation'
-        'Max range'
-      )
-      OnChange = range1Change
-      ParentBidiMode = False
-      ParentColor = True
-      ParentShowHint = False
-      ShowHint = True
-      Style = csDropDownList
-      TabOrder = 4
-      Text = 'Medium'
-    end
-    object stretch1: TComboBox
-      Left = 313
-      Height = 23
-      Hint = 'Stretch factor applied on displayed image. This is a  colour preserving stretch based on an asinh function.'
-      Top = 0
-      Width = 100
-      DropDownCount = 20
-      Enabled = False
-      ItemHeight = 15
-      ItemIndex = 0
-      Items.Strings = (
-        'off'
-        '2'
-        '4'
-        '8'
-        '10'
-        '15'
-        '20'
-        '30'
-        '40'
-        '70'
-        '100'
-        '200'
-        '400'
-        '800'
-      )
-      OnCloseUp = stretch1CloseUp
-      OnExit = stretch1Exit
-      ParentColor = True
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 5
-      Text = 'off'
-    end
-    object saturation_factor_plot1: TTrackBar
-      Left = 392
-      Height = 48
-      Hint = 'Saturation adjust factor. The midde position is neutral.  Above is increase, below is decrease.'
-      Top = 52
-      Width = 20
-      Frequency = 5
-      Min = -10
-      Orientation = trVertical
-      Position = 0
-      Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -11
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      OnMouseUp = saturation_factor_plot1MouseUp
-      OnKeyUp = saturation_factor_plot1KeyUp
-      ParentFont = False
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 6
-    end
-    object shape_histogram1: TShape
-      Left = 72
-      Height = 54
-      Top = 1
-      Width = 1
-      Brush.Color = clNone
-      Brush.Style = bsClear
-      Pen.Color = clWhite
-      Pen.Style = psDot
-      Visible = False
-    end
-  end
-  object Polynomial1: TComboBox
-    Left = 456
-    Height = 23
-    Hint = 'Use WCS, SIP or DSS polynomial for indicating the position. SIP is available for Astrometry.net solutions and DSS polynomial for images from the DSS survey. A red background is indicating "no valid" solution for this option.'
-    Top = 49
-    Width = 125
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ItemHeight = 15
-    ItemIndex = 0
-    Items.Strings = (
-      'WCS'
-      'SIP Polynomial'
-      'DSS Polynomial'
-    )
-    OnChange = Polynomial1Change
-    ParentColor = True
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 5
-    Text = 'WCS'
   end
   object StatusBar1: TStatusBar
     Left = 0
@@ -760,213 +107,895 @@ object mainwindow: Tmainwindow
     SizeGrip = False
     OnMouseEnter = StatusBar1MouseEnter
   end
-  object BitBtn1: TBitBtn
-    Left = 248
-    Height = 42
-    Hint = 'Show stack menu. CTRL-A'
-    Top = 5
-    Width = 48
-    AutoSize = True
-    Caption = '∑ '
-    Font.Height = -24
-    OnClick = Stackimages1Click
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 7
-  end
-  object SpeedButton1: TSpeedButton
-    Left = 8
-    Height = 22
-    Hint = 'Browse & preview fits files'
-    Top = 8
-    Width = 23
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    Glyph.Data = {
-      36050000424D3605000000000000360400002800000010000000100000000100
-      08000000000000010000C40E0000C40E00000000000000000000000000000000
-      80000080000000808000800000008000800080800000C0C0C000C0DCC000F0CA
-      A6000020400000206000002080000020A0000020C0000020E000004000000040
-      20000040400000406000004080000040A0000040C0000040E000006000000060
-      20000060400000606000006080000060A0000060C0000060E000008000000080
-      20000080400000806000008080000080A0000080C0000080E00000A0000000A0
-      200000A0400000A0600000A0800000A0A00000A0C00000A0E00000C0000000C0
-      200000C0400000C0600000C0800000C0A00000C0C00000C0E00000E0000000E0
-      200000E0400000E0600000E0800000E0A00000E0C00000E0E000400000004000
-      20004000400040006000400080004000A0004000C0004000E000402000004020
-      20004020400040206000402080004020A0004020C0004020E000404000004040
-      20004040400040406000404080004040A0004040C0004040E000406000004060
-      20004060400040606000406080004060A0004060C0004060E000408000004080
-      20004080400040806000408080004080A0004080C0004080E00040A0000040A0
-      200040A0400040A0600040A0800040A0A00040A0C00040A0E00040C0000040C0
-      200040C0400040C0600040C0800040C0A00040C0C00040C0E00040E0000040E0
-      200040E0400040E0600040E0800040E0A00040E0C00040E0E000800000008000
-      20008000400080006000800080008000A0008000C0008000E000802000008020
-      20008020400080206000802080008020A0008020C0008020E000804000008040
-      20008040400080406000804080008040A0008040C0008040E000806000008060
-      20008060400080606000806080008060A0008060C0008060E000808000008080
-      20008080400080806000808080008080A0008080C0008080E00080A0000080A0
-      200080A0400080A0600080A0800080A0A00080A0C00080A0E00080C0000080C0
-      200080C0400080C0600080C0800080C0A00080C0C00080C0E00080E0000080E0
-      200080E0400080E0600080E0800080E0A00080E0C00080E0E000C0000000C000
-      2000C0004000C0006000C0008000C000A000C000C000C000E000C0200000C020
-      2000C0204000C0206000C0208000C020A000C020C000C020E000C0400000C040
-      2000C0404000C0406000C0408000C040A000C040C000C040E000C0600000C060
-      2000C0604000C0606000C0608000C060A000C060C000C060E000C0800000C080
-      2000C0804000C0806000C0808000C080A000C080C000C080E000C0A00000C0A0
-      2000C0A04000C0A06000C0A08000C0A0A000C0A0C000C0A0E000C0C00000C0C0
-      2000C0C04000C0C06000C0C08000C0C0A000F0FBFF00A4A0A000808080000000
-      FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00FFFFFFFFFFFF
-      A4FFA4FFFFFFFFFFFFFFFFFFFFFFFFA4FFFFFFA4FFFFFFFFFFFFFFFFFFFFA4FF
-      FFFFFFFFA4FFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFA4FFFFFFFFFFFFA4FFFFFF
-      FFFFFFFFFFFFA4FFFFFFFFA4FFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFA4FFFFFF
-      FFFFFFFFFFFFA4FFFFFFFFFFFFA4FFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFFA4FF
-      FFFFFFFFA4FFFFFFFFFFFFFFFFFFFFA4FFFFFFA4FFFFFFFFFFFFFFFFFFFFFFFF
-      A4FFA4FFFFFFFFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFF
-    }
-    OnClick = SpeedButton1Click
-    ShowHint = True
-    ParentFont = False
-    ParentShowHint = False
-  end
-  object PageControl1: TPageControl
-    Left = 595
-    Height = 177
+  object PairSplitter1: TPairSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 676
     Top = 0
-    Width = 741
-    ActivePage = TabSheet1
-    Anchors = [akTop, akLeft, akRight]
-    TabIndex = 0
-    TabOrder = 8
-    object TabSheet1: TTabSheet
-      Caption = 'Header'
-      ClientHeight = 149
-      ClientWidth = 733
-      object Memo1: TMemo
-        Left = 0
-        Height = 149
+    Width = 1333
+    Align = alClient
+    Color = clForm
+    Position = 176
+    SplitterType = pstVertical
+    object PairSplitterSide1: TPairSplitterSide
+      Cursor = crArrow
+      Left = 0
+      Height = 176
+      Top = 0
+      Width = 1333
+      ClientWidth = 1333
+      ClientHeight = 176
+      object SpeedButton1: TSpeedButton
+        Left = 8
+        Height = 22
+        Hint = 'Browse & preview fits files'
+        Top = 8
+        Width = 23
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Glyph.Data = {
+          36050000424D3605000000000000360400002800000010000000100000000100
+          08000000000000010000C40E0000C40E00000000000000000000000000000000
+          80000080000000808000800000008000800080800000C0C0C000C0DCC000F0CA
+          A6000020400000206000002080000020A0000020C0000020E000004000000040
+          20000040400000406000004080000040A0000040C0000040E000006000000060
+          20000060400000606000006080000060A0000060C0000060E000008000000080
+          20000080400000806000008080000080A0000080C0000080E00000A0000000A0
+          200000A0400000A0600000A0800000A0A00000A0C00000A0E00000C0000000C0
+          200000C0400000C0600000C0800000C0A00000C0C00000C0E00000E0000000E0
+          200000E0400000E0600000E0800000E0A00000E0C00000E0E000400000004000
+          20004000400040006000400080004000A0004000C0004000E000402000004020
+          20004020400040206000402080004020A0004020C0004020E000404000004040
+          20004040400040406000404080004040A0004040C0004040E000406000004060
+          20004060400040606000406080004060A0004060C0004060E000408000004080
+          20004080400040806000408080004080A0004080C0004080E00040A0000040A0
+          200040A0400040A0600040A0800040A0A00040A0C00040A0E00040C0000040C0
+          200040C0400040C0600040C0800040C0A00040C0C00040C0E00040E0000040E0
+          200040E0400040E0600040E0800040E0A00040E0C00040E0E000800000008000
+          20008000400080006000800080008000A0008000C0008000E000802000008020
+          20008020400080206000802080008020A0008020C0008020E000804000008040
+          20008040400080406000804080008040A0008040C0008040E000806000008060
+          20008060400080606000806080008060A0008060C0008060E000808000008080
+          20008080400080806000808080008080A0008080C0008080E00080A0000080A0
+          200080A0400080A0600080A0800080A0A00080A0C00080A0E00080C0000080C0
+          200080C0400080C0600080C0800080C0A00080C0C00080C0E00080E0000080E0
+          200080E0400080E0600080E0800080E0A00080E0C00080E0E000C0000000C000
+          2000C0004000C0006000C0008000C000A000C000C000C000E000C0200000C020
+          2000C0204000C0206000C0208000C020A000C020C000C020E000C0400000C040
+          2000C0404000C0406000C0408000C040A000C040C000C040E000C0600000C060
+          2000C0604000C0606000C0608000C060A000C060C000C060E000C0800000C080
+          2000C0804000C0806000C0808000C080A000C080C000C080E000C0A00000C0A0
+          2000C0A04000C0A06000C0A08000C0A0A000C0A0C000C0A0E000C0C00000C0C0
+          2000C0C04000C0C06000C0C08000C0C0A000F0FBFF00A4A0A000808080000000
+          FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00FFFFFFFFFFFF
+          A4FFA4FFFFFFFFFFFFFFFFFFFFFFFFA4FFFFFFA4FFFFFFFFFFFFFFFFFFFFA4FF
+          FFFFFFFFA4FFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFA4FFFFFFFFFFFFA4FFFFFF
+          FFFFFFFFFFFFA4FFFFFFFFA4FFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFF
+          FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+          FFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFA4FFFFFF
+          FFFFFFFFFFFFA4FFFFFFFFFFFFA4FFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFFA4FF
+          FFFFFFFFA4FFFFFFFFFFFFFFFFFFFFA4FFFFFFA4FFFFFFFFFFFFFFFFFFFFFFFF
+          A4FFA4FFFFFFFFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFF
+        }
+        OnClick = SpeedButton1Click
+        ShowHint = True
+        ParentFont = False
+        ParentShowHint = False
+      end
+      object Label1: TLabel
+        Left = 54
+        Height = 25
+        Hint = 'Right ascension'
         Top = 0
-        Width = 733
+        Width = 12
+        Alignment = taRightJustify
+        Caption = 'α'
+        Font.Height = -19
+        ParentColor = False
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ra1: TEdit
+        Left = 75
+        Height = 23
+        Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
+        Top = 0
+        Width = 95
+        OnChange = ra1Change
+        OnDblClick = radec_search1Click
+        ParentShowHint = False
+        PopupMenu = PopupMenu_ra_dec1
+        ShowHint = True
+        TabOrder = 0
+        Text = '00 00 00.0'
+      end
+      object ra_label: TLabel
+        Left = 176
+        Height = 15
+        Top = 6
+        Width = 12
+        Caption = '00'
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentColor = False
+        ParentFont = False
+      end
+      object dec_label: TLabel
+        Left = 176
+        Height = 15
+        Top = 30
+        Width = 12
+        Caption = '00'
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentColor = False
+        ParentFont = False
+      end
+      object dec1: TEdit
+        Left = 75
+        Height = 23
+        Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database.'
+        Top = 26
+        Width = 95
+        OnChange = dec1Change
+        OnDblClick = radec_search1Click
+        ParentShowHint = False
+        PopupMenu = PopupMenu_ra_dec1
+        ShowHint = True
+        TabOrder = 1
+        Text = '+00 00 00.00'
+      end
+      object Label2: TLabel
+        Left = 54
+        Height = 25
+        Hint = 'Declination'
+        Top = 24
+        Width = 11
+        Alignment = taRightJustify
+        Caption = 'δ'
+        Font.Height = -19
+        ParentColor = False
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object data_range_groupBox1: TGroupBox
+        Left = 8
+        Height = 120
+        Hint = ' '
+        Top = 52
+        Width = 417
+        AutoSize = True
+        Caption = 'Data range'
+        ClientHeight = 100
+        ClientWidth = 413
+        Enabled = False
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentBackground = False
+        ParentFont = False
+        TabOrder = 2
+        object Label12: TLabel
+          Left = 0
+          Height = 15
+          Top = 57
+          Width = 53
+          Caption = 'Minimum'
+          Color = clBtnFace
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clBlack
+          Font.Height = -12
+          Font.Name = 'Segoe UI'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+        end
+        object Label13: TLabel
+          Left = 0
+          Height = 15
+          Top = 77
+          Width = 55
+          Caption = 'Maximum'
+          Color = clBtnFace
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clBlack
+          Font.Height = -12
+          Font.Name = 'Segoe UI'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+        end
+        object histogram1: TImage
+          Cursor = crCross
+          Left = 93
+          Height = 54
+          Top = 0
+          Width = 210
+          OnMouseMove = histogram1MouseMove
+          ParentShowHint = False
+          PopupMenu = PopupMenu_histogram1
+          ShowHint = True
+          StretchOutEnabled = False
+          StretchInEnabled = False
+        end
+        object Label5: TLabel
+          Left = 4
+          Height = 15
+          Top = 8
+          Width = 59
+          Caption = 'Histogram:'
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clBlack
+          Font.Height = -12
+          Font.Name = 'Segoe UI'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          ParentColor = False
+          ParentFont = False
+        end
+        object minimum1: TScrollBar
+          Left = 67
+          Height = 16
+          Hint = 'Adjust the black level'
+          Top = 57
+          Width = 261
+          Enabled = False
+          Max = 65535
+          PageSize = 0
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 0
+          OnChange = minimum1Change
+          OnScroll = maximum1Scroll
+        end
+        object maximum1: TScrollBar
+          Left = 67
+          Height = 16
+          Hint = 'Adjust the white level.'
+          Top = 80
+          Width = 261
+          Enabled = False
+          LargeChange = 5000
+          Max = 65535
+          Min = 1
+          PageSize = 0
+          ParentShowHint = False
+          Position = 65535
+          ShowHint = True
+          SmallChange = 1000
+          TabOrder = 1
+          OnChange = maximum1Change
+          OnScroll = maximum1Scroll
+        end
+        object min2: TEdit
+          Left = 340
+          Height = 23
+          Hint = 'At this level the pixels are displayed as black.'
+          Top = 56
+          Width = 49
+          Enabled = False
+          OnEditingDone = min2EditingDone
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 2
+          Text = '0'
+        end
+        object max2: TEdit
+          Left = 340
+          Height = 23
+          Hint = 'At this level the pixels are displayed as fully white.'
+          Top = 77
+          Width = 49
+          Enabled = False
+          OnEditingDone = max2EditingDone
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 3
+          Text = '65535'
+        end
+        object range1: TComboBox
+          Left = 313
+          Height = 23
+          Hint = 'Preset of the automatic data range adjustments.'
+          Top = 27
+          Width = 100
+          DropDownCount = 20
+          Enabled = False
+          ItemHeight = 15
+          ItemIndex = 2
+          Items.Strings = (
+            'Low'
+            'Low +'
+            'Medium'
+            'Medium +'
+            'High'
+            'High +'
+            'Range'
+            'Manual'
+            'Show saturation'
+            'Max range'
+          )
+          OnChange = range1Change
+          ParentBidiMode = False
+          ParentColor = True
+          ParentShowHint = False
+          ShowHint = True
+          Style = csDropDownList
+          TabOrder = 4
+          Text = 'Medium'
+        end
+        object stretch1: TComboBox
+          Left = 313
+          Height = 23
+          Hint = 'Stretch factor applied on displayed image. This is a  colour preserving stretch based on an asinh function.'
+          Top = 0
+          Width = 100
+          DropDownCount = 20
+          Enabled = False
+          ItemHeight = 15
+          ItemIndex = 0
+          Items.Strings = (
+            'off'
+            '2'
+            '4'
+            '8'
+            '10'
+            '15'
+            '20'
+            '30'
+            '40'
+            '70'
+            '100'
+            '200'
+            '400'
+            '800'
+          )
+          OnCloseUp = stretch1CloseUp
+          OnExit = stretch1Exit
+          ParentColor = True
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 5
+          Text = 'off'
+        end
+        object saturation_factor_plot1: TTrackBar
+          Left = 392
+          Height = 48
+          Hint = 'Saturation adjust factor. The midde position is neutral.  Above is increase, below is decrease.'
+          Top = 52
+          Width = 20
+          Frequency = 5
+          Min = -10
+          Orientation = trVertical
+          Position = 0
+          Enabled = False
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clBlack
+          Font.Height = -11
+          Font.Name = 'Segoe UI'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          OnMouseUp = saturation_factor_plot1MouseUp
+          OnKeyUp = saturation_factor_plot1KeyUp
+          ParentFont = False
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 6
+        end
+        object shape_histogram1: TShape
+          Left = 72
+          Height = 54
+          Top = 1
+          Width = 1
+          Brush.Color = clNone
+          Brush.Style = bsClear
+          Pen.Color = clWhite
+          Pen.Style = psDot
+          Visible = False
+        end
+      end
+      object BitBtn1: TBitBtn
+        Left = 248
+        Height = 42
+        Hint = 'Show stack menu. CTRL-A'
+        Top = 5
+        Width = 48
+        AutoSize = True
+        Caption = '∑ '
+        Font.Height = -24
+        OnClick = Stackimages1Click
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
+      end
+      object solve_button1: TButton
+        Left = 312
+        Height = 30
+        Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible.'#13#10'- Reasonable round stars.'#13#10'- Image dimensions at least 1280x960 pixels.'#13#10'- An approximate position is available for a spiral search'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'#13#10'- Image is not stretched or heavily photo-shopped.'
+        Top = 8
+        Width = 121
+        Caption = 'Solve'
+        Enabled = False
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        OnClick = solve_button1Click
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
+      end
+      object save1: TButton
+        Left = 453
+        Height = 30
+        Hint = 'Save FITS file with plate solution'
+        Top = 8
+        Width = 128
+        Caption = 'Save new header'
+        Enabled = False
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        OnClick = SaveFITSwithupdatedheader1Click
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 5
+      end
+      object Polynomial1: TComboBox
+        Left = 456
+        Height = 23
+        Hint = 'Use WCS, SIP or DSS polynomial for indicating the position. SIP is available for Astrometry.net solutions and DSS polynomial for images from the DSS survey. A red background is indicating "no valid" solution for this option.'
+        Top = 49
+        Width = 125
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'WCS'
+          'SIP Polynomial'
+          'DSS Polynomial'
+        )
+        OnChange = Polynomial1Change
+        ParentColor = True
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 6
+        Text = 'WCS'
+      end
+      object inversemousewheel1: TCheckBox
+        Left = 456
+        Height = 19
+        Hint = 'Inverse zoom action of the mouse wheel.'
+        Top = 78
+        Width = 101
+        Caption = 'Inverse 🖱️ wheel'
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 7
+      end
+      object image_north_arrow1: TImage
+        Left = 456
+        Height = 69
+        Hint = 'Long axis is north, small axis is east,  F indicates flipped image.'
+        Top = 103
+        Width = 69
+        ParentShowHint = False
+        ShowHint = True
+        Transparent = True
+      end
+      object PageControl1: TPageControl
+        Left = 595
+        Height = 176
+        Top = 0
+        Width = 738
+        ActivePage = TabSheet1
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
-        Font.Height = -9
-        Font.Name = 'Courier'
-        Lines.Strings = (
-          ''
-        )
-        OnChange = Memo1Change
-        OnKeyUp = Memo1KeyUp
-        ParentFont = False
-        PopupMenu = PopupMenu_memo1
-        ScrollBars = ssVertical
-        TabOrder = 0
-        WordWrap = False
+        BorderSpacing.Left = 595
+        TabIndex = 0
+        TabOrder = 8
+        object TabSheet1: TTabSheet
+          Caption = 'Header'
+          ClientHeight = 148
+          ClientWidth = 730
+          object Memo1: TMemo
+            Left = 0
+            Height = 148
+            Top = 0
+            Width = 730
+            Align = alClient
+            Font.Height = -9
+            Font.Name = 'Courier'
+            Lines.Strings = (
+              ''
+            )
+            OnChange = Memo1Change
+            OnKeyUp = Memo1KeyUp
+            ParentFont = False
+            PopupMenu = PopupMenu_memo1
+            ScrollBars = ssVertical
+            TabOrder = 0
+            WordWrap = False
+          end
+        end
+        object TabSheet2: TTabSheet
+          Caption = 'Table'
+          ClientHeight = 148
+          ClientWidth = 730
+          object Memo3: TMemo
+            Left = 0
+            Height = 148
+            Top = 0
+            Width = 730
+            Align = alClient
+            Anchors = [akTop, akLeft, akRight]
+            Font.Height = -9
+            Font.Name = 'Courier'
+            Lines.Strings = (
+              ''
+            )
+            OnKeyUp = Memo1KeyUp
+            ParentFont = False
+            ScrollBars = ssAutoVertical
+            TabOrder = 0
+            WordWrap = False
+          end
+        end
       end
-    end
-    object TabSheet2: TTabSheet
-      Caption = 'Table'
-      ClientHeight = 149
-      ClientWidth = 733
-      object Memo3: TMemo
-        Left = 0
-        Height = 149
+      object UpDown1: TUpDown
+        Left = 808
+        Height = 23
+        Hint = 'Scroll through the images and tables in the FITS extension.'
         Top = 0
-        Width = 733
-        Align = alClient
-        Anchors = [akTop, akLeft, akRight]
-        Font.Height = -9
-        Font.Name = 'Courier'
-        Lines.Strings = (
-          ''
-        )
-        OnKeyUp = Memo1KeyUp
+        Width = 47
+        Min = 0
+        OnClick = UpDown1Click
+        Orientation = udHorizontal
+        ParentShowHint = False
+        Position = 0
+        ShowHint = True
+        TabOrder = 9
+        Visible = False
+      end
+      object rotation1: TLabel
+        Left = 531
+        Height = 15
+        Hint = 'Orientation of the image north axis, independent of  flip settings.'
+        Top = 130
+        Width = 6
+        Caption = '0'
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentColor = False
         ParentFont = False
-        ScrollBars = ssAutoVertical
-        TabOrder = 0
-        WordWrap = False
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object flip_indication1: TLabel
+        Left = 531
+        Height = 15
+        Hint = 'The image is flipped. Either the east is swapped with west or north is swapped with south.'
+        Top = 150
+        Width = 6
+        Caption = 'F'
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentColor = False
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        Visible = False
       end
     end
-  end
-  object UpDown1: TUpDown
-    Left = 808
-    Height = 23
-    Hint = 'Scroll through the images and tables in the FITS extension.'
-    Top = 0
-    Width = 47
-    Min = 0
-    OnClick = UpDown1Click
-    Orientation = udHorizontal
-    ParentShowHint = False
-    Position = 0
-    ShowHint = True
-    TabOrder = 9
-    Visible = False
-  end
-  object solve_button1: TButton
-    Left = 312
-    Height = 30
-    Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible.'#13#10'- Reasonable round stars.'#13#10'- Image dimensions at least 1280x960 pixels.'#13#10'- An approximate position is available for a spiral search'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'#13#10'- Image is not stretched or heavily photo-shopped.'
-    Top = 8
-    Width = 121
-    Caption = 'Solve'
-    Enabled = False
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    OnClick = solve_button1Click
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 10
-  end
-  object save1: TButton
-    Left = 453
-    Height = 30
-    Hint = 'Save FITS file with plate solution'
-    Top = 8
-    Width = 128
-    Caption = 'Save new header'
-    Enabled = False
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    OnClick = SaveFITSwithupdatedheader1Click
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 11
-  end
-  object flip_indication1: TLabel
-    Left = 531
-    Height = 15
-    Hint = 'The image is flipped. Either the east is swapped with west or north is swapped with south.'
-    Top = 150
-    Width = 6
-    Caption = 'F'
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentColor = False
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-    Visible = False
+    object PairSplitterSide2: TPairSplitterSide
+      Cursor = crArrow
+      Left = 0
+      Height = 495
+      Top = 181
+      Width = 1333
+      ClientWidth = 1333
+      ClientHeight = 495
+      object Panel1: TPanel
+        Left = 0
+        Height = 495
+        Hint = 'hint'
+        Top = 0
+        Width = 1333
+        Align = alClient
+        ClientHeight = 495
+        ClientWidth = 1333
+        Color = 2105376
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentBackground = False
+        ParentColor = False
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 0
+        OnMouseDown = Panel1MouseDown
+        OnMouseMove = Panel1MouseMove
+        OnMouseWheelDown = Panel1MouseWheelDown
+        OnMouseWheelUp = Panel1MouseWheelUp
+        object Image1: TImage
+          Left = 71
+          Height = 264
+          Top = -6
+          Width = 608
+          Anchors = []
+          OnMouseDown = Image1MouseDown
+          OnMouseEnter = Image1MouseEnter
+          OnMouseMove = Image1MouseMove
+          OnMouseUp = Image1MouseUp
+          OnPaint = Image1Paint
+          ParentShowHint = False
+          PopupMenu = PopupMenu1
+          Stretch = True
+          Visible = False
+        end
+        object Shape_alignment_marker1: TShape
+          Left = 32
+          Height = 11
+          Top = 112
+          Width = 11
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 3
+          Shape = stCircle
+          ShowHint = True
+          Visible = False
+        end
+        object shape_marker1: TShape
+          Left = 40
+          Height = 31
+          Hint = 'reference 1'
+          Top = 8
+          Width = 31
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clFuchsia
+          Pen.Mode = pmNotXor
+          Pen.Width = 2
+          ShowHint = True
+          Visible = False
+        end
+        object error_label1: TLabel
+          Left = 24
+          Height = 28
+          Top = 40
+          Width = 158
+          Caption = 'Error loading file!!'
+          Font.Color = clRed
+          Font.Height = -20
+          ParentColor = False
+          ParentFont = False
+          Visible = False
+        end
+        object shape_marker2: TShape
+          Left = 103
+          Height = 31
+          Hint = 'reference 2'
+          Top = 8
+          Width = 31
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 2
+          ShowHint = True
+          Visible = False
+        end
+        object shape_marker3: TShape
+          Left = 160
+          Height = 31
+          Top = 8
+          Width = 31
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clBlue
+          Pen.Mode = pmNotXor
+          Pen.Width = 2
+          ShowHint = True
+          Visible = False
+        end
+        object shape_paste1: TShape
+          Left = 216
+          Height = 31
+          Top = 8
+          Width = 31
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clBlue
+          Pen.Mode = pmNotXor
+          Pen.Width = 2
+          ShowHint = True
+          Visible = False
+        end
+        object shape_marker4: TShape
+          Left = 272
+          Height = 31
+          Hint = 'Mount'
+          Top = 8
+          Width = 31
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clGreen
+          Pen.Mode = pmNotXor
+          Pen.Width = 2
+          Shape = stCircle
+          ShowHint = True
+          Visible = False
+        end
+        object Shape_alignment_marker2: TShape
+          Left = 32
+          Height = 11
+          Top = 144
+          Width = 11
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 3
+          Shape = stDiamond
+          ShowHint = True
+          Visible = False
+        end
+        object Shape_alignment_marker3: TShape
+          Left = 32
+          Height = 11
+          Hint = '3'
+          Top = 176
+          Width = 11
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 3
+          Shape = stDiamond
+          ShowHint = True
+          Visible = False
+        end
+        object LabelVar1: TLabel
+          Left = 62
+          Height = 30
+          Top = 104
+          Width = 29
+          Caption = 'Var'
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clYellow
+          Font.Height = -21
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          ParentColor = False
+          ParentFont = False
+          Visible = False
+        end
+        object LabelCheck1: TLabel
+          Left = 62
+          Height = 30
+          Top = 136
+          Width = 56
+          Caption = 'Check'
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clYellow
+          Font.Height = -21
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          ParentColor = False
+          ParentFont = False
+          Visible = False
+        end
+        object LabelThree1: TLabel
+          Left = 62
+          Height = 30
+          Top = 168
+          Width = 11
+          Caption = '3'
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clYellow
+          Font.Height = -21
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          ParentColor = False
+          ParentFont = False
+          Visible = False
+        end
+        object shape_manual_alignment1: TShape
+          Left = 344
+          Height = 11
+          Hint = 'Lock unreliable, check position'
+          Top = 16
+          Width = 11
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 3
+          Shape = stCircle
+          ShowHint = True
+          Visible = False
+        end
+        object boxshape1: TShape
+          Left = 392
+          Height = 75
+          Hint = 'Select rectangle'
+          Top = 32
+          Width = 104
+          Brush.Color = clNone
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clYellow
+          Pen.EndCap = pecSquare
+          Pen.JoinStyle = pjsMiter
+          Pen.Mode = pmXor
+          Visible = False
+        end
+      end
+    end
   end
   object MainMenu1: TMainMenu
     Images = ImageList1
@@ -2157,7 +2186,6 @@ object mainwindow: Tmainwindow
     Text = 'Text'
     TextFont.Height = -11
     Title = 'ASTAP astrometric solver'
-    TitleFont.Height = -15
     TitleFont.Style = [fsBold]
     Visible = False
     Left = 1128

@@ -1,7 +1,7 @@
 unit unit_hjd;
 { Converts Julian day to Heliocentric Julian Day. Difference is maximum +- 500 sec / 8.3 minutes }
 
-{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public

@@ -1,6 +1,6 @@
 unit unit_annotation; {deep sky and star annotation & photometry calibation of the image}
 {$mode delphi}
-{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
  This Source Code Form is subject to the terms of the Mozilla Public
@@ -1060,12 +1060,6 @@ begin
   end;
 end;
 
-procedure check_database_version;
-begin
-  if copy(deepstring.strings[0],1,4)<>'V001' then
-    application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
-end;
-
 procedure load_variable;{load the variable star database once. If loaded no action}
 begin
   if database_nr<>3 then {load variable database}
@@ -1080,12 +1074,9 @@ begin
          beep;
          application.messagebox(pchar('The variable star database not found!'),'',0);
          esc_pressed:=true;
-         exit;
+
        end;
     end;
-    {$IfDef Darwin}
-    check_database_version;//Mac variable database down to mag 11 is included with star database.
-    {$endif}
   end;
 end;
 
@@ -1106,7 +1097,8 @@ begin
          exit;
        end;
     end;
-    check_database_version;
+    if copy(deepstring.strings[0],1,4)<>'V001' then
+      application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 end;
 
@@ -1128,7 +1120,8 @@ begin
          exit;
        end;
     end;
-    check_database_version;
+    if copy(deepstring.strings[0],1,4)<>'V001' then
+      application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 
 end;
