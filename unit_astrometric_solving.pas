@@ -921,7 +921,6 @@ begin
     //    hd.cd2_2:= + solution_vectorY[1]/3600;
 
     //New 2023 method for correct rotation angle/annotation near to the celestial pole.
-
     if solution_vectorX[0]*solution_vectorY[1] - solution_vectorX[1]*solution_vectorY[0] >0 then // flipped?
     flipped_image:=-1 //change rotation for flipped image, {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
     else

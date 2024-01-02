@@ -1060,6 +1060,12 @@ begin
   end;
 end;
 
+procedure check_database_version;
+begin
+  if copy(deepstring.strings[0],1,4)<>'V001' then
+    application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
+end;
+
 procedure load_variable;{load the variable star database once. If loaded no action}
 begin
   if database_nr<>3 then {load variable database}
@@ -1074,9 +1080,12 @@ begin
          beep;
          application.messagebox(pchar('The variable star database not found!'),'',0);
          esc_pressed:=true;
-
+         exit;
        end;
     end;
+    {$IfDef Darwin}
+    check_database_version;//Mac variable database down to mag 11 is included with star database.
+    {$endif}
   end;
 end;
 
@@ -1097,8 +1106,7 @@ begin
          exit;
        end;
     end;
-    if copy(deepstring.strings[0],1,4)<>'V001' then
-      application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
+    check_database_version;
   end;
 end;
 
@@ -1120,8 +1128,7 @@ begin
          exit;
        end;
     end;
-    if copy(deepstring.strings[0],1,4)<>'V001' then
-      application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
+    check_database_version;
   end;
 
 end;

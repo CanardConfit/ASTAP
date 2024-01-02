@@ -685,6 +685,7 @@ type
     procedure contour_gaussian1Change(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
+    procedure FormPaint(Sender: TObject);
     procedure MenuItem14Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure pixelsize1Change(Sender: TObject);
@@ -3656,7 +3657,8 @@ begin
       4:  scroll:=stackmenu1.width<most_right5.left;
       5:  scroll:=stackmenu1.width<most_right6.left;
       6:  scroll:=stackmenu1.width<most_right7.left;
-      7:  scroll:=stackmenu1.width<most_right8.left;
+      7:
+          scroll:=stackmenu1.width<most_right8.left;
       8:  scroll:=stackmenu1.width<most_right9.left;
       9:  scroll:=stackmenu1.width<most_right10.left;
      10:  scroll:=stackmenu1.width<most_right11.left;
@@ -3676,17 +3678,59 @@ begin
   memo2.Height := stackmenu1.Height - memo2.top-w;{make it High-DPI robust}
   memo2.width:=stackmenu1.width-2;
 
+
+
   end;
 
 end;
 
 
+
+
+procedure Tstackmenu1.FormPaint(Sender: TObject);
+var
+  hp,w : integer;
+begin
+  hp:=horzScrollbar.position;
+
+
+  listview1.left:=hp;//horzScrollbar.position;
+  listview2.left:=hp;//horzScrollbar.position;
+  listview3.left:=hp;//horzScrollbar.position;
+  listview4.left:=hp;//horzScrollbar.position;
+  listview5.left:=hp;//horzScrollbar.position;
+  listview6.left:=hp;//horzScrollbar.position;
+  listview7.left:=hp;//horzScrollbar.position;
+  listview8.left:=hp;//horzScrollbar.position;
+  listview9.left:=hp;//horzScrollbar.position;
+  memo2.left:=hp;
+
+  w:=stackmenu1.width-6;
+  listview1.Width:=w;
+  listview2.Width:=w;
+  listview3.Width:=w;
+  listview4.Width:=w;
+  listview5.Width:=w;
+  listview6.Width:=w;
+  listview7.Width:=w;
+  listview8.Width:=w;
+  listview9.Width:=w;
+
+end;
+
+
+
 procedure Tstackmenu1.FormResize(Sender: TObject);
 var
-  newtop : integer;
+  newtop,maxwidth,newheight,w : integer;
 
 begin
   pagecontrol1.Height := classify_groupbox1.top;{make it High-DPI robust}
+
+//  pagecontrol1.Constraints.minwidth  := max(stackmenu1.width-5,most_right9.left);;{make it High-DPI robust}
+  pagecontrol1.Constraints.minwidth  :=8000;
+
+
 
   newtop := browse1.top + browse1.Height + 5;
 
@@ -3698,30 +3742,37 @@ begin
   listview6.top := newtop;
   listview7.top := newtop;
   listview8.top := newtop;
+  listview9.top := newtop;
 
 
-{  listview1.Width:=stackmenu1.width-6;
-  listview2.Width:=stackmenu1.width-6;
-  listview3.Width:=stackmenu1.width-6;
-  listview4.Width:=stackmenu1.width-6;
-  listview5.Width:=stackmenu1.width-6;
-  listview6.Width:=stackmenu1.width-6;
-  listview7.Width:=stackmenu1.width-6;
-  listview8.Width:=stackmenu1.width-6;
-  listview9.Width:=stackmenu1.width-6;}
 
+  maxwidth:=stackmenu1.width-6;
 
-  listview1.constraints.maxWidth:=stackmenu1.width-6;
-  listview2.constraints.maxWidth:=stackmenu1.width-6;
-  listview3.constraints.maxWidth:=stackmenu1.width-6;
-  listview4.constraints.maxWidth:=stackmenu1.width-6;
-  listview5.constraints.maxWidth:=stackmenu1.width-6;
-  listview6.constraints.maxWidth:=stackmenu1.width-6;
-  listview7.constraints.maxWidth:=stackmenu1.width-6;
-  listview8.constraints.maxWidth:=stackmenu1.width-6;
-  listview9.constraints.maxWidth:=stackmenu1.width-6;
+  listview1.constraints.maxWidth:=maxwidth;
+  listview2.constraints.maxWidth:=maxwidth;
+  listview3.constraints.maxWidth:=maxwidth;
+  listview4.constraints.maxWidth:=maxwidth;
+  listview5.constraints.maxWidth:=maxwidth;
+  listview6.constraints.maxWidth:=maxwidth;
+  listview7.constraints.maxWidth:=maxwidth;
+  listview8.constraints.maxWidth:=maxwidth;
+  listview9.constraints.maxWidth:=maxwidth;
 
   update_stackmenu_scrollbar;
+
+  {  newheight:=classify_groupbox1.top-newtop-10;
+
+    listview1.height:=newheight;
+    listview2.height:=newheight;
+    listview3.height:=newheight;
+    listview4.height:=newheight;
+    listview5.height:=newheight;
+    listview6.height:=newheight;
+    listview7.height:=newheight;
+    listview8.height:=newheight;
+    listview9.height:=newheight; }
+
+
 end;
 
 

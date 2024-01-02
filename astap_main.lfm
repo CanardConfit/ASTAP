@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 221
+  Left = 276
   Height = 699
   Hint = ' '
-  Top = 179
+  Top = 116
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -226,9 +226,9 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 78
+      Left = 93
       Height = 264
-      Top = 47
+      Top = 54
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -2157,6 +2157,7 @@ object mainwindow: Tmainwindow
     Text = 'Text'
     TextFont.Height = -11
     Title = 'ASTAP astrometric solver'
+    TitleFont.Height = -15
     TitleFont.Style = [fsBold]
     Visible = False
     Left = 1128
