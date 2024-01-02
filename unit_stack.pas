@@ -411,6 +411,7 @@ type
     PairSplitter1: TPairSplitter;
     PairSplitterSide1: TPairSplitterSide;
     PairSplitterSide2: TPairSplitterSide;
+    Panel1: TPanel;
     panel_ephemeris1: TPanel;
     panel_manual1: TPanel;
     Panel_solver1: TPanel;

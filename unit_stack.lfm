@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 380
+  Left = 67
   Height = 717
-  Top = 238
+  Top = 172
   Width = 1531
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -68,6 +68,7 @@ object stackmenu1: Tstackmenu1
       Width = 1920
       ClientWidth = 1920
       ClientHeight = 500
+      Constraints.MinHeight = 440
       object pagecontrol1: TPageControl
         Left = 0
         Height = 500
@@ -5884,11 +5885,11 @@ object stackmenu1: Tstackmenu1
           end
           object GroupBox11: TGroupBox
             Left = 792
-            Height = 424
+            Height = 400
             Top = 8
             Width = 377
             Caption = 'Colour replace'
-            ClientHeight = 404
+            ClientHeight = 380
             ClientWidth = 373
             ParentBackground = False
             TabOrder = 7
@@ -5930,7 +5931,7 @@ object stackmenu1: Tstackmenu1
               Left = 104
               Height = 25
               Hint = 'Add noise to the image in the viewer'
-              Top = 368
+              Top = 347
               Width = 184
               AutoSize = True
               Caption = 'Apply'
@@ -5958,7 +5959,7 @@ object stackmenu1: Tstackmenu1
               Left = 304
               Height = 30
               Hint = 'Undo last action'
-              Top = 368
+              Top = 347
               Width = 30
               Glyph.Data = {
                 36040000424D3604000000000000360000002800000010000000100000000100
@@ -7053,11 +7054,11 @@ object stackmenu1: Tstackmenu1
           end
           object GroupBox17: TGroupBox
             Left = 287
-            Height = 72
+            Height = 56
             Top = 352
             Width = 225
             Caption = 'Binning'
-            ClientHeight = 52
+            ClientHeight = 36
             ClientWidth = 221
             ParentBackground = False
             TabOrder = 9
@@ -7128,17 +7129,17 @@ object stackmenu1: Tstackmenu1
             end
             object bin_image1: TButton
               Left = 81
-              Height = 30
+              Height = 28
               Hint = 'Bin current image in the viewer. Noise will be reduced.'
               Top = 5
-              Width = 80
+              Width = 97
               Caption = 'Apply'
               OnClick = bin_image1Click
               ParentFont = False
               TabOrder = 2
             end
             object undo_button21: TBitBtn
-              Left = 171
+              Left = 184
               Height = 30
               Hint = 'Undo last action'
               Top = 5
@@ -7280,7 +7281,7 @@ object stackmenu1: Tstackmenu1
           object GroupBox18: TGroupBox
             Left = 776
             Height = 64
-            Top = 272
+            Top = 264
             Width = 256
             Caption = 'Remove stars'
             ClientHeight = 44
@@ -7347,12 +7348,12 @@ object stackmenu1: Tstackmenu1
             end
           end
           object GroupBox19: TGroupBox
-            Left = 776
-            Height = 72
-            Top = 352
+            Left = 775
+            Height = 64
+            Top = 336
             Width = 256
             Caption = 'Increase nebulosity signal'
-            ClientHeight = 52
+            ClientHeight = 44
             ClientWidth = 252
             ParentBackground = False
             ParentFont = False
@@ -7566,11 +7567,11 @@ object stackmenu1: Tstackmenu1
           end
           object GroupBox20: TGroupBox
             Left = 528
-            Height = 72
+            Height = 56
             Top = 352
             Width = 186
             Caption = 'Normalise raw OSC image'
-            ClientHeight = 52
+            ClientHeight = 36
             ClientWidth = 182
             ParentBackground = False
             TabOrder = 14
@@ -7692,11 +7693,11 @@ object stackmenu1: Tstackmenu1
           end
           object GroupBox21: TGroupBox
             Left = 1047
-            Height = 224
-            Top = 200
+            Height = 216
+            Top = 184
             Width = 337
             Caption = 'Satellite streak detection'
-            ClientHeight = 204
+            ClientHeight = 196
             ClientWidth = 333
             ParentBackground = False
             TabOrder = 15
@@ -7850,191 +7851,202 @@ object stackmenu1: Tstackmenu1
         ScrollBars = ssVertical
         TabOrder = 0
       end
-      object stack_button1: TBitBtn
-        Left = 24
-        Height = 41
-        Hint = 'Stack check marked images using darks, flats and flat dark frames.'
-        Top = 8
-        Width = 260
-        Caption = 'Stack check marked images'
-        OnClick = stack_button1Click
-        ParentFont = False
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 1
-      end
-      object press_esc_to_abort1: TLabel
-        Left = 288
-        Height = 15
-        Hint = 'Hit ESC key or click on this text to stop.'
-        Top = 8
-        Width = 98
-        Caption = 'Press ESC to abort.'
-        ParentFont = False
-        ParentShowHint = False
-        ShowHint = True
-        Transparent = False
-        OnClick = press_esc_to_abort1Click
-      end
-      object classify_groupbox1: TGroupBox
-        Left = 408
-        Height = 60
+      object Panel1: TPanel
+        Left = 0
+        Height = 64
         Top = 0
-        Width = 632
-        Caption = 'Classify by'
-        ClientHeight = 40
-        ClientWidth = 628
+        Width = 1920
+        Align = alClient
+        Caption = 'Panel1'
+        ClientHeight = 64
+        ClientWidth = 1920
         ParentBackground = False
-        ParentFont = False
-        TabOrder = 2
-        object classify_filter1: TCheckBox
-          Left = 72
-          Height = 19
-          Hint = 'Activate this option if you want to stack LRGB or RGB  images using filter name.  Set filter names in stack method'
-          Top = -2
-          Width = 72
-          Caption = 'Light filter'
-          OnClick = classify_filter1Click
+        TabOrder = 1
+        object stack_button1: TBitBtn
+          Left = 24
+          Height = 41
+          Hint = 'Stack check marked images using darks, flats and flat dark frames.'
+          Top = 8
+          Width = 260
+          Caption = 'Stack check marked images'
+          OnClick = stack_button1Click
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 0
         end
-        object classify_object1: TCheckBox
-          Left = 72
-          Height = 19
-          Hint = 'Activate this option if you want to stack images of different objects in one run.'
-          Top = 16
-          Width = 81
-          Caption = 'Light object'
-          ParentFont = False
+        object press_esc_to_abort1: TLabel
+          Left = 288
+          Height = 15
+          Hint = 'Hit ESC key or click on this text to stop.'
+          Top = 8
+          Width = 98
+          Caption = 'Press ESC to abort.'
           ParentShowHint = False
           ShowHint = True
+          Transparent = False
+          OnClick = press_esc_to_abort1Click
+        end
+        object classify_groupbox1: TGroupBox
+          Left = 408
+          Height = 60
+          Top = 0
+          Width = 632
+          Caption = 'Classify by'
+          ClientHeight = 40
+          ClientWidth = 628
+          ParentBackground = False
+          ParentFont = False
           TabOrder = 1
+          object classify_filter1: TCheckBox
+            Left = 72
+            Height = 19
+            Hint = 'Activate this option if you want to stack LRGB or RGB  images using filter name.  Set filter names in stack method'
+            Top = -2
+            Width = 72
+            Caption = 'Light filter'
+            OnClick = classify_filter1Click
+            ParentFont = False
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 0
+          end
+          object classify_object1: TCheckBox
+            Left = 72
+            Height = 19
+            Hint = 'Activate this option if you want to stack images of different objects in one run.'
+            Top = 16
+            Width = 81
+            Caption = 'Light object'
+            ParentFont = False
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 1
+          end
+          object classify_flat_filter1: TCheckBox
+            Left = 384
+            Height = 19
+            Hint = 'Activate this option if you want link the flats based on filter name.'
+            Top = 16
+            Width = 64
+            Caption = 'Flat filter'
+            ParentFont = False
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 4
+          end
+          object classify_dark_exposure1: TCheckBox
+            Left = 208
+            Height = 19
+            Hint = 'Activate this option if you want link the darks based on exposure duration.'
+            Top = -2
+            Width = 120
+            Caption = 'Dark exposure time'
+            ParentFont = False
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 2
+          end
+          object classify_dark_temperature1: TCheckBox
+            Left = 384
+            Height = 19
+            Hint = 'Activate this option if you want link the darks based on sensor temperature.'
+            Top = -2
+            Width = 110
+            Caption = 'Dark temperature'
+            OnChange = classify_dark_temperature1Change
+            ParentFont = False
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 3
+          end
+          object classify_dark_gain1: TCheckBox
+            Left = 208
+            Height = 19
+            Top = 16
+            Width = 68
+            Caption = 'Dark gain'
+            TabOrder = 5
+          end
+          object delta_temp1: TEdit
+            Left = 536
+            Height = 23
+            Hint = 'Temperature tolorance'
+            Top = -2
+            Width = 30
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 6
+            Text = '1'
+          end
+          object delta_temp_updown1: TUpDown
+            Left = 566
+            Height = 23
+            Top = -2
+            Width = 17
+            Associate = delta_temp1
+            Max = 5
+            Min = 1
+            Position = 1
+            TabOrder = 7
+          end
+          object Label60: TLabel
+            Left = 584
+            Height = 15
+            Top = 0
+            Width = 13
+            Caption = '°C'
+            ParentColor = False
+          end
+          object Label63: TLabel
+            Left = 520
+            Height = 15
+            Top = 0
+            Width = 8
+            Caption = '±'
+            ParentColor = False
+          end
         end
-        object classify_flat_filter1: TCheckBox
-          Left = 384
-          Height = 19
-          Hint = 'Activate this option if you want link the flats based on filter name.'
-          Top = 16
-          Width = 64
-          Caption = 'Flat filter'
+        object help_stack_menu2: TLabel
+          Cursor = crHandPoint
+          Left = 1080
+          Height = 30
+          Hint = 'Help'
+          Top = 14
+          Width = 9
+          Caption = '?'
+          Font.Color = clBlue
+          Font.Height = -21
+          ParentColor = False
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
-          TabOrder = 4
+          OnClick = help_stack_menu1Click
         end
-        object classify_dark_exposure1: TCheckBox
-          Left = 208
+        object powerdown_enabled1: TCheckBox
+          Left = 1120
           Height = 19
-          Hint = 'Activate this option if you want link the darks based on exposure duration.'
-          Top = -2
-          Width = 120
-          Caption = 'Dark exposure time'
+          Hint = 'If selected, shutdown computer after completion.'
+          Top = 8
+          Width = 175
+          Caption = 'Power down after completion'
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 2
         end
-        object classify_dark_temperature1: TCheckBox
-          Left = 384
+        object write_log1: TCheckBox
+          Left = 1120
           Height = 19
-          Hint = 'Activate this option if you want link the darks based on sensor temperature.'
-          Top = -2
-          Width = 110
-          Caption = 'Dark temperature'
-          OnChange = classify_dark_temperature1Change
+          Hint = 'Write the stack log to a file with .txt extension at the light directory.'
+          Top = 32
+          Width = 115
+          Caption = 'Write stack log file'
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 3
         end
-        object classify_dark_gain1: TCheckBox
-          Left = 208
-          Height = 19
-          Top = 16
-          Width = 68
-          Caption = 'Dark gain'
-          TabOrder = 5
-        end
-        object delta_temp1: TEdit
-          Left = 536
-          Height = 23
-          Hint = 'Temperature tolorance'
-          Top = -2
-          Width = 30
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 6
-          Text = '1'
-        end
-        object delta_temp_updown1: TUpDown
-          Left = 566
-          Height = 23
-          Top = -2
-          Width = 17
-          Associate = delta_temp1
-          Max = 5
-          Min = 1
-          Position = 1
-          TabOrder = 7
-        end
-        object Label60: TLabel
-          Left = 584
-          Height = 15
-          Top = 0
-          Width = 13
-          Caption = '°C'
-          ParentColor = False
-        end
-        object Label63: TLabel
-          Left = 520
-          Height = 15
-          Top = 0
-          Width = 8
-          Caption = '±'
-          ParentColor = False
-        end
-      end
-      object write_log1: TCheckBox
-        Left = 1120
-        Height = 19
-        Hint = 'Write the stack log to a file with .txt extension at the light directory.'
-        Top = 32
-        Width = 115
-        Caption = 'Write stack log file'
-        ParentFont = False
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 3
-      end
-      object powerdown_enabled1: TCheckBox
-        Left = 1120
-        Height = 19
-        Hint = 'If selected, shutdown computer after completion.'
-        Top = 8
-        Width = 175
-        Caption = 'Power down after completion'
-        ParentFont = False
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 4
-      end
-      object help_stack_menu2: TLabel
-        Cursor = crHandPoint
-        Left = 1080
-        Height = 30
-        Hint = 'Help'
-        Top = 14
-        Width = 9
-        Caption = '?'
-        Font.Color = clBlue
-        Font.Height = -21
-        ParentColor = False
-        ParentFont = False
-        ParentShowHint = False
-        ShowHint = True
-        OnClick = help_stack_menu1Click
       end
     end
   end
