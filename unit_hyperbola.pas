@@ -1,6 +1,6 @@
 unit unit_hyperbola; {Hyperbola modeling of the star disk size in HFD as function of the telescope focuser position. Purpose is finding the best focuser position at the hyperbola minimum.}
 
-{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public

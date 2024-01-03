@@ -1,5 +1,5 @@
 ﻿unit astap_main;
-{Copyright (C) 2017, 2023 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -57,12 +57,12 @@ uses
   LCLVersion, InterfaceBase, LCLPlatformDef,
   SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
-  Buttons, PopupNotifier, simpleipc,
+  Buttons, PopupNotifier, PairSplitter, simpleipc,
   CustApp, Types, fileutil,
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.01.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.01.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -71,12 +71,26 @@ type
     bin3x3: TMenuItem;
     BitBtn1: TBitBtn;
     boxshape1: TShape;
+    data_range_groupBox1: TGroupBox;
+    dec1: TEdit;
+    dec_label: TLabel;
     error_label1: TLabel;
+    flip_indication1: TLabel;
     FontDialog1: TFontDialog;
+    histogram1: TImage;
+    Image1: TImage;
     image_north_arrow1: TImage;
+    inversemousewheel1: TCheckBox;
+    Label1: TLabel;
+    Label12: TLabel;
+    Label13: TLabel;
+    Label2: TLabel;
+    Label5: TLabel;
+    LabelCheck1: TLabel;
     LabelThree1: TLabel;
     LabelVar1: TLabel;
-    LabelCheck1: TLabel;
+    max2: TEdit;
+    maximum1: TScrollBar;
     Memo1: TMemo;
     Memo3: TMemo;
     menucopy2: TMenuItem;
@@ -121,13 +135,42 @@ type
     export_star_info1: TMenuItem;
     grid_az_alt1: TMenuItem;
     az_alt1: TMenuItem;
+    min2: TEdit;
+    minimum1: TScrollBar;
+    PageControl1: TPageControl;
+    PairSplitter1: TPairSplitter;
+    PairSplitterSide1: TPairSplitterSide;
+    PairSplitterSide2: TPairSplitterSide;
+    Panel1: TPanel;
+    Polynomial1: TComboBox;
+    ra1: TEdit;
+    range1: TComboBox;
+    ra_label: TLabel;
+    rotation1: TLabel;
+    saturation_factor_plot1: TTrackBar;
+    save1: TButton;
+    Shape_alignment_marker1: TShape;
+    Shape_alignment_marker2: TShape;
+    Shape_alignment_marker3: TShape;
+    shape_histogram1: TShape;
+    shape_manual_alignment1: TShape;
+    shape_marker1: TShape;
+    shape_marker2: TShape;
+    shape_marker3: TShape;
+    shape_marker4: TShape;
+    shape_paste1: TShape;
+    solve_button1: TButton;
+    SpeedButton1: TSpeedButton;
     star_profile1: TMenuItem;
     Separator2: TMenuItem;
+    stretch1: TComboBox;
+    TabSheet1: TTabSheet;
+    TabSheet2: TTabSheet;
+    UpDown1: TUpDown;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
-    flip_indication1: TLabel;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
     Separator1: TMenuItem;
     simbad_annotation_star1: TMenuItem;
@@ -169,21 +212,16 @@ type
     aavso_chart1: TMenuItem;
     N4: TMenuItem;
     MenuItem38: TMenuItem;
-    save1: TButton;
     simbad_query1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     sip1: TMenuItem;
-    solve_button1: TButton;
     zoomfactorone1: TMenuItem;
     extractred1: TMenuItem;
     extractblue1: TMenuItem;
     extractgreen1: TMenuItem;
     MenuItem24: TMenuItem;
     writepositionshort1: TMenuItem;
-    Shape_alignment_marker2: TShape;
-    Shape_alignment_marker3: TShape;
-    shape_manual_alignment1: TShape;
     sqm1: TMenuItem;
     Rota_mainmenu1: TMenuItem;
     batch_rotate_left1: TMenuItem;
@@ -202,7 +240,6 @@ type
     northeast1: TMenuItem;
     selectfont1: TMenuItem;
     popupmenu_statusbar1: TPopupMenu;
-    shape_marker4: TShape;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
     show_statistics1: TMenuItem;
@@ -212,7 +249,6 @@ type
     menupaste1: TMenuItem;
     PopupMenu_memo2: TPopupMenu;
     select_all1: TMenuItem;
-    PageControl1: TPageControl;
     save_to_tiff1: TMenuItem;
     extract_pixel_12: TMenuItem;
     MenuItem7: TMenuItem;
@@ -234,26 +270,18 @@ type
     select_all2: TMenuItem;
     set_area1: TMenuItem;
     rotate1: TMenuItem;
-    shape_histogram1: TShape;
-    shape_paste1: TShape;
     submenurotate1: TMenuItem;
     MenuItem19: TMenuItem;
-    shape_marker2: TShape;
-    shape_marker3: TShape;
     solvebytwopositions1: TMenuItem;
     enterposition1: TMenuItem;
     save_settings_as1: TMenuItem;
     settings_menu1: TMenuItem;
-    TabSheet1: TTabSheet;
-    TabSheet2: TTabSheet;
-    UpDown1: TUpDown;
     variable_star_annotation1: TMenuItem;
     clean_up1: TMenuItem;
     preview_demosaic1: TMenuItem;
     PopupNotifier1: TPopupNotifier;
     remove_colour1: TMenuItem;
     Returntodefaultsettings1: TMenuItem;
-    saturation_factor_plot1: TTrackBar;
     savesettings1: TMenuItem;
     MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
@@ -271,9 +299,6 @@ type
     remove_above1: TMenuItem;
     remove_below1: TMenuItem;
     MenuItem8: TMenuItem;
-    Shape_alignment_marker1: TShape;
-    shape_marker1: TShape;
-    SpeedButton1: TSpeedButton;
     split_osc1: TMenuItem;
     recent7: TMenuItem;
     recent8: TMenuItem;
@@ -293,10 +318,6 @@ type
     star_annotation1: TMenuItem;
     Remove_deep_sky_object1: TMenuItem;
     MenuItem4: TMenuItem;
-    ra1: TEdit;
-    dec1: TEdit;
-    Label1: TLabel;
-    Label2: TLabel;
     MainMenu1: TMainMenu;
     Help: TMenuItem;
     Exit1: TMenuItem;
@@ -308,10 +329,6 @@ type
     ShowFITSheader1: TMenuItem;
     SaveDialog1: TSaveDialog;
     error_get_it: TLabel;
-    ra_label: TLabel;
-    dec_label: TLabel;
-    rotation1: TLabel;
-    inversemousewheel1: TCheckBox;
     LoadFITSPNGBMPJPEG1: TMenuItem;
     SaveasJPGPNGBMP1: TMenuItem;
     batch_add_solution1: TMenuItem;
@@ -327,16 +344,6 @@ type
     N6: TMenuItem;
     Undo1: TMenuItem;
     stretch_draw1: TMenuItem;
-    data_range_groupBox1: TGroupBox;
-    Label12: TLabel;
-    minimum1: TScrollBar;
-    Label13: TLabel;
-    maximum1: TScrollBar;
-    min2: TEdit;
-    max2: TEdit;
-    histogram1: TImage;
-    Label5: TLabel;
-    range1: TComboBox;
     PopupMenu1: TPopupMenu;
     Copyposition1: TMenuItem;
     Copypositionindeg1: TMenuItem;
@@ -349,12 +356,8 @@ type
     ImageList1: TImageList;
     N9: TMenuItem;
     CropFITSimage1: TMenuItem;
-    stretch1: TComboBox;
-    Polynomial1: TComboBox;
     N3: TMenuItem;
     StatusBar1: TStatusBar;
-    Panel1: TPanel;
-    Image1: TImage;
 
     procedure add_marker_position1Click(Sender: TObject);
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
@@ -3460,7 +3463,7 @@ begin
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2023 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
+  #13+#10+'© 2018, 2024 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7668,6 +7671,8 @@ begin
       c:=Sett.ReadInteger('stack','stackmenu_top',987654321);  if c<>987654321 then stackmenu1.top:=c;
       c:=Sett.ReadInteger('stack','stackmenu_height',987654321); if c<>987654321 then stackmenu1.height:=c;
       c:=Sett.ReadInteger('stack','stackmenu_width',987654321); if c<>987654321 then stackmenu1.width:=c;
+      c:=Sett.ReadInteger('stack','splitter',987654321); if c<>987654321 then stackmenu1.pairsplitter1.position:=c;
+
 
       c:=Sett.ReadInteger('stack','mosaic_crop',987654321);if c<>987654321 then stackmenu1.mosaic_crop1.position:=c;
 
@@ -8039,6 +8044,7 @@ begin
       sett.writeInteger('stack','stackmenu_top',stackmenu1.top);
       sett.writeInteger('stack','stackmenu_height',stackmenu1.height);
       sett.writeInteger('stack','stackmenu_width',stackmenu1.width);
+      sett.writeInteger('stack','splitter',stackmenu1.pairsplitter1.position);
 
       sett.writeInteger('stack','stack_method',stackmenu1.stack_method1.itemindex);
 
