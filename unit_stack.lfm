@@ -480,7 +480,6 @@ object stackmenu1: Tstackmenu1
         end
         object Darks: TTabSheet
           Hint = 'Select here the dark frames.'
-          AutoSize = True
           Caption = 'Darks'
           ClientHeight = 472
           ClientWidth = 1912
@@ -490,7 +489,7 @@ object stackmenu1: Tstackmenu1
             Left = 296
             Height = 25
             Hint = 'Combine to check-marked files to master dark. The other files are not affected.'
-            Top = 0
+            Top = 5
             Width = 295
             AutoSize = True
             Caption = 'Replace check-marked by one or more master dark'
@@ -502,7 +501,7 @@ object stackmenu1: Tstackmenu1
             Left = 984
             Height = 25
             Hint = 'Clear the frame list'
-            Top = 0
+            Top = 5
             Width = 71
             AutoSize = True
             Caption = 'Clear list'
@@ -619,7 +618,7 @@ object stackmenu1: Tstackmenu1
             Left = 120
             Height = 25
             Hint = 'Analyse image files'
-            Top = 0
+            Top = 5
             Width = 67
             AutoSize = True
             Caption = 'Analyse'
@@ -629,10 +628,10 @@ object stackmenu1: Tstackmenu1
             TabOrder = 3
           end
           object nr_total_darks1: TLabel
-            Left = 256
+            Left = 224
             Height = 15
             Hint = 'Number of images in the list'
-            Top = 5
+            Top = 9
             Width = 6
             Caption = '0'
             Color = clBtnFace
@@ -644,7 +643,7 @@ object stackmenu1: Tstackmenu1
             Left = 744
             Height = 19
             Hint = 'Combine darks within 12 hour time range to master'
-            Top = 3
+            Top = 8
             Width = 203
             Caption = 'Classify by date for master creation'
             ParentFont = False
@@ -656,7 +655,7 @@ object stackmenu1: Tstackmenu1
             Left = 0
             Height = 26
             Hint = 'Browse and select darks'
-            Top = 0
+            Top = 5
             Width = 92
             AutoSize = True
             Caption = 'Browse'
@@ -667,9 +666,9 @@ object stackmenu1: Tstackmenu1
             TabOrder = 5
           end
           object most_right2: TStaticText
-            Left = 1250
+            Left = 1248
             Height = 16
-            Top = 3
+            Top = 8
             Width = 3
             AutoSize = True
             Caption = '|'
@@ -7977,7 +7976,7 @@ object stackmenu1: Tstackmenu1
             ParentShowHint = False
             ShowHint = True
             TabOrder = 6
-            Text = '1'
+            Text = '3'
           end
           object delta_temp_updown1: TUpDown
             Left = 566
@@ -7987,7 +7986,7 @@ object stackmenu1: Tstackmenu1
             Associate = delta_temp1
             Max = 5
             Min = 1
-            Position = 1
+            Position = 3
             TabOrder = 7
           end
           object Label60: TLabel

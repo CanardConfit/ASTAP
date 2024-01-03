@@ -104,6 +104,7 @@ uses   Classes,SysUtils,controls,forms,math,
 function solve_image(img :image_array;var hd: Theader; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height :double) : integer;{select the binning}
+function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
 procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
 function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer; out nrstars:integer): boolean;{read star from star database}
 procedure binX2_crop(crop {0..1}:double; img : image_array; out img2: image_array);{combine values of 4 pixels and crop is required, Result is mono}
@@ -116,6 +117,27 @@ var
 
 implementation
 
+function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+//See book Meeus, Astronomical Algorithms, formula 46.5 edition 1991 or 48.5 edition 1998, angle of moon limb or page 116 edition 1998.
+//See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+//   PA=arctan2(cos(δ0)sin(α1−α0), sin(δ1)cos(δ0)−sin(δ0)cos(δ1)cos(α1−α0))      In lazarus the function is arctan2(y/x)
+//   is seen at point α0,δ0. This means you are calculating the angle at point α0,δ0 (the reference point) towards point α1,δ1 (the target point).
+//   To clarify:
+//     Point α0,δ0 (Reference Point): This is where the observation is made from, or the point of reference.
+//     Point α1,δ1 (Target Point): This is the point towards which the position angle is being measured.
+//     Position Angle (PA): This is the angle measured at the reference point α0,δ0, going from the direction of the North Celestial Pole towards the target point α1,δ1, measured eastward (or counter-clockwise).
+//     So in your observational scenario, if you were at point α0,δ0 and wanted to determine the direction to point α1,δ1, the PA would tell you the angle to rotate from the north, moving eastward, to align with the target point.
+
+var
+  sinDeltaRa,cosDeltaRa,
+  sinDec0,cosDec0,
+  sinDec1,cosDec1 : double;
+begin
+  sincos(ra1-ra0,sinDeltaRa,cosDeltaRa);
+  sincos(dec0,sinDec0,cosDec0);
+  sincos(dec1,sinDec1,cosDec1);
+  result:=arctan2(cosDec1*sinDeltaRa,sinDec1*cosDec0 - cosDec1*sinDec0*cosDeltaRa);
+end;
 
 function distance_to_string(dist, inp:double):string; {angular distance to string intended for RA and DEC. Unit is based on dist}
 begin
@@ -929,22 +951,17 @@ begin
     // position +1 pixels in direction hd.crpix2
     standard_equatorial( ra_database,dec_database, (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
                                                    (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
-                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 10 pixels away
+                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 1 pixels away
 
-    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-    crota2:=-arctan2(cos(dec7)*sin(ra7-hd.ra0),sin(dec7)*cos(hd.dec0) - cos(dec7)*sin(hd.dec0)*cos(ra7-hd.ra0));//Accurate formula. Angle between line between the two positions and north as seen at hd.ra0, hd.dec0
+    crota2:=-position_angle(ra7,dec7,hd.ra0,hd.dec0);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
 
     // position 1*flipped_image  pixels in direction hd.crpix1
     standard_equatorial( ra_database,dec_database,(solution_vectorX[0]*(centerX+flipped_image) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
                                                   (solution_vectorY[0]*(centerX+flipped_image) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
                                                   1, {CCD scale} ra7 ,dec7{equatorial position});
 
-    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-    crota1:=+arctan2(sin(dec7)*cos(hd.dec0) - cos(dec7)*sin(hd.dec0)*cos(ra7-hd.ra0),cos(dec7)*sin(ra7-hd.ra0));//Accurate formula. See calculation hd.crota2, arguments arctan swapped
-//    crota1:=-arctan2(cos(dec7)*sin(ra7-hd.ra0),sin(dec7)*cos(hd.dec0) - cos(dec7)*sin(hd.dec0)*cos(ra7-hd.ra0));//Accurate formula. Angle between line between the two positions and north as seen at hd.ra0, hd.dec0
-
-
-
+    crota1:=pi/2-position_angle(ra7,dec7,hd.ra0,hd.dec0);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+    if crota1>pi then crota1:=crota1-2*pi;//keep within range -pi to +pi
 
     hd.cdelt1:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]))/3600; // from unit arcsec to degrees
     hd.cdelt2:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]))/3600;
