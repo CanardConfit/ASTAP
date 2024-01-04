@@ -411,7 +411,7 @@ type
     PairSplitter1: TPairSplitter;
     PairSplitterSide1: TPairSplitterSide;
     PairSplitterSide2: TPairSplitterSide;
-    Panel1: TPanel;
+    Panel_stack_button1: TPanel;
     panel_ephemeris1: TPanel;
     panel_manual1: TPanel;
     Panel_solver1: TPanel;
@@ -5025,6 +5025,7 @@ begin
   resize_img_loaded(width_UpDown1.position / head.Width {ratio});
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  remove_photometric_calibration;//from header
   plot_fits(mainwindow.image1, True, True);{plot}
   Screen.cursor := crDefault;
 end;
@@ -10572,6 +10573,7 @@ begin
       2: bin_X2X3X4(4);
     end;
 
+    remove_photometric_calibration;//from header
     plot_fits(mainwindow.image1, True, True);{plot real}
     Screen.Cursor := crDefault;
   end;

@@ -325,11 +325,10 @@ describe the six parameter &nbsp;plate solution X<sub>ref</sub>:=a*x
 the solution and the equatorial center position of the reference image
 the test image center&nbsp;equatorial position, &#945; and &#948; can be
 calculated.<br>
-<br>
-Make
-from the test image center small one pixel steps in x, y and use the
-differences in &#945;, &#948; to calculate the image scale and orientation.<br>
-<br>
+<br>Calculate from the solution the pixel size in x (cdelt1) an y
+(cdelt2) and at the image center position the rotation of the x-axis
+(crota1) and y-axis (crota2) relative to the celestial north using
+goniometric formulas. Convert these to cd1_1,cd1_2,cd_2_1, cd2_2.<br><br>
 This
 is the final solution. The solution vector (for position, scale,
 rotation) can be stored as the FITS keywords crval1, crval2,
@@ -348,9 +347,9 @@ detections.<br><br>
 <div style="text-align: left;"><br>
 </div><br></center>
 <p align="left"><img src="hanemail.gif"></p>
-<p align="left">Version: 2023-11-05</p>
+<p align="left">Version: 2024-01-04</p>
 <p align="left"><span class="ILfuVd"><span class="hgKElc">© </span></span>Han Kleijn,
-www.hnsky.org, 2018, 2023.&nbsp;</p><p align="left">&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width: 0pt;" src="https://i.creativecommons.org/l/by/4.0/88x31.png"> </a>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
+www.hnsky.org, 2018, 2024.</p><p align="left">&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width: 0pt;" src="https://i.creativecommons.org/l/by/4.0/88x31.png"> </a>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
 Commons Attribution 4.0 International License</a>.&nbsp;<em>which
 permits unrestricted use, distribution, and reproduction
 in any medium, provided the original work is properly cited</em>.</p><p align="left"></p><p align="left">
