@@ -1,4 +1,10 @@
 unit unit_command_line_general;
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+ email: han.k.. at...hnsky.org
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 {$mode objfpc}{$H+}
 
@@ -15,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2023.12.30';
+  astap_version: string='2024.01.03';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}

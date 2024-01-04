@@ -1,4 +1,101 @@
 unit unit_command_line_solving;
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+email: han.k.. at...hnsky.org
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+
+
+{ASTAP is using a linear astrometric solution for both stacking and solving.  The method is based on what traditionally is called "reducing the plate measurements.
+First step is to find star matches between a test image and a reference image. The reference image is either created from a star database or a reference image.
+The star positions x, y are to be calculated in standard coordinates which is equivalent to the x,y pixel position. The x,y position are measured relative to the image center.
+
+The test image center, size and orientation position will be different compared with the reference image. The required conversion from test image [x,y] star positions to the
+same stars on the test images can be written as:
+
+Xref : = a*xtest + b*ytest + c
+Yref:=   d*xtest + e*ytest + f
+
+The factors, a,b,c,d,e,f are called the six plate constants and will be slightly different different for each star. They describe the conversion of  the test image standard coordinates
+to the reference image standard coordinates. Using a least square routine the best solution fit can calculated if at least three matching star positions are found since there are three unknowns.
+
+With the solution and the equatorial center position of the reference image the test image center equatorial position, α and δ can be calculated.
+
+Make from the test image center small one pixel steps in x, y and use the differences in α, δ to calculate the image scale and orientation.
+
+For astrometric solving (plate solving), this "reducing the plate measurement" is done against star positions extracted from a database. The resulting absolute astrometric solution
+will allow specification of the α, δ equatorial positions of each pixel. For star alignment this "reducing the plate measurement" is done against a reference image. The resulting
+six plate constants are a relative astrometric solution. The position of the reference image is not required. Pixels of the solved image can be stacked with reference image using
+the six plate constants only.
+
+To automate this process rather then using reference stars the matching reference objects are the center positions of quads made of four close stars. Comparing the length ratios
+of the sides of the quads allows automated matching.
+
+Below a brief flowchart of the ASTAP astrometric solving process:
+}
+
+//                                                  =>ASTAP  astronomical plate solving method by Han Kleijn <=
+//
+//      => Image <=         	                                                 |	=> Star database <=
+//1) 	Find background, noise and star level                                    |
+//                                                                               |
+//2) 	Find stars and their CCD x, y position (standard coordinates) 	         | Extract the same amount of stars (area corrected) from the area of interest
+//                                                                               | Convert the α, δ equatorial coordinates into standard coordinates
+//                                                                               | (CCD pixel x,y coordinates for optical projection), rigid method
+//
+//3) 	Use the extracted stars to construct the smallest irregular tetrahedrons | Use the extracted stars to construct the smallest irregular tetrahedrons
+//      figures of four  star called quads. Calculate the six distance between   | figures of four  star called quads. Calculate the six distance between
+//      the four stars and the mean x,y position of the quad                     | the four stars and the mean x,y position of the quad
+//                                                                               |
+//4) 	For each quad sort the six quad distances.                      	 | For each quad sort the six quad distances.
+//      Label them all where d1 is the longest and d6 the shortest distance.     | Label them all where d1 is the longest and d6 the shortest distance.
+//                                                                               |
+//5) 	Scale the six quad star distances as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1) | Scale the six quad star distances as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)
+//      These are the image hash codes.                                          | These are the database hash codes.
+//
+//                           => matching process <=
+//6)                         Find quad hash code matches where the five ratios d2/d1 to d6/d1 match within a small tolerance.
+//
+//7) 		             For matching quad hash codes, calculate the longest side ratios d1_found/d1_reference. Calculate the median ratio.
+//                           Compare the quads longest side ratios with the median value and remove quads outside a small tolerance.
+//
+//8)                         From the remaining matching quads, prepare the "A" matrix/array containing the x,y center positions of the test image quads in standard coordinates
+//                           and  the array X_ref, Y_ref containing the x, y center positions of the reference imagete trahedrons in standard coordinates.
+//
+//                           A:                  Sx:         X_ref:
+//                           [x1 y1  1]          [a1]         [X1]
+//                           [x2 y2  1]    *     [b1]    =    [X2]
+//                           [x3 y3  1]          [c1]         [X3]
+//                           [x4 y4  1]                       [X4]
+//                           [.. .. ..]                       [..]
+//                           [xn yn  1]                       [Xn]
+//
+//
+//                           A:                  Sx:         Y_ref:
+//                           [x1 y1  1]          [a2]         [Y1]
+//                           [x2 y2  1]    *     [b2]    =    [Y2]
+//                           [x3 y3  1]          [c2]         [Y3]
+//                           [x4 y4  1]                       [Y4]
+//                           [.. .. ..]                       [..]
+//                           [xn yn  1]                       [Yn]
+//
+//                           Find the solution matrices Sx and Sy of this overdetermined system of linear equations. (LSQ_FIT)
+//
+//                           The solutions Sx and Sy describe the six parameter solution, X_ref:=a1*x + b1*y + c1 and Y_ref:=a2*x + b2*y +c2.
+//
+//
+//                           With the solution calculate the test image center equatorial position α (crval1), δ (crval2).
+//
+//                           Calculate from the solution the pixel size in x (cdelt1) an y (cdelt2) and at the image center position the rotation of the x-axis (crota1)
+//                           and y-axis (crota2) compared with the celestial north using goniometric formulas. Convertese these to cd1_1,cd1_2,cd_2_1, cd2_2.
+//
+//                           This is the final solution. The solution vector (for position, scale, rotation) can be stored as the FITS keywords crval1, crval2, cd1_1,cd1_2,cd_2_1, cd2_2.
+//
+// Notes:
+// For a low faint star count (<30) the star patterns can be slightly different between image and database due to small magnitude differences.
+// For these cases it can be beneficial to extract triples (three stars patterns) from the found quads (four star patterns) but stricter tolerances are required to avoid false detections.
+
 {$mode objfpc}{$H+}
 
 interface
@@ -671,6 +768,30 @@ begin
   else
   result:= floattostrF2(inp*180/pi,0,1)+'d';
 end;
+
+
+function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+//See book Meeus, Astronomical Algorithms, formula 46.5 edition 1991 or 48.5 edition 1998, angle of moon limb or page 116 edition 1998.
+//See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+//   PA=arctan2(cos(δ0)sin(α1−α0), sin(δ1)cos(δ0)−sin(δ0)cos(δ1)cos(α1−α0))      In lazarus the function is arctan2(y/x)
+//   is seen at point α0,δ0. This means you are calculating the angle at point α0,δ0 (the reference point) towards point α1,δ1 (the target point).
+//   To clarify:
+//     Point α0,δ0 (Reference Point): This is where the observation is made from, or the point of reference.
+//     Point α1,δ1 (Target Point): This is the point towards which the position angle is being measured.
+//     Position Angle (PA): This is the angle measured at the reference point α0,δ0, going from the direction of the North Celestial Pole towards the target point α1,δ1, measured eastward (or counter-clockwise).
+//     So in your observational scenario, if you were at point α0,δ0 and wanted to determine the direction to point α1,δ1, the PA would tell you the angle to rotate from the north, moving eastward, to align with the target point.
+
+var
+  sinDeltaRa,cosDeltaRa,
+  sinDec0,cosDec0,
+  sinDec1,cosDec1 : double;
+begin
+  sincos(ra1-ra0,sinDeltaRa,cosDeltaRa);
+  sincos(dec0,sinDec0,cosDec0);
+  sincos(dec1,sinDec1,cosDec1);
+  result:=arctan2(cosDec1*sinDeltaRa,sinDec1*cosDec0 - cosDec1*sinDec0*cosDeltaRa);
+end;
+
 
 {transformation of equatorial coordinates into CCD pixel coordinates for optical projection, rigid method}
 {ra0,dec0: right ascension and declination of the optical axis}
@@ -1422,7 +1543,9 @@ begin
                                                     1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 10 pixels away
 
     //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-    crota2:=-arctan2(cos(dec7)*sin(ra7-ra_radians),sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians));//Accurate formula. Angle between line between the two positions and north as seen at hd.ra0, hd.dec0
+//    crota2:=-arctan2(cos(dec7)*sin(ra7-ra_radians),sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians));//Accurate formula. Angle between line between the two positions and north as seen at hd.ra0, hd.dec0
+    crota2:=-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+
 
     // position 1*flipped_image  pixels in direction hd.crpix1
     standard_equatorial( ra_database,dec_database,(solution_vectorX[0]*(centerX+flipped_image) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
@@ -1430,7 +1553,9 @@ begin
                                                   1, {CCD scale} ra7 ,dec7{equatorial position});
 
     //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-    crota1:=+arctan2(sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians),cos(dec7)*sin(ra7-ra_radians));//Accurate formula. See calculation hd.crota2, arguments arctan swapped
+//    crota1:=+arctan2(sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians),cos(dec7)*sin(ra7-ra_radians));//Accurate formula. See calculation hd.crota2, arguments arctan swapped
+    crota1:=pi/2-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+    if crota1>pi then crota1:=crota1-2*pi;//keep within range -pi to +pi
 
     cdelt1:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]))/3600; // from unit arcsec to degrees
     cdelt2:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]))/3600;

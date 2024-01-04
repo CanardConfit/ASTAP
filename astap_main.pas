@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.01.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.01.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3015,7 +3015,6 @@ begin
     // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
     back.star_level:= max(max(3.5*sd,1 {1})  ,back.star_level-back.backgr-1 {2) below saturation}); //star_level is relative to background
     back.star_level2:=max(max(3.5*sd,1 {1})  ,back.star_level2-back.backgr-1 {2) below saturation}); //star_level is relative to background
-  // beep;
   end;
 end;
 
@@ -10015,9 +10014,7 @@ begin
     if sep<1 then seperation:=floattostrF(sep*60,FFfixed,0,2)+#39
     else
     seperation:=floattostrF(sep,FFfixed,0,2)+'°';
-
-    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-    pa:=FloattostrF(arctan2(cos(dec2)*sin(ra2-ra1),sin(dec2)*cos(dec1) - cos(dec2)*sin(dec1)*cos(ra2-ra1))*180/pi,FFfixed,0,0)+'°';; {Accurate formula. Angle between line between the two positions and north as seen at ra1, dec1}
+    pa:=FloattostrF(position_angle(ra2,dec2,ra1,dec1)*180/pi,FFfixed,0,0)+'°';; //Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
   end
   else
   begin //no astrometric solution available
@@ -13412,19 +13409,8 @@ begin
       head.cdelt1:=-head.cdelt2;
 
     {find head.crota2}
-   {see meeus new formula 46.5, angle of moon limb}
-   //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-   //   Confirmation by ChatGPT:
-   //   PA=arctan2(sin(δ1)cos(δ0)−sin(δ0)cos(δ1)cos(α1−α0),cos(δ0)sin(α1−α0))
-   //   is seen at point α0,δ0. This means you are calculating the angle at point α0,δ0 (the reference point) towards point α1,δ1 (the target point).
-   //   To clarify:
-   //     Point α0,δ0 (Reference Point): This is where the observation is made from, or the point of reference.
-   //     Point α1,δ1 (Target Point): This is the point towards which the position angle is being measured.
-   //     Position Angle (PA): This is the angle measured at the reference point α0,δ0, going from the direction of the North Celestial Pole towards the target point α1,δ1, measured eastward (or counter-clockwise).
-   //     So in your observational scenario, if you were at point α0,δ0 and wanted to determine the direction to point α1,δ1, the PA would tell you the angle to rotate from the north, moving eastward, to align with the target point.
-
-   angle2:=arctan2(cos(dec2)*sin(ra2-head.ra0),sin(dec2)*cos(head.dec0) - cos(dec2)*sin(head.dec0)*cos(ra2-head.ra0)); {angle between line between the two stars and north as seen at head.ra0, head.dec0}
-   angle3:=arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
+    angle2:= position_angle(ra2,dec2,head.ra0,head.dec0);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+    angle3:= arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
 
     if flipped then
       angle:=(-angle2+angle3){swapped n-s or e-w image}
