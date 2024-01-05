@@ -88,7 +88,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //                           With the solution calculate the test image center equatorial position α (crval1), δ (crval2).
 //
 //                           Calculate from the solution the pixel size in x (cdelt1) an y (cdelt2) and at the image center position the rotation of the x-axis (crota1)
-//                           and y-axis (crota2) compared with the celestial north using goniometric formulas. Convertese these to cd1_1,cd1_2,cd_2_1, cd2_2.
+//                           and y-axis (crota2) relative to the celestial north using goniometric formulas. Convert these to cd1_1,cd1_2,cd_2_1, cd2_2.
 //
 //                           This is the final solution. The solution vector (for position, scale, rotation) can be stored as the FITS keywords crval1, crval2, cd1_1,cd1_2,cd_2_1, cd2_2.
 //

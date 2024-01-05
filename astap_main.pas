@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.01.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.01.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -142,6 +142,7 @@ type
     PairSplitterSide1: TPairSplitterSide;
     PairSplitterSide2: TPairSplitterSide;
     Panel1: TPanel;
+    Panel_top_menu1: TPanel;
     Polynomial1: TComboBox;
     ra1: TEdit;
     range1: TComboBox;
@@ -871,6 +872,8 @@ procedure calibrate_photometry;
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
 function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
+procedure remove_photometric_calibration;//from header
+
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -9198,6 +9201,15 @@ begin
 end;
 
 
+procedure remove_photometric_calibration;//from header
+begin
+  head.mzero:=0;//clear photometric calibration
+  remove_key('MZERO   =',false{all});
+  remove_key('MZEROR  =',false{all});
+  remove_key('MZEROAPT=',false{all});
+end;
+
+
 procedure Tmainwindow.bin_2x2menu1Click(Sender: TObject);
 begin
  if head.naxis<>0 then
@@ -9216,6 +9228,7 @@ begin
       filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
     end;
 
+    remove_photometric_calibration;//from header
     plot_fits(mainwindow.image1,true,true);{plot real}
     mainwindow.caption:=Filename2;
     Screen.Cursor:=crDefault;
@@ -11234,6 +11247,8 @@ begin
       end;
 
       add_text   ('HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
+
+      remove_photometric_calibration;//from header
 
       {plot result}
       use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -14940,6 +14955,7 @@ var filename3:ansistring;
 
 begin
   filename3:=ChangeFileExt(FileName2,'');
+  filename3:=stringreplace(filename3,'_stacked','',[]);  //remove stacked mark
   savedialog1.initialdir:=ExtractFilePath(filename3);
   savedialog1.filename:=filename3;
   savedialog1.Filter := 'PNG 8 bit(*.png)|*.png;|BMP 8 bit(*.bmp)|*.bmp;|JPG 100% compression quality (*.jpg)|*.jpg;|JPG 90% compression quality (*.jpg)|*.jpg;|JPG 80% compression quality (*.jpg)|*.jpg;|JPG 70% compression quality (*.jpg)|*.jpg;';
@@ -15666,7 +15682,6 @@ begin
     for fitsX:=startX to stopX-1 do
     begin
       if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
-      if ((distance>=0) and (distance<=2)) then
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
          mean[k]:=mean[k]+img_loaded[k,fitsY,fitsX];

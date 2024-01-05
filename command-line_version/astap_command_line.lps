@@ -15,16 +15,18 @@
       <Unit1>
         <Filename Value="unit_command_line_solving.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <CursorPos X="19" Y="83"/>
+        <TopLine Value="58"/>
+        <CursorPos X="45" Y="67"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
+        <CursorPos X="36" Y="24"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>
@@ -236,15 +238,14 @@
         </Mode0>
       </Modes>
     </RunParams>
-    <HistoryLists Count="3">
-      <List0 Name="WorkingDirectory" Type="File" Count="1"/>
-      <List1 Name="LaunchingApplication" Type="File" Count="1">
+    <HistoryLists Count="2">
+      <List0 Name="LaunchingApplication" Type="File" Count="1">
         <Item1 Value="C:\WINDOWS\system32\cmd.exe /C ${TargetCmdLine}"/>
-      </List1>
-      <List2 Name="CommandLineParameters" Count="2">
+      </List0>
+      <List1 Name="CommandLineParameters" Count="2">
         <Item1 Value="-f  C:\astap.fpc\command_line_version\m13.tif  -r 180  -spd 80 -fov 0 -update"/>
         <Item2 Value="-f  C:\astap.fpc\command_line_version\m13.tif  -r 180  -spd 80 -fov 0"/>
-      </List2>
+      </List1>
     </HistoryLists>
   </ProjectSession>
 </CONFIG>

@@ -85,9 +85,10 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //                           The solutions Sx and Sy describe the six parameter solution, X_ref:=a1*x + b1*y + c1 and Y_ref:=a2*x + b2*y +c2.
 //
 //
-//                           With the solution calculate the test image center equatorial position α, δ.
+//                           With the solution calculate the test image center equatorial position α (crval1), δ (crval2).
 //
-//                           Make from the image center small one pixel steps in x, y and use the differences in α, δ to calculate the image scale and orientation.
+//                           Calculate from the solution the pixel size in x (cdelt1) an y (cdelt2) and at the image center position the rotation of the x-axis (crota1)
+//                           and y-axis (crota2) relative to the celestial north using goniometric formulas. Convert these to cd1_1,cd1_2,cd_2_1, cd2_2.
 //
 //                           This is the final solution. The solution vector (for position, scale, rotation) can be stored as the FITS keywords crval1, crval2, cd1_1,cd1_2,cd_2_1, cd2_2.
 //
@@ -117,6 +118,18 @@ var
 
 implementation
 
+function distance_to_string(dist, inp:double):string; {angular distance to string intended for RA and DEC. Unit is based on dist}
+begin
+  if abs(dist)<pi/(180*60) then {unit seconds}
+      result:= floattostrF(inp*3600*180/pi,ffFixed,0,1)+'"'
+  else
+  if abs(dist)<pi/180 then {unit minutes}
+      result:= floattostrF(inp*60*180/pi,ffFixed,0,1)+#39
+  else
+  result:= floattostrF(inp*180/pi,ffFixed,0,1)+'d';  {° symbol is converted to unicode by tmemo}
+end;
+
+
 function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
 //See book Meeus, Astronomical Algorithms, formula 46.5 edition 1991 or 48.5 edition 1998, angle of moon limb or page 116 edition 1998.
 //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
@@ -139,16 +152,6 @@ begin
   result:=arctan2(cosDec1*sinDeltaRa,sinDec1*cosDec0 - cosDec1*sinDec0*cosDeltaRa);
 end;
 
-function distance_to_string(dist, inp:double):string; {angular distance to string intended for RA and DEC. Unit is based on dist}
-begin
-  if abs(dist)<pi/(180*60) then {unit seconds}
-      result:= floattostrF(inp*3600*180/pi,ffFixed,0,1)+'"'
-  else
-  if abs(dist)<pi/180 then {unit minutes}
-      result:= floattostrF(inp*60*180/pi,ffFixed,0,1)+#39
-  else
-  result:= floattostrF(inp*180/pi,ffFixed,0,1)+'d';  {° symbol is converted to unicode by tmemo}
-end;
 
 {transformation of equatorial coordinates into CCD pixel coordinates for optical projection, rigid method}
 {head.ra0,head.dec0: right ascension and declination of the optical axis}
@@ -951,7 +954,7 @@ begin
     // position +1 pixels in direction hd.crpix2
     standard_equatorial( ra_database,dec_database, (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
                                                    (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
-                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 1 pixels away
+                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 1 pixel away
 
     crota2:=-position_angle(ra7,dec7,hd.ra0,hd.dec0);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
 
