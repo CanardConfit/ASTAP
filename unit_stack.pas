@@ -1964,6 +1964,32 @@ begin
 end;
 
 
+procedure calculate_required_dimensions(head: theader);//for image stitching mode
+var
+  ra,dec : double;
+begin
+  sensor_coordinates_to_celestial(head,1,1 , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(head,head.width,1 , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(head,1,head.height , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(head,head.width,1, ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+end;
+
 
 function get_filter_icon(filter_name: string; out red,green, blue : boolean): integer;
 begin
@@ -2028,13 +2054,13 @@ end;
 
 procedure analyse_tab_lights(analyse_level : integer);
 var
-  c, star_counter, i, counts: integer;
-  hfd_median, alt, az       : double;
-  red, green, blue, planetary : boolean;
+  c, star_counter, i, counts                 : integer;
+  hfd_median, alt, az                        : double;
+  red, green, blue, planetary,stitching_mode : boolean;
   key, filename1, rawstr      : string;
-  img             : image_array;
-  bck             : Tbackground;
-  header_2        : tstrings; {extra header}
+  img                         : image_array;
+  bck                         : Tbackground;
+  header_2                    : tstrings; {extra header}
 
   procedure cleanup;
   begin
@@ -2067,6 +2093,8 @@ begin
 
     jd_sum:= 0;{for sigma clip advanced average}
     planetary:= planetary_image1.Checked;
+    stitching_mode := pos('stitch', stackmenu1.stack_method1.Text) > 0;
+
 
     if analyse_level=2 then
     begin
@@ -2296,7 +2324,11 @@ begin
 
                 {is internal solution available?}
                 if head_2.cd1_1 <> 0 then
-                  ListView1.Items.item[c].subitems.Strings[L_solution] := '✓'
+                begin
+                  ListView1.Items.item[c].subitems.Strings[L_solution] := '✓';
+                  if stitching_mode then
+                       calculate_required_dimensions(head_2);
+                end
                 else
                   ListView1.Items.item[c].subitems.Strings[L_solution] := '-';
 
@@ -3444,7 +3476,7 @@ begin
       if stars[4,i]{SNR}>40 then
       begin
         magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
-        sensor_coordinates_to_celestial(1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
+        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
         report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
 
         if ((v>0) and (b>0)) then
@@ -8153,13 +8185,13 @@ begin
 
           head_ref := head;{backup solution for deepsky annotation}
 
-          sensor_coordinates_to_celestial(shape_fitsX, shape_fitsY, rax1, decx1 {fitsX, Y to ra,dec});
+          sensor_coordinates_to_celestial(head,shape_fitsX, shape_fitsY, rax1, decx1 {fitsX, Y to ra,dec});
           abbreviation_var_IAU := prepare_IAU_designation(rax1, decx1);
 
-          sensor_coordinates_to_celestial(shape_fitsX2, shape_fitsY2,{var} rax2, decx2 {position});
+          sensor_coordinates_to_celestial(head,shape_fitsX2, shape_fitsY2,{var} rax2, decx2 {position});
           name_check_iau := prepare_IAU_designation(rax2, decx2);
 
-          sensor_coordinates_to_celestial(shape_fitsX3, shape_fitsY3,rax3, decx3 {fitsX, Y to ra,dec});
+          sensor_coordinates_to_celestial(head,shape_fitsX3, shape_fitsY3,rax3, decx3 {fitsX, Y to ra,dec});
           init:=true;//after measure the frist image
         end;
 
@@ -11630,31 +11662,6 @@ begin
   Result := Result + '_stacked.fits';
 end;
 
-procedure calculate_required_dimensions;
-var
-  ra,dec : double;
-begin
-  sensor_coordinates_to_celestial(1,1 , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head.width,1 , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(1,head.height , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head.width,1, ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-end;
 
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
@@ -11822,8 +11829,7 @@ begin
   stackmenu1.memo2.SelStart := Length(stackmenu1.memo2.Lines.Text);
   stackmenu1.memo2.SelLength := 0;
 
-  if ((use_astrometry_internal1.Checked) or (use_ephemeris_alignment1.Checked)) then
-    {astrometric alignment}
+  if ((use_astrometry_internal1.Checked) or (use_ephemeris_alignment1.Checked) or (stitching_mode)) then  {astrometric alignment}
   begin
     memo2_message('Checking astrometric solutions');
     if use_ephemeris_alignment1.Checked then
@@ -11880,7 +11886,7 @@ begin
             stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] := ''; {report internal plate solve result}
 
            if stitching_mode then
-                         calculate_required_dimensions;
+                         calculate_required_dimensions(head);
         finally
         end;
       end;
@@ -12102,7 +12108,7 @@ begin
       if nrfiles > 1 then {need at least two files to sort}
       begin
         if stitching_mode = False then put_best_quality_on_top(files_to_process);
-        {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
+          {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
         if sigma_clip then
         begin
@@ -12112,7 +12118,7 @@ begin
         end
         else
         if stitching_mode then
-          stack_mosaic(over_size,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
+          stack_mosaic(over_size, process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
         else
         if cal_and_align then {calibration & alignment only}
         begin
@@ -12227,7 +12233,7 @@ begin
               stack_sigmaclip(over_size, process_as_osc,{var}files_to_process, counterL) {sigma clip combining}
             else
             if stitching_mode then
-              stack_mosaic(over_size,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
+              stack_mosaic(over_size, process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
             else
               stack_average(over_size, process_as_osc,{var}files_to_process, counterL);{average}
             over_sizeL := 0; {do oversize only once. Not again in 'L' mode !!}
@@ -12689,9 +12695,9 @@ begin
   //Sigma clip, skip LRGB combine
 
   mosaic_box1.Enabled := mosa;
-  raw_box1.Enabled := ((mosa = False) and (classify_filter1.Checked = False));
-  if mosa then  raw_box1.Caption :='RAW one shot colour images   (Disabled by stack method)'
-  else
+  raw_box1.Enabled := ({(mosa = False) and} (classify_filter1.Checked = False));
+//  if mosa then  raw_box1.Caption :='RAW one shot colour images   (Disabled by stack method)'
+//  else
   if classify_filter1.Checked then
     raw_box1.Caption := 'RAW one shot colour images   (Disabled by ☑ Light filter)'
   else
