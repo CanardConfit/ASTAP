@@ -958,7 +958,6 @@ var
   asteroidlist: array of array of array of double;
   solve_show_log: boolean;
   process_as_osc: integer;//1=auto 2=forced process as OSC image
-  ra_min,ra_max,dec_min,dec_max : double; //for mosaic
 
 var  {################# initialised variables #########################}
   areaX1: integer = 0; {for set area}
@@ -1964,33 +1963,6 @@ begin
 end;
 
 
-procedure calculate_required_dimensions(head: theader);//for image stitching mode
-var
-  ra,dec : double;
-begin
-  sensor_coordinates_to_celestial(head,1,1 , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,head.width,1 , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,1,head.height , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,head.width,1, ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-end;
-
-
 function get_filter_icon(filter_name: string; out red,green, blue : boolean): integer;
 begin
   red := False;
@@ -2056,7 +2028,7 @@ procedure analyse_tab_lights(analyse_level : integer);
 var
   c, star_counter, i, counts                 : integer;
   hfd_median, alt, az                        : double;
-  red, green, blue, planetary,stitching_mode : boolean;
+  red, green, blue, planetary                : boolean;
   key, filename1, rawstr      : string;
   img                         : image_array;
   bck                         : Tbackground;
@@ -2093,8 +2065,6 @@ begin
 
     jd_sum:= 0;{for sigma clip advanced average}
     planetary:= planetary_image1.Checked;
-    stitching_mode := pos('stitch', stackmenu1.stack_method1.Text) > 0;
-
 
     if analyse_level=2 then
     begin
@@ -2324,11 +2294,7 @@ begin
 
                 {is internal solution available?}
                 if head_2.cd1_1 <> 0 then
-                begin
-                  ListView1.Items.item[c].subitems.Strings[L_solution] := '✓';
-                  if stitching_mode then
-                       calculate_required_dimensions(head_2);
-                end
+                  ListView1.Items.item[c].subitems.Strings[L_solution] := '✓'
                 else
                   ListView1.Items.item[c].subitems.Strings[L_solution] := '-';
 
@@ -11689,11 +11655,6 @@ begin
   sender_photometry := (Sender = photom_stack1);//stack instruction from photometry tab?
   sender_stack_groups := (Sender =stack_groups1);//stack instruction from photometry tab?
 
-  ra_min:=+99;//for mosaic mode
-  ra_max:=-99;
-  dec_min:=+99;
-  dec_max:=-99;
-
 
   classify_filter := ((classify_filter1.Checked) and (sender_photometry = False));  //disable classify filter if sender is photom_stack1
   classify_object := ((classify_object1.Checked) and (sender_photometry = False));  //disable classify object if sender is photom_stack1
@@ -11743,14 +11704,14 @@ begin
       else
         memo2_message('Colour stack. OSC images detected. Demosaic method ' +  demosaic_method1.Text);
 
-      if classify_filter{1.checked} then
+      if classify_filter then
       begin
-        //     memo2_message('■■■■■■■■■■■■■ OSC images. Will uncheck "Classify by filter" ! ■■■■■■■■■■■■■');
-        classify_filter{1.checked} := False;
+        memo2_message('■■■■■■■■■■■■■ OSC images. Will uncheck "Classify by filter" ! ■■■■■■■■■■■■■');
+        classify_filter := False;
       end;
     end
     else
-    if classify_filter{1.checked} then
+    if classify_filter then
       memo2_message('LRGB colour stack (classify by light filter checked)')
     else
       memo2_message('Grayscale stack (classify by light filter unchecked)');
@@ -11884,9 +11845,6 @@ begin
           end
           else
             stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] := ''; {report internal plate solve result}
-
-           if stitching_mode then
-                         calculate_required_dimensions(head);
         finally
         end;
       end;
@@ -12060,7 +12018,7 @@ begin
     for i := 0 to 4 do filters_used[i] := '';
     Inc(object_counter);
 
-    lrgb := ((classify_filter{1.checked}) and (cal_and_align = False)); {ignore lrgb for calibration and alignment is true}
+    lrgb := ((classify_filter) and (cal_and_align = False)); {ignore lrgb for calibration and alignment is true}
     over_size := round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
     if lrgb = False then
     begin
@@ -12074,7 +12032,7 @@ begin
         if ((ListView1.items[c].Checked = True) and (ListView1.Items.item[c].SubitemImages[L_result] < 0)) then {not done yet}
         begin
           if object_to_process = '' then object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name to stack}
-          if ((classify_object{1.checked} = False) or (stitching_mode){ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
+          if ((classify_object = False) or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
           then
             {correct object?}
           begin {correct object}
@@ -12193,7 +12151,7 @@ begin
           begin  {not done yet}
             if object_to_process = '' then object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a next object name to stack}
 
-            if ((classify_object{1.checked} = False) or (stitching_mode) {ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object])))) {correct object?} then
+            if ((classify_object = False) or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object])))) {correct object?} then
             begin {correct object}
               defilter := ListView1.Items.item[c].subitems.Strings[L_filter];
               if ((AnsiCompareText(filter_name1, defilter) = 0) or
@@ -12625,8 +12583,8 @@ begin
   if total_counter=0 then {somehow nothing was stacked}
   begin
     memo2.Lines.add('No images in tab lights to stack.');
-    if classify_filter{1.checked} then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
-    if classify_object{1.checked} then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
+    if classify_filter then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
+    if classify_object then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
     if use_astrometry_internal1.Checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
   end
   else
@@ -12721,10 +12679,9 @@ begin
   end;
   if mosa then memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
 
-  classify_object1.Enabled := (mosa = False); {in mosaic mode ignore object name}
 
   classify_filter1.Enabled := ((cal_and_align = False) and (cal_only = False) and (mosa = False));
-  classify_object1.Enabled := ((cal_only = False) and (mosa = False));
+  classify_object1.Enabled := (cal_only = False);
 
   if classify_filter1.Checked then mode := 'LRGB ' else mode := '';
   stack_button1.Caption := 'STACK ' + mode + '(' + stack_method1.Text + ')';
