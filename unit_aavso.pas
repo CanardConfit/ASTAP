@@ -209,9 +209,9 @@ begin
            filter_used:=listview7.Items.item[c].subitems.Strings[P_filter] //take from header
          else
            filter_used:=copy(filter1.text,1,2);//manual input
-         aavso_report:= aavso_report+ name_var+delim+
+
+         aavso_report:= aavso_report+ stringreplace(name_var,'_',' ',[rfReplaceAll])+delim+
                         StringReplace(listview7.Items.item[c].subitems.Strings[P_jd_mid],',','.',[])+delim+
-//                        StringReplace(listview7.Items.item[c].subitems.Strings[P_magn1],',','.',[])+delim+
                         transform_magn(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}])+delim+
                         err+
                         delim+filter_used+delim+
