@@ -11350,8 +11350,6 @@ begin
         for fitsY := 0 to head.Height-1 do  {apply the OSC flat}
           for fitsX := 0 to head.Width-1 do
           begin //thread the red, green and blue pixels seperately
-
-
             //bias is already combined in flat in combine_flat
             if odd(fitsX) then
             begin
@@ -11370,7 +11368,7 @@ begin
 
             flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
 
-            img[k, fitsY, fitsX] := img[k, fitsY, fitsX] * flat_factor;
+            img[0, fitsY, fitsX] := img[0, fitsY, fitsX] * flat_factor;
           end;
       end
       else //monochrome images (or weird images already in colour)
