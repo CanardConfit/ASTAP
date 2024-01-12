@@ -812,6 +812,11 @@ begin
             ra_database:=fnmodulo(flip+ra_radians+ra_database_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
             ang_sep(ra_database,dec_database,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
 
+            //if solve_show_log then
+            //begin
+            //  memo2_message('Read database at: '+prepare_ra(ra_database,' ')+',  '+prepare_dec(dec_database,' '));
+            //end;
+
             if seperation<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
             begin
               {info reporting}
