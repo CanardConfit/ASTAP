@@ -7,7 +7,7 @@ import { autoMerge } from "./auto-merge";
 
 const program = new Command();
 
-const repo = "ASTAP-dev";
+const repo = "ASTAP";
 const author = "CanardConfit";
 
 program
