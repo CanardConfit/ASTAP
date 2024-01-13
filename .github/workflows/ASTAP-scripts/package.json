@@ -1,17 +1,36 @@
 {
-    "name": "astap-scrips",
-    "version": "1.0.0",
+    "name": "astap-scripts",
+    "version": "2.0.0",
     "author": "CanardConfit",
-    "dependencies": {
-        "axios": "^1.6.1",
-        "cheerio": "^1.0.0-rc.12",
-        "isomorphic-git": "^1.25.0",
-        "luxon": "^3.4.4",
-        "process": "^0.11.10"
-    },
+    "description": "CLI scripts used by github actions on the ASTAP repository.",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "node get-version-info.js"
+        "build": "tsc",
+        "lint": "eslint src/**/*",
+        "dev": "nodemon src/index.ts",
+        "start": "node --no-warnings dist/index.js"
     },
-    "license": "ISC"
+    "license": "ISC",
+    "dependencies": {
+        "commander": "^11.1.0",
+        "date-fns": "^2.30.0",
+        "luxon": "^3.4.4",
+        "octokit": "^3.1.2",
+        "process": "^0.11.10",
+        "puppeteer": "^21.6.0"
+    },
+    "devDependencies": {
+        "@types/cheerio": "^0.22.35",
+        "@types/luxon": "^3.3.7",
+        "@types/node": "^20.10.4",
+        "@typescript-eslint/eslint-plugin": "^5.48.0",
+        "@typescript-eslint/parser": "^5.48.0",
+        "eslint": "^8.31.0",
+        "eslint-config-prettier": "^8.6.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "nodemon": "^3.0.2",
+        "prettier": "^2.8.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^4.9.4"
+    }
 }

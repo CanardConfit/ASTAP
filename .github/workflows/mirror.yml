@@ -52,169 +52,24 @@ jobs:
           force_with_lease: true
           branch: imported
           directory: data/git-repo
-  run-check: # Maybe utiliser github-script pour check correctement si on a besoin de faire un pR : Error: Unhandled error: HttpError: Validation Failed: {"resource":"PullRequest","code":"custom","message":"A pull request already exists for CanardConfit:imported."}
+  ASTAP-script:
     needs: [mirror]
     runs-on: self-hosted
-    container: 
-      image: node:lts-alpine3.18
-    outputs:
-      needUpdate: ${{ steps.pre-val.outputs.needUpdate }}
-      firstCommitDate: ${{ steps.pre-val.outputs.firstCommitDate }}
-    steps:
-      - name: Checkout imported branch of git-repo
-        uses: actions/checkout@v4
-        with:
-          ref: imported
-          path: data/git-repo
-      - name: Install dependancies
-        run: npm install date-fns
-      - name: PR Approval Status
-        id: pre-val
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { repo, owner } = context.repo;
-            const { format } = require("date-fns");
-
-            const baseBranch = 'main';
-            const targetBranch = 'imported';
-            
-            const authorEmail = 'han.k@hnsky.org';
-            
-            // Function to get the last commit of a specific author on a branch
-            const getLastCommitByAuthor = async (branch, authorEmail) => {
-                const commits = await github.rest.repos.listCommits({
-                    owner: owner,
-                    repo: repo,
-                    sha: branch,
-                    per_page: 1,
-                    author: authorEmail,
-                });
-            
-                return commits.data.length > 0 ? commits.data[0] : null;
-            };
-            
-            // Function to check if there is an open pull request for a specific branch
-            const prExists = async (head, base) => {
-                const prs = await github.rest.pulls.list({
-                    owner: owner,
-                    repo: repo,
-                    state: 'open',
-                    head: head,
-                    base: base
-                });
-            
-                return prs.data.length > 0;
-            };
-            
-            const importedCommit = await getLastCommitByAuthor(targetBranch, authorEmail);
-            
-            if (!importedCommit) {
-                core.setFailed(`No commit found for ${authorEmail} on ${targetBranch}.`);
-            }
-            
-            const mainCommit = await getLastCommitByAuthor(baseBranch, authorEmail);
-            
-            if (!mainCommit) {
-                core.setFailed('Failed to retrieve main commit by han.k@hnsky.org.');
-            }
-            
-            const formattedMainCommitDate = format(new Date(mainCommit.commit.author.date), 'yyyy-MM-dd');
-            core.setOutput('firstCommitDate', formattedMainCommitDate);
-            
-            const isLastCommitOnMain = mainCommit.sha === importedCommit.sha;
-            
-            const isPRExists = await prExists( `${owner}:${targetBranch}`, baseBranch);
-            
-            core.setOutput('needUpdate', !isLastCommitOnMain && !isPRExists);
-      - name: Display result
-        run: |
-          echo "Need Update: ${{ steps.pre-val.outputs.needUpdate }}"
-          echo "First Commit Date: ${{ steps.pre-val.outputs.firstCommitDate }}"
-  get-astap-news:
-    needs: [run-check]
-    runs-on: self-hosted
     container:
-      image: node:latest
-    outputs:
-      content: ${{ steps.get-values.outputs.content }}
+      image: ghcr.io/puppeteer/puppeteer:latest
+      options: --user root
     steps:
-      - name: Checkout main branch of git-repo
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
           ref: main
           path: git-repo
-      - name: Fetch all branches
-        run: git fetch --all
-        working-directory: git-repo
-      - name: Install npm pre-requises for script
-        run: "npm install"
+      - name: Install node prerequises
+        run: yarn
         working-directory: git-repo/.github/workflows/ASTAP-scripts
-      - name: Process script for news about ASTAP versions
-        id: get-values
-        run: echo "content=$(npm run start ${{ needs.run-check.outputs.firstCommitDate }} -s)" >> $GITHUB_OUTPUT
+      - name: Build
+        run: yarn build
         working-directory: git-repo/.github/workflows/ASTAP-scripts
-  createPullRequest:
-    needs: [run-check, get-astap-news]
-    if: needs.run-check.outputs.needUpdate == 'true'
-    runs-on: self-hosted
-    container: 
-      image: node:lts-alpine3.18
-    steps:
-      - name: Checkout imported branch
-        uses: actions/checkout@v4
-        with:
-          ref: imported
-      - name: Install dependancies
-        run: npm install date-fns
-      - name: Create Pull Request
-        id: cpr
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { repo, owner } = context.repo;
-            const { format } = require("date-fns");
-            const versionsRaw = JSON.parse(${{needs.get-astap-news.outputs.content}});
-            let versions = {};
-
-            versionsRaw.forEach(function (a) {
-              let title = a.title.replace("v", "");
-              versions[title] = versions[title] || { commits: new Set(), content: a.content.trim() };
-              versions[title].commits.add(a.commit);
-            });
-
-            let ret = "";
-
-            for (var key in versions) {
-              let commits = Array.from(versions[key].commits).join(') (');
-              let content = versions[key].content;
-
-              ret += `### ASTAP_${key} (${commits})\n\n${content}\n\n`;
-            }
-
-            let currentDate = new Date();
-            let mergeDate = new Date();
-            const hours = 10;
-            mergeDate.setTime(mergeDate.getTime() + hours * 60 * 60 * 1000);
-
-            const result = await github.rest.pulls.create({
-              title: '[Automation] [' + format(currentDate, 'yyyy-MM-dd') + '] Mirroring from the Mercury repo',
-              owner,
-              repo,
-              head: 'imported',
-              base: 'main',
-              body: [
-                '## Changelog',
-                '',
-                ret,
-                '',
-                '',
-                '> **NOTE**: This PR is automatically generated and will be automatically merged on **' + format(mergeDate, 'yyyy-MM-dd HH:mm:ss') + '**.',
-              ].join('\n')
-            });
-            github.rest.issues.addLabels({
-              owner,
-              repo,
-              issue_number: result.data.number,
-              labels: ['mirror', 'automated pr']
-            });
+      - name: Launch script to check if PR is needed, and create PR with ASTAP News
+        run: yarn start createPullRequest true -t ${{ secrets.GITHUB_TOKEN }}
+        working-directory: git-repo/.github/workflows/ASTAP-scripts
