@@ -1,4 +1,101 @@
 unit unit_command_line_solving;
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+email: han.k.. at...hnsky.org
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+
+
+{ASTAP is using a linear astrometric solution for both stacking and solving.  The method is based on what traditionally is called "reducing the plate measurements.
+First step is to find star matches between a test image and a reference image. The reference image is either created from a star database or a reference image.
+The star positions x, y are to be calculated in standard coordinates which is equivalent to the x,y pixel position. The x,y position are measured relative to the image center.
+
+The test image center, size and orientation position will be different compared with the reference image. The required conversion from test image [x,y] star positions to the
+same stars on the test images can be written as:
+
+Xref : = a*xtest + b*ytest + c
+Yref:=   d*xtest + e*ytest + f
+
+The factors, a,b,c,d,e,f are called the six plate constants and will be slightly different different for each star. They describe the conversion of  the test image standard coordinates
+to the reference image standard coordinates. Using a least square routine the best solution fit can calculated if at least three matching star positions are found since there are three unknowns.
+
+With the solution and the equatorial center position of the reference image the test image center equatorial position, α and δ can be calculated.
+
+Make from the test image center small one pixel steps in x, y and use the differences in α, δ to calculate the image scale and orientation.
+
+For astrometric solving (plate solving), this "reducing the plate measurement" is done against star positions extracted from a database. The resulting absolute astrometric solution
+will allow specification of the α, δ equatorial positions of each pixel. For star alignment this "reducing the plate measurement" is done against a reference image. The resulting
+six plate constants are a relative astrometric solution. The position of the reference image is not required. Pixels of the solved image can be stacked with reference image using
+the six plate constants only.
+
+To automate this process rather then using reference stars the matching reference objects are the center positions of quads made of four close stars. Comparing the length ratios
+of the sides of the quads allows automated matching.
+
+Below a brief flowchart of the ASTAP astrometric solving process:
+}
+
+//                                                  =>ASTAP  astronomical plate solving method by Han Kleijn <=
+//
+//      => Image <=         	                                                 |	=> Star database <=
+//1) 	Find background, noise and star level                                    |
+//                                                                               |
+//2) 	Find stars and their CCD x, y position (standard coordinates) 	         | Extract the same amount of stars (area corrected) from the area of interest
+//                                                                               | Convert the α, δ equatorial coordinates into standard coordinates
+//                                                                               | (CCD pixel x,y coordinates for optical projection), rigid method
+//
+//3) 	Use the extracted stars to construct the smallest irregular tetrahedrons | Use the extracted stars to construct the smallest irregular tetrahedrons
+//      figures of four  star called quads. Calculate the six distance between   | figures of four  star called quads. Calculate the six distance between
+//      the four stars and the mean x,y position of the quad                     | the four stars and the mean x,y position of the quad
+//                                                                               |
+//4) 	For each quad sort the six quad distances.                      	 | For each quad sort the six quad distances.
+//      Label them all where d1 is the longest and d6 the shortest distance.     | Label them all where d1 is the longest and d6 the shortest distance.
+//                                                                               |
+//5) 	Scale the six quad star distances as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1) | Scale the six quad star distances as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)
+//      These are the image hash codes.                                          | These are the database hash codes.
+//
+//                           => matching process <=
+//6)                         Find quad hash code matches where the five ratios d2/d1 to d6/d1 match within a small tolerance.
+//
+//7) 		             For matching quad hash codes, calculate the longest side ratios d1_found/d1_reference. Calculate the median ratio.
+//                           Compare the quads longest side ratios with the median value and remove quads outside a small tolerance.
+//
+//8)                         From the remaining matching quads, prepare the "A" matrix/array containing the x,y center positions of the test image quads in standard coordinates
+//                           and  the array X_ref, Y_ref containing the x, y center positions of the reference imagete trahedrons in standard coordinates.
+//
+//                           A:                  Sx:         X_ref:
+//                           [x1 y1  1]          [a1]         [X1]
+//                           [x2 y2  1]    *     [b1]    =    [X2]
+//                           [x3 y3  1]          [c1]         [X3]
+//                           [x4 y4  1]                       [X4]
+//                           [.. .. ..]                       [..]
+//                           [xn yn  1]                       [Xn]
+//
+//
+//                           A:                  Sx:         Y_ref:
+//                           [x1 y1  1]          [a2]         [Y1]
+//                           [x2 y2  1]    *     [b2]    =    [Y2]
+//                           [x3 y3  1]          [c2]         [Y3]
+//                           [x4 y4  1]                       [Y4]
+//                           [.. .. ..]                       [..]
+//                           [xn yn  1]                       [Yn]
+//
+//                           Find the solution matrices Sx and Sy of this overdetermined system of linear equations. (LSQ_FIT)
+//
+//                           The solutions Sx and Sy describe the six parameter solution, X_ref:=a1*x + b1*y + c1 and Y_ref:=a2*x + b2*y +c2.
+//
+//
+//                           With the solution calculate the test image center equatorial position α (crval1), δ (crval2).
+//
+//                           Calculate from the solution the pixel size in x (cdelt1) an y (cdelt2) and at the image center position the rotation of the x-axis (crota1)
+//                           and y-axis (crota2) relative to the celestial north using goniometric formulas. Convert these to cd1_1,cd1_2,cd_2_1, cd2_2.
+//
+//                           This is the final solution. The solution vector (for position, scale, rotation) can be stored as the FITS keywords crval1, crval2, cd1_1,cd1_2,cd_2_1, cd2_2.
+//
+// Notes:
+// For a low faint star count (<30) the star patterns can be slightly different between image and database due to small magnitude differences.
+// For these cases it can be beneficial to extract triples (three stars patterns) from the found quads (four star patterns) but stricter tolerances are required to avoid false detections.
+
 {$mode objfpc}{$H+}
 
 interface
@@ -116,7 +213,7 @@ end;
 {   see also Montenbruck & Pfleger, Astronomy on the personal computer}
 procedure lsq_fit( A_matrix: star_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector );
   const tiny = 1E-10;  {accuracy}
-  var i,j,k, nr_equations,nr_columns,hhh  : integer;
+  var i,j,k, nr_equations,nr_columns  : integer;
       p,q,h                           : double;
       temp_matrix                     : star_list;
 
@@ -176,7 +273,6 @@ begin
     {solution vector x:=x_matrix[0]x+x_matrix[1]y+x_matrix[2]}
   end;
 end; {lsq_fit}
-
 
 
 procedure QuickSort_starlist(var A: star_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
@@ -673,6 +769,30 @@ begin
   result:= floattostrF2(inp*180/pi,0,1)+'d';
 end;
 
+
+function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+//See book Meeus, Astronomical Algorithms, formula 46.5 edition 1991 or 48.5 edition 1998, angle of moon limb or page 116 edition 1998.
+//See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+//   PA=arctan2(cos(δ0)sin(α1−α0), sin(δ1)cos(δ0)−sin(δ0)cos(δ1)cos(α1−α0))      In lazarus the function is arctan2(y/x)
+//   is seen at point α0,δ0. This means you are calculating the angle at point α0,δ0 (the reference point) towards point α1,δ1 (the target point).
+//   To clarify:
+//     Point α0,δ0 (Reference Point): This is where the observation is made from, or the point of reference.
+//     Point α1,δ1 (Target Point): This is the point towards which the position angle is being measured.
+//     Position Angle (PA): This is the angle measured at the reference point α0,δ0, going from the direction of the North Celestial Pole towards the target point α1,δ1, measured eastward (or counter-clockwise).
+//     So in your observational scenario, if you were at point α0,δ0 and wanted to determine the direction to point α1,δ1, the PA would tell you the angle to rotate from the north, moving eastward, to align with the target point.
+
+var
+  sinDeltaRa,cosDeltaRa,
+  sinDec0,cosDec0,
+  sinDec1,cosDec1 : double;
+begin
+  sincos(ra1-ra0,sinDeltaRa,cosDeltaRa);
+  sincos(dec0,sinDec0,cosDec0);
+  sincos(dec1,sinDec1,cosDec1);
+  result:=arctan2(cosDec1*sinDeltaRa,sinDec1*cosDec0 - cosDec1*sinDec0*cosDeltaRa);
+end;
+
+
 {transformation of equatorial coordinates into CCD pixel coordinates for optical projection, rigid method}
 {ra0,dec0: right ascension and declination of the optical axis}
 {ra,dec:   right ascension and declination}
@@ -1121,9 +1241,9 @@ function solve_image(img :image_array) : boolean;{find match between image and s
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,database_density,limit,err                                       : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
+  search_field,step_size,ra_database,dec_database,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
   oversize,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
-  quad_tolerance,dummy, extrastars,flip,extra,distance                                                               : double;
+  quad_tolerance,dummy, extrastars,flip,extra,distance,flipped_image                                                 : double;
   solution, go_ahead ,autoFOV                                                                                        : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
@@ -1316,20 +1436,20 @@ begin
           end;{end spiral around [0 0]}
 
           {adapt search field to matrix position, +0+0/+1+0,+1+1,+0+1,-1+1,-1+0,-1-1,+0-1,+1-1..}
-          telescope_dec:=STEP_SIZE*spiral_y+dec_radians;
+          dec_database:=STEP_SIZE*spiral_y+dec_radians;
           flip:=0;
-          if telescope_dec>+pi/2 then  begin telescope_dec:=pi-telescope_dec; flip:=pi; end {crossed the pole}
+          if dec_database>+pi/2 then  begin dec_database:=pi-dec_database; flip:=pi; end {crossed the pole}
           else
-          if telescope_dec<-pi/2 then  begin telescope_dec:=-pi-telescope_dec; flip:=pi; end;
+          if dec_database<-pi/2 then  begin dec_database:=-pi-dec_database; flip:=pi; end;
 
-          if telescope_dec>0 then extra:=step_size/2 else extra:=-step_size/2;{use the distance furthest away from the pole}
+          if dec_database>0 then extra:=step_size/2 else extra:=-step_size/2;{use the distance furthest away from the pole}
 
-          telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec-extra));{step larger near pole. This telescope_ra is an offsett from zero}
+          telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(dec_database-extra));{step larger near pole. This ra_database is an offsett from zero}
           if ((telescope_ra_offset<=+pi/2+step_size/2) and (telescope_ra_offset>=-pi/2)) then  {step_size for overlap}
           begin
-            telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
+            ra_database:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
 
-            ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
+            ang_sep(ra_database,dec_database,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
             if seperation<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
             begin
 
@@ -1347,7 +1467,7 @@ begin
               extrastars:=1/1.1;{star with a factor of one}
               repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
                 extrastars:=extrastars*1.1;
-                if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
+                if read_stars(ra_database,dec_database,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
                 begin
                   memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');
                   errorlevel:=33;{read error star database}
@@ -1362,11 +1482,11 @@ begin
               if ((solve_show_log) and  (extrastars>1)) then memo2_message('Too many small quads excluded due to higher resolution database, increased the number of stars with '+inttostr(round((extrastars-1)*100))+'%');
 
               if solve_show_log then {global variable set in find stars}
-                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'], position: '+ prepare_ra(telescope_ra,': ')+prepare_dec(telescope_dec,'d ')+#9+' Down to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.');
+                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'], position: '+ prepare_ra(ra_database,': ')+prepare_dec(dec_database,'d ')+#9+' Down to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.');
 
               // for testing purposes
               // create supplement lines for sky coverage testing and write to log using -log
-              // memo2.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
+              // memo2.add(floattostr(ra_database*12/pi)+',,,'+floattostr(dec_database*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
                solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
             end; {within search circle. Otherwise the search is within a kind of square}
@@ -1381,7 +1501,7 @@ begin
           crpix1:=centerX+1;{center image in fits coordinate range 1..width2}
           crpix2:=centery+1;
 
-          standard_equatorial( telescope_ra,telescope_dec,
+          standard_equatorial( ra_database,dec_database,
               (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
               (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
               1, {CCD scale}
@@ -1411,34 +1531,47 @@ begin
     //    cd2_1:= + solution_vectorY[0]/3600;
     //    cd2_2:= + solution_vectorY[1]/3600;
 
-    // rather then using the solution vector directly, for maximum accuracy find the vector for the center of the image.
-    //make 1 step in direction crpix1
-    standard_equatorial( telescope_ra,telescope_dec,
-        (solution_vectorX[0]*(centerX+1) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
-        (solution_vectorY[0]*(centerX+1) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
-        1, {CCD scale}
-        ra7 ,dec7{center equatorial position});
+    //New 2023 method for correct rotation angle/annotation near to the celestial pole.
+    if solution_vectorX[0]*solution_vectorY[1] - solution_vectorX[1]*solution_vectorY[0] >0 then // flipped?
+    flipped_image:=-1 //change rotation for flipped image, {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+    else
+    flipped_image:=+1;//not flipped
 
-    delta_ra:=ra7-ra0;
-    if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
-    if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
-    cd1_1:=(delta_ra)*cos(dec0)*(180/pi);
-    cd2_1:=(dec7-dec0)*(180/pi);
+    // position +1 pixels in direction hd.crpix2
+    standard_equatorial( ra_database,dec_database, (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
+                                                   (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
+                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 10 pixels away
 
-    //make 1 step in direction crpix2
-    standard_equatorial( telescope_ra,telescope_dec,
-        (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
-        (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
-         1, {CCD scale}
-        ra7 ,dec7{center equatorial position});
+    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+//    crota2:=-arctan2(cos(dec7)*sin(ra7-ra_radians),sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians));//Accurate formula. Angle between line between the two positions and north as seen at hd.ra0, hd.dec0
+    crota2:=-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
 
-    delta_ra:=ra7-ra0;
-    if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
-    if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
-    cd1_2:=(delta_ra)*cos(dec0)*(180/pi);
-    cd2_2:=(dec7-dec0)*(180/pi);
 
-    new_to_old_WCS;
+    // position 1*flipped_image  pixels in direction hd.crpix1
+    standard_equatorial( ra_database,dec_database,(solution_vectorX[0]*(centerX+flipped_image) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
+                                                  (solution_vectorY[0]*(centerX+flipped_image) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
+                                                  1, {CCD scale} ra7 ,dec7{equatorial position});
+
+    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+//    crota1:=+arctan2(sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians),cos(dec7)*sin(ra7-ra_radians));//Accurate formula. See calculation hd.crota2, arguments arctan swapped
+    crota1:=pi/2-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+    if crota1>pi then crota1:=crota1-2*pi;//keep within range -pi to +pi
+
+    cdelt1:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]))/3600; // from unit arcsec to degrees
+    cdelt2:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]))/3600;
+
+
+
+    cd1_1:=+cdelt1*cos(crota1);
+    cd1_2:=-cdelt1*sin(crota1)*flipped_image;
+    cd2_1:=+cdelt2*sin(crota2)*flipped_image;
+    cd2_2:=+cdelt2*cos(crota2);
+
+    crota2:=crota2*180/pi;//convert to degrees
+    crota1:=crota1*180/pi;
+    //end new 2023 method
+
+
     solved_in:='Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec';{make string to report in FITS header.}
 
     offset_found:=distance_to_string(sep_search ,sep_search)+'.';

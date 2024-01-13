@@ -1,4 +1,10 @@
 program astap_command_line;
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+ email: han.k.. at...hnsky.org
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 {$mode objfpc}{$H+}
 
@@ -55,7 +61,7 @@ begin
   begin
     writeln(
     'ASTAP astrometric solver version CLI-'+astap_version+#10+
-    '(C) 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
+    '(C) 2018, 2023 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
     'Usage:'+#10+
     '-f  filename  {fits, tiff, png, jpg files}'+#10+
     '-r  radius_area_to_search[degrees]'+#10+      {changed}

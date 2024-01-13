@@ -1,5 +1,5 @@
 unit unit_astrometric_solving;
-{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
 email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -85,9 +85,10 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //                           The solutions Sx and Sy describe the six parameter solution, X_ref:=a1*x + b1*y + c1 and Y_ref:=a2*x + b2*y +c2.
 //
 //
-//                           With the solution calculate the test image center equatorial position α, δ.
+//                           With the solution calculate the test image center equatorial position α (crval1), δ (crval2).
 //
-//                           Make from the image center small one pixel steps in x, y and use the differences in α, δ to calculate the image scale and orientation.
+//                           Calculate from the solution the pixel size in x (cdelt1) an y (cdelt2) and at the image center position the rotation of the x-axis (crota1)
+//                           and y-axis (crota2) relative to the celestial north using goniometric formulas. Convert these to cd1_1,cd1_2,cd_2_1, cd2_2.
 //
 //                           This is the final solution. The solution vector (for position, scale, rotation) can be stored as the FITS keywords crval1, crval2, cd1_1,cd1_2,cd_2_1, cd2_2.
 //
@@ -104,6 +105,7 @@ uses   Classes,SysUtils,controls,forms,math,
 function solve_image(img :image_array;var hd: Theader; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height :double) : integer;{select the binning}
+function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
 procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
 function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer; out nrstars:integer): boolean;{read star from star database}
 procedure binX2_crop(crop {0..1}:double; img : image_array; out img2: image_array);{combine values of 4 pixels and crop is required, Result is mono}
@@ -116,7 +118,6 @@ var
 
 implementation
 
-
 function distance_to_string(dist, inp:double):string; {angular distance to string intended for RA and DEC. Unit is based on dist}
 begin
   if abs(dist)<pi/(180*60) then {unit seconds}
@@ -127,6 +128,30 @@ begin
   else
   result:= floattostrF(inp*180/pi,ffFixed,0,1)+'d';  {° symbol is converted to unicode by tmemo}
 end;
+
+
+function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+//See book Meeus, Astronomical Algorithms, formula 46.5 edition 1991 or 48.5 edition 1998, angle of moon limb or page 116 edition 1998.
+//See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
+//   PA=arctan2(cos(δ0)sin(α1−α0), sin(δ1)cos(δ0)−sin(δ0)cos(δ1)cos(α1−α0))      In lazarus the function is arctan2(y/x)
+//   is seen at point α0,δ0. This means you are calculating the angle at point α0,δ0 (the reference point) towards point α1,δ1 (the target point).
+//   To clarify:
+//     Point α0,δ0 (Reference Point): This is where the observation is made from, or the point of reference.
+//     Point α1,δ1 (Target Point): This is the point towards which the position angle is being measured.
+//     Position Angle (PA): This is the angle measured at the reference point α0,δ0, going from the direction of the North Celestial Pole towards the target point α1,δ1, measured eastward (or counter-clockwise).
+//     So in your observational scenario, if you were at point α0,δ0 and wanted to determine the direction to point α1,δ1, the PA would tell you the angle to rotate from the north, moving eastward, to align with the target point.
+
+var
+  sinDeltaRa,cosDeltaRa,
+  sinDec0,cosDec0,
+  sinDec1,cosDec1 : double;
+begin
+  sincos(ra1-ra0,sinDeltaRa,cosDeltaRa);
+  sincos(dec0,sinDec0,cosDec0);
+  sincos(dec1,sinDec1,cosDec1);
+  result:=arctan2(cosDec1*sinDeltaRa,sinDec1*cosDec0 - cosDec1*sinDec0*cosDeltaRa);
+end;
+
 
 {transformation of equatorial coordinates into CCD pixel coordinates for optical projection, rigid method}
 {head.ra0,head.dec0: right ascension and declination of the optical axis}
@@ -506,8 +531,10 @@ var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;
   search_field,step_size,ra_database,dec_database,ra_database_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
-  sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
-  current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio   : double;
+  sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,
+  current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio,
+  crota1,crota2,flipped_image   : double;
+
   solution, go_ahead, autoFOV,use_triples,yes_use_triples         : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
@@ -918,36 +945,41 @@ begin
     //    hd.cd2_1:= + solution_vectorY[0]/3600;
     //    hd.cd2_2:= + solution_vectorY[1]/3600;
 
-    // rather then using the solution vector directly, for maximum accuracy find the vector for the center of the image.
-    // make 1 step in direction hd.crpix1
-    standard_equatorial( ra_database,dec_database,
-        (solution_vectorX[0]*(centerX+pixel_aspect_ratio{normally 1}) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
-        (solution_vectorY[0]*(centerX+pixel_aspect_ratio{normally 1}) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
-        1, {CCD scale}
-        ra7 ,dec7{center equatorial position});
+    //New 2023 method for correct rotation angle/annotation near to the celestial pole.
+    if solution_vectorX[0]*solution_vectorY[1] - solution_vectorX[1]*solution_vectorY[0] >0 then // flipped?
+    flipped_image:=-1 //change rotation for flipped image, {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+    else
+    flipped_image:=+1;//not flipped
 
-    delta_ra:=ra7-hd.ra0;
-    if delta_ra>+pi then delta_ra:=delta_ra-2*pi; {1 -> 359,    -2:=(359-1) -360 }{rev 2021}
-    if delta_ra<-pi then delta_ra:=delta_ra+2*pi; {359 -> 1,    +2:=(1-359) +360 }
+    // position +1 pixels in direction hd.crpix2
+    standard_equatorial( ra_database,dec_database, (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
+                                                   (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
+                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 1 pixel away
 
-    hd.cd1_1:=(delta_ra)*cos(hd.dec0)*(180/pi);
-    hd.cd2_1:=(dec7-hd.dec0)*(180/pi);
+    crota2:=-position_angle(ra7,dec7,hd.ra0,hd.dec0);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
 
-    //make 1 step in direction hd.crpix2
-    standard_equatorial( ra_database,dec_database,
-        (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
-        (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
-         1, {CCD scale}
-        ra7 ,dec7{center equatorial position});
+    // position 1*flipped_image  pixels in direction hd.crpix1
+    standard_equatorial( ra_database,dec_database,(solution_vectorX[0]*(centerX+flipped_image) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
+                                                  (solution_vectorY[0]*(centerX+flipped_image) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
+                                                  1, {CCD scale} ra7 ,dec7{equatorial position});
 
-    delta_ra:=ra7-hd.ra0;
-    if delta_ra>+pi then delta_ra:=delta_ra-2*pi; {1 -> 359,    -2:=(359-1) -360 } {rev 2021}
-    if delta_ra<-pi then delta_ra:=delta_ra+2*pi; {359 -> 1,    +2:=(1-359) +360 }
+    crota1:=pi/2-position_angle(ra7,dec7,hd.ra0,hd.dec0);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+    if crota1>pi then crota1:=crota1-2*pi;//keep within range -pi to +pi
 
-    hd.cd1_2:=(delta_ra)*cos(hd.dec0)*(180/pi);
-    hd.cd2_2:=(dec7-hd.dec0)*(180/pi);
+    hd.cdelt1:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]))/3600; // from unit arcsec to degrees
+    hd.cdelt2:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]))/3600;
 
-    new_to_old_WCS(hd);
+
+
+    hd.cd1_1:=+hd.cdelt1*cos(crota1);
+    hd.cd1_2:=-hd.cdelt1*sin(crota1)*flipped_image;
+    hd.cd2_1:=+hd.cdelt2*sin(crota2)*flipped_image;
+    hd.cd2_2:=+hd.cdelt2*cos(crota2);
+
+    hd.crota2:=crota2*180/pi;//convert to degrees
+    hd.crota1:=crota1*180/pi;
+    //end new 2023 method
+
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
     offset_found:={' Δ was '}distance_to_string(sep_search {scale selection},sep_search)+'.';
@@ -1020,14 +1052,6 @@ begin
   end;
 
   warning_str:=warning_str + warning_downsample; {add the last warning from loop autoFOV}
-
-// this does not happen anymore with new database with fixed density.
-//  if nrstars_required>database_stars+4 then
-//  begin
-//    memo2_message('Warning, reached the limit of the star database!');
-//    warning_str:=warning_str+'Star database limit was reached! ';
-//  end;
-
   if warning_str<>'' then
   begin
     update_longstr('WARNING =',warning_str);{update or insert long str including single quotes}

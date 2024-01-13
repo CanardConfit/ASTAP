@@ -1,5 +1,5 @@
 unit unit_stack_routines;
-{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -14,7 +14,8 @@ uses
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 procedure stack_average(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 
-procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo;max_dev_backgr: double; out counter : integer);{stack mosaic/tile mode}
+procedure stack_mosaic(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
+
 procedure stack_sigmaclip(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
@@ -819,6 +820,32 @@ begin
 end;
 
 
+procedure calculate_required_dimensions(head: theader; var ra_min,ra_max,dec_min,dec_max: double);//for image stitching mode
+var
+  ra,dec : double;
+begin
+  sensor_coordinates_to_celestial(head,1,1 , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(head,head.width,1 , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(head,1,head.height , ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+  sensor_coordinates_to_celestial(head,head.width,1, ra, dec);
+  ra_min:=min(ra_min,ra);
+  ra_max:=max(ra_max,ra);
+  dec_min:=min(dec_min,dec);
+  dec_max:=max(dec_max,dec);
+end;
+
 
 function minimum_distance_borders(fitsX,fitsY,w,h: integer): single;
 begin
@@ -828,11 +855,13 @@ begin
 end;
 
 
-procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
+procedure stack_mosaic(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels    : integer;
-    value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels,
-    fx1,fx2,fy1,fy2, raMiddle,decMiddle                            : double;
+    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels,count    : integer;
+    value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels,coverage,
+    fx1,fx2,fy1,fy2, raMiddle,decMiddle,
+    ra_min,ra_max,dec_min,dec_max,total_fov,fw,fh                   : double; //for mosaic
+
     tempval                                                        : single;
     init, vector_based,merge_overlap,equalise_background           : boolean;
     background_correction,background_correction_center,background    : array[0..2] of double;
@@ -841,6 +870,25 @@ var
 begin
   with stackmenu1 do
   begin
+    //find dimensions of this package
+    memo2_message('Analysing and calculating celestial field-of-view dimensions.');
+    ra_min:=+99;//for mosaic mode
+    ra_max:=-99;
+    dec_min:=+99;
+    dec_max:=-99;
+
+    count:=0;
+    total_fov:=0;
+    for c:=0 to length(files_to_process)-1 do
+      if length(files_to_process[c].name)>0 then
+      begin
+        if load_fits(files_to_process[c].name,true {light},false{load data},false {update memo} ,0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        calculate_required_dimensions(head, ra_min,ra_max,dec_min,dec_max);
+        total_fov:=total_fov+head.cdelt1*head.cdelt2*head.width*head.height;
+        inc(count);
+      end;
+    if ra_min=99 then begin memo2_message('Abort. Failed to calculate mosaic dimension!');exit;end;
+
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     merge_overlap:=merge_overlap1.checked;
     Equalise_background:=Equalise_background1.checked;
@@ -854,6 +902,7 @@ begin
 
     dummy:=0;
 
+    if stackmenu1.classify_object1.Checked then memo2_message('█ █ █ █ █ █  Will make more then one mosaic based "Light object". Uncheck classify on "Light object" if required !!█ █ █ █ █ █  ');
     {mosaic mode}
     begin
       for c:=0 to length(files_to_process)-1 do
@@ -877,6 +926,7 @@ begin
           begin
              // not for mosaic||| if init=true then   if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
              if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+
           end;
 
           if init=false then
@@ -884,7 +934,15 @@ begin
             head_ref:=head;{backup solution}
             celestial_to_pixel(ra_min,dec_min, fx1,fy1);{ra,dec to fitsX,fitsY}
             celestial_to_pixel(ra_max,dec_max, fx2,fy2);{ra,dec to fitsX,fitsY}
-            sensor_coordinates_to_celestial((fx1+fx2)/2,(fy1+fy2)/2, raMiddle, decMiddle);//find middle of mosaic
+
+            fw:=head.cdelt1*abs(fx2-fx1);
+            fh:=head.cdelt2*abs(fy2-fy1);
+            coverage:=total_fov/(fw*fh);
+            if coverage<0.5 then
+             begin memo2_message('█ █ █ █ █ █  Abort!! Too many missing tiles. Field is '+floattostrF(fw,FFFixed,0,1)+'x'+floattostrF(fh,FFfixed,0,1)+
+                                                '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. For multiple mosaics is classify on "Light object" set?'); exit;end;
+
+            sensor_coordinates_to_celestial(head,(fx1+fx2)/2,(fy1+fy2)/2, raMiddle, decMiddle);//find middle of mosaic
             sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
             head_ref.ra0:=raMiddle;// set middle of the mosaic
             head_ref.crpix1:=abs(fx1-fx2)/2;
@@ -896,6 +954,17 @@ begin
           memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
+
+
+          if process_as_osc>0 then {do demosaic bayer}
+          begin
+            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            else
+               demosaic_bayer(img_loaded); {convert OSC image to colour}
+              {head.naxis3 is now 3}
+          end;
+
+
 
           if init=false then {init}
           begin
@@ -1056,6 +1125,8 @@ begin
 
       if counter<>0 then
       begin
+        head_ref.naxis3:= head.naxis3; {store colour info in reference header. could be modified by OSC conversion}
+        head_ref.naxis:=  head.naxis;  {store colour info in reference header}
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
         head.height:=height_max;
         head.width:=width_max;

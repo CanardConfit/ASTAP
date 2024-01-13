@@ -10,7 +10,7 @@ object form_aavso1: Tform_aavso1
   OnClose = FormClose
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '3.0.0.1'
+  LCLVersion = '3.0.0.3'
   object obscode1: TEdit
     Left = 16
     Height = 23
@@ -44,8 +44,8 @@ object form_aavso1: Tform_aavso1
     Top = 416
     Width = 168
     Caption = 'Report to clipboard'
-    OnClick = report_to_clipboard1Click
     TabOrder = 1
+    OnClick = report_to_clipboard1Click
   end
   object Filter1: TComboBox
     Left = 16
@@ -147,8 +147,8 @@ object form_aavso1: Tform_aavso1
     Top = 416
     Width = 168
     Caption = 'Report to file'
-    OnClick = report_to_clipboard1Click
     TabOrder = 5
+    OnClick = report_to_clipboard1Click
   end
   object name_check1: TComboBox
     Left = 16
@@ -156,14 +156,15 @@ object form_aavso1: Tform_aavso1
     Hint = ' Check star  AUID  (much preferred) or designation. Alternatively you could select the IAU designation using the position.'
     Top = 208
     Width = 208
+    DropDownCount = 30
     ItemHeight = 15
-    OnChange = name_check1Change
-    OnDropDown = name_check1DropDown
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
     Sorted = True
     TabOrder = 6
+    OnChange = name_check1Change
+    OnDropDown = name_check1DropDown
   end
   object Image_photometry1: TImage
     Cursor = crCross
@@ -209,11 +210,11 @@ object form_aavso1: Tform_aavso1
     Hint = 'Colour difference between variable and check star.  This will be used for differential magnitude correction for variable star based on the slope. '
     Top = 84
     Width = 64
-    OnChange = name_variable1Change
     ParentShowHint = False
     ShowHint = True
     TabOrder = 8
     Text = '0'
+    OnChange = name_variable1Change
   end
   object Label9: TLabel
     Left = 88
@@ -229,11 +230,11 @@ object form_aavso1: Tform_aavso1
     Hint = 'Slope of magnitude difference caused by the colour difference between variable and check star. A differential correction will be applied on the variable magnitude in the final report. Enter here the slope found by pressing button "Transformation". '
     Top = 112
     Width = 64
-    OnChange = name_variable1Change
     ParentShowHint = False
     ShowHint = True
     TabOrder = 9
     Text = '0'
+    OnChange = name_variable1Change
   end
   object Label10: TLabel
     Left = 88
@@ -259,14 +260,15 @@ object form_aavso1: Tform_aavso1
     Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier.  Limit: 30 characters.'
     Top = 48
     Width = 208
+    DropDownCount = 30
     ItemHeight = 15
-    OnChange = name_check1Change
-    OnDropDown = name_variable1DropDown
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
     Sorted = True
     TabOrder = 10
+    OnChange = name_check1Change
+    OnDropDown = name_variable1DropDown
   end
   object PopupMenu1: TPopupMenu
     Left = 685

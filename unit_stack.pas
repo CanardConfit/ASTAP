@@ -28,272 +28,41 @@ uses
   Controls, Forms, Dialogs, ComCtrls, StdCtrls,
   Math, ExtCtrls, Menus, Buttons,
   LCLIntf,{for for getkeystate, selectobject, openURL}
-  clipbrd, Types, strutils,
+  clipbrd, PairSplitter, Types, strutils,
   unit_star_database,
   astap_main;
 
 type
   { Tstackmenu1 }
   Tstackmenu1 = class(TForm)
+    aavso_button1: TButton;
     actual_search_distance1: TLabel;
+    add_bias1: TCheckBox;
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
-    analyse_lights_extra1: TButton;
-    bin_image1: TButton;
-    bin_image2: TButton;
-    blend1: TCheckBox;
-    classify_dark_gain1: TCheckBox;
-    ClearButton1: TButton;
-    contour_gaussian1: TComboBox;
-    colournebula1: TButton;
-    delta_temp1: TEdit;
-    delta_temp_updown1: TUpDown;
-    detection_grid1: TComboBox;
-    filter_artificial_colouring1: TComboBox;
-    GroupBox14: TGroupBox;
-    GroupBox20: TGroupBox;
-    GroupBox21: TGroupBox;
-    detect_contour1: TBitBtn;
-    increase_nebulosity3: TEdit;
-    GroupBox19: TGroupBox;
-    Label15: TLabel;
-    Label16: TLabel;
-    Label19: TLabel;
-    Label35: TLabel;
-    Label40: TLabel;
-    Label60: TLabel;
-    Label63: TLabel;
-    label_gaussian1: TLabel;
-    Label39: TLabel;
-    Label4: TLabel;
-    listview2: TListView;
-    listview5: TListView;
-    listview6: TListView;
-    listview7: TListView;
-    limit_background_correction1: TCheckBox;
-    MenuItem14: TMenuItem;
-    Separator5: TMenuItem;
-    stack_groups1: TMenuItem;
-    mount1: TTabSheet;
-    refresh_astrometric_solutions1: TMenuItem;
-    photometric_calibration1: TMenuItem;
-    photom_blue1: TMenuItem;
-    photom_red1: TMenuItem;
-    Separator2: TMenuItem;
-    Separator3: TMenuItem;
-    Separator4: TMenuItem;
-    contour_sigma1: TComboBox;
-    most_right1: TStaticText;
-    most_right10: TStaticText;
-    most_right11: TStaticText;
-    most_right12: TStaticText;
-    most_right13: TStaticText;
-    most_right14: TStaticText;
-    most_right15: TStaticText;
-    most_right2: TStaticText;
-    most_right3: TStaticText;
-    most_right4: TStaticText;
-    most_right5: TStaticText;
-    most_right6: TStaticText;
-    most_right7: TStaticText;
-    most_right8: TStaticText;
-    most_right9: TStaticText;
-    transformation1: TButton;
-    remove_stars1: TBitBtn;
-    GroupBox18: TGroupBox;
-    reference_database1: TComboBox;
-    Annotations_visible2: TCheckBox;
-    clear_result_list1: TButton;
-    column_fov1: TMenuItem;
-    column_sqm1: TMenuItem;
-    column_lim_magn1: TMenuItem;
-    new_colour_luminance1: TTrackBar;
-    increase_nebulosity1: TBitBtn;
-    save_settings_image_path1: TCheckBox;
-    annotate_mode1: TComboBox;
-    browse1: TBitBtn;
-    browse_blink1: TBitBtn;
-    browse_monitoring1: TBitBtn;
-    browse_mount1: TBitBtn;
-    browse_live_stacking1: TBitBtn;
-    Button1: TButton;
-    calculated_sensor_size1: TLabel;
-    donutstars1: TCheckBox;
-    check_pattern_filter1: TCheckBox;
-    auto_select1: TMenuItem;
-    photom_stack1: TMenuItem;
-    photom_calibrate1: TMenuItem;
-    photom_green1: TMenuItem;
-    Separator1: TMenuItem;
-    star_level_colouring1: TComboBox;
-    target_altitude1: TLabel;
-    target_azimuth1: TLabel;
-    direction_arrow1: TImage;
-    label_latitude1: TLabel;
-    label_longitude1: TLabel;
-    monitor_latitude1: TEdit;
-    monitor_longitude1: TEdit;
-    test_osc_normalise_filter2: TButton;
-    undo_button17: TBitBtn;
-    undo_button18: TBitBtn;
-    undo_button19: TBitBtn;
-    undo_button20: TBitBtn;
-    undo_button21: TBitBtn;
-    undo_button8: TBitBtn;
-    use_triples1: TCheckBox;
-    MenuItem33: TMenuItem;
-    target_distance1: TLabel;
-    target_group1: TGroupBox;
-    delta_ra1: TLabel;
-    delta_dec1: TLabel;
-    RAposition1: TLabel;
-    monitor_applydarkflat1: TCheckBox;
-    help_monitoring1: TLabel;
-    monitor_date1: TLabel;
-    file_to_add1: TBitBtn;
-    browse_photometry1: TBitBtn;
-    browse_dark1: TBitBtn;
-    browse_bias1: TBitBtn;
-    browse_flats1: TBitBtn;
-    browse_inspector1: TBitBtn;
-    classify_flat_date1: TCheckBox;
-    classify_flat_exposure1: TCheckBox;
-    hours_and_minutes1: TCheckBox;
-    center_position1: TLabel;
-    calculator_binning1: TLabel;
-    Label3: TLabel;
-    Label43: TLabel;
-    live_monitoring1: TButton;
-    monitoring_path1: TLabel;
-    monitoring_stop1: TButton;
-    DECposition1: TLabel;
-    removeselected5: TMenuItem;
-    menukeywordchange1: TMenuItem;
-    MenuItem32: TMenuItem;
-    keywordchangelast1: TMenuItem;
-    calc_polar_alignment_error1: TButton;
-    planetary_image1: TCheckBox;
-    classify_dark_date1: TCheckBox;
-    box_blur_factor1: TComboBox;
-    GroupBox8: TGroupBox;
-    green_purple_filter1: TCheckBox;
-    help_mount_tab1: TLabel;
-    osc_preserve_r_nebula1: TCheckBox;
-    lrgb_auto_level1: TCheckBox;
-    lrgb_colour_smooth1: TCheckBox;
-    lrgb_smart_colour_sd1: TComboBox;
-    lrgb_smart_smooth_width1: TComboBox;
-    lrgb_preserve_r_nebula1: TCheckBox;
-    preserve_red_nebula1: TCheckBox;
     add_valueB1: TEdit;
     add_valueG1: TEdit;
     add_valueR1: TEdit;
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
-    aavso_button1: TButton;
-    mount_analyse1: TButton;
-    analysephotometrymore1: TButton;
-    blink_button_contB1: TButton;
-    blink_unaligned_multi_step_backwards1: TButton;
-    changekeyword9: TMenuItem;
-    clear_mount_list1: TButton;
-    keyword9: TMenuItem;
-    list_to_clipboard9: TMenuItem;
-    MenuItem29: TMenuItem;
-    MenuItem30: TMenuItem;
-    MenuItem31: TMenuItem;
-    mount_ignore_solutions1: TCheckBox;
-    changekeyword6: TMenuItem;
-    changekeyword7: TMenuItem;
-    annulus_radius1: TComboBox;
-    keyword8: TMenuItem;
-    changekeyword8: TMenuItem;
-    keyword6: TMenuItem;
-    keyword7: TMenuItem;
-    copy_to_photometry1: TMenuItem;
-    copy_to_blink1: TMenuItem;
-    Label26: TLabel;
-    flux_aperture1: TComboBox;
-    Label27: TLabel;
-    listview9: TListView;
-    MenuItem28: TMenuItem;
-    mount_add_solutions1: TButton;
-    mount_write_wcs1: TCheckBox;
-    PopupMenu9: TPopupMenu;
-    removeselected9: TMenuItem;
-    renametobak9: TMenuItem;
-    monitor_action1: TComboBox;
-    select9: TMenuItem;
-    selectall5: TMenuItem;
-    selectall9: TMenuItem;
-    speedButton_location1: TSpeedButton;
-    tab_mount1: TTabSheet;
-    apply_box_filter2: TButton;
-    tab_monitoring1: TTabSheet;
-    target1: TLabel;
-    undo_button6: TBitBtn;
-    unselect9: TMenuItem;
-    Viewimage9: TMenuItem;
-    merge_overlap1: TCheckBox;
-    timestamp1: TCheckBox;
     Analyse1: TButton;
     analyseblink1: TButton;
     analysedarksButton2: TButton;
     analyseflatdarksButton1: TButton;
     analyseflatsButton3: TButton;
     analysephotometry1: TButton;
+    analysephotometrymore1: TButton;
     analyse_inspector1: TButton;
-    add_bias1: TCheckBox;
-    binning_for_solving_label3: TLabel;
+    analyse_lights_extra1: TButton;
     analyse_objects_visible1: TButton;
-    binning_for_solving_label4: TLabel;
-    ignorezero1: TCheckBox;
-    Equalise_background1: TCheckBox;
-    GroupBox17: TGroupBox;
-    bin_factor1: TComboBox;
-    undo_button12: TBitBtn;
-    UpDown_nebulosity1: TUpDown;
-    write_video1: TButton;
-    Label36: TLabel;
-    Label49: TLabel;
-    Label54: TLabel;
-    Label62: TLabel;
-    most_common_mono1: TButton;
-    correct_gradient_label1: TLabel;
-    save_settings_extra_button1: TButton;
-    calculated_scale1: TLabel;
-    osc_colour_smooth1: TCheckBox;
-    smart_colour_sd1: TComboBox;
-    raw_conversion_program1: TComboBox;
-    GroupBox15: TGroupBox;
-    focallength1: TEdit;
-    GroupBox13: TGroupBox;
-    help_stack_menu3: TLabel;
-    ignore_header_solution1: TCheckBox;
-    copy_files_to_clipboard1: TMenuItem;
-    interim_to_clipboard1: TCheckBox;
-    Label13: TLabel;
-    Label22: TLabel;
-    Label25: TLabel;
-    min_star_size_stacking1: TComboBox;
-    go_step_two1: TBitBtn;
-    osc_smart_colour_sd1: TComboBox;
-    osc_smart_smooth_width1: TComboBox;
-    update_annotation1: TCheckBox;
-    update_solution1: TCheckBox;
-    update_annotations1: TCheckBox;
-    Label23: TLabel;
-    Label24: TLabel;
-    Label28: TLabel;
-    ephemeris_centering1: TComboBox;
-    panel_ephemeris1: TPanel;
-    pixelsize1: TEdit;
-    saturation_tolerance1: TTrackBar;
-    curve_fitting1: TButton;
+    annotate_mode1: TComboBox;
+    Annotations_visible2: TCheckBox;
+    annulus_radius1: TComboBox;
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
     apply_background_noise_filter1: TButton;
+    apply_box_filter2: TButton;
     apply_dpp_button1: TButton;
     apply_factor1: TButton;
     apply_file1: TButton;
@@ -309,42 +78,93 @@ type
     artificial_image_gradient1: TCheckBox;
     auto_background1: TCheckBox;
     auto_background_level1: TButton;
+    auto_rotate1: TCheckBox;
     bayer_pattern1: TComboBox;
     bb1: TEdit;
     bg1: TEdit;
     Bias: TTabSheet;
+    binning_for_solving_label3: TLabel;
+    binning_for_solving_label4: TLabel;
+    bin_factor1: TComboBox;
+    bin_image1: TButton;
+    bin_image2: TButton;
+    blend1: TCheckBox;
     blink_button1: TButton;
+    blink_button_contB1: TButton;
     blink_button_contF1: TButton;
-    photometry_repeat1: TButton;
-    solve_and_annotate1: TCheckBox;
     blink_stop1: TButton;
-    lights_blink_pause1: TButton;
     blink_unaligned_multi_step1: TButton;
+    blink_unaligned_multi_step_backwards1: TButton;
     blue_filter1: TEdit;
     blue_filter2: TEdit;
     blue_filter_add1: TEdit;
     blur_factor1: TComboBox;
+    box_blur_factor1: TComboBox;
     br1: TEdit;
+    browse1: TBitBtn;
+    browse_bias1: TBitBtn;
+    browse_blink1: TBitBtn;
+    browse_dark1: TBitBtn;
+    browse_flats1: TBitBtn;
+    browse_inspector1: TBitBtn;
+    browse_live_stacking1: TBitBtn;
+    browse_monitoring1: TBitBtn;
+    browse_mount1: TBitBtn;
+    browse_photometry1: TBitBtn;
+    Button1: TButton;
     Button_free_resize_fits1: TButton;
+    calculated_scale1: TLabel;
+    calculated_sensor_size1: TLabel;
+    calculator_binning1: TLabel;
+    calc_polar_alignment_error1: TButton;
     calibrate_prior_solving1: TCheckBox;
+    center_position1: TLabel;
+    check_pattern_filter1: TCheckBox;
+    classify_dark_date1: TCheckBox;
+    classify_dark_exposure1: TCheckBox;
+    classify_dark_gain1: TCheckBox;
+    classify_dark_temperature1: TCheckBox;
+    classify_filter1: TCheckBox;
+    classify_flat_date1: TCheckBox;
+    classify_flat_exposure1: TCheckBox;
+    classify_flat_filter1: TCheckBox;
+    classify_groupbox1: TGroupBox;
+    classify_object1: TCheckBox;
+    ClearButton1: TButton;
     clear_blink_alignment1: TButton;
     clear_blink_list1: TButton;
-    clear_inspector_list1: TButton;
     clear_dark_list1: TButton;
     clear_image_list1: TButton;
+    clear_inspector_list1: TButton;
+    clear_mount_list1: TButton;
     clear_photometry_list1: TButton;
+    clear_result_list1: TButton;
     clear_selection2: TButton;
     clear_selection3: TButton;
+    colournebula1: TButton;
     colourShape1: TShape;
     colourShape2: TShape;
     colourShape3: TShape;
+    contour_gaussian1: TComboBox;
+    contour_sigma1: TComboBox;
+    correct_gradient_label1: TLabel;
     create_test_image_stars1: TButton;
+    curve_fitting1: TButton;
     Darks: TTabSheet;
     dark_areas_box_size1: TComboBox;
     dark_spot_filter1: TButton;
     ddp_filter1: TRadioButton;
     ddp_filter2: TRadioButton;
+    DECposition1: TLabel;
+    delta_dec1: TLabel;
+    delta_ra1: TLabel;
+    delta_temp1: TEdit;
+    delta_temp_updown1: TUpDown;
     demosaic_method1: TComboBox;
+    detection_grid1: TComboBox;
+    detect_contour1: TBitBtn;
+    direction_arrow1: TImage;
+    donutstars1: TCheckBox;
     downsample_for_solving1: TComboBox;
     downsample_solving_label1: TLabel;
     Edit_a1: TEdit;
@@ -353,31 +173,47 @@ type
     edit_k1: TEdit;
     edit_noise1: TEdit;
     Edit_width1: TEdit;
+    ephemeris_centering1: TComboBox;
+    Equalise_background1: TCheckBox;
     export_aligned_files1: TButton;
     extract_background_box_size1: TComboBox;
     files_live_stacked1: TLabel;
+    file_to_add1: TBitBtn;
+    filter_artificial_colouring1: TComboBox;
     filter_groupbox1: TGroupBox;
     Flats: TTabSheet;
+    flux_aperture1: TComboBox;
+    focallength1: TEdit;
     force_oversize1: TCheckBox;
     gb1: TEdit;
     gg1: TEdit;
+    go_step_two1: TBitBtn;
     gr1: TEdit;
     gradient_filter_factor1: TEdit;
     green_filter1: TEdit;
     green_filter2: TEdit;
     green_filter_add1: TEdit;
+    green_purple_filter1: TCheckBox;
     GroupBox1: TGroupBox;
     GroupBox10: TGroupBox;
     GroupBox11: TGroupBox;
     GroupBox12: TGroupBox;
+    GroupBox13: TGroupBox;
+    GroupBox14: TGroupBox;
+    GroupBox15: TGroupBox;
     GroupBox16: TGroupBox;
+    GroupBox17: TGroupBox;
+    GroupBox18: TGroupBox;
+    GroupBox19: TGroupBox;
     GroupBox2: TGroupBox;
+    GroupBox20: TGroupBox;
+    GroupBox21: TGroupBox;
     GroupBox3: TGroupBox;
     GroupBox4: TGroupBox;
     GroupBox5: TGroupBox;
     GroupBox6: TGroupBox;
     GroupBox7: TGroupBox;
-    raw_box1: TGroupBox;
+    GroupBox8: TGroupBox;
     GroupBox9: TGroupBox;
     GroupBox_astrometric_solver_settings1: TGroupBox;
     groupBox_dvp1: TGroupBox;
@@ -388,57 +224,88 @@ type
     help_astrometric_alignment1: TLabel;
     help_astrometric_solving1: TLabel;
     help_blink1: TLabel;
+    help_inspector_tab1: TLabel;
     help_live_stacking1: TLabel;
+    help_monitoring1: TLabel;
+    help_mount_tab1: TLabel;
     help_osc_menu1: TLabel;
     help_photometry1: TLabel;
-    help_inspector_tab1: TLabel;
     help_pixel_math1: TLabel;
     help_pixel_math2: TLabel;
     help_stack_menu1: TLabel;
+    help_stack_menu2: TLabel;
+    help_stack_menu3: TLabel;
     help_uncheck_outliers1: TLabel;
     hfd_simulation1: TComboBox;
+    hours_and_minutes1: TCheckBox;
     HueRadioButton1: TRadioButton;
     HueRadioButton2: TRadioButton;
     hue_fuzziness1: TTrackBar;
-    lights: TTabSheet;
+    ignorezero1: TCheckBox;
+    ignore_header_solution1: TCheckBox;
     image_to_add1: TLabel;
+    increase_nebulosity1: TBitBtn;
+    increase_nebulosity3: TEdit;
+    interim_to_clipboard1: TCheckBox;
     Label1: TLabel;
     Label10: TLabel;
     Label11: TLabel;
     Label12: TLabel;
+    Label13: TLabel;
     Label14: TLabel;
+    Label15: TLabel;
+    Label16: TLabel;
     Label17: TLabel;
     Label18: TLabel;
+    Label19: TLabel;
     Label2: TLabel;
     Label20: TLabel;
     Label21: TLabel;
+    Label22: TLabel;
+    Label23: TLabel;
+    Label24: TLabel;
+    Label25: TLabel;
+    Label26: TLabel;
+    Label27: TLabel;
+    Label28: TLabel;
     Label29: TLabel;
+    Label3: TLabel;
     Label30: TLabel;
     Label31: TLabel;
     Label32: TLabel;
     Label33: TLabel;
     Label34: TLabel;
-    Label_masterflat1: TLabel;
+    Label35: TLabel;
+    Label36: TLabel;
     Label38: TLabel;
+    Label39: TLabel;
+    Label4: TLabel;
+    Label40: TLabel;
     Label41: TLabel;
     Label42: TLabel;
+    Label43: TLabel;
     Label44: TLabel;
     Label45: TLabel;
     Label46: TLabel;
     Label47: TLabel;
     Label48: TLabel;
+    Label49: TLabel;
     Label5: TLabel;
     Label50: TLabel;
     Label51: TLabel;
     Label52: TLabel;
     Label53: TLabel;
+    Label54: TLabel;
     Label55: TLabel;
     Label56: TLabel;
     Label57: TLabel;
     Label58: TLabel;
     Label59: TLabel;
     Label6: TLabel;
+    Label60: TLabel;
     Label61: TLabel;
+    Label62: TLabel;
+    Label63: TLabel;
     Label64: TLabel;
     Label65: TLabel;
     Label67: TLabel;
@@ -446,34 +313,81 @@ type
     Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
+    label_gaussian1: TLabel;
+    label_latitude1: TLabel;
+    label_longitude1: TLabel;
+    Label_masterflat1: TLabel;
     Label_results1: TLabel;
+    lights: TTabSheet;
+    lights_blink_pause1: TButton;
+    limit_background_correction1: TCheckBox;
     listview1: TListView;
+    listview2: TListView;
     listview3: TListView;
     listview4: TListView;
+    listview5: TListView;
+    listview6: TListView;
+    listview7: TListView;
     listview8: TListView;
-    list_to_clipboard8: TMenuItem;
+    listview9: TListView;
+    live_monitoring1: TButton;
     live_stacking1: TButton;
     live_stacking_path1: TLabel;
     live_stacking_pause1: TButton;
     live_stacking_restart1: TButton;
+    lrgb_auto_level1: TCheckBox;
+    lrgb_colour_smooth1: TCheckBox;
+    lrgb_preserve_r_nebula1: TCheckBox;
+    lrgb_smart_colour_sd1: TComboBox;
+    lrgb_smart_smooth_width1: TComboBox;
     luminance_filter1: TEdit;
     luminance_filter2: TEdit;
     make_osc_color1: TCheckBox;
     manual_centering1: TComboBox;
     mark_outliers_upto1: TComboBox;
-    min_star_size1: TComboBox;
     max_stars1: TComboBox;
-    MenuItem23: TMenuItem;
-    MenuItem26: TMenuItem;
-    MenuItem27: TMenuItem;
+    memo2: TMemo;
+    MenuItem14: TMenuItem;
+    merge_overlap1: TCheckBox;
+    min_star_size1: TComboBox;
+    min_star_size_stacking1: TComboBox;
+    monitoring_path1: TLabel;
+    monitoring_stop1: TButton;
+    monitor_action1: TComboBox;
+    monitor_applydarkflat1: TCheckBox;
+    monitor_date1: TLabel;
+    monitor_latitude1: TEdit;
+    monitor_longitude1: TEdit;
     mosaic_box1: TGroupBox;
     mosaic_crop1: TUpDown;
     mosaic_crop2: TEdit;
     most_common_filter_radius1: TEdit;
     most_common_filter_tool1: TButton;
+    most_common_mono1: TButton;
+    most_right1: TStaticText;
+    most_right10: TStaticText;
+    most_right11: TStaticText;
+    most_right12: TStaticText;
+    most_right13: TStaticText;
+    most_right14: TStaticText;
+    most_right15: TStaticText;
+    most_right2: TStaticText;
+    most_right3: TStaticText;
+    most_right4: TStaticText;
+    most_right5: TStaticText;
+    most_right6: TStaticText;
+    most_right7: TStaticText;
+    most_right8: TStaticText;
+    most_right9: TStaticText;
+    mount1: TTabSheet;
+    mount_add_solutions1: TButton;
+    mount_analyse1: TButton;
+    mount_ignore_solutions1: TCheckBox;
+    mount_write_wcs1: TCheckBox;
     multiply_blue1: TEdit;
     multiply_green1: TEdit;
     multiply_red1: TEdit;
+    new_colour_luminance1: TTrackBar;
     new_height1: TLabel;
     new_height2: TLabel;
     new_saturation1: TTrackBar;
@@ -483,40 +397,188 @@ type
     nr_total1: TLabel;
     nr_total_bias1: TLabel;
     nr_total_blink1: TLabel;
-    nr_total_inspector1: TLabel;
     nr_total_darks1: TLabel;
     nr_total_flats1: TLabel;
+    nr_total_inspector1: TLabel;
     nr_total_photometry1: TLabel;
     osc_auto_level1: TCheckBox;
+    osc_colour_smooth1: TCheckBox;
+    osc_preserve_r_nebula1: TCheckBox;
+    osc_smart_colour_sd1: TComboBox;
+    osc_smart_smooth_width1: TComboBox;
     oversize1: TComboBox;
     pagecontrol1: TPageControl;
+    PairSplitter1: TPairSplitter;
+    PairSplitterSide1: TPairSplitterSide;
+    PairSplitterSide2: TPairSplitterSide;
+    Panel_stack_button1: TPanel;
+    panel_ephemeris1: TPanel;
     panel_manual1: TPanel;
     Panel_solver1: TPanel;
     Panel_star_detection1: TPanel;
     photometry_binx2: TButton;
     photometry_button1: TButton;
+    photometry_repeat1: TButton;
     photometry_stop1: TButton;
-    PopupMenu8: TPopupMenu;
+    pixelsize1: TEdit;
+    planetary_image1: TCheckBox;
+    powerdown_enabled1: TCheckBox;
+    preserve_red_nebula1: TCheckBox;
+    press_esc_to_abort1: TLabel;
+    quad_tolerance1: TComboBox;
     radius_search1: TComboBox;
-    scale_calc1: TLabel;
-    auto_rotate1: TCheckBox;
-    use_ephemeris_alignment1: TRadioButton;
-    write_jpeg1: TCheckBox;
-    //  xxxxxxx: TComboBox;
     rainbow_Panel1: TPanel;
+    RAposition1: TLabel;
+    raw_box1: TGroupBox;
+    raw_conversion_program1: TComboBox;
     rb1: TEdit;
     red_filter1: TEdit;
     red_filter2: TEdit;
     red_filter_add1: TEdit;
-    removeselected8: TMenuItem;
+    reference_database1: TComboBox;
     remove_deepsky_label1: TLabel;
-    renametobak8: TMenuItem;
+    remove_stars1: TBitBtn;
     replace_by_master_dark1: TButton;
     replace_by_master_flat1: TButton;
     reset_factors1: TButton;
     resize_factor1: TComboBox;
     restore_file_ext1: TButton;
     Result1: TTabSheet;
+    rg1: TEdit;
+    ring_equalise_factor1: TComboBox;
+    rr1: TEdit;
+    sample_size1: TComboBox;
+    saturation_tolerance1: TTrackBar;
+    saved1: TLabel;
+    save_as_new_file1: TButton;
+    save_result1: TButton;
+    save_settings_extra_button1: TButton;
+    save_settings_image_path1: TCheckBox;
+    scale_calc1: TLabel;
+    sd_factor1: TComboBox;
+    sd_factor_list1: TComboBox;
+    search_fov1: TComboBox;
+    Separator5: TMenuItem;
+    show_quads1: TBitBtn;
+    sigma_decolour1: TComboBox;
+    smart_colour_sd1: TComboBox;
+    smart_colour_smooth_button1: TButton;
+    smart_smooth_width1: TComboBox;
+    solve1: TButton;
+    solve_and_annotate1: TCheckBox;
+    solve_show_log1: TCheckBox;
+    SpeedButton1: TSpeedButton;
+    speedButton_location1: TSpeedButton;
+    splitRGB1: TButton;
+    stack_button1: TBitBtn;
+    stack_groups1: TMenuItem;
+    refresh_astrometric_solutions1: TMenuItem;
+    photometric_calibration1: TMenuItem;
+    photom_blue1: TMenuItem;
+    photom_red1: TMenuItem;
+    Separator2: TMenuItem;
+    Separator3: TMenuItem;
+    Separator4: TMenuItem;
+    column_fov1: TMenuItem;
+    column_sqm1: TMenuItem;
+    column_lim_magn1: TMenuItem;
+    auto_select1: TMenuItem;
+    photom_stack1: TMenuItem;
+    photom_calibrate1: TMenuItem;
+    photom_green1: TMenuItem;
+    Separator1: TMenuItem;
+    MenuItem33: TMenuItem;
+    removeselected5: TMenuItem;
+    menukeywordchange1: TMenuItem;
+    MenuItem32: TMenuItem;
+    keywordchangelast1: TMenuItem;
+    changekeyword9: TMenuItem;
+    keyword9: TMenuItem;
+    list_to_clipboard9: TMenuItem;
+    MenuItem29: TMenuItem;
+    MenuItem30: TMenuItem;
+    MenuItem31: TMenuItem;
+    changekeyword6: TMenuItem;
+    changekeyword7: TMenuItem;
+    keyword8: TMenuItem;
+    changekeyword8: TMenuItem;
+    keyword6: TMenuItem;
+    keyword7: TMenuItem;
+    copy_to_photometry1: TMenuItem;
+    copy_to_blink1: TMenuItem;
+    MenuItem28: TMenuItem;
+    PopupMenu9: TPopupMenu;
+    removeselected9: TMenuItem;
+    renametobak9: TMenuItem;
+    select9: TMenuItem;
+    selectall5: TMenuItem;
+    selectall9: TMenuItem;
+    stack_method1: TComboBox;
+    star_database1: TComboBox;
+    star_level_colouring1: TComboBox;
+    subtract_background1: TButton;
+    tab_blink1: TTabSheet;
+    tab_inspector1: TTabSheet;
+    tab_live_stacking1: TTabSheet;
+    tab_monitoring1: TTabSheet;
+    tab_mount1: TTabSheet;
+    tab_photometry1: TTabSheet;
+    tab_Pixelmath1: TTabSheet;
+    tab_Pixelmath2: TTabSheet;
+    tab_stackmethod1: TTabSheet;
+    target1: TLabel;
+    target_altitude1: TLabel;
+    target_azimuth1: TLabel;
+    target_distance1: TLabel;
+    target_group1: TGroupBox;
+    test_osc_normalise_filter2: TButton;
+    test_pattern1: TButton;
+    timestamp1: TCheckBox;
+    transformation1: TButton;
+    uncheck_outliers1: TCheckBox;
+    undo_button1: TBitBtn;
+    undo_button10: TBitBtn;
+    undo_button11: TBitBtn;
+    undo_button12: TBitBtn;
+    undo_button13: TBitBtn;
+    undo_button14: TBitBtn;
+    undo_button15: TBitBtn;
+    undo_button16: TBitBtn;
+    undo_button17: TBitBtn;
+    undo_button18: TBitBtn;
+    undo_button19: TBitBtn;
+    undo_button2: TBitBtn;
+    undo_button20: TBitBtn;
+    undo_button21: TBitBtn;
+    undo_button3: TBitBtn;
+    undo_button4: TBitBtn;
+    undo_button5: TBitBtn;
+    undo_button6: TBitBtn;
+    undo_button7: TBitBtn;
+    undo_button8: TBitBtn;
+    undo_button9: TBitBtn;
+    undo_button_equalise_background1: TBitBtn;
+    unselect9: TMenuItem;
+    unselect_area1: TButton;
+    update_annotation1: TCheckBox;
+    update_annotations1: TCheckBox;
+    update_solution1: TCheckBox;
+    UpDown1: TUpDown;
+    UpDown_nebulosity1: TUpDown;
+    use_astrometry_internal1: TRadioButton;
+    use_ephemeris_alignment1: TRadioButton;
+    use_manual_alignment1: TRadioButton;
+    use_star_alignment1: TRadioButton;
+    use_triples1: TCheckBox;
+    Viewimage9: TMenuItem;
+    copy_files_to_clipboard1: TMenuItem;
+    list_to_clipboard8: TMenuItem;
+    MenuItem23: TMenuItem;
+    MenuItem26: TMenuItem;
+    MenuItem27: TMenuItem;
+    PopupMenu8: TPopupMenu;
+    removeselected8: TMenuItem;
+    renametobak8: TMenuItem;
     result_compress1: TMenuItem;
     MenuItem25: TMenuItem;
     rename_result1: TMenuItem;
@@ -531,16 +593,6 @@ type
     PopupMenu7: TPopupMenu;
     removeselected7: TMenuItem;
     renametobak7: TMenuItem;
-    rg1: TEdit;
-    ring_equalise_factor1: TComboBox;
-    rr1: TEdit;
-    sample_size1: TComboBox;
-    saved1: TLabel;
-    save_as_new_file1: TButton;
-    save_result1: TButton;
-    sd_factor1: TComboBox;
-    sd_factor_list1: TComboBox;
-    search_fov1: TComboBox;
     select7: TMenuItem;
     select8: TMenuItem;
     selectall3: TMenuItem;
@@ -551,15 +603,6 @@ type
     selectall7: TMenuItem;
     list_to_clipboard1: TMenuItem;
     selectall8: TMenuItem;
-    show_quads1: TBitBtn;
-    sigma_decolour1: TComboBox;
-    smart_colour_smooth_button1: TButton;
-    smart_smooth_width1: TComboBox;
-    solve1: TButton;
-    solve_show_log1: TCheckBox;
-    SpeedButton1: TSpeedButton;
-    splitRGB1: TButton;
-    stack_button1: TBitBtn;
     MenuItem16: TMenuItem;
     MenuItem17: TMenuItem;
     MenuItem18: TMenuItem;
@@ -568,50 +611,14 @@ type
     removeselected6: TMenuItem;
     renametobak6: TMenuItem;
     select6: TMenuItem;
-    stack_method1: TComboBox;
-    star_database1: TComboBox;
-    subtract_background1: TButton;
-    tab_inspector1: TTabSheet;
-    tab_blink1: TTabSheet;
-    tab_live_stacking1: TTabSheet;
-    tab_photometry1: TTabSheet;
-    tab_Pixelmath1: TTabSheet;
-    tab_Pixelmath2: TTabSheet;
-    tab_stackmethod1: TTabSheet;
-    test_pattern1: TButton;
-    quad_tolerance1: TComboBox;
-    uncheck_outliers1: TCheckBox;
-    undo_button1: TBitBtn;
-    undo_button10: TBitBtn;
-    undo_button11: TBitBtn;
-    undo_button13: TBitBtn;
-    undo_button14: TBitBtn;
-    undo_button15: TBitBtn;
-    undo_button16: TBitBtn;
-    undo_button2: TBitBtn;
-    undo_button3: TBitBtn;
-    undo_button4: TBitBtn;
-    undo_button5: TBitBtn;
-    undo_button7: TBitBtn;
-    undo_button9: TBitBtn;
-    undo_button_equalise_background1: TBitBtn;
     unselect6: TMenuItem;
     unselect7: TMenuItem;
     unselect8: TMenuItem;
-    unselect_area1: TButton;
-    UpDown1: TUpDown;
-    use_astrometry_internal1: TRadioButton;
-    use_manual_alignment1: TRadioButton;
-    use_star_alignment1: TRadioButton;
     Viewimage6: TMenuItem;
     Viewimage7: TMenuItem;
     Viewimage8: TMenuItem;
     width_UpDown1: TUpDown;
-    write_log1: TCheckBox;
-    powerdown_enabled1: TCheckBox;
-    classify_dark_exposure1: TCheckBox;
-    classify_dark_temperature1: TCheckBox;
-    classify_flat_filter1: TCheckBox;
+    write_jpeg1: TCheckBox;
     keyword1: TMenuItem;
     changekeyword1: TMenuItem;
     changekeyword2: TMenuItem;
@@ -621,7 +628,6 @@ type
     keyword3: TMenuItem;
     keyword4: TMenuItem;
     copy_to_images1: TMenuItem;
-    help_stack_menu2: TLabel;
     MenuItem13: TMenuItem;
     copypath1: TMenuItem;
     PopupMenu5: TPopupMenu;
@@ -648,15 +654,12 @@ type
     select3: TMenuItem;
     select4: TMenuItem;
     luminance_filter_factor2: TEdit;
-    classify_filter1: TCheckBox;
-    classify_object1: TCheckBox;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     removeselected1: TMenuItem;
     green_filter_factor2: TEdit;
     blue_filter_factor2: TEdit;
-    classify_groupbox1: TGroupBox;
     ImageList_colors: TImageList;
     unselect2: TMenuItem;
     unselect3: TMenuItem;
@@ -664,16 +667,16 @@ type
     unselect1: TMenuItem;
     select1: TMenuItem;
     OpenDialog1: TOpenDialog;
-    memo2: TMemo;
     ImageList2: TImageList;
     PopupMenu1: TPopupMenu;
     renametobak1: TMenuItem;
     Viewimage1: TMenuItem;
-    press_esc_to_abort1: TLabel;
     Viewimage2: TMenuItem;
     Viewimage3: TMenuItem;
     Viewimage4: TMenuItem;
     Viewimage5: TMenuItem;
+    write_log1: TCheckBox;
+    write_video1: TButton;
     procedure add_noise1Click(Sender: TObject);
     procedure alignment1Show(Sender: TObject);
     procedure align_blink1Change(Sender: TObject);
@@ -955,7 +958,6 @@ var
   asteroidlist: array of array of array of double;
   solve_show_log: boolean;
   process_as_osc: integer;//1=auto 2=forced process as OSC image
-  ra_min,ra_max,dec_min,dec_max : double; //for mosaic
 
 var  {################# initialised variables #########################}
   areaX1: integer = 0; {for set area}
@@ -1109,9 +1111,8 @@ const
   P_centalt = 20;
   P_airmass = 21;
   P_limmagn = 22;
-  p_nr_norm = 23;
-  p_nr_varmax : integer=23;{adjustable number of columns. Column where extra var's end}
-  P_nr : integer = 23;{adjustable number of columns. Column where xtra check's end}
+  p_nr_norm = 23; //standard end of the columns
+  P_nr : integer = 23;{adapted end with extra columns}
 
   I_date = 6;//inspector tab
   I_nr_stars = 7;
@@ -1962,7 +1963,6 @@ begin
 end;
 
 
-
 function get_filter_icon(filter_name: string; out red,green, blue : boolean): integer;
 begin
   red := False;
@@ -2026,13 +2026,13 @@ end;
 
 procedure analyse_tab_lights(analyse_level : integer);
 var
-  c, star_counter, i, counts: integer;
-  hfd_median, alt, az       : double;
-  red, green, blue, planetary : boolean;
+  c, star_counter, i, counts                 : integer;
+  hfd_median, alt, az                        : double;
+  red, green, blue, planetary                : boolean;
   key, filename1, rawstr      : string;
-  img             : image_array;
-  bck             : Tbackground;
-  header_2        : tstrings; {extra header}
+  img                         : image_array;
+  bck                         : Tbackground;
+  header_2                    : tstrings; {extra header}
 
   procedure cleanup;
   begin
@@ -3442,7 +3442,7 @@ begin
       if stars[4,i]{SNR}>40 then
       begin
         magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
-        sensor_coordinates_to_celestial(1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
+        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
         report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
 
         if ((v>0) and (b>0)) then
@@ -3967,8 +3967,7 @@ var
   filename1,filterstr,filterstrUP,issue : string;
   loaded, red, green, blue: boolean;
   img: image_array;
-  nr_stars, hfd_outer_ring, median_11, median_21, median_31,
-  median_12, median_22, median_32, median_13, median_23, median_33: double;
+  nr_stars, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33: double;
   bck : Tbackground;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -4041,7 +4040,6 @@ begin
       begin
         memo2_message('Removed second entry of same file ' + lv.items[i].Caption);
         lv.Items.Delete(i);
-        //dec(i); {compensate for delete}
         Dec(counts); {compensate for delete}
       end
       else
@@ -4060,8 +4058,7 @@ begin
     begin
       progress_indicator(100 * c / lv.items.Count - 1, ' Analysing');
       lv.Selected := nil; {remove any selection}
-      lv.ItemIndex := c;
-      {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+      lv.ItemIndex := c; {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
       lv.Items[c].MakeVisible(False);{scroll to selected item}
 
 
@@ -4078,22 +4075,15 @@ begin
         try
           begin
             if head_2.exposure >= 10 then
-              lv.Items.item[c].subitems.Strings[D_exposure] :=
-                IntToStr(round(head_2.exposure))
+              lv.Items.item[c].subitems.Strings[D_exposure] := IntToStr(round(head_2.exposure))
             else
-              lv.Items.item[c].subitems.Strings[D_exposure] :=
-                floattostrf(head_2.exposure, ffgeneral, 6, 6);
+              lv.Items.item[c].subitems.Strings[D_exposure] := floattostrf(head_2.exposure, ffgeneral, 6, 6);
 
-            lv.Items.item[c].subitems.Strings[D_temperature] :=
-              IntToStr(head_2.set_temperature);
-            lv.Items.item[c].subitems.Strings[D_binning] :=
-              floattostrf(head_2.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf(
-              head_2.Ybinning, ffgeneral, 0, 0);
-            {Binning CCD}
-            lv.Items.item[c].subitems.Strings[D_width] := IntToStr(head_2.Width);
-            {image width}
-            lv.Items.item[c].subitems.Strings[D_height] := IntToStr(head_2.Height);
-            {image height}
+            lv.Items.item[c].subitems.Strings[D_temperature] := IntToStr(head_2.set_temperature);
+            lv.Items.item[c].subitems.Strings[D_binning] := floattostrf(head_2.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf(
+              head_2.Ybinning, ffgeneral, 0, 0);  {Binning CCD}
+            lv.Items.item[c].subitems.Strings[D_width] := IntToStr(head_2.Width);  {image width}
+            lv.Items.item[c].subitems.Strings[D_height] := IntToStr(head_2.Height);  {image height}
             lv.Items.item[c].subitems.Strings[D_type] := imagetype;{image type}
 
 
@@ -4105,22 +4095,17 @@ begin
               if head_2.gain <> '' then
                 lv.Items.item[c].subitems.Strings[D_gain] := head_2.gain;
 
-              if ((full = True) and (tabnr in [2, 3, 4, 7])) then
-                {get background for dark, flats, flat-darks, photometry}
+              if ((full = True) and (tabnr in [2, 3, 4, 7])) then  {get background for dark, flats, flat-darks, photometry}
               begin {analyse background and noise}
                 get_background(0, img, True {update_hist}, False {calculate noise level}, {var} bck);
-
                 lv.Items.item[c].subitems.Strings[D_background] := inttostr5(round(bck.backgr));
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
-                  local_sd((head_2.Width div 2) - 50, (head_2.Height div 2) - 50, (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean},iterations);
-                  {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+                  local_sd((head_2.Width div 2) - 50, (head_2.Height div 2) - 50, (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean},iterations); {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
-                  adu_e := retrieve_ADU_to_e_unbinned(head_2.egain);
-                  //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
-                  lv.Items.item[c].subitems.Strings[D_sigma] := noise_to_electrons(adu_e, head_2.Xbinning, sd);
-                  //reports noise in ADU's (adu_e=0) or electrons
+                  adu_e := retrieve_ADU_to_e_unbinned(head_2.egain);  //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+                  lv.Items.item[c].subitems.Strings[D_sigma] := noise_to_electrons(adu_e, head_2.Xbinning, sd); //reports noise in ADU's (adu_e=0) or electrons
                 end;
               end;
             end;
@@ -4168,13 +4153,9 @@ begin
             if tabnr = 6 then {blink tab}
             begin
               lv.Items.item[c].subitems.Strings[B_date] :=
-                StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []);
-              {date/time for blink. Remove fractions of seconds}
-              lv.Items.item[c].subitems.Strings[B_calibration] := head_2.calstat;
-              {calibration head_2.calstat info DFB}
-              if annotated then lv.Items.item[c].subitems.Strings[B_annotated] := '✓'
-              else
-                lv.Items.item[c].subitems.Strings[B_annotated] := '';
+                StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []); {date/time for blink. Remove fractions of seconds}
+              lv.Items.item[c].subitems.Strings[B_calibration] := head_2.calstat;  {calibration head_2.calstat info DFB}
+              if annotated then lv.Items.item[c].subitems.Strings[B_annotated] := '✓' else lv.Items.item[c].subitems.Strings[B_annotated] := '';
             end
             else
 
@@ -4217,23 +4198,22 @@ begin
               lv.Items.item[c].subitems.Strings[P_jd_mid] := floattostrF(jd_mid, ffFixed, 0, 5);{julian day}
 
               hjd := JD_to_HJD(jd_mid, head_2.ra0, head_2.dec0);{conversion JD to HJD}
-              lv.Items.item[c].subitems.Strings[P_jd_helio] :=
-                floattostrF(Hjd, ffFixed, 0, 5);{helio julian day}
-
+              lv.Items.item[c].subitems.Strings[P_jd_helio] := floattostrF(Hjd, ffFixed, 0, 5);{helio julian day}
 
               calculate_az_alt(0 {try to use header values}, head_2,{out}az, alt);  {try to get  a value for alt}
-              if ((centalt = '') and (alt <> 0)) then  centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
-
-              lv.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
-              if alt <> 0 then lv.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+              if alt <> 0 then
+              begin
+                 centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
+                 lv.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
+                 lv.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+              end;
 
               {magn is column 9 will be added separately}
               {solution is column 12 will be added separately}
               if head_2.calstat <> '' then
                 lv.Items.item[c].subitems.Strings[P_calibration] := head_2.calstat
               else
-                lv.Items.item[c].subitems.Strings[P_calibration] := 'None';
-              {calibration head_2.calstat info DFB}
+                lv.Items.item[c].subitems.Strings[P_calibration] := 'None';  {calibration head_2.calstat info DFB}
 
               if head_2.cd1_1 = 0 then lv.Items.item[c].subitems.Strings[P_astrometric] := ''
               else
@@ -4384,8 +4364,7 @@ begin
                   lv.Items.item[c].subitems.Strings[M_ra_jnow] := floattostrf(ra_jnow * 180 / pi, ffFixed, 9, 6);
                   lv.Items.item[c].subitems.Strings[M_dec_jnow]:=floattostrf(dec_jnow * 180 / pi, ffFixed, 9, 6);
 
-                  calculate_az_alt(2 {force accurate calculation from ra, dec},
-                    head_2,{out}az, alt); {call it with J2000 values. Precession will be applied in the routine}
+                  calculate_az_alt(2 {force accurate calculation from ra, dec}, head_2,{out}az, alt); {call it with J2000 values. Precession will be applied in the routine}
                   if alt <> 0 then
                   begin
                     centalt := floattostrf(alt, ffFixed, 9, 6); {altitude}
@@ -5044,6 +5023,7 @@ begin
   resize_img_loaded(width_UpDown1.position / head.Width {ratio});
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  remove_photometric_calibration;//from header
   plot_fits(mainwindow.image1, True, True);{plot}
   Screen.cursor := crDefault;
 end;
@@ -7815,111 +7795,113 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
   medianCheck, medianThree, hfd_med, apert, annul,
-  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e : double;
+  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree, database_col,j, obj_count,lvsx,lvsp,nrvars : integer;
+  countCheck, countThree, database_col,j, lvsx,lvsp,nrvars : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
-  warned, success: boolean;
+  warned, success,new_object: boolean;
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   outliers: array of array of double;
   astr, memo2_text, filename1 : string;
   bck :tbackground;
+  oldra0 : double=0;
+  olddec0: double=-pi/2;
 
-  function measure_star(deX, deY: double): string;{measure position and flux}
-  begin
-    HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
-    if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
-    begin
-      if head.calstat = '' then saturation_level := 64000
-      else
-        saturation_level := 60000; {could be dark subtracted changing the saturation level}
-      if
-       ((img_loaded[0, round(yc)    , round(xc)] < saturation_level) and
-        (img_loaded[0, round(yc - 1), round(xc)] < saturation_level) and
-        (img_loaded[0, round(yc + 1), round(xc)] < saturation_level) and
-        (img_loaded[0, round(yc)    , round(xc - 1)] < saturation_level) and
-        (img_loaded[0, round(yc)    , round(xc + 1)] < saturation_level) and
-        (img_loaded[0, round(yc - 1), round(xc - 1)] < saturation_level) and
-        (img_loaded[0, round(yc - 1), round(xc + 1)] < saturation_level) and
-        (img_loaded[0, round(yc + 1), round(xc - 1)] < saturation_level) and
-        (img_loaded[0, round(yc + 1), round(xc + 1)] < saturation_level)) then
-        {not saturated star}
-      begin
-        magn:=starlistpack[c].MZERO - ln(flux)*2.5/ln(10);
-
-
-        Result := floattostrf(magn, ffFixed, 5, 3);
-        {write measured magnitude to list}
-        //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
-        //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
-        //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_ratio, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
-
-        //        if Flipvertical=false then  starY:=(head.height-yc) else starY:=(yc);
-        //        if Fliphorizontal     then starX:=(head.width-xc)  else starX:=(xc);
-        //        if flux_aperture<99 {<>max setting}then
-        //        begin
-        //          mainwindow.image1.Canvas.Pen.style:=psSolid;
-        //          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-        //        end;
-        //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
-        //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
-      end
-      else
-        Result := 'Saturated';
-    end
-    else
-      Result := '?';
-  end;
-
-  procedure plot_annulus(x, y: integer; apr,anr :double); {plot the aperture and annulus}
-  begin
-    if Flipvertical = False then  starY := (head.Height - y) else starY := (y);
-    if Fliphorizontal then starX := (head.Width - x) else starX := (x);
-    if apr < 99 {<>max setting} then   mainwindow.image1.canvas.ellipse(round(starX - apr - 1), round(starY - apr - 1), round( starX +apr + 1), round(starY + apr + 1)); {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-    mainwindow.image1.canvas.ellipse(round(starX - anr), round(starY - anr), round(starX + anr), round(starY + anr)); {three pixels, 1,2,3}
-    mainwindow.image1.canvas.ellipse(round(starX - anr - 4), round(starY - anr - 4), round(starX + anr + 4), round( starY + anr + 4));
-  end;
-
-  procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
-  var
-    k: integer;
-  begin
-    mainwindow.image1.Canvas.Pen.Color := clyellow;
-    mainwindow.image1.Canvas.Pen.mode := pmXor;
-
-    for k := 0 to length(outliers[0]) - 1 do
-    begin
-      if flipvertical = False then  starY := round(head.Height - (outliers[1, k]))
-      else
-        starY := round(outliers[1, k]);
-      if Fliphorizontal then starX := round(head.Width - outliers[0, k])
-      else
-        starX := round(outliers[0, k]);
-      mainwindow.image1.Canvas.ellipse(starX - 20, starY - 20, starX + 20, starY + 20);
-      {indicate outlier rectangle}
-      mainwindow.image1.Canvas.textout(starX + 20, starY + 20,
-        'σ ' + floattostrf(outliers[2, k], ffgeneral, 3, 0));{add hfd as text}
-    end;
-  end;
+            function measure_star(deX, deY: double): string;{measure position and flux}
+            begin
+              HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
+              if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
+              begin
+                if head.calstat = '' then saturation_level := 64000
+                else
+                  saturation_level := 60000; {could be dark subtracted changing the saturation level}
+                if
+                 ((img_loaded[0, round(yc)    , round(xc)] < saturation_level) and
+                  (img_loaded[0, round(yc - 1), round(xc)] < saturation_level) and
+                  (img_loaded[0, round(yc + 1), round(xc)] < saturation_level) and
+                  (img_loaded[0, round(yc)    , round(xc - 1)] < saturation_level) and
+                  (img_loaded[0, round(yc)    , round(xc + 1)] < saturation_level) and
+                  (img_loaded[0, round(yc - 1), round(xc - 1)] < saturation_level) and
+                  (img_loaded[0, round(yc - 1), round(xc + 1)] < saturation_level) and
+                  (img_loaded[0, round(yc + 1), round(xc - 1)] < saturation_level) and
+                  (img_loaded[0, round(yc + 1), round(xc + 1)] < saturation_level)) then
+                  {not saturated star}
+                begin
+                  magn:=starlistpack[c].MZERO - ln(flux)*2.5/ln(10);
 
 
-  procedure nil_all;
-  begin
-    //img_temp:=nil;{free memory}
-    starlistx := nil;{free memory}
-    starlistpack := nil; {release memory}
-    outliers := nil;
-    starCheck := nil;
-    starThree := nil;
-    variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
+                  Result := floattostrf(magn, ffFixed, 5, 3);
+                  {write measured magnitude to list}
+                  //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
+                  //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
+                  //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_ratio, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
 
-    //remove following line at the end of 2025
-    if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
+                  //        if Flipvertical=false then  starY:=(head.height-yc) else starY:=(yc);
+                  //        if Fliphorizontal     then starX:=(head.width-xc)  else starX:=(xc);
+                  //        if flux_aperture<99 {<>max setting}then
+                  //        begin
+                  //          mainwindow.image1.Canvas.Pen.style:=psSolid;
+                  //          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+                  //        end;
+                  //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
+                  //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
+                end
+                else
+                  Result := 'Saturated';
+              end
+              else
+                Result := '?';
+            end;
 
-    Screen.Cursor := crDefault;{back to normal }
-  end;
+            procedure plot_annulus(x, y: integer; apr,anr :double); {plot the aperture and annulus}
+            begin
+              if Flipvertical = False then  starY := (head.Height - y) else starY := (y);
+              if Fliphorizontal then starX := (head.Width - x) else starX := (x);
+              if apr < 99 {<>max setting} then   mainwindow.image1.canvas.ellipse(round(starX - apr - 1), round(starY - apr - 1), round( starX +apr + 1), round(starY + apr + 1)); {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+              mainwindow.image1.canvas.ellipse(round(starX - anr), round(starY - anr), round(starX + anr), round(starY + anr)); {three pixels, 1,2,3}
+              mainwindow.image1.canvas.ellipse(round(starX - anr - 4), round(starY - anr - 4), round(starX + anr + 4), round( starY + anr + 4));
+            end;
+
+            procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
+            var
+              k: integer;
+            begin
+              mainwindow.image1.Canvas.Pen.Color := clyellow;
+              mainwindow.image1.Canvas.Pen.mode := pmXor;
+
+              for k := 0 to length(outliers[0]) - 1 do
+              begin
+                if flipvertical = False then  starY := round(head.Height - (outliers[1, k]))
+                else
+                  starY := round(outliers[1, k]);
+                if Fliphorizontal then starX := round(head.Width - outliers[0, k])
+                else
+                  starX := round(outliers[0, k]);
+                mainwindow.image1.Canvas.ellipse(starX - 20, starY - 20, starX + 20, starY + 20);
+                {indicate outlier rectangle}
+                mainwindow.image1.Canvas.textout(starX + 20, starY + 20,
+                  'σ ' + floattostrf(outliers[2, k], ffgeneral, 3, 0));{add hfd as text}
+              end;
+            end;
+
+
+            procedure nil_all;
+            begin
+              //img_temp:=nil;{free memory}
+              starlistx := nil;{free memory}
+              starlistpack := nil; {release memory}
+              outliers := nil;
+              starCheck := nil;
+              starThree := nil;
+              variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
+
+              //remove following line at the end of 2025
+              if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
+
+              Screen.Cursor := crDefault;{back to normal }
+            end;
 
 begin
   if listview7.items.Count <= 0 then exit; {no files}
@@ -8169,15 +8151,14 @@ begin
 
           head_ref := head;{backup solution for deepsky annotation}
 
-          sensor_coordinates_to_celestial(shape_fitsX, shape_fitsY, rax1, decx1 {fitsX, Y to ra,dec});
+          sensor_coordinates_to_celestial(head,shape_fitsX, shape_fitsY, rax1, decx1 {fitsX, Y to ra,dec});
           abbreviation_var_IAU := prepare_IAU_designation(rax1, decx1);
 
-          sensor_coordinates_to_celestial(shape_fitsX2, shape_fitsY2,{var} rax2, decx2 {position});
+          sensor_coordinates_to_celestial(head,shape_fitsX2, shape_fitsY2,{var} rax2, decx2 {position});
           name_check_iau := prepare_IAU_designation(rax2, decx2);
 
-          sensor_coordinates_to_celestial(shape_fitsX3, shape_fitsY3,rax3, decx3 {fitsX, Y to ra,dec});
-
-          init := True;
+          sensor_coordinates_to_celestial(head,shape_fitsX3, shape_fitsY3,rax3, decx3 {fitsX, Y to ra,dec});
+          init:=true;//after measure the frist image
         end;
 
         if var_lock<>'' then
@@ -8248,100 +8229,147 @@ begin
           end;
 
           //measure all AAVSO objects
-          if stackmenu1.annotate_mode1.itemindex=5 then //measure all AAVSO stars using the position from the local database
-          begin
-            if length(variable_list)=0 then
-            begin
-              clear_added_AAVSO_columns;
-              setlength(variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
-              mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
-            end;
-            if variable_list_length>0 then
-            begin
-              obj_count:=0;
-              for j:=0 to variable_list_length do
-              begin
-                celestial_to_pixel(variable_list[j].ra, variable_list[j].dec, xn, yn);
-                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+          case stackmenu1.annotate_mode1.itemindex of
+            7,8,9 : //measure all AAVSO stars using the position from the local database
                 begin
-                  if obj_count+P_nr_norm>=p_nr then //add columns
-                  with listview7 do
-                  begin //add column
-                    listview7_add_column(variable_list[j].abbr);
-                    listview7_add_column('SNR');
-                    memo2_message('Added a column for '+variable_list[j].abbr);
-                  end;
-                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                  inc(obj_count,2);
-                end;
-              end;
-            end;
-            memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
-          end
-          else
-          if stackmenu1.annotate_mode1.itemindex>5 then //measure all AAVSO using the online vsx, vsp
-          begin
-            mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result ins load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
-            lvsx:=length(vsx);
-            if lvsx>0 then
-            begin
-              obj_count:=0;
-              for j:=0 to lvsx-1 do
-              begin
-                celestial_to_pixel(vsx[j].ra, vsx[j].dec, xn, yn);
-                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
-                begin
-                  if obj_count+P_nr_norm>=p_nr then //add columns
-                  with listview7 do
-                  begin //add column
-                    listview7_add_column(vsx[j].name);
-                    listview7_add_column('SNR');
-                    memo2_message('Added a column for '+vsx[j].name);
-                  end;
+               //   if pos('V645',filename2)>0 then
+               //   beep;
 
-                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                  listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                  inc(obj_count,2);
-                end;
-              end;
-              memo2_message('Added the measuruments of '+inttostr(obj_count div 2)+' variables to tab photometry.');
-              nrvars:=obj_count;
 
-              p_nr_varmax:=obj_count+P_nr_norm;//where do the variables end;
-              lvsp:=length(vsp);
-              if lvsp>0 then
-              begin
-                for j:=0 to lvsp-1 do
-                begin
-                  celestial_to_pixel(vsp[j].ra, vsp[j].dec, xn, yn);
-                  if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                  if length(variable_list)=0 then
                   begin
-                    if obj_count+P_nr_norm>=p_nr then //add columns
-                    with listview7 do
-                    begin //add column
-                      listview7_add_column(vsp[j].auid);
-                      listview7_add_column('SNR');
-                      memo2_message('Added a column for '+vsp[j].auid);
+                   // clear_added_AAVSO_columns;
+                    setlength(variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
+                    mainwindow.variable_star_annotation1Click(sender {load local database and fill variable_list});
+                  end
+                  else
+                  begin
+                    ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
+                      if sep>head.width*head.cdelt2*2*pi/180 then //different area of the sky, update variable_list
+                          mainwindow.variable_star_annotation1Click(sender {new position, update variable list});
+
+                  end;
+                  oldra0:=head.ra0;
+                  olddec0:=head.dec0;
+
+
+                  if variable_list_length>0 then
+                  begin
+                  //  obj_count:=0;
+                    for j:=0 to variable_list_length do
+                    begin
+                      celestial_to_pixel(variable_list[j].ra, variable_list[j].dec, xn, yn);
+                      if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                      begin
+                        astr := measure_star(xn, yn);
+                        if snr>0 then
+                        begin
+                          new_object:=true;
+                          for i:=p_nr_norm+1 to p_nr-1 do
+                            if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=variable_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                            begin //existing object column
+                             listview7.Items.item[c].subitems.Strings[i-1]:= astr;
+                             listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
+                             new_object:=false;
+                             break;
+                            end;
+                          if new_object then
+                          begin
+                            with listview7 do
+                            begin //add column
+                              listview7_add_column(variable_list[j].abbr);
+                              listview7_add_column('SNR');
+                              memo2_message('Added a column for '+variable_list[j].abbr);
+                            end;
+                            listview7.Items.item[c].subitems.Strings[P_nr-2]:= astr;
+                            listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(snr));
+                          end;//new object
+                        end;//enough snr
+                      end;
+
+                    end;
+                  end;
+                end;
+            10,11,12 :  //measure all AAVSO using the online vsx, vsp
+                begin
+                  mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result in load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
+                  lvsx:=length(vsx);
+                  if lvsx>0 then //database is loaded
+                  begin
+                    for j:=0 to lvsx-1 do
+                    begin
+                      celestial_to_pixel(vsx[j].ra, vsx[j].dec, xn, yn);
+                      if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                      begin
+                        astr := measure_star(xn, yn);
+                        if snr>0 then
+                        begin
+                          new_object:=true;
+                          for i:=p_nr_norm+1 to p_nr-1 do
+                          if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vsx[j].name)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                          begin //existing object column
+                           listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
+                           listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
+                           new_object:=false;
+                           break;
+                          end;//test new object
+
+                          if new_object then
+                          begin
+                            with listview7 do
+                            begin //add column
+                              listview7_add_column(vsx[j].name);
+                              listview7_add_column('SNR');
+                              memo2_message('Added a column for '+vsx[j].name);
+                            end;
+                            listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
+                            listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
+                          end;//new object
+                        end;//enough snr
+                      end;
                     end;
 
-                    listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count] := measure_star(xn, yn);;
-                    listview7.Items.item[c].subitems.Strings[P_nr_norm+obj_count+1] := IntToStr(round(snr));
-                    inc(obj_count,2);
-                  end;
+                    lvsp:=length(vsp);
+                    if lvsp>0 then
+                    begin
+                      for j:=0 to lvsp-1 do
+                      begin
+                        celestial_to_pixel(vsp[j].ra, vsp[j].dec, xn, yn);
+                        if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                        begin
+                          astr := measure_star(xn, yn);
+                          if snr>0 then
+                          begin
+                            new_object:=true;
+                            for i:=p_nr_norm+1 to p_nr-1 do
+                            if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vsp[j].auid)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                            begin //existing object column
+                              listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
+                              listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
+                               new_object:=false;
+                              break;
+                            end;
+
+                            if new_object then
+                            begin
+                              with listview7 do
+                              begin //add column
+                                listview7_add_column(vsp[j].auid);
+                                listview7_add_column('SNR');
+                                memo2_message('Added a column for '+vsp[j].auid);
+                              end;
+                              listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
+                              listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
+                            end;//new object
+                          end;//enough snr
+                        end;//within the image
+                      end;
+                    end;
+                  end;//vsx
                 end;
-              end;
-              memo2_message('Added the measuruments of '+inttostr((obj_count-nrvars) div 2)+' check stars to tab photometry.');
-
-            end;//vsx
-
-            with listview7 do
-            while ColumnCount-1>obj_count+P_nr_norm do
-              columns.Delete(ColumnCount-1); //remove older columns if required by reduced database magnitude limit
-
-          end //measure AAVSO
           else
           if p_nr>p_nr_norm then clear_added_AAVSO_columns;
+          end; //case measure AAVSO
 
         end;
 
@@ -8493,7 +8521,8 @@ begin
 
     photometry_stdev := madCheck * 1.4826;{mad to standard deviation}
 
-    plot_graph; {aavso report}
+    if form_aavso1 <> nil then
+        form_aavso1.FormShow(nil);{aavso report}
   until ((esc_pressed) or (Sender <> photometry_repeat1 {single run}));
 
   nil_all;{nil all arrays and restore cursor}
@@ -10542,6 +10571,7 @@ begin
       2: bin_X2X3X4(4);
     end;
 
+    remove_photometric_calibration;//from header
     plot_fits(mainwindow.image1, True, True);{plot real}
     Screen.Cursor := crDefault;
   end;
@@ -11320,8 +11350,6 @@ begin
         for fitsY := 0 to head.Height-1 do  {apply the OSC flat}
           for fitsX := 0 to head.Width-1 do
           begin //thread the red, green and blue pixels seperately
-
-
             //bias is already combined in flat in combine_flat
             if odd(fitsX) then
             begin
@@ -11340,7 +11368,7 @@ begin
 
             flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
 
-            img[k, fitsY, fitsX] := img[k, fitsY, fitsX] * flat_factor;
+            img[0, fitsY, fitsX] := img[0, fitsY, fitsX] * flat_factor;
           end;
       end
       else //monochrome images (or weird images already in colour)
@@ -11405,7 +11433,7 @@ begin
           if apply_dark_and_flat(img_loaded) {apply dark, flat if required, renew if different head.exposure or ccd temp} then
           begin //success added dark or flat
             memo2_message('Calibrating file: ' + IntToStr(c + 1) + '-' + IntToStr(
-              ListView1.items.Count - 1) + ' "' + filename2 + '"  to average. Using ' +
+              ListView1.items.Count) + ' "' + filename2 + '"  to average. Using ' +
               IntToStr(head.dark_count) + ' darks, ' + IntToStr(head.flat_count) +
               ' flats, ' + IntToStr(head.flatdark_count) + ' flat-darks');
             Application.ProcessMessages;
@@ -11598,31 +11626,6 @@ begin
   Result := Result + '_stacked.fits';
 end;
 
-procedure calculate_required_dimensions;
-var
-  ra,dec : double;
-begin
-  sensor_coordinates_to_celestial(1,1 , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head.width,1 , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(1,head.height , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head.width,1, ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-end;
 
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
@@ -11649,11 +11652,6 @@ begin
   cal_and_align := pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
   sender_photometry := (Sender = photom_stack1);//stack instruction from photometry tab?
   sender_stack_groups := (Sender =stack_groups1);//stack instruction from photometry tab?
-
-  ra_min:=+99;//for mosaic mode
-  ra_max:=-99;
-  dec_min:=+99;
-  dec_max:=-99;
 
 
   classify_filter := ((classify_filter1.Checked) and (sender_photometry = False));  //disable classify filter if sender is photom_stack1
@@ -11704,14 +11702,14 @@ begin
       else
         memo2_message('Colour stack. OSC images detected. Demosaic method ' +  demosaic_method1.Text);
 
-      if classify_filter{1.checked} then
+      if classify_filter then
       begin
-        //     memo2_message('■■■■■■■■■■■■■ OSC images. Will uncheck "Classify by filter" ! ■■■■■■■■■■■■■');
-        classify_filter{1.checked} := False;
+        memo2_message('■■■■■■■■■■■■■ OSC images. Will uncheck "Classify by filter" ! ■■■■■■■■■■■■■');
+        classify_filter := False;
       end;
     end
     else
-    if classify_filter{1.checked} then
+    if classify_filter then
       memo2_message('LRGB colour stack (classify by light filter checked)')
     else
       memo2_message('Grayscale stack (classify by light filter unchecked)');
@@ -11790,8 +11788,7 @@ begin
   stackmenu1.memo2.SelStart := Length(stackmenu1.memo2.Lines.Text);
   stackmenu1.memo2.SelLength := 0;
 
-  if ((use_astrometry_internal1.Checked) or (use_ephemeris_alignment1.Checked)) then
-    {astrometric alignment}
+  if ((use_astrometry_internal1.Checked) or (use_ephemeris_alignment1.Checked) or (stitching_mode)) then  {astrometric alignment}
   begin
     memo2_message('Checking astrometric solutions');
     if use_ephemeris_alignment1.Checked then
@@ -11846,9 +11843,6 @@ begin
           end
           else
             stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] := ''; {report internal plate solve result}
-
-           if stitching_mode then
-                         calculate_required_dimensions;
         finally
         end;
       end;
@@ -12022,7 +12016,7 @@ begin
     for i := 0 to 4 do filters_used[i] := '';
     Inc(object_counter);
 
-    lrgb := ((classify_filter{1.checked}) and (cal_and_align = False)); {ignore lrgb for calibration and alignment is true}
+    lrgb := ((classify_filter) and (cal_and_align = False)); {ignore lrgb for calibration and alignment is true}
     over_size := round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
     if lrgb = False then
     begin
@@ -12036,7 +12030,7 @@ begin
         if ((ListView1.items[c].Checked = True) and (ListView1.Items.item[c].SubitemImages[L_result] < 0)) then {not done yet}
         begin
           if object_to_process = '' then object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name to stack}
-          if ((classify_object{1.checked} = False) or (stitching_mode){ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
+          if ((classify_object = False) or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
           then
             {correct object?}
           begin {correct object}
@@ -12070,7 +12064,7 @@ begin
       if nrfiles > 1 then {need at least two files to sort}
       begin
         if stitching_mode = False then put_best_quality_on_top(files_to_process);
-        {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
+          {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
         if sigma_clip then
         begin
@@ -12080,7 +12074,7 @@ begin
         end
         else
         if stitching_mode then
-          stack_mosaic(over_size,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
+          stack_mosaic(over_size, process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
         else
         if cal_and_align then {calibration & alignment only}
         begin
@@ -12155,7 +12149,7 @@ begin
           begin  {not done yet}
             if object_to_process = '' then object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a next object name to stack}
 
-            if ((classify_object{1.checked} = False) or (stitching_mode) {ignore object name in mosaic} or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object])))) {correct object?} then
+            if ((classify_object = False) or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object])))) {correct object?} then
             begin {correct object}
               defilter := ListView1.Items.item[c].subitems.Strings[L_filter];
               if ((AnsiCompareText(filter_name1, defilter) = 0) or
@@ -12195,7 +12189,7 @@ begin
               stack_sigmaclip(over_size, process_as_osc,{var}files_to_process, counterL) {sigma clip combining}
             else
             if stitching_mode then
-              stack_mosaic(over_size,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
+              stack_mosaic(over_size, process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
             else
               stack_average(over_size, process_as_osc,{var}files_to_process, counterL);{average}
             over_sizeL := 0; {do oversize only once. Not again in 'L' mode !!}
@@ -12587,8 +12581,8 @@ begin
   if total_counter=0 then {somehow nothing was stacked}
   begin
     memo2.Lines.add('No images in tab lights to stack.');
-    if classify_filter{1.checked} then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
-    if classify_object{1.checked} then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
+    if classify_filter then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
+    if classify_object then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
     if use_astrometry_internal1.Checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
   end
   else
@@ -12657,9 +12651,9 @@ begin
   //Sigma clip, skip LRGB combine
 
   mosaic_box1.Enabled := mosa;
-  raw_box1.Enabled := ((mosa = False) and (classify_filter1.Checked = False));
-  if mosa then  raw_box1.Caption :='RAW one shot colour images   (Disabled by stack method)'
-  else
+  raw_box1.Enabled := ({(mosa = False) and} (classify_filter1.Checked = False));
+//  if mosa then  raw_box1.Caption :='RAW one shot colour images   (Disabled by stack method)'
+//  else
   if classify_filter1.Checked then
     raw_box1.Caption := 'RAW one shot colour images   (Disabled by ☑ Light filter)'
   else
@@ -12683,10 +12677,9 @@ begin
   end;
   if mosa then memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
 
-  classify_object1.Enabled := (mosa = False); {in mosaic mode ignore object name}
 
   classify_filter1.Enabled := ((cal_and_align = False) and (cal_only = False) and (mosa = False));
-  classify_object1.Enabled := ((cal_only = False) and (mosa = False));
+  classify_object1.Enabled := (cal_only = False);
 
   if classify_filter1.Checked then mode := 'LRGB ' else mode := '';
   stack_button1.Caption := 'STACK ' + mode + '(' + stack_method1.Text + ')';

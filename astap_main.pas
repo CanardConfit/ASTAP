@@ -1,5 +1,5 @@
 ﻿unit astap_main;
-{Copyright (C) 2017, 2023 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -57,12 +57,12 @@ uses
   LCLVersion, InterfaceBase, LCLPlatformDef,
   SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
-  Buttons, PopupNotifier, simpleipc,
+  Buttons, PopupNotifier, PairSplitter, simpleipc,
   CustApp, Types, fileutil,
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2023.12.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.01.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -71,12 +71,26 @@ type
     bin3x3: TMenuItem;
     BitBtn1: TBitBtn;
     boxshape1: TShape;
+    data_range_groupBox1: TGroupBox;
+    dec1: TEdit;
+    dec_label: TLabel;
     error_label1: TLabel;
+    flip_indication1: TLabel;
     FontDialog1: TFontDialog;
+    histogram1: TImage;
+    Image1: TImage;
     image_north_arrow1: TImage;
+    inversemousewheel1: TCheckBox;
+    Label1: TLabel;
+    Label12: TLabel;
+    Label13: TLabel;
+    Label2: TLabel;
+    Label5: TLabel;
+    LabelCheck1: TLabel;
     LabelThree1: TLabel;
     LabelVar1: TLabel;
-    LabelCheck1: TLabel;
+    max2: TEdit;
+    maximum1: TScrollBar;
     Memo1: TMemo;
     Memo3: TMemo;
     menucopy2: TMenuItem;
@@ -121,13 +135,43 @@ type
     export_star_info1: TMenuItem;
     grid_az_alt1: TMenuItem;
     az_alt1: TMenuItem;
+    min2: TEdit;
+    minimum1: TScrollBar;
+    PageControl1: TPageControl;
+    PairSplitter1: TPairSplitter;
+    PairSplitterSide1: TPairSplitterSide;
+    PairSplitterSide2: TPairSplitterSide;
+    Panel1: TPanel;
+    Panel_top_menu1: TPanel;
+    Polynomial1: TComboBox;
+    ra1: TEdit;
+    range1: TComboBox;
+    ra_label: TLabel;
+    rotation1: TLabel;
+    saturation_factor_plot1: TTrackBar;
+    save1: TButton;
+    Shape_alignment_marker1: TShape;
+    Shape_alignment_marker2: TShape;
+    Shape_alignment_marker3: TShape;
+    shape_histogram1: TShape;
+    shape_manual_alignment1: TShape;
+    shape_marker1: TShape;
+    shape_marker2: TShape;
+    shape_marker3: TShape;
+    shape_marker4: TShape;
+    shape_paste1: TShape;
+    solve_button1: TButton;
+    SpeedButton1: TSpeedButton;
     star_profile1: TMenuItem;
     Separator2: TMenuItem;
+    stretch1: TComboBox;
+    TabSheet1: TTabSheet;
+    TabSheet2: TTabSheet;
+    UpDown1: TUpDown;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
-    flip_indication1: TLabel;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
     Separator1: TMenuItem;
     simbad_annotation_star1: TMenuItem;
@@ -169,21 +213,16 @@ type
     aavso_chart1: TMenuItem;
     N4: TMenuItem;
     MenuItem38: TMenuItem;
-    save1: TButton;
     simbad_query1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     sip1: TMenuItem;
-    solve_button1: TButton;
     zoomfactorone1: TMenuItem;
     extractred1: TMenuItem;
     extractblue1: TMenuItem;
     extractgreen1: TMenuItem;
     MenuItem24: TMenuItem;
     writepositionshort1: TMenuItem;
-    Shape_alignment_marker2: TShape;
-    Shape_alignment_marker3: TShape;
-    shape_manual_alignment1: TShape;
     sqm1: TMenuItem;
     Rota_mainmenu1: TMenuItem;
     batch_rotate_left1: TMenuItem;
@@ -202,7 +241,6 @@ type
     northeast1: TMenuItem;
     selectfont1: TMenuItem;
     popupmenu_statusbar1: TPopupMenu;
-    shape_marker4: TShape;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
     show_statistics1: TMenuItem;
@@ -212,7 +250,6 @@ type
     menupaste1: TMenuItem;
     PopupMenu_memo2: TPopupMenu;
     select_all1: TMenuItem;
-    PageControl1: TPageControl;
     save_to_tiff1: TMenuItem;
     extract_pixel_12: TMenuItem;
     MenuItem7: TMenuItem;
@@ -234,26 +271,18 @@ type
     select_all2: TMenuItem;
     set_area1: TMenuItem;
     rotate1: TMenuItem;
-    shape_histogram1: TShape;
-    shape_paste1: TShape;
     submenurotate1: TMenuItem;
     MenuItem19: TMenuItem;
-    shape_marker2: TShape;
-    shape_marker3: TShape;
     solvebytwopositions1: TMenuItem;
     enterposition1: TMenuItem;
     save_settings_as1: TMenuItem;
     settings_menu1: TMenuItem;
-    TabSheet1: TTabSheet;
-    TabSheet2: TTabSheet;
-    UpDown1: TUpDown;
     variable_star_annotation1: TMenuItem;
     clean_up1: TMenuItem;
     preview_demosaic1: TMenuItem;
     PopupNotifier1: TPopupNotifier;
     remove_colour1: TMenuItem;
     Returntodefaultsettings1: TMenuItem;
-    saturation_factor_plot1: TTrackBar;
     savesettings1: TMenuItem;
     MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
@@ -271,9 +300,6 @@ type
     remove_above1: TMenuItem;
     remove_below1: TMenuItem;
     MenuItem8: TMenuItem;
-    Shape_alignment_marker1: TShape;
-    shape_marker1: TShape;
-    SpeedButton1: TSpeedButton;
     split_osc1: TMenuItem;
     recent7: TMenuItem;
     recent8: TMenuItem;
@@ -293,10 +319,6 @@ type
     star_annotation1: TMenuItem;
     Remove_deep_sky_object1: TMenuItem;
     MenuItem4: TMenuItem;
-    ra1: TEdit;
-    dec1: TEdit;
-    Label1: TLabel;
-    Label2: TLabel;
     MainMenu1: TMainMenu;
     Help: TMenuItem;
     Exit1: TMenuItem;
@@ -308,10 +330,6 @@ type
     ShowFITSheader1: TMenuItem;
     SaveDialog1: TSaveDialog;
     error_get_it: TLabel;
-    ra_label: TLabel;
-    dec_label: TLabel;
-    rotation1: TLabel;
-    inversemousewheel1: TCheckBox;
     LoadFITSPNGBMPJPEG1: TMenuItem;
     SaveasJPGPNGBMP1: TMenuItem;
     batch_add_solution1: TMenuItem;
@@ -327,16 +345,6 @@ type
     N6: TMenuItem;
     Undo1: TMenuItem;
     stretch_draw1: TMenuItem;
-    data_range_groupBox1: TGroupBox;
-    Label12: TLabel;
-    minimum1: TScrollBar;
-    Label13: TLabel;
-    maximum1: TScrollBar;
-    min2: TEdit;
-    max2: TEdit;
-    histogram1: TImage;
-    Label5: TLabel;
-    range1: TComboBox;
     PopupMenu1: TPopupMenu;
     Copyposition1: TMenuItem;
     Copypositionindeg1: TMenuItem;
@@ -349,12 +357,8 @@ type
     ImageList1: TImageList;
     N9: TMenuItem;
     CropFITSimage1: TMenuItem;
-    stretch1: TComboBox;
-    Polynomial1: TComboBox;
     N3: TMenuItem;
     StatusBar1: TStatusBar;
-    Panel1: TPanel;
-    Image1: TImage;
 
     procedure add_marker_position1Click(Sender: TObject);
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
@@ -844,7 +848,7 @@ function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double); {fitsX, Y to ra,dec}
-procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out  ram,decm  : double {fitsX, Y to ra,dec});
+procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
 procedure celestial_to_pixel(ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
@@ -868,6 +872,8 @@ procedure calibrate_photometry;
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
 function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
+procedure remove_photometric_calibration;//from header
+
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -1423,7 +1429,7 @@ begin
           end; {C}
 
 
-          if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpi  x1/2}
+          if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpix1/2}
                ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
                ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
           begin
@@ -1448,6 +1454,17 @@ begin
             if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
           end;
 
+//          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='V')  and (header[i+3]='R') and (header[i+4]='A')) then  {ra}
+//          begin
+//            ra_mount:=validate_double*pi/180;
+//            if head.ra0=0 then head.ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
+//          end;
+//          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='V')  and (header[i+3]='D') and (header[i+4]='E')) then  {dec}
+//          begin
+//            dec_mount:=validate_double*pi/180;
+//            if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+//          end;
+
 
           if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J')) then {OBJ}
           begin
@@ -1465,7 +1482,8 @@ begin
                 dec_mount:=dec_radians;
               end
               else {for older MaximDL5}
-              if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then centalt:=get_as_string {universal for string and floats}
+              if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then
+                                                                            centalt:=get_as_string {universal for string and floats}
               else {for older MaximDL5}
               if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then
                                    centaz:=get_as_string; {universal for string and floats}
@@ -3000,7 +3018,6 @@ begin
     // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
     back.star_level:= max(max(3.5*sd,1 {1})  ,back.star_level-back.backgr-1 {2) below saturation}); //star_level is relative to background
     back.star_level2:=max(max(3.5*sd,1 {1})  ,back.star_level2-back.backgr-1 {2) below saturation}); //star_level is relative to background
-  // beep;
   end;
 end;
 
@@ -3448,7 +3465,7 @@ begin
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2023 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
+  #13+#10+'© 2018, 2024 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3522,7 +3539,7 @@ end;
 procedure Tmainwindow.deepsky_overlay1Click(Sender: TObject);
 begin
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky;
+  plot_deepsky(false);
 end;
 
 
@@ -3797,7 +3814,7 @@ procedure Tmainwindow.hyperleda_annotation1Click(Sender: TObject);
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   load_hyperleda;   { Load the database once. If loaded no action}
-  plot_deepsky;{plot the deep sky object on the image}
+  plot_deepsky(false);{plot the deep sky object on the image}
   Screen.Cursor:=crDefault;
 end;
 
@@ -3944,7 +3961,7 @@ begin
 
   if ((data0='c') or (data0='C')) then {place marker in middle}
   begin
-    sensor_coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
+    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
     data1:='Center image '; {for hint}
@@ -4049,7 +4066,7 @@ begin
     end;
 
     mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
-    mainwindow.flip_indication1.Visible:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0;// flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
+    mainwindow.flip_indication1.Visible:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0;// flipped image?
 
     Canvas.Pen.Color := clred;
 
@@ -7656,6 +7673,8 @@ begin
       c:=Sett.ReadInteger('stack','stackmenu_top',987654321);  if c<>987654321 then stackmenu1.top:=c;
       c:=Sett.ReadInteger('stack','stackmenu_height',987654321); if c<>987654321 then stackmenu1.height:=c;
       c:=Sett.ReadInteger('stack','stackmenu_width',987654321); if c<>987654321 then stackmenu1.width:=c;
+      c:=Sett.ReadInteger('stack','splitter',987654321); if c<>987654321 then stackmenu1.pairsplitter1.position:=c;
+
 
       c:=Sett.ReadInteger('stack','mosaic_crop',987654321);if c<>987654321 then stackmenu1.mosaic_crop1.position:=c;
 
@@ -8027,6 +8046,7 @@ begin
       sett.writeInteger('stack','stackmenu_top',stackmenu1.top);
       sett.writeInteger('stack','stackmenu_height',stackmenu1.height);
       sett.writeInteger('stack','stackmenu_width',stackmenu1.width);
+      sett.writeInteger('stack','splitter',stackmenu1.pairsplitter1.position);
 
       sett.writeInteger('stack','stack_method',stackmenu1.stack_method1.itemindex);
 
@@ -9181,6 +9201,15 @@ begin
 end;
 
 
+procedure remove_photometric_calibration;//from header
+begin
+  head.mzero:=0;//clear photometric calibration
+  remove_key('MZERO   =',false{all});
+  remove_key('MZEROR  =',false{all});
+  remove_key('MZEROAPT=',false{all});
+end;
+
+
 procedure Tmainwindow.bin_2x2menu1Click(Sender: TObject);
 begin
  if head.naxis<>0 then
@@ -9199,6 +9228,7 @@ begin
       filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
     end;
 
+    remove_photometric_calibration;//from header
     plot_fits(mainwindow.image1,true,true);{plot real}
     mainwindow.caption:=Filename2;
     Screen.Cursor:=crDefault;
@@ -9465,13 +9495,27 @@ var
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
+//0, No annotation
+//1, Annotation local DB mag 13
+//2, Annotation local DB mag 15
+//3, Annotation online DB mag 13
+//4, Annotation online DB mag 15
+//5, Annotation online DB mag 99
+//6, Annotation local DB mag 13 & measure all
+//7, Annotation local DB mag 15 & measure all
+//8, Annotation online DB mag 13 & measure all
+//9, Annotation online DB mag 15 & measure all
+//10,Annotation online DB mag 99 & measure all
+
   case stackmenu1.annotate_mode1.itemindex of
-       0,1,5: lim_magn:=-99;//use local database
-       2,6:   lim_magn:=13;
-       3,7:   lim_magn:=15;
-       4,8:   lim_magn:=99;
+       0,1,7: begin lim_magn:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+       2,8:   begin lim_magn:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+       3,9:   begin lim_magn:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+       4,10: lim_magn:=13;
+       5,11: lim_magn:=15;
+       6,12:lim_magn:=99;
        else
-             lim_magn:=99;
+          lim_magn:=99;
      end; //case
 
   if lim_magn>0 then //online version
@@ -9490,8 +9534,7 @@ begin
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    load_variable;{Load the database once. If loaded no action}
-    plot_deepsky; {Plot the deep sky object on the image}
+    plot_deepsky(sender=stackmenu1.photometry_button1); {Plot the variables on the image. If photmetry_button then only fill variable_list}
   end;
 
   Screen.Cursor:=crDefault;
@@ -9975,8 +10018,8 @@ var
 begin
   if head.cdelt2<>0 then
   begin
-    sensor_coordinates_to_celestial(fitsX1,fitsY1,ra1,dec1);{calculate the ra,dec position}
-    sensor_coordinates_to_celestial(fitsX2,fitsY2,ra2,dec2);{calculate the ra,dec position}
+    sensor_coordinates_to_celestial(head,fitsX1,fitsY1,ra1,dec1);{calculate the ra,dec position}
+    sensor_coordinates_to_celestial(head,fitsX2,fitsY2,ra2,dec2);{calculate the ra,dec position}
     ang_sep(ra1,dec1,ra2,dec2, sep);
     sep:=sep*180/pi; //convert to degrees
     if sep<1/60 then seperation:=inttostr(round(sep*3600))+'"'
@@ -9984,10 +10027,7 @@ begin
     if sep<1 then seperation:=floattostrF(sep*60,FFfixed,0,2)+#39
     else
     seperation:=floattostrF(sep,FFfixed,0,2)+'°';
-
-    {see meeus new formula 46.5, angle of moon limb}
-    //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-    pa:=FloattostrF(arctan2(cos(dec2)*sin(ra2-ra1),sin(dec2)*cos(dec1) - cos(dec2)*sin(dec1)*cos(ra2-ra1))*180/pi,FFfixed,0,0)+'°';; {Accurate formula. Angle between line between the two stars and north as seen at ra1, dec1}
+    pa:=FloattostrF(position_angle(ra2,dec2,ra1,dec1)*180/pi,FFfixed,0,0)+'°';; //Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
   end
   else
   begin //no astrometric solution available
@@ -10791,7 +10831,7 @@ begin
 
       if subframe then
       begin
-        sensor_coordinates_to_celestial(1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
+        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
         rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
         decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
 
@@ -11208,6 +11248,8 @@ begin
 
       add_text   ('HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
 
+      remove_photometric_calibration;//from header
+
       {plot result}
       use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
       plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
@@ -11414,7 +11456,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky;{plot the deep sky object on the image}
+  plot_deepsky(false);{plot the deep sky object on the image}
   Screen.Cursor:=crDefault;
 end;
 
@@ -11691,7 +11733,7 @@ begin
             y1:=round(strtofloat2(list[1]));
             x2:=round(strtofloat2(list[2]));
             y2:=round(strtofloat2(list[3]));
-            sensor_coordinates_to_celestial((x1+x2)/2,(y1+y2)/2, ra,dec {RA, DEC position annotation});
+            sensor_coordinates_to_celestial(head,(x1+x2)/2,(y1+y2)/2, ra,dec {RA, DEC position annotation});
             count1:=-1; //stop
           end;
 
@@ -12049,7 +12091,7 @@ var
    JPG: TJPEGImage;
 begin
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky;{annotate}
+  plot_deepsky(false);{annotate}
   JPG := TJPEGImage.Create;
   try
     JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into jpg
@@ -12981,7 +13023,7 @@ begin
 end;
 
 
-procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
+procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
 var
    fits_unsampledX, fits_unsampledY :double;
    u,v,u2,v2             : double;
@@ -13079,9 +13121,9 @@ begin
      {do the rigid method.}
      fxc:=1+(startX+stopX)/2;//position of new center
      fyc:=1+(startY+stopY)/2;
-     sensor_coordinates_to_celestial(fxc,fyc, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
-     sensor_coordinates_to_celestial(1+fxc,fyc, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
-     sensor_coordinates_to_celestial(fxc,fyc+1 , ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
+     sensor_coordinates_to_celestial(head,fxc,fyc, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
+     sensor_coordinates_to_celestial(head,1+fxc,fyc, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
+     sensor_coordinates_to_celestial(head,fxc,fyc+1 , ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
 
      delta_ra:=ra_n-ra_c;
      if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
@@ -13382,19 +13424,8 @@ begin
       head.cdelt1:=-head.cdelt2;
 
     {find head.crota2}
-   {see meeus new formula 46.5, angle of moon limb}
-   //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-   //   Confirmation by ChatGPT:
-   //   PA=arctan2(sin(δ1)cos(δ0)−sin(δ0)cos(δ1)cos(α1−α0),cos(δ0)sin(α1−α0))
-   //   is seen at point α0,δ0. This means you are calculating the angle at point α0,δ0 (the reference point) towards point α1,δ1 (the target point).
-   //   To clarify:
-   //     Point α0,δ0 (Reference Point): This is where the observation is made from, or the point of reference.
-   //     Point α1,δ1 (Target Point): This is the point towards which the position angle is being measured.
-   //     Position Angle (PA): This is the angle measured at the reference point α0,δ0, going from the direction of the North Celestial Pole towards the target point α1,δ1, measured eastward (or counter-clockwise).
-   //     So in your observational scenario, if you were at point α0,δ0 and wanted to determine the direction to point α1,δ1, the PA would tell you the angle to rotate from the north, moving eastward, to align with the target point.
-
-   angle2:=arctan2(cos(dec2)*sin(ra2-head.ra0),sin(dec2)*cos(head.dec0) - cos(dec2)*sin(head.dec0)*cos(ra2-head.ra0)); {angle between line between the two stars and north as seen at head.ra0, head.dec0}
-   angle3:=arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
+    angle2:= position_angle(ra2,dec2,head.ra0,head.dec0);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+    angle3:= arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
 
     if flipped then
       angle:=(-angle2+angle3){swapped n-s or e-w image}
@@ -13543,7 +13574,7 @@ var
 begin
   flipped_view:=+1;//not flipped
 
-  if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
+  if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?
     flipped_image:=-1  //change rotation for flipped image,  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   else
     flipped_image:=+1;//not flipped
@@ -13611,8 +13642,7 @@ begin
       Application.ProcessMessages;
       if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false)) then begin break;end;
 
-      if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // flipped?  sign(CDELT1*CDELT2) =  sign(cd1_1*cd2_2 - cd1_2*cd2_1) See World Coordinate Systems Representations within the FITS format, draft 1988
-                                                               // Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped
+      if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped
         flipped_image:=-1  // change rotation for flipped image
       else
         flipped_image:=+1; // not flipped
@@ -13795,8 +13825,8 @@ begin
     slist.Free;
   end;
 
-  database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
-  plot_deepsky;
+  database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  plot_deepsky(false);
 end;
 
 
@@ -13820,7 +13850,7 @@ begin
 
   slist := TStringList.Create;
   deepstring.clear;
-  deepstring.add('');//add two lines blank comments
+  deepstring.add('');//add two lines as blank comments
   deepstring.add('');
   datalines:=false;
 
@@ -13832,7 +13862,7 @@ begin
       regel:=ansistring(slist[count]);
       inc(count);
 
-      if datalines then //Data from Vizier
+      if ((datalines) and (length(regel)>10)) then //Data from Vizier
       begin
         {magnitude}
         p1:=pos(' ',regel);{first column changes in width}
@@ -13850,11 +13880,12 @@ begin
           themagn:=transform_gaia(filter,g,bp,rp);//transformation of Gaia magnitudes
 
           if themagn<>0 then //valid value
+          begin
              simobject:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+inttostr(round(10*themagn));
-
-          //RA[0..864000], DEC[-324000..324000], name(s), length [0.1 min], width[0.1 min], orientation[degrees]
-          //659250,-49674,M16/NGC6611/Eagle_Nebula,80
-          deepstring.add(simobject);
+             //RA[0..864000], DEC[-324000..324000], name(s), length [0.1 min], width[0.1 min], orientation[degrees]
+             //659250,-49674,M16/NGC6611/Eagle_Nebula,80
+             deepstring.add(simobject);
+          end;
         end;
       end {correct line of object list}
       else
@@ -13869,8 +13900,8 @@ begin
     slist.Free;
   end;
 
-  database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
-  plot_deepsky;
+  database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  plot_deepsky(false);
 end;
 
 
@@ -13904,8 +13935,8 @@ begin
     window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h);{square box}
     {-c.geom=b  square box, -c.bs=10 box size 10arc
     else radius}
-    sensor_coordinates_to_celestial(startX+1,startY+1,ra1,dec1);{first position}
-    sensor_coordinates_to_celestial(stopX+1,stopY+1,ra2,dec2);{first position}
+    sensor_coordinates_to_celestial(head,startX+1,startY+1,ra1,dec1);{first position}
+    sensor_coordinates_to_celestial(head,stopX+1,stopY+1,ra2,dec2);{first position}
     object_raM:=(ra1+ra2)/2; {center position}
     object_decM:=(dec1+dec2)/2;
   end;
@@ -14801,7 +14832,7 @@ begin
 
    end;
 
-   sensor_coordinates_to_celestial(mouse_fitsx,mouse_fitsy,raM,decM);
+   sensor_coordinates_to_celestial(head,mouse_fitsx,mouse_fitsy,raM,decM);
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
    adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
@@ -14829,9 +14860,10 @@ begin
      else mag_str:='';
 
      {centered coordinates}
-     sensor_coordinates_to_celestial(object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
+     sensor_coordinates_to_celestial(head,object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
      if ((object_raM<>0) and (object_decM<>0)) then
-       mainwindow.statusbar1.panels[1].text:=prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
+       mainwindow.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
+                                               //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
      else
        mainwindow.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str{+' '+floattostr4(flux)};
@@ -14923,6 +14955,7 @@ var filename3:ansistring;
 
 begin
   filename3:=ChangeFileExt(FileName2,'');
+  filename3:=stringreplace(filename3,'_stacked','',[]);  //remove stacked mark
   savedialog1.initialdir:=ExtractFilePath(filename3);
   savedialog1.filename:=filename3;
   savedialog1.Filter := 'PNG 8 bit(*.png)|*.png;|BMP 8 bit(*.bmp)|*.bmp;|JPG 100% compression quality (*.jpg)|*.jpg;|JPG 90% compression quality (*.jpg)|*.jpg;|JPG 80% compression quality (*.jpg)|*.jpg;|JPG 70% compression quality (*.jpg)|*.jpg;';
@@ -15649,7 +15682,6 @@ begin
     for fitsX:=startX to stopX-1 do
     begin
       if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
-      if ((distance>=0) and (distance<=2)) then
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
          mean[k]:=mean[k]+img_loaded[k,fitsY,fitsX];

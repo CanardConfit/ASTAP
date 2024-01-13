@@ -1,4 +1,10 @@
 unit unit_command_line_general;
+{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+ email: han.k.. at...hnsky.org
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 {$mode objfpc}{$H+}
 
@@ -15,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2023.12.14';
+  astap_version: string='2024.01.04';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -146,7 +152,6 @@ procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,s
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
-procedure new_to_old_WCS;{convert new style FITsS to old style}
 procedure write_astronomy_wcs;
 procedure write_ini(solution:boolean);{write solution to ini file}
 function load_image2 : boolean; {load fits or PNG, BMP, TIF}
@@ -342,60 +347,6 @@ begin
 
   ra:=plusmin*(abs(rah)+ram/60+ras/3600)*pi/12;
   errorRA:=((error1<>0) or (error2>1) or (error3<>0) or (ra>2*pi));
-end;
-
-
-procedure new_to_old_WCS;{convert new style FITS to old style, revison 2022}
-begin
-  // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
-  // Representations of World Coordinates in FITS paper II aah3860
-
-  // formula 191
-  if cd2_1>0 then crota1:=arctan2(-cd2_1,-cd1_1)*180/pi
-  else
-  if cd2_1<0 then crota1:=arctan2(+cd2_1,+cd1_1)*180/pi
-  else
-  crota1:=0;
-
-  if cd1_2>0 then crota2:=arctan2(-cd1_2,cd2_2)*180/pi
-  else
-  if cd1_2<0 then crota2:=arctan2(cd1_2,-cd2_2)*180/pi
-  else
-  crota2:=0;
-
-  // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
-  // Representations of World Coordinates in FITS paper II aah3860
-  // Formula 193 improved for crota close to or equal to +90 or -90 degrees
-  // Calculate cdelt1, cdelt2 values using the longest side of the triangle
-  if abs(cd1_1)>abs(cd2_1) then
-  begin
-    cdelt1:=+cd1_1/cos(crota1*pi/180);
-    cdelt2:=+cd2_2/cos(crota2*pi/180);
-  end
-  else
-  begin
-    cdelt1:=+cd2_1/sin(crota1*pi/180);
-    cdelt2:=-cd1_2/sin(crota2*pi/180);
-  end;
-
-  //Solutions for CROTA2 come in pairs separated by 180degr. The other solution is obtained by subtracting 180 from CROTA2 and negating CDELT1 and CDELT2.
-  //While each solution is equally valid, if one makes CDELT1 < 0 and CDELT2 > 0 then it would normally be the one chosen.
-  if cdelt2<0 then //CDELT2 is always kept positive and if not the solution is flipped by negating both CDELT2, CDELT2 and shifting the angle 180 degrees. So if the image is flipped the solution is reporting "flipped horizontal" and not an equivalent "flipped vertical".
-  begin
-    if crota2<0 then
-    begin
-      crota2:=crota2+180;
-      crota1:=crota1+180;
-    end
-    else
-    begin
-      crota2:=crota2-180;
-      crota1:=crota1-180;
-    end;
-
-    cdelt2:=-cdelt2;
-    cdelt1:=-cdelt1;
-  end;//make cdelt2 always positive
 end;
 
 
