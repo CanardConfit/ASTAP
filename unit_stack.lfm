@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 457
-  Height = 717
-  Top = 181
+  Left = 418
+  Height = 707
+  Top = 188
   Width = 1531
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 700
+  ClientHeight = 690
   ClientWidth = 1531
   Color = clForm
   Icon.Data = {
@@ -53,7 +53,7 @@ object stackmenu1: Tstackmenu1
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 700
+    Height = 690
     Top = 0
     Width = 1920
     Align = alClient
@@ -139,7 +139,7 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
           end
           object clear_image_list1: TButton
-            Left = 808
+            Left = 821
             Height = 25
             Hint = 'Clear the frame list'
             Top = 5
@@ -345,7 +345,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 3
           end
           object sd_factor_list1: TComboBox
-            Left = 672
+            Left = 715
             Height = 23
             Hint = 'Sigma factor (or percentage to keep) to identify statistically low quality images.'
             Top = 5
@@ -498,7 +498,7 @@ object stackmenu1: Tstackmenu1
             OnClick = replace_by_master_dark1Click
           end
           object clear_dark_list1: TButton
-            Left = 984
+            Left = 1051
             Height = 25
             Hint = 'Clear the frame list'
             Top = 5
@@ -723,13 +723,13 @@ object stackmenu1: Tstackmenu1
           end
           object listview3: TListView
             Left = 0
-            Height = 436
+            Height = 431
             Hint = 'Double click to view image'
-            Top = 36
+            Top = 41
             Width = 1912
             Align = alClient
             AutoSortIndicator = True
-            BorderSpacing.Top = 36
+            BorderSpacing.Top = 41
             Checkboxes = True
             Columns = <            
               item
@@ -878,7 +878,7 @@ object stackmenu1: Tstackmenu1
             Left = 714
             Height = 19
             Hint = 'Activate this option if you want classify the flats and flat darks based on exposure time.'
-            Top = 16
+            Top = 19
             Width = 258
             Caption = 'Classify by exposure time for master creation.'
             ParentFont = False
@@ -2317,7 +2317,7 @@ object stackmenu1: Tstackmenu1
                 OnDropDown = star_database1DropDown
               end
               object Label53: TLabel
-                Left = 376
+                Left = 375
                 Height = 20
                 Top = 90
                 Width = 176
@@ -2711,7 +2711,7 @@ object stackmenu1: Tstackmenu1
                 OnChange = check_pattern_filter1Change
               end
               object use_triples1: TCheckBox
-                Left = 672
+                Left = 671
                 Height = 19
                 Hint = 'Use triples (three star) for pattern detection for images with less then 30 stars. In all other case use quads (four star).'
                 Top = 56
@@ -2995,7 +2995,7 @@ object stackmenu1: Tstackmenu1
             OnKeyDown = listview1KeyDown
           end
           object clear_blink_list1: TButton
-            Left = 1136
+            Left = 1168
             Height = 25
             Hint = 'Clear image list'
             Top = 34
@@ -3068,7 +3068,7 @@ object stackmenu1: Tstackmenu1
             Left = 752
             Height = 19
             Hint = 'Solve images and annotate with MPCORB database.  For setting see viewer, tools, annotate asteroids.'
-            Top = 4
+            Top = 0
             Width = 210
             Caption = 'Solve images and annotate asteroids'
             ParentFont = False
@@ -3103,7 +3103,7 @@ object stackmenu1: Tstackmenu1
           end
           object help_blink1: TLabel
             Cursor = crHandPoint
-            Left = 1144
+            Left = 1189
             Height = 30
             Hint = 'Online help'
             Top = 0
@@ -3118,7 +3118,7 @@ object stackmenu1: Tstackmenu1
             OnClick = help_blink1Click
           end
           object export_aligned_files1: TButton
-            Left = 1000
+            Left = 1019
             Height = 25
             Hint = 'Export the images with solution to new aligned image files (_aligned.fit). Prior to this run the blink routine once to get alignment solutions.'
             Top = 4
@@ -3135,7 +3135,7 @@ object stackmenu1: Tstackmenu1
             Left = 752
             Height = 19
             Hint = 'Update existing FITS header annotations.'
-            Top = 20
+            Top = 21
             Width = 122
             Caption = 'Update annotations'
             Enabled = False
@@ -3143,7 +3143,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 10
           end
           object write_video1: TButton
-            Left = 1000
+            Left = 1019
             Height = 25
             Hint = 'Write image list as YUV4MPEG2 video with extension y4m.'
             Top = 34
@@ -3194,7 +3194,7 @@ object stackmenu1: Tstackmenu1
             Left = 752
             Height = 19
             Hint = 'Same option as in the viewer under View.'
-            Top = 37
+            Top = 43
             Width = 119
             Caption = 'Annotations visible'
             TabOrder = 15
@@ -3455,10 +3455,10 @@ object stackmenu1: Tstackmenu1
           end
           object help_photometry1: TLabel
             Cursor = crHandPoint
-            Left = 1080
+            Left = 1147
             Height = 30
             Hint = 'Online help'
-            Top = 8
+            Top = 29
             Width = 9
             Caption = '?'
             Font.Color = clBlue
@@ -3481,10 +3481,10 @@ object stackmenu1: Tstackmenu1
             OnClick = photometry_binx2Click
           end
           object mark_outliers_upto1: TComboBox
-            Left = 960
+            Left = 976
             Height = 23
             Hint = 'Mark in the image outliers down to this magnitude'
-            Top = 4
+            Top = 5
             Width = 48
             ItemHeight = 15
             ItemIndex = 3
@@ -3503,7 +3503,7 @@ object stackmenu1: Tstackmenu1
             OnChange = flux_aperture1change
           end
           object aavso_button1: TButton
-            Left = 960
+            Left = 976
             Height = 25
             Hint = 'Generate AAVSO report'
             Top = 34
@@ -3517,7 +3517,7 @@ object stackmenu1: Tstackmenu1
             Left = 512
             Height = 23
             Hint = 'Flux measuring aperture [x HFD ].  Typical range 1 to max. With max all star flux is measured. Can be adjusted to find the lowest standard deviation in the results (check star). Typical values 1.5 or 2.0'
-            Top = 7
+            Top = 5
             Width = 72
             DropDownCount = 10
             ItemHeight = 15
@@ -3542,9 +3542,9 @@ object stackmenu1: Tstackmenu1
             OnChange = flux_aperture1change
           end
           object Label26: TLabel
-            Left = 454
+            Left = 448
             Height = 15
-            Top = 10
+            Top = 11
             Width = 49
             Alignment = taRightJustify
             Caption = 'Aperture:'
@@ -3586,7 +3586,7 @@ object stackmenu1: Tstackmenu1
             OnChange = flux_aperture1change
           end
           object Label27: TLabel
-            Left = 456
+            Left = 455
             Height = 15
             Top = 36
             Width = 47
@@ -3595,7 +3595,7 @@ object stackmenu1: Tstackmenu1
             ParentColor = False
           end
           object speedButton_location1: TSpeedButton
-            Left = 1034
+            Left = 1040
             Height = 25
             Hint = 'Default observer location for the case it is not available in the file header. Use this for DSLR images.'
             Top = 4
@@ -3621,9 +3621,10 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Annotate variable and comparison stars'
             Top = 34
-            Width = 272
+            Width = 283
             DropDownCount = 17
             ItemHeight = 15
+            ItemIndex = 1
             Items.Strings = (
               'No annotation'
               'Annotation local DB mag 11'
@@ -3641,7 +3642,7 @@ object stackmenu1: Tstackmenu1
             )
             ParentFont = False
             TabOrder = 13
-            Text = 'Annotation local DB'
+            Text = 'Annotation local DB mag 11'
             OnChange = annotate_mode1Change
           end
           object reference_database1: TComboBox
@@ -3649,7 +3650,7 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Reference star database to be used. Set to '#13#10'1) Online , Gaia ->auto '#13#10'or'#13#10'2) Local star database and select in tab alignment V50 for Johnson-V.'
             Top = 5
-            Width = 144
+            Width = 160
             DropDownCount = 17
             ItemHeight = 15
             ItemIndex = 0
@@ -3670,7 +3671,7 @@ object stackmenu1: Tstackmenu1
             OnChange = reference_database1Change
           end
           object transformation1: TButton
-            Left = 816
+            Left = 832
             Height = 25
             Hint = 'This will calculate the transformation equation  ∆ V = a + T*(B-V) using the image in the viewer'
             Top = 4
@@ -3983,13 +3984,13 @@ object stackmenu1: Tstackmenu1
           ImageIndex = 21
           object listview9: TListView
             Left = 0
-            Height = 436
+            Height = 431
             Hint = 'Double click to view image'
-            Top = 36
+            Top = 41
             Width = 1912
             Align = alClient
             AutoSortIndicator = True
-            BorderSpacing.Top = 36
+            BorderSpacing.Top = 41
             Checkboxes = True
             Columns = <            
               item
@@ -4189,7 +4190,7 @@ object stackmenu1: Tstackmenu1
             Left = 616
             Height = 19
             Hint = 'Write solution to a new separate header file only. (.wcs)'
-            Top = 17
+            Top = 19
             Width = 147
             Caption = 'Do not modify the lights'
             Checked = True
@@ -4771,7 +4772,7 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             TabOrder = 0
             object Label14: TLabel
-              Left = 4
+              Left = -2
               Height = 20
               Top = 3
               Width = 87
@@ -4785,7 +4786,7 @@ object stackmenu1: Tstackmenu1
               Transparent = False
             end
             object Label17: TLabel
-              Left = 4
+              Left = -2
               Height = 20
               Top = 27
               Width = 87
@@ -7003,20 +7004,20 @@ object stackmenu1: Tstackmenu1
               OnExit = focallength1Exit
             end
             object calculated_scale1: TLabel
-              Left = 248
+              Left = 252
               Height = 15
               Hint = 'Arcseconds per pixel'
-              Top = 52
+              Top = 53
               Width = 15
               BorderSpacing.Around = 5
               Caption = '0.0'
               ParentColor = False
             end
             object scale_calc1: TLabel
-              Left = 248
+              Left = 252
               Height = 15
               Hint = 'Image dimensions in degrees'
-              Top = 24
+              Top = 27
               Width = 42
               Caption = '0.0 x 0.0'
               ParentColor = False
@@ -7041,7 +7042,7 @@ object stackmenu1: Tstackmenu1
               ParentColor = False
             end
             object calculated_sensor_size1: TLabel
-              Left = 248
+              Left = 252
               Height = 15
               Hint = 'Calculated sensor size in mm'
               Top = 80
@@ -7455,7 +7456,7 @@ object stackmenu1: Tstackmenu1
             object colournebula1: TButton
               Left = 7
               Height = 30
-              Top = 48
+              Top = 53
               Width = 136
               Caption = 'Colour nebula'
               ParentFont = False
@@ -7466,7 +7467,7 @@ object stackmenu1: Tstackmenu1
               Left = 8
               Height = 23
               Hint = 'Star level above background'
-              Top = 17
+              Top = 21
               Width = 80
               ItemHeight = 15
               ItemIndex = 3
@@ -7485,7 +7486,7 @@ object stackmenu1: Tstackmenu1
               Left = 104
               Height = 23
               Hint = 'Filter factor to separate stars from nebula.'
-              Top = 17
+              Top = 21
               Width = 80
               ItemHeight = 15
               ItemIndex = 1
@@ -7521,7 +7522,7 @@ object stackmenu1: Tstackmenu1
               Left = 154
               Height = 30
               Hint = 'Undo last action'
-              Top = 48
+              Top = 53
               Width = 30
               Glyph.Data = {
                 36040000424D3604000000000000360000002800000010000000100000000100
@@ -7825,15 +7826,15 @@ object stackmenu1: Tstackmenu1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 195
+      Height = 185
       Top = 505
       Width = 1920
       ClientWidth = 1920
-      ClientHeight = 195
+      ClientHeight = 185
       object memo2: TMemo
         Left = 0
-        Height = 131
-        Top = 64
+        Height = 91
+        Top = 94
         Width = 1920
         Align = alBottom
         Anchors = [akTop, akLeft, akBottom]
@@ -7852,11 +7853,11 @@ object stackmenu1: Tstackmenu1
       end
       object Panel_stack_button1: TPanel
         Left = 0
-        Height = 64
+        Height = 94
         Top = 0
         Width = 1920
         Align = alClient
-        ClientHeight = 64
+        ClientHeight = 94
         ClientWidth = 1920
         ParentBackground = False
         TabOrder = 1
@@ -7886,7 +7887,7 @@ object stackmenu1: Tstackmenu1
           OnClick = press_esc_to_abort1Click
         end
         object classify_groupbox1: TGroupBox
-          Left = 408
+          Left = 427
           Height = 60
           Top = 0
           Width = 632
@@ -8007,7 +8008,7 @@ object stackmenu1: Tstackmenu1
         end
         object help_stack_menu2: TLabel
           Cursor = crHandPoint
-          Left = 1080
+          Left = 1088
           Height = 30
           Hint = 'Help'
           Top = 14
@@ -8022,7 +8023,7 @@ object stackmenu1: Tstackmenu1
           OnClick = help_stack_menu1Click
         end
         object powerdown_enabled1: TCheckBox
-          Left = 1120
+          Left = 1131
           Height = 19
           Hint = 'If selected, shutdown computer after completion.'
           Top = 8
@@ -8034,7 +8035,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 2
         end
         object write_log1: TCheckBox
-          Left = 1120
+          Left = 1131
           Height = 19
           Hint = 'Write the stack log to a file with .txt extension at the light directory.'
           Top = 32
