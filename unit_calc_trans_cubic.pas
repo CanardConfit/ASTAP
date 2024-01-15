@@ -1,11 +1,10 @@
 unit unit_calc_trans_cubic;
-{ This unit is based on some C language routines from the package Match. See describtion below. Conversion and modification for the ASTAP program by Han Kleijn
-The original Match version was suitable for 2th order only but extend to the 3th order by Cecile for the Siril program.
+//  DESCRIPTION:
+//  This unit calculated the 3th order transfer function between two set of matching quads or star positions.
+//  The output are ten transfer coefficients for X axis and ten coefficients for the Y-axis.
 
-DESCRIPTION:
-  //  This unit calculated the 3th order transfer function between two set of matching quads or star positions.
-  //  The output are ten transfer coefficients for X axis and ten coefficients for the Y-axis.
-
+{ This unit is based on some C language routines from the package Match. See describtion below. Conversion and modification for the ASTAP program by Han Kleijn.
+The original Match version was suitable for 2th order only but extended to the 3th order by Cecile Melis for the Siril program.
 
 Copyright (C) 2024 by Han Kleijn www.hnsky.org
 
@@ -22,9 +21,9 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 }
-
-
-//original describtion for the Match program.
+//==============================================================================
+//Original description for the Match program.
+//http://spiff.rit.edu/match/
 { *  match: a package to match lists of stars (or other items)
  *  Copyright (C) 2000  Michael William Richmond
  *
@@ -73,8 +72,9 @@ type
 
 function Calc_Trans_Cubic(starsA: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
                           starsB: TStarArray; // Second array of s_star structure we match
-                          var trans: TTrans   // Place solved coefficients into this  existing structure's fields
-                         ): Integer;
+                          out trans: TTrans;  // Place solved coefficients into this  existing structure's fields
+                          out err_mess : string // any error message
+                          ): boolean; //succes
 
 
 implementation
@@ -83,15 +83,7 @@ type
   Tsolutionvector = array[0..9] of Double;
 
 const
-    SH_SUCCESS=1;
-    SH_GENERIC_ERROR=0;
-    MATRIX_TOL=1E-10;
-
-
-procedure memo2_message(s: string);
-begin
-  beep;
-end;
+  MATRIX_TOL=1E-10;
 
 
 {/***************************************************************************
@@ -112,19 +104,17 @@ end;
  *
  * </AUTO>
  */}
-function GaussPivot(var matrix: TMatrix;          // I/O: a square 2-D matrix we are inverting
-                    num: Integer;                 // I: number of rows and cols in matrix
-                    var vector: TSolutionVector;  // I/O: vector which holds "b" values in input
-                    var biggest_val: TVector;     // I: largest value in each row of matrix
-                    row: Integer                  // I: want to pivot around this row
-                   ): Integer;
+procedure Gauss_Pivot(var matrix: TMatrix;          // I/O: a square 2-D matrix we are inverting
+                      num: Integer;                 // I: number of rows and cols in matrix
+                      var vector: TSolutionVector;  // I/O: vector which holds "b" values in input
+                      var biggest_val: TVector;     // I: largest value in each row of matrix
+                      row: Integer                  // I: want to pivot around this row
+                     );
 var
   i, col, pivot_row  : Integer;
   big, other_big,temp: Double;
 
 begin
-  result:=0;
-
   pivot_row := row;
   big := Abs(matrix[row][row] / biggest_val[row]);
 
@@ -162,8 +152,6 @@ begin
     biggest_val[pivot_row] := biggest_val[row];
     biggest_val[row] := temp;
   end;
-
-  Result := SH_SUCCESS; // Assuming SH_SUCCESS is a predefined constant for success
 end;
 
 
@@ -203,8 +191,10 @@ end;
 
 function Gauss_Matrix(var matrix: TMatrix;        // I/O: the square 2-D matrix we'll invert will hold inverse matrix on output
                       num: Integer;                // I: number of rows and cols in matrix
-                      var vector: Tsolutionvector  // I/O: vector which holds "b" values in input and the solution vector "x" on output
-                      ): Integer;
+                      var vector: Tsolutionvector;  // I/O: vector which holds "b" values in input and the solution vector "x" on output
+                      out err_mess : string         // O: Any error message
+
+                      ): boolean;
 
 var
   i,
@@ -215,6 +205,7 @@ var
   factor,
   sum             : Double;
 begin
+  err_mess:=''; //clear message;
   SetLength(biggest_val, num);
   SetLength(solution_vector, num);
   // Step 1: Find the largest value in each row of matrix,
@@ -234,27 +225,30 @@ begin
       // Handle the error: "gauss_matrix: biggest val in row is zero"
       // Error handling code should go here. In Pascal, you might raise an exception
       // or handle the error in a way that's appropriate for your application.
-      memo2_message('Gauss_matrix: biggest val in row is zero');
-      exit;
+      err_mess:='Gauss_matrix: biggest val in row is zero';
+      exit(false);
     end;
   end;
+
    // Step 2: Use Gaussian elimination to convert the "matrix"
    // into a triangular matrix, in which the values of all
    // elements below the diagonal are zero.
   for i := 0 to num - 2 do
   begin
     // Pivot this row (if necessary)
-    if GaussPivot(matrix, num, vector, biggest_val, i) = SH_GENERIC_ERROR then
-    begin
-      // Handle error: "gauss_matrix: singular matrix"
-      // Error handling code should go here. In Pascal, you might raise an exception
-      Exit(SH_GENERIC_ERROR); // Assuming SH_GENERIC_ERROR is an error code
-    end;
+    Gauss_Pivot(matrix, num, vector, biggest_val, i);
+
+//    Remark: Gauss_Pivot give never an error in the code.
+//    if Gauss_Pivot(matrix, num, vector, biggest_val, i) =false then
+//    begin
+//      err_mess:='Gauss_matrix error: singular matrix.';
+//      Exit(false);
+//    end;
 
     if Abs(matrix[i][i] / biggest_val[i]) < MATRIX_TOL then
     begin
-      // Handle error: "gauss_matrix: row has tiny value"
-      Exit(SH_GENERIC_ERROR); // Replace with appropriate error handling
+      err_mess:='Gauss_matrix error: row has a too tiny value';
+      Exit(false);
     end;
 
     // Eliminate this variable in all rows below the current one
@@ -273,10 +267,8 @@ begin
   // Make sure that the last row's single remaining element isn't too tiny
   if Abs(matrix[num - 1][num - 1] / biggest_val[num - 1]) < MATRIX_TOL then
   begin
-    // Handle error: "gauss_matrix: last row has tiny value"
-    // In Pascal, you might raise an exception or handle the error in a way that's
-    // appropriate for your application.
-    Exit(SH_GENERIC_ERROR); // Replace with appropriate error handling
+    err_mess:='Gauss_matrix error: last row has a too tiny value';
+    Exit(false);
   end;
 
   // * Step 3: We can now calculate the solution_vector values
@@ -301,7 +293,7 @@ begin
   for i := 0 to num-1 do begin
     vector[i] := solution_vector[i];
   end;
-  Result := SH_SUCCESS;
+  Result:=true;
 end;
 
 
@@ -410,11 +402,11 @@ end;
 
 function Calc_Trans_Cubic(starsA: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
                           starsB: TStarArray; // Second array of s_star structure we match
-                          var trans: TTrans // Place solved coefficients into this  existing structure's fields
-                         ): Integer;
+                          out trans: TTrans; // Place solved coefficients into this  existing structure's fields
+                          out err_mess : string   // any error message
+                           ): boolean; //succes
 
 var
-  i           : integer;
   matrix      : Tmatrix;
   vector      : Tsolutionvector;//array[0..9] of Double;
   solved_a,
@@ -487,14 +479,15 @@ var
   sumx1sqy1qu,
   sumx1y1pe,
   sumy1he     : Double;
-  r,c,wa,wb    : integer;
+  r,c,i       : integer;
 begin
    //* in variable names below, a '1' refers to coordinate of star s1
    //*   (which appear on both sides of the matrix equation)
    //*                      and a '2' refers to coordinate of star s2
    //*   (which appears only on left hand side of matrix equation)    o
 
-   if length(starsA) <10 {AT_MATCH_REQUIRE_CUBIC} then begin result:=0; exit; end;
+   err_mess:=''; //clear message;
+   if length(starsA) <10 {AT_MATCH_REQUIRE_CUBIC} then begin err_mess:='Calc_Trans_Cubic: Not enough equations.'; exit(false); end;
 
    //  if_assert(trans.order = AT_TRANS_CUBIC)=false then begin result:=0; exit; end;
    //* allocate a matrix we'll need for this function
@@ -551,64 +544,57 @@ begin
   sumy2x1sqy1 := 0.0;
   sumy2x1y1sq := 0.0;
   sumy2y1cu := 0.0;
-  for i := 0 to length(starsA)-1 do begin
-    { sanity checks }
-
-    wa:=i;  //note removed winner_index_A and winner_index_B from the code
-    wb:=min(i,length(starsB)-1);//should not be required but just in case.
-//    if winner_index_A[i] < length(starsA) then begin result:=0;exit;end;;
-//    s1 := @star_array_A[winner_index_A[i]];
-//    if winner_index_B[i] < length(starsB) then begin result:=0;exit;end;;
-//    s2 := @(star_array_B[winner_index_B[i]]);
-    sumx2        := sumx2       + starsB[wb].x;
-    sumx2x1      := sumx2x1     + (starsB[wb].x * starsA[wa].x);
-    sumx2y1      := sumx2y1     + (starsB[wb].x * starsA[wa].y);
-    sumx2x1sq    := sumx2x1sq   + (starsB[wb].x * starsA[wa].x * starsA[wa].x);
-    sumx2x1y1    := sumx2x1y1   + (starsB[wb].x * starsA[wa].x * starsA[wa].y);
-    sumx2y1sq    := sumx2y1sq   + (starsB[wb].x * starsA[wa].y * starsA[wa].y);
-    sumx2x1cu    := sumx2x1cu   + (starsB[wb].x * starsA[wa].x * starsA[wa].x * starsA[wa].x);
-    sumx2x1sqy1  := sumx2x1sqy1 + (starsB[wb].x * starsA[wa].x * starsA[wa].x * starsA[wa].y);
-    sumx2x1y1sq  := sumx2x1y1sq + (starsB[wb].x * starsA[wa].x * starsA[wa].y * starsA[wa].y);
-    sumx2y1cu    := sumx2y1cu   + (starsB[wb].x * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumy2        := sumy2       + starsB[wb].y;
-    sumy2x1      := sumy2x1     + (starsB[wb].y * starsA[wa].x);
-    sumy2y1      := sumy2y1     + (starsB[wb].y * starsA[wa].y);
-    sumy2x1sq    := sumy2x1sq   + (starsB[wb].y * starsA[wa].x * starsA[wa].x);
-    sumy2x1y1    := sumy2x1y1   + (starsB[wb].y * starsA[wa].x * starsA[wa].y);
-    sumy2y1sq    := sumy2y1sq   + (starsB[wb].y * starsA[wa].y * starsA[wa].y);
-    sumy2x1cu    := sumy2x1cu   + (starsB[wb].y * starsA[wa].x * starsA[wa].x * starsA[wa].x);
-    sumy2x1sqy1  := sumy2x1sqy1 + (starsB[wb].y * starsA[wa].x * starsA[wa].x * starsA[wa].y);
-    sumy2x1y1sq  := sumy2x1y1sq + (starsB[wb].y * starsA[wa].x * starsA[wa].y * starsA[wa].y);
-    sumy2y1cu    := sumy2y1cu   + (starsB[wb].y * starsA[wa].y * starsA[wa].y * starsA[wa].y);
+  for i := 0 to min(length(starsA)-1,length(starsB)-1) do //take the minimum of the two array for the case one list is longer. Should not happen normally.
+  begin
+    sumx2        := sumx2       + starsB[i].x;
+    sumx2x1      := sumx2x1     + (starsB[i].x * starsA[i].x);
+    sumx2y1      := sumx2y1     + (starsB[i].x * starsA[i].y);
+    sumx2x1sq    := sumx2x1sq   + (starsB[i].x * starsA[i].x * starsA[i].x);
+    sumx2x1y1    := sumx2x1y1   + (starsB[i].x * starsA[i].x * starsA[i].y);
+    sumx2y1sq    := sumx2y1sq   + (starsB[i].x * starsA[i].y * starsA[i].y);
+    sumx2x1cu    := sumx2x1cu   + (starsB[i].x * starsA[i].x * starsA[i].x * starsA[i].x);
+    sumx2x1sqy1  := sumx2x1sqy1 + (starsB[i].x * starsA[i].x * starsA[i].x * starsA[i].y);
+    sumx2x1y1sq  := sumx2x1y1sq + (starsB[i].x * starsA[i].x * starsA[i].y * starsA[i].y);
+    sumx2y1cu    := sumx2y1cu   + (starsB[i].x * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumy2        := sumy2       + starsB[i].y;
+    sumy2x1      := sumy2x1     + (starsB[i].y * starsA[i].x);
+    sumy2y1      := sumy2y1     + (starsB[i].y * starsA[i].y);
+    sumy2x1sq    := sumy2x1sq   + (starsB[i].y * starsA[i].x * starsA[i].x);
+    sumy2x1y1    := sumy2x1y1   + (starsB[i].y * starsA[i].x * starsA[i].y);
+    sumy2y1sq    := sumy2y1sq   + (starsB[i].y * starsA[i].y * starsA[i].y);
+    sumy2x1cu    := sumy2x1cu   + (starsB[i].y * starsA[i].x * starsA[i].x * starsA[i].x);
+    sumy2x1sqy1  := sumy2x1sqy1 + (starsB[i].y * starsA[i].x * starsA[i].x * starsA[i].y);
+    sumy2x1y1sq  := sumy2x1y1sq + (starsB[i].y * starsA[i].x * starsA[i].y * starsA[i].y);
+    sumy2y1cu    := sumy2y1cu   + (starsB[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
     { elements of the matrix }
     sum    := sum   + 1.0;
-    sumx1  := sumx1 + starsA[wa].x;
-    sumy1  := sumy1 + starsA[wa].y;
-    sumx1sq  := sumx1sq + (starsA[wa].x * starsA[wa].x);
-    sumx1y1  := sumx1y1 + (starsA[wa].x * starsA[wa].y);
-    sumy1sq  := sumy1sq + (starsA[wa].y * starsA[wa].y);
-    sumx1cu    := sumx1cu   + (starsA[wa].x * starsA[wa].x * starsA[wa].x);
-    sumx1sqy1  := sumx1sqy1 + (starsA[wa].x * starsA[wa].x * starsA[wa].y);
-    sumx1y1sq  := sumx1y1sq + (starsA[wa].x * starsA[wa].y * starsA[wa].y);
-    sumy1cu    := sumy1cu   + (starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumx1qu      := sumx1qu     + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x);
-    sumx1cuy1    := sumx1cuy1   + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].y);
-    sumx1sqy1sq  := sumx1sqy1sq + (starsA[wa].x * starsA[wa].x * starsA[wa].y * starsA[wa].y);
-    sumx1y1cu    := sumx1y1cu   + (starsA[wa].x * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumy1qu      := sumy1qu     + (starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumx1pe      := sumx1pe     + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x);
-    sumx1quy1    := sumx1quy1   + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].y);
-    sumx1cuy1sq  := sumx1cuy1sq + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].y * starsA[wa].y);
-    sumx1sqy1cu  := sumx1sqy1cu + (starsA[wa].x * starsA[wa].x * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumx1y1qu    := sumx1y1qu   + (starsA[wa].x * starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumy1pe      := sumy1pe     + (starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumx1he      := sumx1he     + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x);
-    sumx1pey1    := sumx1pey1   + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].y);
-    sumx1quy1sq  := sumx1quy1sq + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].y * starsA[wa].y);
-    sumx1cuy1cu  := sumx1cuy1cu + (starsA[wa].x * starsA[wa].x * starsA[wa].x * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumx1sqy1qu  := sumx1sqy1qu + (starsA[wa].x * starsA[wa].x * starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumx1y1pe    := sumx1y1pe   + (starsA[wa].x * starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y);
-    sumy1he      := sumy1he     + (starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y * starsA[wa].y);
+    sumx1  := sumx1 + starsA[i].x;
+    sumy1  := sumy1 + starsA[i].y;
+    sumx1sq  := sumx1sq + (starsA[i].x * starsA[i].x);
+    sumx1y1  := sumx1y1 + (starsA[i].x * starsA[i].y);
+    sumy1sq  := sumy1sq + (starsA[i].y * starsA[i].y);
+    sumx1cu    := sumx1cu   + (starsA[i].x * starsA[i].x * starsA[i].x);
+    sumx1sqy1  := sumx1sqy1 + (starsA[i].x * starsA[i].x * starsA[i].y);
+    sumx1y1sq  := sumx1y1sq + (starsA[i].x * starsA[i].y * starsA[i].y);
+    sumy1cu    := sumy1cu   + (starsA[i].y * starsA[i].y * starsA[i].y);
+    sumx1qu      := sumx1qu     + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x);
+    sumx1cuy1    := sumx1cuy1   + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y);
+    sumx1sqy1sq  := sumx1sqy1sq + (starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y);
+    sumx1y1cu    := sumx1y1cu   + (starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumy1qu      := sumy1qu     + (starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumx1pe      := sumx1pe     + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x);
+    sumx1quy1    := sumx1quy1   + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y);
+    sumx1cuy1sq  := sumx1cuy1sq + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y);
+    sumx1sqy1cu  := sumx1sqy1cu + (starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumx1y1qu    := sumx1y1qu   + (starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumy1pe      := sumy1pe     + (starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumx1he      := sumx1he     + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x);
+    sumx1pey1    := sumx1pey1   + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y);
+    sumx1quy1sq  := sumx1quy1sq + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y);
+    sumx1cuy1cu  := sumx1cuy1cu + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumx1sqy1qu  := sumx1sqy1qu + (starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumx1y1pe    := sumx1y1pe   + (starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumy1he      := sumy1he     + (starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
   end;
 
   // Now turn these sums into a matrix and a vector
@@ -698,11 +684,10 @@ begin
   // * and now call the Gaussian-elimination routines to solve the matrix.
   // * The solution for TRANS coefficients A, B, C, D, E, F, I, J will be placed
   // * into the elements on 'vector" after "gauss_matrix' finishes.
-  if gauss_matrix(matrix, 10, vector) <> SH_SUCCESS then
+  if gauss_matrix(matrix, 10, vector,err_mess)=false then
   begin
-    memo2_message('calc_trans_cubic: can not solve for coeffs A,B,C,D,E,F,G,H,I,J');
-    //free_matrix(matrix, 10);
-    exit(SH_GENERIC_ERROR);
+    err_mess:=err_mess+', Calc_trans_cubic: can not solve for coeffs A,B,C,D,E,F,G,H,I,J';
+    exit(false);
   end;
   //Writeln('after calling solution routines, here's matrix');
   solved_a := vector[0];
@@ -806,11 +791,10 @@ begin
   //* and now call the Gaussian-elimination routines to solve the matrix.
   // * The solution for TRANS coefficients K, L, M, N, O, P, Q, R, S, T will be placed
   // * into the elements on 'vector" after "gauss_matrix' finishes.
-  if gauss_matrix(matrix, 10, vector)<> SH_SUCCESS then
+  if gauss_matrix(matrix, 10, vector,err_mess)=false then
   begin
-    memo2_message('Calc_trans_cubic: can not solve for coeffs K,L,M,N,O,P,Q,R,S,T');
-    //free_matrix(matrix, 10);
-    exit(SH_GENERIC_ERROR);
+    err_mess:=err_mess+', Calc_trans_cubic: Can not solve for coeffs K,L,M,N,O,P,Q,R,S,T';
+    exit(false);
   end;
   //Writeln('after  calling solution routines, here's matrix');
   solved_k := vector[0];
@@ -846,10 +830,11 @@ begin
   trans.s := solved_s;
   trans.t := solved_t;
   //free_matrix(matrix, 10);
-  Result := (SH_SUCCESS);
+  Result :=true;
 end;
 
-{ TEST PROGRAM FOR DEVELOPMENT ONLY
+
+{ TEST PROGRAM FOR DEVELOPMENT ONLY ==================================================================================
 
 procedure rotate(rot,x,y :double;var  x2,y2:double);//rotate a vector point, angle seen from y-axis, counter clockwise
 var
@@ -867,6 +852,7 @@ var
 
   asw,bb:  TStarArray;
   trans:  TTrans;
+  sss : string;
   AP_0_0,  AP_0_1,AP_0_2, AP_0_3, AP_1_0, AP_1_1,AP_1_2, AP_2_0, AP_2_1, AP_3_0, BP_0_0, BP_0_1, BP_0_2, BP_0_3, BP_1_0, BP_1_1, BP_1_2, BP_2_0, BP_2_1, BP_3_0 : double;
 
 begin
@@ -924,8 +910,9 @@ begin
 
   if Calc_Trans_Cubic(asw, // First array of s_star structure we match the output TRANS takes their coords into those of array B
                       bb, // Second array of s_star structure we match
-                     trans // Place solved coefficients into this  existing structure's fields
-                      )=0
+                     trans, // Place solved coefficients into this  existing structure's fields
+                     sss
+                      )=false
   then
     beep  //failure
   else

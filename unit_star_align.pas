@@ -46,7 +46,7 @@ uses  unit_annotation;
 {   In matrix calculations, b_matrix[0..nr_columns-1,0..nr_equations-1]:=solution_vector[0..2] * A_XYpositions[0..nr_columns-1,0..nr_equations-1]}
 {                                                                                                                              }
 {   see also Montenbruck & Pfleger, Astronomy on the personal computer}
-procedure lsq_fit( A_matrix: star_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector );
+function lsq_fit( A_matrix: star_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector ): boolean;
   const tiny = 1E-10;  {accuracy}
   var i,j,k, nr_equations,nr_columns,hhh  : integer;
       p,q,h                           : double;
@@ -74,6 +74,17 @@ begin
         end
         else
         begin
+          // Notes:
+          // Zero the left bottom corner of the matrix
+          // Residuals are r1..rn
+          // The sum of the sqr(residuals) should be minimised.
+          // Take two numbers where (p^2+q^2) = 1.
+          // Then (r1^2+r2^2) = (p^2+q^2)*(r1^2+r2^2)
+          // Choose p and h as follows:
+          // p = +A11/h
+          // q = -A21/h
+          // where h= +-sqrt(A11^2+A21^2)
+          // A21=q*A11+p*A21 = (-A21*A11 + A21*A11)/h=0
           h:=sqrt(temp_matrix[j,j]*temp_matrix[j,j]+temp_matrix[j,i]*temp_matrix[j,i]);
           if temp_matrix[j,j]<0 then h:=-h;
           p:=temp_matrix[j,j]/h;
@@ -101,12 +112,13 @@ begin
     H:=b_matrix[i];
     for k:=i+1 to nr_columns-1 do
             h:=h-temp_matrix[k,i]*x_matrix[k];
-    if temp_matrix[i,i]<>0 then x_matrix[i] := h/temp_matrix[i,i]
+    if abs(temp_matrix[i,i])>1E-30 then x_matrix[i] := h/temp_matrix[i,i]
     else
-    x_matrix[i]:=9999999999999999; //v2022. Prevent runtime error dividing by zero. Should normally not happen. In case of zero due to wrong double star detection by using triples force a failure
+    exit(false);//Prevent runtime error dividing by zero. Should normally not happen. In case of zero due to wrong double star detection by using triples force a failure
 
     {solution vector x:=x_matrix[0]x+x_matrix[1]y+x_matrix[2]}
   end;
+  result:=true;
 end; {lsq_fit}
 
 
@@ -934,35 +946,38 @@ end;
 
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 var
-  xy_sqr_ratio   : double;
+  xy_sqr_ratio   :  double;
 begin
+  result:=false; //assume failure
+
+  {3 quads required giving 3 center quad references}
   if find_fit(minimum_quads, tolerance)=false then
   begin
-    result:=false;
     reset_solution_vectors(0.001);{nullify}
     exit;
   end;
-
-  result:=true;{3 quads required giving 3 center quad references}
 
   {in matrix calculations, b_refpositionX[0..2,0..nr_equations-1]:=solution_vectorX[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
   {                        b_refpositionY[0..2,0..nr_equations-1]:=solution_matrixY[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
 
   {find solution vector for X:=ax+by+c  / b_Xref:=solution[0]x+solution[1]y+solution[2]}
-   lsq_fit( A_XYpositions {[0..2,0..nr_equations-1]},b_Xrefpositions, solution_vectorX {[0..2]} );
+  if (lsq_fit( A_XYpositions {[0..2,0..nr_equations-1]},b_Xrefpositions, solution_vectorX {[0..2]}))=false then begin reset_solution_vectors(0.001);exit; end;
 
   {find solution vector for Y:=ax+by+c  / b_Yref:=solution[0]x+solution[1]y+solution[2]}
-  lsq_fit( A_XYpositions {0..2,[0..nr_equations-1]},b_Yrefpositions, solution_vectorY {[0..2]});
+  if (lsq_fit( A_XYpositions {0..2,[0..nr_equations-1]},b_Yrefpositions, solution_vectorY {[0..2]}))=false then begin reset_solution_vectors(0.001);exit; end;
 
-  xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) );
-
+  xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) ); //last check
   if ((xy_sqr_ratio<0.9) or (xy_sqr_ratio>1.1)) then {dimensions x, y are not the same, something wrong.}
   begin
-    result:=false;
     reset_solution_vectors(0.001);{nullify}
     if solve_show_log then {global variable set in find stars} memo2_message('Solution skipped on XY ratio: '+ floattostr(xy_sqr_ratio));
-  end;
+  end
+  else
+  result:=true;
+
+
 end;
+
 
 end.
 
