@@ -1902,9 +1902,12 @@ begin
           {quick and dirty method to roughly correct existing solutions}
           head.crpix1:=solution_vectorX[0]*(head.crpix1-1)+solution_vectorX[1]*(head.crpix2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
           head.crpix2:=solution_vectorY[0]*(head.crpix1-1)+solution_vectorY[1]*(head.crpix2-1)+solution_vectorY[2];
+
+          mainwindow.Memo1.Lines.EndUpdate;
           update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
           update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
           update_text   ('COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
+          mainwindow.Memo1.Lines.EndUpdate;
         end;
 
 

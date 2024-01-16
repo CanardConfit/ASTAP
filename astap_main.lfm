@@ -1173,12 +1173,6 @@ object mainwindow: Tmainwindow
         ShortCut = 16464
         OnClick = astrometric_solve_image1Click
       end
-      object sip1: TMenuItem
-        Caption = 'Add SIP coefficients to header'
-        Enabled = False
-        Hint = 'SIP polynomial factors will be calculated and added to the header allowing more accurate position measurement outside the image center.  This basic implementation will only compensate for  barrel/pincushion distortion.'
-        OnClick = sip1Click
-      end
       object MenuItem9: TMenuItem
         Caption = '-'
       end
@@ -1200,12 +1194,6 @@ object mainwindow: Tmainwindow
           AutoCheck = True
           Caption = '          ☑ option "Add limiting magnitude and SQM"'
           Hint = 'Add estimated limiting magnitude and SQM to the file header. The keyword LIM_MAGN and SQM can be configured in tab lights. For SQM enter a fixed pedestal value in viewer menu SQM report.'
-          ShowAlwaysCheckable = True
-        end
-        object add_sip_check1: TMenuItem
-          AutoCheck = True
-          Caption = '          ☑ option "Add SIP coefficients"       '
-          Hint = 'Add basic SIP coefficients for maximum readout accuracy.'
           ShowAlwaysCheckable = True
         end
         object maintain_date1: TMenuItem

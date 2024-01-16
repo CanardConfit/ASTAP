@@ -570,6 +570,7 @@ type
     use_manual_alignment1: TRadioButton;
     use_star_alignment1: TRadioButton;
     use_triples1: TCheckBox;
+    add_sip1: TCheckBox;
     Viewimage9: TMenuItem;
     copy_files_to_clipboard1: TMenuItem;
     list_to_clipboard8: TMenuItem;
@@ -4964,6 +4965,8 @@ begin
 
   img_temp2 := nil;
 
+
+  mainwindow.Memo1.Lines.BeginUpdate;
   update_integer('NAXIS1  =', ' / length of x axis                               '
     , head.Width);
   update_integer('NAXIS2  =', ' / length of y axis                               '
@@ -5012,6 +5015,8 @@ begin
     update_float('PIXSIZE2=', ' / Pixel height in microns (after stretching)      ',false, head.YPIXSZ);
   end;
   add_text('HISTORY   ', 'Image resized with factor ' + floattostr6(ratio));
+  mainwindow.Memo1.Lines.EndUpdate;
+
 end;
 
 
@@ -12389,6 +12394,8 @@ begin
 
         plot_fits(mainwindow.image1, True, True);{plot real}
 
+        mainwindow.Memo1.Lines.BeginUpdate;
+
         remove_key('DATE    ', False{all});{no purpose anymore for the original date written}
         remove_key('EXPTIME', False{all}); {remove, will be added later in the header}
         remove_key('EXPOSURE', False{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
@@ -12540,6 +12547,7 @@ begin
           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
 
+
           thefilters := '';
           for i := 0 to 4 do if length(filters_used[i]) > 0 then thefilters := thefilters + ' ' + filters_used[i];
           thefilters := trim(thefilters);
@@ -12554,6 +12562,8 @@ begin
             IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L  (' + thefilters + ')';
           {head.exposure}
         end;
+
+        mainwindow.Memo1.Lines.EndUpdate;
 
         filename2 := extractfilepath(filename2) + propose_file_name(stitching_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, thefilters);{give it a nice file name}
 
