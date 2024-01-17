@@ -100,7 +100,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 interface
 
 uses   Classes,SysUtils,controls,forms,math,
-       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field;
+       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field, unit_calc_trans_cubic;
 
 function solve_image(img :image_array;var hd: Theader; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
@@ -525,6 +525,208 @@ begin
 end;
 
 
+procedure add_sip(hd: Theader;ra_database,dec_database:double);
+var
+  stars_measured,stars_reference                  : TStarArray;
+  trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
+  len,i          : integer;
+  succ: boolean;
+  err_mess: string;
+  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec : double;
+begin
+  {1) Solve the image with the 1th order solver.
+   2) Get the x,y coordinates of the detected stars= "stars_measured"
+   3) Get the x,y coordinates of the reference stars= "stars_reference"
+   4) Shift the x,y coordinates of "stars_measured" to the center of the image. so position [0,0] is at CRPIX1, CRPIX2.
+   5) Convert reference stars coordinates to the same coordinate system as the measured stars.
+      In my case I had to convert the quad x,y coordinates to ra, dec and then convert these to image position using the original first order solution
+   6) Now both the "stars_measured" and "stars_reference" positions match with stars in the image except for distortion. Position [0,0] is at CRPIX1, CRPIX2.
+   7) For pixel_to_sky  call:  Calc_Trans_Cubic(stars_measured,  stars_reference,...).   The trans array will work for pixel to sky.
+   8) For sky_to_pixel  call:  Calc_Trans_Cubic(stars_reference,  stars_measured,...)    The trans array will work for sky to pixel.
+   }
+
+  len:=length(b_Xrefpositions);
+  if len<20 then
+  begin
+    memo2_message('Not sufficient quads for a Simple Imaging Polynomial.');
+    exit;
+  end;
+  setlength(stars_measured,len);
+  setlength(stars_reference,len);
+
+  for i:=0 to len-1 do
+  begin
+    stars_measured[i].x:=A_XYpositions[0,i]-hd.crpix1;//position as seen from center at crpix1, crpix2
+    stars_measured[i].y:=A_XYpositions[1,i]-hd.crpix2;
+
+    standard_equatorial( ra_database,dec_database,
+                         b_Xrefpositions[i], {x reference star}
+                         b_Yrefpositions[i], {y reference star}
+                         1, {CCD scale}
+                         ra_t,dec_t) ; //calculate back to the reference star positions
+
+   {5. Conversion (RA,DEC) -> x,y image}
+   sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then separate sin and cos functions}
+   sincos(hd.dec0,SIN_dec_ref,COS_dec_ref);{}
+
+   delta_ra:=ra_t-hd.ra0;
+   sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+
+   H := SIN_dec_t*sin_dec_ref + COS_dec_t*COS_dec_ref*COS_delta_ra;
+   dRA := (COS_dec_t*SIN_delta_ra / H)*180/pi;
+   dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
+
+   det:=hd.cd2_2*hd.cd1_1 - hd.cd1_2*hd.cd2_1;
+
+   stars_reference[i].x:= - (hd.cd1_2*dDEC - hd.cd2_2*dRA) / det;
+   stars_reference[i].y:= + (hd.cd1_1*dDEC - hd.cd2_1*dRA) / det;
+  end;
+  succ:=Calc_Trans_Cubic(stars_reference,     // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
+                         stars_measured,      // Second array of s_star structure we match
+                         trans_sky_to_pixel,  // Transfer coefficients for stars_measured positions to stars_reference positions
+                         err_mess             // any error message
+                            );
+  if succ=false then
+  begin
+    memo2_message(err_mess);
+    exit;
+  end;
+
+  succ:=Calc_Trans_Cubic(stars_measured,      // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
+                         stars_reference,     // Second array of s_star structure we match
+                         trans_pixel_to_sky,  // Transfer coefficients for stars_measured positions to stars_reference positions
+                         err_mess             // any error message
+                         );
+
+
+  if succ=false then
+  begin
+    memo2_message(err_mess);
+    exit;
+  end;
+
+  // const   A,K
+  //  x;      B,L
+  //  y;      C,M
+  //  x*x;    D,N
+  //  x*y;    E,O
+  //  y*y;    F,P
+  //  x*x*x;  G,Q
+  //  x*x*y;  H,R
+  //  x*y*y;  J,S
+  //  y*y*y;  K,T
+
+    sip:=true;
+    // SIP definitions https://irsa.ipac.caltech.edu/data/SPITZER/docs/files/spitzer/shupeADASS.pdf
+
+    A_ORDER:=3;{allow usage in astap}
+    A_0_0:=0;//trans_pixel_to_sky.A,is already in the WCS solution;
+    A_0_1:=0;//trans_pixel_to_sky.C,is already in the WCS solution;
+    A_0_2:=trans_pixel_to_sky.F;
+    A_0_3:=trans_pixel_to_sky.J;
+    A_1_0:=0; //trans_pixel_to_sky.B;
+    A_1_1:=trans_pixel_to_sky.E;
+    A_1_2:=trans_pixel_to_sky.I;
+    A_2_0:=trans_pixel_to_sky.D;
+    A_2_1:=trans_pixel_to_sky.H;
+    A_3_0:=trans_pixel_to_sky.G;
+
+    B_0_0:=0;//trans_pixel_to_sky.K, is already in the WCS solution;
+    B_0_1:=0;//trans_pixel_to_sky.M, is already in the WCS solution;
+    B_0_2:=trans_pixel_to_sky.P;
+    B_0_3:=trans_pixel_to_sky.T;
+    B_1_0:=0;//trans_pixel_to_sky.L;
+    B_1_1:=trans_pixel_to_sky.O;
+    B_1_2:=trans_pixel_to_sky.S;
+    B_2_0:=trans_pixel_to_sky.N;
+    B_2_1:=trans_pixel_to_sky.R;
+    B_3_0:=trans_pixel_to_sky.Q;
+
+    {sky to pixel coefficients}
+    AP_order:=3; {allow usage in astap}
+    AP_0_0:=0;   //trans_sky_to_pixel.A,is already in the WCS solution;
+    AP_0_1:=0;   //trans_sky_to_pixel.C, is already in the WCS solution
+    AP_0_2:=trans_sky_to_pixel.F;
+    AP_0_3:=trans_sky_to_pixel.J;
+    AP_1_0:=0;   //trans_sky_to_pixel.B, is already in the WCS solution
+    AP_1_1:=trans_sky_to_pixel.E;
+    AP_1_2:=trans_sky_to_pixel.I;
+    AP_2_0:=trans_sky_to_pixel.D;
+    AP_2_1:=trans_sky_to_pixel.H;
+    AP_3_0:=trans_sky_to_pixel.G;
+
+
+    // const   A,K
+    //  x;      B,L
+    //  y;      C,M
+    //  x*x;    D,N
+    //  x*y;    E,O
+    //  y*y;    F,P
+    //  x*x*x;  G,Q
+    //  x*x*y;  H,R
+    //  x*y*y;  I,S
+    //  y*y*y;  J,T
+
+    BP_0_0:=0;   //trans_sky_to_pixel.K, is already in the WCS solution;
+    BP_0_1:=0;   //(trans_sky_to_pixel.L, is already in the WCS solution);
+    BP_0_2:=trans_sky_to_pixel.P;
+    BP_0_3:=trans_sky_to_pixel.T;
+    BP_1_0:=0;   // trans_sky_to_pixel.M,is already in the WCS solution;
+    BP_1_1:=trans_sky_to_pixel.O;
+    BP_1_2:=trans_sky_to_pixel.S;
+    BP_2_0:=trans_sky_to_pixel.N;
+    BP_2_1:=trans_sky_to_pixel.R;
+    BP_3_0:=trans_sky_to_pixel.Q;
+
+    update_float('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',false,3);
+    update_float('A_0_0   =',' / SIP coefficient                                ',false,A_0_0);
+    update_float('A_0_1   =',' / SIP coefficient                                ',false,A_0_1);
+    update_float('A_0_2   =',' / SIP coefficient                                ',false,A_0_2);
+    update_float('A_0_3   =',' / SIP coefficient                                ',false,A_0_3);
+    update_float('A_1_0   =',' / SIP coefficient                                ',false,A_1_0);
+    update_float('A_1_1   =',' / SIP coefficient                                ',false,A_1_1);
+    update_float('A_1_2   =',' / SIP coefficient                                ',false,A_1_2);
+    update_float('A_2_0   =',' / SIP coefficient                                ',false,A_2_0);
+    update_float('A_2_1   =',' / SIP coefficient                                ',false,A_2_1);
+    update_float('A_3_0   =',' / SIP coefficient                                ',false,A_3_0);
+
+
+    update_float('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',false,3);
+    update_float('B_0_0   =',' / SIP coefficient                                ',false ,B_0_0);
+    update_float('B_0_1   =',' / SIP coefficient                                ',false ,B_0_1);
+    update_float('B_0_2   =',' / SIP coefficient                                ',false ,B_0_2);
+    update_float('B_0_3   =',' / SIP coefficient                                ',false ,B_0_3);
+    update_float('B_1_0   =',' / SIP coefficient                                ',false ,B_1_0);
+    update_float('B_1_1   =',' / SIP coefficient                                ',false ,B_1_1);
+    update_float('B_1_2   =',' / SIP coefficient                                ',false ,B_1_2);
+    update_float('B_2_0   =',' / SIP coefficient                                ',false ,B_2_0);
+    update_float('B_2_1   =',' / SIP coefficient                                ',false ,B_2_1);
+    update_float('B_3_0   =',' / SIP coefficient                                ',false ,B_3_0);
+
+    update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',false,3);
+    update_float('AP_0_0  =',' / SIP coefficient                                ',false,AP_0_0);
+    update_float('AP_0_1  =',' / SIP coefficient                                ',false,AP_0_1);
+    update_float('AP_0_2  =',' / SIP coefficient                                ',false,AP_0_2);
+    update_float('AP_0_3  =',' / SIP coefficient                                ',false,AP_0_3);
+    update_float('AP_1_0  =',' / SIP coefficient                                ',false,AP_1_0);
+    update_float('AP_1_1  =',' / SIP coefficient                                ',false,AP_1_1);
+    update_float('AP_1_2  =',' / SIP coefficient                                ',false,AP_1_2);
+    update_float('AP_2_0  =',' / SIP coefficient                                ',false,AP_2_0);
+    update_float('AP_2_1  =',' / SIP coefficient                                ',false,AP_2_1);
+    update_float('AP_3_0  =',' / SIP coefficient                                ',false,AP_3_0);
+
+    update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',false,3);
+    update_float('BP_0_0  =',' / SIP coefficient                                ',false ,BP_0_0);
+    update_float('BP_0_1  =',' / SIP coefficient                                ',false ,BP_0_1);
+    update_float('BP_0_2  =',' / SIP coefficient                                ',false ,BP_0_2);
+    update_float('BP_0_3  =',' / SIP coefficient                                ',false ,BP_0_3);
+    update_float('BP_1_0  =',' / SIP coefficient                                ',false ,BP_1_0);
+    update_float('BP_1_1  =',' / SIP coefficient                                ',false ,BP_1_1);
+    update_float('BP_1_2  =',' / SIP coefficient                                ',false ,BP_1_2);
+    update_float('BP_2_0  =',' / SIP coefficient                                ',false ,BP_2_0);
+    update_float('BP_2_1  =',' / SIP coefficient                                ',false ,BP_2_1);
+    update_float('BP_3_0  =',' / SIP coefficient                                ',false ,BP_3_0);
+end;
 
 function solve_image(img :image_array;var hd: Theader;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
@@ -985,6 +1187,7 @@ begin
     hd.crota1:=crota1*180/pi;
     //end new 2023 method
 
+
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
     offset_found:={' Δ was '}distance_to_string(sep_search {scale selection},sep_search)+'.';
@@ -1006,6 +1209,18 @@ begin
     memo2_message('Solution found: '+  prepare_ra(hd.ra0,': ')+#9+prepare_dec(hd.dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info_str+' Used stars down to magnitude: '+floattostrF(mag2/10,ffFixed,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(hd.ra0,': ')+'     '+prepare_dec(hd.dec0,'° ')  );
     result:=true;
+
+    mainwindow.Memo1.Lines.BeginUpdate;
+
+    memo2_message('start');
+  for i:=0 to 100 do
+  begin
+    if stackmenu1.add_sip1.checked then
+      add_sip(hd,ra_database,dec_database);//takes about 200 ms sec due to the header update. Calculations are very fast
+
+  end;
+  memo2_message('stop');
+
 
     update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
     update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
@@ -1032,6 +1247,7 @@ begin
     update_float('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd2_2);
     update_text ('PLTSOLVD=','                   T / Astrometric solved by ASTAP v'+astap_version+'.       ');
     update_text ('COMMENT 7', solved_in+' Offset '+offset_found+mount_offset_str);
+    mainwindow.Memo1.Lines.EndUpdate;
 
     if solve_show_log then {global variable set in find stars}
     begin

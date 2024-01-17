@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 418
+  Left = 220
   Height = 707
-  Top = 188
+  Top = 212
   Width = 1531
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -2276,11 +2276,11 @@ object stackmenu1: Tstackmenu1
             Left = 208
             Height = 192
             Top = 0
-            Width = 849
+            Width = 872
             AutoSize = True
             Caption = 'Solver'
             ClientHeight = 172
-            ClientWidth = 845
+            ClientWidth = 868
             ParentBackground = False
             ParentFont = False
             TabOrder = 4
@@ -2288,12 +2288,12 @@ object stackmenu1: Tstackmenu1
               Left = 0
               Height = 172
               Top = 0
-              Width = 845
+              Width = 868
               AutoSize = True
               BevelColor = clMenuHighlight
               BevelOuter = bvSpace
               ClientHeight = 172
-              ClientWidth = 845
+              ClientWidth = 868
               ParentBackground = False
               ParentFont = False
               TabOrder = 0
@@ -2610,7 +2610,7 @@ object stackmenu1: Tstackmenu1
                 end
               end
               object calibrate_prior_solving1: TCheckBox
-                Left = 673
+                Left = 696
                 Height = 19
                 Hint = 'Calibrate the images prior to solving. Use this for noisy images.'
                 Top = 104
@@ -2624,7 +2624,7 @@ object stackmenu1: Tstackmenu1
                 OnChange = calibrate_prior_solving1Change
               end
               object force_oversize1: TCheckBox
-                Left = 673
+                Left = 696
                 Height = 19
                 Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but it will slow down solving.  Default this is off.  If off  the search window size will be automatically reduced if sufficient stars are found. This option is equivalent to command line option -speed'
                 Top = 80
@@ -2686,7 +2686,7 @@ object stackmenu1: Tstackmenu1
                 TabOrder = 7
               end
               object save_settings_extra_button1: TButton
-                Left = 769
+                Left = 792
                 Height = 25
                 Hint = 'Save settings'
                 Top = 6
@@ -2697,7 +2697,7 @@ object stackmenu1: Tstackmenu1
                 OnClick = save_settings_extra_button1Click
               end
               object check_pattern_filter1: TCheckBox
-                Left = 673
+                Left = 696
                 Height = 19
                 Hint = 'Intended for OSC cameras in bin 1x1 mode only. It will remove the check pattern prior to solving. '
                 Top = 128
@@ -2711,7 +2711,7 @@ object stackmenu1: Tstackmenu1
                 OnChange = check_pattern_filter1Change
               end
               object use_triples1: TCheckBox
-                Left = 671
+                Left = 696
                 Height = 19
                 Hint = 'Use triples (three star) for pattern detection for images with less then 30 stars. In all other case use quads (four star).'
                 Top = 56
@@ -2722,6 +2722,19 @@ object stackmenu1: Tstackmenu1
                 ParentColor = False
                 ParentFont = False
                 TabOrder = 10
+              end
+              object add_sip1: TCheckBox
+                Left = 696
+                Height = 19
+                Hint = 'Add SIP image distortion information to the FITS image header.'
+                Top = 33
+                Width = 122
+                BorderSpacing.Around = 5
+                Caption = 'Add SIP polynomial'
+                Color = clBtnFace
+                ParentColor = False
+                ParentFont = False
+                TabOrder = 11
               end
             end
           end

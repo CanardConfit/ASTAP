@@ -72,7 +72,7 @@ type
 
 function Calc_Trans_Cubic(starsA: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
                           starsB: TStarArray; // Second array of s_star structure we match
-                          out trans: TTrans;  // Place solved coefficients into this  existing structure's fields
+                          out trans: TTrans;  // Transfer coefficients for starsA positions to starsB positions
                           out err_mess : string // any error message
                           ): boolean; //succes
 
@@ -83,7 +83,7 @@ type
   Tsolutionvector = array[0..9] of Double;
 
 const
-  MATRIX_TOL=1E-10;
+  MATRIX_TOL=1E-100;
 
 
 {/***************************************************************************
@@ -402,7 +402,7 @@ end;
 
 function Calc_Trans_Cubic(starsA: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
                           starsB: TStarArray; // Second array of s_star structure we match
-                          out trans: TTrans; // Place solved coefficients into this  existing structure's fields
+                          out trans: TTrans; // Transfer coefficients for starsA positions to starsB positions
                           out err_mess : string   // any error message
                            ): boolean; //succes
 
@@ -833,8 +833,9 @@ begin
   Result :=true;
 end;
 
+{
 
-{ TEST PROGRAM FOR DEVELOPMENT ONLY ==================================================================================
+   // TEST PROGRAM FOR DEVELOPMENT ONLY ==================================================================================
 
 procedure rotate(rot,x,y :double;var  x2,y2:double);//rotate a vector point, angle seen from y-axis, counter clockwise
 var
@@ -848,17 +849,18 @@ end;
 var
   b : TVector;
   i,j,k, count                                 : Integer;
-  x,y,x2,y2,testx,testy, maxerrorX,maxerrorY,maxcorrectionX,maxcorrectionY,correction,errorposX,errorposY: Double;
+  x,y,x2,y2,testx,testy, maxerrorX,maxerrorY,correction,errorposX,errorposY: Double;
 
-  asw,bb:  TStarArray;
+  distorted,reference,ideal:  TStarArray;
   trans:  TTrans;
   sss : string;
   AP_0_0,  AP_0_1,AP_0_2, AP_0_3, AP_1_0, AP_1_1,AP_1_2, AP_2_0, AP_2_1, AP_3_0, BP_0_0, BP_0_1, BP_0_2, BP_0_3, BP_1_0, BP_1_1, BP_1_2, BP_2_0, BP_2_1, BP_3_0 : double;
 
 begin
   count:=0;
-  setlength(asw,10000);
-  setlength(bb,10000);
+  setlength(distorted,10000);
+  setlength(reference,10000);
+  setlength(ideal,10000);
 
   for i:=-10 to +10 do
   for j:=-10 to +10 do
@@ -867,13 +869,16 @@ begin
     x:=j*100;//image 2000x2000
     y:=i*100;
 
-    bb[count].x:=x+1000;//reference X
-    bb[count].y:=x+500;//reference X
+    reference[count].x:=x+1000;//reference X
+    reference[count].y:=y+500;//reference X
 
-    rotate(pi*30/180,x,y, x2,y2);
+
+    rotate(0*pi*30/180,x,y, x2,y2);
     x:=x2;
     y:=y2;
 
+    ideal[count].x:=x;//reference X
+    ideal[count].y:=y;
 
     AP_0_0  :=      0.0124162099556 ;
     AP_0_1  :=   -9.16796068412E-08 ;
@@ -901,28 +906,49 @@ begin
     x:=x+AP_0_0+ AP_0_1*y +AP_0_2*y*y + AP_0_3*y*y*y +AP_1_0*x +AP_1_1*x*y + AP_1_2*x*y*y + AP_2_0*x*x + AP_2_1*x*x*y+ AP_3_0*x*x*x;//process, image with significant optical distortion
     y:=y+BP_0_0+ BP_0_1*y +BP_0_2*y*y + BP_0_3*y*y*y +BP_1_0*x +BP_1_1*x*y + BP_1_2*x*y*y + BP_2_0*x*x + BP_2_1*x*x*y+ BP_3_0*x*x*x;//process
 
-    asw[count].x:=x;
-    asw[count].y:=y;
+    distorted[count].x:=x;
+    distorted[count].y:=y;
     inc(count);
   end;
-  setlength(asw,count);
+  setlength(distorted,count);
   setlength(b,count);
 
-  if Calc_Trans_Cubic(asw, // First array of s_star structure we match the output TRANS takes their coords into those of array B
-                      bb, // Second array of s_star structure we match
-                     trans, // Place solved coefficients into this  existing structure's fields
-                     sss
-                      )=false
-  then
-    beep  //failure
-  else
-  //succes
+
 
  //TESTING ============
   maxerrorX:=0;
   maxerrorY:=0;
-  maxcorrectionX:=0;
-  maxcorrectionY:=0;
+  //test uncorrected
+
+  for i:=0 to count-1 do
+  begin
+     testX:=distorted[i].x- ideal[i].x;
+     if abs(testX)>maxerrorX then
+     begin
+       maxerrorX:=abs(testX);
+       errorposY:=i;
+     end;
+
+     testY:=distorted[i].y- ideal[i].y;
+     if abs(testY)>maxerrorY then
+     begin
+       maxerrorY:=abs(testY);
+       errorposY:=i;
+     end;
+  end;
+  beep;
+
+   if Calc_Trans_Cubic(distorted, // First array of s_star structure we match the output TRANS takes their coords into those of array B
+                       reference, // Second array of s_star structure we match
+                      trans, // Place solved coefficients into this  existing structure's fields
+                      sss
+                       )=false
+
+   then
+     beep  //failure
+   else
+   //succes
+
 
 // const   A,K
 //  x;      B,L
@@ -932,14 +958,16 @@ begin
 //  y*y;    F,P
 //  x*x*x;  G,Q
 //  x*x*y;  H,R
-//  x*y*y;  J,S
-//  y*y*y;  K,T
+//  x*y*y;  I,S
+//  y*y*y;  J,T
 
+  maxerrorX:=0;
+  maxerrorY:=0;
 
   for i:=0 to count-1 do
   begin
-  x:=asw[i].x;
-  y:=asw[i].y;
+  x:=distorted[i].x;
+  y:=distorted[i].y;
   correction:=
       trans.a   +
       trans.b*x +
@@ -951,7 +979,7 @@ begin
       trans.h*x*x*y +
       trans.i*x*y*y +
       trans.j*y*y*y;
-      testX:=correction-bb[i].x;
+      testX:=correction-reference[i].x;
 
    if abs(testX)>maxerrorX then
    begin
@@ -971,7 +999,7 @@ begin
         trans.r*x*x*y +
         trans.s*x*y*y +
         trans.t*y*y*y;
-        testY:=correction-bb[i].y;
+        testY:=correction-reference[i].y;
 
      if abs(testY)>maxerrorY then
      begin
@@ -980,7 +1008,7 @@ begin
      end;
    end;
    beep;
- }
+   }
 
 end.
 
