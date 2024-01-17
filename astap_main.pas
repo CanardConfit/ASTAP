@@ -3036,10 +3036,11 @@ begin
   end;
 end;
 
+//    if inpt=copy(mainwindow.Memo1.Lines[count1],1,length(inpt)) then {found}
 
 procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
  var
-   s,aline  : string;
+   s,aline,dummy  : string;
    count1: integer;
 begin
   str(x:20,s);
@@ -3050,6 +3051,7 @@ begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
     begin
       aline:=mainwindow.Memo1.Lines[count1];
+
       if ((preserve_comment) and (copy(aline,32,1)='/')) then
       begin
         delete(aline,11,20); {preserve comment}

@@ -679,29 +679,29 @@ begin
     BP_3_0:=trans_sky_to_pixel.Q;
 
     update_float('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',false,3);
-    update_float('A_0_0  =',' / SIP coefficient                                ',false,A_0_0);
-    update_float('A_0_1  =',' / SIP coefficient                                ',false,A_0_1);
-    update_float('A_0_2  =',' / SIP coefficient                                ',false,A_0_2);
-    update_float('A_0_3  =',' / SIP coefficient                                ',false,A_0_3);
-    update_float('A_1_0  =',' / SIP coefficient                                ',false,A_1_0);
-    update_float('A_1_1  =',' / SIP coefficient                                ',false,A_1_1);
-    update_float('A_1_2  =',' / SIP coefficient                                ',false,A_1_2);
-    update_float('A_2_0  =',' / SIP coefficient                                ',false,A_2_0);
-    update_float('A_2_1  =',' / SIP coefficient                                ',false,A_2_1);
-    update_float('A_3_0  =',' / SIP coefficient                                ',false,A_3_0);
+    update_float('A_0_0   =',' / SIP coefficient                                ',false,A_0_0);
+    update_float('A_0_1   =',' / SIP coefficient                                ',false,A_0_1);
+    update_float('A_0_2   =',' / SIP coefficient                                ',false,A_0_2);
+    update_float('A_0_3   =',' / SIP coefficient                                ',false,A_0_3);
+    update_float('A_1_0   =',' / SIP coefficient                                ',false,A_1_0);
+    update_float('A_1_1   =',' / SIP coefficient                                ',false,A_1_1);
+    update_float('A_1_2   =',' / SIP coefficient                                ',false,A_1_2);
+    update_float('A_2_0   =',' / SIP coefficient                                ',false,A_2_0);
+    update_float('A_2_1   =',' / SIP coefficient                                ',false,A_2_1);
+    update_float('A_3_0   =',' / SIP coefficient                                ',false,A_3_0);
 
 
     update_float('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',false,3);
-    update_float('B_0_0  =',' / SIP coefficient                                ',false ,B_0_0);
-    update_float('B_0_1  =',' / SIP coefficient                                ',false ,B_0_1);
-    update_float('B_0_2  =',' / SIP coefficient                                ',false ,B_0_2);
-    update_float('B_0_3  =',' / SIP coefficient                                ',false ,B_0_3);
-    update_float('B_1_0  =',' / SIP coefficient                                ',false ,B_1_0);
-    update_float('B_1_1  =',' / SIP coefficient                                ',false ,B_1_1);
-    update_float('B_1_2  =',' / SIP coefficient                                ',false ,B_1_2);
-    update_float('B_2_0  =',' / SIP coefficient                                ',false ,B_2_0);
-    update_float('B_2_1  =',' / SIP coefficient                                ',false ,B_2_1);
-    update_float('B_3_0  =',' / SIP coefficient                                ',false ,B_3_0);
+    update_float('B_0_0   =',' / SIP coefficient                                ',false ,B_0_0);
+    update_float('B_0_1   =',' / SIP coefficient                                ',false ,B_0_1);
+    update_float('B_0_2   =',' / SIP coefficient                                ',false ,B_0_2);
+    update_float('B_0_3   =',' / SIP coefficient                                ',false ,B_0_3);
+    update_float('B_1_0   =',' / SIP coefficient                                ',false ,B_1_0);
+    update_float('B_1_1   =',' / SIP coefficient                                ',false ,B_1_1);
+    update_float('B_1_2   =',' / SIP coefficient                                ',false ,B_1_2);
+    update_float('B_2_0   =',' / SIP coefficient                                ',false ,B_2_0);
+    update_float('B_2_1   =',' / SIP coefficient                                ',false ,B_2_1);
+    update_float('B_3_0   =',' / SIP coefficient                                ',false ,B_3_0);
 
     update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',false,3);
     update_float('AP_0_0  =',' / SIP coefficient                                ',false,AP_0_0);
@@ -1212,14 +1212,14 @@ begin
 
     mainwindow.Memo1.Lines.BeginUpdate;
 
-//    memo2_message('start');
-//  for i:=0 to 100 do
-//  begin
+    memo2_message('start');
+  for i:=0 to 100 do
+  begin
     if stackmenu1.add_sip1.checked then
       add_sip(hd,ra_database,dec_database);//takes about 200 ms sec due to the header update. Calculations are very fast
 
-//  end;
-//  memo2_message('stop');
+  end;
+  memo2_message('stop');
 
 
     update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
