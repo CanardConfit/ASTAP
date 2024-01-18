@@ -1,4 +1,7 @@
-\lazarus\lazbuild astap_w64.lpi
+del .\*.ppu
+del .\*.O
+
+d:\lazarus\lazbuild  astap_w64.lpi -B
 
 pkzip25 -add astap .\astap.exe
 pkzip25 -add astap .\deep_sky.csv
@@ -11,7 +14,7 @@ copy astap.zip C:\webpage\webpage\homepage_hnsky /y
 copy C:\astap.fpc\output\Output\mysetup.exe C:\webpage\webpage\homepage_hnsky\astap_setup.exe /y
 
 
-\lazarus\lazbuild astap_w32.lpi
+d:\lazarus\lazbuild astap_w32.lpi  -B
 
 pkzip25 -add astapwin32 .\astap.exe
 pkzip25 -add astapwin32 .\deep_sky.csv

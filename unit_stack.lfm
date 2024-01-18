@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_stackmethod1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 5
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2726,11 +2726,11 @@ object stackmenu1: Tstackmenu1
               object add_sip1: TCheckBox
                 Left = 696
                 Height = 19
-                Hint = 'Add SIP image distortion information to the FITS image header.'
+                Hint = 'Add and use SIP image distortion information.  Polynomial factors up to third order will be written to the FITS image header.'
                 Top = 33
-                Width = 122
+                Width = 97
                 BorderSpacing.Around = 5
-                Caption = 'Add SIP polynomial'
+                Caption = 'SIP polynomial'
                 Color = clBtnFace
                 ParentColor = False
                 ParentFont = False

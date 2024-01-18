@@ -998,7 +998,7 @@ procedure box_blur(colors, range : integer; var img: image_array);{blur by combi
 procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter(var img: image_array); {remove black spots with value zero}{execution time about 0.4 sec}
 
-function create_internal_solution(img: image_array; hd: theader): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
+function update_solution_and_save(img: image_array; hd: theader): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function apply_dark_and_flat(var img: image_array): boolean; inline;{apply dark and flat if required, renew if different head.exposure or ccd temp}
 
 procedure smart_colour_smooth(var img: image_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
@@ -2294,6 +2294,9 @@ begin
                 {give internal position}
 
                 {is internal solution available?}
+                if A_ORDER>0 then
+                  stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:='✓✓'
+                else
                 if head_2.cd1_1 <> 0 then
                   ListView1.Items.item[c].subitems.Strings[L_solution] := '✓'
                 else
@@ -5879,7 +5882,7 @@ begin
     {no solution or ignore solution}
   begin
     memo2_message('Solving file: ' + filename2);
-    if create_internal_solution(img_loaded, head) = False then
+    if update_solution_and_save(img_loaded, head) = False then
     begin
       memo2_message('Abort, can' + #39 + 't solve ' + filename2);
       Screen.Cursor := crDefault;    { back to normal }
@@ -11241,7 +11244,7 @@ begin
 end;
 
 
-function create_internal_solution(img: image_array; hd: theader): boolean;  {plate solving, image should be already loaded create internal solution using the internal solver}
+function update_solution_and_save(img: image_array; hd: theader): boolean;  {plate solving, image should be already loaded create internal solution using the internal solver}
 begin
   if solve_image(img, hd, True) then {match between loaded image and star database}
   begin
@@ -11636,7 +11639,7 @@ procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
 
   i, c, over_size, over_sizeL, nrfiles, image_counter, object_counter,
-  first_file, total_counter, counter_colours,analyse_level: integer;
+  first_file, total_counter, counter_colours,analyse_level, solution_type,dum: integer;
   filter_name1, filter_name2, defilter, filename3,
   extra1, extra2, object_to_process, stack_info, thefilters                : string;
   lrgb, solution, monofile, ignore, cal_and_align,
@@ -11801,10 +11804,10 @@ begin
     else
       ignore := stackmenu1.ignore_header_solution1.Checked; {stacking}
 
+
     for c := 0 to ListView1.items.Count - 1 do
-      if ((ListView1.items[c].Checked = True) and
-        ((ignore) or (ListView1.Items.item[c].subitems.Strings[L_solution] <>
-        '✓')){no internal solution }) then
+      if ListView1.items[c].Checked then
+      if ((ignore) or (copy(ListView1.Items.item[c].subitems.Strings[L_solution],1,1) <>'✓')) then  //no internal solution
       begin
         try { Do some lengthy operation }
           ListView1.Selected := nil; {remove any selection}
@@ -11829,10 +11832,7 @@ begin
             Screen.Cursor := crDefault;
             exit;
           end;
-          if ((head.cd1_1 = 0) or (ignore)) then
-            solution := create_internal_solution(img_loaded, head)
-          else
-            solution := True;
+          solution := update_solution_and_save(img_loaded, head);//solve and save
 
           if solution = False then
           begin {no solution found}
@@ -11843,7 +11843,10 @@ begin
             memo2_message('Astrometric solution for: "' + filename2 + '"');
           if solution then
           begin
-            stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:='✓';
+            if A_ORDER>0 then
+              stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:='✓✓'
+            else
+              stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:='✓';
             stackmenu1.ListView1.Items.item[c].subitems.Strings[L_position]:= prepare_ra5(head.ra0, ': ') + ', ' + prepare_dec4(head.dec0, '° ');{give internal position}
           end
           else
@@ -12031,6 +12034,7 @@ begin
       for c := 0 to ListView1.items.Count - 1 do
       begin
         files_to_process[c].Name := '';{mark empthy}
+
         files_to_process[c].listviewindex := c; {use same index as listview1 except when later put lowest HFD first}
         if ((ListView1.items[c].Checked = True) and (ListView1.Items.item[c].SubitemImages[L_result] < 0)) then {not done yet}
         begin
@@ -12396,6 +12400,8 @@ begin
 
         mainwindow.Memo1.Lines.BeginUpdate;
 
+        remove_solution;//fast and efficient
+
         remove_key('DATE    ', False{all});{no purpose anymore for the original date written}
         remove_key('EXPTIME', False{all}); {remove, will be added later in the header}
         remove_key('EXPOSURE', False{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
@@ -12661,9 +12667,8 @@ begin
   //Sigma clip, skip LRGB combine
 
   mosaic_box1.Enabled := mosa;
-  raw_box1.Enabled := ({(mosa = False) and} (classify_filter1.Checked = False));
-//  if mosa then  raw_box1.Caption :='RAW one shot colour images   (Disabled by stack method)'
-//  else
+  raw_box1.Enabled := classify_filter1.Checked = False;
+
   if classify_filter1.Checked then
     raw_box1.Caption := 'RAW one shot colour images   (Disabled by ☑ Light filter)'
   else
@@ -12671,7 +12676,13 @@ begin
 
 
   filter_groupbox1.Enabled := ((mosa = False) and (classify_filter1.Checked));
-  if mosa then filter_groupbox1.Caption := 'LRGB stacking   (Disabled by stack method)'
+
+  if mosa then
+  begin
+     filter_groupbox1.Caption := 'LRGB stacking   (Disabled by stack method)';
+     add_sip1.checked:=true;
+     memo2_message('Activated SIP for accurate astrometric stitching. Deactive SIP for normal stacking ');
+  end
   else
   if classify_filter1.Checked = False then
     filter_groupbox1.Caption := 'LRGB stacking   (Disabled by ☐ Light filter)'
@@ -12683,7 +12694,7 @@ begin
   if ((use_astrometry_internal1.Checked = False) and (mosa)) then
   begin
     use_astrometry_internal1.Checked := True;
-    memo2_message('Switched to INTERNAL ASTROMETRIC alignment. Set in tab aligment the mosaic width and height high enough to have enough work space.');
+    memo2_message('Switched to ASTROMETRIC alignment.');
   end;
   if mosa then memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
 

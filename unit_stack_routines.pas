@@ -23,15 +23,15 @@ procedure calibration_and_alignment(oversize,process_as_osc:integer; var files_t
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
 procedure initialise_var1;{set variables correct}
-procedure initialise_var2;{set variables correct}
+//procedure initialise_var2;{set variables correct}
 function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 
 var
   pedestal_s : double;{target background value}
 
 var
-  SIN_dec0,COS_dec0,x_new_float,y_new_float,SIN_dec_ref,COS_dec_ref,
-  ap_0_1_ref,ap_0_2_ref,ap_0_3_ref,ap_1_0_ref,ap_1_1_ref, ap_1_2_ref,ap_2_0_ref,ap_2_1_ref,ap_3_0_ref, bp_0_1_ref,bp_0_2_ref,bp_0_3_ref,bp_1_0_ref,bp_1_1_ref,bp_1_2_ref,bp_2_0_ref,bp_2_1_ref,bp_3_0_ref   : double;
+  SIN_dec0,COS_dec0,x_new_float,y_new_float,SIN_dec_ref,COS_dec_ref : double;
+//  ap_0_1_ref,ap_0_2_ref,ap_0_3_ref,ap_1_0_ref,ap_1_1_ref, ap_1_2_ref,ap_2_0_ref,ap_2_1_ref,ap_3_0_ref, bp_0_1_ref,bp_0_2_ref,bp_0_3_ref,bp_1_0_ref,bp_1_1_ref,bp_1_2_ref,bp_2_0_ref,bp_2_1_ref,bp_3_0_ref   : double;
   gain_refxxx: string;
 
 
@@ -56,10 +56,10 @@ Begin
     u0:=fitsXfloat-head.crpix1;
     v0:=fitsYfloat-head.crpix2;
 
-    if a_order>=2 then {apply SIP correction up second order}
+    if a_order>=2 then {apply SIP correction up third order}
     begin
-      u:=u0 + a_2_0*u0*u0 + a_0_2*v0*v0 + a_1_1*u0*v0; {SIP correction}
-      v:=v0 + b_2_0*u0*u0 + b_0_2*v0*v0 + b_1_1*u0*v0; {SIP correction}
+      u:=u0 + a_0_0+ a_0_1*v0 + a_0_2*v0*v0 + a_0_3*v0*v0*v0 + a_1_0*u0 + a_1_1*u0*v0 + a_1_2*u0*v0*v0 + a_2_0*u0*u0 + a_2_1*u0*u0*v0 + a_3_0*u0*u0*u0 ; {SIP correction for second or third order}
+      v:=v0 + b_0_0+ b_0_1*v0 + b_0_2*v0*v0 + b_0_3*v0*v0*v0 + b_1_0*u0 + b_1_1*u0*v0 + b_1_2*u0*v0*v0 + b_2_0*u0*u0 + b_2_1*u0*u0*v0 + b_3_0*u0*u0*u0 ; {SIP correction for second or third order}
     end
     else
     begin
@@ -77,6 +77,7 @@ Begin
 
    {5. Conversion (RA,DEC) -> (x,y) of reference image}
     sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
+    //sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref); Alread done during initialisaion
     delta_ra:=RA_new-head_ref.ra0;
     sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
 
@@ -136,9 +137,9 @@ begin
   sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 end;
 
-procedure initialise_var2;{set variables correct}
+procedure NOLONGERREQUIEREDinitialise_var2;{set variables correct}
 begin
-  ap_0_1_ref:=ap_0_1;{store polynomial first fits }
+ { ap_0_1_ref:=ap_0_1;//store polynomial first fits
   ap_0_2_ref:=ap_0_2;
   ap_0_3_ref:=ap_0_3;
   ap_1_0_ref:=ap_1_0;
@@ -156,7 +157,7 @@ begin
   bp_2_1_ref:=bp_2_1;
   bp_2_0_ref:=bp_2_0;
   bp_2_1_ref:=bp_2_1;
-  bp_3_0_ref:=bp_3_0;
+  bp_3_0_ref:=bp_3_0;}
 end;
 
 
@@ -170,7 +171,7 @@ var
   br_factor, bg_factor, bb_factor,
   saturated_level,hfd_min,tempval                           : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,
-  use_astrometry_internal,vector_based :boolean;
+  use_astrometry_internal,vector_based,use_sip :boolean;
   warning             : string;
 
 begin
@@ -184,6 +185,7 @@ begin
     use_astrometry_internal:=use_astrometry_internal1.checked;
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
+    use_sip:=stackmenu1.add_sip1.checked;
 
     counter:=0;
     jd_sum:=0;{sum of Julian midpoints}
@@ -256,9 +258,10 @@ begin
             begin
               head_ref:=head;{backup solution}
               initialise_var1;{set variables correct, do this before apply dark}
-              initialise_var2;{set variables correct}
+             // initialise_var2;{set variables correct}
             end;
 
+            if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
             saturated_level:=head.datamax_org*0.97;{130}
 
             if c=1 then
@@ -303,7 +306,7 @@ begin
             if use_astrometry_internal then {internal solver, create new solutions for the R, G, B and L stacked images if required}
             begin
               memo2_message('Preparing astrometric solution for interim file: '+filename2);
-              if head.cd1_1=0 then solution:= create_internal_solution(img_loaded,head) else solution:=true;
+              if head.cd1_1=0 then solution:= update_solution_and_save(img_loaded,head) else solution:=true;
               if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
             end
             else
@@ -577,7 +580,7 @@ procedure stack_average(oversize,process_as_osc :integer; var files_to_process :
 var
     fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars                                : integer;
     background_correction, weightF,hfd_min                                                                                               : double;
-    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based                     : boolean;
+    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip             : boolean;
     tempval                                                                                                                              : single;
     warning             : string;
 
@@ -591,6 +594,7 @@ begin
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
+    use_sip:=stackmenu1.add_sip1.checked;
 
     counter:=0;
     sum_exp:=0;
@@ -625,7 +629,7 @@ begin
             old_height:=head.height;
             head_ref:=head;{backup solution}
             initialise_var1;{set variables correct. Do this before apply dark}
-            initialise_var2;{set variables correct}
+            //initialise_var2;{set variables correct}
             if ((bayerpat='') and (process_as_osc=2 {forced})) then
                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
                else
@@ -636,6 +640,7 @@ begin
             if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
             if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
           end;
+          if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
 
           apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
@@ -862,8 +867,8 @@ var
     fx1,fx2,fy1,fy2, raMiddle,decMiddle,
     ra_min,ra_max,dec_min,dec_max,total_fov,fw,fh                   : double; //for mosaic
 
-    tempval                                                        : single;
-    init, vector_based,merge_overlap,equalise_background           : boolean;
+    tempval                                                          : single;
+    init, vector_based,merge_overlap,equalise_background,use_sip     : boolean;
     background_correction,background_correction_center,background    : array[0..2] of double;
     counter_overlap                                                  : array[0..2] of integer;
     bck                                                              : array[0..3] of double;
@@ -899,7 +904,7 @@ begin
     jd_start_first:=1E99;{begin observations in Julian day}
     jd_end_last:=0;{end observations in Julian day}
     init:=false;
-
+    use_sip:=stackmenu1.add_sip1.checked;
     dummy:=0;
 
     if stackmenu1.classify_object1.Checked then memo2_message('█ █ █ █ █ █  Will make more then one mosaic based "Light object". Uncheck classify on "Light object" if required !!█ █ █ █ █ █  ');
@@ -948,10 +953,17 @@ begin
             head_ref.crpix1:=abs(fx1-fx2)/2;
             head_ref.crpix2:=abs(fy1-fy2)/2;
 
-            initialise_var2;{set variables correct}
+           // initialise_var2;{set variables correct}
           end;
 
+
+          if use_sip=false then
+                    a_order:=0; //stop using SIP from the header in astrometric mode
+
           memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+          if a_order<2 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion compensation not working. Either SIP not check marked or not available in image header. Activate SIP and refresh astrometrical solutions!!█ █ █ █ █ █');
+
+
           Application.ProcessMessages;
           if esc_pressed then exit;
 
@@ -1023,6 +1035,7 @@ begin
               astrometric_to_vector;{convert astrometric solution to vector solution}
               vector_based:=true;
             end;
+            ap_order:=0;// don't correct for RA to XY for mosaic !!!
 
             cropW:=trunc(stackmenu1.mosaic_crop1.Position*head.width/200);
             cropH:=trunc(stackmenu1.mosaic_crop1.Position*head.height/200);
@@ -1042,7 +1055,7 @@ begin
               for fitsX:=1+1+cropW to head.width-1-cropW  do
               begin
                 calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+                x_new:=round(x_new_float+oversize); y_new:=round(y_new_float+oversize);
                 if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                 begin
                   if img_loaded[0,fitsY-1,fitsX-1]>0.0001 then {not a black area around image}
@@ -1168,8 +1181,8 @@ var
     solutions      : array of tsolution;
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars                                        : integer;
     variance_factor, value,weightF,hfd_min                                                                                                         : double;
-    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based                              : boolean;
-    tempval, sumpix, newpix,target_background,background_correction                                                                                    : single;
+    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip                      : boolean;
+    tempval, sumpix, newpix,target_background,background_correction                                                                                : single;
     warning     : string;
 begin
   with stackmenu1 do
@@ -1179,6 +1192,8 @@ begin
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
+    use_sip:=stackmenu1.add_sip1.checked;
+
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
@@ -1220,7 +1235,7 @@ begin
 
           head_ref:=head;{backup solution}
           initialise_var1;{set variables correct}
-          initialise_var2;{set variables correct}
+          //initialise_var2;{set variables correct}
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else
@@ -1231,6 +1246,8 @@ begin
           if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
           if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
+
+        if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
 
         apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
@@ -1663,7 +1680,7 @@ procedure calibration_and_alignment(oversize,process_as_osc :integer; var files_
 var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV,max_stars   : integer;
     background_correction, hfd_min      : double;
-    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
+    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip :boolean;
     warning              : string;
 begin
   with stackmenu1 do
@@ -1671,6 +1688,8 @@ begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
+    use_sip:=stackmenu1.add_sip1.checked;
+
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
@@ -1708,7 +1727,7 @@ begin
 
           head_ref:=head;{backup solution}
           initialise_var1;{set variables correct}
-          initialise_var2;{set variables correct}
+          //initialise_var2;{set variables correct}
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else
@@ -1720,6 +1739,7 @@ begin
           if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
+        if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
         apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
         memo2_message('Calibrating and aligning file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
