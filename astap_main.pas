@@ -771,6 +771,7 @@ procedure update_generic(message_key,message_value,message_comment:string);{upda
 procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
 procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
 procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
+
 procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
 function fnmodulo (x,range: double):double;
@@ -870,6 +871,7 @@ procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : 
 function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 procedure remove_photometric_calibration;//from header
+procedure remove_solution;//remove all solution key words efficient
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3036,11 +3038,9 @@ begin
   end;
 end;
 
-//    if inpt=copy(mainwindow.Memo1.Lines[count1],1,length(inpt)) then {found}
-
-procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
+procedure update_floatOLD(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
  var
-   s,aline,dummy  : string;
+   s,aline        : string;
    count1: integer;
 begin
   str(x:20,s);
@@ -3067,6 +3067,48 @@ begin
       exit;
     end;
     count1:=count1-1;
+  end;
+  {not found, add to the end}
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
+end;
+
+
+procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
+ var
+   s,aline,buf           : string;
+   cnt,line_end,i,count,len   : integer;
+begin
+  str(x:20,s);
+
+  cnt:=pos(inpt,mainwindow.Memo1.text);
+  if cnt>0 then
+  begin //insert;
+    line_end:=posex(LineEnding,mainwindow.Memo1.text,cnt+1);//lines length could be different then 80 due to editing
+    aline:=copy(mainwindow.Memo1.text,cnt,line_End - cnt );
+
+    if ((preserve_comment) and (copy(aline,32,1)='/')) then
+    begin
+      delete(aline,11,20); //preserve comment
+      insert(s,aline,11);
+    end
+    else
+    begin
+      delete(aline,11,120);  //delete all including above position 80
+      aline:=aline+s+comment1; //line length correction will be done during saving FITS
+    end;
+
+    //replace, this is much faster then insert
+    buf:=mainwindow.Memo1.text;
+
+    for i:=0 to line_end-cnt-1 do
+    begin
+     if i<length(aline) then
+       buf[cnt+i]:=aline[i+1]
+     else
+       buf[cnt+i]:=' ';
+    end;
+    mainwindow.Memo1.text:=buf;
+    exit;
   end;
   {not found, add to the end}
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
@@ -3214,6 +3256,85 @@ begin
   end;
 end;
 
+
+procedure remove_solution;//remove all solution key words efficient
+var
+  cnt,line_end : integer;
+  buf : string;
+     procedure remove(inpt : string);
+     begin
+       cnt:=pos(inpt,buf);
+       if cnt>0 then
+       begin //remove;
+         line_end:=posex(LineEnding,mainwindow.Memo1.text,cnt+1);//lines length could be different then 80 due to editing
+         delete(buf,cnt,line_end-cnt+length(LineEnding));//delete the line
+       end;
+     end;
+
+begin
+  head.cd1_1:=0;//no WCS
+  A_ORDER:=0;//no SIP
+
+  buf:=mainwindow.Memo1.text;
+  remove    ('CD1_1   =');
+  remove    ('CD1_2   =');
+  remove    ('CD2_1   =');
+  remove    ('CD2_2   =');
+
+  remove    ('A_ORDER =');
+  remove    ('A_0_0   =');
+  remove    ('A_0_1   =');
+  remove    ('A_0_2   =');
+  remove    ('A_0_3   =');
+  remove    ('A_1_0   =');
+  remove    ('A_1_1   =');
+  remove    ('A_1_2   =');
+  remove    ('A_2_0   =');
+  remove    ('A_2_1   =');
+  remove    ('A_3_0   =');
+
+  remove    ('B_ORDER =');
+  remove    ('B_0_0   =');
+  remove    ('B_0_1   =');
+  remove    ('B_0_2   =');
+  remove    ('B_0_3   =');
+  remove    ('B_1_0   =');
+  remove    ('B_1_1   =');
+  remove    ('B_1_2   =');
+  remove    ('B_2_0   =');
+  remove    ('B_2_1   =');
+  remove    ('B_3_0   =');
+
+  remove    ('AP_ORDER=');
+  remove    ('AP_0_0  =');
+  remove    ('AP_0_1  =');
+  remove    ('AP_0_2  =');
+  remove    ('AP_0_3  =');
+  remove    ('AP_1_0  =');
+  remove    ('AP_1_1  =');
+  remove    ('AP_1_2  =');
+  remove    ('AP_2_0  =');
+  remove    ('AP_2_1  =');
+  remove    ('AP_3_0  =');
+
+  remove    ('BP_ORDER=');
+  remove    ('BP_0_0  =');
+  remove    ('BP_0_1  =');
+  remove    ('BP_0_2  =');
+  remove    ('BP_0_3  =');
+  remove    ('BP_1_0  =');
+  remove    ('BP_1_1  =');
+  remove    ('BP_1_2  =');
+  remove    ('BP_2_0  =');
+  remove    ('BP_2_1  =');
+  remove    ('BP_3_0  =');
+
+  remove    ('CROTA1  =');
+  remove    ('CROTA2  =');
+
+
+  mainwindow.Memo1.text:=buf;
+end;
 
 procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 var
@@ -12861,7 +12982,7 @@ begin
  end
  else
  begin {WCS and SIP solutions}
-   if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial use by astrometry.net or spitzer}
+   if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial}
    begin
      u:=fitsx-head.crpix1;
      v:=fitsy-head.crpix2;
@@ -13358,10 +13479,7 @@ begin
   begin
     if ((head.crpix1<>0.5+centerxs) or (head.crpix2<>0.5+centerys)) then {reference is not center}
     begin  {to much hassle to fix. Just remove the solution}
-      remove_key('CD1_1   ',false);
-      remove_key('CD1_2   ',false);
-      remove_key('CD2_1   ',false);
-      remove_key('CD2_2   ',false);
+      remove_solution;
     end;
     head.crota2:=fnmodulo(head.crota2+angle*flipped_image*flipped_view,360);
     head.crota1:=fnmodulo(head.crota1+angle*flipped_image*flipped_view,360);

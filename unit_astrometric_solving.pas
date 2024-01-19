@@ -529,7 +529,7 @@ procedure add_sip(hd: Theader;ra_database,dec_database:double);
 var
   stars_measured,stars_reference                  : TStarArray;
   trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
-  len,i          : integer;
+  len,i,position          : integer;
   succ: boolean;
   err_mess: string;
   ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec : double;
@@ -548,7 +548,7 @@ begin
   len:=length(b_Xrefpositions);
   if len<20 then
   begin
-    memo2_message('Not sufficient quads for a Simple Imaging Polynomial.');
+    memo2_message('Not enough quads for calculating SIP.');
     exit;
   end;
   setlength(stars_measured,len);
@@ -655,18 +655,6 @@ begin
     AP_2_1:=trans_sky_to_pixel.H;
     AP_3_0:=trans_sky_to_pixel.G;
 
-
-    // const   A,K
-    //  x;      B,L
-    //  y;      C,M
-    //  x*x;    D,N
-    //  x*y;    E,O
-    //  y*y;    F,P
-    //  x*x*x;  G,Q
-    //  x*x*y;  H,R
-    //  x*y*y;  I,S
-    //  y*y*y;  J,T
-
     BP_0_0:=0;   //trans_sky_to_pixel.K, is already in the WCS solution;
     BP_0_1:=0;   //(trans_sky_to_pixel.L, is already in the WCS solution);
     BP_0_2:=trans_sky_to_pixel.P;
@@ -726,6 +714,8 @@ begin
     update_float('BP_2_0  =',' / SIP coefficient                                ',false ,BP_2_0);
     update_float('BP_2_1  =',' / SIP coefficient                                ',false ,BP_2_1);
     update_float('BP_3_0  =',' / SIP coefficient                                ',false ,BP_3_0);
+
+
 end;
 
 function solve_image(img :image_array;var hd: Theader;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
@@ -1212,14 +1202,14 @@ begin
 
     mainwindow.Memo1.Lines.BeginUpdate;
 
-    memo2_message('start');
-  for i:=0 to 100 do
-  begin
+//    memo2_message('start');
+//  for i:=0 to 100 do
+//  begin
     if stackmenu1.add_sip1.checked then
-      add_sip(hd,ra_database,dec_database);//takes about 200 ms sec due to the header update. Calculations are very fast
+      add_sip(hd,ra_database,dec_database); //takes about 200 ms sec due to the header update. Calculations are very fast
 
-  end;
-  memo2_message('stop');
+//  end;
+//  memo2_message('stop');
 
 
     update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');

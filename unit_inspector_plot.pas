@@ -1521,13 +1521,7 @@ begin
    update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
    if head.cd1_1<>0 then {remove solution}
-   begin
-     remove_key('CD1_1   =',true{one});
-     remove_key('CD1_2   =',true{one});
-     remove_key('CD2_1   =',true{one});
-     remove_key('CD2_2   =',true{one});
-     head.cd1_1:=0;
-   end;
+     remove_solution;
 
    update_text   ('COMMENT A','  Aberration view '+filename2);
 
