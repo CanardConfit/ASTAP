@@ -305,6 +305,7 @@ begin
     x4:=starlist[0,j_distance3];
     y4:=starlist[1,j_distance3];
 
+
     xt:=(x1+x2+x3+x4)/4; {mean x position quad}
     yt:=(y1+y2+y3+y4)/4; {mean y position quad}
 
@@ -360,10 +361,12 @@ begin
         quad_star_distances[6,nrquads]:=xt;{store mean x position}
         quad_star_distances[7,nrquads]:=yt;{store mean y position}
         inc(nrquads); {new unique quad found}
-      end;
+       end;
     end;
   end;{i}
   SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
+
+
 end;
 
 procedure find_triples_using_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}

@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.01.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.01.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -696,7 +696,7 @@ var {################# initialised variables #########################}
   database_path:string='';{to be set in main}
   bayerpat: string='';{bayer pattern}
   bayerpattern_final :integer=2; {ASI294, ASI071, most common pattern}
-  sip                : boolean=false; {use SIP coefficients}
+  sip               : boolean=false; {use SIP coefficients}
 
   xbayroff: double=0;{additional bayer pattern offset to apply}
   Ybayroff: double=0;{additional bayer pattern offset to apply}
