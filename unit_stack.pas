@@ -4219,9 +4219,14 @@ begin
               else
                 lv.Items.item[c].subitems.Strings[P_calibration] := 'None';  {calibration head_2.calstat info DFB}
 
-              if head_2.cd1_1 = 0 then lv.Items.item[c].subitems.Strings[P_astrometric] := ''
+              if a_order>0 then
+                lv.Items.item[c].subitems.Strings[P_astrometric] := '✓✓' //SIP solution
               else
-                lv.Items.item[c].subitems.Strings[P_astrometric] := '✓';
+              if head_2.cd1_1 <> 0 then
+                lv.Items.item[c].subitems.Strings[P_astrometric] := '✓'
+              else
+                lv.Items.item[c].subitems.Strings[P_astrometric] := '';
+
 
               if full {amode=3} then {listview7 photometry plus mode}
               begin
@@ -8155,7 +8160,7 @@ begin
         {standard aligned blink}
         if init = False then {init}
         begin
-          initialise_var1; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
+          initialise_calc_sincos_dec0; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
 
           head_ref := head;{backup solution for deepsky annotation}
 
@@ -11639,12 +11644,12 @@ procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
 
   i, c, over_size, over_sizeL, nrfiles, image_counter, object_counter,
-  first_file, total_counter, counter_colours,analyse_level, solution_type,dum: integer;
+  first_file, total_counter, counter_colours,analyse_level, solution_type :   integer;
   filter_name1, filter_name2, defilter, filename3,
-  extra1, extra2, object_to_process, stack_info, thefilters                : string;
+  extra1, extra2, object_to_process, stack_info, thefilters,dumstr                : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
-  success, classify_filter, classify_object, sender_photometry, sender_stack_groups      : boolean;
+  success, classify_filter, classify_object, sender_photometry, sender_stack_groups,dum      : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr    : double;
   filters_used: array [0..4] of string;
@@ -11807,7 +11812,7 @@ begin
 
     for c := 0 to ListView1.items.Count - 1 do
       if ListView1.items[c].Checked then
-      if ((ignore) or (copy(ListView1.Items.item[c].subitems.Strings[L_solution],1,1) <>'✓')) then  //no internal solution
+      if ((ignore) or (pos('✓',stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution])=0)) then  //no internal solution
       begin
         try { Do some lengthy operation }
           ListView1.Selected := nil; {remove any selection}
@@ -11868,7 +11873,7 @@ begin
   begin
     memo2_message('Checking orientations');
     for c := 0 to ListView1.items.Count - 1 do
-      if ((ListView1.items[c].Checked = True) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]='✓' {solution})) then
+      if ((ListView1.items[c].Checked = True) and (pos('✓',ListView1.Items.item[c].subitems.Strings[L_solution])>0 {solution})) then
       begin
         try { Do some lengthy operation }
           ListView1.Selected := nil; {remove any selection}
@@ -11913,8 +11918,7 @@ begin
   begin
     memo2_message('Checking annotations');
     for c := 0 to ListView1.items.Count - 1 do
-      //   and (stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓')and ( length(stackmenu1.ListView1.Items.item[c].subitems.Strings[I_X])<=1){no annotation yet}
-      if ((ListView1.items[c].Checked = True) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution] = '✓' {solution}) and
+      if ((ListView1.items[c].Checked = True) and (pos('✓',stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution])>0 {solution}) and
          ((stackmenu1.update_annotations1.Checked) or (stackmenu1.auto_rotate1.Checked) or (length(stackmenu1.ListView1.Items.item[c].subitems.Strings[L_X]) <= 1)){no annotation yet}) then
       begin
         try { Do some lengthy operation }

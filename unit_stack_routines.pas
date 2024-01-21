@@ -22,7 +22,7 @@ procedure calibration_and_alignment(oversize,process_as_osc:integer; var files_t
 {$inline off}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
-procedure initialise_var1;{set variables correct}
+procedure initialise_calc_sincos_dec0;{set variables correct}
 //procedure initialise_var2;{set variables correct}
 function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 
@@ -132,7 +132,7 @@ begin
   end;
 end;
 
-procedure initialise_var1;{set variables correct}
+procedure initialise_calc_sincos_dec0;{set variables correct}
 begin
   sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 end;
@@ -257,7 +257,7 @@ begin
             if init=false then
             begin
               head_ref:=head;{backup solution}
-              initialise_var1;{set variables correct, do this before apply dark}
+              initialise_calc_sincos_dec0;{set variables correct, do this before apply dark}
              // initialise_var2;{set variables correct}
             end;
 
@@ -628,7 +628,7 @@ begin
             old_width:=head.width;
             old_height:=head.height;
             head_ref:=head;{backup solution}
-            initialise_var1;{set variables correct. Do this before apply dark}
+            initialise_calc_sincos_dec0;{set variables correct. Do this before apply dark}
             //initialise_var2;{set variables correct}
             if ((bayerpat='') and (process_as_osc=2 {forced})) then
                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -952,8 +952,6 @@ begin
             head_ref.ra0:=raMiddle;// set middle of the mosaic
             head_ref.crpix1:=abs(fx1-fx2)/2;
             head_ref.crpix2:=abs(fy1-fy2)/2;
-
-           // initialise_var2;{set variables correct}
           end;
 
 
@@ -961,8 +959,7 @@ begin
                     a_order:=0; //stop using SIP from the header in astrometric mode
 
           memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
-          if a_order<2 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion compensation not working. Either SIP not check marked or not available in image header. Activate SIP and refresh astrometrical solutions!!█ █ █ █ █ █');
-
+          if a_order=0 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion correction not working. Either the option SIP not checkmarked or SIP terms not in the image header. Activate SIP and refresh astrometrical solutions with SIP checkmarked!! █ █ █ █ █ █');
 
           Application.ProcessMessages;
           if esc_pressed then exit;
@@ -1234,7 +1231,7 @@ begin
           old_height:=head.height;
 
           head_ref:=head;{backup solution}
-          initialise_var1;{set variables correct}
+          initialise_calc_sincos_dec0;{set variables correct}
           //initialise_var2;{set variables correct}
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -1726,7 +1723,7 @@ begin
           old_height:=head.height;
 
           head_ref:=head;{backup solution}
-          initialise_var1;{set variables correct}
+          initialise_calc_sincos_dec0;{set variables correct}
           //initialise_var2;{set variables correct}
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')

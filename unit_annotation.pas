@@ -25,7 +25,6 @@ procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: doubl
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
-function calculate_undisturbed_image_scale : boolean;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
 
 
 var
@@ -2301,103 +2300,15 @@ begin
 end;{plot stars}
 
 
-function calculate_undisturbed_image_scale : boolean;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
-var
-  i,j,count,stars_measured,count2       : integer;
-  x1,y1,x2,y2,xc1,yc1,xc2,yc2,factor,r1,r2,d1,d2,range   : double;
-  factors      : array of double;
-
-begin
-  measure_distortion(false {plot and no sip correction},stars_measured);{measure stars against the database}
-
-  setlength(factors,stars_measured);
-
-  range:=0.05; {start with 0.05+0.05 is 0.1 range}
-
-  if stars_measured>0 then
-  repeat
-    count:=0;
-    range:=range+0.05; {increase range of center for finding stars}
-    begin
-      for i:=0 to stars_measured-1 do
-      begin
-        x1:=distortion_data[0,i]-head.crpix1;{database, x from center}
-        y1:=distortion_data[1,i]-head.crpix2;
-        r1:=sqr(x1)+sqr(y1);{distance from centre image}
-
-        if  r1<sqr(range{0.1}*head.height) then {short distance 10% of image scale, distortion low}
-        begin
-          count2:=0;
-          for j:=0 to stars_measured-1 do {second loop}
-          if ((i<>j) and (count2<6)) then {compare against a few other stars in center}
-          begin
-
-            x2:=distortion_data[0,j]-head.crpix1;{database, x from center}
-            y2:=distortion_data[1,j]-head.crpix2;
-            r2:=sqr(x2)+sqr(y2);{distance from centre image}
-
-            if  r2<sqr(range{0.1}*head.height) then {short distance 10% of image scale, distortion low}
-            begin
-              xc1:=distortion_data[2,i]-head.crpix1;{database, x from center}
-              yc1:=distortion_data[3,i]-head.crpix2;
-              xc2:=distortion_data[2,j]-head.crpix1;{database, x from center}
-              yc2:=distortion_data[3,j]-head.crpix2;
-
-              d1:=sqr(x1-x2)+sqr(y1-y2);
-              if d1>sqr(0.5*range{0.1}*head.height) then {some distance}
-              begin
-                d2:=sqr(xc1-xc2)+sqr(yc1-yc2);
-                factors[count]:=sqrt(d1/d2) ; //Ratio between close distance stars of database and image stars for center of the image. It is assumed that the center of the image is undisturbed optically
-                inc(count,1);
-                inc(count2,1);
-                if count>length(factors) then
-                          setlength(factors,count+stars_measured);
-              end;
-            end;
-          end;
-
-        end;
-      end;
-      factor:=smedian(factors,count);{filter out outliers using median}
-    end;
-  until ((count>50 {about 50/6 stars}) or (range>=0.3));
-  if count>50  then
-  begin
-    head.cd1_1:=head.cd1_1*factor;
-    head.cd1_2:=head.cd1_2*factor;
-    head.cd2_1:=head.cd2_1*factor;
-    head.cd2_2:=head.cd2_2*factor;
-    head.cdelt1:=head.cdelt1*factor;
-    head.cdelt2:=head.cdelt2*factor;
-
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
-
-    if factor<1 then memo2_message('Assuming barrel distortion.') else memo2_message('Assuming pincushion distortion.');
-    memo2_message('Measured the undisturbed image scale in center and corrected image scale with factor '+floattostr6(factor)+'. Used '+inttostr(round(range*100))+'% of image');
-    result:=true;
-  end
-  else
-  begin
-    memo2_message('Failed to measure undisturbed image scale');
-    factor:=1;
-    result:=false;
-  end;
-  factors:=nil;{release memory}
-end;
-
 procedure measure_distortion(plot: boolean; out stars_measured : integer);{measure or plot distortion}
 var
   dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error,sep   : double;
-  star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count                : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error_innner,
+  astrometric_error_outer,sep,ra3,dec3,astrometric_error_innnerPS,astrometric_error_outerPS                                                      : double;
+  star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,sub_counter2,sub_counter3,sub_counter4,scale,count   : integer;
   flip_horizontal, flip_vertical       : boolean;
-  error_array                          : array of double;
+  errors_sky_pixel1, errors_sky_pixel2,errors_pixel_sky1,errors_pixel_sky2   : array of double;
 
     procedure plot_star;
     begin
@@ -2442,11 +2353,33 @@ var
             mainwindow.image1.Canvas.Pen.width :=1;
 
             {for median errror}
-            if  ( (x>0.25*head.height) and  (x< 0.75*head.height) and (y> 0.25*head.height) and  (y< 0.75*head.height) and (sub_counter<length(error_array))) then
+            if  ( (sqr(x-head.crpix1)+sqr(y-head.crpix2)<sqr(0.25*head.height)) and (sub_counter<length(errors_sky_pixel1))) then
             begin
-              error_array[sub_counter]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
+              errors_sky_pixel1[sub_counter]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
               inc(sub_counter);
+
+              //check sky to pixel errors:
+              if ((sip) and (sub_counter3<length(errors_pixel_sky1)) ) then
+              begin
+                sensor_coordinates_to_celestial(head,xc+1,yc+1,ra3,dec3);{calculate the ra,dec position}
+                ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky1[sub_counter3] );//angular seperation
+                inc(sub_counter3);
+              end;
             end;
+           if  ( (sqr(x-head.crpix1)+sqr(y-head.crpix2)>sqr(0.5*head.height)) and (sub_counter2<length(errors_sky_pixel2))) then
+            begin
+              errors_sky_pixel2[sub_counter2]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
+              inc(sub_counter2);
+
+              //check sky to pixel errors:
+              if ((sip) and (sub_counter4<length(errors_pixel_sky2)) ) then
+              begin
+                sensor_coordinates_to_celestial(head,xc+1,yc+1,ra3,dec3);{calculate the ra,dec position}
+                ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky2[sub_counter4] );//angular seperation
+                inc(sub_counter4);
+              end;
+            end;
+
           end {show distortion}
           else
           if stars_measured<max_nr_stars then {store distortion data}
@@ -2480,9 +2413,16 @@ begin
 
     star_total_counter:=0;{total counter}
     sub_counter:=0;
+    sub_counter2:=0;
+    sub_counter3:=0;
+    sub_counter4:=0;
 
     max_nr_stars:=round(head.width*head.height*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
-    setlength(error_array,max_nr_stars);
+    setlength(errors_sky_pixel1,max_nr_stars);
+    setlength(errors_sky_pixel2,max_nr_stars);
+    setlength(errors_pixel_sky1,max_nr_stars);
+    setlength(errors_pixel_sky2,max_nr_stars);
+
 
     {sets file290 so do before fov selection}
     if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then exit;
@@ -2573,8 +2513,20 @@ begin
 
     if plot then
     begin
-      astrometric_error:=smedian(error_array,sub_counter);
-      memo2_message('The center median astrometric error is '+floattostr4(astrometric_error*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error)+' pixel using '+inttostr(sub_counter)+ ' stars.');
+      astrometric_error_innner:=smedian(errors_sky_pixel1,sub_counter);
+      astrometric_error_outer:=smedian(errors_sky_pixel2,sub_counter2);
+      astrometric_error_innnerPS:=smedian(errors_pixel_sky1,sub_counter)*180/pi;//median value dregees
+      astrometric_error_outerPS:=smedian(errors_pixel_sky2,sub_counter2)*180/pi;
+
+      memo2_message('For center median error sky->pixel is '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_innner)+' pixel using '+inttostr(sub_counter)+ ' stars.');
+      memo2_message('For outer regions median error sky->pixel is '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_outer)+' pixel using '+inttostr(sub_counter2)+ ' stars.');
+      if sip then
+      begin
+        memo2_message('For center median error pixel->sky is '+floattostr4(astrometric_error_innnerPS*3600)+'" or ' +floattostr4(astrometric_error_innnerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter3)+ ' stars.');
+        memo2_message('For outer regions median error pixel->sky is '+floattostr4(astrometric_error_outerPS*3600)+'" or ' +floattostr4(astrometric_error_outerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter4)+ ' stars.');
+      end;
+
+
 
       mainwindow.image1.Canvas.Pen.mode:=pmXor;
       mainwindow.image1.canvas.pen.color:=annotation_color;
@@ -2613,14 +2565,15 @@ begin
       mainwindow.image1.Canvas.font.size:=12;
 
       if sip then
-      begin
-        mainwindow.image1.Canvas.textout(700,head.height-25,'SIP corrections are applied. Median error for 50% of image '+floattostr4(astrometric_error*head.cdelt2*3600)+'"');
-      end
+        mainwindow.image1.Canvas.textout(500,head.height-25,'Using SIP median error inner part image '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outer part image '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"')
       else
-      mainwindow.image1.Canvas.textout(350,head.height-25,'Median error for 50% of image '+floattostr4(astrometric_error*head.cdelt2*3600)+'"');
+        mainwindow.image1.Canvas.textout(500,head.height-25,'Using SIP median error inner part image '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outer part image '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"');
 
 
-      error_array:=nil;
+
+
+    //  errors_sky_pixel1 :=nil;  not required auto deallocated
+    //  errors_sky_pixel2:=nil;
     end;
 
 

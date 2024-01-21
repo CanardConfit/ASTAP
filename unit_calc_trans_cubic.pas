@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //==============================================================================
 //Original description for the Match program.
 //http://spiff.rit.edu/match/
-{ *  match: a package to match lists of stars (or other items)
+{*  match: a package to match lists of stars (or other items)
  *  Copyright (C) 2000  Michael William Richmond
  *
  *  Contact: Michael William Richmond
@@ -271,10 +271,10 @@ begin
     Exit(false);
   end;
 
-  // * Step 3: We can now calculate the solution_vector values
-  // *         via back-substitution; we start at the last value in the
-  // *         vector (at the "bottom" of the vector) and work
-  // *         upwards towards the top.
+  //  Step 3: We can now calculate the solution_vector values
+  //          via back-substitution; we start at the last value in the
+  //          vector (at the "bottom" of the vector) and work
+  //          upwards towards the top.
   solution_vector[num - 1] := vector[num - 1] / matrix[num - 1][num - 1];
   for i := num - 2 downto 0 do
   begin
@@ -481,21 +481,19 @@ var
   sumy1he     : Double;
   r,c,i       : integer;
 begin
-   //* in variable names below, a '1' refers to coordinate of star s1
-   //*   (which appear on both sides of the matrix equation)
-   //*                      and a '2' refers to coordinate of star s2
-   //*   (which appears only on left hand side of matrix equation)    o
+   // in variable names below, a '1' refers to coordinate of star s1 (which appear on both sides of the matrix equation)
+   //                      and a '2' refers to coordinate of star s2 (which appears only on left hand side of matrix equation)
 
    err_mess:=''; //clear message;
    if length(starsA) <10 {AT_MATCH_REQUIRE_CUBIC} then begin err_mess:='Calc_Trans_Cubic: Not enough equations.'; exit(false); end;
 
-   //  if_assert(trans.order = AT_TRANS_CUBIC)=false then begin result:=0; exit; end;
-   //* allocate a matrix we'll need for this function
+   // if_assert(trans.order = AT_TRANS_CUBIC)=false then begin result:=0; exit; end;
+   // allocate a matrix we'll need for this function
 
   SetLength(matrix, 10, 10); // Assuming a 10x10 matrix
 
-  // * first, we consider the coefficients A, B, C, D, E, F, G, H, I, J in the trans.
-  // * we form the sums that make up the elements of matrix M
+  // First, we consider the coefficients A, B, C, D, E, F, G, H, I, J in the trans.
+  // We form the sums that make up the elements of matrix M
   sum := 0.0;
   sumx1 := 0.0;
   sumy1 := 0.0;
@@ -681,9 +679,9 @@ begin
   vector[9] := sumx2y1cu;
   //Writeln('before calling solution routines for ABCDEFGHIJ, here's matrix');
 
-  // * and now call the Gaussian-elimination routines to solve the matrix.
-  // * The solution for TRANS coefficients A, B, C, D, E, F, I, J will be placed
-  // * into the elements on 'vector" after "gauss_matrix' finishes.
+  // and now call the Gaussian-elimination routines to solve the matrix.
+  // The solution for TRANS coefficients A, B, C, D, E, F, I, J will be placed
+  // into the elements on 'vector" after "gauss_matrix' finishes.
   if gauss_matrix(matrix, 10, vector,err_mess)=false then
   begin
     err_mess:=err_mess+', Calc_trans_cubic: can not solve for coeffs A,B,C,D,E,F,G,H,I,J';
@@ -701,8 +699,8 @@ begin
   solved_i := vector[8];
   solved_j := vector[9];
 
-  //* Okay, now we solve for TRANS coefficients K, L, M, N, O, P, Q, R, S, T
-  //* using the * set of equations that relates y' to (x,y)
+  // Okay, now we solve for TRANS coefficients K, L, M, N, O, P, Q, R, S, T
+  // using the * set of equations that relates y' to (x,y)
 
   //rows 0-9 - column 0
   matrix[0][0] := sum;
@@ -787,10 +785,8 @@ begin
   vector[9] := sumy2y1cu;
 
   //  Writeln('before calling solution routines for KLMNOPQRST, here's matrix');
-
-  //* and now call the Gaussian-elimination routines to solve the matrix.
-  // * The solution for TRANS coefficients K, L, M, N, O, P, Q, R, S, T will be placed
-  // * into the elements on 'vector" after "gauss_matrix' finishes.
+  //  And now call the Gaussian-elimination routines to solve the matrix.
+  //  The solution for TRANS coefficients K, L, M, N, O, P, Q, R, S, T will be placed into the elements on 'vector" after "gauss_matrix' finishes.
   if gauss_matrix(matrix, 10, vector,err_mess)=false then
   begin
     err_mess:=err_mess+', Calc_trans_cubic: Can not solve for coeffs K,L,M,N,O,P,Q,R,S,T';
@@ -829,12 +825,12 @@ begin
   trans.r := solved_r;
   trans.s := solved_s;
   trans.t := solved_t;
-  //free_matrix(matrix, 10);
+  //free_matrix(matrix, 10);//Not required in FPC
   Result :=true;
 end;
 
-{
 
+{
    // TEST PROGRAM FOR DEVELOPMENT ONLY ==================================================================================
 
 procedure rotate(rot,x,y :double;var  x2,y2:double);//rotate a vector point, angle seen from y-axis, counter clockwise
@@ -866,8 +862,8 @@ begin
   for j:=-10 to +10 do
   if ((j<>0) and (i<>0) ) then
   begin
-    x:=j*100;//image 2000x2000
-    y:=i*100;
+    x:=j*150;//image 3000x3000
+    y:=i*150;
 
     reference[count].x:=x+1000;//reference X
     reference[count].y:=y+500;//reference X
@@ -1008,7 +1004,7 @@ begin
      end;
    end;
    beep;
-   }
+ }
 
 end.
 

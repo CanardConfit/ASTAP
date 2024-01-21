@@ -1169,7 +1169,7 @@ begin
   form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
 
-  if calculate_undisturbed_image_scale then
+ // if calculate_undisturbed_image_scale then
     measure_distortion(true {plot},stars_measured);{measure or plot distortion}
 
   if toClipboard1 then
