@@ -56,7 +56,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 interface
 
 uses
-  Classes, SysUtils,math;
+  Classes, SysUtils,math, astap_main;
 
 type
   TMatrix = array of array of Double;
@@ -70,8 +70,8 @@ type
              k, l, m, n, o, p, q, r, s, t: Double;
            end;
 
-function Calc_Trans_Cubic(starsA: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
-                          starsB: TStarArray; // Second array of s_star structure we match
+function Calc_Trans_Cubic(stars_reference: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
+                          stars_distorted: TStarArray; // Second array of s_star structure we match
                           out trans: TTrans;  // Transfer coefficients for starsA positions to starsB positions
                           out err_mess : string // any error message
                           ): boolean; //succes
@@ -400,8 +400,8 @@ end;
   //  */
 
 
-function Calc_Trans_Cubic(starsA: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
-                          starsB: TStarArray; // Second array of s_star structure we match
+function Calc_Trans_Cubic(stars_reference: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
+                          stars_distorted: TStarArray; // Second array of s_star structure we match
                           out trans: TTrans; // Transfer coefficients for starsA positions to starsB positions
                           out err_mess : string   // any error message
                            ): boolean; //succes
@@ -409,26 +409,6 @@ function Calc_Trans_Cubic(starsA: TStarArray; // First array of s_star structure
 var
   matrix      : Tmatrix;
   vector      : Tsolutionvector;//array[0..9] of Double;
-  solved_a,
-  solved_b,
-  solved_c,
-  solved_d,
-  solved_e,
-  solved_f,
-  solved_g,
-  solved_h,
-  solved_i,
-  solved_j,
-  solved_k,
-  solved_l,
-  solved_m,
-  solved_n,
-  solved_o,
-  solved_p,
-  solved_q,
-  solved_r,
-  solved_s,
-  solved_t    : Double;
   s1,
   s2          : s_star;
   sumx2,
@@ -485,7 +465,7 @@ begin
    //                      and a '2' refers to coordinate of star s2 (which appears only on left hand side of matrix equation)
 
    err_mess:=''; //clear message;
-   if length(starsA) <10 {AT_MATCH_REQUIRE_CUBIC} then begin err_mess:='Calc_Trans_Cubic: Not enough equations.'; exit(false); end;
+   if length(stars_reference) <10 {AT_MATCH_REQUIRE_CUBIC} then begin err_mess:='Calc_Trans_Cubic: Not enough equations.'; exit(false); end;
 
    // if_assert(trans.order = AT_TRANS_CUBIC)=false then begin result:=0; exit; end;
    // allocate a matrix we'll need for this function
@@ -542,57 +522,57 @@ begin
   sumy2x1sqy1 := 0.0;
   sumy2x1y1sq := 0.0;
   sumy2y1cu := 0.0;
-  for i := 0 to min(length(starsA)-1,length(starsB)-1) do //take the minimum of the two array for the case one list is longer. Should not happen normally.
+  for i := 0 to min(length(stars_reference)-1,length(stars_distorted)-1) do //take the minimum of the two array for the case one list is longer. Should not happen normally.
   begin
-    sumx2        := sumx2       + starsB[i].x;
-    sumx2x1      := sumx2x1     + (starsB[i].x * starsA[i].x);
-    sumx2y1      := sumx2y1     + (starsB[i].x * starsA[i].y);
-    sumx2x1sq    := sumx2x1sq   + (starsB[i].x * starsA[i].x * starsA[i].x);
-    sumx2x1y1    := sumx2x1y1   + (starsB[i].x * starsA[i].x * starsA[i].y);
-    sumx2y1sq    := sumx2y1sq   + (starsB[i].x * starsA[i].y * starsA[i].y);
-    sumx2x1cu    := sumx2x1cu   + (starsB[i].x * starsA[i].x * starsA[i].x * starsA[i].x);
-    sumx2x1sqy1  := sumx2x1sqy1 + (starsB[i].x * starsA[i].x * starsA[i].x * starsA[i].y);
-    sumx2x1y1sq  := sumx2x1y1sq + (starsB[i].x * starsA[i].x * starsA[i].y * starsA[i].y);
-    sumx2y1cu    := sumx2y1cu   + (starsB[i].x * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumy2        := sumy2       + starsB[i].y;
-    sumy2x1      := sumy2x1     + (starsB[i].y * starsA[i].x);
-    sumy2y1      := sumy2y1     + (starsB[i].y * starsA[i].y);
-    sumy2x1sq    := sumy2x1sq   + (starsB[i].y * starsA[i].x * starsA[i].x);
-    sumy2x1y1    := sumy2x1y1   + (starsB[i].y * starsA[i].x * starsA[i].y);
-    sumy2y1sq    := sumy2y1sq   + (starsB[i].y * starsA[i].y * starsA[i].y);
-    sumy2x1cu    := sumy2x1cu   + (starsB[i].y * starsA[i].x * starsA[i].x * starsA[i].x);
-    sumy2x1sqy1  := sumy2x1sqy1 + (starsB[i].y * starsA[i].x * starsA[i].x * starsA[i].y);
-    sumy2x1y1sq  := sumy2x1y1sq + (starsB[i].y * starsA[i].x * starsA[i].y * starsA[i].y);
-    sumy2y1cu    := sumy2y1cu   + (starsB[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumx2        := sumx2       + stars_distorted[i].x;
+    sumx2x1      := sumx2x1     + (stars_distorted[i].x * stars_reference[i].x);
+    sumx2y1      := sumx2y1     + (stars_distorted[i].x * stars_reference[i].y);
+    sumx2x1sq    := sumx2x1sq   + (stars_distorted[i].x * stars_reference[i].x * stars_reference[i].x);
+    sumx2x1y1    := sumx2x1y1   + (stars_distorted[i].x * stars_reference[i].x * stars_reference[i].y);
+    sumx2y1sq    := sumx2y1sq   + (stars_distorted[i].x * stars_reference[i].y * stars_reference[i].y);
+    sumx2x1cu    := sumx2x1cu   + (stars_distorted[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x);
+    sumx2x1sqy1  := sumx2x1sqy1 + (stars_distorted[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].y);
+    sumx2x1y1sq  := sumx2x1y1sq + (stars_distorted[i].x * stars_reference[i].x * stars_reference[i].y * stars_reference[i].y);
+    sumx2y1cu    := sumx2y1cu   + (stars_distorted[i].x * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumy2        := sumy2       + stars_distorted[i].y;
+    sumy2x1      := sumy2x1     + (stars_distorted[i].y * stars_reference[i].x);
+    sumy2y1      := sumy2y1     + (stars_distorted[i].y * stars_reference[i].y);
+    sumy2x1sq    := sumy2x1sq   + (stars_distorted[i].y * stars_reference[i].x * stars_reference[i].x);
+    sumy2x1y1    := sumy2x1y1   + (stars_distorted[i].y * stars_reference[i].x * stars_reference[i].y);
+    sumy2y1sq    := sumy2y1sq   + (stars_distorted[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumy2x1cu    := sumy2x1cu   + (stars_distorted[i].y * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x);
+    sumy2x1sqy1  := sumy2x1sqy1 + (stars_distorted[i].y * stars_reference[i].x * stars_reference[i].x * stars_reference[i].y);
+    sumy2x1y1sq  := sumy2x1y1sq + (stars_distorted[i].y * stars_reference[i].x * stars_reference[i].y * stars_reference[i].y);
+    sumy2y1cu    := sumy2y1cu   + (stars_distorted[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
     { elements of the matrix }
     sum    := sum   + 1.0;
-    sumx1  := sumx1 + starsA[i].x;
-    sumy1  := sumy1 + starsA[i].y;
-    sumx1sq  := sumx1sq + (starsA[i].x * starsA[i].x);
-    sumx1y1  := sumx1y1 + (starsA[i].x * starsA[i].y);
-    sumy1sq  := sumy1sq + (starsA[i].y * starsA[i].y);
-    sumx1cu    := sumx1cu   + (starsA[i].x * starsA[i].x * starsA[i].x);
-    sumx1sqy1  := sumx1sqy1 + (starsA[i].x * starsA[i].x * starsA[i].y);
-    sumx1y1sq  := sumx1y1sq + (starsA[i].x * starsA[i].y * starsA[i].y);
-    sumy1cu    := sumy1cu   + (starsA[i].y * starsA[i].y * starsA[i].y);
-    sumx1qu      := sumx1qu     + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x);
-    sumx1cuy1    := sumx1cuy1   + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y);
-    sumx1sqy1sq  := sumx1sqy1sq + (starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y);
-    sumx1y1cu    := sumx1y1cu   + (starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumy1qu      := sumy1qu     + (starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumx1pe      := sumx1pe     + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x);
-    sumx1quy1    := sumx1quy1   + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y);
-    sumx1cuy1sq  := sumx1cuy1sq + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y);
-    sumx1sqy1cu  := sumx1sqy1cu + (starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumx1y1qu    := sumx1y1qu   + (starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumy1pe      := sumy1pe     + (starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumx1he      := sumx1he     + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x);
-    sumx1pey1    := sumx1pey1   + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y);
-    sumx1quy1sq  := sumx1quy1sq + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y);
-    sumx1cuy1cu  := sumx1cuy1cu + (starsA[i].x * starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumx1sqy1qu  := sumx1sqy1qu + (starsA[i].x * starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumx1y1pe    := sumx1y1pe   + (starsA[i].x * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
-    sumy1he      := sumy1he     + (starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y * starsA[i].y);
+    sumx1  := sumx1 + stars_reference[i].x;
+    sumy1  := sumy1 + stars_reference[i].y;
+    sumx1sq  := sumx1sq + (stars_reference[i].x * stars_reference[i].x);
+    sumx1y1  := sumx1y1 + (stars_reference[i].x * stars_reference[i].y);
+    sumy1sq  := sumy1sq + (stars_reference[i].y * stars_reference[i].y);
+    sumx1cu    := sumx1cu   + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x);
+    sumx1sqy1  := sumx1sqy1 + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].y);
+    sumx1y1sq  := sumx1y1sq + (stars_reference[i].x * stars_reference[i].y * stars_reference[i].y);
+    sumy1cu    := sumy1cu   + (stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumx1qu      := sumx1qu     + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x);
+    sumx1cuy1    := sumx1cuy1   + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].y);
+    sumx1sqy1sq  := sumx1sqy1sq + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].y * stars_reference[i].y);
+    sumx1y1cu    := sumx1y1cu   + (stars_reference[i].x * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumy1qu      := sumy1qu     + (stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumx1pe      := sumx1pe     + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x);
+    sumx1quy1    := sumx1quy1   + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].y);
+    sumx1cuy1sq  := sumx1cuy1sq + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].y * stars_reference[i].y);
+    sumx1sqy1cu  := sumx1sqy1cu + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumx1y1qu    := sumx1y1qu   + (stars_reference[i].x * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumy1pe      := sumy1pe     + (stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumx1he      := sumx1he     + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x);
+    sumx1pey1    := sumx1pey1   + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].y);
+    sumx1quy1sq  := sumx1quy1sq + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].y * stars_reference[i].y);
+    sumx1cuy1cu  := sumx1cuy1cu + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].x * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumx1sqy1qu  := sumx1sqy1qu + (stars_reference[i].x * stars_reference[i].x * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumx1y1pe    := sumx1y1pe   + (stars_reference[i].x * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
+    sumy1he      := sumy1he     + (stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y * stars_reference[i].y);
   end;
 
   // Now turn these sums into a matrix and a vector
@@ -688,16 +668,16 @@ begin
     exit(false);
   end;
   //Writeln('after calling solution routines, here's matrix');
-  solved_a := vector[0];
-  solved_b := vector[1];
-  solved_c := vector[2];
-  solved_d := vector[3];
-  solved_e := vector[4];
-  solved_f := vector[5];
-  solved_g := vector[6];
-  solved_h := vector[7];
-  solved_i := vector[8];
-  solved_j := vector[9];
+  trans.a := vector[0];
+  trans.b := vector[1];
+  trans.c := vector[2];
+  trans.d := vector[3];
+  trans.e := vector[4];
+  trans.f := vector[5];
+  trans.g := vector[6];
+  trans.h := vector[7];
+  trans.i := vector[8];
+  trans.j := vector[9];
 
   // Okay, now we solve for TRANS coefficients K, L, M, N, O, P, Q, R, S, T
   // using the * set of equations that relates y' to (x,y)
@@ -793,46 +773,25 @@ begin
     exit(false);
   end;
   //Writeln('after  calling solution routines, here's matrix');
-  solved_k := vector[0];
-  solved_l := vector[1];
-  solved_m := vector[2];
-  solved_n := vector[3];
-  solved_o := vector[4];
-  solved_p := vector[5];
-  solved_q := vector[6];
-  solved_r := vector[7];
-  solved_s := vector[8];
-  solved_t := vector[9];
+  trans.k := vector[0];
+  trans.l := vector[1];
+  trans.m := vector[2];
+  trans.n := vector[3];
+  trans.o := vector[4];
+  trans.p := vector[5];
+  trans.q := vector[6];
+  trans.r := vector[7];
+  trans.s := vector[8];
+  trans.t := vector[9];
 
-  //* assign the coefficients we've just calculated to the output TRANS structure.
-  trans.a := solved_a;
-  trans.b := solved_b;
-  trans.c := solved_c;
-  trans.d := solved_d;
-  trans.e := solved_e;
-  trans.f := solved_f;
-  trans.g := solved_g;
-  trans.h := solved_h;
-  trans.i := solved_i;
-  trans.j := solved_j;
-  trans.k := solved_k;
-  trans.l := solved_l;
-  trans.m := solved_m;
-  trans.n := solved_n;
-  trans.o := solved_o;
-  trans.p := solved_p;
-  trans.q := solved_q;
-  trans.r := solved_r;
-  trans.s := solved_s;
-  trans.t := solved_t;
   //free_matrix(matrix, 10);//Not required in FPC
   Result :=true;
 end;
 
 
-{
-   // TEST PROGRAM FOR DEVELOPMENT ONLY ==================================================================================
 
+   // TEST PROGRAM FOR DEVELOPMENT ONLY ==================================================================================
+{
 procedure rotate(rot,x,y :double;var  x2,y2:double);//rotate a vector point, angle seen from y-axis, counter clockwise
 var
   sin_rot, cos_rot :double;
@@ -850,92 +809,41 @@ var
   distorted,reference,ideal:  TStarArray;
   trans:  TTrans;
   sss : string;
-  AP_0_0,  AP_0_1,AP_0_2, AP_0_3, AP_1_0, AP_1_1,AP_1_2, AP_2_0, AP_2_1, AP_3_0, BP_0_0, BP_0_1, BP_0_2, BP_0_3, BP_1_0, BP_1_1, BP_1_2, BP_2_0, BP_2_1, BP_3_0 : double;
+  f: textfile;
+
 
 begin
   count:=0;
-  setlength(distorted,10000);
-  setlength(reference,10000);
-  setlength(ideal,10000);
-
-  for i:=-10 to +10 do
-  for j:=-10 to +10 do
-  if ((j<>0) and (i<>0) ) then
+  setlength(distorted,50);
+  setlength(reference,50);
+//  setlength(ideal,10000);
+  for j:=1 to +10 do
   begin
-    x:=j*150;//image 3000x3000
-    y:=i*150;
+    for i:=1 to +10 do
+    begin
+      //x:=j*150;//image 3000x3000
+      //y:=i*150;
 
-    reference[count].x:=x+1000;//reference X
-    reference[count].y:=y+500;//reference X
+      reference[count].x:=i;//reference X
+      reference[count].y:=j;//reference X
 
-
-    rotate(0*pi*30/180,x,y, x2,y2);
-    x:=x2;
-    y:=y2;
-
-    ideal[count].x:=x;//reference X
-    ideal[count].y:=y;
-
-    AP_0_0  :=      0.0124162099556 ;
-    AP_0_1  :=   -9.16796068412E-08 ;
-    AP_0_2  :=   -1.96540746616E-07 ;
-    AP_0_3  :=    1.74034956318E-11 ;
-    AP_1_0  :=    -0.00011307711845 ;
-    AP_1_1  :=    1.20978402726E-07 ;
-    AP_1_2  :=    1.24676031751E-09 ;
-    AP_2_0  :=   -1.97047860146E-07 ;
-    AP_2_1  :=    -1.5397306046E-11 ;
-    AP_3_0  :=    1.20355457881E-09 ;
-
-    BP_0_0  :=    -0.00397170042445 ;
-    BP_0_1  :=   -7.87791261302E-05 ;
-    BP_0_2  :=    1.54860395975E-07 ;
-    BP_0_3  :=    1.14464806315E-09 ;
-    BP_1_0  :=   -2.98529389782E-07 ;
-    BP_1_1  :=   -1.39126756734E-08 ;
-    BP_1_2  :=    8.63437642927E-12 ;
-    BP_2_0  :=    1.67478963016E-08 ;
-    BP_2_1  :=    1.21665781135E-09 ;
-    BP_3_0  :=     1.5793454372E-12 ;
-
-
-    x:=x+AP_0_0+ AP_0_1*y +AP_0_2*y*y + AP_0_3*y*y*y +AP_1_0*x +AP_1_1*x*y + AP_1_2*x*y*y + AP_2_0*x*x + AP_2_1*x*x*y+ AP_3_0*x*x*x;//process, image with significant optical distortion
-    y:=y+BP_0_0+ BP_0_1*y +BP_0_2*y*y + BP_0_3*y*y*y +BP_1_0*x +BP_1_1*x*y + BP_1_2*x*y*y + BP_2_0*x*x + BP_2_1*x*x*y+ BP_3_0*x*x*x;//process
-
-    distorted[count].x:=x;
-    distorted[count].y:=y;
-    inc(count);
+      distorted[count].x:=i+1000+i*i*0.00001+i*j*0.00002+j*j*0.00003+i*i*i*0.00004+i*i*j*0.00005+i*j*j*0.00006+j*j*j*0.00007;
+      distorted[count].y:=j+1000+i*i*0.00008+i*j*0.00009+j*j*0.00010+i*i*i*0.00011+i*i*j*0.00012+i*j*j*0.00013+j*j*j*0.00014;
+      inc(count);
+      if count>=length(distorted) then break;
+    end;
+    if count>=length(distorted) then break;
   end;
   setlength(distorted,count);
-  setlength(b,count);
+  setlength(reference,count);
 
 
 
  //TESTING ============
-  maxerrorX:=0;
-  maxerrorY:=0;
-  //test uncorrected
 
-  for i:=0 to count-1 do
-  begin
-     testX:=distorted[i].x- ideal[i].x;
-     if abs(testX)>maxerrorX then
-     begin
-       maxerrorX:=abs(testX);
-       errorposY:=i;
-     end;
 
-     testY:=distorted[i].y- ideal[i].y;
-     if abs(testY)>maxerrorY then
-     begin
-       maxerrorY:=abs(testY);
-       errorposY:=i;
-     end;
-  end;
-  beep;
-
-   if Calc_Trans_Cubic(distorted, // First array of s_star structure we match the output TRANS takes their coords into those of array B
-                       reference, // Second array of s_star structure we match
+   if Calc_Trans_Cubic(reference, // First array of s_star structure we match the output TRANS takes their coords into those of array B
+                       distorted, // Second array of s_star structure we match
                       trans, // Place solved coefficients into this  existing structure's fields
                       sss
                        )=false
@@ -945,7 +853,7 @@ begin
    else
    //succes
 
-
+    beep;
 // const   A,K
 //  x;      B,L
 //  y;      C,M
@@ -957,54 +865,8 @@ begin
 //  x*y*y;  I,S
 //  y*y*y;  J,T
 
-  maxerrorX:=0;
-  maxerrorY:=0;
-
-  for i:=0 to count-1 do
-  begin
-  x:=distorted[i].x;
-  y:=distorted[i].y;
-  correction:=
-      trans.a   +
-      trans.b*x +
-      trans.c*y +
-      trans.d*x*x +
-      trans.e*x*y +
-      trans.f*y*y +
-      trans.g*x*x*x +
-      trans.h*x*x*y +
-      trans.i*x*y*y +
-      trans.j*y*y*y;
-      testX:=correction-reference[i].x;
-
-   if abs(testX)>maxerrorX then
-   begin
-     maxerrorX:=abs(testX);
-     errorposY:=i;
-   end;
-
-
-   correction:=
-        trans.k   +
-        trans.l*x +
-        trans.m*y +
-        trans.n*x*x +
-        trans.o*x*y +
-        trans.p*y*y +
-        trans.q*x*x*x +
-        trans.r*x*x*y +
-        trans.s*x*y*y +
-        trans.t*y*y*y;
-        testY:=correction-reference[i].y;
-
-     if abs(testY)>maxerrorY then
-     begin
-       maxerrorY:=abs(testY);
-       errorposY:=i;
-     end;
-   end;
+    // log_to_file( 'c:\temp\test.txt',floattostr(reference[i].x)+#9+floattostr(reference[i].y)+#9+floattostr(testX)+#9+floattostr(testY));
    beep;
- }
-
+   }
 end.
 
