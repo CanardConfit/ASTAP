@@ -5179,6 +5179,7 @@ procedure Tstackmenu1.splitRGB1Click(Sender: TObject);
 var
   fitsx, fitsY: integer;
   filename1, memo2_text: string;
+  img_buffer           : image_array;
 begin
   if ((head.naxis = 0) or (head.naxis3 <> 3)) then
   begin
@@ -10734,29 +10735,6 @@ begin
     Inc(index); {go to next file}
   end;
   listview1.Items.endUpdate;
-end;
-
-
-procedure double_size(img: image_array; w, h: integer; var img2: image_array);{double array size}
-var
-  fitsX, fitsY, i, x, y: integer;
-begin
-  setlength(img_buffer,head.naxis3, h, w);{set length of image array}
-
-  for fitsY := 0 to h do
-    for fitsX := 0 to w do
-    begin
-      for i := 0 to head.naxis3 - 1 do
-      begin
-        x := fitsX div 2;
-        y := fitsY div 2;
-        if ((x <= head.Width - 1) and (y <= head.Height - 1)) then {prevent problem if slightly different} img_buffer[i, fitsX, fitsY] := img[i, x, y];
-      end;
-    end;
-  head.Height := h;
-  head.Width := w;
-
-  img2 := img_buffer;
 end;
 
 

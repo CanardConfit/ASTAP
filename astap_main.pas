@@ -630,7 +630,7 @@ var
   vsp : array of theauid;//for comparison stars AUID
   vsx : array of thevar;//for variable stars AUID
   img_backup      : array of timgbackup;{dynamic so memory can be freed}
-  img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final :image_array;
+  img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_final :image_array;
   head,    {for lights}
   head_2,  {for analysing lights and dark, flats}
   head_ref {for reference light in stacking}
@@ -8983,7 +8983,7 @@ begin
     begin
       if conv_index=2 {dcraw} then head.set_temperature:=extract_temperature_from_filename(filename4);{including update header}
       update_text('OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
-      result:=save_fits(img_buffer,filename4,16,true);{overwrite. Filename2 will be set to fits file}
+      result:=save_fits(img,filename4,16,true);{overwrite. Filename2 will be set to fits file}
     end;
     if loadfile=false then  img:=nil;{clear memory}
   end
@@ -15971,7 +15971,11 @@ var
   rgb  : byteX3;{array [0..2] containing r,g,b colours}
 begin
   result:=false;
-
+  if img=nil then
+  begin
+    memo2_message('Error,  no image');
+    exit;
+  end;
   {get dimensions directly from array}
   colours5:=length(img);{nr colours}
   width5:=length(img[0,0]);{width}
