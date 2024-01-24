@@ -553,8 +553,7 @@ var
   len,i,position                         : integer;
   succ: boolean;
   err_mess: string;
-  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,MatrixDeterminant,u0,v0,
-  cd1_1,cd1_2,cd2_1,cd2_2 : double;
+  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,MatrixDeterminant,u0,v0 : double;
   cd : array[0..1,0..1] of double;
   solution_vectorXinv,solution_vectorYinv : solution_vector;
 const
@@ -581,11 +580,6 @@ begin
   setlength(stars_reference,len);
 
 
-  cd1_1:=sign(hd.cd1_1)*(abs(hd.cd1_1)+abs(hd.cd2_2))/2;
-  cd2_2:=sign(hd.cd2_2)*(abs(hd.cd1_1)+abs(hd.cd2_2))/2;
-  cd2_1:=sign(hd.cd2_1)*(abs(hd.cd2_1)+abs(hd.cd1_2))/2;
-  cd1_2:=sign(hd.cd1_2)*(abs(hd.cd2_1)+abs(hd.cd1_2))/2;
-
   for i:=0 to len-1 do
   begin
     stars_measured[i].x:=1+A_XYpositions[0,i]-hd.crpix1;//position as seen from center at crpix1, crpix2, in fits range 1..width
@@ -610,14 +604,9 @@ begin
     dRA := (COS_dec_t*SIN_delta_ra / H)*180/pi;
     dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
 
-//    det:=hd.cd2_2*hd.cd1_1 - hd.cd1_2*hd.cd2_1;
-    det:=cd2_2*cd1_1 - cd1_2*cd2_1;
-
-//    stars_reference[i].x:= - (hd.cd1_2*dDEC - hd.cd2_2*dRA) / det;
-//    stars_reference[i].y:= + (hd.cd1_1*dDEC - hd.cd2_1*dRA) / det;
-
-    stars_reference[i].x:={-0.5} - (cd1_2*dDEC - cd2_2*dRA) / det;
-    stars_reference[i].y:={-0.5} + (cd1_1*dDEC - cd2_1*dRA) / det;
+    det:=hd.cd2_2*hd.cd1_1 - hd.cd1_2*hd.cd2_1;
+    stars_reference[i].x:={-0.5} - (hd.cd1_2*dDEC - hd.cd2_2*dRA) / det;
+    stars_reference[i].y:={-0.5} + (hd.cd1_1*dDEC - hd.cd2_1*dRA) / det;
 
   end;
 
@@ -716,7 +705,7 @@ begin
                          grid_list2,      // distorted
                          trans_pixel_to_sky,  // Transfer coefficients for stars_measured positions to stars_reference positions
                          err_mess             // any error message
-}                         );
+                         );}
 
   //swap the arrays for inverse factors
   succ:=Calc_Trans_Cubic(stars_measured,      // reference
@@ -1201,7 +1190,7 @@ begin
               extrastars:=1/1.1;{star with a factor of one}
               repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
                 extrastars:=extrastars*1.1;
-                if read_stars(ra_database,dec_database,search_field*oversize,database_type,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
+                if read_stars(ra_database,dec_database,search_field*oversize,database_type,round(nrstars_required*oversize*oversize*extrastars) ,{out}database_stars)= false then
                 begin
                   {$IFDEF linux}
                    //keep till 2026
