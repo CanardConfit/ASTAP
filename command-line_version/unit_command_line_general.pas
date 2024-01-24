@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.01.04';
+  astap_version: string='2024.01.24';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -62,7 +62,8 @@ type
      histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
      r_aperture : integer; {histogram number of values}
      histo_peak_position : integer;
-     his_mean,noise_level : array[0..2] of integer;
+     his_mean : array[0..2] of integer;
+     noise_level : array[0..2] of double;
      esc_pressed, fov_specified {, last_extension }: boolean;
      star_level,star_level2  : double;
      exposure,focallen,equinox : double;
@@ -2016,11 +2017,10 @@ begin
   if calc_noise_level then  {find star level and background noise level}
   begin
     {calculate noise level}
-    stepsize:=round(height2/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
-    if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
-
     width5:=Length(img[0,0]); {width}
     height5:=Length(img[0]); {height}
+    stepsize:=round(height5/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
+    if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
 
     sd:=99999;
     iterations:=0;
@@ -2049,7 +2049,7 @@ begin
       sd:=sqrt(sd/counter); {standard deviation}
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
-    noise_level[colour]:= round(sd);   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
+    noise_level[colour]:= sd;   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
 
 
     {calculate star level}
@@ -2091,7 +2091,7 @@ const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
 var
   i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter :integer;
-  SumVal, SumValX,SumValY,SumValR, Xg,Yg, r, val,bg,pixel_counter,valmax,mad_bg,sd_bg    : double;
+  SumVal, SumValX,SumValY,SumValR, Xg,Yg, r, val,star_bg,pixel_counter,valmax,mad_bg,sd_bg    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
@@ -2107,10 +2107,10 @@ var
       x_frac :=frac(x1);
       y_frac :=frac(y1);
       try
-        result:=         (img[0,y_trunc,  x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-        result:=result + (img[0,y_trunc+1,x_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
-        result:=result + (img[0,y_trunc  ,x_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-        result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+        result:=         (img[0,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top,    1}
+        result:=result + (img[0,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top,   2}
+        result:=result + (img[0,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+        result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
       except
       end;
     end;
@@ -2142,8 +2142,8 @@ begin
       end;
     end;
 
-    bg:=Smedian(background,counter);
-    for i:=0 to counter-1 do background[i]:=abs(background[i] - bg);{fill background with offsets}
+    star_bg:=Smedian(background,counter);
+    for i:=0 to counter-1 do background[i]:=abs(background[i] - star_bg);{fill background with offsets}
     mad_bg:=Smedian(background,counter); //median absolute deviation (MAD)
     sd_bg:=mad_bg*1.4826; {Conversion from mad to sd for a normal distribution. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
     sd_bg:=max(sd_bg,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
@@ -2159,7 +2159,7 @@ begin
       for i:=-rs to rs do
       for j:=-rs to rs do
       begin
-        val:=(img[0,y1+j,x1+i])- bg;
+        val:=(img[0,y1+j,x1+i])- star_bg;
         if val>3.0*sd_bg then
         begin
           SumVal:=SumVal+val;
@@ -2201,7 +2201,7 @@ begin
         distance:=round(sqrt(i*i + j*j)); {distance from gravity center} {modA}
         if distance<=rs then {build histogram for circel with radius rs}
         begin
-          val:=value_subpixel(xc+i,yc+j)-bg;
+          val:=value_subpixel(xc+i,yc+j)-star_bg;
           if val>3.0*sd_bg then {3 * sd should be signal }
           begin
             distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram up to circel with diameter rs}
@@ -2233,12 +2233,11 @@ begin
   SumValR:=0;
   pixel_counter:=0;
 
-
   // Get HFD using the aproximation routine assuming that HFD line divides the star in equal portions of gravity:
   for i:=-r_aperture to r_aperture do {Make steps of one pixel}
   for j:=-r_aperture to r_aperture do
   begin
-    Val:=value_subpixel(xc+i,yc+j)-bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
+    Val:=value_subpixel(xc+i,yc+j)-star_bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
     r:=sqrt(i*i+j*j); {Distance from star gravity center}
     SumVal:=SumVal+Val;{Sumval will be star total star flux}
     SumValR:=SumValR+Val*r; {Method Kazuhisa Miyashita, see notes of HFD calculation method, note calculate HFD over square area. Works more accurate then for round area}

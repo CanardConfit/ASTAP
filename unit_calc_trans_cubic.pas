@@ -66,8 +66,21 @@ type
            end;
   TStarArray = array of s_star;
   TTrans = record
-             a, b, c, d, e, f, g, h, i, j: Double;
-             k, l, m, n, o, p, q, r, s, t: Double;
+//             a, b, c, d, e, f, g, h, i, j: Double;
+//             k, l, m, n, o, p, q, r, s, t: Double;
+             x00,x10,x01,x20,x11,x02,x30,x21,x12,x03 : double;
+             y00,y10,y01,y20,y11,y02,y30,y21,y12,y03 : double;
+             // const   A,K   00
+             //  x;      B,L  10
+             //  y;      C,M  01
+             //  x*x;    D,N  20
+             //  x*y;    E,O  11
+             //  y*y;    F,P  02
+             //  x*x*x;  G,Q  30
+             //  x*x*y;  H,R  21
+             //  x*y*y;  I,S  12
+             //  y*y*y;  J,T  03
+
            end;
 
 function Calc_Trans_Cubic(stars_reference: TStarArray; // First array of s_star structure we match the output TRANS takes their coords into those of array B
@@ -668,16 +681,28 @@ begin
     exit(false);
   end;
   //Writeln('after calling solution routines, here's matrix');
-  trans.a := vector[0];
-  trans.b := vector[1];
-  trans.c := vector[2];
-  trans.d := vector[3];
-  trans.e := vector[4];
-  trans.f := vector[5];
-  trans.g := vector[6];
-  trans.h := vector[7];
-  trans.i := vector[8];
-  trans.j := vector[9];
+
+  //  const   A,K  00
+  //  x;      B,L  10
+  //  y;      C,M  01
+  //  x*x;    D,N  20
+  //  x*y;    E,O  11
+  //  y*y;    F,P  02
+  //  x*x*x;  G,Q  30
+  //  x*x*y;  H,R  21
+  //  x*y*y;  I,S  12
+  //  y*y*y;  J,T  03
+
+  trans.x00 := vector[0];
+  trans.x10 := vector[1];
+  trans.x01 := vector[2];
+  trans.x20 := vector[3];
+  trans.x11 := vector[4];
+  trans.x02 := vector[5];
+  trans.x30 := vector[6];
+  trans.x21 := vector[7];
+  trans.x12 := vector[8];
+  trans.x03 := vector[9];
 
   // Okay, now we solve for TRANS coefficients K, L, M, N, O, P, Q, R, S, T
   // using the * set of equations that relates y' to (x,y)
@@ -773,16 +798,30 @@ begin
     exit(false);
   end;
   //Writeln('after  calling solution routines, here's matrix');
-  trans.k := vector[0];
-  trans.l := vector[1];
-  trans.m := vector[2];
-  trans.n := vector[3];
-  trans.o := vector[4];
-  trans.p := vector[5];
-  trans.q := vector[6];
-  trans.r := vector[7];
-  trans.s := vector[8];
-  trans.t := vector[9];
+  //  const   A,K  00
+  //  x;      B,L  10
+  //  y;      C,M  01
+  //  x*x;    D,N  20
+  //  x*y;    E,O  11
+  //  y*y;    F,P  02
+  //  x*x*x;  G,Q  30
+  //  x*x*y;  H,R  21
+  //  x*y*y;  I,S  12
+  //  y*y*y;  J,T  03
+
+  trans.y00 := vector[0];
+  trans.y10 := vector[1];
+  trans.y01 := vector[2];
+  trans.y20 := vector[3];
+  trans.y11 := vector[4];
+  trans.y02 := vector[5];
+  trans.y30 := vector[6];
+  trans.y21 := vector[7];
+  trans.y12 := vector[8];
+  trans.y03 := vector[9];
+
+
+
 
   //free_matrix(matrix, 10);//Not required in FPC
   Result :=true;

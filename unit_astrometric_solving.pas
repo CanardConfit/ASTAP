@@ -525,14 +525,40 @@ begin
 end;
 
 
+procedure create_grid_list( width2, height2, nrpoints : integer; out grid_list : TStarArray); // Create list of nbpoints x nbpoints positions in the image  equally spread. Positions relative to the image center.
+var
+  middleX,middleY : Double;
+  s, x, y,counter : integer;
+begin
+  middleX:=width2/2;
+  middleY:=height2/2;
+  setlength(grid_list,nrpoints*nrpoints);
+  counter:=0;
+  for y := 0 to nrpoints-1 do
+  begin
+    for x := 0 to nrpoints-1 do
+    begin
+      grid_list[counter].x := -middleX+x*width2/(nrpoints-1);
+      grid_list[counter].y := -middleY+y*height2/(nrpoints-1);
+      inc(counter);
+    end;
+  end;
+end;
+
+
 procedure add_sip(hd: Theader;ra_database,dec_database:double);
 var
-  stars_measured,stars_reference         : TStarArray;
+  stars_measured,stars_reference,grid_list1,grid_list2  : TStarArray;
   trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
-  len,i,position          : integer;
+  len,i,position                         : integer;
   succ: boolean;
   err_mess: string;
-  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec : double;
+  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,MatrixDeterminant,u0,v0,
+  cd1_1,cd1_2,cd2_1,cd2_2 : double;
+  cd : array[0..1,0..1] of double;
+  solution_vectorXinv,solution_vectorYinv : solution_vector;
+const
+   nrpoints=6;
 begin
   {1) Solve the image with the 1th order solver.
    2) Get the x,y coordinates of the detected stars= "stars_measured"
@@ -553,6 +579,12 @@ begin
   end;
   setlength(stars_measured,len);
   setlength(stars_reference,len);
+
+
+  cd1_1:=sign(hd.cd1_1)*(abs(hd.cd1_1)+abs(hd.cd2_2))/2;
+  cd2_2:=sign(hd.cd2_2)*(abs(hd.cd1_1)+abs(hd.cd2_2))/2;
+  cd2_1:=sign(hd.cd2_1)*(abs(hd.cd2_1)+abs(hd.cd1_2))/2;
+  cd1_2:=sign(hd.cd1_2)*(abs(hd.cd2_1)+abs(hd.cd1_2))/2;
 
   for i:=0 to len-1 do
   begin
@@ -578,11 +610,25 @@ begin
     dRA := (COS_dec_t*SIN_delta_ra / H)*180/pi;
     dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
 
-    det:=hd.cd2_2*hd.cd1_1 - hd.cd1_2*hd.cd2_1;
+//    det:=hd.cd2_2*hd.cd1_1 - hd.cd1_2*hd.cd2_1;
+    det:=cd2_2*cd1_1 - cd1_2*cd2_1;
 
-    stars_reference[i].x:= - (hd.cd1_2*dDEC - hd.cd2_2*dRA) / det;
-    stars_reference[i].y:= + (hd.cd1_1*dDEC - hd.cd2_1*dRA) / det;
+//    stars_reference[i].x:= - (hd.cd1_2*dDEC - hd.cd2_2*dRA) / det;
+//    stars_reference[i].y:= + (hd.cd1_1*dDEC - hd.cd2_1*dRA) / det;
+
+    stars_reference[i].x:={-0.5} - (cd1_2*dDEC - cd2_2*dRA) / det;
+    stars_reference[i].y:={-0.5} + (cd1_1*dDEC - cd2_1*dRA) / det;
+
   end;
+
+  //  for i:=0 to length(stars_reference)-1 do
+  //               log_to_file('d:\temp\ref.txt',floattostr(stars_reference[i].x)+', '+floattostr(stars_reference[i].y));
+ //   for i:=0 to length(b_Xrefpositions)-1 do
+ //                log_to_file('d:\temp\reference.txt',floattostr(b_Xrefpositions[i])+', '+floattostr(b_Yrefpositions[i]));
+
+ //   log_to_file('d:\temp\databasepos.txt',floattostr(ra_database)+', '+floattostr(dec_database));
+
+
   succ:=Calc_Trans_Cubic(stars_reference,     // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
                          stars_measured,      // Second array of s_star structure we match
                          trans_sky_to_pixel,  // Transfer coefficients for stars_measured positions to stars_reference positions. Fits range 1..max
@@ -594,8 +640,87 @@ begin
     exit;
   end;
 
-  succ:=Calc_Trans_Cubic(stars_measured,      // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
-                         stars_reference,     // Second array of s_star structure we match
+
+  {sky to pixel coefficients}
+  AP_order:=3; //third order
+  AP_0_0:=trans_sky_to_pixel.x00;
+  AP_1_0:=-1+trans_sky_to_pixel.x10;
+  AP_0_1:=trans_sky_to_pixel.x01;
+  AP_2_0:=trans_sky_to_pixel.x20;
+  AP_1_1:=trans_sky_to_pixel.x11;
+  AP_0_2:=trans_sky_to_pixel.x02;
+  AP_3_0:=trans_sky_to_pixel.x30;
+  AP_2_1:=trans_sky_to_pixel.x21;
+  AP_1_2:=trans_sky_to_pixel.x12;
+  AP_0_3:=trans_sky_to_pixel.x03;
+
+  BP_0_0:=trans_sky_to_pixel.y00;
+  BP_1_0:=trans_sky_to_pixel.y10;
+  BP_0_1:=-1+trans_sky_to_pixel.y01;
+  BP_2_0:=trans_sky_to_pixel.y20;
+  BP_1_1:=trans_sky_to_pixel.y11;
+  BP_0_2:=trans_sky_to_pixel.y02;
+  BP_3_0:=trans_sky_to_pixel.y30;
+  BP_2_1:=trans_sky_to_pixel.y21;
+  BP_1_2:=trans_sky_to_pixel.y12;
+  BP_0_3:=trans_sky_to_pixel.y03;
+
+
+  //inverse transformation calculation
+  create_grid_list( hd.width,hd.height, nrpoints{6}, {out} grid_list1); // Create list of nbpoints x nbpoints positions in the image  equally spread. Positions relative to the image center.
+  setlength(grid_list2,nrpoints*nrpoints);//create a second grid
+  for i:=0 to (nrpoints*nrpoints)-1 do {apply SIP correction, sky to pixel}
+  begin
+    u0:=grid_list1[i].x;
+    v0:=grid_list1[i].y;
+//    grid_list2[i].x:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP third order correction}
+//    grid_list2[i].y:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ;
+
+    grid_list2[i].x:= u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0; {3th order SIP correction}
+    grid_list2[i].y:= v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0; {3th order SIP correction}
+
+
+  end;
+//  cd1_1:=hd.cd1_1/hd.cdelt1;//scale to pixels
+//  cd1_2:=hd.cd1_2/hd.cdelt1;
+//  cd2_1:=hd.cd2_1/hd.cdelt2;
+//  cd2_2:=hd.cd2_2/hd.cdelt2;
+
+  // calculate CD^-1 of the 1th order solution
+  // MatrixDeterminant:=M[0, 0] * M[1, 1] - M[0, 1] * M[1, 0];
+
+ //       cd[0][0] = trans->x10;
+//	cd[0][1] = trans->x01;
+//	cd[1][0] = trans->y10;
+//	cd[1][1] = trans->y01;
+
+{  MatrixDeterminant:=trans_sky_to_pixel.x10*trans_sky_to_pixel.y01 - trans_sky_to_pixel.x01*trans_sky_to_pixel.y10;
+  //   Result[0, 0] :=  M[1, 1] / Det;
+  //   Result[0, 1] := -M[0, 1] / Det;
+  //   Result[1, 0] := -M[1, 0] / Det;
+  //   Result[1, 1] :=  M[0, 0] / Det;
+  cd[0,0] :=  trans_sky_to_pixel.x10 / MatrixDeterminant;
+  cd[0,1] := -trans_sky_to_pixel.x01 / MatrixDeterminant;
+  cd[1,0] := -trans_sky_to_pixel.y10 / MatrixDeterminant;
+  cd[1,1] :=  trans_sky_to_pixel.y01 / MatrixDeterminant;
+
+  for i:=0 to (nrpoints*nrpoints)-1 do
+  begin
+//    grid_list2[i].x:= trans_sky_to_pixel.x10*grid_list2[i].x +  trans_sky_to_pixel.x01*grid_list2[i].y;
+//    grid_list2[i].y:= trans_sky_to_pixel.y10*grid_list2[i].x +  trans_sky_to_pixel.y01*grid_list2[i].y;
+    grid_list2[i].x:=cd[0,0]*grid_list2[i].x + cd[0,1]*grid_list2[i].y;
+    grid_list2[i].y:=cd[1,0]*grid_list2[i].x + cd[1,1]*grid_list2[i].y;
+  end;}
+
+{  succ:=Calc_Trans_Cubic(grid_list1,      // reference
+                         grid_list2,      // distorted
+                         trans_pixel_to_sky,  // Transfer coefficients for stars_measured positions to stars_reference positions
+                         err_mess             // any error message
+}                         );
+
+  //swap the arrays for inverse factors
+  succ:=Calc_Trans_Cubic(stars_measured,      // reference
+                         stars_reference,      // distorted
                          trans_pixel_to_sky,  // Transfer coefficients for stars_measured positions to stars_reference positions
                          err_mess             // any error message
                          );
@@ -624,65 +749,70 @@ begin
 
     //Pixel to sky coefficients
     A_ORDER:=3;//3th order
-    A_0_0:=trans_pixel_to_sky.A;
-    A_1_0:=-1+ trans_pixel_to_sky.B;
-    A_0_1:=trans_pixel_to_sky.C;
-    A_2_0:=trans_pixel_to_sky.D;
-    A_1_1:=trans_pixel_to_sky.E;
-    A_0_2:=trans_pixel_to_sky.F;
-    A_3_0:=trans_pixel_to_sky.G;
-    A_2_1:=trans_pixel_to_sky.H;
-    A_1_2:=trans_pixel_to_sky.I;
-    A_0_3:=trans_pixel_to_sky.J;
+    A_0_0:=trans_pixel_to_sky.x00;
+    A_1_0:=-1+ trans_pixel_to_sky.x10;
+    A_0_1:=trans_pixel_to_sky.x01;
+    A_2_0:=trans_pixel_to_sky.x20;
+    A_1_1:=trans_pixel_to_sky.x11;
+    A_0_2:=trans_pixel_to_sky.x02;
+    A_3_0:=trans_pixel_to_sky.x30;
+    A_2_1:=trans_pixel_to_sky.x21;
+    A_1_2:=trans_pixel_to_sky.x12;
+    A_0_3:=trans_pixel_to_sky.x03;
 
-    B_0_0:=trans_pixel_to_sky.K;
-    B_1_0:=trans_pixel_to_sky.L;
-    B_0_1:=-1+trans_pixel_to_sky.M;
-    B_2_0:=trans_pixel_to_sky.N;
-    B_1_1:=trans_pixel_to_sky.O;
-    B_0_2:=trans_pixel_to_sky.P;
-    B_3_0:=trans_pixel_to_sky.Q;
-    B_2_1:=trans_pixel_to_sky.R;
-    B_1_2:=trans_pixel_to_sky.S;
-    B_0_3:=trans_pixel_to_sky.T;
+    B_0_0:=trans_pixel_to_sky.y00;
+    B_1_0:=trans_pixel_to_sky.y10;
+    B_0_1:=-1+trans_pixel_to_sky.y01;
 
-    {sky to pixel coefficients}
-    AP_order:=3; //third order
-    AP_0_0:=trans_sky_to_pixel.A;
-    AP_1_0:=-1+trans_sky_to_pixel.B;
-    AP_0_1:=trans_sky_to_pixel.C;
-    AP_2_0:=trans_sky_to_pixel.D;
-    AP_1_1:=trans_sky_to_pixel.E;
-    AP_0_2:=trans_sky_to_pixel.F;
-    AP_3_0:=trans_sky_to_pixel.G;
-    AP_2_1:=trans_sky_to_pixel.H;
-    AP_1_2:=trans_sky_to_pixel.I;
-    AP_0_3:=trans_sky_to_pixel.J;
+    B_2_0:=trans_pixel_to_sky.y20;
+    B_1_1:=trans_pixel_to_sky.y11;
+    B_0_2:=trans_pixel_to_sky.y02;
+    B_3_0:=trans_pixel_to_sky.y30;
+    B_2_1:=trans_pixel_to_sky.y21;
+    B_1_2:=trans_pixel_to_sky.y12;
+    B_0_3:=trans_pixel_to_sky.y03;
 
-    BP_0_0:=trans_sky_to_pixel.K;
-    BP_0_1:=trans_sky_to_pixel.L;
-    BP_1_0:=-1+trans_sky_to_pixel.M;
-    BP_2_0:=trans_sky_to_pixel.N;
-    BP_1_1:=trans_sky_to_pixel.O;
-    BP_0_2:=trans_sky_to_pixel.P;
-    BP_3_0:=trans_sky_to_pixel.Q;
-    BP_2_1:=trans_sky_to_pixel.R;
-    BP_1_2:=trans_sky_to_pixel.S;
-    BP_0_3:=trans_sky_to_pixel.T;
+{    A_0_0:=-AP_0_0;
+    A_1_0:=-AP_1_0;
+    A_0_1:=-AP_0_1;
+    A_2_0:=-AP_2_0;
+    A_1_1:=-AP_1_1;
+    A_0_2:=-AP_0_2;
+    A_3_0:=-AP_3_0;
+    A_2_1:=-AP_2_1;
+    A_1_2:=-AP_1_2;
+    A_0_3:=-AP_0_3;
 
-
-{    A_0_0:=0;//trans_pixel_to_sky.A;//trans_pixel_to_sky.A,is already in the WCS solution;
-    A_1_0:=0;
-    A_0_1:=0;//is already in the WCS solution;
-    A_1_1:=0;
-
-    B_0_0:=0;//trans_pixel_to_sky.K;//trans_pixel_to_sky.K, is already in the WCS solution;
-    B_1_0:=0;
-    B_0_1:=0;//, is already in the WCS solution;
-    B_1_1:=0;
+    B_0_0:=-BP_0_0;
+    B_1_0:=-BP_1_0;
+    B_0_1:=-BP_0_1;
+    B_2_0:=-BP_2_0;
+    B_1_1:=-BP_1_1;
+    B_0_2:=-BP_0_2;
+    B_3_0:=-BP_3_0;
+    B_2_1:=-BP_2_1;
+    B_1_2:=-BP_1_2;
+    B_0_3:=-BP_0_3;   }
 
 
-    AP_0_0:=0;   //trans_sky_to_pixel.A,is already in the WCS solution;
+
+
+
+
+
+
+//    A_0_0:=0;//trans_pixel_to_sky.A;//trans_pixel_to_sky.A,is already in the WCS solution;
+//    A_1_0:=0;
+//    A_0_1:=0;//is already in the WCS solution;
+//    A_1_1:=0;
+
+//    B_0_0:=0;//trans_pixel_to_sky.K;//trans_pixel_to_sky.K, is already in the WCS solution;
+//    B_1_0:=0;
+//    B_0_1:=0;//, is already in the WCS solution;
+//    B_1_1:=0;
+
+
+{    AP_0_0:=0;   //trans_sky_to_pixel.A,is already in the WCS solution;
     AP_1_0:=0;  //trans_sky_to_pixel.B, is already in the WCS solution
     AP_0_1:=0;   //trans_sky_to_pixel.C, is already in the WCS solution
     AP_1_1:=0;
