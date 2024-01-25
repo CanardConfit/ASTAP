@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.01.24';
+  astap_version: string='2024.01.25';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -438,24 +438,11 @@ var
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
   header    : array[0..2880] of ansichar;
 
-
      procedure close_fits_files;
      begin
         Reader.free;
         TheFile3.free;
         TheFile4.free;
-     end;
-
-     Function validate_double:double;{read values}
-     var t :string[20];
-         r,err : integer;
-         x     :double;
-     begin
-       t:='';
-       for r:=I+10 to I+29 do
-       if header[r]<>' ' then t:=t+header[r];
-       val(t,x,err);
-       validate_double:=x;
      end;
 begin
 
@@ -707,19 +694,20 @@ const
         TheFile3.free;
      end;
 
-     Function validate_double:double;{read floating point or integer values}
-     var t : string[20];
+     function validate_double:double;{read floating point or integer values}
+     var t : string[21];
          r,err : integer;
      begin
        t:='';
        r:=I+10;{position 11 equals 10}
-       while ((header[r]<>'/') and (r<=I+29) {pos 30}) do {'/' check is strictly not necessary but safer}
-       begin  {read 20 characters max, position 11 to 30 in string, position 10 to 29 in pchar}
+       while ((header[r]<>'/') and (r<=I+30) {pos 31}) do {'/' check is strictly not necessary but safer. Read up to position 31 so one more then fits standard since CFITSIO could write for minus values up to position 31. A violation of FITS standard 4}
+       begin  {read 20 characters max, position 11 to 31 in string, position 10 to 30 in pchar}
          if header[r]<>' ' then t:=t+header[r];
          inc(r);
        end;
        val(t,result,err);
      end;
+
 
      Function get_string:string;{read string values}
      var  r: integer;

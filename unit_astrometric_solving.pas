@@ -801,16 +801,16 @@ begin
 //    B_1_1:=0;
 
 
-{    AP_0_0:=0;   //trans_sky_to_pixel.A,is already in the WCS solution;
-    AP_1_0:=0;  //trans_sky_to_pixel.B, is already in the WCS solution
-    AP_0_1:=0;   //trans_sky_to_pixel.C, is already in the WCS solution
-    AP_1_1:=0;
+//    AP_0_0:=0;   //trans_sky_to_pixel.A,is already in the WCS solution;
+//    AP_1_0:=0;  //trans_sky_to_pixel.B, is already in the WCS solution
+ //   AP_0_1:=0;   //trans_sky_to_pixel.C, is already in the WCS solution
+//    AP_1_1:=0;
 
 
-    BP_0_0:=0;   //trans_sky_to_pixel.K, is already in the WCS solution;
-    BP_0_1:=0;   //(trans_sky_to_pixel.L, is already in the WCS solution);
-    BP_1_0:=0;   // trans_sky_to_pixel.M,is already in the WCS solution;
-    BP_1_1:=0; }
+//    BP_0_0:=0;   //trans_sky_to_pixel.K, is already in the WCS solution;
+//    BP_0_1:=0;   //(trans_sky_to_pixel.L, is already in the WCS solution);
+//    BP_1_0:=0;   // trans_sky_to_pixel.M,is already in the WCS solution;
+//    BP_1_1:=0;
 
 
 
@@ -864,6 +864,57 @@ begin
     update_float('BP_1_2  =',' / SIP coefficient                                ',false,BP_1_2);
     update_float('BP_0_3  =',' / SIP coefficient                                ',false,BP_0_3);
 end;
+
+{procedure improved_solution(ra_database,dec_database, centerX,centerY : double; out ra_radians,dec_radians: double);
+var
+  len,i : integer;
+  stars_measured,stars_reference : TStarArray;
+  trans                          : Ttrans;
+  succ                           : boolean;
+  err_mess                       : string;
+
+begin
+  len:=length(b_Xrefpositions);
+  if len<20 then
+  begin
+    memo2_message('Not enough quads for calculating SIP.');
+    exit;
+  end;
+  setlength(stars_measured,len);
+  setlength(stars_reference,len);
+
+  for i:=0 to len-1 do
+  begin
+    stars_measured[i].x:=A_XYpositions[0,i];//position as seen from center at crpix1, crpix2, in fits range 1..width
+    stars_measured[i].y:=A_XYpositions[1,i];
+    stars_reference[i].x:=b_Xrefpositions[i];
+    stars_reference[i].y:=b_Yrefpositions[i];
+  end;
+
+  succ:=Calc_Trans_Cubic(stars_measured,   // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
+                         stars_reference,  // Second array of s_star structure we match
+                         trans,            // Transfer coefficients for stars_measured positions to stars_reference positions. Fits range 1..max
+                         err_mess          // any error message
+                          );
+  if succ=false then
+  begin
+    memo2_message(err_mess);
+    exit;
+  end;
+  solution_vectorX[0]:=trans.x10;
+  solution_vectorX[1]:=trans.x01;
+  solution_vectorX[2]:=trans.x00;
+
+  solution_vectorY[0]:=trans.y10;
+  solution_vectorY[1]:=trans.y01;
+  solution_vectorY[2]:=trans.y00;
+
+  standard_equatorial( ra_database,dec_database,
+      (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), //x
+      (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), //y
+      1, //CCD scale
+      ra_radians ,dec_radians );//put the calculated image center equatorial position into the start search position
+end; }
 
 
 function solve_image(img :image_array;var hd: Theader;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
@@ -1258,6 +1309,7 @@ begin
           hd.crpix1:=centerX+1;{center image in fits coordinate range 1..hd.width}
           hd.crpix2:=centery+1;
 
+
           standard_equatorial( ra_database,dec_database,
               (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
               (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
@@ -1265,6 +1317,9 @@ begin
               ra_radians ,dec_radians {put the calculated image center equatorial position into the start search position});
           current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
           inc(match_nr);
+
+          //improved_solution(ra_database,dec_database, centerX,centerY, ra_radians,dec_radians);
+
         end;
       until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accuracy loop. After match possible on a corner do a second solve using the found hd.ra0,hd.dec0 for maximum accuracy USING ALL STARS}
 
