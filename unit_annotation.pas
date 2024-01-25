@@ -2513,18 +2513,17 @@ begin
 
     if plot then
     begin
-      astrometric_error_innner:=smedian(errors_sky_pixel1,sub_counter);
+      astrometric_error_innner:=smedian(errors_sky_pixel1,sub_counter); //pixels
       astrometric_error_outer:=smedian(errors_sky_pixel2,sub_counter2);
-      astrometric_error_innnerPS:=smedian(errors_pixel_sky1,sub_counter)*180/pi;//median value dregees
+      astrometric_error_innnerPS:=smedian(errors_pixel_sky1,sub_counter)*180/pi;//median value degrees
       astrometric_error_outerPS:=smedian(errors_pixel_sky2,sub_counter2)*180/pi;
 
-      memo2_message('For center median error sky->pixel is '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_innner)+' pixel using '+inttostr(sub_counter)+ ' stars.');
-      memo2_message('For outer regions median error sky->pixel is '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_outer)+' pixel using '+inttostr(sub_counter2)+ ' stars.');
-      if sip then
-      begin
-        memo2_message('For center median error pixel->sky is '+floattostr4(astrometric_error_innnerPS*3600)+'" or ' +floattostr4(astrometric_error_innnerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter3)+ ' stars.');
-        memo2_message('For outer regions median error pixel->sky is '+floattostr4(astrometric_error_outerPS*3600)+'" or ' +floattostr4(astrometric_error_outerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter4)+ ' stars.');
-      end;
+
+      memo2_message('Pixel->Sky error inside '+floattostr4(astrometric_error_innnerPS*3600)+'" or ' +floattostr4(astrometric_error_innnerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter3)+ ' stars.'+
+                                    ' Outside '+floattostr4(astrometric_error_outerPS*3600)+'" or ' +floattostr4(astrometric_error_outerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter4)+ ' stars.');
+      memo2_message('Sky->Pixel error inside '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_innner)+' pixel using '+inttostr(sub_counter)+ ' stars.'+
+                                     ' Outside '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_outer)+' pixel using '+inttostr(sub_counter2)+ ' stars.');
+
 
 
 
@@ -2564,13 +2563,8 @@ begin
 
       mainwindow.image1.Canvas.font.size:=12;
 
-      if sip then
-        mainwindow.image1.Canvas.textout(500,head.height-25,'Using SIP median error inner part image '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outer part image '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"')
-      else
-        mainwindow.image1.Canvas.textout(500,head.height-25,'Using SIP median error inner part image '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outer part image '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"');
-
-
-
+      mainwindow.image1.Canvas.textout(500,head.height-50,'Pixel->Sky error inside '+floattostr4(astrometric_error_innnerPS*3600)+'", outside '+floattostr4(astrometric_error_outerPS*3600)+'"');
+      mainwindow.image1.Canvas.textout(500,head.height-25,'Sky->Pixel error inside '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outside '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"');
 
     //  errors_sky_pixel1 :=nil;  not required auto deallocated
     //  errors_sky_pixel2:=nil;

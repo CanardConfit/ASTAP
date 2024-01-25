@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.01.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.01.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -752,7 +752,7 @@ var {################# initialised variables #########################}
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
-function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
+  function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small, adu_e {unbinned}:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
@@ -1116,12 +1116,12 @@ var {################# initialised variables #########################}
      end;
 
      Function validate_double:double;{read floating point or integer values}
-     var t : string[20];
+     var t : string[21];
          r,err : integer;
      begin
        t:='';
        r:=I+10;{position 11 equals 10}
-       while ((header[r]<>'/') and (r<=I+29) {pos 30}) do {'/' check is strictly not necessary but safer}
+       while ((header[r]<>'/') and (r<=I+30) {pos 31}) do {'/' check is strictly not necessary but safer. Read up to position 31 so one more then fits standard since CFITSIO writes for minus values up to position 31}
        begin  {read 20 characters max, position 11 to 30 in string, position 10 to 29 in pchar}
          if header[r]<>' ' then t:=t+header[r];
          inc(r);
@@ -2951,11 +2951,11 @@ begin
   if calc_noise_level then  {find star level and background noise level}
   begin
     {calculate noise level}
-    stepsize:=round(head.height/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
-    if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
-
     width5:=Length(img[0,0]);    {width}
     height5:=Length(img[0]); {height}
+    stepsize:=round(height5/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
+    if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
+
 
     sd:=99999;
     iterations:=0;
@@ -14228,10 +14228,10 @@ var
       x_frac :=frac(x1);
       y_frac :=frac(y1);
       try
-        result:=         (img[0,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-        result:=result + (img[0,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+        result:=         (img[0,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top,    1}
+        result:=result + (img[0,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top,   2}
         result:=result + (img[0,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-        result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+        result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
       except
       end;
     end;
@@ -14362,7 +14362,6 @@ begin
   Sumval_small:=0;
   SumValR:=0;
   pixel_counter:=0;
-
 
   // Get HFD using the aproximation routine assuming that HFD line divides the star in equal portions of gravity:
   for i:=-r_aperture to r_aperture do {Make steps of one pixel}

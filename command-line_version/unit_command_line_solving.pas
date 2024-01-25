@@ -234,7 +234,7 @@ begin
           p:=0;
           q:=1;
           temp_matrix[j,j]:=-temp_matrix[j,i];
-          temp_matrix[i,i]:=0;
+          temp_matrix[j,i]:=0;
 
         end
         else
