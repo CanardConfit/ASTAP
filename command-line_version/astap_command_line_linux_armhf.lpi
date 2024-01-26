@@ -62,7 +62,8 @@
     <Other>
       <CustomOptions Value="-XX
 -Si
--vh"/>
+-vh
+-Cg-"/>
     </Other>
   </CompilerOptions>
   <Debugging>

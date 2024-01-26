@@ -855,7 +855,7 @@ end;
 //end;
 
 
-function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out nrstars:integer): boolean;{read star from star database}
+function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out starlist1: star_list; out nrstars:integer): boolean;{read star from star database}
 var
    Bp_Rp, ra2,dec2,
    frac1,frac2,frac3,frac4,sep                      : double;
@@ -1467,7 +1467,7 @@ begin
               extrastars:=1/1.1;{star with a factor of one}
               repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
                 extrastars:=extrastars*1.1;
-                if read_stars(ra_database,dec_database,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
+                if read_stars(ra_database,dec_database,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars),{out} starlist1 ,{out}database_stars)= false then
                 begin
                   memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');
                   errorlevel:=33;{read error star database}

@@ -752,7 +752,7 @@ var {################# initialised variables #########################}
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
-  function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small, adu_e {unbinned}:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
@@ -1115,14 +1115,14 @@ var {################# initialised variables #########################}
         TheFile.free;
      end;
 
-     Function validate_double:double;{read floating point or integer values}
+     function validate_double:double;{read floating point or integer values}
      var t : string[21];
          r,err : integer;
      begin
        t:='';
        r:=I+10;{position 11 equals 10}
-       while ((header[r]<>'/') and (r<=I+30) {pos 31}) do {'/' check is strictly not necessary but safer. Read up to position 31 so one more then fits standard since CFITSIO writes for minus values up to position 31}
-       begin  {read 20 characters max, position 11 to 30 in string, position 10 to 29 in pchar}
+       while ((header[r]<>'/') and (r<=I+30) {pos 31}) do {'/' check is strictly not necessary but safer. Read up to position 31 so one more then fits standard since CFITSIO could write for minus values up to position 31. A violation of FITS standard 4}
+       begin  {read 20 characters max, position 11 to 31 in string, position 10 to 30 in pchar}
          if header[r]<>' ' then t:=t+header[r];
          inc(r);
        end;
@@ -7441,18 +7441,6 @@ var
         Reader.free;
         TheFile.free;
         TheFile_new.free;
-     end;
-
-     Function validate_double:double;{read values}
-     var t :string[20];
-         r,err : integer;
-         x     :double;
-     begin
-       t:='';
-       for r:=I+10 to I+29 do
-       if header[r]<>' ' then t:=t+header[r];
-       val(t,x,err);
-       validate_double:=x;
      end;
 begin
   result:=false;{assume failure}

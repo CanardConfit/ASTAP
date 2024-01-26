@@ -977,8 +977,6 @@ begin
   end
   else
   result:=true;
-
-
 end;
 
 

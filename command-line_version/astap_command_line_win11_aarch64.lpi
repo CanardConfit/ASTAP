@@ -67,12 +67,10 @@
       </Debugging>
     </Linking>
     <Other>
-      <ConfigFile>
-        <WriteConfigFilePath Value="$(ProjOutDir)\fpclaz.cfg"/>
-      </ConfigFile>
       <CustomOptions Value="-XX
 -Si
--vh"/>
+-vh
+-Cg-"/>
     </Other>
   </CompilerOptions>
 </CONFIG>
