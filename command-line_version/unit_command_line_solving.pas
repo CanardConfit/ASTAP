@@ -109,7 +109,6 @@ type
   solution_vector   = array[0..2] of double;
 
 var
-   starlist1, starlist2                   : star_list;
    quad_star_distances1, quad_star_distances2: star_list;
    A_XYpositions                          : star_list;
    b_Xrefpositions,b_Yrefpositions        :  array of double;
@@ -855,7 +854,7 @@ end;
 //end;
 
 
-function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out starlist1: star_list; out nrstars:integer): boolean;{read star from star database}
+function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out starlist: star_list; out nrstars:integer): boolean;{read star from star database}
 var
    Bp_Rp, ra2,dec2,
    frac1,frac2,frac3,frac4,sep                      : double;
@@ -866,7 +865,7 @@ begin
   nrstars:=0;{set counters at zero}
   ra2:=0; {define ra2 value. Prevent ra2 = -nan(0xffffffffffde9) run time failure when first header record is read}
 
-  SetLength(starlist1,2,nrstars_required);{set array length}
+  SetLength(starlist,2,nrstars_required);{set array length}
 
   if database_type<>001 then {1476 or 290 files}
   begin
@@ -883,7 +882,7 @@ begin
       nrstars_required2:=min(nrstars_required,trunc(nrstars_required * frac1));
       while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
     end;
@@ -892,10 +891,10 @@ begin
     begin
       if open_database(telescope_dec,area2)=false then
         exit; {open database file or reset buffer}
-      nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2)));{prevent round up errors resulting in error starlist1}
+      nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2)));{prevent round up errors resulting in error starlist}
       while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
     end;
@@ -907,7 +906,7 @@ begin
       nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3)));
       while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
     end;
@@ -919,7 +918,7 @@ begin
       nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3+frac4)));
       while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
       begin {add star}
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
     end;
@@ -936,7 +935,7 @@ begin
       ang_sep(ra2,dec2,telescope_ra,telescope_dec, sep);{angular seperation. Required for large field of view around the pole. Can not use simple formulas anymore}
       if ((sep<search_field*0.5*0.9*(2/sqrt(pi))) and  (sep<pi/2)) then  {factor 2/sqrt(pi) is to adapt circle search field to surface square. Factor 0.9 is a fiddle factor for trees, house and dark corners. Factor <pi/2 is the limit for procedure equatorial_standard}
       begin
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
       inc(count);
@@ -947,7 +946,7 @@ begin
 //  memo2_message('testareas'+#9+floattostr4(telescope_ra*12/pi)+#9+floattostr4(telescope_dec*180/pi)+#9+inttostr(maga)+#9+inttostr(magb)+#9+inttostr(magc)+#9+inttostr(magd)+#9+floattostr4(frac1)+#9+floattostr4(frac2)+#9+floattostr4(frac3)+#9+floattostr4(frac4)+#9+inttostr(area1)+#9+inttostr(area2)+#9+inttostr(area3)+#9+inttostr(area4));
 
   if nrstars<nrstars_required then
-       SetLength(starlist1,2,nrstars); {fix array length on data for case less stars are found}
+       SetLength(starlist,2,nrstars); {fix array length on data for case less stars are found}
   result:=true;{no errors}
 
   //for testing
@@ -1201,8 +1200,15 @@ begin
 
     for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
-      starlist3[0,i]:=starlist3[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
-      starlist3[1,i]:=starlist3[1,i]*binning+(height2*(1-cropping)/2);
+      starlist3[0,i]:=(binning-1)*0.5+starlist3[0,i]*binning +(width2*(1-cropping)/2);//correct star positions for binning/ cropping. Position [3.5,3,5] becomes after 2x2 binning [1,1] after x2 [3,3]. So correct for 0.5 pixel
+      starlist3[1,i]:=(binning-1)*0.5+starlist3[1,i]*binning +(height2*(1-cropping)/2);
+      // For zero based indexing:
+      // A star of 2x2 pixels at position [2.5,2.5] is after 2x2 binning at position [1,1]. If doubled to [2,2] then the position has 0.5 pixel shifted.
+      // A star of 3x3 pixels at position [4,4] is after 3x3 binning at position [1,1]. If tripled to [3,3] then the position has 1.0 pixel shifted.
+      // A star of 4x4 pixels at position [5.5,5.5] is after 4x4 binning at position [1,1]. If quadruped to [4,4] then the position has 1.5 pixel shifted.
+      // So positions measured in a binned image should be corrected as x:=(binning-1)*0.5+binning*x and y:=(binning-1)*0.5+binning*y
+
+
     end;
   end
   else
@@ -1247,6 +1253,7 @@ var
   solution, go_ahead ,autoFOV                                                                                        : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
+  starlist1,starlist2 : star_list;
 
 begin
   result:=false;
@@ -1498,8 +1505,6 @@ begin
         begin
           centerX:=(width2-1)/2 ;{center image in 0..width2-1 range}
           centerY:=(height2-1)/2;{center image in 0..height2-1 range}
-          crpix1:=centerX+1;{center image in fits coordinate range 1..width2}
-          crpix2:=centery+1;
 
           standard_equatorial( ra_database,dec_database,
               (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
@@ -1521,6 +1526,8 @@ begin
     ang_sep(ra_radians,dec_radians,ra0,dec0, sep_search);{calculate search offset}
     ra0:=ra_radians;//store solution
     dec0:=dec_radians;
+    crpix1:=centerX+1;{center image in fits coordinate range 1..width2}
+    crpix2:=centery+1;
 
     memo2_message(#10+inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+quad_tolerance1+' tolerance.'  {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
                  +#10+'Solution["] x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])

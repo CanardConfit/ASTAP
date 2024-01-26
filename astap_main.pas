@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.01.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.01.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -847,7 +847,7 @@ function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double); {fitsX, Y to ra,dec}
 procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
-procedure celestial_to_pixel(ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure celestial_to_pixel(head: theader;ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
@@ -4031,7 +4031,7 @@ begin
 end;
 
 
-procedure celestial_to_pixel(ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure celestial_to_pixel(head: theader;ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 var
   SIN_dec_t,COS_dec_t,
   SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,u0,v0 : double;
@@ -4151,7 +4151,7 @@ begin
   if decode_string(data0,ra_new,dec_new) then
   begin
     result:=true;
-    celestial_to_pixel(ra_new,dec_new, fitsX,fitsY); {ra,dec to fitsX,fitsY}
+    celestial_to_pixel(head, ra_new,dec_new, fitsX,fitsY); {ra,dec to fitsX,fitsY}
     shape_marker3_fitsX:=fitsX;
     shape_marker3_fitsY:=fitsY;
     show_marker_shape(mainwindow.shape_marker3,0 {rectangle},20,20,10,shape_marker3_fitsX, shape_marker3_fitsY);
@@ -4302,7 +4302,7 @@ var
 begin
   if ra_mount<99 then {ra mount was specified}
   begin
-    celestial_to_pixel(ra_mount,dec_mount, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+    celestial_to_pixel(head, ra_mount,dec_mount, fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
     shape_marker4_fitsX:=FITSX;
     shape_marker4_fitsY:=FITSY;
@@ -4537,7 +4537,7 @@ begin
     ang_sep(ra2,dec2,head.ra0,head.dec0, sep);
     if   sep<pi*0.6 then
     begin
-      celestial_to_pixel(ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       if ((fitsx>0) and (fitsx<head.width) and (fitsy>0) and (fitsy<head.height)) then {within screen}
       begin
         if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
@@ -4556,7 +4556,7 @@ begin
     ang_sep(ra2,dec2,head.ra0,head.dec0, sep);
     if   sep<pi*0.6 then
     begin
-      celestial_to_pixel(ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       if ((fitsx>-overshoot) and (fitsx<head.width+overshoot) and (fitsy>-overshoot) and (fitsy<head.height+overshoot)) then {within screen}
       begin
         if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
@@ -4651,9 +4651,9 @@ begin
 
     {angle}
     az_ra(az-0.01*pi/180,alt,site_lat_radians,0,wtime2actual,{out} r1,d1);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
-    celestial_to_pixel(r1,d1, fX1,fY1);{ra,dec to fitsX,fitsY}
+    celestial_to_pixel(head, r1,d1, fX1,fY1);{ra,dec to fitsX,fitsY}
     az_ra(az+0.01*pi/180,alt,site_lat_radians,0,wtime2actual,{out} r2,d2);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
-    celestial_to_pixel(r2,d2, fX2,fY2);{ra,dec to fitsX,fitsY}
+    celestial_to_pixel(head, r2,d2, fX2,fY2);{ra,dec to fitsX,fitsY}
     angle:=arctan2(fy2-fy1,fx2-fx1)*180/pi;
     mainwindow.image1.Canvas.font.size:=14;
     mainwindow.image1.Canvas.textout(10,head.height-25,'Angle: '+floattostrF(angle,FFfixed,0,2)+ '°    ('+head.date_obs+', '+sitelong+', '+sitelat+')');
@@ -4739,7 +4739,7 @@ begin
         precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
       end;
 
-      celestial_to_pixel(ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
       if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
       if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
@@ -4753,7 +4753,7 @@ begin
         precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
       end;
 
-      celestial_to_pixel(ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
 
       if flip_horizontal then x2:=round((head.width-1)-(fitsX-1)) else x2:=round(fitsX-1);
@@ -4796,7 +4796,7 @@ begin
        precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
      end;
 
-      celestial_to_pixel(ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
       if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
       if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
@@ -4810,7 +4810,7 @@ begin
       end;
 
 
-      celestial_to_pixel(ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
       if flip_horizontal then x2:=round((head.width-1)-(fitsX-1)) else x2:=round(fitsX-1);
       if flip_vertical=false then y2:=round((head.height-1)-(fitsY-1)) else y2:=round(fitsY-1);

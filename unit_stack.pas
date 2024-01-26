@@ -2608,6 +2608,8 @@ var
   max_stars, binning,i: integer;
   starlistquads: star_list;
   warning_downsample: string;
+  starlist1         : star_list;
+
 begin
   if head.naxis = 0 then application.messagebox(
       PChar('First load an image in the viewer!'), PChar('No action'), MB_OK)
@@ -5369,7 +5371,9 @@ var
   c, x_new, y_new, fitsX, fitsY, col, first_image, stepnr, nrrows,
   cycle, step, ps, bottom, top, left, w, h, max_stars: integer;
   reference_done, init{,solut}, astro_solved, store_annotated, success, res: boolean;
-  st: string;
+  st                  : string;
+  starlist1,starlist2 : star_list;
+
 begin
   if listview6.items.Count <= 1 then exit; {no files}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -8200,7 +8204,7 @@ begin
             adu_e := retrieve_ADU_to_e_unbinned(head.egain);
             //Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
             mainwindow.image1.Canvas.Pen.Color := clRed;
-            celestial_to_pixel(rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY}
+            celestial_to_pixel(head, rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY}
             astr := measure_star(xn, yn); {var star #####################################################################################################################}
 
 //            memo2_message('measuring star1 '+astr +'at '+floattostr(xn)+','+floattostr(yn));
@@ -8218,7 +8222,7 @@ begin
           begin //do check star
             mainwindow.image1.Canvas.Pen.Color := clGreen;
 
-            celestial_to_pixel(rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY}
+            celestial_to_pixel(head, rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY}
             astr := measure_star(xn, yn); {chk}
             listview7.Items.item[c].subitems.Strings[P_magn2] := astr;
             if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
@@ -8232,7 +8236,7 @@ begin
           begin //do star 3
             mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
 
-            celestial_to_pixel(rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY}
+            celestial_to_pixel(head, rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY}
             astr := measure_star(xn, yn); {star3}
             listview7.Items.item[c].subitems.Strings[P_magn3] := astr;
             if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
@@ -8272,7 +8276,7 @@ begin
                   //  obj_count:=0;
                     for j:=0 to variable_list_length do
                     begin
-                      celestial_to_pixel(variable_list[j].ra, variable_list[j].dec, xn, yn);
+                      celestial_to_pixel(head, variable_list[j].ra, variable_list[j].dec, xn, yn);
                       if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
                       begin
                         astr := measure_star(xn, yn);
@@ -8312,7 +8316,7 @@ begin
                   begin
                     for j:=0 to lvsx-1 do
                     begin
-                      celestial_to_pixel(vsx[j].ra, vsx[j].dec, xn, yn);
+                      celestial_to_pixel(head, vsx[j].ra, vsx[j].dec, xn, yn);
                       if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
                       begin
                         astr := measure_star(xn, yn);
@@ -8348,7 +8352,7 @@ begin
                     begin
                       for j:=0 to lvsp-1 do
                       begin
-                        celestial_to_pixel(vsp[j].ra, vsp[j].dec, xn, yn);
+                        celestial_to_pixel(head, vsp[j].ra, vsp[j].dec, xn, yn);
                         if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
                         begin
                           astr := measure_star(xn, yn);
@@ -8442,7 +8446,7 @@ begin
           if mainwindow.shape_alignment_marker1.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clRed;
-            celestial_to_pixel(rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
+            celestial_to_pixel(head, rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
             plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
          end;
 
@@ -8450,7 +8454,7 @@ begin
           begin
             mainwindow.image1.Canvas.Pen.Color := clGreen;
             //plot_annulus(round(shape_fitsX2), round(shape_fitsY2),starlistpack[c].apr,starlistpack[c].anr);
-            celestial_to_pixel(rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
+            celestial_to_pixel(head, rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
             plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
 
           end;
@@ -8459,7 +8463,7 @@ begin
           begin
             mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
            // plot_annulus(round(shape_fitsX3), round(shape_fitsY3),starlistpack[c].apr,starlistpack[c].anr);
-            celestial_to_pixel(rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
+            celestial_to_pixel(head, rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
             plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
           end;
         end;

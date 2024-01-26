@@ -173,6 +173,7 @@ var
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,
   use_astrometry_internal,vector_based,use_sip :boolean;
   warning             : string;
+  starlist1,starlist2 : star_list;
 
 begin
   with stackmenu1 do
@@ -583,6 +584,7 @@ var
     init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip             : boolean;
     tempval                                                                                                                              : single;
     warning             : string;
+    starlist1,starlist2 : star_list;
 
 begin
   with stackmenu1 do
@@ -937,8 +939,8 @@ begin
           if init=false then
           begin
             head_ref:=head;{backup solution}
-            celestial_to_pixel(ra_min,dec_min, fx1,fy1);{ra,dec to fitsX,fitsY}
-            celestial_to_pixel(ra_max,dec_max, fx2,fy2);{ra,dec to fitsX,fitsY}
+            celestial_to_pixel(head, ra_min,dec_min, fx1,fy1);{ra,dec to fitsX,fitsY}
+            celestial_to_pixel(head, ra_max,dec_max, fx2,fy2);{ra,dec to fitsX,fitsY}
 
             fw:=head.cdelt1*abs(fx2-fx1);
             fh:=head.cdelt2*abs(fy2-fy1);
@@ -1181,6 +1183,8 @@ var
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip                      : boolean;
     tempval, sumpix, newpix,target_background,background_correction                                                                                : single;
     warning     : string;
+    starlist1,starlist2 : star_list;
+
 begin
   with stackmenu1 do
   begin
@@ -1678,7 +1682,9 @@ var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV,max_stars   : integer;
     background_correction, hfd_min      : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip :boolean;
-    warning              : string;
+    warning             : string;
+    starlist1,starlist2 : star_list;
+
 begin
   with stackmenu1 do
   begin

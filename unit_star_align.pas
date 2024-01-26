@@ -16,7 +16,7 @@ type
 
 
 var
-   starlist1, starlist2                   :star_list;
+   //starlist2,
    quad_star_distances1, quad_star_distances2: star_list;
    A_XYpositions                          : star_list;
    b_Xrefpositions,b_Yrefpositions        : array of double;
