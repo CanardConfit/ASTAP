@@ -588,7 +588,7 @@ begin
   setlength(stars_reference,len);
 
 
-  sincos(dec_t,SIN_dec_t,COS_dec_t);{ For 5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
+  sincos(hd.dec0,SIN_dec_ref,COS_dec_ref);;{ For 5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
 
   for i:=0 to len-1 do
   begin
@@ -603,8 +603,8 @@ begin
 
 
     {5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
-   // sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then separate sin and cos functions}
-    sincos(hd.dec0,SIN_dec_ref,COS_dec_ref);{}
+    sincos(dec_t,SIN_dec_t,COS_dec_t);
+//  sincos(hd.dec0,SIN_dec_ref,COS_dec_ref);{Required but for speed executed outside the for loop}
 
     delta_ra:=ra_t-hd.ra0;
     sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
