@@ -19,9 +19,9 @@ procedure load_variable;{load variable stars. If loaded no action}
 procedure load_variable_13;{load variable stars. If loaded no action}
 procedure load_variable_15;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
-procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
+procedure measure_distortion(out stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array;head:theader;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
-procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
+procedure plot_stars_used_for_solving(starlist1,starlist2: star_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
@@ -1381,7 +1381,7 @@ type
      x1,y1,x2,y2 : integer;
   end;
 var
-  dra,ddec, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,
+  dra,ddec, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,fitsX,fitsY,
   gx_orientation, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0 : double;
   name: string;
   flip_horizontal, flip_vertical                   : boolean;
@@ -1434,28 +1434,10 @@ begin
 
     while read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa) {deepsky database search} do
     begin
-      {5. Conversion (RA,DEC) -> (x,y). See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
-      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-      delta_ra:=ra2-head.ra0;
-      sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-      HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
-      dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
-      dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-      det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
+      celestial_to_pixel(head,ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
+      y:=round(fitsY-1);
 
-      u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-      v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-
-      if sip then {apply SIP correction}
-      begin
-         x:=round(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-         y:=round(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
-      end
-      else
-      begin
-        x:=round(head.crpix1 + u0)-1; {in image array range 0..width-1}
-        y:=round(head.crpix2 + v0)-1;
-      end;
 
       if ((x>-0.25*head.width) and (x<=1.25*head.width) and (y>-0.25*head.height) and (y<=1.25*head.height)) then {within image1 with some overlap}
       begin
@@ -1599,7 +1581,7 @@ type
   end;
 var
   dra,ddec, telescope_ra,telescope_dec, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,
-  COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec : double;
+  COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec,fitsX,fitsY : double;
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
@@ -1654,36 +1636,12 @@ begin
 
       while count<counts do //go through data
       begin
-        {5. Conversion (RA,DEC) -> (x,y). See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
-
-        if mode=1 then begin ra:=vsx[count].ra; dec:=vsx[count].dec;end else begin ra:=vsp[count].ra; dec:=vsp[count].dec;end;
-
-        sincos(dec,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-        delta_ra:=ra-head.ra0;
-        sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-        HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
-        dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
-        dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-        det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
-
-        u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-        v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-
-        if sip then {apply SIP correction}
-        begin
-           x:=round(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-           y:=round(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
-        end
-        else
-        begin
-          x:=round(head.crpix1 + u0)-1; {in image array range 0..width-1}
-          y:=round(head.crpix2 + v0)-1;
-        end;
+        celestial_to_pixel(head,ra,dec, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+        x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
+        y:=round(fitsY-1);
 
         if ((x>0) and (x<head.width-1) and (y>0) and (y<head.height-1)) then {within image1}
         begin
-
-
           {Plot deepsky text labels on an empthy text space.}
           { 1) If the center of the deepsky object is outside the image then don't plot text}
           { 2) If the text space is occupied, then move the text down. If the text crosses the bottom then use the original text position.}
@@ -1919,13 +1877,14 @@ end;
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   dra,ddec, telescope_ra,telescope_dec,fov,ra2,dec2,
-  magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,
+  magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,fitsX,fitsY,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,magn_limit_min,magn_limit_max,cv : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
   flip_horizontal, flip_vertical     : boolean;
   flux_ratio_array,hfd_x_sd          : array of double;
   database_passband : string;
   data_max          : single;
+  starlist1         : star_list;
 var
   flux_ratio             : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
 
@@ -1935,36 +1894,9 @@ var
       u,v,u2,v2 : double;
     begin
       if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999){mono colour database})then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
-
-     {5. Conversion (RA,DEC) -> (x,y)}
-      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-      delta_ra:=ra2-head.ra0;
-      sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-      HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
-      dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
-      dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-      det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
-
-      u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-      v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-
-      if sip then {apply SIP correction, sky to pixel}
-      begin
-         x:=(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-         y:=(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
-
-         //reverse test
-         //u:=u0;
-         //v:=v0;
-         //x:=x+ a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
-         //y:=y + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
-      end
-      else
-      begin
-        x:=(head.crpix1 + u0)-1; {in image array range 0..width-1}
-        y:=(head.crpix2 + v0)-1;
-      end;
-
+      celestial_to_pixel(head,ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      x:=(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
+      y:=(fitsY-1);
 
       if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
       begin
@@ -2094,7 +2026,7 @@ begin
         if select_star_database(stackmenu1.star_database1.text,fov_org {fov})=false then exit;
 
      //  max_nr_stars:=20;
-        if read_stars(telescope_ra,telescope_dec,fov_org, database_type, max_nr_stars,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this.Max magnitude is stored in mag2}
+        if read_stars(telescope_ra,telescope_dec,fov_org, database_type, max_nr_stars,{out} starlist1,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this.Max magnitude is stored in mag2}
         begin //maximum magnitude mag2 is known for the amount of stars for calibration using online stars
           memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFgeneral,3,1)+ ' for '+inttostr( max_nr_stars)+' stars')  ;
           if read_stars_online(telescope_ra,telescope_dec,fov_org, mag2/10 {max_magnitude})= false then
@@ -2300,40 +2232,22 @@ begin
 end;{plot stars}
 
 
-procedure measure_distortion(plot: boolean; out stars_measured : integer);{measure or plot distortion}
+procedure measure_distortion(out stars_measured : integer);{measure or plot distortion}
 var
-  dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error_innner,
+  telescope_ra,telescope_dec,fov,fov_org,ra2,dec2, mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,
+  frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error_innner,
   astrometric_error_outer,sep,ra3,dec3,astrometric_error_innnerPS,astrometric_error_outerPS                                                      : double;
   star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,sub_counter2,sub_counter3,sub_counter4,scale,count   : integer;
   flip_horizontal, flip_vertical       : boolean;
   errors_sky_pixel1, errors_sky_pixel2,errors_pixel_sky1,errors_pixel_sky2   : array of double;
 
     procedure plot_star;
+    var
+      fitsX,fitsY : double;
     begin
-     {5. Conversion (RA,DEC) -> (x,y)}
-      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-      delta_ra:=ra2-head.ra0;
-      sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-      HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
-      dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
-      dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-      det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
-
-      u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-      v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-
-      if ((plot) and (sip)) then {apply SIP correction, sky to pixel. Do not apply correction for measurement if plotting is false !!!!}
-      begin
-        x:=(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-        y:=(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
-      end
-      else
-      begin
-        x:=(head.crpix1 + u0)-1; {in image array range 0..width-1}
-        y:=(head.crpix2 + v0)-1;
-      end;
+      celestial_to_pixel(head,ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      x:=fitsX-1;//fits count from 1, image from zero therefore subtract 1
+      y:=fitsY-1;
 
       if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
       begin
@@ -2345,43 +2259,38 @@ var
         HFD(img_loaded,round(x),round(y), 14 {annulus_radius},99 {flux_aperture},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
         begin
-          if plot then {show distortion}
+          mainwindow.image1.Canvas.Pen.width :=3;
+          mainwindow.image1.Canvas.MoveTo(round(x2), round(y2));
+          mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
+          mainwindow.image1.Canvas.Pen.width :=1;
+
+          {for median errror}
+          if  ( (sqr(x-head.crpix1)+sqr(y-head.crpix2)<sqr(0.25*head.height)) and (sub_counter<length(errors_sky_pixel1))) then
           begin
-            mainwindow.image1.Canvas.Pen.width :=3;
-            mainwindow.image1.Canvas.MoveTo(round(x2), round(y2));
-            mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
-            mainwindow.image1.Canvas.Pen.width :=1;
+            errors_sky_pixel1[sub_counter]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
+            inc(sub_counter);
 
-            {for median errror}
-            if  ( (sqr(x-head.crpix1)+sqr(y-head.crpix2)<sqr(0.25*head.height)) and (sub_counter<length(errors_sky_pixel1))) then
+            //check sky to pixel errors:
+            if ((sip) and (sub_counter3<length(errors_pixel_sky1)) ) then
             begin
-              errors_sky_pixel1[sub_counter]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
-              inc(sub_counter);
-
-              //check sky to pixel errors:
-              if ((sip) and (sub_counter3<length(errors_pixel_sky1)) ) then
-              begin
-                sensor_coordinates_to_celestial(head,xc+1,yc+1,ra3,dec3);{calculate the ra,dec position}
-                ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky1[sub_counter3] );//angular seperation
-                inc(sub_counter3);
-              end;
+              sensor_coordinates_to_celestial(head,xc+1,yc+1,ra3,dec3);{calculate the ra,dec position}
+              ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky1[sub_counter3] );//angular seperation
+              inc(sub_counter3);
             end;
-           if  ( (sqr(x-head.crpix1)+sqr(y-head.crpix2)>sqr(0.5*head.height)) and (sub_counter2<length(errors_sky_pixel2))) then
+          end;
+         if  ( (sqr(x-head.crpix1)+sqr(y-head.crpix2)>sqr(0.5*head.height)) and (sub_counter2<length(errors_sky_pixel2))) then
+          begin
+            errors_sky_pixel2[sub_counter2]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
+            inc(sub_counter2);
+
+            //check sky to pixel errors:
+            if ((sip) and (sub_counter4<length(errors_pixel_sky2)) ) then
             begin
-              errors_sky_pixel2[sub_counter2]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
-              inc(sub_counter2);
-
-              //check sky to pixel errors:
-              if ((sip) and (sub_counter4<length(errors_pixel_sky2)) ) then
-              begin
-                sensor_coordinates_to_celestial(head,xc+1,yc+1,ra3,dec3);{calculate the ra,dec position}
-                ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky2[sub_counter4] );//angular seperation
-                inc(sub_counter4);
-              end;
+              sensor_coordinates_to_celestial(head,xc+1,yc+1,ra3,dec3);{calculate the ra,dec position}
+              ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky2[sub_counter4] );//angular seperation
+              inc(sub_counter4);
             end;
-
-          end {show distortion}
-          else
+          end;
           if stars_measured<max_nr_stars then {store distortion data}
           begin
             distortion_data[0,stars_measured]:=x;{database}
@@ -2427,13 +2336,10 @@ begin
     {sets file290 so do before fov selection}
     if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then exit;
 
-    if plot=false then setlength(distortion_data,4,max_nr_stars);
+    setlength(distortion_data,4,max_nr_stars);
     stars_measured:=0;{star number}
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
-
-
-    sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
     if database_type>1 then {1476 or 290 files}
     begin
@@ -2474,8 +2380,7 @@ begin
       begin
         if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp))
-        and (bp_rp>12) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       end;
 
       close_star_database;
@@ -2511,65 +2416,61 @@ begin
     mainwindow.image1.Canvas.Font.Name :='Helvetica';
     {$endif}
 
-    if plot then
+    astrometric_error_innner:=smedian(errors_sky_pixel1,sub_counter); //pixels
+    astrometric_error_outer:=smedian(errors_sky_pixel2,sub_counter2);
+    astrometric_error_innnerPS:=smedian(errors_pixel_sky1,sub_counter)*180/pi;//median value degrees
+    astrometric_error_outerPS:=smedian(errors_pixel_sky2,sub_counter2)*180/pi;
+
+
+    memo2_message('Pixel->Sky error inside '+floattostr4(astrometric_error_innnerPS*3600)+'" or ' +floattostr4(astrometric_error_innnerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter3)+ ' stars.'+
+                                  ' Outside '+floattostr4(astrometric_error_outerPS*3600)+'" or ' +floattostr4(astrometric_error_outerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter4)+ ' stars.');
+    memo2_message('Sky->Pixel error inside '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_innner)+' pixel using '+inttostr(sub_counter)+ ' stars.'+
+                                   ' Outside '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_outer)+' pixel using '+inttostr(sub_counter2)+ ' stars.');
+
+
+
+
+    mainwindow.image1.Canvas.Pen.mode:=pmXor;
+    mainwindow.image1.canvas.pen.color:=annotation_color;
+    mainwindow.image1.Canvas.brush.Style:=bsClear;
+    mainwindow.image1.Canvas.font.color:=annotation_color;
+    mainwindow.image1.Canvas.font.size:=8;
+
+    mainwindow.image1.Canvas.Pen.width :=3;
+
+    {scale in pixels}
+    mainwindow.image1.Canvas.MoveTo(20, head.height-30);
+    mainwindow.image1.Canvas.LineTo(20+50*3,head.height-30);
+    for i:=0 to 3 do
     begin
-      astrometric_error_innner:=smedian(errors_sky_pixel1,sub_counter); //pixels
-      astrometric_error_outer:=smedian(errors_sky_pixel2,sub_counter2);
-      astrometric_error_innnerPS:=smedian(errors_pixel_sky1,sub_counter)*180/pi;//median value degrees
-      astrometric_error_outerPS:=smedian(errors_pixel_sky2,sub_counter2)*180/pi;
+      mainwindow.image1.Canvas.MoveTo(20+50*i,head.height-25);
+      mainwindow.image1.Canvas.LineTo(20+50*i,head.height-35);
+      mainwindow.image1.Canvas.textout(17+50*i,head.height-25,inttostr(i));
+    end;
+    mainwindow.image1.Canvas.textout(20,head.height-60,'Scale in pixels');
 
 
-      memo2_message('Pixel->Sky error inside '+floattostr4(astrometric_error_innnerPS*3600)+'" or ' +floattostr4(astrometric_error_innnerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter3)+ ' stars.'+
-                                    ' Outside '+floattostr4(astrometric_error_outerPS*3600)+'" or ' +floattostr4(astrometric_error_outerPS/head.cdelt2)+' pixel using '+inttostr(sub_counter4)+ ' stars.');
-      memo2_message('Sky->Pixel error inside '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_innner)+' pixel using '+inttostr(sub_counter)+ ' stars.'+
-                                     ' Outside '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error_outer)+' pixel using '+inttostr(sub_counter2)+ ' stars.');
+    {scale in arc seconds}
+    scale:=round(50/(head.cdelt2*3600));
+    mainwindow.image1.Canvas.MoveTo(220, head.height-30);
+    mainwindow.image1.Canvas.LineTo(220+scale*3,head.height-30);
 
 
+    for i:=0 to 3 do
+    begin
+      mainwindow.image1.Canvas.MoveTo(220+scale*i,head.height-25);
+      mainwindow.image1.Canvas.LineTo(220+scale*i,head.height-35);
+      mainwindow.image1.Canvas.textout(217+scale*i,head.height-25,inttostr(i)+'"');
+    end;
+    mainwindow.image1.Canvas.textout(220,head.height-60,'Scale in arcsecs');
 
+    mainwindow.image1.Canvas.font.size:=12;
 
-      mainwindow.image1.Canvas.Pen.mode:=pmXor;
-      mainwindow.image1.canvas.pen.color:=annotation_color;
-      mainwindow.image1.Canvas.brush.Style:=bsClear;
-      mainwindow.image1.Canvas.font.color:=annotation_color;
-      mainwindow.image1.Canvas.font.size:=8;
-
-      mainwindow.image1.Canvas.Pen.width :=3;
-
-      {scale in pixels}
-      mainwindow.image1.Canvas.MoveTo(20, head.height-30);
-      mainwindow.image1.Canvas.LineTo(20+50*3,head.height-30);
-      for i:=0 to 3 do
-      begin
-        mainwindow.image1.Canvas.MoveTo(20+50*i,head.height-25);
-        mainwindow.image1.Canvas.LineTo(20+50*i,head.height-35);
-        mainwindow.image1.Canvas.textout(17+50*i,head.height-25,inttostr(i));
-      end;
-      mainwindow.image1.Canvas.textout(20,head.height-60,'Scale in pixels');
-
-
-      {scale in arc seconds}
-      scale:=round(50/(head.cdelt2*3600));
-      mainwindow.image1.Canvas.MoveTo(220, head.height-30);
-      mainwindow.image1.Canvas.LineTo(220+scale*3,head.height-30);
-
-
-      for i:=0 to 3 do
-      begin
-        mainwindow.image1.Canvas.MoveTo(220+scale*i,head.height-25);
-        mainwindow.image1.Canvas.LineTo(220+scale*i,head.height-35);
-        mainwindow.image1.Canvas.textout(217+scale*i,head.height-25,inttostr(i)+'"');
-      end;
-      mainwindow.image1.Canvas.textout(220,head.height-60,'Scale in arcsecs');
-
-      mainwindow.image1.Canvas.font.size:=12;
-
-      mainwindow.image1.Canvas.textout(500,head.height-50,'Pixel->Sky error inside '+floattostr4(astrometric_error_innnerPS*3600)+'", outside '+floattostr4(astrometric_error_outerPS*3600)+'"');
-      mainwindow.image1.Canvas.textout(500,head.height-25,'Sky->Pixel error inside '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outside '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"');
+    mainwindow.image1.Canvas.textout(500,head.height-50,'Pixel->Sky error inside '+floattostr4(astrometric_error_innnerPS*3600)+'", outside '+floattostr4(astrometric_error_outerPS*3600)+'"');
+    mainwindow.image1.Canvas.textout(500,head.height-25,'Sky->Pixel error inside '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outside '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"');
 
     //  errors_sky_pixel1 :=nil;  not required auto deallocated
     //  errors_sky_pixel2:=nil;
-    end;
-
 
     Screen.Cursor:=crDefault;
   end;{fits file}
@@ -2579,23 +2480,13 @@ end;{measure distortion}
 procedure plot_artificial_stars(img: image_array;head: theader; magnlimit:double);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
-  mag2, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,m_limit,sep : double;
+  mag2, m_limit,sep : double;
   x,y,count                                                        : integer;
   passband                                                         : string;
 
     procedure plot_star;
     begin
-     {5. Conversion (RA,DEC) -> (x,y)}
-      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-      delta_ra:=ra2-head.ra0;
-      sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-      HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
-      dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
-      dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-      det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
-      fitsX:= +head.crpix1 - (head.cd1_2*dDEC - head.cd2_2*dRA) / det; {1..head.width}
-      fitsY:= +head.crpix2 + (head.cd1_1*dDEC - head.cd2_1*dRA) / det; {1..head.height}
+      celestial_to_pixel(head, ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       x:=round(fitsX-1); {0..head.width-1}
       y:=round(fitsY-1); {0..head.height-1}
 
@@ -2629,8 +2520,6 @@ begin
 
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
-
-    sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
 //    if database_type>001 then //1476 or 290 files
 //    begin
@@ -2726,7 +2615,7 @@ begin
 end;{plot stars}
 
 
-procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
+procedure plot_stars_used_for_solving(starlist1,starlist2: star_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 var
   nrstars,i, starX, starY,size,flipped  : integer;
   flip_horizontal, flip_vertical        : boolean;

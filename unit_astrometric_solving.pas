@@ -107,7 +107,7 @@ procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:d
 function report_binning(height :double) : integer;{select the binning}
 function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
 procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
-function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer; out nrstars:integer): boolean;{read star from star database}
+function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer;out starlist : star_list; out nrstars:integer): boolean;{read star from star database}
 procedure binX2_crop(crop {0..1}:double; img : image_array; out img2: image_array);{combine values of 4 pixels and crop is required, Result is mono}
 procedure binX1_crop(crop {0..1}:double; img : image_array; var img2: image_array);{crop image, make mono, no binning}
 
@@ -215,18 +215,17 @@ end;
 //end;
 
 
-function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer; out nrstars:integer): boolean;{read star from star database}
+function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer;out starlist : star_list; out nrstars:integer): boolean;{read star from star database}
 var
    Bp_Rp, ra2,dec2,
    frac1,frac2,frac3,frac4,sep                      : double;
    area1,area2,area3,area4,nrstars_required2,count  : integer;
-//   correctionX,correctionY : double;
 begin
   result:=false;{assume failure}
   nrstars:=0;{set counters at zero}
   ra2:=0; {define ra2 value. Prevent ra2 = -nan(0xffffffffffde9) run time failure when first header record is read}
 
-  SetLength(starlist1,2,nrstars_required);{set array length}
+  SetLength(starlist,2,nrstars_required);{set array length}
 
   if database_type>1 then {1476 or 290 files}
   begin
@@ -243,7 +242,7 @@ begin
       nrstars_required2:=min(nrstars_required,trunc(nrstars_required * frac1));
       while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
     end;
@@ -252,10 +251,10 @@ begin
     begin
       if open_database(telescope_dec,area2)=false then
         exit; {open database file or reset buffer}
-      nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2)));{prevent round up errors resulting in error starlist1}
+      nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2)));{prevent round up errors resulting in error starlist}
       while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
     end;
@@ -267,7 +266,7 @@ begin
       nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3)));
       while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
     end;
@@ -279,7 +278,7 @@ begin
       nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3+frac4)));
       while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
       begin {add star}
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
     end;
@@ -296,7 +295,7 @@ begin
       ang_sep(ra2,dec2,telescope_ra,telescope_dec, sep);{angular seperation. Required for large field of view around the pole. Can not use simple formulas anymore}
       if ((sep<search_field*0.5*0.9*(2/sqrt(pi))) and  (sep<pi/2)) then  {factor 2/sqrt(pi) is to adapt circle search field to surface square. Factor 0.9 is a fiddle factor for trees, house and dark corners. Factor <pi/2 is the limit for procedure equatorial_standard}
       begin
-        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist[0,nrstars]{x},starlist[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
       end;
       inc(count);
@@ -306,7 +305,7 @@ begin
   //  memo2_message('testareas'+#9+floattostr4(telescope_ra*12/pi)+#9+floattostr4(telescope_dec*180/pi)+#9+inttostr(maga)+#9+inttostr(magb)+#9+inttostr(magc)+#9+inttostr(magd)+#9+floattostr4(frac1)+#9+floattostr4(frac2)+#9+floattostr4(frac3)+#9+floattostr4(frac4)+#9+inttostr(area1)+#9+inttostr(area2)+#9+inttostr(area3)+#9+inttostr(area4));
 
   if nrstars<nrstars_required then
-       SetLength(starlist1,2,nrstars); {fix array length on data for case less stars are found}
+       SetLength(starlist,2,nrstars); {fix array length on data for case less stars are found}
   result:=true;{no errors}
 
   //for testing
@@ -478,7 +477,6 @@ begin
 
     get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{out}bck {cblack,star_level} );{get back ground}
     find_stars(img_binned,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
-    nrstars:=Length(starlist3[0]);
 
     if length(img_binned[0])<960 then
     begin
@@ -487,10 +485,16 @@ begin
     end;
     img_binned:=nil;
 
+    nrstars:=Length(starlist3[0]);
     for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
-      starlist3[0,i]:=starlist3[0,i]*binning+(width5*(1-cropping)/2);{correct star positions for binning/ cropping}
-      starlist3[1,i]:=starlist3[1,i]*binning+(height5*(1-cropping)/2);
+      starlist3[0,i]:=(binning-1)*0.5+starlist3[0,i]*binning +(width5*(1-cropping)/2);//correct star positions for binning/ cropping. Position [3.5,3,5] becomes after 2x2 binning [1,1] after x2 [3,3]. So correct for 0.5 pixel
+      starlist3[1,i]:=(binning-1)*0.5+starlist3[1,i]*binning +(height5*(1-cropping)/2);
+      // For zero based indexing:
+      // A star of 2x2 pixels at position [2.5,2.5] is after 2x2 binning at position [1,1]. If doubled to [2,2] then the position has 0.5 pixel shifted.
+      // A star of 3x3 pixels at position [4,4] is after 3x3 binning at position [1,1]. If tripled to [3,3] then the position has 1.0 pixel shifted.
+      // A star of 4x4 pixels at position [5.5,5.5] is after 4x4 binning at position [1,1]. If quadruped to [4,4] then the position has 1.5 pixel shifted.
+      // So positions measured in a binned image should be corrected as x:=(binning-1)*0.5+binning*x and y:=(binning-1)*0.5+binning*y
     end;
   end
   else
@@ -510,6 +514,10 @@ begin
     get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {out}bck{ cblack,star_level});{get back ground}
     find_stars(img,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
   end;
+
+ //  for i:=0 to length(starlist3[0])-1 do
+ //          log_to_file('d:\temp\referenceA1.txt',floattostr(starlist3[0,i])+', '+floattostr(starlist3[1,i]));
+
 end;
 
 
@@ -550,10 +558,10 @@ procedure add_sip(hd: Theader;ra_database,dec_database:double);
 var
   stars_measured,stars_reference,grid_list1,grid_list2  : TStarArray;
   trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
-  len,i,position                         : integer;
+  len,i,position,j,nr                       : integer;
   succ: boolean;
   err_mess: string;
-  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,MatrixDeterminant,u0,v0 : double;
+  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,MatrixDeterminant,u0,v0,sep,sepsmallest : double;
   cd : array[0..1,0..1] of double;
   solution_vectorXinv,solution_vectorYinv : solution_vector;
 const
@@ -580,6 +588,8 @@ begin
   setlength(stars_reference,len);
 
 
+  sincos(hd.dec0,SIN_dec_ref,COS_dec_ref);;{ For 5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
+
   for i:=0 to len-1 do
   begin
     stars_measured[i].x:=1+A_XYpositions[0,i]-hd.crpix1;//position as seen from center at crpix1, crpix2, in fits range 1..width
@@ -591,11 +601,10 @@ begin
                          1, {CCD scale}
                          ra_t,dec_t) ; //calculate back to the reference star positions
 
-//    err_mess:=floattostr(ra_t*180/pi)+',' +floattostr(dec_t*180/pi);
 
     {5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
-    sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then separate sin and cos functions}
-    sincos(hd.dec0,SIN_dec_ref,COS_dec_ref);{}
+    sincos(dec_t,SIN_dec_t,COS_dec_t);
+//  sincos(hd.dec0,SIN_dec_ref,COS_dec_ref);{Required but for speed executed outside the for loop}
 
     delta_ra:=ra_t-hd.ra0;
     sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
@@ -605,18 +614,10 @@ begin
     dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
 
     det:=hd.cd2_2*hd.cd1_1 - hd.cd1_2*hd.cd2_1;
-    stars_reference[i].x:={-0.5} - (hd.cd1_2*dDEC - hd.cd2_2*dRA) / det;
-    stars_reference[i].y:={-0.5} + (hd.cd1_1*dDEC - hd.cd2_1*dRA) / det;
+    stars_reference[i].x:= - (hd.cd1_2*dDEC - hd.cd2_2*dRA) / det;
+    stars_reference[i].y:= + (hd.cd1_1*dDEC - hd.cd2_1*dRA) / det;
 
   end;
-
-  //  for i:=0 to length(stars_reference)-1 do
-  //               log_to_file('d:\temp\ref.txt',floattostr(stars_reference[i].x)+', '+floattostr(stars_reference[i].y));
- //   for i:=0 to length(b_Xrefpositions)-1 do
- //                log_to_file('d:\temp\reference.txt',floattostr(b_Xrefpositions[i])+', '+floattostr(b_Yrefpositions[i]));
-
- //   log_to_file('d:\temp\databasepos.txt',floattostr(ra_database)+', '+floattostr(dec_database));
-
 
   succ:=Calc_Trans_Cubic(stars_reference,     // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
                          stars_measured,      // Second array of s_star structure we match
@@ -633,288 +634,118 @@ begin
   {sky to pixel coefficients}
   AP_order:=3; //third order
   AP_0_0:=trans_sky_to_pixel.x00;
-  AP_1_0:=-1+trans_sky_to_pixel.x10;
   AP_0_1:=trans_sky_to_pixel.x01;
-  AP_2_0:=trans_sky_to_pixel.x20;
-  AP_1_1:=trans_sky_to_pixel.x11;
   AP_0_2:=trans_sky_to_pixel.x02;
-  AP_3_0:=trans_sky_to_pixel.x30;
-  AP_2_1:=trans_sky_to_pixel.x21;
-  AP_1_2:=trans_sky_to_pixel.x12;
   AP_0_3:=trans_sky_to_pixel.x03;
+  AP_1_0:=-1+trans_sky_to_pixel.x10;
+  AP_1_1:=trans_sky_to_pixel.x11;
+  AP_1_2:=trans_sky_to_pixel.x12;
+  AP_2_0:=trans_sky_to_pixel.x20;
+  AP_2_1:=trans_sky_to_pixel.x21;
+  AP_3_0:=trans_sky_to_pixel.x30;
 
   BP_0_0:=trans_sky_to_pixel.y00;
-  BP_1_0:=trans_sky_to_pixel.y10;
   BP_0_1:=-1+trans_sky_to_pixel.y01;
-  BP_2_0:=trans_sky_to_pixel.y20;
-  BP_1_1:=trans_sky_to_pixel.y11;
   BP_0_2:=trans_sky_to_pixel.y02;
-  BP_3_0:=trans_sky_to_pixel.y30;
-  BP_2_1:=trans_sky_to_pixel.y21;
-  BP_1_2:=trans_sky_to_pixel.y12;
   BP_0_3:=trans_sky_to_pixel.y03;
+  BP_1_0:=trans_sky_to_pixel.y10;
+  BP_1_1:=trans_sky_to_pixel.y11;
+  BP_1_2:=trans_sky_to_pixel.y12;
+  BP_2_0:=trans_sky_to_pixel.y20;
+  BP_2_1:=trans_sky_to_pixel.y21;
+  BP_3_0:=trans_sky_to_pixel.y30;
 
 
   //inverse transformation calculation
-  create_grid_list( hd.width,hd.height, nrpoints{6}, {out} grid_list1); // Create list of nbpoints x nbpoints positions in the image  equally spread. Positions relative to the image center.
-  setlength(grid_list2,nrpoints*nrpoints);//create a second grid
-  for i:=0 to (nrpoints*nrpoints)-1 do {apply SIP correction, sky to pixel}
-  begin
-    u0:=grid_list1[i].x;
-    v0:=grid_list1[i].y;
-//    grid_list2[i].x:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP third order correction}
-//    grid_list2[i].y:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ;
-
-    grid_list2[i].x:= u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0; {3th order SIP correction}
-    grid_list2[i].y:= v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0; {3th order SIP correction}
-
-
-  end;
-//  cd1_1:=hd.cd1_1/hd.cdelt1;//scale to pixels
-//  cd1_2:=hd.cd1_2/hd.cdelt1;
-//  cd2_1:=hd.cd2_1/hd.cdelt2;
-//  cd2_2:=hd.cd2_2/hd.cdelt2;
-
-  // calculate CD^-1 of the 1th order solution
-  // MatrixDeterminant:=M[0, 0] * M[1, 1] - M[0, 1] * M[1, 0];
-
- //       cd[0][0] = trans->x10;
-//	cd[0][1] = trans->x01;
-//	cd[1][0] = trans->y10;
-//	cd[1][1] = trans->y01;
-
-{  MatrixDeterminant:=trans_sky_to_pixel.x10*trans_sky_to_pixel.y01 - trans_sky_to_pixel.x01*trans_sky_to_pixel.y10;
-  //   Result[0, 0] :=  M[1, 1] / Det;
-  //   Result[0, 1] := -M[0, 1] / Det;
-  //   Result[1, 0] := -M[1, 0] / Det;
-  //   Result[1, 1] :=  M[0, 0] / Det;
-  cd[0,0] :=  trans_sky_to_pixel.x10 / MatrixDeterminant;
-  cd[0,1] := -trans_sky_to_pixel.x01 / MatrixDeterminant;
-  cd[1,0] := -trans_sky_to_pixel.y10 / MatrixDeterminant;
-  cd[1,1] :=  trans_sky_to_pixel.y01 / MatrixDeterminant;
-
-  for i:=0 to (nrpoints*nrpoints)-1 do
-  begin
-//    grid_list2[i].x:= trans_sky_to_pixel.x10*grid_list2[i].x +  trans_sky_to_pixel.x01*grid_list2[i].y;
-//    grid_list2[i].y:= trans_sky_to_pixel.y10*grid_list2[i].x +  trans_sky_to_pixel.y01*grid_list2[i].y;
-    grid_list2[i].x:=cd[0,0]*grid_list2[i].x + cd[0,1]*grid_list2[i].y;
-    grid_list2[i].y:=cd[1,0]*grid_list2[i].x + cd[1,1]*grid_list2[i].y;
-  end;}
-
-{  succ:=Calc_Trans_Cubic(grid_list1,      // reference
-                         grid_list2,      // distorted
-                         trans_pixel_to_sky,  // Transfer coefficients for stars_measured positions to stars_reference positions
-                         err_mess             // any error message
-                         );}
-
-  //swap the arrays for inverse factors
+  //swap the arrays for inverse factors. This works as long the offset is small like in this situation
   succ:=Calc_Trans_Cubic(stars_measured,      // reference
                          stars_reference,      // distorted
                          trans_pixel_to_sky,  // Transfer coefficients for stars_measured positions to stars_reference positions
                          err_mess             // any error message
                          );
 
-
   if succ=false then
   begin
     memo2_message(err_mess);
     exit;
   end;
 
-  // const   A,K
-  //  x;      B,L
-  //  y;      C,M
-  //  x*x;    D,N
-  //  x*y;    E,O
-  //  y*y;    F,P
-  //  x*x*x;  G,Q
-  //  x*x*y;  H,R
-  //  x*y*y;  J,S
-  //  y*y*y;  K,T
+  sip:=true;
+  // SIP definitions https://irsa.ipac.caltech.edu/data/SPITZER/docs/files/spitzer/shupeADASS.pdf
+
+  //Pixel to sky coefficients
+  A_0_0:=trans_pixel_to_sky.x00;
+  A_0_1:=trans_pixel_to_sky.x01;
+  A_0_2:=trans_pixel_to_sky.x02;
+  A_0_3:=trans_pixel_to_sky.x03;
+  A_1_0:=-1+ trans_pixel_to_sky.x10;
+  A_1_1:=trans_pixel_to_sky.x11;
+  A_1_2:=trans_pixel_to_sky.x12;
+  A_2_0:=trans_pixel_to_sky.x20;
+  A_2_1:=trans_pixel_to_sky.x21;
+  A_3_0:=trans_pixel_to_sky.x30;
+
+  B_0_0:=trans_pixel_to_sky.y00;
+  B_0_1:=-1+trans_pixel_to_sky.y01;
+  B_0_2:=trans_pixel_to_sky.y02;
+  B_0_3:=trans_pixel_to_sky.y03;
+  B_1_0:=trans_pixel_to_sky.y10;
+  B_1_1:=trans_pixel_to_sky.y11;
+  B_1_2:=trans_pixel_to_sky.y12;
+  B_2_0:=trans_pixel_to_sky.y20;
+  B_2_1:=trans_pixel_to_sky.y21;
+  B_3_0:=trans_pixel_to_sky.y30;
 
 
-    sip:=true;
-    // SIP definitions https://irsa.ipac.caltech.edu/data/SPITZER/docs/files/spitzer/shupeADASS.pdf
-
-    //Pixel to sky coefficients
-    A_ORDER:=3;//3th order
-    A_0_0:=trans_pixel_to_sky.x00;
-    A_1_0:=-1+ trans_pixel_to_sky.x10;
-    A_0_1:=trans_pixel_to_sky.x01;
-    A_2_0:=trans_pixel_to_sky.x20;
-    A_1_1:=trans_pixel_to_sky.x11;
-    A_0_2:=trans_pixel_to_sky.x02;
-    A_3_0:=trans_pixel_to_sky.x30;
-    A_2_1:=trans_pixel_to_sky.x21;
-    A_1_2:=trans_pixel_to_sky.x12;
-    A_0_3:=trans_pixel_to_sky.x03;
-
-    B_0_0:=trans_pixel_to_sky.y00;
-    B_1_0:=trans_pixel_to_sky.y10;
-    B_0_1:=-1+trans_pixel_to_sky.y01;
-
-    B_2_0:=trans_pixel_to_sky.y20;
-    B_1_1:=trans_pixel_to_sky.y11;
-    B_0_2:=trans_pixel_to_sky.y02;
-    B_3_0:=trans_pixel_to_sky.y30;
-    B_2_1:=trans_pixel_to_sky.y21;
-    B_1_2:=trans_pixel_to_sky.y12;
-    B_0_3:=trans_pixel_to_sky.y03;
-
-{    A_0_0:=-AP_0_0;
-    A_1_0:=-AP_1_0;
-    A_0_1:=-AP_0_1;
-    A_2_0:=-AP_2_0;
-    A_1_1:=-AP_1_1;
-    A_0_2:=-AP_0_2;
-    A_3_0:=-AP_3_0;
-    A_2_1:=-AP_2_1;
-    A_1_2:=-AP_1_2;
-    A_0_3:=-AP_0_3;
-
-    B_0_0:=-BP_0_0;
-    B_1_0:=-BP_1_0;
-    B_0_1:=-BP_0_1;
-    B_2_0:=-BP_2_0;
-    B_1_1:=-BP_1_1;
-    B_0_2:=-BP_0_2;
-    B_3_0:=-BP_3_0;
-    B_2_1:=-BP_2_1;
-    B_1_2:=-BP_1_2;
-    B_0_3:=-BP_0_3;   }
+  update_float('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',false,3);
+  update_float('A_0_0   =',' / SIP coefficient                                ',false,A_0_0);
+  update_float('A_1_0   =',' / SIP coefficient                                ',false,A_1_0);
+  update_float('A_0_1   =',' / SIP coefficient                                ',false,A_0_1);
+  update_float('A_2_0   =',' / SIP coefficient                                ',false,A_2_0);
+  update_float('A_1_1   =',' / SIP coefficient                                ',false,A_1_1);
+  update_float('A_0_2   =',' / SIP coefficient                                ',false,A_0_2);
+  update_float('A_3_0   =',' / SIP coefficient                                ',false,A_3_0);
+  update_float('A_2_1   =',' / SIP coefficient                                ',false,A_2_1);
+  update_float('A_1_2   =',' / SIP coefficient                                ',false,A_1_2);
+  update_float('A_0_3   =',' / SIP coefficient                                ',false,A_0_3);
 
 
+  update_float('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',false,3);
+  update_float('B_0_0   =',' / SIP coefficient                                ',false ,B_0_0);
+  update_float('B_0_1   =',' / SIP coefficient                                ',false ,B_0_1);
+  update_float('B_1_0   =',' / SIP coefficient                                ',false ,B_1_0);
+  update_float('B_2_0   =',' / SIP coefficient                                ',false ,B_2_0);
+  update_float('B_1_1   =',' / SIP coefficient                                ',false ,B_1_1);
+  update_float('B_0_2   =',' / SIP coefficient                                ',false ,B_0_2);
+  update_float('B_3_0   =',' / SIP coefficient                                ',false ,B_3_0);
+  update_float('B_2_1   =',' / SIP coefficient                                ',false ,B_2_1);
+  update_float('B_1_2   =',' / SIP coefficient                                ',false ,B_1_2);
+  update_float('B_0_3   =',' / SIP coefficient                                ',false ,B_0_3);
 
+  update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',false,3);
+  update_float('AP_0_0  =',' / SIP coefficient                                ',false,AP_0_0);
+  update_float('AP_1_0  =',' / SIP coefficient                                ',false,AP_1_0);
+  update_float('AP_0_1  =',' / SIP coefficient                                ',false,AP_0_1);
+  update_float('AP_2_0  =',' / SIP coefficient                                ',false,AP_2_0);
+  update_float('AP_1_1  =',' / SIP coefficient                                ',false,AP_1_1);
+  update_float('AP_0_2  =',' / SIP coefficient                                ',false,AP_0_2);
+  update_float('AP_3_0  =',' / SIP coefficient                                ',false,AP_3_0);
+  update_float('AP_2_1  =',' / SIP coefficient                                ',false,AP_2_1);
+  update_float('AP_1_2  =',' / SIP coefficient                                ',false,AP_1_2);
+  update_float('AP_0_3  =',' / SIP coefficient                                ',false,AP_0_3);
 
-
-
-
-
-//    A_0_0:=0;//trans_pixel_to_sky.A;//trans_pixel_to_sky.A,is already in the WCS solution;
-//    A_1_0:=0;
-//    A_0_1:=0;//is already in the WCS solution;
-//    A_1_1:=0;
-
-//    B_0_0:=0;//trans_pixel_to_sky.K;//trans_pixel_to_sky.K, is already in the WCS solution;
-//    B_1_0:=0;
-//    B_0_1:=0;//, is already in the WCS solution;
-//    B_1_1:=0;
-
-
-//    AP_0_0:=0;   //trans_sky_to_pixel.A,is already in the WCS solution;
-//    AP_1_0:=0;  //trans_sky_to_pixel.B, is already in the WCS solution
- //   AP_0_1:=0;   //trans_sky_to_pixel.C, is already in the WCS solution
-//    AP_1_1:=0;
-
-
-//    BP_0_0:=0;   //trans_sky_to_pixel.K, is already in the WCS solution;
-//    BP_0_1:=0;   //(trans_sky_to_pixel.L, is already in the WCS solution);
-//    BP_1_0:=0;   // trans_sky_to_pixel.M,is already in the WCS solution;
-//    BP_1_1:=0;
-
-
-
-
-    update_float('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',false,3);
-    update_float('A_0_0   =',' / SIP coefficient                                ',false,A_0_0);
-    update_float('A_1_0   =',' / SIP coefficient                                ',false,A_1_0);
-    update_float('A_0_1   =',' / SIP coefficient                                ',false,A_0_1);
-    update_float('A_2_0   =',' / SIP coefficient                                ',false,A_2_0);
-    update_float('A_1_1   =',' / SIP coefficient                                ',false,A_1_1);
-    update_float('A_0_2   =',' / SIP coefficient                                ',false,A_0_2);
-    update_float('A_3_0   =',' / SIP coefficient                                ',false,A_3_0);
-    update_float('A_2_1   =',' / SIP coefficient                                ',false,A_2_1);
-    update_float('A_1_2   =',' / SIP coefficient                                ',false,A_1_2);
-    update_float('A_0_3   =',' / SIP coefficient                                ',false,A_0_3);
-
-
-    update_float('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',false,3);
-    update_float('B_0_0   =',' / SIP coefficient                                ',false ,B_0_0);
-    update_float('B_0_1   =',' / SIP coefficient                                ',false ,B_0_1);
-    update_float('B_1_0   =',' / SIP coefficient                                ',false ,B_1_0);
-    update_float('B_2_0   =',' / SIP coefficient                                ',false ,B_2_0);
-    update_float('B_1_1   =',' / SIP coefficient                                ',false ,B_1_1);
-    update_float('B_0_2   =',' / SIP coefficient                                ',false ,B_0_2);
-    update_float('B_3_0   =',' / SIP coefficient                                ',false ,B_3_0);
-    update_float('B_2_1   =',' / SIP coefficient                                ',false ,B_2_1);
-    update_float('B_1_2   =',' / SIP coefficient                                ',false ,B_1_2);
-    update_float('B_0_3   =',' / SIP coefficient                                ',false ,B_0_3);
-
-    update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',false,3);
-    update_float('AP_0_0  =',' / SIP coefficient                                ',false,AP_0_0);
-    update_float('AP_1_0  =',' / SIP coefficient                                ',false,AP_1_0);
-    update_float('AP_0_1  =',' / SIP coefficient                                ',false,AP_0_1);
-    update_float('AP_2_0  =',' / SIP coefficient                                ',false,AP_2_0);
-    update_float('AP_1_1  =',' / SIP coefficient                                ',false,AP_1_1);
-    update_float('AP_0_2  =',' / SIP coefficient                                ',false,AP_0_2);
-    update_float('AP_3_0  =',' / SIP coefficient                                ',false,AP_3_0);
-    update_float('AP_2_1  =',' / SIP coefficient                                ',false,AP_2_1);
-    update_float('AP_1_2  =',' / SIP coefficient                                ',false,AP_1_2);
-    update_float('AP_0_3  =',' / SIP coefficient                                ',false,AP_0_3);
-
-    update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',false,3);
-    update_float('BP_0_0  =',' / SIP coefficient                                ',false,BP_0_0);
-    update_float('BP_1_0  =',' / SIP coefficient                                ',false,BP_1_0);
-    update_float('BP_0_1  =',' / SIP coefficient                                ',false,BP_0_1);
-    update_float('BP_2_0  =',' / SIP coefficient                                ',false,BP_2_0);
-    update_float('BP_1_1  =',' / SIP coefficient                                ',false,BP_1_1);
-    update_float('BP_0_2  =',' / SIP coefficient                                ',false,BP_0_2);
-    update_float('BP_3_0  =',' / SIP coefficient                                ',false,BP_3_0);
-    update_float('BP_2_1  =',' / SIP coefficient                                ',false,BP_2_1);
-    update_float('BP_1_2  =',' / SIP coefficient                                ',false,BP_1_2);
-    update_float('BP_0_3  =',' / SIP coefficient                                ',false,BP_0_3);
+  update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',false,3);
+  update_float('BP_0_0  =',' / SIP coefficient                                ',false,BP_0_0);
+  update_float('BP_1_0  =',' / SIP coefficient                                ',false,BP_1_0);
+  update_float('BP_0_1  =',' / SIP coefficient                                ',false,BP_0_1);
+  update_float('BP_2_0  =',' / SIP coefficient                                ',false,BP_2_0);
+  update_float('BP_1_1  =',' / SIP coefficient                                ',false,BP_1_1);
+  update_float('BP_0_2  =',' / SIP coefficient                                ',false,BP_0_2);
+  update_float('BP_3_0  =',' / SIP coefficient                                ',false,BP_3_0);
+  update_float('BP_2_1  =',' / SIP coefficient                                ',false,BP_2_1);
+  update_float('BP_1_2  =',' / SIP coefficient                                ',false,BP_1_2);
+  update_float('BP_0_3  =',' / SIP coefficient                                ',false,BP_0_3);
 end;
-
-{procedure improved_solution(ra_database,dec_database, centerX,centerY : double; out ra_radians,dec_radians: double);
-var
-  len,i : integer;
-  stars_measured,stars_reference : TStarArray;
-  trans                          : Ttrans;
-  succ                           : boolean;
-  err_mess                       : string;
-
-begin
-  len:=length(b_Xrefpositions);
-  if len<20 then
-  begin
-    memo2_message('Not enough quads for calculating SIP.');
-    exit;
-  end;
-  setlength(stars_measured,len);
-  setlength(stars_reference,len);
-
-  for i:=0 to len-1 do
-  begin
-    stars_measured[i].x:=A_XYpositions[0,i];//position as seen from center at crpix1, crpix2, in fits range 1..width
-    stars_measured[i].y:=A_XYpositions[1,i];
-    stars_reference[i].x:=b_Xrefpositions[i];
-    stars_reference[i].y:=b_Yrefpositions[i];
-  end;
-
-  succ:=Calc_Trans_Cubic(stars_measured,   // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
-                         stars_reference,  // Second array of s_star structure we match
-                         trans,            // Transfer coefficients for stars_measured positions to stars_reference positions. Fits range 1..max
-                         err_mess          // any error message
-                          );
-  if succ=false then
-  begin
-    memo2_message(err_mess);
-    exit;
-  end;
-  solution_vectorX[0]:=trans.x10;
-  solution_vectorX[1]:=trans.x01;
-  solution_vectorX[2]:=trans.x00;
-
-  solution_vectorY[0]:=trans.y10;
-  solution_vectorY[1]:=trans.y01;
-  solution_vectorY[2]:=trans.y00;
-
-  standard_equatorial( ra_database,dec_database,
-      (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), //x
-      (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), //y
-      1, //CCD scale
-      ra_radians ,dec_radians );//put the calculated image center equatorial position into the start search position
-end; }
 
 
 function solve_image(img :image_array;var hd: Theader;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
@@ -930,6 +761,7 @@ var
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
   offset_found,ra_offset_str,dec_offset_str,mount_info_str,mount_offset_str,warning_downsample                                         : string;
+  starlist1,starlist2                                                                                                                  : star_list;
 var {with value}
   quads_str: string=' quads';
 const
@@ -1148,6 +980,8 @@ begin
     begin
       search_field:=fov2*(pi/180);
 
+
+
       STEP_SIZE:=search_field;{fixed step size search spiral}
       if database_type=1 then
       begin {make small steps for wide field images. Much more reliable}
@@ -1241,7 +1075,7 @@ begin
               extrastars:=1/1.1;{star with a factor of one}
               repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
                 extrastars:=extrastars*1.1;
-                if read_stars(ra_database,dec_database,search_field*oversize,database_type,round(nrstars_required*oversize*oversize*extrastars) ,{out}database_stars)= false then
+                if read_stars(ra_database,dec_database,search_field*oversize,database_type,round(nrstars_required*oversize*oversize*extrastars),{out} starlist1 ,{out}database_stars)= false then
                 begin
                   {$IFDEF linux}
                    //keep till 2026
@@ -1306,9 +1140,6 @@ begin
         begin
           centerX:=(hd.width-1)/2 ;{center image in 0..hd.width-1 range}
           centerY:=(hd.height-1)/2;{center image in 0..hd.height-1 range}
-          hd.crpix1:=centerX+1;{center image in fits coordinate range 1..hd.width}
-          hd.crpix2:=centery+1;
-
 
           standard_equatorial( ra_database,dec_database,
               (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
@@ -1317,11 +1148,8 @@ begin
               ra_radians ,dec_radians {put the calculated image center equatorial position into the start search position});
           current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
           inc(match_nr);
-
-          //improved_solution(ra_database,dec_database, centerX,centerY, ra_radians,dec_radians);
-
         end;
-      until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accuracy loop. After match possible on a corner do a second solve using the found hd.ra0,hd.dec0 for maximum accuracy USING ALL STARS}
+        until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accuracy loop. After match possible on a corner do a second solve using the found hd.ra0,hd.dec0 for maximum accuracy USING ALL STARS}
 
       stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
       stackmenu1.Memo2.Lines.EndUpdate;
@@ -1334,6 +1162,9 @@ begin
   begin
     hd.ra0:=ra_radians;//store solution in header
     hd.dec0:=dec_radians;
+    hd.crpix1:=centerX+1;{center image in fits coordinate range 1..hd.width}
+    hd.crpix2:=centery+1;
+
     ang_sep(ra_radians,dec_radians,ra_start,dec_start, sep_search);//calculate search offset
 
     memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+quads_str+' selected matching within '+floattostr(quad_tolerance)+' tolerance.'  //  3 quads are required giving 3 center quad references}
@@ -1399,7 +1230,7 @@ begin
     else
     mount_info_str:='';{no mount info}
 
-    memo2_message('Solution found: '+  prepare_ra(hd.ra0,': ')+#9+prepare_dec(hd.dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info_str+' Used stars down to magnitude: '+floattostrF(mag2/10,ffFixed,0,1) );
+    memo2_message('Solution found: '+  prepare_ra8(hd.ra0,': ')+#9+prepare_dec2(hd.dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info_str+' Used stars down to magnitude: '+floattostrF(mag2/10,ffFixed,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(hd.ra0,': ')+'     '+prepare_dec(hd.dec0,'° ')  );
     result:=true;
 
@@ -1438,7 +1269,7 @@ begin
     if solve_show_log then {global variable set in find stars}
     begin
       equatorial_standard(ra_database,dec_database,hd.ra0,hd.dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
-      plot_stars_used_for_solving(hd,correctionX,correctionY); {plot image stars and database stars used for the solution}
+      plot_stars_used_for_solving(starlist1,starlist2,hd,correctionX,correctionY); {plot image stars and database stars used for the solution}
       memo2_message('See viewer image for image stars used (red) and database star used (yellow)');
     end;
 

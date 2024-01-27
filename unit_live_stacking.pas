@@ -126,7 +126,7 @@ var
     file_ext,filen,filename_org                 :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
     warning  : string;
-var
+    starlist1,starlist2 : star_list;
     rename_counter: integer=0;
     count         : integer=0;
 

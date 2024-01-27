@@ -1170,7 +1170,7 @@ begin
   executed:=1;{only refresh required to undo}
 
  // if calculate_undisturbed_image_scale then
-    measure_distortion(true {plot},stars_measured);{measure or plot distortion}
+    measure_distortion(stars_measured);{measure andor plot distortion}
 
   if toClipboard1 then
   begin

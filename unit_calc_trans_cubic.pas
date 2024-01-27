@@ -66,11 +66,9 @@ type
            end;
   TStarArray = array of s_star;
   TTrans = record
-//             a, b, c, d, e, f, g, h, i, j: Double;
-//             k, l, m, n, o, p, q, r, s, t: Double;
              x00,x10,x01,x20,x11,x02,x30,x21,x12,x03 : double;
              y00,y10,y01,y20,y11,y02,y30,y21,y12,y03 : double;
-             // const   A,K   00
+             //  const  A,K   00
              //  x;      B,L  10
              //  y;      C,M  01
              //  x*x;    D,N  20
