@@ -846,7 +846,7 @@ function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double); {fitsX, Y to ra,dec}
-procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
+procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ram,decm  : double) {fitsX, Y to ra,dec};
 procedure celestial_to_pixel(head: theader;ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
@@ -871,7 +871,7 @@ procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : 
 function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 procedure remove_photometric_calibration;//from header
-procedure remove_solution;//remove all solution key words efficient
+procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3247,7 +3247,7 @@ begin
 end;
 
 
-procedure remove_solution;//remove all solution key words efficient
+procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
 var
   cnt,line_end : integer;
   buf : string;
@@ -3262,15 +3262,18 @@ var
      end;
 
 begin
-  head.cd1_1:=0;//no WCS
-  A_ORDER:=0;//no SIP
 
   buf:=mainwindow.Memo1.text;
-  remove    ('CD1_1   =');
-  remove    ('CD1_2   =');
-  remove    ('CD2_1   =');
-  remove    ('CD2_2   =');
+  if keep_wcs=false then
+  begin
+    head.cd1_1:=0;//no WCS
+    remove    ('CD1_1   =');
+    remove    ('CD1_2   =');
+    remove    ('CD2_1   =');
+    remove    ('CD2_2   =');
+  end;
 
+  A_ORDER:=0;//no SIP
   remove    ('A_ORDER =');
   remove    ('A_0_0   =');
   remove    ('A_0_1   =');
@@ -4077,7 +4080,7 @@ begin
 
   if ((data0='c') or (data0='C')) then {place marker in middle}
   begin
-    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
+    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
     data1:='Center image '; {for hint}
@@ -9929,8 +9932,8 @@ var
 begin
   if head.cdelt2<>0 then
   begin
-    sensor_coordinates_to_celestial(head,fitsX1,fitsY1,ra1,dec1);{calculate the ra,dec position}
-    sensor_coordinates_to_celestial(head,fitsX2,fitsY2,ra2,dec2);{calculate the ra,dec position}
+    sensor_coordinates_to_celestial(head,fitsX1,fitsY1,mainwindow.Polynomial1.itemindex,ra1,dec1);{calculate the ra,dec position}
+    sensor_coordinates_to_celestial(head,fitsX2,fitsY2,mainwindow.Polynomial1.itemindex,ra2,dec2);{calculate the ra,dec position}
     ang_sep(ra1,dec1,ra2,dec2, sep);
     sep:=sep*180/pi; //convert to degrees
     if sep<1/60 then seperation:=inttostr(round(sep*3600))+'"'
@@ -10664,7 +10667,7 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
-  size, i, starX, starY,magn,fontsize,text_height,text_width,dum    : integer;
+  size, i, starX, starY,magn,fontsize,text_height,text_width,dum,formalism    : integer;
   Fliphorizontal, Flipvertical  : boolean;
   magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
 
@@ -10676,6 +10679,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   subframe:=(sender=export_star_info1); //full frame or sub section
+  formalism:=mainwindow.Polynomial1.itemindex;
 
   calibrate_photometry;
 
@@ -10742,7 +10746,7 @@ begin
 
       if subframe then
       begin
-        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
+        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
         rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
         decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
 
@@ -11620,7 +11624,7 @@ end;
 
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 var
-  count1,x1,y1,x2,y2 : integer;
+  count1,x1,y1,x2,y2,formalism : integer;
   typ     : double;
   List: TStrings;
 //  dummy : string;
@@ -11630,6 +11634,7 @@ begin
 
   List := TStringList.Create;
   list.StrictDelimiter:=true;
+  formalism:=mainwindow.Polynomial1.itemindex;
 
   count1:=mainwindow.Memo1.Lines.Count-1;
   try
@@ -11648,7 +11653,7 @@ begin
             y1:=round(strtofloat2(list[1]));
             x2:=round(strtofloat2(list[2]));
             y2:=round(strtofloat2(list[3]));
-            sensor_coordinates_to_celestial(head,(x1+x2)/2,(y1+y2)/2, ra,dec {RA, DEC position annotation});
+            sensor_coordinates_to_celestial(head,(x1+x2)/2,(y1+y2)/2,formalism, ra,dec {RA, DEC position annotation});
             count1:=-1; //stop
           end;
 
@@ -12937,7 +12942,7 @@ begin
 end;
 
 
-procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
+procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ram,decm  : double) {fitsX, Y to ra,dec};
 var
    fits_unsampledX, fits_unsampledY :double;
    u,v,u2,v2             : double;
@@ -12946,7 +12951,7 @@ var
 begin
  RAM:=0;DECM:=0;{for case wrong index or head.cd1_1=0}
  {DSS polynom solution}
- if mainwindow.polynomial1.itemindex=2 then {DSS survey}
+ if formalism=2 then {DSS survey}
  begin
  { Convert from image subsampled pixels position to unsampled pixel position }
    fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
@@ -12959,7 +12964,7 @@ begin
  end
  else
  begin {WCS and SIP solutions}
-   if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial}
+   if ((formalism=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial}
    begin
      u:=fitsx-head.crpix1;
      v:=fitsy-head.crpix2;
@@ -12989,7 +12994,7 @@ end;
 
 
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
-var fitsX,fitsY,col,dum      : integer;
+var fitsX,fitsY,col,dum, formalism      : integer;
     fxc,fyc, ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
 begin
   if ((head.naxis<>0) and (abs(stopX-startX)>3)and (abs(stopY-starty)>3)) then
@@ -12997,6 +13002,8 @@ begin
    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
    backup_img;
+
+   formalism:=mainwindow.Polynomial1.itemindex;
 
    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -13035,9 +13042,9 @@ begin
      {do the rigid method.}
      fxc:=1+(startX+stopX)/2;//position of new center
      fyc:=1+(startY+stopY)/2;
-     sensor_coordinates_to_celestial(head,fxc,fyc, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
-     sensor_coordinates_to_celestial(head,1+fxc,fyc, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
-     sensor_coordinates_to_celestial(head,fxc,fyc+1 , ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
+     sensor_coordinates_to_celestial(head,fxc,fyc, formalism, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
+     sensor_coordinates_to_celestial(head,1+fxc,fyc, formalism, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
+     sensor_coordinates_to_celestial(head,fxc,fyc+1 , formalism, ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
 
      delta_ra:=ra_n-ra_c;
      if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
@@ -13456,7 +13463,7 @@ begin
   begin
     if ((head.crpix1<>0.5+centerxs) or (head.crpix2<>0.5+centerys)) then {reference is not center}
     begin  {to much hassle to fix. Just remove the solution}
-      remove_solution;
+      remove_solution(true {keep wcs});
     end;
     head.crota2:=fnmodulo(head.crota2+angle*flipped_image*flipped_view,360);
     head.crota1:=fnmodulo(head.crota1+angle*flipped_image*flipped_view,360);
@@ -13825,8 +13832,9 @@ procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
    url,ra8,dec8,sgn,window_size,dec_degrees  : string;
    ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
-   radius,x1,y1                  : integer;
+   radius,x1,y1,formalism                : integer;
 begin
+  formalism:=mainwindow.Polynomial1.itemindex;
   if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
   begin
     if object_xc>0 then {object sync}
@@ -13850,8 +13858,8 @@ begin
     window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h);{square box}
     {-c.geom=b  square box, -c.bs=10 box size 10arc
     else radius}
-    sensor_coordinates_to_celestial(head,startX+1,startY+1,ra1,dec1);{first position}
-    sensor_coordinates_to_celestial(head,stopX+1,stopY+1,ra2,dec2);{first position}
+    sensor_coordinates_to_celestial(head,startX+1,startY+1, formalism,ra1,dec1);{first position}
+    sensor_coordinates_to_celestial(head,stopX+1,stopY+1,formalism,ra2,dec2);{first position}
     object_raM:=(ra1+ra2)/2; {center position}
     object_decM:=(dec1+dec2)/2;
   end;
@@ -14746,7 +14754,7 @@ begin
 
    end;
 
-   sensor_coordinates_to_celestial(head,mouse_fitsx,mouse_fitsy,raM,decM);
+   sensor_coordinates_to_celestial(head,mouse_fitsx,mouse_fitsy,mainwindow.Polynomial1.itemindex,raM,decM);
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
    adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
@@ -14774,7 +14782,7 @@ begin
      else mag_str:='';
 
      {centered coordinates}
-     sensor_coordinates_to_celestial(head,object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
+     sensor_coordinates_to_celestial(head,object_xc+1,object_yc+1,mainwindow.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
      if ((object_raM<>0) and (object_decM<>0)) then
        mainwindow.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
                                                //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
@@ -15512,6 +15520,7 @@ begin
     new_to_old_WCS(head);{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
 
     mainwindow.Memo1.Lines.BeginUpdate;
+    remove_solution(true {keep wcs});
     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
@@ -15524,6 +15533,7 @@ begin
     update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ',false ,head.crota2);
 
     remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
+
     mainwindow.Memo1.Lines.EndUpdate;
 
     add_text     ('HISTORY   ','Flipped.                                                           ');

@@ -830,23 +830,25 @@ end;
 procedure calculate_required_dimensions(head: theader; var ra_min,ra_max,dec_min,dec_max: double);//for image stitching mode
 var
   ra,dec : double;
+  formalism : integer;
 begin
-  sensor_coordinates_to_celestial(head,1,1 , ra, dec);
+  formalism:=mainwindow.Polynomial1.itemindex;
+  sensor_coordinates_to_celestial(head,1,1,formalism , ra, dec);
   ra_min:=min(ra_min,ra);
   ra_max:=max(ra_max,ra);
   dec_min:=min(dec_min,dec);
   dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,head.width,1 , ra, dec);
+  sensor_coordinates_to_celestial(head,head.width,1,formalism , ra, dec);
   ra_min:=min(ra_min,ra);
   ra_max:=max(ra_max,ra);
   dec_min:=min(dec_min,dec);
   dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,1,head.height , ra, dec);
+  sensor_coordinates_to_celestial(head,1,head.height,formalism , ra, dec);
   ra_min:=min(ra_min,ra);
   ra_max:=max(ra_max,ra);
   dec_min:=min(dec_min,dec);
   dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,head.width,1, ra, dec);
+  sensor_coordinates_to_celestial(head,head.width,1,formalism, ra, dec);
   ra_min:=min(ra_min,ra);
   ra_max:=max(ra_max,ra);
   dec_min:=min(dec_min,dec);
@@ -864,7 +866,7 @@ end;
 
 procedure stack_mosaic(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels,count    : integer;
+    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels,count,formalism   : integer;
     value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels,coverage,
     fx1,fx2,fy1,fy2, raMiddle,decMiddle,
     ra_min,ra_max,dec_min,dec_max,total_fov,fw,fh                   : double; //for mosaic
@@ -883,6 +885,7 @@ begin
     ra_max:=-99;
     dec_min:=+99;
     dec_max:=-99;
+    formalism:=mainwindow.Polynomial1.itemindex;
 
     count:=0;
     total_fov:=0;
@@ -949,7 +952,7 @@ begin
              begin memo2_message('█ █ █ █ █ █  Abort!! Too many missing tiles. Field is '+floattostrF(fw,FFFixed,0,1)+'x'+floattostrF(fh,FFfixed,0,1)+
                                                 '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. For multiple mosaics is classify on "Light object" set?'); exit;end;
 
-            sensor_coordinates_to_celestial(head,(fx1+fx2)/2,(fy1+fy2)/2, raMiddle, decMiddle);//find middle of mosaic
+            sensor_coordinates_to_celestial(head,(fx1+fx2)/2,(fy1+fy2)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
             sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
             head_ref.ra0:=raMiddle;// set middle of the mosaic
             head_ref.crpix1:=abs(fx1-fx2)/2;
