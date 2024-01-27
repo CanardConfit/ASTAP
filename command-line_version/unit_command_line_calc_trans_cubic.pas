@@ -1,4 +1,4 @@
-unit unit_calc_trans_cubic;
+unit unit_command_line_calc_trans_cubic;
 //  DESCRIPTION:
 //  This unit calculates the 3th order transfer function between two set of matching quads or star positions.
 //  The output are ten transfer coefficients for X axis and ten coefficients for the Y-axis.
@@ -56,7 +56,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 interface
 
 uses
-  Classes, SysUtils,math, astap_main;
+  Classes, SysUtils,math;
 
 type
   TMatrix = array of array of Double;
