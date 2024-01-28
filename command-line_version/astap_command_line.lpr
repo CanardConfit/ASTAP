@@ -75,6 +75,7 @@ begin
     '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
     '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
     '-o  file {Name the output files with this base path & file name}'+#10+
+    '-sip     {Add SIP image distortion information}'+#10+
     '-d  path {specify a path to the star database}'+#10+
     '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
     '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
@@ -132,6 +133,7 @@ begin
     if hasoption('s') then max_stars:=strtoint(GetOptionValue('s'));
     if hasoption('t') then quad_tolerance1:=GetOptionValue('t');
     if hasoption('m') then min_star_size1:=GetOptionValue('m');
+    if hasoption('sip') then add_sip1:='n'<>GetOptionValue('sip');
     if hasoption('speed') then force_oversize1:=pos('slow',GetOptionValue('speed'))<>0;
     if hasoption('check') then check_pattern_filter1:=('y'=GetOptionValue('check'));
 

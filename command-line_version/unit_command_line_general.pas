@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.01.26';
+  astap_version: string='2024.01.27';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -37,6 +37,7 @@ var {################# initialised variables #########################}
   database_path   : string='';{to be set in main}
   downsample_for_solving1: integer=0;
   star_database1  : string='auto';
+  add_sip1        : boolean=false;
 
 type
   image_array = array of array of array of Single;
@@ -57,28 +58,32 @@ type
     ra_radians,dec_radians, pixel_size : double;
     ra_mount,dec_mount                     : double; {telescope ra,dec}
 
+    a_order,ap_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+    a_0_0,   a_0_1, a_0_2,  a_0_3,  a_1_0,  a_1_1,  a_1_2,  a_2_0,  a_2_1,  a_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
+    b_0_0,   b_0_1, b_0_2,  b_0_3,  b_1_0,  b_1_1,  b_1_2,  b_2_0,  b_2_1,  b_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
+    ap_0_0, ap_0_1,ap_0_2, ap_0_3, ap_1_0, ap_1_1, ap_1_2, ap_2_0, ap_2_1, ap_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
+    bp_0_0, bp_0_1,bp_0_2, bp_0_3, bp_1_0, bp_1_1, bp_1_2, bp_2_0, bp_2_1, bp_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
 
-  var
-     histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
-     r_aperture : integer; {histogram number of values}
-     histo_peak_position : integer;
-     his_mean : array[0..2] of integer;
-     noise_level : array[0..2] of double;
-     esc_pressed, fov_specified {, last_extension }: boolean;
-     star_level,star_level2  : double;
-     exposure,focallen,equinox : double;
-     cblack, cwhite,
-     gain   :double; {from FITS}
-     date_obs : string;
-     instrum  :string;
+    histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
+    r_aperture : integer; {histogram number of values}
+    histo_peak_position : integer;
+    his_mean : array[0..2] of integer;
+    noise_level : array[0..2] of double;
+    esc_pressed, fov_specified {, last_extension }: boolean;
+    star_level,star_level2  : double;
+    exposure,focallen,equinox : double;
+    cblack, cwhite,
+    gain   :double; {from FITS}
+    date_obs : string;
+    instrum  :string;
 
-     datamin_org, datamax_org :double;
-     warning_str : string;{for solver}
-     xpixsz,ypixsz: double;//Pixel Width in microns (after binning)
-     ra0,dec0 : double; {plate center values}
-     cdelt1,cdelt2: double;{deg/pixel for x}
-     naxis  : integer;{number of dimensions}
-     naxis3 : integer;{number of colors}
+    datamin_org, datamax_org :double;
+    warning_str : string;{for solver}
+    xpixsz,ypixsz: double;//Pixel Width in microns (after binning)
+    ra0,dec0 : double; {plate center values}
+    cdelt1,cdelt2: double;{deg/pixel for x}
+    naxis  : integer;{number of dimensions}
+    naxis3 : integer;{number of colors}
 
   const
     hist_range  {range histogram 255 or 65535 or streched} : integer=255;
@@ -1277,7 +1282,6 @@ begin
   {not found, add to the end}
   memo1.insert(Memo1.Count-1,inpt+' '+s+comment1);
 end;
-
 
 procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
 var

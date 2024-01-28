@@ -3403,7 +3403,7 @@ end;
 
 procedure Tstackmenu1.transformation1Click(Sender: TObject);
 var
-  i, countxy     : integer;
+  i, countxy,formalism     : integer;
   magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
 
   stars,xylist  : star_list;
@@ -3437,6 +3437,7 @@ begin
   end;
 
   measure_magnitudes(14,0,0,head.width-1,head.height-1,true {deep},stars);
+  formalism:=mainwindow.Polynomial1.itemindex;
 
   setlength(xylist,2, length(stars[0]));
   countxy:=0;
@@ -3448,7 +3449,7 @@ begin
       if stars[4,i]{SNR}>40 then
       begin
         magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
-        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],raM,decM);//+1 to get fits coordinated
+        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
         report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
 
         if ((v>0) and (b>0)) then
@@ -7816,7 +7817,7 @@ var
   rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree, database_col,j, lvsx,lvsp,nrvars : integer;
+  countCheck, countThree, database_col,j, lvsx,lvsp,nrvars,formalism : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object: boolean;
   starlistx: star_list;
@@ -7948,6 +7949,7 @@ begin
   apert := strtofloat2(flux_aperture1.Text);
   aperture_ratio := apert;{remember apert setting}
   annul := strtofloat2(annulus_radius1.Text);
+  formalism:=mainwindow.Polynomial1.itemindex;
 
   esc_pressed := False;
   warned := False;
@@ -8169,13 +8171,13 @@ begin
 
           head_ref := head;{backup solution for deepsky annotation}
 
-          sensor_coordinates_to_celestial(head,shape_fitsX, shape_fitsY, rax1, decx1 {fitsX, Y to ra,dec});
+          sensor_coordinates_to_celestial(head,shape_fitsX, shape_fitsY, formalism,rax1, decx1 {fitsX, Y to ra,dec});
           abbreviation_var_IAU := prepare_IAU_designation(rax1, decx1);
 
-          sensor_coordinates_to_celestial(head,shape_fitsX2, shape_fitsY2,{var} rax2, decx2 {position});
+          sensor_coordinates_to_celestial(head,shape_fitsX2, shape_fitsY2,formalism,{var} rax2, decx2 {position});
           name_check_iau := prepare_IAU_designation(rax2, decx2);
 
-          sensor_coordinates_to_celestial(head,shape_fitsX3, shape_fitsY3,rax3, decx3 {fitsX, Y to ra,dec});
+          sensor_coordinates_to_celestial(head,shape_fitsX3, shape_fitsY3,formalism,rax3, decx3 {fitsX, Y to ra,dec});
           init:=true;//after measure the frist image
         end;
 
@@ -12386,7 +12388,7 @@ begin
 
         mainwindow.Memo1.Lines.BeginUpdate;
 
-        remove_solution;//fast and efficient
+        remove_solution(false {keep wcs});//fast and efficient
 
         remove_key('DATE    ', False{all});{no purpose anymore for the original date written}
         remove_key('EXPTIME', False{all}); {remove, will be added later in the header}

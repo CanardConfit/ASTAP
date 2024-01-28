@@ -1166,7 +1166,7 @@ var
   report : string;
 begin
   toClipboard1:=to_Clipboard1.checked;
-  form_inspection1.undo_button1Click(nil);{undo if required}
+    form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
 
  // if calculate_undisturbed_image_scale then
@@ -1185,9 +1185,9 @@ end;
 
 procedure Tform_inspection1.tilt1Click(Sender: TObject);
 begin
-  form_inspection1.undo_button1Click(nil);{undo if required}
+  if  executed<>0 then
+    form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
-
   if extra_stars=false then
     CCDinspector(30,three_corners,strtofloat(measuring_angle))
   else
@@ -1205,7 +1205,7 @@ procedure Tform_inspection1.undo_button1Click(Sender: TObject);
 begin
   if executed=1 then plot_fits(mainwindow.image1,false,true) {only refresh required}
   else
-  if mainwindow.Undo1.enabled then
+  if ((executed=2) and (mainwindow.Undo1.enabled)) then
   begin
     restore_img;
   end;
@@ -1502,8 +1502,6 @@ begin
         img_temp[col,fitsY+2*(side+gap),fitsX+2*(side+gap)]:=img_loaded[col,fitsY + head.height - side,fitsX+head.width-side];
 
 
-
-
 //   setlength(img_loaded,head.naxis3,head.height,head.width);{set length of image array}
 //   img_loaded[0]:=img_temp[0];
 //   if head.naxis3>1 then img_loaded[1]:=img_temp[1];
@@ -1521,7 +1519,7 @@ begin
    update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
    if head.cd1_1<>0 then {remove solution}
-     remove_solution;
+     remove_solution(false {keep wcs});
 
    update_text   ('COMMENT A','  Aberration view '+filename2);
 

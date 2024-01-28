@@ -2235,10 +2235,11 @@ end;{plot stars}
 procedure measure_distortion(out stars_measured : integer);{measure or plot distortion}
 var
   telescope_ra,telescope_dec,fov,fov_org,ra2,dec2, mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,
-  frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error_innner,
-  astrometric_error_outer,sep,ra3,dec3,astrometric_error_innnerPS,astrometric_error_outerPS                                                      : double;
-  star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,sub_counter2,sub_counter3,sub_counter4,scale,count   : integer;
-  flip_horizontal, flip_vertical       : boolean;
+  frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error_innner, astrometric_error_outer,sep,
+  ra3,dec3,astrometric_error_innnerPS,astrometric_error_outerPS                                 : double;
+  star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,
+  sub_counter2,sub_counter3,sub_counter4,scale,count, formalism                                 : integer;
+  flip_horizontal, flip_vertical                                                                : boolean;
   errors_sky_pixel1, errors_sky_pixel2,errors_pixel_sky1,errors_pixel_sky2   : array of double;
 
     procedure plot_star;
@@ -2271,9 +2272,9 @@ var
             inc(sub_counter);
 
             //check sky to pixel errors:
-            if ((sip) and (sub_counter3<length(errors_pixel_sky1)) ) then
+            if sub_counter3<length(errors_pixel_sky1) then
             begin
-              sensor_coordinates_to_celestial(head,xc+1,yc+1,ra3,dec3);{calculate the ra,dec position}
+              sensor_coordinates_to_celestial(head,xc+1,yc+1,formalism,ra3,dec3);{calculate the ra,dec position}
               ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky1[sub_counter3] );//angular seperation
               inc(sub_counter3);
             end;
@@ -2284,9 +2285,9 @@ var
             inc(sub_counter2);
 
             //check sky to pixel errors:
-            if ((sip) and (sub_counter4<length(errors_pixel_sky2)) ) then
+            if sub_counter4<length(errors_pixel_sky2) then
             begin
-              sensor_coordinates_to_celestial(head,xc+1,yc+1,ra3,dec3);{calculate the ra,dec position}
+              sensor_coordinates_to_celestial(head,xc+1,yc+1,formalism,ra3,dec3);{calculate the ra,dec position}
               ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky2[sub_counter4] );//angular seperation
               inc(sub_counter4);
             end;
@@ -2340,6 +2341,7 @@ begin
     stars_measured:=0;{star number}
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
+    formalism:=mainwindow.Polynomial1.itemindex;
 
     if database_type>1 then {1476 or 290 files}
     begin
