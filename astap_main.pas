@@ -847,7 +847,7 @@ function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double); {fitsX, Y to ra,dec}
 procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ram,decm  : double) {fitsX, Y to ra,dec};
-procedure celestial_to_pixel(head: theader;ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure celestial_to_pixel(head: theader;ra,dec: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
@@ -4024,26 +4024,25 @@ begin
 end;
 
 
-procedure celestial_to_pixel(head: theader;ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure celestial_to_pixel(head: theader;ra,dec: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 var
-  SIN_dec_t,COS_dec_t,
-  SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,u0,v0 : double;
+  SIN_dec,COS_dec,
+  SIN_dec_ref,COS_dec_ref,det,SIN_delta_ra,COS_delta_ra, H, xi,eta,u0,v0 : double;
 begin
   {5. Conversion (RA,DEC) -> x,y image}
-  sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then separate sin and cos functions}
+  sincos(dec,SIN_dec,COS_dec);{sincos is faster then separate sin and cos functions}
   sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{}
 
-  delta_ra:=ra_t-head.ra0;
-  sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+  sincos(ra-head.ra0,SIN_delta_ra,COS_delta_ra);
 
-  H := SIN_dec_t*sin_dec_ref + COS_dec_t*COS_dec_ref*COS_delta_ra;
-  dRA := (COS_dec_t*SIN_delta_ra / H)*180/pi;
-  dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
+  H := SIN_dec*sin_dec_ref + COS_dec*COS_dec_ref*COS_delta_ra;
+  xi := (COS_dec*SIN_delta_ra / H)*180/pi;
+  eta:= ((SIN_dec*COS_dec_ref - COS_dec*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
 
   det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
 
-  u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-  v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
+  u0:= - (head.cd1_2*eta - head.cd2_2*xi) / det;
+  v0:= + (head.cd1_1*eta - head.cd2_1*xi) / det;
 
 
   if sip then {apply SIP correction, sky to pixel}
@@ -12424,7 +12423,7 @@ begin
         '-d  path {Specify a path to the star database}'+#10+
         '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
-        '-sip     {Add SIP image distortion information}'+#10+
+        '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
         '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
         '-sqm pedestal  {add measured sqm value to the solution}'+#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
