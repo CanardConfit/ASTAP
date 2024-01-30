@@ -36,7 +36,7 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
 fi
 rm astap_cli
 
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_armhf.lpi
+/home/h/fpcupdeluxe_stable/lazarus/lazbuild astap_command_line_android_armhf.lpi
 zip astap_command-line_version_Android_armhf.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Android_armhf file does not exist, aborting!!'
@@ -45,7 +45,7 @@ fi
 rm astap_cli
 
 
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_aarch64.lpi
+/home/h/fpcupdeluxe_stable/lazarus/lazbuild astap_command_line_android_aarch64.lpi
 zip astap_command-line_version_Android_aarch64.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Android_armhf file does not exist, aborting!!'
@@ -53,7 +53,7 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
 fi
 rm astap_cli
 
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86.lpi
+/home/h/fpcupdeluxe_stable/lazarus/lazbuild astap_command_line_android_x86.lpi
 zip astap_command-line_version_Android_x86.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Android_armhf file does not exist, aborting!!'
@@ -61,7 +61,7 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
 fi
 rm astap_cli
 
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86_64.lpi
+/home/h/fpcupdeluxe_stable/lazarus/lazbuild astap_command_line_android_x86_64.lpi
 zip astap_command-line_version_Android_x86_64.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Android_x86_64 file does not exist, aborting!!'
@@ -85,6 +85,18 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli.exe ]] ; then
     exit
 fi
 rm astap_cli.exe
+
+#/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_iOS_aarch64.lpi
+#zip astap_command-line_version_iOS.zip astap_cli
+#if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
+#    echo 'iOS_aarch64 file does not exist, aborting!!'
+#    exit
+#fi
+#rm astap_cli
+
+
+
+
 
 
 

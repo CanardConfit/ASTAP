@@ -11,13 +11,13 @@ interface
 uses
   Classes, SysUtils,forms, math, unit_stack, astap_main, unit_star_align;
 
-procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
-procedure stack_average(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
+procedure stack_LRGB( var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
+procedure stack_average(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 
-procedure stack_mosaic(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
+procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
 
-procedure stack_sigmaclip(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
-procedure calibration_and_alignment(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
+procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
+procedure calibration_and_alignment(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
 {$inline off}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
@@ -110,18 +110,25 @@ var
 begin
   a_order:=0; {SIP correction should be zero by definition}
 
-  calc_newx_newy(false,1,1) ;
-  solution_vectorX[2]:=x_new_float;
+  calc_newx_newy(false,1,1) ;//this will only work well for 1th orde solutions
+  calc_newx_newy(false,head.crpix1, head.crpix2) ;//this will only work well for 1th orde solutions
+    solution_vectorX[2]:=x_new_float;
   solution_vectorY[2]:=y_new_float;
 
   calc_newx_newy(false,2, 1); {move one pixel in X}
+  calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
 
   solution_vectorX[0]:=+(x_new_float- solution_vectorX[2]);
   solution_vectorX[1]:=-(y_new_float- solution_vectorY[2]);
 
   calc_newx_newy(false,1, 2);{move one pixel in Y}
+  calc_newx_newy(false,head.crpix1, head.crpix2+1);{move one pixel in Y}
+
   solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
   solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
+
+  solution_vectorX[2]:=  solution_vectorX[2]-head.crpix1;
+  solution_vectorY[2]:=  solution_vectorY[2]-head.crpix2;
 
   flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   flipped_reference:=head_ref.CD1_1*head_ref.CD2_2>0; {flipped reference image}
@@ -137,31 +144,8 @@ begin
   sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 end;
 
-procedure NOLONGERREQUIEREDinitialise_var2;{set variables correct}
-begin
- { ap_0_1_ref:=ap_0_1;//store polynomial first fits
-  ap_0_2_ref:=ap_0_2;
-  ap_0_3_ref:=ap_0_3;
-  ap_1_0_ref:=ap_1_0;
-  ap_1_1_ref:=ap_1_1;
-  ap_1_2_ref:=ap_1_2;
-  ap_2_0_ref:=ap_2_0;
-  ap_2_1_ref:=ap_2_1;
-  ap_3_0_ref:=ap_3_0;
 
-  bp_0_1_ref:=bp_0_1;
-  bp_0_2_ref:=bp_0_2;
-  bp_0_3_ref:=bp_0_3;
-  bp_1_0_ref:=bp_1_0;
-  bp_1_1_ref:=bp_1_1;
-  bp_2_1_ref:=bp_2_1;
-  bp_2_0_ref:=bp_2_0;
-  bp_2_1_ref:=bp_2_1;
-  bp_3_0_ref:=bp_3_0;}
-end;
-
-
-procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
+procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
   fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,oversizeV,max_stars,col  : integer;
   background_r, background_g, background_b, background_l ,
@@ -169,9 +153,8 @@ var
   rr_factor, rg_factor, rb_factor,
   gr_factor, gg_factor, gb_factor,
   br_factor, bg_factor, bb_factor,
-  saturated_level,hfd_min,tempval                           : double;
-  init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,
-  use_astrometry_internal,vector_based,use_sip :boolean;
+  saturated_level,hfd_min,tempval,aa,bb,cc,dd,ee,ff                                        : double;
+  init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip : boolean;
   warning             : string;
   starlist1,starlist2 : star_list;
 
@@ -180,10 +163,9 @@ begin
   begin
 
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
-    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_internal1.checked;
+    use_astrometry_internal:=use_astrometry_alignment1.checked;
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
     use_sip:=stackmenu1.add_sip1.checked;
@@ -328,18 +310,8 @@ begin
 
             if init=false then {init}
             begin
-              if oversize<0 then {shrink a lot, adapt in ratio}
-              begin
-                oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
-                oversizeV:=round(oversize*head.height/head.width);{vertical shrinkage in pixels}
-                height_max:=head.height+oversizeV*2;
-              end
-              else
-              begin
-                oversizeV:=oversize;
-                height_max:=head.height+oversize*2;
-              end;
-              width_max:=head.width+oversize*2;
+              height_max:=head.height;
+              width_max:=head.width;
 
               setlength(img_average,3,height_max,width_max);{will be color}
               setlength(img_temp,3,height_max,width_max);
@@ -397,24 +369,28 @@ begin
               jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
 
-              vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
-              if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
-              begin
-                astrometric_to_vector;{convert astrometric solution to vector solution}
-                vector_based:=true;
-              end;
+              if use_astrometry_internal then
+                 astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-              for fitsY:=1 to head.height do {skip outside pixels if color}
-              for fitsX:=1 to head.width do
+              aa:=solution_vectorX[0];//move to local variable to improve speed a little
+              bb:=solution_vectorX[1];
+              cc:=solution_vectorX[2];
+              dd:=solution_vectorY[0];
+              ee:=solution_vectorY[1];
+              ff:=solution_vectorY[2];
+
+
+              for fitsY:=0 to head.height-1 do {skip outside pixels if color}
+              for fitsX:=0 to head.width-1 do
               begin
-                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+                x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  result in image array range 0..head.width-1}
+                y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
 
                 if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                 begin
                   if c=1 {red} then
                   begin
-                    value:=img_loaded[0,fitsY-1,fitsX-1];
+                    value:=img_loaded[0,fitsY,fitsX];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
                       for col:=0 to 2 do
@@ -430,7 +406,7 @@ begin
                   end;
                   if c=2 {green} then
                   begin
-                    value:=img_loaded[0,fitsY-1,fitsX-1];
+                    value:=img_loaded[0,fitsY,fitsX];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
                       for col:=0 to 2 do
@@ -446,7 +422,7 @@ begin
                   end;
                   if c=3 {blue}  then
                   begin
-                    value:=img_loaded[0,fitsY-1,fitsX-1];
+                    value:=img_loaded[0,fitsY,fitsX];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
                       for col:=0 to 2 do
@@ -462,9 +438,9 @@ begin
                   end;
                   if c=4 {RGB image, naxis3=3}   then
                   begin
-                    begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + img_loaded[0,fitsY-1,fitsX-1]-background_r; img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1; end;
-                    begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + img_loaded[1,fitsY-1,fitsX-1]-background_g; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
-                    begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + img_loaded[2,fitsY-1,fitsX-1]-background_b; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
+                    begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + img_loaded[0,fitsY,fitsX]-background_r; img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1; end;
+                    begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + img_loaded[1,fitsY,fitsX]-background_g; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
+                    begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + img_loaded[2,fitsY,fitsX]-background_b; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
                   end;
                   if c=5 {Luminance} then
                   begin
@@ -482,9 +458,9 @@ begin
                       blue_f:=colb/rgbsum;  if blue_f<0  then blue_f:=0; if blue_f>1 then  blue_f:=1;
                     end;
 
-                    img_average[0,y_new,x_new]:=1000+(img_loaded[0,fitsY-1,fitsX-1] - background_l)*(red_f);
-                    img_average[1,y_new,x_new]:=1000+(img_loaded[0,fitsY-1,fitsX-1] - background_l)*(green_f);
-                    img_average[2,y_new,x_new]:=1000+(img_loaded[0,fitsY-1,fitsX-1] - background_l)*(blue_f);
+                    img_average[0,y_new,x_new]:=1000+(img_loaded[0,fitsY,fitsX] - background_l)*(red_f);
+                    img_average[1,y_new,x_new]:=1000+(img_loaded[0,fitsY,fitsX] - background_l)*(green_f);
+                    img_average[2,y_new,x_new]:=1000+(img_loaded[0,fitsY,fitsX] - background_l)*(blue_f);
                   end;
                 end;
               end;
@@ -577,11 +553,11 @@ begin
 end;
 
 
-procedure stack_average(oversize,process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
+procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
     fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars                                : integer;
-    background_correction, weightF,hfd_min                                                                                               : double;
-    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip             : boolean;
+    background_correction, weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                                             : double;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                          : boolean;
     tempval                                                                                                                              : single;
     warning             : string;
     starlist1,starlist2 : star_list;
@@ -589,10 +565,9 @@ var
 begin
   with stackmenu1 do
   begin
-    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_internal1.checked;
+    use_astrometry_internal:=use_astrometry_alignment1.checked;
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
@@ -679,18 +654,8 @@ begin
 
           if init=false then {init}
           begin
-            if oversize<0 then {shrink a lot, adapt in ratio}
-            begin
-              oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
-              oversizeV:=round(oversize*head.height/head.width);
-              height_max:=head.height+oversizeV*2;
-            end
-            else
-            begin
-              oversizeV:=oversize;
-              height_max:=head.height+oversize*2;
-            end;
-            width_max:=head.width+oversize*2;
+            height_max:=head.height;
+            width_max:=head.width;
 
             setlength(img_average,head.naxis3,height_max,width_max);
             setlength(img_temp,1,height_max,width_max);
@@ -764,23 +729,26 @@ begin
             jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
             jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
 
-            vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
-            if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
-            begin
-              astrometric_to_vector;{convert astrometric solution to vector solution}
-              vector_based:=true;
-            end;
+            if use_astrometry_internal then
+              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-            for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
-            for fitsX:=1 to head.width  do
+            aa:=solution_vectorX[0]; //move to local variables for some speed improvement
+            bb:=solution_vectorX[1];
+            cc:=solution_vectorX[2];
+            dd:=solution_vectorY[0];
+            ee:=solution_vectorY[1];
+            ff:=solution_vectorY[2];
+
+            for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
+            for fitsX:=0 to head.width-1  do
             begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversizeV;
-              x_new:=round(x_new_float);y_new:=round(y_new_float);
+              x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+              y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to head.naxis3-1 do {all colors}
-                  img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY-1,fitsX-1]*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                  img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY,fitsX]*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
 
                 img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
@@ -864,7 +832,7 @@ begin
 end;
 
 
-procedure stack_mosaic(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
+procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
 var
     fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels,count,formalism   : integer;
     value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels,coverage,
@@ -982,8 +950,8 @@ begin
 
           if init=false then {init}
           begin
-            width_max:=abs(round(fx2-fx1))+oversize*2;
-            height_max:=abs(round(fy2-fy1))+oversize*2;
+            width_max:=abs(round(fx2-fx1));
+            height_max:=abs(round(fy2-fy1));
 
             setlength(img_average,head.naxis3,height_max,width_max);
             setlength(img_temp,1,height_max,width_max);{gray}
@@ -1053,20 +1021,21 @@ begin
             counter_overlap[1]:=0;
             counter_overlap[2]:=0;
 
-              for fitsY:=1+1+cropH to head.height-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
-              for fitsX:=1+1+cropW to head.width-1-cropW  do
+              for fitsY:=(1+cropH) to head.height-(1+1+cropH) do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
+              for fitsX:=(1+cropW) to head.width-(1+1+cropW)  do
               begin
                 calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new:=round(x_new_float+oversize); y_new:=round(y_new_float+oversize);
+                x_new:=round(x_new_float); y_new:=round(y_new_float);
+
                 if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                 begin
-                  if img_loaded[0,fitsY-1,fitsX-1]>0.0001 then {not a black area around image}
+                  if img_loaded[0,fitsY,fitsX]>0.0001 then {not a black area around image}
                   begin
                     if img_average[0,y_new,x_new]<>0 then {filled pixel}
                     begin
                       for col:=0 to head.naxis3-1 do {all colors}
                       begin
-                        correction:=round(img_average[col,y_new,x_new]-(img_loaded[col,fitsY-1,fitsX-1]+background_correction_center[col]) );
+                        correction:=round(img_average[col,y_new,x_new]-(img_loaded[col,fitsY,fitsX]+background_correction_center[col]) );
                         if abs(correction)<max_dev_backgr*1.5 then {acceptable offset based on the lowest and highest background measured earlier}
                         begin
                            background_correction[col]:=background_correction[col]+correction;
@@ -1085,20 +1054,21 @@ begin
 
             init:=true;{initialize for first image done}
 
-            for fitsY:=1+1+cropH to head.height-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
-            for fitsX:=1+1+cropW to head.width-1-cropW  do
+            for fitsY:=1+cropH to head.height-(1+1+cropH) do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
+            for fitsX:=1+cropW to head.width-(1+1+cropW)  do
             begin
               calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+              x_new:=round(x_new_float);y_new:=round(y_new_float);
+
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
-                if img_loaded[0,fitsY-1,fitsX-1]>0.0001 then {not a black area around image}
+                if img_loaded[0,fitsY,fitsX]>0.0001 then {not a black area around image}
                 begin
                   dummy:=1+minimum_distance_borders(fitsX,fitsY,head.width,head.height);{minimum distance borders}
                   if img_temp[0,y_new,x_new]=0 then {blank pixel}
                   begin
                      for col:=0 to head.naxis3-1 do {all colors}
-                     img_average[col,y_new,x_new]:=img_loaded[col,fitsY-1,fitsX-1]+background_correction_center[col] +background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                     img_average[col,y_new,x_new]:=img_loaded[col,fitsY,fitsX]+background_correction_center[col] +background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                      img_temp[0,y_new,x_new]:=dummy;
 
                   end
@@ -1106,7 +1076,7 @@ begin
                   begin {already pixel filled, try to make an average}
                     for col:=0 to head.naxis3-1 do {all colors}
                     begin
-                      median:=background_correction_center[col] +background_correction[col]+median_background(img_loaded,col,15,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img_loaded}
+                      median:=background_correction_center[col] +background_correction[col]+median_background(img_loaded,col,15,15,fitsX,fitsY);{find median value in sizeXsize matrix of img_loaded}
 
                       if merge_overlap=false then {method 2}
                       begin
@@ -1116,11 +1086,11 @@ begin
                       end
                       else
                       begin {method 1}
-                        value:=img_loaded[col,fitsY-1,fitsX-1]+background_correction_center[col];
-                        local_sd(fitsX-1-15 ,fitsY-1-15, fitsX-1+15,fitsY-1+15,col,img_loaded, {var} noise,mean, iterations);{local noise recheck every 10 th pixel}
+                        value:=img_loaded[col,fitsY,fitsX]+background_correction_center[col];
+                        local_sd(fitsX-15 ,fitsY-15, fitsX+15,fitsY+15,col,img_loaded, {var} noise,mean, iterations);{local noise recheck every 10 th pixel}
                         maxlevel:=median+noise*5;
                         if ((value<maxlevel) and
-                          (img_loaded[col,fitsY-1,fitsX-1-1]<maxlevel) and (img_loaded[col,fitsY-1,fitsX-1+1]<maxlevel) and (img_loaded[col,fitsY-1-1,fitsX-1]<maxlevel) and (img_loaded[col,fitsY-1+1,fitsX-1]<maxlevel) {check nearest pixels}
+                          (img_loaded[col,fitsY,fitsX-1]<maxlevel) and (img_loaded[col,fitsY,fitsX+1]<maxlevel) and (img_loaded[col,fitsY-1,fitsX]<maxlevel) and (img_loaded[col,fitsY+1,fitsX]<maxlevel) {check nearest pixels}
                            ) then {not a star, prevent double stars at overlap area}
                            img_average[col,y_new,x_new]:=+img_average[col,y_new,x_new]*img_temp[0,y_new,x_new]{distance border}/(dummy+img_temp[0,y_new,x_new])
                                                         +(value+background_correction[col])*dummy/(dummy+img_temp[0,y_new,x_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
@@ -1172,7 +1142,7 @@ begin
 end;
 
 
-procedure stack_sigmaclip(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
+procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 type
    tsolution  = record
      solution_vectorX : solution_vector {array[0..2] of double};
@@ -1181,10 +1151,10 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars                                        : integer;
-    variance_factor, value,weightF,hfd_min                                                                                                         : double;
-    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip                      : boolean;
-    tempval, sumpix, newpix,target_background,background_correction                                                                                : single;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars       : integer;
+    variance_factor, value,weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                      : double;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                      : boolean;
+    tempval, sumpix, newpix,target_background,background_correction                                               : single;
     warning     : string;
     starlist1,starlist2 : star_list;
 
@@ -1198,11 +1168,9 @@ begin
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
     use_sip:=stackmenu1.add_sip1.checked;
 
-
-    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_internal1.checked;
+    use_astrometry_internal:=use_astrometry_alignment1.checked;
 
     counter:=0;
     sum_exp:=0;
@@ -1289,18 +1257,8 @@ begin
 
         if init=false then {init}
         begin
-          if oversize<0 then {shrink, adapt in ratio}
-          begin
-            oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
-            oversizeV:=round(oversize*head.height/head.width);{vertical}
-            height_max:=head.height+oversizeV*2;
-          end
-          else
-          begin
-            oversizeV:=oversize;
-            height_max:=head.height+oversize*2;
-          end;
-          width_max:=head.width+oversize*2;
+          height_max:=head.height;
+          width_max:=head.width;
 
           setlength(img_average,head.naxis3,height_max,width_max);
           setlength(img_temp,head.naxis3,height_max,width_max);
@@ -1383,24 +1341,28 @@ begin
           jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
           jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
 
-          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
-          if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
-          begin
-            astrometric_to_vector;{convert astrometric solution to vector solution}
-            vector_based:=true;
-          end;
+          if use_astrometry_internal then
+             astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          for fitsY:=1 to head.height do {average}
-          for fitsX:=1 to head.width  do
+          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          bb:=solution_vectorX[1];
+          cc:=solution_vectorX[2];
+          dd:=solution_vectorY[0];
+          ee:=solution_vectorY[1];
+          ff:=solution_vectorY[2];
+
+          for fitsY:=0 to head.height-1 do {average}
+          for fitsX:=0 to head.width-1  do
           begin
-            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+
 
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
               for col:=0 to head.naxis3-1 do
               begin
-                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ (img_loaded[col,fitsY-1,fitsX-1]- background_correction) *weightF;{Note fits count from 1, image from zero}
+                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ (img_loaded[col,fitsY,fitsX]- background_correction) *weightF;{Note fits count from 1, image from zero}
                 img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
               end;
             end;
@@ -1497,21 +1459,26 @@ begin
           head.datamax_org:=min($FFFF,head.datamax_org-background_correction);{note head.datamax_org is already corrected in apply dark}
           {2}
 
-          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
-          if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
-          begin
-            astrometric_to_vector;{convert astrometric solution to vector solution}
-            vector_based:=true;
-          end;
+          if use_astrometry_internal then
+             astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
-          for fitsX:=1 to head.width  do
+          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          bb:=solution_vectorX[1];
+          cc:=solution_vectorX[2];
+          dd:=solution_vectorY[0];
+          ee:=solution_vectorY[1];
+          ff:=solution_vectorY[2];
+
+
+          for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
+          for fitsX:=0 to head.width-1  do
           begin
-            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              for col:=0 to head.naxis3-1 do img_variance[col,y_new,x_new]:=img_variance[col,y_new,x_new] +  sqr( (img_loaded[col,fitsY-1,fitsX-1]- background_correction)*weightF - img_average[col,y_new,x_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
+              for col:=0 to head.naxis3-1 do img_variance[col,y_new,x_new]:=img_variance[col,y_new,x_new] +  sqr( (img_loaded[col,fitsY,fitsX]- background_correction)*weightF - img_average[col,y_new,x_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
             end;
           end;
 
@@ -1606,24 +1573,28 @@ begin
           head.datamax_org:=min($FFFF,head.datamax_org-background_correction);
           {3}
 
-          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
-          if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
-          begin
-            astrometric_to_vector;{convert astrometric solution to vector solution}
-            vector_based:=true;
-          end;
+          if use_astrometry_internal then
+             astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
+
+          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          bb:=solution_vectorX[1];
+          cc:=solution_vectorX[2];
+          dd:=solution_vectorY[0];
+          ee:=solution_vectorY[1];
+          ff:=solution_vectorY[2];
 
            //phase 3
-          for fitsY:=1 to head.height do
-          for fitsX:=1 to head.width  do
+          for fitsY:=0 to head.height-1 do
+          for fitsX:=0 to head.width-1  do
           begin
-            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
               for col:=0 to head.naxis3-1 do {do all colors}
               begin
-                value:=(img_loaded[col,fitsY-1,fitsX-1]- background_correction)*weightF;
+                value:=(img_loaded[col,fitsY,fitsX]- background_correction)*weightF;
                 if sqr (value - img_average[col,y_new,x_new])< variance_factor*{sd sqr}( img_variance[col,y_new,x_new])  then {not an outlier}
                 begin
                   img_final[col,y_new,x_new]:=img_final[col,y_new,x_new]+ value;{dark and flat, flat dark already applied}
@@ -1680,11 +1651,11 @@ begin
   solutions:=nil;
 end;   {stack using sigma clip average}
 
-procedure calibration_and_alignment(oversize,process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
+procedure calibration_and_alignment(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV,max_stars   : integer;
-    background_correction, hfd_min      : double;
-    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,use_sip :boolean;
+    background_correction, hfd_min,aa,bb,cc,dd,ee,ff      : double;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip :boolean;
     warning             : string;
     starlist1,starlist2 : star_list;
 
@@ -1697,10 +1668,9 @@ begin
     use_sip:=stackmenu1.add_sip1.checked;
 
 
-    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_internal1.checked;
+    use_astrometry_internal:=use_astrometry_alignment1.checked;
 
     init:=false;
     background_correction:=0;{required for astrometric alignment}
@@ -1786,18 +1756,8 @@ begin
 
         if init=false then {init}
         begin
-          if oversize<0 then {shrink a lot, adapt in ratio}
-          begin
-            oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
-            oversizeV:=round(oversize*head.height/head.width);{vertical shrinkage in pixels}
-            height_max:=head.height+oversizeV*2;
-          end
-          else
-          begin
-            oversizeV:=oversize;
-            height_max:=head.height+oversize*2;
-          end;
-          width_max:=head.width+oversize*2;
+          height_max:=head.height;
+          width_max:=head.width;
 
 
           setlength(img_average,head.naxis3,height_max,width_max);
@@ -1869,24 +1829,28 @@ begin
         begin
           inc(counter);
 
-          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
-          if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
-          begin
-            astrometric_to_vector;{convert astrometric solution to vector solution}
-            vector_based:=true;
-          end;
+          if use_astrometry_internal then
+             astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
-          for fitsX:=1 to head.width do
+          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          bb:=solution_vectorX[1];
+          cc:=solution_vectorX[2];
+          dd:=solution_vectorY[0];
+          ee:=solution_vectorY[1];
+          ff:=solution_vectorY[2];
+
+
+          for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
+          for fitsX:=0 to head.width-1 do
           begin
-            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  result in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
 
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
               for col:=0 to head.naxis3-1 do
               begin
-                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY-1,fitsX-1]+background_correction;{Note fits count from 1, image from zero}
+                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ img_loaded[col,fitsY,fitsX]+background_correction;{Note fits count from 1, image from zero}
                 img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+1;{count the number of image pixels added=samples}
               end;
             end;

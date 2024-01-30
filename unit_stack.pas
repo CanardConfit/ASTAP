@@ -301,7 +301,6 @@ type
     Label57: TLabel;
     Label58: TLabel;
     Label59: TLabel;
-    Label6: TLabel;
     Label60: TLabel;
     Label61: TLabel;
     Label62: TLabel;
@@ -310,7 +309,6 @@ type
     Label65: TLabel;
     Label67: TLabel;
     Label68: TLabel;
-    Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
     label_gaussian1: TLabel;
@@ -406,7 +404,6 @@ type
     osc_preserve_r_nebula1: TCheckBox;
     osc_smart_colour_sd1: TComboBox;
     osc_smart_smooth_width1: TComboBox;
-    oversize1: TComboBox;
     pagecontrol1: TPageControl;
     PairSplitter1: TPairSplitter;
     PairSplitterSide1: TPairSplitterSide;
@@ -565,7 +562,7 @@ type
     update_solution1: TCheckBox;
     UpDown1: TUpDown;
     UpDown_nebulosity1: TUpDown;
-    use_astrometry_internal1: TRadioButton;
+    use_astrometry_alignment1: TRadioButton;
     use_ephemeris_alignment1: TRadioButton;
     use_manual_alignment1: TRadioButton;
     use_star_alignment1: TRadioButton;
@@ -899,7 +896,7 @@ type
       Data: integer; var Compare: integer);
     procedure apply_artificial_flat_correction1Click(Sender: TObject);
     procedure stack_method1Change(Sender: TObject);
-    procedure use_astrometry_internal1Change(Sender: TObject);
+    procedure use_astrometry_alignment1Change(Sender: TObject);
     procedure use_ephemeris_alignment1Change(Sender: TObject);
     procedure use_manual_alignment1Change(Sender: TObject);
     procedure use_star_alignment1Change(Sender: TObject);
@@ -1252,7 +1249,7 @@ begin
       min_star_size_stacking1.Enabled := True;
     end
     else
-    if use_astrometry_internal1.Checked then
+    if use_astrometry_alignment1.Checked then
     begin
       Panel_solver1.bevelouter := bvSpace;
       Panel_solver1.color := CLWindow;
@@ -2624,7 +2621,7 @@ begin
 
     binning := report_binning(head.Height{*cropping});
     {select binning on dimensions of cropped image}
-    if use_astrometry_internal1.Checked then
+    if use_astrometry_alignment1.Checked then
     begin
       if head.cdelt2 = 0 {jpeg} then
         head.cdelt2 := binning * strtofloat2(search_fov1.Text) / head.Height;
@@ -6528,8 +6525,7 @@ begin
   live_stacking1.font.style := [fsbold, fsunderline];
   Application.ProcessMessages; {process font changes}
   if pause_pressed = False then {restart}
-    stack_live(round(strtofloat2(stackmenu1.oversize1.Text)),
-      live_stacking_path1.Caption){stack live average}
+    stack_live(live_stacking_path1.Caption){stack live average}
   else
     pause_pressed := False;
 end;
@@ -11138,7 +11134,7 @@ begin
               exit;
             end;
           end
-          else
+          else {head.flatdark_count will be zero}
           memo2_message('█ █ █ █ █ █ Warning no flat-dark/bias found!! █ █ █ █ █ █ ');
 
           flatdark_used := False;
@@ -11643,7 +11639,7 @@ end;
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
 
-  i, c, over_size, over_sizeL, nrfiles, image_counter, object_counter,
+  i, c, nrfiles, image_counter, object_counter,
   first_file, total_counter, counter_colours,analyse_level, solution_type :   integer;
   filter_name1, filter_name2, defilter, filename3,
   extra1, extra2, object_to_process, stack_info, thefilters,dumstr                : string;
@@ -11658,7 +11654,6 @@ begin
   esc_pressed := False;
 
   memo2_message('Stack method ' + stack_method1.Text);
-  memo2_message('Oversize ' + oversize1.Text + ' pixels');
   stitching_mode := pos('stitch', stackmenu1.stack_method1.Text) > 0;
   sigma_clip := pos('Sigma', stackmenu1.stack_method1.Text) > 0;
   skip_combine := pos('skip', stackmenu1.stack_method1.Text) > 0;
@@ -11801,7 +11796,7 @@ begin
   stackmenu1.memo2.SelStart := Length(stackmenu1.memo2.Lines.Text);
   stackmenu1.memo2.SelLength := 0;
 
-  if ((use_astrometry_internal1.Checked) or (use_ephemeris_alignment1.Checked) or (stitching_mode)) then  {astrometric alignment}
+  if ((use_astrometry_alignment1.Checked) or (use_ephemeris_alignment1.Checked) or (stitching_mode)) then  {astrometric alignment}
   begin
     memo2_message('Checking astrometric solutions');
     if use_ephemeris_alignment1.Checked then
@@ -12029,7 +12024,6 @@ begin
     Inc(object_counter);
 
     lrgb := ((classify_filter) and (cal_and_align = False)); {ignore lrgb for calibration and alignment is true}
-    over_size := round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
     if lrgb = False then
     begin
       SetLength(files_to_process, ListView1.items.Count);{set array length to listview}
@@ -12082,20 +12076,20 @@ begin
         if sigma_clip then
         begin
           if length(files_to_process) <= 5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
-          stack_sigmaclip(over_size, process_as_osc,{var}files_to_process, counterL);
+          stack_sigmaclip( process_as_osc,{var}files_to_process, counterL);
           {sigma clip combining}
         end
         else
         if stitching_mode then
-          stack_mosaic(over_size, process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
+          stack_mosaic(process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
         else
         if cal_and_align then {calibration & alignment only}
         begin
           memo2_message('---------- Calibration & alignment for object: ' + object_to_process + ' -----------');
-          calibration_and_alignment(over_size, process_as_osc, {var}files_to_process, counterL);{saturation clip average}
+          calibration_and_alignment(process_as_osc, {var}files_to_process, counterL);{saturation clip average}
         end
         else
-          stack_average(over_size, process_as_osc,{var}files_to_process, counterL);
+          stack_average(process_as_osc,{var}files_to_process, counterL);
         {average}
 
         if counterL > 0 then
@@ -12199,30 +12193,19 @@ begin
             if stitching_mode = False then put_best_quality_on_top(files_to_process); {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
             if sigma_clip then
-              stack_sigmaclip(over_size, process_as_osc,{var}files_to_process, counterL) {sigma clip combining}
+              stack_sigmaclip( process_as_osc,{var}files_to_process, counterL) {sigma clip combining}
             else
             if stitching_mode then
-              stack_mosaic(over_size, process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
+              stack_mosaic(process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
             else
-              stack_average(over_size, process_as_osc,{var}files_to_process, counterL);{average}
-            over_sizeL := 0; {do oversize only once. Not again in 'L' mode !!}
+              stack_average(process_as_osc,{var}files_to_process, counterL);{average}
+
             if esc_pressed then
             begin
               progress_indicator(-2, 'ESC');
               restore_img;
               Screen.Cursor := crDefault;{ back to normal }
               exit;
-            end;
-
-            if ((over_size <> 0) and (head.cd1_1 <> 0){solution}) then {adapt astrometric solution for intermediate file}
-            begin {adapt reference pixels of plate solution due to oversize}
-              head.crpix1 := head.crpix1 + over_size;
-              if over_size > 0 then
-                head.crpix2 := head.crpix2 + over_size
-              else
-                head.crpix2 := head.crpix2 + round(over_size * head.Height / head.Width);  {if oversize is negative then shrinking is done in ratio. Y shrinkage is done with factor round(oversize*height/width. Adapt head.crpix2 accordingly.}
-              update_float('CRPIX1  =', ' / X of reference pixel                           ',false, head.crpix1);
-              update_float('CRPIX2  =', ' / Y of reference pixel                           ',false, head.crpix2);
             end;
 
             update_text('COMMENT 1', '  Written by ASTAP. www.hnsky.org');
@@ -12283,7 +12266,6 @@ begin
               filters_used[4] := filters_used[i];{store luminance filter}
               memo2_message('Filter ' + filters_used[i] + ' will also be used for luminance.');
             end;
-            over_sizeL := over_size;{do oversize in 'L'  routine}
             counterL := 1;
           end;
 
@@ -12309,7 +12291,7 @@ begin
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0] := files_to_process_LRGB[1]; {use red channel as reference if no luminance is available}
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0] := files_to_process_LRGB[2]; {use green channel as reference if no luminance is available}
           counterL := 0; //reset counter for case no Luminance files are available, so RGB stacking.
-          stack_LRGB(over_sizeL {zero if already stacked from several files}, files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
+          stack_LRGB(files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
           if esc_pressed then
           begin
             progress_indicator(-2, 'ESC');
@@ -12473,18 +12455,6 @@ begin
 
         if lrgb = False then {monochrome}
         begin {adapt astrometric solution. For colour this is already done during luminance stacking}
-          if ((over_size <> 0) and (head.cd1_1 <> 0){solution}) then
-            {adapt astrometric solution for intermediate file}
-          begin {adapt reference pixels of plate solution due to oversize}
-            head.crpix1 := head.crpix1 + over_size;
-            if over_size > 0 then
-              head.crpix2 := head.crpix2 + over_size
-            else
-              head.crpix2 := head.crpix2 + round(over_size * head.Height / head.Width); {if oversize is negative then shrinking is done in ratio. Y shrinkage is done with factor round(oversize*height/width. Adapt head.crpix2 accordingly.}
-            update_float('CRPIX1  =', ' / X of reference pixel                           ',false, head.crpix1);
-            update_float('CRPIX2  =', ' / Y of reference pixel                           ',false, head.crpix2);
-          end;
-
           update_integer('SET-TEMP=', ' / Average set temperature used for luminance.    ', temperatureL);
           add_integer('LUM_EXP =', ' / Average luminance exposure time.               ', exposureL);
           add_integer('LUM_CNT =', ' / Luminance images combined.                     ', counterL);
@@ -12603,7 +12573,7 @@ begin
     memo2.Lines.add('No images in tab lights to stack.');
     if classify_filter then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
     if classify_object then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
-    if use_astrometry_internal1.Checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
+    if use_astrometry_alignment1.Checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
   end
   else
     memo2.Lines.add('Finished in ' + IntToStr(round((gettickcount64 - startTick) / 1000)) +' sec. The FITS header contains a detailed history.');
@@ -12695,9 +12665,9 @@ begin
 
   sd_factor1.Enabled := sigm;
 
-  if ((use_astrometry_internal1.Checked = False) and (mosa)) then
+  if ((use_astrometry_alignment1.Checked = False) and (mosa)) then
   begin
-    use_astrometry_internal1.Checked := True;
+    use_astrometry_alignment1.Checked := True;
     memo2_message('Switched to ASTROMETRIC alignment.');
   end;
   if mosa then memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
@@ -12717,7 +12687,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.use_astrometry_internal1Change(Sender: TObject);
+procedure Tstackmenu1.use_astrometry_alignment1Change(Sender: TObject);
 begin
   update_tab_alignment;
 end;
