@@ -194,7 +194,7 @@ of the
 external astrometry.net&nbsp;solver&nbsp;</a></big></li></ul></ul><br>
         <ul>
           <li><big><a href="#stack_process">Appendix
-                1 stack process</a></big></li><li><big><a href="#why-flat-darks">Appendix 2 Why using flat-darks or bias</a></big></li><li><big><a href="astap.htm#1476">Appendix 3 the star database 1476 and 001 format.</a></big></li>
+                1 stack process</a></big></li><li><big><a href="#why-flat-darks">Appendix 2 Why using flat-darks or bias</a></big></li><li><big><a href="astap.htm#1476">Appendix 3 the star database 1476 and 001 format.</a></big></li><li><big><a href="astap.htm#sip">Developer information</a></big><a href="sip.htm"><big>: Using&nbsp;SIP Coefficients&nbsp;for optical distortion correction</big></a></li>
           <li><big><a href="astap_astrometric_solving.htm">Background
                 info, ASTAP star pattern recognition and astrometric (plate) solving algorithm.</a></big></li>
         </ul>
@@ -827,7 +827,7 @@ mouse button popup menu "rename to *.bak"</span><span style="font-family: Arial;
         <big><br>
         </big><span style="font-weight: bold; text-decoration: underline;"><a name="stack_menu2"></a></span><big><big><span style="text-decoration: underline;">Stack method tab</span></big></big>
       </div>
-      <div style="text-align: left;"><img style="width: 1502px; height: 628px;" alt="" src="astap_stack_menu2.png"><br>
+      <div style="text-align: left;"><img style="width: 1505px; height: 578px;" alt="" src="astap_stack_menu2.png"><br>
         <big><br>
           <span style="font-weight: bold;"></span><span style="font-weight: bold;"></span></big><big><span style="font-weight: bold;"></span>The best stack option is "Sigma
           clip
@@ -948,7 +948,7 @@ suffering
               whiter. Star colour will be lost.&nbsp;</big></li>
         </ul><a name="astrosimple"></a><br>The principle of the AstroSimple demosaic method:<br><br><div style="text-align: center;"><img style="width: 1309px; height: 715px;" alt="The ASTAP demosaic method Simple" src="astap_simple.png"></div>
         <big><span style="font-weight: bold;"></span></big><br><big><br><br><br>
-          <br></big><big><small><span style="text-decoration: underline; font-weight: bold;"><a name="lrgb"></a></span></small><big><span style="text-decoration: underline; font-weight: bold;"><small>Stack method tab, (L)RGB stacking:</small><br><br></span></big></big>Activating&nbsp;(L)RGB mode: <br><img style="width: 1502px; height: 628px;" alt="" src="astap_stack_menu2_lrgb.png"><big><br></big><br><big>
+          <br></big><big><small><span style="text-decoration: underline; font-weight: bold;"><a name="lrgb"></a></span></small><big><span style="text-decoration: underline; font-weight: bold;"><small>Stack method tab, (L)RGB stacking:</small><br><br></span></big></big>Activating&nbsp;(L)RGB mode: <br><img style="width: 1505px; height: 578px;" alt="" src="astap_stack_menu2_lrgb.png"><big><br></big><br><big>
 The filter names should match the filter names in the FITS headers.
 This is the case if in tab Lights the filter column is displaying red,
 green, blue or gray icon. If there is no match the icon will be a
@@ -960,10 +960,7 @@ question &nbsp;mark.<br><br></big><br><big>
 image stiching is&nbsp;possible with the internal astrometric solver. The reference of each pixel is the
 astronomical position. So stacking is not done against a reference
 image but against&nbsp;an position array set by the first image.
-&nbsp;You have to set the in tab alignment the settings for "Image
-stiching (method)" correctly.&nbsp;If you stitch 4 images, you have set
-"Mosaic width/height&nbsp; in tiles:" at 2. This will provide enough
-space to place for the 2x2 mosaic.<br>
+If if image stitching is selected the <a href="astap.htm#sip">SIP</a> option in tab alignment will be activated. This will allow for correction of optical distortions.<br>&nbsp;.<br>
           <br>
         </big><span style="font-family: Arial;"></span><big>Here a suggested work method:<br>
         </big>
@@ -1021,7 +1018,7 @@ images have poor borders, set option crop images larger then 0%.</big></li><li><
         </big><big><br>
         </big><big><span style="text-decoration: underline; font-weight: bold;">&nbsp;<a name="internal_alignment"></a></span><span style="text-decoration: underline;">Internal star alignment</span><span style="text-decoration: underline; font-weight: bold;"><br>
             <br>
-          </span></big><big><span style="text-decoration: underline; font-weight: bold;"><img style="width: 1499px; height: 666px;" alt="" src="astap_stack_menu3.png"><br>
+          </span></big><big><span style="text-decoration: underline; font-weight: bold;"><img style="width: 1443px; height: 578px;" alt="" src="astap_stack_menu3.png"><br>
           </span></big><big><br>This
           internal star matching alignment is the best and fastest
           option to
@@ -1072,7 +1069,7 @@ tetrahedron and will be used as a hash code:<br>
           does the ASTAP astrometric solving works internally</a><br>
         <span style="font-style: italic;"><br>
         </span><big><br>
-          <a name="astrometric_alignment"></a><span style="text-decoration: underline;">Astrometric alignment.<br><br></span></big><img style="width: 1499px; height: 666px;" alt="" src="astap_stack_menu3_astro.png"><br><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span> <br>
+          <a name="astrometric_alignment"></a><span style="text-decoration: underline;">Astrometric alignment.<br><br></span></big><img style="width: 1443px; height: 578px;" alt="" src="file:///D:/webpage/webpage/homepage_hnsky/astap_stack_menu3_astro.png"><br><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span> <br>
         </big><big><span style="font-weight: bold;">Internal
             astrometric solver</span> (plate solver). This works with
           the
@@ -1114,7 +1111,14 @@ maximum number of stars will be reduced automatically.</big></li>
               have
               severe
               optical distortion.&nbsp;</big><big>If you have too many false detections then set this
-              lower<span style="font-weight: bold;">.</span></big></li><li><big><span style="font-weight: bold;">Use triples. </span>Experimental option for images with a low star count only. Default unchecked.<br></big></li><li><big><span style="font-weight: bold;">Slow</span>.
+              lower<span style="font-weight: bold;">.</span></big></li><li><big><span style="font-weight: bold;">SIP&nbsp;coefficients:&nbsp;</span></big> <big>Add SIP coefficients to ensure accurate positional 
+information of celestial objects and to facilitate precise image 
+stitching. Astronomical images often suffer from barrel distortion, 
+where stars near the edges appear to move outward from the center of the
+ image. SIP (Simple Image Polynomial) coefficients provide a polynomial 
+model to represent this distortion. This model mathematically describes 
+how the actual positions of stars (or other celestial objects) in the 
+image deviate from their ideal positions on a distortion-free plane."<span style="font-weight: bold;"></span> </big><big><span style="font-weight: bold;"></span></big></li><li><big><span style="font-weight: bold;">Use triples. </span>Experimental option for images with a low star count only. Default unchecked.<br></big></li><li><big><span style="font-weight: bold;">Slow</span>.
               This will force a 50% overlap between search fields. Default unchecked. Use
               this in rare cases where&nbsp;solving fails and still many star are detected. I applied this will slow down blind
               solving.</big></li><li><big><span style="font-weight: bold;">Calibrate prior to solving.</span>&nbsp; </big><big>If
@@ -2483,7 +2487,7 @@ astrometric
           </tr>
           <tr><td style="background-color: rgb(204, 204, 255);">-m</td><td style="background-color: rgb(204, 204, 255);">minimum star size</td><td style="background-color: rgb(204, 204, 255);">arcsec</td><td style="background-color: rgb(204, 204, 255);">This could be used to filter out hot pixels.</td></tr>
           <tr><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);"></td></tr><tr><td style="background-color: rgb(204, 204, 255);">-check</td><td style="background-color: rgb(204, 204, 255);">apply</td><td style="background-color: rgb(204, 204, 255);">y/n</td><td style="background-color: rgb(204, 204, 255);">Apply check pattern filter prior to solving. Use&nbsp;for raw OSC images only when binning is 1x1&nbsp;&nbsp;*</td></tr><tr><td style="background-color: rgb(204, 204, 255);">-d</td><td style="background-color: rgb(204, 204, 255);">path</td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);">Specify a path to the star database</td></tr><tr><td style="background-color: rgb(204, 204, 255);">-D</td><td>abbreviation</td><td></td><td>Specify a star database [d80, d50, ..]</td></tr><tr><td style="background-color: rgb(204, 204, 255);">-o</td><td style="background-color: rgb(204, 204, 255);">file</td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);">Name the output files with this base path &amp; file
-              name</td></tr><tr><td>-sip</td><td>add</td><td>y/n</td><td>Add SIP image distortion information. Note the parameter is only required to deactivate SIP.</td></tr><tr><td style="background-color: rgb(204, 204, 255);">-speed</td><td style="background-color: rgb(204, 204, 255);">mode</td><td style="background-color: rgb(204, 204, 255);">slow / auto</td><td style="background-color: rgb(204, 204, 255);">"slow" is forcing the reading a larger area from the star
+              name</td></tr><tr><td>-sip</td><td>add</td><td>y/n</td><td>Add <a href="astap.htm#sip">SIP&nbsp;</a><a href="astap.htm#sip">(Simple Image Polynomial) coefficients</a>. Note the parameter is only required to deactivate SIP.</td></tr><tr><td style="background-color: rgb(204, 204, 255);">-speed</td><td style="background-color: rgb(204, 204, 255);">mode</td><td style="background-color: rgb(204, 204, 255);">slow / auto</td><td style="background-color: rgb(204, 204, 255);">"slow" is forcing the reading a larger area from the star
               database (more overlap)&nbsp; to
               improve&nbsp;detection. *</td></tr>
           <tr><td style="background-color: rgb(204, 204, 255);">-sqm</td><td style="background-color: rgb(204, 204, 255);">pedestal</td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);">Measure the sky background value in magn/arcsec<span class="texhtml"><sup>2&nbsp; &nbsp;</sup></span> relative to the stars. The pedestal is the mean value of a dark.</td></tr><tr><td style="background-color: rgb(204, 204, 255);">-wcs</td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);">Write a .wcs file &nbsp;in&nbsp;similar format as&nbsp;Astrometry.net. Else text style</td></tr><tr><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);"></td></tr><tr><td style="background-color: rgb(204, 204, 255);">-annotate</td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);"></td><td style="background-color: rgb(204, 204, 255);">Produce a deep sky annotated jpeg file with same name as
@@ -3501,7 +3505,7 @@ following array (first star is Sirius):<br><br><span style="font-family: monospa
 2.003995701&nbsp;&nbsp;&nbsp; ,&nbsp;&nbsp;&nbsp;
 0.091067934&nbsp;&nbsp; ),</span><br>
       &nbsp; <br><big style="font-weight: bold;"><span style="text-decoration: underline;"></span></big><p align="left"><a href="astap.htm#index">Back
-            to index</a></p></div><br>
+            to index</a></p><br><big style="font-weight: bold;"><span style="text-decoration: underline;"><br><a name="sip"></a></span> &nbsp;External link:<span style="text-decoration: underline;"><br><br></span></big><big><a href="sip.htm">Developer information: Using&nbsp;SIP Coefficients&nbsp;for optical distortion correction</a></big><big style="font-weight: bold;"> <br><br></big><br></div><br>
       <big style="font-weight: bold;"><span style="text-decoration: underline;"></span></big>
       <hr size="1"></center>
     <br>

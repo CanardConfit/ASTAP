@@ -4480,16 +4480,16 @@ begin
 end;
 
 
-function average_flatdarks(exposure: double): integer;
+function average_flatdarks(exposure: double; out w,h : integer): boolean;
 var
   c, file_count: integer;
   file_list: array of string;
 begin
+  result:=false;{just in case no flat-dark are found}
   analyse_listview(stackmenu1.listview4, False {light}, False {full fits}, False{refesh});
   {update the flat-dark tab information. Convert to FITS if required}
   setlength(file_list, stackmenu1.listview4.items.Count);
   file_count := 0;
-  Result := 0;{just in case no flat-dark are found}
   for c := 0 to stackmenu1.listview4.items.Count - 1 do
     if stackmenu1.listview4.items[c].Checked = True then
     begin
@@ -4505,7 +4505,9 @@ begin
   begin
     memo2_message('Averaging flat dark frames.');
     average('flat-dark', file_list, file_count, img_bias);{only average}
-    Result := head.Width; {width of the flat-dark}
+    Result := true;
+    w:=head.Width; {width of the flat-dark}
+    h:=head.height; {width of the flat-dark}
   end;
   head.flatdark_count := file_count;
   file_list := nil;
@@ -10772,13 +10774,18 @@ begin
           begin
             if head.Width = StrToInt(listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
             begin
-              d := strtofloat(listview2.Items.item[c].subitems.Strings[D_jd]);
-              if abs(d - jd_int) < day_offset then {find dark with closest date}
+              if head.height = StrToInt(listview2.Items.item[c].subitems.Strings[D_height]) then {height correct}
               begin
-                filen := ListView2.items[c].Caption;
-                day_offset := abs(d - jd_int);
-              end;
-              listview2.Items.item[c].subitems.Strings[D_issues]:='';//clear issue
+                d := strtofloat(listview2.Items.item[c].subitems.Strings[D_jd]);
+                if abs(d - jd_int) < day_offset then {find dark with closest date}
+                begin
+                  filen := ListView2.items[c].Caption;
+                  day_offset := abs(d - jd_int);
+                end;
+                listview2.Items.item[c].subitems.Strings[D_issues]:='';//clear issue
+              end
+              else
+              listview2.Items.item[c].subitems.Strings[D_issues]:='height<>'+inttostr(head.height);
             end
             else
             listview2.Items.item[c].subitems.Strings[D_issues]:='width<>'+inttostr(head.width);
@@ -10844,13 +10851,18 @@ begin
       begin
         if head.Width = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct, matches with the light width}
         begin
-          d := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
-          if abs(d - jd_int) < day_offset then {find flat with closest date}
+          if head.height = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]) then
           begin
-            filen := stackmenu1.ListView3.items[c].Caption;
-            day_offset := abs(d - jd_int);
-          end;
-          stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='';//clear issues
+            d := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
+            if abs(d - jd_int) < day_offset then {find flat with closest date}
+            begin
+              filen := stackmenu1.ListView3.items[c].Caption;
+              day_offset := abs(d - jd_int);
+            end;
+            stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='';//clear issues
+          end
+          else
+          stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='height<>'+inttostr(head.height);
         end
         else
         stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='width<>'+inttostr(head.width);
@@ -11048,7 +11060,7 @@ var
   day, flatdark_exposure, flat_exposure: double;
   c, counter, i: integer;
   specified, classify_exposure: boolean;
-  flat_width, flat_dark_width: integer;
+  flat_width,flat_height, flat_dark_width,flat_dark_height: integer;
   flatdark_used: boolean;
   file_list: array of string;
 begin
@@ -11078,20 +11090,21 @@ begin
             begin
               flat_filter := stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
               flat_width := StrToInt(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
+              flat_height := StrToInt(stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]);
               day := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
               flat_exposure := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]);
               specified := True;
             end;
 
             if ((stackmenu1.classify_flat_filter1.Checked = False) or(flat_filter = stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
-              if flat_width = StrToInt(
-                stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
-                if ((classify_flat_date1.Checked = False) or (abs(day - strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd])) <= 0.5)) then {within 12 hours made}
-                  if ((classify_exposure = False) or (abs(flat_exposure - strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure])) < 0.01)) then  {head.exposure correct?}
-                  begin
-                    file_list[flat_count] := filen;
-                    Inc(flat_count);
-                  end;
+              if flat_width = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
+                if flat_height = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]) then {height correct}
+                  if ((classify_flat_date1.Checked = False) or (abs(day - strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd])) <= 0.5)) then {within 12 hours made}
+                    if ((classify_exposure = False) or (abs(flat_exposure - strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure])) < 0.01)) then  {head.exposure correct?}
+                    begin
+                      file_list[flat_count] := filen;
+                      Inc(flat_count);
+                    end;
           end;
         end;{checked}
 
@@ -11116,15 +11129,18 @@ begin
             analyseflatdarksButton1Click(nil); {head.exposure lengths are required for selection}
             memo2_message('Selecting flat darks with exposure time ' +  floattostrF(flat_exposure, FFgeneral, 0, 2) + 'sec');
           end;
-          flat_dark_width := average_flatdarks(flat_exposure);  {average of bias frames. Convert to FITS if required}
-          flatdark_exposure := flat_exposure;{store this head.exposure for next time}
-          if flat_dark_width = 0 then  memo2_message('█ █ █ █ █ █ Warning no flat-dark/bias found!! █ █ █ █ █ █ ')
+          if average_flatdarks(flat_exposure,flat_dark_width,flat_dark_height) then  {average of bias frames. Convert to FITS if required}
+          begin  //falt darks found
+            flatdark_exposure := flat_exposure; {store this head.exposure for next time}
+            if ((flat_width <> flat_dark_width) or (flat_height <> flat_dark_height)) then
+            begin
+              memo2_message('Abort, the width or height of the flat and flat-dark do not match!!');
+              exit;
+            end;
+          end
           else
-          if flat_width <> flat_dark_width then
-          begin
-            memo2_message('Abort, the width of the flat and flat-dark do not match!!');
-            exit;
-          end;
+          memo2_message('█ █ █ █ █ █ Warning no flat-dark/bias found!! █ █ █ █ █ █ ');
+
           flatdark_used := False;
         end;
 
@@ -11481,7 +11497,7 @@ begin
           else //no change
           begin
             Application.ProcessMessages;
-            memo2_message(filename2 + ' No dark of flat found or is already calibrated!!!!');
+            memo2_message(filename2 + ' No compatible dark of flat found or is already calibrated!!!!');
             if esc_pressed then exit;
           end;
         finally
