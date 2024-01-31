@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.01.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.01.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -7838,7 +7838,7 @@ begin
       stackmenu1.blur_factor1.text:= Sett.ReadString('stack','blur_factor','');
 
       stackmenu1.use_manual_alignment1.checked:=Sett.ReadString('stack','align_method','')='4';
-      stackmenu1.use_astrometry_internal1.checked:=Sett.ReadString('stack','align_method','')='3';
+      stackmenu1.use_astrometry_alignment1.checked:=Sett.ReadString('stack','align_method','')='3';
       stackmenu1.use_star_alignment1.checked:=Sett.ReadString('stack','align_method','')='2';
       stackmenu1.use_ephemeris_alignment1.checked:=Sett.ReadString('stack','align_method','')='1';
 
@@ -7866,7 +7866,6 @@ begin
 
       dum:=Sett.ReadString('stack','downsample',''); if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
 
-      dum:=Sett.ReadString('stack','oversize','');if dum<>'' then stackmenu1.oversize1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor',''); if dum<>'' then stackmenu1.sd_factor1.text:=dum;
 
       dum:=Sett.ReadString('stack','most_common_filter_radius',''); if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
@@ -8225,7 +8224,7 @@ begin
 
       if  stackmenu1.use_manual_alignment1.checked then sett.writestring('stack','align_method','4')
       else
-      if  stackmenu1.use_astrometry_internal1.checked then sett.writestring('stack','align_method','3')
+      if  stackmenu1.use_astrometry_alignment1.checked then sett.writestring('stack','align_method','3')
       else
       if  stackmenu1.use_star_alignment1.checked then sett.writestring('stack','align_method','2')
       else
@@ -8242,8 +8241,6 @@ begin
       sett.writestring('stack','manual_centering',stackmenu1.manual_centering1.text);
 
       sett.writestring('stack','downsample',stackmenu1.downsample_for_solving1.text);
-
-      sett.writestring('stack','oversize',stackmenu1.oversize1.text);
 
       sett.writestring('stack','sd_factor',stackmenu1.sd_factor1.text);
       sett.writestring('stack','blur_factor',stackmenu1.blur_factor1.text);

@@ -16,7 +16,7 @@ uses
   graphics,
   math;
 
-procedure stack_live(oversize:integer; path :string);{stack live average}
+procedure stack_live(path :string);{stack live average}
 
 const
   pause_pressed: boolean=false;
@@ -118,11 +118,11 @@ begin
 end;
 
 
-procedure stack_live(oversize:integer; path :string);{stack live average}
+procedure stack_live(path :string);{stack live average}
 var
     fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter,max_stars,process_as_asc :  integer;
-    distance,hfd_min                                                                                                                             : double;
-    init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
+    distance,hfd_min,aa,bb,cc,dd,ee,ff                                                                                                           : double;
+    init, solution, waiting,transition_image,colour_correction :boolean;
     file_ext,filen,filename_org                 :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
     warning  : string;
@@ -259,8 +259,8 @@ begin
             if init=false then {init}
             begin
               memo2_message('Reference image is: '+filename2);
-              width_max:=head.width+oversize*2;
-              height_max:=head.height+oversize*2;
+              width_max:=head.width;
+              height_max:=head.height;
 
               setlength(img_average,head.naxis3,height_max,width_max);
               for fitsY:=0 to height_max-1 do
@@ -330,22 +330,26 @@ begin
               jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure.}
 
-              vector_based:=true;{no astrometric alignment}
+              aa:=solution_vectorX[0];
+              bb:=solution_vectorX[1];
+              cc:=solution_vectorX[2];
+              dd:=solution_vectorY[0];
+              ee:=solution_vectorY[1];
+              ff:=solution_vectorY[2];
 
               if colour_correction=false then {no colour correction}
               begin
-                for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
-                for fitsX:=1 to head.width  do
+                for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
+                for fitsX:=0 to head.width-1  do
                 begin
-                  calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                  x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
-                  x_new:=round(x_new_float);y_new:=round(y_new_float);
+                  x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+                  y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
                   if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                   begin
                     for col:=0 to head.naxis3-1 do {all colors}
                     begin
                       {serial stacking}
-                      img_average[col,y_new,x_new]:=(img_average[col,y_new,x_new]*(counter-1)+ img_loaded[col,fitsY-1,fitsX-1])/counter;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                      img_average[col,y_new,x_new]:=(img_average[col,y_new,x_new]*(counter-1)+ img_loaded[col,fitsY,fitsX])/counter;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                     end;
                   end;
                 end;
@@ -353,28 +357,27 @@ begin
 
               else {colour correction}
               begin
-                for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
-                for fitsX:=1 to head.width  do
+                for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
+                for fitsX:=0 to head.width-1  do
                 begin
-                  calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                  x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
-                  x_new:=round(x_new_float);y_new:=round(y_new_float);
+                  x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+                  y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
                   if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                   begin
-                    dum:=img_loaded[0,fitsY-1,fitsX-1];
-                      if dum<>0 then {signal}
-                      begin
+                    dum:=img_loaded[0,fitsY,fitsX];
+                    if dum<>0 then {signal}
+                    begin
                       dum:=(dum+add_valueR)*multiply_red/largest;
-                        if dum<0 then dum:=0;
-                       img_average[0,y_new,x_new]:=(img_average[0,y_new,x_new]*(counter-1)+ dum)/counter;
-                      end;
+                      if dum<0 then dum:=0;
+                      img_average[0,y_new,x_new]:=(img_average[0,y_new,x_new]*(counter-1)+ dum)/counter;
+                    end;
                     if head.naxis3>1 then {colour}
                     begin
-                      dum:=img_loaded[1,fitsY-1,fitsX-1];   if dum<>0 then {signal} begin dum:=(dum+add_valueG)*multiply_green/largest; if dum<0 then dum:=0; img_average[1,y_new,x_new]:=(img_average[1,y_new,x_new]*(counter-1)+ dum)/counter;end;
+                      dum:=img_loaded[1,fitsY,fitsX];   if dum<>0 then {signal} begin dum:=(dum+add_valueG)*multiply_green/largest; if dum<0 then dum:=0; img_average[1,y_new,x_new]:=(img_average[1,y_new,x_new]*(counter-1)+ dum)/counter;end;
                     end;
                     if head.naxis3>2 then {colour}
                     begin
-                      dum:=img_loaded[2,fitsY-1,fitsX-1]; if dum<>0 then {signal} begin dum:=(dum+add_valueB)*multiply_blue/largest; if dum<0 then dum:=0; img_average[2,y_new,x_new]:=(img_average[2,y_new,x_new]*(counter-1)+ dum)/counter;end;
+                      dum:=img_loaded[2,fitsY,fitsX]; if dum<>0 then {signal} begin dum:=(dum+add_valueB)*multiply_blue/largest; if dum<0 then dum:=0; img_average[2,y_new,x_new]:=(img_average[2,y_new,x_new]*(counter-1)+ dum)/counter;end;
                     end;
                   end;
                 end;
