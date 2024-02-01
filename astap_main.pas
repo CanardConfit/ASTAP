@@ -12422,19 +12422,20 @@ begin
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
         '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
-        '-sqm pedestal  {add measured sqm value to the solution}'+#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
+        '-log   {Write the solver log to file}'+#10+
+        '-update  {update the FITS/TIFF header with the found solution.  Jpeg, png will be written as fits}' +#10+
         #10+
+        'Extra options:' +#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
-        '-log   {Write the solver log to file}'+#10+
         '-tofits  binning[1,2,3,4]  {Make new fits file from PNG/JPG file input}'+#10+
-        '-update  {update the FITS/TIFF header with the found solution.  Jpeg, png will be written as fits}' +#10+
         #10+
         'Analyser and stacker usage:' +#10+
         '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
         '-analyse2 snr_min {both analyse and solve}'+#10+
         '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
+        '-sqm pedestal  {add measured sqm value to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-stack  path {startup with live stack tab and path selected}'+#10+
         #10+
