@@ -1004,7 +1004,7 @@ procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert date_obs 
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio: double); {resize img_loaded in free ratio}
 function median_background(var img: image_array; color, sizeX, sizeY, x, y: integer): double; {find median value of an area at position x,y with sizeX,sizeY}
-procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean;  out star_counter: integer; out bck :Tbackground;out hfd_median: double);{find background, number of stars, median HFD}
+procedure analyse_image(img: image_array; head: Theader; snr_min: double; report_type: integer;  out star_counter: integer; out bck :Tbackground;out hfd_median: double);{find background, number of stars, median HFD}
 
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc, dest: image_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
@@ -1559,11 +1559,11 @@ begin
 end;
 
 
-procedure analyse_image(img: image_array; head: Theader; snr_min: double; report: boolean; out star_counter: integer; out bck:Tbackground; out hfd_median: double);//find background, number of stars, median HFD
+procedure analyse_image(img: image_array; head: Theader; snr_min: double; report_type: integer; out star_counter: integer; out bck:Tbackground; out hfd_median: double);//find background, number of stars, median HFD
 var
   width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, m,
-  xci, yci, sqr_radius: integer;
-  hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background: double;
+  xci, yci, sqr_radius, formalism: integer;
+  hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background,ra,decl: double;
   hfd_list:  array of double;
   img_sa: image_array;
 var
@@ -1571,6 +1571,11 @@ var
 var   {################# initialised variables #########################}
   len: integer = 1000;
 begin
+  //report_type=0, report hfd_median
+  //report_type=1, report hfd_median and write csv file
+  //report_type=2, write csv file
+
+
   width5 := Length(img[0,0]); {width}
   height5 := Length(img[0]);  {height}
 
@@ -1579,6 +1584,8 @@ begin
 
   get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
   detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
+
+  if ap_order>0 then formalism:=1{sip} else formalism:=0{1th order};
 
   retries:=3; {try up to four times to get enough stars from the image}
 
@@ -1602,11 +1609,11 @@ begin
 
       star_counter := 0;
 
-      if report then {write values to file}
+      if report_type>0 then {write values to file}
       begin
         assignfile(f, ChangeFileExt(filename2, '.csv'));
         rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
-        writeln(f, 'x,y,hfd,snr,flux');
+        writeln(f, 'x,y,hfd,snr,flux,ra[0..360],dec[0..360]');
       end;
 
       setlength(img_sa, 1, height5, width5);{set length of image array}
@@ -1649,25 +1656,35 @@ begin
                     img_sa[0, j, i] := 1;
                 end;
 
-              if report then
-                writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))); {+1 to convert 0... to FITS 1... coordinates}
+              if report_type>0 then
+              begin
+                if head.cd1_1=0 then
+                  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
+                else
+                begin
+                  sensor_coordinates_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
+                  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr(ra*180/pi) + ',' + floattostr(decl*180/pi) ) {+1 to convert 0... to FITS 1... coordinates}
+                end;
+              end;
+
             end;
           end;
         end;
       end;
 
       Dec(retries);{Try again with lower detection level}
-      if report then closefile(f);
+      if report_type>0 then closefile(f);
 
     until ((star_counter >= max_stars) or (retries < 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-    if star_counter > 0 then hfd_median := SMedian(hfd_List, star_counter) else  hfd_median := 99;
+    if ((star_counter > 0) and (report_type<=1)) then hfd_median := SMedian(hfd_List, star_counter) else  hfd_median := 99;
   end {backgr is normal}
   else
     hfd_median := 99; {Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
 
   img_sa := nil;{free m}
 end;
+
 
 
 procedure analyse_image_extended(img: image_array; head: Theader; out nr_stars, hfd_median, median_outer_ring, median_11, median_21, median_31,  median_12, median_22, median_32, median_13, median_23, median_33: double);{analyse several areas}
@@ -2198,7 +2215,7 @@ begin
           begin {light frame}
 
             if ((planetary = False) and (analyse_level>0)) then
-              analyse_image(img, head_2, 10 {snr_min}, False, star_counter, bck, hfd_median) {find background, number of stars, median HFD}
+              analyse_image(img, head_2, 10 {snr_min}, 0, star_counter, bck, hfd_median) {find background, number of stars, median HFD}
             else
             begin
               star_counter := 0;
@@ -4231,7 +4248,7 @@ begin
               if full {amode=3} then {listview7 photometry plus mode}
               begin
 
-                analyse_image(img, head_2, 10 {snr_min}, False, hfd_counter, bck, hfd_median);
+                analyse_image(img, head_2, 10 {snr_min}, 0 {report nr stars and hfd only}, hfd_counter, bck, hfd_median);
                 {find background, number of stars, median HFD}
                 lv.Items.item[c].subitems.Strings[P_background]:= inttostr5(round(bck.backgr));
                 lv.Items.item[c].subitems.Strings[P_hfd] := floattostrF(hfd_median, ffFixed, 0, 1);
@@ -4384,8 +4401,8 @@ begin
                 end;
 
                 {calculate crota_jnow}
-                coordinates_to_celestial(head_2.crpix1, head_2.crpix2 + 1,
-                  head_2, ram, decm);
+                sensor_coordinates_to_celestial(head_2,head_2.crpix1, head_2.crpix2 + 1,1 {wcs and sip is available}, ram, decm);
+
                 {fitsX, Y to ra,dec}{Step one pixel in Y}
                 J2000_to_apparent(jd_mid, ram, decm);{without refraction}
                 lv.Items.item[c].subitems.Strings[M_crota_jnow] := floattostrf(arctan2((ram - ra_jnow) * cos(dec_jnow), decm - dec_jnow) * 180 / pi, ffFixed, 7, 4);
@@ -8104,7 +8121,7 @@ begin
         begin
           if apert <> 0 then {aperture<>auto}
           begin
-            analyse_image(img_loaded, head, 30, False {report}, hfd_counter, bck, hfd_med);
+            analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only}, hfd_counter, bck, hfd_med);
             {find background, number of stars, median HFD}
             if hfd_med <> 0 then
             begin
@@ -9742,11 +9759,10 @@ begin
       img_temp3[0,fitsY,fitsX]:=default;{clear}
   plot_artificial_stars(img_temp3,head,magn_limit {measured});{create artificial image with database stars as pixels}
 
-   analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
-
-   backgrR:=bck.backgr;//defaults
-   backgrG:=bck.backgr;
-   backgrB:=bck.backgr;
+  analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only},hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
+  backgrR:=bck.backgr;//defaults
+  backgrG:=bck.backgr;
+  backgrB:=bck.backgr;
 
    for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do

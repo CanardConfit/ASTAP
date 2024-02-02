@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.01.27';
+  astap_version: string='2024.02.02';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -153,7 +153,7 @@ function floattostr6(x:double):string;{float to string with 6 decimals}
 function floattostr4(x:double):string;
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
-procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
+procedure analyse_image(img : image_array;snr_min:double;report_type:integer;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
@@ -2304,10 +2304,48 @@ begin
 end;
 
 
-procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer;out backgr, hfd_median : double); {find background, number of stars, median HFD}
+procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
+var
+  fits_unsampledX, fits_unsampledY :double;
+  u,v,u2,v2             : double;
+  dRa,dDec,delta,gamma  : double;
+
+begin
+  RAM:=0;DECM:=0;{for case wrong index or cd1_1=0}
+
+  if cd1_1<>0 then
+  begin //wcs
+    if a_order>=2 then {SIP, Simple Imaging Polynomial}
+    begin //apply SIP correction to pixels.
+      u:=fitsx-crpix1;
+      v:=fitsy-crpix2;
+      u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
+      v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
+    end
+    else
+    begin
+      u2:=fitsx-crpix1;
+      v2:=fitsy-crpix2;
+    end; {mainwindow.Polynomial1.itemindex=0}
+
+
+    dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
+    dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
+    delta:=cos(dec0)-dDec*sin(dec0);
+    gamma:=sqrt(dRa*dRa+delta*delta);
+    decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+    ram:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
+    if ram<0 then ram:=ram+2*pi;
+    if ram>pi*2 then ram:=ram-pi*2;
+  end; //WCS
+end;
+
+
+
+procedure analyse_image(img : image_array;snr_min:double;report_type:integer;out star_counter : integer;out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
    fitsX,fitsY,diam,i,j,retries,m,n,xci,yci,sqr_diam : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,detection_level               : double;
+   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,ra,decl        : double;
    hfd_list                                                    : array of double;
    img_sa                                                      : image_array;
 var
@@ -2315,6 +2353,10 @@ var
 const
    len: integer=1000;
 begin
+  //report_type=0, report hfd_median
+  //report_type=1, report hfd_median and write csv file
+  //report_type=2, write csv file
+
   SetLength(hfd_list,len);{set array length to len}
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level,star_level2);
@@ -2335,11 +2377,11 @@ begin
 
       star_counter:=0;
 
-      if report then {write values to file}
+      if report_type>0 then {write values to file}
       begin
         assignfile(f,ChangeFileExt(filename2,'.csv'));
         rewrite(f); {this could be done 3 times due to the repeat but it is the most simple code}
-        writeln(f,'x,y,hfd,snr,flux');
+        writeln(f, 'x,y,hfd,snr,flux,ra[0..360],dec[0..360]');
       end;
 
       setlength(img_sa,1,height2,width2);{set length of image array}
@@ -2373,14 +2415,16 @@ begin
                     img_sa[0,j,i]:=1;
                 end;
 
-
-
-
-              if report then
+              if report_type>0 then
               begin
-                writeln(f,floattostr4(xc+1)+','+floattostr4(yc+1)+','+floattostr4(hfd1)+','+inttostr(round(snr))+','+inttostr(round(flux)) ); {+1 to convert 0... to FITS 1... coordinates}
-              end;
-
+                if cd1_1=0 then
+                  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
+                else
+                begin
+                  sensor_coordinates_to_celestial(xc + 1,yc + 1, ra,decl);
+                  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr(ra*180/pi) + ',' + floattostr(decl*180/pi) ) {+1 to convert 0... to FITS 1... coordinates}
+                end;
+              end;//report
             end;
           end;
         end;
@@ -2388,13 +2432,11 @@ begin
 
       dec(retries);{Try again with lower detection level}
 
-      if report then closefile(f);
+      if report_type>0 then closefile(f);
 
     until ((star_counter>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-    if star_counter>0 then
-      hfd_median:=SMedian(hfd_List,star_counter)
-    else hfd_median:=99;
+    if ((star_counter > 0) and (report_type<=1)) then hfd_median := SMedian(hfd_List, star_counter) else  hfd_median := 99;
   end {backgr is normal}
   else
   hfd_median:=99;{Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
