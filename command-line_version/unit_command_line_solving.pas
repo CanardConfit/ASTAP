@@ -1362,6 +1362,7 @@ begin
   // SIP definitions https://irsa.ipac.caltech.edu/data/SPITZER/docs/files/spitzer/shupeADASS.pdf
 
   //Pixel to sky coefficients
+  A_order:=3;
   A_0_0:=trans_pixel_to_sky.x00;
   A_0_1:=trans_pixel_to_sky.x01;
   A_0_2:=trans_pixel_to_sky.x02;

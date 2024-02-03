@@ -37,9 +37,9 @@ end;
 
 procedure Tastap.DoRun;
 var
-  file_loaded,filespecified,analysespecified,extractspecified : boolean;
+  file_loaded,filespecified,analysespecified, extractspecified, extractspecified2 : boolean;
   backgr, hfd_median,snr_min          : double;
-  hfd_counter                         : integer;
+  hfd_counter,report                  : integer;
 begin
   {$IfDef Darwin}// for OS X,
     database_path:='/usr/local/opt/astap/';
@@ -65,25 +65,30 @@ begin
     'Usage:'+#10+
     '-f  filename  {fits, tiff, png, jpg files}'+#10+
     '-r  radius_area_to_search[degrees]'+#10+      {changed}
-    '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
     '-fov diameter_field[degrees] {enter zero for auto}'+#10+   {changed}
     '-ra  center_right_ascension[hours]'+#10+
     '-spd center_south_pole_distance[degrees]'+#10+
     '-s  max_number_of_stars  {default 500}'+#10+
     '-t  tolerance  {default 0.007}'+#10+
     '-m  minimum_star_size["]  {default 1.5}'+#10+
+    '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
+
     '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
-    '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
-    '-o  file {Name the output files with this base path & file name}'+#10+
-    '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
     '-d  path {specify a path to the star database}'+#10+
     '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
-    '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
-    '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
-    '-update  {update the FITS header with the found solution. Jpeg, png, tiff will be written as fits}' +#10+
+    '-o  file {Name the output files with this base path & file name}'+#10+
+    '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
+    '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
     '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
     '-log  {Write the solver log to file}'+#10+
+    '-update  {update the FITS header with the found solution. Jpeg, png, tiff will be written as fits}' +#10+
     '-progress   {Log all progress steps and messages}'+#10+
+    #10+
+    'Analyse options:' +#10+
+    '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
+    '-extract snr_min {As -analyse but additionally export info of all detectable stars to a .csv file}'+#10+
+    '-extract2 snr_min {Solve and export info of all detectable stars to a .csv file including ra, dec.}'+#10+
+
     'Preference will be given to the command line values.'
     );
 
@@ -138,18 +143,30 @@ begin
     if hasoption('check') then check_pattern_filter1:=('y'=GetOptionValue('check'));
 
     extractspecified:=hasoption('extract');
+    extractspecified2:=hasoption('extract2');
+    if extractspecified2 then add_sip1:=true;//force sip for high accuracy
     analysespecified:=hasoption('analyse');
+
     if ((file_loaded) and ((analysespecified) or (extractspecified)) ) then {analyse fits and report HFD value in errorlevel }
     begin
-      if analysespecified then snr_min:=strtofloat2(getoptionvalue('analyse'));
-      if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
+      if analysespecified then
+      begin
+         snr_min:=strtofloat2(getoptionvalue('analyse'));
+         report:=0; {report nr stars and hfd only}
+      end;
+      if extractspecified then
+      begin
+        snr_min:=strtofloat2(getoptionvalue('extract'));
+        report:=2; {report nr stars and hfd and export csv file}
+      end;
       if snr_min=0 then snr_min:=30;
-      analyse_fits(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+      analyse_image(img_loaded,snr_min,report, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
       if isConsole then {stdout available, compile targe option -wh used}
       begin
         writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,1));
         writeln('STARS='+inttostr(hfd_counter));
       end;
+
       {$IFDEF msWindows}
       halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
       {$ELSE}
@@ -187,6 +204,7 @@ begin
         write_astronomy_wcs  {write WCS astronomy.net style}
       else
         try Memo1.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+
     end {solution}
     else
     begin {no solution}
@@ -194,8 +212,15 @@ begin
       write_ini(false);{write solution to ini file}
       errorlevel:=1;{no solution}
     end;
-    esc_pressed:=true;{kill any running activity. This for APT}
 
+    if ((file_loaded) and (extractspecified2)) then
+    begin
+      snr_min:=strtofloat2(getoptionvalue('extract2'));
+      if snr_min=0 then snr_min:=30;
+      analyse_image(img_loaded,snr_min,2 {report, export CSV only}, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+    end;
+
+    esc_pressed:=true;{kill any running activity. This for APT}
     if commandline_log then
              Memo2.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo2 log to log file}
 

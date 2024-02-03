@@ -845,7 +845,7 @@ function fits_file_name(inp : string): boolean; {fits file name?}
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
-procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double); {fitsX, Y to ra,dec}
+//procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double); {fitsX, Y to ra,dec}
 procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ram,decm  : double) {fitsX, Y to ra,dec};
 procedure celestial_to_pixel(head: theader;ra,dec: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
@@ -10418,7 +10418,7 @@ begin
     aperture_ratio:=apert;{remember setting}
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
-      analyse_image(img_loaded,head,30,false {report}, hfd_counter,bck,hfd_med); {find background, number of stars, median HFD}
+      analyse_image(img_loaded,head,30,0 {report nr stars and hfd only}, hfd_counter,bck,hfd_med); {find background, number of stars, median HFD}
       if hfd_med<>0 then
       begin
         memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
@@ -10489,7 +10489,7 @@ const
 
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
+  analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only},hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
   search_radius:=max(3,round(hfd_median));
 
   setlength(img_sa,1,head.height,head.width);{set length of image array}
@@ -12373,10 +12373,10 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
   s      : string;
-  histogram_done,file_loaded,debug,filespecified,analysespecified,analysespecified2,extractspecified,focusrequest : boolean;
-  snr_min                  : double;
-  binning,focus_count      : integer;
-  bck                      : Tbackground;
+  histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,extractspecified2,focusrequest : boolean;
+  snr_min                     : double;
+  binning,focus_count,report  : integer;
+  bck                         : Tbackground;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -12426,15 +12426,15 @@ begin
         '-log   {Write the solver log to file}'+#10+
         '-update  {update the FITS/TIFF header with the found solution.  Jpeg, png will be written as fits}' +#10+
         #10+
+        'Analyse options:' +#10+
+        '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
+        '-extract snr_min {As -analyse but additionally export info of all detectable stars to a .csv file}'+#10+
+        '-extract2 snr_min {Solve and export info of all detectable stars to a .csv file including ra, dec.}'+#10+
+        #10+
         'Extra options:' +#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-tofits  binning[1,2,3,4]  {Make new fits file from PNG/JPG file input}'+#10+
-        #10+
-        'Analyser and stacker usage:' +#10+
-        '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
-        '-analyse2 snr_min {both analyse and solve}'+#10+
-        '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
         '-sqm pedestal  {add measured sqm value to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-stack  path {startup with live stack tab and path selected}'+#10+
@@ -12533,39 +12533,34 @@ begin
         if debug=false then {standard solve via command line}
         begin
           extractspecified:=hasoption('extract');
+          extractspecified2:=hasoption('extract2');
+          if extractspecified2 then stackmenu1.add_sip1.checked:=true;//force sip for high accuracy
           analysespecified:=hasoption('analyse');
-          analysespecified2:=hasoption('analyse2');
-          if ((file_loaded) and ((analysespecified) or (analysespecified2) or (extractspecified)) ) then {analyse fits and report HFD value in errorlevel }
+
+          if ((file_loaded) and ((analysespecified) or (extractspecified)) ) then {analyse fits and report HFD value in errorlevel }
           begin
-            if ((analysespecified) or (analysespecified2)) then snr_min:=strtofloat2(getoptionvalue('analyse'));
-            if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
+            if analysespecified then
+            begin
+               snr_min:=strtofloat2(getoptionvalue('analyse'));
+               report:=0; {report nr stars and hfd only}
+            end;
+            if extractspecified then
+            begin
+              snr_min:=strtofloat2(getoptionvalue('extract'));
+              report:=2; {report nr stars and hfd and export csv file}
+            end;
             if snr_min=0 then snr_min:=30;
-            analyse_image(img_loaded,head,snr_min,extractspecified, hfd_counter,bck,hfd_median); {find background, number of stars, median HFD}
+            analyse_image(img_loaded,head,snr_min,report, hfd_counter,bck,hfd_median); {find background, number of stars, median HFD}
             if isConsole then {stdout available, compile targe option -wh used}
             begin
               writeln('HFD_MEDIAN='+floattostrF(hfd_median,ffFixed,0,1));
               writeln('STARS='+inttostr(hfd_counter));
             end;
-            update_float('HFD     =',' / Median Half Flux Diameter     ',false ,hfd_median);
-            update_float('STARS   =',' / Number of stars detected      ',false ,hfd_counter);
-
-
-            if analysespecified2=false then {-analyse -extract}
-            begin
-              {$IFDEF msWindows}
-               halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
-              {$ELSE}
-              halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
-              {$ENDIF}
-             end
-            else
-            begin  {-analyse2}
-              {$IFDEF msWindows}
-              errorlevel:=round(hfd_median*100)*1000000+hfd_counter;{report in errorlevel the hfd and the number of stars used}
-              {$ELSE}
-              //nothing.
-              {$ENDIF}
-            end;
+            {$IFDEF msWindows}
+            halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+            {$ELSE}
+            halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
+            {$ENDIF}
           end;{analyse fits and report HFD value}
 
           if hasoption('d') then
@@ -12607,11 +12602,10 @@ begin
             else
               try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
-
             histogram_done:=false;
             if hasoption('annotate') then
             begin
-              use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+              use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
               histogram_done:=true;
               plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
               save_annotated_jpg(filename2);{save viewer as annotated jpg}
@@ -12622,7 +12616,7 @@ begin
               begin
                 binning:=round(strtofloat2(GetOptionValue('tofits')));
                 if binning>1 then bin_X2X3X4(binning);{bin img_loaded 2x or 3x or 4x}
-                if histogram_done=false then use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+                if histogram_done=false then use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
                 save_fits(img_loaded,changeFileExt(filename2,'.fit'),8,true {overwrite});
               end;
             end;
@@ -12639,8 +12633,17 @@ begin
             write_ini(false);{write solution to ini file}
             if errorlevel=0 then errorlevel:=1;{no solution}
           end;
-          esc_pressed:=true;{kill any running activity. This for APT}
 
+
+          if ((file_loaded) and (extractspecified2)) then
+          begin
+            snr_min:=strtofloat2(getoptionvalue('extract2'));
+            if snr_min=0 then snr_min:=30;
+            analyse_image(img_loaded,head,snr_min,2{export CSV only}, hfd_counter,bck,hfd_median); {find background, number of stars, median HFD}
+          end;
+
+
+          esc_pressed:=true;{kill any running activity. This for APT}
           if commandline_log then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
 
           halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
@@ -12926,19 +12929,6 @@ begin
 end;
 
 
-procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double) {fitsX, Y to ra,dec};
-var
-  dRa,dDec,delta,gamma  : double;
-begin
-  dRa :=(head.cd1_1*(fitsx-head.crpix1)+head.cd1_2*(fitsy-head.crpix2))*pi/180;
-  dDec:=(head.cd2_1*(fitsx-head.crpix1)+head.cd2_2*(fitsy-head.crpix2))*pi/180;
-  delta:=cos(head.dec0)-dDec*sin(head.dec0);
-  gamma:=sqrt(dRa*dRa+delta*delta);
-  ram:=head.ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
-  decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
-end;
-
-
 procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ram,decm  : double) {fitsX, Y to ra,dec};
 var
    fits_unsampledX, fits_unsampledY :double;
@@ -12946,47 +12936,45 @@ var
    dRa,dDec,delta,gamma  : double;
 
 begin
- RAM:=0;DECM:=0;{for case wrong index or head.cd1_1=0}
- {DSS polynom solution}
- if formalism=2 then {DSS survey}
- begin
- { Convert from image subsampled pixels position to unsampled pixel position }
-   fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
-   fits_unsampledY:=subsamp*(fitsY-0.5)+0.5;
-                 //{fits (1,1)+subsamp of 2x =>(eqv unsampled 1,5,1,5)
-                 //(fits (2,2)+subsamp of 2x =>(eqv unsampled 3,5,3,5)
-                 //(fits 1,1)+subsamp of 4x=>(eqv unsampled 2.5,2.5)
-                 //(fits 2,2)+subsamp of 4=>(eqv unsampled 6.5,6.5)
-   dsspos(fits_unsampledX , fits_unsampledY, ram, decm );
- end
- else
- begin {WCS and SIP solutions}
-   if ((formalism=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial}
-   begin
-     u:=fitsx-head.crpix1;
-     v:=fitsy-head.crpix2;
-     u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
-     v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
+  RAM:=0;DECM:=0;{for case wrong index or head.cd1_1=0}
+  {DSS polynom solution}
+  if formalism=2 then {DSS survey}
+  begin
+  { Convert from image subsampled pixels position to unsampled pixel position }
+    fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
+    fits_unsampledY:=subsamp*(fitsY-0.5)+0.5;
+                  //{fits (1,1)+subsamp of 2x =>(eqv unsampled 1,5,1,5)
+                  //(fits (2,2)+subsamp of 2x =>(eqv unsampled 3,5,3,5)
+                  //(fits 1,1)+subsamp of 4x=>(eqv unsampled 2.5,2.5)
+                  //(fits 2,2)+subsamp of 4=>(eqv unsampled 6.5,6.5)
+    dsspos(fits_unsampledX , fits_unsampledY, ram, decm );
+  end
+  else
+  if head.cd1_1<>0 then
+  begin //wcs
+    if ((formalism=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial}
+    begin //apply SIP correction to pixels.
+      u:=fitsx-head.crpix1;
+      v:=fitsy-head.crpix2;
+      u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
+      v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
+    end
+    else
+    begin
+      u2:=fitsx-head.crpix1;
+      v2:=fitsy-head.crpix2;
+    end; {mainwindow.Polynomial1.itemindex=0}
 
-     dRa :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
-     dDec:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
-     delta:=cos(head.dec0)-dDec*sin(head.dec0);
-     gamma:=sqrt(dRa*dRa+delta*delta);
-     decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
-     ram:=head.ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
-     if ram<0 then ram:=ram+2*pi;
-     if ram>pi*2 then ram:=ram-pi*2;
-   end
-   else
-   begin  {mainwindow.Polynomial1.itemindex=0}
-     if head.cd1_1<>0 then
-     begin
-       coordinates_to_celestial(fitsx,fitsy, head, ram,decm) {fitsX, Y to ra,dec};
-       if ram<0 then ram:=ram+2*pi;
-       if ram>pi*2 then ram:=ram-pi*2;
-     end;
-   end;
- end;{WCS solution}
+    //for fomalism 0 and 1
+    dRa :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
+    dDec:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
+    delta:=cos(head.dec0)-dDec*sin(head.dec0);
+    gamma:=sqrt(dRa*dRa+delta*delta);
+    decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
+    ram:=head.ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
+    if ram<0 then ram:=ram+2*pi;
+    if ram>pi*2 then ram:=ram-pi*2;
+  end; //WCS
 end;
 
 
