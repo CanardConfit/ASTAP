@@ -798,6 +798,12 @@ begin
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
   max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
   use_triples:=stackmenu1.use_triples1.checked;
+
+//  DEC_RADIANS:=0.423927653945506; //testing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//  ra_radians:=0.990076857289244;  //testing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
   ra_start:=ra_radians;//start position search;
   dec_start:=dec_radians;//start position search;
 
@@ -891,6 +897,8 @@ begin
     bin_and_find_stars(img,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
     nrstars:=Length(starlist2[0]);
 
+
+
     if ((hd.xpixsz<>0) and (hd.ypixsz<>0) and (abs(hd.xpixsz-hd.ypixsz)>0.1)) then //non-square pixels, correct. Remove in future?
     begin //very very rare. Example QHY6 camera
       memo2_message('Rare none square pixels specified.');
@@ -910,6 +918,7 @@ begin
     end
     else
       popup_warningSample:='';
+
 
     {prepare popupnotifier1 text}
     if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
@@ -1095,7 +1104,6 @@ begin
                 else
                   find_quads(starlist1,quad_smallest*(fov_org*3600/hd.height {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
                   {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
-
 
 
               until ((nrstars_required>database_stars) {No more stars available in the database}
