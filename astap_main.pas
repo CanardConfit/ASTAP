@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.07';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -846,7 +846,7 @@ function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 //procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double); {fitsX, Y to ra,dec}
-procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ram,decm  : double) {fitsX, Y to ra,dec};
+procedure pixel_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
 procedure celestial_to_pixel(head: theader;ra,dec: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
@@ -3106,25 +3106,34 @@ end;
 
 
 procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
- var
-   s,aline  : string;
-   count1   : integer;
+var
+  s,aline,buf           : string;
+  cnt,line_end,i,count,len   : integer;
 begin
   str(x:20,s);
+  cnt:=pos(inpt,mainwindow.Memo1.text);
+  if cnt>0 then
+  begin //insert;
+    line_end:=posex(LineEnding,mainwindow.Memo1.text,cnt+1);//lines length could be different then 80 due to editing
+    aline:=copy(mainwindow.Memo1.text,cnt,line_End - cnt );
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
-  while count1>=0 do {update keyword}
-  begin
-    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
+    delete(aline,11,120);  //delete all including above position 80
+    aline:=aline+s+comment1; //line length correction will be done during saving FITS
+
+    //replace, this is much faster then insert
+    buf:=mainwindow.Memo1.text;
+
+    for i:=0 to line_end-cnt-1 do
     begin
-      aline:=mainwindow.Memo1.Lines[count1];
-      delete(aline,11,20);
-      insert(s,aline,11);
-      mainwindow.Memo1.Lines[count1]:=aline;
-      exit;
+     if i<length(aline) then
+       buf[cnt+i]:=aline[i+1]
+     else
+       buf[cnt+i]:=' ';
     end;
-    count1:=count1-1;
+    mainwindow.Memo1.text:=buf;
+    exit;
   end;
+
   {not found, add at the correct position or at the end}
   if inpt='NAXIS1  =' then mainwindow.memo1.lines.insert(3,inpt+' '+s+comment1) else{PixInsight requires to have it on 3th place}
   if inpt='NAXIS2  =' then mainwindow.memo1.lines.insert(4,inpt+' '+s+comment1) else{PixInsight requires to have it on 4th place}
@@ -3146,7 +3155,7 @@ procedure update_generic(message_key,message_value,message_comment:string);{upda
 var
    count1: integer;
 begin
-  if ((pos('HISTORY',message_key)=0) and (pos('COMMENT',message_key)=0)) then {allow multiple lines of hisotry and comments}
+  if ((pos('HISTORY',message_key)=0) and (pos('COMMENT',message_key)=0)) then {allow multiple lines of history and comments}
   begin
     while length(message_value)<20 do message_value:=' '+message_value;{extend length, right aligned}
     while length(message_key)<8 do message_key:=message_key+' ';{make standard lenght of 8}
@@ -4058,6 +4067,140 @@ begin
 end;
 
 
+{procedure pixel_to_celestial_astap(head : theader; fitsx,fitsy : double; out ra,dec  : double);
+var
+   u2,v2,xi,eta,delta, gamma, sindec0,cosdec0  : double;
+begin
+  u2:=fitsx-head.crpix1;
+  v2:=fitsy-head.crpix2;
+  xi :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
+  eta:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
+
+  sincos(head.dec0,sindec0,cosdec0);
+  delta:=cosdec0-eta*sindec0;
+  ra:=head.ra0+arctan2(xi,delta); //atan2 is required for images containing celestial pole
+  dec:=arctan((sindec0+eta*cosdec0)/sqrt(sqr(xi)+sqr(delta)));
+
+  if ra<0 then ra:=ra+pi*2;
+  if ra>pi*2 then ra:=ra-pi*2;
+end; }
+
+
+{procedure pixel_to_celestial_siril(head : theader; fitsx,fitsy : double; out ra,dec  : double);
+var
+   u2,v2,xi,eta,delta,gamma,delta_ra,sindec0,cosdec0  : double;
+begin
+  u2:=fitsx-head.crpix1;
+  v2:=fitsy-head.crpix2;
+
+  xi :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
+  eta:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
+
+  sincos(head.dec0,sindec0,cosdec0);
+  ra:=head.ra0 + arctan2(xi,cosdec0-eta*sindec0);
+  dec:=arcSIN((sindec0 + eta * cosdec0) / SQRT( 1 + sqr(xi) + sqr(eta)));
+
+
+  if ra<0 then ra:=ra+pi*2;
+  if ra>pi*2 then ra:=ra-pi*2;
+end; }
+
+
+{procedure pixel_to_celestial_tatum(head : theader; fitsx,fitsy : double; out ra,dec  : double);
+var
+   u2,v2,xi,eta,delta_ra, gamma,sindec0,cosdec0  : double;
+begin
+  u2:=fitsx-head.crpix1;
+  v2:=fitsy-head.crpix2;
+  xi :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
+  eta:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
+
+
+  sincos(head.dec0,sindec0,cosdec0);
+  delta_ra:= arctan2(xi,COSdec0-eta*SINdec0);
+  ra:=head.ra0+delta_ra;
+  dec:=arctan2((eta*cosdec0+cosdec0)*SIN( delta_ra),xi);
+
+  if ra<0 then ra:=ra+pi*2;
+  if ra>pi*2 then ra:=ra-pi*2;
+end;
+}
+
+
+procedure pixel_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
+var
+   fits_unsampledX, fits_unsampledY, sindec0,cosdec0 :double;
+   u,v,u2,v2             : double;
+   xi,eta,delta,gamma  : double;
+
+   ra1,dec1,ra2,dec2,ra3,dec3 : double;
+   i : integer;
+
+begin
+  RA:=0;DEC:=0;{for case wrong index or head.cd1_1=0}
+  {DSS polynom solution}
+  if formalism=2 then {DSS survey}
+  begin
+  { Convert from image subsampled pixels position to unsampled pixel position }
+    fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
+    fits_unsampledY:=subsamp*(fitsY-0.5)+0.5;
+                  //{fits (1,1)+subsamp of 2x =>(eqv unsampled 1,5,1,5)
+                  //(fits (2,2)+subsamp of 2x =>(eqv unsampled 3,5,3,5)
+                  //(fits 1,1)+subsamp of 4x=>(eqv unsampled 2.5,2.5)
+                  //(fits 2,2)+subsamp of 4=>(eqv unsampled 6.5,6.5)
+    dsspos(fits_unsampledX , fits_unsampledY, ra, dec );
+  end
+  else
+  if head.cd1_1<>0 then
+  begin //wcs
+    if ((formalism=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial}
+    begin //apply SIP correction to pixels.
+      u:=fitsx-head.crpix1;
+      v:=fitsy-head.crpix2;
+      u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
+      v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
+    end
+    else
+    begin
+      u2:=fitsx-head.crpix1;
+      v2:=fitsy-head.crpix2;
+    end; {mainwindow.Polynomial1.itemindex=0}
+
+    //for fomalism 0 and 1
+    xi :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
+    eta:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
+
+    sincos(head.dec0,sindec0,cosdec0);
+    delta:=cosdec0-eta*sindec0;
+    ra:=head.ra0+arctan2(xi,delta); {atan2 is required for images containing celestial pole}
+    dec:=arctan((sindec0+eta*cosdec0)/sqrt(sqr(xi)+sqr(delta)));
+    if ra<0 then ra:=ra+pi*2;
+    if ra>pi*2 then ra:=ra-pi*2;
+  end; //WCS
+
+{   memo2_message('start');
+  for i:=0 to 180000000 do
+    pixel_to_celestial_astap(head,fitsx,fitsy, ra1,dec1 );
+  memo2_message('existing ready');
+
+  for i:=0 to 180000000 do
+   pixel_to_celestial_astap(head,fitsx,fitsy, ra1,dec1 );
+ memo2_message('existing atan2 ready');
+
+
+ for i:=0 to 180000000 do
+    pixel_to_celestial_siril(head,fitsx,fitsy, ra2,dec2 );
+  memo2_message('Siril method ready ');
+
+  for i:=0 to 180000000 do
+    pixel_to_celestial_tatum(head,fitsx,fitsy, ra3,dec3 );
+  memo2_message('Tatum method ready ');
+
+
+  beep;}
+end;
+
+
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
 var
   error1,error2,degrees   : boolean;
@@ -4079,7 +4222,7 @@ begin
 
   if ((data0='c') or (data0='C')) then {place marker in middle}
   begin
-    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
     data1:='Center image '; {for hint}
@@ -7184,9 +7327,7 @@ begin
   begin
     img.top:=0;
     img.height:=mainwindow.panel1.height;
-
-    img.left:=0;
-
+    img.left:=(mainwindow.width - round(mainwindow.panel1.height*head.width/head.height)) div 2;
   end;
   img.width:=round(img.height*head.width/head.height); {lock image aspect always for case a image with a different is clicked on in stack menu}
 
@@ -9928,8 +10069,8 @@ var
 begin
   if head.cdelt2<>0 then
   begin
-    sensor_coordinates_to_celestial(head,fitsX1,fitsY1,mainwindow.Polynomial1.itemindex,ra1,dec1);{calculate the ra,dec position}
-    sensor_coordinates_to_celestial(head,fitsX2,fitsY2,mainwindow.Polynomial1.itemindex,ra2,dec2);{calculate the ra,dec position}
+    pixel_to_celestial(head,fitsX1,fitsY1,mainwindow.Polynomial1.itemindex,ra1,dec1);{calculate the ra,dec position}
+    pixel_to_celestial(head,fitsX2,fitsY2,mainwindow.Polynomial1.itemindex,ra2,dec2);{calculate the ra,dec position}
     ang_sep(ra1,dec1,ra2,dec2, sep);
     sep:=sep*180/pi; //convert to degrees
     if sep<1/60 then seperation:=inttostr(round(sep*3600))+'"'
@@ -10742,7 +10883,7 @@ begin
 
       if subframe then
       begin
-        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
+        pixel_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
         rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
         decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
 
@@ -11649,7 +11790,7 @@ begin
             y1:=round(strtofloat2(list[1]));
             x2:=round(strtofloat2(list[2]));
             y2:=round(strtofloat2(list[3]));
-            sensor_coordinates_to_celestial(head,(x1+x2)/2,(y1+y2)/2,formalism, ra,dec {RA, DEC position annotation});
+            pixel_to_celestial(head,(x1+x2)/2,(y1+y2)/2,formalism, ra,dec {RA, DEC position annotation});
             count1:=-1; //stop
           end;
 
@@ -11918,21 +12059,15 @@ begin
   maximum1.width:=histogram1.width+24;
 {$ENDIF}
 
-  panel1.Top:=max(PageControl1.height, data_range_groupBox1.top+data_range_groupBox1.height+5);
-  panel1.left:=0;
-
-  mw:=mainwindow.width;
-  h:=StatusBar1.top-panel1.top;
+  h:=panel1.height;
   w:=round(h*head.width/head.height);
-
-  panel1.width:=mw;
-  panel1.height:=h;
 
   mainwindow.image1.height:=h;
   mainwindow.image1.width:=w;
 
   mainwindow.image1.top:=0;
 
+  mw:=mainwindow.width;
   mainwindow.image1.left:=(mw-w) div 2;
 
   {update shape positions}
@@ -12929,55 +13064,6 @@ begin
 end;
 
 
-procedure sensor_coordinates_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ram,decm  : double) {fitsX, Y to ra,dec};
-var
-   fits_unsampledX, fits_unsampledY :double;
-   u,v,u2,v2             : double;
-   dRa,dDec,delta,gamma  : double;
-
-begin
-  RAM:=0;DECM:=0;{for case wrong index or head.cd1_1=0}
-  {DSS polynom solution}
-  if formalism=2 then {DSS survey}
-  begin
-  { Convert from image subsampled pixels position to unsampled pixel position }
-    fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
-    fits_unsampledY:=subsamp*(fitsY-0.5)+0.5;
-                  //{fits (1,1)+subsamp of 2x =>(eqv unsampled 1,5,1,5)
-                  //(fits (2,2)+subsamp of 2x =>(eqv unsampled 3,5,3,5)
-                  //(fits 1,1)+subsamp of 4x=>(eqv unsampled 2.5,2.5)
-                  //(fits 2,2)+subsamp of 4=>(eqv unsampled 6.5,6.5)
-    dsspos(fits_unsampledX , fits_unsampledY, ram, decm );
-  end
-  else
-  if head.cd1_1<>0 then
-  begin //wcs
-    if ((formalism=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial}
-    begin //apply SIP correction to pixels.
-      u:=fitsx-head.crpix1;
-      v:=fitsy-head.crpix2;
-      u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
-      v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
-    end
-    else
-    begin
-      u2:=fitsx-head.crpix1;
-      v2:=fitsy-head.crpix2;
-    end; {mainwindow.Polynomial1.itemindex=0}
-
-    //for fomalism 0 and 1
-    dRa :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
-    dDec:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
-    delta:=cos(head.dec0)-dDec*sin(head.dec0);
-    gamma:=sqrt(dRa*dRa+delta*delta);
-    decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
-    ram:=head.ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
-    if ram<0 then ram:=ram+2*pi;
-    if ram>pi*2 then ram:=ram-pi*2;
-  end; //WCS
-end;
-
-
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
 var fitsX,fitsY,col,dum, formalism      : integer;
     fxc,fyc, ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
@@ -13027,9 +13113,9 @@ begin
      {do the rigid method.}
      fxc:=1+(startX+stopX)/2;//position of new center
      fyc:=1+(startY+stopY)/2;
-     sensor_coordinates_to_celestial(head,fxc,fyc, formalism, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
-     sensor_coordinates_to_celestial(head,1+fxc,fyc, formalism, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
-     sensor_coordinates_to_celestial(head,fxc,fyc+1 , formalism, ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
+     pixel_to_celestial(head,fxc,fyc, formalism, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
+     pixel_to_celestial(head,1+fxc,fyc, formalism, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
+     pixel_to_celestial(head,fxc,fyc+1 , formalism, ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
 
      delta_ra:=ra_n-ra_c;
      if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
@@ -13843,8 +13929,8 @@ begin
     window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h);{square box}
     {-c.geom=b  square box, -c.bs=10 box size 10arc
     else radius}
-    sensor_coordinates_to_celestial(head,startX+1,startY+1, formalism,ra1,dec1);{first position}
-    sensor_coordinates_to_celestial(head,stopX+1,stopY+1,formalism,ra2,dec2);{first position}
+    pixel_to_celestial(head,startX+1,startY+1, formalism,ra1,dec1);{first position}
+    pixel_to_celestial(head,stopX+1,stopY+1,formalism,ra2,dec2);{first position}
     object_raM:=(ra1+ra2)/2; {center position}
     object_decM:=(dec1+dec2)/2;
   end;
@@ -14739,7 +14825,7 @@ begin
 
    end;
 
-   sensor_coordinates_to_celestial(head,mouse_fitsx,mouse_fitsy,mainwindow.Polynomial1.itemindex,raM,decM);
+   pixel_to_celestial(head,mouse_fitsx,mouse_fitsy,mainwindow.Polynomial1.itemindex,raM,decM);
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
    adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
@@ -14767,7 +14853,7 @@ begin
      else mag_str:='';
 
      {centered coordinates}
-     sensor_coordinates_to_celestial(head,object_xc+1,object_yc+1,mainwindow.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
+     pixel_to_celestial(head,object_xc+1,object_yc+1,mainwindow.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
      if ((object_raM<>0) and (object_decM<>0)) then
        mainwindow.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
                                                //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}

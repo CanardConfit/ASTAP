@@ -801,22 +801,22 @@ var
   formalism : integer;
 begin
   formalism:=mainwindow.Polynomial1.itemindex;
-  sensor_coordinates_to_celestial(head,1,1,formalism , ra, dec);
+  pixel_to_celestial(head,1,1,formalism , ra, dec);
   ra_min:=min(ra_min,ra);
   ra_max:=max(ra_max,ra);
   dec_min:=min(dec_min,dec);
   dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,head.width,1,formalism , ra, dec);
+  pixel_to_celestial(head,head.width,1,formalism , ra, dec);
   ra_min:=min(ra_min,ra);
   ra_max:=max(ra_max,ra);
   dec_min:=min(dec_min,dec);
   dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,1,head.height,formalism , ra, dec);
+  pixel_to_celestial(head,1,head.height,formalism , ra, dec);
   ra_min:=min(ra_min,ra);
   ra_max:=max(ra_max,ra);
   dec_min:=min(dec_min,dec);
   dec_max:=max(dec_max,dec);
-  sensor_coordinates_to_celestial(head,head.width,1,formalism, ra, dec);
+  pixel_to_celestial(head,head.width,1,formalism, ra, dec);
   ra_min:=min(ra_min,ra);
   ra_max:=max(ra_max,ra);
   dec_min:=min(dec_min,dec);
@@ -920,7 +920,7 @@ begin
              begin memo2_message('█ █ █ █ █ █  Abort!! Too many missing tiles. Field is '+floattostrF(fw,FFFixed,0,1)+'x'+floattostrF(fh,FFfixed,0,1)+
                                                 '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. For multiple mosaics is classify on "Light object" set?'); exit;end;
 
-            sensor_coordinates_to_celestial(head,(fx1+fx2)/2,(fy1+fy2)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
+            pixel_to_celestial(head,(fx1+fx2)/2,(fy1+fy2)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
             sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
             head_ref.ra0:=raMiddle;// set middle of the mosaic
             head_ref.crpix1:=abs(fx1-fx2)/2;

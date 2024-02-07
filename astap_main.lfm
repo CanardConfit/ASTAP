@@ -6,7 +6,7 @@ object mainwindow: Tmainwindow
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 654
+  ClientHeight = 674
   ClientWidth = 1333
   Color = clForm
   Icon.Data = {
@@ -52,7 +52,7 @@ object mainwindow: Tmainwindow
   OnShow = FormShow
   ParentFont = True
   Position = poDesktopCenter
-  LCLVersion = '2.2.4.0'
+  LCLVersion = '3.0.0.3'
   object error_get_it: TLabel
     Left = 217
     Height = 15
@@ -71,7 +71,7 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 631
+    Top = 651
     Width = 1333
     Panels = <    
       item
@@ -110,7 +110,7 @@ object mainwindow: Tmainwindow
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 631
+    Height = 651
     Top = 0
     Width = 1333
     Align = alClient
@@ -231,13 +231,13 @@ object mainwindow: Tmainwindow
           Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
           Top = 1
           Width = 95
-          OnChange = ra1Change
-          OnDblClick = radec_search1Click
           ParentShowHint = False
           PopupMenu = PopupMenu_ra_dec1
           ShowHint = True
           TabOrder = 0
           Text = '00 00 00.0'
+          OnChange = ra1Change
+          OnDblClick = radec_search1Click
         end
         object ra_label: TLabel
           Left = 169
@@ -298,11 +298,11 @@ object mainwindow: Tmainwindow
           Font.Name = 'Segoe UI'
           Font.Pitch = fpVariable
           Font.Quality = fqDraft
-          OnClick = solve_button1Click
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 2
+          OnClick = solve_button1Click
         end
         object save1: TButton
           Left = 446
@@ -318,11 +318,11 @@ object mainwindow: Tmainwindow
           Font.Name = 'Segoe UI'
           Font.Pitch = fpVariable
           Font.Quality = fqDraft
-          OnClick = SaveFITSwithupdatedheader1Click
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 3
+          OnClick = SaveFITSwithupdatedheader1Click
         end
         object Polynomial1: TComboBox
           Left = 449
@@ -343,13 +343,13 @@ object mainwindow: Tmainwindow
             'SIP Polynomial'
             'DSS Polynomial'
           )
-          OnChange = Polynomial1Change
           ParentColor = True
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 4
           Text = 'WCS'
+          OnChange = Polynomial1Change
         end
         object data_range_groupBox1: TGroupBox
           Left = 1
@@ -474,11 +474,11 @@ object mainwindow: Tmainwindow
             Top = 56
             Width = 49
             Enabled = False
-            OnEditingDone = min2EditingDone
             ParentShowHint = False
             ShowHint = True
             TabOrder = 2
             Text = '0'
+            OnEditingDone = min2EditingDone
           end
           object max2: TEdit
             Left = 340
@@ -487,11 +487,11 @@ object mainwindow: Tmainwindow
             Top = 77
             Width = 49
             Enabled = False
-            OnEditingDone = max2EditingDone
             ParentShowHint = False
             ShowHint = True
             TabOrder = 3
             Text = '65535'
+            OnEditingDone = max2EditingDone
           end
           object range1: TComboBox
             Left = 313
@@ -515,7 +515,6 @@ object mainwindow: Tmainwindow
               'Show saturation'
               'Max range'
             )
-            OnChange = range1Change
             ParentBidiMode = False
             ParentColor = True
             ParentShowHint = False
@@ -523,6 +522,7 @@ object mainwindow: Tmainwindow
             Style = csDropDownList
             TabOrder = 4
             Text = 'Medium'
+            OnChange = range1Change
           end
           object stretch1: TComboBox
             Left = 313
@@ -550,13 +550,13 @@ object mainwindow: Tmainwindow
               '400'
               '800'
             )
-            OnCloseUp = stretch1CloseUp
-            OnExit = stretch1Exit
             ParentColor = True
             ParentShowHint = False
             ShowHint = True
             TabOrder = 5
             Text = 'off'
+            OnCloseUp = stretch1CloseUp
+            OnExit = stretch1Exit
           end
           object saturation_factor_plot1: TTrackBar
             Left = 392
@@ -600,20 +600,20 @@ object mainwindow: Tmainwindow
           Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database.'
           Top = 27
           Width = 95
-          OnChange = dec1Change
-          OnDblClick = radec_search1Click
           ParentShowHint = False
           PopupMenu = PopupMenu_ra_dec1
           ShowHint = True
           TabOrder = 6
           Text = '+00 00 00.00'
+          OnChange = dec1Change
+          OnDblClick = radec_search1Click
         end
         object inversemousewheel1: TCheckBox
           Left = 449
           Height = 19
           Hint = 'Inverse zoom action of the mouse wheel.'
           Top = 79
-          Width = 103
+          Width = 101
           Caption = 'Inverse 🖱️ wheel'
           Font.CharSet = ANSI_CHARSET
           Font.Color = clBlack
@@ -661,13 +661,13 @@ object mainwindow: Tmainwindow
               Lines.Strings = (
                 ''
               )
-              OnChange = Memo1Change
-              OnKeyUp = Memo1KeyUp
               ParentFont = False
               PopupMenu = PopupMenu_memo1
               ScrollBars = ssVertical
               TabOrder = 0
               WordWrap = False
+              OnChange = Memo1Change
+              OnKeyUp = Memo1KeyUp
             end
           end
           object TabSheet2: TTabSheet
@@ -685,11 +685,11 @@ object mainwindow: Tmainwindow
               Lines.Strings = (
                 ''
               )
-              OnKeyUp = Memo1KeyUp
               ParentFont = False
               ScrollBars = ssAutoVertical
               TabOrder = 0
               WordWrap = False
+              OnKeyUp = Memo1KeyUp
             end
           end
         end
@@ -750,19 +750,20 @@ object mainwindow: Tmainwindow
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 450
+      Height = 470
       Top = 181
       Width = 1333
       ClientWidth = 1333
-      ClientHeight = 450
+      ClientHeight = 470
       object Panel1: TPanel
         Left = 0
-        Height = 450
+        Height = 470
         Hint = 'hint'
         Top = 0
         Width = 1333
         Align = alClient
-        ClientHeight = 450
+        AutoSize = True
+        ClientHeight = 470
         ClientWidth = 1333
         Color = 2105376
         Font.CharSet = ANSI_CHARSET
@@ -782,7 +783,7 @@ object mainwindow: Tmainwindow
         object Image1: TImage
           Left = 122
           Height = 264
-          Top = 5
+          Top = 11
           Width = 608
           Anchors = []
           OnMouseDown = Image1MouseDown
@@ -796,9 +797,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object Shape_alignment_marker1: TShape
-          Left = 32
+          Left = 9
           Height = 11
-          Top = 112
+          Top = 105
           Width = 11
           Brush.Style = bsClear
           Enabled = False
@@ -811,10 +812,10 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object shape_marker1: TShape
-          Left = 40
+          Left = 17
           Height = 31
           Hint = 'reference 1'
-          Top = 8
+          Top = 1
           Width = 31
           Brush.Style = bsClear
           Enabled = False
@@ -826,9 +827,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object error_label1: TLabel
-          Left = 24
+          Left = 1
           Height = 28
-          Top = 40
+          Top = 33
           Width = 158
           Caption = 'Error loading file!!'
           Font.Color = clRed
@@ -838,10 +839,10 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object shape_marker2: TShape
-          Left = 103
+          Left = 80
           Height = 31
           Hint = 'reference 2'
-          Top = 8
+          Top = 1
           Width = 31
           Brush.Style = bsClear
           Enabled = False
@@ -853,9 +854,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object shape_marker3: TShape
-          Left = 160
+          Left = 137
           Height = 31
-          Top = 8
+          Top = 1
           Width = 31
           Brush.Style = bsClear
           Enabled = False
@@ -867,9 +868,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object shape_paste1: TShape
-          Left = 216
+          Left = 193
           Height = 31
-          Top = 8
+          Top = 1
           Width = 31
           Brush.Style = bsClear
           Enabled = False
@@ -881,10 +882,10 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object shape_marker4: TShape
-          Left = 272
+          Left = 249
           Height = 31
           Hint = 'Mount'
-          Top = 8
+          Top = 1
           Width = 31
           Brush.Style = bsClear
           Enabled = False
@@ -897,9 +898,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object Shape_alignment_marker2: TShape
-          Left = 32
+          Left = 9
           Height = 11
-          Top = 144
+          Top = 137
           Width = 11
           Brush.Style = bsClear
           Enabled = False
@@ -912,10 +913,10 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object Shape_alignment_marker3: TShape
-          Left = 32
+          Left = 9
           Height = 11
           Hint = '3'
-          Top = 176
+          Top = 169
           Width = 11
           Brush.Style = bsClear
           Enabled = False
@@ -928,9 +929,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object LabelVar1: TLabel
-          Left = 62
+          Left = 39
           Height = 30
-          Top = 104
+          Top = 97
           Width = 29
           Caption = 'Var'
           Font.CharSet = ANSI_CHARSET
@@ -943,9 +944,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object LabelCheck1: TLabel
-          Left = 62
+          Left = 39
           Height = 30
-          Top = 136
+          Top = 129
           Width = 56
           Caption = 'Check'
           Font.CharSet = ANSI_CHARSET
@@ -958,9 +959,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object LabelThree1: TLabel
-          Left = 62
+          Left = 39
           Height = 30
-          Top = 168
+          Top = 161
           Width = 11
           Caption = '3'
           Font.CharSet = ANSI_CHARSET
@@ -973,10 +974,10 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object shape_manual_alignment1: TShape
-          Left = 344
+          Left = 321
           Height = 11
           Hint = 'Lock unreliable, check position'
-          Top = 16
+          Top = 9
           Width = 11
           Brush.Style = bsClear
           Enabled = False
@@ -989,10 +990,10 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object boxshape1: TShape
-          Left = 392
+          Left = 369
           Height = 75
           Hint = 'Select rectangle'
-          Top = 32
+          Top = 25
           Width = 104
           Brush.Color = clNone
           Brush.Style = bsClear

@@ -1,8 +1,8 @@
 object form_inspection1: Tform_inspection1
   Cursor = crHandPoint
-  Left = 213
+  Left = 629
   Height = 270
-  Top = 219
+  Top = 283
   Width = 948
   Caption = 'Image inspection'
   ClientHeight = 270
