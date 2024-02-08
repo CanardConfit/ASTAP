@@ -778,7 +778,6 @@ type
     procedure listview7CustomDrawItem(Sender: TCustomListView;      Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
     procedure live_stacking_pause1Click(Sender: TObject);
     procedure live_stacking_restart1Click(Sender: TObject);
-    procedure more_indication1Click(Sender: TObject);
     procedure photometry_binx2Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
     procedure saturation_tolerance1Change(Sender: TObject);
@@ -1565,7 +1564,8 @@ var
   xci, yci, sqr_radius, formalism: integer;
   hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background,ra,decl: double;
   hfd_list:  array of double;
-  img_sa: image_array;
+  img_sa  : image_array;
+  startext: string;
 var
   f: textfile;
 var   {################# initialised variables #########################}
@@ -1611,9 +1611,10 @@ begin
 
       if report_type>0 then {write values to file}
       begin
-        assignfile(f, ChangeFileExt(filename2, '.csv'));
-        rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
-        writeln(f, 'x,y,hfd,snr,flux,ra[0..360],dec[0..360]');
+      //  assignfile(f, ChangeFileExt(filename2, '.csv'));
+       // rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
+       // writeln(f, 'x,y,hfd,snr,flux,ra[0..360],dec[0..360]');
+        startext:='x,y,hfd,snr,flux,ra[0..360],dec[0..360]'+LineEnding;
       end;
 
       setlength(img_sa, 1, height5, width5);{set length of image array}
@@ -1659,11 +1660,13 @@ begin
               if report_type>0 then
               begin
                 if head.cd1_1=0 then
-                  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
+                //  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
+                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+LineEnding {+1 to convert 0... to FITS 1... coordinates}
                 else
                 begin
-                  sensor_coordinates_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
-                  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr(ra*180/pi) + ',' + floattostr(decl*180/pi) ) {+1 to convert 0... to FITS 1... coordinates}
+                  pixel_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
+                  //writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr(ra*180/pi) + ',' + floattostr(decl*180/pi) ) {+1 to convert 0... to FITS 1... coordinates}
+                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr(ra*180/pi) + ',' + floattostr(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
                 end;
               end;
 
@@ -1673,7 +1676,7 @@ begin
       end;
 
       Dec(retries);{Try again with lower detection level}
-      if report_type>0 then closefile(f);
+      //if report_type>0 then closefile(f);
 
     until ((star_counter >= max_stars) or (retries < 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -1681,6 +1684,15 @@ begin
   end {backgr is normal}
   else
     hfd_median := 99; {Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
+
+  if report_type>0 then
+  begin
+    assignfile(f, ChangeFileExt(filename2, '.csv'));
+    rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
+    writeln(f,startext);
+    closefile(f);
+  end;
+
 
   img_sa := nil;{free m}
 end;
@@ -3463,7 +3475,7 @@ begin
       if stars[4,i]{SNR}>40 then
       begin
         magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
-        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
+        pixel_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
         report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
 
         if ((v>0) and (b>0)) then
@@ -4401,7 +4413,7 @@ begin
                 end;
 
                 {calculate crota_jnow}
-                sensor_coordinates_to_celestial(head_2,head_2.crpix1, head_2.crpix2 + 1,1 {wcs and sip is available}, ram, decm);
+                pixel_to_celestial(head_2,head_2.crpix1, head_2.crpix2 + 1,1 {wcs and sip is available}, ram, decm);
 
                 {fitsX, Y to ra,dec}{Step one pixel in Y}
                 J2000_to_apparent(jd_mid, ram, decm);{without refraction}
@@ -7600,19 +7612,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.more_indication1Click(Sender: TObject);
-begin
-  case pagecontrol1.tabindex of
-    7: stackmenu1.Width := export_aligned_files1.left + export_aligned_files1.Width + 10;
-    {set width if clicked on arrow}
-    8: stackmenu1.Width :=
-        mark_outliers_upto1.left + mark_outliers_upto1.Width + 10;
-    9: stackmenu1.Width :=
-        GroupBox_test_images1.left + GroupBox_test_images1.Width + 10;
-  end;
-end;
-
-
 procedure Tstackmenu1.photometry_binx2Click(Sender: TObject);
 var
   c: integer;
@@ -8186,13 +8185,13 @@ begin
 
           head_ref := head;{backup solution for deepsky annotation}
 
-          sensor_coordinates_to_celestial(head,shape_fitsX, shape_fitsY, formalism,rax1, decx1 {fitsX, Y to ra,dec});
+          pixel_to_celestial(head,shape_fitsX, shape_fitsY, formalism,rax1, decx1 {fitsX, Y to ra,dec});
           abbreviation_var_IAU := prepare_IAU_designation(rax1, decx1);
 
-          sensor_coordinates_to_celestial(head,shape_fitsX2, shape_fitsY2,formalism,{var} rax2, decx2 {position});
+          pixel_to_celestial(head,shape_fitsX2, shape_fitsY2,formalism,{var} rax2, decx2 {position});
           name_check_iau := prepare_IAU_designation(rax2, decx2);
 
-          sensor_coordinates_to_celestial(head,shape_fitsX3, shape_fitsY3,formalism,rax3, decx3 {fitsX, Y to ra,dec});
+          pixel_to_celestial(head,shape_fitsX3, shape_fitsY3,formalism,rax3, decx3 {fitsX, Y to ra,dec});
           init:=true;//after measure the frist image
         end;
 

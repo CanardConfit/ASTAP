@@ -171,23 +171,48 @@ end;
 
 
 {transformation from CCD coordinates into equatorial coordinates}
-{head.ra0,head.dec0: right ascension and declination of the optical axis       }
+{ra0, dec0: right ascension and declination of the optical axis       }
+{x,y     : CCD coordinates                                           }
+{cdelt:  : scale of CCD pixel in arc seconds                         }
+{ra,dec  : right ascension and declination                           }
+//{$INLINE off}
+{$INLINE ON}
+{procedure standard_equatorialold(ra0,dec0,x,y,cdelt: double; out ra,dec : double); inline; //transformation from CCD coordinates into equatorial coordinates
+var sin_dec0 ,cos_dec0,delta : double;
+begin
+  sincos(dec0  ,sin_dec0 ,cos_dec0);
+  x:=x *cdelt/ (3600*180/pi); //scale CCD pixels to standard coordinates (tang angle)
+  y:=y *cdelt/ (3600*180/pi);
+
+  ra  := ra0 + arctan2 (-x, cos_DEC0- y*sin_DEC0); //atan2 is required for images containing celestial pole
+  dec := arcsin ( (sin_dec0+y*cos_dec0)/sqrt(1.0+x*x+y*y) );
+
+  if ra>pi*2 then ra:=ra-pi*2; //prevent values above 2*pi which confuses the direction detection later
+  if ra<0 then ra:=ra+pi*2;
+end;
+}
+
+{transformation from CCD coordinates into equatorial coordinates}
+{ra0,dec0: right ascension and declination of the optical axis       }
 {x,y     : CCD coordinates                                           }
 {cdelt:  : scale of CCD pixel in arc seconds                         }
 {ra,dec  : right ascension and declination                           }
 {$INLINE ON}
 procedure standard_equatorial(ra0,dec0,x,y,cdelt: double; out ra,dec : double); inline;{transformation from CCD coordinates into equatorial coordinates}
-var sin_dec0 ,cos_dec0 : double;
+var sin_dec0 ,cos_dec0,delta : double;
 begin
   sincos(dec0  ,sin_dec0 ,cos_dec0);
-  x:=x *cdelt/ (3600*180/pi);{scale CCD pixels to standard coordinates (tang angle)}
+  x:=x *cdelt/ (3600*180/pi);//scale CCD pixels to standard coordinates (tang angle)
   y:=y *cdelt/ (3600*180/pi);
 
-  ra  := ra0 + arctan2 (-x, cos_DEC0- y*sin_DEC0);{atan2 is required for images containing celestial pole}
-  if ra>pi*2 then ra:=ra-pi*2; {prevent values above 2*pi which confuses the direction detection later}
+  delta:=cos_dec0-y*sin_dec0;
+  ra:=ra0+arctan2(-x,delta); //atan2 is required for images containing celestial pole
+  dec:=arctan((sin_dec0+y*cos_dec0)/sqrt(sqr(x)+sqr(delta)));
+
+  if ra>pi*2 then ra:=ra-pi*2; //prevent values above 2*pi which confuses the direction detection later
   if ra<0 then ra:=ra+pi*2;
-  dec := arcsin ( (sin_dec0+y*cos_dec0)/sqrt(1.0+x*x+y*y) );
 end;
+
 
 
 //procedure give_spiral_position(position : integer; out x,y : integer); {give x,y position of square spiral as function of input value}
@@ -554,7 +579,7 @@ begin
 end;
 
 
-procedure add_sip(hd: Theader;ra_database,dec_database:double);
+function add_sip(hd: Theader;ra_database,dec_database:double) : boolean;
 var
   stars_measured,stars_reference,grid_list1,grid_list2  : TStarArray;
   trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
@@ -567,6 +592,8 @@ var
 const
    nrpoints=6;
 begin
+  result:=true;// assume success
+
   {1) Solve the image with the 1th order solver.
    2) Get the x,y coordinates of the detected stars= "stars_measured"
    3) Get the x,y coordinates of the reference stars= "stars_reference"
@@ -582,7 +609,7 @@ begin
   if len<20 then
   begin
     memo2_message('Not enough quads for calculating SIP.');
-    exit;
+    exit(false);
   end;
   setlength(stars_measured,len);
   setlength(stars_reference,len);
@@ -627,7 +654,7 @@ begin
   if succ=false then
   begin
     memo2_message(err_mess);
-    exit;
+    exit(false);
   end;
 
 
@@ -667,7 +694,7 @@ begin
   if succ=false then
   begin
     memo2_message(err_mess);
-    exit;
+    exit(false);
   end;
 
   sip:=true;
@@ -698,7 +725,7 @@ begin
   B_3_0:=trans_pixel_to_sky.y30;
 
 
-  update_float('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',false,3);
+  update_integer('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',3);
   update_float('A_0_0   =',' / SIP coefficient                                ',false,A_0_0);
   update_float('A_1_0   =',' / SIP coefficient                                ',false,A_1_0);
   update_float('A_0_1   =',' / SIP coefficient                                ',false,A_0_1);
@@ -711,7 +738,7 @@ begin
   update_float('A_0_3   =',' / SIP coefficient                                ',false,A_0_3);
 
 
-  update_float('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',false,3);
+  update_integer('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',3);
   update_float('B_0_0   =',' / SIP coefficient                                ',false ,B_0_0);
   update_float('B_0_1   =',' / SIP coefficient                                ',false ,B_0_1);
   update_float('B_1_0   =',' / SIP coefficient                                ',false ,B_1_0);
@@ -723,7 +750,7 @@ begin
   update_float('B_1_2   =',' / SIP coefficient                                ',false ,B_1_2);
   update_float('B_0_3   =',' / SIP coefficient                                ',false ,B_0_3);
 
-  update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',false,3);
+  update_integer('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',3);
   update_float('AP_0_0  =',' / SIP coefficient                                ',false,AP_0_0);
   update_float('AP_1_0  =',' / SIP coefficient                                ',false,AP_1_0);
   update_float('AP_0_1  =',' / SIP coefficient                                ',false,AP_0_1);
@@ -735,7 +762,7 @@ begin
   update_float('AP_1_2  =',' / SIP coefficient                                ',false,AP_1_2);
   update_float('AP_0_3  =',' / SIP coefficient                                ',false,AP_0_3);
 
-  update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',false,3);
+  update_integer('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',3);
   update_float('BP_0_0  =',' / SIP coefficient                                ',false,BP_0_0);
   update_float('BP_1_0  =',' / SIP coefficient                                ',false,BP_1_0);
   update_float('BP_0_1  =',' / SIP coefficient                                ',false,BP_0_1);
@@ -753,7 +780,7 @@ function solve_image(img :image_array;var hd: Theader;get_hist{update hist}:bool
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;
-  search_field,step_size,ra_database,dec_database,ra_database_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
+  search_field,step_size,ra_database,dec_database,ra_database_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,oversize2,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,
   current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio,
   crota1,crota2,flipped_image   : double;
@@ -798,11 +825,6 @@ begin
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
   max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
   use_triples:=stackmenu1.use_triples1.checked;
-
-//  DEC_RADIANS:=0.423927653945506; //testing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//  ra_radians:=0.990076857289244;  //testing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
 
   ra_start:=ra_radians;//start position search;
   dec_start:=dec_radians;//start position search;
@@ -1082,10 +1104,14 @@ begin
 
               {If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
               {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
-              extrastars:=1/1.1;{star with a factor of one}
+              extrastars:=1/1.1;{start with a factor of one}
               repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
                 extrastars:=extrastars*1.1;
-                if read_stars(ra_database,dec_database,search_field*oversize,database_type,round(nrstars_required*oversize*oversize*extrastars),{out} starlist1 ,{out}database_stars)= false then
+                if match_nr=0  then
+                  oversize2:=oversize
+                else
+                  oversize2:=max(oversize, sqrt(sqr(hd.width/hd.height)+sqr(1))); //Use full image for solution for second solve.
+                if read_stars(ra_database,dec_database,search_field*oversize2,database_type,round(nrstars_required*oversize2*oversize2*extrastars),{out} starlist1 ,{out}database_stars)= false then
                 begin
                   {$IFDEF linux}
                    //keep till 2026
@@ -1155,14 +1181,16 @@ begin
               (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
               1, {CCD scale}
               ra_radians ,dec_radians {put the calculated image center equatorial position into the start search position});
-          current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
+          //current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
           inc(match_nr);
-        end;
-        until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accuracy loop. After match possible on a corner do a second solve using the found hd.ra0,hd.dec0 for maximum accuracy USING ALL STARS}
+        end
+        else
+        match_nr:=0;//This should not happen for the second solve but just in case
+
+      until ((solution=false) {or (current_dist<fov2*0.05)}{within 5% if image height from center}  or (match_nr>=2));{Maximum accuracy loop. After match possible on a corner do a second solve using the found hd.ra0,hd.dec0 for maximum accuracy USING ALL STARS}
 
       stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
       stackmenu1.Memo2.Lines.EndUpdate;
-
     end; {enough quads in image}
 
   until ((autoFOV=false) or (solution) or (fov2<=fov_min)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
@@ -1245,11 +1273,18 @@ begin
 
     mainwindow.Memo1.Lines.BeginUpdate;
 
-    if stackmenu1.add_sip1.checked then
-      add_sip(hd,ra_database,dec_database); //takes about 50 ms sec due to the header update. Calculations are very fast
+    if ((stackmenu1.add_sip1.checked) and
+      (add_sip(hd,ra_database,dec_database))) then //takes about 50 ms sec due to the header update. Calculations are very fast
+    begin
+      update_text ('CTYPE1  =',#39+'RA---TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
+      update_text ('CTYPE2  =',#39+'DEC--TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
+    end
+    else
+    begin
+      update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA,    projection TANgential   ');
+      update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
+    end;
 
-    update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
-    update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
     update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
 
     update_text ('EQUINOX =','              2000.0 / Equinox of coordinates                         ');{the equinox is 2000 since the database is in 2000}

@@ -1405,7 +1405,7 @@ begin
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     {find RA, DEC position of the middle of the image}
     {FITS range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     cos_telescope_dec:=cos(telescope_dec);
     fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
@@ -1599,7 +1599,7 @@ begin
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     {find RA, DEC position of the middle of the image}
     {FITS range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     cos_telescope_dec:=cos(telescope_dec);
 
@@ -1636,6 +1636,7 @@ begin
 
       while count<counts do //go through data
       begin
+        if mode=1 then begin ra:=vsx[count].ra; dec:=vsx[count].dec;end else begin ra:=vsp[count].ra; dec:=vsp[count].dec;end;
         celestial_to_pixel(head,ra,dec, fitsX,fitsY);{ra,dec to fitsX,fitsY}
         x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
         y:=round(fitsY-1);
@@ -1972,7 +1973,7 @@ begin
     bp_rp:=999;{not defined in mono versions of the database}
 
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,1{wcs and sip if available},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,1{wcs and sip if available},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
     mainwindow.image1.Canvas.Pen.mode:=pmCopy;
@@ -2274,7 +2275,7 @@ var
             //check sky to pixel errors:
             if sub_counter3<length(errors_pixel_sky1) then
             begin
-              sensor_coordinates_to_celestial(head,xc+1,yc+1,formalism,ra3,dec3);{calculate the ra,dec position}
+              pixel_to_celestial(head,xc+1,yc+1,formalism,ra3,dec3);{calculate the ra,dec position}
               ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky1[sub_counter3] );//angular seperation
               inc(sub_counter3);
             end;
@@ -2287,7 +2288,7 @@ var
             //check sky to pixel errors:
             if sub_counter4<length(errors_pixel_sky2) then
             begin
-              sensor_coordinates_to_celestial(head,xc+1,yc+1,formalism,ra3,dec3);{calculate the ra,dec position}
+              pixel_to_celestial(head,xc+1,yc+1,formalism,ra3,dec3);{calculate the ra,dec position}
               ang_sep(ra3,dec3,ra2,dec2,errors_pixel_sky2[sub_counter4] );//angular seperation
               inc(sub_counter4);
             end;
@@ -2314,7 +2315,7 @@ begin
     bp_rp:=999;{not defined in mono versions of the database}
 
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,0{wcs only},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,0{wcs only},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     mainwindow.image1.Canvas.Pen.mode:=pmCopy;
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
@@ -2511,7 +2512,7 @@ begin
 
     {find middle of the image}
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,0 {wcs is sufficient},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,0 {wcs is sufficient},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then exit; {sets file290 so do before fov selection}
 

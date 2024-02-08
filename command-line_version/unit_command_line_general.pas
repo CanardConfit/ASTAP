@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.02.02';
+  astap_version: string='2024.02.07';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -92,7 +92,7 @@ type
     fits_file: boolean=false;
     crpix1: double=0;{reference pixel}
     crpix2: double=0;
-
+    pi_=pi;//for testing
 
   const   bufwide=1024*120;{buffer size in bytes}
 
@@ -173,11 +173,26 @@ procedure add_text(inpt,comment1:string);{add text to header memo}
 procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
 procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
 procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
-
+procedure log_to_file(logf,mess : string);{for testing}
 
 implementation
 
 uses unit_command_line_solving, unit_command_line_star_database;
+
+
+procedure log_to_file(logf,mess : string);{for testing}
+var
+  f   :  textfile;
+begin
+  assignfile(f,logf);
+  try
+   if fileexists(logf)=false then rewrite(f) else append(f);
+   writeln(f,mess);
+
+  finally
+    closefile(f);
+  end;
+end;
 
 
 function floattostrE(x:double):string;
