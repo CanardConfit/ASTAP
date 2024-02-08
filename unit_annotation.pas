@@ -1636,6 +1636,7 @@ begin
 
       while count<counts do //go through data
       begin
+        if mode=1 then begin ra:=vsx[count].ra; dec:=vsx[count].dec;end else begin ra:=vsp[count].ra; dec:=vsp[count].dec;end;
         celestial_to_pixel(head,ra,dec, fitsX,fitsY);{ra,dec to fitsX,fitsY}
         x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
         y:=round(fitsY-1);

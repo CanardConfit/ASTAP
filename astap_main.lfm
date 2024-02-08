@@ -762,7 +762,6 @@ object mainwindow: Tmainwindow
         Top = 0
         Width = 1333
         Align = alClient
-        AutoSize = True
         ClientHeight = 470
         ClientWidth = 1333
         Color = 2105376

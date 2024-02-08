@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.07';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -5017,9 +5017,9 @@ begin
   if mainwindow.Flip_horizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
   if mainwindow.flip_vertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
 
-  if w=0 then {auto size}
-  begin
-  end;
+//  if w=0 then {auto size}
+ // begin
+ // end;
 
   with shape do
   begin
@@ -9629,7 +9629,7 @@ end;
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access
 var
   s,dummy,url   : string;
-  count,i,j,k,errorRA,errorDEC : integer;
+  count,i,j,k,errorRa,errorDec   : integer;
   radius,ra,dec : double;
 begin
   result:=false;
@@ -9670,7 +9670,7 @@ begin
     i:=i+length('"RA2000":"');
     j:=posex('"',s,i);
     dummy:=copy(s,i,j-i);
-    val(dummy,ra,errorRA); {convert ra text to double in radians}
+    val(dummy,ra,errorRa); {convert ra text to double in radians}
     vsx[count].ra:=ra*pi/180;
 
     i:=posex('"Declination2000":"',s,j);//dec will be always available
@@ -10090,9 +10090,9 @@ end;
 
 procedure Tmainwindow.angular_distance1Click(Sender: TObject);
 var
-   shapetype                               : integer;
+   shapetype                                 : integer;
    hfd1,star_fwhm,snr,flux,xc,yc, hfd2,
-   star_fwhm2,snr2,flux2,xc2,yc2,angle,ra1,dec1,ra2,dec2,sep     : double;
+   star_fwhm2,snr2,flux2,xc2,yc2             : double;
    info_message,info_message1, info_message2 : string;
 begin
   if head.naxis=0 then exit;
