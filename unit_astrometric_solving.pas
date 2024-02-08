@@ -1275,12 +1275,13 @@ begin
 
     if ((stackmenu1.add_sip1.checked) and
       (add_sip(hd,ra_database,dec_database))) then //takes about 50 ms sec due to the header update. Calculations are very fast
-    begin
+    begin //SIP added
       update_text ('CTYPE1  =',#39+'RA---TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
       update_text ('CTYPE2  =',#39+'DEC--TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
+      mainwindow.Polynomial1.itemindex:=1;//switch to sip
     end
     else
-    begin
+    begin //No SIP added.
       update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA,    projection TANgential   ');
       update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
     end;

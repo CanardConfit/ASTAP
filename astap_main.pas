@@ -5017,10 +5017,6 @@ begin
   if mainwindow.Flip_horizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
   if mainwindow.flip_vertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
 
-//  if w=0 then {auto size}
- // begin
- // end;
-
   with shape do
   begin
      hh:=max(minimum,round(h*mainwindow.image1.height/head.height));
@@ -5041,7 +5037,7 @@ begin
      if shape_type=1 then {circle}
      begin {good lock on object}
        shape:=stcircle;
-       shape:=stellipse;
+//       shape:=stellipse;
        visible:=true;
      end
      else
@@ -5167,7 +5163,7 @@ end;
 
 procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i,band,flux_counter,ttt,greylevels,greylevels2 : integer;
+   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i,band,flux_counter,greylevels,greylevels2 : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
    sd,mean,median,bg_median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b,hotpixel_adu,hotpixel_perc : double;
    Save_Cursor              : TCursor;
