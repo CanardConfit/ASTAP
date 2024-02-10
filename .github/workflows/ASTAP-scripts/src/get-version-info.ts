@@ -15,7 +15,7 @@ export const getVersionsInfo = async (specifiedDate: Date, octokit: Octokit, own
   const browser = await puppeteer.launch({
     headless: "new",
     timeout: 0,
-    args: ['--no-sandbox'],
+    args: ["--no-sandbox"],
   });
   const page = (await browser.pages())[0];
   await page.goto("https://www.hnsky.org/history_astap", { timeout: 0 });

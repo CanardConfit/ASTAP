@@ -29,7 +29,10 @@ export const runChecks = async (octokit: Octokit, owner: string, repo: string, p
 
   log("RunChecks", "[General] Determination of information...", ret.logs, printFormatted);
   const time2Process = Date.now();
-  const formattedMainCommitDate = format(new Date(mainCommit.commit.author.date), "yyyy-MM-dd");
+  const mainCommitDate = new Date(mainCommit.commit.author.date);
+  mainCommitDate.setDate(mainCommitDate.getDate() + 1);
+  mainCommitDate.setHours(0, 0, 0, 0);
+  const formattedMainCommitDate = format(new Date(mainCommitDate), "yyyy-MM-dd");
   ret.outputs.push({ key: "firstCommitDate", value: formattedMainCommitDate });
 
   const isLastCommitOnMain = mainCommit.sha === importedCommit.sha;
