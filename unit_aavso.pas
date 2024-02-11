@@ -121,7 +121,7 @@ end;
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c  : integer;
-    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type,filter_used: string;
+    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type,filter_used,settings: string;
     stdev_valid : boolean;
     snr_value,err_by_snr  : double;
     PNG: TPortableNetworkGraphic;{FPC}
@@ -163,9 +163,14 @@ begin
     detype:='Extended';
     baa_extra:='';
   end;
+  if stackmenu1.reference_database1.ItemIndex=0 then settings:=stackmenu1.reference_database1.text+' '+uppercase(name_database)
+  else
+    settings:=stackmenu1.reference_database1.text;
+  settings:=settings+', aperture='+stackmenu1.flux_aperture1.text+' HFD, annulus='+stackmenu1.annulus_radius1.text+' HFD';
+
   aavso_report:= '#TYPE='+detype+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, v'+astap_version+#13+#10+
+                 '#SOFTWARE=ASTAP, v'+astap_version+' ('+settings+ ')'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
