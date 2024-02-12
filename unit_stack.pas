@@ -455,6 +455,7 @@ type
     sd_factor1: TComboBox;
     sd_factor_list1: TComboBox;
     search_fov1: TComboBox;
+    Separator4: TMenuItem;
     Separator5: TMenuItem;
     show_quads1: TBitBtn;
     sigma_decolour1: TComboBox;
@@ -475,7 +476,6 @@ type
     photom_red1: TMenuItem;
     Separator2: TMenuItem;
     Separator3: TMenuItem;
-    Separator4: TMenuItem;
     column_fov1: TMenuItem;
     column_sqm1: TMenuItem;
     column_lim_magn1: TMenuItem;
@@ -3552,17 +3552,28 @@ begin
   end;
 end;
 
+function now_time_str: string; //reporte current time in 6 digit format as 235959
+var
+  hh,mm, ss,ms: Word;
+begin
+  decodetime(now, hh, mm, ss, ms);
+  result:= 'TT'+LeadingZero(hh)+LeadingZero(mm)+LeadingZero(ss);
+end;
 
 procedure listview_update_keyword(tl: tlistview; keyw, Value: string);
 {update key word of multiple files}
 var
   index, counter, error2: integer;
-  waarde: double;
-  filename_old: string;
-  success: boolean;
+  waarde,jd: double;
+  filename_old,new_date,keywOldTime: string;
+  success,dateObs: boolean;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   index := 0;
+  dateObs:=(keyw='DATE-OBS');
+  if dateObs then
+    keywOldTime:=now_time_str;
+
   esc_pressed := False;
   counter := tl.Items.Count;
   while index < counter do
@@ -3581,6 +3592,22 @@ begin
           remove_key(keyw, True {all})
         {remove key word in header. If all=true then remove multiple of the same keyword}
         else
+        if dateObs then //keyw is DATE-OBS
+        begin
+          date_to_jd(head.date_obs,'',0);
+          if jd_start=0 then exit;
+          jd:=jd_start+strtofloat2(value)/24;
+          new_date:=jdtodate(jd);
+          update_text(keyw + '=', #39 + new_date + #39);//new date
+          update_text(keywOldTime+'=', #39 + head.date_obs + #39+'/ Backup of previous DATE-OBS'); //backup date in unused keyword
+          memo2_message('Old date is stored in '+keywOldTime+'. To recover delete keyword DATE-OBS and rename '+keywOldTime+' to DATE-OBS.');
+
+          if tl = stackmenu1.listview1 then
+            tl.Items.item[index].subitems.Strings[L_datetime] := new_date;{update light}
+          if tl = stackmenu1.listview7 then
+            tl.Items.item[index].subitems.Strings[p_date] := new_date;{update photometry}
+        end
+        else
         begin
           val(Value, waarde, error2); {test for number or text}
           if error2 <> 0 then {text, not a number}
@@ -3591,8 +3618,7 @@ begin
             update_text(keyw + '=', #39 + Value + #39);//spaces will be added later
           end
           else
-            update_float(keyw + '=', ' /                                                ',true
-              , waarde);
+            update_float(keyw + '=', ' /                                                ',true , waarde);
 
           {update listview}
           if keyw = 'OBJECT  ' then
@@ -4826,7 +4852,7 @@ end;
 procedure Tstackmenu1.changekeyword1Click(Sender: TObject);
 var
   keyw, Value: string;
-  lv: tlistview;
+  lv         : tlistview;
 begin
   if Sender = changekeyword1 then
   begin
@@ -4849,9 +4875,14 @@ begin
     '', '');
   if length(keyw) < 2 then exit;
 
-  Value := InputBox('New value header keyword (Type DELETE to remove keyword):', '', '');
+  keyw:=uppercase(keyw);
+  if keyw='DATE-OBS' then
+    Value := InputBox('Shift in hours:', '', '')
+  else
+    Value := InputBox('New value header keyword (Type DELETE to remove keyword):', '', '');
+
   if length(Value) <= 0 then exit;
-  listview_update_keyword(lv, uppercase(keyw), Value);{update key word}
+  listview_update_keyword(lv, keyw, Value);{update key word}
 end;
 
 
@@ -7828,7 +7859,7 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
   medianCheck, medianThree, hfd_med, apert, annul,
-  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep : double;
+  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep,az,alt : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
   countCheck, countThree, database_col,j, lvsx,lvsp,nrvars,formalism : integer;
@@ -7997,8 +8028,7 @@ begin
       if ((head_2.cd1_1 = 0) or (refresh_solutions)) then
       begin
         listview7.Selected := nil; {remove any selection}
-        listview7.ItemIndex := c;
-        {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+        listview7.ItemIndex := c;  {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
         memo2_message(filename1 + ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
         Application.ProcessMessages;
@@ -8016,13 +8046,19 @@ begin
             exit;
           end;
           listview7.Items.item[c].subitems.Strings[P_astrometric] := '✓';
+          calculate_az_alt(1 {calculate}, head_2,{out}az, alt);  {try to get  a value for alt}
+          if alt <> 0 then
+          begin
+             centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
+             listview7.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
+             listview7.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+          end;
         end
         else
         begin
           listview7.Items[c].Checked := False;
           listview7.Items.item[c].subitems.Strings[P_astrometric] := '';
-          memo2_message(filename1 +
-            'Uncheck, no astrometric solution found for this file. Can' + #39 + 't measure magnitude!');
+          memo2_message(filename1 + 'Uncheck, no astrometric solution found for this file. Can' + #39 + 't measure magnitude!');
         end;
       end
       else
