@@ -7383,7 +7383,7 @@ var
   A, B, C, D, E, F, G, J, M, T, Z: double;
   {!!! 2016 by purpose, otherwise with timezone 8, 24:00 midnigth becomes 15:59 UTC}
   HH, MM, SS: integer;
-  year3: string[6];
+  year3: string;
 begin
   if (abs(jd) > 1461 * 10000) then
   begin

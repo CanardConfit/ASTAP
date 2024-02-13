@@ -393,7 +393,7 @@ begin
   if ((centuryA='19') or (centuryA='20') or (centuryA='21')) then {do only data}
   begin
     name:=copy(txt,167,194-167+1);
-    desn:=copy(txt,1,5);
+    desn:=trimRight(copy(txt,1,7));
 
     H:=strtofloat(copy(txt,8,12-8+1));   { 8 -  12  f5.2   Absolute magnitude, H}
     G:=strtofloat(copy(txt,14,19-14+1)); {14 -  19  f5.2   Slope parameter, G}
@@ -500,13 +500,13 @@ var
         if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
         begin
           {annotate}
-           if showfullnames then thetext1:=trim(name) else thetext1:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
-           if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
+           if showfullnames then thetext1:=trim(name) else thetext1:=desn+'('+floattostrF(mag,ffgeneral,3,1)+')';
+           if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:=' ';
 
            if add_annot then
            begin
               {store annotation. Fractions are for ephemeride alignment stacking}
-              add_text ('ANNOTATE=',#39+copy(floattostrF(x+1-sizebox,FFFixed,0,2)+';'+floattostrF(y+1-sizebox,FFFixed,0,2)+';'+floattostrF(x+1+sizebox,fffixed,0,2)+';'+floattostrF(y+1+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';',1,68)+#39); {store in FITS coordinates 1..}
+              add_text ('ANNOTATE=',#39+copy(floattostrF(x+1-sizebox,FFFixed,0,2)+';'+floattostrF(y+1-sizebox,FFFixed,0,2)+';'+floattostrF(x+1+sizebox,fffixed,0,2)+';'+floattostrF(y+1+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+desn+';',1,68)+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
            end;
            plot_the_annotation(round(x+1-sizebox) {x1},round(y+1-sizebox) {y1},round(x+1+sizebox){x2},round(y+1+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
@@ -728,6 +728,7 @@ begin
 end;
 
 
+
 procedure Tform_asteroids1.annotate_asteroids1Click(Sender: TObject); {han.k}
 var maxcount : integer;
     maxmag   : double;
@@ -761,6 +762,8 @@ begin
 
   form_asteroids1.close;   {normal this form is not loaded}
   mainwindow.setfocus;
+
+
 end;
 
 
