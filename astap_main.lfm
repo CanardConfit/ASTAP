@@ -1793,10 +1793,15 @@ object mainwindow: Tmainwindow
       ImageIndex = 34
       OnClick = show_statistics1Click
     end
+    object mpcreport1: TMenuItem
+      Caption = 'MPC1992 report line  (.)'
+      Hint = 'Write a MPC1992 report line to the clipboard for the object at the cursor.'
+      OnClick = mpcreport1Click
+    end
     object export_star_info1: TMenuItem
       Caption = 'Star info to clipboard (▭)'
       Enabled = False
-      Hint = 'Within slection shape. To clipboard the x,y positions, HFD, and if available α, δ and measured magnitude'
+      Hint = 'Within selection shape. To clipboard the x,y positions, HFD, and if available α, δ and measured magnitude'
       ImageIndex = 48
       OnClick = export_star_info1Click
     end

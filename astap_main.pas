@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -135,6 +135,7 @@ type
     export_star_info1: TMenuItem;
     grid_az_alt1: TMenuItem;
     az_alt1: TMenuItem;
+    mpcreport1: TMenuItem;
     min2: TEdit;
     minimum1: TScrollBar;
     PageControl1: TPageControl;
@@ -410,6 +411,7 @@ type
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
     procedure dust_spot_removal1Click(Sender: TObject);
+    procedure mpcreport1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -749,6 +751,7 @@ var {################# initialised variables #########################}
   egain_default       : double=1;
   passband_active: string=''; //Indicates current Gaia conversion active
   star_profile_plotted: boolean=false;
+  minor_planet_at_cursor:string='';
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
@@ -6053,14 +6056,14 @@ function prepare_dec(decx:double; sep:string):string; {radialen to text, format 
  var
    g,m,s  :integer;
    sign   : ansichar;
-begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
+begin {make from rax [0..pi*2] a string. Length is 10 long}
   if decx<0 then sign:='-' else sign:='+';
   decx:=abs(decx)+pi/(360*60*60); {add half second to get correct rounding and not 7:60 results as with round}
   decx:=decx*180/pi; {make degrees}
   g:=trunc(decx);
   m:=trunc((decx-g)*60);
   s:=trunc((decx-g-m/60)*3600);
-  prepare_dec:=sign+leadingzero(g)+sep+leadingzero(m)+' '+leadingzero(s);
+  prepare_dec:=sign+leadingzero(g)+sep+leadingzero(m)+copy('  ',1,length(sep))+leadingzero(s);
 end;
 
 
@@ -6068,7 +6071,7 @@ function prepare_ra8(rax:double; sep:string):string; {radialen to text, format 2
  var
    B       : String[2];
    h,m,s,ds  :integer;
- begin   {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
+ begin   {make from rax [0..pi*2] a string. Length is 8 long}
   rax:=rax+pi*0.01/(24*60*60); {add 1/10 of half second to get correct rounding and not 7:60 results as with round}
   rax:=rax*12/pi; {make hours}
   h:=trunc(rax);
@@ -6076,7 +6079,7 @@ function prepare_ra8(rax:double; sep:string):string; {radialen to text, format 2
   s:=trunc((rax-h-m/60)*3600);
   ds:=trunc((rax-h-m/60-s/3600)*360000);
   Str(trunc(h):2,b);
-  result:=b+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+leadingzero(ds);
+  result:=b+sep+leadingzero(m)+copy('  ',1,length(sep))+leadingzero(s)+'.'+leadingzero(ds);
 end;
 
 
@@ -8745,6 +8748,118 @@ begin
 end;
 
 
+
+function Jd_To_MPCDate(jd: double): string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
+var
+  A, B, C, D, E, F, G, J, M, T, Z: double;
+  {!!! 2016 by purpose, otherwise with timezone 8, 24:00 midnigth becomes 15:59 UTC}
+  HH, MM, SS: integer;
+  year3,day: string;
+begin
+  jd := jd + (0.5 / (24 * 3600));
+  {2016 one 1/2 second extra for math errors, fix problem with timezone 8, 24:00 midnight becomes 15:59 UTC}
+
+  Z := trunc(JD + 0.5);
+  F := Frac(JD + 0.5);
+
+
+
+  if Z < 2299160.5 then A := Z // < 15.10.1582 00:00 {Note Meeus 2 takes midday 12:00}
+  else
+  begin
+    g := int((Z - 1867216.25) / 36524.25);
+    a := z + 1 + g - trunc(g / 4);
+  end;
+  B := A + 1524;
+  C := trunc((B - 122.1) / 365.25);
+  D := trunc(365.25 * C);
+  E := trunc((B - D) / 30.6001);
+  T := B - D - int(30.6001 * E) + F; {day of the month}
+  if (E < 14) then
+    M := E - 1
+  else
+    M := E - 13;
+  if (M > 2) then
+    J := C - 4716
+  else
+    J := C - 4715;
+
+  str(trunc(J): 4, year3);
+  str(trunc(T)+F:7: 5, day);  //probably could use T only
+
+  Result := year3 + ' ' + leadingzero(trunc(M)) + ' ' + day;
+end;
+
+
+procedure Tmainwindow.mpcreport1Click(Sender: TObject);
+var
+   line,mag_str : string;
+   hfd2,fwhm_star2,snr,flux,object_xc,object_yc,object_raM,object_decM  : double;
+begin
+//  clipboard.AsText:=inttostr(startX)+','+inttostr(startY);
+  if sip=false then
+     memo2_message('Warning image not solved with SIP polynomial correction! See settings tab alignment');
+
+  minor_planet_at_cursor:=''; //clear last found
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+//  plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
+  plot_annotations(false {use solution vectors},false);
+
+  Screen.Cursor:=crDefault;
+{  https://www.minorplanetcenter.net/iau/info/OpticalObs.html
+   Columns     Format   Use
+    1 -  5       A5     Packed minor planet number
+    6 - 12       A7     Packed provisional designation, or a temporary designation
+   13            A1     Discovery asterisk
+   14            A1     Note 1
+   15            A1     Note 2
+   16 - 32              Date of observation
+   33 - 44              Observed RA (J2000.0)
+   45 - 56              Observed Decl. (J2000.0)
+   57 - 65       9X     Must be blank
+   66 - 71    F5.2,A1   Observed magnitude and band
+                           (or nuclear/total flag for comets)
+   72 - 77       X      Must be blank
+   78 - 80       A3     Observatory code
+}
+  if minor_planet_at_cursor='' then
+  begin
+    memo2_message('Warning minor planet designation not found! First annotate image with option "Asteroid & comet annotation" (Ctrl+R) with option "Annotation to the FITS header".');
+    minor_planet_at_cursor:='     ';//no name found
+  end;
+  if length(minor_planet_at_cursor)<=5 then  line:=minor_planet_at_cursor {5} +'       '{7}+'  C'{2}
+  else
+  line:='     '{5}+minor_planet_at_cursor {7}+'  C'{2};
+  HFD(img_loaded,round((startX+stopX)/2-1),round((startY+stopY)/2-1),annulus_radius {annulus radius},head.mzero_radius,0 {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
+  if ((hfd2<99) and (hfd2>0)) then //star detected
+  begin
+    date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
+    line:=line+Jd_To_MPCDate(jd_mid)+' ';
+
+
+    {centered coordinates}
+    pixel_to_celestial(head,object_xc+1,object_yc+1,mainwindow.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
+    if ((object_raM<>0) and (object_decM<>0)) then
+    begin
+      line:=line+prepare_ra8(object_raM,' ')+' '+prepare_dec2(object_decM,' ');{object position in RA,DEC}
+      line:=line+'         ';
+      if head.mzero<>0 then {offset calculated in star annotation call}
+      begin
+        str(head.mzero -ln(flux)*2.5/ln(10):5:2,mag_str);
+      end
+      else mag_str:='     ';
+      line:=line+mag_str;
+    end;
+    line:=line+'B      XXX'
+  end
+  else memo2_message('No object detection at this image location.');
+//  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
+  plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,line,'');{rectangle, +1 to fits coordinates}
+  memo2_message(line);
+end;
+
+
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
 begin
   maintype:=InputBox('Simbad search by criteria.','Enter the object main type (E.g. star=*, galaxy=G, quasar=QSO):',maintype);
@@ -10409,6 +10524,10 @@ begin
   form_asteroids1:=Tform_asteroids1.Create(self); {in project option not loaded automatic}
   form_asteroids1.ShowModal;
   form_asteroids1.release;
+
+///  form_asteroids1.close;   {normal this form is not loaded}
+  mainwindow.setfocus;
+
   save_settings2;
 end;
 
@@ -11475,7 +11594,9 @@ begin
     {$ifdef mswindows}
     {$else} {unix}
     if copy(database_path,1,4)='/usr' then {for Linux distributions}
-      database_path:='/usr/share/astap/data/';
+      if DirectoryExists('/opt/astap')=false then
+        database_path:='/usr/share/astap/data/';
+
     {$endif}
   {$endif}
 
@@ -11712,6 +11833,8 @@ begin
       begin
         List.Clear;
         ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,posex(#39,mainwindow.Memo1.Lines[count1],20)-12)),List);
+
+
         if list.count>=6  then {correct annotation}
         begin
           x1:=round(strtofloat2(list[0]));
@@ -11741,6 +11864,16 @@ begin
 
           plot_the_annotation(x1,y1,x2,y2,typ, name,magn);
 
+//          if (list.count>7) then
+//          begin
+  //        minor_planet_at_cursor:=list[7];//for mpc1992 report line
+    //      minor_planet_at_cursor:=list[8];//for mpc1992 report line
+      //    end;
+
+          if ((list.count>7) and ( (x1-x2)/2 - abs((startx+stopx)/2)<8) and  ((x1-x2)/2- abs((starty+stopy)/2)<8)) then
+              minor_planet_at_cursor:=list[7];//for mpc1992 report line
+
+
           if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
             stackmenu1.ephemeris_centering1.Additem(name,nil);
 
@@ -11758,7 +11891,6 @@ end;
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 var
   count1,x1,y1,x2,y2,formalism : integer;
-  typ     : double;
   List: TStrings;
 //  dummy : string;
 begin
@@ -15545,6 +15677,7 @@ begin
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
+
 
 procedure Tmainwindow.flip_H1Click(Sender: TObject);
 var

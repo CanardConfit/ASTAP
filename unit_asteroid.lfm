@@ -11,7 +11,7 @@ object form_asteroids1: Tform_asteroids1
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '3.0.0.1'
+  LCLVersion = '3.0.0.3'
   object annotate_asteroids1: TButton
     Left = 192
     Height = 25
@@ -19,8 +19,8 @@ object form_asteroids1: Tform_asteroids1
     Top = 384
     Width = 224
     Caption = 'Annotate asteroids && comets'
-    OnClick = annotate_asteroids1Click
     TabOrder = 0
+    OnClick = annotate_asteroids1Click
   end
   object cancel_button1: TButton
     Left = 440
@@ -29,8 +29,8 @@ object form_asteroids1: Tform_asteroids1
     Top = 384
     Width = 75
     Caption = 'Cancel'
-    OnClick = cancel_button1Click
     TabOrder = 1
+    OnClick = cancel_button1Click
   end
   object help_asteroid_annotation1: TLabel
     Cursor = crHandPoint
@@ -59,21 +59,21 @@ object form_asteroids1: Tform_asteroids1
     TabOrder = 2
     OnClick = Group_Box1Click
     object file_to_add1: TButton
-      Left = 100
+      Left = 38
       Height = 25
       Hint = 'Browse and select MPCORB.DAT to use'
       Top = 8
       Width = 35
       AutoSize = True
       Caption = '...'
-      OnClick = file_to_add1Click
       ParentFont = False
       ParentShowHint = False
       ShowHint = True
       TabOrder = 0
+      OnClick = file_to_add1Click
     end
     object mpcorb_filedate1: TLabel
-      Left = 168
+      Left = 106
       Height = 15
       Top = 8
       Width = 15
@@ -82,7 +82,7 @@ object form_asteroids1: Tform_asteroids1
     end
     object download_mpcorb1: TLabel
       Cursor = crHandPoint
-      Left = 32
+      Left = 8
       Height = 30
       Hint = 'Download MPCORB.DAT or CometEls.txt using default browser'
       Top = 3
@@ -198,21 +198,21 @@ object form_asteroids1: Tform_asteroids1
       TabOrder = 13
     end
     object file_to_add2: TButton
-      Left = 100
+      Left = 38
       Height = 25
       Hint = 'Browse and select MPCORB.DAT to use'
       Top = 40
       Width = 35
       AutoSize = True
       Caption = '...'
-      OnClick = file_to_add2Click
       ParentFont = False
       ParentShowHint = False
       ShowHint = True
       TabOrder = 2
+      OnClick = file_to_add2Click
     end
     object mpcorb_filedate2: TLabel
-      Left = 168
+      Left = 106
       Height = 15
       Top = 40
       Width = 15
@@ -220,7 +220,7 @@ object form_asteroids1: Tform_asteroids1
       ParentColor = False
     end
     object mpcorb_path2: TLabel
-      Left = 312
+      Left = 232
       Height = 15
       Hint = 'Path to CometEls.txt file'
       Top = 40
@@ -237,7 +237,7 @@ object form_asteroids1: Tform_asteroids1
       TabOrder = 11
     end
     object mpcorb_path1: TLabel
-      Left = 312
+      Left = 232
       Height = 15
       Hint = 'Path to MPCORB.DAT file'
       Top = 8
@@ -246,7 +246,7 @@ object form_asteroids1: Tform_asteroids1
       ParentColor = False
     end
     object BitBtn1: TBitBtn
-      Left = 136
+      Left = 74
       Height = 24
       Hint = 'Clear and disable'
       Top = 8
@@ -259,7 +259,7 @@ object form_asteroids1: Tform_asteroids1
       TabOrder = 1
     end
     object BitBtn2: TBitBtn
-      Left = 136
+      Left = 74
       Height = 24
       Hint = 'Clear and disable'
       Top = 40
@@ -343,11 +343,11 @@ object form_asteroids1: Tform_asteroids1
       Hint = 'The latitude of the observatory in degrees.'
       Top = 40
       Width = 113
-      OnChange = latitude1Change
       ParentShowHint = False
       ShowHint = True
       TabOrder = 1
       Text = '0'
+      OnChange = latitude1Change
     end
     object Label2: TLabel
       Left = 75
@@ -373,11 +373,11 @@ object form_asteroids1: Tform_asteroids1
       Hint = 'The longitude of the observatory in degrees. For east enter positive, for west enter negative values.'
       Top = 72
       Width = 113
-      OnChange = longitude1Change
       ParentShowHint = False
       ShowHint = True
       TabOrder = 2
       Text = '0'
+      OnChange = longitude1Change
     end
     object label_start_mid1: TLabel
       Left = 384
