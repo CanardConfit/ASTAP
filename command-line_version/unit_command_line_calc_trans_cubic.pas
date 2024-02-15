@@ -3,27 +3,24 @@ unit unit_command_line_calc_trans_cubic;
 //  This unit calculates the 3th order transfer function between two set of matching quads or star positions.
 //  The output are ten transfer coefficients for X axis and ten coefficients for the Y-axis.
 
+{Copyright (C) 2024 by Han Kleijn, www.hnsky.org
+ email: han.k.. at...hnsky.org
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+
+
 {This unit is based on some C language routines from the package Match. See describtion below. Conversion and modification for the ASTAP program by Han Kleijn.
-The original Match version was suitable for 2th order only but extended to the 3th order by Cecile Melis for the Siril program.
+The original Match version was suitable an eight coefficients 3th order solution but was extended to a ten cofficients 3th order solution by Cecile Melis for the Siril program.
 
-Copyright (C) 2024 by Han Kleijn www.hnsky.org
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+The  licence of this code has been changed to MPL2 with permission from Michael Richmond by email dated 2024-2-15:
+    "Yes, I grant you permission to change the license for the code you have adopted to the Mozilla Public License, v2.0."
 }
-//==============================================================================
-//Original description for the Match program.
-//http://spiff.rit.edu/match/
+
+// ==============================================================================
+// Original description for the Match program.
+// http://spiff.rit.edu/match/
 {*  match: a package to match lists of stars (or other items)
  *  Copyright (C) 2000  Michael William Richmond
  *
@@ -35,19 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *           E-mail: mwrsps@rit.edu
  *
  *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  */
  }

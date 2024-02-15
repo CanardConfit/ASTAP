@@ -112,6 +112,7 @@ type
     browse_mount1: TBitBtn;
     browse_photometry1: TBitBtn;
     Button1: TButton;
+    save_button1: TButton;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
     calculated_sensor_size1: TLabel;
@@ -344,6 +345,7 @@ type
     manual_centering1: TComboBox;
     mark_outliers_upto1: TComboBox;
     max_stars1: TComboBox;
+    Memo3: TMemo;
     memo2: TMemo;
     MenuItem14: TMenuItem;
     merge_overlap1: TCheckBox;
@@ -514,6 +516,7 @@ type
     star_database1: TComboBox;
     star_level_colouring1: TComboBox;
     subtract_background1: TButton;
+    MPC1992_1: TTabSheet;
     tab_blink1: TTabSheet;
     tab_inspector1: TTabSheet;
     tab_live_stacking1: TTabSheet;
@@ -781,6 +784,7 @@ type
     procedure photometry_binx2Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
     procedure saturation_tolerance1Change(Sender: TObject);
+    procedure save_button1Click(Sender: TObject);
     procedure save_result1Click(Sender: TObject);
     procedure save_settings_extra_button1Click(Sender: TObject);
     procedure smart_colour_smooth_button1Click(Sender: TObject);
@@ -5290,7 +5294,7 @@ end;
 
 procedure Tstackmenu1.analysedarksButton2Click(Sender: TObject);
 begin
-  analyse_listview(listview2, False {light}, True {full fits, include background and SD},  False{refresh}); {img_loaded array and memo1 will not be modified}
+  analyse_listview(listview2, False {light}, True {full fits, include background and SD},  False{refresh}); {img_loaded array and Memo3 will not be modified}
 
   {temporary fix for CustomDraw not called}
   {$ifdef darwin} {MacOS}
@@ -5526,8 +5530,7 @@ begin
           begin
             if ((annotated = False) or (stackmenu1.update_annotation1.Checked)) then
             begin
-              plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(
-                maxmag_asteroid), True {add annotations});
+              plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations});
               listview6.Items.item[c].subitems.Strings[B_annotated] := '✓';
             end;
             if ((astro_solved) or (stackmenu1.update_annotation1.Checked)) then
@@ -5547,6 +5550,7 @@ begin
             end;
           end;
         end;{astrometric solve and annotate}
+
 
         {find align solution}
         if align_blink1.Checked then
@@ -5708,6 +5712,9 @@ begin
       Inc(c, step);
     until ((c >= nrrows) or (c < 0));
 
+   solve_and_annotate1.checked:=false;
+//    stackmenu1.update_annotation1.Checked:=false;//update is done
+
   until ((esc_pressed) or (Sender = blink_button1 {single run}) or
       (Sender = write_video1) or (Sender = nil){export aligned});
 
@@ -5725,7 +5732,7 @@ var
 begin
 
   mainwindow.memo1.Visible := False;
-  {stop visualising memo1 for speed. Will be activated in plot routine}
+  {stop visualising Memo3 for speed. Will be activated in plot routine}
   mainwindow.memo1.Clear;{clear memo for new header}
 
   reset_fits_global_variables(True, head);
@@ -5755,7 +5762,7 @@ begin
   filename2 := 'star_test_image.fit';
   for j := 0 to 10 do {create an header with fixed sequence}
     if (j <> 5) then {skip head.naxis3 for mono images}
-      mainwindow.memo1.Lines.add(head1[j]); {add lines to empthy memo1}
+      mainwindow.memo1.Lines.add(head1[j]); {add lines to empthy Memo3}
   mainwindow.memo1.Lines.add(head1[27]); {add end}
 
   update_integer('BITPIX  =', ' / Bits per entry                                 ' , nrbits);
@@ -6721,7 +6728,7 @@ begin
 
   Screen.Cursor := crDefault;{back to normal }
 
-  update_menu(False);  //do not allow to save fits. img_load is still valid but memo1 is cleared. Could be recovered but is not done
+  update_menu(False);  //do not allow to save fits. img_load is still valid but Memo3 is cleared. Could be recovered but is not done
   stackmenu1.mount_analyse1Click(nil);  {update. Since it are WCS files with naxis,2 then image1 will be cleared in load_fits}
 end;
 
@@ -8605,6 +8612,11 @@ begin
   {plot colour disk in on paint event. Onpaint is required for MacOS}
 end;
 
+procedure Tstackmenu1.save_button1Click(Sender: TObject);
+begin
+  save_settings2;
+end;
+
 procedure Tstackmenu1.save_result1Click(Sender: TObject);
 var
   dot_pos: integer;
@@ -9594,7 +9606,7 @@ begin
 
   Screen.Cursor := crDefault;{back to normal }
 
-  update_menu(False);  //do not allow to save fits. img_load is still valid but memo1 is cleared. Could be recovered but is not done
+  update_menu(False);  //do not allow to save fits. img_load is still valid but Memo3 is cleared. Could be recovered but is not done
 
 end;
 
@@ -11552,7 +11564,7 @@ begin
       end;
   end;{with stackmenu1 do}
 
-  plot_fits(mainwindow.image1, True, True);{update to last image, activate memo1}
+  plot_fits(mainwindow.image1, True, True);{update to last image, activate Memo3}
 
   Screen.Cursor := crDefault;
   memo2_message('Calibration of the individual files is complete. New files are posted in the results tab');
