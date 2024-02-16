@@ -1583,7 +1583,7 @@ begin
   width5 := Length(img[0,0]); {width}
   height5 := Length(img[0]);  {height}
 
-  max_stars := 500;
+  max_stars := strtoint2(stackmenu1.max_stars1.Text,500);
   SetLength(hfd_list, len);{set array length to len}
 
   get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
@@ -11723,7 +11723,6 @@ begin
   cal_and_align := pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
   sender_photometry := (Sender = photom_stack1);//stack instruction from photometry tab?
   sender_stack_groups := (Sender =stack_groups1);//stack instruction from photometry tab?
-
 
   classify_filter := ((classify_filter1.Checked) and (sender_photometry = False));  //disable classify filter if sender is photom_stack1
   classify_object := ((classify_object1.Checked) and (sender_photometry = False));  //disable classify object if sender is photom_stack1

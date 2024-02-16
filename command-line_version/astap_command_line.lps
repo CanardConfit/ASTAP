@@ -25,6 +25,7 @@
       <Unit2>
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <CursorPos X="36" Y="24"/>
         <UsageCount Value="200"/>
@@ -137,7 +138,6 @@
       </Unit16>
       <Unit17>
         <Filename Value="unit_command_line_calc_trans_cubic.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
         <CursorPos X="4" Y="21"/>
         <UsageCount Value="12"/>
@@ -282,123 +282,123 @@
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1626" Column="80" TopLine="1594"/>
+        <Caret Line="1641" Column="80" TopLine="1609"/>
       </Position1>
       <Position2>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1627" Column="80" TopLine="1595"/>
+        <Caret Line="1642" Column="80" TopLine="1610"/>
       </Position2>
       <Position3>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1628" Column="80" TopLine="1596"/>
+        <Caret Line="1643" Column="80" TopLine="1611"/>
       </Position3>
       <Position4>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1629" Column="80" TopLine="1597"/>
+        <Caret Line="1644" Column="80" TopLine="1612"/>
       </Position4>
       <Position5>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1630" Column="80" TopLine="1598"/>
+        <Caret Line="1632" Column="107" TopLine="1613"/>
       </Position5>
       <Position6>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1631" Column="80" TopLine="1599"/>
+        <Caret Line="2018" TopLine="1989"/>
       </Position6>
       <Position7>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1632" Column="80" TopLine="1600"/>
+        <Caret Line="1748" Column="28" TopLine="1739"/>
       </Position7>
       <Position8>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1633" Column="80" TopLine="1601"/>
+        <Caret Line="1845" Column="115" TopLine="1826"/>
       </Position8>
       <Position9>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1636" Column="80" TopLine="1604"/>
+        <Caret Line="1877" Column="154" TopLine="1845"/>
       </Position9>
       <Position10>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1637" Column="80" TopLine="1605"/>
+        <Caret Line="1881" Column="109" TopLine="1849"/>
       </Position10>
       <Position11>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1638" Column="80" TopLine="1606"/>
+        <Caret Line="1650" Column="71" TopLine="1641"/>
       </Position11>
       <Position12>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1639" Column="80" TopLine="1607"/>
+        <Caret Line="1654" Column="22" TopLine="1641"/>
       </Position12>
       <Position13>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1640" Column="80" TopLine="1608"/>
+        <Caret Line="1653" Column="13" TopLine="1638"/>
       </Position13>
       <Position14>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1641" Column="80" TopLine="1609"/>
+        <Caret Line="1751" Column="51" TopLine="1719"/>
       </Position14>
       <Position15>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1642" Column="80" TopLine="1610"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="24" Column="36"/>
       </Position15>
       <Position16>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1643" Column="80" TopLine="1611"/>
+        <Caret Line="1885" TopLine="1865"/>
       </Position16>
       <Position17>
         <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1644" Column="80" TopLine="1612"/>
+        <Caret Line="1884" TopLine="1865"/>
       </Position17>
       <Position18>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1632" Column="107" TopLine="1613"/>
+        <Filename Value="unit_command_line_calc_trans_cubic.pas"/>
+        <Caret Line="21" Column="4"/>
       </Position18>
       <Position19>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2018" TopLine="1989"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="690" Column="4" TopLine="666"/>
       </Position19>
       <Position20>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1748" Column="28" TopLine="1739"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="694" Column="11" TopLine="666"/>
       </Position20>
       <Position21>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1845" Column="115" TopLine="1826"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="839" Column="19" TopLine="807"/>
       </Position21>
       <Position22>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1877" Column="154" TopLine="1845"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="690" Column="10" TopLine="669"/>
       </Position22>
       <Position23>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1881" Column="109" TopLine="1849"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="759" Column="21" TopLine="750"/>
       </Position23>
       <Position24>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1650" Column="71" TopLine="1641"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="884" Column="41" TopLine="852"/>
       </Position24>
       <Position25>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1654" Column="22" TopLine="1641"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="892" Column="11" TopLine="858"/>
       </Position25>
       <Position26>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1653" Column="13" TopLine="1638"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="716" Column="30" TopLine="693"/>
       </Position26>
       <Position27>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1751" Column="51" TopLine="1719"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="884" Column="43" TopLine="852"/>
       </Position27>
       <Position28>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="24" Column="36"/>
+        <Caret Line="931" Column="9" TopLine="803"/>
       </Position28>
       <Position29>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1885" TopLine="1865"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="707" Column="15" TopLine="686"/>
       </Position29>
       <Position30>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="1884" TopLine="1865"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="901" Column="9" TopLine="879"/>
       </Position30>
     </JumpHistory>
     <RunParams>
@@ -437,6 +437,7 @@
         <Item19 Value="-f  C:\astap.fpc\command_line_version\TestIm1.fit  -r 20 "/>
         <Item20 Value="-f  C:\astap.fpc\command_line_version\TestIm1.fit  -r 20 -d c:\astap.fpc"/>
       </List1>
+      <List2 Name="WorkingDirectory" Type="File" Count="1"/>
     </HistoryLists>
   </ProjectSession>
   <Debugging>
@@ -467,7 +468,7 @@
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="unit_command_line_general.pas"/>
-        <Line Value="981"/>
+        <Line Value="1004"/>
       </Item>
     </BreakPoints>
   </Debugging>
