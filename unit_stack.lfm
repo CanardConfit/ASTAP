@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 185
+  Left = 65
   Height = 707
-  Top = 128
+  Top = 109
   Width = 1531
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -3106,8 +3106,8 @@ object stackmenu1: Tstackmenu1
             Height = 19
             Hint = 'Update existing FITS header annotations.'
             Top = 21
-            Width = 122
-            Caption = 'Update annotations'
+            Width = 158
+            Caption = 'Update stored annotations'
             Enabled = False
             ParentFont = False
             TabOrder = 10
@@ -4718,6 +4718,45 @@ object stackmenu1: Tstackmenu1
             Caption = '|'
             TabOrder = 6
             Visible = False
+          end
+        end
+        object MPC1992_1: TTabSheet
+          Hint = 'MPC1992 style report of astrometric observations of comets, minor planets'
+          Caption = 'MPC1992'
+          ClientHeight = 472
+          ClientWidth = 1912
+          object Memo3: TMemo
+            Left = 0
+            Height = 436
+            Top = 36
+            Width = 1912
+            Align = alClient
+            BorderSpacing.Top = 36
+            Font.CharSet = ANSI_CHARSET
+            Font.Name = 'Courier New'
+            Font.Pitch = fpFixed
+            Font.Quality = fqDraft
+            Lines.Strings = (
+              'COD XXX'
+              'CON Optional contact name. Additional contact details may then follow. '
+              'OBS Observer name(s), no programs'
+              'MEA Measurers name(s), no programs'
+              'TEL 0.1-m f/5.8 refractor + CCD'
+              'COM Long. 6 30 00 E, Lat. 53 00 00 N, Alt 10m, Google Earth'
+              'NET Gaia3'
+            )
+            ParentFont = False
+            ScrollBars = ssAutoBoth
+            TabOrder = 0
+          end
+          object save_button1: TButton
+            Left = 16
+            Height = 25
+            Top = 5
+            Width = 75
+            Caption = 'Save'
+            TabOrder = 1
+            OnClick = save_button1Click
           end
         end
         object tab_Pixelmath1: TTabSheet

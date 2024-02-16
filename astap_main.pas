@@ -41,7 +41,7 @@ uses
  {$ifdef mswindows}
   Windows,
   Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,
-  windirs,{for directories from windows}
+  windirs,{for directories from Windows}
  {$else} {unix}
   LCLType, {for vk_...}
   Unix,  {for console}
@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8173,9 +8173,10 @@ begin
         inc(c);
       until (dum='');
 
-     stackmenu1.visible:=((paramcount=0) and (Sett.ReadBool('stack','stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
-     listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
-    end;
+      stackmenu1.visible:=((paramcount=0) and (Sett.ReadBool('stack','stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
+      listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
+      dum:=sett.readstring('mpc','mpc1992',''); if dum<>'' then  stackmenu1.memo3.text:=stringreplace(dum,'|',LineEnding,[rfReplaceAll]);//all in one line
+    end; //with mainwindow
 
   finally {also for error it end's here}
     Sett.Free;
@@ -8528,6 +8529,8 @@ begin
         sett.writeBool('files','inspector'+inttostr(c)+'_check',stackmenu1.ListView8.items[c].Checked);
       end;
 
+
+      sett.writestring('mpc','mpc1992',stringreplace(stackmenu1.memo3.text,LineEnding, '|',[rfReplaceAll]) );//all in one line
     end;{mainwindow}
   finally
     Sett.Free; {Note error detection seems not possible with tmeminifile. Tried everything}
@@ -8856,7 +8859,8 @@ begin
   else memo2_message('No object detection at this image location.');
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
   plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,line,'');{rectangle, +1 to fits coordinates}
-  memo2_message(line);
+  stackmenu1.memo3.Lines.add(line);
+  memo2_message('Added to report in tab MPC1992: '+line);
 end;
 
 
