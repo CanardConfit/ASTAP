@@ -4752,6 +4752,7 @@ object stackmenu1: Tstackmenu1
           object save_button1: TButton
             Left = 16
             Height = 25
+            Hint = 'Save temporary to the standard astap.cfg file. To export select all by ctrl+A and copy with ctrl+C.'
             Top = 5
             Width = 75
             Caption = 'Save'

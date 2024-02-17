@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -151,6 +151,7 @@ type
     rotation1: TLabel;
     saturation_factor_plot1: TTrackBar;
     save1: TButton;
+    Separator3: TMenuItem;
     Shape_alignment_marker1: TShape;
     Shape_alignment_marker2: TShape;
     Shape_alignment_marker3: TShape;
@@ -1085,7 +1086,7 @@ var
   TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
-  dummy, ccd_temperature, jd2,jd_obs, PC1_1,PC1_2, PC2_1,PC2_2   : double;
+  tempval, ccd_temperature, jd2,jd_obs, PC1_1,PC1_2, PC2_1,PC2_2   : double;
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -1103,7 +1104,7 @@ var
   x_double    : double absolute x_qword;{for conversion 64 bit "big-endian" data}
   int_64      : int64 absolute x_qword;{for 64 bit signed integer}
 
-  tfields,tform_counter,header_count,pointer,let  : integer;
+  tfields,tform_counter,header_count,pointer,let, validate_double_error : integer;
   ttype,tform,tunit : array of string;
   tbcol,tform_nr    : array of integer;
   simple,image,bintable,asciitable    : boolean;
@@ -1119,8 +1120,8 @@ var {################# initialised variables #########################}
      end;
 
      function validate_double:double;{read floating point or integer values}
-     var t : string[21];
-         r,err : integer;
+     var t     : string[21];
+         r     : integer;
      begin
        t:='';
        r:=I+10;{position 11 equals 10}
@@ -1129,7 +1130,7 @@ var {################# initialised variables #########################}
          if header[r]<>' ' then t:=t+header[r];
          inc(r);
        end;
-       val(t,result,err);
+       val(t,result,validate_double_error);
      end;
 
      Function get_string:string;{read string values}
@@ -1295,11 +1296,11 @@ begin
           else
           if ( (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
           begin
-             dummy:=validate_double;
-             if dummy>2147483647 then
+             tempval:=validate_double;
+             if tempval>2147483647 then
              bzero:=-2147483648
              else
-             bzero:=round(dummy); {Maxim DL writes BZERO value -2147483647 as +2147483648 !! }
+             bzero:=round(tempval); {Maxim DL writes BZERO value -2147483647 as +2147483648 !! }
             {without this it would have worked also with error check off}
           end
           else
@@ -1570,8 +1571,12 @@ begin
 
           if ((header[i]='D') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]=' ')) then {dec}
           begin
-            dec_mount:=validate_double*pi/180;
-            if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+            tempval:=validate_double*pi/180;
+            if validate_double_error=0 then //not a string value behind keyword DEC
+            begin
+              dec_mount:=tempval;
+              if head.dec0=0 then head.dec0:=tempval; {dec telescope, read double value only if crval is not available}
+            end;
           end;
 
           if header[i]='E' then
@@ -1707,11 +1712,15 @@ begin
           begin
             if ((header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
             begin
-              ra_mount:=validate_double*pi/180;
-              if head.ra0=0 then head.ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
+              tempval:=validate_double*pi/180;
+              if validate_double_error=0 then //not a string value behind keyword RA
+              begin
+                ra_mount:=tempval;
+                if head.ra0=0 then head.ra0:=tempval; {ra telescope, read double value only if crval is not available}
+              end;
             end;
             if ((header[i+1]='O')  and (header[i+2]='W') and (header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D') and (header[i+6]='E')) then
-                     roworder:=get_string;
+              roworder:=get_string;
           end;//R
 
           if (header[i]='S') then
@@ -6098,7 +6107,7 @@ begin {make from decx [-pi/2..pi/2] a text in array bericht. Length is 10 long}
   ds:=trunc((decx-g-m/60-s/3600)*36000);
   Str(trunc(g):2,b);
   Str(trunc(ds):1,ds2);
-  prepare_dec2:=sign+b+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+ds2;
+  prepare_dec2:=sign+b+sep+leadingzero(m)+copy('  ',1,length(sep))+leadingzero(s)+'.'+ds2;
 end;
 
 
@@ -8803,8 +8812,10 @@ begin
   if sip=false then
      memo2_message('Warning image not solved with SIP polynomial correction! See settings tab alignment');
 
-  minor_planet_at_cursor:=''; //clear last found
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  calibrate_photometry;//calibrate photometry if required
+  minor_planet_at_cursor:=''; //clear last found
 
 //  plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
   plot_annotations(false {use solution vectors},false);
@@ -8831,9 +8842,9 @@ begin
     memo2_message('Warning minor planet designation not found! First annotate image with option "Asteroid & comet annotation" (Ctrl+R) with option "Annotation to the FITS header".');
     minor_planet_at_cursor:='     ';//no name found
   end;
-  if length(minor_planet_at_cursor)<=5 then  line:=minor_planet_at_cursor {5} +'       '{7}+'  C'{2}
+  if length(minor_planet_at_cursor)<=5 then  line:=minor_planet_at_cursor {5} +'       '{7}+'  B'{3, B for CMOS}
   else
-  line:='     '{5}+minor_planet_at_cursor {7}+'  C'{2};
+  line:='     '{5}+minor_planet_at_cursor {7}+'  B'{3};
   HFD(img_loaded,round((startX+stopX)/2-1),round((startY+stopY)/2-1),annulus_radius {annulus radius},head.mzero_radius,0 {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
   if ((hfd2<99) and (hfd2>0)) then //star detected
   begin
@@ -8846,21 +8857,28 @@ begin
     if ((object_raM<>0) and (object_decM<>0)) then
     begin
       line:=line+prepare_ra8(object_raM,' ')+' '+prepare_dec2(object_decM,' ');{object position in RA,DEC}
-      line:=line+'         ';
+      if line[46]=' ' then line[46]:='0';// add the missing zero for e.g. "- 7 39 33.03"
+      line:=line+'          ';
       if head.mzero<>0 then {offset calculated in star annotation call}
       begin
         str(head.mzero -ln(flux)*2.5/ln(10):5:2,mag_str);
       end
-      else mag_str:='     ';
+      else
+      begin
+        mag_str:='     ';
+      end;
       line:=line+mag_str;
     end;
-    line:=line+'B      XXX'
+    line:=line+'B      XXX';
+
+    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,line,'');{rectangle, +1 to fits coordinates}
+    stackmenu1.memo3.Lines.add(line);
+    memo2_message('Added to report in tab MPC1992: '+line);
   end
-  else memo2_message('No object detection at this image location.');
+  else
+    memo2_message('No object detection at this image location.');
+
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
-  plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,line,'');{rectangle, +1 to fits coordinates}
-  stackmenu1.memo3.Lines.add(line);
-  memo2_message('Added to report in tab MPC1992: '+line);
 end;
 
 
@@ -11868,15 +11886,8 @@ begin
 
           plot_the_annotation(x1,y1,x2,y2,typ, name,magn);
 
-//          if (list.count>7) then
-//          begin
-  //        minor_planet_at_cursor:=list[7];//for mpc1992 report line
-    //      minor_planet_at_cursor:=list[8];//for mpc1992 report line
-      //    end;
-
-          if ((list.count>7) and ( (x1-x2)/2 - abs((startx+stopx)/2)<8) and  ((x1-x2)/2- abs((starty+stopy)/2)<8)) then
+          if ((list.count>7) and (abs( (x1+x2)/2 - (startx+stopx)/2)<8 ) and  (abs((y1+y2)/2 - (starty+stopy)/2)<8)) then
               minor_planet_at_cursor:=list[7];//for mpc1992 report line
-
 
           if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
             stackmenu1.ephemeris_centering1.Additem(name,nil);

@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.02.07';
+  astap_version: string='2024.02.16';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -686,8 +686,8 @@ end;
 function load_fits(filen:string;out img_loaded2: image_array): boolean;{load fits file}
 var
   header    : array[0..2880] of ansichar;
-  i,j,k,error3,naxis1, reader_position              : integer;
-  dummy                                             : double;
+  i,j,k,error3,naxis1, reader_position,validate_double_error   : integer;
+  tempval                                                      : double;
   col_float,bscale,measured_max,scalefactor  : single;
   bzero                       : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
   aline                       : ansistring;
@@ -716,7 +716,7 @@ const
 
      function validate_double:double;{read floating point or integer values}
      var t : string[21];
-         r,err : integer;
+         r : integer;
      begin
        t:='';
        r:=I+10;{position 11 equals 10}
@@ -725,7 +725,7 @@ const
          if header[r]<>' ' then t:=t+header[r];
          inc(r);
        end;
-       val(t,result,err);
+       val(t,result,validate_double_error);
      end;
 
 
@@ -836,30 +836,44 @@ begin
         begin
           if ( (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
           begin
-             dummy:=validate_double;
-             if dummy>2147483647 then
-             bzero:=-2147483648
-             else
-             bzero:=round(dummy); {Maxim DL writes BZERO value -2147483647 as +2147483648 !! }
-            {without this it would have worked also with error check off}
-          end
-          else
-          if ( (header[i+1]='S')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') ) then
-           begin
-              bscale:=validate_double; {rarely used. Normally 1}
-           end;
+            tempval:=validate_double;
+            if tempval>2147483647 then
+            bzero:=-2147483648
+            else
+            bzero:=round(tempval); {Maxim DL writes BZERO value -2147483647 as +2147483648 !! }
+           {without this it would have worked also with error check off}
+         end
+         else
+         if ( (header[i+1]='S')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') ) then
+          begin
+             bscale:=validate_double; {rarely used. Normally 1}
+          end;
         end;
 
-        if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 xbinning:=round(validate_double);{binning}
-        if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 ybinning:=round(validate_double);{binning}
-
-        if ((header[i]='C') and (header[i+1]='D')  and (header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {cdelt1}
+        if header[i]='C' then
         begin
-          if header[i+5]='1' then cdelt1:=validate_double else{deg/pixel for RA}
-          if header[i+5]='2' then cdelt2:=validate_double;    {deg/pixel for DEC}
-        end;
+          if ((header[i+1]='D')) then
+          begin
+             if ((header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {cdelt1}
+             begin
+               if header[i+5]='1' then cdelt1:=validate_double else{deg/pixel for RA}
+               if header[i+5]='2' then cdelt2:=validate_double;    {deg/pixel for DEC}
+             end
+             else
+             begin
+               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   cd1_1:=validate_double;
+               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   cd1_2:=validate_double;
+               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   cd2_1:=validate_double;
+               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   cd2_2:=validate_double;
+             end;
+          end;
+          if ((header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
+          begin
+            if (header[i+5]='1') then  ra0:=validate_double*pi/180; {ra center, read double value}
+            if (header[i+5]='2') then  dec0:=validate_double*pi/180; {dec center, read double value}
+          end;
+        end;//C
+
         if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpix1/2}
              ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
              ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
@@ -871,30 +885,21 @@ begin
         if ((header[i]='E') and (header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
              equinox:=validate_double;
 
-        if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
-               xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
-        if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
-             ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
 
        if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
             focallen:=validate_double;{Focal length of telescope in mm, maxim DL keyword}
 
-        if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
-        begin
-          if (header[i+5]='1') then  ra0:=validate_double*pi/180; {ra center, read double value}
-          if (header[i+5]='2') then  dec0:=validate_double*pi/180; {dec center, read double value}
-        end;
-        if ((header[i]='R') and (header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
-        begin
-          ra_mount:=validate_double*pi/180;
-          if ra0=0 then ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
-        end;
+
+
         if ((header[i]='D') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]=' ')) then {dec}
         begin
-          dec_mount:=validate_double*pi/180;
-          if dec0=0 then dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+          tempval:=validate_double*pi/180;
+          if validate_double_error=0 then //not a string value behind keyword DEC
+          begin
+            dec_mount:=tempval;
+            if dec0=0 then dec0:=tempval; {dec telescope, read double value only if crval is not available}
+          end;
         end;
-
 
         if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J')) then
         begin
@@ -912,14 +917,32 @@ begin
           end;
         end;
 
-        if ((header[i]='C') and (header[i+1]='D')) then
+        if ((header[i]='R') and (header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
         begin
-          if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   cd1_1:=validate_double;
-          if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   cd1_2:=validate_double;
-          if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   cd2_1:=validate_double;
-          if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   cd2_2:=validate_double;
+          tempval:=validate_double*pi/180;
+          if validate_double_error=0 then //not a string value behind keyword RA
+          begin
+            ra_mount:=tempval;
+            if ra0=0 then ra0:=tempval; {ra telescope, read double value only if crval1 is not available}
+          end;
         end;
 
+
+        if header[i]='X' then
+        begin
+        if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
+               xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+        if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+                 xbinning:=round(validate_double);{binning}
+        end;//X
+
+        if header[i]='Y' then
+        begin
+          if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
+               ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+          if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+               ybinning:=round(validate_double);{binning}
+        end;//Y
 
       end; {image header}
 
