@@ -6903,7 +6903,8 @@ begin
 
 end;
 
-procedure Tstackmenu1.photom_stack1Click(Sender: TObject);
+
+procedure stack_group(lv : tlistview; Sender: TObject);
 var
   index, counter, oldindex, position, i: integer;
   ListItem: TListItem;
@@ -6911,20 +6912,20 @@ begin
 
   position := -1;
   index := 0;
-  listview1.Items.beginUpdate;
-  listview1.Clear;
-  counter := listview7.Items.Count;
+  stackmenu1.listview1.Items.beginUpdate;
+  stackmenu1.listview1.Clear;
+  counter := lv.Items.Count;
   while index < counter do
   begin
-    if listview7.Items[index].Selected then
+    if lv.Items[index].Selected then
     begin
       if position < 0 then position := index;//store first position
-      listview_add(listview1, listview7.items[index].Caption, True, L_nr);
+      listview_add(stackmenu1.listview1, lv.items[index].Caption, True, L_nr);
       // add to tab light
     end;
     Inc(index); {go to next file}
   end;
-  listview1.Items.endUpdate;
+  stackmenu1.listview1.Items.endUpdate;
 
   analyse_tab_lights(0 {analyse_level});//update also process_as_osc
   if process_as_osc > 0 then
@@ -6935,15 +6936,15 @@ begin
     exit;
   end;
 
-  oldindex := stack_method1.ItemIndex;
-  stack_method1.ItemIndex := 0; //average
+  oldindex := stackmenu1.stack_method1.ItemIndex;
+  stackmenu1.stack_method1.ItemIndex := 0; //average
 
-  stack_button1Click(Sender);// stack the files in tab lights
+  stackmenu1.stack_button1Click(Sender);// stack the files in tab lights
 
   // move calibrated files back
-  listview_removeselect(listview7);
-  listview7.Items.BeginUpdate;
-  with listview7 do
+  listview_removeselect(lv);
+  lv.Items.BeginUpdate;
+  with lv do
   begin
     ListItem := Items.insert(position);
     ListItem.Caption := filename2; // contains the stack file name
@@ -6952,15 +6953,21 @@ begin
       ListItem.SubItems.Add(''); // add the other columns
     Dec(index); {go to next file}
   end;
-  listview7.Items.EndUpdate;
+  lv.Items.EndUpdate;
 
-  listview1.Clear;
+  stackmenu1.listview1.Clear;
 
-  stack_method1.ItemIndex := oldindex;//return old setting
+  stackmenu1.stack_method1.ItemIndex := oldindex;//return old setting
   save_settings2;
 
-  analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
+  analyse_listview(lv, True {light}, False {full fits}, True{refresh});
   {refresh list}
+end;
+
+
+procedure Tstackmenu1.photom_stack1Click(Sender: TObject);
+begin
+  stack_group(listview7,Sender);
 end;
 
 
@@ -11701,7 +11708,6 @@ end;
 
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
-
   i, c, nrfiles, image_counter, object_counter,
   first_file, total_counter, counter_colours,analyse_level, solution_type :   integer;
   filter_name1, filter_name2, defilter, filename3,
@@ -12448,7 +12454,7 @@ begin
 
         mainwindow.Memo1.Lines.BeginUpdate;
 
-        remove_solution(false {keep wcs});//fast and efficient
+        //remove_solution(false {keep wcs});//fast and efficient
 
         remove_key('DATE    ', False{all});{no purpose anymore for the original date written}
         remove_key('EXPTIME', False{all}); {remove, will be added later in the header}

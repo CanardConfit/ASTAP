@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1110,6 +1110,8 @@ var
   simple,image,bintable,asciitable    : boolean;
   abyte                               : byte;
 
+  dummy                               : dword;
+
 var {################# initialised variables #########################}
   end_record : boolean=false;
 
@@ -1995,8 +1997,9 @@ begin
         try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
         for i:=0 to head.width-1 do
         begin
-          col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..65535}
-                         {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
+          col_float:=dword(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..65535}
+                        {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
+                        {Dword is required for high values}
           img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
@@ -2024,8 +2027,9 @@ begin
     if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
     begin
       scalefactor:=1;
-      if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
-                                                                                                     {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
+      if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then
+        scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
+                                         {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
       if scalefactor<>1 then {not a 0..65535 range, rescale}
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
@@ -8797,7 +8801,8 @@ begin
     J := C - 4715;
 
   str(trunc(J): 4, year3);
-  str(trunc(T)+F:7: 5, day);  //probably could use T only
+  str(trunc(T)+F:8: 5, day);  //probably could use T only
+  if day[1]=' ' then day[1]:='0';
 
   Result := year3 + ' ' + leadingzero(trunc(M)) + ' ' + day;
 end;
@@ -8857,7 +8862,8 @@ begin
     if ((object_raM<>0) and (object_decM<>0)) then
     begin
       line:=line+prepare_ra8(object_raM,' ')+' '+prepare_dec2(object_decM,' ');{object position in RA,DEC}
-      if line[46]=' ' then line[46]:='0';// add the missing zero for e.g. "- 7 39 33.03"
+      if line[33]=' ' then line[33]:='0';// add the missing zero for ra e.g. " 7 39 33.03"
+      if line[46]=' ' then line[46]:='0';// add the missing zero for dec e.g. "- 7 39 33.03"
       line:=line+'          ';
       if head.mzero<>0 then {offset calculated in star annotation call}
       begin
