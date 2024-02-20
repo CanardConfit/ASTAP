@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3789,9 +3789,7 @@ begin
   fact:=inttostr(binfactor);
   fact:=fact+'x'+fact;
   add_text   ('HISTORY   ','BIN'+fact+' version of '+filename2);
-
   mainwindow.Memo1.Lines.EndUpdate;
-
 end;
 
 
