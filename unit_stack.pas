@@ -112,6 +112,8 @@ type
     browse_mount1: TBitBtn;
     browse_photometry1: TBitBtn;
     Button1: TButton;
+    blink_stack_selected1: TMenuItem;
+    analyse_objects_visible2: TMenuItem;
     save_button1: TButton;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
@@ -459,6 +461,7 @@ type
     search_fov1: TComboBox;
     Separator4: TMenuItem;
     Separator5: TMenuItem;
+    Separator6: TMenuItem;
     show_quads1: TBitBtn;
     sigma_decolour1: TComboBox;
     smart_colour_sd1: TComboBox;
@@ -690,8 +693,10 @@ type
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure MenuItem14Click(Sender: TObject);
+    procedure analyse_objects_visible2Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure pixelsize1Change(Sender: TObject);
+    procedure PopupMenu6Popup(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -802,6 +807,7 @@ type
     procedure speedButton_location1Click(Sender: TObject);
     procedure stack_groups1Click(Sender: TObject);
     procedure stack_method1DropDown(Sender: TObject);
+    procedure blink_stack_selected1Click(Sender: TObject);
     procedure star_database1Change(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
     procedure apply_box_filter2Click(Sender: TObject);
@@ -5934,20 +5940,19 @@ begin
   end;
 end;
 
-
-procedure Tstackmenu1.analyse_objects_visible1Click(Sender: TObject);
+procedure analyse_objects_visible(lv :tlistview);
 begin
   esc_pressed:=false;
-  if ListView1.items.Count = 0 then
+  if lv.items.Count = 0 then
   begin
     memo2_message('Abort, No files in tab IMAGES.');
     exit;
   end;{no files in list, exit}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  if listview1.selected = nil then
-    ListView1.ItemIndex := 0;{show wich file is processed}
-  filename2 := Listview1.selected.Caption;
+  if lv.selected = nil then
+    lv.ItemIndex := 0;{show wich file is processed}
+  filename2 := lv.selected.Caption;
 
   if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
   begin
@@ -5979,6 +5984,13 @@ begin
     memo2_message('No object locations found in the image. Modify limiting count and limiting magnitude in Asteroid & Comet annotation menu, CTRL+R');
   memo2_message('Completed. Select the object to align on.');
   Screen.Cursor := crDefault;    { back to normal }
+end;
+
+
+
+procedure Tstackmenu1.analyse_objects_visible1Click(Sender: TObject);
+begin
+  analyse_objects_visible(listview1);
 end;
 
 
@@ -6909,6 +6921,19 @@ var
   index, counter, oldindex, position, i: integer;
   ListItem: TListItem;
 begin
+  if lv=tlistview(stackmenu1.listview6) then
+  begin
+    memo2_message('Loading first image to calibrate photometry for the stack');
+    listview_view(stackmenu1.listview6);//show first selected image
+    calibrate_photometry;
+    if save_fits(img_loaded,filename2,nrbits,true)=false then
+    begin
+      memo2_message('Abort. Could not save photometric updated file: '+filename2);
+      exit;
+    end
+    else
+    memo2_message(filename2+' photometric calibrated (MZERO)')
+  end;
 
   position := -1;
   index := 0;
@@ -6919,7 +6944,10 @@ begin
   begin
     if lv.Items[index].Selected then
     begin
-      if position < 0 then position := index;//store first position
+      if position < 0 then
+      begin
+        position := index;//store first position
+      end;
       listview_add(stackmenu1.listview1, lv.items[index].Caption, True, L_nr);
       // add to tab light
     end;
@@ -6939,23 +6967,30 @@ begin
   oldindex := stackmenu1.stack_method1.ItemIndex;
   stackmenu1.stack_method1.ItemIndex := 0; //average
 
+  filename2:='';
   stackmenu1.stack_button1Click(Sender);// stack the files in tab lights
 
-  // move calibrated files back
-  listview_removeselect(lv);
-  lv.Items.BeginUpdate;
-  with lv do
+  if filename2<>'' then
   begin
-    ListItem := Items.insert(position);
-    ListItem.Caption := filename2; // contains the stack file name
-    ListItem.Checked := True;
-    for i := 1 to P_nr do
-      ListItem.SubItems.Add(''); // add the other columns
-    Dec(index); {go to next file}
-  end;
-  lv.Items.EndUpdate;
+    // move calibrated files back
+    listview_removeselect(lv);
+    lv.Items.BeginUpdate;
+    with lv do
+    begin
+      ListItem := Items.insert(position);
+      ListItem.Caption := filename2; // contains the stack file name
+      ListItem.Checked := True;
+      for i := 1 to P_nr do
+        ListItem.SubItems.Add(''); // add the other columns
+      Dec(index); {go to next file}
+    end;
+    lv.Items.EndUpdate;
+    stackmenu1.listview1.Clear;
+    memo2_message('Stacking successfull');
 
-  stackmenu1.listview1.Clear;
+  end //stack success
+  else
+   memo2_message('Stack failure! Check stack settings');
 
   stackmenu1.stack_method1.ItemIndex := oldindex;//return old setting
   save_settings2;
@@ -9355,6 +9390,16 @@ begin
   tcombobox(sender).ItemWidth:=round(stack_method1.width*1.5);
 end;
 
+procedure Tstackmenu1.blink_stack_selected1Click(Sender: TObject);
+begin
+  use_ephemeris_alignment1.Checked:=true;
+  if ephemeris_centering1.text='' then
+  begin
+    memo2_message('For ephemeris aligned stacking first select an object in tab alignment, ephemeris alignment');
+  end;
+  stack_group(listview6,Sender);
+end;
+
 
 procedure Tstackmenu1.star_database1Change(Sender: TObject);
 begin
@@ -9623,6 +9668,11 @@ begin
   stackmenu1.Analyse1Click(Sender);{refresh positions}
 end;
 
+procedure Tstackmenu1.analyse_objects_visible2Click(Sender: TObject);
+begin
+  analyse_objects_visible(listview6);
+end;
+
 
 procedure Tstackmenu1.photometric_calibration1Click(Sender: TObject);
 var
@@ -9692,6 +9742,11 @@ end;
 procedure Tstackmenu1.pixelsize1Change(Sender: TObject);
 begin
   new_analyse_required:=true;
+end;
+
+procedure Tstackmenu1.PopupMenu6Popup(Sender: TObject);
+begin
+  blink_stack_selected1.Caption:='Stack selected files aligned on '+ephemeris_centering1.text;
 end;
 
 
@@ -12111,7 +12166,6 @@ begin
           begin {correct object}
             files_to_process[c].Name := ListView1.items[c].Caption;
             Inc(image_counter);{one image more}
-//            inc(total_counter);
 
             ListView1.Items.item[c].SubitemImages[L_result] := 5; {mark 3th columns as done using a stacked icon}
             ListView1.Items.item[c].subitems.Strings[L_result] := IntToStr(object_counter) + '  ';{show image result number}
@@ -12233,7 +12287,6 @@ begin
                 filters_used[i] := defilter;
                 files_to_process[c].Name := ListView1.items[c].Caption;
                 Inc(image_counter);{one image more}
-//                inc(total_counter);
 
                 ListView1.Items.item[c].SubitemImages[L_result] := 5;
                 {mark 3th columns as done using a stacked icon}
