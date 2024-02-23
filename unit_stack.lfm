@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_blink1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 7
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3032,31 +3032,19 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             State = cbChecked
             TabOrder = 5
-            OnChange = align_blink1Change
-          end
-          object solve_and_annotate1: TCheckBox
-            Left = 752
-            Height = 19
-            Hint = 'Solve images and annotate with MPCORB database.  For setting see viewer, tools, annotate asteroids.'
-            Top = 0
-            Width = 210
-            Caption = 'Solve images and annotate asteroids'
-            ParentFont = False
-            TabOrder = 6
-            OnChange = solve_and_annotate1Change
           end
           object clear_blink_alignment1: TButton
-            Left = 624
+            Left = 296
             Height = 25
             Hint = 'Clear alignment and photometric calibration. Apply this if alignment is poor.'
-            Top = 34
-            Width = 110
+            Top = 5
+            Width = 146
             AutoSize = True
-            Caption = 'Clear alignment'
+            Caption = 'Clear image alignment'
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 7
+            TabOrder = 6
             OnClick = clear_blink_alignment1Click
           end
           object analyseblink1: TButton
@@ -3068,7 +3056,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Analyse'
             ParentFont = False
-            TabOrder = 8
+            TabOrder = 7
             OnClick = analyseblink1Click
           end
           object help_blink1: TLabel
@@ -3098,19 +3086,8 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 9
+            TabOrder = 8
             OnClick = export_aligned_files1Click
-          end
-          object update_annotation1: TCheckBox
-            Left = 752
-            Height = 19
-            Hint = 'Update existing FITS header annotations.'
-            Top = 21
-            Width = 158
-            Caption = 'Update stored annotations'
-            Enabled = False
-            ParentFont = False
-            TabOrder = 10
           end
           object write_video1: TButton
             Left = 1019
@@ -3121,7 +3098,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Write video'
             Constraints.MinWidth = 102
-            TabOrder = 11
+            TabOrder = 9
             OnClick = write_video1Click
           end
           object timestamp1: TCheckBox
@@ -3134,8 +3111,7 @@ object stackmenu1: Tstackmenu1
             Checked = True
             ParentFont = False
             State = cbChecked
-            TabOrder = 12
-            OnChange = align_blink1Change
+            TabOrder = 10
           end
           object blink_button_contB1: TButton
             Left = 440
@@ -3145,7 +3121,7 @@ object stackmenu1: Tstackmenu1
             Width = 43
             Caption = '◀'
             ParentFont = False
-            TabOrder = 13
+            TabOrder = 11
             OnClick = blink_button1Click
           end
           object browse_blink1: TBitBtn
@@ -3158,16 +3134,16 @@ object stackmenu1: Tstackmenu1
             Images = ImageList2
             ImageIndex = 23
             OnClick = browse_blink1Click
-            TabOrder = 14
+            TabOrder = 12
           end
           object Annotations_visible2: TCheckBox
-            Left = 752
+            Left = 656
             Height = 19
             Hint = 'Same option as in the viewer under View.'
-            Top = 43
+            Top = 37
             Width = 119
             Caption = 'Annotations visible'
-            TabOrder = 15
+            TabOrder = 13
             OnClick = Annotations_visible2Click
           end
           object most_right8: TStaticText
@@ -3177,8 +3153,24 @@ object stackmenu1: Tstackmenu1
             Width = 3
             AutoSize = True
             Caption = '|'
-            TabOrder = 16
+            TabOrder = 14
             Visible = False
+          end
+          object Label6: TLabel
+            Left = 809
+            Height = 15
+            Top = 8
+            Width = 193
+            Caption = 'For Track and Stack see popup menu'
+          end
+          object blink_annotate_and_solve1: TButton
+            Left = 656
+            Height = 25
+            Top = 5
+            Width = 144
+            Caption = '(Re)annotate (&&solve)'
+            TabOrder = 15
+            OnClick = blink_annotate_and_solve1Click
           end
         end
         object tab_photometry1: TTabSheet
@@ -4718,46 +4710,6 @@ object stackmenu1: Tstackmenu1
             Caption = '|'
             TabOrder = 6
             Visible = False
-          end
-        end
-        object MPC1992_1: TTabSheet
-          Hint = 'MPC1992 style report of astrometric observations of comets, minor planets'
-          Caption = 'MPC1992'
-          ClientHeight = 472
-          ClientWidth = 1912
-          object Memo3: TMemo
-            Left = 0
-            Height = 436
-            Top = 36
-            Width = 1912
-            Align = alClient
-            BorderSpacing.Top = 36
-            Font.CharSet = ANSI_CHARSET
-            Font.Name = 'Courier New'
-            Font.Pitch = fpFixed
-            Font.Quality = fqDraft
-            Lines.Strings = (
-              'COD XXX'
-              'CON Optional contact name. Additional contact details may then follow. '
-              'OBS Observer name(s), no programs'
-              'MEA Measurers name(s), no programs'
-              'TEL 0.1-m f/5.8 refractor + CCD'
-              'COM Long. 6 30 00 E, Lat. 53 00 00 N, Alt 10m, Google Earth'
-              'NET Gaia3'
-            )
-            ParentFont = False
-            ScrollBars = ssAutoBoth
-            TabOrder = 0
-          end
-          object save_button1: TButton
-            Left = 16
-            Height = 25
-            Hint = 'Save temporary to the standard astap.cfg file. To export select all by ctrl+A and copy with ctrl+C.'
-            Top = 5
-            Width = 75
-            Caption = 'Save'
-            TabOrder = 1
-            OnClick = save_button1Click
           end
         end
         object tab_Pixelmath1: TTabSheet
@@ -8529,7 +8481,6 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu6: TPopupMenu
     Images = ImageList2
-    OnPopup = PopupMenu6Popup
     Left = 936
     Top = 592
     object Viewimage6: TMenuItem
@@ -8581,14 +8532,10 @@ object stackmenu1: Tstackmenu1
     object MenuItem18: TMenuItem
       Caption = '-'
     end
-    object analyse_objects_visible2: TMenuItem
-      Caption = 'Fill alignment tab with objects'
-      Hint = 'For ephemeris alignment'
-      OnClick = analyse_objects_visible2Click
-    end
     object blink_stack_selected1: TMenuItem
-      Caption = 'Stack selected files aligned on an object'
-      Hint = 'Stack the selected files in mode average.'
+      Caption = 'Track and Stack all selected files for all annotations'
+      Hint = 'Stack selected files aligned for each annotated object'
+      ImageIndex = 6
       OnClick = blink_stack_selected1Click
     end
     object Separator6: TMenuItem
