@@ -113,8 +113,8 @@ type
     browse_photometry1: TBitBtn;
     Button1: TButton;
     blink_stack_selected1: TMenuItem;
-    analyse_objects_visible2: TMenuItem;
-    save_button1: TButton;
+    blink_annotate_and_solve1: TButton;
+    Label6: TLabel;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
     calculated_sensor_size1: TLabel;
@@ -347,7 +347,6 @@ type
     manual_centering1: TComboBox;
     mark_outliers_upto1: TComboBox;
     max_stars1: TComboBox;
-    Memo3: TMemo;
     memo2: TMemo;
     MenuItem14: TMenuItem;
     merge_overlap1: TCheckBox;
@@ -468,7 +467,6 @@ type
     smart_colour_smooth_button1: TButton;
     smart_smooth_width1: TComboBox;
     solve1: TButton;
-    solve_and_annotate1: TCheckBox;
     solve_show_log1: TCheckBox;
     SpeedButton1: TSpeedButton;
     speedButton_location1: TSpeedButton;
@@ -519,7 +517,6 @@ type
     star_database1: TComboBox;
     star_level_colouring1: TComboBox;
     subtract_background1: TButton;
-    MPC1992_1: TTabSheet;
     tab_blink1: TTabSheet;
     tab_inspector1: TTabSheet;
     tab_live_stacking1: TTabSheet;
@@ -563,7 +560,6 @@ type
     undo_button_equalise_background1: TBitBtn;
     unselect9: TMenuItem;
     unselect_area1: TButton;
-    update_annotation1: TCheckBox;
     update_annotations1: TCheckBox;
     update_solution1: TCheckBox;
     UpDown1: TUpDown;
@@ -683,20 +679,18 @@ type
     write_video1: TButton;
     procedure add_noise1Click(Sender: TObject);
     procedure alignment1Show(Sender: TObject);
-    procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
     procedure blend1Change(Sender: TObject);
+    procedure blink_annotate_and_solve1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure MenuItem14Click(Sender: TObject);
-    procedure analyse_objects_visible2Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure pixelsize1Change(Sender: TObject);
-    procedure PopupMenu6Popup(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -789,7 +783,6 @@ type
     procedure photometry_binx2Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
     procedure saturation_tolerance1Change(Sender: TObject);
-    procedure save_button1Click(Sender: TObject);
     procedure save_result1Click(Sender: TObject);
     procedure save_settings_extra_button1Click(Sender: TObject);
     procedure smart_colour_smooth_button1Click(Sender: TObject);
@@ -803,7 +796,6 @@ type
     procedure apply_remove_background_colour1Click(Sender: TObject);
     procedure reset_factors1Click(Sender: TObject);
     procedure search_fov1Change(Sender: TObject);
-    procedure solve_and_annotate1Change(Sender: TObject);
     procedure speedButton_location1Click(Sender: TObject);
     procedure stack_groups1Click(Sender: TObject);
     procedure stack_method1DropDown(Sender: TObject);
@@ -953,6 +945,7 @@ var
   sum_exp, sum_temp, photometry_stdev: double;
   referenceX, referenceY: double;{reference position used stacking}
   jd_mid: double;{julian day of mid head.exposure}
+  jd_mid_reference :double; { julian day of mid head.exposure for reference image}
   jd_sum: double;{sum of julian days}
   jd_end: double;{end observation in julian days}
   jd_start_first: double;{begin of observation in julian days}
@@ -4224,6 +4217,11 @@ begin
               lv.Items.item[c].subitems.Strings[B_date] :=
                 StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []); {date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[B_calibration] := head_2.calstat;  {calibration head_2.calstat info DFB}
+              if a_order>0 then
+                lv.Items.item[c].subitems.Strings[B_solution] := '✓✓' //SIP solution
+              else
+              if head_2.cd1_1 <> 0 then
+                lv.Items.item[c].subitems.Strings[B_solution] := '✓';
               if annotated then lv.Items.item[c].subitems.Strings[B_annotated] := '✓' else lv.Items.item[c].subitems.Strings[B_annotated] := '';
             end
             else
@@ -5440,7 +5438,7 @@ var
   hfd_min: double;
   c, x_new, y_new, fitsX, fitsY, col, first_image, stepnr, nrrows,
   cycle, step, ps, bottom, top, left, w, h, max_stars: integer;
-  reference_done, init{,solut}, astro_solved, store_annotated, success, res: boolean;
+  reference_done, init{,solut}, astro_solved, store_annotated, success, res,buffer_loaded: boolean;
   st                  : string;
   starlist1,starlist2 : star_list;
 
@@ -5459,6 +5457,7 @@ begin
   mainwindow.image1.canvas.font.color := $00B0FF;{orange}
 
   esc_pressed := False;
+  buffer_loaded:=false;
   first_image := -1;
   cycle := 0;
   if Sender = blink_button_contB1 then step := -1  else step := 1;{forward/ backwards}
@@ -5468,7 +5467,7 @@ begin
   setlength(bsolutions, nrrows); {for the solutions in memory. bsolutions is destroyed in formdestroy}
 
   stepnr := 0;
-  if ((Sender = blink_button1) or (solve_and_annotate1.Checked) or
+  if ((Sender = blink_button1) or
     (Sender = write_video1) or (Sender = nil){export aligned}) then  init := True {start at beginning for video}
   else
     init := False;{start at selection}
@@ -5509,54 +5508,6 @@ begin
         use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
         if first_image = c then Inc(cycle);
-        if cycle >= 2 then stackmenu1.update_annotation1.Checked := False;
-        {reset any request to update fits header annotations}
-
-        if solve_and_annotate1.Checked then
-        begin
-          astro_solved := False;{assume failure}
-          if head.cd1_1 = 0 then {get astrometric solution}
-          begin
-            listview6.Selected := nil; {remove any selection}
-            listview6.ItemIndex := c;
-            {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-            listview6.Items[c].MakeVisible(False);{scroll to selected item}
-            memo2_message(filename2 + ' Adding astrometric solution to files.');
-
-            if solve_image(img_loaded, head, True  {get hist}) then
-            begin{match between loaded image and star database}
-              astro_solved := True;{saving will be done later}
-              memo2_message(filename2 + ' astrometric solved.');
-            end
-            else
-              memo2_message(filename2 + 'No astrometric solution found for this file.');
-          end;
-
-          if head.cd1_1 <> 0 then
-          begin
-            if ((annotated = False) or (stackmenu1.update_annotation1.Checked)) then
-            begin
-              plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations});
-              listview6.Items.item[c].subitems.Strings[B_annotated] := '✓';
-            end;
-            if ((astro_solved) or (stackmenu1.update_annotation1.Checked)) then
-              {save solution}
-            begin
-              if fits_file_name(filename2) then
-                success := savefits_update_header(filename2)
-              else
-                success := save_tiff16_secure(img_loaded, filename2);
-              {guarantee no file is lost}
-              if success = False then
-              begin
-                ShowMessage('Write error !!' + filename2);
-                Screen.Cursor := crDefault;
-                exit;
-              end;
-            end;
-          end;
-        end;{astrometric solve and annotate}
-
 
         {find align solution}
         if align_blink1.Checked then
@@ -5717,10 +5668,6 @@ begin
       end;
       Inc(c, step);
     until ((c >= nrrows) or (c < 0));
-
-   solve_and_annotate1.checked:=false;
-//    stackmenu1.update_annotation1.Checked:=false;//update is done
-
   until ((esc_pressed) or (Sender = blink_button1 {single run}) or
       (Sender = write_video1) or (Sender = nil){export aligned});
 
@@ -5940,12 +5887,13 @@ begin
   end;
 end;
 
-procedure analyse_objects_visible(lv :tlistview);
+procedure analyse_objects_visible(lv :tlistview);  //analyse the the first selected image or the first image
 begin
   esc_pressed:=false;
+  stackmenu1.ephemeris_centering1.items.clear;//clear the list
   if lv.items.Count = 0 then
   begin
-    memo2_message('Abort, No files in tab IMAGES.');
+    memo2_message('Abort, No files in the listview.');
     exit;
   end;{no files in list, exit}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -5973,7 +5921,7 @@ begin
   end;
 
   memo2_message('Annotating file: ' + filename2 + ' and extracting objects.');
-  plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations});
+  plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations},false);
   if annotated then
   begin
     mainwindow.annotations_visible1.Checked := True;
@@ -5990,7 +5938,7 @@ end;
 
 procedure Tstackmenu1.analyse_objects_visible1Click(Sender: TObject);
 begin
-  analyse_objects_visible(listview1);
+  analyse_objects_visible(listview1); ;//file ephemeris_centering1 tCombobox in tab alignment with asteroids using one image
 end;
 
 
@@ -6919,21 +6867,10 @@ end;
 procedure stack_group(lv : tlistview; Sender: TObject);
 var
   index, counter, oldindex, position, i: integer;
-  ListItem: TListItem;
+  ListItem  : TListItem;
+  blinktab  : boolean;
 begin
-  if lv=tlistview(stackmenu1.listview6) then
-  begin
-    memo2_message('Loading first image to calibrate photometry for the stack');
-    listview_view(stackmenu1.listview6);//show first selected image
-    calibrate_photometry;
-    if save_fits(img_loaded,filename2,nrbits,true)=false then
-    begin
-      memo2_message('Abort. Could not save photometric updated file: '+filename2);
-      exit;
-    end
-    else
-    memo2_message(filename2+' photometric calibrated (MZERO)')
-  end;
+  blinktab:=lv=tlistview(stackmenu1.listview6);//sender is blink tab
 
   position := -1;
   index := 0;
@@ -6973,13 +6910,13 @@ begin
   if filename2<>'' then
   begin
     // move calibrated files back
-    listview_removeselect(lv);
+    if blinktab=false then listview_removeselect(lv);
     lv.Items.BeginUpdate;
     with lv do
     begin
       ListItem := Items.insert(position);
       ListItem.Caption := filename2; // contains the stack file name
-      ListItem.Checked := True;
+      ListItem.Checked := blinktab=false;//do not check the new files in tab blink
       for i := 1 to P_nr do
         ListItem.SubItems.Add(''); // add the other columns
       Dec(index); {go to next file}
@@ -6995,7 +6932,7 @@ begin
   stackmenu1.stack_method1.ItemIndex := oldindex;//return old setting
   save_settings2;
 
-  analyse_listview(lv, True {light}, False {full fits}, True{refresh});
+  if blinktab=false then analyse_listview(lv, True {light}, False {full fits}, True{refresh});
   {refresh list}
 end;
 
@@ -8654,10 +8591,6 @@ begin
   {plot colour disk in on paint event. Onpaint is required for MacOS}
 end;
 
-procedure Tstackmenu1.save_button1Click(Sender: TObject);
-begin
-  save_settings2;
-end;
 
 procedure Tstackmenu1.save_result1Click(Sender: TObject);
 var
@@ -9289,12 +9222,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.solve_and_annotate1Change(Sender: TObject);
-begin
-  update_annotation1.Enabled := solve_and_annotate1.Checked;{update menu}
-end;
-
-
 procedure Tstackmenu1.speedButton_location1Click(Sender: TObject);
 begin
   lat_default := InputBox('Default observer location:','Enter the default observer latitude in degrees [DD.DDD or DD MM]', lat_default);
@@ -9391,13 +9318,58 @@ begin
 end;
 
 procedure Tstackmenu1.blink_stack_selected1Click(Sender: TObject);
+var
+  i : integer;
 begin
+  esc_pressed:=false;
+
+//  if lv.selected = nil then
+//    lv.ItemIndex := 0;{show wich file is processed}
+//  filename2 := lv.selected.Caption;
+
+
+  analyse_objects_visible(listview6);//file ephemeris_centering1 tCombobox in tab alignment with asteroids using one image
+
+  memo2_message('Loading first image to calibrate photometry for the stack');
+  listview_view(stackmenu1.listview6);//show first selected image
+
+ // if ((head.cd1_1=0) or (annotated=false)) then
+//  begin
+//    memo2_message('Abort!, '+ filename2+' image not solved or annotated. Click on the button "(Re)annotate & solve" first!');
+//    exit;
+//  end;
+
+  calibrate_photometry;
+  if save_fits(img_loaded,filename2,nrbits,true)=false then
+  begin
+    memo2_message('Abort. Could not save photometric updated file: '+filename2);
+    exit;
+  end
+  else
+  memo2_message(filename2+' photometric calibrated (MZERO)');
+
   use_ephemeris_alignment1.Checked:=true;
   if ephemeris_centering1.text='' then
   begin
-    memo2_message('For ephemeris aligned stacking first select an object in tab alignment, ephemeris alignment');
+    memo2_message('No objects found. Adapt the settings in viewer tools menu "Annotate asteroids and comets" shortcut ctrl+R');
   end;
-  stack_group(listview6,Sender);
+  for i:=0 to ephemeris_centering1.items.count-1 do
+  begin
+    application.processmessages;
+    if esc_pressed then
+    begin
+   //   Screen.Cursor := crDefault;{back to normal }
+      exit;
+    end;
+    ephemeris_centering1.itemindex:=i; //select the asteroid
+    if  ephemeris_centering1.text<>'' then
+    begin
+      memo2_message('Track & stack for '+ephemeris_centering1.text);
+      stack_group(listview6,Sender); //stack aligned on this asteroid;
+    end;
+  end;
+  memo2_message('Track & stack is complete. Resulting files are inserted at the top of the selection!');
+  memo2_message('Use the viewer popup menu "MPC1992 report line" to compile a MPC1992 report or to check the object at "https://www.minorplanetcenter.net/cgi-bin/checkmp.cgi"');
 end;
 
 
@@ -9546,6 +9518,75 @@ begin
   new_colour_luminance1.Enabled:=blend1.checked=false;
 end;
 
+procedure Tstackmenu1.blink_annotate_and_solve1Click(Sender: TObject);
+var
+  c: integer;
+  buffer_loaded,success : boolean;
+begin
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  buffer_loaded:=false;//astro_buffer
+  for c:=0 to listview6.Items.count-1 do
+  begin
+    if ((esc_pressed = False) and (listview6.Items.item[c].Checked)) then
+    begin
+      listview6.Selected := nil; {remove any selection}
+      listview6.ItemIndex := c;
+      {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+      listview6.Items[c].MakeVisible(False);{scroll to selected item}
+
+      filename2 := listview6.items[c].Caption;
+      mainwindow.Caption := filename2;
+      memo2_message('Annotating '+filename2);
+      Application.ProcessMessages;
+      if esc_pressed then break;
+      {load image}
+      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
+      begin
+        esc_pressed := True;
+        break;
+      end;
+
+      use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+
+      if head.cd1_1 = 0 then {get astrometric solution}
+      begin
+        listview6.Selected := nil; {remove any selection}
+        listview6.ItemIndex := c;
+        {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+        listview6.Items[c].MakeVisible(False);{scroll to selected item}
+        memo2_message(filename2 + ' Adding astrometric solution to files.');
+
+        if solve_image(img_loaded, head, True  {get hist}) then
+        begin{match between loaded image and star database}
+          memo2_message(filename2 + ' astrometric solved.');
+        end
+        else
+          memo2_message(filename2 + 'No astrometric solution found for this file.');
+      end;
+
+      if head.cd1_1 <> 0 then
+      begin
+        plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations},buffer_loaded);
+        buffer_loaded:=true;//asteroids are in the buffer ready to be reused
+        listview6.Items.item[c].subitems.Strings[B_annotated] := '✓';
+
+        if fits_file_name(filename2) then
+          success := savefits_update_header(filename2)
+        else
+          success := save_tiff16_secure(img_loaded, filename2);
+        {guarantee no file is lost}
+        if success = False then
+        begin
+          ShowMessage('Write error !!' + filename2);
+          break;
+        end;
+      end;
+    end;//checked item
+  end;//for loop
+  Screen.Cursor:=crDefault;
+end;
+
 
 procedure Tstackmenu1.classify_dark_temperature1Change(Sender: TObject);
 begin
@@ -9668,11 +9709,6 @@ begin
   stackmenu1.Analyse1Click(Sender);{refresh positions}
 end;
 
-procedure Tstackmenu1.analyse_objects_visible2Click(Sender: TObject);
-begin
-  analyse_objects_visible(listview6);
-end;
-
 
 procedure Tstackmenu1.photometric_calibration1Click(Sender: TObject);
 var
@@ -9742,11 +9778,6 @@ end;
 procedure Tstackmenu1.pixelsize1Change(Sender: TObject);
 begin
   new_analyse_required:=true;
-end;
-
-procedure Tstackmenu1.PopupMenu6Popup(Sender: TObject);
-begin
-  blink_stack_selected1.Caption:='Stack selected files aligned on '+ephemeris_centering1.text;
 end;
 
 
@@ -10721,12 +10752,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.align_blink1Change(Sender: TObject);
-begin
-  solve_and_annotate1.Enabled := align_blink1.Checked;
-end;
-
-
 procedure Tstackmenu1.add_noise1Click(Sender: TObject);
 var
   fitsX, fitsY, col: integer;
@@ -11092,7 +11117,7 @@ begin
         path1 := extractfilepath(file_list[0]) + 'master_dark_' + IntToStr(head.dark_count) + 'x' + IntToStr(round(exposure)) + 's_at_' + IntToStr( temperatureRound) + 'C_' + copy(head.date_obs, 1, 10) + '.fit';
         update_integer('DARK_CNT=', ' / Number of dark image combined                  ' , head.dark_count);
         update_integer('CCD-TEMP=', ' / Average sensor temperature (Celsius)           ' , temperatureRound);
-        add_text('COMMENT 7', '  Dark temperature tolerance setting was ' + IntToStr(stackmenu1.delta_temp_updown1.position)+ ' degrees Celsius' );
+        add_text('COMMENT 8', '  Dark temperature tolerance setting was ' + IntToStr(stackmenu1.delta_temp_updown1.position)+ ' degrees Celsius' );
 
         { ASTAP keyword standard:}
         { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
@@ -11756,6 +11781,8 @@ begin
     decodetime(time, hh, mm, ss, ms);
     Result := Result + '_' + leadingzero(hh) + leadingzero(mm) + leadingzero(ss);
   end;
+
+  if stackmenu1.use_ephemeris_alignment1.Checked then result:=result+stackmenu1.ephemeris_centering1.text;
   if pos('Aver', stackmenu1.stack_method1.Text) > 0 then Result := Result + '_average';
   Result := Result + '_stacked.fits';
 end;
@@ -12064,7 +12091,7 @@ begin
             Screen.Cursor := crDefault;
             exit;
           end;
-          plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add_annotations});
+          plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add_annotations},true {use asteroid buffer. Was loaded by analyse_objects_visible});
 
           if fits_file_name(filename2) then
             success := savefits_update_header(filename2)
@@ -12211,7 +12238,7 @@ begin
           calibration_and_alignment(process_as_osc, {var}files_to_process, counterL);{saturation clip average}
         end
         else
-          stack_average(process_as_osc,{var}files_to_process, counterL);
+        stack_average(process_as_osc,{var}files_to_process, counterL);
         {average}
 
         if counterL > 0 then
@@ -12526,7 +12553,7 @@ begin
         update_text('COMMENT 1', '  Written by ASTAP. www.hnsky.org');
 
         head.calstat := head.calstat + 'S'; {status stacked}
-        update_float  ('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
+        update_float('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
         update_text('CALSTAT =', #39 + head.calstat + #39); {calibration status}
 
 
@@ -12535,13 +12562,17 @@ begin
         update_text('DATE-OBS=', #39 + head.date_obs + #39 + '/ Date and time of the start of the observation.'); //add_text
         update_text('DATE-END=', #39 + jdToDate(jd_end_last) + #39 + '/ Date and time of the end of the observation.'); //add_text
 
-        if ((head.naxis3 = 1) and (counterL > 0)) then {works only for mono}
-        begin
-          update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum / counterL);{give midpoint of exposures}
-          head.date_avg := JdToDate(jd_sum / counterL);  {update date_avg for asteroid annotation}
 
+        if (((head.naxis3 = 1) or (process_as_osc>0)) and (counterL > 0)) then {works only for mono}
+        begin
+          if use_ephemeris_alignment1.Checked=false then
+            jd_mid:=jd_sum / counterL  //average of jd_mid
+          else
+            jd_mid:=jd_mid_reference;//stacked aligned to the minor planet of the reference image.
+          update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_mid);{give midpoint of exposures}
+          head.date_avg := JdToDate(jd_mid);  {update date_avg for asteroid annotation}
           update_text('DATE-AVG=', #39 + head.date_avg + #39);{give midpoint of exposures}
-          head.date_obs := JdToDate((jd_sum / counterL) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
+          head.date_obs := JdToDate((jd_mid) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
         end;
 
         head.exposure := sum_exp;

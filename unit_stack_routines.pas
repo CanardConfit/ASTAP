@@ -150,22 +150,22 @@ begin
   if ((head.cd1_1=0) or (flipx=false)) then //no solution or not flipped
   begin
     solution_vectorX[0]:=1;
-    solution_vectorX[2]:=referenceX-strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {calculate correction}
+    solution_vectorX[2]:=referenceX{-1}-(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]){-1}); {calculate correction. The two subtractions are neutralizing each other}
   end
   else
   begin
     solution_vectorX[0]:=-1; //flipped x
-    solution_vectorX[2]:=2*(head.width+1) - referenceX + strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]);  //flipped x
+    solution_vectorX[2]:=(referenceX-1) + (strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X])-1);//calculate in 0..width-1 range. ReferenceX is in fits values
   end;
   if ((head.cd1_1=0) or (flipY=false)) then //no solution or not flipped in Y
   begin
    solution_vectorY[1]:=1;
-   solution_vectorY[2]:=referenceY-strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]);
+   solution_vectorY[2]:=referenceY{-1} - (strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]){-1});//the two subtractions are neutralizing each other
    end
   else
   begin
     solution_vectorY[1]:=-1; //flipped y
-    solution_vectorY[2]:=2*(head.height+1) - referenceY +strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); //flipped y
+    solution_vectorY[2]:=(referenceY-1) +(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y])-1); ;//calculate in 0..height-1 range. ReferenceY is in FITS values
   end;
 
 end;
@@ -632,6 +632,7 @@ begin
           begin {init is false, first image}
             old_width:=head.width;
             old_height:=head.height;
+            add_text('COMMENT 9', '  Reference file was ' + filename2);
             head_ref:=head;{backup solution}
             initialise_calc_sincos_dec0;{set variables correct. Do this before apply dark}
             //initialise_var2;{set variables correct}
@@ -662,6 +663,7 @@ begin
 
           if init=false then {init}
           begin
+            jd_mid_reference:=jd_mid; //for ephemeris stacking
             height_max:=head.height;
             width_max:=head.width;
             binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
@@ -761,6 +763,16 @@ begin
             dd:=solution_vectorY[0];
             ee:=solution_vectorY[1];
             ff:=solution_vectorY[2];
+
+//            fitsx:=1362;
+  //          fitsy:=447;
+
+//            fitsx:=176;
+  //          fitsy:=578;
+
+    //        x_new:=round(aa*(175.64)+bb*(fitsY)+cc);
+      //      y_new:=round(dd*(fitsx)+ee*(578.3)+ff); {correction y:=aX+bY+c}
+        //    beep;  }
 
             for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
             for fitsX:=0 to head.width-1  do

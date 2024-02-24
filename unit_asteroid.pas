@@ -71,8 +71,17 @@ type
   public
   end;
 
+
+type
+  Tasteroid =record
+               yy,mm,dd,
+               a_e,a_or_q ,a_i,a_ohm,a_w,a_M,H,
+               a_g : double;
+               desn,name: string;
+             end;
 var
   form_asteroids1: Tform_asteroids1;
+  asteroid_buffer : array of Tasteroid;
 const
    maxcount_asteroid : string='10000';
    maxmag_asteroid : string='17';
@@ -84,7 +93,9 @@ const
    add_annotations: boolean=false;{annotation to the fits header}
    add_date: boolean=true;
 
-procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
+
+
+procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot,use_buffer :boolean) ;{read MPCORB.dat}{han.k}
 function deltaT_calc(jd: double) : double; {delta_T in days}
 
 implementation
@@ -361,7 +372,7 @@ begin
 end;
 
 
-procedure convert_MPCORB_line(txt : string; var desn,name: string; var yy,mm,dd,a_e,a_a,a_i,a_ohm,a_w,a_M,h,g: double);{read asteroid, han.k}
+procedure convert_MPCORB_line(txt : string; out desn,name: string; out yy,mm,dd,a_e,a_a,a_i,a_ohm,a_w,a_M,h,g: double);{read asteroid, han.k}
 var
   code2           : integer;
 //  degrees_to_perihelion,c_epochdelta           : double;
@@ -414,7 +425,7 @@ begin
 end;
 
 
-procedure convert_comet_line(txt : string; var desn,name: string; var yy,mm,dd, ecc,q,inc2,lan,aop,M_anom,H,k: double); {han.k}
+procedure convert_comet_line(txt : string; out desn,name: string; out yy,mm,dd, ecc,q,inc2,lan,aop,M_anom,H,k: double); {han.k}
 var
   error1          : integer;
   g               : double;
@@ -453,14 +464,14 @@ begin
 end;
 
 
-procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
+procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot,use_buffer:boolean) ;{read MPCORB.dat}{han.k}
 const
   a_g : double =0.15;{asteroid_slope_factor}
   siderealtime2000=(280.46061837)*pi/180;{[radians], sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
 var
   txtf : textfile;
-  count,fontsize           : integer;
+  count,fontsize,counter           : integer;
   yy,mm,dd,h,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
   SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,a_e,a_i,a_ohm,a_w,a_M   : double;
   desn,name,s, thetext1,thetext2,fontsize_str:string;
@@ -497,34 +508,52 @@ var
           y:=(head.crpix2 + v0);
         end;
 
-        if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
+        if ((x>0) and (x<head.width) and (y>0) and (y<head.height)) then {within image1}
         begin
           {annotate}
            if showfullnames then thetext1:=trim(name) else thetext1:=desn+'('+floattostrF(mag,ffgeneral,3,1)+')';
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:=' ';
 
+        //   thetext2:=thetext2+prepare_ra8(ra2,' ')+' '+prepare_dec2(dec2,' ')+' '+floattostr(x)+','+floattostr(y);
+
+
+
+
+
+
+
+
+
+
+
+
+
            if add_annot then
            begin
               {store annotation. Fractions are for ephemeride alignment stacking}
-              add_text ('ANNOTATE=',#39+copy(floattostrF(x+1-sizebox,FFFixed,0,2)+';'+floattostrF(y+1-sizebox,FFFixed,0,2)+';'+floattostrF(x+1+sizebox,fffixed,0,2)+';'+floattostrF(y+1+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+desn+';',1,68)+#39); {store in FITS coordinates 1..}
+              add_text ('ANNOTATE=',#39+copy(floattostrF(x-sizebox,FFFixed,0,2)+';'+floattostrF(y-sizebox,FFFixed,0,2)+';'+floattostrF(x+sizebox,fffixed,0,2)+';'+floattostrF(y+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+desn+';',1,68)+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
            end;
-           plot_the_annotation(round(x+1-sizebox) {x1},round(y+1-sizebox) {y1},round(x+1+sizebox){x2},round(y+1+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
+           plot_the_annotation(round(x-sizebox) {x1},round(y-sizebox) {y1},round(x+sizebox){x2},round(y+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
         end;
       end;
       procedure read_and_plot(asteroid: boolean; path :string);
       begin
+        if length(asteroid_buffer)=0 then
+        begin
+          setlength(asteroid_buffer,1000);
+        end;
+        counter:=0;
         assignfile(txtf,path);
         try
           Reset(txtf);
           while ((not EOF(txtf)) and (count<maxcount) and (esc_pressed=false)) do   {loop}
           begin
             ReadLn(txtf, s);
-           if length(s)>10 then
-           begin
-
-             if asteroid then  convert_MPCORB_line(s, {var} desn,name, yy,mm,dd,a_e,a_or_q {a},a_i,a_ohm,a_w,a_M,H,a_g){read MPC asteroid}
-                         else  convert_comet_line (s, {var} desn,name, yy,mm,dd,a_e ,a_or_q {q},a_i,a_ohm,a_w,a_M,H,c_k); {read MPC comet}
+            if length(s)>10 then
+            begin
+             if asteroid then  convert_MPCORB_line(s, {out} desn,name, yy,mm,dd,a_e,a_or_q {a},a_i,a_ohm,a_w,a_M,H,a_g){read MPC asteroid}
+                         else  convert_comet_line (s, {var} desn,name, yy,mm,dd,a_e,a_or_q {q},a_i,a_ohm,a_w,a_M,H,c_k); {read MPC comet}
              if ((desn<>'') and (a_or_q<>0)) then {data line}
              begin
                try
@@ -555,7 +584,29 @@ var
 
                    if mag<=maxmag then
                    begin
-                     if asteroid then plot_asteroid(annotation_diameter) else plot_asteroid(annotation_diameter*5);
+                     if asteroid then
+                       plot_asteroid(annotation_diameter)
+                     else
+                       plot_asteroid(annotation_diameter*5);
+
+                     asteroid_buffer[counter].yy:=yy;
+                     asteroid_buffer[counter].mm:=mm;
+                     asteroid_buffer[counter].dd:=dd;
+                     asteroid_buffer[counter].a_e:=a_e;
+                     asteroid_buffer[counter].a_or_q :=a_or_q;
+                     asteroid_buffer[counter].a_i:=a_i;
+                     asteroid_buffer[counter].a_ohm:=a_ohm;
+                     asteroid_buffer[counter].a_w:=a_w;
+                     asteroid_buffer[counter].a_M:=a_M; //1E99 if comet
+                     asteroid_buffer[counter].h:=h;
+                     if asteroid then
+                        asteroid_buffer[counter].a_g:=a_g
+                     else
+                       asteroid_buffer[counter].a_g:=c_k;
+                     asteroid_buffer[counter].desn:=desn;
+                     asteroid_buffer[counter].name:=name;
+                     inc(counter);
+                     if counter>=length(asteroid_buffer) then setlength(asteroid_buffer,length(asteroid_buffer)+1000);
                    end;
 
                    if frac(count/10000)=0 then
@@ -571,8 +622,61 @@ var
         end;
         finally
           CloseFile(txtf);
+          setlength(asteroid_buffer,counter);
         end;
       end;
+
+      procedure replot; //plot for the second image in a series using the existing data in the asteroid_buffer
+      var
+        cc : integer;
+      begin
+        try
+        for cc:=0 to length(asteroid_buffer)-1 do
+        begin
+          {comet is indicated by a_M:=1E99, Mean anomoly, an abnormal value}
+          minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},
+          round(asteroid_buffer[cc].yy),
+          round(asteroid_buffer[cc].mm),
+          asteroid_buffer[cc].dd,
+          asteroid_buffer[cc].a_e,
+          asteroid_buffer[cc].a_or_q,
+          asteroid_buffer[cc].a_i,
+          asteroid_buffer[cc].a_ohm,
+          asteroid_buffer[cc].a_w,
+          asteroid_buffer[cc].a_M,
+          {out} ra2,dec2,delta,sun_delta);
+
+          if sqr( (ra2-head.ra0)*cos_telescope_dec)  + sqr(dec2-head.dec0)< sqr(fov) then {within the image FOV}
+          begin
+            desn:=asteroid_buffer[cc].desn;
+            name:=asteroid_buffer[cc].name;
+
+            if a_M<1E98 {asteroid} then
+             begin
+               mag:=asteroid_buffer[cc].h+ ln(delta*sun_delta)*5/ln(10);  {log(x) = ln(x)/ln(10)}
+
+               phase:=illum_planet; { Get phase comet. Only valid if comet routine is called first.}
+               mag:=mag+asteroid_magn_comp(a_g{asteroid_slope_factor},phase);
+               {slope factor =0.15
+                angle object-sun-earth of 0   => 0   magnitude
+                                          5      0.42
+                                         10      0.65
+                                         15      0.83
+                                         20      1}
+               plot_asteroid(annotation_diameter)
+             end
+             else
+             begin {comet magnitude}
+               mag:=asteroid_buffer[cc].H+ ln(delta)*5/ln(10)+ a_g{c_k}*ln(sun_delta)/ln(10) ;
+               plot_asteroid(annotation_diameter*5);
+
+             end;
+          end;{within FOV}
+        end;// for loop
+        except
+        end;
+      end;//procedure replot
+
 
 begin
   if head.naxis=0 then exit;
@@ -637,6 +741,9 @@ begin
      annotated:=false;
   end;
 
+  if use_buffer then
+    replot
+  else
   if mpcorb_path<>'' then
   begin
     if  fileexists(mpcorb_path) then
@@ -650,9 +757,9 @@ begin
   if cometels_path<>'' then
   begin
     if fileexists(cometels_path) then
-      read_and_plot(false,cometels_path)
-    else
-      memo2_message('CometEls.txt file not found: '+ cometels_path+'   Set path in Asteroid & Comet annotation menu, CTRL+R' );
+      read_and_plot(false,cometels_path);
+  //  else
+  //    memo2_message('CometEls.txt file not found: '+ cometels_path+'   Set path in Asteroid & Comet annotation menu, CTRL+R' );
   end;
 
   {write some info at bottom screen}
@@ -757,7 +864,7 @@ begin
   cometels_path:=form_asteroids1.mpcorb_path2.caption;
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  plot_mpcorb(maxcount,maxmag,add_annotations);
+  plot_mpcorb(maxcount,maxmag,add_annotations,false);
   Screen.Cursor:=crDefault;
 
   form_asteroids1.close;   {normal this form is not loaded}
