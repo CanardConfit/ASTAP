@@ -997,7 +997,7 @@ procedure box_blur(colors, range : integer; var img: image_array);{blur by combi
 procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter(var img: image_array); {remove black spots with value zero}{execution time about 0.4 sec}
 
-function update_solution_and_save(img: image_array; hd: theader): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
+function update_solution_and_save(img: image_array; var hd: theader): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function apply_dark_and_flat(var img: image_array): boolean; inline;{apply dark and flat if required, renew if different head.exposure or ccd temp}
 
 procedure smart_colour_smooth(var img: image_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
@@ -4217,11 +4217,7 @@ begin
               lv.Items.item[c].subitems.Strings[B_date] :=
                 StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []); {date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[B_calibration] := head_2.calstat;  {calibration head_2.calstat info DFB}
-              if a_order>0 then
-                lv.Items.item[c].subitems.Strings[B_solution] := '✓✓' //SIP solution
-              else
-              if head_2.cd1_1 <> 0 then
-                lv.Items.item[c].subitems.Strings[B_solution] := '✓';
+              //Remark. Do not fill [B_solution]. Will contain numbers instead of ✓ used by the blink routine
               if annotated then lv.Items.item[c].subitems.Strings[B_annotated] := '✓' else lv.Items.item[c].subitems.Strings[B_annotated] := '';
             end
             else
@@ -5557,11 +5553,8 @@ begin
 
                 memo2_message(IntToStr(nr_references) + ' of ' +
                   IntToStr(nr_references2) + ' quads selected matching within ' +
-                  stackmenu1.quad_tolerance1.Text + ' tolerance.' +
-                  '  Solution x:=' + floattostr6(solution_vectorX[0]) + '*x+ ' + floattostr6(
-                  solution_vectorX[1]) + '*y+ ' + floattostr6(solution_vectorX[2]) +
-                  ',  y:=' + floattostr6(solution_vectorY[0]) + '*x+ ' + floattostr6(
-                  solution_vectorY[1]) + '*y+ ' + floattostr6(solution_vectorY[2]));
+                  stackmenu1.quad_tolerance1.Text + ' tolerance.' + '  Solution[px] x:=' + floattostr6(solution_vectorX[0]) + 'x+ ' + floattostr6(solution_vectorX[1]) + 'y+ ' + floattostr6(solution_vectorX[2]) +
+                                                                                ',  y:=' + floattostr6(solution_vectorY[0]) + 'x+ ' + floattostr6(solution_vectorY[1]) + 'y+ ' + floattostr6(solution_vectorY[2]));
               end
               else
               begin
@@ -5929,7 +5922,7 @@ begin
     stackmenu1.ephemeris_centering1.ItemIndex :=  stackmenu1.ephemeris_centering1.items.Count - 1;{show first found in the list}
   end
   else
-    memo2_message('No object locations found in the image. Modify limiting count and limiting magnitude in Asteroid & Comet annotation menu, CTRL+R');
+    memo2_message('No object locations found in the image. Increase the limiting count and/or limiting magnitude in Asteroid & Comet annotation menu, shortcut CTRL+R');
   memo2_message('Completed. Select the object to align on.');
   Screen.Cursor := crDefault;    { back to normal }
 end;
@@ -6866,11 +6859,12 @@ end;
 
 procedure stack_group(lv : tlistview; Sender: TObject);
 var
-  index, counter, oldindex, position, i: integer;
+  index, counter, oldindex, position, i,referenceX,referenceY: integer;
   ListItem  : TListItem;
   blinktab  : boolean;
 begin
-  blinktab:=lv=tlistview(stackmenu1.listview6);//sender is blink tab
+//  blinktab:=lv=tlistview(stackmenu1.listview6);//sender is blink tab
+  blinktab:=(sender=stackmenu1.blink_stack_selected1);//sender is blink tab
 
   position := -1;
   index := 0;
@@ -6909,6 +6903,7 @@ begin
 
   if filename2<>'' then
   begin
+
     // move calibrated files back
     if blinktab=false then listview_removeselect(lv);
     lv.Items.BeginUpdate;
@@ -9323,21 +9318,10 @@ var
 begin
   esc_pressed:=false;
 
-//  if lv.selected = nil then
-//    lv.ItemIndex := 0;{show wich file is processed}
-//  filename2 := lv.selected.Caption;
-
-
   analyse_objects_visible(listview6);//file ephemeris_centering1 tCombobox in tab alignment with asteroids using one image
 
   memo2_message('Loading first image to calibrate photometry for the stack');
   listview_view(stackmenu1.listview6);//show first selected image
-
- // if ((head.cd1_1=0) or (annotated=false)) then
-//  begin
-//    memo2_message('Abort!, '+ filename2+' image not solved or annotated. Click on the button "(Re)annotate & solve" first!');
-//    exit;
-//  end;
 
   calibrate_photometry;
   if save_fits(img_loaded,filename2,nrbits,true)=false then
@@ -9524,7 +9508,7 @@ var
   buffer_loaded,success : boolean;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
+  esc_pressed:=false;
   buffer_loaded:=false;//astro_buffer
   for c:=0 to listview6.Items.count-1 do
   begin
@@ -9585,6 +9569,7 @@ begin
     end;//checked item
   end;//for loop
   Screen.Cursor:=crDefault;
+  memo2_message('Annotating ready');
 end;
 
 
@@ -11395,7 +11380,7 @@ begin
 end;
 
 
-function update_solution_and_save(img: image_array; hd: theader): boolean;  {plate solving, image should be already loaded create internal solution using the internal solver}
+function update_solution_and_save(img: image_array; var hd: theader): boolean;  {plate solving, image should be already loaded create internal solution using the internal solver}
 begin
   if solve_image(img, hd, True) then {match between loaded image and star database}
   begin
@@ -11791,9 +11776,9 @@ end;
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
   i, c, nrfiles, image_counter, object_counter,
-  first_file, total_counter, counter_colours,analyse_level, solution_type :   integer;
+  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY :   integer;
   filter_name1, filter_name2, defilter, filename3,
-  extra1, extra2, object_to_process, stack_info, thefilters,dumstr                : string;
+  extra1, extra2, object_to_process, stack_info, thefilters                       : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
   success, classify_filter, classify_object, sender_photometry, sender_stack_groups,dum      : boolean;
@@ -12466,12 +12451,27 @@ begin
     end;
 
 
+
     if ((cal_and_align = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
     begin  //fits_file:=true;
       nrbits := -32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
+
       if ((monofile){success none lrgb loop} or (counter_colours <> 0{length(extra2)>=2} {lrgb loop})) then
       begin
+
+        if  sender=stackmenu1.blink_stack_selected1 then   //blinktab, crop stack
+        begin
+          referenceX:=round(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[0].listviewindex].subitems.Strings[L_X])); {reference offset}
+          referenceY:=round(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[0].listviewindex].subitems.Strings[L_Y])); {reference offset}
+          startX:=referenceX-100;
+          stopX:=referenceX+100;
+          startY:=referenceY-100;
+          stopY:=referenceY+100;
+          remove_key('ANNOTATE',true{all});{remove annotation}
+          mainwindow.CropFITSimage1Click(Sender);
+        end;
+
         if counter_colours <> 0{length(extra2)>=2} {lrgb loop} then
         begin
           if stackmenu1.lrgb_auto_level1.Checked then

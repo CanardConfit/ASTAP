@@ -22,11 +22,11 @@ type
     annotate_asteroids1: TButton;
     BitBtn1: TBitBtn;
     BitBtn2: TBitBtn;
+    download_mpcorb1: TBitBtn;
     cancel_button1: TButton;
     ColorBox1: TColorBox;
     date_label1: TLabel;
     date_obs1: TEdit;
-    download_mpcorb1: TLabel;
     file_to_add1: TButton;
     file_to_add2: TButton;
     Group_Box1: TGroupBox;
@@ -513,20 +513,6 @@ var
           {annotate}
            if showfullnames then thetext1:=trim(name) else thetext1:=desn+'('+floattostrF(mag,ffgeneral,3,1)+')';
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:=' ';
-
-        //   thetext2:=thetext2+prepare_ra8(ra2,' ')+' '+prepare_dec2(dec2,' ')+' '+floattostr(x)+','+floattostr(y);
-
-
-
-
-
-
-
-
-
-
-
-
 
            if add_annot then
            begin

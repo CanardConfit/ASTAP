@@ -976,7 +976,7 @@ begin
     if solve_show_log then {global variable set in find stars} memo2_message('Solution skipped on XY ratio: '+ floattostr(xy_sqr_ratio));
   end
   else
-  result:=true;
+    result:=true;
 end;
 
 

@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8807,7 +8807,6 @@ var
    line,mag_str : string;
    hfd2,fwhm_star2,snr,flux,object_xc,object_yc,object_raM,object_decM  : double;
 begin
-//  clipboard.AsText:=inttostr(startX)+','+inttostr(startY);
   if sip=false then
      memo2_message('Warning image not solved with SIP polynomial correction! See settings tab alignment');
 
@@ -8871,11 +8870,15 @@ begin
     end;
     line:=line+'B      XXX';
 
-    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,line,'');{rectangle, +1 to fits coordinates}
+    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,' 📋','');{rectangle, +1 to fits coordinates}
     stackmenu1.memo2.Lines.add(line);
+    clipboard.AsText:=line;//copy to the clipboard
   end
   else
+  begin
     memo2_message('No object detection at this image location.');
+    clipboard.AsText:=('ASTAP: No object detected!');;
+  end;
 
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
@@ -13696,7 +13699,7 @@ begin
     update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
     update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
   end;
-  remove_key('ANNOTATE',true{all});{this all will be invalid}
+  remove_key('ANNOTATE',true{all});{remove annotations. They would be otherwise invalid}
   add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
 
 end;
