@@ -855,7 +855,7 @@ procedure celestial_to_pixel(head: theader;ra,dec: double; out fitsX,fitsY: doub
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
-procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
+procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name :string);{plot annotation from header in ASTAP format}
 procedure reset_fits_global_variables(light :boolean; out head:theader ); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
@@ -8870,7 +8870,7 @@ begin
     end;
     line:=line+'B      XXX';
 
-    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,' 📋','');{rectangle, +1 to fits coordinates}
+    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,' 📋');{rectangle, +1 to fits coordinates}
     stackmenu1.memo2.Lines.add(line);
     clipboard.AsText:=line;//copy to the clipboard
   end
@@ -11771,9 +11771,9 @@ begin
 end;
 
 
-procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
+procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name :string);{plot annotation from header in ASTAP format}
 var                                                                               {typ >0 line, value defines thickness line}
-  size,xcenter,ycenter,text_height,text_width  :integer;                          {type<=0 rectangle or two lines, value defines thickness lines}
+  size,xcenter,ycenter,text_height,text_width,fontsize,left,top  :integer;                          {type<=0 rectangle or two lines, value defines thickness lines}
 begin
   dec(x1); {convert to screen coordinates 0..}
   dec(y1);
@@ -11791,9 +11791,9 @@ begin
     y2:=(head.height-1)-y2;
   end;
 
-
+  if head.height<512 then fontsize:=8 else fontsize:=12;
   mainwindow.image1.Canvas.Pen.width:=max(1,round(1*abs(typ))); ;
-  mainwindow.image1.Canvas.font.size:=max(12,round(12*abs(typ)));
+  mainwindow.image1.Canvas.font.size:=max(fontsize,round(fontsize*abs(typ)));
 
   if typ>0 then {single line}
   begin
@@ -11819,9 +11819,13 @@ begin
   text_height:=round(mainwindow.image1.canvas.Textheight(name));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
   text_width:=round(mainwindow.image1.canvas.Textwidth(name)); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
 
-  if x2>=x1 then text_width:=0;
-  if y2>=y1 then text_height:=text_height div 3;
-  mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,name{name}+magn{magnitude});
+  if x2>=x1 then left:=x2 else left:=x2-text_width;
+  left:=min(left, head.width-text_width);{stay away from the right side}
+
+  if y2>=y1 then top:=y2 - (text_height div 3) else top:=y2- text_height;
+  top:=min(top, head.height-text_height);{stay away from the bottom}
+
+  mainwindow.image1.Canvas.textout( left,top ,name{name});
 end;
 
 
@@ -11886,7 +11890,7 @@ begin
           name:=list[5];
           if list.count>6  then  magn:=list[6] else magn:='';
 
-          plot_the_annotation(x1,y1,x2,y2,typ, name,magn);
+          plot_the_annotation(x1,y1,x2,y2,typ, name+magn);
 
           if ((list.count>7) and (abs( (x1+x2)/2 - (startx+stopx)/2)<15 ) and  (abs((y1+y2)/2 - (starty+stopy)/2)<15)) then
               minor_planet_at_cursor:=list[7];//for mpc1992 report line
@@ -12036,7 +12040,7 @@ begin
 
   if sender<>Enter_rectangle_with_label1 then boldness:=head.width/image1.width else boldness:=-head.width/image1.width;
 
-  plot_the_annotation(startX,startY,text_X,text_Y,boldness,value,'');
+  plot_the_annotation(startX,startY,text_X,text_Y,boldness,value);
   add_text ('ANNOTATE=',#39+copy(inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';',1,68)+#39);
   annotated:=true; {header contains annotations}
 end;
@@ -14145,7 +14149,7 @@ begin
 
   if sender=mainwindow.gaia_star_position1 then //Browser Gaia stars
   begin
-    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'','');{rectangle, +1 to fits coordinates}
+    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'');{rectangle, +1 to fits coordinates}
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=300&Gmag=<23';
     //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
     //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=2x2&-out.max=1000000&BPmag=%3C21.5
@@ -14165,7 +14169,7 @@ begin
 
   if sender=mainwindow.hyperleda_guery1 then
   begin {sender hyperleda_guery1}
-    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'','');{rectangle, +1 to fits coordinates}
+    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'');{rectangle, +1 to fits coordinates}
     url:='http://leda.univ-lyon1.fr/fG.cgi?n=a000&ob=ra&c=o&p=J'+ra8+'d%2C'+sgn+dec8+'d&f='+floattostr6(max(ang_w,ang_h)/(60));  //350.1000D%2C50.50000D    &f=50
     // http://leda.univ-lyon1.fr/fG.cgi?n=a000&c=o&p=J350.1000D%2C50.50000D&f=50&ob=ra
   end
@@ -14190,7 +14194,7 @@ begin
     radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert ellipse to circle}
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
-    plot_the_annotation(x1-radius+1,y1-radius+1,x1+radius+1,y1+radius+1,0,'','');{square}
+    plot_the_annotation(x1-radius+1,y1-radius+1,x1+radius+1,y1+radius+1,0,'');{square}
 
     ra8:=prepare_ra(object_raM,' '); {radialen to text, format 24: 00 00.0 }
     dec8:=prepare_dec(object_decM,' '); {radialen to text, format 90d 00 00}

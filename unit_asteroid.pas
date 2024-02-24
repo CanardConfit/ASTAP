@@ -520,7 +520,7 @@ var
               add_text ('ANNOTATE=',#39+copy(floattostrF(x-sizebox,FFFixed,0,2)+';'+floattostrF(y-sizebox,FFFixed,0,2)+';'+floattostrF(x+sizebox,fffixed,0,2)+';'+floattostrF(y+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+desn+';',1,68)+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
            end;
-           plot_the_annotation(round(x-sizebox) {x1},round(y-sizebox) {y1},round(x+sizebox){x2},round(y+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
+           plot_the_annotation(round(x-sizebox) {x1},round(y-sizebox) {y1},round(x+sizebox){x2},round(y+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1+thetext2); {plot annotation}
         end;
       end;
       procedure read_and_plot(asteroid: boolean; path :string);

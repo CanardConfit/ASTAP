@@ -12451,7 +12451,6 @@ begin
     end;
 
 
-
     if ((cal_and_align = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
     begin  //fits_file:=true;
       nrbits := -32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
@@ -12468,8 +12467,8 @@ begin
           stopX:=referenceX+100;
           startY:=referenceY-100;
           stopY:=referenceY+100;
-          remove_key('ANNOTATE',true{all});{remove annotation}
           mainwindow.CropFITSimage1Click(Sender);
+          plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations},true {buffer_loaded});//removes also the old keywords
         end;
 
         if counter_colours <> 0{length(extra2)>=2} {lrgb loop} then
