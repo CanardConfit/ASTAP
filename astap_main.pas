@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.02.25a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2314,6 +2314,7 @@ begin
   {variables are already reset}
   count1:=mainwindow.Memo1.Lines.Count-1-1;
   ccd_temperature:=999;
+  annotated:=false;
 
   index:=1;
   while index<=count1 do {read keys}
@@ -2408,7 +2409,7 @@ begin
     if key='MZEROAPT=' then head.mzero_radius:=read_float else
     if key='MZEROPAS=' then head.passband_database:=read_string else
 
-
+    if key='ANNOTATE=' then annotated:=true else
     if key='TELESCOP=' then telescop:=read_string else
     if key='INSTRUME=' then instrum:=read_string else
     if key='CENTALT =' then centalt:=read_string else
