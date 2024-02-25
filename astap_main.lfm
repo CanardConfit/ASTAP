@@ -1795,7 +1795,7 @@ object mainwindow: Tmainwindow
     end
     object mpcreport1: TMenuItem
       Caption = 'MPC1992 report line  (.)'
-      Hint = 'Write a MPC1992 report line to the clipboard for the object at the cursor.'
+      Hint = 'Write a MPC1992 report line to the clipboard for the object at the cursor.. This report line can be tested at:  https://minorplanetcenter.net/cgi-bin/checkmp.cgi'
       ImageIndex = 49
       OnClick = mpcreport1Click
     end

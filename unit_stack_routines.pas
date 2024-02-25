@@ -145,7 +145,7 @@ begin
 end;
 
 
-procedure calculate_manual_vector( c: integer; flipX,flipY : boolean);
+procedure calculate_manual_vector( c: integer; flipX,flipY : boolean); //calculate the vector for the image scale one and 0..h, 0..w range.
 begin
   if ((head.cd1_1=0) or (flipx=false)) then //no solution or not flipped
   begin
@@ -167,7 +167,8 @@ begin
     solution_vectorY[1]:=-1; //flipped y
     solution_vectorY[2]:=(referenceY-1) +(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y])-1); ;//calculate in 0..height-1 range. ReferenceY is in FITS values
   end;
-
+  memo2_message('Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
+                         +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) )
 end;
 
 
@@ -361,8 +362,7 @@ begin
               begin
                 if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
-                  calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );
-                  memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
+                  calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );//includes memo2_message with solution vector
                 end
                 else
                 begin{internal alignment}
@@ -371,8 +371,8 @@ begin
                   find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                   memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
-                       +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
-                       +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) )
+                       +'  Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
+                                   +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) )
 
                     else
                     begin
@@ -707,8 +707,7 @@ begin
             begin
               if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin {manual alignment}
-                calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );
-                memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
+                calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );//includes memo2_message with solution vector
               end
               else
               begin{internal alignment}
@@ -722,8 +721,8 @@ begin
                 find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
-                     +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
-                     +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) )
+                     +'  Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
+                                 +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) )
 
                   else
                   begin
@@ -1319,8 +1318,7 @@ begin
               begin
                 if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
-                  calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );
-                  memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
+                  calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );//includes memo2_message with solution vector
                 end
                 else
                 begin{internal alignment}
@@ -1329,8 +1327,8 @@ begin
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                   begin
                     memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
-                       +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
-                       +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
+                       +'  Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
+                                   +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) );
 
                     solutions[c].solution_vectorX:= solution_vectorX;{store solutions}
                     solutions[c].solution_vectorY:= solution_vectorY;
@@ -1826,8 +1824,7 @@ begin
           begin
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin {manual alignment}
-              calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );
-              memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
+              calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );//includes memo2_message with solution vector
             end
             else
             begin{internal alignment}
@@ -1841,8 +1838,8 @@ begin
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
               memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
-                   +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
-                   +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) )
+                   +'  Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
+                               +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) )
 
                 else
                 begin

@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_blink1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 7
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2935,7 +2935,7 @@ object stackmenu1: Tstackmenu1
               end            
               item
                 Alignment = taRightJustify
-                Caption = 'Solution'
+                Caption = 'Alignment'
                 MinWidth = 90
                 Width = 90
               end            
@@ -3036,7 +3036,7 @@ object stackmenu1: Tstackmenu1
           object clear_blink_alignment1: TButton
             Left = 296
             Height = 25
-            Hint = 'Clear alignment and photometric calibration. Apply this if alignment is poor.'
+            Hint = 'Clear the star alignment. Apply this if alignment is poor.'
             Top = 5
             Width = 146
             AutoSize = True
@@ -3166,6 +3166,7 @@ object stackmenu1: Tstackmenu1
           object blink_annotate_and_solve1: TButton
             Left = 656
             Height = 25
+            Hint = 'Reannotate and solve all checked images. To refresh the solution set the override option in tab Alignment.'
             Top = 5
             Width = 144
             Caption = '(Re)annotate (&&solve)'

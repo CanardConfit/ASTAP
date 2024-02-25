@@ -22,11 +22,11 @@ type
     annotate_asteroids1: TButton;
     BitBtn1: TBitBtn;
     BitBtn2: TBitBtn;
+    download_mpcorb1: TBitBtn;
     cancel_button1: TButton;
     ColorBox1: TColorBox;
     date_label1: TLabel;
     date_obs1: TEdit;
-    download_mpcorb1: TLabel;
     file_to_add1: TButton;
     file_to_add2: TButton;
     Group_Box1: TGroupBox;
@@ -514,27 +514,13 @@ var
            if showfullnames then thetext1:=trim(name) else thetext1:=desn+'('+floattostrF(mag,ffgeneral,3,1)+')';
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:=' ';
 
-        //   thetext2:=thetext2+prepare_ra8(ra2,' ')+' '+prepare_dec2(dec2,' ')+' '+floattostr(x)+','+floattostr(y);
-
-
-
-
-
-
-
-
-
-
-
-
-
            if add_annot then
            begin
               {store annotation. Fractions are for ephemeride alignment stacking}
               add_text ('ANNOTATE=',#39+copy(floattostrF(x-sizebox,FFFixed,0,2)+';'+floattostrF(y-sizebox,FFFixed,0,2)+';'+floattostrF(x+sizebox,fffixed,0,2)+';'+floattostrF(y+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+desn+';',1,68)+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
            end;
-           plot_the_annotation(round(x-sizebox) {x1},round(y-sizebox) {y1},round(x+sizebox){x2},round(y+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
+           plot_the_annotation(round(x-sizebox) {x1},round(y-sizebox) {y1},round(x+sizebox){x2},round(y+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1+thetext2); {plot annotation}
         end;
       end;
       procedure read_and_plot(asteroid: boolean; path :string);

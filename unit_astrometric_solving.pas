@@ -1205,8 +1205,8 @@ begin
     ang_sep(ra_radians,dec_radians,ra_start,dec_start, sep_search);//calculate search offset
 
     memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+quads_str+' selected matching within '+floattostr(quad_tolerance)+' tolerance.'  //  3 quads are required giving 3 center quad references}
-                   +'  Solution["] x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
-                   +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
+                   +'  Solution["] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
+                   +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) );
     //  following doesn't give maximum angle accuracy, so is not used.
     //    hd.cd1_1:= - solution_vectorX[0]/3600;{/3600, arcsec to degrees conversion}
     //    hd.cd1_2:= - solution_vectorX[1]/3600;
