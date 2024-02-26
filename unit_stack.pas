@@ -9315,6 +9315,7 @@ end;
 procedure Tstackmenu1.blink_stack_selected1Click(Sender: TObject);
 var
   i : integer;
+  success : boolean;
 begin
   esc_pressed:=false;
 
@@ -9324,12 +9325,17 @@ begin
   listview_view(stackmenu1.listview6);//show first selected image
 
   calibrate_photometry;
-  if save_fits(img_loaded,filename2,nrbits,true)=false then
+
+  if fits_file_name(filename2) then
+    success := savefits_update_header(filename2)
+  else
+    success := save_tiff16_secure(img_loaded, filename2);
+  {guarantee no file is lost}
+  if success = False then
   begin
     memo2_message('Abort. Could not save photometric updated file: '+filename2);
     exit;
-  end
-  else
+  end;
   memo2_message(filename2+' photometric calibrated (MZERO)');
 
   use_ephemeris_alignment1.Checked:=true;
@@ -9341,10 +9347,7 @@ begin
   begin
     application.processmessages;
     if esc_pressed then
-    begin
-   //   Screen.Cursor := crDefault;{back to normal }
       exit;
-    end;
     ephemeris_centering1.itemindex:=i; //select the asteroid
     if  ephemeris_centering1.text<>'' then
     begin
@@ -11767,7 +11770,7 @@ begin
     Result := Result + '_' + leadingzero(hh) + leadingzero(mm) + leadingzero(ss);
   end;
 
-  if stackmenu1.use_ephemeris_alignment1.Checked then result:=result+stackmenu1.ephemeris_centering1.text;
+  if stackmenu1.use_ephemeris_alignment1.Checked then result:=result + RemoveSpecialChars(stackmenu1.ephemeris_centering1.text);
   if pos('Aver', stackmenu1.stack_method1.Text) > 0 then Result := Result + '_average';
   Result := Result + '_stacked.fits';
 end;
@@ -12455,7 +12458,6 @@ begin
     begin  //fits_file:=true;
       nrbits := -32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
-
       if ((monofile){success none lrgb loop} or (counter_colours <> 0{length(extra2)>=2} {lrgb loop})) then
       begin
 
@@ -12463,10 +12465,10 @@ begin
         begin
           referenceX:=round(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[0].listviewindex].subitems.Strings[L_X])); {reference offset}
           referenceY:=round(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[0].listviewindex].subitems.Strings[L_Y])); {reference offset}
-          startX:=referenceX-100;
-          stopX:=referenceX+100;
-          startY:=referenceY-100;
-          stopY:=referenceY+100;
+          startX:=referenceX-150;
+          stopX:=referenceX+150;
+          startY:=referenceY-150;
+          stopY:=referenceY+150;
           mainwindow.CropFITSimage1Click(Sender);
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations},true {buffer_loaded});//removes also the old keywords
         end;

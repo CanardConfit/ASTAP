@@ -195,7 +195,7 @@ begin
 end;
 
 
-procedure minor_planet(sun_earth_vector:boolean;julian {dynamic time}:double;year,month:integer;day,a_e, a_or_q,a_i,a_ohm,a_w,a_M :double;var RA3,DEC3,DELTA,sun_delta:double);
+procedure minor_planet(sun_earth_vector:boolean;julian {dynamic time}:double;year,month:integer;day,a_e, a_or_q,a_i,a_ohm,a_w,a_M :double;out RA3,DEC3,DELTA,sun_delta:double; out outdated : boolean);
 { Comet hale bopp
   YEAR:=1997;
   MONTH:=03;
@@ -221,10 +221,17 @@ begin
   end;
   epoch:= julian_calc(year,month,day,0,0,0)-2400000.5; {MJD}
 
+
   if a_M<1E98 then {asteroid. Use a_M, mean anomoly as an indicator for minor planet or comet, The mean anomoly of a comet is in princple zero and at perihelion}
-  orbit (mjd, 2 {minor planet}, epoch, a_i*pi/180, a_ohm*pi/180,a_w*pi/180, a_or_q,a_e,a_M*pi/180, 0, PV, JSTAT) //Determine the position and velocity.
+  begin
+    orbit (mjd, 2 {minor planet}, epoch, a_i*pi/180, a_ohm*pi/180,a_w*pi/180, a_or_q,a_e,a_M*pi/180, 0, PV, JSTAT); //Determine the position and velocity.
+    outdated:=abs(epoch - mjd)>120;//more then 120 days from epoch database
+  end
   else
-  orbit (mjd, 3 {comet}       , epoch, a_i*pi/180, a_ohm*pi/180,a_w*pi/180,a_or_q, a_e,0           , 0, PV, JSTAT);//Determine the position and velocity.
+  begin
+    orbit (mjd, 3 {comet}       , epoch, a_i*pi/180, a_ohm*pi/180,a_w*pi/180,a_or_q, a_e,0           , 0, PV, JSTAT);//Determine the position and velocity.
+    outdated:=false;//epoch is when the comet is nearest
+  end;
 
   if (Jstat <> 0) then
   begin
@@ -475,7 +482,7 @@ var
   yy,mm,dd,h,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
   SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,a_e,a_i,a_ohm,a_w,a_M   : double;
   desn,name,s, thetext1,thetext2,fontsize_str:string;
-  flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
+  flip_horizontal, flip_vertical,form_existing, errordecode,outdated : boolean;
 
       procedure plot_asteroid(sizebox :integer);
       var
@@ -511,8 +518,9 @@ var
         if ((x>0) and (x<head.width) and (y>0) and (y<head.height)) then {within image1}
         begin
           {annotate}
-           if showfullnames then thetext1:=trim(name) else thetext1:=desn+'('+floattostrF(mag,ffgeneral,3,1)+')';
-           if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:=' ';
+           if showfullnames then thetext1:=trim(name) else thetext1:=desn{+'('+floattostrF(mag,ffgeneral,3,1)+')'};
+           if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
+           if outdated then thetext2:=thetext2+'⚠ ' +'obsolete';
 
            if add_annot then
            begin
@@ -529,7 +537,7 @@ var
         begin
           setlength(asteroid_buffer,1000);
         end;
-        counter:=0;
+        count:=0;
         assignfile(txtf,path);
         try
           Reset(txtf);
@@ -546,7 +554,7 @@ var
                  inc(count);
 
                  {comet is indicated by a_M:=1E99, Mean anomoly, an abnormal value}
-                 minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},round(yy),round(mm),dd,a_e,a_or_q,a_i,a_ohm,a_w,a_M,{var} ra2,dec2,delta,sun_delta);
+                 minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},round(yy),round(mm),dd,a_e,a_or_q,a_i,a_ohm,a_w,a_M,{var} ra2,dec2,delta,sun_delta, outdated);
 
                  if sqr( (ra2-head.ra0)*cos_telescope_dec)  + sqr(dec2-head.dec0)< sqr(fov) then {within the image FOV}
                  begin
@@ -630,14 +638,14 @@ var
           asteroid_buffer[cc].a_ohm,
           asteroid_buffer[cc].a_w,
           asteroid_buffer[cc].a_M,
-          {out} ra2,dec2,delta,sun_delta);
+          {out} ra2,dec2,delta,sun_delta,outdated);
 
           if sqr( (ra2-head.ra0)*cos_telescope_dec)  + sqr(dec2-head.dec0)< sqr(fov) then {within the image FOV}
           begin
             desn:=asteroid_buffer[cc].desn;
             name:=asteroid_buffer[cc].name;
 
-            if a_M<1E98 {asteroid} then
+            if asteroid_buffer[cc].a_M<1E98 {asteroid} then
              begin
                mag:=asteroid_buffer[cc].h+ ln(delta*sun_delta)*5/ln(10);  {log(x) = ln(x)/ln(10)}
 
@@ -718,7 +726,6 @@ begin
   wtime2actual:=fnmodulo(site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
 
   sun200_calculated:=false;
-  count:=0;
   sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
   if add_annot then
@@ -727,29 +734,32 @@ begin
      annotated:=false;
   end;
 
+  counter:=0;//counter for asteroid_buffer. Count both asteroids and comets.
+
   if use_buffer then
-    replot
+    replot //use asteroid_buffer information
   else
-  if mpcorb_path<>'' then
   begin
-    if  fileexists(mpcorb_path) then
-      read_and_plot(true,mpcorb_path)
-    else
-      memo2_message('MPCORB.DAT file not found: '+ mpcorb_path+'   Set path in Asteroid & Comet annotation menu, CTRL+R' );
-  end;
+    if mpcorb_path<>'' then
+    begin
+      if  fileexists(mpcorb_path) then
+        read_and_plot(true,mpcorb_path)
+      else
+        memo2_message('MPCORB.DAT file not found: '+ mpcorb_path+'   Set path in Asteroid & Comet annotation menu, CTRL+R' );
+    end;
 
-  count:=0;
+    if cometels_path<>'' then
+    begin
+      if fileexists(cometels_path) then
+        read_and_plot(false,cometels_path);
 
-  if cometels_path<>'' then
-  begin
-    if fileexists(cometels_path) then
-      read_and_plot(false,cometels_path);
-  //  else
-  //    memo2_message('CometEls.txt file not found: '+ cometels_path+'   Set path in Asteroid & Comet annotation menu, CTRL+R' );
-  end;
+    // Do not warn for missing comet file.
+    //  else
+    //    memo2_message('CometEls.txt file not found: '+ cometels_path+'   Set path in Asteroid & Comet annotation menu, CTRL+R' );
+    end;
+  end;//not replot
 
   {write some info at bottom screen}
-
   if form_existing then
   begin
     with mainwindow do
