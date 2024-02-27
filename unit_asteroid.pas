@@ -379,34 +379,31 @@ begin
 end;
 
 
-procedure convert_MPCORB_line(txt : string; out desn,name: string; out yy,mm,dd,a_e,a_a,a_i,a_ohm,a_w,a_M,h,g: double);{read asteroid, han.k}
+//A brief header is given below:
+//Des'n     H     G   Epoch     M        Peri.      Node       Incl.       e            n           a        Reference #Obs #Opp    Arc    rms  Perts   Computer
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//00001    3.4   0.15 K205V 162.68631   73.73161   80.28698   10.58862  0.0775571  0.21406009   2.7676569  0 MPO492748  6751 115 1801-2019 0.60 M-v 30h Williams   0000      (1) Ceres              20190915
+//00002    4.2   0.15 K205V 144.97567  310.20237  173.02474   34.83293  0.2299723  0.21334458   2.7738415  0 MPO492748  8027 109 1821-2019 0.58 M-v 28h Williams   0000      (2) Pallas             20190812
+//00003    5.2   0.15 K205V 125.43538  248.06618  169.85147   12.99105  0.2569364  0.22612870   2.6682853  0 MPO525910  7020 106 1821-2020 0.59 M-v 38h Williams   0000      (3) Juno               20200109
+//00004    3.0   0.15 K205V 204.32771  150.87483  103.80908    7.14190  0.0885158  0.27150657   2.3620141  0 MPO525910  6941 102 1821-2019 0.60 M-p 18h Williams   0000      (4) Vesta              20191229
+//00005    6.9   0.15 K205V  17.84635  358.64840  141.57102    5.36742  0.1909134  0.23866119   2.5740373  0 MPO525910  2784  77 1845-2020 0.53 M-v 38h Williams   0000      (5) Astraea            20200105
+//00006    5.7   0.15 K205V 190.68653  239.73624  138.64343   14.73966  0.2032188  0.26107303   2.4245327  0 MPO525910  5745  90 1848-2020 0.53 M-v 38h Williams   0007      (6) Hebe               20200110
+
+procedure convert_MPCORB_line(txt : string; out desn,name: string; out yy,mm : integer; out dd,a_e,a_a,a_i,a_ohm,a_w,a_M,h,g: double);{read asteroid, han.k}
 var
   code2           : integer;
-//  degrees_to_perihelion,c_epochdelta           : double;
-  date_regel                                             : STRING[5];
-  centuryA,monthA,dayA                                   :string[2];
-//const
-//   Gauss_gravitational_constant: double=0.01720209895*180/pi;
+  centuryA        : string[2];
 begin
   desn:='';{assume failure}
 
-  date_regel:=copy(txt,21,25-21+1); {21 -  25  a5     Epoch (in packed form, .0 TT), see http://www.minorplanetcenter.net/iau/info/MPOrbitFormat.html}
-   //    date_regel:='J9611';
+   //  Epoch (in packed form, .0 TT), see http://www.minorplanetcenter.net/iau/info/MPOrbitFormat.html}
    //   1996 Jan. 1    = J9611
    //   1996 Jan. 10   = J961A
    //   1996 Sept.30   = J969U
    //   1996 Oct. 1    = J96A1
    //   2001 Oct. 22   = K01AM
 
-  str(Ord(date_regel[1])-55:2,centuryA); // 'A'=65
-
-  code2:=Ord(date_regel[4]);
-  if code2<65 then code2:=code2-48 {1..9} else code2:=code2-55; {A..Z}
-  monthA := Formatfloat('00', code2);{convert to string with 2 digits}
-
-  code2:=Ord(date_regel[5]);
-  if code2<65 then code2:=code2-48 {1..9} else code2:=code2-55; {A..Z}
-  dayA := Formatfloat('00', code2); {convert to string with 2 digits}
+  str(Ord(txt[21])-55:2,centuryA); // 'A'=65
 
   if ((centuryA='19') or (centuryA='20') or (centuryA='21')) then {do only data}
   begin
@@ -416,9 +413,13 @@ begin
     H:=strtofloat(copy(txt,8,12-8+1));   { 8 -  12  f5.2   Absolute magnitude, H}
     G:=strtofloat(copy(txt,14,19-14+1)); {14 -  19  f5.2   Slope parameter, G}
 
-    yy:=strtofloat(centuryA+date_regel[2]+date_regel[3]);{epoch year}
-    mm:=strtofloat(monthA);{epoch month}
-    dd:=strtofloat(dayA);  {epoch day}
+    yy:=strtoint(centuryA+txt[22]+txt[23]);{epoch year}
+
+    code2:=Ord(txt[24]);
+    if code2<65 then mm:=code2-48 {1..9} else mm:=code2-55; {A..Z}
+
+    code2:=Ord(txt[25]);
+    if code2<65 then dd:=code2-48 {1..9} else dd:=code2-55; {A..Z}
 
     a_M:=strtofloat(copy(txt,27,35-27+1));   {27 -  35  f9.5   Mean anomaly at the epoch, in degrees}
     a_w:=strtofloat(copy(txt,38,46-38+1));   {38 -  46  f9.5   Argument of perihelion, J2000.0 (degrees)}
@@ -432,15 +433,15 @@ begin
 end;
 
 
-procedure convert_comet_line(txt : string; out desn,name: string; out yy,mm,dd, ecc,q,inc2,lan,aop,M_anom,H,k: double); {han.k}
+procedure convert_comet_line(txt : string; out desn,name: string; out yy,mm :integer; out dd, ecc,q,inc2,lan,aop,M_anom,H,k: double); {han.k}
 var
-  error1          : integer;
+  error1,error2    : integer;
   g               : double;
 begin
   desn:='';{assume failure}
-  //date_regel:=copy(txt,21,25-21+1); {21 -  25  a5     Epoch (in packed form, .0 TT), see http://www.minorplanetcenter.net/iau/info/MPOrbitFormat.html}
-  yy:=strtofloat(copy(txt,15,4));{epoch year}
-  if ((yy>1900) and (yy<2200)) then {do only data}
+
+  val(copy(txt,15,4),yy,error2);//epoch year.
+  if ((error2=0) and (yy>1900) and (yy<2200)) then {do only data}
   begin
     name:=copy(txt,103,39);
     desn:=copy(txt,159,10);
@@ -450,8 +451,7 @@ begin
     val(copy(txt,97,4),g,error1);
     k:=g*2.5; { Comet activity}
 
-    yy:=strtofloat(copy(txt,15,4));{epoch year}
-    mm:=strtofloat(copy(txt,20,2));{epoch month}
+    mm:=strtoint(copy(txt,20,2));{epoch month}
     dd:=strtofloat(copy(txt,23,7));{epoch day}
 
     q:=strtofloat(copy(txt,31,9)); {q}
@@ -478,11 +478,11 @@ const
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
 var
   txtf : textfile;
-  count,fontsize,counter           : integer;
-  yy,mm,dd,h,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
+  count,fontsize,counter,yy,mm                                                     : integer;
+  dd,h,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
   SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,a_e,a_i,a_ohm,a_w,a_M   : double;
-  desn,name,s, thetext1,thetext2,fontsize_str:string;
-  flip_horizontal, flip_vertical,form_existing, errordecode,outdated : boolean;
+  desn,name,s, thetext1,thetext2,fontsize_str                                      : string;
+  form_existing, errordecode,outdated                                              : boolean;
 
       procedure plot_asteroid(sizebox :integer);
       var
@@ -533,10 +533,8 @@ var
       end;
       procedure read_and_plot(asteroid: boolean; path :string);
       begin
-        if length(asteroid_buffer)=0 then
-        begin
-          setlength(asteroid_buffer,1000);
-        end;
+        asteroid_buffer:=nil;//remove old data;
+        setlength(asteroid_buffer,1000);
         count:=0;
         assignfile(txtf,path);
         try
@@ -554,7 +552,7 @@ var
                  inc(count);
 
                  {comet is indicated by a_M:=1E99, Mean anomoly, an abnormal value}
-                 minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},round(yy),round(mm),dd,a_e,a_or_q,a_i,a_ohm,a_w,a_M,{var} ra2,dec2,delta,sun_delta, outdated);
+                 minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},yy,mm,dd,a_e,a_or_q,a_i,a_ohm,a_w,a_M,{var} ra2,dec2,delta,sun_delta, outdated);
 
                  if sqr( (ra2-head.ra0)*cos_telescope_dec)  + sqr(dec2-head.dec0)< sqr(fov) then {within the image FOV}
                  begin
@@ -677,8 +675,8 @@ begin
   if head.cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
   cos_telescope_dec:=cos(head.dec0);
   fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
-  flip_vertical:=mainwindow.flip_vertical1.Checked;
-  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+//  flip_vertical:=mainwindow.flip_vertical1.Checked;
+//  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   form_existing:=assigned(form_asteroids1);{form existing}
 
