@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -816,7 +816,7 @@ procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
 function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: Theader; out img: image_array ): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
 
-function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
+function unpack_cfitsio(var filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
 function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
@@ -8971,7 +8971,7 @@ begin
 end;
 
 
-function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
+function unpack_cfitsio(var filename3: string): boolean; {convert .fz to .fits using funpack}
 var
   commando :string;
   newfilename : string;
@@ -8987,20 +8987,32 @@ begin
   end;
 
   {$ifdef mswindows}
-  if fileexists(application_path+'funpack.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'funpack.exe !!, Download and install fpack_funpack.exe' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
+  if fileexists(application_path+'funpack.exe')=false then
+  begin
+    application.messagebox(pchar('Could not find: '+application_path+'funpack.exe !!, Download and install fpack_funpack.exe' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+    exit;
+  end;
   ExecuteAndWait(application_path+'funpack.exe '+commando+ ' "'+filename3+'"',false);{execute command and wait}
   {$endif}
   {$ifdef Darwin}{MacOS}
-  if fileexists(application_path+'/funpack')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'funpack' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
+  if fileexists(application_path+'/funpack')=false then
+  begin
+    application.messagebox(pchar('Could not find: '+application_path+'funpack' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+    exit;
+  end;
   execute_unix2(application_path+'/funpack '+commando+' "'+filename3+'"');
   {$endif}
   {$ifdef linux}
-  if fileexists('/usr/bin/funpack')=false then begin result:=false; application.messagebox(pchar('Could not find program funpack !!, Install this program. Eg: sudo apt-get install libcfitsio-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
+  if fileexists('/usr/bin/funpack')=false then
+  begin
+    application.messagebox(pchar('Could not find program funpack !!, Install this program. Eg: sudo apt-get install libcfitsio-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+    exit;
+  end;
   execute_unix2('/usr/bin/funpack '+commando+' "'+filename3+'"');
   {$endif}
-   filename2:=stringreplace(filename3,'.fz', '',[]); {changeFilext doesn't work for double dots .fits.fz}
+  filename3:=stringreplace(filename3,'.fz', '',[]); {changeFilext doesn't work for double dots .fits.fz}
 
-   result:=true;
+  result:=true;
 end;
 
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
@@ -9280,7 +9292,7 @@ begin
   if (ext='.FZ') then {CFITSIO format}
   begin
     result:=unpack_cfitsio(filen); {filename2 contains the new file name}
-    if result then filen:=filename2;
+   // if result then filen:=filename2;
   end
   else
   begin
@@ -9392,7 +9404,7 @@ begin
   if (ext1='.FZ') then {CFITSIO format}
   begin
     if unpack_cfitsio(filename2) then {successful conversion using funpack}
-    result:=load_fits(filename2,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img_loaded); {load new fits file}
+      result:=load_fits(filename2,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img_loaded); {load new fits file}
   end {fz}
   else
   if check_raw_file_extension(ext1) then {raw format}

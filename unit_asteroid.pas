@@ -532,8 +532,6 @@ var
       end;
       procedure read_and_plot(asteroid: boolean; path :string);
       begin
-        asteroid_buffer:=nil;//remove old data;
-        setlength(asteroid_buffer,1000);
         count:=0;
         assignfile(txtf,path);
         try
@@ -742,12 +740,15 @@ begin
      annotated:=false;
   end;
 
-  counter:=0;//counter for asteroid_buffer. Count both asteroids and comets.
 
   if use_buffer then
     replot //use asteroid_buffer information
   else
   begin
+    counter:=0;//counter for asteroid_buffer. Count both asteroids and comets.
+    asteroid_buffer:=nil;//remove old data;
+    setlength(asteroid_buffer,1000);
+
     if mpcorb_path<>'' then
     begin
       if  fileexists(mpcorb_path) then
