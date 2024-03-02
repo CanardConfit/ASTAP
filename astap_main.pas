@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.02.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8974,10 +8974,18 @@ end;
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 var
   commando :string;
+  newfilename : string;
 begin
   result:=false;
 
   commando:='-D';
+  if pos('(',filename3)>0 then //this ( is not processed by fpunpack
+  begin
+    newfilename:=stringreplace(filename3,'(','_',[rfReplaceAll]);
+    if renamefile(filename3,newfilename) then
+      filename3:=newfilename;
+  end;
+
   {$ifdef mswindows}
   if fileexists(application_path+'funpack.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'funpack.exe !!, Download and install fpack_funpack.exe' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
   ExecuteAndWait(application_path+'funpack.exe '+commando+ ' "'+filename3+'"',false);{execute command and wait}
@@ -16528,9 +16536,9 @@ procedure Tmainwindow.Stackimages1Click(Sender: TObject);
 begin
   listviews_begin_update; {speed up making stackmenu visible having a many items}
 
+  stackmenu1.windowstate:=wsNormal;
   stackmenu1.visible:=true;
   stackmenu1.setfocus;
-
   listviews_end_update;{speed up making stackmenu visible having a many items}
 end;
 

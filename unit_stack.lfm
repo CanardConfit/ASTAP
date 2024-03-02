@@ -8,7 +8,7 @@ object stackmenu1: Tstackmenu1
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 690
+  ClientHeight = 707
   ClientWidth = 1531
   Color = clForm
   Icon.Data = {
@@ -53,7 +53,7 @@ object stackmenu1: Tstackmenu1
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 690
+    Height = 707
     Top = 0
     Width = 1920
     Align = alClient
@@ -7789,14 +7789,14 @@ object stackmenu1: Tstackmenu1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 185
+      Height = 202
       Top = 505
       Width = 1920
       ClientWidth = 1920
-      ClientHeight = 185
+      ClientHeight = 202
       object memo2: TMemo
         Left = 0
-        Height = 91
+        Height = 108
         Top = 94
         Width = 1920
         Align = alBottom
