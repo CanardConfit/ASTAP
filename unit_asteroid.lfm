@@ -11,7 +11,7 @@ object form_asteroids1: Tform_asteroids1
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '3.0.0.3'
+  LCLVersion = '3.2.0.0'
   object annotate_asteroids1: TButton
     Left = 184
     Height = 25

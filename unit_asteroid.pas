@@ -210,7 +210,6 @@ const
 var
   JSTAT,I : integer;
   x_pln,y_pln,z_pln,TL,R, epoch,mjd : double;
-  U : U_array;
   pv : r6_array;
 begin
   mjd:=julian-2400000.5;  {convert to mjd}
@@ -533,8 +532,6 @@ var
       end;
       procedure read_and_plot(asteroid: boolean; path :string);
       begin
-        asteroid_buffer:=nil;//remove old data;
-        setlength(asteroid_buffer,1000);
         count:=0;
         assignfile(txtf,path);
         try
@@ -544,6 +541,12 @@ var
             ReadLn(txtf, s);
             if length(s)>10 then
             begin
+
+  //                                  if pos('38826)',s)>0 then
+   //                                 beep;
+
+
+
              if asteroid then  convert_MPCORB_line(s, {out} desn,name, yy,mm,dd,a_e,a_or_q {a},a_i,a_ohm,a_w,a_M,H,a_g){read MPC asteroid}
                          else  convert_comet_line (s, {var} desn,name, yy,mm,dd,a_e,a_or_q {q},a_i,a_ohm,a_w,a_M,H,c_k); {read MPC comet}
              if ((desn<>'') and (a_or_q<>0)) then {data line}
@@ -581,6 +584,8 @@ var
                      else
                        plot_asteroid(annotation_diameter*5);
 
+
+
                      asteroid_buffer[counter].yy:=yy;
                      asteroid_buffer[counter].mm:=mm;
                      asteroid_buffer[counter].dd:=dd;
@@ -597,6 +602,9 @@ var
                        asteroid_buffer[counter].a_g:=c_k;
                      asteroid_buffer[counter].desn:=desn;
                      asteroid_buffer[counter].name:=name;
+
+
+
                      inc(counter);
                      if counter>=length(asteroid_buffer) then setlength(asteroid_buffer,length(asteroid_buffer)+1000);
                    end;
@@ -732,12 +740,15 @@ begin
      annotated:=false;
   end;
 
-  counter:=0;//counter for asteroid_buffer. Count both asteroids and comets.
 
   if use_buffer then
     replot //use asteroid_buffer information
   else
   begin
+    counter:=0;//counter for asteroid_buffer. Count both asteroids and comets.
+    asteroid_buffer:=nil;//remove old data;
+    setlength(asteroid_buffer,1000);
+
     if mpcorb_path<>'' then
     begin
       if  fileexists(mpcorb_path) then
