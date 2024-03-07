@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 240
+  Left = 10
   Height = 707
-  Top = 201
-  Width = 1531
+  Top = 138
+  Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 707
-  ClientWidth = 1531
+  ClientHeight = 690
+  ClientWidth = 1862
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -49,11 +49,11 @@ object stackmenu1: Tstackmenu1
   OnKeyPress = FormKeyPress
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '3.0.0.3'
+  LCLVersion = '3.2.0.0'
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 707
+    Height = 690
     Top = 0
     Width = 1920
     Align = alClient
@@ -2965,12 +2965,11 @@ object stackmenu1: Tstackmenu1
             OnKeyDown = listview1KeyDown
           end
           object clear_blink_list1: TButton
-            Left = 1168
+            Left = 991
             Height = 25
             Hint = 'Clear image list'
             Top = 34
-            Width = 53
-            AutoSize = True
+            Width = 61
             Caption = 'Clear'
             ParentFont = False
             ParentShowHint = False
@@ -2982,7 +2981,7 @@ object stackmenu1: Tstackmenu1
             Left = 24
             Height = 15
             Hint = 'Number of images in the list'
-            Top = 5
+            Top = 8
             Width = 6
             Caption = '0'
             ParentColor = False
@@ -3025,7 +3024,7 @@ object stackmenu1: Tstackmenu1
             Left = 512
             Height = 19
             Hint = 'Use star alignment to align images. For the first round additional time will be required for calculating solution. Clear alignment if you reuse images.'
-            Top = 11
+            Top = 4
             Width = 87
             Caption = 'Align images'
             Checked = True
@@ -3037,7 +3036,7 @@ object stackmenu1: Tstackmenu1
             Left = 296
             Height = 25
             Hint = 'Clear the star alignment. Apply this if alignment is poor.'
-            Top = 5
+            Top = 4
             Width = 146
             AutoSize = True
             Caption = 'Clear image alignment'
@@ -3061,7 +3060,7 @@ object stackmenu1: Tstackmenu1
           end
           object help_blink1: TLabel
             Cursor = crHandPoint
-            Left = 1189
+            Left = 1100
             Height = 30
             Hint = 'Online help'
             Top = 0
@@ -3076,7 +3075,7 @@ object stackmenu1: Tstackmenu1
             OnClick = help_blink1Click
           end
           object export_aligned_files1: TButton
-            Left = 1019
+            Left = 850
             Height = 25
             Hint = 'Export the images with solution to new aligned image files (_aligned.fit). Prior to this run the blink routine once to get alignment solutions.'
             Top = 4
@@ -3090,7 +3089,7 @@ object stackmenu1: Tstackmenu1
             OnClick = export_aligned_files1Click
           end
           object write_video1: TButton
-            Left = 1019
+            Left = 850
             Height = 25
             Hint = 'Write image list as YUV4MPEG2 video with extension y4m.'
             Top = 34
@@ -3105,7 +3104,7 @@ object stackmenu1: Tstackmenu1
             Left = 512
             Height = 19
             Hint = 'Write data and time to screen and image array. If the file is saved this annotation in written in the image itself.'
-            Top = 37
+            Top = 34
             Width = 80
             Caption = 'Time stamp'
             Checked = True
@@ -3140,7 +3139,7 @@ object stackmenu1: Tstackmenu1
             Left = 656
             Height = 19
             Hint = 'Same option as in the viewer under View.'
-            Top = 37
+            Top = 34
             Width = 119
             Caption = 'Annotations visible'
             TabOrder = 13
@@ -3149,7 +3148,7 @@ object stackmenu1: Tstackmenu1
           object most_right8: TStaticText
             Left = 1250
             Height = 16
-            Top = 4
+            Top = 9
             Width = 3
             AutoSize = True
             Caption = '|'
@@ -3157,9 +3156,9 @@ object stackmenu1: Tstackmenu1
             Visible = False
           end
           object Label6: TLabel
-            Left = 809
+            Left = 1080
             Height = 15
-            Top = 8
+            Top = 34
             Width = 193
             Caption = 'For Track and Stack see popup menu'
           end
@@ -3167,11 +3166,22 @@ object stackmenu1: Tstackmenu1
             Left = 656
             Height = 25
             Hint = 'Reannotate and solve all checked images. To refresh the solution set the override option in tab Alignment.'
-            Top = 5
+            Top = 4
             Width = 144
             Caption = '(Re)annotate (&&solve)'
             TabOrder = 15
             OnClick = blink_annotate_and_solve1Click
+          end
+          object blink_binx2: TButton
+            Left = 992
+            Height = 25
+            Hint = 'Bin the images for better photometric detection.  Original files will not be affected.'
+            Top = 4
+            Width = 61
+            Caption = 'Bin x 2'
+            ParentFont = False
+            TabOrder = 16
+            OnClick = photometry_binx2Click
           end
         end
         object tab_photometry1: TTabSheet
@@ -7789,14 +7799,14 @@ object stackmenu1: Tstackmenu1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 202
+      Height = 185
       Top = 505
       Width = 1920
       ClientWidth = 1920
-      ClientHeight = 202
+      ClientHeight = 185
       object memo2: TMemo
         Left = 0
-        Height = 108
+        Height = 91
         Top = 94
         Width = 1920
         Align = alBottom

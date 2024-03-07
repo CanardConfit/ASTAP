@@ -167,8 +167,7 @@ begin
     solution_vectorY[1]:=-1; //flipped y
     solution_vectorY[2]:=(referenceY-1) +(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y])-1); ;//calculate in 0..height-1 range. ReferenceY is in FITS values
   end;
-  memo2_message('Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
-                         +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) )
+  memo2_message(solution_str);
 end;
 
 
@@ -370,19 +369,16 @@ begin
 
                   find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
-                  memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
-                       +'  Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
-                                   +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) )
-
-                    else
-                    begin
-                      memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
-                      files_to_process[c].name:=''; {remove file from list}
-                     solution:=false;
-                      ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
-                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='no solution';{no stack result}
-                    end;
-                 end;{internal alignment}
+                    memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  ' +solution_str)
+                  else
+                  begin
+                    memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
+                    files_to_process[c].name:=''; {remove file from list}
+                   solution:=false;
+                    ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
+                    ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='no solution';{no stack result}
+                  end;
+                end;{internal alignment}
               end
               else
               reset_solution_vectors(1);{no influence on the first image}
@@ -720,19 +716,16 @@ begin
 
                 find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
-                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
-                     +'  Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
-                                 +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) )
-
-                  else
-                  begin
-                    memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
-                    files_to_process[c].name:=''; {remove file from list}
-                    solution:=false;
-                    ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
-                    ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
-                  end;
-               end;{internal alignment}
+                   memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str)
+                else
+                begin
+                  memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
+                  files_to_process[c].name:=''; {remove file from list}
+                  solution:=false;
+                  ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
+                  ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
+                end;
+              end;{internal alignment}
             end
             else
             reset_solution_vectors(1);{no influence on the first image}
@@ -1326,15 +1319,10 @@ begin
                   find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                   begin
-                    memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
-                       +'  Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
-                                   +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) );
-
+                    memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str);
                     solutions[c].solution_vectorX:= solution_vectorX;{store solutions}
                     solutions[c].solution_vectorY:= solution_vectorY;
                     solutions[c].cblack:=bck.backgr;
-
-
                   end
                     else
                     begin
@@ -1837,19 +1825,16 @@ begin
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
-              memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
-                   +'  Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
-                               +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]) )
-
-                else
-                begin
-                  memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
-                  files_to_process[c].name:=''; {remove file from list}
-                  solution:=false;
-                  ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
-                  ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
-                end;
-             end;{internal alignment}
+                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str)
+              else
+              begin
+                memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
+                files_to_process[c].name:=''; {remove file from list}
+                solution:=false;
+                ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
+                ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
+              end;
+            end;{internal alignment}
           end
           else
           reset_solution_vectors(1);{no influence on the first image}

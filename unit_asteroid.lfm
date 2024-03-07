@@ -342,7 +342,7 @@ object form_asteroids1: Tform_asteroids1
       Height = 23
       Hint = 'The latitude of the observatory in degrees.'
       Top = 40
-      Width = 113
+      Width = 144
       ParentShowHint = False
       ShowHint = True
       TabOrder = 1
@@ -372,7 +372,7 @@ object form_asteroids1: Tform_asteroids1
       Height = 23
       Hint = 'The longitude of the observatory in degrees. For east enter positive, for west enter negative values.'
       Top = 72
-      Width = 113
+      Width = 145
       ParentShowHint = False
       ShowHint = True
       TabOrder = 2

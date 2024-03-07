@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.07';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1152,7 +1152,8 @@ var {################# initialised variables #########################}
      Function get_as_string:string;{read float as string values. Universal e.g. for latitude and longitude which could be either string or float}
      var  r: integer;
      begin
-       result:='';
+       result:=header[i+10]; //This position could be the minus sign of a number -3.000000000000E+001
+       if result=#39 then result:='';//Ignore the #39 character indication a string
        r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
        while ((header[r]<>#39){last quote} and (r<I+30)) do {read string up to position 30}
        begin
@@ -8979,11 +8980,12 @@ begin
   result:=false;
 
   commando:='-D';
-  if pos('(',filename3)>0 then //this ( is not processed by fpunpack
+  if pos('(',filename3)>0 then //this character "(" is not processed by fpunpack
   begin
-    newfilename:=stringreplace(filename3,'(','_',[rfReplaceAll]);
+    newfilename:=extractfilepath(filename3)+stringreplace(extractfilename(filename3),'(','_',[rfReplaceAll]);
     if renamefile(filename3,newfilename) then
       filename3:=newfilename;
+    if pos('(',newfilename)>0 then begin memo2_message('Error!. Can not process a path with the "(" character');exit;  end;
   end;
 
   {$ifdef mswindows}
@@ -9016,7 +9018,6 @@ begin
 end;
 
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
-
 begin
   result:=false;
   {$ifdef mswindows}
@@ -13343,44 +13344,54 @@ var
   degrees : boolean;
   data    : string;
 begin
-  inp:=uppercase(inp); {upcase once instead of every stringreplace using rfIgnorecase}
-  degrees:=pos('D',inp)>0;{degrees ?}
-  inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
+  val(inp,ra,error1); //try easy conversion
+  if error1<>0 then
+  begin //do compilcated conversion
+    inp:=uppercase(inp); {upcase once instead of every stringreplace using rfIgnorecase}
+    degrees:=pos('D',inp)>0;{degrees ?}
+    inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
 
-  data:='';
-  for i := 1 to length(inp) do
-  begin
-    if (((ord(inp[i])>=48) and (ord(inp[i])<=57)) or (inp[i]='.') or (inp[i]='-')) then   data:=data+inp[i] else data:=data+' ';{replace all char by space except for numbers and dot}
-  end;
-  repeat  {remove all double spaces}
-    i:=pos('  ',data);
-    if i>0 then delete(data,i,1);
-  until i=0;
-
-
-  data:=trim(data)+' ';
-  if pos('-',data)>0 then plusmin:=-1 else plusmin:=1;
-
-  position1:=pos(' ',data);
-  val(copy(data,1,position1-1),rah,error1);
-  if degrees then rah:=rah*24/360;{input was in degrees}
+    data:='';
+    for i := 1 to length(inp) do
+    begin
+      if (((ord(inp[i])>=48) and (ord(inp[i])<=57)) or (inp[i]='.') or (inp[i]='-')) then   data:=data+inp[i] else data:=data+' ';{replace all char by space except for numbers and dot}
+    end;
+    repeat  {remove all double spaces}
+      i:=pos('  ',data);
+      if i>0 then delete(data,i,1);
+    until i=0;
 
 
-  position2:=posex(' ',data,position1+1);
-  if position2-position1>1 then {ram available}
-  begin
-    val(copy(data,position1+1,position2-position1-1),ram,error2);
+    data:=trim(data)+' ';
+    if pos('-',data)>0 then plusmin:=-1 else plusmin:=1;
 
-    {ram found try ras}
-    position3:=posex(' ',data,position2+1);
-    if position3-position2>1 then val( copy(data,position2+1,position3-position2-1),ras,error3)
-       else begin ras:=0;error3:=0;end;
+    position1:=pos(' ',data);
+    val(copy(data,1,position1-1),rah,error1);
+    if degrees then rah:=rah*24/360;{input was in degrees}
+
+
+    position2:=posex(' ',data,position1+1);
+    if position2-position1>1 then {ram available}
+    begin
+      val(copy(data,position1+1,position2-position1-1),ram,error2);
+
+      {ram found try ras}
+      position3:=posex(' ',data,position2+1);
+      if position3-position2>1 then val( copy(data,position2+1,position3-position2-1),ras,error3)
+         else begin ras:=0;error3:=0;end;
+    end
+    else
+      begin ram:=0;error2:=0; ras:=0; error3:=0; end;
+
+    ra:=plusmin*(abs(rah)+ram/60+ras/3600)*pi/12;
+    errorRA:=((error1<>0) or (error2>1) or (error3<>0) or (ra>2*pi));
+
   end
   else
-    begin ram:=0;error2:=0; ras:=0; error3:=0; end;
-
-  ra:=plusmin*(abs(rah)+ram/60+ras/3600)*pi/12;
-  errorRA:=((error1<>0) or (error2>1) or (error3<>0) or (ra>2*pi));
+  begin
+    errorRA:=false;
+    ra:=ra*pi/12; //convert to radians
+  end;
 end;
 
 
@@ -13404,40 +13415,48 @@ var
   position1,position2,position3,error1,error2,error3,plusmin,i : integer ;
   data                                                       : string;
 begin
-  inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
-  data:='';
-  for i := 1 to length(inp) do
-  begin
-    if (((ord(inp[i])>=48) and (ord(inp[i])<=57)) or (inp[i]='.') or (inp[i]='-')) then   data:=data+inp[i] else data:=data+' ';{replace all char by space except for numbers and dot}
-  end;
-  repeat  {remove all double spaces}
-    i:=pos('  ',data);
-    if i>0 then delete(data,i,1);
-  until i=0;;
+  val(inp,dec,error1);//try easy decode including scientific 6.704750E-01
+  if error1<>0 then
+  begin //try dificult decode such as '+53 20 52.510'
+    inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
+    data:='';
+    for i := 1 to length(inp) do
+    begin
+      if (((ord(inp[i])>=48) and (ord(inp[i])<=57)) or (inp[i]='.') or (inp[i]='-')) then   data:=data+inp[i] else data:=data+' ';{replace all char by space except for numbers and dot}
+    end;
+    repeat  {remove all double spaces}
+      i:=pos('  ',data);
+      if i>0 then delete(data,i,1);
+    until i=0;;
 
 
-  data:=trim(data)+' ';
-  if pos('-',data)>0 then plusmin:=-1 else plusmin:=1;
+    data:=trim(data)+' ';
+    if pos('-',data)>0 then plusmin:=-1 else plusmin:=1;
 
-  position1:=pos(' ',data);
-  val(copy(data,1,position1-1),decd,error1);
+    position1:=pos(' ',data);
+    val(copy(data,1,position1-1),decd,error1);
 
+    position2:=posex(' ',data,position1+1);
+    if position2-position1>1 then {decm available}
+    begin
+      val(copy(data,position1+1,position2-position1-1),decm,error2);
 
-  position2:=posex(' ',data,position1+1);
-  if position2-position1>1 then {decm available}
-  begin
-    val(copy(data,position1+1,position2-position1-1),decm,error2);
+      {decm found try decs}
+      position3:=posex(' ',data,position2+1);
+      if position3-position2>1 then val( copy(data,position2+1,position3-position2-1),decs,error3)
+         else begin decs:=0;error3:=0;end;
+    end
+    else
+      begin decm:=0;error2:=0;decs:=0; error3:=0; end;
 
-    {decm found try decs}
-    position3:=posex(' ',data,position2+1);
-    if position3-position2>1 then val( copy(data,position2+1,position3-position2-1),decs,error3)
-       else begin decs:=0;error3:=0;end;
-  end
+    dec:=plusmin*(abs(decd)+decm/60+decs/3600)*pi/180;
+    errorDEC:=((error1<>0) or (error2>1) or (error3<>0));
+  end//end of difficult decode
   else
-    begin decm:=0;error2:=0;decs:=0; error3:=0; end;
-
-  dec:=plusmin*(abs(decd)+decm/60+decs/3600)*pi/180;
-  errorDEC:=((error1<>0) or (error2>1) or (error3<>0));
+  begin
+    errorDec:=false;
+    dec:=dec*pi/180;//convert to radians
+  end;
 end;
 
 
