@@ -6884,7 +6884,7 @@ begin
   stackmenu1.listview1.Items.endUpdate;
 
   analyse_tab_lights(0 {analyse_level});//update also process_as_osc
-  if process_as_osc > 0 then
+  if ((blinktab=false) and (process_as_osc > 0)) then
   begin
     memo2_message(
       '█ █ █ █ █ █ Abort !! For photometry you can not stack OSC images. First extract the green channel. █ █ █ █ █ █');

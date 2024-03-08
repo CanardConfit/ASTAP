@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.07';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3801,6 +3801,8 @@ begin
   if load_fits(filename2,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false then exit;
 
   bin_X2X3X4(binfactor);{bin img_loaded 2x or 3x}
+
+  remove_key('BAYERPAT=',false{all});//do not allow debayer anymore
 
   if fits_file_name(filename2) then
   begin
