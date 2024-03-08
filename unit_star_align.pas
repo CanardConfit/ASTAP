@@ -33,11 +33,23 @@ procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FO
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 procedure display_quads(starlistquads :star_list);{draw quads}
+function solution_str: string;
 
 implementation
 
 uses  unit_annotation;
 
+
+function floattostr6b(x:double):string;//always with dot decimal seperator. Float to string with 6 decimals
+begin
+  str(x:5:5,result);
+end;
+
+function solution_str: string;
+begin
+  result:='Solution[px] x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
+                   +',  y:='+floattostr6(solution_vectorY[0])+'x+ '+floattostr6(solution_vectorY[1])+'y+ '+floattostr6(solution_vectorY[2]);
+end;
 
 {   lsq_fit:                                                                                                                                     }
 {   Find the solution vector of an overdetermined system of linear equations according to the method of least squares using GIVENS rotations     }

@@ -1,12 +1,12 @@
 object mainwindow: Tmainwindow
   Left = 45
-  Height = 654
+  Height = 634
   Hint = ' '
-  Top = 336
+  Top = 334
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 654
+  ClientHeight = 634
   ClientWidth = 1333
   Color = clForm
   Icon.Data = {
@@ -71,7 +71,7 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 631
+    Top = 611
     Width = 1333
     Panels = <    
       item
@@ -110,7 +110,7 @@ object mainwindow: Tmainwindow
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 631
+    Height = 611
     Top = 0
     Width = 1333
     Align = alClient
@@ -750,19 +750,19 @@ object mainwindow: Tmainwindow
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 450
+      Height = 430
       Top = 181
       Width = 1333
       ClientWidth = 1333
-      ClientHeight = 450
+      ClientHeight = 430
       object Panel1: TPanel
         Left = 0
-        Height = 450
+        Height = 430
         Hint = 'hint'
         Top = 0
         Width = 1333
         Align = alClient
-        ClientHeight = 450
+        ClientHeight = 430
         ClientWidth = 1333
         Color = 2105376
         Font.CharSet = ANSI_CHARSET
@@ -782,7 +782,7 @@ object mainwindow: Tmainwindow
         object Image1: TImage
           Left = 122
           Height = 264
-          Top = 5
+          Top = -1
           Width = 608
           Anchors = []
           OnMouseDown = Image1MouseDown

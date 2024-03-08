@@ -77,7 +77,8 @@ type
                yy,mm,dd,
                a_e,a_or_q ,a_i,a_ohm,a_w,a_M,H,
                a_g : double;
-               desn,name: string;
+               desn: string[9]; //fixed size otherwise problems with resizing. 7 charactor are required for asteroids and 9 for comets. So 9 will fit both.
+               name: string[28];//fixed size otherwise problems with resizing
              end;
 var
   form_asteroids1: Tform_asteroids1;
@@ -406,8 +407,8 @@ begin
 
   if ((centuryA='19') or (centuryA='20') or (centuryA='21')) then {do only data}
   begin
-    name:=copy(txt,167,194-167+1);
-    desn:=trimRight(copy(txt,1,7));
+    name:=copy(txt,167,194-167+1); //28 charaters
+    desn:=trimRight(copy(txt,1,7));//7 characters
 
     H:=strtofloat(copy(txt,8,12-8+1));   { 8 -  12  f5.2   Absolute magnitude, H}
     G:=strtofloat(copy(txt,14,19-14+1)); {14 -  19  f5.2   Slope parameter, G}
@@ -442,14 +443,6 @@ begin
   val(copy(txt,15,4),yy,error2);//epoch year.
   if ((error2=0) and (yy>1900) and (yy<2200)) then {do only data}
   begin
-    name:=copy(txt,103,39);
-    desn:=copy(txt,159,10);
-
-    H:=strtofloat(copy(txt,91,5));   {   Absolute magnitude, H}
-
-    val(copy(txt,97,4),g,error1);
-    k:=g*2.5; { Comet activity}
-
     mm:=strtoint(copy(txt,20,2));{epoch month}
     dd:=strtofloat(copy(txt,23,7));{epoch day}
 
@@ -459,6 +452,13 @@ begin
     lan:=strtofloat(copy(txt,61,9));
     inc2:=strtofloat(copy(txt,71,9));
     M_anom:=1E99;{Should be zero since comet values are give at perihelion. But label this as a a comet by abnormal value 1E99}
+
+    H:=strtofloat(copy(txt,91,5));   {   Absolute magnitude, H}
+    val(copy(txt,97,4),g,error1);
+    k:=g*2.5; { Comet activity}
+
+    name:=copy(txt,103,28);//could be 56 charactor long. Limit to 28 as used for asteroids
+    desn:=copy(txt,160,9); //9 charactors long. The record size of asteroid_buffer.name should match
 
     {Hale Bopp
       Q:= 0.91468400000000005; Perihelion distance q in AU;
@@ -541,12 +541,6 @@ var
             ReadLn(txtf, s);
             if length(s)>10 then
             begin
-
-  //                                  if pos('38826)',s)>0 then
-   //                                 beep;
-
-
-
              if asteroid then  convert_MPCORB_line(s, {out} desn,name, yy,mm,dd,a_e,a_or_q {a},a_i,a_ohm,a_w,a_M,H,a_g){read MPC asteroid}
                          else  convert_comet_line (s, {var} desn,name, yy,mm,dd,a_e,a_or_q {q},a_i,a_ohm,a_w,a_M,H,c_k); {read MPC comet}
              if ((desn<>'') and (a_or_q<>0)) then {data line}
@@ -584,8 +578,8 @@ var
                      else
                        plot_asteroid(annotation_diameter*5);
 
-
-
+                     if counter>=length(asteroid_buffer) then
+                       setlength(asteroid_buffer,length(asteroid_buffer)+1000);//increase buffer
                      asteroid_buffer[counter].yy:=yy;
                      asteroid_buffer[counter].mm:=mm;
                      asteroid_buffer[counter].dd:=dd;
@@ -602,11 +596,7 @@ var
                        asteroid_buffer[counter].a_g:=c_k;
                      asteroid_buffer[counter].desn:=desn;
                      asteroid_buffer[counter].name:=name;
-
-
-
                      inc(counter);
-                     if counter>=length(asteroid_buffer) then setlength(asteroid_buffer,length(asteroid_buffer)+1000);
                    end;
 
                    if frac(count/10000)=0 then
@@ -748,6 +738,7 @@ begin
     counter:=0;//counter for asteroid_buffer. Count both asteroids and comets.
     asteroid_buffer:=nil;//remove old data;
     setlength(asteroid_buffer,1000);
+
 
     if mpcorb_path<>'' then
     begin

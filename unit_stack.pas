@@ -417,6 +417,7 @@ type
     Panel_solver1: TPanel;
     Panel_star_detection1: TPanel;
     photometry_binx2: TButton;
+    blink_binx2: TButton;
     photometry_button1: TButton;
     photometry_repeat1: TButton;
     photometry_stop1: TButton;
@@ -5550,11 +5551,7 @@ begin
                 {store location in listview for case list is sorted/modified}
                 ListView6.Items.item[c].SubitemImages[B_solution] := -1;
                 {remove any older icon_king}
-
-                memo2_message(IntToStr(nr_references) + ' of ' +
-                  IntToStr(nr_references2) + ' quads selected matching within ' +
-                  stackmenu1.quad_tolerance1.Text + ' tolerance.' + '  Solution[px] x:=' + floattostr6(solution_vectorX[0]) + 'x+ ' + floattostr6(solution_vectorX[1]) + 'y+ ' + floattostr6(solution_vectorX[2]) +
-                                                                                ',  y:=' + floattostr6(solution_vectorY[0]) + 'x+ ' + floattostr6(solution_vectorY[1]) + 'y+ ' + floattostr6(solution_vectorY[2]));
+                memo2_message(IntToStr(nr_references) + ' of ' +IntToStr(nr_references2) + ' quads selected matching within ' + stackmenu1.quad_tolerance1.Text +' tolerance.  '+solution_str);
               end
               else
               begin
@@ -7626,37 +7623,47 @@ end;
 
 procedure Tstackmenu1.photometry_binx2Click(Sender: TObject);
 var
-  c: integer;
+  c,columns: integer;
+  lv: tlistview;
 begin
+  if sender=blink_binx2 then
+  begin
+    lv:=stackmenu1.listview6;
+    columns:=b_nr;
+  end
+  else
+  begin
+    lv:=stackmenu1.listview7;
+    columns:=p_nr
+  end;
+
   esc_pressed := False;
   if (idYes = Application.MessageBox(
     'Binning images 2x2 for better detection. Original files will be preserved. Continue?',
     'Bin 2x2', MB_ICONQUESTION + MB_YESNO)) = False then exit;
 
-  listview7.Items.beginUpdate;
-  for c := 0 to listview7.items.Count - 1 do
+  lv.Items.beginUpdate;
+  for c := 0 to lv.items.Count - 1 do
   begin
-    if ((esc_pressed = False) and (listview7.Items.item[c].Checked)) then
+    if ((esc_pressed = False) and (lv.Items.item[c].Checked)) then
     begin
 
-      filename2 := listview7.items[c].Caption;
+      filename2 := lv.items[c].Caption;
 
       if fits_file_name(filename2) = False then
       begin
-        memo2_message('█ █ █ █ █ █ Can' + #39 +
-          't bin x 2. First analyse file list to convert to FITS !! █ █ █ █ █ █');
+        memo2_message('█ █ █ █ █ █ Can' + #39 +'t bin x 2. First analyse file list to convert to FITS !! █ █ █ █ █ █');
         beep;
         exit;
       end;
       mainwindow.Caption := filename2;
       Application.ProcessMessages;
-      if ((esc_pressed) or (binX2X3_file(2) = False))
-      {converts filename2 to binx2 version} then exit;
-      listview7.Items[c].Checked := False;
-      listview_add(listview7, filename2, True, P_nr);{add binx2 file}
+      if ((esc_pressed) or (binX2X3_file(2) = False)) {converts filename2 to binx2 version} then exit;
+      lv.Items[c].Checked := False;
+      listview_add(lv, filename2, True, columns);{add binx2 file}
     end;
   end;{for loop}
-  listview7.Items.endUpdate;
+  lv.Items.endUpdate;
 end;
 
 
