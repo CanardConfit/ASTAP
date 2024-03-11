@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = alignment1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 6
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2763,8 +2763,8 @@ object stackmenu1: Tstackmenu1
             Height = 19
             Hint = 'Ephemeris alignment: '#13#10#13#10'Preperation:'#13#10'- Batch solve the images in the viewer.'#13#10'- Batch annotate the images in the viewer.'#13#10#13#10'Stacking:'#13#10'- Select manual/ephemeris alignment'#13#10'- Browse for all the images in the image tab and add if available the dark, flats.'#13#10'- Double click on one of the image files to open in the viewer. This will fill in tab alignment the option combobox with all annotations.'#13#10'- Select from the option combobox the asteroid to align on.'#13#10'- Hit the analyse button in the image tab. This fill all the x,y positions in the image list based on the object annotation selected.'#13#10'- If all okay, hit the stack button. '
             Top = 288
-            Width = 141
-            Caption = 'Emphemeris alignment'
+            Width = 130
+            Caption = 'Ephemeris alignment'
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
