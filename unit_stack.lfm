@@ -2808,11 +2808,11 @@ object stackmenu1: Tstackmenu1
             object analyse_objects_visible1: TButton
               Left = 238
               Height = 25
-              Hint = 'This will fill the combobox with objects visible in the image.'
+              Hint = 'This will fill the combobox with objects visible in the selected light'
               Top = 4
-              Width = 226
+              Width = 217
               AutoSize = True
-              Caption = 'Analyse the selected file in tab images'
+              Caption = 'Analyse the selected file in tab lights'
               TabOrder = 1
               OnClick = analyse_objects_visible1Click
             end
