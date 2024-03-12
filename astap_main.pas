@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -4184,7 +4184,7 @@ begin
       v2:=fitsy-head.crpix2;
     end; {mainwindow.Polynomial1.itemindex=0}
 
-    //for fomalism 0 and 1
+    //for formalism 0 and 1
     xi :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
     eta:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
 

@@ -904,7 +904,7 @@ procedure Tform_asteroids1.file_to_add1Click(Sender: TObject); {han.k}
 begin
   OpenDialog1.Title := 'Select MPCORB.DAT to use';
   OpenDialog1.Options := [ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'MPCORB.DAT(*.DAT*)|*.dat;*.DAT';
+  opendialog1.Filter := 'MPCORB, NEA(*.DAT*;*.txt)|*.dat;*.DAT;*.txt';
   if opendialog1.execute then
   begin
     mpcorb_path1.caption:=OpenDialog1.Files[0];
@@ -917,7 +917,7 @@ procedure Tform_asteroids1.file_to_add2Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Select AllCometEls.txt to use';
   OpenDialog1.Options := [ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'AllCometEls.txt file (*.txt)|*.txt';
+  opendialog1.Filter := 'AllCometEls.txt file (A*.txt)|A*.txt';
   if opendialog1.execute then
   begin
     mpcorb_path2.caption:=OpenDialog1.Files[0];

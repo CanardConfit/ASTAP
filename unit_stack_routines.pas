@@ -40,7 +40,7 @@ implementation
 uses unit_astrometric_solving, unit_contour;
 
 
-procedure  calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
+procedure  calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
 var
   u,u0,v,v0,dRa,dDec,delta,ra_new,dec_new,delta_ra,det,gamma,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,h: double;
 Begin
@@ -106,29 +106,35 @@ end;{calc_newx_newy}
 procedure astrometric_to_vector;{convert astrometric solution to vector solution}
 var
   flipped,flipped_reference  : boolean;
+  centerX,centerY            : double;
 
 begin
   a_order:=0; {SIP correction should be zero by definition}
 
-  calc_newx_newy(false,1,1) ;//this will only work well for 1th orde solutions
+//  calc_newx_newy(false,1,1) ;//this will only work well for 1th orde solutions
   calc_newx_newy(false,head.crpix1, head.crpix2) ;//this will only work well for 1th orde solutions
-  solution_vectorX[2]:=x_new_float;
-  solution_vectorY[2]:=y_new_float;
+  centerX:=x_new_float;
+  centerY:=y_new_float;
 
-  calc_newx_newy(false,2, 1); {move one pixel in X}
+//  calc_newx_newy(false,2, 1); {move one pixel in X}
   calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
 
-  solution_vectorX[0]:=+(x_new_float- solution_vectorX[2]);
-  solution_vectorX[1]:=-(y_new_float- solution_vectorY[2]);
+  solution_vectorX[0]:=+(x_new_float- centerX);
+  solution_vectorX[1]:=-(y_new_float- centerY);
 
-  calc_newx_newy(false,1, 2);{move one pixel in Y}
+//  calc_newx_newy(false,1, 2);{move one pixel in Y}
   calc_newx_newy(false,head.crpix1, head.crpix2+1);{move one pixel in Y}
 
-  solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
-  solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
+  solution_vectorY[0]:=-(x_new_float- centerX);
+  solution_vectorY[1]:=+(y_new_float- centerY);
 
-  solution_vectorX[2]:=  solution_vectorX[2]-head.crpix1;
-  solution_vectorY[2]:=  solution_vectorY[2]-head.crpix2;
+//  solution_vectorX[2]:=  solution_vectorX[2]-(head.crpix1-1);//range 0..width-1
+//  solution_vectorY[2]:=  solution_vectorY[2]-(head.crpix2-1);
+
+  calc_newx_newy(false,1, 1);
+  solution_vectorX[2]:=  x_new_float;//range 0..width-1
+  solution_vectorY[2]:=  Y_new_float;
+
 
   flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   flipped_reference:=head_ref.CD1_1*head_ref.CD2_2>0; {flipped reference image}
@@ -141,45 +147,69 @@ end;
 
 procedure initialise_calc_sincos_dec0;{set variables correct}
 begin
-  sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+  sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 end;
 
 
-procedure calculate_manual_vector( c: integer; flipX,flipY : boolean); //calculate the vector for the image scale one and 0..h, 0..w range.
+procedure calculate_manual_vector(c: integer); //calculate the vector drift for the image scale one and 0..h, 0..w range.
+var
+  ra1,dec1,x1,y1,shiftX,shiftY : double;
+  dummy : string;
 begin
-  if ((head.cd1_1=0) or (flipx=false)) then //no solution or not flipped
+  if head.cd1_1=0 then //pure manual stacking
   begin
     solution_vectorX[0]:=1;
+    solution_vectorX[1]:=0;
     solution_vectorX[2]:=referenceX{-1}-(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]){-1}); {calculate correction. The two subtractions are neutralizing each other}
+    solution_vectorY[0]:=0;
+    solution_vectorY[1]:=1;
+    solution_vectorY[2]:=referenceY{-1} - (strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]){-1});//the two subtractions are neutralizing each other
   end
   else
   begin
-    solution_vectorX[0]:=-1; //flipped x
-    solution_vectorX[2]:=(referenceX-1) + (strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X])-1);//calculate in 0..width-1 range. ReferenceX is in fits values
-  end;
-  if ((head.cd1_1=0) or (flipY=false)) then //no solution or not flipped in Y
-  begin
-   solution_vectorY[1]:=1;
-   solution_vectorY[2]:=referenceY{-1} - (strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]){-1});//the two subtractions are neutralizing each other
-   end
-  else
-  begin
-    solution_vectorY[1]:=-1; //flipped y
-    solution_vectorY[2]:=(referenceY-1) +(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y])-1); ;//calculate in 0..height-1 range. ReferenceY is in FITS values
+//    pixel_to_celestial(head,1,1,1 {formalism},  ra1,dec1 );
+
+    sincos(head.dec0,SIN_dec0,COS_dec0);//intilialize SIN_dec0,COS_dec0
+    astrometric_to_vector;{convert 1th order astrometric solution to a vector solution}
+
+    dummy:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X];
+    dummy:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y];
+
+
+    //convert the astroid position to ra, dec
+    pixel_to_celestial(head,strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]),1 {formalism},  ra1,dec1 );
+    //calculate the astroid position to x,y coordinated of the reference image
+    celestial_to_pixel(head_ref, ra1,dec1,x1,y1);//ra,dec  ref image to fitsX,fitsY second image
+
+
+    //convert the center based solution to solution with origin at 0,0
+    if solution_vectorX[0]<0  then
+       solution_vectorX[2]:=solution_vectorX[2]+head.width-1;
+
+    if solution_vectorY[1]<0  then
+       solution_vectorY[2]:=solution_vectorY[2]+head.height-1;
+
+
+    shiftX:=x1 {-1} - referenceX{-1}; //The asteroid correction. The two subtractions are neutralizing each other
+    shiftY:=y1 {-1} - referenceY{-1}; //The asteroid correction. The two subtractions are neutralizing each other
+
+    solution_vectorX[2]:=solution_vectorX[2]-shiftx;
+    solution_vectorY[2]:=solution_vectorY[2]-shifty;
   end;
   memo2_message(solution_str);
 end;
 
 
+
 procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
-  fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,oversizeV,max_stars,col  : integer;
+  fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,max_stars,col  : integer;
   background_r, background_g, background_b, background_l ,
   rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, red_add,green_add,blue_add,
   rr_factor, rg_factor, rb_factor,
   gr_factor, gg_factor, gb_factor,
   br_factor, bg_factor, bb_factor,
-  saturated_level,hfd_min,tempval,aa,bb,cc,dd,ee,ff,refcd1_1,refcd1_2                      : double;
+  saturated_level,hfd_min,tempval,aa,bb,cc,dd,ee,ff                                        : double;
   init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip : boolean;
   warning             : string;
   starlist1,starlist2 : star_list;
@@ -325,8 +355,6 @@ begin
               begin
                 referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
                 referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
-                refcd1_1:=head.cd1_1;
-                refcd1_2:=head.cd1_2;
               end
               else
               begin
@@ -361,11 +389,11 @@ begin
               begin
                 if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
-                  calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );//includes memo2_message with solution vector
+                  calculate_manual_vector(c);//includes memo2_message with solution vector
                 end
                 else
                 begin{internal alignment}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                   find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -579,8 +607,8 @@ end;
 
 procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars                                : integer;
-    background_correction, weightF,hfd_min,aa,bb,cc,dd,ee,ff,refcd1_1,refcd1_2                                                           : double;
+    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars                                : integer;
+    background_correction, weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                                   : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                          : boolean;
     tempval                                                                                                                              : single;
     warning             : string;
@@ -678,8 +706,6 @@ begin
             begin
               referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
               referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
-              refcd1_1:=head.cd1_1;
-              refcd1_2:=head.cd1_2;
             end
             else
             if  use_astrometry_internal=false then
@@ -703,7 +729,7 @@ begin
             begin
               if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin {manual alignment}
-                calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );//includes memo2_message with solution vector
+                calculate_manual_vector(c);//includes memo2_message with solution vector
               end
               else
               begin{internal alignment}
@@ -755,16 +781,6 @@ begin
             dd:=solution_vectorY[0];
             ee:=solution_vectorY[1];
             ff:=solution_vectorY[2];
-
-//            fitsx:=1362;
-  //          fitsy:=447;
-
-//            fitsx:=176;
-  //          fitsy:=578;
-
-    //        x_new:=round(aa*(175.64)+bb*(fitsY)+cc);
-      //      y_new:=round(dd*(fitsx)+ee*(578.3)+ff); {correction y:=aX+bY+c}
-        //    beep;  }
 
             for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
             for fitsX:=0 to head.width-1  do
@@ -1178,8 +1194,8 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars       : integer;
-    variance_factor, value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,refcd1_1,refcd1_2                                    : double;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars                 : integer;
+    variance_factor, value,weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                      : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                      : boolean;
     tempval, sumpix, newpix,target_background,background_correction                                               : single;
     warning     : string;
@@ -1277,8 +1293,6 @@ begin
             begin
               referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
               referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
-              refcd1_1:=head.cd1_1;
-              refcd1_2:=head.cd1_2;
             end
             else
             begin
@@ -1311,7 +1325,7 @@ begin
               begin
                 if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
-                  calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );//includes memo2_message with solution vector
+                  calculate_manual_vector(c);//includes memo2_message with solution vector
                 end
                 else
                 begin{internal alignment}
@@ -1461,7 +1475,7 @@ begin
               end
               else
               begin
-                calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );
+                calculate_manual_vector(c);
               end;
             end
             else
@@ -1574,7 +1588,7 @@ begin
               end
               else
               begin
-                calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );
+                calculate_manual_vector(c);
               end;
             end
             else
@@ -1671,8 +1685,8 @@ end;   {stack using sigma clip average}
 
 procedure calibration_and_alignment(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV,max_stars   : integer;
-    background_correction, hfd_min,aa,bb,cc,dd,ee,ff,refcd1_1,refcd1_2                                         : double;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, max_stars             : integer;
+    background_correction, hfd_min,aa,bb,cc,dd,ee,ff                                                           : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip :boolean;
     warning             : string;
     starlist1,starlist2 : star_list;
@@ -1757,8 +1771,6 @@ begin
           begin
             referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
             referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
-            refcd1_1:=head.cd1_1;
-            refcd1_2:=head.cd1_2;
           end
           else
           begin
@@ -1779,18 +1791,14 @@ begin
           height_max:=head.height;
           width_max:=head.width;
 
-
           setlength(img_average,head.naxis3,height_max,width_max);
           setlength(img_temp,head.naxis3,height_max,width_max);
           {clearing image_average and img_temp is done for each image. See below}
-
 
           if ((use_manual_align) or (use_ephemeris_alignment)) then
           begin
             referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
             referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
-            refcd1_1:=head.cd1_1;
-            refcd1_2:=head.cd1_2;
           end;
         end;{init, c=0}
 
@@ -1812,7 +1820,7 @@ begin
           begin
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin {manual alignment}
-              calculate_manual_vector(c,sign(refcd1_1)<>sign(head.cd1_1),sign(refcd1_2)<>sign(head.cd1_2)  );//includes memo2_message with solution vector
+              calculate_manual_vector(c);//includes memo2_message with solution vector
             end
             else
             begin{internal alignment}
@@ -1821,7 +1829,6 @@ begin
               background_correction:=pedestal_s-bck.backgr;
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
               head.pedestal:=background_correction;
-
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -1840,7 +1847,6 @@ begin
           reset_solution_vectors(1);{no influence on the first image}
         end;
         init:=true;{initialize for first image done}
-
 
         if solution then
         begin

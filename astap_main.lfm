@@ -826,9 +826,9 @@ object mainwindow: Tmainwindow
           Visible = False
         end
         object error_label1: TLabel
-          Left = 1
+          Left = 16
           Height = 28
-          Top = 33
+          Top = 32
           Width = 158
           Caption = 'Error loading file!!'
           Font.Color = clRed
