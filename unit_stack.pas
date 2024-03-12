@@ -114,6 +114,7 @@ type
     Button1: TButton;
     blink_stack_selected1: TMenuItem;
     blink_annotate_and_solve1: TButton;
+    Label37: TLabel;
     Label6: TLabel;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
@@ -312,6 +313,7 @@ type
     Label65: TLabel;
     Label67: TLabel;
     Label68: TLabel;
+    Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
     label_gaussian1: TLabel;
@@ -2300,7 +2302,7 @@ begin
                 else
                 if stackmenu1.make_osc_color1.Checked then process_as_osc:= 2//forced process as OSC images
                 else
-                if ((head_2.naxis3 = 1) and (head_2.Xbinning = 1) and (bayerpat <> '')) then
+                if ((head_2.naxis3 = 1) and (head_2.Xbinning = 1) and (bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
                   //auto process as OSC images
                   process_as_osc:=1
                 else
@@ -4225,8 +4227,7 @@ begin
 
             if tabnr = 7 then {photometry tab}
             begin
-              lv.Items.item[c].subitems.Strings[P_date] :=
-                StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []);
+              lv.Items.item[c].subitems.Strings[P_date] :=StringReplace(copy(head_2.date_obs, 1, 19), 'T', ' ', []);
               {date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[P_filter] := head_2.filter_name;
 
@@ -8035,11 +8036,10 @@ begin
           end;
           listview7.Items.item[c].subitems.Strings[P_astrometric] := '✓';
           calculate_az_alt(1 {calculate}, head_2,{out}az, alt);  {try to get  a value for alt}
-          if alt <> 0 then
+          if alt > 0 then
           begin
-             centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
-             listview7.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
-             listview7.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+            listview7.Items.item[c].subitems.Strings[P_centalt] := floattostrf(alt, ffGeneral, 3, 1); {altitude}
+            listview7.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
           end;
         end
         else

@@ -19,11 +19,10 @@ procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of T
 procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
-{$inline off}  {!!! Set this off for debugging}
+{$inline on}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
 procedure initialise_calc_sincos_dec0;{set variables correct}
-//procedure initialise_var2;{set variables correct}
 function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 
 var
@@ -31,7 +30,6 @@ var
 
 var
   SIN_dec0,COS_dec0,x_new_float,y_new_float,SIN_dec_ref,COS_dec_ref : double;
-//  ap_0_1_ref,ap_0_2_ref,ap_0_3_ref,ap_1_0_ref,ap_1_1_ref, ap_1_2_ref,ap_2_0_ref,ap_2_1_ref,ap_3_0_ref, bp_0_1_ref,bp_0_2_ref,bp_0_3_ref,bp_1_0_ref,bp_1_1_ref,bp_1_2_ref,bp_2_0_ref,bp_2_1_ref,bp_3_0_ref   : double;
   gain_refxxx: string;
 
 
@@ -103,6 +101,73 @@ Begin
   end;{astrometric}
 end;{calc_newx_newy}
 
+
+procedure astrometric_to_vectoroldest;{convert astrometric solution to vector solution}
+var
+  flipped,flipped_reference  : boolean;
+
+begin
+  a_order:=0; {SIP correction should be zero by definition}
+
+  calc_newx_newy(false,1,1) ;
+  solution_vectorX[2]:=x_new_float;
+  solution_vectorY[2]:=y_new_float;
+
+  calc_newx_newy(false,2, 1); {move one pixel in X}
+
+  solution_vectorX[0]:=+(x_new_float- solution_vectorX[2]);
+  solution_vectorX[1]:=-(y_new_float- solution_vectorY[2]);
+
+  calc_newx_newy(false,1, 2);{move one pixel in Y}
+  solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
+  solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
+
+  flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+  flipped_reference:=head_ref.CD1_1*head_ref.CD2_2>0; {flipped reference image}
+  if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
+  begin
+    solution_vectorX[1]:=-solution_vectorX[1];
+    solution_vectorY[0]:=-solution_vectorY[0];
+  end;
+end;
+
+procedure astrometric_to_vectorolder;{convert astrometric solution to vector solution}
+var
+  flipped,flipped_reference  : boolean;
+
+begin
+  a_order:=0; {SIP correction should be zero by definition}
+
+  calc_newx_newy(false,1,1) ;//this will only work well for 1th orde solutions
+  calc_newx_newy(false,head.crpix1, head.crpix2) ;//this will only work well for 1th orde solutions
+  solution_vectorX[2]:=x_new_float;
+  solution_vectorY[2]:=y_new_float;
+
+  calc_newx_newy(false,2, 1); {move one pixel in X}
+  calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
+
+  solution_vectorX[0]:=+(x_new_float- solution_vectorX[2]);
+  solution_vectorX[1]:=-(y_new_float- solution_vectorY[2]);
+
+  calc_newx_newy(false,1, 2);{move one pixel in Y}
+  calc_newx_newy(false,head.crpix1, head.crpix2+1);{move one pixel in Y}
+
+  solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
+  solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
+
+  solution_vectorX[2]:=  solution_vectorX[2]-head.crpix1;
+  solution_vectorY[2]:=  solution_vectorY[2]-head.crpix2;
+
+  flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+  flipped_reference:=head_ref.CD1_1*head_ref.CD2_2>0; {flipped reference image}
+  if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
+  begin
+    solution_vectorX[1]:=-solution_vectorX[1];
+    solution_vectorY[0]:=-solution_vectorY[0];
+  end;
+end;
+
+
 procedure astrometric_to_vector;{convert astrometric solution to vector solution}
 var
   flipped,flipped_reference  : boolean;
@@ -117,16 +182,18 @@ begin
   centerY:=y_new_float;
 
 //  calc_newx_newy(false,2, 1); {move one pixel in X}
-  calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
+calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
+//  calc_newx_newy(false,(2*head.crpix1)-1, head.crpix2); {move one pixel in X}
 
-  solution_vectorX[0]:=+(x_new_float- centerX);
-  solution_vectorX[1]:=-(y_new_float- centerY);
+  solution_vectorX[0]:=+(x_new_float- centerX){/(HEAD.CRPIX1-1)};
+  solution_vectorX[1]:=-(y_new_float- centerY){/(HEAD.CRPIX1-1)};
 
 //  calc_newx_newy(false,1, 2);{move one pixel in Y}
   calc_newx_newy(false,head.crpix1, head.crpix2+1);{move one pixel in Y}
+//  calc_newx_newy(false,head.crpix1, (2*head.crpix2)+1);{move one pixel in Y}
 
-  solution_vectorY[0]:=-(x_new_float- centerX);
-  solution_vectorY[1]:=+(y_new_float- centerY);
+  solution_vectorY[0]:=-(x_new_float- centerX){/(head.crpix2-1)};
+  solution_vectorY[1]:=+(y_new_float- centerY){/(head.crpix2-1)};
 
 //  solution_vectorX[2]:=  solution_vectorX[2]-(head.crpix1-1);//range 0..width-1
 //  solution_vectorY[2]:=  solution_vectorY[2]-(head.crpix2-1);
@@ -134,6 +201,10 @@ begin
   calc_newx_newy(false,1, 1);
   solution_vectorX[2]:=  x_new_float;//range 0..width-1
   solution_vectorY[2]:=  Y_new_float;
+
+//  solution_vectorX[2]:=  centerX - (head.crpix1-1);
+// solution_vectorY[2]:=  centerY -(head.crpix2-1);
+
 
 
   flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
@@ -143,6 +214,7 @@ begin
     solution_vectorX[1]:=-solution_vectorX[1];
     solution_vectorY[0]:=-solution_vectorY[0];
   end;
+  memo2_message('Astrometric vector solution '+solution_str)
 end;
 
 procedure initialise_calc_sincos_dec0;{set variables correct}

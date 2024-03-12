@@ -81,8 +81,8 @@ var
 
 function calculate_sqm(get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 var
-  airm, correction,alt,az : double;
-  bayer,form_exist        : boolean;
+  correction,az,airm         : double;
+  bayer,form_exist           : boolean;
 begin
   form_exist:=form_sqm1<>nil;   {see form_sqm1.FormClose action to make this working reliable}
 
@@ -153,12 +153,12 @@ begin
 
     sqmfloat:=head.mzero - ln((bck.backgr-pedestal2-head.pedestal)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;// +head.pedestal was the value added calibration calibration
 
-    calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,alt);
+    calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,altitudefloat);
 
-    centalt:=inttostr(round(alt));{for reporting in menu sqm1}
-    if alt<>0 then
+   // centalt:=inttostr(round(alt));{for reporting in menu sqm1}
+    if altitudefloat>0 then
     begin
-      airm:=airmass_calc(alt);
+      airm:=airmass_calc(altitudefloat);
       correction:= atmospheric_absorption(airm)- 0.28 {correction at zenith is defined as zero by subtracting 0.28};
       sqmfloat:=sqmfloat+correction;
       result:=true;
@@ -252,9 +252,9 @@ begin
     end;
 
     {calc}
-    if calculate_sqm(true {get backgr},update_hist{get histogr},pedestal2)=false then {failure in calculating sqm value}
+    if calculate_sqm(true {get backgr},update_hist{get histogr},{var} pedestal2)=false then {failure in calculating sqm value}
     begin
-      if centalt='0' then error_message1.caption:=error_message1.caption+'Could not retrieve or calculate altitude. Enter the default geographic location'+#10;
+      if altitudefloat<1 then error_message1.caption:=error_message1.caption+'Could not retrieve or calculate altitude. Enter the default geographic location'+#10;
       sqm1.caption:='?';
       bortle1.caption:='';
       exit;
@@ -262,7 +262,7 @@ begin
 
     {report}
     background1.caption:=inttostr(round(bck.backgr));
-    altitude1.caption:=centalt;
+    altitude1.caption:=inttostr(round(altitudefloat));
     sqm1.caption:=floattostrF(sqmfloat,ffFixed,0,2);
     bortle1.caption:=bortle(sqmfloat);
   end;
