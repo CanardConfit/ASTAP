@@ -1192,8 +1192,8 @@ object mainwindow: Tmainwindow
         end
         object add_limiting_magn_check1: TMenuItem
           AutoCheck = True
-          Caption = '          ☑ option "Add limiting magnitude and SQM"'
-          Hint = 'Add estimated limiting magnitude and SQM to the file header. The keyword LIM_MAGN and SQM can be configured in tab lights. For SQM enter a fixed pedestal value in viewer menu SQM report.'
+          Caption = '          ☑ option "Add limiting magnitude, SQM, CENTALT"'
+          Hint = 'Add estimated limiting magnitude and SQM to the file header. The keyword LIM_MAGN and SQM can be configured in tab lights. For SQM enter a fixed pedestal value in viewer menu SQM report. Will also add CENTALT if missing.'
           ShowAlwaysCheckable = True
         end
         object maintain_date1: TMenuItem

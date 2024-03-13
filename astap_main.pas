@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -664,7 +664,7 @@ var
   {star_level,}star_bg,sd_bg, magn_limit  : double;
   object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
-  focus_temp,{cblack,}cwhite,sqmfloat,pressure   :double; {from FITS}
+  focus_temp,{cblack,}cwhite,sqmfloat,altitudefloat, pressure   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
   telescop,instrum,origin,sqm_value   : string;
 
@@ -1023,6 +1023,7 @@ begin
 
     centalt:='';{assume no data available}
     centaz:='';{assume no data available}
+
     x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
     y_coeff[0]:=0;
     a_order:=0; {SIP_polynomial, use for check if there is data}
@@ -1662,10 +1663,10 @@ begin
                 end
                 else {for older MaximDL5}
                 if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then
-                                                                              centalt:=get_as_string {universal for string and floats}
+                    centalt:=get_as_string {universal for string and floats}
                 else {for older MaximDL5}
                 if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then
-                                     centaz:=get_as_string; {universal for string and floats}
+                    centaz:=get_as_string; {universal for string and floats}
               end {OBJCT}
               else
               if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
@@ -11336,6 +11337,7 @@ begin
 end;
 
 
+
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
@@ -12883,9 +12885,13 @@ begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
               if calculate_sqm(false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
               begin
+                if centalt=''  then //no old altitude
+                   update_text ('CENTALT =',#39+floattostr2(altitudefloat)+#39+'              / [deg] Altitude of center of image            ');
                 update_text('SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                 update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
-              end;
+              end
+              else
+              update_text('SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
             end;
 
             if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
@@ -13098,7 +13104,14 @@ begin
                 begin
                   update_text('SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                   update_text('COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
-                  mess:=' and SQM'
+                  mess:=' and SQM';
+                  if centalt=''  then //no old altitude
+                     update_text ('CENTALT =',#39+floattostr2(altitudefloat)+#39+'              / [deg] Altitude of center of image            ');
+                end
+                else
+                begin
+                  update_text('SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
+                  memo2_message('Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.');
                 end;
               end
               else
