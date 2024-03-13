@@ -114,7 +114,6 @@ type
     Button1: TButton;
     blink_stack_selected1: TMenuItem;
     blink_annotate_and_solve1: TButton;
-    Label37: TLabel;
     Label6: TLabel;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
@@ -2250,13 +2249,17 @@ begin
 
                 ListView1.Items.item[c].subitems.Strings[L_filter] := head_2.filter_name;
                 {filter name, without spaces}
-                if head_2.naxis3 = 3 then
-                  ListView1.Items.item[c].subitems.Strings[L_filter] := 'colour';
-                {give RGB lights filter name colour}
 
-                if head_2.naxis3 = 3 then  ListView1.Items.item[c].SubitemImages[L_filter] := 3 {RGB colour}
+                if head_2.naxis3 >= 3 then
+                begin
+                  ListView1.Items.item[c].subitems.Strings[L_filter] := 'colour';
+                  ListView1.Items.item[c].SubitemImages[L_filter] := 3 {RGB colour}
+                end
                 else
-                ListView1.Items.item[c].SubitemImages[L_filter] :=get_filter_icon(head_2.filter_name,{out} red,green, blue);
+                if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
+                  ListView1.Items.item[c].SubitemImages[L_filter] :=25  //raw OSC file
+                else
+                  ListView1.Items.item[c].SubitemImages[L_filter] :=get_filter_icon(head_2.filter_name,{out} red,green, blue);
 
 
                 ListView1.Items.item[c].subitems.Strings[L_bin] := floattostrf(head_2.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf( head_2.Ybinning, ffgeneral, 0, 0);
@@ -4188,7 +4191,11 @@ begin
               issue:='';//clear old issues
               lv.Items.item[c].subitems.Strings[F_filter] := head_2.filter_name;
 
-              if head_2.naxis3 = 3 then  lv.Items.item[c].SubitemImages[F_filter] := 3 {RGB colour}
+              if head_2.naxis3 = 3 then
+                lv.Items.item[c].SubitemImages[F_filter] := 3 {RGB colour}
+              else
+              if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
+                Lv.Items.item[c].SubitemImages[F_filter] :=25  //raw OSC file
               else
               begin
                 Lv.Items.item[c].SubitemImages[F_filter] :=get_filter_icon(head_2.filter_name,{out} red,green, blue);
@@ -4234,7 +4241,13 @@ begin
 
               filterstr:=head_2.filter_name;// R, G or V, B or TG
               filterstrUP:=uppercase(filterstr);
-              if ((length(filterstr)=0) or (pos('CV',filterstrUP)>0))  then lv.Items.item[c].SubitemImages[P_filter]:=-1 //unknown
+              if ((length(filterstr)=0) or (pos('CV',filterstrUP)>0))  then
+              begin
+                if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
+                  Lv.Items.item[c].SubitemImages[P_filter] :=25  //raw OSC file
+                else
+                lv.Items.item[c].SubitemImages[P_filter]:=-1 //unknown
+              end
               else
               if pos('S',filterstrUP)>0 then //sloan
               begin

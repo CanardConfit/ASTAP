@@ -102,113 +102,47 @@ Begin
 end;{calc_newx_newy}
 
 
-procedure astrometric_to_vectoroldest;{convert astrometric solution to vector solution}
-var
-  flipped,flipped_reference  : boolean;
-
-begin
-  a_order:=0; {SIP correction should be zero by definition}
-
-  calc_newx_newy(false,1,1) ;
-  solution_vectorX[2]:=x_new_float;
-  solution_vectorY[2]:=y_new_float;
-
-  calc_newx_newy(false,2, 1); {move one pixel in X}
-
-  solution_vectorX[0]:=+(x_new_float- solution_vectorX[2]);
-  solution_vectorX[1]:=-(y_new_float- solution_vectorY[2]);
-
-  calc_newx_newy(false,1, 2);{move one pixel in Y}
-  solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
-  solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
-
-  flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-  flipped_reference:=head_ref.CD1_1*head_ref.CD2_2>0; {flipped reference image}
-  if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
-  begin
-    solution_vectorX[1]:=-solution_vectorX[1];
-    solution_vectorY[0]:=-solution_vectorY[0];
-  end;
-end;
-
-procedure astrometric_to_vectorolder;{convert astrometric solution to vector solution}
-var
-  flipped,flipped_reference  : boolean;
-
-begin
-  a_order:=0; {SIP correction should be zero by definition}
-
-  calc_newx_newy(false,1,1) ;//this will only work well for 1th orde solutions
-  calc_newx_newy(false,head.crpix1, head.crpix2) ;//this will only work well for 1th orde solutions
-  solution_vectorX[2]:=x_new_float;
-  solution_vectorY[2]:=y_new_float;
-
-  calc_newx_newy(false,2, 1); {move one pixel in X}
-  calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
-
-  solution_vectorX[0]:=+(x_new_float- solution_vectorX[2]);
-  solution_vectorX[1]:=-(y_new_float- solution_vectorY[2]);
-
-  calc_newx_newy(false,1, 2);{move one pixel in Y}
-  calc_newx_newy(false,head.crpix1, head.crpix2+1);{move one pixel in Y}
-
-  solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
-  solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
-
-  solution_vectorX[2]:=  solution_vectorX[2]-head.crpix1;
-  solution_vectorY[2]:=  solution_vectorY[2]-head.crpix2;
-
-  flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-  flipped_reference:=head_ref.CD1_1*head_ref.CD2_2>0; {flipped reference image}
-  if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
-  begin
-    solution_vectorX[1]:=-solution_vectorX[1];
-    solution_vectorY[0]:=-solution_vectorY[0];
-  end;
-end;
-
-
 procedure astrometric_to_vector;{convert astrometric solution to vector solution}
 var
   flipped,flipped_reference  : boolean;
-  centerX,centerY            : double;
+  centerX,centerY,scale_correctionX,scale_correctionY    : double;
 
 begin
   a_order:=0; {SIP correction should be zero by definition}
 
-//  calc_newx_newy(false,1,1) ;//this will only work well for 1th orde solutions
   calc_newx_newy(false,head.crpix1, head.crpix2) ;//this will only work well for 1th orde solutions
   centerX:=x_new_float;
   centerY:=y_new_float;
 
-//  calc_newx_newy(false,2, 1); {move one pixel in X}
-calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
-//  calc_newx_newy(false,(2*head.crpix1)-1, head.crpix2); {move one pixel in X}
+  calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
 
-  solution_vectorX[0]:=+(x_new_float- centerX){/(HEAD.CRPIX1-1)};
-  solution_vectorX[1]:=-(y_new_float- centerY){/(HEAD.CRPIX1-1)};
+  solution_vectorX[0]:=+(x_new_float- centerX);
+  solution_vectorX[1]:=-(y_new_float- centerY);
 
-//  calc_newx_newy(false,1, 2);{move one pixel in Y}
   calc_newx_newy(false,head.crpix1, head.crpix2+1);{move one pixel in Y}
-//  calc_newx_newy(false,head.crpix1, (2*head.crpix2)+1);{move one pixel in Y}
 
-  solution_vectorY[0]:=-(x_new_float- centerX){/(head.crpix2-1)};
-  solution_vectorY[1]:=+(y_new_float- centerY){/(head.crpix2-1)};
+  solution_vectorY[0]:=-(x_new_float- centerX);
+  solution_vectorY[1]:=+(y_new_float- centerY);
 
-//  solution_vectorX[2]:=  solution_vectorX[2]-(head.crpix1-1);//range 0..width-1
-//  solution_vectorY[2]:=  solution_vectorY[2]-(head.crpix2-1);
+ //Correction for image distortion. The solution was extracted by comparison the distorted image with a linear star database. The solution factors are then typical a tiny amount smaller then "one"
+  scale_correctionX:=sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]));//for scale to "one"
+  scale_correctionX:=scale_correctionX*head_ref.cdelt1/head.cdelt1;//relative scale to reference image. Note a temperature change is followed by a focus correction and therefore a change in image scale.
+  solution_vectorX[0]:=solution_vectorX[0]/scale_correctionX;//apply correction
+  solution_vectorX[1]:=solution_vectorX[1]/scale_correctionX;
 
-  calc_newx_newy(false,1, 1);
+  scale_correctionY:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]));//for scale to "one"
+  scale_correctionY:=scale_correctionY*head_ref.cdelt2/head.cdelt2;//relative scale to reference image. Note a temperature change is followed by a focus correction and therefore a change in image scale.
+  solution_vectorY[0]:=solution_vectorY[0]/scale_correctionY;//apply correction
+  solution_vectorY[1]:=solution_vectorY[1]/scale_correctionY;
+
+
+  calc_newx_newy(false,(head.crpix1)*(1-scale_correctionX)+1, (head.crpix2)*(1-scale_correctionY)+1);
   solution_vectorX[2]:=  x_new_float;//range 0..width-1
   solution_vectorY[2]:=  Y_new_float;
 
-//  solution_vectorX[2]:=  centerX - (head.crpix1-1);
-// solution_vectorY[2]:=  centerY -(head.crpix2-1);
-
-
-
   flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-  flipped_reference:=head_ref.CD1_1*head_ref.CD2_2>0; {flipped reference image}
+  flipped_reference:=head_ref.cd1_1*head_ref.cd2_2 - head_ref.cd1_2*head_ref.cd2_1>0; {flipped reference image}
+
   if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
   begin
     solution_vectorX[1]:=-solution_vectorX[1];
@@ -216,6 +150,7 @@ calc_newx_newy(false,head.crpix1+1, head.crpix2); {move one pixel in X}
   end;
   memo2_message('Astrometric vector solution '+solution_str)
 end;
+
 
 procedure initialise_calc_sincos_dec0;{set variables correct}
 begin
@@ -268,7 +203,6 @@ begin
     solution_vectorX[2]:=solution_vectorX[2]-shiftx;
     solution_vectorY[2]:=solution_vectorY[2]-shifty;
   end;
-  memo2_message(solution_str);
 end;
 
 
@@ -910,32 +844,36 @@ begin
 end;
 
 
-procedure calculate_required_dimensions(head: theader; var ra_min,ra_max,dec_min,dec_max: double);//for image stitching mode
+procedure calculate_required_dimensions(head_ref,head: theader; var x_min,x_max,y_min,y_max: double);//for image stitching mode
 var
-  ra,dec : double;
+  ra,dec,x,y : double;
   formalism : integer;
 begin
   formalism:=mainwindow.Polynomial1.itemindex;
-  pixel_to_celestial(head,1,1,formalism , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  pixel_to_celestial(head,head.width,1,formalism , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  pixel_to_celestial(head,1,head.height,formalism , ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
-  pixel_to_celestial(head,head.width,1,formalism, ra, dec);
-  ra_min:=min(ra_min,ra);
-  ra_max:=max(ra_max,ra);
-  dec_min:=min(dec_min,dec);
-  dec_max:=max(dec_max,dec);
+  pixel_to_celestial(head,1,1,formalism , ra, dec); //left bottom
+  celestial_to_pixel(head_ref, ra,dec, x,y);{ra,dec to fitsX,fitsY}
+  x_min:=min(x_min,x);
+  x_max:=max(x_max,x);
+  y_min:=min(y_min,y);
+  y_max:=max(y_max,y);
+  pixel_to_celestial(head,head.width,1,formalism , ra, dec);  //right bottom
+  celestial_to_pixel(head_ref, ra,dec, x,y);{ra,dec to fitsX,fitsY}
+  x_min:=min(x_min,x);
+  x_max:=max(x_max,x);
+  y_min:=min(y_min,y);
+  y_max:=max(y_max,y);
+  pixel_to_celestial(head,1,head.height,formalism , ra, dec); //left top
+  celestial_to_pixel(head_ref, ra,dec, x,y);{ra,dec to fitsX,fitsY}
+  x_min:=min(x_min,x);
+  x_max:=max(x_max,x);
+  y_min:=min(y_min,y);
+  y_max:=max(y_max,y);
+  pixel_to_celestial(head,head.width,head.height,formalism, ra, dec); //right top
+  celestial_to_pixel(head_ref, ra,dec, x,y);{ra,dec to fitsX,fitsY}
+  x_min:=min(x_min,x);
+  x_max:=max(x_max,x);
+  y_min:=min(y_min,y);
+  y_max:=max(y_max,y);
 end;
 
 
@@ -951,36 +889,47 @@ procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of T
 var
     fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels,count,formalism   : integer;
     value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels,coverage,
-    fx1,fx2,fy1,fy2, raMiddle,decMiddle,
-    ra_min,ra_max,dec_min,dec_max,total_fov,fw,fh                   : double; //for mosaic
+    raMiddle,decMiddle,  x_min,x_max,y_min,y_max,total_fov,fw,fh     : double; //for mosaic
 
     tempval                                                          : single;
     init, vector_based,merge_overlap,equalise_background,use_sip     : boolean;
     background_correction,background_correction_center,background    : array[0..2] of double;
     counter_overlap                                                  : array[0..2] of integer;
     bck                                                              : array[0..3] of double;
+    oldsip                                                           : boolean;
 begin
   with stackmenu1 do
   begin
     //find dimensions of this package
     memo2_message('Analysing and calculating celestial field-of-view dimensions.');
-    ra_min:=+99;//for mosaic mode
-    ra_max:=-99;
-    dec_min:=+99;
-    dec_max:=-99;
+    x_min:=0;//for mosaic mode
+    x_max:=0;
+    y_min:=0;
+    y_max:=0;
     formalism:=mainwindow.Polynomial1.itemindex;
 
     count:=0;
     total_fov:=0;
+    init:=false;
+    oldsip:=sip;
+    sip:=false;//prevent large error due to sip outside image
     for c:=0 to length(files_to_process)-1 do
       if length(files_to_process[c].name)>0 then
       begin
         if load_fits(files_to_process[c].name,true {light},false{load data},false {update memo} ,0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-        calculate_required_dimensions(head, ra_min,ra_max,dec_min,dec_max);
+        if init=false then
+        begin
+          head_ref:=head;{backup solution}
+          init:=true;
+        end;
+
+        calculate_required_dimensions(head_ref,head, x_min,x_max,y_min,y_max);
         total_fov:=total_fov+head.cdelt1*head.cdelt2*head.width*head.height;
         inc(count);
       end;
-    if ra_min=99 then begin memo2_message('Abort. Failed to calculate mosaic dimension!');exit;end;
+    sip:=oldsip;
+    if abs(x_max-x_min)<1 then begin memo2_message('Abort. Failed to calculate mosaic dimensions!');exit;end;
+
 
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     merge_overlap:=merge_overlap1.checked;
@@ -1019,29 +968,25 @@ begin
           begin
              // not for mosaic||| if init=true then   if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
              if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
-
           end;
 
           if init=false then
           begin
             head_ref:=head;{backup solution}
-            celestial_to_pixel(head, ra_min,dec_min, fx1,fy1);{ra,dec to fitsX,fitsY}
-            celestial_to_pixel(head, ra_max,dec_max, fx2,fy2);{ra,dec to fitsX,fitsY}
 
-            fw:=head.cdelt1*abs(fx2-fx1);
-            fh:=head.cdelt2*abs(fy2-fy1);
+            fw:=head.cdelt1*abs(x_max-x_min);
+            fh:=head.cdelt2*abs(y_max-y_min);
             coverage:=total_fov/(fw*fh);
             if coverage<0.5 then
              begin memo2_message('█ █ █ █ █ █  Abort!! Too many missing tiles. Field is '+floattostrF(fw,FFFixed,0,1)+'x'+floattostrF(fh,FFfixed,0,1)+
                                                 '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. For multiple mosaics is classify on "Light object" set?'); exit;end;
 
-            pixel_to_celestial(head,(fx1+fx2)/2,(fy1+fy2)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
+            pixel_to_celestial(head,(x_min+x_max)/2,(y_min+y_max)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
             sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
             head_ref.ra0:=raMiddle;// set middle of the mosaic
-            head_ref.crpix1:=abs(fx1-fx2)/2;
-            head_ref.crpix2:=abs(fy1-fy2)/2;
+            head_ref.crpix1:=abs(x_max-x_min)/2;
+            head_ref.crpix2:=abs(y_max-y_min)/2;
           end;
-
 
           if use_sip=false then
                     a_order:=0; //stop using SIP from the header in astrometric mode
@@ -1061,12 +1006,10 @@ begin
               {head.naxis3 is now 3}
           end;
 
-
-
           if init=false then {init}
           begin
-            width_max:=abs(round(fx2-fx1));
-            height_max:=abs(round(fy2-fy1));
+            width_max:=abs(round(x_max-x_min));
+            height_max:=abs(round(y_max-y_min));
 
             setlength(img_average,head.naxis3,height_max,width_max);
             setlength(img_temp,1,height_max,width_max);{gray}
@@ -1254,6 +1197,10 @@ begin
     end;{mosaic mode}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
+
+  //disable sip
+  mainwindow.Polynomial1.itemindex:=0;//switch to WCS
+  a_order:=0;
 end;
 
 

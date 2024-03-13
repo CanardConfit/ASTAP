@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1009,7 +1009,6 @@ begin
     head.cd1_2:=0;{just for the case it is not available}
     head.cd2_1:=0;{just for the case it is not available}
     head.cd2_2:=0;{just for the case it is not available}
-    bayerpat:='';{reset bayer pattern}
     xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
     ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
     roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
@@ -1061,6 +1060,7 @@ begin
   head.gain:='';
   head.egain:='';{assume no data available}
   head.passband_database:='';//used to measure MZERO
+  bayerpat:='';{reset bayer pattern}
 end;{reset global variables}
 
 
@@ -1295,6 +1295,9 @@ begin
 
          if (header[i]='B') then {B}
         begin
+          if ((header[i+1]='A')  and (header[i+2]='Y') and (header[i+3]='E') and (header[i+4]='R') and (header[i+5]='P') and (header[i+6]='A')) then {BAYERPAT, read for flats}
+             bayerpat:=get_string {BAYERPAT, bayer pattern such as RGGB}
+          else
           if ((header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
             nrbits:=round(validate_double) {BITPIX, read integer using double routine}
           else
@@ -1315,6 +1318,15 @@ begin
                head.flatdark_count:=round(validate_double);{read integer as double value}
         end;{B}
 
+        if (header[i]='C') then {C}
+        begin
+          if ((header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {head.calstat is also for flats}
+              head.calstat:=get_string {indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
+          else
+          if ((header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+             ccd_temperature:=validate_double;{read double value}
+        end;{C}
+
         if (header[i]='E') then
         begin
           if ((header[i+1]='G')  and (header[i+2]='A') and (header[i+3]='I') and (header[i+4]='N')) then  {egain}
@@ -1328,15 +1340,6 @@ begin
                 head.exposure:=validate_double;{read double value}
           end;
         end;
-
-        if (header[i]='C') then {C}
-        begin
-          if ((header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {head.calstat is also for flats}
-              head.calstat:=get_string {indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
-          else
-          if ((header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
-             ccd_temperature:=validate_double;{read double value}
-        end;{C}
 
         if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
                try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
@@ -1478,9 +1481,6 @@ begin
 
           if (header[i]='B') then {B}
           begin
-            if ((header[i+1]='A')  and (header[i+2]='Y') and (header[i+3]='E') and (header[i+4]='R') and (header[i+5]='P') and (header[i+6]='A')) then {BAYERPAT}
-               bayerpat:=get_string {BAYERPAT, bayer pattern such as RGGB}
-            else
             if ((header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
             begin
                BANDPASS:=validate_double;{read integer as double value. Deep sky survey keyword}
