@@ -10,7 +10,7 @@ object form_aavso1: Tform_aavso1
   OnClose = FormClose
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '3.0.0.3'
+  LCLVersion = '3.2.0.0'
   object obscode1: TEdit
     Left = 16
     Height = 23
@@ -269,6 +269,17 @@ object form_aavso1: Tform_aavso1
     TabOrder = 10
     OnChange = name_check1Change
     OnDropDown = name_variable1DropDown
+  end
+  object hjd1: TCheckBox
+    Left = 116
+    Height = 19
+    Hint = 'Report the date as Heliocentric Julian Day'
+    Top = 344
+    Width = 39
+    Caption = 'HJD'
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 11
   end
   object PopupMenu1: TPopupMenu
     Left = 685

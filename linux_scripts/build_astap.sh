@@ -12,6 +12,7 @@ sudo rm *.rpm
 sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_amd64
 sudo /home/h/alien/alien-8.95/alien.pl -r -c -k  /home/h/astap_install/astap_amd64.deb
 cp *.rpm astap_amd64.rpm
+rm ./astap-2*.rpm
 
 #unpack
 sudo dpkg -i ./astap_amd64.deb

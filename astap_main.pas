@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8110,6 +8110,7 @@ begin
       obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
       delim_pos:=Sett.ReadInteger('aavso','delim_pos',0);
       baa_style:=Sett.ReadBool('aavso','baa_style',false);{aavso report}
+      hjd_date:=Sett.ReadBool('aavso','hjd_date',false);{aavso report}
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
       magnitude_slope:=Sett.ReadFloat('aavso','slope',0);
 
@@ -8478,6 +8479,7 @@ begin
       sett.writestring('aavso','obscode',obscode);
       sett.writeInteger('aavso','delim_pos',delim_pos);
       sett.writeBool('aavso','baa_style',baa_style);{AAVSO report}
+      sett.writeBool('aavso','hjd_date',hjd_date);{AAVSO report}
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
       sett.writeFloat('aavso','slope', magnitude_slope);
 
@@ -8887,6 +8889,7 @@ begin
 
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
+
 
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
@@ -13096,7 +13099,8 @@ begin
               update_float('LIM_MAGN=',' / estimated limiting magnitude for point sources',false ,magn_limit);
 
               mess:='';
-              if pedestal<>0 then
+
+              if ((pedestal<>0) or (pos('D',head.calstat)>0)) then
               begin
                 //jd_start:=0; { if altitude missing then force an date to jd conversion'}
                 pedestal2:=pedestal; {protect pedestal setting}
@@ -13104,9 +13108,12 @@ begin
                 begin
                   update_text('SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                   update_text('COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
-                  mess:=' and SQM';
+                  mess:=', SQM';
                   if centalt=''  then //no old altitude
+                  begin
                      update_text ('CENTALT =',#39+floattostr2(altitudefloat)+#39+'              / [deg] Altitude of center of image            ');
+                     mess:=mess+', CENT-ALT';
+                  end;
                 end
                 else
                 begin
