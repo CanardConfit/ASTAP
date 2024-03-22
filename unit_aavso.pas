@@ -19,6 +19,7 @@ type
 
   Tform_aavso1 = class(TForm)
     baa_style1: TCheckBox;
+    hjd1: TCheckBox;
     delta_bv1: TEdit;
     Image_photometry1: TImage;
     Label10: TLabel;
@@ -73,7 +74,8 @@ var
   name_var   : string='';
   delim_pos  : integer=0;
   to_clipboard  : boolean=true;
-  baa_style  : boolean=true;
+  baa_style  : boolean=false;
+  hjd_date   : boolean=false;
   aavso_filter_index: integer=0;
   delta_bv : double=0;
   magnitude_slope    : double=0;
@@ -111,6 +113,7 @@ begin
     abbreviation_check:=name_check1.text;
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
+    hjd_date:=hjd1.checked;
     aavso_filter_index:=filter1.itemindex;
     delta_bv:=strtofloat2(form_aavso1.delta_bv1.text);
     magnitude_slope:=strtofloat2(form_aavso1.magnitude_slope1.text);
@@ -120,8 +123,8 @@ end;
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
-    c  : integer;
-    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type,filter_used,settings: string;
+    c,date_column  : integer;
+    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format: string;
     stdev_valid : boolean;
     snr_value,err_by_snr  : double;
     PNG: TPortableNetworkGraphic;{FPC}
@@ -163,6 +166,17 @@ begin
     detype:='Extended';
     baa_extra:='';
   end;
+  if hjd1.Checked then
+  begin
+    date_format:='HJD';
+    date_column:=P_jd_helio;
+  end
+  else
+  begin
+    date_format:='JD';
+    date_column:=P_jd_mid;
+  end;
+
   if stackmenu1.reference_database1.ItemIndex=0 then settings:=stackmenu1.reference_database1.text+' '+uppercase(name_database)
   else
     settings:=stackmenu1.reference_database1.text;
@@ -172,7 +186,7 @@ begin
                  '#OBSCODE='+obscode+#13+#10+
                  '#SOFTWARE=ASTAP, v'+astap_version+' ('+settings+ ')'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
-                 '#DATE=JD'+#13+#10+
+                 '#DATE='+date_format+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
                   baa_extra+
                  '#'+#13+#10+
@@ -216,7 +230,7 @@ begin
            filter_used:=copy(filter1.text,1,2);//manual input
 
          aavso_report:= aavso_report+ stringreplace(name_var,'_',' ',[rfReplaceAll])+delim+
-                        StringReplace(listview7.Items.item[c].subitems.Strings[P_jd_mid],',','.',[])+delim+
+                        StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
                         transform_magn(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}])+delim+
                         err+
                         delim+filter_used+delim+
@@ -617,6 +631,7 @@ begin
 
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
+  hjd1.checked:=hjd_date;
   if stackmenu1.reference_database1.itemindex=0 then
     Comparison1.Text:=name_database
   else
