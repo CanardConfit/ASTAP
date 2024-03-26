@@ -301,6 +301,7 @@ begin
       memo2_message('Restoring image');
       img_loaded:=duplicate(img_bk);//fastest way to duplicate an image
       img_bk:=nil;
+      head.naxis3:=oldNaxis3;
       get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
     end;
 

@@ -47,6 +47,7 @@ type
     Filter1: TComboBox;
     procedure delta_bv2Change(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure hjd1Change(Sender: TObject);
     procedure Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState;
       X, Y: Integer);
     procedure MenuItem1Click(Sender: TObject);
@@ -381,6 +382,11 @@ begin
   plot_graph;
 end;
 
+procedure Tform_aavso1.hjd1Change(Sender: TObject);
+begin
+  plot_graph;
+end;
+
 procedure Tform_aavso1.delta_bv2Change(Sender: TObject);
 begin
   plot_graph;
@@ -389,9 +395,9 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,nrmarkX, nrmarkY,wtext : integer;
+  x1,y1,c,textp1,textp2,textp3,nrmarkX, nrmarkY,wtext,date_column : integer;
   scale,range         : double;
-  text1,text2   : string;
+  text1,text2,date_format  : string;
   bmp: TBitmap;
   dum:string;
   data : array of array of double;
@@ -428,6 +434,19 @@ begin
   magn_min:=99;
   magn_max:=0;
 
+  if form_aavso1.hjd1.Checked then
+  begin
+    date_format:='HJD';
+    date_column:=P_jd_helio;
+  end
+  else
+  begin
+    date_format:='JD (mid)';
+    date_column:=P_jd_mid;
+  end;
+
+
+
   w:=max(form_aavso1.Image_photometry1.width,(len*2)*stackmenu1.listview7.items.count);{make graph large enough for all points}
   h:=max(100,form_aavso1.Image_photometry1.height);
   bspace:=2*mainwindow.image1.Canvas.textheight('T');{{border space graph. Also for 4k with "make everything bigger"}
@@ -441,7 +460,7 @@ begin
   begin
     if listview7.Items.item[c].checked then
     begin
-      dum:=(listview7.Items.item[c].subitems.Strings[P_jd_mid]);
+      dum:=(listview7.Items.item[c].subitems.Strings[date_column]);
       if dum<>'' then  data[0,c]:=strtofloat(dum) else data[0,c]:=0;
       if data[0,c]<>0 then
       begin
@@ -524,7 +543,7 @@ begin
 
     bmp.canvas.font.style:=[fsbold];
     bmp.canvas.textout(5,bspace div 2,'Magn');
-    bmp.canvas.textout(w-4*bspace,h-(bspace div 2),'JD (mid)');
+    bmp.canvas.textout(w-4*bspace,h-(bspace div 2),date_format{JD (mid) or HJD});
     bmp.canvas.font.style:=[];
 
     text1:='Var ('+form_aavso1.name_variable1.text+')';

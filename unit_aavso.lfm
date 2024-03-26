@@ -280,6 +280,7 @@ object form_aavso1: Tform_aavso1
     ParentShowHint = False
     ShowHint = True
     TabOrder = 11
+    OnChange = hjd1Change
   end
   object PopupMenu1: TPopupMenu
     Left = 685
