@@ -614,10 +614,10 @@ end;
 
 procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars                                : integer;
+    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3                     : integer;
     background_correction, weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                                   : double;
-    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                          : boolean;
-    tempval                                                                                                                              : single;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                                   : boolean;
+    tempval                                                                                                                    : single;
     warning             : string;
     starlist1,starlist2 : star_list;
 
@@ -663,6 +663,8 @@ begin
           begin {init is false, first image}
             old_width:=head.width;
             old_height:=head.height;
+            old_naxis3:=head.naxis3;
+
             add_text('COMMENT 9', '  Reference file was ' + filename2);
             head_ref:=head;{backup solution}
             initialise_calc_sincos_dec0;{set variables correct. Do this before apply dark}
@@ -675,7 +677,7 @@ begin
           else
           begin {second, third .... image}
             if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-            if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
+            if head.naxis3>old_naxis3 then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
           end;
           if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
 
@@ -1214,13 +1216,12 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars                 : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars,old_naxis3      : integer;
     variance_factor, value,weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                      : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                      : boolean;
     tempval, sumpix, newpix,target_background,background_correction                                               : single;
     warning     : string;
     starlist1,starlist2 : star_list;
-
 begin
   with stackmenu1 do
   begin
@@ -1267,6 +1268,7 @@ begin
         begin
           old_width:=head.width;
           old_height:=head.height;
+          old_naxis3:=head.naxis3;
 
           head_ref:=head;{backup solution}
           initialise_calc_sincos_dec0;{set variables correct}
@@ -1279,7 +1281,7 @@ begin
         else
         begin {second, third, ... image}
           if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-          if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+          if head.naxis3>old_naxis3 then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
         end;
 
         if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
@@ -1715,7 +1717,7 @@ type
 var
     solutions      : array of tsolution;
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, old_naxis3     : integer;
-    value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,delta_JD_required,target_background                : double;
+    value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,delta_JD_required,target_background, JD_reference   : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip   : boolean;
     tempval,jd_fraction                                                                        : single;
     background_correction : array[0..2] of single;
@@ -1774,7 +1776,7 @@ begin
         else
         begin {second, third, ... image}
           if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-          if head.naxis3<>old_naxis3 {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+          if head.naxis3>old_naxis3 then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
         end;
 
         if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
@@ -1856,11 +1858,13 @@ begin
 
           jd_fraction:=frac(jd_mid);//Take fraction because single has not enough resolution for JD
 
-
+          if counter=1 then JD_reference:=jd_Start  // JD of reference image. Can not use JD_start_first since it can go back in time by the min() function
+          else
           if counter=2 then
           begin
-             delta_JD_required:= (jd_start-jd_start_first)* 3*strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_hfd])/sqrt(sqr(solution_vectorX[2]-cc)+sqr(solution_vectorY[2]-ff));
-             memo2_message('3*HFD drift takes '+ floattostrF(delta_JD_required*24*3600,FFFixed,4,0)+'sec');
+             //calculate drift compared to the reference image
+             delta_JD_required:= abs(jd_start-jd_reference)* 3*strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_hfd])/sqrt(sqr(solution_vectorX[2])+sqr(solution_vectorY[2]));
+             memo2_message('For stars 3*HFD drift takes '+ floattostrF(delta_JD_required*24*3600,FFFixed,4,0)+'sec');
           end;
 
 
@@ -2063,9 +2067,9 @@ end;   {comet and stars sharp}
 
 procedure calibration_and_alignment(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, max_stars             : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, max_stars,old_naxis3  : integer;
     background_correction, hfd_min,aa,bb,cc,dd,ee,ff                                                           : double;
-    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip :boolean;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                   : boolean;
     warning             : string;
     starlist1,starlist2 : star_list;
 
@@ -2110,6 +2114,7 @@ begin
         begin
           old_width:=head.width;
           old_height:=head.height;
+          old_naxis3:=head.naxis3;
 
           head_ref:=head;{backup solution}
           initialise_calc_sincos_dec0;{set variables correct}
@@ -2122,7 +2127,7 @@ begin
         else
         begin {second, third ... image}
           if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-          if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+          if head.naxis3>old_naxis3 then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
         end;
 
         if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
