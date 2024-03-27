@@ -24,6 +24,7 @@ procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double);
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
 procedure initialise_calc_sincos_dec0;{set variables correct}
 function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
+procedure stack_comet(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 
 var
   pedestal_s : double;{target background value}
@@ -148,7 +149,7 @@ begin
     solution_vectorX[1]:=-solution_vectorX[1];
     solution_vectorY[0]:=-solution_vectorY[0];
   end;
-  memo2_message('Astrometric vector solution '+solution_str)
+  if stackmenu1.solve_show_log1.checked then memo2_message('Astrometric vector solution '+solution_str)
 end;
 
 
@@ -1299,7 +1300,7 @@ begin
         if use_astrometry_internal then
         begin //for making all background the same for better sigma clip function
           get_background(0, img_loaded, True {update_hist}, False {calculate noise level}, {var} bck);
-          solutions[c].cblack:=bck.backgr;
+          solutions[c].cblack:=bck.backgr;  //background after applying dark and flats!! Not the same as in listview1
         end;
 
         if init=false then
@@ -1701,6 +1702,364 @@ begin
 
   solutions:=nil;
 end;   {stack using sigma clip average}
+
+
+
+procedure stack_comet(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack comets using ephemeris method. Comet is stacked aligned. Driting stars are surpressed except for first frame}
+type
+   tsolution  = record
+     solution_vectorX : solution_vector {array[0..2] of double};
+     solution_vectorY : solution_vector;
+     cblack : array[0..2] of single;
+   end;
+var
+    solutions      : array of tsolution;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, old_naxis3     : integer;
+    value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,delta_JD_required,target_background                : double;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip   : boolean;
+    tempval,jd_fraction                                                                        : single;
+    background_correction : array[0..2] of single;
+begin
+  with stackmenu1 do
+  begin
+    {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    use_sip:=stackmenu1.add_sip1.checked;
+
+    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
+    use_astrometry_internal:=use_astrometry_alignment1.checked;
+
+    counter:=0;
+    sum_exp:=0;
+    sum_temp:=0;
+    jd_sum:=0;{sum of Julian midpoints}
+    jd_start_first:=1E99;{begin observations in Julian day}
+    jd_end_last:=0;{end observations in Julian day}
+
+
+    init:=false;
+    {find the JD moment when the pixel is at max value}
+    begin
+      setlength(solutions,length(files_to_process));
+      init:=false;
+      for c:=0 to length(files_to_process)-1 do
+      if length(files_to_process[c].name)>0 then
+      begin
+      try { Do some lengthy operation }
+        ListView1.Selected :=nil; {remove any selection}
+        ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
+        Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
+
+        filename2:=files_to_process[c].name;
+
+        {load image}
+        Application.ProcessMessages;
+        if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        if init=false then {first image}
+        begin
+          old_width:=head.width;
+          old_height:=head.height;
+          old_naxis3:=head.naxis3;
+
+          head_ref:=head;{backup solution}
+          initialise_calc_sincos_dec0;{set variables correct}
+          //initialise_var2;{set variables correct}
+          if ((bayerpat='') and (process_as_osc=2 {forced})) then
+             if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
+             else
+             if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
+        end
+        else
+        begin {second, third, ... image}
+          if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+          if head.naxis3<>old_naxis3 {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+        end;
+
+        if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
+
+        apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+
+        memo2_message('Registrating drifting stars movements: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
+        Application.ProcessMessages;
+        if esc_pressed then exit;
+
+        if process_as_osc>0 then {do demosaic bayer}
+        begin
+          if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+          else
+             demosaic_bayer(img_loaded); {convert OSC image to colour}
+            {head.naxis3 is now 3}
+        end;
+
+        //calculate background for best quality drifting star supression
+        begin //for making all background the same for better sigma clip function
+          memo2_message('Measuring background for all colours');
+          for col:=0 to head.naxis3-1 do /// for all colours
+          begin
+            get_background(col, img_loaded, True {update_hist}, False {calculate noise level}, {var} bck);
+            solutions[c].cblack[col]:=bck.backgr;
+          end;
+
+        end;
+
+        if init=false then
+        begin
+          referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+          referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
+
+          height_max:=head.height;
+          width_max:=head.width;
+
+          setlength(img_variance,2,height_max,width_max);//two colour array
+          for fitsY:=0 to height_max-1 do
+            for fitsX:=0 to width_max-1 do
+            begin
+              img_variance[0,fitsY,fitsX]:=0;//will be used for storing the max value during time period
+              img_variance[1,fitsY,fitsX]:=0;//will be used for storing the time (jd_fraction) when maximum occurs
+            end;
+          target_background:=max(500,solutions[c].cblack[0]); //target for all images. Background of reference image or when lower then 500 then 500.
+          memo2_message('Target background for all images is '+floattostrF(target_background,FFFixed,0,0));
+        end;{init, c=0}
+
+        solution:=true;
+
+        if init=true then {second image}
+          calculate_manual_vector(c)//includes memo2_message with solution vector
+        else
+        begin {first image}
+          reset_solution_vectors(1);{no influence on the first image}
+          solutions[c].solution_vectorX:= solution_vectorX; {store solutions for later}
+          solutions[c].solution_vectorY:= solution_vectorY;
+         end;
+
+
+        init:=true;{initialize for first image done}
+        if solution then
+        begin
+          inc(counter);
+          sum_exp:=sum_exp+head.exposure;
+          sum_temp:=sum_temp+head.set_temperature;
+
+          weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
+          for col:=0 to head.naxis3-1 do
+            background_correction[col]:=solutions[c].cblack[col] - target_background;//for sigma clip. First try to get backgrounds equal for more effective sigma clip
+
+          head.datamax_org:=min($FFFF,head.datamax_org-background_correction[0]);{note head.datamax_org is already corrected in apply dark}
+          {1}
+
+          date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+          jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
+          jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
+          jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+
+          jd_fraction:=frac(jd_mid);//Take fraction because single has not enough resolution for JD
+
+
+          if counter=2 then
+          begin
+             delta_JD_required:= (jd_start-jd_start_first)* 3*strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_hfd])/sqrt(sqr(solution_vectorX[2]-cc)+sqr(solution_vectorY[2]-ff));
+             memo2_message('3*HFD drift takes '+ floattostrF(delta_JD_required*24*3600,FFFixed,4,0)+'sec');
+          end;
+
+
+          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          bb:=solution_vectorX[1];
+          cc:=solution_vectorX[2];
+          dd:=solution_vectorY[0];
+          ee:=solution_vectorY[1];
+          ff:=solution_vectorY[2];
+
+
+          for fitsY:=0 to head.height-1 do {average}
+          for fitsX:=0 to head.width-1  do
+          begin
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+
+
+            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+            begin
+              value:=0;
+              for col:=0 to head.naxis3-1 do //do all colours
+                value:=value+(img_loaded[col,fitsY,fitsX]- background_correction[col]) *weightF; //sum red, green/blue
+              if value>img_variance[0,y_new,x_new] then
+              begin
+                img_variance[0,y_new,x_new]:=value; // Find the highest value for this (final) pixel position
+                img_variance[1,y_new,x_new]:=jd_fraction; // The time this highest value occurs Take fraction because single float has not enough resolution for JD
+              end;
+
+            end;
+          end;
+
+        end;//solution
+        progress_indicator(10+round(0.5*90*(counter)/images_selected),' ■□');{show progress}
+        finally
+        end;
+      end;{try}
+    end;  {find the JD moment when the pixel is at max value}
+
+
+
+    // combine images but throw out the moments when a star is drifting to each pixel. This moment is detected by the max value and recorded in phase 1 in img_variance.
+    begin
+      counter:=0;
+      init:=false;
+      for c:=0 to length(files_to_process)-1 do
+      if length(files_to_process[c].name)>0 then
+      begin
+        try { Do some lengthy operation }
+          ListView1.Selected :=nil; {remove any selection}
+          ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
+          Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
+
+          filename2:=files_to_process[c].name;
+
+          {load file}
+          Application.ProcessMessages;
+          if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+
+          date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+          jd_fraction:=frac(jd_mid);//Take fraction because single has not enough resolution for JD
+
+
+          memo2_message('Combining '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring moving stars. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
+          Application.ProcessMessages;
+          if esc_pressed then exit;
+
+          if process_as_osc>0 then {do demosaic bayer}
+          begin
+            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            else
+              demosaic_bayer(img_loaded); {convert OSC image to colour}
+              {head.naxis3 is now 3}
+           end;
+
+          if init=false then {init, (3) step throw outliers out}
+          begin
+            setlength(img_temp,1,height_max,width_max);
+            setlength(img_final,head.naxis3,height_max,width_max);
+            for fitsY:=0 to height_max-1 do
+            for fitsX:=0 to width_max-1 do
+            begin
+              for col:=0 to head.naxis3-1 do
+                img_final[col,fitsY,fitsX]:=0; {clear final}
+              img_temp[0,fitsY,fitsX]:=0; {clear counter}
+            end;
+          end;{init}
+
+          inc(counter);
+
+          if use_astrometry_internal then  sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          else
+          begin {align using star match, read saved solution vectors}
+            if ((use_manual_align) or (use_ephemeris_alignment)) then
+            begin
+              if init=false then {3}
+              begin
+                reset_solution_vectors(1);{no influence on the first image}
+              end
+              else
+              begin
+                calculate_manual_vector(c);
+              end;
+            end
+            else
+            begin  {reuse solution from first step average}
+              solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
+              solution_vectorY:=solutions[c].solution_vectorY;
+            end;
+          end;
+
+          weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
+
+          for col:=0 to head.naxis3-1 do /// for all colours
+            background_correction[col]:=solutions[c].cblack[col] - target_background;//try to get backgrounds equal
+          head.datamax_org:=min($FFFF,head.datamax_org-background_correction[0]);
+
+
+          {phase 2}
+//          if use_astrometry_internal then
+//             astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
+
+          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          bb:=solution_vectorX[1];
+          cc:=solution_vectorX[2];
+          dd:=solution_vectorY[0];
+          ee:=solution_vectorY[1];
+          ff:=solution_vectorY[2];
+
+
+           //phase 2
+          for fitsY:=0 to head.height-1 do
+          for fitsX:=0 to head.width-1  do
+          begin
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+
+            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+            begin
+              if ((init=false) or (abs(jd_fraction{when is star spot is passing by} - img_variance[1,y_new,x_new])>delta_JD_required )) then // Avoid streaks. Skip stacking when star is passing by
+              begin
+                for col:=0 to head.naxis3-1 do {do all colors}
+                begin
+                  value:=(img_loaded[col,fitsY,fitsX]- background_correction[col])*weightF;
+                  img_final[col,y_new,x_new]:=img_final[col,y_new,x_new]+ value;{dark and flat, flat dark already applied}
+                  img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
+                end;
+              end;
+            end;
+          end;
+
+          init:=true;{initialize for first image done}
+
+          progress_indicator(10+45+round(0.5*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■');{show progress}
+          finally
+        end;
+      end;
+
+     {scale to number of pixels}
+      if counter<>0 then
+      begin
+        head_ref.naxis3:= head.naxis3; {store colour info in reference header. could be modified by OSC conversion}
+        head_ref.naxis:=  head.naxis;  {store colour info in reference header}
+        head_ref.datamax_org:= head.datamax_org;  {for 8 bit files, they are now 500 minimum}
+        head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not oversized}
+        head.height:=height_max;
+        head.width:=width_max;
+        setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
+
+        for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
+          For fitsY:=0 to head.height-1 do
+            for fitsX:=0 to head.width-1 do
+            begin
+              tempval:=img_temp[0,fitsY,fitsX];
+              if tempval<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_final[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
+              else
+              begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
+                if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
+                begin
+                  if img_temp[0,fitsY,fitsX-1]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
+                  else
+                  if img_temp[0,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
+                  else
+                  img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
+                end {fill black spots}
+                else
+                img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
+              end; {black spot filter}
+            end;
+      end;{counter<>0}
+    end;// combine images but throw out the moments when a star is at the pixel. This moment is detected by the max value.
+  end;{with stackmenu1}
+  {image arrays will be nilled later. This is done for early exits}
+
+  solutions:=nil;
+end;   {comet and stars sharp}
+
 
 procedure calibration_and_alignment(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var

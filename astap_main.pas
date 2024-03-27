@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -915,6 +915,7 @@ const   bufwide=1024*120;{buffer size in bytes}
 
   pi_=pi; {for evaluate in debugging}
   dialog_filter_fits_tif='FITS and TIFF files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.tif;*.tiff;*.TIF.TIFF';
+
 
 type  byteX3  = array[0..2] of byte;
       byteXX3 = array[0..2] of word;
@@ -3917,6 +3918,7 @@ begin
         end;
       end;
     end;{k color}
+
     gaussian_blur2(img_temp,strtofloat2(stackmenu1.blur_factor1.text));
 
     for k:=0 to head.naxis3-1 do {do all colors}
@@ -8088,11 +8090,18 @@ begin
       dum:=Sett.ReadString('stack','noisefilter_blur',''); if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
       dum:=Sett.ReadString('stack','noisefilter_sd',''); if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
 
+
       c:=Sett.ReadInteger('stack','hue_fuzziness',987654321); if c<>987654321 then stackmenu1.hue_fuzziness1.position:=c;
       c:=Sett.ReadInteger('stack','saturation_tolerance',987654321);  if c<>987654321 then stackmenu1.saturation_tolerance1.position:=c;
       stackmenu1.blend1.checked:= Sett.ReadBool('stack','blend',true);
 
       c:=Sett.ReadInteger('stack','sample_size',987654321);if c<>987654321 then stackmenu1.sample_size1.itemindex:=c;
+
+      dum:=Sett.ReadString('stack','usm_amount',''); if dum<>'' then stackmenu1.unsharp_edit_amount1.text:=dum;
+      dum:=Sett.ReadString('stack','usm_radius',''); if dum<>'' then stackmenu1.unsharp_edit_radius1.text:=dum;
+      dum:=Sett.ReadString('stack','usm_thresh',''); if dum<>'' then stackmenu1.unsharp_edit_threshold1.text:=dum;
+
+
 
       stackmenu1.mount_write_wcs1.Checked:=Sett.ReadBool('stack','wcs',true);{use wcs files for mount}
 
@@ -8464,6 +8473,10 @@ begin
       sett.writeInteger('stack','hue_fuzziness',stackmenu1.hue_fuzziness1.position);
       sett.writeInteger('stack','saturation_tolerance',stackmenu1.saturation_tolerance1.position);
       sett.WriteBool('stack','blend', stackmenu1.blend1.checked);
+
+      sett.writestring('stack','usm_amount',stackmenu1.unsharp_edit_amount1.text);
+      sett.writestring('stack','usm_radius',stackmenu1.unsharp_edit_radius1.text);
+      sett.writestring('stack','usm_thresh',stackmenu1.unsharp_edit_threshold1.text);
 
       sett.writeInteger('stack','sample_size',stackmenu1.sample_size1.itemindex);
       sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}

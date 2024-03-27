@@ -6,7 +6,7 @@ object mainwindow: Tmainwindow
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 634
+  ClientHeight = 614
   ClientWidth = 1333
   Color = clForm
   Icon.Data = {
@@ -52,7 +52,7 @@ object mainwindow: Tmainwindow
   OnShow = FormShow
   ParentFont = True
   Position = poDesktopCenter
-  LCLVersion = '3.2.0.0'
+  LCLVersion = '2.2.4.0'
   object error_get_it: TLabel
     Left = 217
     Height = 15
@@ -71,7 +71,7 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 611
+    Top = 591
     Width = 1333
     Panels = <    
       item
@@ -110,7 +110,7 @@ object mainwindow: Tmainwindow
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 611
+    Height = 591
     Top = 0
     Width = 1333
     Align = alClient
@@ -231,13 +231,13 @@ object mainwindow: Tmainwindow
           Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
           Top = 1
           Width = 95
+          OnChange = ra1Change
+          OnDblClick = radec_search1Click
           ParentShowHint = False
           PopupMenu = PopupMenu_ra_dec1
           ShowHint = True
           TabOrder = 0
           Text = '00 00 00.0'
-          OnChange = ra1Change
-          OnDblClick = radec_search1Click
         end
         object ra_label: TLabel
           Left = 169
@@ -298,11 +298,11 @@ object mainwindow: Tmainwindow
           Font.Name = 'Segoe UI'
           Font.Pitch = fpVariable
           Font.Quality = fqDraft
+          OnClick = solve_button1Click
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 2
-          OnClick = solve_button1Click
         end
         object save1: TButton
           Left = 446
@@ -318,11 +318,11 @@ object mainwindow: Tmainwindow
           Font.Name = 'Segoe UI'
           Font.Pitch = fpVariable
           Font.Quality = fqDraft
+          OnClick = SaveFITSwithupdatedheader1Click
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 3
-          OnClick = SaveFITSwithupdatedheader1Click
         end
         object Polynomial1: TComboBox
           Left = 449
@@ -343,13 +343,13 @@ object mainwindow: Tmainwindow
             'SIP Polynomial'
             'DSS Polynomial'
           )
+          OnChange = Polynomial1Change
           ParentColor = True
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 4
           Text = 'WCS'
-          OnChange = Polynomial1Change
         end
         object data_range_groupBox1: TGroupBox
           Left = 1
@@ -474,11 +474,11 @@ object mainwindow: Tmainwindow
             Top = 56
             Width = 49
             Enabled = False
+            OnEditingDone = min2EditingDone
             ParentShowHint = False
             ShowHint = True
             TabOrder = 2
             Text = '0'
-            OnEditingDone = min2EditingDone
           end
           object max2: TEdit
             Left = 340
@@ -487,11 +487,11 @@ object mainwindow: Tmainwindow
             Top = 77
             Width = 49
             Enabled = False
+            OnEditingDone = max2EditingDone
             ParentShowHint = False
             ShowHint = True
             TabOrder = 3
             Text = '65535'
-            OnEditingDone = max2EditingDone
           end
           object range1: TComboBox
             Left = 313
@@ -515,6 +515,7 @@ object mainwindow: Tmainwindow
               'Show saturation'
               'Max range'
             )
+            OnChange = range1Change
             ParentBidiMode = False
             ParentColor = True
             ParentShowHint = False
@@ -522,7 +523,6 @@ object mainwindow: Tmainwindow
             Style = csDropDownList
             TabOrder = 4
             Text = 'Medium'
-            OnChange = range1Change
           end
           object stretch1: TComboBox
             Left = 313
@@ -550,13 +550,13 @@ object mainwindow: Tmainwindow
               '400'
               '800'
             )
+            OnCloseUp = stretch1CloseUp
+            OnExit = stretch1Exit
             ParentColor = True
             ParentShowHint = False
             ShowHint = True
             TabOrder = 5
             Text = 'off'
-            OnCloseUp = stretch1CloseUp
-            OnExit = stretch1Exit
           end
           object saturation_factor_plot1: TTrackBar
             Left = 392
@@ -600,20 +600,20 @@ object mainwindow: Tmainwindow
           Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database.'
           Top = 27
           Width = 95
+          OnChange = dec1Change
+          OnDblClick = radec_search1Click
           ParentShowHint = False
           PopupMenu = PopupMenu_ra_dec1
           ShowHint = True
           TabOrder = 6
           Text = '+00 00 00.00'
-          OnChange = dec1Change
-          OnDblClick = radec_search1Click
         end
         object inversemousewheel1: TCheckBox
           Left = 449
           Height = 19
           Hint = 'Inverse zoom action of the mouse wheel.'
           Top = 79
-          Width = 101
+          Width = 103
           Caption = 'Inverse 🖱️ wheel'
           Font.CharSet = ANSI_CHARSET
           Font.Color = clBlack
@@ -661,13 +661,13 @@ object mainwindow: Tmainwindow
               Lines.Strings = (
                 ''
               )
+              OnChange = Memo1Change
+              OnKeyUp = Memo1KeyUp
               ParentFont = False
               PopupMenu = PopupMenu_memo1
               ScrollBars = ssVertical
               TabOrder = 0
               WordWrap = False
-              OnChange = Memo1Change
-              OnKeyUp = Memo1KeyUp
             end
           end
           object TabSheet2: TTabSheet
@@ -685,11 +685,11 @@ object mainwindow: Tmainwindow
               Lines.Strings = (
                 ''
               )
+              OnKeyUp = Memo1KeyUp
               ParentFont = False
               ScrollBars = ssAutoVertical
               TabOrder = 0
               WordWrap = False
-              OnKeyUp = Memo1KeyUp
             end
           end
         end
@@ -750,19 +750,19 @@ object mainwindow: Tmainwindow
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 430
+      Height = 410
       Top = 181
       Width = 1333
       ClientWidth = 1333
-      ClientHeight = 430
+      ClientHeight = 410
       object Panel1: TPanel
         Left = 0
-        Height = 430
+        Height = 410
         Hint = 'hint'
         Top = 0
         Width = 1333
         Align = alClient
-        ClientHeight = 430
+        ClientHeight = 410
         ClientWidth = 1333
         Color = 2105376
         Font.CharSet = ANSI_CHARSET
@@ -782,7 +782,7 @@ object mainwindow: Tmainwindow
         object Image1: TImage
           Left = 122
           Height = 264
-          Top = -1
+          Top = -7
           Width = 608
           Anchors = []
           OnMouseDown = Image1MouseDown

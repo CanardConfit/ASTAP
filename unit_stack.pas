@@ -114,6 +114,12 @@ type
     Button1: TButton;
     blink_stack_selected1: TMenuItem;
     blink_annotate_and_solve1: TButton;
+    apply_unsharp_mask1: TButton;
+    unsharp_edit_amount1: TEdit;
+    unsharp_edit_radius1: TEdit;
+    unsharp_edit_threshold1: TEdit;
+    GroupBox22: TGroupBox;
+    Label37: TLabel;
     Label6: TLabel;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
@@ -310,9 +316,13 @@ type
     Label63: TLabel;
     Label64: TLabel;
     Label65: TLabel;
+    Label66: TLabel;
     Label67: TLabel;
     Label68: TLabel;
+    Label69: TLabel;
     Label7: TLabel;
+    Label70: TLabel;
+    Label71: TLabel;
     Label8: TLabel;
     Label9: TLabel;
     label_gaussian1: TLabel;
@@ -393,6 +403,8 @@ type
     new_height1: TLabel;
     new_height2: TLabel;
     new_saturation1: TTrackBar;
+    undo_button22: TBitBtn;
+    unsharp_amount1: TTrackBar;
     noisefilter_blur1: TComboBox;
     noisefilter_sd1: TComboBox;
     nr_selected1: TLabel;
@@ -562,6 +574,8 @@ type
     undo_button_equalise_background1: TBitBtn;
     unselect9: TMenuItem;
     unselect_area1: TButton;
+    unsharp_radius1: TTrackBar;
+    unsharp_threshold1: TTrackBar;
     update_annotations1: TCheckBox;
     update_solution1: TCheckBox;
     UpDown1: TUpDown;
@@ -686,10 +700,14 @@ type
     procedure Annotations_visible2Click(Sender: TObject);
     procedure blend1Change(Sender: TObject);
     procedure blink_annotate_and_solve1Click(Sender: TObject);
+    procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
+    procedure unsharp_edit_amount1Change(Sender: TObject);
+    procedure unsharp_edit_radius1Change(Sender: TObject);
+    procedure unsharp_edit_threshold1Change(Sender: TObject);
     procedure MenuItem14Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure pixelsize1Change(Sender: TObject);
@@ -892,6 +910,9 @@ type
     procedure undo_button_equalise_background1Click(Sender: TObject);
     procedure unselect1Click(Sender: TObject);
     procedure unselect_area1Click(Sender: TObject);
+    procedure unsharp_amount1Change(Sender: TObject);
+    procedure unsharp_radius1Change(Sender: TObject);
+    procedure unsharp_threshold1Change(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
     procedure FormResize(Sender: TObject);
     procedure listview1ColumnClick(Sender: TObject; Column: TListColumn);
@@ -3896,6 +3917,21 @@ end;
 procedure Tstackmenu1.unselect_area1Click(Sender: TObject);
 begin
   area_set1.Caption := '⍻';
+end;
+
+procedure Tstackmenu1.unsharp_amount1Change(Sender: TObject);
+begin
+  unsharp_edit_amount1.text:=inttostr(unsharp_amount1.position div 10);
+end;
+
+procedure Tstackmenu1.unsharp_radius1Change(Sender: TObject);
+begin
+  unsharp_edit_radius1.text:=floattostrF(unsharp_radius1.position/10,ffgeneral,4,1);
+end;
+
+procedure Tstackmenu1.unsharp_threshold1Change(Sender: TObject);
+begin
+  unsharp_edit_threshold1.text:=floattostrF(unsharp_threshold1.position/10,ffgeneral,4,1);
 end;
 
 
@@ -9459,6 +9495,10 @@ begin
   HueRadioButton2.Enabled:=blend1.checked=false;
   new_saturation1.Enabled:=blend1.checked=false;
   new_colour_luminance1.Enabled:=blend1.checked=false;
+
+  stackmenu1.unsharp_amount1Change(sender);//update edit value
+  stackmenu1.unsharp_radius1Change(Sender);
+  stackmenu1.unsharp_threshold1Change(Sender);
 end;
 
 procedure Tstackmenu1.tab_Pixelmath2Show(Sender: TObject);
@@ -9595,6 +9635,82 @@ begin
   memo2_message('Annotating ready');
 end;
 
+procedure Tstackmenu1.apply_unsharp_mask1Click(Sender: TObject);
+var
+  tmp : image_array;
+  fitsX,fitsY,dum,k,threshold: integer;
+  factor1,factor2   : double;
+  value,threshold_value   : single;
+
+begin
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+  backup_img;
+
+  get_background(0,img_loaded, false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
+
+
+  tmp:=duplicate(img_loaded);//fastest way to duplicate an image
+  gaussian_blur2(tmp,unsharp_radius1.position/10);
+
+  threshold:=unsharp_threshold1.position; //expressed in sigma
+  factor1:=1/(1-(unsharp_amount1.position/1000));
+  factor2:=factor1-1;
+  memo2_message('Applying unsharp mask. Amount='+unsharp_edit_amount1.text+' %, Gaussian blur radius='+unsharp_edit_radius1.text+' px, threshold='+unsharp_edit_threshold1.text+' σ');
+  if threshold=0 then
+  begin
+    for k:=0 to head.naxis3-1 do {do all colors}
+    begin
+      for fitsY:=0 to head.height-1 do
+      for fitsX:=0 to head.width-1 do
+      begin
+        img_loaded[k,fitsY,fitsX]:=factor1*img_loaded[k,fitsY,fitsX] - factor2* tmp[k,fitsY,fitsX];
+      end;
+    end;{k color}
+  end
+  else
+  begin //use threshold
+    threshold_value:=threshold*bck.noise_level;//express in ADU
+    for k:=0 to head.naxis3-1 do {do all colors}
+    begin
+      for fitsY:=0 to head.height-1 do
+      for fitsX:=0 to head.width-1 do
+      begin
+        value:=factor1*img_loaded[k,fitsY,fitsX] - factor2* tmp[k,fitsY,fitsX];
+        if abs(value- img_loaded[k,fitsY,fitsX])>threshold_value then
+           img_loaded[k,fitsY,fitsX]:=value;
+      end;
+    end;{k color}
+
+  end;
+
+  plot_fits(mainwindow.image1,false,true);
+  Screen.Cursor:=crDefault;
+
+  {
+  Sharpening with Unsharp Mask (USM) is a popular method for enhancing the apparent sharpness and detail in images, including astronomical images where clarity and detail are crucial for observation and analysis.
+  The method is particularly effective for bringing out subtle features in celestial bodies or deep-sky objects. Here’s a simplified explanation of how it works:
+
+  1)  Create a Blurred Copy of the Original Image:
+      First, a blurred (or "unsharp") version of the original image is created. The blurring is typically done using a Gaussian blur, which smoothly averages pixel values with their neighbors,
+      effectively removing high-frequency details (like edges and fine textures).
+
+  2)  Subtract the Blurred Image from the Original:
+      Next, this blurred image is subtracted from the original image. The idea here is that by subtracting the low-frequency details, you're left with just the high-frequency details—essentially,
+      the edges and textures that define sharpness.
+
+  3)  Add the Result Back to the Original Image:
+      The resulting difference image, which contains the enhanced edges and details, is then added back to the original image. This step amplifies the original details, making the image appear sharper.
+
+  4)  Adjustment of the Strength of the Effect:
+      Typically, the process includes a parameter to adjust the strength of the sharpening effect. This can involve scaling the difference image before adding it back to the original,
+      allowing for finer control over how pronounced the sharpening is.
+
+  5)  Thresholding (Optional):
+      Some implementations of Unsharp Masking allow for a threshold parameter, which prevents sharpening from being applied to areas where the difference between the original and blurred images is below a certain value.
+      This helps to avoid amplifying noise in relatively flat or smooth regions of the image.
+   }
+end;
+
 
 procedure Tstackmenu1.classify_dark_temperature1Change(Sender: TObject);
 begin
@@ -9646,6 +9762,21 @@ procedure Tstackmenu1.ClearButton1Click(Sender: TObject);
 begin
   memo2_message('Removing streak annotations from header');
   plot_fits(mainwindow.image1,false,true);
+end;
+
+procedure Tstackmenu1.unsharp_edit_amount1Change(Sender: TObject);
+begin
+  unsharp_amount1.position:=round(strtofloat2(unsharp_edit_amount1.text)*10);
+end;
+
+procedure Tstackmenu1.unsharp_edit_radius1Change(Sender: TObject);
+begin
+  unsharp_radius1.position:=round(strtofloat2(unsharp_edit_radius1.text)*10);
+end;
+
+procedure Tstackmenu1.unsharp_edit_threshold1Change(Sender: TObject);
+begin
+  unsharp_threshold1.position:=round(strtofloat2(unsharp_edit_threshold1.text)*10);
 end;
 
 
@@ -9826,7 +9957,7 @@ end;
 
 procedure remove_stars;
 var
-  fitsX,fitsY,hfd_counter,position,x,y,x1,y1  : integer;
+  fitsX,fitsY,hfd_counter,position,x,y,x1,y1,counter_noflux  : integer;
   flux,magnd, hfd_median,max_radius, backgrR,backgrG,backgrB,delta                           : double;
   img_temp3 :image_array;
   old_aperture : string;
@@ -9851,14 +9982,16 @@ const
        begin
          if ((x1-r2>=0) and (x1+r2<=head.width-1) and
           (y1-r2>=0) and (y1+r2<=head.height-1) ) then
-
-           distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
-           if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
            begin
-             backgroundR[counter]:=img_loaded[0,y1+j,x1+i];
-             if head.naxis3>1 then backgroundG[counter]:=img_loaded[1,y1+j,x1+i];
-             if head.naxis3>2 then backgroundB[counter]:=img_loaded[2,y1+j,x1+i];
-             inc(counter);
+             distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
+             if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
+             begin
+               backgroundR[counter]:=img_loaded[0,y1+j,x1+i];
+               if head.naxis3>1 then backgroundG[counter]:=img_loaded[1,y1+j,x1+i];
+               if head.naxis3>2 then backgroundB[counter]:=img_loaded[2,y1+j,x1+i];
+               inc(counter);
+             end;
+
            end;
         end;
         if counter>2 then
@@ -9912,18 +10045,23 @@ begin
   backgrG:=bck.backgr;
   backgrB:=bck.backgr;
 
+
+
    for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
     begin
       magnd:=img_temp3[0,fitsY,fitsX];
       if magnd<default then {a star from the database}
       begin
+     //     if ((abs(fitsX-2602)<5) and (abs(fitsY-1224)<5)) then
+    //      beep;
+
           star_background(round(4*hfd_median) {radius},fitsX,fitsY);//calculate background(s)
-          flux:=power(10,0.4*(head.mzero-magnd/10));
+//          flux:=power(10,0.4*(head.mzero-magnd/10));
 
-          flux:=flux*1.1;//compensate for flux errors
-          max_radius:=99999;
-
+//          flux:=flux*1.1;//compensate for flux errors
+ //         max_radius:=99999;
+          counter_noflux:=0;
           for position:=0 to length(disk)-1 do //remove star flux
           begin
             begin
@@ -9933,24 +10071,37 @@ begin
               y:=fitsY+y1;
               if ((x>=0) and (x<head.width) and (y>=0) and (y<head.height)) then //within image
               begin
-                if max_radius>100 then
-                begin
-                  if img_loaded[0,y,x]-backgrR<=0 then //reached outside of star
-                    max_radius:=1+sqrt(sqr(x1)+sqr(y1));//allow to continue for one pixel ring max
-                end
-                else
-                if sqrt(sqr(x1)+sqr(y1))>=max_radius then
+//                if max_radius>100 then
+  //              begin
+    //              if img_loaded[0,y,x]-backgrR<=0 then //reached outside of star
+      //              max_radius:=1+sqrt(sqr(x1)+sqr(y1));//allow to continue for one pixel ring max
+        //        end
+          //      else
+                if sqrt(sqr(x1)+sqr(y1))>=hfd_median*4 then
                   break;
 
-                delta:=min(flux,(img_loaded[0,y,x]-backgrR));//all photometry is only done in the red channel
-                img_loaded[0,y,x]:=img_loaded[0,y,x]-delta;
-                flux:=flux-delta;
+//                delta:=min(flux,(img_loaded[0,y,x]-backgrR));//all photometry is only done in the red channel
+
+                if counter_noflux>0.5*2*pi*sqrt(sqr(x1)+sqr(y1)) then //2*pi*r is circumference
+                  break;
+
+                delta:=img_loaded[0,y,x]-backgrR;//all photometry is only done in the red channel
+
+
+    //            flux:=flux-delta;
+
+         //       if flux<-1000 then break;
+
 
                 if delta>0 then //follow the red channel
                 begin
+                  img_loaded[0,y,x]:=img_loaded[0,y,x]-delta;
                   if head.naxis3>1 then img_loaded[1,y,x]:=img_loaded[0,y,x]*backgrG/backgrR;
                   if head.naxis3>2 then img_loaded[2,y,x]:=img_loaded[0,y,x]*backgrB/backgrR;
-                end;
+                end
+                else
+                inc(counter_noflux);
+
               end;
 
             end;
@@ -11804,7 +11955,7 @@ var
   extra1, extra2, object_to_process, stack_info, thefilters                       : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
-  success, classify_filter, classify_object, sender_photometry, sender_stack_groups,dum      : boolean;
+  success, classify_filter, classify_object, sender_photometry, sender_stack_groups,comet     : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr    : double;
   filters_used: array [0..4] of string;
@@ -11815,6 +11966,7 @@ begin
   memo2_message('Stack method ' + stack_method1.Text);
   stitching_mode := pos('stitch', stackmenu1.stack_method1.Text) > 0;
   sigma_clip := pos('Sigma', stackmenu1.stack_method1.Text) > 0;
+  comet:=pos('Comet', stackmenu1.stack_method1.Text) > 0;
   skip_combine := pos('skip', stackmenu1.stack_method1.Text) > 0;
   cal_and_align := pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
   sender_photometry := (Sender = photom_stack1);//stack instruction from photometry tab?
@@ -11827,6 +11979,12 @@ begin
 
   if stackmenu1.use_ephemeris_alignment1.Checked then
   begin
+    if length(ephemeris_centering1.Text) <= 1 then
+    begin
+      analyse_objects_visible1Click(nil); //try to fill with one object
+      if ephemeris_centering1.items.count>1 then
+         ephemeris_centering1.itemindex:=-1;//more then one object. Can not take decision
+    end;
     if length(ephemeris_centering1.Text) <= 1 then
     begin
       memo2_message('█ █ █ █ █ █ Abort, no object selected for ephemeris alignment. At tab alignment, press analyse and select object to align on! █ █ █ █ █ █');
@@ -12233,8 +12391,7 @@ begin
         if sigma_clip then
         begin
           if length(files_to_process) <= 5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
-          stack_sigmaclip( process_as_osc,{var}files_to_process, counterL);
-          {sigma clip combining}
+          stack_sigmaclip( process_as_osc,{var}files_to_process, counterL);       {sigma clip combining}
         end
         else
         if stitching_mode then
@@ -12246,8 +12403,13 @@ begin
           calibration_and_alignment(process_as_osc, {var}files_to_process, counterL);{saturation clip average}
         end
         else
-        stack_average(process_as_osc,{var}files_to_process, counterL);
-        {average}
+        if comet then
+        begin
+          stackmenu1.use_ephemeris_alignment1.Checked := True;  //force ephemeris alignment
+          stack_comet( process_as_osc,{var}files_to_process, counterL);
+        end
+        else
+          stack_average(process_as_osc,{var}files_to_process, counterL);    {average}
 
         if counterL > 0 then
         begin
@@ -12852,9 +13014,15 @@ begin
   if classify_filter1.Checked then mode := 'LRGB ' else mode := '';
   stack_button1.Caption := 'STACK ' + mode + '(' + stack_method1.Text + ')';
 
-  if ((method >= 6 {Skip average or sigma clip LRGB combine}) and
+  if ((method >= 6 {Skip average or sigma clip LRGB combine}) and (method <=7) and
     (classify_filter1.Checked = False)) then
     memo2_message( '█ █ █ █ █ █ Warning, classify on Light Filter is not check marked !!! █ █ █ █ █ █ ');
+
+
+  if method=8 then
+  begin
+    memo2_message( 'Method Comet & Stars sharp. Will switch to ephemeris alignment!! Check your comet or asteroid database. See menu CTRL+R');
+  end;
 
   set_icon_stackbutton;  //update glyph stack button to colour or gray
 end;
