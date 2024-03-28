@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.03.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -13041,6 +13041,9 @@ begin
   memo1.font.name:=font_name;
   memo1.font.style:=font_style;
   memo1.font.charset:=font_charset;  {note Greek=161, Russian or Cyrillic =204}
+
+  pairsplitter1.position:=image_north_arrow1.top+image_north_arrow1.height+8;//set correct for 4k screens with hiDPI settings. Works only in show. Not in create
+                     //The thing is that the LCL scales the form on the Show method, because that any scaling produced before showing the form is not applied.
 end;
 
 

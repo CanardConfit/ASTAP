@@ -8833,9 +8833,10 @@ begin
 
 
 
+//  star_level:=max(bckR.star_level,max(bckG.star_level,bckB.star_level));
+//  star_level:=max(bckR.star_level2,max(bckG.star_level2,bckB.star_level2));
 
-
-  star_level:=max(bckR.star_level,max(bckG.star_level,bckB.star_level));
+  star_level:=30*max(bckR.noise_level,max(bckG.noise_level,bckB.noise_level));
 
   bg := (bgR + bgG + bgB) / 3; {average background}
 
@@ -8856,8 +8857,7 @@ begin
       b2 := img[2, fitsY, fitsX] - bgB;
 
 
-      if ((r2 > sd * bckR.noise_level) or (g2 > sd * bckG.noise_level) or (b2 > sd * bckB.noise_level)) then
-        {some relative flux}
+      if ((r2 > sd * bckR.noise_level) or (g2 > sd * bckG.noise_level) or (b2 > sd * bckB.noise_level)) then  {some relative flux}
       begin
         for y := -step to step do
           for x := -step to step do
@@ -8883,8 +8883,7 @@ begin
                 if g < bgG2 then bgG2 := g;
                 if b < bgB2 then bgB2 := b;
 
-                if ((r < 60000) and (g < 60000) and (b < 60000)) then
-                  {no saturation, ignore saturated pixels}
+                if ((r < 60000) and (g < 60000) and (b < 60000)) then  {no saturation, ignore saturated pixels}
                 begin
                   begin
                     if (r - bgR) > 0 then
