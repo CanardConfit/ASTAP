@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 jobs:
   mirror:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container: 
       image: canardconfit/hg-to-git:python3.9.18-alpine3.18
     steps:
@@ -54,7 +54,7 @@ jobs:
           directory: data/git-repo
   ASTAP-script:
     needs: [mirror]
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/puppeteer/puppeteer:latest
       options: --user root

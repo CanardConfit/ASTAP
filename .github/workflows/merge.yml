@@ -13,7 +13,7 @@ on:
         default: 'false'
 jobs:
   auto-merge:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/puppeteer/puppeteer:latest
       options: --user root
