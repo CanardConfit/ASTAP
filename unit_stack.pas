@@ -5788,7 +5788,7 @@ begin
 
   stepsize := round(sigma * 3);
   if stepsize < 8 then stepsize := 8;{minimum value}
-  subsampling := 5;
+  subsampling := 10;
   for i := stepsize to head.Height - 1 - stepsize do
     for j := stepsize to head.Width - 1 - stepsize do
     begin
@@ -8619,8 +8619,7 @@ begin
       madCheck := 0;
     if countThree > 4 then
     begin
-      mad_median(starThree, countThree{counter},{var}madThree, medianThree);
-      {calculate mad and median without modifying the data}
+      mad_median(starThree, countThree{counter},{var}madThree, medianThree);   {calculate mad and median without modifying the data}
       memo2_message('3 star, median: ' + floattostrf(medianThree,  ffgeneral, 4, 4) + ', σ: ' + floattostrf(1.4826 * madThree  {1.0*sigma}, ffgeneral, 4, 4));
     end
     else

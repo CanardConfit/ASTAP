@@ -155,9 +155,19 @@ begin
       correction:= atmospheric_absorption(airm)- 0.28 {correction at zenith is defined as zero by subtracting 0.28};
       sqmfloat:=sqmfloat+correction;
       result:=true;
+    end
+    else
+    begin
+      memo2_message('Negative altitude calculated!');
+      warning_str:=warning_str+'Negative altitude calculated!';
     end;
-  end;
 
+  end
+  else
+  begin
+    memo2_message('MZERO calibration failure!');
+    warning_str:=warning_str+'MZERO calibration failure!';
+  end;
   if backup_made then
   begin
     restore_img;
@@ -247,7 +257,10 @@ begin
     {calc}
     if calculate_sqm(true {get backgr},update_hist{get histogr},{var} pedestal2)=false then {failure in calculating sqm value}
     begin
-      if altitudefloat<1 then error_message1.caption:=error_message1.caption+'Could not retrieve or calculate altitude. Enter the default geographic location'+#10;
+      if altitudefloat<1 then error_message1.caption:=warning_str;
+      warning_str:=''; //clear error message
+
+      //error_message1.caption+'Could not retrieve or calculate altitude. Enter the default geographic location'+#10;
       sqm1.caption:='?';
       bortle1.caption:='';
       exit;

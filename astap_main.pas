@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.03.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.04.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1663,7 +1663,7 @@ begin
                   dec_mount:=dec_radians;
                 end
                 else {for older MaximDL5}
-                if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then
+                if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then //OBJCTALT
                     centalt:=get_as_string {universal for string and floats}
                 else {for older MaximDL5}
                 if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then
@@ -4594,6 +4594,7 @@ begin
       end;
     end;
 
+    if valmax>valmin then //prevent runtime errors
     for i:=-rs to rs do
     begin
       if profile[1,i]<>0 then
@@ -12902,7 +12903,11 @@ begin
               if calculate_sqm(false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
               begin
                 if centalt=''  then //no old altitude
-                   update_text ('CENTALT =',#39+floattostr2(altitudefloat)+#39+'              / [deg] Altitude of center of image            ');
+                begin
+                  centalt:=floattostr2(altitudefloat);
+                  update_text ('CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                  update_text ('OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                end;
                 update_text('SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                 update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
               end
@@ -13081,7 +13086,11 @@ begin
         progress_indicator(100*i/(count),' Solving');{show progress}
         solved:=false;
 
-        if fits_tiff_file_name(filename2)=false then continue; //skip wrong file types in case somebody typed *.*
+        if fits_tiff_file_name(filename2)=false then
+        begin
+           memo2_message('█ █ █ █ █ █ Skipping non FITS/TIFF file '+filename2+' █ █ █ █ █ █ ');
+           continue; //skip wrong file types in case somebody typed *.*
+        end;
 
         Application.ProcessMessages;
         if esc_pressed then  break;
@@ -13127,8 +13136,10 @@ begin
                   mess:=', SQM';
                   if centalt=''  then //no old altitude
                   begin
-                     update_text ('CENTALT =',#39+floattostr2(altitudefloat)+#39+'              / [deg] Altitude of center of image            ');
-                     mess:=mess+', CENT-ALT';
+                    centalt:=floattostr2(altitudefloat);
+                    update_text ('CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                    update_text ('OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                    mess:=mess+', CENT-ALT';
                   end;
                 end
                 else
@@ -13154,11 +13165,6 @@ begin
 
             if ((maintain_date) and (file_age>-1)) then FileSetDate(filename2,file_age);
           end;
-//          else
-//          begin
-//            memo2_message('No solution: '+filename2);
-//            failed:=failed+#13+#10+extractfilename(filename2);
-//          end;
         end;
       end;{for i:=}
 

@@ -1871,24 +1871,19 @@ begin
 
     memo2_message('Manual selected transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
   end;
-
 end;
 
 
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
-  dra,ddec, telescope_ra,telescope_dec,fov,ra2,dec2,
-  magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,standard_error_mean,fov_org,fitsX,fitsY,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,magn_limit_min,magn_limit_max,cv : double;
+  telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
+  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,cv                                         : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
   flip_horizontal, flip_vertical     : boolean;
-  flux_ratio_array,hfd_x_sd          : array of double;
+  mzero_array,hfd_x_sd          : array of double;
   database_passband : string;
   data_max          : single;
   starlist1         : star_list;
-var
-  flux_ratio             : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
-
 
     procedure plot_star;
     var
@@ -1937,14 +1932,13 @@ var
                 (img_loaded[0,round(yc+1),round(xc-1)]<data_max) and
                 (img_loaded[0,round(yc+1),round(xc+1)]<data_max)  ) then {not saturated}
             begin
-              if counter_flux_measured>=length(flux_ratio_array) then
+              if counter_flux_measured>=length(mzero_array) then
               begin
-               SetLength(flux_ratio_array,counter_flux_measured+500);{increase length array}
+               SetLength(mzero_array,counter_flux_measured+500);{increase length array}
                if report_lim_magn then  SetLength(hfd_x_sd,counter_flux_measured+500);{increase length array}
               end;
 
-
-              flux_ratio_array[counter_flux_measured]:=flux*power(2.511886432,(magn/10));//flux ratio measured. Note mag increased, flux decreased. So product should be constant/
+              mzero_array[counter_flux_measured]:=magn/10 + 2.5 * ln(flux)/ln(10); //should be constant for all stars
 
               if report_lim_magn then
               begin
@@ -1952,7 +1946,6 @@ var
               end;
 
 //              memo2_message(#9+floattostr4(snr)+#9+floattostr4(hfd1)+#9+floattostr4(R_aperture)+#9+floattostr4(sd_bg) );
-
               inc(counter_flux_measured); {increase counter of number of stars analysed}
             end;
 
@@ -2006,7 +1999,7 @@ begin
     if flux_calibration then
     begin
       max_nr_stars:=round(head.width*head.height*(730/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
-      setlength(flux_ratio_array,max_nr_stars);
+      setlength(mzero_array,max_nr_stars);
       if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
     end;
 
@@ -2056,9 +2049,9 @@ begin
     if database_type>1 then {1476 or 290 files}
     begin
       if database_type=1476 then {.1476 files}
-      fov:=min(fov_org,5.142857143*pi/180) {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+        fov:=min(fov_org,5.142857143*pi/180) {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
       else {.290 files}
-      fov:=min(fov_org,9.53*pi/180); {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+        fov:=min(fov_org,9.53*pi/180); {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
 
       if fov_org>fov then max_nr_stars:=round(max_nr_stars*sqr(fov)/sqr(fov_org));{reduce number of stars for very large FOV}
 
@@ -2138,9 +2131,7 @@ begin
     begin
       if counter_flux_measured>=3 then {at least three stars}
       begin
-        get_best_mean(flux_ratio_array,counter_flux_measured {length},flux_ratio,standard_error_mean,cv );
-
-        head.mzero:=2.5*ln(flux_ratio)/ln(10);
+        get_best_mean(mzero_array,counter_flux_measured {length},head.mzero,standard_error_mean,cv );//calculate and store mzero in header
         head.passband_database:=passband_active; //passband_active is global variable. Now store in the header. head.passband_database can also be retrieved using keyword MZEROPAS
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
@@ -2207,10 +2198,8 @@ begin
           //encircled flux =1-EXP(-0.5*(apert*2.3548/2))^2)
           flux_snr_7:=flux_snr_7*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
 
-          magn_limit:=ln(flux_ratio/flux_snr_7)/ln(2.511886432); //global variable.  same as:  mzero-ln(flux)*2.5/ln(10)
-          magn_limit_min:=ln( (flux_ratio-standard_error_mean)/flux_snr_7)/ln(2.511886432); {global variable}
-          magn_limit_max:=ln( (flux_ratio+standard_error_mean)/flux_snr_7)/ln(2.511886432); {global variable}
-          magn_limit_str:='Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   ('+floattostrF(magn_limit_min,ffgeneral,3,1)+'< m <'+floattostrF(magn_limit_max,ffgeneral,3,1)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
+          magn_limit:=head.mzero-ln(flux_snr_7)*2.5/ln(10); //global variable.  same as:  mzero-ln(flux)*2.5/ln(10)
+          magn_limit_str:='Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
 
           memo2_message(magn_limit_str);
           mainwindow.caption:='Photometry calibration successful. '+magn_limit_str;
@@ -2218,19 +2207,19 @@ begin
       end
       else
       begin
-        flux_ratio:=0;
-        magn_limit_str:='Calibration failure!';
+        magn_limit_str:='Calibration failure! Less then three usable stars found.';
         mainwindow.caption:=magn_limit_str;
         memo2_message(magn_limit_str);
       end;
 
-      flux_ratio_array:=nil;
+      mzero_array:=nil;
       hfd_x_sd:=nil;
     end;
 
     Screen.Cursor:=crDefault;
   end;{fits file}
 end;{plot stars}
+
 
 
 procedure measure_distortion(out stars_measured : integer);{measure or plot distortion}
