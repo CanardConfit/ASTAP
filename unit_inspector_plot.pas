@@ -141,17 +141,19 @@ var
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
+ fwhm_median,
  hfd_median, median_outer_ring,
  median_11, median_21, median_31,
  median_12, median_22, median_32,
  median_13, median_23, median_33      : double;
- hfdlist, hfdlist_outer_ring,
+ hfd_list, hfdlist_outer_ring,
  hfdlist_11,hfdlist_21,hfdlist_31,
  hfdlist_12,hfdlist_22,hfdlist_32,
- hfdlist_13,hfdlist_23,hfdlist_33     : array of double;
+ hfdlist_13,hfdlist_23,hfdlist_33,
+ fwhm_list                            : array of double;
 
  starlistXY    :array of array of double;
- mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr : string;
+ mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr,fwhm_value,fwhm_arcsec : string;
 
  Fliph, Flipv,restore_req  : boolean;
  img_bk,img_sa                         : image_array;
@@ -214,7 +216,8 @@ begin
     median_23:=0;
     median_33:=0;
 
-    SetLength(hfdlist,len);{set array length on a starting value}
+    SetLength(hfd_list,len);{set array length on a starting value}
+    SetLength(fwhm_list,len);{set array length on a starting value}
     SetLength(starlistXY,3,len);{x,y positions}
 
     setlength(img_sa,1,head.height,head.width);{set length of image array}
@@ -277,13 +280,15 @@ begin
                   (img_loaded[0,yci+1,xci+1]<data_max)  ) then {not saturated}
               begin
                 {store values}
-                hfdlist[nhfd]:=hfd1;
+                hfd_list[nhfd]:=hfd1;
+                fwhm_list[nhfd]:=star_fwhm;
                 starlistXY[0,nhfd]:=xc; {store star position in image coordinates, not FITS coordinates}
                 starlistXY[1,nhfd]:=yc;
                 starlistXY[2,nhfd]:=flux;
-                inc(nhfd); if nhfd>=length(hfdlist) then
+                inc(nhfd); if nhfd>=length(hfd_list) then
                 begin
-                  SetLength(hfdlist,nhfd+max_stars); {adapt length if required and store hfd value}
+                  SetLength(hfd_list,nhfd+max_stars); {adapt length if required and store hfd value}
+                  SetLength(fwhm_list,nhfd+max_stars); {adapt length if required and store hfd value}
                   SetLength(starlistXY,3,nhfd+max_stars);{adapt array size if required}
                 end;
 
@@ -345,7 +350,7 @@ begin
 
       for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
       begin
-        hfd1:=hfdlist[i];
+        hfd1:=hfd_list[i];
         size:=round(5*hfd1);
 
         starX:=round(starlistXY[0,i]);
@@ -410,7 +415,8 @@ begin
       else
       mess1:='';
 
-      hfd_median:=SMedian(hfdList,nhfd {use length});
+      hfd_median:=SMedian(hfd_List,nhfd {use length});
+      fwhm_median:=SMedian(fwhm_List,nhfd {use length});
 
 
       if ((triangle=true) and (nhfd_11>0)  and (nhfd_21>0) and (nhfd_31>0)) then  {enough information for tilt calculation}
@@ -575,11 +581,23 @@ begin
       end;
 
       str(hfd_median:0:1,hfd_value);
-      if head.cdelt2<>0 then begin str(hfd_median*abs(head.cdelt2)*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
+      str(fwhm_median:0:1,fwhm_value);
+      if head.cdelt2<>0 then
+      begin
+         str(hfd_median*abs(head.cdelt2)*3600:0:1,hfd_arcsec);
+         hfd_arcsec:=' ('+hfd_arcsec+'")';
+         str(fwhm_median*abs(head.cdelt2)*3600:0:1,fwhm_arcsec);
+         fwhm_arcsec:=' ('+fwhm_arcsec+'")';
+      end
+      else
+      begin
+        hfd_arcsec:='';
+        fwhm_arcsec:='';
+      end;
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
       text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
-      fontsize:=trunc(fontsize*(head.width*0.9)/text_width);{use 90% of width}
+      fontsize:=min(60,trunc(fontsize*(head.width*0.9)/text_width));{use 90% of width}
       image1.Canvas.font.size:=fontsize;
       image1.Canvas.font.color:=clwhite;
       text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
@@ -590,13 +608,15 @@ begin
       image1.Canvas.Brush.Color:=clBlack;
       image1.Canvas.textout(left_margin,head.height-text_height,mess2);{median HFD and tilt indication}
 
+      mess2:=mess2+'. Median FWHM='+fwhm_value+fwhm_arcsec;
       memo2_message(mess2);{for stacking live}
     end
     else
       image1.Canvas.textout(round(fontsize*2),head.height- round(fontsize*4),'No stars detected');
   end;{with mainwindow}
 
-  hfdlist:=nil;{release memory}
+  hfd_list:=nil;{release memory}
+  fwhm_list:=nil;{release memory}
 
   hfdlist_outer_ring:=nil;
   hfdlist_13:=nil;
