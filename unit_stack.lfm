@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = alignment1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 6
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2567,20 +2567,6 @@ object stackmenu1: Tstackmenu1
                   end
                 end
               end
-              object calibrate_prior_solving1: TCheckBox
-                Left = 696
-                Height = 19
-                Hint = 'Calibrate the images prior to solving. Use this for noisy images.'
-                Top = 104
-                Width = 134
-                BorderSpacing.Around = 5
-                Caption = 'Calibrate prior solving'
-                Color = clBtnFace
-                ParentColor = False
-                ParentFont = False
-                TabOrder = 5
-                OnChange = calibrate_prior_solving1Change
-              end
               object force_oversize1: TCheckBox
                 Left = 696
                 Height = 19
@@ -2592,7 +2578,7 @@ object stackmenu1: Tstackmenu1
                 Color = clBtnFace
                 ParentColor = False
                 ParentFont = False
-                TabOrder = 6
+                TabOrder = 5
               end
               object min_star_size1: TComboBox
                 Left = 561
@@ -2641,7 +2627,7 @@ object stackmenu1: Tstackmenu1
                 Width = 333
                 Caption = 'Ignore existing FITS header solution for astrometric stacking'
                 ParentFont = False
-                TabOrder = 7
+                TabOrder = 6
               end
               object save_settings_extra_button1: TButton
                 Left = 792
@@ -2650,23 +2636,9 @@ object stackmenu1: Tstackmenu1
                 Top = 6
                 Width = 75
                 Caption = 'Save'
-                TabOrder = 8
+                TabOrder = 7
                 Visible = False
                 OnClick = save_settings_extra_button1Click
-              end
-              object check_pattern_filter1: TCheckBox
-                Left = 696
-                Height = 19
-                Hint = 'Intended for OSC cameras in bin 1x1 mode only. It will remove the check pattern prior to solving. '
-                Top = 128
-                Width = 119
-                BorderSpacing.Around = 5
-                Caption = 'Check pattern filter'
-                Color = clBtnFace
-                ParentColor = False
-                ParentFont = False
-                TabOrder = 9
-                OnChange = check_pattern_filter1Change
               end
               object use_triples1: TCheckBox
                 Left = 696
@@ -2679,7 +2651,7 @@ object stackmenu1: Tstackmenu1
                 Color = clBtnFace
                 ParentColor = False
                 ParentFont = False
-                TabOrder = 10
+                TabOrder = 8
               end
               object add_sip1: TCheckBox
                 Left = 696
@@ -2692,7 +2664,7 @@ object stackmenu1: Tstackmenu1
                 Color = clBtnFace
                 ParentColor = False
                 ParentFont = False
-                TabOrder = 11
+                TabOrder = 9
               end
             end
           end

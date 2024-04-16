@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.04.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.04.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -135,6 +135,7 @@ type
     export_star_info1: TMenuItem;
     grid_az_alt1: TMenuItem;
     az_alt1: TMenuItem;
+    cal_batch1: TMenuItem;
     mpcreport1: TMenuItem;
     min2: TEdit;
     minimum1: TScrollBar;
@@ -633,11 +634,11 @@ var
   vsp : array of theauid;//for comparison stars AUID
   vsx : array of thevar;//for variable stars AUID
   img_backup      : array of timgbackup;{dynamic so memory can be freed}
-  img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_final :image_array;
+  img_loaded,img_dark,img_flat :  image_array;
   head,    {for lights}
-  head_2,  {for analysing lights and dark, flats}
-  head_ref {for reference light in stacking}
-    : Theader;{contains the most important header info}
+  head_ref, {for reference light in stacking}
+  head_flat,
+  head_dark : Theader;{contains the most important header info}
   bck : Tbackground;
 
   settingstring : tstrings; {settings for save and loading}
@@ -3899,6 +3900,7 @@ end;
 procedure Tmainwindow.localgaussian1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k : integer;
+   img_temp : image_array;
 begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
@@ -5500,7 +5502,7 @@ begin
 
   {solve internal}
   mainwindow.caption:='Solving.......';
-  save1.Enabled:=solve_image(img_loaded,head,false {get hist, is already available});{match between loaded image and star database}
+  save1.Enabled:=solve_image(img_loaded,head,false {get hist, is already available},false {check filter});{match between loaded image and star database}
   if head.cd1_1<>0 then
   begin
     mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
@@ -7900,6 +7902,8 @@ begin
       if paramcount=0 then filename2:=Sett.ReadString('main','last_file','');{if used as viewer don't override paramstr1}
       export_index:=Sett.ReadInteger('main','export_index',3);{tiff stretched}
       annotation_magn:=Sett.ReadString('main', 'anno_magn',annotation_magn);
+      cal_batch1.Checked:=Sett.ReadBool('main','cal_batch',false);
+
 
 
       dum:=Sett.ReadString('ast','mpcorb_path','');if dum<>'' then mpcorb_path:=dum;{asteroids}
@@ -8006,8 +8010,6 @@ begin
       stackmenu1.timestamp1.Checked:=Sett.ReadBool('stack','time_stamp',true);{blink}
 
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
-      stackmenu1.calibrate_prior_solving1.Checked:=Sett.ReadBool('stack','calibrate_prior_solving',false);
-      stackmenu1.check_pattern_filter1.Checked:=Sett.ReadBool('stack','check_pattern_filter',false);
       stackmenu1.use_triples1.Checked:=Sett.ReadBool('stack','use_triples',false);
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
@@ -8284,6 +8286,7 @@ begin
       sett.writestring('main','last_file',filename2);
       sett.writeInteger('main','export_index',export_index);
       sett.writestring('main','anno_magn',annotation_magn);
+      sett.writeBool('main','cal_batch',cal_batch1.checked);
 
 
       sett.writestring('ast','mpcorb_path',mpcorb_path);{asteroids}
@@ -8384,8 +8387,6 @@ begin
       sett.writeBool('stack','time_stamp',stackmenu1.timestamp1.checked);{blink}
 
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
-      sett.writeBool('stack','calibrate_prior_solving',stackmenu1.calibrate_prior_solving1.checked);
-      sett.writeBool('stack','check_pattern_filter',stackmenu1.check_pattern_filter1.checked);
       sett.writeBool('stack','use_triples',stackmenu1.use_triples1.checked);
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
 
@@ -12292,14 +12293,6 @@ end;
 //end;
 
 
-function load_and_solve : boolean; {load image and plate solve}
-begin
-  progress_indicator(0,'');
-  result:=load_image(false,false {plot});
-  result:=((result {succesfull load?}) and (solve_image(img_loaded,head,true {get hist}) )); {find plate solution}
-end;
-
-
 procedure log_to_file(logf,mess : string);{for testing}
 var
   f   :  textfile;
@@ -12446,7 +12439,7 @@ begin
         search_field:= min(180,sqrt(regions)*0.5*field_size);{regions 1000 is equivalent to 32x32 regions. So distance form center is 0.5*32=16 region heights}
 
         stackmenu1.radius_search1.text:=floattostrF(search_field,ffFixed,0,1);{convert to radius of a square search field}
-        if ((file_loaded) and (solve_image(img_loaded,head,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
+        if ((file_loaded) and (solve_image(img_loaded,head,true {get hist},false {check filter}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           resultstr:='Valid plate solution';
           confidence:='999';
@@ -12700,7 +12693,7 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
   s      : string;
-  histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,extractspecified2,focusrequest : boolean;
+  histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,extractspecified2,focusrequest,checkfilter : boolean;
   snr_min                     : double;
   binning,focus_count,report  : integer;
   bck                         : Tbackground;
@@ -12743,7 +12736,7 @@ begin
         '-m  minimum_star_size["]'+#10+
         '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
         #10+
-        '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
+        '-check  {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
         '-d  path {Specify a path to the star database}'+#10+
         '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
@@ -12828,7 +12821,7 @@ begin
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
         if hasoption('sip') then stackmenu1.add_sip1.checked:='n'<>GetOptionValue('sip');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=('slow'=GetOptionValue('speed'));
-        if hasoption('check') then stackmenu1.check_pattern_filter1.checked:=('y'=GetOptionValue('check'));
+        if hasoption('check') then checkfilter:=true else checkfilter:=false;
 
         if focusrequest then {find best focus using curve fitting}
         begin
@@ -12895,7 +12888,7 @@ begin
           if hasoption('D') then
              stackmenu1.star_database1.text:=GetOptionValue('D'); {specify a different database}
 
-          if ((file_loaded) and (solve_image(img_loaded,head,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
+          if ((file_loaded) and (solve_image(img_loaded,head,true {get hist},checkfilter) )) then {find plate solution, filename2 extension will change to .fit}
           begin
             if hasoption('sqm') then {sky quality}
             begin
@@ -13054,8 +13047,8 @@ end;
 
 procedure Tmainwindow.batch_add_solution1Click(Sender: TObject);
 var
-  i,nrskipped, nrsolved,nrfailed,file_age,pedestal2                     : integer;
-  dobackup,add_lim_magn,solution_overwrite,solved,maintain_date,success : boolean;
+  i,nrskipped, nrsolved,nrfailed,file_age,pedestal2,oldnrbits                         : integer;
+  dobackup,add_lim_magn,solution_overwrite,solved,maintain_date,success,image_changed : boolean;
   failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
 begin
@@ -13070,6 +13063,7 @@ begin
   if OpenDialog1.Execute then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
     nrsolved:=0;
     nrskipped:=0;
     nrfailed:=0;
@@ -13097,6 +13091,7 @@ begin
         {load image and solve image}
         if load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then {load image success}
         begin
+          image_changed:=false;
           if ((head.cd1_1<>0) and (solution_overwrite=false)) then
           begin
             nrskipped:=nrskipped+1; {plate solved}
@@ -13105,8 +13100,25 @@ begin
           end
           else
           begin
+            if cal_batch1.checked then
+            begin
+              {preserve header and some important variable}
+              memo2_message('Calibrating image prior to solving.');
+              analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
+              analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
+
+              if apply_dark_and_flat(img_loaded,head){apply dark, flat if required, renew if different hd.exposure or ccd temp. This will clear the header in load_fits} then
+              begin //dark or flat or both applied
+                update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
+                image_changed:=true;
+                //get_hist:=true; {update required}
+              end;
+            end;
+
+
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
-            solved:=solve_image(img_loaded,head,true {get hist});
+            oldnrbits:=nrbits;
+            solved:=solve_image(img_loaded,head,true {get hist}, false {check filter});
             if solved then nrsolved:=nrsolved+1 {solve}
             else
             begin
@@ -13158,10 +13170,15 @@ begin
 
             if maintain_date then file_age:=Fileage(filename2);
             if fits_file_name(filename2) then
-              success:=savefits_update_header(filename2)
+            begin
+              if image_changed=false then
+                success:=savefits_update_header(filename2)
+              else
+                success:=save_fits(img_loaded,filename2,oldnrbits,true);//image was updated by calibration.
+            end
             else
               success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
-            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
+            if success=false then begin ShowMessage('Write error !!'+#10+#10 + filename2);Screen.Cursor:=crDefault; exit;end;
 
             if ((maintain_date) and (file_age>-1)) then FileSetDate(filename2,file_age);
           end;
@@ -13282,6 +13299,7 @@ end;
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
 var fitsX,fitsY,col,dum, formalism      : integer;
     fxc,fyc, ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
+    img_temp : image_array;
 begin
   if ((head.naxis<>0) and (abs(stopX-startX)>3)and (abs(stopY-starty)>3)) then
   begin
@@ -14254,8 +14272,9 @@ begin
   if sender=mainwindow.hyperleda_guery1 then
   begin {sender hyperleda_guery1}
     plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'');{rectangle, +1 to fits coordinates}
-    url:='http://leda.univ-lyon1.fr/fG.cgi?n=a000&ob=ra&c=o&p=J'+ra8+'d%2C'+sgn+dec8+'d&f='+floattostr6(max(ang_w,ang_h)/(60));  //350.1000D%2C50.50000D    &f=50
+    url:='http://atlas.obs-hp.fr/hyperleda/fG.cgi?n=a000&ob=ra&c=o&p=J'+ra8+'d%2C'+sgn+dec8+'d&f='+floattostr6(max(ang_w,ang_h)/(60));  //350.1000D%2C50.50000D    &f=50
     // http://leda.univ-lyon1.fr/fG.cgi?n=a000&c=o&p=J350.1000D%2C50.50000D&f=50&ob=ra
+    // http://atlas.obs-hp.fr/hyperleda/fG.cgi?n=a000&ob=ra&c=o&p=J161.7415593981d%2C%2B11.8948545867d&f=17.877745
   end
 
   else
@@ -15787,7 +15806,8 @@ end;
 procedure Tmainwindow.flip_H1Click(Sender: TObject);
 var
   col,fitsX,fitsY : integer;
-  vertical             :boolean;
+  vertical        : boolean;
+  img_temp        : image_array;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -15980,6 +16000,8 @@ var
   I    : integer;
   succ,err : boolean;
   thepath:string;
+  head_2 : theader;
+  img_temp : image_array;
 begin
   OpenDialog1.Title := 'Select multiple files to move';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -16044,7 +16066,6 @@ begin
     Screen.Cursor:=crDefault;  { Always restore to normal }
     progress_indicator(-100,'');{progresss done}
   end;
-  img_temp:=nil;
 end;
 
 
@@ -16059,6 +16080,8 @@ procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
 var
   I    : integer;
   err : boolean;
+  head_2 : theader;
+  img_temp : image_array;
 begin
   OpenDialog1.Title := 'Select multiple FITS files to set "modified date" to DATE-OBS';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -16104,7 +16127,6 @@ begin
     Screen.Cursor:=crDefault;  { Always restore to normal }
     progress_indicator(-100,'');{progresss done}
   end;
-  img_temp:=nil;
 end;
 
 
@@ -16118,6 +16140,7 @@ end;
 procedure Tmainwindow.Export_image1Click(Sender: TObject);
 var
   filename3:ansistring;
+  img_temp : image_array;
 begin
   filename3:=ChangeFileExt(FileName2,'');
   savedialog1.filename:=filename3;

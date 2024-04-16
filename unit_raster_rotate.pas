@@ -1249,7 +1249,7 @@ begin
         progress_value:=round(progressC*100/(rh));{progress in %}
         progress_indicator(progress_value,'');{report progress}
         Application.ProcessMessages;{this could change startX, startY}
-        if esc_pressed then  begin  img_temp:=nil;  exit;  end;
+        if esc_pressed then  exit;
       end;
 
     inc(progressC);

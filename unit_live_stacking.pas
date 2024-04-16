@@ -42,7 +42,7 @@ begin
   try
   //No need to create the stringlist; the function does that for you
   theFiles := FindAllFiles(stack_directory, '*.fit;*.fits;*.FIT;*.FITS;'+
-                                            '*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;'+
+                                            '*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.xisf;'+
                                             '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;', false {search subdirectories}); //find images
   if TheFiles.count>0 then
   begin
@@ -129,6 +129,7 @@ var
     starlist1,starlist2 : star_list;
     rename_counter: integer=0;
     count         : integer=0;
+    img_average   : image_array;
 
     procedure reset_var;{reset variables  including init:=false}
     begin
@@ -217,7 +218,8 @@ begin
               if stackmenu1.make_osc_color1.checked then
                 process_as_osc:=2 //forced process as OSC images
               else
-              if ((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'') and (bayerpat[1]<>'N') {ZWO NONE}) then //auto process as OSC images
+//              if ((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'') and (bayerpat[1]<>'N') {ZWO NONE}) then //auto process as OSC images
+              if ((head.naxis3=1) and (head.Xbinning=1) and (bayerpat<>'') and (bayerpat[1]<>'N') {ZWO NONE}) then //auto process as OSC images
                 process_as_osc:=1
               else
                 process_as_osc:=0;//disable demosaicing
@@ -231,7 +233,7 @@ begin
                 if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
             end;
 
-            apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+            apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
             memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename_org+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
 

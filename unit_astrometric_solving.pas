@@ -102,7 +102,7 @@ interface
 uses   Classes,SysUtils,controls,forms,math,
        unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field, unit_calc_trans_cubic;
 
-function solve_image(img :image_array;var hd: Theader; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
+function solve_image(img :image_array;var hd: Theader; get_hist{update hist}, check_patternfilter : boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height :double) : integer;{select the binning}
 function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
@@ -776,7 +776,7 @@ begin
 end;
 
 
-function solve_image(img :image_array;var hd: Theader;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
+function solve_image(img :image_array;var hd: Theader;get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;
@@ -804,19 +804,7 @@ begin
   startTick := GetTickCount64;
   popup_warningG05:='';
 
-  if stackmenu1.calibrate_prior_solving1.checked then
-  begin
-    {preserve header and some important variable}
-    memo2_message('Calibrating image prior to solving.');
-    analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
-    analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
-
-    apply_dark_and_flat(img);{apply dark, flat if required, renew if different hd.exposure or ccd temp. This will clear the header in load_fits}
-    update_text ('CALSTAT =',#39+hd.calstat+#39); {calibration status}
-    get_hist:=true; {update required}
-  end
-  else
-  if stackmenu1.check_pattern_filter1.checked then {for OSC images with low dimensions only}
+  if check_patternfilter then {for OSC images with low dimensions only}
   begin
     check_pattern_filter(img);
     get_hist:=true; {update required}

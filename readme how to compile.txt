@@ -19,6 +19,8 @@ How to compile ASTAP:
   Mac:  
      lazbuild -B astap_mac.lpi
 
+To include package Synape, just load ./synapse/laz_synapse.lpk packagein the editor of Lazarus.  The astap.lpi and compile.
+
 -----------------------------------------------------------------------------------------------------------------------------------
 Notes:
 

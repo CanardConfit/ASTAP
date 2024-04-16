@@ -1190,6 +1190,11 @@ object mainwindow: Tmainwindow
           Caption = '          ☑ option "overwrite existing solutions'
           Hint = 'Overwrite existing astrometric solutions'
         end
+        object cal_batch1: TMenuItem
+          AutoCheck = True
+          Caption = '          ☑ option "Calibrate"'
+          Hint = 'Calibrate image prior to solving'
+        end
         object add_limiting_magn_check1: TMenuItem
           AutoCheck = True
           Caption = '          ☑ option "Add limiting magnitude, SQM, CENTALT"'

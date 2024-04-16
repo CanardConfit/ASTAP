@@ -220,7 +220,7 @@ var
   init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip : boolean;
   warning             : string;
   starlist1,starlist2 : star_list;
-
+  img_temp,img_average : image_array;
 begin
   with stackmenu1 do
   begin
@@ -620,7 +620,7 @@ var
     tempval                                                                                                                    : single;
     warning             : string;
     starlist1,starlist2 : star_list;
-
+    img_temp,img_average : image_array;
 begin
   with stackmenu1 do
   begin
@@ -681,7 +681,7 @@ begin
           end;
           if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
 
-          apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+          apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
           memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
           Application.ProcessMessages;
@@ -900,6 +900,8 @@ var
     counter_overlap                                                  : array[0..2] of integer;
     bck                                                              : array[0..3] of double;
     oldsip                                                           : boolean;
+    img_temp,img_average : image_array;
+
 begin
   with stackmenu1 do
   begin
@@ -1222,6 +1224,7 @@ var
     tempval, sumpix, newpix,target_background,background_correction                                               : single;
     warning     : string;
     starlist1,starlist2 : star_list;
+    img_temp,img_average,img_final,img_variance : image_array;
 begin
   with stackmenu1 do
   begin
@@ -1286,7 +1289,7 @@ begin
 
         if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
 
-        apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+        apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
         memo2_message('Adding light file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
@@ -1461,7 +1464,7 @@ begin
             {not required. Done in first step}
           end;
 
-          apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+          apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
           memo2_message('Calculating pixels σ of light file '+inttostr(counter+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
@@ -1568,7 +1571,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
           if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-          apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+          apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
           memo2_message('Combining '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
@@ -1721,6 +1724,7 @@ var
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip   : boolean;
     tempval,jd_fraction                                                                        : single;
     background_correction : array[0..2] of single;
+    img_temp,img_final,img_variance : image_array;
 begin
   with stackmenu1 do
   begin
@@ -1781,7 +1785,7 @@ begin
 
         if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
 
-        apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+        apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
         memo2_message('Registrating drifting stars movements: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
@@ -1924,7 +1928,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
           if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-          apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+          apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
           date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
           jd_fraction:=frac(jd_mid);//Take fraction because single has not enough resolution for JD
@@ -2072,7 +2076,7 @@ var
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                   : boolean;
     warning             : string;
     starlist1,starlist2 : star_list;
-
+    img_temp,img_average : image_array;
 begin
   with stackmenu1 do
   begin
@@ -2131,7 +2135,7 @@ begin
         end;
 
         if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
-        apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+        apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
         memo2_message('Calibrating and aligning file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
