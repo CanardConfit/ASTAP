@@ -240,7 +240,7 @@ begin
         backup_img;
         backup_made:=true;//required in calculateSQM for 2x2 bining OSC
       end;
-      apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+      apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
       if pos('D',head.calstat)>0  then {status of dark application}
       begin

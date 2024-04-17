@@ -1442,6 +1442,8 @@ end;
 procedure Tform_inspection1.aberration_inspector1Click(Sender: TObject);
 var
    fitsX,fitsY,col, widthN,heightN                : integer;
+   img_temp : image_array;
+
 var  {################# initialised variables #########################}
    side :integer=250;
 const

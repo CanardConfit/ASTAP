@@ -221,7 +221,7 @@ begin
 
           if monitor_applydarkflat1.checked then
           begin
-            apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+            apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
             {these global variables are passed-on in procedure to protect against overwriting}
             update_text('CALSTAT =',#39+head.calstat+#39);
             if ((pos('D',head.calstat)>0) or (pos('F',head.calstat)>0))  then {status of dark application}
