@@ -37,7 +37,7 @@ function hfd_calc(position,perfectfocusposition,a,b:double) :double; {calculate 
 {a,b are the hyperbola parameters, a is the lowest HFD value at focus position, the asymptote y:= +-x*a/b} {rev1}
 {A vertical hyperbola is defined as: sqr(y/a)-sqr(x/b)=1}
 var
-  x,t : double;
+  x : double;
 begin
   x:=perfectfocusposition - position;
   result:=a*sqrt(1+sqr(x/b));//The y or hfd value
@@ -49,7 +49,7 @@ function steps_to_focus(hfd,a,b:double) :double; {calculates focuser steps to pe
 {A vertical hyperbola is defined as: sqr(y/a)-sqr(x/b)=1}
 {Note using the HFD there are two solutions, either left or right side of the hyperbola}
 var
-  k,t : double;
+  k  : double;
 begin
   k:=hfd/a;
   if k<1 then k:=1;{prevent run time errors}

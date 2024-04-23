@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.04.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.04.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -127,7 +127,6 @@ type
     grid_ra_dec1: TMenuItem;
     freetext1: TMenuItem;
     MenuItem21: TMenuItem;
-    display_adu1: TMenuItem;
     localcoloursmooth2: TMenuItem;
     fittowindow1: TMenuItem;
     flipVH1: TMenuItem;
@@ -173,7 +172,6 @@ type
     UpDown1: TUpDown;
     vizier_gaia_annotation1: TMenuItem;
     simbad_annotation_deepsky_filtered1: TMenuItem;
-    MenuItem36: TMenuItem;
     move_images1: TMenuItem;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
     Separator1: TMenuItem;
@@ -408,7 +406,6 @@ type
     procedure bin_2x2menu1Click(Sender: TObject);
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
-    procedure display_adu1Click(Sender: TObject);
     procedure localcoloursmooth2Click(Sender: TObject);
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
@@ -870,7 +867,7 @@ function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarante
 function find_reference_star(img : image_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
-function noise_to_electrons(adu_e, binning, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
+function noise_to_electrons(adu_e, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
 procedure calibrate_photometry;
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
 function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
@@ -965,7 +962,6 @@ var {################# initialised variables #########################}
   mouse_fitsy : double=0;
   coord_frame : integer=0; {J2000=0 or galactic=1}
   hfd_arcseconds: boolean=false; {HFD in arc seconds or pixels}
-  display_adu: boolean=false; {display adu measured}
 
   {$IFDEF Darwin}
   font_name: string= 'Courier';
@@ -1120,8 +1116,8 @@ var {################# initialised variables #########################}
 
      procedure close_fits_file; inline;
      begin
-        Reader.free;
-        TheFile.free;
+       Reader.free;
+       TheFile.free;
      end;
 
      function validate_double:double;{read floating point or integer values}
@@ -3801,7 +3797,7 @@ end;
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
 begin
   result:=false;
-  if load_fits(filename2,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false then exit;
+  if load_fits(filename2,true {light},true {load data},true {update memo for naxis1,...},0,mainwindow.memo1.lines,head,img_loaded)=false then exit;
 
   bin_X2X3X4(binfactor);{bin img_loaded 2x or 3x}
 
@@ -5190,7 +5186,6 @@ var
    fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i,band,flux_counter,greylevels,greylevels2 : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
    sd,mean,median,bg_median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e,center_x,center_y,a,b,hotpixel_adu,hotpixel_perc : double;
-   Save_Cursor              : TCursor;
    info_message,shapeform,shapeform2   : string;
    median_array                        : array of double;
    full_image                          : boolean;
@@ -5265,8 +5260,12 @@ begin
           inc(counter_median);
         end;
 
-        if value=maximum then max_counter:=max_counter+1; {counter at max}
-        if value>maximum then maximum:=value; {max}
+        if value=maximum then max_counter:=max_counter+1; {counter at max. Not an exact counter since maximum is adjusted}
+        if value>maximum then
+        begin
+          maximum:=value; //max
+          max_counter:=1;//reset
+        end;
         if value<minimum then minimum:=value; {min}
         if value>=64000 then saturated:=saturated+1;{saturation counter}
         if col=0 then
@@ -5320,18 +5319,18 @@ begin
     if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
 
     info_message:=info_message+  'x̄ :    '+floattostrf(mean,ffFixed, 0, 2)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+             {mean}
-                                 'x̃  :   '+floattostrf(median,ffFixed, 0, 2)+#10+ {median}
-                                 'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
-                                 'σ :   '+noise_to_electrons(adu_e,head.xbinning,sd)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
-                                 'σ_2:   '+noise_to_electrons(adu_e,head.xbinning,get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common))+#10+
-                                 'mad:   '+floattostrf(mad,ffgeneral, 4, 4)+#10+
-                                 'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
-                                 'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
-                                 'Flux: '+floattostrf(total_flux,ffExponent, 4, 2)+ '  (Counts '+inttostr(flux_counter)+ ', Average '+inttostr(round(total_flux/flux_counter))+'/px)'+#10+
-                                 'BG :   '+floattostrf(bg_median,ffgeneral, 5, 5)+#10+ {median}
-                                 'Hot pixels: '+floattostrf(100*hotpixel_perc,FFfixed, 0, 1)+'%'+#10+
-                                 'Hot pixels RMS: '+noise_to_electrons(adu_e,head.xbinning,hotpixel_adu)+#10+
-                                 '≥64E3 :  '+inttostr(round(saturated));
+                                  'x̃  :   '+floattostrf(median,ffFixed, 0, 2)+#10+ {median}
+                                  'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
+                                  'σ :   '+noise_to_electrons(adu_e,sd)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
+                                  'σ_2:   '+noise_to_electrons(adu_e,get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common))+#10+
+                                  'mad:   '+floattostrf(mad,ffgeneral, 4, 4)+#10+
+                                  'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
+                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
+                                  'Flux: '+floattostrf(total_flux,ffExponent, 4, 2)+ '  (Counts '+inttostr(flux_counter)+ ', Average '+inttostr(round(total_flux/flux_counter))+'/px)'+#10+
+                                  'BG :   '+floattostrf(bg_median,ffgeneral, 5, 5)+#10+ {median}
+                                  'Hot pixels: '+floattostrf(100*hotpixel_perc,FFfixed, 0, 1)+'%'+#10+
+                                  'Hot pixels RMS: '+noise_to_electrons(adu_e,hotpixel_adu)+#10+
+                                  '≥64E3 :  '+inttostr(round(saturated));
   end;
   if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
   begin
@@ -5344,7 +5343,12 @@ begin
   end;
 
   if range>0 then
-         info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
+  begin
+    if max_counter>50 then
+      info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2))){bit range, calculate 2log}
+    else
+      info_message:=info_message+#10+#10+'Bit depth data: ??  Image is not saturated.';
+  end;
 
 
   if ((nrbits=16) or (nrbits=8)) then info_message:=info_message+#10+'Greyscale levels: '+ inttostr(greylevels);
@@ -5907,6 +5911,8 @@ begin
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
+
+
 
 
 function floattostr6(x:double):string;//always with dot decimal seperator. Float to string with 6 decimals
@@ -14520,7 +14526,7 @@ const
 
 var
   width5,height5,i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
-  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg, flux_e, sd_bg_e,radius    : double;
+  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg,radius    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
@@ -14699,19 +14705,15 @@ begin
     radius:=aperture_small; // use smaller aperture
   end;
 
-  if adu_e=0 then
-  begin {no adu to e correction}
-    flux_e:=flux;
-    sd_bg_e:=sd_bg;
-  end
-  else
+  if adu_e<>0 then
   begin //adu to e- correction
-    flux_e:=flux*adu_e*sqr(head.xbinning);// if an image is binned the adu's are averaged. So bin2x2 result in four times less adu.
-    sd_bg_e:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
+    flux:=flux*adu_e*sqr(head.xbinning);// if an image is binned the adu's are averaged. So bin2x2 result in four times less adu. Star flux should be independend of binning
+    sd_bg:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
   end;
 
+
   if flux>=1 then
-    snr:=flux_e /sqrt(flux_e +sqr(radius)*pi*sqr(sd_bg_e))
+    snr:=flux /sqrt(flux +sqr(radius)*pi*sqr(sd_bg))
   else
     snr:=0;//rare but happens. Prevent runtime errors  by /flux
   {For both bright stars (shot-noise limited) or skybackground limited situations
@@ -14821,7 +14823,7 @@ end;
 
 
 procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; out sd,mean : double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-var i,j,counter,counter2,w,h : integer;
+var i,j,counter,w,h                 : integer;
     value, sd_old,meanx             : double;
 
 begin
@@ -14858,7 +14860,6 @@ begin
     {sd}
     sd_old:=sd;
     counter:=0;
-    counter2:=0;
     for j:=y1 to y2  do {calculate standard deviation  of region of interest}
     for i:=x1 to x2 do {calculate standard deviation  of region of interest}
     begin
@@ -14923,12 +14924,26 @@ begin
   result:=0;// zero is calculate snr using ADU's
 end;
 
-function noise_to_electrons(adu_e, binning, sd : double): string;
+function noise_to_electrons(adu_e, sd : double): string;
 begin
+//  CMOS camera/software binning. Sky noise dominant. Software binning is sum pixels divide by four.
+//
+//                e- / pixel received	Gain         	ADU       	        EGAIN	                σ ADU  (noise)	                                σ e-   (noise)
+//  bin 1x1       100 e-	        1 (unity gain)	100 ADU	                1  e-/ADU (bin1x1)      sqrt(100)=10 ADU	                        sqrt(100 e-)=10 e-
+//  bin 2x2       400 e-	        1 (unity gain)	100 ADU                 1  e-/ADU (bin1x1)      sqrt(10ADU^2+10ADU^2+10ADU^2+10ADU^2)/4=5 ADU	sqrt(400 e-)/4=5 e-
+
+
+//                 e- / pixel received	Gain         	ADU       	        EGAIN	                σ ADU  (noise)	                                σ e-   (noise)
+//  bin 1x1        100 e-                2              200 ADU	                0.5  e-/ADU (bin1x1)	2*sqrt(100)=20 ADU	                        sqrt(100 e-)=10 e-
+//  bin 2x2  	   400 e-                2              200 ADU=2*sqrt(400)/4	0.5  e-/ADU (bin1x1)	sqrt(20ADU^2+20ADU^2+20ADU^2+20ADU^2)/4=10 ADU	sqrt(400 e-)/4=5 e-
+//
+//  Ik ga er vanuit dat het ontvangen licht in de pixels totaal 100 electrons (e-) in een echte pixel vrijmaakt. De ruis (σ) ofwel shot noise is dan ongeveer de wortel van het aantal electrons.
+//  Bij software binning halveert de pixelruis met een factor 2 voor zowel de ruis uitgedrukt in ADU als electrons. Ruis sommeer je als σ_tot:=sqrt(σ1^2+ σ2^2)
+
+  result:=floattostrF(sd,FFGeneral,3,3);
+
   if adu_e<>0 then
-    result:=floattostrF(sd*adu_e*binning,FFfixed,6,1)+' e-' // in electrons
-  else
-    result:=floattostrF(sd,FFfixed,6,1);//in adu's
+    result:=result+' e-' // in electrons
 
 end;
 
@@ -15095,7 +15110,7 @@ begin
 
      str(snr:0:0,snr_str);
      if adu_e=0 then snr_str:='SNR='+snr_str // noise based on ADU's
-                else snr_str:='SNR_e='+snr_str;// noise based on electrons
+       else snr_str:='SNR_e='+snr_str;// noise based on electrons. No unit
 
      if head.mzero<>0 then {offset calculated in star annotation call}
      begin
@@ -15111,9 +15126,13 @@ begin
                                                //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
      else
        mainwindow.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
-     mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str{+' '+floattostr4(flux)};
-     if display_adu then
-               mainwindow.statusbar1.panels[7].text:='ADU='+floattostrF(flux,ffFixed,0,0);
+     mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str; {+', '+floattostrF(flux,ffFixed,0,0)};
+
+     if adu_e<>0 then
+       mainwindow.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' e-'
+     else
+       mainwindow.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' ADU';
+
      if star_profile1.checked then
      begin
        plot_star_profile(round(object_xc),round(object_yc));
@@ -15129,7 +15148,7 @@ begin
 
      local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
-     mainwindow.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, head.Xbinning, sd); //reports noise in ADU's (adu_e=0) or electrons
+     mainwindow.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, sd); //reports noise in ADU's (adu_e=0) or electrons
 
      if star_profile_plotted then plot_north;
      star_profile_plotted:=false;
@@ -15893,11 +15912,6 @@ begin
   ,inttostr(egain_extra_factor))));
 end;
 
-
-procedure Tmainwindow.display_adu1Click(Sender: TObject);
-begin
-  display_adu:=display_adu1.checked;
-end;
 
 procedure Tmainwindow.localcoloursmooth2Click(Sender: TObject);
 var

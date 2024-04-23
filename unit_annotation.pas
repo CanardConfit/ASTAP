@@ -1917,7 +1917,7 @@ var
 
         if ((flux_calibration) and (Bp_Rp<>-128 {if -128 then unreliable Johnson-V magnitude, either Bp or Rp is missing in Gaia})) then
         begin
-          HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,0 {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin

@@ -984,7 +984,7 @@ begin
             coverage:=total_fov/(fw*fh);
             if coverage<0.5 then
              begin memo2_message('█ █ █ █ █ █  Abort!! Too many missing tiles. Field is '+floattostrF(fw,FFFixed,0,1)+'x'+floattostrF(fh,FFfixed,0,1)+
-                                                '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. For multiple mosaics is classify on "Light object" set?'); exit;end;
+                                                '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. Is there in outlier in the image list? Check image α, δ positions. For multiple mosaics is classify on "Light object" set?'); exit;end;
 
             pixel_to_celestial(head,(x_min+x_max)/2,(y_min+y_max)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
             sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
