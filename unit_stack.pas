@@ -4210,7 +4210,7 @@ begin
                   local_sd((head_2.Width div 2) - 50, (head_2.Height div 2) - 50, (head_2.Width div 2) + 50, (head_2.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean},iterations); {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
                   adu_e := retrieve_ADU_to_e_unbinned(head_2.egain);  //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
-                  lv.Items.item[c].subitems.Strings[D_sigma] := noise_to_electrons(adu_e, head_2.Xbinning, sd); //reports noise in ADU's (adu_e=0) or electrons
+                  lv.Items.item[c].subitems.Strings[D_sigma] := noise_to_electrons(adu_e, sd); //reports noise in ADU's (adu_e=0) or electrons
                 end;
               end;
             end;

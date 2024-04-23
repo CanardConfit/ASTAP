@@ -988,15 +988,18 @@ If if image stitching is selected the <a href="astap.htm#add_sip">SIP</a> option
               files.</big></li><li><big>In tab&nbsp;</big><big> "stack method" select option </big><big>"IMAGE STICHING METHOD" and
               select
               astrometic alignment using either the internal solver.</big></li><li><big>In
-tab "stack method", set the "mosaic width/height" correct and
-check-mark the option&nbsp;"equalise background". &nbsp;If the input
+tab "stack method" check-mark the option&nbsp;"equalise background". &nbsp;If the input
 images have poor borders, set option crop images larger then 0%.</big></li><li><big>Select the files. Most likely the files names contain "_stacked, so you have the check-mark the files after selection.<br></big><big></big></li>
           <li><big>Click on the button&nbsp;</big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Stack check marked images|</big>&nbsp;&nbsp;</span><big> </big></li>
           <li><big>Crop the stacked result
               using the image crop option in the viewer mouse pop-up menu.</big></li><li><big>Adjusted the stretch
               range and save
               as JPEG, 90% quality.</big></li>
-        </ol>
+        </ol><br><big>Possible error message: <span style="font-style: italic;">&nbsp;Abort!! Too many missing tiles. Field is 11.7x1.3°. Coverage only 14.5%.</span><br>This
+could happens if you have by accident an image from a different series
+in the collection. The program tries to adapt the canvas to include the
+outlier but it will be too empthy.&nbsp; Check the positions of the
+images to stitch and remove any outlier.</big> <br>
         <big>Here an example mosaic x 4 of M31 made with ASTAP:</big><br>
         <br>
         <img style="width: 1000px; height: 758px;" alt="" src="astap_mosaic%20x%204.jpg"><br>

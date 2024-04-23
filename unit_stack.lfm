@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = alignment1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 6
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2151,7 +2151,7 @@ object stackmenu1: Tstackmenu1
           object use_star_alignment1: TRadioButton
             Left = 8
             Height = 19
-            Hint = 'Program will select four star pyramids to match images.'
+            Hint = 'Star alignment is the best option for stacking'
             Top = 24
             Width = 95
             Caption = 'Star alignment'
@@ -5055,7 +5055,7 @@ object stackmenu1: Tstackmenu1
             object most_common_filter_radius1: TEdit
               Left = 305
               Height = 23
-              Hint = 'Median filter factor (box size). Typical value is 20'
+              Hint = 'Median filter factor (box size). Typical value is 30'
               Top = 112
               Width = 32
               ParentFont = False
@@ -7904,6 +7904,7 @@ object stackmenu1: Tstackmenu1
             object ClearButton1: TButton
               Left = 232
               Height = 30
+              Hint = 'Clear'
               Top = 152
               Width = 75
               Caption = 'Clear'
