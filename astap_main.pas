@@ -1329,7 +1329,7 @@ begin
         begin
           if ((header[i+1]='G')  and (header[i+2]='A') and (header[i+3]='I') and (header[i+4]='N')) then  {egain}
           begin
-            head.egain:=get_as_string//Do not crop anymore since it doesn't work for scientific notation, e-/adu gain
+            head.egain:=trim(get_as_string)//Do not crop anymore since it doesn't work for scientific notation, e-/adu gain
           end
           else
           if ((header[i+1]='X')  and (header[i+2]='P')) then
