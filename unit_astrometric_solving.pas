@@ -340,43 +340,49 @@ end;
 
 
 procedure binX1_crop(crop {0..1}:double; img : image_array; var img2: image_array);{crop image, make mono, no binning}
-  var fitsX,fitsY,k, w,h,  shiftX,shiftY: integer;
-      val       : single;
+var
+  fitsX,fitsY,k, w,h, shiftX,shiftY,nrcolors,width5,height5: integer;
+  val       : single;
 begin
+  nrcolors:=Length(img);
+  width5:=Length(img[0,0]); {width}
+  height5:=Length(img[0]);  {height}
+
   w:=trunc(crop*length(img[0,0]{width}));  {cropped}
   h:=trunc(crop*length(img[0]{height}));
 
   setlength(img2,1,h,w); {set length of image array}
 
-  shiftX:=round(head.width*(1-crop)/2); {crop is 0.9, shift is 0.05*head.width}
-  shiftY:=round(head.height*(1-crop)/2); {crop is 0.9, start at 0.05*head.height}
+  shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05 * width}
+  shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05 * height}
 
   for fitsY:=0 to h-1 do
     for fitsX:=0 to w-1  do
     begin
       val:=0;
-      for k:=0 to head.naxis3-1 do {all colors and make mono}
+      for k:=0 to nrcolors-1 do {all colors and make mono}
          val:=val + img[k ,shiftY+fitsY,shiftX+fitsx];
-      img2[0,fitsY,fitsX]:=val/head.naxis3;
+      img2[0,fitsY,fitsX]:=val/nrcolors;
     end;
 end;
 
 
 procedure binX2_crop(crop {0..1}:double; img : image_array; out img2: image_array);{combine values of 4 pixels and crop is required, Result is mono}
-  var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
-      val       : single;
+var
+  fitsX,fitsY,k, w,h, shiftX,shiftY,nrcolors,width5,height5: integer;
+  val       : single;
 begin
    nrcolors:=Length(img);
-   width5:=Length(img[0,0]);    {width}
-   height5:=Length(img[0]); {height}
+   width5:=Length(img[0,0]); {width}
+   height5:=Length(img[0]);  {height}
 
    w:=trunc(crop*width5/2);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
    h:=trunc(crop*height5/2);
 
    setlength(img2,1,h,w); {set length of image array}
 
-   shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*head.width}
-   shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*head.height}
+   shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05 * width}
+   shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05 * height}
 
    for fitsY:=0 to h-1 do
       for fitsX:=0 to w-1  do
@@ -392,8 +398,9 @@ begin
  end;
 
 procedure binX3_crop(crop {0..1}:double; img : image_array; out img2: image_array);{combine values of 9 pixels and crop is required. Result is mono}
-  var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
-      val       : single;
+var
+  fitsX,fitsY,k, w,h, shiftX,shiftY,nrcolors,width5,height5: integer;
+  val       : single;
 begin
   nrcolors:=Length(img);
   width5:=Length(img[0,0]);    {width}
@@ -427,8 +434,9 @@ end;
 
 
 procedure binX4_crop(crop {0..1}:double;img : image_array; out img2: image_array);{combine values of 16 pixels and crop is required. Result is mono}
-  var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
-      val       : single;
+var
+  fitsX,fitsY,k, w,h, shiftX,shiftY,nrcolors,width5,height5: integer;
+  val       : single;
 begin
   nrcolors:=Length(img);
   width5:=Length(img[0,0]);    {width}
