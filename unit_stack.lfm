@@ -8296,7 +8296,7 @@ object stackmenu1: Tstackmenu1
       end
       object column_lim_magn1: TMenuItem
         Caption = 'LIM_MAGN'
-        Hint = 'This keyword is available if the images are batch solved (in viewer menu tools) with option add limitng magnitude.'
+        Hint = 'This keyword is available if the images are batch solved (in viewer menu tools) with option add limiting magnitude.'
         RadioItem = True
         OnClick = column_lim_magn1Click
       end

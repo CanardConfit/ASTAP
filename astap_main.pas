@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.04.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.04.28';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1328,7 +1328,9 @@ begin
         if (header[i]='E') then
         begin
           if ((header[i+1]='G')  and (header[i+2]='A') and (header[i+3]='I') and (header[i+4]='N')) then  {egain}
-               head.egain:=copy(trim(get_as_string),1,5) {e-/adu gain, use 4 digits only}
+          begin
+            head.egain:=trim(get_as_string)//Do not crop anymore since it doesn't work for scientific notation, e-/adu gain
+          end
           else
           if ((header[i+1]='X')  and (header[i+2]='P')) then
           begin
@@ -4152,8 +4154,8 @@ var
    u,v,u2,v2             : double;
    xi,eta,delta,gamma  : double;
 
-   ra1,dec1,ra2,dec2,ra3,dec3 : double;
-   i : integer;
+//   ra1,dec1,ra2,dec2,ra3,dec3 : double;
+//   i : integer;
 
 begin
   RA:=0;DEC:=0;{for case wrong index or head.cd1_1=0}
@@ -8790,8 +8792,6 @@ end;
 function Jd_To_MPCDate(jd: double): string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
 var
   A, B, C, D, E, F, G, J, M, T, Z: double;
-  {!!! 2016 by purpose, otherwise with timezone 8, 24:00 midnigth becomes 15:59 UTC}
-  HH, MM, SS: integer;
   year3,day: string;
 begin
   jd := jd + (0.5 / (24 * 3600));
@@ -9671,7 +9671,7 @@ function download_vsp(limiting_mag: double) : boolean;//AAVSO API access
 var
   s,url   : string;
   val,val2 : char;
-  count,i,j,k,fov,dummy : integer;
+  count,i,j,k,fov  : integer;
   errorRA,errorDEC :boolean;
 begin
   result:=false;
@@ -15916,7 +15916,7 @@ end;
 procedure Tmainwindow.localcoloursmooth2Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,counter    : integer;
-   flux,center_x,center_y,a,b,rgb,distance,lumr : single;
+   flux,center_x,center_y,a,b,rgb, lumr : single;
    colour,mean : array[0..2] of single;
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;

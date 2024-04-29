@@ -10191,7 +10191,6 @@ procedure Tstackmenu1.column_fov1Click(Sender: TObject);
 begin
   stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'FOV';
   sqm_key:='FOV     ';//does not exist, but will be calculated
-
 end;
 
 procedure Tstackmenu1.column_lim_magn1Click(Sender: TObject);
