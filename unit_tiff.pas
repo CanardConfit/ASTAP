@@ -168,8 +168,8 @@ begin
     if MessageDlg('Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) <> 6 {mbYes} then
     Exit;
 
-  width2:=length(img[0,0]);{width}
-  height2:=length(img[0]);{height}
+  width2:=length(img[0,0]); {width}
+  height2:=length(img[0]);  {height}
   description:=description+#0;{GIMP is complaining about this #0}
 
   try
