@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.04.28';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.05.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2323,11 +2323,12 @@ begin
   begin
     key:=copy(mainwindow.Memo1.Lines[index],1,9);
 
+    //should in this sequence available. If not fix.
     if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
     if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
     if index=3 then if key<>'NAXIS1  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
     if index=4 then if key<>'NAXIS2  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
-    if ((index=5) and (head.naxis>1)) then if key<>'NAXIS3  =' then
+    if ((index=5) and (head.naxis3>1)) then if key<>'NAXIS3  =' then
                                              begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
 
     if key='CD1_1   =' then head.cd1_1:=read_float else
@@ -14550,7 +14551,7 @@ var
       end;
     end;
 begin
-  width5:=Length(img[0,0]);    {width}
+  width5:=Length(img[0,0]);{width}
   height5:=Length(img[0]); {height}
 
   {rs should be <=50 to prevent runtime errors}

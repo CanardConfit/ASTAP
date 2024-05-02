@@ -1,6 +1,6 @@
-How to compile ASTAP:
+How to compile the ASTAP program:
 
-1) Install Lazurus  (this will also install Free Pascal Compiler)
+1) Install Lazurus  (this will also install the Free Pascal Compiler)
 
 
 2a) Start Lazarus GUI.  Load astap.lpi or astap_linux.lip or astap_mac.lpi. Menu Run, Run or Compile
@@ -18,8 +18,6 @@ How to compile ASTAP:
 
   Mac:  
      lazbuild -B astap_mac.lpi
-
-To include package Synape, just load ./synapse/laz_synapse.lpk packagein the editor of Lazarus.  The astap.lpi and compile.
 
 -----------------------------------------------------------------------------------------------------------------------------------
 Notes:

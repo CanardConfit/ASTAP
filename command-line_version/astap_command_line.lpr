@@ -109,7 +109,7 @@ begin
     if filespecified then
     begin
       filename2:=GetOptionValue('f');
-      file_loaded:=load_image2; {load file first to give commandline parameters later priority}
+      file_loaded:=load_image; {load file first to give commandline parameters later priority}
       if file_loaded=false then errorlevel:=16;{error file loading}
     end
     else
@@ -224,7 +224,7 @@ begin
     if commandline_log then
              Memo2.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo2 log to log file}
 
-    halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+    halt(errorlevel);
 
     //  Exit status:
     //  0 no errors.

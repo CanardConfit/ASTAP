@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.02.16';
+  astap_version: string='2024.05.01';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -82,13 +82,11 @@ type
     xpixsz,ypixsz: double;//Pixel Width in microns (after binning)
     ra0,dec0 : double; {plate center values}
     cdelt1,cdelt2: double;{deg/pixel for x}
-    naxis  : integer;{number of dimensions}
-    naxis3 : integer;{number of colors}
+//    naxis  : integer;{number of dimensions}
+//    naxis3 : integer;{number of colors}
 
   const
     hist_range  {range histogram 255 or 65535 or streched} : integer=255;
-    width2  : integer=100;
-    height2: integer=100;{do not use reserved word height}
     fits_file: boolean=false;
     crpix1: double=0;{reference pixel}
     crpix2: double=0;
@@ -160,7 +158,7 @@ function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
 procedure write_astronomy_wcs;
 procedure write_ini(solution:boolean);{write solution to ini file}
-function load_image2 : boolean; {load fits or PNG, BMP, TIF}
+function load_image : boolean; {load fits or PNG, BMP, TIF}
 procedure SaveFITSwithupdatedheader1;
 function save_fits16bit(img: image_array;filen2:ansistring): boolean;{save to 16 fits file}
 
@@ -672,8 +670,8 @@ begin
   dec1:='';
   equinox:=2000;
 
-  naxis:=1;
-  naxis3:=1;
+//  naxis:=1;
+//  naxis3:=1;
   datamin_org:=0;
   datamax_org:=$FFFF;
 
@@ -686,8 +684,8 @@ end;
 function load_fits(filen:string;out img_loaded2: image_array): boolean;{load fits file}
 var
   header    : array[0..2880] of ansichar;
-  i,j,k,error3,naxis1, reader_position,validate_double_error   : integer;
-  tempval                                                      : double;
+  i,j,k,error3,naxis1,width2,height2, reader_position,validate_double_error,naxis,naxis3   : integer;
+  tempval                                                                                  : double;
   col_float,bscale,measured_max,scalefactor  : single;
   bzero                       : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
   aline                       : ansistring;
@@ -761,6 +759,8 @@ begin
 
   {Reset variables for case they are not specified in the file}
   reset_fits_global_variables; {reset the global variable}
+  naxis:=0;//number of dimensions, normally 2, colour 3
+  naxis3:=1;//number of colours
 
   bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
   bscale:=1;
@@ -1076,8 +1076,9 @@ begin
         try reader.read(fitsbuffer,width2*4);except; end; {read file info}
         for i:=0 to width2-1 do
         begin
-          col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
-                         {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
+          col_float:=dword(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..65535}
+                        {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
+                        {Dword is required for high values}
           img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
@@ -1379,7 +1380,7 @@ begin
 end;
 
 
-procedure read_keys_memo;{for tiff, header in the describtion decoding}
+procedure read_keys_memo(naxis3: integer);{for tiff, header in the describtion decoding}
 var
   key                                      : string;
   count1,index                             : integer;
@@ -1411,12 +1412,20 @@ var
 begin
   {variables are already reset}
   count1:=Memo1.Count-1-1;
-//  ccd_temperature:=999;
 
   index:=1;
   while index<=count1 do {read keys}
   begin
     key:=copy(Memo1[index],1,9);
+
+    //should in this sequence available. If not fix.
+    if index=1 then if key<>'BITPIX  =' then begin Memo1.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
+    if index=2 then if key<>'NAXIS   =' then begin Memo1.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
+    if index=3 then if key<>'NAXIS1  =' then begin Memo1.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
+    if index=4 then if key<>'NAXIS2  =' then begin Memo1.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
+    if ((index=5) and (naxis3>1)) then if key<>'NAXIS3  =' then begin Memo1.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
+
+
     if key='CD1_1   =' then cd1_1:=read_float else
     if key='CD1_2   =' then cd1_2:=read_float else
     if key='CD2_1   =' then cd2_1:=read_float else
@@ -1462,12 +1471,6 @@ begin
 
     if key='DATE-OBS=' then date_obs:=read_string else
 
-    if index=1 then if key<>'BITPIX  =' then begin Memo1.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
-    if index=2 then if key<>'NAXIS   =' then begin Memo1.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
-    if index=3 then if key<>'NAXIS1  =' then begin Memo1.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
-    if index=4 then if key<>'NAXIS2  =' then begin Memo1.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
-    if ((index=5) and (naxis>1)) then if key<>'NAXIS3  =' then
-               begin Memo1.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
     index:=index+1;
   end;
 
@@ -1513,13 +1516,13 @@ end;
 
 function load_PPM_PGM_PFM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
-   i,j, reader_position  : integer;
+   i,j, reader_position,naxis  : integer;
    aline,w1,h1,bits,comm  : ansistring;
    ch                : ansichar;
    rgb32dummy        : byteXXXX3;
    rgb16dummy        : byteXX3;
    rgbdummy          : byteX3;
-   err,err2,err3,package  : integer;
+   width2,height2, err,err2,err3,package,naxis3      : integer;
    comment,color7,pfm,expdet,timedet,isodet,instdet  : boolean;
    range, jd2        : double;
 
@@ -1776,10 +1779,10 @@ end;
 
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
-  i,j   : integer;
-  jd2   : double;
-  image: TFPCustomImage;
-  reader: TFPCustomImageReader;
+  i,j,width2,height2,naxis3,naxis   : integer;
+  jd2                               : double;
+  image                             : TFPCustomImage;
+  reader                            : TFPCustomImageReader;
   tiff, png,jpeg,colour,saved_header  : boolean;
   ext,descrip   : string;
 begin
@@ -1909,7 +1912,7 @@ begin
   if copy(descrip,1,6)='SIMPLE' then {fits header included}
   begin
     memo1.text:=descrip;
-    read_keys_memo;
+    read_keys_memo(naxis3);
     saved_header:=true;
   end
   else {no fits header in tiff file available}
@@ -1944,36 +1947,22 @@ begin
 end;
 
 
-function load_image2: boolean; {load fits or PNG, BMP, TIF}
+function load_image: boolean; {load fits or PNG, BMP, TIF}
 var
    ext1   : string;
 begin
   ext1:=uppercase(ExtractFileExt(filename2));
 
-  result:=false;{assume failure}
-  {fits}
-  if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
-  begin
-    result:=load_fits(filename2,img_loaded);
-    if ((result=false) or (naxis<2))  then {no image or failure.}
-    begin
-       exit; {WCS file}
-    end;
-  end
+  if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')) then {FITS}
+    result:=load_fits(filename2,img_loaded) //fits
   else
   if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM') or (ext1='.PBM')) then {PPM/PGM/ PFM}
-  begin
-    if load_PPM_PGM_PFM(filename2,img_loaded)=false then begin exit; end {load the simple formats ppm color or pgm grayscale, exit on failure}
-    else
-      result:=true;
-  end
+    result:=load_PPM_PGM_PFM(filename2,img_loaded) {load the simple formats ppm color or pgm grayscale, exit on failure}
   else
-  {tif, png, bmp, jpeg}
-  if load_tiffpngJPEG(filename2,img_loaded)=false then
-        begin exit; end  {load tif, exit on failure}
+  if ((ext1='.TIF') or (ext1='.TIFF') or (ext1='.PNG') or (ext1='.JPG') or (ext1='.JPEG') or (ext1='.BMP')) then {tif, png, bmp, jpeg}
+    result:=load_tiffpngJPEG(filename2,img_loaded) {tif, png, bmp, jpeg}
   else
-    result:=true;
-
+  result:=false;
 end;
 
 
@@ -2120,7 +2109,7 @@ procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,s
 const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
 var
-  i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter :integer;
+  width2, height2, i, j, r1_square, r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter :integer;
   SumVal, SumValX,SumValY,SumValR, Xg,Yg, r, val,star_bg,pixel_counter,valmax,mad_bg,sd_bg    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
@@ -2145,6 +2134,9 @@ var
       end;
     end;
 begin
+  width2:=Length(img[0,0]); {width}
+  height2:=Length(img[0]);  {height}
+
   {rs should be <=50 to prevent runtime errors}
   r1_square:=rs*rs;{square radius}
   r2:=rs+1;{annulus width us 1}
@@ -2382,10 +2374,10 @@ end;
 
 procedure analyse_image(img : image_array;snr_min:double;report_type:integer;out star_counter : integer;out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
-   fitsX,fitsY,diam,i,j,retries,m,n,xci,yci,sqr_diam : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,ra,decl        : double;
-   hfd_list                                                    : array of double;
-   img_sa                                                      : image_array;
+   width2,height2,fitsX,fitsY,diam,i,j,retries,m,n,xci,yci,sqr_diam : integer;
+   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,ra,decl            : double;
+   hfd_list                                                         : array of double;
+   img_sa                                                           : image_array;
 var
   f   :  textfile;
 const
@@ -2394,6 +2386,9 @@ begin
   //report_type=0, report hfd_median
   //report_type=1, report hfd_median and write csv file
   //report_type=2, write csv file
+
+  width2 := Length(img[0,0]); {width}
+  height2 := Length(img[0]);  {height}
 
   SetLength(hfd_list,len);{set array length to len}
 
@@ -2480,38 +2475,6 @@ begin
   hfd_median:=99;{Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
 
   img_sa:=nil;{free mem}
-end;
-
-
-function load_image : boolean; {load fits or PNG, BMP, TIF}
-var
-   ext1                : string;
-begin
-  ext1:=uppercase(ExtractFileExt(filename2));
-
-  result:=false;{assume failure}
-  {fits}
-  if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
-  begin
-    result:=load_fits(filename2,img_loaded);
-    if ((result=false) or (naxis<2))  then {no image or failure.}
-    begin
-       exit; {WCS file}
-    end;
-  end
-  else
-  if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM') or (ext1='.PBM')) then {PPM/PGM/ PFM}
-  begin
-    if load_PPM_PGM_PFM(filename2,img_loaded)=false then begin exit; end {load the simple formats ppm color or pgm grayscale, exit on failure}
-    else
-      result:=true;
-  end
-  else
-  {tif, png, bmp, jpeg}
-  if load_tiffpngJPEG(filename2,img_loaded)=false then
-        begin exit; end  {load tif, exit on failure}
-  else
-    result:=true;
 end;
 
 

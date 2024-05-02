@@ -619,14 +619,17 @@ end;
 
 procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level               : double;
+   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2  : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level                     : double;
    img_sa     : image_array;
    snr_list        : array of double;
    startTick2  : qword;{for timing/speed purposes}
 const
     buffersize=5000;{5000}
 begin
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
+
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
   SetLength(starlist1,2,buffersize);{set array length}
   setlength(snr_list,buffersize);{set array length}
@@ -1025,28 +1028,29 @@ end;
 
 
 procedure binX1_crop(crop {0..1}:double; img : image_array; var img2: image_array);{crop image, make mono, no binning}
-  var fitsX,fitsY,k, w,h,  shiftX,shiftY: integer;
+  var fitsX,fitsY,k, w,h, shiftX,shiftY, nrcolors,width5,height5: integer;
       val       : single;
 begin
-  w:=trunc(crop*width2);  {cropped}
-  h:=trunc(crop*height2);
+  nrcolors:=Length(img);
+  width5:=Length(img[0,0]);  {width}
+  height5:=Length(img[0]);   {height}
+
+  w:=trunc(crop*width5);  {cropped}
+  h:=trunc(crop*height5);
 
   setlength(img2,1,h,w); {set length of image array}
 
-  shiftX:=round(width2*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
-  shiftY:=round(height2*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
+  shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
+  shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
 
   for fitsY:=0 to h-1 do
     for fitsX:=0 to w-1  do
     begin
       val:=0;
-      for k:=0 to naxis3-1 do {all colors and make mono}
+      for k:=0 to nrcolors-1 do {all colors and make mono}
          val:=val + img[k,shiftY+fitsY   ,shiftX+fitsX];
-      img2[0,fitsY,fitsX]:=val/naxis3;
+      img2[0,fitsY,fitsX]:=val/nrcolors;
     end;
-  width2:=w;
-  height2:=h;
-  naxis3:=1;
 end;
 
 
@@ -1055,8 +1059,8 @@ procedure binX2_crop(crop {0..1}:double; img : image_array; var img2: image_arra
       val       : single;
 begin
    nrcolors:=Length(img);
-   width5:=Length(img[0,0]);    {width}
-   height5:=Length(img[0]); {height}
+   width5:=Length(img[0,0]);  {width}
+   height5:=Length(img[0]);   {height}
 
    w:=trunc(crop*width5/2);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
    h:=trunc(crop*height5/2);
@@ -1077,11 +1081,7 @@ begin
                    img[k,shiftY+fitsy*2 +1,shiftX+fitsX*2+1])/4;
        img2[0,fitsY,fitsX]:=val/nrcolors;
      end;
-
-   width2:=w;
-   height2:=h;
-   naxis3:=1;
- end;
+end;
 
 procedure binX3_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 9 pixels and crop is required. Result is mono}
   var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
@@ -1115,9 +1115,6 @@ begin
                                img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+2])/9;
        img2[0,fitsY,fitsX]:=val/nrcolors;
     end;
-  width2:=w;
-  height2:=h;
-  naxis3:=1;
 end;
 
 
@@ -1160,25 +1157,22 @@ begin
                                img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+3])/16;
          img2[0,fitsY,fitsX]:=val/nrcolors;
     end;
-  width2:=w;
-  height2:=h;
-  naxis3:=1;
 end;
 
 
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 var
-  old_width,old_height,old_naxis3,nrstars,i : integer;
+  width2,height2,nrstars,i : integer;
   img_binned : image_array;
 
 begin
   short_warning:='';{clear string}
 
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
+
   if ((binning>1) or (cropping<1)) then
   begin
-    old_width:=width2;
-    old_height:=height2;
-    old_naxis3:=naxis3;
     if binning>1 then memo2_message('Creating grayscale x '+inttostr(binning)+' binning image for solving/star alignment.');
     if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
 
@@ -1207,10 +1201,6 @@ begin
       memo2_message('Warning, remaining image dimensions too low! Try to REDUCE OR REMOVE DOWNSAMPLING.');
     end;
 
-    width2:=old_width; {restore to original size}
-    height2:=old_height;
-    naxis3:=old_naxis3;
-
     for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
       starlist3[0,i]:=(binning-1)*0.5+starlist3[0,i]*binning +(width2*(1-cropping)/2);//correct star positions for binning/ cropping. Position [3.5,3,5] becomes after 2x2 binning [1,1] after x2 [3,3]. So correct for 0.5 pixel
@@ -1220,8 +1210,6 @@ begin
       // A star of 3x3 pixels at position [4,4] is after 3x3 binning at position [1,1]. If tripled to [3,3] then the position has 1.0 pixel shifted.
       // A star of 4x4 pixels at position [5.5,5.5] is after 4x4 binning at position [1,1]. If quadruped to [4,4] then the position has 1.5 pixel shifted.
       // So positions measured in a binned image should be corrected as x:=(binning-1)*0.5+binning*x and y:=(binning-1)*0.5+binning*y
-
-
     end;
   end
   else
@@ -1649,7 +1637,7 @@ end;
 function solve_image(img :image_array) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
-  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,database_density,limit,err                                       : integer;
+  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,database_density,limit,err, width2, height2                      : integer;
   search_field,step_size,ra_database,dec_database,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
   oversize,oversize2,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
   quad_tolerance,dummy, extrastars,flip,extra,distance,flipped_image                                                 : double;
@@ -1664,6 +1652,9 @@ begin
   warning_str:='';{for header}
   startTick := GetTickCount64;
   quad_tolerance:=strtofloat2(quad_tolerance1);
+
+  width2:=length(img[0,0]); {width}
+  height2:=length(img[0]);  {height}
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no FOV in native command line and cdelt2 in header}
     fov_org:=min(180,height2*abs(cdelt2)) {calculate FOV. PI can give negative CDELT2}
@@ -1961,8 +1952,6 @@ begin
                                                    (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
                                                     1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 10 pixels away
 
-    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-//    crota2:=-arctan2(cos(dec7)*sin(ra7-ra_radians),sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians));//Accurate formula. Angle between line between the two positions and north as seen at ra0, dec0
     crota2:=-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
 
 
@@ -1971,8 +1960,6 @@ begin
                                                   (solution_vectorY[0]*(centerX+flipped_image) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
                                                   1, {CCD scale} ra7 ,dec7{equatorial position});
 
-    //See book Meeus, Astronomical Algorithms, formula 46.5, angle of moon limb. See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
-//    crota1:=+arctan2(sin(dec7)*cos(dec_radians) - cos(dec7)*sin(dec_radians)*cos(ra7-ra_radians),cos(dec7)*sin(ra7-ra_radians));//Accurate formula. See calculation crota2, arguments arctan swapped
     crota1:=pi/2-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
     if crota1>pi then crota1:=crota1-2*pi;//keep within range -pi to +pi
 
