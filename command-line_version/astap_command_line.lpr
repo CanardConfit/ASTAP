@@ -37,9 +37,10 @@ end;
 
 procedure Tastap.DoRun;
 var
-  file_loaded,filespecified,analysespecified, extractspecified, extractspecified2 : boolean;
+  file_loaded,filespecified,analysespecified, extractspecified, extractspecified2,wresult : boolean;
   backgr, hfd_median,snr_min          : double;
   hfd_counter,report                  : integer;
+  filename_output                     : string;
 begin
   {$IfDef Darwin}// for OS X,
     database_path:='/usr/local/opt/astap/';
@@ -179,20 +180,29 @@ begin
     if hasoption('D') then
       star_database1:=GetOptionValue('D'); {specify a different database}
 
+    if hasoption('o') then
+      filename_output:=GetOptionValue('o') {for the .ini and .wcs files}
+    else
+      filename_output:=filename2; //use same filename for .ini and .wcs files
 
-
-    if ((file_loaded) and (solve_image(img_loaded ))) then {find plate solution, filename2 extension will change to .fit}
+    if ((file_loaded) and (solve_image(img_loaded ))) then {find plate solution}
     begin
-      if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
-      write_ini(true);{write solution to ini file}
+      write_ini(filename_output,true);{write solution to ini file}
 
       add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
 
-      if hasoption('update') then
+      if hasoption('update') then  //write error
       begin
-        if fits_file_name(filename2) then SaveFITSwithupdatedheader1
+        if fits_file_name(filename2) then
+          wresult:=savefits_update_header(filename2)
         else
-        save_fits16bit(img_loaded,ChangeFileExt(filename2,'.fits'));{save original png,tiff jpg to 16 bits fits file}
+          wresult:=save_fits16bit(img_loaded,ChangeFileExt(filename2,'.fits'));{save original png,tiff jpg to 16 bits fits file}
+
+        if wresult=false then
+        begin
+           memo2_message('█ █ █ Error updating input file !! █ █ █');
+           errorlevel:=34;{Error updating input file}
+        end;
       end;
 
       remove_key('NAXIS1  =',true{one});
@@ -201,15 +211,14 @@ begin
       update_integer('BITPIX  =',' /                                                ' ,8);
 
       if hasoption('wcs') then
-        write_astronomy_wcs  {write WCS astronomy.net style}
+        write_astronomy_wcs(filename_output)  {write WCS astronomy.net style}
       else
-        try Memo1.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+        try Memo1.SavetoFile(ChangeFileExt(filename_output,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
     end {solution}
     else
     begin {no solution}
-      if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
-      write_ini(false);{write solution to ini file}
+      write_ini(filename_output,false);{write solution to ini file}
       errorlevel:=1;{no solution}
     end;
 
@@ -222,7 +231,7 @@ begin
 
     esc_pressed:=true;{kill any running activity. This for APT}
     if commandline_log then
-             Memo2.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo2 log to log file}
+             Memo2.SavetoFile(ChangeFileExt(filename_output,'.log'));{save Memo2 log to log file}
 
     halt(errorlevel);
 
@@ -235,6 +244,7 @@ begin
 
     // 32 no star database found.
     // 33 error reading star database.
+    // 34 error updating input file
 
     // ini file is always written. Could contain:
     // ERROR=......

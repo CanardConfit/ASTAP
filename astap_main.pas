@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.05.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.05.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -12346,11 +12346,11 @@ begin
 end;
 
 
-procedure write_ini(solution:boolean);{write solution to ini file}
+procedure write_ini(filen:string; solution:boolean);{write solution to ini file}
 var
    f: text;
 begin
-  assignfile(f,ChangeFileExt(filename2,'.ini'));
+  assignfile(f,ChangeFileExt(filen,'.ini'));
   rewrite(f);
   if solution then
   begin
@@ -12514,7 +12514,7 @@ begin
         {note SGP uses PlateSolve2 v2.29. This version writes APM always with dot as decimal separator}
 
         {extra log}
-        write_ini(solved);{write solution to ini file}
+        write_ini(filename2,solved);{write solution to ini file}
         count:=0;
         while  ((fileexists(ChangeFileExt(filename2,'.apm'))=false) and  (count<60)) do begin sleep(50);inc(count); end;{wait maximum 3 seconds till solution file is available before closing the program}
       end {list count}
@@ -12700,10 +12700,11 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
   s      : string;
-  histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,extractspecified2,focusrequest,checkfilter : boolean;
+  histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,extractspecified2,focusrequest,checkfilter, wresult : boolean;
   snr_min                     : double;
   binning,focus_count,report  : integer;
   bck                         : Tbackground;
+  filename_output             : string;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -12895,6 +12896,12 @@ begin
           if hasoption('D') then
              stackmenu1.star_database1.text:=GetOptionValue('D'); {specify a different database}
 
+          if hasoption('o') then
+            filename_output:=GetOptionValue('o') {for the .ini and .wcs files}
+          else
+            filename_output:=filename2; //use same filename for .ini and .wcs files
+
+
           if ((file_loaded) and (solve_image(img_loaded,head,true {get hist},checkfilter) )) then {find plate solution, filename2 extension will change to .fit}
           begin
             if hasoption('sqm') then {sky quality}
@@ -12915,27 +12922,32 @@ begin
               update_text('SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
             end;
 
-            if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
-            write_ini(true);{write solution to ini file}
+            write_ini(filename_output,true);{write solution to ini file}
 
             add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
 
             if hasoption('update') then
             begin
-              if fits_file_name(filename2) then savefits_update_header(filename2) {update the fits file header}
+              if fits_file_name(filename2) then wresult:=savefits_update_header(filename2) {update the fits file header}
               else
-              if tiff_file_name(filename2) then save_tiff16_secure(img_loaded,filename2){guarantee no file is lost}
+              if tiff_file_name(filename2) then wresult:=save_tiff16_secure(img_loaded,filename2){guarantee no file is lost}
               else
-              save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save original png,tiff jpg to 16 fits file}
+              wresult:=save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save original png,tiff jpg to 16 fits file}
+
+              if wresult=false then //write error
+              begin
+                 memo2_message('█ █ █ Error updating input file !! █ █ █');//qill be reported if -log is specified in command line
+                 errorlevel:=34;{Error updating input file}
+              end;
             end;
 
             remove_key('NAXIS1  =',true{one});
             remove_key('NAXIS2  =',true{one});
             update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
             if hasoption('wcs') then
-              write_astronomy_wcs(ChangeFileExt(filename2,'.wcs'))  {write WCS astronomy.net style}
+              write_astronomy_wcs(ChangeFileExt(filename_output,'.wcs'))  {write WCS astronomy.net style}
             else
-              try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+              try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename_output,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
             histogram_done:=false;
             if hasoption('annotate') then
@@ -12943,7 +12955,7 @@ begin
               use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
               histogram_done:=true;
               plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
-              save_annotated_jpg(filename2);{save viewer as annotated jpg}
+              save_annotated_jpg(filename_output);{save viewer as annotated jpg}
             end;
             if hasoption('tofits') then {still to be tested}
             begin
@@ -12952,7 +12964,7 @@ begin
                 binning:=round(strtofloat2(GetOptionValue('tofits')));
                 if binning>1 then bin_X2X3X4(binning);{bin img_loaded 2x or 3x or 4x}
                 if histogram_done=false then use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
-                save_fits(img_loaded,changeFileExt(filename2,'.fit'),8,true {overwrite});
+                save_fits(img_loaded,changeFileExt(filename_output,'.fit'),8,true {overwrite});
               end;
             end;
 
@@ -12964,8 +12976,8 @@ begin
           end {solution}
           else
           begin {no solution}
-            if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
-            write_ini(false);{write solution to ini file}
+            //if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
+            write_ini(filename_output,false);{write solution to ini file}
             if errorlevel=0 then errorlevel:=1;{no solution}
           end;
 
@@ -12979,9 +12991,9 @@ begin
 
 
           esc_pressed:=true;{kill any running activity. This for APT}
-          if commandline_log then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
+          if commandline_log then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename_output,'.log'));{save Memo2 log to log file}
 
-          halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+          halt(errorlevel); {don't save only, do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
 
           //  Exit status:
           //  0 no errors.
@@ -12992,6 +13004,7 @@ begin
 
           // 32 no star database found.
           // 33 error reading star database.
+          // 34 error updating input file
 
           // ini file is always written. Could contain:
           // ERROR=......

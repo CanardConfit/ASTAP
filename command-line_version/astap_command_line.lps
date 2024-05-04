@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units Count="35">
+      <Unit0>
+        <Filename Value="astap_command_line.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="175"/>
+        <CursorPos X="67" Y="203"/>
+        <UsageCount Value="200"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <IsPartOfProject Value="True"/>
+        <TopLine Value="1968"/>
+        <CursorPos X="15" Y="1971"/>
+        <UsageCount Value="200"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="unit_command_line_general.pas"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="6" Y="7"/>
+        <UsageCount Value="200"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\astap_main.pas"/>
+        <ComponentName Value="mainwindow"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="4533"/>
+        <CursorPos X="11" Y="4555"/>
+        <UsageCount Value="8"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\unit_stack.pas"/>
+        <ComponentName Value="stackmenu1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1169"/>
+        <CursorPos X="13" Y="1184"/>
+        <UsageCount Value="3"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\unit_astrometric_solving.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="561"/>
+        <CursorPos X="10" Y="582"/>
+        <UsageCount Value="10"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\unit_star_align.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="663"/>
+        <CursorPos X="10" Y="667"/>
+        <UsageCount Value="2"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="unit_star_database.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos Y="44"/>
+        <UsageCount Value="1"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI02.518\unit_command_line_general.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="446"/>
+        <CursorPos Y="467"/>
+        <UsageCount Value="7"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="unit_command_line_star_database.pas"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="2652"/>
+        <CursorPos X="19" Y="2674"/>
+        <UsageCount Value="99"/>
+        <Loaded Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="unit_command_line_stars_wide_field.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="41219"/>
+        <CursorPos X="36" Y="41329"/>
+        <UsageCount Value="38"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="backup\unit_command_line_general.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2021"/>
+        <CursorPos X="26" Y="2052"/>
+        <UsageCount Value="7"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\unit_inspector_plot.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="457"/>
+        <CursorPos X="29" Y="487"/>
+        <UsageCount Value="8"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="C:\hnsky.fpc\conversion\AAVSO_retrieval\unit_retrieval.pas"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="18"/>
+        <UsageCount Value="7"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\astap_main.lfm"/>
+        <HasResources Value="True"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="d:\temp\match-1.0\match-1.0\atpmatch.c"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="3116"/>
+        <CursorPos X="47" Y="3146"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="backup\unit_command_line_solving.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1786"/>
+        <CursorPos X="8" Y="1806"/>
+        <UsageCount Value="9"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="unit_command_line_calc_trans_cubic.pas"/>
+        <EditorIndex Value="4"/>
+        <CursorPos X="4" Y="21"/>
+        <UsageCount Value="16"/>
+        <Loaded Value="True"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="d:\temp\siril-master\siril-master\subprojects\wcslib\prj.c"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2323"/>
+        <CursorPos X="32" Y="2222"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="d:\temp\siril-master\siril-master\subprojects\wcslib\cel.c"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="321"/>
+        <CursorPos X="5" Y="286"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="d:\temp\siril-master\siril-master\subprojects\wcslib\wcsconfig.h"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="14" Y="19"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\longnam.h"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="569"/>
+        <CursorPos X="27" Y="589"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\docs\cfitsio.ps"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="11076"/>
+        <CursorPos X="3" Y="11096"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="None"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\docs\cfitsio.tex"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="5285"/>
+        <CursorPos X="7" Y="5305"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="None"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\docs\changes.txt"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2364"/>
+        <CursorPos X="46" Y="2255"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="None"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\fitsio.h"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1846"/>
+        <CursorPos X="15" Y="1866"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\region.c"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1705"/>
+        <CursorPos X="11" Y="1725"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\testprog.c"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2308"/>
+        <CursorPos X="44" Y="2335"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\testprog.out"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="728"/>
+        <CursorPos X="32" Y="748"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="None"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\wcssub.c"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="737"/>
+        <CursorPos X="50" Y="706"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="d:\temp\cfit-4.3.1\cfitsio-4.3.1\wcsutil.c"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="462"/>
+        <CursorPos X="96" Y="480"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="d:\temp\astropy-6.0.0\astropy-6.0.0\astropy\wcs\wcsapi\tests\test_fitswcs.py"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1099"/>
+        <CursorPos X="35" Y="1119"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="Python"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="d:\temp\astropy-6.0.0\astropy-6.0.0\astropy\wcs\wcsapi\high_level_api.py"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="68"/>
+        <CursorPos X="21" Y="88"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="Python"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="d:\temp\astropy-6.0.0\astropy-6.0.0\astropy\wcs\wcsapi\wrappers\sliced_wcs.py"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="237"/>
+        <CursorPos X="41" Y="257"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="Python"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="d:\temp\astropy-6.0.0\astropy-6.0.0\astropy\wcs\wcsapi\wrappers\tests\test_sliced_wcs.py"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="147"/>
+        <CursorPos X="52" Y="176"/>
+        <UsageCount Value="7"/>
+        <DefaultSyntaxHighlighter Value="Python"/>
+      </Unit34>
+    </Units>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="201" TopLine="173"/>
+      </Position1>
+      <Position2>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="209" Column="20" TopLine="167"/>
+      </Position2>
+      <Position3>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="98" Column="41" TopLine="67"/>
+      </Position3>
+      <Position4>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="105" Column="11" TopLine="69"/>
+      </Position4>
+      <Position5>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="107" Column="23" TopLine="71"/>
+      </Position5>
+      <Position6>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="234" Column="60" TopLine="197"/>
+      </Position6>
+      <Position7>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="211" TopLine="197"/>
+      </Position7>
+      <Position8>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="19" Column="64" TopLine="9"/>
+      </Position8>
+      <Position9>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="43" Column="18" TopLine="9"/>
+      </Position9>
+      <Position10>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="172" Column="31" TopLine="148"/>
+      </Position10>
+      <Position11>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="184" Column="22" TopLine="148"/>
+      </Position11>
+      <Position12>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="186" Column="22" TopLine="150"/>
+      </Position12>
+      <Position13>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="190" Column="32" TopLine="154"/>
+      </Position13>
+      <Position14>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="214" Column="44" TopLine="178"/>
+      </Position14>
+      <Position15>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="216" Column="59" TopLine="180"/>
+      </Position15>
+      <Position16>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="196" Column="12" TopLine="59"/>
+      </Position16>
+      <Position17>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="214" Column="44" TopLine="178"/>
+      </Position17>
+      <Position18>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="216" Column="59" TopLine="180"/>
+      </Position18>
+      <Position19>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="221" Column="32" TopLine="185"/>
+      </Position19>
+      <Position20>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="238" Column="20" TopLine="213"/>
+      </Position20>
+      <Position21>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="201" TopLine="172"/>
+      </Position21>
+      <Position22>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="194" TopLine="172"/>
+      </Position22>
+      <Position23>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="197" TopLine="172"/>
+      </Position23>
+      <Position24>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="201" TopLine="172"/>
+      </Position24>
+      <Position25>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="207" Column="8" TopLine="175"/>
+      </Position25>
+      <Position26>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="194" TopLine="175"/>
+      </Position26>
+      <Position27>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="197" TopLine="175"/>
+      </Position27>
+      <Position28>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="201" TopLine="175"/>
+      </Position28>
+      <Position29>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="203" Column="79" TopLine="175"/>
+      </Position29>
+      <Position30>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="11" Column="12"/>
+      </Position30>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="1" ActiveMode="default">
+        <Mode0 Name="default">
+          <local>
+            <CommandLineParams Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 -o C:\astap.fpc\command_line_version\m45_.fits -log"/>
+          </local>
+        </Mode0>
+      </Modes>
+    </RunParams>
+    <HistoryLists Count="3">
+      <List0 Name="LaunchingApplication" Type="File" Count="1">
+        <Item1 Value="C:\WINDOWS\system32\cmd.exe /C ${TargetCmdLine}"/>
+      </List0>
+      <List1 Name="CommandLineParameters" Count="20">
+        <Item1 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 -o C:\astap.fpc\command_line_version\m45_.fits -log"/>
+        <Item2 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 -o C:\astap.fpc\command_line_version\m45_.fits"/>
+        <Item3 Value="-f  C:\astap.fpc\command_line_version\m81.jpg  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 -fov 0"/>
+        <Item4 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 C:\astap.fpc\command_line_version\m45_.fits"/>
+        <Item5 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80"/>
+        <Item6 Value="-f  C:\astap.fpc\command_line_version\m13.fits  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80"/>
+        <Item7 Value="-f  C:\astap.fpc\command_line_version\m13.fit  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80"/>
+        <Item8 Value="-f  C:\astap.fpc\command_line_version\m13.png  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80"/>
+        <Item9 Value="-f  C:\astap.fpc\command_line_version\m13.png  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 "/>
+        <Item10 Value="-f  C:\astap.fpc\command_line_version\m13.png  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 -fov 0"/>
+        <Item11 Value="-f  C:\astap.fpc\command_line_version\m81.jpg  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 -fov 0 -z 2"/>
+        <Item12 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc -D d80 -fov 0"/>
+        <Item13 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -sip -update -d c:\astap.fpc"/>
+        <Item14 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -sip -update"/>
+        <Item15 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -extract2"/>
+        <Item16 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -analyse2 30"/>
+        <Item17 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -extract 30 "/>
+        <Item18 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc "/>
+        <Item19 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -extract 30  "/>
+        <Item20 Value="-f  C:\astap.fpc\command_line_version\m45.fits  -r 180 -d c:\astap.fpc -update -sip"/>
+      </List1>
+      <List2 Name="WorkingDirectory" Type="File" Count="1"/>
+    </HistoryLists>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="unit_command_line_general.pas"/>
+        <Line Value="784"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="unit_command_line_general.pas"/>
+        <Line Value="791"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_command_line.lpr"/>
+        <Line Value="211"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_command_line.lpr"/>
+        <Line Value="222"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_command_line.lpr"/>
+        <Line Value="197"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_command_line.lpr"/>
+        <Line Value="201"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_command_line.lpr"/>
+        <Line Value="194"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
+</CONFIG>
