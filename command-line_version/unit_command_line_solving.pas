@@ -1978,7 +1978,7 @@ begin
     //end new 2023 method
 
 
-    solved_in:='Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec';{make string to report in FITS header.}
+    solved_in:='Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
     offset_found:=distance_to_string(sep_search ,sep_search)+'.';
     if ra_mount<99 then {mount position known and specified}

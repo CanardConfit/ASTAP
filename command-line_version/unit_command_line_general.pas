@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.05.01';
+  astap_version: string='2024.05.04';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -156,10 +156,11 @@ procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,s
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
-procedure write_astronomy_wcs;
-procedure write_ini(solution:boolean);{write solution to ini file}
+procedure write_astronomy_wcs(filen: string);
+procedure write_ini(filen: string;solution:boolean);{write solution to ini file}
 function load_image : boolean; {load fits or PNG, BMP, TIF}
-procedure SaveFITSwithupdatedheader1;
+function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
+
 function save_fits16bit(img: image_array;filen2:ansistring): boolean;{save to 16 fits file}
 
 procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
@@ -369,7 +370,7 @@ begin
 end;
 
 
-procedure write_astronomy_wcs;
+procedure write_astronomy_wcs(filen:string);
 var
   TheFile4 : tfilestream;
   I : integer;
@@ -378,7 +379,7 @@ var
 
 begin
   try
-   TheFile4:=tfilestream.Create(ChangeFileExt(filename2,'.wcs'), fmcreate );
+   TheFile4:=tfilestream.Create(ChangeFileExt(filen,'.wcs'), fmcreate );
 
   {write memo1 header to file}
    for i:=0 to 79 do empthy_line[i]:=#32;{space}
@@ -404,11 +405,11 @@ begin
 end;
 
 
-procedure write_ini(solution:boolean);{write solution to ini file}
+procedure write_ini(filen:string; solution:boolean);{write solution to ini file}
 var
    f: text;
 begin
-  assignfile(f,ChangeFileExt(filename2,'.ini'));
+  assignfile(f,ChangeFileExt(filen,'.ini'));
   rewrite(f);
   if solution then
   begin
@@ -447,96 +448,94 @@ begin
 end;
 
 
-procedure savefits_update_header(filen,filen2:string);{save fits file with updated header}
+function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 var
-  reader_position,I,readsize  : integer;
-  TheFile4  : tfilestream;
-  fract     : double;
+  TheFile  : tfilestream;
+  reader_position,I,readsize,bufsize : integer;
+  TheFile_new : tfilestream;
+  fract       : double;
   line0       : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
   header    : array[0..2880] of ansichar;
+  endfound  : boolean;
+  filename_tmp: string;
 
      procedure close_fits_files;
      begin
         Reader.free;
-        TheFile3.free;
-        TheFile4.free;
+        TheFile.free;
+        TheFile_new.free;
      end;
 begin
-
+  result:=false;{assume failure}
+  filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
   try
-    TheFile3:=tfilestream.Create(filen, fmOpenRead or fmShareDenyWrite);
+    TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
+    TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
+    Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
+
+    {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+    I:=0;
+    reader_position:=0;
+    repeat
+      reader.read(header[i],80); {read file info, 80 bytes only}
+      inc(reader_position,80);
+      endfound:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));
+    until ((endfound) or (I>=sizeof(header)-16 ));
+    if endfound=false then
+    begin
+      close_fits_files;
+      beep;
+      memo2_message('Abort, error reading source FITS file!!');
+      exit;
+    end;
+
+    fract:=frac(reader_position/2880);
+
+    if fract<>0 then
+    begin
+      i:=round((1-fract)*2880);{left part of next 2880 bytes block}
+      reader.read(header[0],i); {skip empty part and go to image data}
+      inc(reader_position,i);
+    end;
+    {reader is now at begin of image data}
+
+    {write updated header}
+    for i:=0 to 79 do empthy_line[i]:=#32;{space}
+    i:=0;
+    repeat
+       if i<memo1.count then
+       begin
+         line0:=memo1[i];
+         while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+         strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+         thefile_new.writebuffer(aline,80);{write updated header from memo1.}
+       end
+       else
+       begin
+          thefile_new.writebuffer(empthy_line,80);{write empthy line}
+       end;
+       inc(i);
+    until ((i>=memo1.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+
+    bufsize:=sizeof(fitsbuffer);
+    repeat
+       readsize:=min(bufsize,TheFile.size-reader_position);{read flexible in buffersize and not in fixed steps of 2880 bytes. Note some file are not following the FITS standard of blocksize of 2880 bytes causing problem if fixed 2880 bytes are used}
+       reader.read(fitsbuffer,readsize);
+       inc(reader_position,readsize);
+       thefile_new.writebuffer(fitsbuffer,readsize); {write buffer}
+     until (reader_position>=TheFile.size);
+
+    Reader.free;
+    TheFile.free;
+    TheFile_new.free;
+
+    if deletefile(filen2) then
+      result:=renamefile(filename_tmp,filen2);
   except
     close_fits_files;
+    beep;
     exit;
-  end;
-  try
-    TheFile4:=tfilestream.Create(filen2, fmcreate );
-  except
-    close_fits_files;
-    exit;
-  end;
-
-
-  Reader := TReader.Create (theFile3,$60000);// 393216 byte buffer
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
-  I:=0;
-  reader_position:=0;
-  repeat
-    try reader.read(header[i],80);except;close_fits_files;end; {read file info, 80 bytes only}
-    inc(reader_position,80);
-  until (((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D')) or (I>=sizeof(header)-16 ));
-
-  fract:=frac(reader_position/2880);
-
-  if fract<>0 then
-  begin
-    i:=round((1-fract)*2880);{left part of next 2880 bytes block}
-    try reader.read(header[0],i);except;close_fits_files; exit;end; {skip empty part and go to image data}
-    inc(reader_position,i);
-  end;
-  {reader is now at begin of data}
-
-  {write updated header}
-  for i:=0 to 79 do empthy_line[i]:=#32;{space}
-  i:=0;
-  repeat
-     if i<memo1.count then
-     begin
-       line0:=memo1[i];
-       while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
-       strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-       thefile4.writebuffer(aline,80);{write updated header from memo1.}
-     end
-     else
-     begin
-        thefile4.writebuffer(empthy_line,80);{write empthy line}
-     end;
-     inc(i);
-  until ((i>=memo1.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
-
-  readsize:=2880;
-  repeat
-     try reader.read(fitsbuffer,readsize);except;end; {read file info IN STEPS OF 2880}
-     inc(reader_position,readsize);
-     thefile4.writebuffer(fitsbuffer,readsize); {write as bytes. Do not use write size last record is forgotten !!!}
-   until (reader_position>=thefile3.size);
-
-  Reader.free;
-  TheFile3.free;
-  TheFile4.free;
-end;
-
-
-procedure SaveFITSwithupdatedheader1;
-var
-  filename_bak: string;
-begin
-  try
-    filename_bak:=changeFileExt(filename2,'.bak');
-    if fileexists(filename_bak) then deletefile(filename_bak);
-    if renamefile(filename2,filename_bak) then savefits_update_header(filename_bak,filename2);
-  except
   end;
 end;
 
