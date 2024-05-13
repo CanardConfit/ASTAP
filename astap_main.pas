@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.05.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.05.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -410,6 +410,7 @@ type
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
     procedure dust_spot_removal1Click(Sender: TObject);
+    procedure MenuItem25Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
@@ -579,6 +580,7 @@ type
     calstat    : string;
     filter_name: string;
     passband_database: string;
+    airmass          : string;
   end;
 
 type
@@ -662,7 +664,7 @@ var
   {star_level,}star_bg,sd_bg, magn_limit  : double;
   object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
-  focus_temp,{cblack,}cwhite,sqmfloat,altitudefloat, pressure   :double; {from FITS}
+  focus_temp,{cblack,}cwhite,sqmfloat,altitudefloat, pressure,airmass   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
   telescop,instrum,origin,sqm_value   : string;
 
@@ -1038,6 +1040,7 @@ begin
     focus_temp:=999;{assume no data available}
     focus_pos:=0;{assume no data available}
     pressure:=1010; {mbar/hPa}
+    airmass:=0;
     annotated:=false; {any annotation in the file}
     site_lat_radians:=999;
 
@@ -1446,7 +1449,11 @@ begin
                 val(s,nr,error3);{1 to 20}
                 y_coeff[nr-1]:=validate_double;
               end;
-            end;//AMD
+            end //AMD
+            else
+            if ((header[i+1]='I')  and (header[i+2]='R') and (header[i+3]='M') and (header[i+4]='A') and (header[i+5]='S')) then
+                airmass:=validate_double {airmass}
+            else
 
             if (header[i+1]='_') then
             begin {pixel to sky coefficient}
@@ -2401,6 +2408,7 @@ begin
 
 
     if key='PRESSURE=' then pressure:=round(read_float) else
+    if key='AIRMASS =' then airmass:=round(read_float) else
     if key='AOCBAROM=' then pressure:=round(read_float) else
 
     if key='FOCUSTEM=' then focus_temp:=round(read_float) else
@@ -4805,7 +4813,7 @@ begin
 
   if radec=false then
   begin
-    calculate_az_alt_basic(ra0,dec0,{out} az,alt);{calculate azimuth, altitude and initialize wtime2actual/sidereal time}
+    if calculate_az_alt_basic(ra0,dec0,{out} az,alt)=false then exit;{calculate azimuth, altitude and initialize wtime2actual/sidereal time}
 
     {angle}
     az_ra(az-0.01*pi/180,alt,site_lat_radians,0,wtime2actual,{out} r1,d1);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
@@ -5749,6 +5757,7 @@ begin
 
     add_text   ('HISTORY   ','One raw colour extracted.');
 
+    remove_key('BAYERPAT=',false{all});
     update_text   ('FILTER  =',copy(#39+filtern+#39+'                   ',1,21)+'/ Filter name');
 
     mainwindow.Memo1.Lines.EndUpdate;
@@ -8788,6 +8797,11 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+procedure Tmainwindow.MenuItem25Click(Sender: TObject);
+begin
+  mainwindow.center_lost_windowsClick(Sender);
+end;
+
 
 
 function Jd_To_MPCDate(jd: double): string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
@@ -11509,6 +11523,7 @@ begin
 end;
 
 
+
 procedure Tmainwindow.UpDown1Click(Sender: TObject; Button: TUDBtnType);
 begin
   if ((last_extension) and (button=btNext)) then
@@ -12149,7 +12164,7 @@ begin
   else
   if coord_frame=3 then
   begin
-    calculate_az_alt_basic(ra,dec,{out} az,alt);{calculate azimuth, altitude including refraction}
+    if calculate_az_alt_basic(ra,dec,{out} az,alt)=false then exit;{calculate azimuth, altitude including refraction}
     result:=floattostrF(az*180/pi, FFfixed, 0, 1)+'°'+sep+floattostrF(alt*180/pi, FFfixed, 0, 1)+'°';
   end
   else
@@ -12696,6 +12711,30 @@ end;
 
 //end;
 
+procedure FixHiddenFormProblem(Screen: TScreen; theform: TForm ); //for users who change from two to one monitor
+var
+  s: string;
+  i,left,right,top,bottom : integer;
+begin
+  left:=0;
+  right:=0;
+  top:=0;
+  bottom:=0;
+
+  for i := 0 To screen.MonitorCount - 1 do
+  begin
+    left:=math.min(left,screen.Monitors[i].BoundsRect.left);
+    right:=math.max(right, screen.Monitors[i].BoundsRect.right);
+    top:=math.min(top,screen.Monitors[i].BoundsRect.top);
+    bottom:=math.max(bottom,screen.Monitors[i].BoundsRect.bottom);
+  end;
+
+  theform.Left:=max(theform.left,left);//prevent too left
+  theform.Left:=min(theform.left,right-theform.width);//prevent too right
+  theform.top:=max(theform.top,top);//prevent too high
+  theform.top:=min(theform.top,bottom-theform.height);//prevent too low
+end;
+
 
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
@@ -12763,7 +12802,7 @@ begin
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-tofits  binning[1,2,3,4]  {Make new fits file from PNG/JPG file input}'+#10+
-        '-sqm pedestal  {add measured sqm value to the solution}'+#10+
+        '-sqm pedestal  {add measured sqm, centalt, airmass values to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-stack  path {startup with live stack tab and path selected}'+#10+
         #10+
@@ -12920,6 +12959,11 @@ begin
               end
               else
               update_text('SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
+              if airmass=0 then
+              begin
+                airmass:=AirMass_calc(altitudefloat);
+                update_generic('AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
+              end;
             end;
 
             write_ini(filename_output,true);{write solution to ini file}
@@ -13062,6 +13106,10 @@ begin
 
   pairsplitter1.position:=image_north_arrow1.top+image_north_arrow1.height+8;//set correct for 4k screens with hiDPI settings. Works only in show. Not in create
                      //The thing is that the LCL scales the form on the Show method, because that any scaling produced before showing the form is not applied.
+
+  FixHiddenFormProblem( Screen,mainwindow);//when users change from two to one monitor
+  FixHiddenFormProblem( Screen,stackmenu1);
+
 end;
 
 
@@ -13184,6 +13232,12 @@ begin
               begin
                 update_text('SQM     =',char(39)+'Error! Specify first fixed pedestal value in the SQM menu (ctrl+Q).'+char(39));
                 memo2_message('Can not measure SQM. Specifiy first a fixed pedestal value in the SQM menu. De pedestal value is the median dark or bias value');
+              end;
+              if airmass=0 then
+              begin
+                airmass:=AirMass_calc(altitudefloat);
+                update_generic('AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
+                mess:=mess+', AIRMASS';
               end;
               memo2_message('Added keyword(s) LIM_MAGN'+mess);
             end;

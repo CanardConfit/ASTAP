@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 93
+  Left = 65
   Height = 707
-  Top = 228
+  Top = 248
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -46,6 +46,7 @@ object stackmenu1: Tstackmenu1
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnDropFiles = FormDropFiles
+  OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnResize = FormResize
   OnShow = FormShow
@@ -8272,7 +8273,8 @@ object stackmenu1: Tstackmenu1
       Caption = '-'
     end
     object menukeywordchange1: TMenuItem
-      Caption = 'Change column keyword'
+      Caption = 'Change optional column keyword'
+      Hint = 'This will change the keyword displayed in the last column '
       object keywordchangelast1: TMenuItem
         AutoCheck = True
         Caption = 'Change keyword last column'
@@ -8283,22 +8285,27 @@ object stackmenu1: Tstackmenu1
       object column_fov1: TMenuItem
         AutoCheck = True
         Caption = 'FOV'
-        Hint = 'This value is calculated if the images are batch solved (in viewer menu tools).'
+        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS'
         RadioItem = True
         OnClick = column_fov1Click
       end
       object column_sqm1: TMenuItem
         AutoCheck = True
         Caption = 'SQM'
-        Hint = 'This key is available if the images are batch solved (in viewer menu tools) with option add SQM.'
+        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS'
         RadioItem = True
         OnClick = column_sqm1Click
       end
       object column_lim_magn1: TMenuItem
         Caption = 'LIM_MAGN'
-        Hint = 'This keyword is available if the images are batch solved (in viewer menu tools) with option add limiting magnitude.'
+        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS'
         RadioItem = True
         OnClick = column_lim_magn1Click
+      end
+      object airmass1: TMenuItem
+        Caption = 'AIRMASS'
+        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS'
+        OnClick = airmass1Click
       end
     end
     object MenuItem4: TMenuItem
@@ -8357,18 +8364,23 @@ object stackmenu1: Tstackmenu1
     object MenuItem2: TMenuItem
       Caption = '-'
     end
-    object MenuItem14: TMenuItem
+    object refresh_solutions_selected1: TMenuItem
       Caption = 'Refresh astrometrical solutions of selected files'
       Hint = 'Refresh astrometrical solutions of selected files'
-      OnClick = MenuItem14Click
+      OnClick = refresh_solutions_selected1Click
     end
     object Separator5: TMenuItem
       Caption = '-'
+    end
+    object undo_rename_bak1: TMenuItem
+      Caption = 'HIDDEN, undo rename *.bak'
+      Visible = False
     end
     object renametobak1: TMenuItem
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10
+      ShortCut = 16430
       OnClick = renametobak1Click
     end
   end
@@ -8473,6 +8485,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10
+      ShortCut = 16430
       OnClick = renametobak1Click
     end
   end
@@ -8526,6 +8539,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10
+      ShortCut = 16430
       OnClick = renametobak1Click
     end
   end
@@ -8579,6 +8593,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10
+      ShortCut = 16430
       OnClick = renametobak1Click
     end
   end
@@ -8654,6 +8669,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10
+      ShortCut = 16430
       OnClick = renametobak1Click
     end
   end
@@ -8723,6 +8739,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10
+      ShortCut = 16430
       OnClick = renametobak1Click
     end
   end
@@ -8867,6 +8884,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10
+      ShortCut = 16430
       OnClick = renametobak1Click
     end
   end
@@ -8927,6 +8945,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10
+      ShortCut = 16430
       OnClick = renametobak1Click
     end
   end
