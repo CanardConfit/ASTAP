@@ -781,6 +781,7 @@ begin
             jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
             jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
             jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+            airmass_sum:=airmass_sum+airmass;
 
             if use_astrometry_internal then
               astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
@@ -1400,6 +1401,8 @@ begin
           jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
           jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
           jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+          airmass_sum:=airmass_sum+airmass;
+
 
           if use_astrometry_internal then
              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
@@ -1860,6 +1863,8 @@ begin
           jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
           jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
           jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+          airmass_sum:=airmass_sum+airmass;
+
 
           jd_fraction:=frac(jd_mid);//Take fraction because single has not enough resolution for JD
 

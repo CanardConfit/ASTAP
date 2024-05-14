@@ -115,6 +115,8 @@ type
     blink_stack_selected1: TMenuItem;
     blink_annotate_and_solve1: TButton;
     apply_unsharp_mask1: TButton;
+    airmass1: TMenuItem;
+    undo_rename_bak1: TMenuItem;
     unsharp_edit_amount1: TEdit;
     unsharp_edit_radius1: TEdit;
     unsharp_edit_threshold1: TEdit;
@@ -357,7 +359,7 @@ type
     mark_outliers_upto1: TComboBox;
     max_stars1: TComboBox;
     memo2: TMemo;
-    MenuItem14: TMenuItem;
+    refresh_solutions_selected1: TMenuItem;
     merge_overlap1: TCheckBox;
     min_star_size1: TComboBox;
     min_star_size_stacking1: TComboBox;
@@ -692,6 +694,7 @@ type
     write_log1: TCheckBox;
     write_video1: TButton;
     procedure add_noise1Click(Sender: TObject);
+    procedure airmass1Click(Sender: TObject);
     procedure alignment1Show(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
@@ -703,10 +706,11 @@ type
     procedure contour_gaussian1Change(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure unsharp_edit_amount1Change(Sender: TObject);
     procedure unsharp_edit_radius1Change(Sender: TObject);
     procedure unsharp_edit_threshold1Change(Sender: TObject);
-    procedure MenuItem14Click(Sender: TObject);
+    procedure refresh_solutions_selected1Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
     procedure pixelsize1Change(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
@@ -950,8 +954,18 @@ type
     starlist: star_list;
   end;
 
+  bakfile = record
+    tab : integer;  //from which tab
+    thetime: Tdatetime;
+    index  : integer;//original listview index position
+    name   : string;
+  end;
+
+
 var
   starlistpack: array of tstarlistpackage;{for photometry tab}
+  bakfiles : array of bakfile;//for rename to bak
+
 
 var
   calc_scale: double;
@@ -965,7 +979,7 @@ var
   referenceX, referenceY: double;{reference position used stacking}
   jd_mid: double;{julian day of mid head.exposure}
   jd_mid_reference :double; { julian day of mid head.exposure for reference image}
-  jd_sum: double;{sum of julian days}
+  jd_sum,airmass_sum: double;{sum of julian days}
   jd_end: double;{end observation in julian days}
   jd_start_first: double;{begin of observation in julian days}
   jd_end_last: double;{end of observations in julian days}
@@ -999,6 +1013,7 @@ var  {################# initialised variables #########################}
   groupsizeStr : string='';
   images_selected: integer=0;
   dark_norm_value: double=0;
+
 
 
 const
@@ -1108,6 +1123,8 @@ const
   B_solution = 8;
   B_annotated = 9;
   B_nr = 10;{number of fields}
+
+  R_nr=7; //results
 
   P_exposure = 0;       {photometry tab}
   P_temperature = 1;
@@ -2117,6 +2134,7 @@ begin
     if classify_filter1.checked then  process_as_osc:=0;
 
     jd_sum:= 0;{for sigma clip advanced average}
+    airmass_sum:=0;
     planetary:= planetary_image1.Checked;
 
     if analyse_level=2 then
@@ -2767,12 +2785,15 @@ begin
   {$ifdef darwin} {MacOS}
   count_selected;
   {$endif}
+
+  bakfiles:=nil; //unrename function
 end;
 
 
 procedure Tstackmenu1.clear_dark_list1Click(Sender: TObject);
 begin
   listview2.Clear;
+  bakfiles:=nil; //unrename function
 end;
 
 
@@ -2825,6 +2846,7 @@ begin
     esc_pressed := True;
     memo2_message('ESC pressed. Execution stopped.');
   end;
+
 end;
 
 
@@ -3561,13 +3583,17 @@ end;
 procedure Tstackmenu1.clear_selection3Click(Sender: TObject);
 begin
   listview4.Clear;
+  bakfiles:=nil; //unrename function
 end;
 
 
-procedure listview_rename_bak(tl: tlistview);
+procedure listview_rename_bak(tl: tlistview; tab : integer);
 var
-  index: integer;
+  index,new,position, count : integer;
+  thetime             : Tdatetime;
 begin
+  count:=0;
+  thetime:=now; //store moment of delete
   index := tl.Items.Count - 1;
   while index >= 0 do
   begin
@@ -3577,11 +3603,26 @@ begin
       deletefile(changeFileExt(filename2, '.bak'));
       {delete *.bak left over from astrometric solution}
       if RenameFile(filename2, ChangeFileExt(filename2, '.bak')) then
+      begin
         tl.Items.Delete(Index);
+        //keep record of renamed files
+        position:=length(bakfiles);
+        setlength(bakfiles,position+1);//not efficient but easy to program
+        bakfiles[position].tab:=tab;
+        bakfiles[position].thetime:=thetime;
+        bakfiles[position].index:=index;
+        bakfiles[position].name:=filename2;
+        inc(count);
+      end;
     end;
     Dec(index); {go to next file}
   end;
+  if count>0 then
+  begin
+    memo2_message(inttostr(count)+ ' files renamed to *.bak. Hit ctrl+z to restore.');
+  end;
 end;
+
 
 function now_time_str: string; //reporte current time in 6 digit format as 235959
 var
@@ -3701,15 +3742,15 @@ end;
 
 procedure Tstackmenu1.renametobak1Click(Sender: TObject);
 begin
-  if Sender = renametobak1 then listview_rename_bak(listview1);{from popupmenu}
-  if Sender = renametobak2 then listview_rename_bak(listview2);{from popupmenu}
-  if Sender = renametobak3 then listview_rename_bak(listview3);{from popupmenu}
-  if Sender = renametobak4 then listview_rename_bak(listview4);{from popupmenu}
-  if Sender = renametobak5 then listview_rename_bak(listview5);{from popupmenu}
-  if Sender = renametobak6 then listview_rename_bak(listview6);{from popupmenu blink}
-  if Sender = renametobak7 then listview_rename_bak(listview7);{from popupmenu photometry}
-  if Sender = renametobak8 then listview_rename_bak(listview8);{from popupmenu inspector}
-  if Sender = renametobak9 then listview_rename_bak(listview9);
+  if Sender = renametobak1 then listview_rename_bak(listview1,0);{from popupmenu}
+  if Sender = renametobak2 then listview_rename_bak(listview2,1);{from popupmenu}
+  if Sender = renametobak3 then listview_rename_bak(listview3,2);{from popupmenu}
+  if Sender = renametobak4 then listview_rename_bak(listview4,3);{from popupmenu}
+  if Sender = renametobak5 then listview_rename_bak(listview5,4);{from popupmenu}
+  if Sender = renametobak6 then listview_rename_bak(listview6,5);{from popupmenu blink}
+  if Sender = renametobak7 then listview_rename_bak(listview7,6);{from popupmenu photometry}
+  if Sender = renametobak8 then listview_rename_bak(listview8,7);{from popupmenu inspector}
+  if Sender = renametobak9 then listview_rename_bak(listview9,8);
   {from popupmenu mount analyse}
 end;
 
@@ -3717,6 +3758,7 @@ end;
 procedure Tstackmenu1.clear_selection2Click(Sender: TObject);
 begin
   listview3.Clear;
+  bakfiles:=nil; //unrename function
 end;
 
 
@@ -4324,7 +4366,8 @@ begin
               begin
                  centalt := floattostrf(alt, ffGeneral, 3, 1); {altitude}
                  lv.Items.item[c].subitems.Strings[P_centalt] := centalt; {altitude}
-                 lv.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+                 if airmass=0 then airmass:=AirMass_calc(alt);
+                   lv.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass, ffFixed, 0, 3) {airmass}
               end;
 
               {magn is column 9 will be added separately}
@@ -5271,10 +5314,64 @@ begin
 end;
 
 
-procedure Tstackmenu1.listview1KeyDown(Sender: TObject; var Key: word;
-  Shift: TShiftState);  // for all listviexX
+procedure listview_insert(var lv: tlistview; index:integer;filen : string; nrfields : integer);//insert a row
+var
+  ListItem     : TListItem;
+  j            : integer;
 begin
-  if key = vk_delete then listview_removeselect(TListView(Sender));
+  lv.Items.BeginUpdate;
+  with lv do
+    begin
+      ListItem := Items.insert(index);
+      ListItem.Caption := filen;
+      ListItem.Checked := True;
+      for j := 1 to nrfields do
+        ListItem.SubItems.Add(''); // add the other columns
+    end;
+  lv.items.EndUpdate;
+end;
+
+
+procedure undo_rename_to_bak(tabind : integer);
+var
+   i,posit : integer;
+   thetime: Tdatetime;
+begin
+  posit:=length(bakfiles);
+  if posit=0 then exit; //nothing to restore
+  thetime:=0;
+  with stackmenu1 do
+  for i:=posit-1 downto 0 do //restore one file of the current tab
+  begin
+    if tabind=bakfiles[i].tab then //found the latest renamed file of this tab
+    begin
+      if thetime=0 then thetime:=bakfiles[i].thetime;//store the time of deletion
+      if thetime=bakfiles[i].thetime then //unrename all files with the same time
+        if RenameFile(ChangeFileExt(bakfiles[i].name, '.bak'),bakfiles[i].name) then
+        begin
+          case bakfiles[i].tab of
+            0 : listview_insert(listview1,bakfiles[i].index,bakfiles[i].name,l_nr);//lights
+            1 : listview_insert(listview2,bakfiles[i].index,bakfiles[i].name,d_nr);//darks
+            2 : listview_insert(listview3,bakfiles[i].index,bakfiles[i].name,f_nr);//flats
+            3 : listview_insert(listview4,bakfiles[i].index,bakfiles[i].name,b_nr);//flat darks
+            4 : listview_insert(listview5,bakfiles[i].index,bakfiles[i].name,R_nr);//results
+            7 : listview_insert(listview6,bakfiles[i].index,bakfiles[i].name,B_nr);//blink
+            8 : listview_insert(listview7,bakfiles[i].index,bakfiles[i].name,P_nr);//photometry
+            9 : listview_insert(listview8,bakfiles[i].index,bakfiles[i].name,I_nr);//inspector
+           10 : listview_insert(listview9,bakfiles[i].index,bakfiles[i].name,M_nr);//mount
+          end; //case
+          bakfiles[i].tab:=-1; //mark as processedand ignore till is bakfiles is cleared/nilled;
+          memo2_message('Restored: '+bakfiles[i].name);
+        end;
+    end;
+  end;
+end;
+
+
+procedure Tstackmenu1.listview1KeyDown(Sender: TObject; var Key: word;
+  Shift: TShiftState);  // for all listviexX. does not intefere with other typing
+begin
+  if ((shift=[]) and (key = vk_delete) ) then listview_removeselect(TListView(Sender));
   if key = vk_left then scroll_up_down(tlistview(sender), false);
   if key = vk_right then scroll_up_down(tlistview(sender), true );
 end;
@@ -5288,8 +5385,7 @@ end;
 
 procedure Tstackmenu1.solve1Click(Sender: TObject);
 begin
-  if ((head.Width <> 100) or (head.Height <> 100)) then
-    {is image loaded?,  assigned(img_loaded) doesn't work for jpegs}
+  if ((head.Width <> 100) or (head.Height <> 100)) then {is image loaded?,  assigned(img_loaded) doesn't work for jpegs}
     mainwindow.astrometric_solve_image1Click(nil)
   else
     memo2_message('Abort solve, no image in the viewer.');
@@ -5877,6 +5973,8 @@ procedure Tstackmenu1.clear_blink_list1Click(Sender: TObject);
 begin
   esc_pressed := True; {stop any running action}
   listview6.Clear;
+
+  bakfiles:=nil; //unrename function
 end;
 
 
@@ -6016,6 +6114,8 @@ procedure Tstackmenu1.clear_mount_list1Click(Sender: TObject);
 begin
   esc_pressed := True; {stop any running action}
   listview9.Clear;
+
+  bakfiles:=nil; //unrename function
 end;
 
 
@@ -6024,6 +6124,8 @@ procedure Tstackmenu1.clear_inspector_list1Click(Sender: TObject);
 begin
   esc_pressed := True; {stop any running action}
   listview8.Clear;
+
+  bakfiles:=nil; //unrename function
 end;
 
 procedure Tstackmenu1.copy_to_blink1Click(Sender: TObject);
@@ -7300,6 +7402,9 @@ begin
   clear_added_AAVSO_columns;
 
   listview7.Items.EndUpdate;
+
+  bakfiles:=nil; //unrename function
+
 end;
 
 procedure Tstackmenu1.export_aligned_files1Click(Sender: TObject);
@@ -7585,20 +7690,12 @@ begin
     begin
       case pagecontrol1.pageindex of
         1: listview_add(listview2, FileNames[i], True, D_nr);{darks}
-        2: listview_add(
-            listview3, FileNames[i], True, F_nr);{flats}
-        3: listview_add(
-            listview4, FileNames[i], True, FD_nr);{flat darks}
-        7: listview_add(
-            listview6, FileNames[i], True, B_nr);{blink}
-        8: listview_add(
-            listview7, FileNames[i], True, P_nr);
-        {photometry}
-        9: listview_add(
-            listview8, FileNames[i], True, I_nr);
-        {inspector}
-        10: listview_add(
-            listview9, FileNames[i], True, M_nr);{mount}
+        2: listview_add(listview3, FileNames[i], True, F_nr);{flats}
+        3: listview_add(listview4, FileNames[i], True, FD_nr);{flat darks}
+        7: listview_add(listview6, FileNames[i], True, B_nr);{blink}
+        8: listview_add(listview7, FileNames[i], True, P_nr);{photometry}
+        9: listview_add(listview8, FileNames[i], True, I_nr); {inspector}
+        10: listview_add(listview9, FileNames[i], True, M_nr);{mount}
         else
         begin {lights}
           listview_add(listview1, FileNames[i], True, L_nr);
@@ -7693,9 +7790,7 @@ begin
   end;
 
   esc_pressed := False;
-  if (idYes = Application.MessageBox(
-    'Binning images 2x2 for better detection. Original files will be preserved. Continue?',
-    'Bin 2x2', MB_ICONQUESTION + MB_YESNO)) = False then exit;
+  if (idYes = Application.MessageBox( 'Binning images 2x2 for better detection. Original files will be preserved. Continue?', 'Bin 2x2', MB_ICONQUESTION + MB_YESNO)) = False then exit;
 
   lv.Items.beginUpdate;
   for c := 0 to lv.items.Count - 1 do
@@ -9767,6 +9862,19 @@ begin
   plot_fits(mainwindow.image1,false,true);
 end;
 
+procedure Tstackmenu1.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  tabind: integer;
+begin
+  if  ((ssCtrl in shift) and (key = vk_z)) then
+  begin
+    tabind:=pagecontrol1.tabindex;
+    if tabind in [0,1,2,3,4,7,8,9,10] then //only in the listview tabs. Do not block ctrl+z in the other tabs
+        undo_rename_to_bak(tabind);//ctrl+z
+  end;
+end;
+
 procedure Tstackmenu1.unsharp_edit_amount1Change(Sender: TObject);
 begin
   unsharp_amount1.position:=round(strtofloat2(unsharp_edit_amount1.text)*10);
@@ -9847,7 +9955,7 @@ begin
 
 end;
 
-procedure Tstackmenu1.MenuItem14Click(Sender: TObject);
+procedure Tstackmenu1.refresh_solutions_selected1Click(Sender: TObject);
 begin
   solve_selected_files(listview1,true {refresh solutions});
   stackmenu1.Analyse1Click(Sender);{refresh positions}
@@ -10184,6 +10292,7 @@ end;
 procedure Tstackmenu1.clear_result_list1Click(Sender: TObject);
 begin
   ListView5.Clear;
+  bakfiles:=nil; //unrename function
 end;
 
 
@@ -10932,6 +11041,12 @@ begin
     Screen.Cursor := crDefault;
   end;
   use_histogram(img_loaded, True {update}); {update for the noise, plot histogram, set sliders}
+end;
+
+procedure Tstackmenu1.airmass1Click(Sender: TObject);
+begin
+  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'AIRMASS';
+  sqm_key:='AIRMASS ';
 end;
 
 procedure Tstackmenu1.alignment1Show(Sender: TObject);
@@ -12747,10 +12862,16 @@ begin
         if (((head.naxis3 = 1) or (process_as_osc>0)) and (counterL > 0)) then {works only for mono}
         begin
           if use_ephemeris_alignment1.Checked=false then
-            jd_mid:=jd_sum / counterL  //average of jd_mid
+          begin
+            jd_mid:=jd_sum / counterL;  //average of jd_mid
+            airmass:=airmass_sum/ counterL;
+            update_generic('AIRMASS ',floattostr4(airmass),'Average relative optical path.                ');{update header using text only}
+          end
           else
             jd_mid:=jd_mid_reference;//stacked aligned to the minor planet of the reference image.
-          update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_mid);{give midpoint of exposures}
+
+          update_generic('JD-AVG  ',floattostr6(jd_mid),'Julian Day of the observation mid-point.       ');{update header using text only}
+
           head.date_avg := JdToDate(jd_mid);  {update date_avg for asteroid annotation}
           update_text('DATE-AVG=', #39 + head.date_avg + #39);{give midpoint of exposures}
           head.date_obs := JdToDate((jd_mid) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
@@ -13140,8 +13261,8 @@ end;
 procedure Tstackmenu1.write_video1click(Sender: TObject);
 var
   filen: string;
-  crop, res: boolean;
-  nrframes, c, cpos: integer;
+  crop, res : boolean;
+  nrframes, c : integer;
 begin
   crop := False;
   case QuestionDlg('Crop', 'Crop of full size video?', mtCustom, [20, 'Crop', 21, 'Cancel', 22, 'Full size', 'IsDefault'], '') of
@@ -13194,10 +13315,7 @@ begin
       for c := 0 to listview6.items.Count - 1 do {count frames}
       begin
         if listview6.Items.item[c].Checked then
-        begin
           Inc(nrframes); {for AVI, count frames}
-          cpos:=c;
-        end;
       end;
     end;
 
