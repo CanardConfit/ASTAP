@@ -1652,6 +1652,7 @@ begin
   warning_str:='';{for header}
   startTick := GetTickCount64;
   quad_tolerance:=strtofloat2(quad_tolerance1);
+  quad_tolerance:=min(quad_tolerance,0.008);//prevent too high tolerances set by command line
 
   width2:=length(img[0,0]); {width}
   height2:=length(img[0]);  {height}

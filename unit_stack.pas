@@ -116,7 +116,12 @@ type
     blink_annotate_and_solve1: TButton;
     apply_unsharp_mask1: TButton;
     airmass1: TMenuItem;
-    undo_rename_bak1: TMenuItem;
+    view_next1: TMenuItem;
+    view_previous1: TMenuItem;
+    view_next6: TMenuItem;
+    view_previous6: TMenuItem;
+    view_next7: TMenuItem;
+    view_previous7: TMenuItem;
     unsharp_edit_amount1: TEdit;
     unsharp_edit_radius1: TEdit;
     unsharp_edit_threshold1: TEdit;
@@ -707,6 +712,7 @@ type
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure view_next1Click(Sender: TObject);
     procedure unsharp_edit_amount1Change(Sender: TObject);
     procedure unsharp_edit_radius1Change(Sender: TObject);
     procedure unsharp_edit_threshold1Change(Sender: TObject);
@@ -926,6 +932,8 @@ type
     procedure use_star_alignment1Change(Sender: TObject);
     procedure apply_vertical_gradient1Click(Sender: TObject);
     procedure Viewimage1Click(Sender: TObject);
+    procedure view_previous7Click(Sender: TObject);
+    procedure view_previous6Click(Sender: TObject);
     procedure write_video1Click(Sender: TObject);
   private
     { Private declarations }
@@ -2800,22 +2808,52 @@ end;
 procedure update_stackmenu_mac;//Update menu shortcuts for Mac
 begin
   with stackmenu1 do
-  begin
-    with selectall1 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard1 do shortcut := (shortcut and $BFFF) or $1000; //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall2 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall3 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall4 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall5 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall6 do shortcut := (shortcut and $BFFF) or $1000;    //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard6 do shortcut := (shortcut and $BFFF) or $1000;  //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall7 do shortcut := (shortcut and $BFFF) or $1000;          //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard7 do shortcut := (shortcut and $BFFF) or $1000;  //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall8 do shortcut := (shortcut and $BFFF) or $1000;          //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard8 do shortcut := (shortcut and $BFFF) or $1000;  //replace Ctrl equals $4000 by Meta equals $1000
-    with selectall9 do shortcut := (shortcut and $BFFF) or $1000;          //replace Ctrl equals $4000 by Meta equals $1000
-    with list_to_clipboard9 do shortcut := (shortcut and $BFFF) or $1000;  //replace Ctrl equals $4000 by Meta equals $1000
-  end;
+   begin
+     with view_previous1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with view_previous6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with view_previous7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with view_next1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with view_next6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with view_next7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
+     with list_to_clipboard1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with list_to_clipboard6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with list_to_clipboard7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with list_to_clipboard8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with list_to_clipboard9 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
+     with selectall1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall3 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall4 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall5 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall9 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
+     with renametobak1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with renametobak2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with renametobak3 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with renametobak4 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with renametobak5 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with renametobak6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with renametobak7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with renametobak8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with renametobak9 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
+     with selectall1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall3 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall4 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall5 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with selectall9 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
+     with copy_files_to_clipboard1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+   end;
 end;
 
 
@@ -3589,16 +3627,18 @@ end;
 
 procedure listview_rename_bak(tl: tlistview; tab : integer);
 var
-  index,new,position, count : integer;
+  index,new,position, count,oldposition : integer;
   thetime             : Tdatetime;
 begin
   count:=0;
+  oldposition:=-1;
   thetime:=now; //store moment of delete
   index := tl.Items.Count - 1;
   while index >= 0 do
   begin
     if tl.Items[index].Selected then
     begin
+      if oldposition=-1 then oldposition:=index;
       filename2 := tl.items[index].Caption;
       deletefile(changeFileExt(filename2, '.bak'));
       {delete *.bak left over from astrometric solution}
@@ -3617,9 +3657,17 @@ begin
     end;
     Dec(index); {go to next file}
   end;
+
+  oldposition:=max(0,oldposition-count);
+  tl.Items[oldposition].Selected:=true;//go to old position
+
   if count>0 then
   begin
+   {$IFDEF Darwin}
+    memo2_message(inttostr(count)+ ' files renamed to *.bak. Hit meta+z to restore.');
+   {$else}
     memo2_message(inttostr(count)+ ' files renamed to *.bak. Hit ctrl+z to restore.');
+   {$ENDIF}
   end;
 end;
 
@@ -6293,7 +6341,14 @@ end;
 
 procedure Tstackmenu1.focallength1Exit(Sender: TObject);
 begin
-  if Sender = focallength1 then {manual entered}
+  {The focal lengthcalculation is simple if your using the SI units meter for length and radian for the angles:
+   focal_length:=sensor_diameter / field_of_view
+   For larger field_of_view (>10 degrees) you can not simplify anymore that angle≈tan(angle) and you should use the rigorous formula:
+   Focal length := sensor_diameter / (2×tan(field_of_view/2))
+   The formulas you can visualize on a piece of paper assuming the telescope is a just tiny hole at focal length distance.
+   So assume the sensor dimensions are 0.01×0.01 meter,  the field of view: 0.01×0.01 radians then the focal length is 1 meter. A radian is 180/pi≈57.3 degrees.
+  }
+   if Sender = focallength1 then {manual entered}
     focallen := strtofloat2(stackmenu1.focallength1.Text);
   {manual entered focal length, update focallen}
 
@@ -9867,12 +9922,34 @@ procedure Tstackmenu1.FormKeyDown(Sender: TObject; var Key: Word;
 var
   tabind: integer;
 begin
-  if  ((ssCtrl in shift) and (key = vk_z)) then
+  if
+  {$IFDEF Darwin}
+  ((ssMeta in shift) and (key = vk_z)) //meta+z
+  {$else}
+  ((ssCtrl in shift) and (key = vk_z)) //ctrl+z
+  {$ENDIF}
+  then
   begin
     tabind:=pagecontrol1.tabindex;
     if tabind in [0,1,2,3,4,7,8,9,10] then //only in the listview tabs. Do not block ctrl+z in the other tabs
         undo_rename_to_bak(tabind);//ctrl+z
   end;
+end;
+
+
+procedure Tstackmenu1.view_next1Click(Sender: TObject);
+var
+  c: integer;
+begin
+   c := listview_find_selection(listview1); {find the row selected}
+   listview1.Items[c].Selected:=false;
+   if sender=view_next1 then inc(c) else dec(c);
+
+   if c<0 then c:=listview1.items.count-1;
+   if c>=listview1.items.count then c:=0;
+
+   listview1.Items[c].Selected:=true;
+   listview_view(listview1);//plot
 end;
 
 procedure Tstackmenu1.unsharp_edit_amount1Change(Sender: TObject);
@@ -13255,6 +13332,36 @@ begin
   if Sender = Viewimage7 then listview_view(listview7);//photometry
   if Sender = Viewimage8 then listview_view(listview8);//inspector
   if Sender = Viewimage9 then listview_view(listview9);//mount
+end;
+
+procedure Tstackmenu1.view_previous7Click(Sender: TObject);//blink tab
+var
+ c: integer;
+begin
+  c := listview_find_selection(listview7); {find the row selected}
+  listview7.Items[c].Selected:=false;
+  if sender=view_next7 then inc(c) else dec(c);
+
+  if c<0 then c:=listview7.items.count-1;
+  if c>=listview7.items.count then c:=0;
+
+  listview7.Items[c].Selected:=true;
+  listview_view(listview7);//plot
+end;
+
+procedure Tstackmenu1.view_previous6Click(Sender: TObject);// photometry tab
+var
+  c: integer;
+begin
+   c := listview_find_selection(listview6); {find the row selected}
+   listview6.Items[c].Selected:=false;
+   if sender=view_next6 then inc(c) else dec(c);
+
+   if c<0 then c:=listview6.items.count-1;
+   if c>=listview6.items.count then c:=0;
+
+   listview6.Items[c].Selected:=true;
+   listview_view(listview6);//plot
 end;
 
 

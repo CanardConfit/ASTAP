@@ -24,6 +24,7 @@ type
     Image_photometry1: TImage;
     Label10: TLabel;
     Label11: TLabel;
+    measure_all_mode1: TLabel;
     Label9: TLabel;
     name_variable1: TComboBox;
     name_variable2: TEdit;
@@ -46,6 +47,7 @@ type
     Label1: TLabel;
     Filter1: TComboBox;
     procedure delta_bv2Change(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure hjd1Change(Sender: TObject);
     procedure Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState;
@@ -121,6 +123,15 @@ begin
   end;
 end;
 
+function clean_abreviation(s: string): string;
+var
+  space : integer;
+begin
+  space:= pos(' ',s);
+  if space>0 then
+     s:=copy(s,1,space-1);
+  result:=stringreplace(s,'_',' ',[rfReplaceAll]);
+end;
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
@@ -213,7 +224,7 @@ begin
          err:='na';
        end
        else
-       str(max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of Check  star}
+       str(math.max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of Check  star}
 
        airmass_str:=listview7.Items.item[c].subitems.Strings[P_airmass];
        if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
@@ -230,7 +241,7 @@ begin
          else
            filter_used:=copy(filter1.text,1,2);//manual input
 
-         aavso_report:= aavso_report+ stringreplace(name_var,'_',' ',[rfReplaceAll])+delim+
+         aavso_report:= aavso_report+ clean_abreviation(name_var)+delim+
                         StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
                         transform_magn(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}])+delim+
                         err+
@@ -239,7 +250,7 @@ begin
                        'STD'+delim+
                        'ENSEMBLE'+delim+
                        'na'+delim+
-                       abbreviation_check+delim+
+                       clean_abreviation(abbreviation_check)+delim+
                        stringreplace(listview7.Items.item[c].subitems.Strings[column_check{P_magn2}],',','.',[])+delim+
                        airmass_str+delim+
                        'na'+delim+ {group}
@@ -300,6 +311,7 @@ begin
   plot_graph;
 end;
 
+
 procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
 var
   i,start: integer;
@@ -317,7 +329,22 @@ begin
     begin
       abrv:=stackmenu1.listview7.Column[i].Caption;
       if pos('000',abrv)>0 then //check star
-        name_check1.items.add(abrv);
+      begin
+        with tcombobox(sender) do
+        begin
+          {$ifdef mswindows}
+          {begin adjust width automatically}
+          if (Canvas.TextWidth(abrv)> ItemWidth) then
+          ItemWidth:=20+ Canvas.TextWidth((abrv));{adjust dropdown with if required}
+          Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
+          {end adjust width automatically}
+          {$else} {unix}
+          ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
+          {$endif}
+
+          items.add(abrv);
+        end;
+      end;
     end;
 end;
 
@@ -330,10 +357,11 @@ end;
 
 procedure Tform_aavso1.name_variable1DropDown(Sender: TObject);
 var
-  i: integer;
+  i,ww: integer;
   abrv : string;
 begin
   name_variable1.items.clear;
+  ww:=0;
 
   name_variable1.items.add(mainwindow.Shape_alignment_marker1.HINT);
   name_variable1.items.add(object_name);//from header
@@ -344,7 +372,22 @@ begin
     begin
       abrv:=stackmenu1.listview7.Column[i].Caption;
       if pos('000',abrv)=0 then //not a check star
-         name_variable1.items.add(abrv);
+      begin
+        with tcombobox(sender) do
+        begin
+          {$ifdef mswindows}
+          {begin adjust width automatically}
+          if (Canvas.TextWidth(abrv)> ItemWidth) then
+          ItemWidth:=20+ Canvas.TextWidth((abrv));{adjust dropdown with if required}
+          Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
+          {end adjust width automatically}
+          {$else} {unix}
+          ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
+          {$endif}
+
+          items.add(abrv);
+        end;
+      end;
     end;
 end;
 
@@ -392,12 +435,17 @@ begin
   plot_graph;
 end;
 
+procedure Tform_aavso1.FormCreate(Sender: TObject);
+begin
+  measure_all_mode1.visible:=p_nr>p_nr_norm;
+end;
+
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,nrmarkX, nrmarkY,wtext,date_column : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,wtext,date_column : integer;
   scale,range         : double;
-  text1,text2,date_format  : string;
+  text1,text2,text3, date_format  : string;
   bmp: TBitmap;
   dum:string;
   data : array of array of double;
@@ -557,10 +605,13 @@ begin
     textp3:=textp2+40+bmp.canvas.textwidth(text2);
     bmp.canvas.textout(textp3,len*3,'3');
 
+
+    textp4:=textp3+60;
+
     if object_name<>'' then
-      bmp.canvas.textout(w div 2,len*3,object_name)
+      bmp.canvas.textout(textp4,len*3,object_name)
     else
-      bmp.canvas.textout(w div 2,len*3,ExtractFilePath(filename2));
+      bmp.canvas.textout(textp4,len*3,ExtractFilePath(filename2));
 
     nrmarkX:=trunc(w*5/1000);
     for c:=0 to nrmarkX do {markers x line}
@@ -635,18 +686,8 @@ var
   dum : string;
 begin
   obscode1.text:=obscode;
-//  if length(mainwindow.Shape_alignment_marker1.HINT)>0 then
-    name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT;
-//  else
-//    if object_name<>'' then name_variable1.text:=object_name
-//  else
-//  name_variable1.text:=name_var;
-
-
-//  if length(mainwindow.Shape_alignment_marker2.HINT)>0 then
-    name_check1.text:=mainwindow.Shape_alignment_marker2.HINT ;
-//  else
-//    name_check1.text:=abbreviation_check;
+  name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT;
+  name_check1.text:=mainwindow.Shape_alignment_marker2.HINT ;
 
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
