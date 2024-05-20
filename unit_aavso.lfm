@@ -1,13 +1,14 @@
 object form_aavso1: Tform_aavso1
   Left = 177
-  Height = 452
+  Height = 479
   Hint = 'Enter your geographic location manually for airmass calculation.'
   Top = 113
   Width = 1385
   Caption = 'AAVSO report'
-  ClientHeight = 452
+  ClientHeight = 479
   ClientWidth = 1385
   OnClose = FormClose
+  OnCreate = FormCreate
   OnResize = FormResize
   OnShow = FormShow
   LCLVersion = '3.2.0.0'
@@ -32,7 +33,7 @@ object form_aavso1: Tform_aavso1
   object Label3: TLabel
     Left = 243
     Height = 15
-    Top = 208
+    Top = 232
     Width = 88
     Caption = 'Name check star'
     ParentColor = False
@@ -41,7 +42,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 25
     Hint = 'Copies the report to the clipboard. Paste it into a text editor, save it and upload it to the AAVSO WebObs.'
-    Top = 416
+    Top = 440
     Width = 168
     Caption = 'Report to clipboard'
     TabOrder = 1
@@ -51,7 +52,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'The filter used for the observation.'
-    Top = 256
+    Top = 280
     Width = 208
     ItemHeight = 15
     ItemIndex = 0
@@ -70,7 +71,7 @@ object form_aavso1: Tform_aavso1
   object Label6: TLabel
     Left = 240
     Height = 15
-    Top = 256
+    Top = 280
     Width = 54
     Caption = 'Filter used'
     ParentColor = False
@@ -78,7 +79,7 @@ object form_aavso1: Tform_aavso1
   object Label8: TLabel
     Left = 243
     Height = 15
-    Top = 56
+    Top = 72
     Width = 76
     Caption = 'Name variable'
     ParentColor = False
@@ -86,7 +87,7 @@ object form_aavso1: Tform_aavso1
   object Label2: TLabel
     Left = 16
     Height = 15
-    Top = 376
+    Top = 400
     Width = 365
     Caption = 'For 1 to 4 images the MERR will be calculated by 2/SNR else by StDev.'
     ParentColor = False
@@ -95,7 +96,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'The delimiter used to separate fields in the report. Any will do. '
-    Top = 304
+    Top = 328
     Width = 88
     ItemHeight = 15
     ItemIndex = 0
@@ -114,7 +115,7 @@ object form_aavso1: Tform_aavso1
   object Label4: TLabel
     Left = 243
     Height = 15
-    Top = 306
+    Top = 330
     Width = 48
     Caption = 'Delimiter'
     ParentColor = False
@@ -123,7 +124,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'Fixed. Comparison stars. Will use all available Gaia stars. Select V17.  '
-    Top = 160
+    Top = 184
     Width = 208
     Enabled = False
     ParentShowHint = False
@@ -135,7 +136,7 @@ object form_aavso1: Tform_aavso1
   object Label5: TLabel
     Left = 243
     Height = 15
-    Top = 160
+    Top = 184
     Width = 92
     Caption = 'Comparison stars'
     ParentColor = False
@@ -144,7 +145,7 @@ object form_aavso1: Tform_aavso1
     Left = 218
     Height = 25
     Hint = 'Writes report to file in the same directory as the input files.'
-    Top = 416
+    Top = 440
     Width = 168
     Caption = 'Report to file'
     TabOrder = 5
@@ -154,8 +155,9 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = ' Check star  AUID  (much preferred) or designation. Alternatively you could select the IAU designation using the position.'
-    Top = 208
+    Top = 232
     Width = 208
+    AutoSelect = False
     DropDownCount = 30
     ItemHeight = 15
     ParentFont = False
@@ -169,7 +171,7 @@ object form_aavso1: Tform_aavso1
   object Image_photometry1: TImage
     Cursor = crCross
     Left = 400
-    Height = 452
+    Height = 479
     Top = 0
     Width = 980
     Align = alClient
@@ -183,7 +185,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 19
     Hint = 'Extras report lines will added conform BAA. Info is taken from FITS header.'
-    Top = 344
+    Top = 368
     Width = 68
     Caption = 'BAA style'
     ParentShowHint = False
@@ -208,7 +210,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'Colour difference between variable and check star.  This will be used for differential magnitude correction for variable star based on the slope. '
-    Top = 84
+    Top = 108
     Width = 64
     ParentShowHint = False
     ShowHint = True
@@ -219,7 +221,7 @@ object form_aavso1: Tform_aavso1
   object Label9: TLabel
     Left = 88
     Height = 15
-    Top = 84
+    Top = 108
     Width = 43
     Caption = '∆(b-v)   '
     ParentColor = False
@@ -228,7 +230,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'Slope of magnitude difference caused by the colour difference between variable and check star. A differential correction will be applied on the variable magnitude in the final report. Enter here the slope found by pressing button "Transformation". '
-    Top = 112
+    Top = 136
     Width = 64
     ParentShowHint = False
     ShowHint = True
@@ -239,7 +241,7 @@ object form_aavso1: Tform_aavso1
   object Label10: TLabel
     Left = 88
     Height = 15
-    Top = 112
+    Top = 136
     Width = 28
     Caption = 'slope'
     ParentColor = False
@@ -247,7 +249,7 @@ object form_aavso1: Tform_aavso1
   object Label11: TLabel
     Left = 243
     Height = 60
-    Top = 84
+    Top = 108
     Width = 133
     AutoSize = False
     Caption = 'Optional differential magnitude correction of the var.'
@@ -258,7 +260,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier.  Limit: 30 characters.'
-    Top = 48
+    Top = 72
     Width = 208
     DropDownCount = 30
     ItemHeight = 15
@@ -267,20 +269,30 @@ object form_aavso1: Tform_aavso1
     ShowHint = True
     Sorted = True
     TabOrder = 10
-    OnChange = name_check1Change
+    OnChange = name_variable1Change
     OnDropDown = name_variable1DropDown
   end
   object hjd1: TCheckBox
     Left = 116
     Height = 19
     Hint = 'Report the date as Heliocentric Julian Day'
-    Top = 344
+    Top = 368
     Width = 39
     Caption = 'HJD'
     ParentShowHint = False
     ShowHint = True
     TabOrder = 11
     OnChange = hjd1Change
+  end
+  object measure_all_mode1: TLabel
+    Left = 16
+    Height = 15
+    Top = 48
+    Width = 331
+    Caption = 'Measure all mode . Select variable and check star for report'
+    Font.Style = [fsBold]
+    ParentFont = False
+    Visible = False
   end
   object PopupMenu1: TPopupMenu
     Left = 685

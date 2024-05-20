@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.05.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.05.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8420,6 +8420,7 @@ begin
       sett.writestring('stack','solve_search_field',stackmenu1.search_fov1.text);
       sett.writestring('stack','radius_search',stackmenu1.radius_search1.text);
       sett.writestring('stack','quad_tolerance',stackmenu1.quad_tolerance1.text);
+
       sett.writestring('stack','maximum_stars',stackmenu1.max_stars1.text);
       sett.writestring('stack','min_star_size',stackmenu1.min_star_size1.text);
       sett.writestring('stack','min_star_size_stacking',stackmenu1.min_star_size_stacking1.text);
@@ -11594,7 +11595,7 @@ begin
   end;
 end;
 
-procedure update_mainmenu;// for Mac
+procedure update_mainmenu_mac;// for Mac
 begin
   with mainwindow do
   begin
@@ -11655,7 +11656,8 @@ begin
     with Menufind2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with select_all2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
   end;
-end;
+ end;
+
 
 
 procedure Tmainwindow.FormCreate(Sender: TObject);
@@ -11708,7 +11710,7 @@ begin
   head.naxis:=0; {not fits files available}
 
  {$IfDef Darwin}// for MacOS
-  if commandline_execution=false then update_mainmenu;
+  if commandline_execution=false then update_mainmenu_mac;
  {$endif}
 end;
 
@@ -12865,6 +12867,7 @@ begin
         if hasoption('s') then
                  stackmenu1.max_stars1.text:=GetOptionValue('s');
         if hasoption('t') then stackmenu1.quad_tolerance1.text:=GetOptionValue('t');
+
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
         if hasoption('sip') then stackmenu1.add_sip1.checked:='n'<>GetOptionValue('sip');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=('slow'=GetOptionValue('speed'));

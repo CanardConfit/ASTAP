@@ -965,6 +965,8 @@ var
 begin
   result:=false; //assume failure
 
+  tolerance:=min(tolerance,0.008);//prevent too high tolerances
+
   {3 quads required giving 3 center quad references}
   if find_fit(minimum_quads, tolerance)=false then
   begin
