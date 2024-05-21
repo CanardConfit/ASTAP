@@ -46,6 +46,7 @@ type
     obscode1: TEdit;
     Label1: TLabel;
     Filter1: TComboBox;
+    SaveDialog1: TSaveDialog;
     procedure delta_bv2Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -136,7 +137,7 @@ end;
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c,date_column  : integer;
-    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format: string;
+    err,err_message,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation: string;
     stdev_valid : boolean;
     snr_value,err_by_snr  : double;
     PNG: TPortableNetworkGraphic;{FPC}
@@ -152,6 +153,23 @@ var
 
 begin
   get_info;
+
+
+  if length(name_var)<1 then
+  begin
+    name_variable1.color:=clred;
+    exit;
+  end
+  else
+    name_variable1.color:=cldefault;
+
+  if length(abbreviation_check)<1 then
+  begin
+    name_check1.color:=clred;
+    exit;
+  end
+  else
+    name_check1.color:=cldefault;
 
   stdev_valid:=(photometry_stdev>0.0001);
   if stdev_valid then
@@ -257,6 +275,7 @@ begin
                        abbreviation_var_IAU+delim+
                        'Ensemble of Gaia DR3 stars'+magn_type+' '+err_message+#13+#10;
 
+         date_observation:=copy(listview7.Items.item[c].subitems.Strings[P_date],1,10);
        end;
      end;
    end;
@@ -269,19 +288,22 @@ begin
     Clipboard.AsText:=aavso_report
   else
   begin
-    fn:=ChangeFileExt(filename2,'_report.txt');
-    log_to_file2(fn, aavso_report);
-
-    png:= TPortableNetworkGraphic.Create;   {FPC}
-    try
-      PNG.Assign(Image_photometry1.Picture.Graphic);    //Convert data into png
-      fnG:=ChangeFileExt(filename2,'_graph.png');
-      PNG.SaveToFile(fnG);
-      finally
-       PNG.Free;
+    savedialog1.filename:=name_variable1.text+'_'+date_observation+'_report.txt';
+    savedialog1.initialdir:=ExtractFilePath(filename2);
+    savedialog1.Filter := '(*.txt)|*.txt';
+    if savedialog1.execute then
+    begin
+      log_to_file2(savedialog1.filename, aavso_report);
+      png:= TPortableNetworkGraphic.Create;   {FPC}
+      try
+        PNG.Assign(Image_photometry1.Picture.Graphic);    //Convert data into png
+        fnG:=ChangeFileExt(savedialog1.filename,'_graph.png');
+        PNG.SaveToFile(fnG);
+        finally
+         PNG.Free;
+      end;
+      memo2_message('AAVSO report written to: '+savedialog1.filename + '   and   '+fnG);
     end;
-
-    memo2_message('AAVSO report written to: '+fn +' and '+fnG );
   end;
   save_settings2; {for aavso settings}
 
@@ -318,11 +340,14 @@ var
   abrv    : string;
 begin
   name_check1.items.clear;
+  name_check1.color:=cldefault;
 
-  name_check1.items.add(mainwindow.Shape_alignment_marker2.HINT);
-  name_check1.items.add(abbreviation_check);//the last name
-  name_check1.items.add(name_check_IAU);// created from position
-
+   if stackmenu1.measure_all1.checked=false then
+   begin
+     name_check1.items.add(mainwindow.Shape_alignment_marker2.HINT);
+     name_check1.items.add(abbreviation_check);//the last name
+     name_check1.items.add(name_check_IAU);// created from position
+   end;
 
   for i:=p_nr_norm+1+1 to p_nr do
     if odd(i+1) then //not snr column
@@ -360,12 +385,16 @@ var
   i,ww: integer;
   abrv : string;
 begin
+  name_variable1.color:=cldefault;
   name_variable1.items.clear;
   ww:=0;
 
-  name_variable1.items.add(mainwindow.Shape_alignment_marker1.HINT);
-  name_variable1.items.add(object_name);//from header
-  name_variable1.items.add(name_var);
+  if stackmenu1.measure_all1.checked=false then
+  begin
+    name_variable1.items.add(mainwindow.Shape_alignment_marker1.HINT);
+    name_variable1.items.add(object_name);//from header
+    name_variable1.items.add(name_var);
+  end;
 
   for i:=p_nr_norm+1 to p_nr do
     if odd(i+1) then // not a snr column

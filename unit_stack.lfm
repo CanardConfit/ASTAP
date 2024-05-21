@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 242
+  Left = 72
   Height = 707
-  Top = 202
+  Top = 207
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -499,7 +499,7 @@ object stackmenu1: Tstackmenu1
             OnClick = replace_by_master_dark1Click
           end
           object clear_dark_list1: TButton
-            Left = 1051
+            Left = 688
             Height = 25
             Hint = 'Clear the frame list'
             Top = 5
@@ -641,10 +641,10 @@ object stackmenu1: Tstackmenu1
             Transparent = False
           end
           object classify_dark_date1: TCheckBox
-            Left = 744
+            Left = 856
             Height = 19
             Hint = 'Combine darks within 12 hour time range to master'
-            Top = 8
+            Top = 5
             Width = 203
             Caption = 'Classify by date for master creation'
             ParentFont = False
@@ -699,7 +699,7 @@ object stackmenu1: Tstackmenu1
             OnClick = replace_by_master_flat1Click
           end
           object clear_selection2: TButton
-            Left = 1128
+            Left = 696
             Height = 25
             Hint = 'Clear the frame list'
             Top = 5
@@ -864,7 +864,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 4
           end
           object classify_flat_date1: TCheckBox
-            Left = 714
+            Left = 816
             Height = 19
             Hint = 'Combine flats within 12 hour time range to master'
             Top = 0
@@ -876,12 +876,12 @@ object stackmenu1: Tstackmenu1
             TabOrder = 5
           end
           object classify_flat_exposure1: TCheckBox
-            Left = 714
+            Left = 816
             Height = 19
             Hint = 'Activate this option if you want classify the flats and flat darks based on exposure time.'
             Top = 19
-            Width = 258
-            Caption = 'Classify by exposure time for master creation.'
+            Width = 399
+            Caption = 'Classify by exposure duration, temperature and gain for master creation.'
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
@@ -3580,12 +3580,6 @@ object stackmenu1: Tstackmenu1
               'Annotation online DB mag 13'
               'Annotation online DB mag 15'
               'Annotation online DB mag 99'
-              'Annotation local DB mag 11 & measure all'
-              'Annotation local DB mag 13 & measure all'
-              'Annotation local DB mag 15 & measure all'
-              'Annotation online DB mag 13 & measure all'
-              'Annotation online DB mag 15 & measure all'
-              'Annotation online DB mag 99 & measure all'
             )
             ParentFont = False
             TabOrder = 13
@@ -3653,6 +3647,16 @@ object stackmenu1: Tstackmenu1
             Caption = '|'
             TabOrder = 16
             Visible = False
+          end
+          object measure_all1: TCheckBox
+            Left = 248
+            Height = 19
+            Hint = 'Selection of which to report is done in the report window.'
+            Top = 5
+            Width = 135
+            Caption = 'Measure all annotated'
+            TabOrder = 17
+            OnChange = measure_all1Change
           end
         end
         object tab_inspector1: TTabSheet
