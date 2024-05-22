@@ -116,6 +116,7 @@ type
     blink_annotate_and_solve1: TButton;
     apply_unsharp_mask1: TButton;
     airmass1: TMenuItem;
+    measure_all1: TCheckBox;
     view_next1: TMenuItem;
     view_previous1: TMenuItem;
     view_next6: TMenuItem;
@@ -712,6 +713,7 @@ type
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure measure_all1Change(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
     procedure unsharp_edit_amount1Change(Sender: TObject);
     procedure unsharp_edit_radius1Change(Sender: TObject);
@@ -1680,10 +1682,8 @@ begin
             (img[0, fitsY, fitsX] - bck.backgr > detection_level)) then
             {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0
-              {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
-            if ((hfd1 <= 30) and (snr > snr_min) and
-              (hfd1 > hfd_min) {two pixels minimum}) then
+            HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
+            if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum}) then
             begin
               hfd_list[star_counter] := hfd1;{store}
               Inc(star_counter);
@@ -4158,7 +4158,7 @@ procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);
 var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
   hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, adu_e :double;
-  filename1,filterstr,filterstrUP,issue : string;
+  filename1,filterstr,filterstrUP,issues : string;
   loaded, red, green, blue: boolean;
   img: image_array;
   head_2 : theader;
@@ -4315,7 +4315,8 @@ begin
             else
             if tabnr = 3 then {flat tab}
             begin
-              issue:='';//clear old issues
+              issues:='';//clear old issues
+              if pos('B',head_2.calstat)=0 then issues:='No flat-darks included';
               lv.Items.item[c].subitems.Strings[F_filter] := head_2.filter_name;
 
               if head_2.naxis3 = 3 then
@@ -4326,7 +4327,7 @@ begin
               else
               begin
                 Lv.Items.item[c].SubitemImages[F_filter] :=get_filter_icon(head_2.filter_name,{out} red,green, blue);
-                if Lv.Items.item[c].SubitemImages[F_filter]=7 then lv.Items.item[c].subitems.Strings[F_issues]:='Filter=?';//display issue
+                if Lv.Items.item[c].SubitemImages[F_filter]=7 then issues:=issues+' Filter=?';//display issue
               end;
 
               {$ifdef darwin} {MacOS, fix missing icons by coloured unicode. Place in column "type" to avoid problems with textual filter selection}
@@ -4342,6 +4343,7 @@ begin
               {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
               lv.Items.item[c].subitems.Strings[F_jd] := floattostrF(jd_start, ffFixed, 0, 1); {julian day, 1/10 day accuracy}
               lv.Items.item[c].subitems.Strings[F_calibration] := head_2.calstat;
+              if Lv.Items.item[c].SubitemImages[F_filter]=7 then lv.Items.item[c].subitems.Strings[F_issues]:=issues;;//display issue
             end
             else
             if tabnr = 4 then {flat darks tab}
@@ -4682,7 +4684,7 @@ begin
 end;
 
 
-function average_flatdarks(exposure: double; out w,h : integer;  out img_bias: image_array): boolean;
+function average_flatdarks(exposure: double; out w,h : integer;flat_temperature, flat_gain: string;  out img_bias: image_array): boolean;
 var
   c, file_count: integer;
   file_list: array of string;
@@ -4696,8 +4698,11 @@ begin
     if stackmenu1.listview4.items[c].Checked = True then
     begin
       if ((exposure < 0){disabled} or
-        (abs(strtofloat(stackmenu1.listview4.Items.item[c].subitems.Strings[FD_exposure]) -
-        exposure) < 0.01)) then
+        ( (abs(strtofloat(stackmenu1.listview4.Items.item[c].subitems.Strings[FD_exposure]) -  exposure) < 0.01) and
+          (flat_gain=stackmenu1.listview4.Items.item[c].subitems.Strings[D_gain]) and
+          (flat_temperature=stackmenu1.listview4.Items.item[c].subitems.Strings[D_temperature])  )
+
+        ) then
       begin
         file_list[file_count] := stackmenu1.ListView4.items[c].Caption;
         Inc(file_count);
@@ -6907,20 +6912,34 @@ begin
 end;
 
 
+procedure hide_show_columns_listview7;
+var
+  yes : boolean;
+begin
+  yes:=stackmenu1.measure_all1.checked=false;//measure all mode false? if so hide some columns
+  stackmenu1.listview7.column[12].visible:=yes;//magn var
+  stackmenu1.listview7.column[13].visible:=yes;//
+  stackmenu1.listview7.column[14].visible:=yes;//
+  stackmenu1.listview7.column[15].visible:=yes;//magn 3
+
+  mainwindow.shape_alignment_marker1.Visible :=yes;  {photometry}
+  mainwindow.shape_alignment_marker2.Visible := yes;
+  mainwindow.shape_alignment_marker3.Visible := yes;
+  mainwindow.labelVar1.Visible := yes;
+  mainwindow.labelCheck1.Visible := yes;
+  mainwindow.labelThree1.Visible := yes;
+end;
+
+
 procedure Tstackmenu1.pagecontrol1Change(Sender: TObject);
 var
   theindex: integer;
 begin
   theindex := stackmenu1.pagecontrol1.tabindex;
-  mainwindow.shape_alignment_marker1.Visible := (theindex = 8);
-  {hide shape if stacked image is plotted}
-  mainwindow.shape_alignment_marker2.Visible := (theindex = 8);
-  {hide shape if stacked image is plotted}
-  mainwindow.shape_alignment_marker3.Visible := (theindex = 8);
-  {hide shape if stacked image is plotted}
-  mainwindow.labelVar1.Visible := (theindex = 8);
-  mainwindow.labelCheck1.Visible := (theindex = 8);
-  mainwindow.labelThree1.Visible := (theindex = 8);
+
+  if theindex=8 then //photometry
+      hide_show_columns_listview7;
+
   stack_button1.Enabled := ((theindex <= 6) or (theindex >= 13));
 
   if theindex=9 then
@@ -8441,9 +8460,9 @@ begin
 
         if starlistpack[c].mzero <> 0 then {valid flux calibration}
         begin // do var star
+          adu_e := retrieve_ADU_to_e_unbinned(head.egain);
           if mainwindow.shape_alignment_marker1.Visible then
           begin
-            adu_e := retrieve_ADU_to_e_unbinned(head.egain);
             //Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
             mainwindow.image1.Canvas.Pen.Color := clRed;
             celestial_to_pixel(head, rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY}
@@ -8488,14 +8507,14 @@ begin
             end;
           end;
 
-          //measure all AAVSO objects
+
+          if stackmenu1.measure_all1.checked then //measure all AAVSO objects
+          begin
           case stackmenu1.annotate_mode1.itemindex of
-            7,8,9 : //measure all AAVSO stars using the position from the local database
+            1,2,3 : //measure all AAVSO stars using the position from the local database
                 begin
                //   if pos('V645',filename2)>0 then
                //   beep;
-
-
                   if length(variable_list)=0 then
                   begin
                    // clear_added_AAVSO_columns;
@@ -8550,7 +8569,7 @@ begin
                     end;
                   end;
                 end;
-            10,11,12 :  //measure all AAVSO using the online vsx, vsp
+            4,5,6 :  //measure all AAVSO using the online vsx, vsp
                 begin
                   mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result in load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
                   lvsx:=length(vsx);
@@ -8627,9 +8646,10 @@ begin
                     end;
                   end;//vsx
                 end;
+             end;//case
+          end //measure all
           else
           if p_nr>p_nr_norm then clear_added_AAVSO_columns;
-          end; //case measure AAVSO
 
         end;
 
@@ -9639,6 +9659,7 @@ end;
 procedure Tstackmenu1.tab_photometry1Show(Sender: TObject);
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
+  hide_show_columns_listview7;
 end;
 
 
@@ -9934,6 +9955,11 @@ begin
     if tabind in [0,1,2,3,4,7,8,9,10] then //only in the listview tabs. Do not block ctrl+z in the other tabs
         undo_rename_to_bak(tabind);//ctrl+z
   end;
+end;
+
+procedure Tstackmenu1.measure_all1Change(Sender: TObject);
+begin
+  hide_show_columns_listview7;
 end;
 
 
@@ -11550,8 +11576,8 @@ end;
 procedure replace_by_master_flat(full_analyse: boolean);
 var
   fitsX, fitsY, flat_count: integer;
-  path1, filen, flat_filter, expos: string;
-  day, flatdark_exposure, flat_exposure: double;
+  path1, filen, flat_filter, expos, flat_temperature,flat_gain: string;
+  day, flatdark_exposure, flat_exposure : double;
   c, counter, i: integer;
   specified, classify_exposure: boolean;
   flat_width,flat_height, flat_dark_width,flat_dark_height: integer;
@@ -11588,6 +11614,8 @@ begin
               flat_height := StrToInt(stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]);
               day := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
               flat_exposure := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]);
+              flat_temperature := stackmenu1.listview3.Items.item[c].subitems.Strings[D_temperature];
+              flat_gain := stackmenu1.listview3.Items.item[c].subitems.Strings[D_gain];
               specified := True;
             end;
 
@@ -11613,18 +11641,19 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if abs(flat_exposure - flatdark_exposure) > 0.01 then  {already a dark loaded?}
+        if abs(flat_exposure - flatdark_exposure) > 0.01 then  {already a flat-dark loaded?}
         begin
           if classify_exposure = False then
           begin
-            flat_exposure := -99; {do not classify on flat dark head.exposure time}
+            flat_exposure := -99; {do not classify on flat dark head.exposure time, tmeperature, gain}
           end
           else
           begin
             analyseflatdarksButton1Click(nil); {head.exposure lengths are required for selection}
-            memo2_message('Selecting flat darks with exposure time ' +  floattostrF(flat_exposure, FFgeneral, 0, 2) + 'sec');
+            memo2_message('Selecting flat darks with exposure time ' +  floattostrF(flat_exposure, FFgeneral, 0, 2) + 'sec, temperature '+flat_temperature+' gain '+flat_gain);
           end;
-          if average_flatdarks(flat_exposure,flat_dark_width,flat_dark_height,img_bias) then  {average of bias frames. Convert to FITS if required}
+
+          if average_flatdarks(flat_exposure,flat_dark_width,flat_dark_height,flat_temperature,flat_gain,img_bias) then  {average of bias frames. Convert to FITS if required}
           begin  //falt darks found
             flatdark_exposure := flat_exposure; {store this head.exposure for next time}
             if ((flat_width <> flat_dark_width) or (flat_height <> flat_dark_height)) then
@@ -11634,7 +11663,7 @@ begin
             end;
           end
           else {head.flatdark_count will be zero}
-          memo2_message('█ █ █ █ █ █ Warning no flat-dark/bias found!! █ █ █ █ █ █ ');
+          memo2_message('█ █ █ █ █ █ Warning no suitable flat-dark/bias found!! █ █ █ █ █ █ ');
 
           flatdark_used := False;
         end;

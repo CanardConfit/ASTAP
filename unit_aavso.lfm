@@ -304,4 +304,8 @@ object form_aavso1: Tform_aavso1
       OnClick = MenuItem1Click
     end
   end
+  object SaveDialog1: TSaveDialog
+    Left = 352
+    Top = 334
+  end
 end

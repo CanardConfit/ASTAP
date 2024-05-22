@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.05.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.05.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8103,6 +8103,7 @@ begin
       dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
       c:=Sett.ReadInteger('stack','annotate_m',0); stackmenu1.annotate_mode1.itemindex:=c;
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
+      stackmenu1.measure_all1.Checked:=Sett.ReadBool('stack','measure_all',false);
 
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
@@ -8134,7 +8135,6 @@ begin
       dum:=Sett.ReadString('stack','contour_grid',''); if dum<>'' then stackmenu1.detection_grid1.text:=dum;
       groupsizeStr:=Sett.ReadString('stack','groupsize','');
 
-//      stackmenu1.streak_filter1.Checked:=Sett.ReadBool('stack','streak_filter',false);
 
 
       obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
@@ -8484,6 +8484,7 @@ begin
       sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
       sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
+      sett.WriteBool('stack','measure_all', stackmenu1.measure_all1.checked);
 
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
@@ -9955,12 +9956,12 @@ begin
 //10,Annotation online DB mag 99 & measure all
 
   case stackmenu1.annotate_mode1.itemindex of
-       0,1,7: begin lim_magn:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
-       2,8:   begin lim_magn:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
-       3,9:   begin lim_magn:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-       4,10: lim_magn:=13;
-       5,11: lim_magn:=15;
-       6,12:lim_magn:=99;
+       0,1: begin lim_magn:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+       2:   begin lim_magn:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+       3:   begin lim_magn:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+       4: lim_magn:=13;
+       5: lim_magn:=15;
+       6:lim_magn:=99;
        else
           lim_magn:=99;
      end; //case
@@ -14735,11 +14736,14 @@ begin
       if distance_histogram[r_aperture]>0 then HistStart:=true;{continue until we found a value>0, center of defocused star image can be black having a central obstruction in the telescope}
       if distance_top_value<distance_histogram[r_aperture] then distance_top_value:=distance_histogram[r_aperture]; {this should be 2*pi*r_aperture if it is nice defocused star disk}
     until ( (r_aperture>=rs) or (HistStart and (distance_histogram[r_aperture]<=0.1*distance_top_value {drop-off detection})));{find a distance where there is no pixel illuminated, so the border of the star image of interest}
-    if r_aperture>=rs then exit; {star is equal or larger then box, abort}
+    if r_aperture>=rs then
+        exit; {star is equal or larger then box, abort}
 
-    if (r_aperture>2)and(illuminated_pixels<0.35*sqr(r_aperture+r_aperture-2)){35% surface} then exit;  {not a star disk but stars, abort with hfd 999}
+    if (r_aperture>2)and(illuminated_pixels<0.35*sqr(r_aperture+r_aperture-2)){35% surface} then
+       exit;  {not a star disk but stars, abort with hfd 999}
 
     except
+
   end;
 
   // Get HFD
