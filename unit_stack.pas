@@ -141,7 +141,6 @@ type
     classify_dark_temperature1: TCheckBox;
     classify_filter1: TCheckBox;
     classify_flat_date1: TCheckBox;
-    classify_flat_exposure1: TCheckBox;
     classify_flat_filter1: TCheckBox;
     classify_groupbox1: TGroupBox;
     classify_object1: TCheckBox;
@@ -1438,7 +1437,7 @@ begin
 end;
 
 
-procedure listview5_add(tl: tlistview; s0, s1, s2, s3, s4, s5, s6: string);
+procedure listview5_add(tl: tlistview; s0, s1, s2, s3, s4, s5, s6,s7: string);
 var
   ListItem: TListItem;
 begin
@@ -1453,6 +1452,7 @@ begin
     ListItem.SubItems.Add(s4);
     ListItem.SubItems.Add(s5);
     ListItem.SubItems.Add(s6);
+    ListItem.SubItems.Add(s7);
     Items.EndUpdate;{start updating}
   end;
 end;
@@ -2548,7 +2548,8 @@ begin
       , stack_info
       , IntToStr(head.Width)
       , IntToStr(head.Height)
-      , head.calstat);
+      , head.calstat
+      , head.issues);
     ListView5.Items.item[ListView5.Items.Count - 1].SubitemImages[1] := 5;
     {mark 2th columns as done using a stacked icon}
     ListView5.Items.item[ListView5.Items.Count - 1].SubitemImages[0] := colorinfo;
@@ -4158,8 +4159,8 @@ procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);
 var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
   hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, adu_e :double;
-  filename1,filterstr,filterstrUP,issues : string;
-  loaded, red, green, blue: boolean;
+  filename1,filterstr,filterstrUP  : string;
+  loaded, red, green, blue         : boolean;
   img: image_array;
   head_2 : theader;
   nr_stars, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33: double;
@@ -4315,8 +4316,8 @@ begin
             else
             if tabnr = 3 then {flat tab}
             begin
-              issues:='';//clear old issues
-              if pos('B',head_2.calstat)=0 then issues:='No flat-darks included';
+             // issues:=head_2.issues;
+             // if pos('B',head_2.calstat)=0 then issues:=issues+'No flat-darks included|';
               lv.Items.item[c].subitems.Strings[F_filter] := head_2.filter_name;
 
               if head_2.naxis3 = 3 then
@@ -4325,10 +4326,7 @@ begin
               if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
                 Lv.Items.item[c].SubitemImages[F_filter] :=25  //raw OSC file
               else
-              begin
                 Lv.Items.item[c].SubitemImages[F_filter] :=get_filter_icon(head_2.filter_name,{out} red,green, blue);
-                if Lv.Items.item[c].SubitemImages[F_filter]=7 then issues:=issues+' Filter=?';//display issue
-              end;
 
               {$ifdef darwin} {MacOS, fix missing icons by coloured unicode. Place in column "type" to avoid problems with textual filter selection}
               if red then Lv.Items.item[c].subitems.Strings[D_type]:='🔴' +Lv.Items.item[c].subitems.Strings[D_type]
@@ -4343,7 +4341,7 @@ begin
               {convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
               lv.Items.item[c].subitems.Strings[F_jd] := floattostrF(jd_start, ffFixed, 0, 1); {julian day, 1/10 day accuracy}
               lv.Items.item[c].subitems.Strings[F_calibration] := head_2.calstat;
-              if Lv.Items.item[c].SubitemImages[F_filter]=7 then lv.Items.item[c].subitems.Strings[F_issues]:=issues;;//display issue
+              //if Lv.Items.item[c].SubitemImages[F_filter]=7 then lv.Items.item[c].subitems.Strings[F_issues]:=issues;;//display issue
             end
             else
             if tabnr = 4 then {flat darks tab}
@@ -4626,15 +4624,15 @@ begin
 end;
 
 
-procedure average(mess: string; file_list: array of string; file_count: integer; out img2: image_array);
+procedure average(mess: string; file_list: array of string; var file_count: integer; out img2: image_array);
 {combine to average or mean, make also mono from three colors if color}
 var
   {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw lights}
-  c, fitsX, fitsY: integer;
+  c, fitsX, fitsY,w,h,count: integer;
   img_tmp1: image_array;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
+  count:=0;
   {average}
   for c := 0 to file_count - 1 do
   begin
@@ -4651,32 +4649,43 @@ begin
 
     if c = 0 then {init}
     begin
-      setlength(img2, 1, head.Height, head.Width);{set length of image array mono}
-      for fitsY := 0 to head.Height - 1 do
-        for fitsX := 0 to head.Width - 1 do
+      w:=head.Width;
+      h:=head.Height;
+      setlength(img2, 1, h, w);{set length of image array mono}
+      for fitsY := 0 to h - 1 do
+        for fitsX := 0 to w - 1 do
           img2[0, fitsY, fitsX] := 0; {clear img}
     end;
 
-    if head.naxis3 = 3 then
-      {for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
-    begin {color average}
-      for fitsY := 0 to head.Height - 1 do
-        for fitsX := 0 to head.Width - 1 do
-          img2[0, fitsY, fitsX] := img2[0, fitsY, fitsX] + (img_tmp1[0, fitsY, fitsX] + img_tmp1[1, fitsY, fitsX] +  img_tmp1[2, fitsY, fitsX]) / 3;{fill with image}
+    if ((w=head.width) or (h=head.height)) then
+    begin
+      if head.naxis3 = 3 then
+        {for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
+      begin {color average}
+        for fitsY := 0 to head.Height - 1 do
+          for fitsX := 0 to head.Width - 1 do
+            img2[0, fitsY, fitsX] := img2[0, fitsY, fitsX] + (img_tmp1[0, fitsY, fitsX] + img_tmp1[1, fitsY, fitsX] +  img_tmp1[2, fitsY, fitsX]) / 3;{fill with image}
+      end
+      else
+      begin {mono average}
+        for fitsY := 0 to h - 1 do
+          for fitsX := 0 to w - 1 do
+            img2[0, fitsY, fitsX] := img2[0, fitsY, fitsX] + img_tmp1[0, fitsY, fitsX];
+        {fill with image}
+      end;
+      inc(count);
     end
     else
-    begin {mono average}
-      for fitsY := 0 to head.Height - 1 do
-        for fitsX := 0 to head.Width - 1 do
-          img2[0, fitsY, fitsX] := img2[0, fitsY, fitsX] + img_tmp1[0, fitsY, fitsX];
-      {fill with image}
-
+    begin //wrong dimensions
+      memo2_message('█ █ █ █ █ █ Skipping file. Can not average frames with different dimensions! █ █ █ █ █ █ ');
     end;
   end;{open files}
 
+  file_count:=count;//for case files where ignored;
+
   if file_count > 1 then {not required for single/master files}
-    for fitsY := 0 to head.Height - 1 do
-      for fitsX := 0 to head.Width - 1 do
+    for fitsY := 0 to h - 1 do
+      for fitsX := 0 to w - 1 do
         img2[0, fitsY, fitsX] := img2[0, fitsY, fitsX] / file_count;{scale to one image}
 
   img_tmp1 := nil;{free memo2}
@@ -4684,37 +4693,37 @@ begin
 end;
 
 
-function average_flatdarks(exposure: double; out w,h : integer;flat_temperature, flat_gain: string;  out img_bias: image_array): boolean;
+function average_flatdarks(out img_bias: image_array; out flatdark_exposure,flatdark_temperature,flatdark_gain: string): boolean;
 var
   c, file_count: integer;
   file_list: array of string;
+  specified  : boolean;
 begin
+
   result:=false;{just in case no flat-dark are found}
-  analyse_listview(stackmenu1.listview4, False {light}, False {full fits}, False{refesh});
+  analyse_listview(stackmenu1.listview4, False {light}, False {full fits}, False{refresh});
   {update the flat-dark tab information. Convert to FITS if required}
   setlength(file_list, stackmenu1.listview4.items.Count);
   file_count := 0;
+  specified := False;
   for c := 0 to stackmenu1.listview4.items.Count - 1 do
     if stackmenu1.listview4.items[c].Checked = True then
     begin
-      if ((exposure < 0){disabled} or
-        ( (abs(strtofloat(stackmenu1.listview4.Items.item[c].subitems.Strings[FD_exposure]) -  exposure) < 0.01) and
-          (flat_gain=stackmenu1.listview4.Items.item[c].subitems.Strings[D_gain]) and
-          (flat_temperature=stackmenu1.listview4.Items.item[c].subitems.Strings[D_temperature])  )
-
-        ) then
-      begin
-        file_list[file_count] := stackmenu1.ListView4.items[c].Caption;
-        Inc(file_count);
-      end;
+       if specified=false then//use data from first flat-dark
+       begin
+         flatdark_exposure:=stackmenu1.listview4.Items.item[c].subitems.Strings[FD_exposure];
+         flatdark_temperature:=stackmenu1.listview4.Items.item[c].subitems.Strings[D_temperature];
+         flatdark_gain:=stackmenu1.listview4.Items.item[c].subitems.Strings[D_gain];
+         specified:=true;
+       end;
+       file_list[file_count] := stackmenu1.ListView4.items[c].Caption;
+       Inc(file_count);
     end;
   if file_count <> 0 then
   begin
     memo2_message('Averaging flat dark frames.');
     average('flat-dark', file_list, file_count, img_bias);{only average}
-    Result := true;
-    w:=head.Width; {width of the flat-dark}
-    h:=head.height; {width of the flat-dark}
+    if file_count>0  then result:=true;
   end;
   head.flatdark_count := file_count;
   file_list := nil;
@@ -11335,12 +11344,26 @@ begin
       end; {load master in memory img_dark}
 
       {test compatibility}
-      if ((round(head_dark.exposure) <> 0 {dark exposure is measured}) and (round(hd.exposure){request} <> round(head_dark.exposure))) then memo2_message('█ █ █ █ █ █ Warning dark exposure time (' + floattostrF(head_dark.exposure, ffFixed, 0, 0) + ') is different then the light exposure time (' + floattostrF(hd.exposure, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
-      if ((head_dark.set_temperature <> 999 {dark temperature is measured}) and (hd.set_temperature{request} <> head_dark.set_temperature)) then  memo2_message('█ █ █ █ █ █ Warning dark sensor temperature (' + floattostrF(head_dark.set_temperature, ffFixed, 0, 0) +') is different then the light sensor temperature (' + floattostrF(hd.set_temperature, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
+      if ((round(head_dark.exposure) <> 0 {dark exposure is measured}) and (round(hd.exposure){request} <> round(head_dark.exposure))) then
+      begin
+         memo2_message('█ █ █ █ █ █ Warning dark exposure time (' + floattostrF(head_dark.exposure, ffFixed, 0, 0) + ') is different then the light exposure time (' + floattostrF(hd.exposure, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
+         head_dark.issues:=head_dark.issues+'D_exposure|';
+      end;
+      if ((head_dark.set_temperature <> 999 {dark temperature is measured}) and (hd.set_temperature{request} <> head_dark.set_temperature)) then
+      begin
+        memo2_message('█ █ █ █ █ █ Warning dark sensor temperature (' + floattostrF(head_dark.set_temperature, ffFixed, 0, 0) +') is different then the light sensor temperature (' + floattostrF(hd.set_temperature, ffFixed, 0, 0) + ')! █ █ █ █ █ █ ');
+        head_dark.issues:=head_dark.issues+'D_temperature|';
+      end;
       if ((head_dark.gain <> '' {gain in header}) and (hd.gain{request} <> head_dark.gain)) then
+      begin
         memo2_message('█ █ █ █ █ █ Warning dark gain (' + head_dark.gain + ') is different then the light gain (' + hd.gain +')! █ █ █ █ █ █ ');
+        head_dark.issues:=head_dark.issues+'D_gain|';
+      end;
       if ((head_dark.egain <> '' {gain in header}) and (hd.egain{request} <> head_dark.egain)) then
+      begin
         memo2_message('█ █ █ █ █ █ Warning dark egain (' + head_dark.egain + ') is different then the light egain (' + hd.egain +')! █ █ █ █ █ █ ');
+        head_dark.issues:=head_dark.issues+'D_egain|';
+      end;
 
       last_dark_loaded := filen; {required for for change in light_jd}
       if head_dark.dark_count = 0 then head_dark.dark_count := 1; {store in head of reference file}
@@ -11350,6 +11373,7 @@ begin
   begin
     memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for ' + IntToStr(round(hd.exposure)) + ' sec, temperature ' + IntToStr( hd.set_temperature) + '°, gain ' + hd.gain+' and width '+inttostr(hd.width)+'! De-classify temperature or exposure time or add correct darks. See report in column ISSUES in tab dark.█ █ █ █ █ █ ');
     head_dark.dark_count := 0;{set back to zero}
+
   end;
 end;
 
@@ -11379,15 +11403,15 @@ begin
               filen := stackmenu1.ListView3.items[c].Caption;
               day_offset := abs(d - jd_int);
             end;
-            stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='';//clear issues
+            stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='';//clear fatal issues
           end
           else
-          stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='height<>'+inttostr(hd.height);
+          stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='height<>'+inttostr(hd.height);//add fatal issue
         end
         else
-        stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='width<>'+inttostr(hd.width);
+        stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='width<>'+inttostr(hd.width);//add fatal issue
       end;
-      // else, filter issues are handled in analyse_listview
+      //not the correct filter is not a fatal issue since other filters are likely found
     end;
     Inc(c);
   end;
@@ -11406,12 +11430,10 @@ begin
       {load master in memory img_flat}
       last_flat_loaded := filen; {required for for change in light_jd}
       flat_filter := hd.filter_name; {mark as loaded}
-
       if pos('B', head_flat.calstat) = 0 then
       begin
         memo2_message('█ █ █ █ █ █ Warning: Flat not calibrated with a flat-dark/bias (keywords CALSTAT or BIAS_CNT). █ █ █ █ █ █')
       end;
-
       if head_flat.flat_count = 0 then head_flat.flat_count := 1; {not required for astap master}
     end;
   end
@@ -11576,10 +11598,11 @@ end;
 procedure replace_by_master_flat(full_analyse: boolean);
 var
   fitsX, fitsY, flat_count: integer;
-  path1, filen, flat_filter, expos, flat_temperature,flat_gain: string;
-  day, flatdark_exposure, flat_exposure : double;
+  path1, filen, flat_filter, expos, flat_temperature,flat_gain,
+  flat_exposure, flatdark_exposure,flatdark_temperature,flatdark_gain,issues: string;
+  day : double;
   c, counter, i: integer;
-  specified, classify_exposure: boolean;
+  specified                   : boolean;
   flat_width,flat_height, flat_dark_width,flat_dark_height: integer;
   flatdark_used: boolean;
   file_list: array of string;
@@ -11592,8 +11615,8 @@ begin
     analyse_listview(listview3, False {light}, False {full fits},  new_analyse_required3{refresh});{update the tab information. Convert to FITS if required}
     if esc_pressed then exit;{esc could be pressed in analyse}
     new_analyse_required3 := False;
-    flatdark_exposure := -99;
-    classify_exposure := classify_flat_exposure1.Checked;
+//    flatdark_exposure := -99;
+    img_bias:=nil;
 
     setlength(file_list, stackmenu1.listview3.items.Count);
     repeat
@@ -11613,7 +11636,8 @@ begin
               flat_width := StrToInt(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
               flat_height := StrToInt(stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]);
               day := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
-              flat_exposure := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]);
+//              flat_exposure := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]);
+              flat_exposure := stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure];
               flat_temperature := stackmenu1.listview3.Items.item[c].subitems.Strings[D_temperature];
               flat_gain := stackmenu1.listview3.Items.item[c].subitems.Strings[D_gain];
               specified := True;
@@ -11623,7 +11647,6 @@ begin
               if flat_width = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
                 if flat_height = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]) then {height correct}
                   if ((classify_flat_date1.Checked = False) or (abs(day - strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd])) <= 0.5)) then {within 12 hours made}
-                    if ((classify_exposure = False) or (abs(flat_exposure - strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure])) < 0.01)) then  {head.exposure correct?}
                     begin
                       file_list[flat_count] := filen;
                       Inc(flat_count);
@@ -11641,22 +11664,15 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if abs(flat_exposure - flatdark_exposure) > 0.01 then  {already a flat-dark loaded?}
+        if length(img_bias)=0 then  {already a flat-dark loaded?}
         begin
-          if classify_exposure = False then
-          begin
-            flat_exposure := -99; {do not classify on flat dark head.exposure time, tmeperature, gain}
-          end
-          else
-          begin
-            analyseflatdarksButton1Click(nil); {head.exposure lengths are required for selection}
-            memo2_message('Selecting flat darks with exposure time ' +  floattostrF(flat_exposure, FFgeneral, 0, 2) + 'sec, temperature '+flat_temperature+' gain '+flat_gain);
-          end;
+          analyseflatdarksButton1Click(nil); {head.exposure lengths are required for selection}
+//          memo2_message('Selecting flat darks with exposure time ' +  floattostrF(flat_exposure, FFgeneral, 0, 2) + 'sec, temperature '+flat_temperature+' gain '+flat_gain);
 
-          if average_flatdarks(flat_exposure,flat_dark_width,flat_dark_height,flat_temperature,flat_gain,img_bias) then  {average of bias frames. Convert to FITS if required}
-          begin  //falt darks found
-            flatdark_exposure := flat_exposure; {store this head.exposure for next time}
-            if ((flat_width <> flat_dark_width) or (flat_height <> flat_dark_height)) then
+          if average_flatdarks(img_bias,flatdark_exposure,flatdark_temperature,flatdark_gain) then  {average of bias frames. Convert to FITS if required}
+          begin  //flat darks found
+//            flatdark_exposure := flat_exposure; {store this head.exposure for next time}
+            if ((flat_width <> length(img_bias[0,0])) or (flat_height <> length(img_bias[0]))) then
             begin
               memo2_message('Abort, the width or height of the flat and flat-dark do not match!!');
               exit;
@@ -11664,6 +11680,12 @@ begin
           end
           else {head.flatdark_count will be zero}
           memo2_message('█ █ █ █ █ █ Warning no suitable flat-dark/bias found!! █ █ █ █ █ █ ');
+
+          issues:='';
+          if flat_temperature<>flatdark_temperature then issues:='FD_temperature|';
+          if flat_exposure<>flatdark_exposure then issues:=issues+'FD_exposure|';
+          if flat_gain<>flatdark_gain then issues:=issues+ 'FD_gain|';
+          memo2_message('Master flat creation, warning the flat and flat-dark have unequal values for '+issues);
 
           flatdark_used := False;
         end;
@@ -11701,17 +11723,20 @@ begin
           flat_filter := extract_letters_only(flat_filter);
           {extract_letter is added for filter='N/A' for SIPS software}
           if flat_filter = '' then  head.filter_name := copy(extractfilename(file_list[0]), 1, 10);{for DSLR images}
-          if classify_exposure then
-          begin
-            str(flat_exposure: 0: 2, expos);
-            flat_filter := flat_filter + '_' + expos + 'sec';
-          end;
+//          if classify_exposure then
+//          begin
+//            str(flat_exposure: 0: 2, expos);
+//            flat_filter := flat_filter + '_' + expos + 'sec';
+//          end;
           path1 := extractfilepath(file_list[0]) + 'master_flat_corrected_with_flat_darks_' + flat_filter + '_' + IntToStr(flat_count) + 'xF_' + IntToStr(head.flatdark_count) + 'xFD_' + copy(head.date_obs, 1, 10) + '.fit';
           ;
           update_integer('FLAT_CNT=', ' / Number of flat images combined.                ' , flat_count);
           update_integer('BIAS_CNT=', ' / Number of flat-dark or bias images combined.   ' , head.flatdark_count);
           if head.flatdark_count <> 0 then head.calstat := head.calstat + 'B';
           update_text('CALSTAT =', #39 + head.calstat + #39); {calibration status}
+          add_text('COMMENT ', 'Flat-dark exposure='+flatdark_exposure+', temperature='+flatdark_temperature+', gain='+flatdark_gain);
+          if length(issues)>0 then update_text('ISSUES  =', #39 + issues + #39); {issues}
+
 
           { ASTAP keyword standard:}
           { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
@@ -11805,7 +11830,6 @@ begin
   else
   begin
     load_master_dark(round(jd_start),hd); {will only be renewed if different hd.exposure or hd.set_temperature.}
-
     if head_dark.dark_count > 0 then  {dark and flat use head_2 for status}
     begin
       dark_norm_value := 0;
@@ -11839,8 +11863,7 @@ begin
   if pos('F', hd.calstat) <> 0 then memo2_message('Skipping flat calibration, already applied. See header keyword CALSTAT')
   else
   begin
-    load_master_flat(round(jd_start), hd);
-    {will only be renewed if different filter name.  Note load will overwrite hd.calstat}
+    load_master_flat(round(jd_start), hd);  {will only be renewed if different filter name.  Note load will overwrite hd.calstat}
     last_light_jd := round(jd_start);
 
     if head_flat.flat_count <> 0 then
@@ -11921,14 +11944,13 @@ begin
           end;
       end;
       {for stacking}
-      head_ref.calstat := head_ref.calstat + 'F' + head_flat.calstat{B from flat};
-      {mark that flat and bias have been applied. Store in the header of the reference file since it is not modified while stacking}
+      head_ref.calstat := head_ref.calstat + 'F' + head_flat.calstat{B from flat}; {mark that flat and bias have been applied. Store in the header of the reference file since it is not modified while stacking}
       head_ref.flat_count := head_flat.flat_count;
       head_ref.flatdark_count := head_flat.flatdark_count;
+      head_ref.issues:=head_dark.issues+head_flat.issues;
 
       {for SQM measurement, live stacking}
-      hd.calstat := hd.calstat + 'F' + head_flat.calstat{B from flat};
-      {mark that flat and bias have been applied. Store in the header of the reference file}
+      hd.calstat := hd.calstat + 'F' + head_flat.calstat{B from flat};   {mark that flat and bias have been applied. Store in the header of the reference file}
       hd.flat_count := head_flat.flat_count;
       hd.flatdark_count := head_flat.flatdark_count;
       Result := True;
@@ -12747,6 +12769,7 @@ begin
 
             update_text('COMMENT 1', '  Written by ASTAP. www.hnsky.org');
             update_text('CALSTAT =', #39 + head.calstat + #39);
+            add_text   ('ISSUES  =', #39 + head.issues + #39);//add issues from flat and applying dark
 
             if pos('D', head.calstat) > 0 then
             begin
@@ -12957,7 +12980,7 @@ begin
         head.calstat := head.calstat + 'S'; {status stacked}
         update_float('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
         update_text('CALSTAT =', #39 + head.calstat + #39); {calibration status}
-
+        add_text   ('ISSUES  =', #39 + head.issues + #39);//add issues from flat and applying dark
 
 
         head.date_obs := jdToDate(jd_start_first);
