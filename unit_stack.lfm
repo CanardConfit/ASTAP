@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 72
+  Left = 819
   Height = 707
-  Top = 207
+  Top = 160
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = Darks
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 1
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -592,8 +592,8 @@ object stackmenu1: Tstackmenu1
               end            
               item
                 AutoSize = True
-                Caption = 'Issues'
-                Width = 46
+                Caption = 'Selection issues'
+                Width = 97
               end>
             GridLines = True
             HideSelection = False
@@ -814,8 +814,8 @@ object stackmenu1: Tstackmenu1
               end            
               item
                 AutoSize = True
-                Caption = 'Issues'
-                Width = 46
+                Caption = 'Selection issues'
+                Width = 97
               end>
             GridLines = True
             HideSelection = False
@@ -867,25 +867,13 @@ object stackmenu1: Tstackmenu1
             Left = 816
             Height = 19
             Hint = 'Combine flats within 12 hour time range to master'
-            Top = 0
+            Top = 8
             Width = 203
             Caption = 'Classify by date for master creation'
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
             TabOrder = 5
-          end
-          object classify_flat_exposure1: TCheckBox
-            Left = 816
-            Height = 19
-            Hint = 'Activate this option if you want classify the flats and flat darks based on exposure time.'
-            Top = 19
-            Width = 399
-            Caption = 'Classify by exposure duration, temperature and gain for master creation.'
-            ParentFont = False
-            ParentShowHint = False
-            ShowHint = True
-            TabOrder = 6
           end
           object most_right3: TStaticText
             Left = 1250
@@ -894,7 +882,7 @@ object stackmenu1: Tstackmenu1
             Width = 3
             AutoSize = True
             Caption = '|'
-            TabOrder = 7
+            TabOrder = 6
             Visible = False
           end
         end
@@ -1116,6 +1104,11 @@ object stackmenu1: Tstackmenu1
                 Caption = 'Calibration'
                 MinWidth = 73
                 Width = 73
+              end            
+              item
+                AutoSize = True
+                Caption = 'Minor issues'
+                Width = 81
               end>
             Font.Color = clHighlight
             GridLines = True
@@ -3627,10 +3620,10 @@ object stackmenu1: Tstackmenu1
           end
           object Label19: TLabel
             Left = 1112
-            Height = 25
+            Height = 47
             Hint = 'See popup menu for calibration && extraction'
             Top = 6
-            Width = 99
+            Width = 120
             AutoSize = False
             Caption = 'See popup menu for calibration && extraction'
             Font.Height = -9
@@ -3651,7 +3644,7 @@ object stackmenu1: Tstackmenu1
           object measure_all1: TCheckBox
             Left = 248
             Height = 19
-            Hint = 'Selection of which to report is done in the report window.'
+            Hint = 'All stars annotated with AAVSO labels will be photometric measured and can be selected in the AAVSO report window.'
             Top = 5
             Width = 135
             Caption = 'Measure all annotated'

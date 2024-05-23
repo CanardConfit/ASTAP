@@ -581,6 +581,7 @@ type
     filter_name: string;
     passband_database: string;
     airmass          : string;
+    issues           : string;
   end;
 
 type
@@ -1062,6 +1063,7 @@ begin
   head.egain:='';{assume no data available}
   head.passband_database:='';//used to measure MZERO
   bayerpat:='';{reset bayer pattern}
+  head.issues:='';;
 end;{reset global variables}
 
 
@@ -1347,8 +1349,13 @@ begin
         if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
                try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
 
-        if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
-           imagetype:=get_string;{trim is already applied}
+        if header[i]='I' then
+        begin
+          if ((header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
+            imagetype:=get_string;{trim is already applied}
+          if ((header[i+1]='S')  and (header[i+2]='S') and (header[i+3]='U') and (header[i+4]='E')  and (header[i+5]='S')) then
+            head.issues:=get_string;{trim is already applied}
+        end;
 
         if (header[i]='F') then {F}
         begin
@@ -2398,6 +2405,7 @@ begin
     if key='PEDESTAL=' then head.pedestal:=round(read_float) else  {will not be used unless there is a tiff 32 bit reader}
     if key='CALSTAT =' then head.calstat:=read_string else {will not be used unless there is a tiff 32 bit reader}
     if key='FILTER  =' then head.filter_name:=read_string else
+    if key='ISSUES  =' then head.issues:=read_string else
 
     if key='DATE-OBS=' then head.date_obs:=read_string else
 
@@ -8009,7 +8017,6 @@ begin
       stackmenu1.classify_flat_filter1.checked:= Sett.ReadBool('stack','classify_flat_filter',false);
       stackmenu1.classify_dark_date1.checked:= Sett.ReadBool('stack','classify_dark_date',false);
       stackmenu1.classify_flat_date1.checked:= Sett.ReadBool('stack','classify_flat_date',false);
-      stackmenu1.classify_flat_exposure1.checked:= Sett.ReadBool('stack','classify_flat_exposure',false);
 
       stackmenu1.add_time1.checked:= Sett.ReadBool('stack','add_time',false); {add a copy of the settings at image path}
       stackmenu1.save_settings_image_path1.checked:= Sett.ReadBool('stack','copy_sett',false); {add time to resulting stack file name}
@@ -8392,7 +8399,6 @@ begin
       sett.writeBool('stack','classify_flat_filter',stackmenu1.classify_flat_filter1.Checked);
       sett.writeBool('stack','classify_dark_date',stackmenu1.classify_dark_date1.Checked);
       sett.writeBool('stack','classify_flat_date',stackmenu1.classify_flat_date1.Checked);
-      sett.writeBool('stack','classify_flat_exposure',stackmenu1.classify_flat_exposure1.Checked);
 
       sett.writeBool('stack','add_time',stackmenu1.add_time1.Checked);
       sett.writeBool('stack','copy_sett',stackmenu1.save_settings_image_path1.Checked);
