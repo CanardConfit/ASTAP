@@ -114,7 +114,7 @@ work with SharpCap since FOV is not stored.</big></td></tr><tr><td style="backgr
                 installation</a></big></li>
           <li><big><a href="#operation">Program
                 operation, stacking astronomical images</a></big></li>
-          <li><big><a href="#images"><big>Stack
+          <li><big><a href="#stack_menu"><big>Stack
                   menu</big>&nbsp;</a></big></li>
           <ul><big>
             </big><li><big><a href="#lights_tab">Lights tab</a><a href="astap.htm#uncheck_outliers"></a><br></big></li><ul><li><big><a href="#classify">Classify by options</a></big></li><li><big><a href="astap.htm#uncheck_outliers">How to exclude poor images</a></big></li><li><big><a href="astap.htm#satellite_tracks">Satellite tracks</a></big></li></ul><li><big><a href="#darks_tab">Darks tab</a></big></li><li><big><a href="#flats_tab">Flats tab</a><br></big></li><li><big><a href="#flat_darks">Flat darks tab</a></big></li><li><big><a href="astap.htm#results">Results tab</a></big></li></ul>
@@ -295,7 +295,7 @@ development
           the
           viewer by a double click on the file or using the pop-up menu.<br>
           <br>
-        <img style="width: 1744px; height: 678px;" alt="" src="astap_stack_menu.png"><br>
+        <img style="width: 1835px; height: 622px;" alt="" src="astap_stack_menu.png"><br>
         <br>
           Program requires FITS
           images or RAW files as input for stacking, but it&nbsp;can
@@ -573,18 +573,18 @@ export to 32 bit float TIFF or 32 bit float PFM&nbsp;format.<br><br>ASTAP export
         </span><img style="width: 1835px; height: 622px;" alt="" src="astap_stack_menu.png"><br>
         <br>
         For a generic description how to stack see <a href="astap.htm#operation">Program operation, stacking
-            astronomical images</a><br>
-          <br><span style="background-color: rgb(164, 164, 164);">Browse button:</span> &nbsp;Images, darks, flats can be added using the <span style="background-color: rgb(164, 164, 164);">Browse</span> button or can be drag dropped on the&nbsp;form.<br><br><span style="font-weight: bold;">Analyse and organise button:</span> Images placed in the first tab
+            astronomical images</a><br><br><span style="text-decoration: underline; font-weight: bold;"><a name="lights_tab"></a>Lights tab</span><br>
+          <br><span style="background-color: rgb(164, 164, 164);">Browse</span> button: Images, darks, flats can be added using the <span style="background-color: rgb(164, 164, 164);">Browse</span> button or can be drag dropped on the&nbsp;form.&nbsp;<br><br><span style="background-color: rgb(164, 164, 164);">Analyse and organise button</span>: Images placed in the first tab
           will
           be organised based on the FITS header keyword 
           IMAGETYP.
           So as soon you click on&nbsp;the image &nbsp;<span style="background-color: rgb(164, 164, 164);">Analyse and organise</span>
 button,&nbsp;dark and flats and flat darks/bias images will be moved to
 the corresponding tab. If the button is pressed also the images are
-analysed for HFD, background and other details.<br><br><span style="font-weight: bold;">Check-mark the frames</span>. Only check-marked frames are stacked. Light&nbsp;files names containing "_stacked" will be 
+analysed for HFD, background and other details.<br><br></big><big>For LRGB stacking if a question mark in column "Filter" is displayed then filter name </big><big>in the <a href="astap.htm#stackmenu2">"Stack method tab"</a> should made the same as&nbsp;</big><big>in the flat header behind the keyword FILTER.&nbsp;</big><br><big><br><span style="font-weight: bold;">Check-mark the frames</span>. Only check-marked frames are stacked. Light&nbsp;files names containing "_stacked" will be 
           un-checked by default to
           prevent stacks by accident&nbsp;are&nbsp;re-used.
-          If required, just select the file and check-makr it again.<br>
+          If required, just select the file and check-mark it again.<br>
           <br>
           <span style="font-weight: bold;">Sorting</span>:
           Images can be sorted on any of the columns. For example if you
@@ -641,8 +641,8 @@ pressing CTRL+Z or META+Z for the Mac.<br><br>&nbsp;<big></big></big><ul><li><bi
 
 
 
-is the image median HFD. The lower the better. Depending on focus and
-guiding. &nbsp;Note that low values could be result of loss of
+is the image median HFD. The lower the value the better. The HFD value is depended on focus quality and
+guiding precision.&nbsp;Note that low values could be result of streaks as a result of loss of
 tracking.&nbsp;</big></li><li><big>Quality of the image. The higher the better. Based on the number
 of star detections divided by HFD. Depending on sky transparency of the
 sky and focus. Note that loss of tracking result both in a low HFD and
@@ -704,27 +704,60 @@ images with the &nbsp;<span style="background-color: rgb(153, 153, 153);"> &gt;&
 button. As soon you see an abnormal bright track on the image stop the
 blinking by esc and inspect visually the image(s)&nbsp; involved by
 double click on the row. Remove any poor image&nbsp;by using right
-mouse button popup menu "rename to *.bak"<br><br>If the&nbsp;&nbsp; <span style="background-color: rgb(153, 153, 153);">&nbsp;<big><span style="font-weight: bold;">+&nbsp;</span></big></span>&nbsp; option is used then additionally&nbsp;the number of <a href="astap.htm#streak_filter2">detected satellite streaks</a> will reported in a column. Frames with very bright tracks could be removed<br><br><big><br><br><a style="font-weight: bold; text-decoration: underline;" name="darks_tab"></a><span style="font-weight: bold; text-decoration: underline;">Darks tab:</span></big></big><big><big><span style="font-weight: bold;"><br><br><img style="width: 1836px; height: 625px;" alt="" src="astap_darks_tab.png"><br></span><br></big><span style="background-color: rgb(161, 161, 161);">Browse button:</span> &nbsp;use this button to add&nbsp; frames to the list. Frames&nbsp;can also be drag dropped on the&nbsp;form.<br><br><span style="background-color: rgb(164, 164, 164);">Replace check-marked by one or more master darks:</span>
+mouse button popup menu "rename to *.bak"<br><br>If the&nbsp;&nbsp; <span style="background-color: rgb(153, 153, 153);">&nbsp;<big><span style="font-weight: bold;">+&nbsp;</span></big></span>&nbsp; option is used then additionally&nbsp;the number of <a href="astap.htm#streak_filter2">detected satellite streaks</a> will reported in a column. Frames with very bright tracks could be removed<br><big><br><br><a style="font-weight: bold; text-decoration: underline;" name="darks_tab"></a><span style="font-weight: bold; text-decoration: underline;">Darks tab:</span></big></big><big><big><span style="font-weight: bold;"><br><br><img style="width: 1763px; height: 633px;" alt="" src="astap_darks_tab.png"><br></span><br></big><span style="background-color: rgb(161, 161, 161);">Browse</span> button: use this button to add&nbsp; frames to the list. Frames&nbsp;can also be drag dropped on the&nbsp;form.<br><br><span style="background-color: rgb(164, 164, 164);">Replace check-marked by one or more master darks:</span>
 This will replace the individual&nbsp;check-marked frames&nbsp;by a
-single master dark. The existing master darks will not be effected. <br><br>&nbsp;If&nbsp;the
-list&nbsp;contains frames with&nbsp;different exposure durations&nbsp;and the option&nbsp;"<a href="astap.htm#classify">classify on</a>" exposure time is check-marked then for each exposure
-duration a different&nbsp;master dark will be created. Same applies for gain
-and temperature.<br><br>The intention is
-to keep all master darks here selected. Selection for application to the light can go fully
-automatic by the "<a href="astap.htm#classify">classify on</a>" options.<br><br></big><a href="astap.htm#index">Back to index</a><big><br><big><br><span style="font-weight: bold;"><br></span><a style="font-weight: bold; text-decoration: underline;" name="flats_tab"></a><span style="font-weight: bold; text-decoration: underline;">Flats tab:</span></big></big><big><big><span style="font-weight: bold;"><br><img style="width: 1730px; height: 622px;" alt="" src="astap_flats_tab.png"><br><br></span><span style="background-color: rgb(164, 164, 164);">Browse button:</span></big> &nbsp;use this button to add&nbsp; frames to the list. Frames&nbsp;can also be drag dropped on the&nbsp;form.<br><br><span style="background-color: rgb(164, 164, 164);">Replace check-marked by&nbsp;master flat:</span>
+single master dark. The existing master darks will not be effected. <br><br><span style="text-decoration: underline;">Classify during creation</span><br>If&nbsp;the
+list&nbsp;contains frames with&nbsp;different exposure durations&nbsp;and the option&nbsp;"<a href="astap.htm#classify">classify on</a>"
+exposure time is check-marked then for each exposure
+duration a different&nbsp;master dark will be created. Same applies for
+gain
+and temperature. If not classify check- marks are set then all loaded
+individual dark frames will be combined in one master dark and values
+are averaged.<br><br></big><big><span style="text-decoration: underline;">Classify&nbsp;during stacking</span><br></big><big>The
+intention is
+to keep all master darks here loaded and check-marked. Master dark selection on light
+exposure, gain and temperature can be fully&nbsp;&nbsp;automatic by setting the <a href="astap.htm#classify">"classify on</a>" check-marks. </big><big>
+If &nbsp;two master darks only differ in date then the frame with the date closest to
+the&nbsp;light will be selected. Closest date selection is intended for DSLR
+users without sensor temperature control. It is not required for users
+with temperature controlled cameras where it assumed dark frame do not
+change in time.&nbsp; To automate making a master flat for each observation
+night you could &nbsp;use the </big><big><span style="text-decoration: underline;">Classify by date for master creation</span>
+check mark at the top of the tab. This will create master flats for
+each exposure night from the frame loaded. </big><br><big><br><span style="text-decoration: underline;">Compatibility column.</span> <br>This
+column indicates why the selected darks are not compatible with the
+light frames. Compatibility issues can be frame width,&nbsp; frame
+height, sensor gain, sensor temperature, exposure duration. All can be
+overridden by classify check-mark except for frame width and frame
+height.<br><span style="text-decoration: underline;"></span></big><big><br><br></big><big><br></big><a href="astap.htm#index">Back to index</a><big><br><big><span style="font-weight: bold;"><br></span><a style="font-weight: bold; text-decoration: underline;" name="flats_tab"></a><span style="font-weight: bold; text-decoration: underline;">Flats tab:</span></big></big><big><big><span style="font-weight: bold;"><br><img style="width: 1764px; height: 634px;" alt="" src="astap_flats_tab.png"><br><br></span><span style="background-color: rgb(164, 164, 164);">Browse</span></big> button: use this button to add&nbsp; frames to the list. Frames&nbsp;can also be drag dropped on the&nbsp;form.<br><br><span style="background-color: rgb(164, 164, 164);">Replace check-marked by&nbsp;master flat:</span>
 This
-button will replace the individual&nbsp;check-marked frames&nbsp;by a
+button will combine the individual&nbsp;check-marked frames to a
 single master
 flat using the flat-darks loaded in the flat darks tab. So the
 flat-dark tab should be filled with frames prior pressing this button.
 The existing master flats will not be effected. All individual
 frame&nbsp;will be combined in a master flat with flat-darks included.
-The flat-dark tab will be cleared after the operation.<br><br>&nbsp;If&nbsp;the
+The flat-dark tab will be cleared after the operation. </big><big>&nbsp;</big><big>The user should only combine flat frames and flat-darks with the
+same gain, temperature and preferable exposure time. If the values are
+different then this will be recorded in the FITS header behind keyword
+ISSUES and&nbsp;later reported in the <a href="astap.htm#results">results-tab</a></big><br><big><br><span style="text-decoration: underline;">Classify during creation </span><br>If&nbsp;the
 list&nbsp;contains frames made with different filters&nbsp;and the
 option "classify on" flat&nbsp;filter&nbsp;is check-marked then for
-each filter a different&nbsp;master flat will be created. <br><br>The user should only combine flat frames and flat-darks with the same gain, temperature and preferable exposure time.<br><br>The intention is
-to keep all master flats here selected. Selection can go fully
-automatic by the "<a href="astap.htm#classify">classify on</a>" options.<br><br><a href="astap.htm#index">Back to index</a><br><br><big><span style="font-weight: bold;"><br></span><a style="font-weight: bold; text-decoration: underline;" name="flat_darks"></a><span style="font-weight: bold; text-decoration: underline;">Flat darks tab:</span></big></big><big><big><span style="font-weight: bold;"><br><img style="width: 1726px; height: 623px;" alt="" src="astap_flat_darks_tab.png"><br></span><br></big><span style="background-color: rgb(164, 164, 164);">Browse button:</span> &nbsp;use this button to add&nbsp; frames to the list. Frames&nbsp;can also be drag dropped on the&nbsp;form.<br><br>After&nbsp;master flat(s) are created in the flat-tab then this flat-darks tab will be cleared.<br><br><a href="astap.htm#index">Back to index</a><br><br><br><big><a name="results"></a><span style="font-weight: bold; text-decoration: underline;">Results tab.</span></big>
+each filter a different&nbsp;master flat will be created.&nbsp;</big><big><a href="astap.htm#results"></a><br></big><big><br><span style="text-decoration: underline;">Classify during stacking</span><br></big><big>The intention is
+to keep all master flats here loaded and check-marked. Flat selection on flat filter is&nbsp;automatic by setting the&nbsp;<a href="astap.htm#classify">classify on "flat filter</a>" check-mark. For LRGB stacking if a question mark in column "filter" is displayed then filter name </big><big>in the <a href="#stackmenu2">"Stack method tab"</a> should made the same as&nbsp;</big><big>in the flat header behind the keyword FILTER.&nbsp;</big><big>If &nbsp;two master flats only differ in date then the frame with the date closest to
+the&nbsp;light will be selected. This to ensure that the dust particles pattern
+matches. To automate making a master flat for each observation night you could &nbsp;use the </big><big><span style="text-decoration: underline;">Classify by date for master creation</span>
+check mark at the top of the tab. This will create master flats for
+each exposure night from the frame loaded. &nbsp;Flat-darks are not sorted
+on date because it is assumed they are stable.</big><big><br></big><big><span style="text-decoration: underline;"></span></big><big><span style="text-decoration: underline;"></span></big><big><br><span style="text-decoration: underline;">Calibration column</span><br>This
+column will indicate&nbsp;if the flat is calibrated with a dark-flat by
+the letter B (bias). &nbsp;Use of bias frames are not recommend since
+modern sensors behaviour can change in the first exposure seconds.&nbsp;<br><br></big><big><span style="text-decoration: underline;">Compatibility column.</span>
+&nbsp;<br>This column indicates why the selected flats are not compatible with
+the light frames. Compatibility issues can be frame width,&nbsp; frame
+height, sensor gain, sensor temperature, exposure duration. All can be
+overridden by classify check-mark except for frame width and frame
+height.<br><br></big><big><br><a href="astap.htm#index">Back to index</a><br><br><big><span style="font-weight: bold;"><br></span><a style="font-weight: bold; text-decoration: underline;" name="flat_darks"></a><span style="font-weight: bold; text-decoration: underline;">Flat darks tab:</span></big></big><big><big><span style="font-weight: bold;"><br><img style="width: 1726px; height: 623px;" alt="" src="astap_flat_darks_tab.png"><br></span><br></big><span style="background-color: rgb(164, 164, 164);">Browse button:</span> &nbsp;use this button to add&nbsp; frames to the list. Frames&nbsp;can also be drag dropped on the&nbsp;form.<br><br>After&nbsp;master flat(s) are created&nbsp;the&nbsp;flat-darks tab will be cleared.<br><br></big><big><br><br><a href="astap.htm#index">Back to index</a><br><br><br><big><a name="results"></a><span style="font-weight: bold; text-decoration: underline;">Results tab.</span></big>
         </big><p align="left"><big>The
             stack results are reported in the results tab. By a double
             click
@@ -736,8 +769,22 @@ automatic by the "<a href="astap.htm#classify">classify on</a>" options.<br><br>
             copy the image file path to the clipboard for use in a file
             explorer. <br>
           <span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span>&nbsp;<br>
-          <a href="astap.htm#index"><img style="border: 0px solid ; width: 1414px; height: 632px;" alt="" src="astap_stack_menu4.png"></a></big></p><big>
-        <big><br>
+          <a href="astap.htm#index"><img style="border: 0px solid ; width: 1590px; height: 635px;" alt="" src="astap_stack_menu4.png"></a></big></p><p align="left"><big><span style="text-decoration: underline;">Calibration column</span>
+&nbsp;</big></p><p align="left"><big>This
+column will indicate&nbsp;if the stack was calibrated with a dark (D),
+Flat (F) and&nbsp;flat-dark (B). &nbsp;The S stand for stacked. So
+ideally it indicates DFBS. Calibration stauts is stored behind keyword
+CALSTAT.</big></p><p align="left"><big><span style="text-decoration: underline;"></span></big></p><p align="left"><big><span style="text-decoration: underline;">Issues column</span></big></p><p align="left"><big>
+Possible&nbsp;dark frame issues are D_temperature, D_exposure, D_gain.
+This indicates that the dark sensor temperature, exposure duration and
+sensor gain are different then the light frame values.&nbsp;</big><big>Ideally
+light and dark frames should have been taken with the same sensor
+temperature, exposure duration and sensor gain settings. &nbsp;</big></p><p align="left"><big>Possible minor flat frame issues are </big><big>FD_temperature, FD_exposure, FD_gain.&nbsp;&nbsp;</big><big>This
+indicates that the flat-dark sensor temperature, exposure duration and
+sensor gain are different then the light frame values.</big><big>&nbsp;</big><big>Ideally
+flat and flat-dark frames should have been taken&nbsp;with the same
+sensor temperature, exposure duration and sensor gain settings. &nbsp;</big></p><p align="left"><big>Issues between the darks and lights are more important due to the low light conditions for lights.</big></p><p align="left"><big>These issues are stored in the FITS header behind keyword ISSUES.</big></p><big>
+        <big>
           </big><a href="astap.htm#index">Back to index</a></big><big><br><big><br>
           <span style="font-weight: bold;"></span><big><br>
         </big><a style="font-weight: bold; text-decoration: underline;" name="stack_menu2"></a><span style="font-weight: bold; text-decoration: underline;">Stack method tab</span></big></big>

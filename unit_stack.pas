@@ -11311,22 +11311,22 @@ begin
                   filen := ListView2.items[c].Caption;
                   day_offset := abs(d - jd_int);
                 end;
-                listview2.Items.item[c].subitems.Strings[D_issues]:='';//clear issue
+                listview2.Items.item[c].subitems.Strings[D_issues]:='';//clear compatibility issue
               end
               else
-              listview2.Items.item[c].subitems.Strings[D_issues]:='height<>'+inttostr(hd.height);
+              listview2.Items.item[c].subitems.Strings[D_issues]:='height<>'+inttostr(hd.height);//compatibility issue
             end
             else
-            listview2.Items.item[c].subitems.Strings[D_issues]:='width<>'+inttostr(hd.width);
+            listview2.Items.item[c].subitems.Strings[D_issues]:='width<>'+inttostr(hd.width);//compatibility issue
           end
           else
-          listview2.Items.item[c].subitems.Strings[D_issues]:='gain<>'+dark_gain;
+          listview2.Items.item[c].subitems.Strings[D_issues]:='gain<>'+dark_gain;//compatibility issue
         end
         else
-        listview2.Items.item[c].subitems.Strings[D_issues]:='temperature<>'+floattostrF(light_temperature,FFfixed,0,0);
+        listview2.Items.item[c].subitems.Strings[D_issues]:='temperature<>'+floattostrF(light_temperature,FFfixed,0,0);//compatibility issue
       end
       else
-      listview2.Items.item[c].subitems.Strings[D_issues]:='exposure time<>'+floattostrF(light_exposure,FFfixed,0,0);
+      listview2.Items.item[c].subitems.Strings[D_issues]:='exposure<>'+floattostrF(light_exposure,FFfixed,0,0);//compatibility issue
     Inc(c);
   end;
 
@@ -11406,10 +11406,10 @@ begin
             stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='';//clear fatal issues
           end
           else
-          stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='height<>'+inttostr(hd.height);//add fatal issue
+          stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='height<>'+inttostr(hd.height);//add fatal compatibility issue
         end
         else
-        stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='width<>'+inttostr(hd.width);//add fatal issue
+        stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='width<>'+inttostr(hd.width);//add fatal compatibility issue
       end;
       //not the correct filter is not a fatal issue since other filters are likely found
     end;
