@@ -1934,7 +1934,7 @@ object mainwindow: Tmainwindow
       Hint = 'Local adjustments'
       ImageIndex = 42
       object localcoloursmooth2: TMenuItem
-        Caption = 'Local colour smooth stars (▭, ⬭)'
+        Caption = 'Local colour smooth stars (⬭)'
         OnClick = localcoloursmooth2Click
       end
       object remove_colour1: TMenuItem

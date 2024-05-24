@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.05.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.05.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -877,6 +877,7 @@ function duplicate(img:image_array) :image_array;//fastest way to duplicate an i
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 procedure remove_photometric_calibration;//from header
 procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
+procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -7992,6 +7993,10 @@ begin
       stackmenu1.osc_preserve_r_nebula1.checked:=Sett.ReadBool('stack','osc_pr',true);
       dum:=Sett.ReadString('stack','osc_cw','');if dum<>'' then   stackmenu1.osc_smart_smooth_width1.text:=dum;
       dum:=Sett.ReadString('stack','osc_sd','');  if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:=dum;
+
+      dum:=Sett.ReadString('stack','smooth_dia','');if dum<>'' then   stackmenu1.smooth_diameter1.text:=dum;
+      dum:=Sett.ReadString('stack','smooth_stars','');  if dum<>'' then stackmenu1.smooth_stars1.text:=dum;
+
       dum:=Sett.ReadString('stack','sqm_key',''); if dum<>'' then sqm_key:=copy(dum,1,8);{remove * character used for protection spaces}
       dum:=Sett.ReadString('stack','centaz_key',''); if dum<>'' then centaz_key:=copy(dum,1,8);{remove * character used for protection spaces}
 
@@ -7999,6 +8004,12 @@ begin
       stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','green_fl',false);
       stackmenu1.lrgb_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
       stackmenu1.lrgb_preserve_r_nebula1.checked:=Sett.ReadBool('stack','lrgb_pr',true);
+
+      stackmenu1.lrgb_stars_smooth1.checked:=Sett.ReadBool('stack','lrgb_sm',true);
+      dum:=Sett.ReadString('stack','lrgb_smd','');if dum<>'' then   stackmenu1.lrgb_smooth_diameter1.text:=dum;
+      dum:=Sett.ReadString('stack','lrgb_sms','');  if dum<>'' then stackmenu1.lrgb_smooth_stars1.text:=dum;
+
+
       dum:=Sett.ReadString('stack','lrgb_sw','');if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:=dum;
       dum:=Sett.ReadString('stack','lrgb_sd','');if dum<>'' then  stackmenu1.lrgb_smart_colour_sd1.text:=dum;
 
@@ -8017,6 +8028,7 @@ begin
       stackmenu1.classify_flat_filter1.checked:= Sett.ReadBool('stack','classify_flat_filter',false);
       stackmenu1.classify_dark_date1.checked:= Sett.ReadBool('stack','classify_dark_date',false);
       stackmenu1.classify_flat_date1.checked:= Sett.ReadBool('stack','classify_flat_date',false);
+      stackmenu1.classify_flat_duration1.checked:= Sett.ReadBool('stack','classify_flat_duration',false);
 
       stackmenu1.add_time1.checked:= Sett.ReadBool('stack','add_time',false); {add a copy of the settings at image path}
       stackmenu1.save_settings_image_path1.checked:= Sett.ReadBool('stack','copy_sett',false); {add time to resulting stack file name}
@@ -8370,14 +8382,22 @@ begin
       sett.writeString('stack','osc_sw',stackmenu1.osc_smart_smooth_width1.text);
       sett.writestring('stack','osc_sd',stackmenu1.osc_smart_colour_sd1.text);
 
-      sett.writestring('stack','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
+      sett.writeString('stack','smooth_dia',stackmenu1.smooth_diameter1.text);
+      sett.writestring('stack','smooth_stars',stackmenu1.smooth_stars1.text);
 
+      sett.writestring('stack','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
 
       sett.writeBool('stack','lrgb_al',stackmenu1.lrgb_auto_level1.checked);
       sett.writeBool('stack','green_fl',stackmenu1.green_purple_filter1.checked);
 
       sett.writeBool('stack','lrgb_cs',stackmenu1.lrgb_colour_smooth1.checked);
       sett.writeBool('stack','lrgb_pr',stackmenu1.lrgb_preserve_r_nebula1.checked);
+
+      sett.writeBool('stack','lrgb_sm',stackmenu1.lrgb_stars_smooth1.checked);
+      sett.writeString('stack','lrgb_smd',stackmenu1.lrgb_smooth_diameter1.text);
+      sett.writestring('stack','lrgb_sms',stackmenu1.lrgb_smooth_stars1.text);
+
+
       sett.writestring('stack','lrgb_sw',stackmenu1.lrgb_smart_smooth_width1.text);
       sett.writestring('stack','lrgb_sd',stackmenu1.lrgb_smart_colour_sd1.text);
 
@@ -8399,6 +8419,7 @@ begin
       sett.writeBool('stack','classify_flat_filter',stackmenu1.classify_flat_filter1.Checked);
       sett.writeBool('stack','classify_dark_date',stackmenu1.classify_dark_date1.Checked);
       sett.writeBool('stack','classify_flat_date',stackmenu1.classify_flat_date1.Checked);
+      sett.writeBool('stack','classify_flat_duration',stackmenu1.classify_flat_duration1.Checked);
 
       sett.writeBool('stack','add_time',stackmenu1.add_time1.Checked);
       sett.writeBool('stack','copy_sett',stackmenu1.save_settings_image_path1.Checked);
@@ -15993,12 +16014,91 @@ begin
   ,inttostr(egain_extra_factor))));
 end;
 
+procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
+var
+  fitsX,fitsY,dum,k,counter    : integer;
+  flux,center_x,center_y,a,b,rgb, lumr : single;
+  colour,mean : array[0..2] of single;
+begin
+  if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+  if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
+  startX:=max(0,startX);
+  startY:=max(0,startY);
+  stopX:=min(stopX,length(img_loaded[0,0])-1);
+  stopY:=min(stopY,length(img_loaded[0])-1);
+
+  center_x:=(startx+stopX)/2;
+  center_y:=(startY+stopY)/2;
+  a:=(stopX-1-startx)/2;
+  b:=(stopY-1-startY)/2;
+
+
+  colour[0]:=0;
+  colour[1]:=0;
+  colour[2]:=0;
+  mean[0]:=0;
+  mean[1]:=0;
+  mean[2]:=0;
+
+  counter:=0;
+
+  //mean background
+  for fitsY:=startY to stopY-1 do
+  for fitsX:=startX to stopX-1 do
+  begin
+    if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
+    begin
+      for k:=0 to head.naxis3-1 do {do all colors}
+       mean[k]:=mean[k]+img_loaded[k,fitsY,fitsX];
+       counter:=counter+1;
+    end;
+  end;
+  if counter=0 then exit;
+  for k:=0 to head.naxis3-1 do mean[k]:=mean[k]/counter;
+
+  //mean colour
+  for fitsY:=startY to stopY-1 do
+  for fitsX:=startX to stopX-1 do
+  begin
+    if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
+    begin
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        colour[k]:=colour[k]+img_loaded[k,fitsY,fitsX]-mean[k];
+      end;
+    end;
+  end;
+
+  rgb:=colour[0]+colour[1]+colour[2]+0.00001; {mean pixel flux. Factor 0.00001, prevent dividing by zero}
+
+  for fitsY:=startY to stopY-1 do
+  for fitsX:=startX to stopX-1 do
+  begin
+    if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
+    begin
+      flux:=(img_loaded[0,fitsY,fitsX]-mean[0]
+            +img_loaded[1,fitsY,fitsX]-mean[1]
+            +img_loaded[2,fitsY,fitsX]-mean[2]);//flux of one pixel
+
+
+//        strongest_colour_local:=max(red,max(green,blue));
+//        top:=bg + strongest_colour_local*(flux/rgb);{calculate the highest colour value}
+//        if top>=65534.99 then flux:=flux-(top-65534.99)*rgb/strongest_colour_local;{prevent values above 65535}
+
+      {apply average colour to pixel}
+      lumr:=flux/rgb;
+      img_loaded[0,fitsY,fitsX]:={new_noise[k]}+ mean[0]+colour[0]*lumr;
+      img_loaded[1,fitsY,fitsX]:={new_noise[k]}+ mean[1]+colour[1]*lumr;
+      img_loaded[2,fitsY,fitsX]:={new_noise[k]}+ mean[2]+colour[2]*lumr;
+
+    end;
+  end;
+end;
+
 
 procedure Tmainwindow.localcoloursmooth2Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,counter    : integer;
-   flux,center_x,center_y,a,b,rgb, lumr : single;
-   colour,mean : array[0..2] of single;
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
@@ -16006,75 +16106,7 @@ begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img;
-
-    center_x:=(startx+stopX)/2;
-    center_y:=(startY+stopY)/2;
-    a:=(stopX-1-startx)/2;
-    b:=(stopY-1-startY)/2;
-
-    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
-    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
-
-    colour[0]:=0;
-    colour[1]:=0;
-    colour[2]:=0;
-    mean[0]:=0;
-    mean[1]:=0;
-    mean[2]:=0;
-
-    counter:=0;
-
-    //mean background
-    for fitsY:=startY to stopY-1 do
-    for fitsX:=startX to stopX-1 do
-    begin
-      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
-      begin
-        for k:=0 to head.naxis3-1 do {do all colors}
-         mean[k]:=mean[k]+img_loaded[k,fitsY,fitsX];
-         counter:=counter+1;
-      end;
-    end;
-    if counter=0 then exit;
-    for k:=0 to head.naxis3-1 do mean[k]:=mean[k]/counter;
-
-    //mean colour
-    for fitsY:=startY to stopY-1 do
-    for fitsX:=startX to stopX-1 do
-    begin
-      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
-      begin
-        for k:=0 to head.naxis3-1 do {do all colors}
-        begin
-          colour[k]:=colour[k]+img_loaded[k,fitsY,fitsX]-mean[k];
-        end;
-      end;
-    end;
-
-    rgb:=colour[0]+colour[1]+colour[2]+0.00001; {mean pixel flux. Factor 0.00001, prevent dividing by zero}
-
-    for fitsY:=startY to stopY-1 do
-    for fitsX:=startX to stopX-1 do
-    begin
-      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
-      begin
-        flux:=(img_loaded[0,fitsY,fitsX]-mean[0]
-              +img_loaded[1,fitsY,fitsX]-mean[1]
-              +img_loaded[2,fitsY,fitsX]-mean[2]);//flux of one pixel
-
-
-//        strongest_colour_local:=max(red,max(green,blue));
-//        top:=bg + strongest_colour_local*(flux/rgb);{calculate the highest colour value}
-//        if top>=65534.99 then flux:=flux-(top-65534.99)*rgb/strongest_colour_local;{prevent values above 65535}
-
-        {apply average colour to pixel}
-        lumr:=flux/rgb;
-        img_loaded[0,fitsY,fitsX]:={new_noise[k]}+ mean[0]+colour[0]*lumr;
-        img_loaded[1,fitsY,fitsX]:={new_noise[k]}+ mean[1]+colour[1]*lumr;
-        img_loaded[2,fitsY,fitsX]:={new_noise[k]}+ mean[2]+colour[2]*lumr;
-
-      end;
-    end;
+    local_color_smooth(startX,stopX,startY,stopY);
 
     plot_fits(mainwindow.image1,false,true);
     Screen.Cursor:=crDefault;
