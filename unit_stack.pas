@@ -72,6 +72,7 @@ type
     apply_horizontal_gradient1: TButton;
     apply_hue1: TButton;
     apply_remove_background_colour1: TButton;
+    apply_star_smooth1: TButton;
     apply_vertical_gradient1: TButton;
     area_selected1: TLabel;
     area_set1: TLabel;
@@ -116,7 +117,15 @@ type
     blink_annotate_and_solve1: TButton;
     apply_unsharp_mask1: TButton;
     airmass1: TMenuItem;
+    classify_flat_duration1: TCheckBox;
+    GroupBox23: TGroupBox;
+    lrgb_stars_smooth1: TCheckBox;
+    lrgb_smooth_diameter1: TComboBox;
+    smooth_stars1: TComboBox;
     measure_all1: TCheckBox;
+    smooth_diameter1: TComboBox;
+    lrgb_smooth_stars1: TComboBox;
+    undo_button23: TBitBtn;
     view_next1: TMenuItem;
     view_previous1: TMenuItem;
     view_next6: TMenuItem;
@@ -704,6 +713,7 @@ type
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
+    procedure apply_star_smooth1Click(Sender: TObject);
     procedure blend1Change(Sender: TObject);
     procedure blink_annotate_and_solve1Click(Sender: TObject);
     procedure apply_unsharp_mask1Click(Sender: TObject);
@@ -4693,7 +4703,7 @@ begin
 end;
 
 
-function average_flatdarks(out img_bias: image_array; out flatdark_exposure,flatdark_temperature,flatdark_gain: string): boolean;
+function average_flatdarks(flat_exposure: string; out img_bias: image_array; out flatdark_exposure,flatdark_temperature,flatdark_gain: string): boolean;
 var
   c, file_count: integer;
   file_list: array of string;
@@ -4706,18 +4716,22 @@ begin
   setlength(file_list, stackmenu1.listview4.items.Count);
   file_count := 0;
   specified := False;
-  for c := 0 to stackmenu1.listview4.items.Count - 1 do
-    if stackmenu1.listview4.items[c].Checked = True then
+  with stackmenu1 do
+  for c := 0 to listview4.items.Count - 1 do
+    if listview4.items[c].Checked = True then
     begin
-       if specified=false then//use data from first flat-dark
+       if ((classify_flat_duration1.checked=false) or (flat_exposure=listview4.Items.item[c].subitems.Strings[FD_exposure])) then
        begin
-         flatdark_exposure:=stackmenu1.listview4.Items.item[c].subitems.Strings[FD_exposure];
-         flatdark_temperature:=stackmenu1.listview4.Items.item[c].subitems.Strings[D_temperature];
-         flatdark_gain:=stackmenu1.listview4.Items.item[c].subitems.Strings[D_gain];
-         specified:=true;
+         if specified=false then//use data from first flat-dark
+         begin
+           flatdark_exposure:=listview4.Items.item[c].subitems.Strings[FD_exposure];
+           flatdark_temperature:=listview4.Items.item[c].subitems.Strings[D_temperature];
+           flatdark_gain:=listview4.Items.item[c].subitems.Strings[D_gain];
+           specified:=true;
+         end;
+         file_list[file_count] := ListView4.items[c].Caption;
+         Inc(file_count);
        end;
-       file_list[file_count] := stackmenu1.ListView4.items[c].Caption;
-       Inc(file_count);
     end;
   if file_count <> 0 then
   begin
@@ -8085,7 +8099,7 @@ var
   rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep,az,alt : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
-  countCheck, countThree, database_col,j, lvsx,lvsp,nrvars,formalism : integer;
+  countCheck, countThree, database_col,j, lvsx,lvsp,formalism : integer;
   flipvertical, fliphorizontal, init, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object: boolean;
   starlistx: star_list;
@@ -9740,6 +9754,49 @@ begin
   else
     if annotated then plot_annotations(false {use solution vectors},false);
 end;
+
+
+procedure apply_star_smooth(smooth_diameter, smooth_stars: string);
+var
+  starlist         : star_list;
+  i,nrstars,binning,nr_stars   : integer;
+  hfd_min,hfd1,star_fwhm,snr,flux,xc,yc,rad,radius : double;
+  warning : string;
+begin
+  hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+  rad:=strtofloat2(smooth_diameter)/2;
+  nr_stars:=strtoint(smooth_stars);
+  // find_stars(img_loaded, hfd_min, 500, starlist);
+  binning:=report_binning(head.height);{select binning based on the height of the light}
+  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,nr_stars{max_stars},false{update hist},starlist,warning);{bin, measure background, find stars}
+
+  nrstars:=Length(starlist[0]);
+  for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
+  begin
+    HFD(img_loaded,round(starlist[0,i]),round(starlist[1,i]),14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    if snr>3 then //should always be the case
+    begin
+      radius:=rad*hfd1;
+      local_color_smooth(round(xc-radius),round(xc+radius),round(yc-radius),round(yc+radius));
+    end;
+  end;
+  memo2_message('Star smooth applied on '+inttostr(nrstars-1)+ ' stars.');
+end;
+
+
+procedure Tstackmenu1.apply_star_smooth1Click(Sender: TObject);
+begin
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+  backup_img;
+
+  apply_star_smooth(smooth_diameter1.Text, smooth_stars1.Text);
+
+  plot_fits(mainwindow.image1,false,true);
+
+  Screen.Cursor:=crDefault;
+end;
+
+
 
 procedure Tstackmenu1.blend1Change(Sender: TObject);
 begin
@@ -11613,10 +11670,12 @@ begin
     save_settings2;
     memo2_message('Analysing flats');
     analyse_listview(listview3, False {light}, False {full fits},  new_analyse_required3{refresh});{update the tab information. Convert to FITS if required}
+    analyseflatdarksButton1Click(nil); {head.exposure lengths are required for selection}
     if esc_pressed then exit;{esc could be pressed in analyse}
     new_analyse_required3 := False;
-//    flatdark_exposure := -99;
     img_bias:=nil;
+    flatdark_used := False;
+    flatdark_exposure:='-99';//none existing value
 
     setlength(file_list, stackmenu1.listview3.items.Count);
     repeat
@@ -11636,7 +11695,6 @@ begin
               flat_width := StrToInt(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
               flat_height := StrToInt(stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]);
               day := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
-//              flat_exposure := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]);
               flat_exposure := stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure];
               flat_temperature := stackmenu1.listview3.Items.item[c].subitems.Strings[D_temperature];
               flat_gain := stackmenu1.listview3.Items.item[c].subitems.Strings[D_gain];
@@ -11644,13 +11702,14 @@ begin
             end;
 
             if ((stackmenu1.classify_flat_filter1.Checked = False) or(flat_filter = stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
-              if flat_width = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
-                if flat_height = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]) then {height correct}
-                  if ((classify_flat_date1.Checked = False) or (abs(day - strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd])) <= 0.5)) then {within 12 hours made}
-                    begin
-                      file_list[flat_count] := filen;
-                      Inc(flat_count);
-                    end;
+              if ((stackmenu1.classify_flat_duration1.Checked = False) or(flat_exposure = stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure])) then {exposure duration correct?}
+                if flat_width = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
+                  if flat_height = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]) then {height correct}
+                    if ((classify_flat_date1.Checked = False) or (abs(day - strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd])) <= 0.5)) then {within 12 hours made}
+                      begin
+                        file_list[flat_count] := filen;
+                        Inc(flat_count);
+                     end;
           end;
         end;{checked}
 
@@ -11660,40 +11719,33 @@ begin
 
       if flat_count <> 0 then
       begin
-
         Application.ProcessMessages;
         if esc_pressed then exit;
-
-        if length(img_bias)=0 then  {already a flat-dark loaded?}
+        //Do first the flats-darks to keep the flats header.
+        if ((length(img_bias)=0) or (flat_exposure<>flatdark_exposure)) then  {already a flat-dark loaded?}
         begin
-          analyseflatdarksButton1Click(nil); {head.exposure lengths are required for selection}
-//          memo2_message('Selecting flat darks with exposure time ' +  floattostrF(flat_exposure, FFgeneral, 0, 2) + 'sec, temperature '+flat_temperature+' gain '+flat_gain);
-
-          if average_flatdarks(img_bias,flatdark_exposure,flatdark_temperature,flatdark_gain) then  {average of bias frames. Convert to FITS if required}
+          if average_flatdarks(flat_exposure,img_bias,flatdark_exposure,flatdark_temperature,flatdark_gain) then  {average of bias frames. Convert to FITS if required}
           begin  //flat darks found
-//            flatdark_exposure := flat_exposure; {store this head.exposure for next time}
             if ((flat_width <> length(img_bias[0,0])) or (flat_height <> length(img_bias[0]))) then
             begin
               memo2_message('Abort, the width or height of the flat and flat-dark do not match!!');
               exit;
             end;
+            issues:='';
+            if flat_temperature<>flatdark_temperature then issues:='FD_temperature|';
+            if flat_exposure<>flatdark_exposure then issues:=issues+'FD_exposure|';
+            if flat_gain<>flatdark_gain then issues:=issues+ 'FD_gain|';
+            if length(issues)>0 then memo2_message('Master flat creation, warning the flat and flat-dark have unequal values for '+issues);
           end
           else {head.flatdark_count will be zero}
-          memo2_message('█ █ █ █ █ █ Warning no suitable flat-dark/bias found!! █ █ █ █ █ █ ');
-
-          issues:='';
-          if flat_temperature<>flatdark_temperature then issues:='FD_temperature|';
-          if flat_exposure<>flatdark_exposure then issues:=issues+'FD_exposure|';
-          if flat_gain<>flatdark_gain then issues:=issues+ 'FD_gain|';
-          memo2_message('Master flat creation, warning the flat and flat-dark have unequal values for '+issues);
-
-          flatdark_used := False;
+          memo2_message('█ █ █ █ █ █ Warning no suitable flat-dark/bias found for the next flats !! █ █ █ █ █ █ ');
         end;
 
         memo2_message('Combining flats.');
         Application.ProcessMessages;
         if esc_pressed then exit;
         average('flat', file_list, flat_count, img_flat); {only average, make color also mono}
+
 
         memo2_message('Combining flats and flat-darks.');
         Application.ProcessMessages;
@@ -11720,15 +11772,10 @@ begin
         head.naxis3 := 1; {any color is made mono in the routine}
         if flat_count <> 0 then
         begin
-          flat_filter := extract_letters_only(flat_filter);
-          {extract_letter is added for filter='N/A' for SIPS software}
+          flat_filter := extract_letters_only(flat_filter);     {extract_letter is added for filter='N/A' for SIPS software}
           if flat_filter = '' then  head.filter_name := copy(extractfilename(file_list[0]), 1, 10);{for DSLR images}
-//          if classify_exposure then
-//          begin
-//            str(flat_exposure: 0: 2, expos);
-//            flat_filter := flat_filter + '_' + expos + 'sec';
-//          end;
-          path1 := extractfilepath(file_list[0]) + 'master_flat_corrected_with_flat_darks_' + flat_filter + '_' + IntToStr(flat_count) + 'xF_' + IntToStr(head.flatdark_count) + 'xFD_' + copy(head.date_obs, 1, 10) + '.fit';
+
+          path1 := extractfilepath(file_list[0]) + 'master_flat_corrected_with_flat_darks_' + flat_filter + '_' + IntToStr(flat_count) + 'xF_' + IntToStr(head.flatdark_count) + 'xFD_' + flat_exposure+'sec_'+copy(head.date_obs, 1, 10) + '.fit';
           ;
           update_integer('FLAT_CNT=', ' / Number of flat images combined.                ' , flat_count);
           update_integer('BIAS_CNT=', ' / Number of flat-dark or bias images combined.   ' , head.flatdark_count);
@@ -11748,6 +11795,8 @@ begin
 
           if save_fits(img_flat, path1, -32, False) then {saved}
           begin
+            memo2_message('Saved '+path1);
+            application.processmessages;
             listview3.Items.BeginUpdate; {remove the flats added to master}
             for i := 0 to flat_count do
             begin
@@ -11766,7 +11815,6 @@ begin
             end;
             listview_add(listview3, path1, True, F_nr);{add master}
             listview3.Items.EndUpdate;
-            analyse_listview(listview3, False {light}, full_analyse {full fits (for standard deviation)}, False{refresh});{update the tab information}
           end;
           img_flat := nil;
         end;
@@ -11780,7 +11828,7 @@ begin
     if flatdark_used then listview4.Items.Clear;{remove bias if used}
     save_settings2;{store settings}
     file_list := nil;
-
+    analyse_listview(listview3, False {light}, full_analyse {full fits (for standard deviation)}, False{refresh});{update the tab information}
     memo2_message('Master flat(s) ready.');
   end;{with stackmenu1}
 end;
@@ -12906,21 +12954,27 @@ begin
             apply_factors;{histogram is after this action invalid}
             stackmenu1.reset_factors1Click(nil);{reset factors to default}
 
-            if stackmenu1.green_purple_filter1.Checked then
-            begin
-              memo2_message('Applying "remove green and purple" filter');
-              green_purple_filter(img_loaded);
-            end;
 
             use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
             if stackmenu1.lrgb_colour_smooth1.Checked then
             begin
               memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
-              smart_colour_smooth(img_loaded, strtofloat2(
-                lrgb_smart_smooth_width1.Text), strtofloat2(lrgb_smart_colour_sd1.Text),
-                lrgb_preserve_r_nebula1.Checked, False {get  hist});{histogram doesn't needs an update}
+              smart_colour_smooth(img_loaded, strtofloat2(lrgb_smart_smooth_width1.Text), strtofloat2(lrgb_smart_colour_sd1.Text),  lrgb_preserve_r_nebula1.Checked, False {get  hist});{histogram doesn't needs an update}
             end;
+            if stackmenu1.lrgb_stars_smooth1.Checked then
+            begin
+              memo2_message('Applying star-smoothing filter image as set in tab "stack method"');
+              apply_star_smooth(stackmenu1.lrgb_smooth_diameter1.Text, stackmenu1.lrgb_smooth_stars1.Text);
+            end;
+
+            if stackmenu1.green_purple_filter1.Checked then
+            begin
+              memo2_message('Applying "remove green and purple" filter');
+              green_purple_filter(img_loaded);
+            end;
+
+
           end
           else
           begin
