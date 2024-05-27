@@ -1,5 +1,13 @@
 del .\*.ppu
 del .\*.O
+del .\astap.exe
+
+IF EXIST astap.exe rundll32 user32.dll,MessageBeep
+IF EXIST astap.exe powershell "[console]::beep(500,300)"
+IF EXIST astap.exe powershell "[console]::beep(500,300)"
+IF EXIST astap.exe ECHO ABORT!! astap.exe locked!!!
+IF EXIST astap.exe pause
+IF EXIST astap.exe exit
 
 d:\lazarus\lazbuild  astap_w64.lpi -B
 
