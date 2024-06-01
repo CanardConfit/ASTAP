@@ -12,11 +12,11 @@ sudo rm *.rpm
 sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_amd64
 sudo /home/h/alien/alien-8.95/alien.pl -r -c -k  /home/h/astap_install/astap_amd64.deb
 cp *.rpm astap_amd64.rpm
-rm ./astap-2*.rpm
+sudo rm ./astap-2*.rpm
 
 #unpack
 sudo dpkg -i ./astap_amd64.deb
-tar -czvf astap_amd64.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/astap/astap.ico /opt/astap/copyright.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop /usr/local/bin/astap /opt/astap/dcraw-astap /opt/astap/unprocessed_raw-astap
+tar -czvf astap_amd64.tar.gz /opt/astap /usr/share/applications/ASTAP.desktop 
 
 #build amd64 qt5 using stable version!!
 rm ~/astap.fpc/astap
@@ -26,8 +26,7 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
     exit
 fi
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_amd64_qt5.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/astap/astap.ico /opt/astap/copyright.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop /opt/astap/dcraw-astap /opt/astap/unprocessed_raw-astap
-
+tar -czvf astap_amd64_qt5.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
 #Build i386    
 rm ~/astap.fpc/astap                                
 /home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_gkt2_i386.lpi                  
@@ -53,7 +52,8 @@ cd /home/h/astap_install
 sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64
 sudo cp /home/h/astap.fpc/astap /opt/astap
 sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt/astap
-tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+tar -czvf astap_aarch64.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
+
 #build aarch64 qt5
 rm ~/astap.fpc/astap 
 /home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64_qt5.lpi
@@ -62,7 +62,7 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
     exit
 fi
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_aarch64_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+tar -czvf astap_aarch64_qt5.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
 
 
 # read -p "Press any key to resume ..."
@@ -82,7 +82,8 @@ sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_armhf
 sudo cp /home/h/astap.fpc/astap /opt/astap
 sudo cp /home/h/astap_install/astap_armhf/opt/astap/unprocessed_raw-astap /opt/astap
 # not dcraw-astap
-tar -czvf astap_armhf.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+tar -czvf astap_armhf.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
+
 #build armhf qt5
 #use old compiler. New one has problems with triplets routine
 rm ~/astap.fpc/astap 
@@ -92,8 +93,7 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
     exit
 fi 
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_armhf_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
-
+tar -czvf astap_armhf_qt5.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
 
 rm ~/astap.fpc/astap                                     
 /home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_cross_compile_to_Darwin_M1.lpi
