@@ -1435,14 +1435,15 @@ begin
   end;
 end;
 
+
 procedure listview_add_xy(c:integer; fitsX, fitsY: double);{add x,y position to listview}
 var
   i: integer;
 begin
   with stackmenu1 do
   begin
-        ListView1.Items.item[c].subitems.Strings[L_X] := floattostrF(fitsX, ffFixed, 0, 2);
-        ListView1.Items.item[c].subitems.Strings[L_Y] := floattostrF(fitsY, ffFixed, 0, 2);
+    ListView1.Items.item[c].subitems.Strings[L_X] := floattostrF(fitsX, ffFixed, 0, 2);
+    ListView1.Items.item[c].subitems.Strings[L_Y] := floattostrF(fitsY, ffFixed, 0, 2);
   end;
 end;
 
@@ -7482,9 +7483,21 @@ var
 begin
   //clear added AAVSO columns
   with stackmenu1.listview7 do
-  for i:=p_nr-1 downto p_nr_norm do
-    columns.Delete(ColumnCount-1);
-  p_nr:=p_nr_norm;//set variable for the number of columns correct;
+  begin
+    Items.beginUpdate;{photometry}
+    for i:=p_nr-1 downto p_nr_norm do
+      columns.Delete(ColumnCount-1);//delete last column;
+    p_nr:=ColumnCount-1;//is equal to p_nr_norm;
+    Items.EndUpdate;
+  end;
+
+  //  listview7.Items.beginUpdate;{photometry}
+  //  for index:=p_nr downto p_nr_norm+1 do  //delete extra columns use for measure all
+  //    listview7.columns.Delete(index);
+
+  //  p_nr:=index;
+  //  listview7.Items.EndUpdate;
+
 
 end;
 
@@ -8201,7 +8214,7 @@ var
             end;
 
 begin
-  if listview7.items.Count <= 0 then exit; {no files}
+   if listview7.items.Count <= 0 then exit; {no files}
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -8585,6 +8598,11 @@ begin
                             end;
                             listview7.Items.item[c].subitems.Strings[P_nr-2]:= astr;
                             listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(snr));
+
+                            //store RA, DEC position                 [0..864000], DEC[-324000..324000]
+                            stackmenu1.listview7.column[P_nr-2].tag:= round(variable_list[j].ra*864000/(2*pi));
+                            stackmenu1.listview7.column[P_nr-1].tag:= round(variable_list[j].dec*324000/(0.5*pi));
+
                           end;//new object
                         end;//enough snr
                       end;
@@ -8626,6 +8644,10 @@ begin
                             end;
                             listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
                             listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
+                            //store RA, DEC position                 [0..864000], DEC[-324000..324000]
+                            stackmenu1.listview7.column[P_nr-2].tag:= round(variable_list[j].ra*864000/(2*pi));
+                            stackmenu1.listview7.column[P_nr-1].tag:= round(variable_list[j].dec*324000/(0.5*pi));
+
                           end;//new object
                         end;//enough snr
                       end;
@@ -9739,10 +9761,15 @@ end;
 
 
 procedure Tstackmenu1.annotate_mode1Change(Sender: TObject);
+var
+  index: integer;
 begin
   vsx := nil;//clear downloaded database
   vsp := nil;
+
+  clear_added_AAVSO_columns;
 end;
+
 
 
 procedure Tstackmenu1.Annotations_visible2Click(Sender: TObject);

@@ -11,7 +11,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
-  clipbrd, ExtCtrls, Menus, Buttons;
+  clipbrd, ExtCtrls, Menus, Buttons,strutils;
 
 type
 
@@ -336,8 +336,8 @@ end;
 
 procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
 var
-  i,start: integer;
-  abrv    : string;
+  i: integer;
+  abrv             : string;
 begin
   name_check1.items.clear;
   name_check1.color:=cldefault;
@@ -374,8 +374,101 @@ begin
 end;
 
 
+function find_correct_check_column : integer;
+var
+  i: integer;
+begin
+  for i:=p_nr_norm+1 to p_nr do
+    if ((odd(i+1)) and (form_aavso1.name_check1.text=stackmenu1.listview7.Column[i].Caption)) then
+    begin
+      result:=i-1;
+      exit;
+    end;
+  result:=P_magn2;
+end;
+
+
+function find_correct_var_column : integer;
+var
+  i: integer;
+begin
+  for i:=p_nr_norm+1 to p_nr do
+  begin
+    if ((odd(i+1)) and (form_aavso1.name_variable1.text=stackmenu1.listview7.Column[i].Caption)) then
+    begin
+      result:=i-1;
+      exit;
+    end;
+  end;
+  result:=P_magn1;
+end;
+
+
+procedure find_best_check_star;
+var
+  magn,magn_avgV,magn_minV,mag_var,magC,diff,delt : double;
+  c,i,b,e,err,counter: integer;
+  abrv, abrv_selected,dum: string;
+begin
+  magn_avgV:=0;
+  magn_minV:=99;
+  column_var:= find_correct_var_column;
+  counter:=0;
+
+  //find average  magnitude Variable
+  with stackmenu1 do
+  for c:=0 to listview7.items.count-1 do {retrieve data from listview}
+  begin
+    if listview7.Items.item[c].checked then
+    begin
+      dum:=(listview7.Items.item[c].subitems.Strings[column_var]);{var star}
+      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then
+      begin
+        magn:=strtofloat(dum);
+        magn_avgV:=magn_avgV+magn;
+        counter:=counter+1;
+        magn_minV:=min(magn_minV,magn);
+      end;
+    end;
+  end;
+
+
+  magn_avgV:=magn_avgV/counter;
+  abrv_selected:='';
+  diff:=99;
+
+  for i:=p_nr_norm+1+1 to p_nr do
+  begin
+     if odd(i+1) then //not snr column
+     begin
+       abrv:=stackmenu1.listview7.Column[i].Caption;
+       if pos('000',abrv)>0 then //check star
+       begin
+        b:=pos('=',abrv);
+        e:=posex('_',abrv,b);
+        val(copy(abrv,b+1,e-b-1),magC, err);
+        if err=0 then
+        begin
+           delt:=abs(magn_avgV- magC);
+           if ((magC+0.2>=magn_minV) and (delt<diff)) then //max magn 0.2 brighter
+           begin
+             abrv_selected:=abrv;
+             diff:=delt; //new check star found with close magnitude
+           end;
+        end;
+      end;
+     end;
+  end;
+  form_aavso1.name_check1.text:=abrv_selected;
+
+end;
+
+
+
 procedure Tform_aavso1.name_variable1Change(Sender: TObject);
 begin
+  if stackmenu1.measure_all1.checked then
+    find_best_check_star;
   plot_graph;
 end;
 
@@ -383,7 +476,7 @@ end;
 procedure Tform_aavso1.name_variable1DropDown(Sender: TObject);
 var
   i,ww: integer;
-  abrv : string;
+  abrv   : string;
 begin
   name_variable1.color:=cldefault;
   name_variable1.items.clear;
@@ -420,34 +513,6 @@ begin
     end;
 end;
 
-function find_correct_var_column : integer;
-var
-  i: integer;
-begin
-  for i:=p_nr_norm+1 to p_nr do
-  begin
-    if ((odd(i+1)) and (form_aavso1.name_variable1.text=stackmenu1.listview7.Column[i].Caption)) then
-    begin
-      result:=i-1;
-      exit;
-    end;
-  end;
-  result:=P_magn1;
-end;
-
-function find_correct_check_column : integer;
-var
-  i: integer;
-begin
-  for i:=p_nr_norm+1 to p_nr do
-    if ((odd(i+1)) and (form_aavso1.name_check1.text=stackmenu1.listview7.Column[i].Caption)) then
-    begin
-      result:=i-1;
-      exit;
-    end;
-  result:=P_magn2;
-end;
-
 
 procedure Tform_aavso1.FormResize(Sender: TObject);
 begin
@@ -464,10 +529,41 @@ begin
   plot_graph;
 end;
 
+
 procedure Tform_aavso1.FormCreate(Sender: TObject);
 begin
   measure_all_mode1.visible:=p_nr>p_nr_norm;
 end;
+
+
+procedure annotate_star_of_column(column,column2: integer);
+var
+  ra,dec,fitsX,fitsY : double;
+begin
+  // RA, DEC position is stored as integers in tag   [0..864000], DEC[-324000..324000]
+  ra:= stackmenu1.listview7.column[column].tag*2*pi/864000;
+  dec:= stackmenu1.listview7.column[column+1].tag*0.5*pi/324000;
+  celestial_to_pixel(head, ra,dec, fitsX,fitsY); {ra,dec to fitsX,fitsY}
+  shape_marker3_fitsX:=fitsX;
+  shape_marker3_fitsY:=fitsY;
+  mainwindow.shape_marker3.visible:=true;
+  shape_marker3_size:=50;
+  show_marker_shape(mainwindow.shape_marker3,0 {rectangle},shape_marker3_size,shape_marker3_size,10,shape_marker3_fitsX, shape_marker3_fitsY);
+  mainwindow.shape_marker3.hint:='Var';
+
+  ra:= stackmenu1.listview7.column[column2].tag*2*pi/864000;
+  dec:= stackmenu1.listview7.column[column2+1].tag*0.5*pi/324000;
+  celestial_to_pixel(head, ra,dec, fitsX,fitsY); {ra,dec to fitsX,fitsY}
+  shape_marker4_fitsX:=fitsX;
+  shape_marker4_fitsY:=fitsY;
+  mainwindow.shape_marker4.visible:=true;
+  shape_marker4_size:=50;
+  show_marker_shape(mainwindow.shape_marker4,0 {rectangle},shape_marker4_size,shape_marker4_size,10,shape_marker4_fitsX, shape_marker4_fitsY);
+  mainwindow.shape_marker4.hint:='Check';
+
+end;
+
+
 
 
 procedure plot_graph; {plot curve}
@@ -522,8 +618,6 @@ begin
     date_column:=P_jd_mid;
   end;
 
-
-
   w:=max(form_aavso1.Image_photometry1.width,(len*2)*stackmenu1.listview7.items.count);{make graph large enough for all points}
   h:=max(100,form_aavso1.Image_photometry1.height);
   bspace:=2*mainwindow.image1.Canvas.textheight('T');{{border space graph. Also for 4k with "make everything bigger"}
@@ -531,6 +625,9 @@ begin
 
   column_var:= find_correct_var_column;
   column_check:=find_correct_check_column;
+
+  annotate_star_of_column(column_var,column_check);
+
   setlength(data,4, stackmenu1.listview7.items.count);
   with stackmenu1 do
   for c:=0 to listview7.items.count-1 do {retrieve data from listview}
@@ -707,16 +804,39 @@ begin
 
   closeaction:=caFree; {delete form}
   form_aavso1:=nil;
+  mainwindow.shape_marker3.visible:=false;
+  mainwindow.shape_marker4.visible:=false;
+
 end;
 
 
 procedure Tform_aavso1.FormShow(Sender: TObject);
 var
-  dum : string;
+  dum,object_name2,abrv : string;
+  i : integer;
 begin
   obscode1.text:=obscode;
-  name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT;
-  name_check1.text:=mainwindow.Shape_alignment_marker2.HINT ;
+
+  if stackmenu1.measure_all1.checked=false then
+  begin
+    name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT;
+    name_check1.text:=mainwindow.Shape_alignment_marker2.HINT ;
+
+  end
+  else
+  begin //find the variable of interest for header object
+    object_name2:=stringreplace(object_name,' ','_',[]);
+    for i:=p_nr_norm+1 to p_nr do
+      if odd(i+1) then // not a snr column
+      begin
+        abrv:=stackmenu1.listview7.Column[i].Caption;
+        if  Comparetext(object_name2,copy(abrv,1,length(object_name2)))=0 then
+        begin
+         name_variable1.text:=abrv;
+         break;
+        end;
+      end;
+  end;
 
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;

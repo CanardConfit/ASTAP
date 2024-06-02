@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.05.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.06.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -723,6 +723,7 @@ var {################# initialised variables #########################}
   shape_fitsY3: double=0;
   shape_nr: integer=1;
 
+
   shape_marker1_fitsX: double=10;
   shape_marker1_fitsY: double=10;
   shape_marker2_fitsX: double=20;
@@ -731,6 +732,8 @@ var {################# initialised variables #########################}
   shape_marker3_fitsY: double=0;
   shape_marker4_fitsX: double=0;
   shape_marker4_fitsY: double=0;
+  shape_marker3_size: integer=20;
+  shape_marker4_size: integer=60;
 
 
   commandline_execution : boolean=false;{program executed in command line}
@@ -4480,8 +4483,8 @@ begin
 
     shape_marker4_fitsX:=FITSX;
     shape_marker4_fitsY:=FITSY;
-
-    show_marker_shape(mainwindow.shape_marker4,2 {activate},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+    shape_marker4_size:=40;
+    show_marker_shape(mainwindow.shape_marker4,2 {activate},shape_marker4_size,shape_marker4_size,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
   end;
 end;
 
@@ -5046,10 +5049,12 @@ var
 begin
 
   if head.naxis=0 then exit;
-  if ((shape_type=9{no change})
-     and
-     (shape.visible=false)) then
-     exit;
+  if shape.visible=false then exit;
+
+//  if ((shape_type=9{no change})
+//     and
+  //   (shape.visible=false)) then
+    // exit;
 
   xF:=(fitsX-0.5)*(mainwindow.image1.width/head.width)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/head.width);{starts at 1}
   yF:=-(fitsY-head.height-0.5)*(mainwindow.image1.height/head.height)-0.5; //inverse of fitsy:=0.5+head.height-(0.5+yf)/(image1.height/head.height); {from bottom to top, starts at 1}
@@ -5077,7 +5082,6 @@ begin
      if shape_type=1 then {circle}
      begin {good lock on object}
        shape:=stcircle;
-//       shape:=stellipse;
        visible:=true;
      end
      else
@@ -5135,8 +5139,8 @@ begin
     {marker}
       show_marker_shape(mainwindow.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
       show_marker_shape(mainwindow.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
-      show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-      show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+      show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},shape_marker3_size,shape_marker3_size,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+      show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},shape_marker4_size,shape_marker4_size,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
      if copy_paste then
      begin
@@ -11413,6 +11417,7 @@ begin
     marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0   or  23.99 +89.99  or  359.99d 89.99  or  C for center',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
+    shape_marker3_size:=30;
     mainwindow.shape_marker3.visible:=true;
     add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
   end
@@ -11760,7 +11765,7 @@ begin
     mainwindow.shape_marker1.Visible:=false
   else
   begin
-    shape_marker1_fitsX:=startX+1;
+     shape_marker1_fitsX:=startX+1;
     shape_marker1_fitsY:=startY+1;
     show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
     shape_marker1.hint:='Marker x='+floattostrF(shape_marker1_fitsX,ffFixed,0,1)+' y='+ floattostrF(shape_marker1_fitsY,ffFixed,0,1);
@@ -12272,8 +12277,8 @@ begin
     image_move_to_center:=false;{mark as job done}
 
     {update shapes to new position}
-    show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-    show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+    show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},shape_marker3_size,shape_marker3_size,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+    show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},shape_marker4_size,shape_marker4_size,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
   end;
 end;
 
@@ -12318,8 +12323,8 @@ begin
   {update shape positions}
   show_marker_shape(mainwindow.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
   show_marker_shape(mainwindow.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
-  show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-  show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+  show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},shape_marker3_size,shape_marker3_size,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+  show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},shape_marker4_size,shape_marker4_size,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 end;
 
 //procedure stretch_image(w,h: integer);
@@ -14510,7 +14515,7 @@ begin
     end;
   end
   else
-  if stackmenu1.pagecontrol1.tabindex=8 {photometry} then
+  if ((stackmenu1.pagecontrol1.tabindex=8) and   (stackmenu1.measure_all1.checked=false)) {photometry} then
   begin
     {star alignment}
     HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
