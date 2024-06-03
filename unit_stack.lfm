@@ -3714,7 +3714,7 @@ object stackmenu1: Tstackmenu1
             Left = 248
             Height = 19
             Hint = 'All stars annotated with AAVSO labels will be photometric measured and can be selected in the AAVSO report window.'
-            Top = 5
+            Top = 4
             Width = 135
             Caption = 'Measure all annotated'
             TabOrder = 17

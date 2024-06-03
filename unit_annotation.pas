@@ -1446,11 +1446,11 @@ begin
         begin
           if ((database_nr>=3) and (database_nr<=5)) then //variables
           begin
-            if ((abs(x-shape_fitsX)<5) and  (abs(y-shape_fitsy)<5)) then // note shape_fitsX/Y are in sensor coordinates
-                  mainwindow.Shape_alignment_marker1.HINT:=copy(naam2,1,posex(' ',naam2,4)-1);
+            if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
+                  mainwindow.Shape_var1.HINT:=copy(naam2,1,posex(' ',naam2,4)-1);
 
-            if ((abs(x-shape_fitsX2)<5) and  (abs(y-shape_fitsy2)<5)) then  // note shape_fitsX/Y are in sensor coordinates
-                      mainwindow.Shape_alignment_marker2.HINT:=copy(naam2,1,posex(' ',naam2,4)-1);
+            if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                      mainwindow.shape_check1.HINT:=copy(naam2,1,posex(' ',naam2,4)-1);
           end;
 
           gx_orientation:=(pa+head.crota2)*flipped;
@@ -1652,14 +1652,14 @@ begin
           if mode=1 then
           begin
             name:=vsx[count].name+'_'+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
-            if ((abs(x-shape_fitsX)<5) and  (abs(y-shape_fitsy)<5)) then // note shape_fitsX/Y are in sensor coordinates
-              mainwindow.Shape_alignment_marker1.HINT:=vsx[count].name;
+            if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
+              mainwindow.Shape_var1.HINT:=vsx[count].name;
           end
           else
           begin
             name:=vsp[count].auid;
-            if ((abs(x-shape_fitsX2)<5) and  (abs(y-shape_fitsy2)<5)) then  // note shape_fitsX/Y are in sensor coordinates
-                  mainwindow.Shape_alignment_marker2.HINT:=name;
+            if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                  mainwindow.shape_check1.HINT:=name;
 
             if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
 

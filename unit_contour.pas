@@ -185,7 +185,7 @@ var
 
      procedure mark_pixel(x,y : integer);{flip if required for plotting. From array to image1 coordinates}
      begin
-   //    show_marker_shape(mainwindow.shape_alignment_marker1,1,10,10,10{minimum},X,Y);
+   //    show_marker_shape(mainwindow.shape_var1,1,10,10,10{minimum},X,Y);
        if Fliph       then x:=ww-1-x;
        if Flipv=false then y:=hh-1-y;
        mainwindow.image1.Canvas.pixels[x*binning,y*binning]:=clYellow;
@@ -194,7 +194,7 @@ var
      end;
      procedure mark_pixel_blue(x,y : integer);{flip if required for plotting. From array to image1 coordinates}
      begin
-   //    show_marker_shape(mainwindow.shape_alignment_marker1,1,10,10,10{minimum},X,Y);
+   //    show_marker_shape(mainwindow.shape_var1,1,10,10,10{minimum},X,Y);
        if Fliph       then x:=ww-1-x;
        if Flipv=false then y:=hh-1-y;
        mainwindow.image1.Canvas.pixels[x*binning,y*binning]:=clBlue;

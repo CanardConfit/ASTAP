@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 186
+  Left = 650
   Height = 634
   Hint = ' '
-  Top = 163
+  Top = 189
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -795,7 +795,7 @@ object mainwindow: Tmainwindow
           Stretch = True
           Visible = False
         end
-        object Shape_alignment_marker1: TShape
+        object Shape_var1: TShape
           Left = 9
           Height = 11
           Top = 105
@@ -896,7 +896,7 @@ object mainwindow: Tmainwindow
           ShowHint = True
           Visible = False
         end
-        object Shape_alignment_marker2: TShape
+        object shape_check1: TShape
           Left = 9
           Height = 11
           Top = 137
@@ -911,7 +911,7 @@ object mainwindow: Tmainwindow
           ShowHint = True
           Visible = False
         end
-        object Shape_alignment_marker3: TShape
+        object shape_star3: TShape
           Left = 9
           Height = 11
           Hint = '3'
@@ -1002,6 +1002,38 @@ object mainwindow: Tmainwindow
           Pen.EndCap = pecSquare
           Pen.JoinStyle = pjsMiter
           Pen.Mode = pmXor
+          Visible = False
+        end
+        object shape_var2: TShape
+          Left = 16
+          Height = 50
+          Hint = 'Var'
+          Top = 216
+          Width = 50
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 3
+          Shape = stDiamond
+          ShowHint = True
+          Visible = False
+        end
+        object shape_check2: TShape
+          Left = 16
+          Height = 50
+          Hint = 'Check'
+          Top = 272
+          Width = 50
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 3
+          Shape = stDiamond
+          ShowHint = True
           Visible = False
         end
       end

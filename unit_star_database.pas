@@ -2687,11 +2687,15 @@ end;
 
 procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image. Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
 var
-  ra_cornerWN,ra_cornerEN,ra_cornerWS,ra_cornerES,
-  dec_cornerN,dec_cornerS,fov_half,
-  spaceE,spaceW,spaceN,spaceS                                           : double;
+  ra_cornerWN,ra_cornerEN,ra_cornerWS,ra_cornerES,dec_cornerN,dec_cornerS,fov_half, spaceE,spaceW,spaceN,spaceS  : double;
 begin
-  fov_half:=fov/2; {warning FOV should be less the database tile dimensions, so <=9.53 degrees for .290 files and <=5.14 for .1476 files. Otherwise a tile beyond next tile could be selected}
+  {warning FOV should be less the database tile dimensions, so <=9.53 degrees for .290 files and <=5.14 for .1476 files. Otherwise a tile beyond next tile could be selected}
+  if database_type=290 then
+    fov:=min(fov,9.53*pi/180) //should never happen but this crop is preferred
+  else
+    fov:=min(fov,5.142857*pi/180);//should never happen but this crop is preferred
+
+  fov_half:=fov/2;
 
   dec_cornerN:=dec1+fov_half; {above +pi/2 doesn't matter since it is all area 290}
   dec_cornerS:=dec1-fov_half; {above -pi/2 doesn't matter since it is all area 1}

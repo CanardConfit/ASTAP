@@ -786,7 +786,7 @@ end;
 
 function solve_image(img :image_array;var hd: Theader;get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
+  nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;
   search_field,step_size,ra_database,dec_database,ra_database_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,oversize2,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,
@@ -795,7 +795,7 @@ var
 
   solution, go_ahead, autoFOV,use_triples,yes_use_triples         : boolean;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
+  distancestr,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
   offset_found,ra_offset_str,dec_offset_str,mount_info_str,mount_offset_str,warning_downsample                                         : string;
   starlist1,starlist2                                                                                                                  : star_list;
 var {with value}
@@ -982,23 +982,11 @@ begin
       oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
 
       if ((stackmenu1.force_oversize1.checked) {or (database_type=001)}) then   {for always oversize for wide field database}
-      begin
         oversize:=2;
-        oversize_mess:='Search window at 200%'
-      end
-      else
-      oversize_mess:='Search window at '+ inttostr(round((oversize)*100)) +'% based on the number of'+quads_str+'. Step size at 100% of image height.';
 
+      oversize:=min(oversize,max_fov/fov2);//limit request to database to 1 tile so 5.142857143 degrees for 1476 database or 9.53 degrees for type 290 database. Otherwise a tile beyond next tile could be selected}
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
-
-
-      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(nrstars_required)+' database stars, '
-                             +inttostr(round(nr_quads*nrstars_required/nrstars))+' database'+quads_str+' required for the square search field of '+floattostrF(fov2,ffFixed,0,1)+'°. '+oversize_mess);
-
-
       minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
-
-
     end
     else
     begin
@@ -1010,8 +998,6 @@ begin
     begin
       search_field:=fov2*(pi/180);
 
-
-
       STEP_SIZE:=search_field;{fixed step size search spiral}
       if database_type=1 then
       begin {make small steps for wide field images. Much more reliable}
@@ -1021,6 +1007,11 @@ begin
       end
       else
       max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
+
+      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(nrstars_required)+' database stars, '
+                             +inttostr(round(nr_quads*nrstars_required/nrstars))+' database'+quads_str+' required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'° square search window. '
+                             +'Step size '+floattostrF(fov2,FFfixed,0,2) +'°.');
+
 
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
       stackmenu1.Memo2.disablealign;{prevent paint messages from other controls to update tmemo and make it grey. Mod 2021-06-26}
@@ -1106,10 +1097,13 @@ begin
               repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
                 extrastars:=extrastars*1.1;
                 if match_nr=0  then
+                begin
                   oversize2:=oversize
+                end
                 else
-                  oversize2:=max(oversize, sqrt(sqr(hd.width/hd.height)+sqr(1))); //Use full image for solution for second solve.
-                if read_stars(ra_database,dec_database,search_field*oversize2,database_type,round(nrstars_required*oversize2*oversize2*extrastars),{out} starlist1 ,{out}database_stars)= false then
+                  oversize2:=min(max_fov/fov2, max(oversize, sqrt(sqr(hd.width/hd.height)+sqr(1)))); //Use full image for solution for second solve but limit to one tile max to prevent tile selection problems.
+                nrstars_required2:=round(nrstars_required*oversize2*oversize2*extrastars); //nr of stars requested request from database
+                if read_stars(ra_database,dec_database,search_field*oversize2,database_type,nrstars_required2,{out} starlist1 ,{out}database_stars)= false then
                 begin
                   {$IFDEF linux}
                    //keep till 2026
@@ -1130,7 +1124,7 @@ begin
                   {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
 
 
-              until ((nrstars_required>database_stars) {No more stars available in the database}
+              until ((nrstars_required2>database_stars) {No more stars available in the database}
                       or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Enough quads found. The amount quads could be too low because due to filtering out too small database quads (center m13, M16)in routine find_quads}
                       or (extrastars>15)) {Go up this factor maximum};
 
