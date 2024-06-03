@@ -2665,7 +2665,13 @@ var
   dec_cornerN,dec_cornerS,fov_half,
   spaceE,spaceW,spaceN,spaceS                                           : double;
 begin
-  fov_half:=fov/2; {warning FOV should be less the database tile dimensions, so <=9.53 degrees for .290 files and <=5.14 for .1476 files. Otherwise a tile beyond next tile could be selected}
+  {warning FOV should be less the database tile dimensions, so <=9.53 degrees for .290 files and <=5.14 for .1476 files. Otherwise a tile beyond next tile could be selected}
+  if database_type=290 then
+    fov:=min(fov,9.53*pi/180) //should never happen but this crop is preferred
+  else
+    fov:=min(fov,5.142857*pi/180);//should never happen but this crop is preferred
+
+  fov_half:=fov/2;
 
   dec_cornerN:=dec1+fov_half; {above +pi/2 doesn't matter since it is all area 290}
   dec_cornerS:=dec1-fov_half; {above -pi/2 doesn't matter since it is all area 1}

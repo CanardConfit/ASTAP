@@ -5748,7 +5748,7 @@ begin
                 True {unknown, calculate also datamax}, {out} bck);
               find_stars(img_loaded, hfd_min, max_stars, starlist1);
               {find stars and put them in a list}
-              find_quads(starlist1, 0, quad_smallest, quad_star_distances1);
+              find_quads(starlist1,quad_star_distances1);
               {find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
@@ -5768,7 +5768,7 @@ begin
               get_background(0, img_loaded, False {no histogram already done}, True {unknown, calculate also noise_level}, {out} bck);
               find_stars(img_loaded, hfd_min, max_stars, starlist2);
               {find stars and put them in a list}
-              find_quads(starlist2, 0, quad_smallest, quad_star_distances2);
+              find_quads(starlist2,quad_star_distances2);
               {find star quads for new image}
               if find_offset_and_rotation(3, strtofloat2(stackmenu1.quad_tolerance1.Text))
               then {find difference between ref image and new image}

@@ -367,7 +367,7 @@ begin
               begin
                 binning:=report_binning(head.height);{select binning based on the height of the light}
                 bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
-                find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image/database}
+                find_quads(starlist1,quad_star_distances1);{find quads for reference image/database}
               end;
             end;
 
@@ -402,7 +402,7 @@ begin
                 begin{internal alignment}
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
-                  find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
+                  find_quads(starlist2,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                     memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  ' +solution_str)
                   else
@@ -721,7 +721,7 @@ begin
             if  use_astrometry_internal=false then
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
-              find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image}
+              find_quads(starlist1, quad_star_distances1);{find quads for reference image}
               pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
               if pedestal_s<500 then
                 pedestal_s:=500;{prevent image noise could go below zero}
@@ -750,7 +750,7 @@ begin
                 head.pedestal:=background_correction;
 
 
-                find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
+                find_quads(starlist2, quad_star_distances2);{find star quads for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                    memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str)
                 else
@@ -1324,7 +1324,7 @@ begin
             else
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
-              find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
+              find_quads(starlist1, quad_star_distances1);{find quads for reference image}
             end;
           end;
 
@@ -1357,7 +1357,7 @@ begin
                 else
                 begin{internal alignment}
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
-                  find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
+                  find_quads(starlist2, quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                   begin
                     memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str);
@@ -2168,7 +2168,7 @@ begin
           else
           begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
-            find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
+            find_quads(starlist1, quad_star_distances1);{find quads for reference image}
             pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then
               pedestal_s:=500;{prevent image noise could go below zero}
@@ -2223,7 +2223,7 @@ begin
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
               head.pedestal:=background_correction;
 
-              find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
+              find_quads(starlist2, quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str)
               else

@@ -119,7 +119,7 @@ var
 
 
 procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
-procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
+procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 
@@ -314,7 +314,7 @@ begin
 end;
 
 
-procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
+procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
    i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads,Sstart,Send,tolerance  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
@@ -456,16 +456,13 @@ begin
           quad_star_distances[4,nrquads]:=dist5/dist1;
           quad_star_distances[5,nrquads]:=dist6/dist1;
 
-          if dist1<quad_smallest then quad_smallest:=dist1;{measure the smallest}
         end;
-     except
-     end;
-      if dist1>min_leng then {large enough for earth based telescope}
-      begin
-        quad_star_distances[6,nrquads]:=xt;{store mean x position}
-        quad_star_distances[7,nrquads]:=yt;{store mean y position}
-        inc(nrquads); {new unique quad found}
+      except
       end;
+      quad_star_distances[6,nrquads]:=xt;{store mean x position}
+      quad_star_distances[7,nrquads]:=yt;{store mean y position}
+      inc(nrquads); {new unique quad found}
+
     end;
   end;{i}
 
@@ -1636,14 +1633,14 @@ end;
 
 function solve_image(img :image_array) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
+  nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,database_density,limit,err, width2, height2                      : integer;
   search_field,step_size,ra_database,dec_database,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
   oversize,oversize2,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
-  quad_tolerance,dummy, extrastars,flip,extra,distance,flipped_image                                                 : double;
+  quad_tolerance,flip,extra,distance,flipped_image                                                 : double;
   solution, go_ahead ,autoFOV                                                                                        : boolean;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
+  distancestr,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
   starlist1,starlist2 : star_list;
 
 begin
@@ -1771,7 +1768,7 @@ begin
 
     if go_ahead then {enough stars, lets find quads}
     begin
-      find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independend}
+      find_quads(starlist2,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independend}
       nr_quads:=Length(quad_star_distances2[0]);
       go_ahead:=nr_quads>=3; {enough quads?}
 
@@ -1782,16 +1779,10 @@ begin
       else
       oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
 
-      if force_oversize1 then
-      begin
-        oversize:=2;
-        oversize_mess:='Search window at 200%'
-      end
-      else
-      oversize_mess:='Search window at '+ inttostr(round((oversize)*100)) +'% based on the number of quads. Step size at 100% of image height';
+      if force_oversize1 then oversize:=2;
 
       radius:=strtofloat2(radius_search1);{radius search field}
-      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '+inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF2(fov2,0,1)+'d. '+oversize_mess );
+    //  memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '+inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF2(fov2,0,1)+'d. '+oversize_mess );
 
       minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
     end
@@ -1813,6 +1804,10 @@ begin
       end
       else
       max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
+
+      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '
+                             +inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'d square search window. '
+                             +'Step size '+floattostrF(fov2,FFfixed,0,2) +'d.');
 
       match_nr:=0;
       repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}
@@ -1865,29 +1860,21 @@ begin
                 write(distancestr);
               end; {info reporting}
 
-              {If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
               {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
-              extrastars:=1/1.1;{star with a factor of one}
-              repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
-                extrastars:=extrastars*1.1;
-                if match_nr=0  then
-                  oversize2:=oversize
-                else
-                  oversize2:=max(oversize, sqrt(sqr(width2/height2)+sqr(1))); //Use full image for solution for second solve.
-                if read_stars(ra_database,dec_database,search_field*oversize2,round(nrstars_required*oversize2*oversize2*extrastars),{out} starlist1 ,{out}database_stars)= false then
-                begin
-                  memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');
-                  errorlevel:=33;{read error star database}
-                  exit; {no stars}
-                end;
+              if match_nr=0  then
+                oversize2:=oversize
+              else
+                oversize2:=max(oversize, sqrt(sqr(width2/height2)+sqr(1))); //Use full image for solution for second solve but limit to one tile max to prevent tile selection problems.
 
-                find_quads(starlist1,quad_smallest*(fov_org*3600/height2 {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
-                                     {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
-              until ((nrstars_required>database_stars) {No more stars available in the database}
-                      or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Enough quads found. The amount quads could be too low because due to filtering out too small database quads (center m13, M16)in routine find_quads}
-                      or (extrastars>15)) {Go up this factor maximum};
+              nrstars_required2:=round(nrstars_required*oversize2*oversize2); //nr of stars requested request from database
+              if read_stars(ra_database,dec_database,search_field*oversize2,nrstars_required2,{out} starlist1 ,{out}database_stars)= false then
+              begin
+                memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');
+                errorlevel:=33;{read error star database}
+                exit; {no stars}
+              end;
 
-              if ((solve_show_log) and  (extrastars>1)) then memo2_message('Too many small quads excluded due to higher resolution database, increased the number of stars with '+inttostr(round((extrastars-1)*100))+'%');
+              find_quads(starlist1,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
 
               if solve_show_log then {global variable set in find stars}
                 memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'], position: '+ prepare_ra(ra_database,': ')+prepare_dec(dec_database,'d ')+#9+' Down to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.');
