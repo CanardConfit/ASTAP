@@ -4402,15 +4402,16 @@ begin
                 lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
               end
               else //Johnson-Cousins
-              if pos('TR',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //Red
+              if pos('TR',filterstrUP)>0  then
+                  lv.Items.item[c].SubitemImages[P_filter]:=0 //Red
               else
-              if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red
-              else
-              if pos('V',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
+              if pos('V',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //Green or G
               else
               if pos('G',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
               else
               if pos('B',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //blue
+              else
+              if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red. Note Green also contains a R so first test Green
               else
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 
@@ -5747,7 +5748,7 @@ begin
                 True {unknown, calculate also datamax}, {out} bck);
               find_stars(img_loaded, hfd_min, max_stars, starlist1);
               {find stars and put them in a list}
-              find_quads(starlist1, 0, quad_smallest, quad_star_distances1);
+              find_quads(starlist1,quad_star_distances1);
               {find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
@@ -5767,7 +5768,7 @@ begin
               get_background(0, img_loaded, False {no histogram already done}, True {unknown, calculate also noise_level}, {out} bck);
               find_stars(img_loaded, hfd_min, max_stars, starlist2);
               {find stars and put them in a list}
-              find_quads(starlist2, 0, quad_smallest, quad_star_distances2);
+              find_quads(starlist2,quad_star_distances2);
               {find star quads for new image}
               if find_offset_and_rotation(3, strtofloat2(stackmenu1.quad_tolerance1.Text))
               then {find difference between ref image and new image}
@@ -6936,22 +6937,27 @@ begin
 end;
 
 
-procedure hide_show_columns_listview7;
+procedure hide_show_columns_listview7(tab8 : boolean); //photometry tab
 var
-  yes : boolean;
+  p_single,p_multi,measure_all  : boolean;
 begin
-  yes:=stackmenu1.measure_all1.checked=false;//measure all mode false? if so hide some columns
-  stackmenu1.listview7.column[12].visible:=yes;//magn var
-  stackmenu1.listview7.column[13].visible:=yes;//
-  stackmenu1.listview7.column[14].visible:=yes;//
-  stackmenu1.listview7.column[15].visible:=yes;//magn 3
+  measure_all:=stackmenu1.measure_all1.checked;
 
-  mainwindow.shape_alignment_marker1.Visible :=yes;  {photometry}
-  mainwindow.shape_alignment_marker2.Visible := yes;
-  mainwindow.shape_alignment_marker3.Visible := yes;
-  mainwindow.labelVar1.Visible := yes;
-  mainwindow.labelCheck1.Visible := yes;
-  mainwindow.labelThree1.Visible := yes;
+  p_single:=((tab8) and (measure_all=false)); //photometry single var
+  p_multi:= ((tab8) and (measure_all=true));
+
+  mainwindow.shape_var1.visible := p_single;  {hide shape if stacked image is plotted}
+  mainwindow.shape_check1.Visible := p_single;  {hide shape if stacked image is plotted}
+  mainwindow.shape_star3.Visible := p_single;  {hide shape if stacked image is plotted}
+  mainwindow.labelVar1.Visible := p_single;
+  mainwindow.labelCheck1.Visible := p_single;
+  mainwindow.labelThree1.Visible := p_single;
+
+  //hide/show columns
+  stackmenu1.listview7.column[12].visible:=p_multi=false;//magn var
+  stackmenu1.listview7.column[13].visible:=p_multi=false;//
+  stackmenu1.listview7.column[14].visible:=p_multi=false;//
+  stackmenu1.listview7.column[15].visible:=p_multi=false;//magn 3
 end;
 
 
@@ -6961,8 +6967,7 @@ var
 begin
   theindex := stackmenu1.pagecontrol1.tabindex;
 
-  if theindex=8 then //photometry
-      hide_show_columns_listview7;
+  hide_show_columns_listview7(theindex=8);
 
   stack_button1.Enabled := ((theindex <= 6) or (theindex >= 13));
 
@@ -6990,6 +6995,7 @@ begin
     PageControl1.Hint := PageControl1.Pages[TabIndex].Hint;
   FLastHintTabIndex := TabIndex;
 end;
+
 
 procedure Tstackmenu1.photom_calibrate1Click(Sender: TObject);
 var
@@ -7490,15 +7496,6 @@ begin
     p_nr:=ColumnCount-1;//is equal to p_nr_norm;
     Items.EndUpdate;
   end;
-
-  //  listview7.Items.beginUpdate;{photometry}
-  //  for index:=p_nr downto p_nr_norm+1 do  //delete extra columns use for measure all
-  //    listview7.columns.Delete(index);
-
-  //  p_nr:=index;
-  //  listview7.Items.EndUpdate;
-
-
 end;
 
 procedure Tstackmenu1.clear_photometry_list1Click(Sender: TObject);
@@ -8109,7 +8106,7 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
   medianCheck, medianThree, hfd_med, apert, annul,
-  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep,az,alt : double;
+  rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep,az,alt,pix1,pix2 : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
   countCheck, countThree, database_col,j, lvsx,lvsp,formalism : integer;
@@ -8172,7 +8169,7 @@ var
                 Result := '?';
             end;
 
-            procedure plot_annulus(x, y: integer; apr,anr :double); {plot the aperture and annulus}
+            procedure plot_annulus(head: theader; x, y: integer; apr,anr :double); {plot the aperture and annulus}
             begin
               if Flipvertical = False then  starY := (head.Height - y) else starY := (y);
               if Fliphorizontal then starX := (head.Width - x) else starX := (x);
@@ -8214,7 +8211,7 @@ var
             end;
 
 begin
-   if listview7.items.Count <= 0 then exit; {no files}
+  if listview7.items.Count <= 0 then exit; {no files}
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -8466,18 +8463,22 @@ begin
 
           head_ref := head;{backup solution for deepsky annotation}
 
-          pixel_to_celestial(head,shape_fitsX, shape_fitsY, formalism,rax1, decx1 {fitsX, Y to ra,dec});
+          pixel_to_celestial(head,shape_var1_fitsX, shape_var1_fitsY, formalism,rax1, decx1 {fitsX, Y to ra,dec});
+
           abbreviation_var_IAU := prepare_IAU_designation(rax1, decx1);
 
-          pixel_to_celestial(head,shape_fitsX2, shape_fitsY2,formalism,{var} rax2, decx2 {position});
+          pixel_to_celestial(head,shape_check1_fitsX, shape_check1_fitsY,formalism,{var} rax2, decx2 {position});
           name_check_iau := prepare_IAU_designation(rax2, decx2);
 
-          pixel_to_celestial(head,shape_fitsX3, shape_fitsY3,formalism,rax3, decx3 {fitsX, Y to ra,dec});
+          pixel_to_celestial(head,shape_star3_fitsX, shape_star3_fitsY,formalism,rax3, decx3 {fitsX, Y to ra,dec});
           init:=true;//after measure the frist image
         end;
 
         if var_lock<>'' then
           annotation_position(var_lock, rax1, decx1 );// convert fitsX, fitsY to ra,dec
+
+      //  memo2_message(floattostr(rax1*180/pi)+',    '+floattostr(decx1*180/pi));
+
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.Width := 1;{thickness lines}
@@ -8494,58 +8495,70 @@ begin
         listview7.Items.item[c].subitems.Strings[P_magn2] := ''; {MAGN, always blank}
         listview7.Items.item[c].subitems.Strings[P_magn3] := ''; {MAGN, always blank}
 
+
         if starlistpack[c].mzero <> 0 then {valid flux calibration}
         begin // do var star
           adu_e := retrieve_ADU_to_e_unbinned(head.egain);
-          if mainwindow.shape_alignment_marker1.Visible then
+
+
+
+          if stackmenu1.measure_all1.checked=false then // measure manual
           begin
-            //Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
-            mainwindow.image1.Canvas.Pen.Color := clRed;
-            celestial_to_pixel(head, rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY}
-            astr := measure_star(xn, yn); {var star #####################################################################################################################}
-
-//            memo2_message('measuring star1 '+astr +'at '+floattostr(xn)+','+floattostr(yn));
-
-            listview7.Items.item[c].subitems.Strings[P_magn1] := astr;
-            listview7.Items.item[c].subitems.Strings[P_snr] := IntToStr(round(snr));
-            if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
+            if mainwindow.shape_var1.Visible then
             begin
-              starVar[countVar] := strtofloat2(astr);
-              Inc(countVar);
+              //Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+              mainwindow.image1.Canvas.Pen.Color := clRed;
+
+              celestial_to_pixel(head, rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY}
+
+
+              astr := measure_star(xn, yn); {var star #####################################################################################################################}
+
+  //            memo2_message('measuring star1 '+astr +'at '+floattostr(xn)+','+floattostr(yn));
+
+              listview7.Items.item[c].subitems.Strings[P_magn1] := astr;
+              listview7.Items.item[c].subitems.Strings[P_snr] := IntToStr(round(snr));
+              if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
+              begin
+                starVar[countVar] := strtofloat2(astr);
+                Inc(countVar);
+              end;
             end;
-          end;
 
-          if mainwindow.shape_alignment_marker2.Visible then
-          begin //do check star
-            mainwindow.image1.Canvas.Pen.Color := clGreen;
+            if mainwindow. shape_check1.Visible then
+            begin //do check star
+              mainwindow.image1.Canvas.Pen.Color := clGreen;
 
-            celestial_to_pixel(head, rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY}
-            astr := measure_star(xn, yn); {chk}
-            listview7.Items.item[c].subitems.Strings[P_magn2] := astr;
-            if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
-            begin
-              starCheck[countCheck] := strtofloat2(astr);
-              Inc(countCheck);
+              celestial_to_pixel(head, rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY}
+              astr := measure_star(xn, yn); {chk}
+              listview7.Items.item[c].subitems.Strings[P_magn2] := astr;
+              if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
+              begin
+                starCheck[countCheck] := strtofloat2(astr);
+                Inc(countCheck);
+              end;
             end;
-          end;
 
-          if mainwindow.shape_alignment_marker3.Visible then
-          begin //do star 3
-            mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
+            if mainwindow.shape_star3.Visible then
+            begin //do star 3
+              mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
 
-            celestial_to_pixel(head, rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY}
-            astr := measure_star(xn, yn); {star3}
-            listview7.Items.item[c].subitems.Strings[P_magn3] := astr;
-            if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
-            begin
-              starThree[countThree] := strtofloat2(astr);
-              Inc(countThree);
+              celestial_to_pixel(head, rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY}
+              astr := measure_star(xn, yn); {star3}
+              listview7.Items.item[c].subitems.Strings[P_magn3] := astr;
+              if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
+              begin
+                starThree[countThree] := strtofloat2(astr);
+                Inc(countThree);
+              end;
             end;
-          end;
+
+            if p_nr>p_nr_norm then clear_added_AAVSO_columns;
+          end
+          else
+          begin //mode measure all AAVSO objects
 
 
-          if stackmenu1.measure_all1.checked then //measure all AAVSO objects
-          begin
           case stackmenu1.annotate_mode1.itemindex of
             1,2,3 : //measure all AAVSO stars using the position from the local database
                 begin
@@ -8692,9 +8705,10 @@ begin
                   end;//vsx
                 end;
              end;//case
-          end //measure all
-          else
-          if p_nr>p_nr_norm then clear_added_AAVSO_columns;
+
+
+
+          end; //measure all
 
         end;
 
@@ -8727,9 +8741,25 @@ begin
         head.cd2_1 := abs(head.cd2_1) * sign(head_ref.CD2_1);
         head.cd2_2 := abs(head.cd2_2) * sign(head_ref.CD2_2);
 
+
+  {      pix1 := solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] * (head.crpix2 - 1) + solution_vectorX[2];// correct for marker_position at ra_dec position
+        pix2 := solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] * (head.crpix2 - 1) + solution_vectorY[2];
+
+        head.cd1_1 :=(pix1 - (solution_vectorX[0] * (head.crpix1 - 1+1) + solution_vectorX[1] * (head.crpix2 - 1) + solution_vectorX[2]))*head.cdelt1;
+        head.cd1_2 :=(pix2 - (solution_vectorY[0] * (head.crpix1 - 1+1) + solution_vectorY[1] * (head.crpix2 - 1) + solution_vectorY[2]))*head.cdelt1;
+        head.cd2_1 :=(pix1 - (solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] * (head.crpix2 - 1+1) + solution_vectorX[2]))*head.cdelt2;
+        head.cd2_2 :=(pix2 - (solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] * (head.crpix2 - 1+1) + solution_vectorY[2]))*head.cdelt2;
+
+        head.crpix1 := pix1+1;//to fits coordinates
+        head.crpix2 := pix2+1;
+   }
+
+
         store_annotated := annotated;{store temporary annotated}
         annotated := False;{prevent annotations are plotted in plot_fits}
+
         plot_fits(mainwindow.image1, False {re_center}, True);
+
         annotated := store_annotated;{restore anotated value}
         if ((annotated) and (mainwindow.annotations_visible1.Checked)) then  //header annotations
           plot_annotations(True {use solution vectors!!!!}, False); {corrected annotations in case a part of the lights are flipped in the alignment routine}
@@ -8744,34 +8774,48 @@ begin
         //round(max(10,8*head.height/image1.height));{adapt font to image dimensions}
 
 
+        {calculate vectors from astrometric solution to speed up}
+    {      sincos(head_ref.dec0, SIN_dec0, COS_dec0);
+          astrometric_to_vector;//convert astrometric solution to vectors
+
+         head.crpix1 :=head_ref.crpix1;// correct for marker_position at ra_dec position
+         head.crpix2 :=head_ref.crpix2;
+
+         head.cd1_1 := head_ref.CD1_1;
+         head.cd1_2 := head_ref.CD1_2;
+         head.cd2_1 := head_ref.CD2_1;
+         head.cd2_2 := head_ref.CD2_2;
+     }
+
+
         {plot the aperture and annulus}
         if starlistpack[c].mzero <> 0 then {valid flux calibration}
         begin
           mainwindow.image1.Canvas.Pen.mode := pmCopy;
 
 
-          if mainwindow.shape_alignment_marker1.Visible then
+          if mainwindow.shape_var1.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clRed;
-            celestial_to_pixel(head, rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
-            plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
+            celestial_to_pixel(head, rax1, decx1, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_var1_fitsX, Y since users can try to move the the shape while it is cycling}
+            plot_annulus(head,round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
          end;
 
-         if mainwindow.shape_alignment_marker2.Visible then
+         if mainwindow.shape_check1.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clGreen;
-            //plot_annulus(round(shape_fitsX2), round(shape_fitsY2),starlistpack[c].apr,starlistpack[c].anr);
-            celestial_to_pixel(head, rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
-            plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
+            //plot_annulus(round(shape_check1_fitsX), round(shape_check1_fitsY),starlistpack[c].apr,starlistpack[c].anr);
+            celestial_to_pixel(head, rax2, decx2, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_var1_fitsX, Y since users can try to move the the shape while it is cycling}
+            plot_annulus(head,round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
 
           end;
 
-          if mainwindow.shape_alignment_marker3.Visible then
+          if mainwindow.shape_star3.Visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
-           // plot_annulus(round(shape_fitsX3), round(shape_fitsY3),starlistpack[c].apr,starlistpack[c].anr);
-            celestial_to_pixel(head, rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_FitsX, Y since users can try to move the the shape while it is cycling}
-            plot_annulus(round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
+           // plot_annulus(round(shape_star3_fitsX), round(shape_star3_fitsY),starlistpack[c].apr,starlistpack[c].anr);
+            celestial_to_pixel(head, rax3, decx3, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_var1_fitsX, Y since users can try to move the the shape while it is cycling}
+            plot_annulus(head,round(xn), round(yn),starlistpack[c].apr,starlistpack[c].anr);
           end;
         end;
 
@@ -9704,7 +9748,7 @@ end;
 procedure Tstackmenu1.tab_photometry1Show(Sender: TObject);
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
-  hide_show_columns_listview7;
+  hide_show_columns_listview7(true {tab8});
 end;
 
 
@@ -10052,7 +10096,7 @@ end;
 
 procedure Tstackmenu1.measure_all1Change(Sender: TObject);
 begin
-  hide_show_columns_listview7;
+  hide_show_columns_listview7(true {tab8});
 end;
 
 
@@ -10572,7 +10616,7 @@ begin
   esc_pressed := False;
   someresult := False;
   index := 0;
-  shape_fitsX := -99;
+  shape_var1_fitsX := -99;
   while index <= total do
   begin
     if listview1.Items[index].Selected then
@@ -10582,18 +10626,18 @@ begin
       psx := ListView1.Items.item[index].subitems.Strings[L_X];
       if psx <> '' then
       begin
-        shape_fitsX := -1 + strtofloat2(psx);{keep updating each image}
+        shape_var1_fitsX := -1 + strtofloat2(psx);{keep updating each image}
         psy := ListView1.Items.item[index].subitems.Strings[L_Y];
-        shape_fitsY := -1 + round(strtofloat2(psy));{keep updating each image}
+        shape_var1_fitsY := -1 + round(strtofloat2(psy));{keep updating each image}
       end
       else
-      if shape_fitsX > 0 {at least one reference found} then
+      if shape_var1_fitsX > 0 {at least one reference found} then
         if load_image(True, False {plot}) then {load}
         begin
           if find_reference_star(img_loaded) then
           begin
-            ListView1.Items.item[index].subitems.Strings[L_X] := floattostrF(shape_fitsX, ffFixed, 0, 2);
-            ListView1.Items.item[index].subitems.Strings[L_Y] := floattostrF(shape_fitsY, ffFixed, 0, 2);
+            ListView1.Items.item[index].subitems.Strings[L_X] := floattostrF(shape_var1_fitsX, ffFixed, 0, 2);
+            ListView1.Items.item[index].subitems.Strings[L_Y] := floattostrF(shape_var1_fitsY, ffFixed, 0, 2);
             {$ifdef darwin} {MacOS}
             {bugfix darwin green red colouring}
             stackmenu1.ListView1.Items.item[index].Subitems.strings[L_result]:='✓ star';
@@ -10601,8 +10645,8 @@ begin
             memo2_message(filename2 + ' lock');{for manual alignment}
             someresult := True;
 
-            startX := round(shape_fitsx - 1);{follow star movement for next image}
-            startY := round(shape_fitsY - 1);
+            startX := round(shape_var1_fitsX - 1);{follow star movement for next image}
+            startY := round(shape_var1_fitsY - 1);
           end;
           application.ProcessMessages;
           if esc_pressed then break;

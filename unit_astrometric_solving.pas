@@ -786,18 +786,17 @@ end;
 
 function solve_image(img :image_array;var hd: Theader;get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
+  nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;
   search_field,step_size,ra_database,dec_database,ra_database_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,oversize2,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,
-  current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio,
+  current_dist, quad_tolerance,dummy, flip, extra,distance,mount_sep, mount_ra_sep,mount_dec_sep,ra_start,dec_start,pixel_aspect_ratio,
   crota1,crota2,flipped_image   : double;
-
   solution, go_ahead, autoFOV,use_triples,yes_use_triples         : boolean;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
-  offset_found,ra_offset_str,dec_offset_str,mount_info_str,mount_offset_str,warning_downsample                                         : string;
-  starlist1,starlist2                                                                                                                  : star_list;
+  distancestr,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
+  offset_found,ra_offset_str,dec_offset_str,mount_info_str,mount_offset_str,warning_downsample   : string;
+  starlist1,starlist2                                                                            : star_list;
 var {with value}
   quads_str: string=' quads';
 const
@@ -959,14 +958,14 @@ begin
       yes_use_triples:=((nrstars<30) and  (use_triples));
       if yes_use_triples then
       begin
-        find_triples_using_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2); {find star triples for new image. Quads and quad_smallest are binning independent}
+        find_triples_using_quads(starlist2,quad_star_distances2); {find star triples for new image. Quads and quad_smallest are binning independent}
         quad_tolerance:=0.002;
         quads_str:=' triples';
          if solve_show_log then memo2_message('For triples the hash code tolerance is forced to '+floattostr(quad_tolerance)+'.');
       end
       else
       begin
-        find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independent}
+        find_quads(starlist2,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independent}
         quads_str:=' quads';
       end;
 
@@ -981,24 +980,11 @@ begin
       else
       oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
 
-      if ((stackmenu1.force_oversize1.checked) {or (database_type=001)}) then   {for always oversize for wide field database}
-      begin
-        oversize:=2;
-        oversize_mess:='Search window at 200%'
-      end
-      else
-      oversize_mess:='Search window at '+ inttostr(round((oversize)*100)) +'% based on the number of'+quads_str+'. Step size at 100% of image height.';
+      if stackmenu1.force_oversize1.checked then oversize:=2;
 
+      oversize:=min(oversize,max_fov/fov2);//limit request to database to 1 tile so 5.142857143 degrees for 1476 database or 9.53 degrees for type 290 database. Otherwise a tile beyond next tile could be selected}
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
-
-
-      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(nrstars_required)+' database stars, '
-                             +inttostr(round(nr_quads*nrstars_required/nrstars))+' database'+quads_str+' required for the square search field of '+floattostrF(fov2,ffFixed,0,1)+'°. '+oversize_mess);
-
-
       minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
-
-
     end
     else
     begin
@@ -1010,8 +996,6 @@ begin
     begin
       search_field:=fov2*(pi/180);
 
-
-
       STEP_SIZE:=search_field;{fixed step size search spiral}
       if database_type=1 then
       begin {make small steps for wide field images. Much more reliable}
@@ -1021,6 +1005,11 @@ begin
       end
       else
       max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
+
+      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(nrstars_required)+' database stars, '
+                             +inttostr(round(nr_quads*nrstars_required/nrstars))+' database'+quads_str+' required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'° square search window. '
+                             +'Step size '+floattostrF(fov2,FFfixed,0,2) +'°.');
+
 
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
       stackmenu1.Memo2.disablealign;{prevent paint messages from other controls to update tmemo and make it grey. Mod 2021-06-26}
@@ -1100,45 +1089,38 @@ begin
                 end;
               end; {info reporting}
 
-              {If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
               {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
-              extrastars:=1/1.1;{start with a factor of one}
-              repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
-                extrastars:=extrastars*1.1;
-                if match_nr=0  then
-                  oversize2:=oversize
-                else
-                  oversize2:=max(oversize, sqrt(sqr(hd.width/hd.height)+sqr(1))); //Use full image for solution for second solve.
-                if read_stars(ra_database,dec_database,search_field*oversize2,database_type,round(nrstars_required*oversize2*oversize2*extrastars),{out} starlist1 ,{out}database_stars)= false then
-                begin
-                  {$IFDEF linux}
-                   //keep till 2026
-                   if ((name_database='d50') and (dec_database>pi*(90-15)/180)) then //Files 3502,3503 and 3601.1476 had permission error. Star database fixed on 2023-11-27
-                     application.messagebox(pchar('Star database file permission error near pole. Update the D50 database to crrect !!'), pchar('ASTAP error:'),0)
-                   else
-                  {$ENDIF}
-                  application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download and install one star database.'), pchar('ASTAP error:'),0);
-                  errorlevel:=33;{read error star database}
-                  exit; {no stars}
-                end;
+              if match_nr=0  then
+              begin
+                oversize2:=oversize
+              end
+              else
+                oversize2:=min(max_fov/fov2, max(oversize, sqrt(sqr(hd.width/hd.height)+sqr(1)))); //Use full image for solution for second solve but limit to one tile max to prevent tile selection problems.
+              nrstars_required2:=round(nrstars_required*oversize2*oversize2); //nr of stars requested request from database
 
-                if yes_use_triples then
-                  find_triples_using_quads(starlist1,quad_smallest*(fov_org*3600/hd.height {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1){find quads for reference image/database. Filter out too small quads for Earth based telescopes}
-                  {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
-                else
-                  find_quads(starlist1,quad_smallest*(fov_org*3600/hd.height {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
-                  {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
+              if read_stars(ra_database,dec_database,search_field*oversize2,database_type,nrstars_required2,{out} starlist1 ,{out}database_stars)= false then
+              begin
+                {$IFDEF linux}
+                 //keep till 2026
+                 if ((name_database='d50') and (dec_database>pi*(90-15)/180)) then //Files 3502,3503 and 3601.1476 had permission error. Star database fixed on 2023-11-27
+                   application.messagebox(pchar('Star database file permission error near pole. Update the D50 database to crrect !!'), pchar('ASTAP error:'),0)
+                 else
+                {$ENDIF}
+                application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download and install one star database.'), pchar('ASTAP error:'),0);
+                errorlevel:=33;{read error star database}
+                exit; {no stars}
+              end;
 
+              if yes_use_triples then
+                find_triples_using_quads(starlist1,quad_star_distances1){find quads for reference image/database. Filter out too small quads for Earth based telescopes}
+                {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
+              else
+                find_quads(starlist1, quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
+                {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
 
-              until ((nrstars_required>database_stars) {No more stars available in the database}
-                      or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Enough quads found. The amount quads could be too low because due to filtering out too small database quads (center m13, M16)in routine find_quads}
-                      or (extrastars>15)) {Go up this factor maximum};
 
               if solve_show_log then {global variable set in find stars}
-              begin
-                if extrastars>1 then memo2_message('Too many small quads excluded due to higher resolution database, increased the number of stars with '+inttostr(round((extrastars-1)*100))+'%');
                 memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(ra_database,': ')+#9+prepare_dec(dec_database,'° ')+#9+' Down to magn '+ floattostrF(mag2/10,ffFixed,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
-              end;
 
               // for testing purposes
               // for testing create supplement hnksy planetarium program

@@ -344,7 +344,7 @@ begin
 
    if stackmenu1.measure_all1.checked=false then
    begin
-     name_check1.items.add(mainwindow.Shape_alignment_marker2.HINT);
+     name_check1.items.add(mainwindow.shape_check1.HINT);
      name_check1.items.add(abbreviation_check);//the last name
      name_check1.items.add(name_check_IAU);// created from position
    end;
@@ -431,8 +431,7 @@ begin
       end;
     end;
   end;
-
-
+  if counter=0 then exit;
   magn_avgV:=magn_avgV/counter;
   abrv_selected:='';
   diff:=99;
@@ -484,7 +483,7 @@ begin
 
   if stackmenu1.measure_all1.checked=false then
   begin
-    name_variable1.items.add(mainwindow.Shape_alignment_marker1.HINT);
+    name_variable1.items.add(mainwindow.Shape_var1.HINT);
     name_variable1.items.add(object_name);//from header
     name_variable1.items.add(name_var);
   end;
@@ -537,30 +536,17 @@ end;
 
 
 procedure annotate_star_of_column(column,column2: integer);
-var
-  ra,dec,fitsX,fitsY : double;
 begin
   // RA, DEC position is stored as integers in tag   [0..864000], DEC[-324000..324000]
-  ra:= stackmenu1.listview7.column[column].tag*2*pi/864000;
-  dec:= stackmenu1.listview7.column[column+1].tag*0.5*pi/324000;
-  celestial_to_pixel(head, ra,dec, fitsX,fitsY); {ra,dec to fitsX,fitsY}
-  shape_marker3_fitsX:=fitsX;
-  shape_marker3_fitsY:=fitsY;
-  mainwindow.shape_marker3.visible:=true;
-  shape_marker3_size:=50;
-  show_marker_shape(mainwindow.shape_marker3,0 {rectangle},shape_marker3_size,shape_marker3_size,10,shape_marker3_fitsX, shape_marker3_fitsY);
-  mainwindow.shape_marker3.hint:='Var';
+  shape_var2_ra:= stackmenu1.listview7.column[column].tag*2*pi/864000;
+  shape_var2_dec:= stackmenu1.listview7.column[column+1].tag*0.5*pi/324000;
+  mainwindow.shape_var2.visible:=true;
+  place_marker_radec(mainwindow.shape_var2,shape_var2_ra,shape_var2_dec);{place ra,dec marker in image}
 
-  ra:= stackmenu1.listview7.column[column2].tag*2*pi/864000;
-  dec:= stackmenu1.listview7.column[column2+1].tag*0.5*pi/324000;
-  celestial_to_pixel(head, ra,dec, fitsX,fitsY); {ra,dec to fitsX,fitsY}
-  shape_marker4_fitsX:=fitsX;
-  shape_marker4_fitsY:=fitsY;
-  mainwindow.shape_marker4.visible:=true;
-  shape_marker4_size:=50;
-  show_marker_shape(mainwindow.shape_marker4,0 {rectangle},shape_marker4_size,shape_marker4_size,10,shape_marker4_fitsX, shape_marker4_fitsY);
-  mainwindow.shape_marker4.hint:='Check';
-
+  shape_check2_ra:= stackmenu1.listview7.column[column2].tag*2*pi/864000;
+  shape_check2_dec:= stackmenu1.listview7.column[column2+1].tag*0.5*pi/324000;
+  mainwindow.shape_check2.visible:=true;
+  place_marker_radec(mainwindow.shape_check2,shape_check2_ra,shape_check2_dec);{place ra,dec marker in image}
 end;
 
 
@@ -819,8 +805,8 @@ begin
 
   if stackmenu1.measure_all1.checked=false then
   begin
-    name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT;
-    name_check1.text:=mainwindow.Shape_alignment_marker2.HINT ;
+    name_variable1.text:=mainwindow.Shape_var1.HINT;
+    name_check1.text:=mainwindow.shape_check1.HINT ;
 
   end
   else

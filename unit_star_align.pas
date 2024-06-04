@@ -20,15 +20,14 @@ var
    quad_star_distances1, quad_star_distances2: star_list;
    A_XYpositions                          : star_list;
    b_Xrefpositions,b_Yrefpositions        : array of double;
-   quad_smallest                          : double;
    nr_references,nr_references2           : integer;
    solution_vectorX, solution_vectorY,solution_cblack   : solution_vector ;
 
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
 procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
-procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list); {find more quads build quads using closest stars}
-procedure find_triples_using_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
+procedure find_quads(starlist :star_list; out quad_star_distances :star_list); {find more quads build quads using closest stars}
+procedure find_triples_using_quads(starlist :star_list;  out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
@@ -220,7 +219,7 @@ begin
 end;
 
 
-procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
+procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
    i,j,k,nrstars,j_distance1,j_distance2,j_distance3,nrquads,Sstart,Send,tolerance  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
@@ -229,8 +228,6 @@ var
 begin
 
   nrstars:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
-  quad_smallest:=9999999;
-
 
   if nrstars<4 then
   begin {not enough stars for quads}
@@ -357,7 +354,6 @@ begin
       quad_star_distances[4,nrquads]:=dist5/dist1;
       quad_star_distances[5,nrquads]:=dist6/dist1;
 
-      if dist1<quad_smallest then quad_smallest:=dist1;{measure the smallest}
 
 //    except
 //       On E :Exception do
@@ -368,12 +364,9 @@ begin
 //       end;
 //     end;
 
-      if dist1>min_leng then {large enough for earth based telescope}
-      begin
-        quad_star_distances[6,nrquads]:=xt;{store mean x position}
-        quad_star_distances[7,nrquads]:=yt;{store mean y position}
-        inc(nrquads); {new unique quad found}
-       end;
+      quad_star_distances[6,nrquads]:=xt;{store mean x position}
+      quad_star_distances[7,nrquads]:=yt;{store mean y position}
+      inc(nrquads); {new unique quad found}
     end;
   end;{i}
   SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
@@ -381,7 +374,7 @@ begin
 
 end;
 
-procedure find_triples_using_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
+procedure find_triples_using_quads(starlist :star_list; out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
 var
    i,j,k,nrstars,j_distance1,j_distance2,j_distance3,nrquads,Sstart,Send,tolerance, nrrealquads  : integer;
    distance,distance1,distance2,distance3,x1a,x2a,x3a,x4a,xt,y1a,y2a,y3a,y4a,yt,
@@ -427,19 +420,14 @@ var
               quad_star_distances[3,nrquads]:=0; //fill the rest of quad record with zeros
               quad_star_distances[4,nrquads]:=0;
               quad_star_distances[5,nrquads]:=0;
-              if dist1<quad_smallest then quad_smallest:=dist1;{measure the smallest}
-              if dist1>min_leng then {large enough for earth based telescope}
-              begin
-                quad_star_distances[6,nrquads]:=xt; {mean x position triple} ;{store mean x position}
-                quad_star_distances[7,nrquads]:=yt;{store mean y position}
-                inc(nrquads); {new unique quad found}
-              end;
-            end;//123
+              quad_star_distances[6,nrquads]:=xt; {mean x position triple} ;{store mean x position}
+              quad_star_distances[7,nrquads]:=yt;{store mean y position}
+              inc(nrquads); {new unique quad found}
+          end;//123
           end;
 
 begin
   nrstars:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
-  quad_smallest:=9999999;
 
   if nrstars<4 then
   begin {not enough stars for quads}
