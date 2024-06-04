@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 650
+  Left = 247
   Height = 634
   Hint = ' '
-  Top = 189
+  Top = 216
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -1374,6 +1374,11 @@ object mainwindow: Tmainwindow
           Caption = 'Batch annotate asteroids && comets'
           Hint = 'This will add asteroid or comet annotations to the fits header. Intended for the blinking routine or manual stacking. Batch solve the images first.'
           OnClick = batch_annotate1Click
+        end
+        object batch_add_tilt1: TMenuItem
+          Caption = 'Batch measure tilt and store to header keyword TILT'
+          Hint = 'A keyword TILT is added to the image headers. This keyword can be read by the configurable last column of tab lights'
+          OnClick = batch_add_tilt1Click
         end
       end
       object N6: TMenuItem

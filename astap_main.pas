@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.06.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.06.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -135,6 +135,7 @@ type
     grid_az_alt1: TMenuItem;
     az_alt1: TMenuItem;
     cal_batch1: TMenuItem;
+    batch_add_tilt1: TMenuItem;
     mpcreport1: TMenuItem;
     min2: TEdit;
     minimum1: TScrollBar;
@@ -412,7 +413,7 @@ type
     procedure fittowindow1Click(Sender: TObject);
     procedure flipVH1Click(Sender: TObject);
     procedure dust_spot_removal1Click(Sender: TObject);
-    procedure MenuItem25Click(Sender: TObject);
+    procedure batch_add_tilt1Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
@@ -1783,7 +1784,7 @@ begin
           {adjustable keyword}
           if ((header[i]=sqm_key[1]{S}) and (header[i+1]=sqm_key[2]{Q}) and (header[i+2]=sqm_key[3]{M})and (header[i+3]=sqm_key[4])and (header[i+4]=sqm_key[5])and (header[i+5]=sqm_key[6])and (header[i+6]=sqm_key[7]) and (header[i+7]=sqm_key[8])) then {adjustable keyword}
           begin
-            sqm_value:=get_as_string; {universal for string and floats}{SQM, accept strings (standard) and floats}
+            sqm_value:=trim(get_as_string); {universal for string and floats}{SQM, accept strings (standard) and floats}
           end;
 
           if header[i]='X' then
@@ -8920,11 +8921,71 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
-procedure Tmainwindow.MenuItem25Click(Sender: TObject);
+procedure Tmainwindow.batch_add_tilt1Click(Sender: TObject);
+var
+  I: integer;
+  err,success   : boolean;
+  dobackup : boolean;
+  tilt     : double;
 begin
-  mainwindow.center_lost_windowsClick(Sender);
-end;
+  OpenDialog1.Title:='Select multiple  files to measure and store tilt in header using keyword TILT';
+  OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter:=dialog_filter_fits_tif;
 
+  opendialog1.initialdir:=ExtractFileDir(filename2);
+  esc_pressed:=false;
+  err:=false;
+  if OpenDialog1.Execute then
+  begin
+    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
+    try { Do some lengthy operation }
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        Application.ProcessMessages;
+        if esc_pressed then begin err:=true;break; end;
+        filename2:=Strings[I];
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        if load_image(false {recenter},false {plot}) then
+        begin
+          if extra_stars=false then
+            tilt:=CCDinspector(30,three_corners,strtofloat(measuring_angle))
+          else
+            tilt:=CCDinspector(10,three_corners,strtofloat(measuring_angle));
+
+          if tilt<100 then
+          begin
+            update_text('TILT    = ',floattostr2(tilt)+'                / Delta HFD between wrost and best corner');;//two decimals only for nice reporting
+            if fits_file_name(filename2) then
+              success:=savefits_update_header(filename2)
+            else
+              success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
+          end
+          else
+          memo2_message('Error adding tilt measurement: '+filename2);
+        end
+        else err:=true;
+      end;
+      if err=false then
+      begin
+         mainwindow.caption:='Completed, all files processed.';
+         memo2_message('Completed, all files processed.');
+      end
+      else
+      begin
+        beep;
+        ShowMessage('Errors!! Files modified but with errors or stopped!!');
+      end;
+      finally
+      if dobackup then restore_img;{for the viewer}
+      Screen.Cursor:=crDefault;  { Always restore to normal }
+    end;
+  end;
+end;
 
 
 function Jd_To_MPCDate(jd: double): string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
@@ -9048,7 +9109,6 @@ begin
 
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
-
 
 
 procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
@@ -10639,7 +10699,6 @@ begin
   opendialog1.Filter:=dialog_filter_fits_tif;
 
   opendialog1.initialdir:=ExtractFileDir(filename2);
-//  fits_file:=false;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then

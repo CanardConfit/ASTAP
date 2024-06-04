@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 395
+  Left = 168
   Height = 707
-  Top = 208
+  Top = 204
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -8469,7 +8469,7 @@ object stackmenu1: Tstackmenu1
       object keywordchangelast1: TMenuItem
         AutoCheck = True
         Caption = 'Change keyword last column'
-        Hint = 'Change the key listed in this column'
+        Hint = 'Enter a new keyword to be listed in this column'
         RadioItem = True
         OnClick = keywordchangelast1Click
       end
@@ -8485,18 +8485,23 @@ object stackmenu1: Tstackmenu1
         Caption = 'SQM'
         Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS'
         RadioItem = True
-        OnClick = column_sqm1Click
+        OnClick = column_fov1Click
       end
       object column_lim_magn1: TMenuItem
         Caption = 'LIM_MAGN'
-        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS'
+        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS, TILT'
         RadioItem = True
-        OnClick = column_lim_magn1Click
+        OnClick = column_fov1Click
       end
       object airmass1: TMenuItem
         Caption = 'AIRMASS'
-        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS'
-        OnClick = airmass1Click
+        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS, TILT'
+        OnClick = column_fov1Click
+      end
+      object MenuItem14: TMenuItem
+        Caption = 'TILT'
+        Hint = 'If missing,  this keyword is made available if the images are batch solved (in viewer menu tools) with option add LIM-MAGN, SQM, CENTALT, AIRMASS, TILT'
+        OnClick = column_fov1Click
       end
     end
     object MenuItem4: TMenuItem
