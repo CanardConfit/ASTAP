@@ -101,7 +101,7 @@ var
   inspector_gradations: integer=10;
 
 
-procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double);
+function CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double) : double;
 
 
 implementation
@@ -127,42 +127,44 @@ end;
 
 
 
-procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double{;x1,y1,x2,y2 : integer});
+function CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double) : double;
 var
- fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,len,
- nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
- nhfd_11,nhfd_21,nhfd_31,
- nhfd_12,nhfd_22,nhfd_32,
- nhfd_13,nhfd_23,nhfd_33,
- x_11,x_21,x_31,y_11,y_21,y_31,
- x_12,x_22,x_32,y_12,y_22,y_32,
- x_13,x_23,x_33,y_13,y_23,y_33,
- oldNaxis3, dummy                       : integer;
+  fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,len,
+  nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
+  nhfd_11,nhfd_21,nhfd_31,
+  nhfd_12,nhfd_22,nhfd_32,
+  nhfd_13,nhfd_23,nhfd_33,
+  x_11,x_21,x_31,y_11,y_21,y_31,
+  x_12,x_22,x_32,y_12,y_22,y_32,
+  x_13,x_23,x_33,y_13,y_23,y_33,
+  oldNaxis3, dummy                       : integer;
 
- hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
- hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
- fwhm_median,
- hfd_median, median_outer_ring,
- median_11, median_21, median_31,
- median_12, median_22, median_32,
- median_13, median_23, median_33      : double;
- hfd_list, hfdlist_outer_ring,
- hfdlist_11,hfdlist_21,hfdlist_31,
- hfdlist_12,hfdlist_22,hfdlist_32,
- hfdlist_13,hfdlist_23,hfdlist_33,
- fwhm_list                            : array of double;
+  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
+  hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
+  fwhm_median,
+  hfd_median, median_outer_ring,
+  median_11, median_21, median_31,
+  median_12, median_22, median_32,
+  median_13, median_23, median_33      : double;
+  hfd_list, hfdlist_outer_ring,
+  hfdlist_11,hfdlist_21,hfdlist_31,
+  hfdlist_12,hfdlist_22,hfdlist_32,
+  hfdlist_13,hfdlist_23,hfdlist_33,
+  fwhm_list                            : array of double;
 
- starlistXY    :array of array of double;
- mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr,fwhm_value,fwhm_arcsec : string;
+  starlistXY    :array of array of double;
+  mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr,fwhm_value,fwhm_arcsec : string;
 
- Fliph, Flipv,restore_req  : boolean;
- img_bk,img_sa                         : image_array;
- style: TTextStyle;
- data_max: single;
+  Fliph, Flipv,restore_req  : boolean;
+  img_bk,img_sa                         : image_array;
+  style: TTextStyle;
+  data_max: single;
 begin
+  result:=100; //default indicating an error
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
+  memo2_message('Inspection of: '+filename2);
   restore_req:=false;
   oldNaxis3:=head.naxis3;//for case it is converted to mono
 
@@ -457,6 +459,8 @@ begin
         image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
         image1.Canvas.lineto(x_31,y_31);{draw diagonal}
 
+        result:=median_worst-median_best; //for export
+
         tilt_value:=100*(median_worst-median_best)/hfd_median;
         mess2:='  Tilt[HFD]='+floattostrF(median_worst-median_best,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}
         if tilt_value<5 then mess2:=mess2+' none)'
@@ -545,6 +549,8 @@ begin
         image1.Canvas.lineto(x_33,y_33);{draw diagonal}
         image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
         image1.Canvas.lineto(x_13,y_13);{draw diagonal}
+
+        result:=median_worst-median_best; //for export
 
         tilt_value:=100*(median_worst-median_best)/hfd_median;
         mess2:='  Tilt[HFD]='+floattostrF(median_worst-median_best,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}

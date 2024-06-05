@@ -121,6 +121,7 @@ type
     GroupBox23: TGroupBox;
     lrgb_stars_smooth1: TCheckBox;
     lrgb_smooth_diameter1: TComboBox;
+    MenuItem14: TMenuItem;
     smooth_stars1: TComboBox;
     measure_all1: TCheckBox;
     smooth_diameter1: TComboBox;
@@ -708,7 +709,6 @@ type
     write_log1: TCheckBox;
     write_video1: TButton;
     procedure add_noise1Click(Sender: TObject);
-    procedure airmass1Click(Sender: TObject);
     procedure alignment1Show(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
@@ -735,8 +735,6 @@ type
     procedure Button1Click(Sender: TObject);
     procedure clear_result_list1Click(Sender: TObject);
     procedure column_fov1Click(Sender: TObject);
-    procedure column_lim_magn1Click(Sender: TObject);
-    procedure column_sqm1Click(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
@@ -5663,7 +5661,7 @@ var
   hfd_min: double;
   c, x_new, y_new, fitsX, fitsY, col, first_image, stepnr, nrrows,
   cycle, step, ps, bottom, top, left, w, h, max_stars: integer;
-  reference_done, init{,solut}, astro_solved, store_annotated, success, res,buffer_loaded: boolean;
+  reference_done, init, store_annotated, res        : boolean;
   st                  : string;
   starlist1,starlist2 : star_list;
   img_temp : image_array;
@@ -5682,7 +5680,6 @@ begin
   mainwindow.image1.canvas.font.color := $00B0FF;{orange}
 
   esc_pressed := False;
-  buffer_loaded:=false;
   first_image := -1;
   cycle := 0;
   if Sender = blink_button_contB1 then step := -1  else step := 1;{forward/ backwards}
@@ -10537,23 +10534,17 @@ end;
 
 
 procedure Tstackmenu1.column_fov1Click(Sender: TObject);
+var
+  keyword : string;
 begin
-  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'FOV';
-  sqm_key:='FOV     ';//does not exist, but will be calculated
+  keyword:=Tmenuitem(sender).Caption;
+  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption :=keyword;
+  sqm_key:=copy(keyword+'       ',1,8);
+
+  new_analyse_required:=true;
 end;
 
-procedure Tstackmenu1.column_lim_magn1Click(Sender: TObject);
-begin
-  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'LIM_MAGN';
-  sqm_key:='LIM_MAGN';
 
-end;
-
-procedure Tstackmenu1.column_sqm1Click(Sender: TObject);
-begin
-  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'SQM';
-  sqm_key:='SQM     ';
-end;
 
 
 procedure Tstackmenu1.FormDestroy(Sender: TObject);
@@ -11283,11 +11274,6 @@ begin
   use_histogram(img_loaded, True {update}); {update for the noise, plot histogram, set sliders}
 end;
 
-procedure Tstackmenu1.airmass1Click(Sender: TObject);
-begin
-  stackmenu1.listview1.columns.Items[l_sqm + 1].Caption := 'AIRMASS';
-  sqm_key:='AIRMASS ';
-end;
 
 procedure Tstackmenu1.alignment1Show(Sender: TObject);
 begin
