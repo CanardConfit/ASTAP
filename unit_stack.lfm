@@ -3699,6 +3699,7 @@ object stackmenu1: Tstackmenu1
             ParentColor = False
             ParentFont = False
             WordWrap = True
+            OnClick = Label19Click
           end
           object most_right9: TStaticText
             Left = 1250

@@ -722,6 +722,7 @@ type
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure Label19Click(Sender: TObject);
     procedure measure_all1Change(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
     procedure unsharp_edit_amount1Change(Sender: TObject);
@@ -7298,6 +7299,8 @@ begin
     memo2_message('Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
     head.mzero := 0;
   end;
+  if reference_database1.itemindex>0 then
+  memo2_message('Note that the online reference database is limited to a field-of-view of about 3 degrees');
 end;
 
 
@@ -10089,6 +10092,11 @@ begin
     if tabind in [0,1,2,3,4,7,8,9,10] then //only in the listview tabs. Do not block ctrl+z in the other tabs
         undo_rename_to_bak(tabind);//ctrl+z
   end;
+end;
+
+procedure Tstackmenu1.Label19Click(Sender: TObject);
+begin
+  openurl('http://www.hnsky.org/astap#photometry');
 end;
 
 procedure Tstackmenu1.measure_all1Change(Sender: TObject);
