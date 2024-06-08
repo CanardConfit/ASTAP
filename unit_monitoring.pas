@@ -242,8 +242,8 @@ begin
           monitor_date1.caption:= DateTimeToStr(FileDateToDateTime(latest_time));
 
           solver:=false;
-          case stackmenu1.monitor_action1.itemindex of 1: CCDinspector(30,false,strtofloat(measuring_angle));
-                                                       2: CCDinspector(30,true,strtofloat(measuring_angle));
+          case stackmenu1.monitor_action1.itemindex of 1: CCDinspector(30,true {screenplot},false,strtofloat(measuring_angle));
+                                                       2: CCDinspector(30,true {screenplot},true,strtofloat(measuring_angle));
                                                        3: form_inspection1.aberration_inspector1Click(nil);
                                                        4: solver:=true;
                                                        5: form_inspection1.background_contour1Click(nil);

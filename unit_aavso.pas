@@ -336,9 +336,22 @@ end;
 
 procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
 var
-  i: integer;
-  abrv             : string;
+  i,j: integer;
+  abrv,old,filter       : string;
 begin
+  //prepare filtering if any
+  old:=uppercase(name_check1.text);
+  filter:='';
+  for j:=0 to name_check1.items.count-1 do
+  begin
+    if length(old)<>length( name_check1.items[j]) then
+      if pos(old,name_check1.items[j])>0 then
+      begin
+        filter:=old;
+        break;
+      end;
+  end;
+
   name_check1.items.clear;
   name_check1.color:=cldefault;
 
@@ -349,28 +362,32 @@ begin
      name_check1.items.add(name_check_IAU);// created from position
    end;
 
+
+  begin
   for i:=p_nr_norm+1+1 to p_nr do
     if odd(i+1) then //not snr column
     begin
       abrv:=stackmenu1.listview7.Column[i].Caption;
-      if pos('000',abrv)>0 then //check star
-      begin
-        with tcombobox(sender) do
+      if copy(abrv,1,4)='000-' then //check star
+        if ((filter='') or (pos(filter,abrv)>0)) then
         begin
-          {$ifdef mswindows}
-          {begin adjust width automatically}
-          if (Canvas.TextWidth(abrv)> ItemWidth) then
-          ItemWidth:=20+ Canvas.TextWidth((abrv));{adjust dropdown with if required}
-          Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
-          {end adjust width automatically}
-          {$else} {unix}
-          ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
-          {$endif}
-
-          items.add(abrv);
+          with tcombobox(sender) do
+          begin
+            {$ifdef mswindows}
+            {begin adjust width automatically}
+            if (Canvas.TextWidth(abrv)> ItemWidth) then
+            ItemWidth:=20+ Canvas.TextWidth((abrv));{adjust dropdown with if required}
+            Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
+            {end adjust width automatically}
+            {$else} {unix}
+            ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
+            {$endif}
+            items.add(abrv);
+          end;
         end;
-      end;
     end;
+
+  end;//loop twice if filtering is required
 end;
 
 
@@ -474,9 +491,22 @@ end;
 
 procedure Tform_aavso1.name_variable1DropDown(Sender: TObject);
 var
-  i,ww: integer;
-  abrv   : string;
+  i,ww,j            : integer;
+  abrv,filter,old   : string;
 begin
+  //prepare filtering if any
+  old:=uppercase(name_variable1.text);
+  filter:='';
+  for j:=0 to name_variable1.items.count-1 do
+  begin
+    if length(old)<>length( name_variable1.items[j]) then
+      if pos(old,name_variable1.items[j])>0 then
+      begin
+        filter:=old;
+        break;
+      end;
+  end;
+
   name_variable1.color:=cldefault;
   name_variable1.items.clear;
   ww:=0;
@@ -492,23 +522,24 @@ begin
     if odd(i+1) then // not a snr column
     begin
       abrv:=stackmenu1.listview7.Column[i].Caption;
-      if pos('000',abrv)=0 then //not a check star
-      begin
-        with tcombobox(sender) do
+      if copy(abrv,1,4)<>'000-' then //Not a check star
+        if ((filter='') or (pos(filter,abrv)>0)) then
         begin
-          {$ifdef mswindows}
-          {begin adjust width automatically}
-          if (Canvas.TextWidth(abrv)> ItemWidth) then
-          ItemWidth:=20+ Canvas.TextWidth((abrv));{adjust dropdown with if required}
-          Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
-          {end adjust width automatically}
-          {$else} {unix}
-          ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
-          {$endif}
+          with tcombobox(sender) do
+          begin
+            {$ifdef mswindows}
+            {begin adjust width automatically}
+            if (Canvas.TextWidth(abrv)> ItemWidth) then
+            ItemWidth:=20+ Canvas.TextWidth((abrv));{adjust dropdown with if required}
+            Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
+            {end adjust width automatically}
+            {$else} {unix}
+            ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
+            {$endif}
 
-          items.add(abrv);
+            items.add(abrv);
+          end;
         end;
-      end;
     end;
 end;
 

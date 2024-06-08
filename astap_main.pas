@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.06.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.06.07';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8952,9 +8952,9 @@ begin
         if load_image(false {recenter},false {plot}) then
         begin
           if extra_stars=false then
-            tilt:=CCDinspector(30,three_corners,strtofloat(measuring_angle))
+            tilt:=CCDinspector(30,false {screenplot},false{three_corners},strtofloat(measuring_angle))
           else
-            tilt:=CCDinspector(10,three_corners,strtofloat(measuring_angle));
+            tilt:=CCDinspector(10,false {screenplot},false{three_corners},strtofloat(measuring_angle));
 
           if tilt<100 then
           begin
@@ -9671,14 +9671,6 @@ begin
 end;
 
 
-
-//procedure Tmainwindow.FormClose(Sender: TObject; var Action: TCloseAction);
-//begin
-//  esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
-//  save_settings2;
-//end;
-
-
 procedure Tmainwindow.receivemessage(Sender: TObject);{For OneInstance, called from timer (linux) or SimpleIPCServer1MessageQueued (Windows)}
 begin
   if SimpleIPCServer1.PeekMessage(1,True) then
@@ -9688,6 +9680,7 @@ begin
     load_image(true,true {plot});{show image of parameter1}
   end;
 end;
+
 
 procedure convert_mono(var img: image_array; var head: Theader);
 var
@@ -10185,9 +10178,9 @@ end;
 procedure Tmainwindow.inspection1click(Sender: TObject);
 begin
   if extra_stars=false then
-    CCDinspector(30,three_corners,strtofloat(measuring_angle))
+    CCDinspector(30,true {screenplot},three_corners,strtofloat(measuring_angle))
   else
-    CCDinspector(10,three_corners,strtofloat(measuring_angle));
+    CCDinspector(10,true {screenplot},three_corners,strtofloat(measuring_angle));
 end;
 
 
@@ -12926,7 +12919,6 @@ end;
 
 procedure FixHiddenFormProblem(Screen: TScreen; theform: TForm ); //for users who change from two to one monitor
 var
-  s: string;
   i,left,right,top,bottom : integer;
 begin
   left:=0;

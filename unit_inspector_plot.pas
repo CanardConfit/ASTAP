@@ -101,7 +101,7 @@ var
   inspector_gradations: integer=10;
 
 
-function CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double) : double;
+function CCDinspector(snr_min: double; screenplot,triangle : boolean; measuring_angle: double) : double;
 
 
 implementation
@@ -127,7 +127,7 @@ end;
 
 
 
-function CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double) : double;
+function CCDinspector(snr_min: double; screenplot,triangle : boolean; measuring_angle: double) : double;
 var
   fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,len,
   nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
@@ -445,19 +445,6 @@ begin
         flip_xy(fliph,flipv,x_21,y_21);
         flip_xy(fliph,flipv,x_31,y_31);
 
-        image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
-
-        image1.Canvas.pen.color:=clyellow;
-
-        image1.Canvas.moveto(x_11,y_11);{draw triangle}
-        image1.Canvas.lineto(x_21,y_21);{draw triangle}
-        image1.Canvas.lineto(x_31,y_31);{draw triangle}
-        image1.Canvas.lineto(x_11,y_11);{draw triangle}
-
-        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x_21,y_21);{draw diagonal}
-        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x_31,y_31);{draw diagonal}
 
         result:=median_worst-median_best; //for export
 
@@ -475,13 +462,29 @@ begin
         else
         mess2:=mess2+' extreme)';
 
+        if screenplot then//plot octagon
+        begin
+          image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
 
-        fontsize:=fontsize*4;
-        image1.Canvas.font.size:=fontsize;
-        image1.Canvas.textout(x_11,y_11,floattostrF(median_11,ffFixed,0,2));
-        image1.Canvas.textout(x_21,y_21,floattostrF(median_21,ffFixed,0,2));
-        image1.Canvas.textout(x_31,y_31,floattostrF(median_31,ffFixed,0,2));
-        image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_22,ffFixed,0,2));
+          image1.Canvas.pen.color:=clyellow;
+
+          image1.Canvas.moveto(x_11,y_11);{draw triangle}
+          image1.Canvas.lineto(x_21,y_21);{draw triangle}
+          image1.Canvas.lineto(x_31,y_31);{draw triangle}
+          image1.Canvas.lineto(x_11,y_11);{draw triangle}
+
+          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(x_21,y_21);{draw diagonal}
+          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(x_31,y_31);{draw diagonal}
+
+          fontsize:=fontsize*4;
+          image1.Canvas.font.size:=fontsize;
+          image1.Canvas.textout(x_11,y_11,floattostrF(median_11,ffFixed,0,2));
+          image1.Canvas.textout(x_21,y_21,floattostrF(median_21,ffFixed,0,2));
+          image1.Canvas.textout(x_31,y_31,floattostrF(median_31,ffFixed,0,2));
+          image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_22,ffFixed,0,2));
+        end;
 
       end
       else
@@ -530,25 +533,6 @@ begin
         flip_xy(fliph,flipv,x_33,y_33); {from array to image coordinates}
 
 
-        image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
-        image1.Canvas.pen.color:=clyellow;
-
-        image1.Canvas.moveto(x_11,y_11);{draw trapezium}
-        image1.Canvas.lineto(x_21,y_21);{draw trapezium}
-        image1.Canvas.lineto(x_31,y_31);{draw trapezium}
-        image1.Canvas.lineto(x_32,y_32);{draw trapezium}
-        image1.Canvas.lineto(x_33,y_33);{draw trapezium}
-        image1.Canvas.lineto(x_23,y_23);{draw trapezium}
-        image1.Canvas.lineto(x_13,y_13);{draw trapezium}
-        image1.Canvas.lineto(x_12,y_12);{draw trapezium}
-        image1.Canvas.lineto(x_11,y_11);{draw trapezium}
-
-        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x_31,y_31);{draw diagonal}
-        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x_33,y_33);{draw diagonal}
-        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x_13,y_13);{draw diagonal}
 
         result:=median_worst-median_best; //for export
 
@@ -566,56 +550,84 @@ begin
         else
         mess2:=mess2+' extreme)';
 
-        fontsize:=fontsize*4;
-        image1.Canvas.font.size:=fontsize;
 
-        image1.Canvas.textout(x_11,y_11,floattostrF(median_11,ffFixed,0,2));
-        image1.Canvas.textout(x_21,y_21,floattostrF(median_21,ffFixed,0,2));
-        image1.Canvas.textout(x_31,y_31,floattostrF(median_31,ffFixed,0,2));
+        if screenplot then//plot octagon
+        begin
+          image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
+          image1.Canvas.pen.color:=clyellow;
 
-        image1.Canvas.textout(x_12,y_12,floattostrF(median_12,ffFixed,0,2));
-        image1.Canvas.textout(x_22,y_22,floattostrF(median_22,ffFixed,0,2));
-        image1.Canvas.textout(x_32,y_32,floattostrF(median_32,ffFixed,0,2));
+          image1.Canvas.moveto(x_11,y_11);{draw trapezium}
+          image1.Canvas.lineto(x_21,y_21);{draw trapezium}
+          image1.Canvas.lineto(x_31,y_31);{draw trapezium}
+          image1.Canvas.lineto(x_32,y_32);{draw trapezium}
+          image1.Canvas.lineto(x_33,y_33);{draw trapezium}
+          image1.Canvas.lineto(x_23,y_23);{draw trapezium}
+          image1.Canvas.lineto(x_13,y_13);{draw trapezium}
+          image1.Canvas.lineto(x_12,y_12);{draw trapezium}
+          image1.Canvas.lineto(x_11,y_11);{draw trapezium}
 
-        image1.Canvas.textout(x_13,y_13,floattostrF(median_13,ffFixed,0,2));
-        image1.Canvas.textout(x_23,y_23,floattostrF(median_23,ffFixed,0,2));
-        image1.Canvas.textout(x_33,y_33,floattostrF(median_33,ffFixed,0,2));
+          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(x_31,y_31);{draw diagonal}
+          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(x_33,y_33);{draw diagonal}
+          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(x_13,y_13);{draw diagonal}
+
+          fontsize:=fontsize*4;
+          image1.Canvas.font.size:=fontsize;
+
+          image1.Canvas.textout(x_11,y_11,floattostrF(median_11,ffFixed,0,2));
+          image1.Canvas.textout(x_21,y_21,floattostrF(median_21,ffFixed,0,2));
+          image1.Canvas.textout(x_31,y_31,floattostrF(median_31,ffFixed,0,2));
+
+          image1.Canvas.textout(x_12,y_12,floattostrF(median_12,ffFixed,0,2));
+          image1.Canvas.textout(x_22,y_22,floattostrF(median_22,ffFixed,0,2));
+          image1.Canvas.textout(x_32,y_32,floattostrF(median_32,ffFixed,0,2));
+
+          image1.Canvas.textout(x_13,y_13,floattostrF(median_13,ffFixed,0,2));
+          image1.Canvas.textout(x_23,y_23,floattostrF(median_23,ffFixed,0,2));
+          image1.Canvas.textout(x_33,y_33,floattostrF(median_33,ffFixed,0,2));
+        end;
       end
       else
       begin
         mess2:='';
       end;
 
-      str(hfd_median:0:1,hfd_value);
-      str(fwhm_median:0:1,fwhm_value);
-      if head.cdelt2<>0 then
+
+      if screenplot then
       begin
-         str(hfd_median*abs(head.cdelt2)*3600:0:1,hfd_arcsec);
-         hfd_arcsec:=' ('+hfd_arcsec+'")';
-         str(fwhm_median*abs(head.cdelt2)*3600:0:1,fwhm_arcsec);
-         fwhm_arcsec:=' ('+fwhm_arcsec+'")';
-      end
-      else
-      begin
-        hfd_arcsec:='';
-        fwhm_arcsec:='';
+        str(hfd_median:0:1,hfd_value);
+        str(fwhm_median:0:1,fwhm_value);
+        if head.cdelt2<>0 then
+        begin
+           str(hfd_median*abs(head.cdelt2)*3600:0:1,hfd_arcsec);
+           hfd_arcsec:=' ('+hfd_arcsec+'")';
+           str(fwhm_median*abs(head.cdelt2)*3600:0:1,fwhm_arcsec);
+           fwhm_arcsec:=' ('+fwhm_arcsec+'")';
+        end
+        else
+        begin
+          hfd_arcsec:='';
+          fwhm_arcsec:='';
+        end;
+        mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
+
+        text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
+        fontsize:=min(60,trunc(fontsize*(head.width*0.9)/text_width));{use 90% of width}
+        image1.Canvas.font.size:=fontsize;
+        image1.Canvas.font.color:=clwhite;
+        text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+
+        left_margin:=min(head.width div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
+
+        image1.Canvas.Brush.Style:=bssolid; //Bsclear;
+        image1.Canvas.Brush.Color:=clBlack;
+        image1.Canvas.textout(left_margin,head.height-text_height,mess2);{median HFD and tilt indication}
+
+        mess2:=mess2+'. Median FWHM='+fwhm_value+fwhm_arcsec;
+        memo2_message(mess2);{for stacking live}
       end;
-      mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
-
-      text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
-      fontsize:=min(60,trunc(fontsize*(head.width*0.9)/text_width));{use 90% of width}
-      image1.Canvas.font.size:=fontsize;
-      image1.Canvas.font.color:=clwhite;
-      text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-
-      left_margin:=min(head.width div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
-
-      image1.Canvas.Brush.Style:=bssolid; //Bsclear;
-      image1.Canvas.Brush.Color:=clBlack;
-      image1.Canvas.textout(left_margin,head.height-text_height,mess2);{median HFD and tilt indication}
-
-      mess2:=mess2+'. Median FWHM='+fwhm_value+fwhm_arcsec;
-      memo2_message(mess2);{for stacking live}
     end
     else
       image1.Canvas.textout(round(fontsize*2),head.height- round(fontsize*4),'No stars detected');
@@ -1216,9 +1228,9 @@ begin
     form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
   if extra_stars=false then
-    CCDinspector(30,three_corners,strtofloat(measuring_angle))
+    CCDinspector(30,true {screenplot},three_corners,strtofloat(measuring_angle))
   else
-    CCDinspector(10,three_corners,strtofloat(measuring_angle));
+    CCDinspector(10,true {screenplot},three_corners,strtofloat(measuring_angle));
 end;
 
 
