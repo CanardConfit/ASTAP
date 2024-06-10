@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.06.07';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.06.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -805,9 +805,10 @@ function strtoint2(s: string;default:integer):integer; {str to integer, fault to
 function strtofloat1(s:string): double;{string to float, error tolerant}
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function TextfileSize(const name: string): LongInt;
+function floattostr8(x:double):string;//always with dot decimal seperator  Eight decimals
 function floattostr6(x:double):string;//always with dot decimal seperator
 function floattostr4(x:double):string;//always with dot decimal seperator
-function floattostr2(x:double):string;//always with dot decimal seperator
+function floattostr2(x:double):string;//always with dot decimal seperator.
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 procedure get_hist(colour:integer;img :image_array);{get histogram of img_loaded}
 procedure save_settings2;
@@ -3835,6 +3836,360 @@ begin
 end;
 
 
+function TextfileSize(const name: string): LongInt;
+var
+  SRec: TSearchRec;
+begin
+  if FindFirst(name, faAnyfile, SRec) = 0 then
+  begin
+    Result := SRec.Size;
+    Sysutils.FindClose(SRec);
+  end
+  else
+    Result := 0;
+end;
+
+
+Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
+var
+  value1   : single;
+  lw       : longword absolute value1;
+begin
+  value1:=x;
+  result:=swapendian(lw);
+end;
+
+
+function save_fits(img: image_array;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+var
+  TheFile4 : tfilestream;
+  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
+  dd : single;
+  line0                : ansistring;
+  aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
+  rgb  : byteX3;{array [0..2] containing r,g,b colours}
+begin
+  result:=false;
+  if img=nil then
+  begin
+    memo2_message('Error,  no image');
+    exit;
+  end;
+  {get dimensions directly from array}
+  colours5:=length(img);{nr colours}
+  width5:=length(img[0,0]);{width}
+  height5:=length(img[0]);{height}
+  if colours5=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
+
+  if ((type1=24) and (colours5<3)) then
+  begin
+    application.messagebox(pchar('Abort, can not save grayscale image as colour image!!'),pchar('Error'),MB_OK);
+    exit;
+  end;
+
+  if  override2=false then
+  begin
+    if ((fileexists(filen2)) and (pos('ImageToSolve.fit',filen2)=0)) then
+      if MessageDlg('ASTAP: Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  Exit;
+
+    if extend_type=1 then {image extensions in the file. 1=image extension, 2=ascii table extension, 3=bintable extension}
+    begin
+      if MessageDlg('Only the current image of the multi-extension FITS will be saved. Displayed table will not be preserved. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then
+        exit;
+      mainwindow.Memo1.Lines[0]:= head1[0]; {replace XTENSION= with SIMPLE = }
+    end;
+  end;
+  filename2:=filen2;
+  {$IFDEF fpc}
+  progress_indicator(0,'');
+  {$else} {delphi}
+  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.Normal;
+  mainwindow.taskbar1.progressvalue:=0; {show progress}
+
+  {$endif}
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  try
+    TheFile4:=tfilestream.Create(filen2, fmcreate );
+    try
+      progressC:=0;
+
+     {update FITs header}
+      if type1<>24 then {standard FITS}
+      begin
+        update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
+        update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
+        update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
+        update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
+        if colours5<>1 then {color image}
+          update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,colours5)
+          else
+          remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+
+        if type1=16 then bzero2:=32768 else bzero2:=0;
+
+        update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
+        update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
+        if type1<>8 then
+        begin
+          update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
+          update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
+          update_integer('CBLACK  =',' / Black point used for displaying image.         ' ,round(bck.backgr) ); {2019-4-9}
+          update_integer('CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
+        end
+        else
+        begin {in most case reducing from 16 or flat to 8 bit}
+          update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+          update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+        end;
+      end {update existing header}
+      else
+      begin {special 8 bit with three colors combined in 24 bit}
+        {update FITs header}
+        update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
+        update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
+        update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
+        update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
+        update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
+        update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+        update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+        update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,0);
+        update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
+        {update existing header}
+      end;
+
+      {write memo1 header to file}
+      for i:=0 to 79 do empthy_line[i]:=#32;{space}
+      i:=0;
+      repeat
+         if i<mainwindow.memo1.lines.count then
+         begin
+           line0:=mainwindow.memo1.lines[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126.}
+           while length(line0)<80 do line0:=line0+' ';{extend to length 80 if required}
+           strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+           thefile4.writebuffer(aline,80);{write updated header from memo1}
+         end
+         else
+         thefile4.writebuffer(empthy_line,80);{write empthy line}
+         inc(i);
+      until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+
+      if type1=8 then
+      begin
+        minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
+        maximum:=max(255,mainwindow.maximum1.position);
+        for k:=0 to colours5-1 do {do all colors}
+        for i:=0 to height5-1 do
+        begin
+          inc(progressC);
+          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
+          {$IFDEF fpc}
+          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
+          {$else} {delphi}
+          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          {$endif}
+
+          for j:=0 to width5-1 do
+          begin
+            dd:=img[k,i,j];{save all colors}
+            dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
+            if dum<0 then dum:=0;
+            if dum>255 then dum:=255;
+            fitsbuffer[j]:=dum;
+          end;
+          thefile4.writebuffer(fitsbuffer,width5); {write as bytes}
+        end;
+      end
+      else
+      if type1=24 then
+      begin
+        minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
+        maximum:=max(255,mainwindow.maximum1.position);
+
+        for i:=0 to height5-1 do
+        begin
+          inc(progressC);
+          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
+          {$IFDEF fpc}
+          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
+          {$else} {delphi}
+          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          {$endif}
+
+          for j:=0 to width5-1 do
+          begin
+            for k:=0 to 2 do {do all colors}
+            begin
+              dd:=img[k,i,j];{save all colors}
+              dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
+              if dum<0 then dum:=0;
+              if dum>255 then dum:=255;
+              rgb[k]:=dum;
+            end;
+            fitsbufferRGB[j]:=rgb;
+          end;
+          thefile4.writebuffer(fitsbufferRGB,width5+width5+width5); {write as bytes}
+        end;
+      end
+      else
+
+      if type1=16 then
+      begin
+        for k:=0 to colours5-1 do {do all colors}
+        for i:=0 to height5-1 do
+        begin
+          inc(progressC);
+          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
+          {$IFDEF fpc}
+          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
+          {$else} {delphi}
+          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          {$endif}
+
+          for j:=0 to width5-1 do
+          begin
+            dum:=max(0,min(65535,round(img[k,i,j]))) - bzero2;{limit data between 0 and 65535 and shift it to -32768.. 32767}
+            { value  - bzero              result  shortint    word
+             ($0000  - $8000) and $FFFF = $8000 (-32768       32768 )  note  $0000 - $8000 ==>  $FFFF8000. Highest bits are skipped
+             ($0001  - $8000) and $FFFF = $8001 (-32767       32769 )  note  $0001 - $8000 ==>  $FFFF8001. Highest bits are skipped
+             ($2000  - $8000) and $FFFF = $A000 (-24576       40960 )
+             ($7FFF  - $8000) and $FFFF = $FFFF (    -1       65535 )
+             ($8000  - $8000) and $FFFF = $0000 (     0           0 )
+             ($8001  - $8000) and $FFFF = $0001 (     1           1 )
+             ($A000  - $8000) and $FFFF = $2000 (  8192        8192 )  note $A000 - $8000 equals  $2000.
+             ($FFFE  - $8000) and $FFFF = $7FFE (+32766       32766 )
+             ($FFFF  - $8000) and $FFFF = $7FFF (+32767       32767 )
+            }
+            fitsbuffer2[j]:=swap(word(dum));{in FITS file hi en low bytes are swapped}
+          end;
+          thefile4.writebuffer(fitsbuffer2,width5+width5); {write as bytes}
+        end;
+      end
+      else
+      if type1=-32 then
+      begin
+        for k:=0 to colours5-1 do {do all colors}
+        for i:=0 to height5-1 do
+        begin
+          inc(progressC);
+          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
+          {$IFDEF fpc}
+          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
+          {$else} {delphi}
+          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          {$endif}
+          for j:=0 to width5-1 do
+            fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,i,j]);{in FITS file hi en low bytes are swapped}
+          thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
+        end;
+      end;
+      remain:=round(2880*(1-frac(thefile4.position/2880)));{follow standard and only write in a multi of 2880 bytes}
+      if ((remain<>0) and (remain<>2880)) then
+      begin
+        FillChar(fitsbuffer, remain, 0);
+        thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
+      end;
+
+    //  if extend_type>=3 then {write bintable extension}
+    //  begin
+    //    rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
+    //    tal:=mainwindow.memo3.lines[0];
+    //    i:=0;
+    //    strplcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ',80);{copy 80 and not more or less in position aline[80] should be #0 from string}
+    //    thefile4.writebuffer(aline,80); inc(i);
+    //    strplcopy(aline,  'BITPIX  =                    8 / 8-bits character format                                  ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+    //    strplcopy(aline,  'NAXIS   =                    2 / Tables are 2-D char. array                               ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+    //    str(rows*4:13,tal); {write only 4 byte floats}
+    //    strplcopy(        aline,'NAXIS1  =        '+tal+' / Bytes in row                                             ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    str(mainwindow.memo3.lines.count-1-1 :13,tal);
+    //    strplcopy(aline,      'NAXIS2  =        '+tal  +' /                                                          ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    strplcopy(  aline,'PCOUNT  =                    0 / Parameter count always 0                                 ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    strplcopy(aline,  'GCOUNT  =                    1 / Group count always 1                                     ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    str(rows  :3,tal);
+    //    strplcopy(aline,'TFIELDS =                  '+tal+            ' / No. of col in table                                      ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    for k:=1 to rows do
+    //    begin
+    //      str(k:0,tal); tal:=copy(tal+'  ',1,3);
+    //      strplcopy(aline,'TFORM'+tal+'= '+#39+'E       '+#39+'           / Format of field                                          ',80);
+    //      thefile4.writebuffer(aline,80);inc(i);
+
+    //      lab:=retrieve_memo3_string(k-1,0,'col'+inttostr(k)); {retrieve type from memo3}
+    //      strplcopy(aline,'TTYPE'+tal+'= '+#39+lab+#39+' / Field label                                                                                                        ',80);
+    //      thefile4.writebuffer(aline,80);inc(i);
+
+    //      lab:=retrieve_memo3_string(k-1,1,'unit'+inttostr(k)); {retrieve unit from memo3}
+    //      strplcopy(aline,'TUNIT'+tal+'= '+#39+lab+#39+' / Physical unit of field                                                                                             ',80);
+    //      thefile4.writebuffer(aline,80);inc(i);
+    //    end;
+
+    //    strplcopy(  aline,'ORIGIN  = '    +#39+'ASTAP   '+#39+'           / Written by ASTAP                                         ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+    //    strpcopy(aline,'END                                                                             ');
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    while  frac(i*80/2880)>0 do
+    //    begin
+    //      thefile4.writebuffer(empthy_line,80);{write empthy line}
+    //      inc(i);
+    //    end;
+
+    //    {write datablock}
+    //    i:=0;
+    //    for r:=2 to mainwindow.memo3.lines.count-1 do {rows}
+    //    begin
+    //       for j:=0 to rows-1 do {columns}
+    //      begin
+    //         tal:=retrieve_memo3_string(j {x},r {y},'0'); {retrieve string value from memo3 at position k,m}
+    //         fitsbuffer4[j]:=INT_IEEE4_reverse(strtofloat2(tal));{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+    //       end;
+    //       thefile4.writebuffer(fitsbuffer[0],rows*4);{write one row}
+    //       i:=i+rows*4; {byte counter}
+    //    end;
+
+    //    j:=80-round(80*frac(i/80));{remainder in bytes till written muliple of 80 char}
+    //    thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
+    //    i:=(i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
+
+    //    while  frac(i*80/2880)>0 do {write till 2880 block is written}
+    //    begin
+    //      thefile4.writebuffer(empthy_line,80);{write empthy line}
+    //      inc(i);
+    //    end;
+    //  end;
+
+
+    finally
+      TheFile4.free;
+    end;
+
+  unsaved_import:=false;{file is available for astrometry.net}
+  result:=true;
+  except
+    memo2_message('█ █ █ █ █ █ Write error!!  █ █ █ █ █ █');
+  end;
+  mainwindow.image1.stretch:=true;
+  Screen.Cursor:=crDefault;
+  {$IFDEF fpc}
+  progress_indicator(-100,'');{back to normal}
+  {$else} {delphi}
+  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.None;
+  {$endif}
+end;
+
+
+
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
 begin
   result:=false;
@@ -6014,6 +6369,10 @@ begin
 end;
 
 
+function floattostr8(x:double):string;//always with dot decimal seperator. Float to string with 8 decimals
+begin
+  str(x:0:8,result);
+end;
 
 
 function floattostr6(x:double):string;//always with dot decimal seperator. Float to string with 6 decimals
@@ -6028,7 +6387,7 @@ begin
 end;
 
 
-function floattostr2(x:double):string;//always with dot decimal seperator
+function floattostr2(x:double):string;//always with dot decimal seperator.
 begin
   str(x:0:2,result);
 end;
@@ -8257,6 +8616,7 @@ begin
       hjd_date:=Sett.ReadBool('aavso','hjd_date',false);{aavso report}
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
       magnitude_slope:=Sett.ReadFloat('aavso','slope',0);
+      used_check_stars:=Sett.ReadString('aavso','checkstars','');
 
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('live','live_stack_dir','');
       stackmenu1.monitoring_path1.caption:=Sett.ReadString('live','monitor_dir','');
@@ -8639,6 +8999,7 @@ begin
       sett.writeBool('aavso','hjd_date',hjd_date);{AAVSO report}
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
       sett.writeFloat('aavso','slope', magnitude_slope);
+      sett.writestring('aavso','checkstars',used_check_stars);
 
       sett.writestring('live','live_stack_dir',stackmenu1.live_stacking_path1.caption);{live stacking}
       sett.writestring('live','monitor_dir',stackmenu1.monitoring_path1.caption);
@@ -12993,7 +13354,7 @@ begin
         '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
-        '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
+        '-speed mode[auto/slow] {Slow is forcing reading a larger database area for more overlap to improve initial detection}'+#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
         '-log   {Write the solver log to file}'+#10+
         '-update  {update the FITS/TIFF header with the found solution.  Jpeg, png will be written as fits}' +#10+
@@ -13011,14 +13372,15 @@ begin
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-stack  path {startup with live stack tab and path selected}'+#10+
         #10+
-        'Preference will be given to the command line values.' +#10+
+        'Preference will be given to the command-line values. CSV files are written with a dot as decimal seperator.'+#10+
         'Solver result will be written to filename.ini and filename.wcs.'+#10+
-        'Star database expected at: '+database_path
-        ), pchar('ASTAP astrometric solver usage:'),MB_OK);
+        'Star database expected at: '+database_path), pchar('ASTAP astrometric solver usage:'),MB_OK);
 
         esc_pressed:=true;{kill any running activity. This for APT}
         halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
       end;
+
+      //log_to_file('c:\temp\text.txt',cmdline);
 
       debug:=hasoption('debug'); {The debug option allows to set some solving parameters in the GUI (graphical user interface) and to test the commandline. In debug mode all commandline parameters are set and the specified image is shown in the viewer. Only the solve command has to be given manuallydebug mode }
       filespecified:=hasoption('f');
@@ -13072,7 +13434,8 @@ begin
         if hasoption('t') then stackmenu1.quad_tolerance1.text:=GetOptionValue('t');
 
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
-        if hasoption('sip') then stackmenu1.add_sip1.checked:='n'<>GetOptionValue('sip');
+        if hasoption('sip') then
+            stackmenu1.add_sip1.checked:='n'<>GetOptionValue('sip');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=('slow'=GetOptionValue('speed'));
         if hasoption('check') then checkfilter:=true else checkfilter:=false;
 
@@ -14669,7 +15032,7 @@ begin
   begin
     if find_reference_star(img_loaded) then
     begin
-      if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
+      if snr>10 then shapetype:=1 {circle} else shapetype:=0;{square}
       with stackmenu1 do
         for c := 0 to listview1.Items.Count - 1 do
           if listview1.Items[c].Selected then
@@ -14694,40 +15057,73 @@ begin
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
       xcf:=xc+1;{make fits coordinates}
       ycf:=yc+1;
-      if shape_nr=1 then
+      if shape_nr=1 then//var
       begin
         if ((abs(shape_check1_fitsX-xcf)<=3) and (abs(shape_check1_fitsY-ycf)<=3)) then
-          begin shape_check1_fitsX:=shape_var1_fitsX;shape_check1_fitsY:=shape_var1_fitsY;end{swap, prevent overlapping}
+          begin
+            shape_check1_fitsX:=shape_var1_fitsX;
+            shape_check1_fitsY:=shape_var1_fitsY;
+            shape_check1_ra:=shape_var1_ra;
+            shape_check1_dec:=shape_var1_dec;
+          end{swap, prevent overlapping}
         else
-          if ((abs(shape_star3_fitsX-xcf)<=3) and (abs(shape_star3_fitsY-ycf)<=3)) then begin shape_star3_fitsX:=shape_var1_fitsX;shape_star3_fitsY:=shape_var1_fitsY;end;
+          if ((abs(shape_star3_fitsX-xcf)<=3) and (abs(shape_star3_fitsY-ycf)<=3)) then
+          begin
+            shape_star3_fitsX:=shape_var1_fitsX;
+            shape_star3_fitsY:=shape_var1_fitsY;
+            shape_star3_ra:=shape_var1_ra;
+            shape_star3_dec:=shape_var1_dec;
+          end;
         shape_var1_fitsX:=xcf; shape_var1_fitsY:=ycf;
         pixel_to_celestial(head,xcf,ycf,0,shape_var1_ra,shape_var1_dec);{store shape position in ra,dec for positioning accurate at an other image}
       end
       else
-      if shape_nr=2 then
+      if shape_nr=2 then //check
       begin
         if ((abs(shape_var1_fitsX-xcf)<=3) and (abs(shape_var1_fitsY-ycf)<=3)) then
-          begin shape_var1_fitsX:=shape_check1_fitsX;shape_var1_fitsY:=shape_check1_fitsY;end{swap, prevent overlapping}
+        begin
+          shape_var1_fitsX:=shape_check1_fitsX;
+          shape_var1_fitsY:=shape_check1_fitsY;
+          shape_var1_ra:=shape_check1_ra;
+          shape_var1_dec:=shape_check1_dec;
+        end{swap, prevent overlapping}
         else
-          if ((abs(shape_star3_fitsX-xcf)<=3) and (abs(shape_star3_fitsY-ycf)<=3)) then begin shape_star3_fitsX:=shape_check1_fitsX;shape_star3_fitsY:=shape_check1_fitsY;end;
+          if ((abs(shape_star3_fitsX-xcf)<=3) and (abs(shape_star3_fitsY-ycf)<=3)) then
+          begin
+            shape_star3_fitsX:=shape_check1_fitsX;
+            shape_star3_fitsY:=shape_check1_fitsY;
+            shape_star3_ra:=shape_check1_ra;
+            shape_star3_dec:=shape_check1_dec;
+          end;
         shape_check1_fitsX:=xcf; shape_check1_fitsY:=ycf; {calculate fits positions}
         pixel_to_celestial(head,xcf,ycf,0,shape_check1_ra,shape_check1_dec);{store shape position in ra,dec for positioning accurate at an other image}
 
       end
       else
-      if shape_nr=3 then
+      if shape_nr=3 then //star3
       begin
         if ((abs(shape_var1_fitsX-xcf)<=3) and (abs(shape_var1_fitsY-ycf)<=3)) then
-          begin shape_var1_fitsX:=shape_star3_fitsX;shape_var1_fitsY:=shape_star3_fitsY;end{swap, prevent overlapping}
+          begin
+            shape_var1_fitsX:=shape_star3_fitsX;
+            shape_var1_fitsY:=shape_star3_fitsY;
+            shape_var1_ra:=shape_star3_ra;
+            shape_var1_dec:=shape_star3_dec;
+          end{swap, prevent overlapping}
         else
-          if ((abs(shape_check1_fitsX-xcf)<=3) and (abs(shape_check1_fitsY-ycf)<=3)) then begin shape_check1_fitsX:=shape_star3_fitsX;shape_check1_fitsY:=shape_star3_fitsY;end;
+          if ((abs(shape_check1_fitsX-xcf)<=3) and (abs(shape_check1_fitsY-ycf)<=3)) then
+            begin
+              shape_check1_fitsX:=shape_star3_fitsX;
+              shape_check1_fitsY:=shape_star3_fitsY;
+              shape_check1_ra:=shape_star3_ra;
+              shape_check1_dec:=shape_star3_dec;
+            end;
         shape_star3_fitsX:=xcf; shape_star3_fitsY:=ycf;
         pixel_to_celestial(head,xcf,ycf,0,shape_star3_ra,shape_star3_dec);{store shape position in ra,dec for positioning accurate at an other image}
       end;
       Shape_var1.HINT:='?';//reset any labels
       shape_check1.HINT:='?';
       show_marker_shape(mainwindow.shape_var1,shapetype,20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
-      show_marker_shape(mainwindow.shape_check1,shapetype,20,20,10{minimum},shape_check1_fitsX, shape_check1_fitsY);
+      show_marker_shape(mainwindow.shape_check1,7 {shapetype},20,20,10{minimum},shape_check1_fitsX, shape_check1_fitsY);
       show_marker_shape(mainwindow.shape_star3,shapetype,20,20,10{minimum},shape_star3_fitsX, shape_star3_fitsY);
 
       inc(shape_nr);
@@ -16578,365 +16974,6 @@ begin
     result:=copy(tal,n1,n2-n1)
   else
      result:=default;
-end;
-
-
-Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
-var
-  value1   : single;
-  lw       : longword absolute value1;
-begin
-  value1:=x;
-  result:=swapendian(lw);
-end;
-
-
-function save_fits(img: image_array;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
-var
-  TheFile4 : tfilestream;
-  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
-  dd : single;
-  line0                : ansistring;
-  aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
-  rgb  : byteX3;{array [0..2] containing r,g,b colours}
-begin
-  result:=false;
-  if img=nil then
-  begin
-    memo2_message('Error,  no image');
-    exit;
-  end;
-  {get dimensions directly from array}
-  colours5:=length(img);{nr colours}
-  width5:=length(img[0,0]);{width}
-  height5:=length(img[0]);{height}
-  if colours5=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
-
-  if ((type1=24) and (colours5<3)) then
-  begin
-    application.messagebox(pchar('Abort, can not save grayscale image as colour image!!'),pchar('Error'),MB_OK);
-    exit;
-  end;
-
-  if  override2=false then
-  begin
-    if ((fileexists(filen2)) and (pos('ImageToSolve.fit',filen2)=0)) then
-      if MessageDlg('ASTAP: Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  Exit;
-
-    if extend_type=1 then {image extensions in the file. 1=image extension, 2=ascii table extension, 3=bintable extension}
-    begin
-      if MessageDlg('Only the current image of the multi-extension FITS will be saved. Displayed table will not be preserved. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then
-        exit;
-      mainwindow.Memo1.Lines[0]:= head1[0]; {replace XTENSION= with SIMPLE = }
-    end;
-  end;
-  filename2:=filen2;
-  {$IFDEF fpc}
-  progress_indicator(0,'');
-  {$else} {delphi}
-  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.Normal;
-  mainwindow.taskbar1.progressvalue:=0; {show progress}
-
-  {$endif}
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-  try
-    TheFile4:=tfilestream.Create(filen2, fmcreate );
-    try
-      progressC:=0;
-
-     {update FITs header}
-      if type1<>24 then {standard FITS}
-      begin
-        update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
-        update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
-        update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
-        update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
-        if colours5<>1 then {color image}
-          update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,colours5)
-          else
-          remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
-
-        if type1=16 then bzero2:=32768 else bzero2:=0;
-
-        update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
-        update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
-        if type1<>8 then
-        begin
-          update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
-          update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
-          update_integer('CBLACK  =',' / Black point used for displaying image.         ' ,round(bck.backgr) ); {2019-4-9}
-          update_integer('CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
-        end
-        else
-        begin {in most case reducing from 16 or flat to 8 bit}
-          update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-          update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-        end;
-      end {update existing header}
-      else
-      begin {special 8 bit with three colors combined in 24 bit}
-        {update FITs header}
-        update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
-        update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
-        update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
-        update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
-        update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
-        update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-        update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-        update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,0);
-        update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
-        {update existing header}
-      end;
-
-    //  update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
-
-      {write memo1 header to file}
-      for i:=0 to 79 do empthy_line[i]:=#32;{space}
-      i:=0;
-      repeat
-         if i<mainwindow.memo1.lines.count then
-         begin
-           line0:=mainwindow.memo1.lines[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126.}
-           while length(line0)<80 do line0:=line0+' ';{extend to length 80 if required}
-           strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-           thefile4.writebuffer(aline,80);{write updated header from memo1}
-         end
-         else
-         thefile4.writebuffer(empthy_line,80);{write empthy line}
-         inc(i);
-      until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
-
-      if type1=8 then
-      begin
-        minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
-        maximum:=max(255,mainwindow.maximum1.position);
-        for k:=0 to colours5-1 do {do all colors}
-        for i:=0 to height5-1 do
-        begin
-          inc(progressC);
-          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-          {$IFDEF fpc}
-          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-          {$else} {delphi}
-          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-          {$endif}
-
-          for j:=0 to width5-1 do
-          begin
-            dd:=img[k,i,j];{save all colors}
-            dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
-            if dum<0 then dum:=0;
-            if dum>255 then dum:=255;
-            fitsbuffer[j]:=dum;
-          end;
-          thefile4.writebuffer(fitsbuffer,width5); {write as bytes}
-        end;
-      end
-      else
-      if type1=24 then
-      begin
-        minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
-        maximum:=max(255,mainwindow.maximum1.position);
-
-        for i:=0 to height5-1 do
-        begin
-          inc(progressC);
-          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-          {$IFDEF fpc}
-          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-          {$else} {delphi}
-          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-          {$endif}
-
-          for j:=0 to width5-1 do
-          begin
-            for k:=0 to 2 do {do all colors}
-            begin
-              dd:=img[k,i,j];{save all colors}
-              dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
-              if dum<0 then dum:=0;
-              if dum>255 then dum:=255;
-              rgb[k]:=dum;
-            end;
-            fitsbufferRGB[j]:=rgb;
-          end;
-          thefile4.writebuffer(fitsbufferRGB,width5+width5+width5); {write as bytes}
-        end;
-      end
-      else
-
-      if type1=16 then
-      begin
-        for k:=0 to colours5-1 do {do all colors}
-        for i:=0 to height5-1 do
-        begin
-          inc(progressC);
-          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-          {$IFDEF fpc}
-          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-          {$else} {delphi}
-          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-          {$endif}
-
-          for j:=0 to width5-1 do
-          begin
-            dum:=max(0,min(65535,round(img[k,i,j]))) - bzero2;{limit data between 0 and 65535 and shift it to -32768.. 32767}
-            { value  - bzero              result  shortint    word
-             ($0000  - $8000) and $FFFF = $8000 (-32768       32768 )  note  $0000 - $8000 ==>  $FFFF8000. Highest bits are skipped
-             ($0001  - $8000) and $FFFF = $8001 (-32767       32769 )  note  $0001 - $8000 ==>  $FFFF8001. Highest bits are skipped
-             ($2000  - $8000) and $FFFF = $A000 (-24576       40960 )
-             ($7FFF  - $8000) and $FFFF = $FFFF (    -1       65535 )
-             ($8000  - $8000) and $FFFF = $0000 (     0           0 )
-             ($8001  - $8000) and $FFFF = $0001 (     1           1 )
-             ($A000  - $8000) and $FFFF = $2000 (  8192        8192 )  note $A000 - $8000 equals  $2000.
-             ($FFFE  - $8000) and $FFFF = $7FFE (+32766       32766 )
-             ($FFFF  - $8000) and $FFFF = $7FFF (+32767       32767 )
-            }
-            fitsbuffer2[j]:=swap(word(dum));{in FITS file hi en low bytes are swapped}
-          end;
-          thefile4.writebuffer(fitsbuffer2,width5+width5); {write as bytes}
-        end;
-      end
-      else
-      if type1=-32 then
-      begin
-        for k:=0 to colours5-1 do {do all colors}
-        for i:=0 to height5-1 do
-        begin
-          inc(progressC);
-          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-          {$IFDEF fpc}
-          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
-          {$else} {delphi}
-          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-          {$endif}
-          for j:=0 to width5-1 do
-          begin
-           // img[0,j,i]:=341.7177734375;  {equals non intel 3772492355}
-         //  if img[k,j,i]>4100 then img[k,j,i]:=4100;
-
-            fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,i,j]);{in FITS file hi en low bytes are swapped}
-          end;
-          thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
-        end;
-      end;
-      remain:=round(2880*(1-frac(thefile4.position/2880)));{follow standard and only write in a multi of 2880 bytes}
-      if ((remain<>0) and (remain<>2880)) then
-      begin
-        FillChar(fitsbuffer, remain, 0);
-        thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
-      end;
-
-    //  if extend_type>=3 then {write bintable extension}
-    //  begin
-    //    rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
-    //    tal:=mainwindow.memo3.lines[0];
-    //    i:=0;
-    //    strplcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ',80);{copy 80 and not more or less in position aline[80] should be #0 from string}
-    //    thefile4.writebuffer(aline,80); inc(i);
-    //    strplcopy(aline,  'BITPIX  =                    8 / 8-bits character format                                  ',80);
-    //    thefile4.writebuffer(aline,80);inc(i);
-    //    strplcopy(aline,  'NAXIS   =                    2 / Tables are 2-D char. array                               ',80);
-    //    thefile4.writebuffer(aline,80);inc(i);
-    //    str(rows*4:13,tal); {write only 4 byte floats}
-    //    strplcopy(        aline,'NAXIS1  =        '+tal+' / Bytes in row                                             ',80);
-    //    thefile4.writebuffer(aline,80);inc(i);
-
-    //    str(mainwindow.memo3.lines.count-1-1 :13,tal);
-    //    strplcopy(aline,      'NAXIS2  =        '+tal  +' /                                                          ',80);
-    //    thefile4.writebuffer(aline,80);inc(i);
-
-    //    strplcopy(  aline,'PCOUNT  =                    0 / Parameter count always 0                                 ',80);
-    //    thefile4.writebuffer(aline,80);inc(i);
-
-    //    strplcopy(aline,  'GCOUNT  =                    1 / Group count always 1                                     ',80);
-    //    thefile4.writebuffer(aline,80);inc(i);
-
-    //    str(rows  :3,tal);
-    //    strplcopy(aline,'TFIELDS =                  '+tal+            ' / No. of col in table                                      ',80);
-    //    thefile4.writebuffer(aline,80);inc(i);
-
-    //    for k:=1 to rows do
-    //    begin
-    //      str(k:0,tal); tal:=copy(tal+'  ',1,3);
-    //      strplcopy(aline,'TFORM'+tal+'= '+#39+'E       '+#39+'           / Format of field                                          ',80);
-    //      thefile4.writebuffer(aline,80);inc(i);
-
-    //      lab:=retrieve_memo3_string(k-1,0,'col'+inttostr(k)); {retrieve type from memo3}
-    //      strplcopy(aline,'TTYPE'+tal+'= '+#39+lab+#39+' / Field label                                                                                                        ',80);
-    //      thefile4.writebuffer(aline,80);inc(i);
-
-    //      lab:=retrieve_memo3_string(k-1,1,'unit'+inttostr(k)); {retrieve unit from memo3}
-    //      strplcopy(aline,'TUNIT'+tal+'= '+#39+lab+#39+' / Physical unit of field                                                                                             ',80);
-    //      thefile4.writebuffer(aline,80);inc(i);
-    //    end;
-
-    //    strplcopy(  aline,'ORIGIN  = '    +#39+'ASTAP   '+#39+'           / Written by ASTAP                                         ',80);
-    //    thefile4.writebuffer(aline,80);inc(i);
-    //    strpcopy(aline,'END                                                                             ');
-    //    thefile4.writebuffer(aline,80);inc(i);
-
-    //    while  frac(i*80/2880)>0 do
-    //    begin
-    //      thefile4.writebuffer(empthy_line,80);{write empthy line}
-    //      inc(i);
-    //    end;
-
-    //    {write datablock}
-    //    i:=0;
-    //    for r:=2 to mainwindow.memo3.lines.count-1 do {rows}
-    //    begin
-    //       for j:=0 to rows-1 do {columns}
-    //      begin
-    //         tal:=retrieve_memo3_string(j {x},r {y},'0'); {retrieve string value from memo3 at position k,m}
-    //         fitsbuffer4[j]:=INT_IEEE4_reverse(strtofloat2(tal));{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
-    //       end;
-    //       thefile4.writebuffer(fitsbuffer[0],rows*4);{write one row}
-    //       i:=i+rows*4; {byte counter}
-    //    end;
-
-    //    j:=80-round(80*frac(i/80));{remainder in bytes till written muliple of 80 char}
-    //    thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
-    //    i:=(i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
-
-    //    while  frac(i*80/2880)>0 do {write till 2880 block is written}
-    //    begin
-    //      thefile4.writebuffer(empthy_line,80);{write empthy line}
-    //      inc(i);
-    //    end;
-    //  end;
-
-
-    finally
-      TheFile4.free;
-    end;
-
-  unsaved_import:=false;{file is available for astrometry.net}
-  result:=true;
-  except
-    memo2_message('█ █ █ █ █ █ Write error!!  █ █ █ █ █ █');
-  end;
-  mainwindow.image1.stretch:=true;
-  Screen.Cursor:=crDefault;
-  {$IFDEF fpc}
-  progress_indicator(-100,'');{back to normal}
-  {$else} {delphi}
-  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.None;
-  {$endif}
-end;
-
-function TextfileSize(const name: string): LongInt;
-var
-  SRec: TSearchRec;
-begin
-  if FindFirst(name, faAnyfile, SRec) = 0 then
-  begin
-    Result := SRec.Size;
-    Sysutils.FindClose(SRec);
-  end
-  else
-    Result := 0;
 end;
 
 

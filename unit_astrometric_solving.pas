@@ -503,10 +503,10 @@ begin
     {test routine, to show bin result}
     //    img_loaded:=img_binned;
     //    head.naxis3:=1;
-    //    head.width:=length(img_binned[0,0]);{width} ;
+    //    head.width:=length(img_binned[0,0]);
     //    head.height:=length(img_binned[0]);
-    //    plot_fits(mainwindow.image1,true);{plot real}
-    //    exit;
+    //    plot_fits(mainwindow.image1,true,true);//plot real
+    //    exit;  }
 
     get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{out}bck {cblack,star_level} );{get back ground}
     find_stars(img_binned,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
@@ -589,16 +589,12 @@ end;
 
 function add_sip(hd: Theader;ra_database,dec_database:double) : boolean;
 var
-  stars_measured,stars_reference,grid_list1,grid_list2  : TStarArray;
+  stars_measured,stars_reference                        : TStarArray;
   trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
-  len,i,position,j,nr                       : integer;
+  len,i                                  : integer;
   succ: boolean;
   err_mess: string;
-  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,MatrixDeterminant,u0,v0,sep,sepsmallest : double;
-  cd : array[0..1,0..1] of double;
-  solution_vectorXinv,solution_vectorYinv : solution_vector;
-const
-   nrpoints=6;
+  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec : double;
 begin
   result:=true;// assume success
 
@@ -915,8 +911,6 @@ begin
 
     bin_and_find_stars(img,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
     nrstars:=Length(starlist2[0]);
-
-
 
     if ((hd.xpixsz<>0) and (hd.ypixsz<>0) and (abs(hd.xpixsz-hd.ypixsz)>0.1)) then //non-square pixels, correct. Remove in future?
     begin //very very rare. Example QHY6 camera

@@ -26,7 +26,7 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
     exit
 fi
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_amd64_qt5.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
+tar -czvf astap_amd64_qt5.tar.gz  /opt/astap /usr/share/applications/astap.desktop 
 #Build i386    
 rm ~/astap.fpc/astap                                
 /home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_gkt2_i386.lpi                  
@@ -52,7 +52,7 @@ cd /home/h/astap_install
 sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64
 sudo cp /home/h/astap.fpc/astap /opt/astap
 sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt/astap
-tar -czvf astap_aarch64.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
+tar -czvf astap_aarch64.tar.gz  /opt/astap /usr/share/applications/astap.desktop 
 
 #build aarch64 qt5
 rm ~/astap.fpc/astap 
@@ -62,7 +62,7 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
     exit
 fi
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_aarch64_qt5.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
+tar -czvf astap_aarch64_qt5.tar.gz  /opt/astap /usr/share/applications/astap.desktop 
 
 
 # read -p "Press any key to resume ..."
@@ -82,7 +82,7 @@ sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_armhf
 sudo cp /home/h/astap.fpc/astap /opt/astap
 sudo cp /home/h/astap_install/astap_armhf/opt/astap/unprocessed_raw-astap /opt/astap
 # not dcraw-astap
-tar -czvf astap_armhf.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
+tar -czvf astap_armhf.tar.gz  /opt/astap /usr/share/applications/astap.desktop 
 
 #build armhf qt5
 #use old compiler. New one has problems with triplets routine
@@ -93,7 +93,7 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
     exit
 fi 
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_armhf_qt5.tar.gz  /opt/hnsky /usr/share/applications/hnsky.desktop 
+tar -czvf astap_armhf_qt5.tar.gz  /opt/astap /usr/share/applications/astap.desktop 
 
 rm ~/astap.fpc/astap                                     
 /home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_cross_compile_to_Darwin_M1.lpi

@@ -19,6 +19,7 @@ type
 
   Tform_aavso1 = class(TForm)
     baa_style1: TCheckBox;
+    suggest_check1: TButton;
     hjd1: TCheckBox;
     delta_bv1: TEdit;
     Image_photometry1: TImage;
@@ -61,6 +62,8 @@ type
     procedure report_to_clipboard1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormShow(Sender: TObject);
+    procedure suggest_check1Change(Sender: TObject);
+    procedure suggest_check1Click(Sender: TObject);
   private
 
   public
@@ -83,9 +86,9 @@ var
   aavso_filter_index: integer=0;
   delta_bv : double=0;
   magnitude_slope    : double=0;
-
 var
   aavso_report : string;
+  used_check_stars: string='';
 
 procedure plot_graph; {plot curve}
 
@@ -96,17 +99,44 @@ uses astap_main,
      unit_stack,
      unit_star_database;{for name_database only}
 
-
 var
   jd_min,jd_max,magn_min,magn_max : double;
   w,h,bspace,column_var,column_check  :integer;
-
-
 
 function floattostr3(x:double):string;
 begin
   str(x:0:3,result);
 end;
+
+function retrieve_check_star(variablestar: string): string;
+var
+  i,j,k : integer;
+begin
+  i:=pos(variablestar, used_check_stars);
+  if i<>0 then //already available
+  begin
+    j:=posex(':',used_check_stars,i+1);
+    k:=posex(';',used_check_stars,j+1);
+    result:=copy(used_check_stars,j+1,k-j-1);
+  end
+  else
+  result:='';
+end;
+
+procedure store_check_star(variablestar,checkstar: string);
+var
+   i,j: integer;
+begin
+  if length(variablestar)=0 then exit;
+  i:=pos(variablestar, used_check_stars);
+  if i<>0 then //already available
+  begin
+    j:=posex(';',used_check_stars,i);
+    delete(used_check_stars,i,j-i+1);
+  end;
+  used_check_stars:=used_check_stars+  variablestar+':'+checkstar+';'
+end;
+
 
 procedure get_info;
 begin
@@ -152,9 +182,9 @@ var
     end;
 
 begin
+  store_check_star(clean_abreviation(name_var),abbreviation_check {full});
+
   get_info;
-
-
   if length(name_var)<1 then
   begin
     name_variable1.color:=clred;
@@ -480,11 +510,12 @@ begin
 end;
 
 
-
 procedure Tform_aavso1.name_variable1Change(Sender: TObject);
 begin
   if stackmenu1.measure_all1.checked then
-    find_best_check_star;
+  begin
+    name_check1.text:=retrieve_check_star(clean_abreviation(name_variable1.text))
+  end;
   plot_graph;
 end;
 
@@ -868,8 +899,18 @@ begin
   form_aavso1.delta_bv1.text:=floattostrF(delta_bv,ffFixed,5,3);
   form_aavso1.magnitude_slope1.text:=floattostrF(magnitude_slope,ffFixed,5,3);
 
-
   aavso_report:='';
+  plot_graph;
+end;
+
+procedure Tform_aavso1.suggest_check1Change(Sender: TObject);
+begin
+  form_aavso1.name_variable1Change(nil);
+end;
+
+procedure Tform_aavso1.suggest_check1Click(Sender: TObject);
+begin
+  find_best_check_star;
   plot_graph;
 end;
 

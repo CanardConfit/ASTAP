@@ -1437,16 +1437,13 @@ end;
 
 function add_sip(ra_database,dec_database:double) : boolean;
 var
-  stars_measured,stars_reference,grid_list1,grid_list2  : TStarArray;
+  stars_measured,stars_reference         : TStarArray;
   trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
-  len,i,position,j,nr                       : integer;
+  len,i                                  : integer;
   succ: boolean;
   err_mess: string;
-  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,MatrixDeterminant,u0,v0,sep,sepsmallest : double;
-  cd : array[0..1,0..1] of double;
-  solution_vectorXinv,solution_vectorYinv : solution_vector;
-const
-   nrpoints=6;
+  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec : double;
+
 begin
   result:=true;// assume success
 
@@ -1487,8 +1484,6 @@ begin
 
     {5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
     sincos(dec_t,SIN_dec_t,COS_dec_t);
-//  sincos(dec0,SIN_dec_ref,COS_dec_ref);{Required but for speed executed outside the for loop}
-
     delta_ra:=ra_t-ra0;
     sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
 
