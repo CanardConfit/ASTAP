@@ -1725,8 +1725,7 @@ begin
                 else
                 begin
                   pixel_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
-                  //writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr(ra*180/pi) + ',' + floattostr(decl*180/pi) ) {+1 to convert 0... to FITS 1... coordinates}
-                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr(ra*180/pi) + ',' + floattostr(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
+                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
                 end;
               end;
 

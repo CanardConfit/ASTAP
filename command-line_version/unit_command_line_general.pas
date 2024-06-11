@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.06.03';
+  astap_version: string='2024.06.10';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -147,7 +147,8 @@ type
 
 
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
-function floattostr6(x:double):string;{float to string with 6 decimals}
+function floattostr8(x:double):string;{float to string with 8 decimals and dot as decimal seperator}
+function floattostr6(x:double):string;{float to string with 6 decimals and dot as decimal seperator}
 function floattostr4(x:double):string;
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
@@ -197,6 +198,12 @@ end;
 function floattostrE(x:double):string;
 begin
   str(x,result);
+end;
+
+
+function floattostr8(x:double):string;{float to string with 8 decimals and dot as decimal seperator}
+begin
+  str(x:0:8,result);
 end;
 
 
@@ -2454,7 +2461,7 @@ begin
                 else
                 begin
                   sensor_coordinates_to_celestial(xc + 1,yc + 1, ra,decl);
-                  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr(ra*180/pi) + ',' + floattostr(decl*180/pi) ) {+1 to convert 0... to FITS 1... coordinates}
+                  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi) ) {+1 to convert 0... to FITS 1... coordinates}
                 end;
               end;//report
             end;

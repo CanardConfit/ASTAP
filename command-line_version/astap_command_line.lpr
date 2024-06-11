@@ -72,15 +72,15 @@ begin
     '-s  max_number_of_stars  {default 500}'+#10+
     '-t  tolerance  {default 0.007}'+#10+
     '-m  minimum_star_size["]  {default 1.5}'+#10+
-    '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
+    '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto.}'+#10+
 
     '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
     '-d  path {specify a path to the star database}'+#10+
     '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
-    '-o  file {Name the output files with this base path & file name}'+#10+
+    '-o  file {Name the output files with this base path & file name.}'+#10+
     '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
-    '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
-    '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
+    '-speed mode[auto/slow] {Slow is forcing reading a larger database area for more overlap to improve initial detection}'+#10+
+    '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style}' +#10+
     '-log  {Write the solver log to file}'+#10+
     '-update  {update the FITS header with the found solution. Jpeg, png, tiff will be written as fits}' +#10+
     '-progress   {Log all progress steps and messages}'+#10+
@@ -88,9 +88,11 @@ begin
     'Analyse options:' +#10+
     '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
     '-extract snr_min {As -analyse but additionally export info of all detectable stars to a .csv file}'+#10+
-    '-extract2 snr_min {Solve and export info of all detectable stars to a .csv file including ra, dec.}'+#10+
+    '-extract2 snr_min {Solve and export info of all detectable stars to a .csv file including ra, dec}'+#10+
+    #10+
+    'Preference will be given to the command-line values. CSV files are written with a dot as decimal seperator.'+#10+
+    'Solver result will be written to filename.ini and filename.wcs.'
 
-    'Preference will be given to the command line values.'
     );
 
     esc_pressed:=true;{kill any running activity. This for APT}
@@ -144,8 +146,6 @@ begin
     if hasoption('check') then check_pattern_filter1:=('y'=GetOptionValue('check'));
 
     extractspecified:=hasoption('extract');
-    extractspecified2:=hasoption('extract2');
-    if extractspecified2 then add_sip1:=true;//force sip for high accuracy
     analysespecified:=hasoption('analyse');
 
     if ((file_loaded) and ((analysespecified) or (extractspecified)) ) then {analyse fits and report HFD value in errorlevel }
@@ -184,6 +184,9 @@ begin
       filename_output:=GetOptionValue('o') {for the .ini and .wcs files}
     else
       filename_output:=filename2; //use same filename for .ini and .wcs files
+
+    extractspecified2:=hasoption('extract2');//this option will happen after solving
+    if extractspecified2 then add_sip1:=true;//force sip for high accuracy solving
 
     if ((file_loaded) and (solve_image(img_loaded ))) then {find plate solution}
     begin
