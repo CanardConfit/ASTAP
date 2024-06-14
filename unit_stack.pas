@@ -126,6 +126,7 @@ type
     measure_all1: TCheckBox;
     smooth_diameter1: TComboBox;
     lrgb_smooth_stars1: TComboBox;
+    SpeedButton2: TSpeedButton;
     undo_button23: TBitBtn;
     view_next1: TMenuItem;
     view_previous1: TMenuItem;
@@ -724,6 +725,7 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure Label19Click(Sender: TObject);
     procedure measure_all1Change(Sender: TObject);
+    procedure SpeedButton2Click(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
     procedure unsharp_edit_amount1Change(Sender: TObject);
     procedure unsharp_edit_radius1Change(Sender: TObject);
@@ -1162,13 +1164,12 @@ const
   P_hfd = 15;
   P_stars = 16;
   P_astrometric = 17;
-  P_photometric = 18;
-  P_calibration = 19;
-  P_centalt = 20;
-  P_airmass = 21;
-  P_limmagn = 22;
-  p_nr_norm = 23; //standard end of the columns
-  P_nr : integer = 23;{adapted end with extra columns}
+  P_calibration = 18;
+  P_centalt = 19;
+  P_airmass = 20;
+  P_limmagn = 21;
+  p_nr_norm = 22; //standard end of the columns
+  P_nr : integer = 22;{adapted end with extra columns}
 
   I_date = 6;//inspector tab
   I_nr_stars = 7;
@@ -1235,7 +1236,7 @@ type
 var
   bsolutions: array of blink_solution;
   blink_width,blink_height,blink_naxis3 : integer;
-
+  sd_check_star : double;
 
 {$IFDEF fpc}
   {$R *.lfm}
@@ -5657,11 +5658,10 @@ end;
 
 procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 var
-  Save_Cursor: TCursor;
-  hfd_min: double;
+  hfd_min,aa,bb,cc,dd,ee,ff                                         : double;
   c, x_new, y_new, fitsX, fitsY, col, first_image, stepnr, nrrows,
-  cycle, step, ps, bottom, top, left, w, h, max_stars: integer;
-  reference_done, init, store_annotated, res        : boolean;
+  cycle, step, ps, bottom, top, left, w, h, max_stars               : integer;
+  reference_done, init, store_annotated, res                        : boolean;
   st                  : string;
   starlist1,starlist2 : star_list;
   img_temp : image_array;
@@ -5803,18 +5803,27 @@ begin
           {set to zero to clear old values (at the edges}
           setlength(img_temp,head.naxis3, head.Height, head.Width);{new size}
 
+          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          bb:=solution_vectorX[1];
+          cc:=solution_vectorX[2];
+          dd:=solution_vectorY[0];
+          ee:=solution_vectorY[1];
+          ff:=solution_vectorY[2];
 
-          for fitsY := 0 to head.Height - 1 do
-            for fitsX := 0 to head.Width - 1 do
+
+          {shift, rotate to match lights}
+          for fitsY := 0 to head.Height-1 do
+            for fitsX := 0 to head.Width-1 do
             begin
-              x_new := round(solution_vectorX[0] * (fitsx) + solution_vectorX[1] * (fitsY) + solution_vectorX[2]); {correction x:=aX+bY+c}
-              y_new := round(solution_vectorY[0] * (fitsx) + solution_vectorY[1] * (fitsY) + solution_vectorY[2]); {correction y:=aX+bY+c}
+              x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+              y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
 
-              if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and (y_new <= head.Height - 1)) then
+              if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and  (y_new <= head.Height - 1)) then
                 for col := 0 to head.naxis3 - 1 do {all colors}
-                  img_temp[col, y_new, x_new] := img_loaded[col, fitsY, fitsX];
-
+                   img_temp[col, y_new, x_new] := img_loaded[col, fitsY, fitsX];
             end;
+
+
           img_loaded :=nil;
           img_loaded := img_temp;
         end{star align}
@@ -8101,10 +8110,28 @@ begin
 end;
 
 
+function sd(list: array of double;leng :integer): double;//standard deviation
+var
+  i        : integer;
+  avg,x : double;
+begin
+  avg:=0;
+  for i:=0 to leng-1 do
+    avg:=avg+list[i];{copy magn offset data}
+
+  avg:=avg/leng;
+  x:=0;
+  for i:=0 to leng-1 do
+    x:=x+ sqr(list[i]-avg);{copy magn offset data}
+
+  result:=sqrt(x/leng)
+end;
+
+
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
-  medianCheck, medianThree, hfd_med, apert, annul,
+  medianCheck, medianThree, hfd_med, apert, annul,aa,bb,cc,dd,ee,ff,
   rax1, decx1, rax2, decx2, rax3, decx3, xn, yn, adu_e,sep,az,alt,pix1,pix2 : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
@@ -8120,7 +8147,6 @@ var
   olddec0: double=-pi/2;
   head_2 : theader;
   img_temp : image_array;
-
 
             function measure_star(deX, deY: double): string;{measure position and flux}
             begin
@@ -8381,11 +8407,6 @@ begin
               memo2_message('█ █ █ █ █ █ Warning: Colour image!! Absolute photometric accuracy will be lower. Process only raw images. Set bayer pattern correctly in tab "Stack method" and extract the green pixels in tab photometry. █ █ █ █ █ █');
           end;
           warned := True;{only one message}
-          listview7.Items.item[c].subitems.Strings[P_photometric] := 'Poor';
-        end
-        else
-        begin
-          listview7.Items.item[c].subitems.Strings[P_photometric] := '✓';
         end;
 
         if starlistpack = nil then  {should not happen but it happens?}
@@ -8413,6 +8434,8 @@ begin
             head.mzero_radius := 99;{radius for measuring using a small aperture}
             annulus_radius := 14;{annulus radius}
           end;
+
+
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
           plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
@@ -8593,7 +8616,7 @@ begin
                         begin
                           new_object:=true;
                           for i:=p_nr_norm+1 to p_nr-1 do
-                            if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=variable_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                            if ((odd(i)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=variable_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
                             begin //existing object column
                              listview7.Items.item[c].subitems.Strings[i-1]:= astr;
                              listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
@@ -8638,7 +8661,7 @@ begin
                         begin
                           new_object:=true;
                           for i:=p_nr_norm+1 to p_nr-1 do
-                          if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vsx[j].name)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                          if ((odd(i)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vsx[j].name)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
                           begin //existing object column
                            listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
                            listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
@@ -8678,7 +8701,7 @@ begin
                           begin
                             new_object:=true;
                             for i:=p_nr_norm+1 to p_nr-1 do
-                            if ((odd(i+1)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vsp[j].auid)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                            if ((odd(i)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vsp[j].auid)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
                             begin //existing object column
                               listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
                               listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
@@ -8716,16 +8739,24 @@ begin
         {do this in advance since it is for each pixel the same}
         astrometric_to_vector;{convert astrometric solution to vectors}
 
+        aa:=solution_vectorX[0];//move to local variable to improve speed a little
+        bb:=solution_vectorX[1];
+        cc:=solution_vectorX[2];
+        dd:=solution_vectorY[0];
+        ee:=solution_vectorY[1];
+        ff:=solution_vectorY[2];
+
+
         {shift, rotate to match lights}
-        for fitsY := 1 to head.Height do
-          for fitsX := 1 to head.Width do
+        for fitsY := 0 to head.Height-1 do
+          for fitsX := 0 to head.Width-1 do
           begin
-            x_new := round(solution_vectorX[0] * (fitsx - 1) + solution_vectorX[1] * (fitsY - 1) + solution_vectorX[2]); {correction x:=aX+bY+c}
-            y_new := round(solution_vectorY[0] * (fitsx - 1) + solution_vectorY[1] * (fitsY - 1) + solution_vectorY[2]); {correction y:=aX+bY+c}
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
 
             if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and  (y_new <= head.Height - 1)) then
               for col := 0 to head.naxis3 - 1 do {all colors}
-                 img_temp[col, y_new, x_new] := img_loaded[col, fitsY - 1, fitsX - 1];
+                 img_temp[col, y_new, x_new] := img_loaded[col, fitsY, fitsX];
           end;
 
         img_loaded := nil;
@@ -8739,19 +8770,6 @@ begin
         head.cd1_2 := abs(head.cd1_2) * sign(head_ref.CD1_2);
         head.cd2_1 := abs(head.cd2_1) * sign(head_ref.CD2_1);
         head.cd2_2 := abs(head.cd2_2) * sign(head_ref.CD2_2);
-
-
-  {      pix1 := solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] * (head.crpix2 - 1) + solution_vectorX[2];// correct for marker_position at ra_dec position
-        pix2 := solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] * (head.crpix2 - 1) + solution_vectorY[2];
-
-        head.cd1_1 :=(pix1 - (solution_vectorX[0] * (head.crpix1 - 1+1) + solution_vectorX[1] * (head.crpix2 - 1) + solution_vectorX[2]))*head.cdelt1;
-        head.cd1_2 :=(pix2 - (solution_vectorY[0] * (head.crpix1 - 1+1) + solution_vectorY[1] * (head.crpix2 - 1) + solution_vectorY[2]))*head.cdelt1;
-        head.cd2_1 :=(pix1 - (solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] * (head.crpix2 - 1+1) + solution_vectorX[2]))*head.cdelt2;
-        head.cd2_2 :=(pix2 - (solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] * (head.crpix2 - 1+1) + solution_vectorY[2]))*head.cdelt2;
-
-        head.crpix1 := pix1+1;//to fits coordinates
-        head.crpix2 := pix2+1;
-   }
 
 
         store_annotated := annotated;{store temporary annotated}
@@ -8874,7 +8892,10 @@ begin
     begin
       mad_median(starCheck, countCheck{counter},{var}madCheck, medianCheck);
       {calculate mad and median without modifying the data}
+      sd_check_star:=1.4826 * madCheck;//global for finding best aperture
+//      sd_check_star:=sd(starCheck,countCheck);
       memo2_message('Check star, median: ' + floattostrf(medianCheck,ffgeneral, 4, 4) + ', σ: ' + floattostrf(1.4826 * madCheck  {1.0*sigma}, ffgeneral, 4, 4));
+//      memo2_message('Check star, median: ' + floattostrf(Smedian(starCheck,countCheck),ffgeneral, 4, 4) + ', σ: ' + floattostrf(sd(starCheck,countCheck), ffgeneral, 4, 4));
     end
     else
       madCheck := 0;
@@ -10098,9 +10119,52 @@ begin
   openurl('http://www.hnsky.org/astap#photometry');
 end;
 
+
 procedure Tstackmenu1.measure_all1Change(Sender: TObject);
 begin
   hide_show_columns_listview7(true {tab8});
+end;
+
+procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);
+var
+  i : integer;
+  best, best_aperture : double;
+  results,beststr,oldstr   : string;
+begin
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+  esc_pressed:=false;
+  best:=99;
+  results:='';
+  oldstr:=flux_aperture1.text;
+  if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which give lowest standard deviation for the check star. Assure that images are in the list and a check star is selected. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
+  begin
+    for i:=14 to 22 do
+    begin
+     application.processmessages;
+     if esc_pressed then exit;
+     flux_aperture1.text:=floattostr(i/10);
+     stackmenu1.photometry_button1Click(nil);
+     if sd_check_star=0 then break;
+     if sd_check_star<best then
+     begin
+       best:=sd_check_star;
+       best_aperture:=i/10;
+     end;
+     results:=results+'Aperture '+floattostrF(i/10,FFgeneral,2,1)+',   σ: '+ floattostrF(sd_check_star,FFgeneral,4,4)+#13+#10;
+    end;
+  end;
+  if sd_check_star=0 then
+  begin
+    flux_aperture1.text:=oldstr;
+    memo2_message('Abort, no check star selected')
+  end
+  else
+  begin
+    beststr:=floattostrF(best_aperture,FFgeneral,2,1);
+    flux_aperture1.text:=beststr;
+    memo2_message('Test completed. Results: '+#10+results+#10+#10+'Best aperture setting for these images is '+beststr);
+  end;
+  Screen.Cursor := crDefault;{back to normal }
 end;
 
 
@@ -10135,63 +10199,105 @@ begin
 end;
 
 
-procedure solve_selected_files(lv: tlistview; refresh_solutions :boolean);
+function process_selected_files(lv: tlistview; column: integer; mode : char) : boolean;
 var
   c: integer;
   success    : boolean;
   filename1  : string;
   img_temp   : image_array;
   head_2     : theader;
+
+  function save_fits_tiff(filename1: string) : boolean;
+  begin
+    if fits_file_name(filename1) then
+      result:=savefits_update_header(filename1)
+    else
+      result:=save_tiff16_secure(img_temp, filename1);{guarantee no file is lost}
+    if result=false then ShowMessage('Write error !!' + filename1);
+  end;
+
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
+  result:=true; //assume success
   update_menu(False);  //do not allow to save fits. img_load is still valid but Memo3 is cleared. Could be recovered but is not done
 
+  for c := 0 to lv.items.Count - 1 do {check for astrometric solutions}
+    if lv.Items[c].Selected then
+      lv.Items.item[c].SubitemImages[column] := 99 //mark selected row {file} to be processed with non existing icon. Note -2 is not possible.
+    else
+      lv.Items.item[c].SubitemImages[column] := -1; //mark as no icon
+
+  lv.Selected := nil; {remove any selection}
+
   esc_pressed := False;
-  {solve lights first to allow flux to magnitude calibration}
   with stackmenu1 do
     for c := 0 to lv.items.Count - 1 do {check for astrometric solutions}
     begin
-      if lv.Items[c].Selected then
+      if lv.Items.item[c].SubitemImages[column ] = 99  then //was marked for processing
       begin
         filename1 := lv.items[c].Caption;
+
+        if fits_tiff_file_name(filename1) = False  {fits or tiff file name?} then
+        begin
+          memo2_message('█ █ █ █ █ █ Can' + #39 +'t process this file type. First analyse file list to convert to FITS !! █ █ █ █ █ █');
+          beep;
+          result:=false;
+          break;
+        end;
+
         mainwindow.Caption := filename1;
 
         Application.ProcessMessages;
 
         {load image}
         if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head_2, img_temp) = False)) then
-        begin
-          Screen.Cursor := crDefault;{back to normal }
-          exit;
-        end;
-        if ((head_2.cd1_1 = 0) or (refresh_solutions)) then
+          break;
+
+        if mode='S' then //solve selected files
         begin
           lv.ItemIndex := c;
           {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
           lv.Items[c].MakeVisible(False);{scroll to selected item}
+          Application.ProcessMessages;
+
           memo2_message(filename1 + ' Adding astrometric solution to file.');
           Application.ProcessMessages;
 
           if solve_image(img_temp, head_2, True  {get hist},false {check filter}) then
           begin{match between loaded image and star database}
-            if fits_file_name(filename1) then
-              success := savefits_update_header(filename1)
-            else
-              success := save_tiff16_secure(img_temp, filename1);{guarantee no file is lost}
-            if success = False then
-            begin
-              ShowMessage('Write error !!' + filename1);
-              Screen.Cursor := crDefault;
-              exit;
-            end;
+            result:=save_fits_tiff(filename1);
+            if result=false then break;
           end
           else
           begin
             lv.Items[c].Checked := False;
             memo2_message(filename1 + 'No astrometric solution found for this file!!');
           end;
-        end;
+          if lv=listview1 then
+          begin
+            if a_order>0 then
+              lv.Items.item[c].subitems.Strings[column] := '✓✓' //SIP solution
+            else
+            if head_2.cd1_1 <> 0 then
+              lv.Items.item[c].subitems.Strings[column] := '✓'
+            else
+              lv.Items.item[c].subitems.Strings[column] := '';
+          end;
+        end//mode='S'
+        else
+        if mode='P' then //photometry, add mzero
+        begin
+          head.mzero:=0; //force a new calibration
+          if head.cd1_1<>0 then
+          begin
+            calibrate_photometry;
+            result:=save_fits_tiff(filename1);
+            if result=false then break;
+          end
+          else
+          memo2_message('Can not calibrate '+filename1+'. Add first an astrometrical solution.');
+        end;//mode='P'
       end;
     end;
 
@@ -10199,75 +10305,19 @@ begin
 
 end;
 
+
 procedure Tstackmenu1.refresh_solutions_selected1Click(Sender: TObject);
 begin
-  solve_selected_files(listview1,true {refresh solutions});
-  stackmenu1.Analyse1Click(Sender);{refresh positions}
+  save_settings2;{too many lost selected files . so first save settings}
+  process_selected_files(listview1,L_solution {column},'S');
 end;
 
 
 procedure Tstackmenu1.photometric_calibration1Click(Sender: TObject);
-var
-  c       : integer;
-  ff      : string;
-  success : boolean;
 begin
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  esc_pressed := False;
-
-  if listview7.items.Count > 0 then
-  begin
-    for c := 0 to listview7.items.Count - 1 do
-      if listview7.Items[c].Selected then
-      begin
-        {scroll}
-        //       listview7.Selected :=nil; {remove any selection}
-        listview7.ItemIndex := c;
-        {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-        listview7.Items[c].MakeVisible(False);{scroll to selected item}
-        application.ProcessMessages;
-        if esc_pressed then
-        begin
-          Screen.Cursor := crDefault;
-          exit;
-        end;
-
-        ff := ListView7.items[c].Caption;
-        if fits_tiff_file_name(ff) = False then
-        begin
-          memo2_message('█ █ █ █ █ █ Can' + #39 +'t process this file type. First analyse file list to convert to FITS !! █ █ █ █ █ █');
-          beep;
-          exit;
-        end;
-
-        filename2:=ff;
-        if load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then {load a fits or Astro-TIFF file}
-        begin
-          head.mzero:=0; //force a new calibration
-          if head.cd1_1<>0 then
-          begin
-            calibrate_photometry;
-            if fits_file_name(filename2) then
-              success := savefits_update_header(filename2)
-            else
-              success := save_tiff16_secure(img_loaded, filename2);{guarantee no file is lost}
-            if success = False then
-            begin
-              ShowMessage('Write error !!' + filename2);
-              Screen.Cursor := crDefault;
-              exit;
-            end;
-          end
-          else
-          memo2_message('Can not calibrate '+filename2+'. Add first an astrometrical solution.');
-        end;
-
-      end;
-  end;
-  analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
-  {refresh list}
-  Screen.Cursor := crDefault;  { Always restore to normal }
+  process_selected_files(listview7,p_astrometric,'P');
 end;
+
 
 procedure Tstackmenu1.pixelsize1Change(Sender: TObject);
 begin
@@ -10276,37 +10326,9 @@ end;
 
 
 procedure Tstackmenu1.refresh_astrometric_solutions1Click(Sender: TObject);
-var
-  c: integer;
 begin
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  esc_pressed := False;
-
-  if listview7.items.Count > 0 then
-  begin
-    for c := 0 to listview7.items.Count - 1 do
-      if listview7.Items[c].Selected then
-      begin
-        {scroll}
-        //       listview7.Selected :=nil; {remove any selection}
-        listview7.ItemIndex := c;
-        {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-        listview7.Items[c].MakeVisible(False);{scroll to selected item}
-        application.ProcessMessages;
-        if esc_pressed then
-        begin
-          Screen.Cursor := crDefault;
-          exit;
-        end;
-
-        listview7.Items.item[c].subitems.Strings[P_astrometric] := '';
-        {clear astrometry marks}
-        listview7.Items.item[c].subitems.Strings[P_photometric] := '';
-        {clear photometry marks}
-      end;
-  end;
-  Screen.Cursor := crDefault;  { Always restore to normal }
-  stackmenu1.photometry_button1Click(Sender);{refresh astrometric solutions}
+  save_settings2;{too many lost selected files . so first save settings}
+  process_selected_files(listview7,p_astrometric,'S');
 end;
 
 
@@ -10319,7 +10341,6 @@ var
 
 const
    default=1000;
-
 
    procedure star_background(rs {radius},x1,y1 :integer);
    var

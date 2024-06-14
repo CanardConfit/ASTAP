@@ -814,7 +814,7 @@ begin
   end;
 
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
-  quad_tolerance:=min(quad_tolerance,0.008);//prevent too high tolerances set by command line
+  quad_tolerance:=min(quad_tolerance,0.01);//prevent too high tolerances set by command line
 
   max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
   use_triples:=stackmenu1.use_triples1.checked;

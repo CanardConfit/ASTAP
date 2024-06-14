@@ -395,7 +395,7 @@ begin
 
   begin
   for i:=p_nr_norm+1+1 to p_nr do
-    if odd(i+1) then //not snr column
+    if odd(i) then //not snr column
     begin
       abrv:=stackmenu1.listview7.Column[i].Caption;
       if copy(abrv,1,4)='000-' then //check star
@@ -426,7 +426,7 @@ var
   i: integer;
 begin
   for i:=p_nr_norm+1 to p_nr do
-    if ((odd(i+1)) and (form_aavso1.name_check1.text=stackmenu1.listview7.Column[i].Caption)) then
+    if ((odd(i)) and (form_aavso1.name_check1.text=stackmenu1.listview7.Column[i].Caption)) then
     begin
       result:=i-1;
       exit;
@@ -441,7 +441,7 @@ var
 begin
   for i:=p_nr_norm+1 to p_nr do
   begin
-    if ((odd(i+1)) and (form_aavso1.name_variable1.text=stackmenu1.listview7.Column[i].Caption)) then
+    if ((odd(i)) and (form_aavso1.name_variable1.text=stackmenu1.listview7.Column[i].Caption)) then
     begin
       result:=i-1;
       exit;
@@ -485,7 +485,7 @@ begin
 
   for i:=p_nr_norm+1+1 to p_nr do
   begin
-     if odd(i+1) then //not snr column
+     if odd(i) then //not snr column
      begin
        abrv:=stackmenu1.listview7.Column[i].Caption;
        if pos('000',abrv)>0 then //check star
@@ -550,7 +550,7 @@ begin
   end;
 
   for i:=p_nr_norm+1 to p_nr do
-    if odd(i+1) then // not a snr column
+    if odd(i) then // not a snr column
     begin
       abrv:=stackmenu1.listview7.Column[i].Caption;
       if copy(abrv,1,4)<>'000-' then //Not a check star
@@ -875,7 +875,7 @@ begin
   begin //find the variable of interest for header object
     object_name2:=stringreplace(object_name,' ','_',[]);
     for i:=p_nr_norm+1 to p_nr do
-      if odd(i+1) then // not a snr column
+      if odd(i) then // not a snr column
       begin
         abrv:=stackmenu1.listview7.Column[i].Caption;
         if  Comparetext(object_name2,copy(abrv,1,length(object_name2)))=0 then
