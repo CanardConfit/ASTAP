@@ -1916,7 +1916,11 @@ var
         end;
 
         if ((flux_calibration) and (Bp_Rp<>-128 {if -128 then unreliable Johnson-V magnitude, either Bp or Rp is missing in Gaia})) then
+//        if ((x>70) and (x<head.width-70) and (y>70) and (y<head.height-70)) then // at least 10 pixels from sides
+//        if  sqrt(sqr(x-head.width/2)+sqr(y-head.height/2))<(head.height/2)-20  then //within a circle of center
         begin
+//          annulus_radius:=8;
+//          head.mzero_radius:=3.9;
           HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,0 {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
@@ -1999,6 +2003,9 @@ begin
     if flux_calibration then
     begin
       max_nr_stars:=round(head.width*head.height*(730/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
+
+      //max_nr_stars:=10;
+
       setlength(mzero_array,max_nr_stars);
       if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
     end;
@@ -2019,8 +2026,7 @@ begin
       begin
         if select_star_database(stackmenu1.star_database1.text,fov_org {fov})=false then exit;
 
-     //  max_nr_stars:=20;
-        if read_stars(telescope_ra,telescope_dec,fov_org, database_type, max_nr_stars,{out} starlist1,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this.Max magnitude is stored in mag2}
+         if read_stars(telescope_ra,telescope_dec,fov_org, database_type, max_nr_stars,{out} starlist1,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this. Max magnitude is stored in mag2}
         begin //maximum magnitude mag2 is known for the amount of stars for calibration using online stars
           memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFgeneral,3,1)+ ' for '+inttostr( max_nr_stars)+' stars')  ;
           if read_stars_online(telescope_ra,telescope_dec,fov_org, mag2/10 {max_magnitude})= false then
