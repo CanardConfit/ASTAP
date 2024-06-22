@@ -159,7 +159,7 @@ var
   space : integer;
 begin
   space:= pos(' ',s);
-  if space>0 then
+  if space>5 then
      s:=copy(s,1,space-1);
   result:=stringreplace(s,'_',' ',[rfReplaceAll]);
 end;
