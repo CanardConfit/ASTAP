@@ -431,7 +431,7 @@ begin
               if use_astrometry_internal then
                  astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-              aa:=solution_vectorX[0];//move to local variable to improve speed a little
+              aa:=solution_vectorX[0];//move to local variable for minor faster processing
               bb:=solution_vectorX[1];
               cc:=solution_vectorX[2];
               dd:=solution_vectorY[0];
@@ -1407,7 +1407,7 @@ begin
           if use_astrometry_internal then
              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          aa:=solution_vectorX[0];//move to local variable for minor faster processing
           bb:=solution_vectorX[1];
           cc:=solution_vectorX[2];
           dd:=solution_vectorY[0];
@@ -1523,7 +1523,7 @@ begin
           if use_astrometry_internal then
              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          aa:=solution_vectorX[0];//move to local variable for minor faster processing
           bb:=solution_vectorX[1];
           cc:=solution_vectorX[2];
           dd:=solution_vectorY[0];
@@ -1636,7 +1636,7 @@ begin
           if use_astrometry_internal then
              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          aa:=solution_vectorX[0];//move to local variable for minor faster processing
           bb:=solution_vectorX[1];
           cc:=solution_vectorX[2];
           dd:=solution_vectorY[0];
@@ -1877,7 +1877,7 @@ begin
           end;
 
 
-          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          aa:=solution_vectorX[0];//move to local variable for minor faster processing
           bb:=solution_vectorX[1];
           cc:=solution_vectorX[2];
           dd:=solution_vectorY[0];
@@ -1998,7 +1998,7 @@ begin
 //          if use_astrometry_internal then
 //             astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          aa:=solution_vectorX[0];//move to local variable for minor faster processing
           bb:=solution_vectorX[1];
           cc:=solution_vectorX[2];
           dd:=solution_vectorY[0];
@@ -2247,7 +2247,7 @@ begin
           if use_astrometry_internal then
              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          aa:=solution_vectorX[0];//move to local variable to improve speed a little
+          aa:=solution_vectorX[0];//move to local variable for minor faster processing
           bb:=solution_vectorX[1];
           cc:=solution_vectorX[2];
           dd:=solution_vectorY[0];

@@ -813,7 +813,25 @@ begin
   setlength(starlist1,2,count);{reduce length to used length}
 end;
 
-
+//procedure hfd_filter(var nrstars : integer; var hfd_list,snr_list : array of double; var starlist1 : star_list);//filter out hot pixels
+//var
+//  median_hfd : double;
+//  i,count :integer;
+//begin
+//  median_hfd:=smedian(hfd_list,nrstars);
+//  count:=0;
+//  for i:=0 to nrstars-1 do
+//  begin
+//    if hfd_list[i]>median_hfd*0.6 then
+//    begin
+//      starlist1[0,count]:=starlist1[0,i];{overwrite in the same array}
+//      starlist1[1,count]:=starlist1[1,i];
+//      snr_list[count]:=snr_list[i];
+//      inc(count);
+//    end;
+//  end;
+//  nrstars:=count;
+//end;
 
 procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 var
@@ -904,7 +922,7 @@ begin
             begin
               SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
               setlength(snr_list,nrstars+buffersize);{adapt array size if required}
-            end;
+             end;
             starlist1[0,nrstars-1]:=xc; {store star position}
             starlist1[1,nrstars-1]:=yc;
             snr_list[nrstars-1]:=snr;{store SNR}
@@ -922,6 +940,7 @@ begin
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
   img_sa:=nil;{free mem}
+
 
   SetLength(starlist1,2,nrstars);{set length correct}
   setlength(snr_list,nrstars);{set length correct}

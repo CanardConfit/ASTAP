@@ -7197,7 +7197,7 @@ object stackmenu1: Tstackmenu1
             object Button_free_resize_fits1: TButton
               Left = 296
               Height = 30
-              Hint = 'Resize current image in the viewer. Sizing factor is free selectable but there is no significant noise reducement.'
+              Hint = 'Resize current image in the viewer. Sizing factor is free selectable but there is no significant noise reducement. Interpolation is done using Catmull-Rom splines.'
               Top = 5
               Width = 80
               Caption = 'Resize'

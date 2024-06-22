@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.06.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.06.22';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -964,7 +964,7 @@ implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
      unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia,unit_contour
-     ;
+     ,unit_interpolate;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -4744,6 +4744,7 @@ begin
     shape_check2_fitsY:=fitsY;
     show_marker_shape(shape,9 {no change},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
   end;
+  shape.pen.style:=psSolid;//for photometry, resturn from psClear;
 end;
 
 function place_marker3(data0: string): boolean;{place ra,dec marker in image}
@@ -5518,6 +5519,8 @@ begin
   else
   if tshape(shape)=tshape(mainwindow.shape_star3) then
     begin mainwindow.labelThree1.left:=ll+ww; mainwindow.labelThree1.top:=tt+hh; mainwindow.labelThree1.font.size:=max(hh div 4,14); mainwindow.labelThree1.visible:=true;end;
+
+  shape.pen.style:=psSolid;//for photometry, resturn from psClear;
 end;
 
 
@@ -11198,7 +11201,7 @@ var
   fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min  : double;
   img_sa : image_array;
-  data_max : single;
+  saturation_level : single;
 
 begin
 
@@ -11212,7 +11215,11 @@ begin
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   nrstars:=0;{set counters at zero}
-  data_max:=head.datamax_org-1;
+
+  if head.calstat = '' then saturation_level := 64000
+  else
+    saturation_level := 60000; {could be dark subtracted changing the saturation level}
+  saturation_level:=min(head.datamax_org-1,saturation_level);
 
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
@@ -11247,16 +11254,16 @@ begin
                 img_sa[0,j,i]:=1;
             end;
 
-          if ((img_loaded[0,round(yc),round(xc)]<data_max) and
-              (img_loaded[0,round(yc),round(xc-1)]<data_max) and
-              (img_loaded[0,round(yc),round(xc+1)]<data_max) and
-              (img_loaded[0,round(yc-1),round(xc)]<data_max) and
-              (img_loaded[0,round(yc+1),round(xc)]<data_max) and
+          if ((img_loaded[0,round(yc),round(xc)]<saturation_level) and
+              (img_loaded[0,round(yc),round(xc-1)]<saturation_level) and
+              (img_loaded[0,round(yc),round(xc+1)]<saturation_level) and
+              (img_loaded[0,round(yc-1),round(xc)]<saturation_level) and
+              (img_loaded[0,round(yc+1),round(xc)]<saturation_level) and
 
-              (img_loaded[0,round(yc-1),round(xc-1)]<data_max) and
-              (img_loaded[0,round(yc+1),round(xc-1)]<data_max) and
-              (img_loaded[0,round(yc-1),round(xc+1)]<data_max) and
-              (img_loaded[0,round(yc+1),round(xc+1)]<data_max)  ) then {not saturated}
+              (img_loaded[0,round(yc-1),round(xc-1)]<saturation_level) and
+              (img_loaded[0,round(yc+1),round(xc-1)]<saturation_level) and
+              (img_loaded[0,round(yc-1),round(xc+1)]<saturation_level) and
+              (img_loaded[0,round(yc+1),round(xc+1)]<saturation_level)  ) then {not saturated}
           begin
             {store values}
             inc(nrstars);
@@ -15194,21 +15201,24 @@ begin
   end;{left button pressed}
 end;
 
+
+
 {calculates star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
 procedure HFD(img: image_array;x1,y1,rs {annulus diameter}: integer;aperture_small, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
 const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
+  samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
 
 var
   width5,height5,i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
-  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg,radius    : double;
+  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg,radius,dx,dy    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
 
-    function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
+    function value_subpixel(x1,y1:double):double; {calculate square image pixel value on subpixel level. This method is a little the method bilinear}
     var
       x_trunc,y_trunc: integer;
       x_frac,y_frac  : double;
@@ -15226,9 +15236,12 @@ var
       except
       end;
     end;
+
+
 begin
   width5:=Length(img[0,0]);{width}
   height5:=Length(img[0]); {height}
+
 
   {rs should be <=50 to prevent runtime errors}
   if  aperture_small<99 then
@@ -15357,33 +15370,49 @@ begin
   SumValR:=0;
   pixel_counter:=0;
 
-  // Get HFD using the aproximation routine assuming that HFD line divides the star in equal portions of gravity:
-  for i:=-r_aperture to r_aperture do {Make steps of one pixel}
-  for j:=-r_aperture to r_aperture do
-  begin
-    Val:=value_subpixel(xc+i,yc+j)-star_bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
-    r:=sqrt(i*i+j*j); {Distance from star gravity center}
-    if r<=aperture_small then SumVal_small:=SumVal_small+Val; {For photometry only. Flux within aperture_small. Works more accurate for differential photometry}
-    SumVal:=SumVal+Val;{Sumval will be star total star flux}
-    SumValR:=SumValR+Val*r; {Method Kazuhisa Miyashita, see notes of HFD calculation method, note calculate HFD over square area. Works more accurate then for round area}
-    if val>=valmax*0.5 then pixel_counter:=pixel_counter+1;{How many pixels are above half maximum}
-  end;
-  flux:=max(sumval,0.00001);{prevent dividing by zero or negative values}
-  hfd1:=2*SumValR/flux;
-  hfd1:=max(0.7,hfd1);
 
-  star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
+  SumVal:=0;
+  Sumval_small:=0;
+  SumValR:=0;
+  pixel_counter:=0;
 
-  //noise calculation
-  if r_aperture<aperture_small then {normal mode}
+  if r_aperture<aperture_small then //standard mode, full star flux use
   begin
+    for i:=-r_aperture to r_aperture do //Make steps of one pixel
+    for j:=-r_aperture to r_aperture do
+    begin
+      Val:= value_subpixel(xc+i,yc+j)-star_bg; //The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level
+      if val>=valmax*0.5 then pixel_counter:=pixel_counter+1;//How many pixels are above half maximum
+      r:=sqrt(sqr(i)+sqr(j)); //Distance from star gravity center
+      SumVal:=SumVal+Val;//Sumval will be star total star flux
+      SumValR:=SumValR+Val*r; //Method Kazuhisa Miyashita, see notes of HFD calculation method, note calculate HFD over square area. Works more accurate then for round area
+    end;
+    flux:=max(sumval,0.00001);//prevent dividing by zero or negative values
     radius:=r_aperture;
   end
   else
-  begin {photometry mode. Measure only brightest part of the stars}
-    flux:=max(sumval_small,0.00001);{prevent dividing by zero or negative values}
+  begin //photometry mode. Measure only the bright center of the star for a better SNR
+    for i:=-r_aperture*SamplePoints to r_aperture*SamplePoints do //Make steps in fraction of a pixel
+    for j:=-r_aperture*SamplePoints to r_aperture*SamplePoints do
+    begin
+      dx:=i/samplepoints;
+      dy:=j/samplepoints;
+
+      Val:= value_subpixel(xc+dx,yc+dy)-star_bg;//The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level
+      if val>=valmax*0.5 then pixel_counter:=pixel_counter+1/(SamplePoints*SamplePoints);{How many pixels are above half maximum}
+      val:=val/(SamplePoints*SamplePoints);
+      r:=sqrt(sqr(dx)+sqr(dy)); //Distance from star gravity center
+      if r<=aperture_small then SumVal_small:=SumVal_small+Val; //For photometry only. Flux within aperture_small. Works more accurate for differential photometry
+      SumVal:=SumVal+Val;//Sumval will be star total star flux
+      SumValR:=SumValR+Val*r; //Method Kazuhisa Miyashita, see notes of HFD calculation method, note calculate HFD over square area. Works more accurate then for round area
+    end;
+    flux:=max(sumval_small,0.00001);//prevent dividing by zero or negative values
     radius:=aperture_small; // use smaller aperture
-  end;
+  end; //photometry mode
+
+  star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
+  hfd1:=2*SumValR/flux;
+  hfd1:=max(0.7,hfd1);
 
   if adu_e<>0 then
   begin //adu to e- correction
@@ -15391,7 +15420,7 @@ begin
     sd_bg:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
   end;
 
-
+  //noise calculation
   if flux>=1 then
     snr:=flux /sqrt(flux +sqr(radius)*pi*sqr(sd_bg))
   else

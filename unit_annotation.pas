@@ -1788,32 +1788,33 @@ var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation
   median, mad,sd  : double;
 
 begin
- cv:=0;
+  cv:=0;
 
- if leng=1 then begin mean:=list[0];exit end
- else
- if leng=2 then begin mean:=(list[0]+list[1])/2;exit end;
+  if leng=1 then begin mean:=list[0];exit end
+  else
+  if leng=2 then begin mean:=(list[0]+list[1])/2;exit end;
 
- mad_median(list,leng,mad,median);{calculate mad and median without modifying the data}
+  mad_median(list,leng,mad,median);{calculate mad and median without modifying the data}
 
- sd:=mad*1.4826;//standard deviation calculated from mad
- if median>0 then cv:=sd/median;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
+  sd:=mad*1.4826;//standard deviation calculated from mad
+  if median>0 then cv:=sd/median;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
 
- count:=0;
- mean:=0;
- standard_error_mean:=0;
+  count:=0;
+  mean:=0;
+  standard_error_mean:=0;
 
- for i:=0 to leng-1 do
-   if abs(list[i]-median)<1.50*sd then {offset less the 1.5*sigma.}
+  for i:=0 to leng-1 do
+    if abs(list[i]-median)<1.50*sd then {offset less the 1.5*sigma.}
+    begin
+      mean:=mean+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
+      inc(count);
+    end;
+   if count>0 then
    begin
-     mean:=mean+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
-     inc(count);
+     mean:=mean/count;  {mean without using outliers}
+     standard_error_mean:=sd/sqrt(count); //https://onlinestatbook.com/2/estimation/mean.html
    end;
-  if count>0 then
-  begin
-    mean:=mean/count;  {mean without using outliers}
-    standard_error_mean:=sd/sqrt(count); //https://onlinestatbook.com/2/estimation/mean.html
-  end;
+
 end;
 
 
@@ -1919,22 +1920,23 @@ var
 //        if ((x>70) and (x<head.width-70) and (y>70) and (y<head.height-70)) then // at least 10 pixels from sides
 //        if  sqrt(sqr(x-head.width/2)+sqr(y-head.height/2))<(head.height/2)-20  then //within a circle of center
         begin
-//          annulus_radius:=8;
-//          head.mzero_radius:=3.9;
+       //   annulus_radius:=8;
+      //    head.mzero_radius:=3.9;
+
           HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,0 {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
-            if ((img_loaded[0,round(yc),round(xc)]<data_max) and
-                (img_loaded[0,round(yc-1),round(xc)]<data_max) and
-                (img_loaded[0,round(yc+1),round(xc)]<data_max) and
-                (img_loaded[0,round(yc),round(xc-1)]<data_max) and
-                (img_loaded[0,round(yc),round(xc+1)]<data_max) and
+            if ((img_loaded[0,round(yc),round(xc)]<data_max-1000) and
+                (img_loaded[0,round(yc-1),round(xc)]<data_max-1000) and
+                (img_loaded[0,round(yc+1),round(xc)]<data_max-1000) and
+                (img_loaded[0,round(yc),round(xc-1)]<data_max-1000) and
+                (img_loaded[0,round(yc),round(xc+1)]<data_max-1000) and
 
-                (img_loaded[0,round(yc-1),round(xc-1)]<data_max) and
-                (img_loaded[0,round(yc-1),round(xc+1)]<data_max) and
-                (img_loaded[0,round(yc+1),round(xc-1)]<data_max) and
-                (img_loaded[0,round(yc+1),round(xc+1)]<data_max)  ) then {not saturated}
+                (img_loaded[0,round(yc-1),round(xc-1)]<data_max-1000) and
+                (img_loaded[0,round(yc-1),round(xc+1)]<data_max-1000) and
+                (img_loaded[0,round(yc+1),round(xc-1)]<data_max-1000) and
+                (img_loaded[0,round(yc+1),round(xc+1)]<data_max-1000)  ) then {not saturated}
             begin
               if counter_flux_measured>=length(mzero_array) then
               begin
@@ -2015,7 +2017,7 @@ begin
       begin
         if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
         memo2_message('Using star database '+uppercase(name_database));
-        if uppercase(copy(name_database,1,1))='V' then passband_active:='magV' else passband_active:='magBP';// for reporting
+        if uppercase(copy(name_database,1,1))='V' then passband_active:='V' else passband_active:='BP';// for reporting
     end
     else
     begin  //Reading online database. Update if required
@@ -2477,7 +2479,7 @@ end;{measure distortion}
 
 procedure plot_artificial_stars(img: image_array;head: theader; magnlimit:double);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
-  fitsX,fitsY, dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
+  fitsX,fitsY, telescope_ra,telescope_dec,fov_org,ra2,dec2,
   mag2, m_limit,sep : double;
   x,y,count                                                        : integer;
   passband                                                         : string;
