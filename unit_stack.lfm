@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 107
+  Left = 115
   Height = 707
-  Top = 124
+  Top = 229
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_inspector1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 9
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3206,17 +3206,6 @@ object stackmenu1: Tstackmenu1
             Caption = '(Re)annotate (&&solve)'
             TabOrder = 15
             OnClick = blink_annotate_and_solve1Click
-          end
-          object blink_binx2: TButton
-            Left = 992
-            Height = 25
-            Hint = 'Bin the images for better photometric detection.  Original files will not be affected.'
-            Top = 4
-            Width = 61
-            Caption = 'Bin x 2'
-            ParentFont = False
-            TabOrder = 16
-            OnClick = photometry_binx2Click
           end
         end
         object tab_photometry1: TTabSheet
@@ -8242,6 +8231,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ScrollBars = ssVertical
         TabOrder = 0
+        OnChange = memo2Change
       end
       object Panel_stack_button1: TPanel
         Left = 0
@@ -9011,6 +9001,14 @@ object stackmenu1: Tstackmenu1
     object Separator6: TMenuItem
       Caption = '-'
     end
+    object bin_selectedB1: TMenuItem
+      Caption = 'Bin 2x2 the selected files'
+      Hint = 'Bin 2x2 the selected files.'
+      OnClick = bin_selectedB1Click
+    end
+    object Separator7: TMenuItem
+      Caption = '-'
+    end
     object renametobak6: TMenuItem
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
@@ -9149,6 +9147,11 @@ object stackmenu1: Tstackmenu1
     end
     object Separator1: TMenuItem
       Caption = '-'
+    end
+    object bin2x2_selectedP1: TMenuItem
+      Caption = 'Bin 2x2 the selected files'
+      Hint = 'This will bin 2x2 all selected files and add them to the list.'
+      OnClick = bin2x2_selectedP1Click
     end
     object refresh_astrometric_solutions1: TMenuItem
       Caption = 'Refresh astrometrical solutions of selected files'

@@ -68,24 +68,24 @@ end;
 procedure update_header;
 
 begin
+  mainwindow.Memo1.lines.beginupdate;
   mainwindow.Memo1.Text:=memo1_text;{use saved fits header first FITS file}
 
-  update_text('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
-  update_text   ('HISTORY 1','  Stacking method LIVE STACKING');
-  update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
-  update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
-  update_text ('DATE-OBS=',#39+JdToDate(jd_start_first)+#39);{give begin date exposures}
-//  update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ',false, jd_sum/counterL);{give midpoint of exposures}
-  update_generic('JD-AVG  ',floattostr6(jd_sum/counterL),'Julian Day of the observation mid-point.       ');{update header using text only}
+  update_text(mainwindow.memo1.lines,'COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
+  update_text(mainwindow.memo1.lines,'HISTORY 1','  Stacking method LIVE STACKING');
+  update_integer(mainwindow.memo1.lines,'EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
+  update_text(mainwindow.memo1.lines,'CALSTAT =',#39+head.calstat+#39); {calibration status}
+  update_text(mainwindow.memo1.lines,'DATE-OBS=',#39+JdToDate(jd_start_first)+#39);{give begin date exposures}
+  update_generic(mainwindow.memo1.lines,'JD-AVG  ',floattostr6(jd_sum/counterL),'Julian Day of the observation mid-point.       ');{update header using text only}
 
   head.date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
-  update_text ('DATE-AVG=',#39+head.date_avg+#39);{give midpoint of exposures}
-  update_integer('LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}
-  update_integer('DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-  update_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-  update_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+  update_text(mainwindow.memo1.lines,'DATE-AVG=',#39+head.date_avg+#39);{give midpoint of exposures}
+  update_integer(mainwindow.memo1.lines,'LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}
+  update_integer(mainwindow.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+  update_integer(mainwindow.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+  update_integer(mainwindow.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
 
-  mainwindow.memo1.visible:=true;{Show new header again}
+  mainwindow.memo1.lines.endupdate;{Show new header again}
 
 end;
 
@@ -160,7 +160,7 @@ begin
     esc_pressed:=false;
     total_counter:=0;
 
-    mainwindow.memo1.visible:=false;{Hide header}
+//    mainwindow.memo1.visible:=false;{Hide header}
 
     colour_correction:=((process_as_osc>0) and (stackmenu1.osc_auto_level1.checked));
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
@@ -182,7 +182,9 @@ begin
           Application.ProcessMessages;
           {load image}
           filename_org:=filename2;//remember .cr2 file name
-          if ((esc_pressed) or (load_image(false,false {plot})=false)) then //For .cr2 files filename2 will have extension .fits
+          if ((esc_pressed) or (load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false,false {plot})=false)) then //For .cr2 files filename2 will have extension .fits
+
+
           begin
             if esc_pressed=false then memo2_message('Error loading file'); {can't load}
             live_stacking_pause1.font.style:=[];

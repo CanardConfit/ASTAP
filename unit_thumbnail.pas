@@ -148,7 +148,7 @@ procedure Tthumbnails1.MenuItem1Click(Sender: TObject);
 begin
   {filename2 is set in Tthumbnails1.ImageMouseDown}
   thumbnails1.close;
-  load_image(true,true {plot});
+  load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});
 end;
 
 procedure Tthumbnails1.ImageMouseDown(Sender: TObject; Button: TMouseButton;{generic for all Timages}
@@ -171,7 +171,7 @@ begin
    if button=mbleft then
    begin
      thumbnails1.close;
-     load_image(true,true {plot});
+     load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});
    end;
 
 end;

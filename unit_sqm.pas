@@ -99,7 +99,7 @@ begin
         backup_img; {move viewer data to img_backup}
         backup_made:=true;
       end;
-      bin_X2X3X4(2); //bin 2x2
+      bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,2); //bin 2x2
     end
     else
       form_sqm1.green_message1.caption:='';
@@ -246,7 +246,7 @@ begin
       begin
         memo2_message('Calibration status '+head.calstat+'. Used '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
 
-        update_text('CALSTAT =',#39+head.calstat+#39);
+        update_text(mainwindow.memo1.lines,'CALSTAT =',#39+head.calstat+#39);
         pedestal2:=0;{pedestal no longer required}
         update_hist:=true; {dark is applied, update histogram for background measurement}
       end

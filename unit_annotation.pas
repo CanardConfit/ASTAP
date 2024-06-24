@@ -2143,13 +2143,13 @@ begin
         head.passband_database:=passband_active; //passband_active is global variable. Now store in the header. head.passband_database can also be retrieved using keyword MZEROPAS
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
-          update_float('MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero)
+          update_float(mainwindow.memo1.lines,'MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero)
         else
-          update_text ('MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
+          update_text(mainwindow.memo1.lines,'MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
 
-        update_float('MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
-        update_float('MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
-        update_text ('MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used.');
+        update_float(mainwindow.memo1.lines,'MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
+        update_float(mainwindow.memo1.lines,'MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
+        update_text(mainwindow.memo1.lines,'MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used.');
 
 
 

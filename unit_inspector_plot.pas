@@ -1180,15 +1180,15 @@ begin
         mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
   mainwindow.memo1.lines.add(head1[27]); {add end}
 
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
-  if head.naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+  update_integer(mainwindow.memo1.lines,'BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+  if head.naxis3=1 then  remove_key(mainwindow.memo1.lines,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
-  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
-  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-  if demode='V'  then update_text   ('COMMENT G','  Grey values indicate measured values * 1000');
+  update_integer(mainwindow.memo1.lines,'DATAMIN =',' / Minimum data value                             ' ,0);
+  update_integer(mainwindow.memo1.lines,'DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
+  update_text(mainwindow.memo1.lines,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  if demode='V'  then update_text(mainwindow.memo1.lines,'COMMENT G','  Grey values indicate measured values * 1000');
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
@@ -1412,9 +1412,9 @@ begin
 
 
   case inspector_binning of
-    1: bin_X2X3X4(2);
-    2: bin_X2X3X4(3);
-    3: bin_X2X3X4(4);
+    1: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,2);
+    2: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,3);
+    3: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,4);
   end;
 
   img_bk:=duplicate(img_loaded);
@@ -1556,13 +1556,13 @@ begin
    head.width:=widthN;
    head.height:=heightN;
 
-   update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-   update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+   update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+   update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
    if head.cd1_1<>0 then {remove solution}
      remove_solution(false {keep wcs});
 
-   update_text   ('COMMENT A','  Aberration view '+filename2);
+   update_text(mainwindow.memo1.lines,'COMMENT A','  Aberration view '+filename2);
 
    filename2:=ChangeFileExt(filename2,'_aberration_view.fits');
    plot_fits(mainwindow.image1,true,true);
