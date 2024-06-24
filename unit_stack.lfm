@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_inspector1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 9
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3461,17 +3461,6 @@ object stackmenu1: Tstackmenu1
             ShowHint = True
             OnClick = help_photometry1Click
           end
-          object photometry_binx2: TButton
-            Left = 616
-            Height = 25
-            Hint = 'Bin the images for better photometric detection.  Original files will not be affected.'
-            Top = 4
-            Width = 61
-            Caption = 'Bin x 2'
-            ParentFont = False
-            TabOrder = 6
-            OnClick = photometry_binx2Click
-          end
           object mark_outliers_upto1: TComboBox
             Left = 1000
             Height = 23
@@ -3490,7 +3479,7 @@ object stackmenu1: Tstackmenu1
               '17'
             )
             ParentFont = False
-            TabOrder = 7
+            TabOrder = 6
             Text = '14'
             OnChange = flux_aperture1change
           end
@@ -3502,7 +3491,7 @@ object stackmenu1: Tstackmenu1
             Width = 99
             AutoSize = True
             Caption = 'AAVSO report'
-            TabOrder = 8
+            TabOrder = 7
             OnClick = aavso_button1Click
           end
           object flux_aperture1: TComboBox
@@ -3529,7 +3518,7 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 9
+            TabOrder = 8
             Text = '1.8'
             OnChange = flux_aperture1change
           end
@@ -3551,7 +3540,7 @@ object stackmenu1: Tstackmenu1
             BorderSpacing.Top = 2
             Caption = '+'
             ParentFont = False
-            TabOrder = 10
+            TabOrder = 9
             OnClick = analysephotometry1Click
           end
           object annulus_radius1: TComboBox
@@ -3573,7 +3562,7 @@ object stackmenu1: Tstackmenu1
               '10'
             )
             ParentFont = False
-            TabOrder = 11
+            TabOrder = 10
             Text = '6'
             OnChange = flux_aperture1change
           end
@@ -3641,7 +3630,7 @@ object stackmenu1: Tstackmenu1
             Images = ImageList2
             ImageIndex = 23
             OnClick = browse_photometry1Click
-            TabOrder = 12
+            TabOrder = 11
           end
           object annotate_mode1: TComboBox
             Left = 688
@@ -3662,7 +3651,7 @@ object stackmenu1: Tstackmenu1
               'Annotation online DB mag 99'
             )
             ParentFont = False
-            TabOrder = 13
+            TabOrder = 12
             Text = 'Annotation local DB mag 11'
             OnChange = annotate_mode1Change
           end
@@ -3687,7 +3676,7 @@ object stackmenu1: Tstackmenu1
               'Online Gaia->SI (i'')'
             )
             ParentFont = False
-            TabOrder = 14
+            TabOrder = 13
             Text = 'Local star database'
             OnChange = reference_database1Change
           end
@@ -3702,7 +3691,7 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 15
+            TabOrder = 14
             OnClick = transformation1Click
           end
           object Label19: TLabel
@@ -3726,7 +3715,7 @@ object stackmenu1: Tstackmenu1
             Width = 3
             AutoSize = True
             Caption = '|'
-            TabOrder = 16
+            TabOrder = 15
             Visible = False
           end
           object measure_all1: TCheckBox
@@ -3736,7 +3725,7 @@ object stackmenu1: Tstackmenu1
             Top = 4
             Width = 135
             Caption = 'Measure all annotated'
-            TabOrder = 17
+            TabOrder = 16
             OnChange = measure_all1Change
           end
           object SpeedButton2: TSpeedButton

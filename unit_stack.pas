@@ -448,7 +448,6 @@ type
     panel_manual1: TPanel;
     Panel_solver1: TPanel;
     Panel_star_detection1: TPanel;
-    photometry_binx2: TButton;
     photometry_button1: TButton;
     photometry_repeat1: TButton;
     photometry_stop1: TButton;
@@ -823,7 +822,6 @@ type
     procedure listview7CustomDrawItem(Sender: TCustomListView;      Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
     procedure live_stacking_pause1Click(Sender: TObject);
     procedure live_stacking_restart1Click(Sender: TObject);
-    procedure photometry_binx2Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
     procedure saturation_tolerance1Change(Sender: TObject);
     procedure save_result1Click(Sender: TObject);
@@ -7834,11 +7832,6 @@ begin
   live_stacking_pause1.font.style := [];
   live_stacking1.font.style := [];
   Application.ProcessMessages; {process font changes}
-end;
-
-procedure Tstackmenu1.photometry_binx2Click(Sender: TObject);
-begin
-
 end;
 
 
