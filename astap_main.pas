@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.06.22';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.06.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -642,6 +642,7 @@ var
   head_ref, {for reference light in stacking}
   head_flat,
   head_dark : Theader;{contains the most important header info}
+  memox : tstrings;//work memo
   bck : Tbackground;
 
   settingstring : tstrings; {settings for save and loading}
@@ -784,21 +785,22 @@ procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small, adu_e {unbinned}:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 procedure backup_img;
 procedure restore_img;
-function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, TIF}
+function load_image(filename2: string; out img: image_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
+
 procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
 
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
-function save_fits(img: image_array;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
-procedure update_text(inpt,comment1:string);{update or insert text in header}
-procedure add_text(inpt,comment1:string);{add text to header memo}
-procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
-procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
-procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
-procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
-procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
-procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
+function save_fits(img: image_array;memo:tstrings;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+procedure update_text(memo:tstrings;inpt,comment1:string);{update or insert text in header}
+procedure add_text(memo:tstrings;inpt,comment1:string);{add text to header memo}
+procedure update_longstr(memo:tstrings;inpt,thestr:string);{update or insert long str including single quotes}
+procedure add_long_comment(memo:tstrings;descrip:string);{add long text to header memo. Split description over several lines if required}
+procedure update_generic(memo:tstrings;message_key,message_value,message_comment:string);{update header using text only}
+procedure update_integer(memo:tstrings; inpt,comment1:string;x:integer);{update or insert variable in header}
+procedure add_integer(memo:tstrings;inpt,comment1:string;x:integer);{add integer variable to header}
+procedure update_float(memo:tstrings; inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
 
-procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
+procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
 function fnmodulo (x,range: double):double;
 function strtoint2(s: string;default:integer):integer; {str to integer, fault tolerant}
@@ -842,7 +844,7 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: 
 function unpack_cfitsio(var filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img_loaded2: image_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
 
 
@@ -852,6 +854,7 @@ function extract_objectname_from_filename(filename8: string): string; {try to ex
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 procedure measure_magnitudes(annulus_rad,x1,y1,x2,y2:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
+
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; out dec : double; out errorDEC :boolean); {convert ra in text to double in radians}
@@ -865,7 +868,7 @@ Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
 procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
-procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
+procedure bin_X2X3X4(var img :image_array; var head : theader;memo:tstrings; binfactor:integer);{bin img 2x,3x or 4x}
 procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 function fits_file_name(inp : string): boolean; {fits file name?}
@@ -876,7 +879,7 @@ procedure pixel_to_celestial(head : theader; fitsx,fitsy : double; formalism : i
 procedure celestial_to_pixel(head: theader;ra,dec: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
-function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
+function savefits_update_header(memo:tstrings;filen2:string) : boolean;{save fits file with updated header}
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name :string);{plot annotation from header in ASTAP format}
 procedure reset_fits_global_variables(light :boolean; out head:theader ); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
@@ -886,8 +889,8 @@ procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
-function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
-function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
+function save_tiff16(img: image_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
+function save_tiff16_secure(img : image_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
 function find_reference_star(img : image_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
@@ -1198,7 +1201,7 @@ begin
 
   if tiff_file_name(filen) then  {load Astro-TIFF instead of FITS}
   begin
-    result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2);{load TIFF image}
+    result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2,mainwindow.memo1.lines);{load TIFF image}
     exit;
   end;
 
@@ -1212,11 +1215,9 @@ begin
   end;
   file_size:=TheFile.size;
 
+  memo.beginupdate;{for speed. Will be activated in plot routine}
   if update_memo then
-  begin
-    mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
     memo.clear;{clear memo for new header}
-  end;
 
   Reader := TReader.Create(TheFile,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
 
@@ -1874,6 +1875,7 @@ begin
     until ((i>=2880) or (end_record)); {loop for 80 bytes in 2880 block}
   until end_record; {header, 2880 bytes loop}
 
+  memo.endupdate;{for speed}
 
   if head.naxis<2 then
   begin
@@ -2207,8 +2209,8 @@ begin
     end;
     mainwindow.Memo3.lines.text:=aline;
     aline:=''; {release memory}
-    if update_memo then
-         mainwindow.memo1.visible:=true;{show header}
+   // if update_memo then
+   //      mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
     reader_position:=reader_position+head.width*head.height;
   end; {read table}
@@ -2227,7 +2229,7 @@ begin
       begin
         mainwindow.error_label1.caption:=('Contains extension(s). Click on the arrows to scroll.');
         mainwindow.error_label1.visible:=true;
-        mainwindow.memo1.visible:=true;{show memo1 since no plotting is coming}
+        //mainwindow.memo1.visible:=true;{show memo1 since no plotting is coming}
       end;
     end
     else
@@ -2509,7 +2511,7 @@ begin
 end;
 
 
-function load_PPM_PGM_PFM(filen:string; out head :theader; out img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
+function load_PPM_PGM_PFM(filen:string; out head :theader; out img_loaded2: image_array; memo :Tstrings) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
   TheFile  : tfilestream;
   i,j, reader_position  : integer;
@@ -2543,8 +2545,9 @@ begin
      mainwindow.error_label1.visible:=true;
      exit;
   end;
-  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
-  mainwindow.memo1.clear;{clear memo for new header}
+  memo.beginupdate;
+ // mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
+  memo.clear;{clear memo for new header}
 
   Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
   {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
@@ -2761,31 +2764,32 @@ begin
 
   for j:=0 to 10 do {create an header with fixed sequence}
     if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
-        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
-  mainwindow.memo1.lines.add(head1[27]); {add end}
+        memo.add(head1[j]); {add lines to empthy memo1}
+  memo.add(head1[27]); {add end}
 
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
+  update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
   if head.naxis3<>1 then
-    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3);
-  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                           ' ,round(head.datamax_org));
+    update_integer(memo,'NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3);
+  update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,0);
+  update_integer(memo,'DATAMAX =',' / Maximum data value                           ' ,round(head.datamax_org));
 
-  if head.exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ',false ,head.exposure);
-  if head.gain<>'' then    update_integer('GAIN    =',' / iso speed                                      ',strtoint(head.gain));
+  if head.exposure<>0 then   update_float(memo,'EXPTIME =',' / duration of exposure in seconds                ',false ,head.exposure);
+  if head.gain<>'' then    update_integer(memo,'GAIN    =',' / iso speed                                      ',strtoint(head.gain));
 
-  if head.date_obs<>'' then update_text   ('DATE-OBS=',#39+head.date_obs+#39);
-  if instrum<>''  then update_text   ('INSTRUME=',#39+INSTRUM+#39);
+  if head.date_obs<>'' then update_text(memo,'DATE-OBS=',#39+head.date_obs+#39);
+  if instrum<>''  then update_text(memo,'INSTRUME=',#39+INSTRUM+#39);
 
-  update_text   ('BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
+  update_text(memo,'BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
 
-  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  update_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  memo.endupdate;
 end;
 
 
-function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img_loaded2: image_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
   jd2   : double;
@@ -2875,8 +2879,9 @@ begin
     head.naxis3:=3;
   end;
 
-  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
-  mainwindow.memo1.clear;{clear memo for new header}
+  memo.beginupdate;
+//  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
+  memo.clear;{clear memo for new header}
 
   {set data}
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
@@ -2923,27 +2928,29 @@ begin
   begin
     for j:=0 to 10 do {create an header with fixed sequence}
       if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
-        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
-    mainwindow.memo1.lines.add(head1[27]); {add end}
-    if descrip<>'' then add_long_comment(descrip);{add TIFF describtion}
+        memo.add(head1[j]); {add lines to empthy memo1}
+    memo.add(head1[27]); {add end}
+    if descrip<>'' then add_long_comment(memo,descrip);{add TIFF describtion}
   end;
 
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
+  update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
+  update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,0);
+  update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
 
   if saved_header=false then {saved header in tiff is not restored}
   begin
     JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
     head.date_obs:=JdToDate(jd2);
-    update_text ('DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
+    update_text(memo,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
   end;
 
-  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  update_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+
+  memo.endupdate;
 
   { Clean up! }
   image.Free;
@@ -2973,7 +2980,7 @@ begin
     filename2:=opendialog1.filename;
     if opendialog1.FilterIndex<>4 then {<> preview FITS files, not yet loaded}
     {loadimage}
-    load_image(true,true {plot});{load and center}
+    load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});{load and center}
     LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
     Screen.Cursor:=crDefault;
   end;
@@ -3122,18 +3129,18 @@ begin
 end;
 
 
-procedure update_float(inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
+procedure update_float(memo : tstrings;inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
  var
    s,aline,buf           : string;
    cnt,line_end,i,count,len   : integer;
 begin
   //note this method is not used in astap_cli. There is no speed benefit there
   str(x:20,s);
-  cnt:=pos(inpt,mainwindow.Memo1.text);
+  cnt:=pos(inpt,Memo.text);
   if cnt>0 then
   begin //insert;
-    line_end:=posex(LineEnding,mainwindow.Memo1.text,cnt+1);//lines length could be different then 80 due to editing
-    aline:=copy(mainwindow.Memo1.text,cnt,line_End - cnt );
+    line_end:=posex(LineEnding,memo.text,cnt+1);//lines length could be different then 80 due to editing
+    aline:=copy(memo.text,cnt,line_End - cnt );
 
     if ((preserve_comment) and (copy(aline,32,1)='/')) then
     begin
@@ -3147,7 +3154,7 @@ begin
     end;
 
     //replace, this is much faster then insert
-    buf:=mainwindow.Memo1.text;
+    buf:=memo.text;
 
     for i:=0 to line_end-cnt-1 do
     begin
@@ -3156,31 +3163,31 @@ begin
      else
        buf[cnt+i]:=' ';
     end;
-    mainwindow.Memo1.text:=buf;
+    memo.text:=buf;
     exit;
   end;
   {not found, add to the end}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
+  memo.insert(memo.Count-1,inpt+' '+s+comment1);
 end;
 
 
-procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
+procedure update_integer(memo:tstrings;inpt,comment1:string;x:integer);{update or insert variable in header}
 var
   s,aline,buf           : string;
   cnt,line_end,i,count,len   : integer;
 begin
   str(x:20,s);
-  cnt:=pos(inpt,mainwindow.Memo1.text);
+  cnt:=pos(inpt,Memo.text);
   if cnt>0 then
   begin //insert;
-    line_end:=posex(LineEnding,mainwindow.Memo1.text,cnt+1);//lines length could be different then 80 due to editing
-    aline:=copy(mainwindow.Memo1.text,cnt,line_End - cnt );
+    line_end:=posex(LineEnding,memo.text,cnt+1);//lines length could be different then 80 due to editing
+    aline:=copy(memo.text,cnt,line_End - cnt );
 
     delete(aline,11,120);  //delete all including above position 80
     aline:=aline+s+comment1; //line length correction will be done during saving FITS
 
     //replace, this is much faster then insert
-    buf:=mainwindow.Memo1.text;
+    buf:=memo.text;
 
     for i:=0 to line_end-cnt-1 do
     begin
@@ -3189,28 +3196,28 @@ begin
      else
        buf[cnt+i]:=' ';
     end;
-    mainwindow.Memo1.text:=buf;
+    memo.text:=buf;
     exit;
   end;
 
   {not found, add at the correct position or at the end}
-  if inpt='NAXIS1  =' then mainwindow.memo1.lines.insert(3,inpt+' '+s+comment1) else{PixInsight requires to have it on 3th place}
-  if inpt='NAXIS2  =' then mainwindow.memo1.lines.insert(4,inpt+' '+s+comment1) else{PixInsight requires to have it on 4th place}
-  if inpt='NAXIS3  =' then mainwindow.memo1.lines.insert(5,inpt+' '+s+comment1) else{PixInsight requires to have it on this place}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
+  if inpt='NAXIS1  =' then memo.insert(3,inpt+' '+s+comment1) else{PixInsight requires to have it on 3th place}
+  if inpt='NAXIS2  =' then memo.insert(4,inpt+' '+s+comment1) else{PixInsight requires to have it on 4th place}
+  if inpt='NAXIS3  =' then memo.insert(5,inpt+' '+s+comment1) else{PixInsight requires to have it on this place}
+  memo.insert(memo.Count-1,inpt+' '+s+comment1);
 end;
 
 
-procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
+procedure add_integer(memo:tstrings;inpt,comment1:string;x:integer);{add integer variable to header}
  var
    s        : string;
 begin
   str(x:20,s);
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
+  memo.insert(memo.Count-1,inpt+' '+s+comment1);
 end;
 
 
-procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
+procedure update_generic(memo:tstrings;message_key,message_value,message_comment:string);{update header using text only}
 var
    count1: integer;
 begin
@@ -3219,59 +3226,59 @@ begin
     while length(message_value)<20 do message_value:=' '+message_value;{extend length, right aligned}
     while length(message_key)<8 do message_key:=message_key+' ';{make standard lenght of 8}
 
-   count1:=mainwindow.Memo1.Lines.Count-1;
+   count1:=memo.Count-1;
     while count1>=0 do {update keyword}
     begin
-      if pos(message_key,mainwindow.Memo1.Lines[count1])>0 then {found}
+      if pos(message_key,memo[count1])>0 then {found}
       begin
-        mainwindow.Memo1.Lines[count1]:=message_key+'= '+message_value+' / '+message_comment;
+        memo[count1]:=message_key+'= '+message_value+' / '+message_comment;
         exit;
       end;
       count1:=count1-1;
     end;
     {not found, add to the end}
-    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,message_key+'= '+message_value+' / '+message_comment);
+    memo.insert(memo.Count-1,message_key+'= '+message_value+' / '+message_comment);
   end {no history of comment keyword}
   else
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,message_key+' '+message_value+message_comment);
+  memo.insert(memo.Count-1,message_key+' '+message_value+message_comment);
 end;
 
 
-procedure update_text(inpt,comment1:string);{update or insert text in header}
+procedure update_text(memo: tstrings;inpt,comment1:string);{update or insert text in header}
 var
    count1: integer;
 begin
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=memo.Count-1;
   while count1>=0 do {update keyword}
   begin
-    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
+    if pos(inpt,memo[count1])>0 then {found}
     begin
-      mainwindow.Memo1.Lines[count1]:=inpt+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
+      memo[count1]:=inpt+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
       //ll:=length(inpt+' '+comment1);
       exit;
     end;
     count1:=count1-1;
   end;
   {not found, add to the end}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+comment1);
+  memo.insert(memo.Count-1,inpt+' '+comment1);
 end;
 
 
-procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
+procedure update_longstr(memo:tstrings; inpt,thestr:string);{update or insert long str including single quotes}
 var
    count1,m,k: integer;
    ampersand : ansistring;
 begin
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=memo.Count-1;
   while count1>=0 do {delete keyword}
   begin
-    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found, delete old keyword}
+    if pos(inpt,memo[count1])>0 then {found, delete old keyword}
     begin
-      mainwindow.Memo1.Lines.delete(count1);
-      while pos('CONTINUE=',mainwindow.Memo1.Lines[count1])>0 do
-        mainwindow.Memo1.Lines.delete(count1);
+      memo.delete(count1);
+      while pos('CONTINUE=',memo[count1])>0 do
+        memo.delete(count1);
     end;
     count1:=count1-1;
   end;
@@ -3281,27 +3288,27 @@ begin
 
   if m>68 then
   begin {write as multi record}
-    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+#39+copy(thestr,1,67)+'&'+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
+    memo.insert(memo.Count-1,inpt+' '+#39+copy(thestr,1,67)+'&'+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
     k:=68;
     repeat {write in blocks of 67 char}
       if (m-k)>67 then ampersand:='&' else ampersand:='';
-      mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,'CONTINUE= '+#39+copy(thestr,k,67)+ampersand+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
+      memo.insert(memo.Count-1,'CONTINUE= '+#39+copy(thestr,k,67)+ampersand+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
       inc(k,67);
     until k>=m;
   end
   else {write as single record}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+#39+thestr+#39);
+  memo.insert(memo.Count-1,inpt+' '+#39+thestr+#39);
 
 end;
 
 
-procedure add_text(inpt,comment1:string);{add text to header memo}
+procedure add_text(memo:tstrings;inpt,comment1:string);{add text to header memo}
 begin
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
+  memo.insert(Memo.Count-1,inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
 end;
 
 
-procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
+procedure add_long_comment(memo:tstrings;descrip:string);{add long text to header memo. Split description over several lines if required}
 var
    i,j :integer;
 begin
@@ -3309,7 +3316,7 @@ begin
   j:=length(descrip);
   while i<j do
   begin
-    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,'COMMENT '+copy(descrip,I,72) );  {add to the end. Limit line length to 80}
+    memo.insert(Memo.Count-1,'COMMENT '+copy(descrip,I,72) );  {add to the end. Limit line length to 80}
     inc(i,72);
   end;
 end;
@@ -3397,17 +3404,17 @@ begin
   mainwindow.Memo1.text:=buf;
 end;
 
-procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
+procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 var
    count1: integer;
 begin
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=memo.Count-1;
   while count1>=0 do {update keyword}
   begin
-    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
+    if pos(inpt,memo[count1])>0 then {found}
     begin
-      mainwindow.Memo1.Lines.delete(count1);
+      memo.delete(count1);
       if all=false then exit;
     end;
     count1:=count1-1;
@@ -3725,7 +3732,7 @@ begin
 end;
 
 
-procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x}
+procedure bin_X2X3X4(var img :image_array; var head : theader;memo:tstrings; binfactor:integer);{bin img_loaded 2x or 3x}
   var fitsX,fitsY,k, w,h  : integer;
       img_temp2 : image_array;
       fact      : string;
@@ -3741,10 +3748,10 @@ begin
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
-           img_temp2[k,fitsY,fitsX]:=(img_loaded[k,fitsY*2,fitsX*2]+
-                                      img_loaded[k,fitsY*2 +1,fitsX*2]+
-                                      img_loaded[k,fitsY*2   ,fitsX*2+1]+
-                                      img_loaded[k,fitsY*2 +1,fitsX*2+1])/4;
+           img_temp2[k,fitsY,fitsX]:=(img[k,fitsY*2,fitsX*2]+
+                                      img[k,fitsY*2 +1,fitsX*2]+
+                                      img[k,fitsY*2   ,fitsX*2+1]+
+                                      img[k,fitsY*2 +1,fitsX*2+1])/4;
            end;
   end
   else
@@ -3754,15 +3761,15 @@ begin
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
-           img_temp2[k,fitsY,fitsX]:=(img_loaded[k,fitsY*3   ,fitsX*3  ]+
-                                      img_loaded[k,fitsY*3   ,fitsX*3+1]+
-                                      img_loaded[k,fitsY*3   ,fitsX*3+2]+
-                                      img_loaded[k,fitsY*3 +1,fitsX*3  ]+
-                                      img_loaded[k,fitsY*3 +1,fitsX*3+1]+
-                                      img_loaded[k,fitsY*3 +1,fitsX*3+2]+
-                                      img_loaded[k,fitsY*3 +2,fitsX*3  ]+
-                                      img_loaded[k,fitsY*3 +2,fitsX*3+1]+
-                                      img_loaded[k,fitsY*3 +2,fitsX*3+2])/9;
+           img_temp2[k,fitsY,fitsX]:=(img[k,fitsY*3   ,fitsX*3  ]+
+                                      img[k,fitsY*3   ,fitsX*3+1]+
+                                      img[k,fitsY*3   ,fitsX*3+2]+
+                                      img[k,fitsY*3 +1,fitsX*3  ]+
+                                      img[k,fitsY*3 +1,fitsX*3+1]+
+                                      img[k,fitsY*3 +1,fitsX*3+2]+
+                                      img[k,fitsY*3 +2,fitsX*3  ]+
+                                      img[k,fitsY*3 +2,fitsX*3+1]+
+                                      img[k,fitsY*3 +2,fitsX*3+2])/9;
            end;
   end
   else
@@ -3771,39 +3778,39 @@ begin
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
-           img_temp2[k,fitsY,fitsX]:=(img_loaded[k,fitsY*4   ,fitsX*4  ]+
-                                      img_loaded[k,fitsY*4   ,fitsX*4+1]+
-                                      img_loaded[k,fitsY*4   ,fitsX*4+2]+
-                                      img_loaded[k,fitsY*4   ,fitsX*4+3]+
-                                      img_loaded[k,fitsY*4 +1,fitsX*4  ]+
-                                      img_loaded[k,fitsY*4 +1,fitsX*4+1]+
-                                      img_loaded[k,fitsY*4 +1,fitsX*4+2]+
-                                      img_loaded[k,fitsY*4 +1,fitsX*4+3]+
-                                      img_loaded[k,fitsY*4 +2,fitsX*4  ]+
-                                      img_loaded[k,fitsY*4 +2,fitsX*4+1]+
-                                      img_loaded[k,fitsY*4 +2,fitsX*4+2]+
-                                      img_loaded[k,fitsY*4 +2,fitsX*4+3]+
-                                      img_loaded[k,fitsY*4 +3,fitsX*4  ]+
-                                      img_loaded[k,fitsY*4 +3,fitsX*4+1]+
-                                      img_loaded[k,fitsY*4 +3,fitsX*4+2]+
-                                      img_loaded[k,fitsY*4 +3,fitsX*4+3])/16;
+           img_temp2[k,fitsY,fitsX]:=(img[k,fitsY*4   ,fitsX*4  ]+
+                                      img[k,fitsY*4   ,fitsX*4+1]+
+                                      img[k,fitsY*4   ,fitsX*4+2]+
+                                      img[k,fitsY*4   ,fitsX*4+3]+
+                                      img[k,fitsY*4 +1,fitsX*4  ]+
+                                      img[k,fitsY*4 +1,fitsX*4+1]+
+                                      img[k,fitsY*4 +1,fitsX*4+2]+
+                                      img[k,fitsY*4 +1,fitsX*4+3]+
+                                      img[k,fitsY*4 +2,fitsX*4  ]+
+                                      img[k,fitsY*4 +2,fitsX*4+1]+
+                                      img[k,fitsY*4 +2,fitsX*4+2]+
+                                      img[k,fitsY*4 +2,fitsX*4+3]+
+                                      img[k,fitsY*4 +3,fitsX*4  ]+
+                                      img[k,fitsY*4 +3,fitsX*4+1]+
+                                      img[k,fitsY*4 +3,fitsX*4+2]+
+                                      img[k,fitsY*4 +3,fitsX*4+3])/16;
            end;
   end;
-  img_loaded:=img_temp2;
+  img:=img_temp2;
   head.width:=w;
   head.height:=h;
   img_temp2:=nil;
 
-  mainwindow.Memo1.Lines.BeginUpdate;
+  memo.BeginUpdate;
 
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+  update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-  if head.crpix1<>0 then begin head.crpix1:=head.crpix1/binfactor; update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
-  if head.crpix2<>0 then begin head.crpix2:=head.crpix2/binfactor; update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
+  if head.crpix1<>0 then begin head.crpix1:=head.crpix1/binfactor; update_float(memo,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
+  if head.crpix2<>0 then begin head.crpix2:=head.crpix2/binfactor; update_float(memo,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
 
-  if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1*binfactor; update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
-  if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2*binfactor; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
+  if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1*binfactor; update_float(memo,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
+  if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2*binfactor; update_float(memo,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
 
   if head.cd1_1<>0 then
   begin
@@ -3811,28 +3818,28 @@ begin
     head.cd1_2:=head.cd1_2*binfactor;
     head.cd2_1:=head.cd2_1*binfactor;
     head.cd2_2:=head.cd2_2*binfactor;
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+    update_float(memo,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float(memo,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float(memo,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float(memo,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
   end;
   head.XBINNING:=head.XBINNING*binfactor;
   head.YBINNING:=head.YBINNING*binfactor;
-  update_integer('XBINNING=',' / Binning factor in width                         ' ,round(head.XBINNING));
-  update_integer('YBINNING=',' / Binning factor in height                        ' ,round(head.yBINNING));
+  update_integer(memo,'XBINNING=',' / Binning factor in width                         ' ,round(head.XBINNING));
+  update_integer(memo,'YBINNING=',' / Binning factor in height                        ' ,round(head.yBINNING));
   if head.XPIXSZ<>0 then
   begin
     head.XPIXSZ:=head.XPIXSZ*binfactor;
     head.YPIXSZ:=head.YPIXSZ*binfactor;
-    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,false,head.XPIXSZ);
-    update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,false,head.YPIXSZ);
-    update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,false,head.XPIXSZ);
-    update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,false,head.YPIXSZ);
+    update_float(memo,'XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,false,head.XPIXSZ);
+    update_float(memo,'YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,false,head.YPIXSZ);
+    update_float(memo,'PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,false,head.XPIXSZ);
+    update_float(memo,'PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,false,head.YPIXSZ);
   end;
   fact:=inttostr(binfactor);
   fact:=fact+'x'+fact;
-  add_text   ('HISTORY   ','BIN'+fact+' version of '+filename2);
-  mainwindow.Memo1.Lines.EndUpdate;
+  add_text(memo,'HISTORY   ','BIN'+fact+' version of '+filename2);
+  memo.EndUpdate;
 end;
 
 
@@ -3860,7 +3867,7 @@ begin
 end;
 
 
-function save_fits(img: image_array;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+function save_fits(img: image_array;memo:tstrings;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
   I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
@@ -3896,7 +3903,7 @@ begin
     begin
       if MessageDlg('Only the current image of the multi-extension FITS will be saved. Displayed table will not be preserved. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then
         exit;
-      mainwindow.Memo1.Lines[0]:= head1[0]; {replace XTENSION= with SIMPLE = }
+      memo[0]:= head1[0]; {replace XTENSION= with SIMPLE = }
     end;
   end;
   filename2:=filen2;
@@ -3907,7 +3914,8 @@ begin
   mainwindow.taskbar1.progressvalue:=0; {show progress}
 
   {$endif}
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}{application.processmessages;}{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   try
     TheFile4:=tfilestream.Create(filen2, fmcreate );
@@ -3917,44 +3925,44 @@ begin
      {update FITs header}
       if type1<>24 then {standard FITS}
       begin
-        update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
-        update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
-        update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
-        update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
+        update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
+        update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
+        update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,width5);
+        update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,height5);
         if colours5<>1 then {color image}
-          update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,colours5)
+          update_integer(memo,'NAXIS3  =',' / length of z axis (mostly colors)               ' ,colours5)
           else
-          remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+          remove_key(memo,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
         if type1=16 then bzero2:=32768 else bzero2:=0;
 
-        update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
-        update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
+        update_integer(memo,'BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
+        update_integer(memo,'BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
         if type1<>8 then
         begin
-          update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
-          update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
-          update_integer('CBLACK  =',' / Black point used for displaying image.         ' ,round(bck.backgr) ); {2019-4-9}
-          update_integer('CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
+          update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
+          update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
+          update_integer(memo,'CBLACK  =',' / Black point used for displaying image.         ' ,round(bck.backgr) ); {2019-4-9}
+          update_integer(memo,'CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
         end
         else
         begin {in most case reducing from 16 or flat to 8 bit}
-          update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-          update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+          update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,0);
+          update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,255);
         end;
       end {update existing header}
       else
       begin {special 8 bit with three colors combined in 24 bit}
         {update FITs header}
-        update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
-        update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
-        update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
-        update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
-        update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
-        update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-        update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-        update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,0);
-        update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
+        update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,8);
+        update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
+        update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,3);
+        update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,width5);
+        update_integer(memo,'NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
+        update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,0);
+        update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,255);
+        update_integer(memo,'BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,0);
+        update_integer(memo,'BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
         {update existing header}
       end;
 
@@ -3962,9 +3970,9 @@ begin
       for i:=0 to 79 do empthy_line[i]:=#32;{space}
       i:=0;
       repeat
-         if i<mainwindow.memo1.lines.count then
+         if i<memo.count then
          begin
-           line0:=mainwindow.memo1.lines[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126.}
+           line0:=memo[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126.}
            while length(line0)<80 do line0:=line0+' ';{extend to length 80 if required}
            strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
            thefile4.writebuffer(aline,80);{write updated header from memo1}
@@ -3972,7 +3980,7 @@ begin
          else
          thefile4.writebuffer(empthy_line,80);{write empthy line}
          inc(i);
-      until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+      until ((i>=memo.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
       if type1=8 then
       begin
@@ -4191,25 +4199,28 @@ end;
 
 
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
+var
+  head_2 : theader;
+  img_temp: image_array;
 begin
   result:=false;
-  if load_fits(filename2,true {light},true {load data},true {update memo for naxis1,...},0,mainwindow.memo1.lines,head,img_loaded)=false then exit;
+  if load_fits(filename2,true {light},true {load data},true {update memo for naxis1,...},0,memox,head_2,img_temp)=false then exit;
+  //application.ProcessMessages;
+  bin_X2X3X4(img_temp,head_2,memox,binfactor);{bin img_loaded 2x or 3x}
 
-  bin_X2X3X4(binfactor);{bin img_loaded 2x or 3x}
-
-  remove_key('BAYERPAT=',false{all});//do not allow debayer anymore
+  remove_key(memox,'BAYERPAT=',false{all});//do not allow debayer anymore
 
   if fits_file_name(filename2) then
   begin
     if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.fit')
                    else filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
-    result:=save_fits(img_loaded,filename2,nrbits,true)
+    result:=save_fits(img_temp,memox,filename2,nrbits,true)
   end
   else
   begin
     if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.tif')
                    else filename2:=ChangeFileExt(Filename2,'_bin3x3.tif');
-    result:=save_tiff16(img_loaded,filename2,false {flip H},false {flip V});
+    result:=save_tiff16(img_temp,memox,filename2,false {flip H},false {flip V});
   end;
 end;
 
@@ -5962,9 +5973,11 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
+  memo1.lines.beginupdate;
+
   {solve internal}
   mainwindow.caption:='Solving.......';
-  save1.Enabled:=solve_image(img_loaded,head,false {get hist, is already available},false {check filter});{match between loaded image and star database}
+  save1.Enabled:=solve_image(img_loaded,head,mainwindow.memo1.lines,false {get hist, is already available},false {check filter});{match between loaded image and star database}
   if head.cd1_1<>0 then
   begin
     mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
@@ -5989,6 +6002,7 @@ begin
   {else do nothing, keep old solution visible if available}
 
   memo1.Visible:=true; {could be disabled by loading dark/flits due to calibrate prior to solving}
+  memo1.lines.endupdate;
   Screen.Cursor:=crDefault;
 end;
 
@@ -6158,20 +6172,20 @@ begin
 
     mainwindow.Memo1.Lines.BeginUpdate;
 
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+    update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+    update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
 
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+    update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+    update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
 
 
-    if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
-    if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
+    if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
+    if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
 
-    if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
-    if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
+    if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float(mainwindow.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
+    if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float(mainwindow.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
 
     if head.cd1_1<>0 then
     begin
@@ -6179,39 +6193,39 @@ begin
       head.cd1_2:=head.cd1_2/ratio;
       head.cd2_1:=head.cd2_1/ratio;
       head.cd2_2:=head.cd2_2/ratio;
-      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+      update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+      update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+      update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+      update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
     end;
 
     head.XBINNING:=head.XBINNING/ratio;
     head.YBINNING:=head.YBINNING/ratio;
-    update_float  ('XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
-    update_float  ('YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
+    update_float(mainwindow.memo1.lines,'XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
+    update_float(mainwindow.memo1.lines,'YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
 
 
     if head.XPIXSZ<>0 then
     begin
       head.XPIXSZ:=head.XPIXSZ/ratio;
       head.YPIXSZ:=head.YPIXSZ/ratio;
-      update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);{note: comment will be never used since it is an existing keyword}
-      update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
-      update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);
-      update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
+      update_float(mainwindow.memo1.lines,'XPIXSZ  =',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);{note: comment will be never used since it is an existing keyword}
+      update_float(mainwindow.memo1.lines,'YPIXSZ  =',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
+      update_float(mainwindow.memo1.lines,'PIXSIZE1=',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);
+      update_float(mainwindow.memo1.lines,'PIXSIZE2=',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
 
     end;
 
-    add_text   ('HISTORY   ','One raw colour extracted.');
+    add_text(mainwindow.memo1.lines,'HISTORY   ','One raw colour extracted.');
 
-    remove_key('BAYERPAT=',false{all});
-    update_text   ('FILTER  =',copy(#39+filtern+#39+'                   ',1,21)+'/ Filter name');
+    remove_key(mainwindow.memo1.lines,'BAYERPAT=',false{all});
+    update_text(mainwindow.memo1.lines,'FILTER  =',copy(#39+filtern+#39+'                   ',1,21)+'/ Filter name');
 
     mainwindow.Memo1.Lines.EndUpdate;
 
     img_loaded:=img_temp11;
     result:=ChangeFileExt(FileName7,'_'+filtern+'.fit');
-    if save_fits(img_loaded,result,16,true{overwrite}) =false then result:='';
+    if save_fits(img_loaded,mainwindow.memo1.lines,result,16,true{overwrite}) =false then result:='';
     img_temp11:=nil;
   end
   else
@@ -6293,7 +6307,7 @@ end;
 procedure Tmainwindow.recent1Click(Sender: TObject);
 begin
   filename2:= (Sender as Tmenuitem).caption;
-  if fileexists(filename2) then load_image(true,true {plot}) {load and center, plot}
+  if fileexists(filename2) then load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot}) {load and center, plot}
   else
   begin {file gone/deleted}
      application.messagebox(pchar('File not found:'+#13+#10+#13+#10+(Sender as Tmenuitem).caption),pchar('Error'),MB_ICONWARNING+MB_OK);
@@ -7696,7 +7710,6 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   img.visible:=true;
-  mainwindow.memo1.visible:=show_header;{start updating memo1}
 
   {create bitmap}
   bitmap := TBitmap.Create;
@@ -8046,13 +8059,13 @@ begin
 end;
 
 
-function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
+function save_tiff16_secure(img : image_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
 var
   filename_tmp : string;
 begin
   result:=false;{assume failure}
   filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
-  if  save_tiff16(img,filename_tmp,false {flip H},false {flip V}) then
+  if  save_tiff16(img, memo, filename_tmp,false {flip H},false {flip V}) then
   begin
     if deletefile(filen2) then
       result:=renamefile(filename_tmp,filen2);
@@ -8061,7 +8074,7 @@ end;
 
 
 
-function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
+function savefits_update_header(memo: tstrings; filen2:string) : boolean;{save fits file with updated header}
 var
   TheFile  : tfilestream;
   reader_position,I,readsize,bufsize : integer;
@@ -8087,7 +8100,7 @@ begin
     TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
     Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
 
-   // if head.calstat<>'' then update_text('CALSTAT =',#39+old_calstat+#39); {calibration status has not change because the image is original}
+   // if head.calstat<>'' then update_text(memo,'CALSTAT =',#39+old_calstat+#39); {calibration status has not change because the image is original}
     {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
     I:=0;
     reader_position:=0;
@@ -8118,9 +8131,9 @@ begin
     for i:=0 to 79 do empthy_line[i]:=#32;{space}
     i:=0;
     repeat
-       if i<mainwindow.memo1.lines.count then
+       if i<memo.count then
        begin
-         line0:=mainwindow.memo1.lines[i];
+         line0:=memo[i];
          while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
          strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
          thefile_new.writebuffer(aline,80);{write updated header from memo1.}
@@ -8130,7 +8143,7 @@ begin
           thefile_new.writebuffer(empthy_line,80);{write empthy line}
        end;
        inc(i);
-    until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+    until ((i>=memo.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
     bufsize:=sizeof(fitsbuffer);
     repeat
@@ -9313,7 +9326,7 @@ begin
         if esc_pressed then begin err:=true;break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-        if load_image(false {recenter},false {plot}) then
+        if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false {recenter},false {plot}) then
         begin
           if extra_stars=false then
             tilt:=CCDinspector(30,false {screenplot},false{three_corners},strtofloat(measuring_angle))
@@ -9322,11 +9335,11 @@ begin
 
           if tilt<100 then
           begin
-            update_text('TILT    = ',floattostr2(tilt)+'                / Delta HFD between wrost and best corner');;//two decimals only for nice reporting
+            update_text(mainwindow.memo1.lines,'TILT    = ',floattostr2(tilt)+'                / Delta HFD between wrost and best corner');;//two decimals only for nice reporting
             if fits_file_name(filename2) then
-              success:=savefits_update_header(filename2)
+              success:=savefits_update_header(mainwindow.memo1.lines,filename2)
             else
-              success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+              success:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2);{guarantee no file is lost}
             if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
           end
           else
@@ -9510,7 +9523,7 @@ begin
     val(exposure_str,result,err);
     if err=0 then
     begin
-      update_integer('EXPOSURE=',' / exposure extracted from file name.                     ' ,result);
+      update_integer(mainwindow.memo1.lines,'EXPOSURE=',' / exposure extracted from file name.                     ' ,result);
       memo2_message('Extracted exposure from file name');
     end
     else
@@ -9553,7 +9566,7 @@ begin
   val(temp_str,result,err);
   if err=0 then
   begin
-    update_integer('CCD-TEMP=',' / Sensor temperature extracted from file name            ' ,result);
+    update_integer(mainwindow.memo1.lines,'CCD-TEMP=',' / Sensor temperature extracted from file name            ' ,result);
     memo2_message('Extracted temperature from file name');
   end
   else
@@ -9824,7 +9837,7 @@ begin
 
   if ExtractFileExt(filename4)='.pgm' then {pgm file}
   begin
-    if load_PPM_PGM_PFM(fileName4,head,img) then {succesfull PGM load}
+    if load_PPM_PGM_PFM(fileName4,head,img,mainwindow.memo1.lines) then {succesfull PGM load}
     begin
 
       deletefile(filename4);{delete temporary pgm file}
@@ -9834,10 +9847,10 @@ begin
       begin
         JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage raw, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
         head.date_obs:=JdToDate(jd2);
-        update_text ('DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
+        update_text(mainwindow.memo1.lines,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
       end;
-      update_text ('BAYERPAT=',#39+'????'+#39);{identify raw OSC image}
-      add_text   ('HISTORY  ','Converted from '+filename3);
+      update_text(mainwindow.memo1.lines,'BAYERPAT=',#39+'????'+#39);{identify raw OSC image}
+      add_text(mainwindow.memo1.lines,'HISTORY  ','Converted from '+filename3);
       result:=true;
     end
     else
@@ -9846,8 +9859,8 @@ begin
     if ((savefile) and (conv_index=2) and (result)) then {PPM interstage file, save to fits, Not required for the new unprocessed_raw-astap}
     begin
       if conv_index=2 {dcraw} then head.set_temperature:=extract_temperature_from_filename(filename4);{including update header}
-      update_text('OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
-      result:=save_fits(img,filename4,16,true);{overwrite. Filename2 will be set to fits file}
+      update_text(mainwindow.memo1.lines,'OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
+      result:=save_fits(img,mainwindow.memo1.lines,filename4,16,true);{overwrite. Filename2 will be set to fits file}
     end;
     if loadfile=false then  img:=nil;{clear memory}
   end
@@ -9870,6 +9883,8 @@ end;
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 var
   ext : string;
+  img_temp : image_array;
+  head_2 : theader;
 begin
   ext:=uppercase(ExtractFileExt(filen));
   result:=false;
@@ -9880,32 +9895,29 @@ begin
   end
   else
   if (ext='.FZ') then {CFITSIO format}
-  begin
-    result:=unpack_cfitsio(filen); {filename2 contains the new file name}
-   // if result then filen:=filename2;
-  end
+    result:=unpack_cfitsio(filen) {filename2 contains the new file name}
   else
   begin
     if ((ext='.PPM') or (ext='.PGM') or (ext='.PFM') or (ext='.PBM')) then {PPM/PGM/ PFM}
-      result:=load_PPM_PGM_PFM(filen,head,img_loaded)
+      result:=load_PPM_PGM_PFM(filen,head_2,img_temp,memox)
     else
     if ext='.XISF' then {XISF}
-      result:=load_xisf(filen,head,img_loaded)
+      result:=load_xisf(filen,head,img_loaded,mainwindow.memo1.lines)
     else
     if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
-      result:=load_tiffpngJPEG(filen,true,head,img_loaded);
+      result:=load_tiffpngJPEG(filen,true,head_2,img_temp,memox);
 
     if result then
     begin
       if head.exposure=0 then {not an Astro-TIFF file with an header}
       begin
         head.exposure:=extract_exposure_from_filename(filen); {try to extract head.exposure time from filename. Will be added to the header}
-        update_text('OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
+        update_text(mainwindow.memo1.lines,'OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
         head.set_temperature:=extract_temperature_from_filename(filen);
       end;
 
       filen:=ChangeFileExt(filen,'.fits');
-      result:=save_fits(img_loaded,filen,nrbits,false);
+      result:=save_fits(img_loaded,memox,filen,nrbits,false);
     end;
   end;
 end;
@@ -9914,7 +9926,7 @@ end;
 procedure Tmainwindow.convert_to_fits1click(Sender: TObject);
 var
   I: integer;
-  err, dobackup : boolean;
+  err         : boolean;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert to FITS.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -9930,9 +9942,6 @@ begin
   if OpenDialog1.Execute then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-    dobackup:=img_loaded<>nil;
-    if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
     try { Do some lengthy operation }
       with OpenDialog1.Files do
@@ -9955,8 +9964,7 @@ begin
       else
       mainwindow.caption:='Finished, files converted but with errors or stopped!';
 
-      finally
-      if dobackup then restore_img;{for the viewer}
+    finally
       Screen.Cursor:=crDefault;  { Always restore to normal }
       progress_indicator(-100,'');{progresss done}
     end;
@@ -9964,7 +9972,7 @@ begin
 end;
 
 
-function load_image(re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
+function load_image(filename2: string; out img: image_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
 var
    ext1,filename_org   : string;
 begin
@@ -9979,46 +9987,46 @@ begin
 
   ext1:=uppercase(ExtractFileExt(filename2));
 
-  x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
-  a_order:=0; {SIP_polynomial, use for check if there is data}
-  ap_order:=0; {SIP_polynomial, use for check if there is data}
+//  x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
+//  a_order:=0; {SIP_polynomial, use for check if there is data}
+//  ap_order:=0; {SIP_polynomial, use for check if there is data}
 
   result:=false;{assume failure}
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
   begin
-    result:=load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded);
+    result:=load_fits(filename2,true {light},true,true {update memo},0,memo,head,img);
     if head.naxis<2 then result:=false; {no image}
   end
   else
   if (ext1='.FZ') then {CFITSIO format}
   begin
     if unpack_cfitsio(filename2) then {successful conversion using funpack}
-      result:=load_fits(filename2,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img_loaded); {load new fits file}
+      result:=load_fits(filename2,true {light},true {load data},true {update memo},0,memo,head,img); {load new fits file}
   end {fz}
   else
   if check_raw_file_extension(ext1) then {raw format}
   begin
-    result:=convert_raw(true{load},false{save},filename2,head,img_loaded);
+    result:=convert_raw(true{load},false{save},filename2,head,img);
     if result then {successful conversion using LibRaw}
       filename2:=ChangeFileExt(FileName2,'.fits');{for the case you want to save it}
   end{raw}
   else
   if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM') or (ext1='.PBM')) then {PPM/PGM/ PFM}
-    result:=load_PPM_PGM_PFM(filename2,head,img_loaded)
+    result:=load_PPM_PGM_PFM(filename2,head,img,memo)
   else
   if ext1='.XISF' then {XISF}
-    result:=load_xisf(filename2,head,img_loaded)
+    result:=load_xisf(filename2,head,img,memo)
   else
   if ((ext1='.TIF') or (ext1='.TIFF') or (ext1='.PNG') or (ext1='.JPG') or (ext1='.JPEG') or (ext1='.BMP')) then {tif, png, bmp, jpeg}
-    result:=load_tiffpngJPEG(filename2,true {light},head,img_loaded);
+    result:=load_tiffpngJPEG(filename2,true {light},head,img,memo);
 
   if result=false then begin update_menu(false);exit; end;
 
   if plot then
   begin
-    if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
-    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+    if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img);{demosaic and set levels}
+    use_histogram(img,true {update}); {plot histogram, set sliders}
     image_move_to_center:=re_center;
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
@@ -10041,7 +10049,7 @@ begin
   begin
     BringToFront;
     filename2:=SimpleIPCServer1.StringMessage;
-    load_image(true,true {plot});{show image of parameter1}
+    load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});{show image of parameter1}
   end;
 end;
 
@@ -10075,7 +10083,7 @@ begin
   convert_mono(img_loaded,head);
 
   update_header_for_colour; {update header naxis and naxis3 keywords}
-  add_text('HISTORY   ','Converted to mono');
+  add_text(mainwindow.memo1.lines,'HISTORY   ','Converted to mono');
 
   {colours are now mixed, redraw histogram}
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -10190,9 +10198,9 @@ end;
 procedure remove_photometric_calibration;//from header
 begin
   head.mzero:=0;//clear photometric calibration
-  remove_key('MZERO   =',false{all});
-  remove_key('MZEROR  =',false{all});
-  remove_key('MZEROAPT=',false{all});
+  remove_key(mainwindow.memo1.lines,'MZERO   =',false{all});
+  remove_key(mainwindow.memo1.lines,'MZEROR  =',false{all});
+  remove_key(mainwindow.memo1.lines,'MZEROAPT=',false{all});
 end;
 
 
@@ -10205,12 +10213,12 @@ begin
     backup_img; {move viewer data to img_backup}
     if sender=bin_2x2menu1 then
     begin
-      bin_X2X3X4(2);
+      bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,2);
       filename2:=ChangeFileExt(Filename2,'_bin2x2.fit');
     end
     else
     begin
-      bin_X2X3X4(3);
+      bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,3);
       filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
     end;
 
@@ -10520,7 +10528,7 @@ begin
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    plot_deepsky(sender=stackmenu1.photometry_button1); {Plot the variables on the image. If photmetry_button then only fill variable_list}
+    plot_deepsky(sender=stackmenu1.photometry_button1); {Plot the variables on the image. If photometry_button then only fill variable_list}
   end;
 
   Screen.Cursor:=crDefault;
@@ -10588,7 +10596,7 @@ procedure Tmainwindow.FormDropFiles(Sender: TObject;
 begin
  {no check on file extension required}
   filename2:=FileNames[0];
-   if load_image(true,true {plot}){load and center}=false then beep;{image not found}
+   if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot}){load and center}=false then beep;{image not found}
 end;
 
 procedure Tmainwindow.histogram_range1MouseUp(Sender: TObject;
@@ -11072,14 +11080,14 @@ begin
         if esc_pressed then begin err:=true;break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-        if load_image(false {recenter},false {plot}) then
+        if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false {recenter},false {plot}) then
         begin
-          remove_key('SITELAT =',true{all});
-          remove_key('SITELONG=',true{all});
+          remove_key(mainwindow.memo1.lines,'SITELAT =',true{all});
+          remove_key(mainwindow.memo1.lines,'SITELONG=',true{all});
           if fits_file_name(filename2) then
-            success:=savefits_update_header(filename2)
+            success:=savefits_update_header(mainwindow.memo1.lines,filename2)
           else
-            success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+            success:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2);{guarantee no file is lost}
           if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
         end
         else err:=true;
@@ -11737,9 +11745,9 @@ begin
             begin
               plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations},false);
               if fits_file_name(filename2) then
-                success:=savefits_update_header(filename2)
+                success:=savefits_update_header(mainwindow.memo1.lines,filename2)
               else
-                success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+                success:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2);{guarantee no file is lost}
               if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
               nrannotated :=nrannotated +1;
             end;
@@ -12009,16 +12017,16 @@ begin
 
       mainwindow.Memo1.Lines.BeginUpdate;
 
-      update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-      update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
-      update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+      update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+      update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+      update_integer(mainwindow.memo1.lines,'DATAMAX =',' / Maximum data value                             ' ,255);
 
 
-      if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
-      if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
+      if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
+      if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
 
-      if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
-      if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
+      if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float(mainwindow.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
+      if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float(mainwindow.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
 
       if head.cd1_1<>0 then
       begin
@@ -12026,28 +12034,28 @@ begin
         head.cd1_2:=head.cd1_2/ratio;
         head.cd2_1:=head.cd2_1/ratio;
         head.cd2_2:=head.cd2_2/ratio;
-        update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-        update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-        update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-        update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+        update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+        update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+        update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+        update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
       end;
 
       head.XBINNING:=head.XBINNING/ratio;
       head.YBINNING:=head.YBINNING/ratio;
-      update_float  ('XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
-      update_float  ('YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
+      update_float(mainwindow.memo1.lines,'XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
+      update_float(mainwindow.memo1.lines,'YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
 
       if head.XPIXSZ<>0 then
       begin
         head.XPIXSZ:=head.XPIXSZ/ratio;
         head.YPIXSZ:=head.YPIXSZ/ratio;
-        update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
-        update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
-        update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
-        update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
+        update_float(mainwindow.memo1.lines,'XPIXSZ  =',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
+        update_float(mainwindow.memo1.lines,'YPIXSZ  =',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
+        update_float(mainwindow.memo1.lines,'PIXSIZE1=',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
+        update_float(mainwindow.memo1.lines,'PIXSIZE2=',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
       end;
 
-      add_text   ('HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
+      add_text(mainwindow.memo1.lines,'HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
 
       mainwindow.Memo1.Lines.EndUpdate;
 
@@ -12248,6 +12256,7 @@ begin
 
   deepstring := Tstringlist.Create;{for deepsky overlay}
   recent_files:= Tstringlist.Create;
+  memox:= Tstringlist.Create; ; // this needs to be TStringList
 
   head.naxis:=0; {not fits files available}
 
@@ -12274,8 +12283,9 @@ begin
     mainwindow.shape_marker1.Visible:=false
   else
   begin
-     shape_marker1_fitsX:=startX+1;
+    shape_marker1_fitsX:=startX+1;
     shape_marker1_fitsY:=startY+1;
+    mainwindow.shape_marker1.Visible:=true;
     show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
     shape_marker1.hint:='Marker x='+floattostrF(shape_marker1_fitsX,ffFixed,0,1)+' y='+ floattostrF(shape_marker1_fitsY,ffFixed,0,1);
   end;
@@ -12311,6 +12321,7 @@ begin
   settingstring.free;
   deepstring.free;{free deepsky}
   recent_files.free;
+  memox.free;//free tstrings
 
 // arrays and string are automatic deallocated
 //  wide_field_stars:=nil; {free wide_field_database}
@@ -12651,7 +12662,7 @@ begin
   if sender<>Enter_rectangle_with_label1 then boldness:=head.width/image1.width else boldness:=-head.width/image1.width;
 
   plot_the_annotation(startX,startY,text_X,text_Y,boldness,value);
-  add_text ('ANNOTATE=',#39+copy(inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';',1,68)+#39);
+  add_text(mainwindow.memo1.lines,'ANNOTATE=',#39+copy(inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';',1,68)+#39);
   annotated:=true; {header contains annotations}
 end;
 
@@ -13020,7 +13031,7 @@ begin
 
         filename2:=list[5];
         source_fits:=fits_file_name(filename2);{fits file extension?}
-        file_loaded:=load_image(false,false {plot});{load file first to give commandline parameters later priority}
+        file_loaded:=load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false,false {plot});{load file first to give commandline parameters later priority}
 
         if file_loaded=false then errorlevel:=16;{error file loading}
 
@@ -13035,7 +13046,7 @@ begin
         search_field:= min(180,sqrt(regions)*0.5*field_size);{regions 1000 is equivalent to 32x32 regions. So distance form center is 0.5*32=16 region heights}
 
         stackmenu1.radius_search1.text:=floattostrF(search_field,ffFixed,0,1);{convert to radius of a square search field}
-        if ((file_loaded) and (solve_image(img_loaded,head,true {get hist},false {check filter}) )) then {find plate solution, filename2 extension will change to .fit}
+        if ((file_loaded) and (solve_image(img_loaded,head,mainwindow.memo1.lines,true {get hist},false {check filter}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           resultstr:='Valid plate solution';
           confidence:='999';
@@ -13131,7 +13142,7 @@ begin
   try
    TheFile4:=tfilestream.Create(filen, fmcreate );
 
-   update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+   update_integer(mainwindow.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
    try
   {write memo1 header to file}
    for i:=0 to 79 do empthy_line[i]:=#32;{space}
@@ -13166,13 +13177,13 @@ end;
 //  data: longword;
 //begin
 
-//  remove_key('NAXIS1  =',true{one});     {this will damge the header}
-//  remove_key('NAXIS2  =',true{one});
-//  update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
-//  update_integer('BITPIX  =',' /                                                ' ,8    );
+//  remove_key(mainwindow.memo1.lines,'NAXIS1  =',true{one});     {this will damge the header}
+//  remove_key(mainwindow.memo1.lines,'NAXIS2  =',true{one});
+//  update_integer(mainwindow.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+//  update_integer(mainwindow.memo1.lines,'BITPIX  =',' /                                                ' ,8    );
 
-//  add_text ('EXTEND  =','                   T / There may be FITS extension                    ');
-//  add_text ('AN_FILE =',#39+'XYLS    '+#39+' / Astrometry.net file type                                 ');
+//  add_text(mainwindow.memo1.lines,'EXTEND  =','                   T / There may be FITS extension                    ');
+//  add_text(mainwindow.memo1.lines,'AN_FILE =',#39+'XYLS    '+#39+' / Astrometry.net file type                                 ');
 
 //  try
 //   TheFile4:=tfilestream.Create(ChangeFileExt(filename2,'.xyls'), fmcreate );
@@ -13404,9 +13415,9 @@ begin
         begin
           filename2:=GetOptionValue('f');
           if debug=false then
-            file_loaded:=load_image(false,false {plot}) {load file first to give commandline parameters later priority}
+            file_loaded:=load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false,false {plot}) {load file first to give commandline parameters later priority}
           else
-            file_loaded:=load_image(true,true {plot});{load and show image}
+            file_loaded:=load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});{load and show image}
           if file_loaded=false then errorlevel:=16;{error file loading}
         end
         else
@@ -13517,7 +13528,7 @@ begin
             filename_output:=filename2; //use same filename for .ini and .wcs files
 
 
-          if ((file_loaded) and (solve_image(img_loaded,head,true {get hist},checkfilter) )) then {find plate solution, filename2 extension will change to .fit}
+          if ((file_loaded) and (solve_image(img_loaded,head,mainwindow.memo1.lines,true {get hist},checkfilter) )) then {find plate solution, filename2 extension will change to .fit}
           begin
             if hasoption('sqm') then {sky quality}
             begin
@@ -13527,32 +13538,32 @@ begin
                 if centalt=''  then //no old altitude
                 begin
                   centalt:=floattostr2(altitudefloat);
-                  update_text ('CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
-                  update_text ('OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                  update_text(mainwindow.memo1.lines,'CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                  update_text(mainwindow.memo1.lines,'OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
                 end;
-                update_text('SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
-                update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
+                update_text(mainwindow.memo1.lines,'SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
+                update_text(mainwindow.memo1.lines,'COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
               end
               else
-              update_text('SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
+              update_text(mainwindow.memo1.lines,'SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
               if airmass=0 then
               begin
                 airmass:=AirMass_calc(altitudefloat);
-                update_generic('AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
+                update_generic(mainwindow.memo1.lines,'AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
               end;
             end;
 
             write_ini(filename_output,true);{write solution to ini file}
 
-            add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
+            add_long_comment(mainwindow.memo1.lines,'cmdline:'+cmdline);{log command line in wcs file}
 
             if hasoption('update') then
             begin
-              if fits_file_name(filename2) then wresult:=savefits_update_header(filename2) {update the fits file header}
+              if fits_file_name(filename2) then wresult:=savefits_update_header(mainwindow.memo1.lines,filename2) {update the fits file header}
               else
-              if tiff_file_name(filename2) then wresult:=save_tiff16_secure(img_loaded,filename2){guarantee no file is lost}
+              if tiff_file_name(filename2) then wresult:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2){guarantee no file is lost}
               else
-              wresult:=save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save original png,tiff jpg to 16 fits file}
+              wresult:=save_fits(img_loaded,mainwindow.memo1.lines,ChangeFileExt(filename2,'.fits'),16, true {override});{save original png,tiff jpg to 16 fits file}
 
               if wresult=false then //write error
               begin
@@ -13561,9 +13572,9 @@ begin
               end;
             end;
 
-            remove_key('NAXIS1  =',true{one});
-            remove_key('NAXIS2  =',true{one});
-            update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+            remove_key(mainwindow.memo1.lines,'NAXIS1  =',true{one});
+            remove_key(mainwindow.memo1.lines,'NAXIS2  =',true{one});
+            update_integer(mainwindow.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
             if hasoption('wcs') then
               write_astronomy_wcs(ChangeFileExt(filename_output,'.wcs'))  {write WCS astronomy.net style}
             else
@@ -13582,9 +13593,9 @@ begin
               if fits_file_name(filename2)=false {no fits file?} then
               begin
                 binning:=round(strtofloat2(GetOptionValue('tofits')));
-                if binning>1 then bin_X2X3X4(binning);{bin img_loaded 2x or 3x or 4x}
+                if binning>1 then bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,binning);{bin img_loaded 2x or 3x or 4x}
                 if histogram_done=false then use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
-                save_fits(img_loaded,changeFileExt(filename_output,'.fit'),8,true {overwrite});
+                save_fits(img_loaded,mainwindow.memo1.lines,changeFileExt(filename_output,'.fit'),8,true {overwrite});
               end;
             end;
 
@@ -13662,7 +13673,7 @@ begin
       mainwindow.Stackimages1Click(nil);// make stack menu visible
     end
     else
-    load_image(true,true {plot});{show image of parameter1}
+    load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});{show image of parameter1}
   end {paramcount>0}
   else
   do_stretching; {create gamma curve for image if loaded later and set gamma_on}
@@ -13695,6 +13706,9 @@ var
   dobackup,add_lim_magn,solution_overwrite,solved,maintain_date,success,image_changed : boolean;
   failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
+  head_2 : theader;
+  img_temp: image_array;
+
 begin
   OpenDialog1.Title :='Select multiple files to add astrometric solution';
   OpenDialog1.Options :=[ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -13713,8 +13727,6 @@ begin
     nrfailed:=0;
     failed:='Failed files:';
     skipped:='Skipped files:';
-    dobackup:=img_loaded<>nil;
-    if dobackup then backup_img;{preserve img array and fits header of the viewer}
     startTick := GetTickCount64;
     try { Do some lengthy operation }
       with OpenDialog1.Files do
@@ -13733,10 +13745,10 @@ begin
         Application.ProcessMessages;
         if esc_pressed then  break;
         {load image and solve image}
-        if load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then {load image success}
+        if load_fits(filename2,true {light},true,true {update memo},0,memox,head_2,img_temp) then {load image success}
         begin
           image_changed:=false;
-          if ((head.cd1_1<>0) and (solution_overwrite=false)) then
+          if ((head_2.cd1_1<>0) and (solution_overwrite=false)) then
           begin
             nrskipped:=nrskipped+1; {plate solved}
             memo2_message('Skipped: '+filename2+ '  Already a solution in the header. Select option overwrite to renew.');
@@ -13751,9 +13763,9 @@ begin
               analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
               analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
 
-              if apply_dark_and_flat(img_loaded,head){apply dark, flat if required, renew if different hd.exposure or ccd temp. This will clear the header in load_fits} then
+              if apply_dark_and_flat(img_temp,head_2){apply dark, flat if required, renew if different hd.exposure or ccd temp. This will clear the header in load_fits} then
               begin //dark or flat or both applied
-                update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
+                update_text(memox,'CALSTAT =',#39+head_2.calstat+#39); {calibration status}
                 image_changed:=true;
                 //get_hist:=true; {update required}
               end;
@@ -13762,7 +13774,7 @@ begin
 
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
             oldnrbits:=nrbits;
-            solved:=solve_image(img_loaded,head,true {get hist}, false {check filter});
+            solved:=solve_image(img_temp,head_2,memox,true {get hist}, false {check filter});
             if solved then nrsolved:=nrsolved+1 {solve}
             else
             begin
@@ -13772,47 +13784,47 @@ begin
             end;
           end;
 
-          if ((head.cd1_1<>0) and ((solved) or (add_lim_magn)) )  then {time to save}
+          if ((head_2.cd1_1<>0) and ((solved) or (add_lim_magn)) )  then {time to save}
           begin
             if add_lim_magn then
             begin
               calibrate_photometry;
-              update_float('LIM_MAGN=',' / estimated limiting magnitude for point sources',false ,magn_limit);
+              update_float(memox,'LIM_MAGN=',' / estimated limiting magnitude for point sources',false ,magn_limit);
 
               mess:='';
 
-              if ((pedestal<>0) or (pos('D',head.calstat)>0)) then
+              if ((pedestal<>0) or (pos('D',head_2.calstat)>0)) then
               begin
                 //jd_start:=0; { if altitude missing then force an date to jd conversion'}
                 pedestal2:=pedestal; {protect pedestal setting}
                 if calculate_sqm(true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
-                  update_text('SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
-                  update_text('COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
+                  update_text(memox,'SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
+                  update_text(memox,'COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
                   mess:=', SQM';
                   if centalt=''  then //no old altitude
                   begin
                     centalt:=floattostr2(altitudefloat);
-                    update_text ('CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
-                    update_text ('OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                    update_text(memox,'CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                    update_text(memox,'OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
                     mess:=mess+', CENT-ALT';
                   end;
                 end
                 else
                 begin
-                  update_text('SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
+                  update_text(memox,'SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
                   memo2_message('Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.');
                 end;
               end
               else
               begin
-                update_text('SQM     =',char(39)+'Error! Specify first fixed pedestal value in the SQM menu (ctrl+Q).'+char(39));
+                update_text(memox,'SQM     =',char(39)+'Error! Specify first fixed pedestal value in the SQM menu (ctrl+Q).'+char(39));
                 memo2_message('Can not measure SQM. Specifiy first a fixed pedestal value in the SQM menu. De pedestal value is the median dark or bias value');
               end;
               if airmass=0 then
               begin
                 airmass:=AirMass_calc(altitudefloat);
-                update_generic('AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
+                update_generic(memox,'AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
                 mess:=mess+', AIRMASS';
               end;
               memo2_message('Added keyword(s) LIM_MAGN'+mess);
@@ -13822,12 +13834,12 @@ begin
             if fits_file_name(filename2) then
             begin
               if image_changed=false then
-                success:=savefits_update_header(filename2)
+                success:=savefits_update_header(memox,filename2)
               else
-                success:=save_fits(img_loaded,filename2,oldnrbits,true);//image was updated by calibration.
+                success:=save_fits(img_temp,memox,filename2,oldnrbits,true);//image was updated by calibration.
             end
             else
-              success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+              success:=save_tiff16_secure(img_temp,memox,filename2);{guarantee no file is lost}
             if success=false then begin ShowMessage('Write error !!'+#10+#10 + filename2);Screen.Cursor:=crDefault; exit;end;
 
             if ((maintain_date) and (file_age>-1)) then FileSetDate(filename2,file_age);
@@ -13838,7 +13850,6 @@ begin
       finally
       memo2_message('Processed in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.');
 
-      if dobackup then restore_img;{for the viewer}
       Screen.Cursor:=crDefault;  { Always restore to normal }
     end;
     progress_indicator(-100,'');{progresss done}
@@ -13875,11 +13886,11 @@ end;
 
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 begin
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{number of dimensions, 2 for mono, 3 for colour}
+  update_integer(mainwindow.memo1.lines,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{number of dimensions, 2 for mono, 3 for colour}
   if head.naxis3<>1 then {color image}
-    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3)
+    update_integer(mainwindow.memo1.lines,'NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3)
   else
-    remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+    remove_key(mainwindow.memo1.lines,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 end;
 
 procedure Tmainwindow.demosaic_bayermatrix1Click(Sender: TObject);
@@ -13900,9 +13911,9 @@ begin
 
   demosaic_advanced(img_loaded);
 
-  remove_key('BAYERPAT',false{all});{remove key word in header}
-  remove_key('XBAYROFF',false{all});{remove key word in header}
-  remove_key('YBAYROFF',false{all});{remove key word in header}
+  remove_key(mainwindow.memo1.lines,'BAYERPAT',false{all});{remove key word in header}
+  remove_key(mainwindow.memo1.lines,'XBAYROFF',false{all});{remove key word in header}
+  remove_key(mainwindow.memo1.lines,'YBAYROFF',false{all});{remove key word in header}
 
   plot_fits(mainwindow.image1,false,true);
   stackmenu1.test_pattern1.Enabled:=false;{do no longer allow debayer}
@@ -13986,8 +13997,8 @@ begin
    img_loaded:=nil;{release memory}
    img_loaded:=img_temp;
 
-   update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-   update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+   update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+   update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
    {new reference pixel}
 
@@ -14019,26 +14030,26 @@ begin
 
       new_to_old_WCS(head);
 
-      update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
-      update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
+      update_float(mainwindow.memo1.lines,'CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
+      update_float(mainwindow.memo1.lines,'CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
 
-      update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
-      update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+      update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
+      update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-      update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
-      update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
+      update_float(mainwindow.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+      update_float(mainwindow.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
 
-      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+      update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+      update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+      update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+      update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
       //   Alternative method keeping the old center poistion. Images center outside the image causes problems for image selection in planetarium program
-      //   if head.crpix1<>0 then begin head.crpix1:=head.crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
-      //   if head.crpix2<>0 then begin head.crpix2:=head.crpix2-startY; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
+      //   if head.crpix1<>0 then begin head.crpix1:=head.crpix1-startX; update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
+      //   if head.crpix2<>0 then begin head.crpix2:=head.crpix2-startY; update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
    end;
 
-   update_text   ('COMMENT C','  Cropped image');
+   update_text(mainwindow.memo1.lines,'COMMENT C','  Cropped image');
 
 
    plot_fits(mainwindow.image1,true,true);
@@ -14338,28 +14349,28 @@ begin
 
     mainwindow.Memo1.Lines.BeginUpdate;
 
-    update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
-    update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
-    update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
+    update_text(mainwindow.memo1.lines,'CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
+    update_text(mainwindow.memo1.lines,'CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
+    update_text(mainwindow.memo1.lines,'CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
 
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+    update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+    update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
-    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
+    update_float(mainwindow.memo1.lines,'CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
+    update_float(mainwindow.memo1.lines,'CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
 
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
+    update_float(mainwindow.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
+    update_float(mainwindow.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
+    update_float(mainwindow.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+    update_float(mainwindow.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
-    update_text   ('PLTSOLVD=','                   T / ASTAP manual with two positions');
+    update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+    update_text(mainwindow.memo1.lines,'PLTSOLVD=','                   T / ASTAP manual with two positions');
 
     mainwindow.Memo1.Lines.EndUpdate;
 
@@ -14427,8 +14438,8 @@ begin
   head.width:=length(img_loaded[0,0]);{update width}  ;
   head.height:=length(img_loaded[0]);{update length};
 
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+  update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
 
   if head.cd1_1<>0 then {update solution for rotation}
@@ -14443,20 +14454,20 @@ begin
     head.crpix2:=head.height/2;
     old_to_new_WCS(head);{convert old style FITS to newd style}
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+    update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
 
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+    update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+    update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-    update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
+    update_float(mainwindow.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+    update_float(mainwindow.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
   end;
-  remove_key('ANNOTATE',true{all});{remove annotations. They would be otherwise invalid}
-  add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
+  remove_key(mainwindow.memo1.lines,'ANNOTATE',true{all});{remove annotations. They would be otherwise invalid}
+  add_text(mainwindow.memo1.lines,'HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
 
 end;
 
@@ -14550,9 +14561,9 @@ begin
          rotate_arbitrary(180,1,flipped_image);
 
       if fits_file_name(filename2) then
-        success:=save_fits(img_loaded,filename2,nrbits,true)
+        success:=save_fits(img_loaded,mainwindow.memo1.lines,filename2,nrbits,true)
       else
-        success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+        success:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2);{guarantee no file is lost}
       if success=false then begin ShowMessage('Write error !!' + filename2);break; end;
     end;
     if dobackup then restore_img;{for the viewer}
@@ -15914,7 +15925,7 @@ end;
 
 procedure Tmainwindow.SaveFITSwithupdatedheader1Click(Sender: TObject);
 begin
-  savefits_update_header(filename2);
+  savefits_update_header(mainwindow.memo1.lines,filename2);
 end;
 
 
@@ -16286,7 +16297,7 @@ end;
 //end;
 
 
-function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
+function save_tiff16(img: image_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 var
   i, j, k,m,colours5,width5,height5      :integer;
   image: TFPCustomImage;
@@ -16328,7 +16339,7 @@ begin
 
   image.Extra[TiffSoftware]:='ASTAP';
 
-  image.Extra[TiffImageDescription]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+  image.Extra[TiffImageDescription]:=memo.text; {store full header in TIFF !!!}
 
   Image.Extra[TiffCompression]:= '8'; {FPWriteTiff only support only writing Deflate compression. Any other compression setting is silently replaced in FPWriteTiff at line 465 for Deflate. FPReadTiff that can read other compressed files including LZW.}
 
@@ -16339,9 +16350,9 @@ begin
     for j:=0 to width5-1 do
     begin
       if flip_H=true then m:=width5-1-j else m:=j;
-      thecolor.red:=min(round(img[0,k,m]*factor), $FFFF);
-      if colours5>1 then thecolor.green:=min(round(img[1,k,m]*factor), $FFFF)  else thecolor.green:=thecolor.red;
-      if colours5>2 then thecolor.blue:=min(round(img[2,k,m]*factor), $FFFF)   else thecolor.blue:=thecolor.red;
+      thecolor.red:=min(max(0,round(img[0,k,m]*factor)), $FFFF);
+      if colours5>1 then thecolor.green:=min(max(0,round(img[1,k,m]*factor)), $FFFF)  else thecolor.green:=thecolor.red;
+      if colours5>2 then thecolor.blue:=min(max(0,round(img[2,k,m]*factor)), $FFFF)   else thecolor.blue:=thecolor.red;
       thecolor.alpha:=65535;
       image.Colors[j,i]:=thecolor;
     end;
@@ -16366,6 +16377,8 @@ var
   fileDate    : Integer;
   err,written   : boolean;
   dobackup : boolean;
+  img_temp :image_array;
+  head_2 : theader;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert to (Astro) TIFF. Date will preserved.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -16381,8 +16394,6 @@ begin
   if OpenDialog1.Execute then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-    dobackup:=img_loaded<>nil;
-    if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
     try { Do some lengthy operation }
       with OpenDialog1.Files do
@@ -16395,21 +16406,20 @@ begin
         memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
         if sender=save_to_tiff2 then
           fileDate := FileAge(fileName2);
-        if load_image(false {recenter},false {plot}) then
-   //     if head.height*head.cdelt2<=0.2 then //remove !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if load_image(filename2,img_temp,head_2,memox,false {recenter},false {plot}) then
         begin
           filename2:=ChangeFileExt(filename2,'.tif');
           if abs(nrbits)<=16 then
           begin
-            written:=save_tiff16(img_loaded,filename2,false {flip H},false {flip V});
+            written:=save_tiff16(img_temp,memox,filename2,false {flip H},false {flip V});
           end
           else
           begin {32 bit files}
             memo2_message('This file is 32 bit. Only export to TIFF 32 bit possible. No import!!' );
             if head.naxis3<>1 then {color}
-              written:=save_tiff_96(img_loaded,filename2,mainwindow.memo1.text {store full header in TIFF},false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
+              written:=save_tiff_96(img_temp,filename2,memox.text {store full header in TIFF},false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
             else
-             written:=save_tiff_32(img_loaded,filename2,mainwindow.memo1.text {store full header in TIFF},false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
+             written:=save_tiff_32(img_temp,filename2,memox.text {store full header in TIFF},false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
           end;
           if written then
           begin
@@ -16426,7 +16436,6 @@ begin
       mainwindow.caption:='Finished, files converted but with errors or stopped!';
 
       finally
-      if dobackup then restore_img;{for the viewer}
       Screen.Cursor:=crDefault;  { Always restore to normal }
       progress_indicator(-100,'');{progresss done}
     end;
@@ -16438,7 +16447,8 @@ procedure Tmainwindow.convert_to_ppm1Click(Sender: TObject);
 var
   I: integer;
   err   : boolean;
-  dobackup : boolean;
+  img_temp: image_array;
+  head_2 : theader;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -16456,8 +16466,6 @@ begin
   if OpenDialog1.Execute then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-    dobackup:=img_loaded<>nil;
-    if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
     try { Do some lengthy operation }
       with OpenDialog1.Files do
@@ -16468,19 +16476,19 @@ begin
         if esc_pressed then begin err:=true; break;end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-        if load_image(false {recenter},false {plot}) then
+        if load_image(filename2,img_temp,head_2,memox,false {recenter},false {plot}) then
         begin
           if head.naxis3=1 then {monochrome}
           begin
             if abs(nrbits)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.pgm');
-              save_PPM_PGM_PFM(img_loaded,16 {colour depth},filename2,false {flip H},false {flip V});
+              save_PPM_PGM_PFM(img_temp,16 {colour depth},filename2,false {flip H},false {flip V});
             end
             else
             begin
               filename2:=ChangeFileExt(filename2,'.pfm');
-              save_PPM_PGM_PFM(img_loaded,32 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_temp,32 {colour depth},filename2,false,false);
             end;
           end
           else
@@ -16488,12 +16496,12 @@ begin
             if abs(nrbits)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.ppm');
-              save_PPM_PGM_PFM(img_loaded,48 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_temp,48 {colour depth},filename2,false,false);
             end
             else
             begin
               filename2:=ChangeFileExt(filename2,'.pfm');
-              save_PPM_PGM_PFM(img_loaded,96 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_temp,96 {colour depth},filename2,false,false);
             end;
 
           end;{colour}
@@ -16505,7 +16513,6 @@ begin
       mainwindow.caption:='Finished, files converted but with errors or stopped!';
 
       finally
-      if dobackup then restore_img;{for the viewer}
       Screen.Cursor:=crDefault;  { Always restore to normal }
       progress_indicator(-100,'');{progresss done}
 
@@ -16581,22 +16588,22 @@ begin
 
     mainwindow.Memo1.Lines.BeginUpdate;
     remove_solution(true {keep wcs});
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+    update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
+    update_float(mainwindow.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
+    update_float(mainwindow.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ',false ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ',false ,head.crota2);
+    update_float(mainwindow.memo1.lines,'CROTA1  =',' / Image twist of X axis        (deg)             ',false ,head.crota1);
+    update_float(mainwindow.memo1.lines,'CROTA2  =',' / Image twist of Y axis E of N (deg)             ',false ,head.crota2);
 
-    remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
+    remove_key(mainwindow.memo1.lines,'ROWORDER',false{all});{just remove to be sure no debayer confusion}
 
     mainwindow.Memo1.Lines.EndUpdate;
 
-    add_text     ('HISTORY   ','Flipped.                                                           ');
+    add_text(mainwindow.memo1.lines,'HISTORY   ','Flipped.                                                           ');
   end;
   plot_fits(mainwindow.image1,false,true);
 
@@ -16711,8 +16718,6 @@ end;
 
 
 procedure Tmainwindow.localcoloursmooth2Click(Sender: TObject);
-var
-   fitsX,fitsY,dum,k,counter    : integer;
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
@@ -16908,11 +16913,11 @@ begin
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-        save_tiff16(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_tiff16(img_loaded,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
       save_tiff_96(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainwindow.memo1.text {store full header in TIFF description} ,flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
@@ -16943,11 +16948,11 @@ begin
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-      save_tiff16(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
+      save_tiff16(img_loaded,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
         save_tiff_32(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainwindow.memo1.text {store full header in TIFF desciption} ,flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
@@ -17050,21 +17055,21 @@ begin
   if savedialog1.execute then
   begin
     if SaveDialog1.FilterIndex=1 then
-    save_fits(img_loaded,savedialog1.filename,-32,false)
+    save_fits(img_loaded,mainwindow.memo1.lines,savedialog1.filename,-32,false)
     else
     if SaveDialog1.FilterIndex=2 then
-    save_fits(img_loaded,savedialog1.filename,16,false)
+    save_fits(img_loaded,mainwindow.memo1.lines,savedialog1.filename,16,false)
     else
     if SaveDialog1.FilterIndex=3 then
     begin
       if ((nrbits=8) or (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )) then {ask queastion if nrbits is reduced}
-        save_fits(img_loaded,savedialog1.filename,8,false);
+        save_fits(img_loaded,mainwindow.memo1.lines,savedialog1.filename,8,false);
     end
     else
     if SaveDialog1.FilterIndex=4 then {special naxis1=3}
     begin
       if ((nrbits=8) or (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )) then {ask queastion if nrbits is reduced}
-        save_fits(img_loaded,savedialog1.filename,24,false);
+        save_fits(img_loaded,mainwindow.memo1.lines,savedialog1.filename,24,false);
     end;
 
     add_recent_file(savedialog1.filename);{add to recent file list}

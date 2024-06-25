@@ -352,7 +352,7 @@ begin
             if use_astrometry_internal then {internal solver, create new solutions for the R, G, B and L stacked images if required}
             begin
               memo2_message('Preparing astrometric solution for interim file: '+filename2);
-              if head.cd1_1=0 then solution:= update_solution_and_save(img_loaded,head) else solution:=true;
+              if head.cd1_1=0 then solution:= update_solution_and_save(img_loaded,head,mainwindow.memo1.lines) else solution:=true;
               if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
             end
             else
@@ -666,7 +666,7 @@ begin
             old_height:=head.height;
             old_naxis3:=head.naxis3;
 
-            add_text('COMMENT 9', '  Reference file was ' + filename2);
+            add_text(mainwindow.memo1.lines,'COMMENT 9', '  Reference file was ' + filename2);
             head_ref:=head;{backup solution}
             initialise_calc_sincos_dec0;{set variables correct. Do this before apply dark}
             //initialise_var2;{set variables correct}
@@ -2309,30 +2309,30 @@ begin
           head.crpix2:=solution_vectorY[0]*(head.crpix1-1)+solution_vectorY[1]*(head.crpix2-1)+solution_vectorY[2];
 
           mainwindow.Memo1.Lines.EndUpdate;
-          update_float  ('CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
-          update_float  ('CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
-          update_text   ('COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
+          update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+          update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+          update_text(mainwindow.memo1.lines,'COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
           mainwindow.Memo1.Lines.EndUpdate;
         end;
 
 
 
-        update_text   ('COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
-        update_float  ('PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
-        add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-        add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-        add_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+        update_text(mainwindow.memo1.lines,'COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
+        update_float(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
+        update_integer(mainwindow.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+        update_integer(mainwindow.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+        update_integer(mainwindow.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
          { ASTAP keyword standard:}
          { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
          { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
         if nrbits=16 then
         begin
-          if save_fits(img_loaded,filename2,16,true)=false then exit;//exit if save error
+          if save_fits(img_loaded,mainwindow.memo1.lines,filename2,16,true)=false then exit;//exit if save error
         end
         else
         begin
-          if save_fits(img_loaded,filename2,-32,true)=false then exit;//exit if save error
+          if save_fits(img_loaded,mainwindow.memo1.lines,filename2,-32,true)=false then exit;//exit if save error
         end;
          memo2_message('New aligned image created: '+filename2);
         report_results(object_name,inttostr(round(head.exposure)),0,999 {color icon});{report result in tab result using modified filename2}

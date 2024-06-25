@@ -99,10 +99,10 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 
 interface
 
-uses   Classes,SysUtils,controls,forms,math,
+uses   Classes,SysUtils,controls,forms,math,stdctrls,
        unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field, unit_calc_trans_cubic;
 
-function solve_image(img :image_array;var hd: Theader; get_hist{update hist}, check_patternfilter : boolean) : boolean;{find match between image and star database}
+function solve_image(img :image_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height :double) : integer;{select the binning}
 function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
@@ -587,7 +587,7 @@ begin
 end;
 
 
-function add_sip(hd: Theader;ra_database,dec_database:double) : boolean;
+function add_sip(hd: Theader;memo:tstrings; ra_database,dec_database:double) : boolean;
 var
   stars_measured,stars_reference                        : TStarArray;
   trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
@@ -729,58 +729,58 @@ begin
   B_3_0:=trans_pixel_to_sky.y30;
 
 
-  update_integer('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',3);
-  update_float('A_0_0   =',' / SIP coefficient                                ',false,A_0_0);
-  update_float('A_1_0   =',' / SIP coefficient                                ',false,A_1_0);
-  update_float('A_0_1   =',' / SIP coefficient                                ',false,A_0_1);
-  update_float('A_2_0   =',' / SIP coefficient                                ',false,A_2_0);
-  update_float('A_1_1   =',' / SIP coefficient                                ',false,A_1_1);
-  update_float('A_0_2   =',' / SIP coefficient                                ',false,A_0_2);
-  update_float('A_3_0   =',' / SIP coefficient                                ',false,A_3_0);
-  update_float('A_2_1   =',' / SIP coefficient                                ',false,A_2_1);
-  update_float('A_1_2   =',' / SIP coefficient                                ',false,A_1_2);
-  update_float('A_0_3   =',' / SIP coefficient                                ',false,A_0_3);
+  update_integer(memo,'A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',3);
+  update_float(memo,'A_0_0   =',' / SIP coefficient                                ',false,A_0_0);
+  update_float(memo,'A_1_0   =',' / SIP coefficient                                ',false,A_1_0);
+  update_float(memo,'A_0_1   =',' / SIP coefficient                                ',false,A_0_1);
+  update_float(memo,'A_2_0   =',' / SIP coefficient                                ',false,A_2_0);
+  update_float(memo,'A_1_1   =',' / SIP coefficient                                ',false,A_1_1);
+  update_float(memo,'A_0_2   =',' / SIP coefficient                                ',false,A_0_2);
+  update_float(memo,'A_3_0   =',' / SIP coefficient                                ',false,A_3_0);
+  update_float(memo,'A_2_1   =',' / SIP coefficient                                ',false,A_2_1);
+  update_float(memo,'A_1_2   =',' / SIP coefficient                                ',false,A_1_2);
+  update_float(memo,'A_0_3   =',' / SIP coefficient                                ',false,A_0_3);
 
 
-  update_integer('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',3);
-  update_float('B_0_0   =',' / SIP coefficient                                ',false ,B_0_0);
-  update_float('B_0_1   =',' / SIP coefficient                                ',false ,B_0_1);
-  update_float('B_1_0   =',' / SIP coefficient                                ',false ,B_1_0);
-  update_float('B_2_0   =',' / SIP coefficient                                ',false ,B_2_0);
-  update_float('B_1_1   =',' / SIP coefficient                                ',false ,B_1_1);
-  update_float('B_0_2   =',' / SIP coefficient                                ',false ,B_0_2);
-  update_float('B_3_0   =',' / SIP coefficient                                ',false ,B_3_0);
-  update_float('B_2_1   =',' / SIP coefficient                                ',false ,B_2_1);
-  update_float('B_1_2   =',' / SIP coefficient                                ',false ,B_1_2);
-  update_float('B_0_3   =',' / SIP coefficient                                ',false ,B_0_3);
+  update_integer(memo,'B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',3);
+  update_float(memo,'B_0_0   =',' / SIP coefficient                                ',false ,B_0_0);
+  update_float(memo,'B_0_1   =',' / SIP coefficient                                ',false ,B_0_1);
+  update_float(memo,'B_1_0   =',' / SIP coefficient                                ',false ,B_1_0);
+  update_float(memo,'B_2_0   =',' / SIP coefficient                                ',false ,B_2_0);
+  update_float(memo,'B_1_1   =',' / SIP coefficient                                ',false ,B_1_1);
+  update_float(memo,'B_0_2   =',' / SIP coefficient                                ',false ,B_0_2);
+  update_float(memo,'B_3_0   =',' / SIP coefficient                                ',false ,B_3_0);
+  update_float(memo,'B_2_1   =',' / SIP coefficient                                ',false ,B_2_1);
+  update_float(memo,'B_1_2   =',' / SIP coefficient                                ',false ,B_1_2);
+  update_float(memo,'B_0_3   =',' / SIP coefficient                                ',false ,B_0_3);
 
-  update_integer('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',3);
-  update_float('AP_0_0  =',' / SIP coefficient                                ',false,AP_0_0);
-  update_float('AP_1_0  =',' / SIP coefficient                                ',false,AP_1_0);
-  update_float('AP_0_1  =',' / SIP coefficient                                ',false,AP_0_1);
-  update_float('AP_2_0  =',' / SIP coefficient                                ',false,AP_2_0);
-  update_float('AP_1_1  =',' / SIP coefficient                                ',false,AP_1_1);
-  update_float('AP_0_2  =',' / SIP coefficient                                ',false,AP_0_2);
-  update_float('AP_3_0  =',' / SIP coefficient                                ',false,AP_3_0);
-  update_float('AP_2_1  =',' / SIP coefficient                                ',false,AP_2_1);
-  update_float('AP_1_2  =',' / SIP coefficient                                ',false,AP_1_2);
-  update_float('AP_0_3  =',' / SIP coefficient                                ',false,AP_0_3);
+  update_integer(memo,'AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',3);
+  update_float(memo,'AP_0_0  =',' / SIP coefficient                                ',false,AP_0_0);
+  update_float(memo,'AP_1_0  =',' / SIP coefficient                                ',false,AP_1_0);
+  update_float(memo,'AP_0_1  =',' / SIP coefficient                                ',false,AP_0_1);
+  update_float(memo,'AP_2_0  =',' / SIP coefficient                                ',false,AP_2_0);
+  update_float(memo,'AP_1_1  =',' / SIP coefficient                                ',false,AP_1_1);
+  update_float(memo,'AP_0_2  =',' / SIP coefficient                                ',false,AP_0_2);
+  update_float(memo,'AP_3_0  =',' / SIP coefficient                                ',false,AP_3_0);
+  update_float(memo,'AP_2_1  =',' / SIP coefficient                                ',false,AP_2_1);
+  update_float(memo,'AP_1_2  =',' / SIP coefficient                                ',false,AP_1_2);
+  update_float(memo,'AP_0_3  =',' / SIP coefficient                                ',false,AP_0_3);
 
-  update_integer('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',3);
-  update_float('BP_0_0  =',' / SIP coefficient                                ',false,BP_0_0);
-  update_float('BP_1_0  =',' / SIP coefficient                                ',false,BP_1_0);
-  update_float('BP_0_1  =',' / SIP coefficient                                ',false,BP_0_1);
-  update_float('BP_2_0  =',' / SIP coefficient                                ',false,BP_2_0);
-  update_float('BP_1_1  =',' / SIP coefficient                                ',false,BP_1_1);
-  update_float('BP_0_2  =',' / SIP coefficient                                ',false,BP_0_2);
-  update_float('BP_3_0  =',' / SIP coefficient                                ',false,BP_3_0);
-  update_float('BP_2_1  =',' / SIP coefficient                                ',false,BP_2_1);
-  update_float('BP_1_2  =',' / SIP coefficient                                ',false,BP_1_2);
-  update_float('BP_0_3  =',' / SIP coefficient                                ',false,BP_0_3);
+  update_integer(memo,'BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',3);
+  update_float(memo,'BP_0_0  =',' / SIP coefficient                                ',false,BP_0_0);
+  update_float(memo,'BP_1_0  =',' / SIP coefficient                                ',false,BP_1_0);
+  update_float(memo,'BP_0_1  =',' / SIP coefficient                                ',false,BP_0_1);
+  update_float(memo,'BP_2_0  =',' / SIP coefficient                                ',false,BP_2_0);
+  update_float(memo,'BP_1_1  =',' / SIP coefficient                                ',false,BP_1_1);
+  update_float(memo,'BP_0_2  =',' / SIP coefficient                                ',false,BP_0_2);
+  update_float(memo,'BP_3_0  =',' / SIP coefficient                                ',false,BP_3_0);
+  update_float(memo,'BP_2_1  =',' / SIP coefficient                                ',false,BP_2_1);
+  update_float(memo,'BP_1_2  =',' / SIP coefficient                                ',false,BP_1_2);
+  update_float(memo,'BP_0_3  =',' / SIP coefficient                                ',false,BP_0_3);
 end;
 
 
-function solve_image(img :image_array;var hd: Theader;get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
+function solve_image(img :image_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;
@@ -1245,45 +1245,45 @@ begin
     mainwindow.caption:=('Solution found:    '+  prepare_ra(hd.ra0,': ')+'     '+prepare_dec(hd.dec0,'° ')  );
     result:=true;
 
-    mainwindow.Memo1.Lines.BeginUpdate;
+    memo.BeginUpdate;
 
     if ((stackmenu1.add_sip1.checked) and
-      (add_sip(hd,ra_database,dec_database))) then //takes about 50 ms sec due to the header update. Calculations are very fast
+      (add_sip(hd,memo,ra_database,dec_database))) then //takes about 50 ms sec due to the header update. Calculations are very fast
     begin //SIP added
-      update_text ('CTYPE1  =',#39+'RA---TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
-      update_text ('CTYPE2  =',#39+'DEC--TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
+      update_text(memo,'CTYPE1  =',#39+'RA---TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
+      update_text(memo,'CTYPE2  =',#39+'DEC--TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
       mainwindow.Polynomial1.itemindex:=1;//switch to sip
     end
     else
     begin //No SIP added.
-      update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA,    projection TANgential   ');
-      update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
+      update_text(memo,'CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA,    projection TANgential   ');
+      update_text(memo,'CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
     end;
 
-    update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
+    update_text(memo,'CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
 
-    update_text ('EQUINOX =','              2000.0 / Equinox of coordinates                         ');{the equinox is 2000 since the database is in 2000}
+    update_text(memo,'EQUINOX =','              2000.0 / Equinox of coordinates                         ');{the equinox is 2000 since the database is in 2000}
 
-    update_float('CRPIX1  =',' / X of reference pixel                           ',false,hd.crpix1);
-    update_float('CRPIX2  =',' / Y of reference pixel                           ',false ,hd.crpix2);
+    update_float(memo,'CRPIX1  =',' / X of reference pixel                           ',false,hd.crpix1);
+    update_float(memo,'CRPIX2  =',' / Y of reference pixel                           ',false ,hd.crpix2);
 
-    update_float('CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,hd.ra0*180/pi);
-    update_float('CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,hd.dec0*180/pi);
+    update_float(memo,'CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,hd.ra0*180/pi);
+    update_float(memo,'CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,hd.dec0*180/pi);
 
-    update_float('CDELT1  =',' / X pixel size (deg)                             ',false ,hd.cdelt1);
-    update_float('CDELT2  =',' / Y pixel size (deg)                             ',false ,hd.cdelt2);
+    update_float(memo,'CDELT1  =',' / X pixel size (deg)                             ',false ,hd.cdelt1);
+    update_float(memo,'CDELT2  =',' / Y pixel size (deg)                             ',false ,hd.cdelt2);
 
-    update_float('CROTA1  =',' / Image twist X axis (deg)                       ',false ,hd.crota1);
-    update_float('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,hd.crota2);
+    update_float(memo,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,hd.crota1);
+    update_float(memo,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,hd.crota2);
 
 
-    update_float('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd1_1);
-    update_float('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd1_2);
-    update_float('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd2_1);
-    update_float('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd2_2);
-    update_text ('PLTSOLVD=','                   T / Astrometric solved by ASTAP v'+astap_version+'.       ');
-    update_text ('COMMENT 7', solved_in+' Offset '+offset_found+mount_offset_str);
-    mainwindow.Memo1.Lines.EndUpdate;
+    update_float(memo,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd1_1);
+    update_float(memo,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd1_2);
+    update_float(memo,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd2_1);
+    update_float(memo,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,hd.cd2_2);
+    update_text(memo,'PLTSOLVD=','                   T / Astrometric solved by ASTAP v'+astap_version+'.       ');
+    update_text(memo,'COMMENT 7', solved_in+' Offset '+offset_found+mount_offset_str);
+    memo.EndUpdate;
 
     if solve_show_log then {global variable set in find stars}
     begin
@@ -1304,14 +1304,14 @@ begin
   begin
     memo2_message('No solution found!  :(');
     mainwindow.caption:='No solution found!  :(';
-    update_text   ('PLTSOLVD=','                   F / No plate solution found.   ');
-    remove_key('COMMENT 7',false{all});
+    update_text(memo,'PLTSOLVD=','                   F / No plate solution found.   ');
+    remove_key(memo,'COMMENT 7',false{all});
   end;
 
   warning_str:=warning_str + warning_downsample; {add the last warning from loop autoFOV}
   if warning_str<>'' then
   begin
-    update_longstr('WARNING =',warning_str);{update or insert long str including single quotes}
+    update_longstr(memo,'WARNING =',warning_str);{update or insert long str including single quotes}
   end;
 
   Screen.Cursor:=crDefault;    { back to normal }

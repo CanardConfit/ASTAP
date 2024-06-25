@@ -25,13 +25,13 @@ uses
   unit_dss, {only to reset some variables}
   unit_annotation {only to reset some variables};
 
-function load_xisf(filen:string;out head : theader ; out img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
+function load_xisf(filen:string;out head : theader; out img_loaded2: image_array; memo:tstrings) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 
 
 implementation
 
 
-function load_xisf(filen:string;out head : theader; out img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
+function load_xisf(filen:string;out head : theader; out img_loaded2: image_array; memo:tstrings) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 var
   TheFile  : tfilestream;
   i,j,k, reader_position,a,b,c,d,e : integer;
@@ -81,8 +81,8 @@ begin
   mainwindow.caption:=ExtractFileName(filen);
 
   {add header data to memo}
-  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
-  mainwindow.memo1.clear;{clear memo for new header}
+  memo.beginupdate;
+  memo.clear;{clear memo for new header}
 
   try
     TheFile:=tfilestream.Create( filen, fmOpenRead );
@@ -154,12 +154,12 @@ begin
 
   for j:=0 to 10 do {create an header with fixed sequence}
     if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
-        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
-  mainwindow.memo1.lines.add(head1[27]); {add end}
+        memo.add(head1[j]); {add lines to empthy memo1}
+  memo.add(head1[27]); {add end}
   if head.naxis3>1 then
   begin
     head.naxis:=3; {3 dimensions, one is colours}
-    update_integer('NAXIS   =',' / Number of dimensions                           ' ,3);{2 for mono, 3 for color}
+    update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,3);{2 for mono, 3 for color}
   end
   else head.naxis:=2;{mono}
 
@@ -199,7 +199,7 @@ begin
     close_fits_file;
     mainwindow.error_label1.caption:='Can not read this format.';
     mainwindow.error_label1.enabled:=true;
-    mainwindow.Memo1.visible:=true;
+    Memo.endupdate;
     head.naxis:=0;
     exit;
   end;
@@ -208,10 +208,10 @@ begin
     else {16, -32 files} begin head.datamin_org:=0;head.datamax_org:=$FFFF;end;{not always specified. For example in skyview. So refresh here for case brightness is adjusted}
 
   {update memo keywords}
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
-  if head.naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+  if head.naxis3=1 then  remove_key(memo,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
 
 
@@ -335,13 +335,13 @@ begin
         message_comment:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
       end;
       {if message_key<>'HISTORY' then}
-      update_generic(message_key,message_value,message_comment);{update header using text only}
+      update_generic(memo,message_key,message_value,message_comment);{update header using text only}
       d:=c;
     end;
   until a=0;{repeat until all FIT keywords are recovered}
 
   {add own history}
-  add_text   ('HISTORY ','Imported from XISF file by the ASTAP program');{update memo}
+  add_text(memo,'HISTORY ','Imported from XISF file by the ASTAP program');{update memo}
 
   if ( ((head.cdelt1=0) or (head.crota2>=999)) and (head.cd1_1<>0)) then
   begin
@@ -379,8 +379,7 @@ begin
 
   header2:=nil;{free memory}
 
-  mainwindow.memo1.visible:=true;{start updating}
-
+  memo.endupdate;
 
   {check if buffer is wide enough for one image line}
   i:=round(bufwide/(abs(nrbits/8)));
