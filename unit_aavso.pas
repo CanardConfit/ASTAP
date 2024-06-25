@@ -38,7 +38,6 @@ type
     report_to_file1: TButton;
     delimiter1: TComboBox;
     Comparison1: TEdit;
-    Label2: TLabel;
     Label4: TLabel;
     Label5: TLabel;
     Label6: TLabel;
@@ -203,7 +202,7 @@ begin
 
   stdev_valid:=(photometry_stdev>0.0001);
   if stdev_valid then
-    err_message:='MERR:=max(StDev:2/SNR).'
+    err_message:='MERR:=max(StDev,2/SNR).'
   else
     err_message:='MERR:=2/SNR.';
 
@@ -259,53 +258,50 @@ begin
      begin
        snr_str:=listview7.Items.item[c].subitems.Strings[column_var+1 {P_snr}];
        if snr_str<>'' then  snr_value:=strtoint(snr_str) else snr_value:=0;
-       if snr_value<>0 then
-         err_by_snr:=2 {1.087}/strtoint(snr_str)
-       else
-         err_by_snr:=0;
 
-       if  stdev_valid=false then
+       if snr_value>0 then
        begin
-         if snr_value>0 then
-         str(err_by_snr:1:4,err){SNR method.Note SNR is in ADU but for snr above 20 error is small. For e-/adu<1 error becomes larger. Factor 2 is a practical factor}
+         err_by_snr:=2 {1.087}/snr_value;
+
+         if  stdev_valid=false then
+           str(err_by_snr:1:4,err){SNR method.Note SNR is in ADU but for snr above 20 error is small. For e-/adu<1 error becomes larger. Factor 2 is a practical factor}
          else
-         err:='na';
-       end
-       else
-       str(math.max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of Check  star}
+           str(math.max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of Check  star}
 
-       airmass_str:=listview7.Items.item[c].subitems.Strings[P_airmass];
-       if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
+         airmass_str:=listview7.Items.item[c].subitems.Strings[P_airmass];
+         if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
 
-       if reference_database1.itemindex=0 then //local database
-         if pos('v',name_database)>0 then magn_type:=', transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
-       else  //online database
-         magn_type:=', transformed '+stackmenu1.reference_database1.text;
+         if reference_database1.itemindex=0 then //local database
+           if pos('v',name_database)>0 then magn_type:=', transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
+         else  //online database
+           magn_type:=', transformed '+stackmenu1.reference_database1.text;
 
-       if snr_str<>'' then
-       begin
-         if filter1.itemindex=0 then
-           filter_used:=listview7.Items.item[c].subitems.Strings[P_filter] //take from header
-         else
-           filter_used:=copy(filter1.text,1,2);//manual input
+         if snr_str<>'' then
+         begin
+           if filter1.itemindex=0 then
+             filter_used:=listview7.Items.item[c].subitems.Strings[P_filter] //take from header
+           else
+             filter_used:=copy(filter1.text,1,2);//manual input
 
-         aavso_report:= aavso_report+ clean_abreviation(name_var)+delim+
-                        StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
-                        transform_magn(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}])+delim+
-                        err+
-                        delim+filter_used+delim+
-                       'NO'+delim+
-                       'STD'+delim+
-                       'ENSEMBLE'+delim+
-                       'na'+delim+
-                       clean_abreviation(abbreviation_check)+delim+
-                       stringreplace(listview7.Items.item[c].subitems.Strings[column_check{P_magn2}],',','.',[])+delim+
-                       airmass_str+delim+
-                       'na'+delim+ {group}
-                       abbreviation_var_IAU+delim+
-                       'Ensemble of Gaia DR3 stars'+magn_type+' '+err_message+#13+#10;
+           aavso_report:= aavso_report+ clean_abreviation(name_var)+delim+
+                          StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
+                          transform_magn(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}])+delim+
+                          err+
+                          delim+filter_used+delim+
+                         'NO'+delim+
+                         'STD'+delim+
+                         'ENSEMBLE'+delim+
+                         'na'+delim+
+                         clean_abreviation(abbreviation_check)+delim+
+                         stringreplace(listview7.Items.item[c].subitems.Strings[column_check{P_magn2}],',','.',[])+delim+
+                         airmass_str+delim+
+                         'na'+delim+ {group}
+                         abbreviation_var_IAU+delim+
+                         'Ensemble of Gaia DR3 stars'+magn_type+' '+err_message+#13+#10;
 
-         date_observation:=copy(listview7.Items.item[c].subitems.Strings[P_date],1,10);
+           date_observation:=copy(listview7.Items.item[c].subitems.Strings[P_date],1,10);
+         end;
+
        end;
      end;
    end;
@@ -616,12 +612,13 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,wtext,date_column : integer;
-  scale,range         : double;
-  text1,text2,text3, date_format  : string;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,wtext,date_column,count : integer;
+  scale,range,madCheck, medianCheck     : double;
+  text1,text2,text3, date_format        : string;
   bmp: TBitmap;
   dum:string;
   data : array of array of double;
+  listcheck : array of double;
 const
   len=3;
 
@@ -677,6 +674,8 @@ begin
   annotate_star_of_column(column_var,column_check);
 
   setlength(data,4, stackmenu1.listview7.items.count);
+  setlength(listcheck,length(data[0]));//list with magnitudes check star
+  count:=0;
   with stackmenu1 do
   for c:=0 to listview7.items.count-1 do {retrieve data from listview}
   begin
@@ -699,11 +698,13 @@ begin
       end;
 
       dum:=(listview7.Items.item[c].subitems.Strings[column_check]);{chk star}
-      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[2,c]:=strtofloat(dum) else data[2,c]:=0;
+      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then data[2,c]:=strtofloat(dum) else data[2,c]:=0;
       if data[2,c]<>0 then
       begin
         magn_max:=max(magn_max,data[2,c]);
         magn_min:=min(magn_min,data[2,c]);
+        listcheck[count]:= data[2,c];
+        inc(count);
       end;
 
       dum:=(listview7.Items.item[c].subitems.Strings[P_magn3]); {3th star}
@@ -726,12 +727,12 @@ begin
 
   magn_min:=trunc(magn_min*100)/100; {add some rounding}
   magn_max:=trunc(magn_max*100)/100;
-
   if magn_max-magn_min<0.3 then begin magn_max:=0.15+(magn_max+magn_min)/2; magn_min:=-0.15+(magn_max+magn_min)/2;;end;//minimum range
 
+  mad_median(listcheck, count{counter},{var}madCheck, medianCheck);
+  photometry_stdev:=1.4826 * madCheck;
+
   range:=magn_max-magn_min;
-
-
   if range<-98 then
   begin
     form_aavso1.report_error1.visible:=true;

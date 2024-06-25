@@ -11,6 +11,7 @@ object stackmenu1: Tstackmenu1
   ClientHeight = 690
   ClientWidth = 1862
   Color = clForm
+  DoubleBuffered = True
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
     0000200000000100180000000000000300006400000064000000000000000000
@@ -50,6 +51,7 @@ object stackmenu1: Tstackmenu1
   OnKeyPress = FormKeyPress
   OnResize = FormResize
   OnShow = FormShow
+  ParentDoubleBuffered = False
   LCLVersion = '3.2.0.0'
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
@@ -3271,7 +3273,7 @@ object stackmenu1: Tstackmenu1
             OnClick = photometry_button1Click
           end
           object clear_photometry_list1: TButton
-            Left = 616
+            Left = 613
             Height = 25
             Hint = 'Clear image list'
             Top = 34
@@ -3462,7 +3464,7 @@ object stackmenu1: Tstackmenu1
             OnClick = help_photometry1Click
           end
           object mark_outliers_upto1: TComboBox
-            Left = 1000
+            Left = 1032
             Height = 23
             Hint = 'Mark in the image outliers down to this magnitude'
             Top = 5
@@ -3484,7 +3486,7 @@ object stackmenu1: Tstackmenu1
             OnChange = flux_aperture1change
           end
           object aavso_button1: TButton
-            Left = 1000
+            Left = 1032
             Height = 25
             Hint = 'Generate AAVSO report'
             Top = 34
@@ -3523,7 +3525,7 @@ object stackmenu1: Tstackmenu1
             OnChange = flux_aperture1change
           end
           object Label26: TLabel
-            Left = 448
+            Left = 453
             Height = 15
             Top = 11
             Width = 49
@@ -3576,7 +3578,7 @@ object stackmenu1: Tstackmenu1
             ParentColor = False
           end
           object speedButton_location1: TSpeedButton
-            Left = 1064
+            Left = 1096
             Height = 25
             Hint = 'Default observer location for the case it is not available in the file header. Use this for DSLR images.'
             Top = 4
@@ -3637,7 +3639,7 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Annotate variable and comparison stars'
             Top = 34
-            Width = 283
+            Width = 320
             DropDownCount = 17
             ItemHeight = 15
             ItemIndex = 1
@@ -3660,7 +3662,7 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Reference star database to be used. Set to '#13#10'1) Online , Gaia ->auto '#13#10'or'#13#10'2) Local star database and select in tab alignment V50 for Johnson-V.'
             Top = 5
-            Width = 160
+            Width = 200
             DropDownCount = 17
             ItemHeight = 15
             ItemIndex = 0
@@ -3681,10 +3683,10 @@ object stackmenu1: Tstackmenu1
             OnChange = reference_database1Change
           end
           object transformation1: TButton
-            Left = 856
+            Left = 901
             Height = 25
             Hint = 'This will calculate the transformation equation  ∆ V = a + T*(B-V) using the image in the viewer'
-            Top = 4
+            Top = 3
             Width = 107
             AutoSize = True
             Caption = 'Transformation'
@@ -3695,7 +3697,7 @@ object stackmenu1: Tstackmenu1
             OnClick = transformation1Click
           end
           object Label19: TLabel
-            Left = 1144
+            Left = 1176
             Height = 47
             Hint = 'See popup menu for calibration && extraction'
             Top = 5
@@ -3709,9 +3711,9 @@ object stackmenu1: Tstackmenu1
             OnClick = Label19Click
           end
           object most_right9: TStaticText
-            Left = 1261
+            Left = 1296
             Height = 16
-            Top = 35
+            Top = 36
             Width = 3
             AutoSize = True
             Caption = '|'
@@ -3729,10 +3731,10 @@ object stackmenu1: Tstackmenu1
             OnChange = measure_all1Change
           end
           object SpeedButton2: TSpeedButton
-            Left = 587
+            Left = 584
             Height = 25
             Hint = 'Find best aperture by trial and error.'
-            Top = 3
+            Top = 5
             Width = 25
             Glyph.Data = {
               36040000424D3604000000000000360000002800000010000000100000000100
@@ -8220,7 +8222,6 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ScrollBars = ssVertical
         TabOrder = 0
-        OnChange = memo2Change
       end
       object Panel_stack_button1: TPanel
         Left = 0

@@ -1,6 +1,6 @@
 unit unit_thumbnail; {FPC unit, shows FITS images as thumbnails (3*X)in a form using Timages. Form is fully resizable and thumbnails (Timage) will follow using the Timage stretch function}
 {$mode delphi}
-{Copyright (C) 2018 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2018, 2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
  This Source Code Form is subject to the terms of the Mozilla Public
@@ -16,7 +16,6 @@ uses
 type
 
   { Tthumbnails1 }
-
   Tthumbnails1 = class(TForm)
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
@@ -36,7 +35,6 @@ type
     procedure FormShow(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
-    procedure moveto1Click(Sender: TObject);
     procedure renameimage1Click(Sender: TObject);
     procedure changedirectory1Click(Sender: TObject);
   private
@@ -66,77 +64,6 @@ var
   Myimages : Array of Timage;
 {$R *.lfm}
 
-procedure plot_thumbnails; {plot images in new created timage}
-var
-    newimage : timage;
-    x,y,max_height:integer;
-    searchResult : TSearchRec;
-const
-    nrimages: integer =100;
-begin
-  esc_pressed:=false;
-  imageindex:=0;
-  x:=0;
-  y:=0;
-  setlength(Myimages,nrimages);
-  thumbnails1.panel1.width:=thumbnails1.width-25;
-  thumbnails1.panel1.height:=thumbnails1.height*2;
-  max_height:=0;
-  if SysUtils.findfirst(chosenDirectory+PathDelim+'*.fit*', faAnyFile, searchResult) = 0 then
-  begin
-    repeat
-      newImage := TImage.Create(thumbnails1.panel1);
-      Inc(imageIndex);
-      if imageindex>=nrimages then
-      begin
-        nrimages:=nrimages+30;
-        setlength(Myimages,nrimages);
-     end;
-      with thumbnails1.panel1 do
-      begin
-        newimage.parent:=thumbnails1.panel1;
-        newImage.Tag := imageIndex;
-        newImage.Name := 'Thumb_Image' + IntToStr(imageIndex);
-        newImage.Visible := True;
-
-        filename2:= chosenDirectory+PathDelim+searchResult.Name;
-        thumbnails1.caption:=filename2;{show whats happening}
-        load_fits(filename2,false {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded);
-        if head.naxis<2 then exit; {WCS file}
-        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-        plot_fits(newimage,false,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-
-        newImage.Width := round((thumbnails1.panel1.width-2)/3);
-        newImage.height := round(newImage.Width* newImage.picture.Bitmap.height/newImage.picture.Bitmap.width);
-        if newImage.height>max_height then max_height:=newImage.height;{find largest heigth}
-
-        thumbnails1.VertScrollBar.Increment:=max_height;
-
-        newImage.left :=x;
-        newImage.top := y;
-        inc(x,newImage.Width+1);
-        if x+1>=thumbnails1.panel1.width then {new row}
-        begin
-          x:=0;
-          y:=y+max_height+1;
-          max_height:=0;
-        end;
-        newImage.hint := filename2; //inttostr(imageindex);
-        newimage.OnMouseDown:= thumbnails1.imageMouseDown;
-        newimage.onMouseMove:=thumbnails1.imageMouseMove;
-        newImage.showhint := true;
-        newImage.stretch := true;
-        myimages[imageIndex-1]:=newimage;{store the timage}
-        application.processmessages;
-      end;
-    until ((SysUtils.FindNext(searchResult) <> 0) or (esc_pressed));
-
-    // Must free up resources used by these successful finds
-    SysUtils.FindClose(searchResult);
-  end;
-  thumbnails1.panel1.height:=y+max_height; {causes a repaint}
-
-end;
 
 procedure Tthumbnails1.FormShow(Sender: TObject);
 begin
@@ -173,8 +100,8 @@ begin
      thumbnails1.close;
      load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});
    end;
-
 end;
+
 
 procedure Tthumbnails1.MenuItem2Click(Sender: TObject);
 var
@@ -188,12 +115,6 @@ begin
   TControl(image_sender).height:=20;
   TControl(image_sender).hint:=filename_new;
 end;
-
-procedure Tthumbnails1.moveto1Click(Sender: TObject);
-begin
-
-end;
-
 
 
 procedure Tthumbnails1.renameimage1Click(Sender: TObject);
@@ -219,6 +140,7 @@ begin
         end;
 
       end;
+    imageindex:=0;
     plot_thumbnails;{load new thumnails}
   end;
 end;
@@ -230,7 +152,8 @@ end;
 
 procedure Tthumbnails1.FormPaint(Sender: TObject);
 begin
-  if imageindex=0 then  plot_thumbnails;
+  if imageindex=0 then
+    plot_thumbnails;//fill with images
 end;
 
 procedure Tthumbnails1.FormKeyPress(Sender: TObject; var Key: char);
@@ -285,6 +208,7 @@ end;
 procedure Tthumbnails1.FormResize(Sender: TObject);
 var
    x,y,max_height,i,ww: integer;
+   ratio : double;
 begin
   if imageindex=0 then exit;
   thumbnails1.panel1.width:=thumbnails1.width-25;
@@ -296,8 +220,12 @@ begin
   begin
     with Myimages[i] do  {contains the Timages}
     begin
+       if Myimages[i]=nil then
+          exit;
+
+       ratio:=height/width;
        Width := round((thumbnails1.panel1.width-2)/3);
-       height := round(Width* picture.Bitmap.height/picture.Bitmap.width);
+       height := round(width*ratio);
        if height>max_height then max_height:=height;{find largest heigth}
        thumbnails1.VertScrollBar.Increment:=max_height;
 
@@ -314,6 +242,85 @@ begin
     end;
   end;
 end;
+
+
+procedure plot_thumbnails; {plot images in new created timage}
+var
+    newimage : timage;
+    x,y,max_height:integer;
+    searchResult : TSearchRec;
+const
+    nrimages: integer =200;
+begin
+  esc_pressed:=false;
+
+  x:=0;
+  y:=0;
+  setlength(Myimages,nrimages);
+  thumbnails1.panel1.width:=thumbnails1.width-25;
+  thumbnails1.panel1.height:=thumbnails1.height*2;
+  max_height:=0;
+  if SysUtils.findfirst(chosenDirectory+PathDelim+'*.fit*', faAnyFile, searchResult) = 0 then
+  begin
+    repeat
+      newImage := TImage.Create(thumbnails1.panel1);
+      Inc(imageIndex);
+      if imageindex>=nrimages then //increase size
+      begin
+        nrimages:=nrimages+100;
+        setlength(Myimages,nrimages);
+     end;
+      with thumbnails1.panel1 do
+      begin
+        newimage.parent:=thumbnails1.panel1;
+        newImage.Tag := imageIndex;
+        newImage.Name := 'Thumb_Image' + IntToStr(imageIndex);
+        newImage.Visible := True;
+
+        filename2:= chosenDirectory+PathDelim+searchResult.Name;
+        thumbnails1.caption:=filename2;{show whats happening}
+        if load_fits(filename2,false {light},true,false {update memo},0,memox,head,img_loaded) then
+        begin
+          if head.naxis<2 then exit; {WCS file}
+          use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+
+          newImage.Width := round((thumbnails1.panel1.width-2)/3);
+          newImage.height := round(newImage.Width* head.height/head.width);
+          if newImage.height>max_height then max_height:=newImage.height;{find largest heigth}
+
+          thumbnails1.VertScrollBar.Increment:=max_height;
+
+          newImage.left :=x;
+          newImage.top := y;
+          inc(x,newImage.Width+1);
+          if x+1>=thumbnails1.panel1.width then {new row}
+          begin
+            x:=0;
+            y:=y+max_height+1;
+            max_height:=0;
+          end;
+          newImage.hint := filename2; //inttostr(imageindex);
+          newimage.OnMouseDown:= thumbnails1.imageMouseDown;
+          newimage.onMouseMove:=thumbnails1.imageMouseMove;
+          newImage.showhint := true;
+          newImage.stretch := true;
+          myimages[imageIndex-1]:=newimage;{store the timage}
+
+          plot_fits(newimage,false,false);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+
+          thumbnails1.panel1.height:=y+max_height; {causes a repaint}
+
+          application.processmessages;
+
+        end;//successfull image load
+      end;
+    until ((SysUtils.FindNext(searchResult) <> 0) or (esc_pressed));
+
+    // Must free up resources used by these successful finds
+    SysUtils.FindClose(searchResult);
+  end;
+end;
+
 
 end.
 

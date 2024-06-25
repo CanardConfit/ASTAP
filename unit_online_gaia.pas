@@ -252,8 +252,7 @@ begin
     application.processmessages;
     if esc_pressed then
     begin
-      slist.Free;
-      exit;
+      exit;//jump to finally and slist.free there
     end;
     if slist.count<=31 then
       memo2_message('List received is empthy! url: '+url)

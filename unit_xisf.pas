@@ -334,7 +334,6 @@ begin
         c:=posex('"',aline,b); {find end};
         message_comment:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
       end;
-      {if message_key<>'HISTORY' then}
       update_generic(memo,message_key,message_value,message_comment);{update header using text only}
       d:=c;
     end;
