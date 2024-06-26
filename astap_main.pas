@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.06.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.06.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -844,7 +844,7 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: 
 function unpack_cfitsio(var filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img_loaded2: image_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img: image_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
 
 
@@ -966,8 +966,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
-     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia,unit_contour
-     ,unit_interpolate;
+     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia,unit_contour;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -2321,7 +2320,7 @@ begin
 end;
 
 
-procedure read_keys_memo(light: boolean; var {var because it is set at default values} head : theader);{for tiff header in the describtion decoding}
+procedure read_keys_memo(light: boolean; var {var because it is set at default values} head : theader; memo :tstrings);{for tiff header in the describtion decoding}
 var
   key                             : string;
   count1,index                    : integer;
@@ -2331,19 +2330,19 @@ var
   var
     err: integer;
   begin
-    val(copy(mainwindow.Memo1.Lines[index],11,20),result,err);
+    val(copy(memo[index],11,20),result,err);
   end;
   function read_integer: integer;
   var
     err: integer;
   begin
-    val(copy(mainwindow.Memo1.Lines[index],11,20),result,err);
+    val(copy(memo[index],11,20),result,err);
   end;
   function read_string: string;
   var
     p1,p2 :integer;
   begin
-    result:=copy(mainwindow.Memo1.Lines[index],11,80-11);
+    result:=copy(memo[index],11,80-11);
 
     p1:=pos(char(39),result);
     p2:=posex(char(39),result,p1+1);
@@ -2353,22 +2352,22 @@ var
 
 begin
   {variables are already reset}
-  count1:=mainwindow.Memo1.Lines.Count-1-1;
+  count1:=memo.Count-1-1;
   ccd_temperature:=999;
   annotated:=false;
 
   index:=1;
   while index<=count1 do {read keys}
   begin
-    key:=copy(mainwindow.Memo1.Lines[index],1,9);
+    key:=copy(memo[index],1,9);
 
     //should in this sequence available. If not fix.
-    if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
-    if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
-    if index=3 then if key<>'NAXIS1  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
-    if index=4 then if key<>'NAXIS2  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
+    if index=1 then if key<>'BITPIX  =' then begin memo.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
+    if index=2 then if key<>'NAXIS   =' then begin memo.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
+    if index=3 then if key<>'NAXIS1  =' then begin memo.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
+    if index=4 then if key<>'NAXIS2  =' then begin memo.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
     if ((index=5) and (head.naxis3>1)) then if key<>'NAXIS3  =' then
-                                             begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
+                                             begin memo.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
 
     if key='CD1_1   =' then head.cd1_1:=read_float else
     if key='CD1_2   =' then head.cd1_2:=read_float else
@@ -2789,7 +2788,7 @@ begin
 end;
 
 
-function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img_loaded2: image_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: image_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
   jd2   : double;
@@ -2894,23 +2893,23 @@ begin
 
   head.width:=image.width;
   head.height:=image.height;
-  setlength(img_loaded2,head.naxis3,head.height,head.width);
+  setlength(img,head.naxis3,head.height,head.width);
 
   if head.naxis3=3 then
   begin
     For i:=0 to head.height-1 do
       for j:=0 to head.width-1 do
       begin
-        img_loaded2[0,head.height-1-i,j]:=image.Colors[j,i].red;
-        img_loaded2[1,head.height-1-i,j]:=image.Colors[j,i].green;
-        img_loaded2[2,head.height-1-i,j]:=image.Colors[j,i].blue;
+        img[0,head.height-1-i,j]:=image.Colors[j,i].red;
+        img[1,head.height-1-i,j]:=image.Colors[j,i].green;
+        img[2,head.height-1-i,j]:=image.Colors[j,i].blue;
       end;
   end
   else
   begin
     For i:=0 to head.height-1 do
       for j:=0 to head.width-1 do
-        img_loaded2[0,head.height-1-i,j]:=image.Colors[j,i].red;
+        img[0,head.height-1-i,j]:=image.Colors[j,i].red;
   end;
 
   if tiff then
@@ -2920,8 +2919,8 @@ begin
 
   if copy(descrip,1,6)='SIMPLE' then {fits header included}
   begin
-    mainwindow.memo1.text:=descrip;
-    read_keys_memo(light, head);
+    memo.text:=descrip;
+    read_keys_memo(light, head, memo);
     saved_header:=true;
   end
   else {no fits header in tiff file available}
@@ -4200,14 +4199,12 @@ end;
 
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
 var
-  head_2 : theader;
+  headX : theader;
   img_temp: image_array;
 begin
   result:=false;
-  if load_fits(filename2,true {light},true {load data},true {update memo for naxis1,...},0,memox,head_2,img_temp)=false then exit;
-  //application.ProcessMessages;
-  bin_X2X3X4(img_temp,head_2,memox,binfactor);{bin img_loaded 2x or 3x}
-
+  if load_fits(filename2,true {light},true {load data},true {update memo for naxis1,...},0,memox,headX,img_temp)=false then exit;
+  bin_X2X3X4(img_temp,headX,memox,binfactor);{bin img_loaded 2x or 3x}
   remove_key(memox,'BAYERPAT=',false{all});//do not allow debayer anymore
 
   if fits_file_name(filename2) then
@@ -5195,7 +5192,7 @@ end;
 
 procedure plot_grid(radec: boolean);  //plot ra,dec or az,alt grid
 var
-  fitsX,fitsY,step,stepA,stepB,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0,r1,r2,d1,d2, fX1,fY1,fX2,fY2,angle,az,alt,sep: double;
+  fitsX,fitsY,step,stepA,stepRA,i,j,centra,centdec,range,ra,dcr,ra0,dec0,r1,r2,d1,d2, fX1,fY1,fX2,fY2,angle,az,alt,sep: double;
   x1,y1,x2,y2,k                                          : integer;
   flip_horizontal, flip_vertical: boolean;
   ra_text:             string;
@@ -7929,7 +7926,7 @@ var
   histo_peak : array[0..2] of integer;
 
 begin
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+//  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   number_colors:=length(img);
 
@@ -9335,7 +9332,7 @@ begin
 
           if tilt<100 then
           begin
-            update_text(mainwindow.memo1.lines,'TILT    = ',floattostr2(tilt)+'                / Delta HFD between wrost and best corner');;//two decimals only for nice reporting
+            update_text(mainwindow.memo1.lines,'TILT    = ',floattostr2(tilt)+'                / Delta HFD between worst and best corner');;//two decimals only for nice reporting
             if fits_file_name(filename2) then
               success:=savefits_update_header(mainwindow.memo1.lines,filename2)
             else
@@ -9884,7 +9881,7 @@ function convert_to_fits(var filen: string): boolean; {convert to fits}
 var
   ext : string;
   img_temp : image_array;
-  head_2 : theader;
+  headX : theader;
 begin
   ext:=uppercase(ExtractFileExt(filen));
   result:=false;
@@ -9899,13 +9896,13 @@ begin
   else
   begin
     if ((ext='.PPM') or (ext='.PGM') or (ext='.PFM') or (ext='.PBM')) then {PPM/PGM/ PFM}
-      result:=load_PPM_PGM_PFM(filen,head_2,img_temp,memox)
+      result:=load_PPM_PGM_PFM(filen,headX,img_temp,memox)
     else
     if ext='.XISF' then {XISF}
       result:=load_xisf(filen,head,img_loaded,mainwindow.memo1.lines)
     else
     if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
-      result:=load_tiffpngJPEG(filen,true,head_2,img_temp,memox);
+      result:=load_tiffpngJPEG(filen,true,headX,img_temp,memox);
 
     if result then
     begin
@@ -13706,7 +13703,7 @@ var
   dobackup,add_lim_magn,solution_overwrite,solved,maintain_date,success,image_changed : boolean;
   failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
-  head_2 : theader;
+  headx : theader;
   img_temp: image_array;
 
 begin
@@ -13745,10 +13742,10 @@ begin
         Application.ProcessMessages;
         if esc_pressed then  break;
         {load image and solve image}
-        if load_fits(filename2,true {light},true,true {update memo},0,memox,head_2,img_temp) then {load image success}
+        if load_fits(filename2,true {light},true,true {update memo},0,memox,headx,img_temp) then {load image success}
         begin
           image_changed:=false;
-          if ((head_2.cd1_1<>0) and (solution_overwrite=false)) then
+          if ((headx.cd1_1<>0) and (solution_overwrite=false)) then
           begin
             nrskipped:=nrskipped+1; {plate solved}
             memo2_message('Skipped: '+filename2+ '  Already a solution in the header. Select option overwrite to renew.');
@@ -13763,9 +13760,9 @@ begin
               analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
               analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
 
-              if apply_dark_and_flat(img_temp,head_2){apply dark, flat if required, renew if different hd.exposure or ccd temp. This will clear the header in load_fits} then
+              if apply_dark_and_flat(img_temp,headx){apply dark, flat if required, renew if different hd.exposure or ccd temp. This will clear the header in load_fits} then
               begin //dark or flat or both applied
-                update_text(memox,'CALSTAT =',#39+head_2.calstat+#39); {calibration status}
+                update_text(memox,'CALSTAT =',#39+headx.calstat+#39); {calibration status}
                 image_changed:=true;
                 //get_hist:=true; {update required}
               end;
@@ -13774,7 +13771,7 @@ begin
 
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
             oldnrbits:=nrbits;
-            solved:=solve_image(img_temp,head_2,memox,true {get hist}, false {check filter});
+            solved:=solve_image(img_temp,headx,memox,true {get hist}, false {check filter});
             if solved then nrsolved:=nrsolved+1 {solve}
             else
             begin
@@ -13784,7 +13781,7 @@ begin
             end;
           end;
 
-          if ((head_2.cd1_1<>0) and ((solved) or (add_lim_magn)) )  then {time to save}
+          if ((headx.cd1_1<>0) and ((solved) or (add_lim_magn)) )  then {time to save}
           begin
             if add_lim_magn then
             begin
@@ -13793,7 +13790,7 @@ begin
 
               mess:='';
 
-              if ((pedestal<>0) or (pos('D',head_2.calstat)>0)) then
+              if ((pedestal<>0) or (pos('D',headx.calstat)>0)) then
               begin
                 //jd_start:=0; { if altitude missing then force an date to jd conversion'}
                 pedestal2:=pedestal; {protect pedestal setting}
@@ -16378,7 +16375,7 @@ var
   err,written   : boolean;
   dobackup : boolean;
   img_temp :image_array;
-  head_2 : theader;
+  headx : theader;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert to (Astro) TIFF. Date will preserved.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -16406,7 +16403,7 @@ begin
         memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
         if sender=save_to_tiff2 then
           fileDate := FileAge(fileName2);
-        if load_image(filename2,img_temp,head_2,memox,false {recenter},false {plot}) then
+        if load_image(filename2,img_temp,headx,memox,false {recenter},false {plot}) then
         begin
           filename2:=ChangeFileExt(filename2,'.tif');
           if abs(nrbits)<=16 then
@@ -16448,7 +16445,7 @@ var
   I: integer;
   err   : boolean;
   img_temp: image_array;
-  head_2 : theader;
+  headx : theader;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -16476,7 +16473,7 @@ begin
         if esc_pressed then begin err:=true; break;end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-        if load_image(filename2,img_temp,head_2,memox,false {recenter},false {plot}) then
+        if load_image(filename2,img_temp,headx,memox,false {recenter},false {plot}) then
         begin
           if head.naxis3=1 then {monochrome}
           begin
@@ -16746,7 +16743,7 @@ var
   I    : integer;
   succ,err : boolean;
   thepath:string;
-  head_2 : theader;
+  headx : theader;
   img_temp : image_array;
 begin
   OpenDialog1.Title := 'Select multiple files to move';
@@ -16772,15 +16769,15 @@ begin
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
-        if load_fits(filename2,true{light},false {data},false {update memo},0,mainwindow.memo1.lines,head_2,img_temp) then {load image success}
+        if load_fits(filename2,true{light},false {data},false {update memo},0,memox,headx,img_temp) then {load image success}
         begin
-          date_to_jd(head_2.date_obs,head_2.date_avg,head_2.exposure);{convert date-obs to jd_start, jd_mid}
+          date_to_jd(headx.date_obs,headx.date_avg,headx.exposure);{convert date-obs to jd_start, jd_mid}
 
           if jd_start>2400000 then {valid JD}
           begin
             jd_start:=jd_start-(GetLocalTimeOffset/(24*60));//convert to local time.
             jd_start:=jd_start-0.5; //move 12 hour earlier to get date beginning night
-            thepath:=RemoveSpecialChars(object_name)+', '+copy(JDtoDate(jd_start),1,10)+', '+head_2.filter_name;// the path without special characters
+            thepath:=RemoveSpecialChars(object_name)+', '+copy(JDtoDate(jd_start),1,10)+', '+headx.filter_name;// the path without special characters
 
             {$ifdef mswindows}
             thepath:=SelectDirectoryDialog1.filename+'\'+thepath;
@@ -16826,7 +16823,7 @@ procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
 var
   I    : integer;
   err : boolean;
-  head_2 : theader;
+  headx : theader;
   img_temp : image_array;
 begin
   OpenDialog1.Title := 'Select multiple FITS files to set "modified date" to DATE-OBS';
@@ -16848,12 +16845,12 @@ begin
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
-        if load_fits(filename2,true{light},false {data},false {update memo},0,mainwindow.memo1.lines,head_2,img_temp) then {load image success}
+        if load_fits(filename2,true{light},false {data},false {update memo},0,memox,headx,img_temp) then {load image success}
         begin
-          date_to_jd(head_2.date_obs,head_2.date_avg,head_2.exposure);{convert date-obs to jd_start, jd_mid}
+          date_to_jd(headx.date_obs,headx.date_avg,headx.exposure);{convert date-obs to jd_start, jd_mid}
           if jd_start>2400000 then {valid JD}
           begin
-            jd_start:=jd_start-(GetLocalTimeOffset/(24*60))+head_2.exposure/(24*3600);//correct for timezone and exposure time
+            jd_start:=jd_start-(GetLocalTimeOffset/(24*60))+headx.exposure/(24*3600);//correct for timezone and exposure time
             if FileSetDate(filename2,DateTimeToFileDate(jd_start-2415018.5))<0 then  { filedatatodatetime counts from 30 dec 1899.}
               err:=true;
           end

@@ -222,9 +222,8 @@ begin
               if stackmenu1.make_osc_color1.checked then
                 process_as_osc:=2 //forced process as OSC images
               else
-//              if ((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'') and (bayerpat[1]<>'N') {ZWO NONE}) then //auto process as OSC images
-              if ((head.naxis3=1) and (head.Xbinning=1) and (bayerpat<>'') and (bayerpat[1]<>'N') {ZWO NONE}) then //auto process as OSC images
-                process_as_osc:=1
+                if ((head.naxis3=1) and (head.Xbinning=1) and (bayerpat<>'') and (bayerpat[1]<>'N') {ZWO NONE}) then //auto process as OSC images
+                   process_as_osc:=1
               else
                 process_as_osc:=0;//disable demosaicing
 

@@ -1,8 +1,8 @@
 object form_aavso1: Tform_aavso1
-  Left = 372
+  Left = 451
   Height = 483
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 161
+  Top = 73
   Width = 1385
   Caption = 'AAVSO report'
   ClientHeight = 483
@@ -82,14 +82,6 @@ object form_aavso1: Tform_aavso1
     Top = 72
     Width = 76
     Caption = 'Name variable'
-    ParentColor = False
-  end
-  object Label2: TLabel
-    Left = 16
-    Height = 15
-    Top = 408
-    Width = 365
-    Caption = 'For 1 to 4 images the MERR will be calculated by 2/SNR else by StDev.'
     ParentColor = False
   end
   object delimiter1: TComboBox
@@ -247,10 +239,10 @@ object form_aavso1: Tform_aavso1
     ParentColor = False
   end
   object Label11: TLabel
-    Left = 243
+    Left = 144
     Height = 60
     Top = 108
-    Width = 133
+    Width = 240
     AutoSize = False
     Caption = 'Optional differential magnitude correction of the var.'
     ParentColor = False

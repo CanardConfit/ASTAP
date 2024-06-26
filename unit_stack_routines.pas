@@ -31,7 +31,6 @@ var
 
 var
   SIN_dec0,COS_dec0,x_new_float,y_new_float,SIN_dec_ref,COS_dec_ref : double;
-  gain_refxxx: string;
 
 
 implementation
@@ -1913,8 +1912,6 @@ begin
       end;{try}
     end;  {find the JD moment when the pixel is at max value}
 
-
-
     // combine images but throw out the moments when a star is drifting to each pixel. This moment is detected by the max value and recorded in phase 1 in img_variance.
     begin
       counter:=0;
@@ -1993,11 +1990,6 @@ begin
             background_correction[col]:=solutions[c].cblack[col] - target_background;//try to get backgrounds equal
           head.datamax_org:=min($FFFF,head.datamax_org-background_correction[0]);
 
-
-          {phase 2}
-//          if use_astrometry_internal then
-//             astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
-
           aa:=solution_vectorX[0];//move to local variable for minor faster processing
           bb:=solution_vectorX[1];
           cc:=solution_vectorX[2];
@@ -2005,8 +1997,7 @@ begin
           ee:=solution_vectorY[1];
           ff:=solution_vectorY[2];
 
-
-           //phase 2
+          //phase 2
           for fitsY:=0 to head.height-1 do
           for fitsX:=0 to head.width-1  do
           begin
@@ -2177,7 +2168,6 @@ begin
           end;
         end;
 
-
         if init=false then {init}
         begin
           height_max:=head.height;
@@ -2202,7 +2192,6 @@ begin
               img_average[col,fitsY,fitsX]:=0; {clear img_average}
               img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
             end;
-
 
         solution:=true;
         if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
@@ -2272,7 +2261,6 @@ begin
           end;
         end;
 
-
         {scale to number of pixels}
         head.height:=height_max;
         head.width:=width_max;
@@ -2302,29 +2290,26 @@ begin
         {save}
         filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename}
 
+        mainwindow.Memo1.Lines.beginUpdate;
         if head.cd1_1<>0 then
         begin
           {quick and dirty method to roughly correct existing solutions}
           head.crpix1:=solution_vectorX[0]*(head.crpix1-1)+solution_vectorX[1]*(head.crpix2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
           head.crpix2:=solution_vectorY[0]*(head.crpix1-1)+solution_vectorY[1]*(head.crpix2-1)+solution_vectorY[2];
-
-          mainwindow.Memo1.Lines.EndUpdate;
           update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
           update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
           update_text(mainwindow.memo1.lines,'COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
-          mainwindow.Memo1.Lines.EndUpdate;
         end;
-
-
-
         update_text(mainwindow.memo1.lines,'COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
         update_float(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
         update_integer(mainwindow.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
         update_integer(mainwindow.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
         update_integer(mainwindow.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
-         { ASTAP keyword standard:}
-         { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
-         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+        mainwindow.Memo1.Lines.EndUpdate;
+
+        { ASTAP keyword standard:}
+        { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+        { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
         if nrbits=16 then
         begin

@@ -360,7 +360,6 @@ begin
 //       begin
 //         memo2_message(E.Message+ ' exception in procedure calc_quad_distances');
 //         stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
-//         stackmenu1.Memo2.Lines.EndUpdate; {update memo2}
 //       end;
 //     end;
 
