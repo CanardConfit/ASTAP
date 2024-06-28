@@ -5546,8 +5546,8 @@ begin
   {$endif}
   {$endif}
 
-  if ( ((mainwindow.image1.width<=maxw) or (mousewheelfactor<1){zoom out}) and {increased to 65535 for Windows only. Was above 12000 unequal stretch}
-       ((mainwindow.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
+  if ( (((mainwindow.image1.width<=maxw) and (mainwindow.image1.height<=maxw)) or (mousewheelfactor<1){zoom out}) and {increased to 65535 for Windows only. Was above 12000 unequal stretch}
+        ((mainwindow.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
   then
   begin
     {limit the mouse positions to positions within the image1}
@@ -5633,14 +5633,15 @@ begin
 end;
 
 
-procedure Tmainwindow.Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState;
+procedure Tmainwindow.Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState; //zoom
   MousePos: TPoint; var Handled: Boolean);
 var
   P: TPoint;
 begin
   GetCursorPos(p);  {use this since in Lazarus the mousepos varies depending control under the mouse}
   p:=panel1.Screentoclient(p);
-  if p.y<0 then exit; {not in image range}
+  if p.y<0 then
+      exit; {not in image range}
 
   if mainwindow.inversemousewheel1.checked then  zoom(1/1.2,p) else zoom(1.2,p);
   Handled := True;{prevent that in win7 the combobox is moving up/down if it has focus}

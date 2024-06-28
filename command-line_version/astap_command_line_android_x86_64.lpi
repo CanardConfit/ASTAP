@@ -59,9 +59,6 @@
         <GenerateDebugInfo Value="False"/>
       </Debugging>
     </Linking>
-    <Other>
-      <CustomOptions Value="-Cg-"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

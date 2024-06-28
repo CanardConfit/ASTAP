@@ -2165,6 +2165,8 @@ begin
     red := False;
     green := False;
     blue := False;
+
+    Listview1.Selected := nil; {remove any selection}
     c := 0;
     {convert any non FITS file}
     while c <= counts {check all} do
@@ -2176,6 +2178,9 @@ begin
         if fits_tiff_file_name(filename1) = False  {fits or tiff file name?} then
         begin
           memo2_message('Converting ' + filename1 + ' to FITS file format');
+
+          ListView1.ItemIndex := c;  // mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true
+          Listview1.Items[c].MakeVisible(False);{scroll to selected item}
           Application.ProcessMessages;
           if esc_pressed then
           begin
@@ -2227,8 +2232,7 @@ begin
 
         if counts <> 0 then progress_indicator(100 * c / counts, ' Analysing');
         Listview1.Selected := nil; {remove any selection}
-        ListView1.ItemIndex := c;
-        {mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+        ListView1.ItemIndex := c;  // mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true
         Listview1.Items[c].MakeVisible(False);{scroll to selected item}
 
         filename2 := ListView1.items[c].Caption;
@@ -4187,17 +4191,16 @@ begin
 
   esc_pressed := False;
 
-  if full = False then  lv.Items.BeginUpdate;
-  {stop updating to prevent flickering till finished}
-
   counts := lv.items.Count - 1;
   red := False;
   green := False;
   blue := False;
 
   loaded := False;
-  c := 0;
+  Lv.Selected := nil; {remove any selection}
+  Application.ProcessMessages;
 
+  c := 0;
   {convert any non FITS file}
   while c <= counts {check all} do
   begin
@@ -4208,11 +4211,15 @@ begin
         {not fits or tiff file}
       begin
         memo2_message('Converting ' + filename1 + ' to FITS file format');
+        lv.Selected := nil; //remove any selection
+        Lv.ItemIndex := c;  // mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true
+        Lv.Items[c].MakeVisible(False);{scroll to selected item}
         Application.ProcessMessages;
         if esc_pressed then
         begin
-          Screen.Cursor := crDefault;
-          { back to normal }  exit;
+
+          Screen.Cursor := crDefault; { back to normal }
+          exit;
         end;
         if convert_to_fits(filename1) {convert to fits} then
           lv.items[c].Caption := filename1 {change listview name to FITS.}
@@ -4220,7 +4227,6 @@ begin
         begin {failure}
           lv.Items.item[c].Checked := False;
           lv.Items.item[c].subitems.Strings[L_result] := 'Conv failure!';
-
         end;
       end;
     end;{checked}
@@ -4243,6 +4249,7 @@ begin
   else
     tabnr := 0;
 
+  if full = False then  lv.Items.BeginUpdate;   {stop updating to prevent flickering till finished. This is done after converting to FITS}
 
   c := 0;
   repeat {check for double entries}
@@ -8294,9 +8301,8 @@ begin
         Application.ProcessMessages;
         stop_updating(true);//listview7.Items.BeginUpdate;
 
-        listview7.Selected := nil; {remove any selection}
-        listview7.ItemIndex := c;
-        {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+        listview7.Selected := nil; //remove any selection
+        listview7.ItemIndex := c;  //mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
 
         filename2 := listview7.items[c].Caption;
