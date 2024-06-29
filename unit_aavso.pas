@@ -449,8 +449,8 @@ end;
 
 procedure find_best_check_star;
 var
-  magn,magn_avgV,magn_minV,mag_var,magC,diff,delt : double;
-  c,i,b,e,err,counter: integer;
+  magn,magn_avgV,magn_minV,mag_var,magC,diff,delt,magn_avgC : double;
+  c,i,b,e,e2,err,counter: integer;
   abrv, abrv_selected,dum: string;
 begin
   magn_avgV:=0;
@@ -460,47 +460,62 @@ begin
 
   //find average  magnitude Variable
   with stackmenu1 do
-  for c:=0 to listview7.items.count-1 do {retrieve data from listview}
   begin
-    if listview7.Items.item[c].checked then
+  for c:=0 to listview7.items.count-1 do {retrieve data from listview}
     begin
-      dum:=(listview7.Items.item[c].subitems.Strings[column_var]);{var star}
-      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then
+      if listview7.Items.item[c].checked then
       begin
-        magn:=strtofloat(dum);
-        magn_avgV:=magn_avgV+magn;
-        counter:=counter+1;
-        magn_minV:=min(magn_minV,magn);
+        dum:=(listview7.Items.item[c].subitems.Strings[column_var]);{var star}
+        if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then
+        begin
+          magn:=strtofloat(dum);
+          magn_avgV:=magn_avgV+magn;
+          counter:=counter+1;
+          magn_minV:=min(magn_minV,magn);
+        end;
       end;
     end;
-  end;
-  if counter=0 then exit;
-  magn_avgV:=magn_avgV/counter;
-  abrv_selected:='';
-  diff:=99;
+    if counter=0 then exit;
+    magn_avgV:=magn_avgV/counter;
 
-  for i:=p_nr_norm+1+1 to p_nr do
-  begin
-     if odd(i) then //not snr column
-     begin
-       abrv:=stackmenu1.listview7.Column[i].Caption;
-       if pos('000',abrv)>0 then //check star
-       begin
-        b:=pos('=',abrv);
-        e:=posex('_',abrv,b);
-        val(copy(abrv,b+1,e-b-1),magC, err);
-        if err=0 then
-        begin
-           delt:=abs(magn_avgV- magC);
-           if ((magC+0.2>=magn_minV) and (delt<diff)) then //max magn 0.2 brighter
+    abrv_selected:='';
+    diff:=99;
+    for i:=p_nr_norm+1+1 to p_nr do
+    begin
+      if odd(i) then //not snr column
+      begin
+         abrv:=stackmenu1.listview7.Column[i].Caption;
+         if pos('000',abrv)>0 then //check star
+         begin
+           magn_avgC:=0;
+           counter:=0;
+           for c:=0 to listview7.items.count-1 do {retrieve data from listview}
+           begin
+             if listview7.Items.item[c].checked then
+             begin
+               dum:=(listview7.Items.item[c].subitems.Strings[i-1]);{check star}
+               if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then
+               begin
+                 magC:=strtofloat(dum);
+                 magn_avgC:=magn_avgC+magC;
+                 counter:=counter+1;
+               end;
+             end;
+           end;
+           if counter=0 then magn_avgC:=-10 //skip value
+           else
+           magn_avgC:=magn_avgC/counter; //average magnitude check star
+
+           delt:=abs(magn_avgV- magn_avgC);
+           if ((magC+1.0>=magn_minV) and (delt<diff)) then //max magn 1.0 brighter
            begin
              abrv_selected:=abrv;
              diff:=delt; //new check star found with close magnitude
            end;
-        end;
-      end;
-     end;
-  end;
+         end;//is a check star
+      end;//odd column
+    end;//check star loop
+  end;//with stackmenu1
   form_aavso1.name_check1.text:=abrv_selected;
 
 end;
@@ -729,8 +744,13 @@ begin
   magn_max:=trunc(magn_max*100)/100;
   if magn_max-magn_min<0.3 then begin magn_max:=0.15+(magn_max+magn_min)/2; magn_min:=-0.15+(magn_max+magn_min)/2;;end;//minimum range
 
-  mad_median(listcheck, count{counter},{var}madCheck, medianCheck);
-  photometry_stdev:=1.4826 * madCheck;
+  if count>0 then
+  begin
+    mad_median(listcheck, count{counter},{var}madCheck, medianCheck);
+    photometry_stdev:=1.4826 * madCheck;
+  end
+  else
+    photometry_stdev:=0;
 
   range:=magn_max-magn_min;
   if range<-98 then

@@ -13296,7 +13296,7 @@ end;
 
 procedure FixHiddenFormProblem(Screen: TScreen; theform: TForm ); //for users who change from two to one monitor
 var
-  i,left,right,top,bottom : integer;
+  i,left,right,top,bottom,halfwidth,halfheight : integer;
 begin
   left:=0;
   right:=0;
@@ -13310,11 +13310,12 @@ begin
     top:=math.min(top,screen.Monitors[i].BoundsRect.top);
     bottom:=math.max(bottom,screen.Monitors[i].BoundsRect.bottom);
   end;
-
-  theform.Left:=max(theform.left,left);//prevent too left
-  theform.Left:=min(theform.left,right-theform.width);//prevent too right
+  halfwidth:=theform.width div 2;
+  halfheight:=theform.height div 2;
+  theform.Left:=max(theform.left,left-halfwidth);//prevent too left
+  theform.Left:=min(theform.left,right-halfwidth);//prevent too right
   theform.top:=max(theform.top,top);//prevent too high
-  theform.top:=min(theform.top,bottom-theform.height);//prevent too low
+  theform.top:=min(theform.top,bottom-halfheight);//prevent too low
 end;
 
 
