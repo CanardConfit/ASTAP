@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.06.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.06.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -903,6 +903,7 @@ procedure remove_photometric_calibration;//from header
 procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
 procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
 procedure place_marker_radec(shape: tshape; ra,dec:double);{place ra,dec marker in image}
+procedure variable_star_annotation(plot: boolean {if false, load only});
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -7707,7 +7708,7 @@ var
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  img.visible:=true;
+//  if img.visible=false then img.visible:=true;
 
   {create bitmap}
   bitmap := TBitmap.Create;
@@ -7869,7 +7870,11 @@ begin
 
   {do refresh at the end for smooth display, especially for blinking }
 //  img.refresh;{important, show update}
-  img.invalidate;{important, show update. NoTe refresh aligns image to the left!!}
+
+  if img.visible=false then
+    img.visible:=true //will also refresh. This is only done once during startup
+  else
+    img.invalidate;{important, show update. NoTe refresh aligns image to the left!!}
 
 
   quads_displayed:=false; {displaying quads doesn't require a screen refresh}
@@ -10481,11 +10486,10 @@ begin
 end;
 
 
-procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
+procedure variable_star_annotation(plot: boolean {if false, load only});
 var
   lim_magn            : double;
 begin
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
 //0, No annotation
 //1, Annotation local DB mag 13
@@ -10519,16 +10523,25 @@ begin
         if download_vsx(lim_magn)=false then begin memo2_message('Error!');break; end;
         if download_vsp(lim_magn)=false then begin memo2_message('Error!');break; end;
       end;
-      if sender<>stackmenu1.photometry_button1 then
+      if plot then
                    plot_vsx_vsp;
     until true;//allow breaks to skip and go to cursor statement
   end
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    plot_deepsky(sender=stackmenu1.photometry_button1); {Plot the variables on the image. If photometry_button then only fill variable_list}
+    plot_deepsky(plot=false {if false then extract visible to variable_list}); {Plot the variables on the image. }
   end;
+end;
 
+
+
+procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
+var
+  lim_magn            : double;
+begin
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+  variable_star_annotation(true {load and plot});
   Screen.Cursor:=crDefault;
 end;
 
