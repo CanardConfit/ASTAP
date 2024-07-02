@@ -8036,7 +8036,7 @@ var
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   outliers: array of array of double;
-  astr, filename1   : string;
+  astr, filename1,totalnrstr   : string;
   bck :tbackground;
   oldra0 : double=0;
   olddec0: double=-pi/2;
@@ -8189,7 +8189,7 @@ begin
   refresh_solutions := (Sender = stackmenu1.refresh_astrometric_solutions1);
   {refresh astrometric solutions}
 
-
+  totalnrstr:=inttostr(listview7.items.Count);
   {solve lights first to allow flux to magnitude calibration}
   for c := 0 to listview7.items.Count - 1 do {check for astrometric solutions}
   begin
@@ -8216,7 +8216,8 @@ begin
         listview7.Selected := nil; {remove any selection}
         listview7.ItemIndex := c;  {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
-        memo2_message(filename1 + ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
+        memo2_message(inttostr(c+1)+'-'+totalnrstr+' '+filename1 + ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
+        stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename1;
         Application.ProcessMessages;
 
         if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
@@ -8306,9 +8307,7 @@ begin
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
 
         filename2 := listview7.items[c].Caption;
-        mainwindow.Caption := filename2;
-
-
+        stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename2;
 
         if starlistpack = nil then
         begin
@@ -8502,13 +8501,13 @@ begin
             if length(variable_list)=0 then
             begin
              // clear_added_AAVSO_columns;
-              setlength(variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
-              mainwindow.variable_star_annotation1Click(sender {load local database and fill variable_list});
+             // setlength(fill_variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
+              variable_star_annotation(false {extract  to variable_list});
             end
             else
             begin
               ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
-                if sep>head.width*head.cdelt2*2*pi/180 then //different area of the sky, update variable_list
+                if sep>head.width*head.cdelt2*2*pi/180 then //different area of the sky, update fill_variable_list
                     mainwindow.variable_star_annotation1Click(sender {new position, update variable list});
 
             end;
@@ -8708,7 +8707,7 @@ begin
 
         annotated := store_annotated;{restore anotated value}
         if ((annotated) and (mainwindow.annotations_visible1.Checked)) then  //header annotations
-          plot_annotations(True {use solution vectors!!!!}, False); {corrected annotations in case a part of the lights are flipped in the alignment routine}
+           plot_annotations(True {use solution vectors!!!!}, False); {corrected annotations in case a part of the lights are flipped in the alignment routine}
 
         mainwindow.image1.Canvas.Pen.Width := 1;{thickness lines}
         mainwindow.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
@@ -8753,8 +8752,7 @@ begin
         end;
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-        mainwindow.image1.Canvas.Pen.Width :=
-          round(1 + head.Height / mainwindow.image1.Height);{thickness lines}
+        mainwindow.image1.Canvas.Pen.Width :=round(1 + head.Height / mainwindow.image1.Height);{thickness lines}
         mainwindow.image1.Canvas.Pen.style := psSolid;
         mainwindow.image1.Canvas.Pen.Color := $000050; {dark red}
         if starlistpack[c].starlist_status =2 then {valid measurement}
@@ -8779,7 +8777,7 @@ begin
         if outliers <> nil then plot_outliers;
 
         if annotate_mode1.ItemIndex > 0 then
-          mainwindow.variable_star_annotation1Click(nil); //vsp & vsx
+           variable_star_annotation(true {plot, do not extract to variable_list}); //vsp & vsx
 
         //listview7.Items.EndUpdate;
         stop_updating(false);//listview7.Items.endUpdate;

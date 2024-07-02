@@ -11,7 +11,7 @@ interface
 uses
    forms,Classes, SysUtils,strutils, math,graphics, Controls {for tcursor},astap_main,  unit_stars_wide_field;
 
-procedure plot_deepsky(fill_variable_list: boolean);{plot the deep sky object on the image}
+procedure plot_deepsky(extract_visible: boolean);{plot the deep sky object on the image. If extract is true then extract visible to variable_list}
 procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
@@ -1375,7 +1375,7 @@ begin
 end;
 
 
-procedure plot_deepsky(fill_variable_list: boolean);{plot the deep sky object on the image}
+procedure plot_deepsky(extract_visible: boolean);{plot the deep sky object on the image. If extract is true then extract visible to variable_list}
 type
   textarea = record
      x1,y1,x2,y2 : integer;
@@ -1395,11 +1395,11 @@ begin
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
-    if fill_variable_list=false then //for photometry
+    if extract_visible then //for photometry
     begin
-      fill_variable_list:=false;
       variable_list:=nil;
-      variable_list_length:=0;
+      variable_list_length:=0;//declare empthy
+      setlength(variable_list,1000);//make space
     end;
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
@@ -1529,14 +1529,13 @@ begin
            end;
            mainwindow.image1.Canvas.textout(x1,y1,name);
 
-           if ((fill_variable_list) and (text_counter<length(variable_list))) then //special option to add objects to list for photometry
+           if ((extract_visible) and (text_counter<length(variable_list))) then //special option to add objects to list for photometry
            begin
              variable_list[text_counter].ra:=ra2;
              variable_list[text_counter].dec:=dec2;
              variable_list[text_counter].abbr:=naam2;
              variable_list_length:=text_counter;
            end;
-
            inc(text_counter);
            if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
          end;{centre object visible}
