@@ -7682,8 +7682,7 @@ end;
 //end;
 
 
-procedure date_to_jd(date_obs,date_avg: string; exp: double);
-{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
 var
   yy, mm, dd, hh, min, error2: integer;
   ss: double;
@@ -8501,7 +8500,6 @@ begin
             if length(variable_list)=0 then
             begin
              // clear_added_AAVSO_columns;
-             // setlength(fill_variable_list,1000);// make space in variable list. Array is filled in plot_deepsky;
               variable_star_annotation(false {extract  to variable_list});
             end
             else
