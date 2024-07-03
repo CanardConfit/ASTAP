@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 625
-  Height = 669
-  Top = 731
+  Left = 404
+  Height = 1009
+  Top = 249
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 652
+  ClientHeight = 992
   ClientWidth = 1862
   Color = clForm
   DoubleBuffered = True
@@ -56,7 +56,7 @@ object stackmenu1: Tstackmenu1
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 652
+    Height = 992
     Top = 0
     Width = 1920
     Align = alClient
@@ -78,7 +78,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_photometry1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -86,7 +86,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 8
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -8201,14 +8201,14 @@ object stackmenu1: Tstackmenu1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 147
+      Height = 487
       Top = 505
       Width = 1920
       ClientWidth = 1920
-      ClientHeight = 147
+      ClientHeight = 487
       object memo2: TMemo
         Left = 0
-        Height = 53
+        Height = 393
         Top = 94
         Width = 1920
         Align = alBottom

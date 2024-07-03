@@ -10247,7 +10247,7 @@ begin
     limiting_mag:=12; ////Required by AAVSO
     memo2_message('FOV is larger then 3 degrees. Downloading from AAVSO VSX, VSP is then limited to magnitude 12.');
   end;
-
+  //https://www.aavso.org/apps/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000
   url:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
   s:=get_http(url);{get webpage}
   if length(s)<50 then begin beep; exit end;;
@@ -10379,14 +10379,21 @@ end;
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access
 var
   s,dummy,url   : string;
-  count,i,j,k,errorRa,errorDec   : integer;
-  radius,ra,dec : double;
+  count,i,j,k,errorRa,errorDec,err                : integer;
+  radius,ra,dec,ProperMotionRA,ProperMotionDEC,jd,years_since_2000 : double;
 begin
   result:=false;
   radius:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //radius in degrees. Some solvers produce files with neagative cdelt2
 
+  date_to_jd(head.date_obs,'',0 {exposure});{convert date-obs to jd_start, jd_mid for proper motion}
+  if jd_start>2400000 then
+    years_since_2000:=(jd_start-2451545)/365.25 //years since 2000
+  else
+    years_since_2000:=26; //default, years since 2000
+
   if radius>3 {degrees} then limiting_mag:=12; ////Required by AAVSO
 
+  //https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
   url:='https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
   s:=get_http(url);
   if length(s)<25 then begin beep; exit end;;
@@ -10440,31 +10447,51 @@ begin
       inc(j);
       if ((s[j]='M') and (s[j+1]='a') and (s[j+2]='x')) then //MaxMag found, could be missing
       begin
-        i:=j+length('MaxMag":"');
+        i:=j+length('"MaxMag:"');
         k:=posex('"',s,i);
         vsx[count].maxmag:=copy(s,i,k-i);
       end
       else
-      if ((s[j]='M') and (s[j+1]='i') and (s[j+2]='n')) then //MaxMag found, could be missing
+      if ((s[j]='M') and (s[j+1]='i') and (s[j+2]='n')) then //MinMag found, could be missing
       begin
-        i:=j+length('MinMag":"');
+        i:=j+length('"MinMag:"');
         k:=posex('"',s,i);
         vsx[count].minmag:=copy(s,i,k-i);
       end
       else
       if ((s[j]='C') and (s[j+1]='a') and (s[j+2]='t')) then
       begin
-        i:=j+length('Category":"');
+        i:=j+length('"Category:"');
         k:=posex('"',s,i);
         vsx[count].category:=copy(s,i,3);
       end
       else
       if ((s[j]='P') and (s[j+1]='e') and (s[j+2]='r')) then
       begin
-        i:=j+length('Period":"');
+        i:=j+length('"Period:"');
         k:=posex('"',s,i);
         vsx[count].period:=copy(s,i,k-i);
+      end
+      else
+      if ((s[j]='P') and (s[j+1]='r') and (s[j+2]='o') and (s[j+3]='p') and (s[j+12]='D') and (s[j+13]='e')  ) then
+      begin
+        i:=j+length('"ProperMotionDec:"');
+        k:=posex('"',s,i);
+        val(copy(s,i,k-i),propermotionDEC,err);//Proper motions mas/yr
+        if err=0 then
+           vsx[count].dec:=vsx[count].dec+propermotionDec*years_since_2000/((1000*3600)*180/pi);
+
+      end
+      else
+      if ((s[j]='P') and (s[j+1]='r') and (s[j+2]='o') and (s[j+3]='p') and (s[j+12]='R') and (s[j+13]='A')  ) then
+      begin
+        i:=j+length('"ProperMotionRA:"');
+        k:=posex('"',s,i);
+        val(copy(s,i,k-i),propermotionRA,err);//Proper motions mas/yr
+        if err=0 then
+           vsx[count].ra:=vsx[count].ra+propermotionRA*years_since_2000/(cos(vsx[count].dec)*(1000*3600)*180/pi);
       end;
+
 
       if j<k then j:=k; //k could be in very rare cases 0 resulting in an endless loop
      until ((s[j]='}') or (j=length(s)-1));
