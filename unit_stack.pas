@@ -1427,7 +1427,7 @@ begin
     columns.add;
     Column[ColumnCount - 1].Caption :=s0;//title
 //    Column[ColumnCount - 1].autosize:=true;
-    fwidth:= Round((- GetFontData(stackmenu1.listview7.Font.Handle).height * 72*0.66 / stackmenu1.listview7.Font.PixelsPerInch));//approximate font width of column caption. Autosize works on the data not on caption
+    fwidth:= Round((abs(GetFontData(stackmenu1.listview7.Font.Handle).height) * 72*0.66 / stackmenu1.listview7.Font.PixelsPerInch));//approximate font width of column caption. Autosize works on the data not on caption
     Column[ColumnCount - 1].width:=20+length(s0)*fwidth;
 
     inc(p_nr);
@@ -4412,16 +4412,15 @@ begin
                 lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
               end
               else //Johnson-Cousins
-              if pos('TR',filterstrUP)>0  then
-                  lv.Items.item[c].SubitemImages[P_filter]:=0 //Red
+              if pos('V',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //Green or G or TG
               else
-              if pos('V',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //Green or G
+              if pos('G',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //GREEN, G, TG
               else
-              if pos('G',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //green
+              if pos('B',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //BLUE, B, TB
               else
-              if pos('B',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //blue
+              if pos('RC',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red. Note Green also contains a R so first test Green
               else
-              if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red. Note Green also contains a R so first test Green
+              if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //red, R, TR.  Note Green also contains a R so first test Green
               else
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 

@@ -588,12 +588,9 @@ end;
 }
 
 procedure sla_EL2UE (DATE : double; JFORM : integer; EPOCH : double; ORBINC, ANODE,PERIH, AORQ, E, AORL, DM : double; out U :U_array; out JSTAT : integer) ;
-
-//  Gaussian gravitational constant (exact);
 var
-  GCON:double=0.01720209895;
-  //  Sin and cos of J2000 mean obliquity (IAU 1976);
-  SE:double=0.3977771559319137;
+  GCON:double=0.01720209895;//  Gaussian gravitational constant (exact);
+  SE:double=0.3977771559319137;//  Sin and cos of J2000 mean obliquity (IAU 1976);
   CE:double=0.9174820620691818;
   J: integer;
   PHT,ARGPH,Q,W,CM,ALPHA,PHS,SW,CW,SI,CI,SO,CO,X,Y,Z,PX,PY,PZ,VX,VY,VZ,DT,FC,FP,PSI: double;
@@ -601,55 +598,52 @@ var
   PV : r6_array;
 
 begin
-//  Validate arguments.
-if ((JFORM<1) or (JFORM > 3)) then
-begin
-  JSTAT := -1;
-  exit;
-end;
-if ((E<0E0) or (E > 10E0) or ((E>=1E0) and (JFORM<>3))) then
-begin
-  JSTAT := -2;
-  exit;
-end;
-if (AORQ<=0E0) then
-begin
-  JSTAT := -3;
-  exit;
-end;
-if ((JFORM = 1) and (DM<=0E0)) then
-begin
-  JSTAT := -4;
-  exit;
-end;
-//;
-//  Transform elements into standard form:;
-//;
-//  PHT   := epoch of perihelion passage;
-//*  ARGPH := argument of perihelion (little omega);
-//*  Q     := perihelion distance (q);
-//*  CM    := combined mass, M+m (mu);
-if (JFORM = 1) then
-begin
-//*     Major planet.;
-  PHT := EPOCH-(AORL-PERIH)/DM;
-  ARGPH := PERIH-ANODE;
-  Q := AORQ*(1-E);
-  W := DM/GCON;
-  CM := W*W*AORQ*AORQ*AORQ;
+  //  Validate arguments.
+  if ((JFORM<1) or (JFORM > 3)) then
+  begin
+    JSTAT := -1;
+    exit;
+  end;
+  if ((E<0E0) or (E > 10E0) or ((E>=1E0) and (JFORM<>3))) then
+  begin
+    JSTAT := -2;
+    exit;
+  end;
+  if (AORQ<=0E0) then
+  begin
+    JSTAT := -3;
+    exit;
+  end;
+  if ((JFORM = 1) and (DM<=0E0)) then
+  begin
+    JSTAT := -4;
+    exit;
+  end;
+  //;
+  //  Transform elements into standard form:;
+  //;
+  //  PHT   := epoch of perihelion passage;
+  //*  ARGPH := argument of perihelion (little omega);
+  //*  Q     := perihelion distance (q);
+  //*  CM    := combined mass, M+m (mu);
+  if (JFORM = 1) then
+  begin   //*     Major planet.;
+    PHT := EPOCH-(AORL-PERIH)/DM;
+    ARGPH := PERIH-ANODE;
+    Q := AORQ*(1-E);
+    W := DM/GCON;
+    CM := W*W*AORQ*AORQ*AORQ;
   end
   else
   if (JFORM = 2) then
-  begin
-    //     Minor planet.;
+  begin  //     Minor planet.;
     PHT := EPOCH-AORL*SQRT(AORQ*AORQ*AORQ)/GCON;
     ARGPH := PERIH;
     Q := AORQ*(1-E);
     CM := 1;
   end
   else
-  begin
-  //*     Comet.;
+  begin //*     Comet.;
     PHT := EPOCH;
     ARGPH := PERIH;
     Q := AORQ;
@@ -658,8 +652,7 @@ begin
   //*  The universal variable alpha.  This is proportional to the total;
   //*  energy of the orbit:  -ve for an ellipse, zero for a parabola,;
   //*  +ve for a hyperbola.;
-  ALPHA := CM*(E-1)/Q;
-  //  Speed at perihelion.;
+  ALPHA := CM*(E-1)/Q;  //  Speed at perihelion.;
   PHS := SQRT(ALPHA+2*CM/Q);
   {*  In a Cartesian coordinate system which has the x-axis pointing;
    *  to perihelion and the z-axis normal to the orbit (such that the;
