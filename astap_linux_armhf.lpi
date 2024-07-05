@@ -103,9 +103,7 @@
       <Unit11>
         <Filename Value="unit_inspector_plot.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="form_inspection1"/>
         <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit11>
       <Unit12>
         <Filename Value="unit_hjd.pas"/>
@@ -125,16 +123,19 @@
         <SyntaxMode Value="Delphi"/>
       </SyntaxOptions>
     </Parsing>
+    <CodeGeneration>
+      <TargetCPU Value="arm"/>
+      <TargetOS Value="linux"/>
+      <Optimizations>
+        <OptimizationLevel Value="0"/>
+      </Optimizations>
+    </CodeGeneration>
     <Linking>
       <Debugging>
-        <DebugInfoType Value="dsDwarf2Set"/>
+        <GenerateDebugInfo Value="False"/>
+        <DebugInfoType Value="dsDwarf3"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
-      <Options>
-        <Win32>
-          <GraphicApplication Value="True"/>
-        </Win32>
-      </Options>
     </Linking>
     <Other>
       <CustomOptions Value="-XX
