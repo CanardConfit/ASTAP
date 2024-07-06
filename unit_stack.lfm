@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 22
+  Left = 165
   Height = 707
-  Top = 195
+  Top = 248
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -3270,7 +3270,7 @@ object stackmenu1: Tstackmenu1
             OnClick = photometry_button1Click
           end
           object clear_photometry_list1: TButton
-            Left = 648
+            Left = 1088
             Height = 25
             Hint = 'Clear image list'
             Top = 35
@@ -3444,10 +3444,10 @@ object stackmenu1: Tstackmenu1
           end
           object help_photometry1: TLabel
             Cursor = crHandPoint
-            Left = 1168
+            Left = 1152
             Height = 30
             Hint = 'Online help'
-            Top = 29
+            Top = -2
             Width = 9
             Caption = '?'
             Font.Color = clBlue
@@ -3459,10 +3459,10 @@ object stackmenu1: Tstackmenu1
             OnClick = help_photometry1Click
           end
           object mark_outliers_upto1: TComboBox
-            Left = 1048
+            Left = 1283
             Height = 23
             Hint = 'Mark in the image outliers down to this magnitude'
-            Top = 5
+            Top = 4
             Width = 48
             ItemHeight = 15
             ItemIndex = 3
@@ -3481,10 +3481,10 @@ object stackmenu1: Tstackmenu1
             OnChange = flux_aperture1change
           end
           object aavso_button1: TButton
-            Left = 1048
+            Left = 965
             Height = 25
             Hint = 'Generate AAVSO report'
-            Top = 34
+            Top = 35
             Width = 99
             AutoSize = True
             Caption = 'AAVSO report'
@@ -3595,10 +3595,10 @@ object stackmenu1: Tstackmenu1
             TabOrder = 11
           end
           object annotate_mode1: TComboBox
-            Left = 739
+            Left = 656
             Height = 23
             Hint = 'Annotate variable and comparison stars'
-            Top = 36
+            Top = 37
             Width = 283
             DropDownCount = 17
             ItemHeight = 15
@@ -3618,7 +3618,7 @@ object stackmenu1: Tstackmenu1
             OnChange = annotate_mode1Change
           end
           object reference_database1: TComboBox
-            Left = 739
+            Left = 656
             Height = 23
             Hint = 'Reference star database to be used. Set to '#13#10'1) Online , Gaia ->auto '#13#10'or'#13#10'2) Local star database and select in tab alignment V50 for Johnson-V.'
             Top = 6
@@ -3643,7 +3643,7 @@ object stackmenu1: Tstackmenu1
             OnChange = reference_database1Change
           end
           object transformation1: TButton
-            Left = 907
+            Left = 824
             Height = 25
             Hint = 'This will calculate the transformation equation  ∆ V = a + T*(B-V) using the image in the viewer'
             Top = 6
@@ -3657,7 +3657,7 @@ object stackmenu1: Tstackmenu1
             OnClick = transformation1Click
           end
           object Label19: TLabel
-            Left = 1200
+            Left = 1168
             Height = 47
             Hint = 'See popup menu for calibration && extraction'
             Top = 4
@@ -3670,7 +3670,7 @@ object stackmenu1: Tstackmenu1
             WordWrap = True
           end
           object most_right9: TStaticText
-            Left = 1296
+            Left = 1336
             Height = 16
             Top = 32
             Width = 3
@@ -3732,6 +3732,38 @@ object stackmenu1: Tstackmenu1
               000000000000000000000000000000000000565656FF00000000
             }
             OnClick = SpeedButton2Click
+          end
+          object font_size_photometry1: TEdit
+            Left = 1032
+            Height = 23
+            Hint = 'Font size of image annotations'
+            Top = 5
+            Width = 32
+            TabOrder = 17
+            Text = '8'
+          end
+          object font_size_photometry_UpDown1: TUpDown
+            Left = 1064
+            Height = 23
+            Hint = 'Font size of image annotations'
+            Top = 5
+            Width = 17
+            Associate = font_size_photometry1
+            Max = 20
+            Min = 8
+            ParentShowHint = False
+            Position = 8
+            ShowHint = True
+            TabOrder = 18
+          end
+          object Label72: TLabel
+            Left = 968
+            Height = 15
+            Top = 12
+            Width = 49
+            Alignment = taRightJustify
+            Caption = 'Font size:'
+            ParentColor = False
           end
         end
         object tab_inspector1: TTabSheet

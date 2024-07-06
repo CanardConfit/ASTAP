@@ -55,7 +55,8 @@ sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt
 tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
 #build aarch64 qt5
 rm ~/astap.fpc/astap 
-/home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64_qt5.lpi if [[ ! -f ~/astap.fpc/astap ]] ; then
+/home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64_qt5.lpi
+ if [[ ! -f ~/astap.fpc/astap ]] ; then
     echo 'aarch64 qt5 file does not exist, aborting!!'
     exit
 fi

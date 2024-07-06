@@ -118,7 +118,9 @@ type
     apply_unsharp_mask1: TButton;
     airmass1: TMenuItem;
     classify_flat_duration1: TCheckBox;
+    font_size_photometry1: TEdit;
     GroupBox23: TGroupBox;
+    Label72: TLabel;
     lrgb_stars_smooth1: TCheckBox;
     lrgb_smooth_diameter1: TComboBox;
     MenuItem14: TMenuItem;
@@ -132,6 +134,7 @@ type
     SpeedButton2: TSpeedButton;
     SpeedButton3: TSpeedButton;
     undo_button23: TBitBtn;
+    font_size_photometry_UpDown1: TUpDown;
     view_next1: TMenuItem;
     view_previous1: TMenuItem;
     view_next6: TMenuItem;
@@ -10123,12 +10126,10 @@ end;
 function process_selected_files(lv: tlistview; column: integer; mode : char) : boolean;
 var
   c,nrcolumns,i : integer;
-  success       : boolean;
   filename1     : string;
   img_temp      : image_array;
   headx        : theader;
-const
-  white_icon=26;
+
   function save_fits_tiff(filename1: string) : boolean;
   begin
     if fits_file_name(filename1) then

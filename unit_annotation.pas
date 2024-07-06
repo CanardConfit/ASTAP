@@ -11,7 +11,7 @@ interface
 uses
    forms,Classes, SysUtils,strutils, math,graphics, Controls {for tcursor},astap_main,  unit_stars_wide_field;
 
-procedure plot_deepsky(extract_visible: boolean);{plot the deep sky object on the image. If extract is true then extract visible to variable_list}
+procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the deep sky object on the image. If extract is true then extract visible to variable_list}
 procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
@@ -1096,7 +1096,7 @@ begin
          exit;
        end;
     end;
-    if copy(deepstring.strings[0],1,4)<>'V001' then
+    if copy(deepstring.strings[0],1,4)<>'V003' then
       application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 end;
@@ -1119,7 +1119,7 @@ begin
          exit;
        end;
     end;
-    if copy(deepstring.strings[0],1,4)<>'V001' then
+    if copy(deepstring.strings[0],1,4)<>'V003' then
       application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 
@@ -1250,7 +1250,7 @@ begin
     inc(linepos);
     x:=1; z:=0; y:=0;
 
-    P1 := Pointer(REGEL);
+    P1 := Pointer(regel);
     length_regel:=length(regel);
 
     repeat
@@ -1375,7 +1375,7 @@ begin
 end;
 
 
-procedure plot_deepsky(extract_visible: boolean);{plot the deep sky object on the image. If extract is true then extract visible to variable_list}
+procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the deep sky object on the image. If extract is true then extract visible to variable_list}
 type
   textarea = record
      x1,y1,x2,y2 : integer;
@@ -1472,7 +1472,7 @@ begin
             else
             name:=naam2+'/'+naam3+'/'+naam4;
 
-            mainwindow.image1.Canvas.font.size:=round(min(20,max(8,len /2)));
+            mainwindow.image1.Canvas.font.size:=round(min(20,max(font_size,len /2)));
 
             if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star, Plot green}
 
@@ -1616,7 +1616,7 @@ begin
     mainwindow.image1.canvas.pen.color:=annotation_color;
     mainwindow.image1.canvas.pen.mode:=pmXor;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
-    mainwindow.image1.Canvas.font.size:=8;//round(min(20,max(8,len /2)));
+    mainwindow.image1.Canvas.font.size:=stackmenu1.font_size_photometry_UpDown1.position;
 
     text_counter:=0;
     setlength(text_dimensions,200);
