@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.07.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.07.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3728,7 +3728,7 @@ end;
 procedure Tmainwindow.deepsky_overlay1Click(Sender: TObject);
 begin
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky(false);
+  plot_deepsky(false,8);
 end;
 
 
@@ -4366,7 +4366,7 @@ procedure Tmainwindow.hyperleda_annotation1Click(Sender: TObject);
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   load_hyperleda;   { Load the database once. If loaded no action}
-  plot_deepsky(false);{plot the deep sky object on the image}
+  plot_deepsky(false,8);{plot the deep sky object on the image}
   Screen.Cursor:=crDefault;
 end;
 
@@ -8593,6 +8593,8 @@ begin
       dum:=Sett.ReadString('stack','mark_outliers_upto',''); if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
       dum:=Sett.ReadString('stack','flux_aperture',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
+      dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
+
       c:=Sett.ReadInteger('stack','annotate_m',0); stackmenu1.annotate_mode1.itemindex:=c;
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
       stackmenu1.measure_all1.Checked:=Sett.ReadBool('stack','measure_all',false);
@@ -8983,6 +8985,7 @@ begin
       sett.writestring('stack','mark_outliers_upto',stackmenu1.mark_outliers_upto1.text);
       sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
       sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
+      sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
       sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
       sett.WriteBool('stack','measure_all', stackmenu1.measure_all1.checked);
@@ -10557,7 +10560,7 @@ begin
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    plot_deepsky(plot=false {if false then extract visible to variable_list}); {Plot the variables on the image. }
+    plot_deepsky(plot=false {if false then extract visible to variable_list},stackmenu1.font_size_photometry_UpDown1.position); {Plot the variables on the image. }
   end;
 end;
 
@@ -12310,7 +12313,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky(false);{plot the deep sky object on the image}
+  plot_deepsky(false,8);{plot the deep sky object on the image}
   Screen.Cursor:=crDefault;
 end;
 
@@ -12972,7 +12975,7 @@ var
    JPG: TJPEGImage;
 begin
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky(false);{annotate}
+  plot_deepsky(false,8);{annotate}
   JPG := TJPEGImage.Create;
   try
     JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into jpg
@@ -14770,7 +14773,7 @@ begin
   end;
 
   database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
-  plot_deepsky(false);
+  plot_deepsky(false,8);
 end;
 
 
@@ -14845,7 +14848,7 @@ begin
   end;
 
   database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
-  plot_deepsky(false);
+  plot_deepsky(false,8);
 end;
 
 
