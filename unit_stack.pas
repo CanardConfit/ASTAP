@@ -8821,7 +8821,6 @@ begin
       end
       else
       begin
-        sd_check_star:=0;
         madThree := 0;
       end;
 
@@ -10069,20 +10068,25 @@ begin
      if esc_pressed then exit;
      sd_check_star:=0;
      stackmenu1.photometry_button1Click(nil);
-     if sd_check_star<best then
+     if sd_check_star>0 then
      begin
-       best:=sd_check_star;
-       best_aperture:=i/10;
+       if sd_check_star<best then
+       begin
+         best:=sd_check_star;
+         best_aperture:=i/10;
+       end;
+     end
+     else
+     begin
+       flux_aperture1.text:=oldstr;
+       memo2_message('Abort, no check star selected');
+       break;
      end;
+
      results:=results+'Aperture '+floattostrF(i/10,FFgeneral,2,1)+',   σ: '+ floattostrF(sd_check_star,FFgeneral,4,4)+#13+#10;
     end;
   end;
-  if sd_check_star=0 then
-  begin
-    flux_aperture1.text:=oldstr;
-    memo2_message('Abort, no check star selected')
-  end
-  else
+  if sd_check_star>0 then
   begin
     beststr:=floattostrF(best_aperture,FFgeneral,2,1);
     flux_aperture1.text:=beststr;
