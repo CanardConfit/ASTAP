@@ -83,6 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentBiDiMode = False
         ParentFont = False
         ParentShowHint = False
+        PopupMenu = PopupMenu7
         ShowHint = True
         TabIndex = 0
         TabOrder = 0
@@ -318,6 +319,7 @@ object stackmenu1: Tstackmenu1
             HideSelection = False
             MultiSelect = True
             ParentFont = False
+            PopupMenu = PopupMenu1
             ReadOnly = True
             RowSelect = True
             ScrollBars = ssAutoBoth
