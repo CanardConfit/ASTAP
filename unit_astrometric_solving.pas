@@ -842,7 +842,7 @@ begin
       warning_str:=warning_str+'Very large FOV, use W08 database! '
     else
     if ((fov_org>6) and (database_type=1476)) then
-      warning_str:=warning_str+'Large FOV, use G05 database! ';
+      warning_str:=warning_str+'Large FOV, use G05 (or V05) database! ';
 
     if warning_str<>'' then memo2_message(warning_str);
      popup_warningG05:=#10+warning_str;

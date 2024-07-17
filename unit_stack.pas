@@ -8033,7 +8033,7 @@ var
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, stepnr, countVar,
   countCheck, countThree, database_col,j, lvsx,lvsp,formalism,indicate : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
-  warned, success,new_object,listview_updating: boolean;
+  warned, success,new_object,listview_updating, reference_defined : boolean;
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   outliers: array of array of double;
@@ -8143,7 +8143,7 @@ var
             end;
 
 
-            procedure nil_all;
+            procedure nil_all;{reactivate listview updating, nil all arrays and restore cursor}
             begin
               stop_updating(false);
               variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
@@ -8161,8 +8161,7 @@ begin
   save_settings2;{too many lost selected files . so first save settings}
 
   if pos('V', uppercase(star_database1.Text)) = 0 then
-    memo2_message(star_database1.Text +
-      ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
+    memo2_message(star_database1.Text +  ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
 
 
   {check is analyse is done}
@@ -8206,8 +8205,7 @@ begin
       {load image}
       if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,memox, headx, img_temp) = False)) then
       begin
-        //listview7.Items.EndUpdate;
-        nil_all;{nil all arrays and restore cursor}
+        nil_all;{reactivate listview updating, nil all arrays and restore cursor.}
         exit;
       end;
 
@@ -8230,7 +8228,7 @@ begin
           if success = False then
           begin
             ShowMessage('Write error !!' + filename2);
-            nil_all;
+            nil_all;{reactivate listview updating, nil all arrays and restore cursor.}
             exit;
           end;
           listview7.Items.item[c].subitems.Strings[P_astrometric] := '✓';
@@ -8277,14 +8275,7 @@ begin
     starlistpack[c].starlist_status := 0;
   end;
 
-
-  //use the current display as refefence
-  abbreviation_var_IAU := prepare_IAU_designation(shape_var1_ra, shape_var1_dec);
-  name_check_iau := prepare_IAU_designation(shape_check1_ra, shape_check1_dec);
-  initialise_calc_sincos_dec0; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
-  head_ref := head;{backup solution for deepsky annotation}
-
-
+  reference_defined:=false;
   memo2_message('Click on variable, Check and 3 stars(pink marker) to record magnitudes in the photometry list.');
   repeat
     setlength(starVar, listview7.items.Count);
@@ -8312,7 +8303,7 @@ begin
 
         if starlistpack = nil then
         begin
-          nil_all;
+          nil_all;{reactivate listview updating, nil all arrays and restore cursor}
           exit;
         end;
 
@@ -8320,14 +8311,17 @@ begin
         if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False)) then
         begin
           esc_pressed := True;
-          nil_all;
+          nil_all;{reactivate listview updating, nil all arrays and restore cursor}
           exit;
         end;
 
         if head_ref.naxis=0 then //started without an image displayed. Use first image as reference to avoid run time errors
+        if reference_defined=false then //define first image as reference image
         begin
+          abbreviation_var_IAU := prepare_IAU_designation(shape_var1_ra, shape_var1_dec);
+          name_check_iau := prepare_IAU_designation(shape_check1_ra, shape_check1_dec);
           initialise_calc_sincos_dec0; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
-          head_ref:=head;
+          head_ref := head;{backup solution for deepsky annotation}
         end;
 
         use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
@@ -8346,7 +8340,7 @@ begin
 
         if starlistpack = nil then  {should not happen but it happens?}
         begin
-          nil_all;
+          nil_all;{reactivate listview updating, nil all arrays and restore cursor}
           exit;
         end;
         if starlistpack[c].starlist_status = 0 then {not filled with data}
@@ -8435,8 +8429,6 @@ begin
         listview7.Items.item[c].subitems.Strings[P_magn2] := ''; {MAGN, always blank}
         listview7.Items.item[c].subitems.Strings[P_magn3] := ''; {MAGN, always blank}
 
-        //stop_updating(false);//listview7.Items.endUpdate;
-
         if starlistpack[c].mzero <> 0 then {valid flux calibration}
         begin // do var star
           adu_e := retrieve_ADU_to_e_unbinned(head.egain);
@@ -8449,7 +8441,6 @@ begin
               mainwindow.image1.Canvas.Pen.Color := clRed;
 
               celestial_to_pixel(head, shape_var1_ra, shape_var1_dec, xn, yn); {ra,dec to fitsX,fitsY}
-
 
               astr := measure_star(xn, yn); {var star #####################################################################################################################}
 
@@ -8836,7 +8827,7 @@ begin
         form_aavso1.FormShow(nil);{aavso report}
   until ((esc_pressed) or (Sender <> photometry_repeat1 {single run}));
 
-  nil_all;{nil all arrays and restore cursor}
+  nil_all;{reactivate listview updating, nil all arrays and restore cursor}
 end;
 
 
