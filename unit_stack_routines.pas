@@ -19,7 +19,7 @@ procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of T
 procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
-{$inline on}  {!!! Set this off for debugging}
+{$inline off}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
 procedure initialise_calc_sincos_dec0;{set variables correct}
@@ -108,6 +108,7 @@ var
   centerX,centerY,scale_correctionX,scale_correctionY    : double;
 
 begin
+
   a_order:=0; {SIP correction should be zero by definition}
 
   calc_newx_newy(false,head.crpix1, head.crpix2) ;//this will only work well for 1th orde solutions

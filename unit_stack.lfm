@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_photometry1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -85,7 +85,7 @@ object stackmenu1: Tstackmenu1
         ParentShowHint = False
         PopupMenu = PopupMenu7
         ShowHint = True
-        TabIndex = 8
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3501,18 +3501,22 @@ object stackmenu1: Tstackmenu1
             Width = 72
             DropDownCount = 10
             ItemHeight = 15
-            ItemIndex = 8
+            ItemIndex = 13
             Items.Strings = (
               'max'
-              '1.0'
+              '1.4'
               '1.5'
+              '1.6'
+              '1.7'
+              '1.8'
+              '1.9'
               '2.0'
+              '2.1'
               '2.2'
               '2.4'
               '2.6'
               '2.8'
               '3.0'
-              ''
             )
             ParentFont = False
             ParentShowHint = False

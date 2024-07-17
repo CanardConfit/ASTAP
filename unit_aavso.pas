@@ -202,7 +202,7 @@ begin
 
   stdev_valid:=(photometry_stdev>0.0001);
   if stdev_valid then
-    err_message:='MERR:=max(StDev,2/SNR).'
+    err_message:='MERR:=max(StDev:2/SNR).'
   else
     err_message:='MERR:=2/SNR.';
 
@@ -272,9 +272,9 @@ begin
          if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
 
          if reference_database1.itemindex=0 then //local database
-           if pos('v',name_database)>0 then magn_type:=', transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
+           if pos('v',name_database)>0 then magn_type:=' transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
          else  //online database
-           magn_type:=', transformed '+stackmenu1.reference_database1.text;
+           magn_type:=' transformed '+stackmenu1.reference_database1.text;
 
          if snr_str<>'' then
          begin
@@ -450,7 +450,7 @@ end;
 procedure find_best_check_star;
 var
   magn,magn_avgV,magn_minV,mag_var,magC,diff,delt,magn_avgC : double;
-  c,i,b,e,e2,err,counter: integer;
+  c,i,counter: integer;
   abrv, abrv_selected,dum: string;
 begin
   magn_avgV:=0;
@@ -533,7 +533,7 @@ end;
 
 procedure Tform_aavso1.name_variable1DropDown(Sender: TObject);
 var
-  i,ww,j            : integer;
+  i,j               : integer;
   abrv,filter,old   : string;
 begin
   //prepare filtering if any
@@ -551,7 +551,6 @@ begin
 
   name_variable1.color:=cldefault;
   name_variable1.items.clear;
-  ww:=0;
 
   if stackmenu1.measure_all1.checked=false then
   begin
@@ -629,7 +628,7 @@ procedure plot_graph; {plot curve}
 var
   x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,wtext,date_column,count : integer;
   scale,range,madCheck, medianCheck     : double;
-  text1,text2,text3, date_format        : string;
+  text1,text2, date_format        : string;
   bmp: TBitmap;
   dum:string;
   data : array of array of double;
@@ -809,6 +808,7 @@ begin
       bmp.canvas.textout(textp4,len*3,ExtractFilePath(filename2));
 
     nrmarkX:=trunc(w*5/1000);
+    if nrmarkX>0 then
     for c:=0 to nrmarkX do {markers x line}
     begin
       x1:=wtext+round((w-bspace*2)*c/nrmarkX); {x scale has bspace pixels left and right space}
@@ -819,6 +819,7 @@ begin
     end;
 
     nrmarkY:=trunc(h*5/400);
+    if nrmarkY>0 then
     for c:=0 to nrmarkY do {markers y line}
     begin
       x1:=wtext-5;

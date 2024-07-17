@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.07.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.07.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -13745,7 +13745,7 @@ end;
 procedure Tmainwindow.batch_add_solution1Click(Sender: TObject);
 var
   i,nrskipped, nrsolved,nrfailed,file_age,pedestal2,oldnrbits                         : integer;
-  dobackup,add_lim_magn,solution_overwrite,solved,maintain_date,success,image_changed : boolean;
+  add_lim_magn,solution_overwrite,solved,maintain_date,success,image_changed : boolean;
   failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
   headx : theader;
@@ -15135,7 +15135,16 @@ begin
             shape_star3_dec:=shape_var1_dec;
           end;
         shape_var1_fitsX:=xcf; shape_var1_fitsY:=ycf;
-        pixel_to_celestial(head,xcf,ycf,0,shape_var1_ra,shape_var1_dec);{store shape position in ra,dec for positioning accurate at an other image}
+        if head.cd1_1<>0 then
+        begin
+          pixel_to_celestial(head,xcf,ycf,0,shape_var1_ra,shape_var1_dec);{store shape position in ra,dec for positioning accurate at an other image}
+          error_label1.visible:=false;
+        end
+        else
+        begin
+          error_label1.caption:='Variable position undefined due to missing image solution!';
+          error_label1.visible:=true;
+        end;
       end
       else
       if shape_nr=2 then //check
@@ -15156,7 +15165,8 @@ begin
             shape_star3_dec:=shape_check1_dec;
           end;
         shape_check1_fitsX:=xcf; shape_check1_fitsY:=ycf; {calculate fits positions}
-        pixel_to_celestial(head,xcf,ycf,0,shape_check1_ra,shape_check1_dec);{store shape position in ra,dec for positioning accurate at an other image}
+        if head.cd1_1<>0 then
+          pixel_to_celestial(head,xcf,ycf,0,shape_check1_ra,shape_check1_dec);{store shape position in ra,dec for positioning accurate at an other image}
 
       end
       else
@@ -15178,7 +15188,8 @@ begin
               shape_check1_dec:=shape_star3_dec;
             end;
         shape_star3_fitsX:=xcf; shape_star3_fitsY:=ycf;
-        pixel_to_celestial(head,xcf,ycf,0,shape_star3_ra,shape_star3_dec);{store shape position in ra,dec for positioning accurate at an other image}
+        if head.cd1_1<>0 then
+          pixel_to_celestial(head,xcf,ycf,0,shape_star3_ra,shape_star3_dec);{store shape position in ra,dec for positioning accurate at an other image}
       end;
       Shape_var1.HINT:='?';//reset any labels
       shape_check1.HINT:='?';
