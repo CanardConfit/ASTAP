@@ -269,7 +269,7 @@ object mainwindow: Tmainwindow
           ParentColor = False
           ParentFont = False
         end
-        object BitBtn1: TBitBtn
+        object sigma_button1: TBitBtn
           Left = 241
           Height = 42
           Hint = 'Show stack menu. CTRL-A'
@@ -282,7 +282,7 @@ object mainwindow: Tmainwindow
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
-          TabOrder = 1
+          TabOrder = 2
         end
         object solve_button1: TButton
           Left = 305
@@ -301,7 +301,7 @@ object mainwindow: Tmainwindow
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
-          TabOrder = 2
+          TabOrder = 3
           OnClick = solve_button1Click
         end
         object save1: TButton
@@ -321,7 +321,7 @@ object mainwindow: Tmainwindow
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
-          TabOrder = 3
+          TabOrder = 4
           OnClick = SaveFITSwithupdatedheader1Click
         end
         object Polynomial1: TComboBox
@@ -347,7 +347,7 @@ object mainwindow: Tmainwindow
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
-          TabOrder = 4
+          TabOrder = 5
           Text = 'WCS'
           OnChange = Polynomial1Change
         end
@@ -370,7 +370,7 @@ object mainwindow: Tmainwindow
           Font.Quality = fqDraft
           ParentBackground = False
           ParentFont = False
-          TabOrder = 5
+          TabOrder = 6
           object Label12: TLabel
             Left = 0
             Height = 15
@@ -603,7 +603,7 @@ object mainwindow: Tmainwindow
           ParentShowHint = False
           PopupMenu = PopupMenu_ra_dec1
           ShowHint = True
-          TabOrder = 6
+          TabOrder = 1
           Text = '+00 00 00.00'
           OnChange = dec1Change
           OnDblClick = radec_search1Click

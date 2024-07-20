@@ -18,7 +18,7 @@ procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
 procedure load_variable_13;{load variable stars. If loaded no action}
 procedure load_variable_15;{load variable stars. If loaded no action}
-procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
+procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(out stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array;head:theader;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(starlist1,starlist2: star_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
@@ -1580,12 +1580,12 @@ type
   end;
 var
   dra,ddec, telescope_ra,telescope_dec, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,
-  COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec,fitsX,fitsY : double;
+  COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode : integer;
-  overlap          : boolean;
+  overlap,passband_filter          : boolean;
 
 
 begin
@@ -1594,6 +1594,7 @@ begin
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
+    passband_filter:=stackmenu1.annotate_mode1.itemindex <8;
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     {find RA, DEC position of the middle of the image}
@@ -1648,9 +1649,26 @@ begin
           { 3) If the text crosses the right side of the image then move the text to the left.}
           { 4) If the text is moved in y then connect the text to the deepsky object with a vertical line.}
 
-          if mode=1 then
+          if mode=1 then //plot variable
           begin
-            name:=vsx[count].name+'_'+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
+
+       {     var_epoch:=strtofloat1(vsx[count].epoch);
+            var_period:=strtofloat1(vsx[count].period);
+            if ((var_epoch<>0) and (var_period<>0)) then
+            begin
+              delta:=frac((jd_mid-var_epoch)/var_period);//in periods
+              delta:=delta*var_period; //in days
+            end
+            else
+            delta:=99999;
+        }
+            if ((passband_filter=false) or (pos(' V',vsx[count].minmag)>0)) then //index below 8 or correct passband
+            begin
+              name:=vsx[count].name+'_'+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
+            end
+            else
+              name:='';
+
             if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
               mainwindow.Shape_var1.HINT:=vsx[count].name;
           end
@@ -1661,6 +1679,8 @@ begin
                   mainwindow.shape_check1.HINT:=name;
 
             if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
+
+
 
             if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
             begin //Sloan filters used
@@ -1677,75 +1697,78 @@ begin
 
           end;
 
-          if flip_horizontal then begin x:=(head.width-1)-x;  end;
-          if flip_vertical then  else y:=(head.height-1)-y;
-
-
-          {get text dimensions}
-          th:=mainwindow.image1.Canvas.textheight(name);
-          tw:=mainwindow.image1.Canvas.textwidth(name);
-          x1:=x;
-          y1:=y;
-          x2:=x+ tw;
-          y2:=y+ th ;
-
-          if ((x1<=head.width) and (x2>head.width)) then begin x1:=x1-(x2-head.width);x2:=head.width;end; {if text is beyond right side, move left}
-
-          if text_counter>0 then {find free space in y for text}
+          if name<>'' then
           begin
-            repeat {find free text area}
-              overlap:=false;
-              i:=0;
-              repeat {test overlap}
-                if ( ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {left top overlap} or
-                     ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {right top overlap} or
-                     ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {left bottom overlap} or
-                     ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {right bottom overlap} or
+            if flip_horizontal then begin x:=(head.width-1)-x;  end;
+            if flip_vertical then  else y:=(head.height-1)-y;
 
-                     ((text_dimensions[i].x1>=x1) and (text_dimensions[i].x1<=x2) and (text_dimensions[i].y1>=y1) and (text_dimensions[i].y1<=y2)) {two corners of text_dimensions[i] within text} or
-                     ((text_dimensions[i].x2>=x1) and (text_dimensions[i].x2<=x2) and (text_dimensions[i].y2>=y1) and (text_dimensions[i].y2<=y2)) {two corners of text_dimensions[i] within text}
-                   ) then
-                begin
-                  overlap:=true; {text overlaps an existing text}
-                  y1:=y1+(th div 3);{try to shift text one third of the text height down}
-                  y2:=y2+(th div 3);
-                  if y2>=head.height then {no space left, use original position}
+
+            {get text dimensions}
+            th:=mainwindow.image1.Canvas.textheight(name);
+            tw:=mainwindow.image1.Canvas.textwidth(name);
+            x1:=x;
+            y1:=y;
+            x2:=x+ tw;
+            y2:=y+ th ;
+
+            if ((x1<=head.width) and (x2>head.width)) then begin x1:=x1-(x2-head.width);x2:=head.width;end; {if text is beyond right side, move left}
+
+            if text_counter>0 then {find free space in y for text}
+            begin
+              repeat {find free text area}
+                overlap:=false;
+                i:=0;
+                repeat {test overlap}
+                  if ( ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {left top overlap} or
+                       ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {right top overlap} or
+                       ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {left bottom overlap} or
+                       ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {right bottom overlap} or
+
+                       ((text_dimensions[i].x1>=x1) and (text_dimensions[i].x1<=x2) and (text_dimensions[i].y1>=y1) and (text_dimensions[i].y1<=y2)) {two corners of text_dimensions[i] within text} or
+                       ((text_dimensions[i].x2>=x1) and (text_dimensions[i].x2<=x2) and (text_dimensions[i].y2>=y1) and (text_dimensions[i].y2<=y2)) {two corners of text_dimensions[i] within text}
+                     ) then
                   begin
-                    y1:=y;
-                    y2:=y+th ;
-                    overlap:=false;{stop searching}
-                    i:=$FFFFFFF;{stop searching}
+                    overlap:=true; {text overlaps an existing text}
+                    y1:=y1+(th div 3);{try to shift text one third of the text height down}
+                    y2:=y2+(th div 3);
+                    if y2>=head.height then {no space left, use original position}
+                    begin
+                      y1:=y;
+                      y2:=y+th ;
+                      overlap:=false;{stop searching}
+                      i:=$FFFFFFF;{stop searching}
+                    end;
                   end;
-                end;
-                inc(i);
-              until ((i>=text_counter) or (overlap) );{until all tested or found overlap}
-            until overlap=false;{continue till no overlap}
-          end;
+                  inc(i);
+                until ((i>=text_counter) or (overlap) );{until all tested or found overlap}
+              until overlap=false;{continue till no overlap}
+            end;
 
-          text_dimensions[text_counter].x1:=x1;{store text dimensions in array}
-          text_dimensions[text_counter].y1:=y1;
-          text_dimensions[text_counter].x2:=x2;
-          text_dimensions[text_counter].y2:=y2;
+            text_dimensions[text_counter].x1:=x1;{store text dimensions in array}
+            text_dimensions[text_counter].y1:=y1;
+            text_dimensions[text_counter].x2:=x2;
+            text_dimensions[text_counter].y2:=y2;
 
-          if y1<>y then {there was textual overlap}
-          begin
-            mainwindow.image1.Canvas.moveto(x,round(y+th/4));
-            mainwindow.image1.Canvas.lineto(x,y1);
-          end;
-          mainwindow.image1.Canvas.textout(x1,y1,name);
-          inc(text_counter);
-          if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
+            if y1<>y then {there was textual overlap}
+            begin
+              mainwindow.image1.Canvas.moveto(x,round(y+th/4));
+              mainwindow.image1.Canvas.lineto(x,y1);
+            end;
+            mainwindow.image1.Canvas.textout(x1,y1,name);
+            inc(text_counter);
+            if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
 
-          {plot deepsky object}
-          mainwindow.image1.Canvas.Pen.width :=1;//min(4,max(1,round(len/70)));
-
+            {plot deepsky object}
+            mainwindow.image1.Canvas.Pen.width :=1;//min(4,max(1,round(len/70)));
 
 
-          mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
-          mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
-          mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
-          mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
 
+            mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
+            mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
+            mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
+            mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
+
+          end;//name<>''
 
         end;
         inc(count);
@@ -1874,7 +1897,7 @@ begin
 end;
 
 
-procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
+procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
   standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,cv                                         : double;
@@ -1922,20 +1945,20 @@ var
        //   annulus_radius:=8;
       //    head.mzero_radius:=3.9;
 
-          HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,0 {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,0 {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
-          if snr>30 then {star detected in img_loaded. 30 is found emperical}
+          if snr>30 then {star detected in img. 30 is found emperical}
           begin
-            if ((img_loaded[0,round(yc),round(xc)]<data_max-1000) and
-                (img_loaded[0,round(yc-1),round(xc)]<data_max-1000) and
-                (img_loaded[0,round(yc+1),round(xc)]<data_max-1000) and
-                (img_loaded[0,round(yc),round(xc-1)]<data_max-1000) and
-                (img_loaded[0,round(yc),round(xc+1)]<data_max-1000) and
+            if ((img[0,round(yc),round(xc)]<data_max-1000) and
+                (img[0,round(yc-1),round(xc)]<data_max-1000) and
+                (img[0,round(yc+1),round(xc)]<data_max-1000) and
+                (img[0,round(yc),round(xc-1)]<data_max-1000) and
+                (img[0,round(yc),round(xc+1)]<data_max-1000) and
 
-                (img_loaded[0,round(yc-1),round(xc-1)]<data_max-1000) and
-                (img_loaded[0,round(yc-1),round(xc+1)]<data_max-1000) and
-                (img_loaded[0,round(yc+1),round(xc-1)]<data_max-1000) and
-                (img_loaded[0,round(yc+1),round(xc+1)]<data_max-1000)  ) then {not saturated}
+                (img[0,round(yc-1),round(xc-1)]<data_max-1000) and
+                (img[0,round(yc-1),round(xc+1)]<data_max-1000) and
+                (img[0,round(yc+1),round(xc-1)]<data_max-1000) and
+                (img[0,round(yc+1),round(xc+1)]<data_max-1000)  ) then {not saturated}
             begin
               if counter_flux_measured>=length(mzero_array) then
               begin
@@ -2142,13 +2165,13 @@ begin
         head.passband_database:=passband_active; //passband_active is global variable. Now store in the header. head.passband_database can also be retrieved using keyword MZEROPAS
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
-          update_float(mainwindow.memo1.lines,'MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero)
+          update_float(memo,'MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero)
         else
-          update_text(mainwindow.memo1.lines,'MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
+          update_text(memo,'MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
 
-        update_float(mainwindow.memo1.lines,'MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
-        update_float(mainwindow.memo1.lines,'MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
-        update_text(mainwindow.memo1.lines,'MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used.');
+        update_float(memo,'MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
+        update_float(memo,'MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
+        update_text(memo,'MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used.');
 
 
 
