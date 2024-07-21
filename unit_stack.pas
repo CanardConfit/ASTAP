@@ -121,6 +121,8 @@ type
     font_size_photometry1: TEdit;
     GroupBox23: TGroupBox;
     Label72: TLabel;
+    Label73: TLabel;
+    Label75: TLabel;
     lrgb_stars_smooth1: TCheckBox;
     lrgb_smooth_diameter1: TComboBox;
     MenuItem14: TMenuItem;
@@ -3561,7 +3563,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry;
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
 
   if head.passband_database='V'=false then
   begin
@@ -8367,7 +8369,7 @@ begin
 
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
-          plot_and_measure_stars(True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
+          plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
 
           //icon for used database passband. Database selection could be in auto mode so do this after calibration
           if head.passband_database='BP' then database_col:=4 //gray
@@ -8553,7 +8555,7 @@ begin
                       end;
                     end;
                   end;
-              4,5,6 :  //measure all AAVSO stars using the online vsx, vsp
+              4,5,6,7,8,9,10,11 :  //measure all AAVSO stars using the online vsx, vsp
                   begin
                //     mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result in load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
                     lvsx:=length(vsx);
@@ -9576,7 +9578,7 @@ begin
   memo2_message('Loading first image to calibrate photometry for the stack');
   listview_view(stackmenu1.listview6);//show first selected image
 
-  calibrate_photometry;
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
 
   if fits_file_name(filename2) then
     success := savefits_update_header(mainwindow.memo1.lines,filename2)
@@ -10211,9 +10213,12 @@ begin
           head.mzero:=0; //force a new calibration
           if head.cd1_1<>0 then
           begin
-            calibrate_photometry;
-            result:=save_fits_tiff(filename1);
-            if result=false then break;
+            calibrate_photometry(img_loaded,memoX,headX);
+            if headX.mzero<>0 then
+            begin
+              result:=save_fits_tiff(filename1);
+              if result=false then break;
+           end;
           end
           else
           memo2_message('Can not calibrate '+filename1+'. Add first an astrometrical solution.');
@@ -10343,7 +10348,7 @@ begin
   old_aperture:=stackmenu1.flux_aperture1.text;
   stackmenu1.flux_aperture1.text:='max';//full flux is here required
 
-  calibrate_photometry;
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
 
   stackmenu1.flux_aperture1.text:=old_aperture;
 

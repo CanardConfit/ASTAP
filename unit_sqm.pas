@@ -109,7 +109,7 @@ begin
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
     head.mzero_radius:=99;{calibrate for extended objects}
-    plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
+    plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,true {calibration},false {plot stars},false{report lim magnitude});
   end;
   result:=false;
   if head.mzero>0 then

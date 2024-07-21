@@ -62,14 +62,14 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.07.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.07.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
   Tmainwindow = class(TForm)
     add_marker_position1: TMenuItem;
     bin3x3: TMenuItem;
-    BitBtn1: TBitBtn;
+    sigma_button1: TBitBtn;
     boxshape1: TShape;
     data_range_groupBox1: TGroupBox;
     dec1: TEdit;
@@ -629,6 +629,7 @@ type
               maxmag: string;
               minmag: string;
               period: string;
+              epoch: string;
               category: string;
             end;
 
@@ -804,7 +805,7 @@ procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in
 
 function fnmodulo (x,range: double):double;
 function strtoint2(s: string;default:integer):integer; {str to integer, fault tolerant}
-function strtofloat1(s:string): double;{string to float, error tolerant}
+function strtofloat1(s:string): double;{string to float for dot seperator, error tolerant}
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function TextfileSize(const name: string): LongInt;
 function floattostr8(x:double):string;//always with dot decimal seperator  Eight decimals
@@ -895,7 +896,7 @@ function find_reference_star(img : image_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 function noise_to_electrons(adu_e, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
-procedure calibrate_photometry;
+procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader);
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
 function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
@@ -1141,6 +1142,8 @@ var
   abyte                               : byte;
 
   dummy                               : dword;
+  dummystr,dummystr2: string;
+  dummyfloat       : double;
 
 var {################# initialised variables #########################}
   end_record : boolean=false;
@@ -2038,11 +2041,11 @@ begin
         try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
         for i:=0 to head.width-1 do
         begin
-          col_float:=dword(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..65535}
-                        {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-                        {Dword is required for high values}
+          col_float:=int32(swapendian(fitsbuffer4[i]))*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
+         {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
           img_loaded2[k,j,i]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          if col_float>measured_max then
+             measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
     end {colors head.naxis3 times}
@@ -6443,7 +6446,7 @@ begin
 end;
 
 
-function strtofloat1(s:string): double;{string to float, error tolerant}
+function strtofloat1(s:string): double;{string to float for dot seperator, error tolerant}
 var
   error1:integer;
 begin
@@ -9422,7 +9425,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry;//calibrate photometry if required
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);//calibrate photometry if required
   minor_planet_at_cursor:=''; //clear last found
 
 //  plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
@@ -10241,7 +10244,7 @@ var
   s,url   : string;
   val,val2 : char;
   count,i,j,k,fov  : integer;
-  errorRA,errorDEC :boolean;
+  errorRA,errorDEC   :boolean;
 begin
   result:=false;
   fov:=round(sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2*60)); //arcmin. cdelt2 can be negative for other solvers
@@ -10250,6 +10253,7 @@ begin
     limiting_mag:=12; ////Required by AAVSO
     memo2_message('FOV is larger then 3 degrees. Downloading from AAVSO VSX, VSP is then limited to magnitude 12.');
   end;
+
   //https://www.aavso.org/apps/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000
   url:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
   s:=get_http(url);{get webpage}
@@ -10476,6 +10480,13 @@ begin
         vsx[count].period:=copy(s,i,k-i);
       end
       else
+      if ((s[j]='E') and (s[j+1]='p') and (s[j+2]='o')) then
+      begin
+        i:=j+length('"Epoch:"');
+        k:=posex('"',s,i);
+        vsx[count].epoch:=copy(s,i,k-i);
+      end
+      else
       if ((s[j]='P') and (s[j+1]='r') and (s[j+2]='o') and (s[j+3]='p') and (s[j+12]='D') and (s[j+13]='e')  ) then
       begin
         i:=j+length('"ProperMotionDec:"');
@@ -10537,9 +10548,10 @@ begin
        0,1: begin lim_magn:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
        2:   begin lim_magn:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
        3:   begin lim_magn:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-       4: lim_magn:=13;
-       5: lim_magn:=15;
-       6:lim_magn:=99;
+       4,8: lim_magn:=11;
+       5,9: lim_magn:=13;
+       6,19: lim_magn:=15;
+       7,11:lim_magn:=99;
        else
           lim_magn:=99;
      end; //case
@@ -10686,7 +10698,7 @@ begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       head.mzero_radius:=99;{calibrate for extended objects}
 
-      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
+      plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,true {calibration},false {plot stars},false{report lim magnitude});
     end;
     if head.mzero=0 then begin beep; exit;end;
 
@@ -11337,7 +11349,7 @@ begin
 end;
 
 
-procedure calibrate_photometry;
+procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader);
 var
   apert,annul,hfd_med : double;
   hfd_counter                : integer;
@@ -11354,7 +11366,7 @@ begin
     aperture_ratio:=apert;{remember setting}
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
-      analyse_image(img_loaded,head,30,0 {report nr stars and hfd only}, hfd_counter,bck,hfd_med); {find background, number of stars, median HFD}
+      analyse_image(img,head,30,0 {report nr stars and hfd only}, hfd_counter,bck,hfd_med); {find background, number of stars, median HFD}
       if hfd_med<>0 then
       begin
         memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
@@ -11366,7 +11378,7 @@ begin
     else
     memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
 
-    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
+    plot_and_measure_stars(img,memo, head,true {calibration},false {plot stars},true{report lim magnitude});
   end;
 end;
 
@@ -11387,7 +11399,7 @@ const
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry;
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
 
 
   if head.mzero=0 then
@@ -11613,7 +11625,7 @@ begin
   subframe:=(sender=export_star_info1); //full frame or sub section
   formalism:=mainwindow.Polynomial1.itemindex;
 
-  calibrate_photometry;
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
 
   if head.mzero=0 then
   begin
@@ -11921,7 +11933,7 @@ end;
 procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  calibrate_photometry;
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
   Screen.Cursor:=crDefault;
 end;
 
@@ -13830,7 +13842,7 @@ begin
           begin
             if add_lim_magn then
             begin
-              calibrate_photometry;
+              calibrate_photometry(img_temp,memoX,headX);
               update_float(memox,'LIM_MAGN=',' / estimated limiting magnitude for point sources',false ,magn_limit);
 
               mess:='';
@@ -13976,8 +13988,8 @@ begin
 //  annotation_magn :=inputbox('Annotate stars','Annotate up to magnitude:' ,annotation_magn);
 //  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
-  calibrate_photometry;
-  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn});{plot stars}
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
+  plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,false {calibration},true {plot stars},false {measure lim magn});{plot stars}
 end;
 
 
