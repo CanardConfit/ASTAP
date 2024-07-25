@@ -1,12 +1,12 @@
 object form_aavso1: Tform_aavso1
-  Left = 451
+  Left = 441
   Height = 483
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 73
-  Width = 1385
+  Top = 157
+  Width = 1553
   Caption = 'AAVSO report'
   ClientHeight = 483
-  ClientWidth = 1385
+  ClientWidth = 1553
   OnClose = FormClose
   OnCreate = FormCreate
   OnResize = FormResize
@@ -31,7 +31,7 @@ object form_aavso1: Tform_aavso1
     ParentColor = False
   end
   object Label3: TLabel
-    Left = 243
+    Left = 344
     Height = 15
     Top = 240
     Width = 88
@@ -77,7 +77,7 @@ object form_aavso1: Tform_aavso1
     ParentColor = False
   end
   object Label8: TLabel
-    Left = 243
+    Left = 344
     Height = 15
     Top = 72
     Width = 76
@@ -148,26 +148,28 @@ object form_aavso1: Tform_aavso1
     Height = 23
     Hint = ' Check star  AUID  (much preferred) or designation. Alternatively you could select the IAU designation using the position. The dropdown will be filtered if a part of the designation is typed.'
     Top = 240
-    Width = 208
+    Width = 316
+    AutoComplete = True
+    AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
+    AutoDropDown = True
     AutoSelect = False
     DropDownCount = 30
     ItemHeight = 15
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    Sorted = True
     TabOrder = 6
     OnChange = name_check1Change
     OnDropDown = name_check1DropDown
   end
   object Image_photometry1: TImage
     Cursor = crCross
-    Left = 400
+    Left = 450
     Height = 483
     Top = 0
-    Width = 980
+    Width = 1098
     Align = alClient
-    BorderSpacing.Left = 400
+    BorderSpacing.Left = 450
     BorderSpacing.Right = 5
     OnMouseMove = Image_photometry1MouseMove
     PopupMenu = PopupMenu1
@@ -253,13 +255,15 @@ object form_aavso1: Tform_aavso1
     Height = 23
     Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier.  Limit: 30 characters. The dropdown will be filtered if a part of the Var designation is typed.'
     Top = 72
-    Width = 208
+    Width = 316
+    AutoComplete = True
+    AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
+    AutoDropDown = True
     DropDownCount = 30
     ItemHeight = 15
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    Sorted = True
     TabOrder = 10
     OnChange = name_variable1Change
     OnDropDown = name_variable1DropDown
@@ -283,6 +287,7 @@ object form_aavso1: Tform_aavso1
     Width = 331
     Caption = 'Measure all mode . Select variable and check star for report'
     Font.Style = [fsBold]
+    ParentColor = False
     ParentFont = False
     Visible = False
   end

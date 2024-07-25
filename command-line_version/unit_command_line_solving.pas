@@ -212,7 +212,7 @@ end;
 {   see also Montenbruck & Pfleger, Astronomy on the personal computer}
 function lsq_fit( A_matrix: star_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector ): boolean;
   const tiny = 1E-10;  {accuracy}
-  var i,j,k, nr_equations,nr_columns,hhh  : integer;
+  var i,j,k, nr_equations,nr_columns  : integer;
       p,q,h                           : double;
       temp_matrix                     : star_list;
 
@@ -1241,200 +1241,6 @@ begin
 end;
 
 
-procedure add_sipold(ra_database,dec_database:double);
-var
-  stars_measured,stars_reference,grid_list1,grid_list2  : TStarArray;
-  trans_sky_to_pixel,trans_pixel_to_sky  : Ttrans;
-  len,i,position,j,nr                       : integer;
-  succ: boolean;
-  err_mess: string;
-  ra_t,dec_t,  SIN_dec_t,COS_dec_t, SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,MatrixDeterminant,u0,v0,sep,sepsmallest : double;
-  cd : array[0..1,0..1] of double;
-  solution_vectorXinv,solution_vectorYinv : solution_vector;
-const
-   nrpoints=6;
-begin
-  {1) Solve the image with the 1th order solver.
-   2) Get the x,y coordinates of the detected stars= "stars_measured"
-   3) Get the x,y coordinates of the reference stars= "stars_reference"
-   4) Shift the x,y coordinates of "stars_measured" to the center of the image. so position [0,0] is at CRPIX1, CRPIX2.
-   5) Convert reference stars coordinates to the same coordinate system as the measured stars.
-      In my case I had to convert the quad x,y coordinates to ra, dec and then convert these to image position using the original first order solution
-   6) Now both the "stars_measured" and "stars_reference" positions match with stars in the image except for distortion. Position [0,0] is at CRPIX1, CRPIX2.
-   7) For pixel_to_sky  call:  Calc_Trans_Cubic(stars_measured,  stars_reference,...).   The trans array will work for pixel to sky.
-   8) For sky_to_pixel  call:  Calc_Trans_Cubic(stars_reference,  stars_measured,...)    The trans array will work for sky to pixel.
-   }
-
-  len:=length(b_Xrefpositions);
-  if len<20 then
-  begin
-    memo2_message('Not enough quads for calculating SIP.');
-    exit;
-  end;
-  setlength(stars_measured,len);
-  setlength(stars_reference,len);
-
-
-  sincos(dec0,SIN_dec_ref,COS_dec_ref);;{ For 5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
-
-  for i:=0 to len-1 do
-  begin
-    stars_measured[i].x:=1+A_XYpositions[0,i]-crpix1;//position as seen from center at crpix1, crpix2, in fits range 1..width
-    stars_measured[i].y:=1+A_XYpositions[1,i]-crpix2;
-
-    standard_equatorial( ra_database,dec_database,
-                         b_Xrefpositions[i], {x reference star}
-                         b_Yrefpositions[i], {y reference star}
-                         1, {CCD scale}
-                         ra_t,dec_t) ; //calculate back to the reference star positions
-
-
-    {5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
-    sincos(dec_t,SIN_dec_t,COS_dec_t);
-//  sincos(dec0,SIN_dec_ref,COS_dec_ref);{Required but for speed executed outside the for loop}
-
-    delta_ra:=ra_t-ra0;
-    sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-
-    H := SIN_dec_t*sin_dec_ref + COS_dec_t*COS_dec_ref*COS_delta_ra;
-    dRA := (COS_dec_t*SIN_delta_ra / H)*180/pi;
-    dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
-
-    det:=cd2_2*cd1_1 - cd1_2*cd2_1;
-    stars_reference[i].x:= - (cd1_2*dDEC - cd2_2*dRA) / det;
-    stars_reference[i].y:= + (cd1_1*dDEC - cd2_1*dRA) / det;
-
-  end;
-
-  succ:=Calc_Trans_Cubic(stars_reference,     // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
-                         stars_measured,      // Second array of s_star structure we match
-                         trans_sky_to_pixel,  // Transfer coefficients for stars_measured positions to stars_reference positions. Fits range 1..max
-                         err_mess             // any error message
-                            );
-  if succ=false then
-  begin
-    memo2_message(err_mess);
-    exit;
-  end;
-
-
-  {sky to pixel coefficients}
-  AP_order:=3; //third order
-  AP_0_0:=trans_sky_to_pixel.x00;
-  AP_0_1:=trans_sky_to_pixel.x01;
-  AP_0_2:=trans_sky_to_pixel.x02;
-  AP_0_3:=trans_sky_to_pixel.x03;
-  AP_1_0:=-1+trans_sky_to_pixel.x10;
-  AP_1_1:=trans_sky_to_pixel.x11;
-  AP_1_2:=trans_sky_to_pixel.x12;
-  AP_2_0:=trans_sky_to_pixel.x20;
-  AP_2_1:=trans_sky_to_pixel.x21;
-  AP_3_0:=trans_sky_to_pixel.x30;
-
-  BP_0_0:=trans_sky_to_pixel.y00;
-  BP_0_1:=-1+trans_sky_to_pixel.y01;
-  BP_0_2:=trans_sky_to_pixel.y02;
-  BP_0_3:=trans_sky_to_pixel.y03;
-  BP_1_0:=trans_sky_to_pixel.y10;
-  BP_1_1:=trans_sky_to_pixel.y11;
-  BP_1_2:=trans_sky_to_pixel.y12;
-  BP_2_0:=trans_sky_to_pixel.y20;
-  BP_2_1:=trans_sky_to_pixel.y21;
-  BP_3_0:=trans_sky_to_pixel.y30;
-
-
-  //inverse transformation calculation
-  //swap the arrays for inverse factors. This works as long the offset is small like in this situation
-  succ:=Calc_Trans_Cubic(stars_measured,      // reference
-                         stars_reference,      // distorted
-                         trans_pixel_to_sky,  // Transfer coefficients for stars_measured positions to stars_reference positions
-                         err_mess             // any error message
-                         );
-
-  if succ=false then
-  begin
-    memo2_message(err_mess);
-    exit;
-  end;
-
-  // SIP definitions https://irsa.ipac.caltech.edu/data/SPITZER/docs/files/spitzer/shupeADASS.pdf
-
-  //Pixel to sky coefficients
-  A_order:=3;
-  A_0_0:=trans_pixel_to_sky.x00;
-  A_0_1:=trans_pixel_to_sky.x01;
-  A_0_2:=trans_pixel_to_sky.x02;
-  A_0_3:=trans_pixel_to_sky.x03;
-  A_1_0:=-1+ trans_pixel_to_sky.x10;
-  A_1_1:=trans_pixel_to_sky.x11;
-  A_1_2:=trans_pixel_to_sky.x12;
-  A_2_0:=trans_pixel_to_sky.x20;
-  A_2_1:=trans_pixel_to_sky.x21;
-  A_3_0:=trans_pixel_to_sky.x30;
-
-  B_0_0:=trans_pixel_to_sky.y00;
-  B_0_1:=-1+trans_pixel_to_sky.y01;
-  B_0_2:=trans_pixel_to_sky.y02;
-  B_0_3:=trans_pixel_to_sky.y03;
-  B_1_0:=trans_pixel_to_sky.y10;
-  B_1_1:=trans_pixel_to_sky.y11;
-  B_1_2:=trans_pixel_to_sky.y12;
-  B_2_0:=trans_pixel_to_sky.y20;
-  B_2_1:=trans_pixel_to_sky.y21;
-  B_3_0:=trans_pixel_to_sky.y30;
-
-
-  update_float('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',3);
-  update_float('A_0_0   =',' / SIP coefficient                                ',A_0_0);
-  update_float('A_1_0   =',' / SIP coefficient                                ',A_1_0);
-  update_float('A_0_1   =',' / SIP coefficient                                ',A_0_1);
-  update_float('A_2_0   =',' / SIP coefficient                                ',A_2_0);
-  update_float('A_1_1   =',' / SIP coefficient                                ',A_1_1);
-  update_float('A_0_2   =',' / SIP coefficient                                ',A_0_2);
-  update_float('A_3_0   =',' / SIP coefficient                                ',A_3_0);
-  update_float('A_2_1   =',' / SIP coefficient                                ',A_2_1);
-  update_float('A_1_2   =',' / SIP coefficient                                ',A_1_2);
-  update_float('A_0_3   =',' / SIP coefficient                                ',A_0_3);
-
-
-  update_float('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',3);
-  update_float('B_0_0   =',' / SIP coefficient                                ' ,B_0_0);
-  update_float('B_0_1   =',' / SIP coefficient                                ' ,B_0_1);
-  update_float('B_1_0   =',' / SIP coefficient                                ' ,B_1_0);
-  update_float('B_2_0   =',' / SIP coefficient                                ' ,B_2_0);
-  update_float('B_1_1   =',' / SIP coefficient                                ' ,B_1_1);
-  update_float('B_0_2   =',' / SIP coefficient                                ' ,B_0_2);
-  update_float('B_3_0   =',' / SIP coefficient                                ' ,B_3_0);
-  update_float('B_2_1   =',' / SIP coefficient                                ' ,B_2_1);
-  update_float('B_1_2   =',' / SIP coefficient                                ' ,B_1_2);
-  update_float('B_0_3   =',' / SIP coefficient                                ' ,B_0_3);
-
-  update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',3);
-  update_float('AP_0_0  =',' / SIP coefficient                                ',AP_0_0);
-  update_float('AP_1_0  =',' / SIP coefficient                                ',AP_1_0);
-  update_float('AP_0_1  =',' / SIP coefficient                                ',AP_0_1);
-  update_float('AP_2_0  =',' / SIP coefficient                                ',AP_2_0);
-  update_float('AP_1_1  =',' / SIP coefficient                                ',AP_1_1);
-  update_float('AP_0_2  =',' / SIP coefficient                                ',AP_0_2);
-  update_float('AP_3_0  =',' / SIP coefficient                                ',AP_3_0);
-  update_float('AP_2_1  =',' / SIP coefficient                                ',AP_2_1);
-  update_float('AP_1_2  =',' / SIP coefficient                                ',AP_1_2);
-  update_float('AP_0_3  =',' / SIP coefficient                                ',AP_0_3);
-
-  update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',3);
-  update_float('BP_0_0  =',' / SIP coefficient                                ',BP_0_0);
-  update_float('BP_1_0  =',' / SIP coefficient                                ',BP_1_0);
-  update_float('BP_0_1  =',' / SIP coefficient                                ',BP_0_1);
-  update_float('BP_2_0  =',' / SIP coefficient                                ',BP_2_0);
-  update_float('BP_1_1  =',' / SIP coefficient                                ',BP_1_1);
-  update_float('BP_0_2  =',' / SIP coefficient                                ',BP_0_2);
-  update_float('BP_3_0  =',' / SIP coefficient                                ',BP_3_0);
-  update_float('BP_2_1  =',' / SIP coefficient                                ',BP_2_1);
-  update_float('BP_1_2  =',' / SIP coefficient                                ',BP_1_2);
-  update_float('BP_0_3  =',' / SIP coefficient                                ',BP_0_3);
-end;
-
-
 function add_sip(ra_database,dec_database:double) : boolean;
 var
   stars_measured,stars_reference         : TStarArray;
@@ -1631,8 +1437,8 @@ var
   nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,database_density,limit,err, width2, height2                      : integer;
   search_field,step_size,ra_database,dec_database,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
-  oversize,oversize2,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
-  quad_tolerance,flip,extra,distance,flipped_image                                                 : double;
+  oversize,oversize2,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,
+  quad_tolerance,flip,extra,distance,flipped_image                                                                   : double;
   solution, go_ahead ,autoFOV                                                                                        : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;

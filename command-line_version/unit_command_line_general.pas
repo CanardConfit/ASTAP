@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.06.10';
+  astap_version: string='2024.07.21';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -1082,9 +1082,8 @@ begin
         try reader.read(fitsbuffer,width2*4);except; end; {read file info}
         for i:=0 to width2-1 do
         begin
-          col_float:=dword(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..65535}
-                        {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-                        {Dword is required for high values}
+          col_float:=int32(swapendian(fitsbuffer4[i]))*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
+          {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
           img_loaded2[k,j,i]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;

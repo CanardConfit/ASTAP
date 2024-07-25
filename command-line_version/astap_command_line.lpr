@@ -6,8 +6,17 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
-{$mode objfpc}{$H+}
+//For the Android version the interpreter could be wrong set at libdl. It should be /system/bin/linker64. Test in Linux by entering "file ./astap_cli"
+// To correct use patchelf as follows:
+// 64 bit
+// patchelf --set-interpreter /system/bin/linker64 ./astap_cli
+//
+// 32 bit
+// patchelf --set-interpreter /system/bin/linker ./astap_cli
+// See: https://github.com/han-k59/astap/issues/1
+// See: https://forum.lazarus.freepascal.org/index.php/topic,67692.0.html
 
+{$mode objfpc}{$H+}
 uses
   {$IFDEF UNIX or ANDROID}{$IFDEF UseCThreads}
   cthreads,
