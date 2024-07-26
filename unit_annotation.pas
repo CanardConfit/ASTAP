@@ -1652,25 +1652,28 @@ begin
           if mode=1 then //plot variable
           begin
 
-       {     var_epoch:=strtofloat1(vsx[count].epoch);
-            var_period:=strtofloat1(vsx[count].period);
-            if ((var_epoch<>0) and (var_period<>0)) then
-            begin
-              delta:=frac((jd_mid-var_epoch)/var_period);//in periods
-              delta:=delta*var_period; //in days
-            end
-            else
-            delta:=99999;
-        }
             if ((passband_filter=false) or (pos(' V',vsx[count].minmag)>0)) then //index below 8 or correct passband
             begin
-              name:=vsx[count].name+'_'+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
+              name:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
             end
             else
               name:='';
 
             if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
               mainwindow.Shape_var1.HINT:=vsx[count].name;
+
+
+            var_epoch:=strtofloat1(vsx[count].epoch);
+            var_period:=strtofloat1(vsx[count].period);
+            if ((var_epoch<>0) and (var_period<>0)) then
+            begin
+              delta:=frac((jd_mid-var_epoch)/var_period);//in periods. Should jd_helio but that takes more computing
+              if ((delta>0.95) or (delta<0.05)) then
+                   name:=name+ '[AT MAX]';
+
+                 //  if pos('AD CMi',name)>0 then
+                 //  memo2_message(filename2+',  '+floattostr(jd_mid)+ ',   '+floattostr(delta));
+            end;
           end
           else
           begin
@@ -1678,9 +1681,7 @@ begin
             if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                   mainwindow.shape_check1.HINT:=name;
 
-            if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
-
-
+            name:=name+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
 
             if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
             begin //Sloan filters used
@@ -1693,8 +1694,6 @@ begin
               if vsp[count].Bmag<>'?' then name:=name+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
               if vsp[count].Rmag<>'?' then name:=name+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
             end
-
-
           end;
 
           if name<>'' then

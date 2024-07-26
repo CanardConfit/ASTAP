@@ -11,7 +11,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
-  clipbrd, ExtCtrls, Menus, Buttons,strutils;
+  clipbrd, ExtCtrls, Menus, Buttons, FileCtrl, ComboEx,strutils;
 
 type
 
@@ -74,10 +74,10 @@ var
 
 var
   obscode       : string='';
-  abbreviation_check : string='';
+  abbrev_check : string='';
   name_check_IAU : string='';
   abbreviation_var_IAU   : string='';
-  name_var   : string='';
+  abbrev_var   : string='';
   delim_pos  : integer=0;
   to_clipboard  : boolean=true;
   baa_style  : boolean=false;
@@ -91,13 +91,21 @@ var
 
 procedure plot_graph; {plot curve}
 
-implementation
-{$R *.lfm}
 
+implementation
+
+
+{$R *.lfm}
 uses astap_main,
      unit_stack,
      unit_star_database;{for name_database only}
 
+
+type
+    Tstarinfo = record
+                   x   : double;
+                   str : string;
+                 end;
 var
   jd_min,jd_max,magn_min,magn_max : double;
   w,h,bspace,column_var,column_check  :integer;
@@ -133,7 +141,46 @@ begin
     j:=posex(';',used_check_stars,i);
     delete(used_check_stars,i,j-i+1);
   end;
-  used_check_stars:=used_check_stars+  variablestar+':'+checkstar+';'
+  used_check_stars:=used_check_stars+  variablestar+':'+checkstar+';';
+  if length(used_check_stars)>10000 then used_check_stars:=copy(used_check_stars,20,10100);//limit size. Throw oldest part away.
+end;
+
+
+procedure QuickSort_records(var A: array of Tstarinfo; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+var
+  Lo, Hi : integer;
+  Pivot : double;
+  T: Tstarinfo;
+begin
+  Lo := iLo;
+  Hi := iHi;
+  Pivot := A[(Lo + Hi) div 2].x;
+  repeat
+    while A[Lo].x < Pivot do Inc(Lo) ;
+    while A[Hi].x > Pivot do Dec(Hi) ;
+    if Lo <= Hi then
+    begin {swap}
+      T := A[Lo];
+      A[Lo] := A[Hi];
+      A[Hi] := T;
+      Inc(Lo) ;
+      Dec(Hi) ;
+    end;
+  until Lo > Hi;
+  if Hi > iLo then QuickSort_records(A, iLo, Hi) ;  {executes itself recursively}
+  if Lo < iHi then QuickSort_records(A, Lo, iHi) ;  {executes itself recursively}
+end;
+
+
+function remove_sigma_end(s: string): string;//remove then ', σ=' at the end
+var
+  cpos:integer;
+begin
+  cpos:=pos(',',s);
+  if cpos>0 then
+     result:=copy(s,1,cpos-1)
+  else
+    result:=s;
 end;
 
 
@@ -142,8 +189,8 @@ begin
   with form_aavso1 do
   begin
     obscode:=obscode1.text;
-    name_var:=name_variable1.text;
-    abbreviation_check:=name_check1.text;
+    abbrev_var:=remove_sigma_end(name_variable1.text);
+    abbrev_check:=name_check1.text;
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
     hjd_date:=hjd1.checked;
@@ -153,20 +200,21 @@ begin
   end;
 end;
 
-function clean_abreviation(s: string): string;
+
+function clean_abbreviation(s: string): string;
 var
   space : integer;
 begin
-  space:= pos(' ',s);
-  if space>5 then
-     s:=copy(s,1,space-1);
+  space:= posex(' ',s,4);
+  if space>0 then
+  s:=copy(s,1,space-1);
   result:=stringreplace(s,'_',' ',[rfReplaceAll]);
 end;
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c,date_column  : integer;
-    err,err_message,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation: string;
+    err,err_message,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,abbrev_var_clean,abbrev_check_clean: string;
     stdev_valid : boolean;
     snr_value,err_by_snr  : double;
     PNG: TPortableNetworkGraphic;{FPC}
@@ -181,10 +229,13 @@ var
     end;
 
 begin
-  store_check_star(clean_abreviation(name_var),abbreviation_check {full});
+  get_info;//update abbrev_var and others
 
-  get_info;
-  if length(name_var)<1 then
+  abbrev_var_clean:=clean_abbreviation(abbrev_var);
+  abbrev_check_clean:=clean_abbreviation(abbrev_check);
+  store_check_star(clean_abbreviation(abbrev_var_clean {short}),abbrev_check_clean);
+
+  if length(abbrev_var_clean)<1 then
   begin
     name_variable1.color:=clred;
     exit;
@@ -192,7 +243,7 @@ begin
   else
     name_variable1.color:=cldefault;
 
-  if length(abbreviation_check)<1 then
+  if length(abbrev_check)<1 then
   begin
     name_check1.color:=clred;
     exit;
@@ -283,7 +334,7 @@ begin
            else
              filter_used:=copy(filter1.text,1,2);//manual input
 
-           aavso_report:= aavso_report+ clean_abreviation(name_var)+delim+
+           aavso_report:= aavso_report+ abbrev_var_clean + delim +
                           StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
                           transform_magn(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}])+delim+
                           err+
@@ -292,7 +343,7 @@ begin
                          'STD'+delim+
                          'ENSEMBLE'+delim+
                          'na'+delim+
-                         clean_abreviation(abbreviation_check)+delim+
+                         abbrev_check_clean+delim+
                          stringreplace(listview7.Items.item[c].subitems.Strings[column_check{P_magn2}],',','.',[])+delim+
                          airmass_str+delim+
                          'na'+delim+ {group}
@@ -360,90 +411,149 @@ begin
 end;
 
 
+function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable
+var
+   count, c: integer;
+   magn,madCheck, medianCheck : double;
+   dum: string;
+   listMagnitudes : array of double;
+begin
+  count:=0;
+  setlength(listMagnitudes,stackmenu1.listview7.items.count);//list with magnitudes check star
+
+  with stackmenu1 do
+  for c:=0 to listview7.items.count-1 do {retrieve data from listview}
+  begin
+    if listview7.Items.item[c].checked then
+    begin
+      dum:=(listview7.Items.item[c].subitems.Strings[column]);{var star}
+      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then magn:=strtofloat(dum) else magn:=0;
+      if magn<>0 then
+      begin
+        listMagnitudes[count]:= magn;
+        inc(count);
+      end;
+    end;
+   end;
+  if count>3 then
+  begin
+    mad_median(listMagnitudes, count{counter},{var}madCheck, medianCheck);
+    result:=1.4826 * madCheck;
+  end
+  else
+    result:=0;
+end;
+
+
+
 procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
 var
-  i,j: integer;
-  abrv,old,filter       : string;
+  i,j,count: integer;
+  abrv,old,filter,sdstr    : string;
+  starinfo : array of Tstarinfo;
+   measure_any : boolean;
 begin
-  //prepare filtering if any
-  old:=uppercase(name_check1.text);
-  filter:='';
-  for j:=0 to name_check1.items.count-1 do
-  begin
-    if length(old)<>length( name_check1.items[j]) then
-      if pos(old,name_check1.items[j])>0 then
-      begin
-        filter:=old;
-        break;
-      end;
-  end;
 
   name_check1.items.clear;
   name_check1.color:=cldefault;
 
-   if stackmenu1.measure_all1.checked=false then
-   begin
-     name_check1.items.add(mainwindow.shape_check1.HINT);
-     name_check1.items.add(abbreviation_check);//the last name
-     name_check1.items.add(name_check_IAU);// created from position
-   end;
-
-
+  if stackmenu1.measuring_method1.itemindex=0 then
   begin
-  for i:=p_nr_norm+1+1 to p_nr do
-    if odd(i) then //not snr column
-    begin
-      abrv:=stackmenu1.listview7.Column[i].Caption;
-      if copy(abrv,1,4)='000-' then //check star
-        if ((filter='') or (pos(filter,abrv)>0)) then
-        begin
-          with tcombobox(sender) do
+    name_check1.items.add(mainwindow.shape_check1.HINT);
+    name_check1.items.add(abbrev_check);//the last name
+    name_check1.items.add(name_check_IAU);// created from position
+  end;
+
+  setlength(starinfo,p_nr-p_nr_norm);
+  count:=0;
+
+  measure_any:=stackmenu1.measuring_method1.itemindex=2;
+
+  with tcombobox(sender) do
+  begin
+
+    for i:=p_nr_norm+1+1 to p_nr do
+      if odd(i) then //not snr column
+      begin
+        abrv:=stackmenu1.listview7.Column[i].Caption;
+        if ((measure_any) or (copy(abrv,1,4)='000-')) then //check star
+          if ((filter='') or (pos(filter,abrv)>0)) then
           begin
-            {$ifdef mswindows}
-            {begin adjust width automatically}
-            if (Canvas.TextWidth(abrv)> ItemWidth) then
-            ItemWidth:=20+ Canvas.TextWidth((abrv));{adjust dropdown with if required}
-            Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
-            {end adjust width automatically}
-            {$else} {unix}
-            ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
-            {$endif}
-            items.add(abrv);
+            with tcombobox(sender) do
+            begin
+              {$ifdef mswindows}
+              {begin adjust width automatically}
+              if (Canvas.TextWidth(abrv)> ItemWidth) then
+              ItemWidth:=2*Canvas.TextWidth((abrv));{adjust dropdown with if required}
+              Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
+              {end adjust width automatically}
+              {$else} {unix}
+              ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
+              {$endif}
+              starinfo[count].str:=abrv;//store in an array
+              starinfo[count].x:=find_sd_star(i-1);
+              inc(count);
+            end;
           end;
-        end;
-    end;
+      end;
 
-  end;//loop twice if filtering is required
+      if count>0 then
+      begin
+        QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+        for i:=0 to count-1  do  //display in ascending order
+          if starinfo[i].x<>0 then items.add(starinfo[i].str+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3));//add including standard deviation
+      end;
+  end;
+
 end;
-
 
 function find_correct_check_column : integer;
 var
   i: integer;
+  name_check : string;
 begin
+  if stackmenu1.measuring_method1.itemindex=0  then //manual mode
+  begin
+    result:=P_magn2;
+    exit
+  end;
+
+  result:=-99;//assume failure
+  name_check:=remove_sigma_end(form_aavso1.name_check1.text); //remove ', σ=' at the end
+  if name_check='' then  exit;
+
   for i:=p_nr_norm+1 to p_nr do
-    if ((odd(i)) and (form_aavso1.name_check1.text=stackmenu1.listview7.Column[i].Caption)) then
+    if ((odd(i)) and (name_check=stackmenu1.listview7.Column[i].Caption)) then
     begin
       result:=i-1;
       exit;
     end;
-  result:=P_magn2;
 end;
 
 
 function find_correct_var_column : integer;
 var
-  i: integer;
+  i,cc     : integer;
+  name_var : string;
 begin
+  if stackmenu1.measuring_method1.itemindex=0  then //manual mode
+  begin
+    result:=P_magn1;
+    exit
+  end;
+
+  result:=-99;//assume failure
+  name_var:=remove_sigma_end(form_aavso1.name_variable1.text); //remove ', σ=' at the end
+  if name_var='' then  exit;
+
   for i:=p_nr_norm+1 to p_nr do
   begin
-    if ((odd(i)) and (form_aavso1.name_variable1.text=stackmenu1.listview7.Column[i].Caption)) then
+    if ((odd(i)) and (name_var=stackmenu1.listview7.Column[i].Caption)) then
     begin
       result:=i-1;
       exit;
     end;
   end;
-  result:=P_magn1;
 end;
 
 
@@ -455,7 +565,8 @@ var
 begin
   magn_avgV:=0;
   magn_minV:=99;
-  column_var:= find_correct_var_column;
+  column_var:=find_correct_var_column;
+  if column_var<0 then exit; //no var specified yet
   counter:=0;
 
   //find average  magnitude Variable
@@ -523,66 +634,69 @@ end;
 
 procedure Tform_aavso1.name_variable1Change(Sender: TObject);
 begin
-  if stackmenu1.measure_all1.checked then
-  begin
-    name_check1.text:=retrieve_check_star(clean_abreviation(name_variable1.text))
-  end;
-  plot_graph;
+   if stackmenu1.measuring_method1.itemindex>0  then
+     name_check1.text:=retrieve_check_star(clean_abbreviation(name_variable1.text));
+   plot_graph;
 end;
 
 
 procedure Tform_aavso1.name_variable1DropDown(Sender: TObject);
 var
-  i,j               : integer;
-  abrv,filter,old   : string;
+  i,j,count          : integer;
+  abrv,sdstr         : string;
+  starinfo : array of Tstarinfo;
+
 begin
-  //prepare filtering if any
-  old:=uppercase(name_variable1.text);
-  filter:='';
-  for j:=0 to name_variable1.items.count-1 do
-  begin
-    if length(old)<>length( name_variable1.items[j]) then
-      if pos(old,name_variable1.items[j])>0 then
-      begin
-        filter:=old;
-        break;
-      end;
-  end;
-
-  name_variable1.color:=cldefault;
+//  for filtering dropdown set
+//    AutoComplete := true;
+//    AutoDropDown := true;
   name_variable1.items.clear;
-
-  if stackmenu1.measure_all1.checked=false then
+  if stackmenu1.measuring_method1.itemindex=0  then
   begin
-    name_variable1.items.add(mainwindow.Shape_var1.HINT);
+    name_variable1.items.add(mainwindow.shape_var1.HINT);
     name_variable1.items.add(object_name);//from header
-    name_variable1.items.add(name_var);
+    name_variable1.items.add(abbreviation_var_IAU);
+    name_variable1.items.add(abbrev_var);
   end;
 
+
+  setlength(starinfo,p_nr-p_nr_norm);
+  count:=0;
+
+  with tcombobox(sender) do
+  begin
   for i:=p_nr_norm+1 to p_nr do
     if odd(i) then // not a snr column
     begin
       abrv:=stackmenu1.listview7.Column[i].Caption;
       if copy(abrv,1,4)<>'000-' then //Not a check star
-        if ((filter='') or (pos(filter,abrv)>0)) then
-        begin
-          with tcombobox(sender) do
-          begin
-            {$ifdef mswindows}
-            {begin adjust width automatically}
-            if (Canvas.TextWidth(abrv)> ItemWidth) then
-            ItemWidth:=20+ Canvas.TextWidth((abrv));{adjust dropdown with if required}
-            Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
-            {end adjust width automatically}
-            {$else} {unix}
-            ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
-            {$endif}
-
-            items.add(abrv);
-          end;
-        end;
+      begin
+        {$ifdef mswindows}
+        {begin adjust width automatically}
+        if (Canvas.TextWidth(abrv)> ItemWidth) then
+        ItemWidth:=2*Canvas.TextWidth((abrv));{adjust dropdown with if required}
+        Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
+        {end adjust width automatically}
+        {$else} {unix}
+        ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
+        {$endif}
+        starinfo[count].str:=abrv;//store in an array
+        starinfo[count].x:=find_sd_star(i-1);
+        inc(count);
+      end;
     end;
+
+    if count>0 then
+    begin
+      QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+      for i:= count-1 downto 0 do  //display in decending order
+        if starinfo[i].x<>0 then items.add(starinfo[i].str+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3));//add including standard deviation
+
+      memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
+    end;
+  end;
 end;
+
 
 
 procedure Tform_aavso1.FormResize(Sender: TObject);
@@ -610,15 +724,21 @@ end;
 procedure annotate_star_of_column(column,column2: integer);
 begin
   // RA, DEC position is stored as integers in tag   [0..864000], DEC[-324000..324000]
-  shape_var2_ra:= stackmenu1.listview7.column[column].tag*2*pi/864000;
-  shape_var2_dec:= stackmenu1.listview7.column[column+1].tag*0.5*pi/324000;
-  mainwindow.shape_var2.visible:=true;
-  place_marker_radec(mainwindow.shape_var2,shape_var2_ra,shape_var2_dec);{place ra,dec marker in image}
+  if column>0 then //valid
+  begin
+    shape_var2_ra:= stackmenu1.listview7.column[column].tag*2*pi/864000;
+    shape_var2_dec:= stackmenu1.listview7.column[column+1].tag*0.5*pi/324000;
+    mainwindow.shape_var2.visible:=true;
+    place_marker_radec(mainwindow.shape_var2,shape_var2_ra,shape_var2_dec);{place ra,dec marker in image}
+  end;
 
-  shape_check2_ra:= stackmenu1.listview7.column[column2].tag*2*pi/864000;
-  shape_check2_dec:= stackmenu1.listview7.column[column2+1].tag*0.5*pi/324000;
-  mainwindow.shape_check2.visible:=true;
-  place_marker_radec(mainwindow.shape_check2,shape_check2_ra,shape_check2_dec);{place ra,dec marker in image}
+  if column2>0 then //valid
+  begin
+    shape_check2_ra:= stackmenu1.listview7.column[column2].tag*2*pi/864000;
+    shape_check2_dec:= stackmenu1.listview7.column[column2+1].tag*0.5*pi/324000;
+    mainwindow.shape_check2.visible:=true;
+    place_marker_radec(mainwindow.shape_check2,shape_check2_ra,shape_check2_dec);{place ra,dec marker in image}
+  end;
 end;
 
 
@@ -682,8 +802,10 @@ begin
   bspace:=2*mainwindow.image1.Canvas.textheight('T');{{border space graph. Also for 4k with "make everything bigger"}
   wtext:=mainwindow.image1.Canvas.textwidth('12.3456');
 
-  column_var:= find_correct_var_column;
+  column_var:=find_correct_var_column;
   column_check:=find_correct_check_column;
+  if ((column_var<0) and (column_check<0)) then exit;//no var or check star specified
+
 
   annotate_star_of_column(column_var,column_check);
 
@@ -711,14 +833,17 @@ begin
         magn_min:=min(magn_min,data[1,c]);
       end;
 
-      dum:=(listview7.Items.item[c].subitems.Strings[column_check]);{chk star}
-      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then data[2,c]:=strtofloat(dum) else data[2,c]:=0;
-      if data[2,c]<>0 then
+      if column_check>0 then
       begin
-        magn_max:=max(magn_max,data[2,c]);
-        magn_min:=min(magn_min,data[2,c]);
-        listcheck[count]:= data[2,c];
-        inc(count);
+        dum:=(listview7.Items.item[c].subitems.Strings[column_check]);{chk star}
+        if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then data[2,c]:=strtofloat(dum) else data[2,c]:=0;
+        if data[2,c]<>0 then
+        begin
+          magn_max:=max(magn_max,data[2,c]);
+          magn_min:=min(magn_min,data[2,c]);
+          listcheck[count]:= data[2,c];
+          inc(count);
+        end;
       end;
 
       dum:=(listview7.Items.item[c].subitems.Strings[P_magn3]); {3th star}
@@ -798,7 +923,6 @@ begin
 
     textp3:=textp2+40+bmp.canvas.textwidth(text2);
     bmp.canvas.textout(textp3,len*3,'3');
-
 
     textp4:=textp3+60;
 
@@ -887,7 +1011,7 @@ var
 begin
   obscode1.text:=obscode;
 
-  if stackmenu1.measure_all1.checked=false then
+  if stackmenu1.measuring_method1.itemindex=0 then
   begin
     name_variable1.text:=mainwindow.Shape_var1.HINT;
     name_check1.text:=mainwindow.shape_check1.HINT ;
@@ -895,7 +1019,7 @@ begin
   end
   else
   begin //find the variable of interest for header object
-    object_name2:=stringreplace(object_name,' ','_',[]);
+    object_name2:=stringreplace(object_name,' ','_',[]);//object_name from fits header
     for i:=p_nr_norm+1 to p_nr do
       if odd(i) then // not a snr column
       begin
@@ -922,6 +1046,8 @@ begin
   form_aavso1.magnitude_slope1.text:=floattostrF(magnitude_slope,ffFixed,5,3);
 
   aavso_report:='';
+
+  suggest_check1.Enabled:=stackmenu1.measuring_method1.itemindex>0;
   plot_graph;
 end;
 

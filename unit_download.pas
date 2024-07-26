@@ -13,6 +13,7 @@ function get_http(url: string): string;//get webpage in string
 
 implementation
 
+uses unit_stack;
 
 function get_http(url:string): string;
 var
@@ -22,9 +23,14 @@ begin
   if InitSSLInterface=false then begin application.messagebox(pchar('Install OpenSSL. Required for https conections to AAVSO'), pchar('Missing library'),0);exit;end;
   Client := TFPHttpClient.Create(nil);
   try
+    try
     { Allow redirections }
     Client.AllowRedirect := true;
     result:=Client.Get(url);
+  except
+    memo2_message('Internet error!!');
+
+  end;
   finally
     Client.Free;
   end;

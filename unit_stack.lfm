@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_photometry1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 8
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3260,19 +3260,8 @@ object stackmenu1: Tstackmenu1
             TabOrder = 2
             OnClick = photometry_button1Click
           end
-          object photometry_repeat1: TButton
-            Left = 408
-            Height = 26
-            Hint = 'Continous scrolling through the check-marked images  and measure the marked stars.'
-            Top = 34
-            Width = 32
-            Caption = '▶'
-            ParentFont = False
-            TabOrder = 3
-            OnClick = photometry_button1Click
-          end
           object clear_photometry_list1: TButton
-            Left = 1227
+            Left = 1262
             Height = 25
             Hint = 'Clear image list'
             Top = 34
@@ -3281,7 +3270,7 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 4
+            TabOrder = 3
             OnClick = clear_photometry_list1Click
           end
           object listview7: TListView
@@ -3437,7 +3426,7 @@ object stackmenu1: Tstackmenu1
             SmallImages = ImageList_colors
             SortColumn = 9
             SortType = stText
-            TabOrder = 5
+            TabOrder = 4
             ViewStyle = vsReport
             OnColumnClick = listview1ColumnClick
             OnCompare = listview1Compare
@@ -3447,10 +3436,10 @@ object stackmenu1: Tstackmenu1
           end
           object help_photometry1: TLabel
             Cursor = crHandPoint
-            Left = 1288
+            Left = 1179
             Height = 30
             Hint = 'Online help'
-            Top = 0
+            Top = -1
             Width = 9
             Caption = '?'
             Font.Color = clBlue
@@ -3461,41 +3450,19 @@ object stackmenu1: Tstackmenu1
             ShowHint = True
             OnClick = help_photometry1Click
           end
-          object mark_outliers_upto1: TComboBox
-            Left = 1419
-            Height = 23
-            Hint = 'Mark in the image outliers down to this magnitude'
-            Top = 6
-            Width = 48
-            ItemHeight = 15
-            ItemIndex = 3
-            Items.Strings = (
-              '11'
-              '12'
-              '13'
-              '14'
-              '15'
-              '16'
-              '17'
-            )
-            ParentFont = False
-            TabOrder = 6
-            Text = '14'
-            OnChange = flux_aperture1change
-          end
           object aavso_button1: TButton
-            Left = 1104
+            Left = 1139
             Height = 25
             Hint = 'Generate AAVSO report'
-            Top = 34
+            Top = 35
             Width = 99
             AutoSize = True
             Caption = 'AAVSO report'
-            TabOrder = 7
+            TabOrder = 5
             OnClick = aavso_button1Click
           end
           object flux_aperture1: TComboBox
-            Left = 536
+            Left = 560
             Height = 23
             Hint = 'Flux measuring aperture [x HFD ].  Typical range 1 to max. With max all star flux is measured. Can be adjusted to find the lowest standard deviation in the results (check star). Typical values 1.5 or 2.0'
             Top = 6
@@ -3522,12 +3489,12 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 8
+            TabOrder = 6
             Text = '3.0'
             OnChange = flux_aperture1change
           end
           object Label26: TLabel
-            Left = 472
+            Left = 496
             Height = 15
             Top = 12
             Width = 49
@@ -3544,11 +3511,11 @@ object stackmenu1: Tstackmenu1
             BorderSpacing.Top = 2
             Caption = '+'
             ParentFont = False
-            TabOrder = 9
+            TabOrder = 7
             OnClick = analysephotometry1Click
           end
           object annulus_radius1: TComboBox
-            Left = 536
+            Left = 560
             Height = 23
             Hint = 'Annulus inner diameter [ x HFD]. The annulus diameter has to be larger then  the aperture diameter.'
             Top = 35
@@ -3566,12 +3533,12 @@ object stackmenu1: Tstackmenu1
               '10'
             )
             ParentFont = False
-            TabOrder = 10
+            TabOrder = 8
             Text = '6'
             OnChange = flux_aperture1change
           end
           object Label27: TLabel
-            Left = 474
+            Left = 498
             Height = 15
             Top = 37
             Width = 47
@@ -3580,10 +3547,10 @@ object stackmenu1: Tstackmenu1
             ParentColor = False
           end
           object speedButton_location1: TSpeedButton
-            Left = 1248
+            Left = 1139
             Height = 25
             Hint = 'Default observer location for the case it is not available in the file header. Use this for DSLR images.'
-            Top = 6
+            Top = 7
             Width = 25
             Images = ImageList2
             ImageIndex = 20
@@ -3599,10 +3566,10 @@ object stackmenu1: Tstackmenu1
             Images = ImageList2
             ImageIndex = 23
             OnClick = browse_photometry1Click
-            TabOrder = 11
+            TabOrder = 9
           end
           object annotate_mode1: TComboBox
-            Left = 744
+            Left = 779
             Height = 23
             Hint = 'Annotate variable and comparison stars'
             Top = 35
@@ -3625,15 +3592,15 @@ object stackmenu1: Tstackmenu1
               'Online DB mag 99'
             )
             ParentFont = False
-            TabOrder = 12
+            TabOrder = 10
             Text = 'Local DB mag 11'
             OnChange = annotate_mode1Change
           end
           object reference_database1: TComboBox
-            Left = 744
+            Left = 779
             Height = 23
             Hint = 'Comparison star database to be used. Set to '#13#10'1) Online , Gaia ->auto '#13#10'or'#13#10'2) Local star database and select in tab alignment V50 or V05 for Johnson-V.'
-            Top = 5
+            Top = 7
             Width = 200
             DropDownCount = 17
             ItemHeight = 15
@@ -3650,12 +3617,12 @@ object stackmenu1: Tstackmenu1
               'Online Gaia->SI (i'')'
             )
             ParentFont = False
-            TabOrder = 13
+            TabOrder = 11
             Text = 'Local star database'
             OnChange = reference_database1Change
           end
           object transformation1: TButton
-            Left = 976
+            Left = 1024
             Height = 25
             Hint = 'This will calculate the transformation equation  ∆ V = a + T*(B-V) using the image in the viewer'
             Top = 6
@@ -3665,14 +3632,14 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 14
+            TabOrder = 12
             OnClick = transformation1Click
           end
           object Label19: TLabel
-            Left = 1304
+            Left = 1195
             Height = 47
             Hint = 'See popup menu for calibration && extraction'
-            Top = 6
+            Top = 4
             Width = 120
             AutoSize = False
             Caption = 'See popup menu for calibration && extraction'
@@ -3682,27 +3649,17 @@ object stackmenu1: Tstackmenu1
             WordWrap = True
           end
           object most_right9: TStaticText
-            Left = 1480
+            Left = 1376
             Height = 16
-            Top = 34
+            Top = 40
             Width = 3
             AutoSize = True
             Caption = '|'
-            TabOrder = 15
+            TabOrder = 13
             Visible = False
           end
-          object measure_all1: TCheckBox
-            Left = 248
-            Height = 19
-            Hint = 'All stars annotated with AAVSO labels will be photometric measured and can be selected in the AAVSO report window.'
-            Top = 5
-            Width = 135
-            Caption = 'Measure all annotated'
-            TabOrder = 16
-            OnChange = measure_all1Change
-          end
           object SpeedButton2: TSpeedButton
-            Left = 610
+            Left = 634
             Height = 25
             Hint = 'Find best aperture by trial and error.'
             Top = 5
@@ -3746,19 +3703,19 @@ object stackmenu1: Tstackmenu1
             OnClick = SpeedButton2Click
           end
           object font_size_photometry1: TEdit
-            Left = 1168
+            Left = 1080
             Height = 23
             Hint = 'Font size of image annotations'
-            Top = 7
+            Top = 35
             Width = 32
-            TabOrder = 17
+            TabOrder = 14
             Text = '8'
           end
           object font_size_photometry_UpDown1: TUpDown
-            Left = 1200
+            Left = 1112
             Height = 23
             Hint = 'Font size of image annotations'
-            Top = 7
+            Top = 35
             Width = 17
             Associate = font_size_photometry1
             Max = 20
@@ -3766,19 +3723,19 @@ object stackmenu1: Tstackmenu1
             ParentShowHint = False
             Position = 8
             ShowHint = True
-            TabOrder = 18
+            TabOrder = 15
           end
           object Label72: TLabel
-            Left = 1104
+            Left = 1011
             Height = 15
-            Top = 14
+            Top = 37
             Width = 49
             Alignment = taRightJustify
             Caption = 'Font size:'
             ParentColor = False
           end
           object Label73: TLabel
-            Left = 653
+            Left = 688
             Height = 15
             Top = 12
             Width = 66
@@ -3786,12 +3743,50 @@ object stackmenu1: Tstackmenu1
             Caption = 'Comp. stars:'
           end
           object Label75: TLabel
-            Left = 656
+            Left = 691
             Height = 15
             Top = 37
             Width = 63
             Alignment = taRightJustify
             Caption = 'Annotation:'
+          end
+          object measuring_method1: TComboBox
+            Left = 200
+            Height = 23
+            Hint = 'Select measuring mode'
+            Top = 7
+            Width = 200
+            DropDownCount = 17
+            ItemHeight = 15
+            ItemIndex = 0
+            Items.Strings = (
+              'Manual star selection'
+              'Measure all annotated'
+              'Measure all stars. Total nr:'
+            )
+            ParentFont = False
+            TabOrder = 16
+            Text = 'Manual star selection'
+            OnChange = measuring_method1Change
+          end
+          object nr_stars_to_detect1: TComboBox
+            Left = 408
+            Height = 23
+            Hint = 'Number of stars to detect'
+            Top = 8
+            Width = 64
+            DropDownCount = 17
+            Enabled = False
+            ItemHeight = 15
+            ItemIndex = 0
+            Items.Strings = (
+              '100'
+              '200'
+              '300'
+            )
+            ParentFont = False
+            TabOrder = 17
+            Text = '100'
           end
         end
         object tab_inspector1: TTabSheet

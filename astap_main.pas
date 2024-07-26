@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.07.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.07.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8593,15 +8593,14 @@ begin
       dum:=Sett.ReadString('stack','star_level_colouring',''); if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','filter_artificial_colouring',''); if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','resize_factor',''); if dum<>'' then stackmenu1.resize_factor1.text:=dum;
-      dum:=Sett.ReadString('stack','mark_outliers_upto',''); if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
+      dum:=Sett.ReadString('stack','nr_stars_p',''); if dum<>'' then stackmenu1.nr_stars_to_detect1.text:=dum;
       dum:=Sett.ReadString('stack','flux_aperture',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
       dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
 
       c:=Sett.ReadInteger('stack','annotate_m',0); stackmenu1.annotate_mode1.itemindex:=c;
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
-      stackmenu1.measure_all1.Checked:=Sett.ReadBool('stack','measure_all',false);
-
+      c:=Sett.ReadInteger('stack','measure_all',0); stackmenu1.measuring_method1.itemindex:=c;
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
@@ -8985,13 +8984,14 @@ begin
 
       sett.writestring('stack','resize_factor',stackmenu1.resize_factor1.text);
 
-      sett.writestring('stack','mark_outliers_upto',stackmenu1.mark_outliers_upto1.text);
+      sett.writestring('stack','nr_stars_p',stackmenu1.nr_stars_to_detect1.text);
       sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
       sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
       sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
       sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
-      sett.WriteBool('stack','measure_all', stackmenu1.measure_all1.checked);
+
+      sett.writeInteger('stack','measure_all',stackmenu1.measuring_method1.itemindex);
 
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
@@ -10243,21 +10243,22 @@ function download_vsp(limiting_mag: double) : boolean;//AAVSO API access
 var
   s,url   : string;
   val,val2 : char;
-  count,i,j,k,fov  : integer;
-  errorRA,errorDEC   :boolean;
+  count,i,j,k,fov    : integer;
+  errorRA,errorDEC   : boolean;
 begin
   result:=false;
   fov:=round(sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2*60)); //arcmin. cdelt2 can be negative for other solvers
   if fov>180 {arcmin} then
   begin
-    limiting_mag:=12; ////Required by AAVSO
-    memo2_message('FOV is larger then 3 degrees. Downloading from AAVSO VSX, VSP is then limited to magnitude 12.');
+    if limiting_mag>12 then memo2_message('FOV is larger then 3 degrees. Downloading from AAVSO VSX, VSP is then limited to magnitude 12.');
+    limiting_mag:=min(limiting_mag,12); ////Required by AAVSO
   end;
 
   //https://www.aavso.org/apps/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000
   url:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
   s:=get_http(url);{get webpage}
-  if length(s)<50 then begin beep; exit end;;
+  if length(s)=0 then begin beep; exit end;;
+  if length(s)<256 then exit; //no data for this field
 
   setlength(vsp,1000);
   count:=0;
@@ -10398,12 +10399,13 @@ begin
   else
     years_since_2000:=26; //default, years since 2000
 
-  if radius>3 {degrees} then limiting_mag:=12; ////Required by AAVSO
+  if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); ////Required by AAVSO
 
   //https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
   url:='https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
   s:=get_http(url);
-  if length(s)<25 then begin beep; exit end;;
+  if length(s)=0 then begin beep; exit end;//network error
+  if length(s)<25 then begin exit end;//no stars in this field
 
   setlength(vsx,1000);
   count:=0;
@@ -10415,7 +10417,7 @@ begin
             break;//no more data
     i:=i+length('"Name":"');
     j:=posex('"',s,i);
-    vsx[count].name:=copy(s,i,j-i);
+    vsx[count].name:=stringreplace(copy(s,i,j-i),' ','_',[]);//add underscore for consistancy with local database
 
     //optional field
 //     if s[j+3]='A' then
@@ -10531,7 +10533,6 @@ procedure variable_star_annotation(plot: boolean {if false, load only});
 var
   lim_magn            : double;
 begin
-
 //0, No annotation
 //1, Annotation local DB mag 13
 //2, Annotation local DB mag 15
@@ -10562,11 +10563,15 @@ begin
       if aavso_update_required then
       begin
         memo2_message('Downloading online data from AAVSO as set in tab Photometry.');
-        if download_vsx(lim_magn)=false then begin memo2_message('Error!');break; end;
-        if download_vsp(lim_magn)=false then begin memo2_message('Error!');break; end;
+        if download_vsx(lim_magn)=false then begin memo2_message('No VSX data! Increasing the max magnitude could help.');break; end;
+        if download_vsp(lim_magn)=false then begin memo2_message('No VSP data!');break; end;
+
       end;
       if plot then
-                   plot_vsx_vsp;
+      begin
+         date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
+         plot_vsx_vsp;
+      end;
     until true;//allow breaks to skip and go to cursor statement
   end
   else
@@ -10582,6 +10587,7 @@ procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 var
   lim_magn            : double;
 begin
+  if head.cd1_1=0 then begin memo2_message('No solution!'); exit; end;//no solution
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   variable_star_annotation(true {load and plot});
   Screen.Cursor:=crDefault;
@@ -15120,7 +15126,7 @@ begin
     end;
   end
   else
-  if ((stackmenu1.pagecontrol1.tabindex=8) and   (stackmenu1.measure_all1.checked=false))  then {photometry}
+  if ((stackmenu1.pagecontrol1.tabindex=8) and   (stackmenu1.measuring_method1.itemindex=0))  then {photometry}
   begin
     {star alignment}
     HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
