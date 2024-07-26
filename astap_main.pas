@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.07.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.07.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -10525,7 +10525,7 @@ begin
   if vsx=nil then exit;
   if length(vsx)>0 then
     ang_sep(vsx[0].ra,vsx[0].dec,head.ra0,head.dec0,sep);
-  if sep<head.width*head.cdelt2*2*pi/180 then result:=false;// first entry near to center position image then no update required
+  if sep<head.width*head.cdelt2*0.5*pi/180 then result:=false;// first entry near to center position image then no update required
 end;
 
 
