@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.07.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.07.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -10260,10 +10260,12 @@ begin
   if length(s)=0 then begin beep; exit end;;
   if length(s)<256 then exit; //no data for this field
 
-  setlength(vsp,1000);
+  setlength(vsp,2000);
   count:=0;
   j:=150;//skip some header stuff
   repeat
+    if count>=length(vsp) then setlength(vsp,count+2000);// increase size
+
     i:=posex('"auid":"',s,j); //AUID will be always available
     if i=0 then
             break;//no more data
@@ -10379,7 +10381,7 @@ begin
     until ((val=']') or (j>=length(s)));
 
     inc(count);//number of entries/stars
-  until count>=length(vsp);//normally will stop at above break
+  until count>=10000;//pratical limit, normally will stop at above break
   setlength(vsp,count);
   result:=true;
 end;
@@ -10388,7 +10390,8 @@ function download_vsx(limiting_mag: double): boolean;//AAVSO API access
 var
   s,dummy,url   : string;
   count,i,j,k,errorRa,errorDec,err                : integer;
-  radius,ra,dec,ProperMotionRA,ProperMotionDEC,jd,years_since_2000 : double;
+  radius,ra,dec,ProperMotionRA,ProperMotionDEC,jd,years_since_2000,var_period : double;
+  skip,passband_filter,period_filter  : boolean;
 begin
   result:=false;
   radius:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //radius in degrees. Some solvers produce files with neagative cdelt2
@@ -10401,17 +10404,24 @@ begin
 
   if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); ////Required by AAVSO
 
+  passband_filter:=stackmenu1.annotate_mode1.itemindex <12;
+  period_filter:=stackmenu1.annotate_mode1.itemindex <8;
+
+
+
   //https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
   url:='https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
   s:=get_http(url);
   if length(s)=0 then begin beep; exit end;//network error
   if length(s)<25 then begin exit end;//no stars in this field
 
-  setlength(vsx,1000);
+  setlength(vsx,2000);
   count:=0;
   j:=25;//skip some header stuff
 
   repeat
+    if count>=length(vsx) then setlength(vsx,length(vsx)+2000);// increase size
+
     i:=posex('"Name":"',s,j); //Name will be always available
     if i=0 then
             break;//no more data
@@ -10510,9 +10520,23 @@ begin
 
 
       if j<k then j:=k; //k could be in very rare cases 0 resulting in an endless loop
-     until ((s[j]='}') or (j=length(s)-1));
-    inc(count);//number of entries/stars
-  until count>=length(vsx);//normally will stop at above break
+    until ((s[j]='}') or (j=length(s)-1));
+
+    //filtering
+    skip:=false;
+    if ((passband_filter) and (pos('V',vsx[count].minmag)=0)) then
+      skip:=true
+    else
+    if period_filter then
+    begin
+      var_period:=strtofloat1(vsx[count].period);
+      if ((var_period=0) or (var_period>=3)) then  skip:=true;//only short period var's
+    end;
+
+    if skip=false then
+         inc(count);//number of entries/stars
+
+  until count>=10000;//pratical limit, normally will stop at above break
   setlength(vsx,count);
   result:=true;
 end;
@@ -10525,7 +10549,7 @@ begin
   if vsx=nil then exit;
   if length(vsx)>0 then
     ang_sep(vsx[0].ra,vsx[0].dec,head.ra0,head.dec0,sep);
-  if sep<head.width*head.cdelt2*0.5*pi/180 then result:=false;// first entry near to center position image then no update required
+  if sep<head.width*head.cdelt2*pi/180 then result:=false;// first entry near to center position image then no update required
 end;
 
 
@@ -10549,10 +10573,10 @@ begin
        0,1: begin lim_magn:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
        2:   begin lim_magn:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
        3:   begin lim_magn:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-       4,8: lim_magn:=11;
-       5,9: lim_magn:=13;
-       6,19: lim_magn:=15;
-       7,11:lim_magn:=99;
+       4,8,12:  lim_magn:=11;
+       5,9,13:  lim_magn:=13;
+       6,19,14: lim_magn:=15;
+       7,11,15: lim_magn:=99;
        else
           lim_magn:=99;
      end; //case

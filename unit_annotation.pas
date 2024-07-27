@@ -1585,7 +1585,7 @@ var
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode : integer;
-  overlap,passband_filter          : boolean;
+  overlap      : boolean;
 
 
 begin
@@ -1593,8 +1593,6 @@ begin
   begin
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
-
-    passband_filter:=stackmenu1.annotate_mode1.itemindex <8;
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     {find RA, DEC position of the middle of the image}
@@ -1652,12 +1650,7 @@ begin
           if mode=1 then //plot variable
           begin
 
-            if ((passband_filter=false) or (pos(' V',vsx[count].minmag)>0)) then //index below 8 or correct passband
-            begin
-              name:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
-            end
-            else
-              name:='';
+            name:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
 
             if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
               mainwindow.Shape_var1.HINT:=vsx[count].name;
@@ -1669,14 +1662,15 @@ begin
             begin
               delta:=frac((jd_mid-var_epoch)/var_period);//in periods. Should jd_helio but that takes more computing
               if ((delta>0.95) or (delta<0.05)) then
-                   name:=name+ '[AT MAX]';
+                 name:=name+ '[AT MAX]';
 
                  //  if pos('AD CMi',name)>0 then
                  //  memo2_message(filename2+',  '+floattostr(jd_mid)+ ',   '+floattostr(delta));
             end;
+
           end
           else
-          begin
+          begin //plot check stars
             name:=vsp[count].auid;
             if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                   mainwindow.shape_check1.HINT:=name;
