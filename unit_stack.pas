@@ -8137,11 +8137,8 @@ begin
       begin
         abbreviation_var_IAU := prepare_IAU_designation(shape_var1_ra, shape_var1_dec);
         name_check_iau := prepare_IAU_designation(shape_check1_ra, shape_check1_dec);
-        if head_ref.naxis=0 then //started without an image displayed. Use first image as reference to avoid run time errors
-        begin
-          initialise_calc_sincos_dec0; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
-          head_ref := head;{backup solution for deepsky annotation}
-        end;
+        initialise_calc_sincos_dec0; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
+        head_ref := head;{backup solution for deepsky annotation}
       end;
       use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
@@ -8562,11 +8559,16 @@ begin
 
       if annotate_mode1.ItemIndex > 0 then
       begin
-         head:=head_ref;//use head_ref for annotating.
-         variable_star_annotation(true {plot, do not extract to variable_list}); //vsp & vsx
+        head.ra0:=head_ref.ra0;//use head_ref for annotating. Images are aligned so this will work. Note head:=head_ref doesn't work !!. Seems to make a local head. The head values in the function aavso_update_required are different;
+        head.dec0:=head_ref.dec0;
+        head.cd1_1:=head_ref.cd1_1;
+        head.cd1_2:=head_ref.cd1_2;
+        head.cd2_1:=head_ref.cd2_1;
+        head.cd2_2:=head_ref.cd2_2;
+
+        variable_star_annotation(true {plot, do not extract to variable_list}); //vsp & vsx
       end;
 
-      //listview7.Items.EndUpdate;
       stop_updating(false);//listview7.Items.endUpdate;
 
     end;{find star magnitudes}

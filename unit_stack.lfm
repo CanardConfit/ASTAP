@@ -3261,10 +3261,10 @@ object stackmenu1: Tstackmenu1
             OnClick = photometry_button1Click
           end
           object clear_photometry_list1: TButton
-            Left = 1262
+            Left = 1288
             Height = 25
             Hint = 'Clear image list'
-            Top = 34
+            Top = 35
             Width = 61
             Caption = 'Clear'
             ParentFont = False
@@ -3436,7 +3436,7 @@ object stackmenu1: Tstackmenu1
           end
           object help_photometry1: TLabel
             Cursor = crHandPoint
-            Left = 1179
+            Left = 1203
             Height = 30
             Hint = 'Online help'
             Top = -1
@@ -3451,7 +3451,7 @@ object stackmenu1: Tstackmenu1
             OnClick = help_photometry1Click
           end
           object aavso_button1: TButton
-            Left = 1139
+            Left = 1163
             Height = 25
             Hint = 'Generate AAVSO report'
             Top = 35
@@ -3547,7 +3547,7 @@ object stackmenu1: Tstackmenu1
             ParentColor = False
           end
           object speedButton_location1: TSpeedButton
-            Left = 1139
+            Left = 1163
             Height = 25
             Hint = 'Default observer location for the case it is not available in the file header. Use this for DSLR images.'
             Top = 7
@@ -3573,7 +3573,7 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Annotate variable and comparison stars'
             Top = 35
-            Width = 200
+            Width = 221
             DropDownCount = 17
             ItemHeight = 15
             ItemIndex = 1
@@ -3582,6 +3582,10 @@ object stackmenu1: Tstackmenu1
               'Local DB mag 11'
               'Local DB mag 13'
               'Local DB mag 15'
+              'Online DB mag 11 (V only, period<3)'
+              'Online DB mag 13 (V only, period<3)'
+              'Online DB mag 15 (V only, period<3)'
+              'Online DB mag 99 (V only, period<3)'
               'Online DB mag 11 (V only)'
               'Online DB mag 13 (V only)'
               'Online DB mag 15 (V only)'
@@ -3601,7 +3605,7 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Comparison star database to be used. Set to '#13#10'1) Online , Gaia ->auto '#13#10'or'#13#10'2) Local star database and select in tab alignment V50 or V05 for Johnson-V.'
             Top = 7
-            Width = 200
+            Width = 221
             DropDownCount = 17
             ItemHeight = 15
             ItemIndex = 0
@@ -3622,7 +3626,7 @@ object stackmenu1: Tstackmenu1
             OnChange = reference_database1Change
           end
           object transformation1: TButton
-            Left = 1024
+            Left = 1048
             Height = 25
             Hint = 'This will calculate the transformation equation  ∆ V = a + T*(B-V) using the image in the viewer'
             Top = 6
@@ -3636,7 +3640,7 @@ object stackmenu1: Tstackmenu1
             OnClick = transformation1Click
           end
           object Label19: TLabel
-            Left = 1195
+            Left = 1288
             Height = 47
             Hint = 'See popup menu for calibration && extraction'
             Top = 4
@@ -3649,7 +3653,7 @@ object stackmenu1: Tstackmenu1
             WordWrap = True
           end
           object most_right9: TStaticText
-            Left = 1376
+            Left = 1390
             Height = 16
             Top = 40
             Width = 3
@@ -3703,7 +3707,7 @@ object stackmenu1: Tstackmenu1
             OnClick = SpeedButton2Click
           end
           object font_size_photometry1: TEdit
-            Left = 1080
+            Left = 1104
             Height = 23
             Hint = 'Font size of image annotations'
             Top = 35
@@ -3712,7 +3716,7 @@ object stackmenu1: Tstackmenu1
             Text = '8'
           end
           object font_size_photometry_UpDown1: TUpDown
-            Left = 1112
+            Left = 1136
             Height = 23
             Hint = 'Font size of image annotations'
             Top = 35
@@ -3726,9 +3730,9 @@ object stackmenu1: Tstackmenu1
             TabOrder = 15
           end
           object Label72: TLabel
-            Left = 1011
+            Left = 1040
             Height = 15
-            Top = 37
+            Top = 38
             Width = 49
             Alignment = taRightJustify
             Caption = 'Font size:'
