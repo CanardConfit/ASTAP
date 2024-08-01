@@ -371,8 +371,8 @@ var
 
                 mainwindow.image1.Canvas.pen.color:=clyellow;
               end;
-               if plot then writetext(min(ww*binning,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  σ='+ Floattostrf(sd,ffgeneral,3,3));
-              memo2_message('Streak found: '+filename2+',     Y='+floattostrf(slope,ffgeneral,5,5)+'*X + '+Floattostrf(intercept,ffgeneral,5,5)+ ',  σ='+ Floattostrf(sd,ffgeneral,3,3));
+               if plot then writetext(min(ww*binning,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,FFgeneral,5,0)+'*X + '+Floattostrf(intercept,FFgeneral,5,0)+ ',  σ='+ Floattostrf(sd,FFgeneral,3,0));
+              memo2_message('Streak found: '+filename2+',     Y='+floattostrf(slope,FFgeneral,5,0)+'*X + '+Floattostrf(intercept,FFgeneral,5,0)+ ',  σ='+ Floattostrf(sd,FFgeneral,3,0));
 
               contour_array2:=nil;
 

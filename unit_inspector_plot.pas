@@ -363,7 +363,7 @@ begin
         flip_xy(fliph,flipv,starX2,starY2); {from array to image coordinates}
 
         mainwindow.image1.Canvas.Rectangle(starX2-size,starY2-size, starX2+size, starY2+size);{indicate hfd with rectangle}
-        mainwindow.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+        mainwindow.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffFixed, 0,2));{add hfd as text}
 
 
         //the nine areas. FITS 1,1 is left bottom:
@@ -1093,7 +1093,7 @@ begin
      begin
        if Fliphorizontal     then starX:=head.width-round(hfd_values[0,i])  else starX:=round(hfd_values[0,i]);
        if Flipvertical       then starY:=head.height-round(hfd_values[1,i]) else starY:=round(hfd_values[1,i]);
-       annotation_to_array(floattostrf(hfd_values[2,i]/1000 {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starY,starX]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/300),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
+       annotation_to_array(floattostrf(hfd_values[2,i]/1000 {aspect}, ffgeneral, 3,0){text},true{transparent},round(img_loaded[0,starY,starX]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/300),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
      end;
      hfds[i]:=hfd_values[2,i];
   end;
@@ -1109,7 +1109,7 @@ begin
   else
   begin
      mess:='10% of the HFD measurements is worse or equal then ';
-     mess:=mess+floattostrf(med/1000 , ffgeneral, 2,1);
+     mess:=mess+floattostrf(med/1000 , ffgeneral, 2,0);
   end;
   memo2_message(mess);
   annotation_to_array(mess,true {transparent},65535,size*2 {size},5,10+size*2*9,img_loaded); {report median value}
@@ -1367,7 +1367,7 @@ begin
 
         factor:=median/median_center;
         if abs(1-factor)>0.03 then image1.Canvas.font.color:=$00A5FF {dark orange} else image1.Canvas.font.color:=clYellow;
-        detext:=floattostrf(factor, ffgeneral, 3,3);
+        detext:=floattostrf(factor, ffgeneral, 3,0);
 
         tx:=round(X);
         ty:=round(Y);

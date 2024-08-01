@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.07.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.08.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -5851,9 +5851,7 @@ begin
            mrYes: Clipboard.AsText:=info_message;
   end;
 
-
   median_array:=nil;{free mem}
-
   Screen.Cursor:=crDefault;
 end;
 
@@ -5955,8 +5953,8 @@ begin
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
   stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{mono}
 
-  stackmenu1.focallength1.Text:=floattostrf(focallen,ffgeneral, 4, 4);
-  stackmenu1.pixelsize1.text:=floattostrf(head.xpixsz{*XBINNING},ffgeneral, 4, 4);
+  stackmenu1.focallength1.Text:=floattostrf(focallen,ffFixed, 0, 0);
+  stackmenu1.pixelsize1.text:=floattostrf(head.xpixsz{*XBINNING},ffgeneral, 4, 0);
   stackmenu1.calculator_binning1.caption:=inttostr(head.width)+' x '+inttostr(head.height)+' pixels, binned '+floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
@@ -11399,7 +11397,7 @@ begin
       analyse_image(img,head,30,0 {report nr stars and hfd only}, hfd_counter,bck,hfd_med); {find background, number of stars, median HFD}
       if hfd_med<>0 then
       begin
-        memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
+        memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,0)+'. Aperture and annulus will be adapted accordingly.');;
         head.mzero_radius:=hfd_med*apert/2;{radius}
         annul:=strtofloat2(stackmenu1.annulus_radius1.text);
         annulus_radius:=min(50,round(hfd_med*annul/2)-1);{Radius. Limit to 50 to prevent runtime errors}
@@ -11513,7 +11511,7 @@ const
               //      if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
               //      size:=round(5*hfd1);
               //      mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-              //      mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+              //      mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,0));{add hfd as text}
               //      if ((abs(xc-2294)<4) and  (abs(yc-274)<4)) then
               //      beep;
 
@@ -11851,6 +11849,7 @@ begin
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
+
 
 
 {type
@@ -15755,7 +15754,7 @@ begin
 //  Ik ga er vanuit dat het ontvangen licht in de pixels totaal 100 electrons (e-) in een echte pixel vrijmaakt. De ruis (σ) ofwel shot noise is dan ongeveer de wortel van het aantal electrons.
 //  Bij software binning halveert de pixelruis met een factor 2 voor zowel de ruis uitgedrukt in ADU als electrons. Ruis sommeer je als σ_tot:=sqrt(σ1^2+ σ2^2)
 
-  result:=floattostrF(sd,FFGeneral,3,3);
+  result:=floattostrF(sd,FFFixed,0,1);
 
   if adu_e<>0 then
     result:=result+' e-' // in electrons
@@ -16713,7 +16712,7 @@ end;
 
 procedure Tmainwindow.electron_to_adu_factors1Click(Sender: TObject);
 begin
-  if head.egain='' then head.egain:=floattostrF(egain_default,FFgeneral,3,3);
+  if head.egain='' then head.egain:=floattostrF(egain_default,FFgeneral,3,0);
   head.egain:=InputBox('factor e-/ADU, unbinned?',
   'At unity gain this factor shall be 1'+#10
   ,head.egain);

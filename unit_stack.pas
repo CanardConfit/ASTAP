@@ -485,7 +485,6 @@ type
     rr1: TEdit;
     sample_size1: TComboBox;
     saturation_tolerance1: TTrackBar;
-    saved1: TLabel;
     save_as_new_file1: TButton;
     save_result1: TButton;
     save_settings_extra_button1: TButton;
@@ -2345,7 +2344,7 @@ begin
                   ListView1.Items.item[c].subitems.Strings[L_exposure] := IntToStr(round(headx.exposure))
                 {round values above 10 seconds}
                 else
-                  ListView1.Items.item[c].subitems.Strings[L_exposure]:=floattostrf(headx.exposure, ffgeneral, 6, 6);
+                  ListView1.Items.item[c].subitems.Strings[L_exposure]:=floattostrf(headx.exposure, ffgeneral, 6, 0);
 
                 if headx.set_temperature <> 999 then ListView1.Items.item[c].subitems.Strings[L_temperature]:= IntToStr(headx.set_temperature);
                 ListView1.Items.item[c].subitems.Strings[L_width]:=IntToStr(headx.Width); {width}
@@ -2355,8 +2354,7 @@ begin
                 else
                 if stackmenu1.make_osc_color1.Checked then process_as_osc:= 2//forced process as OSC images
                 else
-                if ((headx.naxis3 = 1) and (headx.Xbinning = 1) and (bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
-                  //auto process as OSC images
+                if ((headx.naxis3 = 1) and (headx.Xbinning = 1) and (bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then //auto process as OSC images
                   process_as_osc:=1
                 else
                   process_as_osc:=0;//disable demosaicing
@@ -2405,8 +2403,8 @@ begin
                   calculate_az_alt(0 {try to use header values}, headx,{out}az, alt);
                   if alt <> 0 then
                   begin
-                    centalt:=floattostrf(alt, ffgeneral, 3, 1); {altitude}
-                    centaz :=floattostrf(az, ffgeneral, 3, 1); {azimuth}
+                    centalt:=floattostrf(alt, ffgeneral, 3, 0); {altitude}
+                    centaz :=floattostrf(az, ffgeneral, 3, 0); {azimuth}
                   end;
                 end;
 
@@ -2571,7 +2569,6 @@ begin
     if ((pos1 < 1) or (pos1 > 5)) then
     begin
       pos1 := 1;
-      saved1.Caption := '';
     end;
 
     if pos1 > 1 then go_step_two1.Enabled := True;
@@ -2593,6 +2590,7 @@ begin
     case pos1 of
        1: begin
             save_as_new_file1.Enabled := True;
+//            save_as_new_file1.caption:='Save current view as new file';
             save_result1.Enabled := True;
             remove_deepsky_label1.Enabled := True;
             undo_button_equalise_background1.Caption := '';
@@ -2643,11 +2641,11 @@ begin
   save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, True);
   if fileexists(filename2) then
   begin
-    saved1.Caption := 'Saved';
+    save_as_new_file1.caption:='Save current view as new file ✔';
     report_results(object_name, '', 0, -1{no icon});{report result in tab results}
   end
   else
-    saved1.Caption := '';
+  save_as_new_file1.caption:='Save current view as new file';
 
   update_equalise_background_step(equalise_background_step + 1); {update menu}
 end;
@@ -3439,7 +3437,7 @@ begin
     begin
       get_background(0, img_loaded, True, False{do not calculate noise_level}, bck);
       min := bck.backgr * 0.9;
-      edit_background1.Text := floattostrf(min, ffgeneral, 4, 1); //floattostr6(min);
+      edit_background1.Text := floattostrf(min, ffgeneral, 4, 0); //floattostr6(min);
 
       for col := 0 to head.naxis3 - 1 do {all colors}
         for fitsY := 0 to head.Height - 1 do
@@ -4033,12 +4031,12 @@ end;
 
 procedure Tstackmenu1.unsharp_radius1Change(Sender: TObject);
 begin
-  unsharp_edit_radius1.text:=floattostrF(unsharp_radius1.position/10,ffgeneral,4,1);
+  unsharp_edit_radius1.text:=floattostrF(unsharp_radius1.position/10,ffgeneral,4,0);
 end;
 
 procedure Tstackmenu1.unsharp_threshold1Change(Sender: TObject);
 begin
-  unsharp_edit_threshold1.text:=floattostrF(unsharp_threshold1.position/10,ffgeneral,4,1);
+  unsharp_edit_threshold1.text:=floattostrF(unsharp_threshold1.position/10,ffgeneral,4,0);
 end;
 
 
@@ -6348,12 +6346,12 @@ begin
       {calculate pixelsize from head.cdelt2 and manual entered focallen}
     begin
       head.xpixsz := calc_scale * focallen / ((180 * 3600 / 1000) / pi);
-      stackmenu1.pixelsize1.Text := floattostrf(head.xpixsz, ffgeneral, 4, 4);
+      stackmenu1.pixelsize1.Text := floattostrf(head.xpixsz, ffgeneral, 4, 0);
     end
     else
     begin  {calculate focal length from head.cdelt2 and pixelsize1}
       focallen := (head.xpixsz / calc_scale) * (180 * 3600 / 1000) / pi; {arcsec per pixel}
-      stackmenu1.focallength1.Text := floattostrf(focallen, ffgeneral, 4, 4);
+      stackmenu1.focallength1.Text := floattostrf(focallen, ffgeneral, 4, 0);
     end;
   end
   else
@@ -6378,7 +6376,7 @@ begin
   if ((head.xpixsz <> 0) and (focallen <> 0)) then
     scale_calc1.Caption := floattostrf((head.Width * head.xpixsz / focallen) *
       (180 / 1000) / pi, ffgeneral, 3, 3) + '° x ' + floattostrf(
-      (head.Height * head.xpixsz / focallen) * (180 / 1000) / pi, ffgeneral, 3, 3) + '°'
+      (head.Height * head.xpixsz / focallen) * (180 / 1000) / pi, ffgeneral, 3, 0) + '°'
   else
     scale_calc1.Caption := '- - -';
 end;
@@ -6865,6 +6863,7 @@ begin
           end
           else
           begin
+            if errorlevel=32 then break; //no star database found
             listview9.Items[c].Checked := False;
             listview9.Items.item[c].subitems.Strings[M_ra] := '?';
             listview9.Items.item[c].subitems.Strings[M_dec] := '?';
@@ -7935,7 +7934,7 @@ var
 
                   Result := floattostrf(magn, ffFixed, 5, 3);
                   {write measured magnitude to list}
-                  //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
+                  //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,0) );
                   //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
                   //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_ratio, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
 
@@ -8073,7 +8072,7 @@ begin
           calculate_az_alt(1 {calculate}, headx,{out}az, alt);  {try to get  a value for alt}
           if alt > 0 then
           begin
-            listview7.Items.item[c].subitems.Strings[P_centalt] := floattostrf(alt, ffGeneral, 3, 1); {altitude}
+            listview7.Items.item[c].subitems.Strings[P_centalt] := floattostrf(alt, ffGeneral, 3, 0); {altitude}
             listview7.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
           end;
         end
@@ -8196,7 +8195,7 @@ begin
       if stackmenu1.measuring_method1.itemindex>0  then indicate:=P_calibration else indicate:=P_magn1;
       ListView7.Items.item[c].SubitemImages[indicate]:= database_col ; //show selected database passband
 
-      listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 2);
+      listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 0);
 
       if head.mzero <> 0 then
         measure_magnitudes(annulus_radius,0,0,head.width-1,head.height-1, False {deep}, starlistx); {analyse}
@@ -8588,7 +8587,7 @@ begin
     if countVar >= 4 then
     begin
       mad_median(starVar, countVar{length},{var}madVar, medianVar); {calculate mad and median without modifying the data}
-      memo2_message('Var star, median: ' + floattostrf(medianVar,ffgeneral, 4, 4) + ', σ: ' + floattostrf(sd(starVar,countVar), ffgeneral, 4, 4)+ ', 1.4826*MAD: ' + floattostrf(1.4826 * madVar  {1.0*sigma}, ffgeneral, 4, 4));
+      memo2_message('Var star, median: ' + floattostrf(medianVar,ffgeneral, 4, 0) + ', σ: ' + floattostrf(sd(starVar,countVar), ffgeneral, 4, 4)+ ', 1.4826*MAD: ' + floattostrf(1.4826 * madVar  {1.0*sigma}, ffgeneral, 4, 4));
     end
     else
       madVar := 0;
@@ -8598,14 +8597,14 @@ begin
       mad_median(starCheck, countCheck{counter},{var}madCheck, medianCheck);
       {calculate mad and median without modifying the data}
       sd_check_star:=1.4826 * madCheck;//global for finding best aperture
-      memo2_message('Check star, median: ' + floattostrf(medianCheck,ffgeneral, 4, 4) + ', σ: ' + floattostrf(sd(starCheck,countCheck), ffgeneral, 4, 4)+ ', 1.4826*MAD: ' + floattostrf(sd_check_star, ffgeneral, 4, 4));
+      memo2_message('Check star, median: ' + floattostrf(medianCheck,ffgeneral, 4, 0) + ', σ: ' + floattostrf(sd(starCheck,countCheck), ffgeneral, 4, 4)+ ', 1.4826*MAD: ' + floattostrf(sd_check_star, ffgeneral, 4, 4));
     end
     else
       madCheck := 0;
     if countThree > 4 then
     begin
       mad_median(starThree, countThree{counter},{var}madThree, medianThree);   {calculate mad and median without modifying the data}
-      memo2_message('3 star, median: ' + floattostrf(medianThree,ffgeneral, 4, 4) + ', σ: ' + floattostrf(sd(starThree,countThree), ffgeneral, 4, 4)+ ', 1.4826*MAD: ' + floattostrf(1.4826 * madThree  {1.0*sigma}, ffgeneral, 4, 4));
+      memo2_message('3 star, median: ' + floattostrf(medianThree,ffgeneral, 4, 0) + ', σ: ' + floattostrf(sd(starThree,countThree), ffgeneral, 4, 4)+ ', 1.4826*MAD: ' + floattostrf(1.4826 * madThree  {1.0*sigma}, ffgeneral, 4, 4));
 
     end
     else
@@ -8647,11 +8646,12 @@ begin
   save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, False);
   if fileexists(filename2) then
   begin
-    saved1.Caption := 'Saved';
+    save_as_new_file1.caption:='Save current view as new file ✔';
+
     report_results(object_name, '', 0, -1{no icon});{report result in tab results}
   end
   else
-    saved1.Caption := '';
+  save_as_new_file1.caption:='Save current view as new file';
 
   {save result, step 6}
   undo_button_equalise_background1.Enabled := False;
@@ -9851,7 +9851,7 @@ begin
   best:=99;
   results:='';
   oldstr:=flux_aperture1.text;
-  if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which gives the lowest standard deviation for the check star. Assure that images are in the list and a check star is selected. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
+  if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which gives the lowest standard deviation for the check star. Assure that ten or more images are in the list, mode is "manual star selection" and a check-star is selected. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
   begin
     for i:=14 to 22 do
     begin
@@ -9875,7 +9875,7 @@ begin
        break;
      end;
 
-     results:=results+'Aperture '+floattostrF(i/10,FFgeneral,2,1)+',   σ: '+ floattostrF(sd_check_star,FFgeneral,4,4)+#13+#10;
+     results:=results+'Aperture '+floattostrF(i/10,FFgeneral,2,1)+',   σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+#13+#10;
     end;
   end;
   if sd_check_star>0 then
@@ -9992,6 +9992,7 @@ begin
           end
           else
           begin
+            if errorlevel=32 then break;//no star database found
             lv.Items[c].Checked := False;
             memo2_message(filename1 + 'No astrometric solution found for this file!!');
           end;
