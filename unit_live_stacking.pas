@@ -211,7 +211,7 @@ begin
           begin
             reset_var; {reset variables including init:=false}
             stackmenu1.memo2.clear;{clear memo2}
-            memo2_message('Exposure time changed from '+floattostrF(oldexposure,ffGeneral,5,5)+' to '+floattostrF(head.exposure,ffGeneral,5,5)+' sec. New stack started.');
+            memo2_message('Exposure time changed from '+floattostrF(oldexposure,ffFixed,0,1)+' to '+floattostrF(head.exposure,ffFixed,0,1)+' sec. New stack started.');
           end;
           oldexposure:=head.exposure;
 

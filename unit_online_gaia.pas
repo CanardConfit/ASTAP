@@ -240,7 +240,7 @@ begin
   try
     slist := TStringList.Create;
 
-    mag_lim:=floattostrF(magli,ffGeneral,3,1); {BP~GP+0.5}
+    mag_lim:=floattostrF(magli,ffFixed,0,2); {BP~GP+0.5}
     memo2_message('Downloading Gaia stars from Vizier down to magnitude '+mag_lim+'. This can take 60 seconds or more ......');
 
     if search_field*180/pi>=3.5 then

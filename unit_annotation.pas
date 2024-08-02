@@ -2045,7 +2045,7 @@ begin
 
          if read_stars(telescope_ra,telescope_dec,fov_org, database_type, max_nr_stars,{out} starlist1,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this. Max magnitude is stored in mag2}
         begin //maximum magnitude mag2 is known for the amount of stars for calibration using online stars
-          memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFgeneral,3,1)+ ' for '+inttostr( max_nr_stars)+' stars')  ;
+          memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFFixed,0,2)+ ' for '+inttostr( max_nr_stars)+' stars')  ;
           if read_stars_online(telescope_ra,telescope_dec,fov_org, mag2/10 {max_magnitude})= false then
           begin
             memo2_message('Error. failure accessing Vizier for Gaia star database!');
@@ -2193,13 +2193,13 @@ begin
 
           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
-                        ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
+                        ' Coefficient of variation: '+floattostrF(cv*100,ffFixed,0,2)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.')
 
         else
           memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+
-                        ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(head.mzero_radius*2, ffgeneral, 2,2)+' pixels.'+
-                        ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
+                        ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(head.mzero_radius*2, ffFixed, 0,2)+' pixels.'+
+                        ' Coefficient of variation: '+floattostrF(cv*100,ffFixed,0,2)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 
         memo2_message('Photometric calibration is only valid if the filter passband ('+head.filter_name+') is compatible with the passband reference database ('+head.passband_database+'). This is indicated by the coloured square icons in tab photometry.');
@@ -2222,7 +2222,7 @@ begin
           flux_snr_7:=flux_snr_7*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
 
           magn_limit:=head.mzero-ln(flux_snr_7)*2.5/ln(10); //global variable.  same as:  mzero-ln(flux)*2.5/ln(10)
-          magn_limit_str:='Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
+          magn_limit_str:='Limiting magnitude is '+ floattostrF(magn_limit,ffFixed,0,2)+'   ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
 
           memo2_message(magn_limit_str);
           mainwindow.caption:='Photometry calibration successful. '+magn_limit_str;

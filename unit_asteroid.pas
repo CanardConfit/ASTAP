@@ -517,7 +517,7 @@ var
         if ((x>0) and (x<head.width) and (y>0) and (y<head.height)) then {within image1}
         begin
           {annotate}
-           if showfullnames then thetext1:=trim(name) else thetext1:=desn{+'('+floattostrF(mag,ffgeneral,3,1)+')'};
+           if showfullnames then thetext1:=trim(name) else thetext1:=desn;
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
            if outdated then thetext2:=thetext2+'⚠ ' +'obsolete';
 

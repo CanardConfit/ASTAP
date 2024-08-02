@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 98
+  Left = 63
   Height = 707
-  Top = 156
+  Top = 283
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -50,7 +50,7 @@ object stackmenu1: Tstackmenu1
   OnKeyPress = FormKeyPress
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '3.2.0.0'
+  LCLVersion = '3.4.0.0'
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
@@ -5363,14 +5363,6 @@ object stackmenu1: Tstackmenu1
               ParentFont = False
               TabOrder = 5
               OnClick = save_result1Click
-            end
-            object saved1: TLabel
-              Left = 216
-              Height = 1
-              Top = 22
-              Width = 1
-              ParentColor = False
-              ParentFont = False
             end
             object dark_spot_filter1: TButton
               Left = 86
