@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_photometry1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 8
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3374,9 +3374,9 @@ object stackmenu1: Tstackmenu1
               end            
               item
                 Alignment = taRightJustify
-                Caption = 'Magn. 3'
-                MinWidth = 80
-                Width = 80
+                Caption = 'Magn. Comp'
+                MinWidth = 100
+                Width = 100
               end            
               item
                 Alignment = taRightJustify

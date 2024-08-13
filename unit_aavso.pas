@@ -19,6 +19,8 @@ type
 
   Tform_aavso1 = class(TForm)
     baa_style1: TCheckBox;
+    gaia_comparison1: TCheckBox;
+    comparison1: TComboBox;
     suggest_check1: TButton;
     hjd1: TCheckBox;
     delta_bv1: TEdit;
@@ -37,7 +39,6 @@ type
     report_to_clipboard1: TButton;
     report_to_file1: TButton;
     delimiter1: TComboBox;
-    Comparison1: TEdit;
     Label4: TLabel;
     Label5: TLabel;
     Label6: TLabel;
@@ -47,6 +48,8 @@ type
     Label1: TLabel;
     Filter1: TComboBox;
     SaveDialog1: TSaveDialog;
+    suggest_comp1: TButton;
+    procedure gaia_comparison1Change(Sender: TObject);
     procedure delta_bv2Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -63,6 +66,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure suggest_check1Change(Sender: TObject);
     procedure suggest_check1Click(Sender: TObject);
+    procedure suggest_comp1Click(Sender: TObject);
   private
 
   public
@@ -75,7 +79,9 @@ var
 var
   obscode       : string='';
   abbrev_check : string='';
+  abbrev_comp : string='';
   name_check_IAU : string='';
+  name_comp_IAU : string='';
   abbreviation_var_IAU   : string='';
   abbrev_var   : string='';
   delim_pos  : integer=0;
@@ -108,7 +114,7 @@ type
                  end;
 var
   jd_min,jd_max,magn_min,magn_max : double;
-  w,h,bspace,column_var,column_check  :integer;
+  w,h,bspace,column_var,column_check,column_comp  :integer;
 
 function floattostr3(x:double):string;
 begin
@@ -191,6 +197,7 @@ begin
     obscode:=obscode1.text;
     abbrev_var:=remove_sigma_end(name_variable1.text);
     abbrev_check:=name_check1.text;
+    abbrev_comp:=comparison1.text;
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
     hjd_date:=hjd1.checked;
@@ -211,31 +218,49 @@ begin
   result:=stringreplace(s,'_',' ',[rfReplaceAll]);
 end;
 
+
+function get_v_magnitude(s: string): double;
+var
+  v,e,err : integer;
+  s2 : string;
+begin
+  result:=0;
+  v:= posex('V=',s,4);
+  if v>0 then
+  begin
+     e:= posex('(',s,4);
+     if s[e-1]='_' then
+       s2:=copy(s,v+2,e-v-3) //local style
+     else
+       s2:=copy(s,v+2,e-v-2);//online style as:  000-BCP-198 V=9.794(0.071)_B=10.162(0.08)_R=9.601(0.071)
+
+     val(s2,result,err);
+  end;
+  if ((err<>0) or (v=0)) then memo2_message('Error reading comparison star magnitude');
+
+end;
+
+
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c,date_column  : integer;
-    err,err_message,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,abbrev_var_clean,abbrev_check_clean: string;
+    err,err_message,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
+    abbrev_var_clean,abbrev_check_clean,abbrev_comp_clean,ensemble_str1,ensemble_str2,ensemble_str3,var_magn_str: string;
     stdev_valid : boolean;
-    snr_value,err_by_snr  : double;
+    snr_value,err_by_snr,comp_magnitude, instr_mag_correction,var_magn  : double;
     PNG: TPortableNetworkGraphic;{FPC}
 
-
-    function transform_magn(mag: string):string;
-    var
-       m : double;
-    begin
-      m:=strtofloat2(mag);
-      str(m+delta_bv*magnitude_slope:5:3,result);
-    end;
 
 begin
   get_info;//update abbrev_var and others
 
   abbrev_var_clean:=clean_abbreviation(abbrev_var);
   abbrev_check_clean:=clean_abbreviation(abbrev_check);
+  abbrev_comp_clean:=clean_abbreviation(abbrev_comp);
   store_check_star(clean_abbreviation(abbrev_var_clean {short}),abbrev_check_clean);
 
-  if length(abbrev_var_clean)<1 then
+
+  if ((length(abbrev_var_clean)<1) or (column_var<0)) then
   begin
     name_variable1.color:=clred;
     exit;
@@ -243,7 +268,7 @@ begin
   else
     name_variable1.color:=cldefault;
 
-  if length(abbrev_check)<1 then
+  if ((length(abbrev_check)<1) or (column_check<0)) then
   begin
     name_check1.color:=clred;
     exit;
@@ -251,11 +276,43 @@ begin
   else
     name_check1.color:=cldefault;
 
+  if ((comparison1.enabled) and (length(abbrev_check)<1)) then
+  begin
+    comparison1.color:=clred;
+    exit;
+  end
+  else
+    comparison1.color:=cldefault;
+
+
   stdev_valid:=(photometry_stdev>0.0001);
   if stdev_valid then
     err_message:='MERR:=max(StDev:2/SNR).'
   else
     err_message:='MERR:=2/SNR.';
+
+
+
+  if gaia_comparison1.checked=false then
+  begin
+    comp_magnitude:=get_v_magnitude(abbrev_comp);
+    ensemble_str1:=abbrev_comp_clean;
+  end
+  else
+  if gaia_comparison1.checked then
+  begin
+    comp_magnitude:=0;
+    ensemble_str1:='ENSEMBLE';
+    ensemble_str2:='na';
+    if stackmenu1.reference_database1.itemindex=0 then //local database
+      if pos('v',name_database)>0 then magn_type:=' transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
+    else  //online database
+      magn_type:=' transformed '+stackmenu1.reference_database1.text;
+
+    ensemble_str3:='Ensemble of Gaia DR3 stars'+ magn_type+' '+err_message;
+  end;
+
+
 
   delta_bv:=strtofloat2(form_aavso1.delta_bv1.text);
   magnitude_slope:=strtofloat2(form_aavso1.magnitude_slope1.text);
@@ -322,11 +379,6 @@ begin
          airmass_str:=listview7.Items.item[c].subitems.Strings[P_airmass];
          if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
 
-         if reference_database1.itemindex=0 then //local database
-           if pos('v',name_database)>0 then magn_type:=' transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
-         else  //online database
-           magn_type:=' transformed '+stackmenu1.reference_database1.text;
-
          if snr_str<>'' then
          begin
            if filter1.itemindex=0 then
@@ -334,21 +386,38 @@ begin
            else
              filter_used:=copy(filter1.text,1,2);//manual input
 
+           if gaia_comparison1.checked=false then
+           begin
+             ensemble_str2:=stringreplace(listview7.Items.item[c].subitems.Strings[column_comp{P_magn3}],',','.',[]);
+           end;
+
+           var_magn:=strtofloat2(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}]);
+
+           if gaia_comparison1.checked=false then //Mode magnitude relative to comp star
+           begin
+             instr_mag_correction:=comp_magnitude- strtofloat2(stackmenu1.listview7.Items.item[c].subitems.Strings[column_comp{P_magn3}]);
+             var_magn:=var_magn +instr_mag_correction;
+             ensemble_str3:='Instr magn correction '+ floattostr4(instr_mag_correction)+'  '  +err_message;
+           end;
+
+           var_magn:=var_magn + delta_bv*magnitude_slope; //apply slope correction;//use magnitude of comparison star if specified and apply slope correctio
+           str(var_magn:0:3,var_magn_str);
+
            aavso_report:= aavso_report+ abbrev_var_clean + delim +
                           StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
-                          transform_magn(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}])+delim+
+                          var_magn_str+delim+
                           err+
                           delim+filter_used+delim+
                          'NO'+delim+
                          'STD'+delim+
-                         'ENSEMBLE'+delim+
-                         'na'+delim+
+                         ensemble_str1+delim+
+                         ensemble_str2+delim+
                          abbrev_check_clean+delim+
                          stringreplace(listview7.Items.item[c].subitems.Strings[column_check{P_magn2}],',','.',[])+delim+
                          airmass_str+delim+
                          'na'+delim+ {group}
                          abbreviation_var_IAU+delim+
-                         'Ensemble of Gaia DR3 stars'+magn_type+' '+err_message+#13+#10;
+                         ensemble_str3+#13+#10;
 
            date_observation:=copy(listview7.Items.item[c].subitems.Strings[P_date],1,10);
          end;
@@ -413,12 +482,13 @@ end;
 
 function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable
 var
-   count, c: integer;
+   count, c,count_checked: integer;
    magn,madCheck, medianCheck : double;
    dum: string;
    listMagnitudes : array of double;
 begin
   count:=0;
+  count_checked:=0;
   setlength(listMagnitudes,stackmenu1.listview7.items.count);//list with magnitudes check star
 
   with stackmenu1 do
@@ -433,9 +503,10 @@ begin
         listMagnitudes[count]:= magn;
         inc(count);
       end;
+      inc(count_checked);
     end;
-   end;
-  if count>3 then
+  end;
+  if count>count_checked/2 then //at least 50% valid measurements
   begin
     mad_median(listMagnitudes, count{counter},{var}madCheck, medianCheck);
     result:=1.4826 * madCheck;
@@ -454,23 +525,30 @@ var
    measure_any : boolean;
 begin
 
-  name_check1.items.clear;
-  name_check1.color:=cldefault;
-
-  if stackmenu1.measuring_method1.itemindex=0 then
-  begin
-    name_check1.items.add(mainwindow.shape_check1.HINT);
-    name_check1.items.add(abbrev_check);//the last name
-    name_check1.items.add(name_check_IAU);// created from position
-  end;
-
-  setlength(starinfo,p_nr-p_nr_norm);
-  count:=0;
-
-  measure_any:=stackmenu1.measuring_method1.itemindex=2;
-
   with tcombobox(sender) do
   begin
+
+    items.clear;
+    color:=cldefault;
+
+    if stackmenu1.measuring_method1.itemindex=0 then
+    begin
+      name_check1.items.add(mainwindow.shape_check1.HINT);
+      name_check1.items.add(abbrev_check);//the last name
+      name_check1.items.add(name_check_IAU);// created from position
+      if gaia_comparison1.checked=false then
+      begin
+        comparison1.items.add(mainwindow.shape_comp1.HINT);
+        comparison1.items.add(abbrev_comp);//the last name
+        comparison1.items.add(name_comp_IAU);// created from position
+      end;
+    end;
+
+    setlength(starinfo,p_nr-p_nr_norm);
+    count:=0;
+
+    measure_any:=stackmenu1.measuring_method1.itemindex=2;
+
 
     for i:=p_nr_norm+1+1 to p_nr do
       if odd(i) then //not snr column
@@ -507,6 +585,7 @@ begin
 
 end;
 
+
 function find_correct_check_column : integer;
 var
   i: integer;
@@ -529,6 +608,30 @@ begin
       exit;
     end;
 end;
+
+function find_correct_comp_column : integer;
+var
+  i: integer;
+  name_comp : string;
+begin
+  if stackmenu1.measuring_method1.itemindex=0  then //manual mode
+  begin
+    result:=P_magn3;
+    exit
+  end;
+
+  result:=-99;//assume failure
+  name_comp:=remove_sigma_end(form_aavso1.name_check1.text); //remove ', σ=' at the end
+  if name_comp='' then  exit;
+
+  for i:=p_nr_norm+1 to p_nr do
+    if ((odd(i)) and (name_comp=stackmenu1.listview7.Column[i].Caption)) then
+    begin
+      result:=i-1;
+      exit;
+    end;
+end;
+
 
 
 function find_correct_var_column : integer;
@@ -557,17 +660,17 @@ begin
 end;
 
 
-procedure find_best_check_star;
+procedure find_best_check_star(combobox : tcombobox; do_not_use : string);
 var
   magn,magn_avgV,magn_minV,mag_var,magC,diff,delt,magn_avgC : double;
-  c,i,counter: integer;
+  c,i,counterV,counter: integer;
   abrv, abrv_selected,dum: string;
 begin
   magn_avgV:=0;
   magn_minV:=99;
   column_var:=find_correct_var_column;
   if column_var<0 then exit; //no var specified yet
-  counter:=0;
+  counterV:=0;
 
   //find average  magnitude Variable
   with stackmenu1 do
@@ -581,13 +684,13 @@ begin
         begin
           magn:=strtofloat(dum);
           magn_avgV:=magn_avgV+magn;
-          counter:=counter+1;
+          counterV:=counterV+1;
           magn_minV:=min(magn_minV,magn);
         end;
       end;
     end;
-    if counter=0 then exit;
-    magn_avgV:=magn_avgV/counter;
+    if counterV=0 then exit;
+    magn_avgV:=magn_avgV/counterV;
 
     abrv_selected:='';
     diff:=99;
@@ -596,7 +699,7 @@ begin
       if odd(i) then //not snr column
       begin
          abrv:=stackmenu1.listview7.Column[i].Caption;
-         if pos('000',abrv)>0 then //check star
+         if ((pos('000',abrv)>0) and (abrv<>do_not_use)) then //check star and not is use already
          begin
            magn_avgC:=0;
            counter:=0;
@@ -613,7 +716,7 @@ begin
                end;
              end;
            end;
-           if counter=0 then magn_avgC:=-10 //skip value
+           if counter<counterV then magn_avgC:=-10 //skip value. Not enough measurements
            else
            magn_avgC:=magn_avgC/counter; //average magnitude check star
 
@@ -627,7 +730,8 @@ begin
       end;//odd column
     end;//check star loop
   end;//with stackmenu1
-  form_aavso1.name_check1.text:=abrv_selected;
+
+  combobox.text:=abrv_selected;
 
 end;
 
@@ -712,6 +816,16 @@ end;
 procedure Tform_aavso1.delta_bv2Change(Sender: TObject);
 begin
   plot_graph;
+end;
+
+procedure Tform_aavso1.gaia_comparison1Change(Sender: TObject);
+var
+  gaia_comparison : boolean;
+begin
+  gaia_comparison:=gaia_comparison1.Checked;
+  comparison1.enabled:=gaia_comparison=false;
+  suggest_comp1.enabled:=gaia_comparison=false;
+  if gaia_comparison1.checked then Comparison1.Text:=name_database;
 end;
 
 
@@ -804,6 +918,8 @@ begin
 
   column_var:=find_correct_var_column;
   column_check:=find_correct_check_column;
+  column_comp:=find_correct_comp_column;
+
   if ((column_var<0) and (column_check<0)) then exit;//no var or check star specified
 
 
@@ -825,12 +941,15 @@ begin
         jd_min:=min(jd_min,data[0,c]);
       end;
 
-      dum:=(listview7.Items.item[c].subitems.Strings[column_var]);{var star}
-      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[1,c]:=strtofloat(dum) else data[1,c]:=0;
-      if data[1,c]<>0 then
+      if  column_var>0 then
       begin
-        magn_max:=max(magn_max,data[1,c]);
-        magn_min:=min(magn_min,data[1,c]);
+        dum:=(listview7.Items.item[c].subitems.Strings[column_var]);{var star}
+        if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[1,c]:=strtofloat(dum) else data[1,c]:=0;
+        if data[1,c]<>0 then
+        begin
+          magn_max:=max(magn_max,data[1,c]);
+          magn_min:=min(magn_min,data[1,c]);
+        end;
       end;
 
       if column_check>0 then
@@ -922,9 +1041,9 @@ begin
     bmp.canvas.textout(textp2,len*3,text2);
 
     textp3:=textp2+40+bmp.canvas.textwidth(text2);
-    bmp.canvas.textout(textp3,len*3,'3');
+    bmp.canvas.textout(textp3,len*3,'Comp');
 
-    textp4:=textp3+60;
+    textp4:=textp3+100;
 
     if object_name<>'' then
       bmp.canvas.textout(textp4,len*3,object_name)
@@ -1058,8 +1177,15 @@ end;
 
 procedure Tform_aavso1.suggest_check1Click(Sender: TObject);
 begin
-  find_best_check_star;
+  find_best_check_star(name_check1,comparison1.text);
   plot_graph;
+end;
+
+procedure Tform_aavso1.suggest_comp1Click(Sender: TObject);
+begin
+  find_best_check_star(comparison1,name_check1.text);
+  plot_graph;
+
 end;
 
 

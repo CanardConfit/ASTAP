@@ -6902,7 +6902,7 @@ begin
 
   mainwindow.shape_var1.visible := p_single;  {hide shape if stacked image is plotted}
   mainwindow.shape_check1.Visible := p_single;  {hide shape if stacked image is plotted}
-  mainwindow.shape_star3.Visible := p_single;  {hide shape if stacked image is plotted}
+  mainwindow.shape_comp1.Visible := p_single;  {hide shape if stacked image is plotted}
   mainwindow.labelVar1.Visible := p_single;
   mainwindow.labelCheck1.Visible := p_single;
   mainwindow.labelThree1.Visible := p_single;
@@ -8136,6 +8136,7 @@ begin
       begin
         abbreviation_var_IAU := prepare_IAU_designation(shape_var1_ra, shape_var1_dec);
         name_check_iau := prepare_IAU_designation(shape_check1_ra, shape_check1_dec);
+        name_comp_iau := prepare_IAU_designation(shape_comp1_ra, shape_comp1_dec);
         initialise_calc_sincos_dec0; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
         head_ref := head;{backup solution for deepsky annotation}
       end;
@@ -8264,11 +8265,11 @@ begin
             end;
           end;
 
-          if mainwindow.shape_star3.Visible then
+          if mainwindow.shape_comp1.Visible then
           begin //do star 3
             mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
 
-            celestial_to_pixel(head, shape_star3_ra, shape_star3_dec, xn, yn); {ra,dec to fitsX,fitsY}
+            celestial_to_pixel(head, shape_comp1_ra, shape_comp1_dec, xn, yn); {ra,dec to fitsX,fitsY}
             astr := measure_star(xn, yn); {star3}
             listview7.Items.item[c].subitems.Strings[P_magn3] := astr;
             if ((astr <> '?') and (copy(astr, 1, 1) <> 'S')) then {Good star detected}
@@ -8520,12 +8521,12 @@ begin
 
        end;
 
-        if mainwindow.shape_star3.Visible then
+        if mainwindow.shape_comp1.Visible then
         begin
-          mainwindow.shape_star3.pen.style:=psclear;//hide
+          mainwindow.shape_comp1.pen.style:=psclear;//hide
           mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
          // plot_annulus(round(shape_star3_fitsX), round(shape_star3_fitsY),starlistpack[c].apr,starlistpack[c].anr);
-          celestial_to_pixel(head, shape_star3_ra, shape_star3_dec, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_var1_fitsX, Y since users can try to move the the shape while it is cycling}
+          celestial_to_pixel(head, shape_comp1_ra, shape_comp1_dec, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_var1_fitsX, Y since users can try to move the the shape while it is cycling}
           plot_annulus(head,round(xn), round(yn), head.mzero_radius,annulus_radius);
 
         end;
