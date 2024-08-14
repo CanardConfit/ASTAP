@@ -1485,13 +1485,6 @@ begin
 end;
 
 
-function add_unicode(u, tekst: string): string;
-begin
-  Result := stringreplace(tekst, '♛', '', [rfReplaceAll]);//remove crown
-  Result := stringreplace(Result, '👎', '', [rfReplaceAll]);//remove thumb down
-  Result := u + Result;
-end;
-
 procedure list_remove_outliers(key: string); {do statistics}
 var
   quality_mean, quality_sd, sd_factor: double;
@@ -1517,15 +1510,7 @@ begin
             ListView1.Items.item[c].Checked := False {no quality, can't process this image}
           else
           begin {normal HFD value}
-
-
-
-            {$ifdef darwin} {MacOS}
-            quality:=strtoint(add_unicode('',stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]));//remove all crowns
-            {$else}
             quality := StrToInt(ListView1.Items.item[c].subitems.Strings[L_quality]);
-            {$endif}
-
             quality_mean := quality_mean + quality;
             Inc(nr_good_images);
 
@@ -1550,12 +1535,7 @@ begin
           if ((ListView1.Items.item[c].Checked) and
             (key = ListView1.Items.item[c].subitems.Strings[L_result])) then
           begin {checked}
-            {$ifdef darwin} {MacOS}
-            quality:=strtoint(add_unicode('',ListView1.Items.item[c].Subitems.strings[L_quality]));//remove crown
-            {$else}
             quality := StrToInt(ListView1.Items.item[c].subitems.Strings[L_quality]);
-           {$endif}
-
             quality_sd := quality_sd + sqr(quality_mean - quality);
           end;
           Inc(c); {go to next file}
@@ -1581,22 +1561,14 @@ begin
             (key = ListView1.Items.item[c].subitems.Strings[L_result])) then
           begin {checked}
             ListView1.Items.item[c].subitems.Strings[L_result] := '';{remove key, job done}
-            {$ifdef darwin} {MacOS}
-            quality:=strtoint(add_unicode('',ListView1.Items.item[c].Subitems.strings[L_quality]));//remove all crowns
-            {$else}
             quality := StrToInt(ListView1.Items.item[c].subitems.Strings[L_quality]);
-           {$endif}
 
             if (quality_mean - quality) > sd_factor * quality_sd then
             begin {remove low quality outliers}
               ListView1.Items.item[c].Checked := False;
               ListView1.Items.item[c].SubitemImages[L_quality] := icon_thumb_down;
               {mark as outlier using imageindex}
-             {$ifdef darwin} {MacOS}
-              ListView1.Items.item[c].Subitems.strings[L_quality]:=add_unicode('👎',ListView1.Items.item[c].Subitems.strings[L_quality]);//thumb down
-             {$endif}
-              memo2_message(ListView1.Items.item[c].Caption +
-                ' unchecked due to low quality = nr stars detected / hfd.');
+              memo2_message(ListView1.Items.item[c].Caption + ' unchecked due to low quality = nr stars detected / hfd.');
             end;
           end;
           Inc(c); {go to next file}
@@ -1604,13 +1576,7 @@ begin
       end;{throw outliers out}
 
       if best <> 0 then
-      begin
-        ListView1.Items.item[best_index].SubitemImages[L_quality] := icon_king;
-        {mark best index. Not nessesary but just nice}
-        {$ifdef darwin} {MacOS}
-        ListView1.Items.item[best_index].Subitems.strings[L_quality]:=add_unicode('♛',ListView1.Items.item[best_index].Subitems.strings[L_quality]);//add crown
-        {$endif}
-      end;
+        ListView1.Items.item[best_index].SubitemImages[L_quality] := icon_king;  {mark best index. Not nessesary but just nice}
 
     finally
       ListView1.Items.EndUpdate;
@@ -2363,15 +2329,6 @@ begin
 
                 ListView1.Items.item[c].subitems.Strings[L_type]:= copy(imagetype, 1, 5) + IntToStr(nrbits) + rawstr;{type}
 
-                {$ifdef darwin} {MacOS, fix missing icons by coloured unicode. Place in column "type" to avoid problems with textual filter selection}
-                 if red then ListView1.Items.item[c].subitems.Strings[L_type]:='🔴' +ListView1.Items.item[c].subitems.Strings[L_type]
-                 else
-                 if green then ListView1.Items.item[c].subitems.Strings[L_type]:='🟢' +ListView1.Items.item[c].subitems.Strings[L_type]
-                 else
-                 if blue then ListView1.Items.item[c].subitems.Strings[L_type]:='🔵' +ListView1.Items.item[c].subitems.Strings[L_type];
-                {$endif}
-
-
                 ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(headx.date_obs, 'T', ' ', []), 1, 23);{date/time up to ms}
                 ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(headx.ra0, ': ') + ', ' + prepare_dec4(headx.dec0, '° ');
                 {give internal position}
@@ -2448,10 +2405,6 @@ begin
           ListView1.Items.item[c].Checked := True;{recheck outliers from previous session}
         end;
         ListView1.Items.item[c].SubitemImages[L_quality] := -1;{remove any icon mark}
-        {$ifdef darwin} {MacOS}
-        ListView1.Items.item[c].subitems.Strings[L_quality]:=add_unicode('', ListView1.Items.item[c].subitems.Strings[L_quality]);//remove all crowns and thumbs
-        {$endif}
-
         if ListView1.items[c].Checked = True then
           ListView1.Items.item[c].subitems.Strings[L_result] :=
             ListView1.Items.item[c].subitems.Strings[L_object] + '_' +{object name}
@@ -4341,14 +4294,6 @@ begin
                 Lv.Items.item[c].SubitemImages[F_filter] :=25  //raw OSC file
               else
                 Lv.Items.item[c].SubitemImages[F_filter] :=get_filter_icon(headx.filter_name,{out} red,green, blue);
-
-              {$ifdef darwin} {MacOS, fix missing icons by coloured unicode. Place in column "type" to avoid problems with textual filter selection}
-              if red then Lv.Items.item[c].subitems.Strings[D_type]:='🔴' +Lv.Items.item[c].subitems.Strings[D_type]
-              else
-              if green then Lv.Items.item[c].subitems.Strings[D_type]:='🟢' +Lv.Items.item[c].subitems.Strings[D_type]
-              else
-              if blue then Lv.Items.item[c].subitems.Strings[D_type]:='🔵' +Lv.Items.item[c].subitems.Strings[D_type];
-              {$endif}
 
               lv.Items.item[c].subitems.Strings[D_date] := copy(headx.date_obs, 1, 10);
               date_to_jd(headx.date_obs,headx.date_avg, headx.exposure);
@@ -7913,10 +7858,6 @@ var
               HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
               if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
               begin
-                if head.calstat = '' then saturation_level := 64000
-                else
-                  saturation_level := 60000; {could be dark subtracted changing the saturation level}
-                saturation_level:=min(head.datamax_org-1,saturation_level);
                 if
                  ((img_loaded[0, round(yc)    , round(xc)] < saturation_level) and
                   (img_loaded[0, round(yc - 1), round(xc)] < saturation_level) and
@@ -8227,6 +8168,11 @@ begin
       begin // do var star
         adu_e := retrieve_ADU_to_e_unbinned(head.egain);
 
+        if head.calstat = '' then saturation_level := 64000
+        else
+          saturation_level := 60000; {could be dark subtracted changing the saturation level}
+        saturation_level:=min(head.datamax_org-1,saturation_level);
+
         if stackmenu1.measuring_method1.itemindex=0 then // measure manual
         begin
           if mainwindow.shape_var1.Visible then
@@ -8525,7 +8471,7 @@ begin
         begin
           mainwindow.shape_comp1.pen.style:=psclear;//hide
           mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
-         // plot_annulus(round(shape_star3_fitsX), round(shape_star3_fitsY),starlistpack[c].apr,starlistpack[c].anr);
+         // plot_annulus(round(shape_comp1_fitsX), round(shape_comp1_fitsY),starlistpack[c].apr,starlistpack[c].anr);
           celestial_to_pixel(head, shape_comp1_ra, shape_comp1_dec, xn, yn); {ra,dec to fitsX,fitsY. Use this rather then shape_var1_fitsX, Y since users can try to move the the shape while it is cycling}
           plot_annulus(head,round(xn), round(yn), head.mzero_radius,annulus_radius);
 
@@ -9479,6 +9425,7 @@ begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=2;//enabled only if method is measure all
   hide_show_columns_listview7(true {tab8});
+  stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
 end;
 
 
@@ -10370,12 +10317,7 @@ end;
 procedure Tstackmenu1.listview1ItemChecked(Sender: TObject; Item: TListItem);
 begin
   if item.Checked = False then
-  begin
     item.SubitemImages[L_quality] := -1;  {no marker. Required for autoselect to remove this item permanent from statistics}
-    {$ifdef darwin} {MacOS}
-    item.subitems.Strings[L_quality]:=add_unicode('', item.subitems.Strings[L_quality]);//remove crown or thumb down
-    {$endif}
-  end;
 end;
 
 
@@ -11978,12 +11920,7 @@ begin
         First := i;
         largest_width := width1;
       end;
-
       quality_str := stackmenu1.ListView1.Items.item[i].subitems.Strings[L_quality]; {number of stars detected}
-      {$ifdef darwin} {MacOS}
-      quality_str:=add_unicode('',quality_str);//remove all crowns and thumbs
-      {$endif}
-
       if length(quality_str) > 1 then quality := StrToInt(quality_str)
       else
         quality := 0;{quality equals nr stars /sqr(hfd)}
@@ -12015,12 +11952,6 @@ begin
       files_to_process[best_index] := file_to_do;
     end;
     stackmenu1.ListView1.Items.item[best_index].SubitemImages[L_quality] := icon_king;{mark as best quality image}
-   {$ifdef darwin} {MacOS}
-    {bugfix darwin icons}
-    stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]:=add_unicode('♛',stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]);//add crown
-   {$endif}
-
-
     memo2_message('Reference image selected based on quality (star_detections/sqr(hfd)) is: ' + files_to_process[best_index].Name);
   end;
 end;

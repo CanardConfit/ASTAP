@@ -1036,6 +1036,22 @@ object mainwindow: Tmainwindow
           ShowHint = True
           Visible = False
         end
+        object shape_comp2: TShape
+          Left = 18
+          Height = 50
+          Hint = 'Check'
+          Top = 328
+          Width = 50
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 3
+          Shape = stDiamond
+          ShowHint = True
+          Visible = False
+        end
       end
     end
   end

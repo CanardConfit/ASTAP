@@ -19,8 +19,7 @@ type
 
   Tform_aavso1 = class(TForm)
     baa_style1: TCheckBox;
-    gaia_comparison1: TCheckBox;
-    comparison1: TComboBox;
+    abrv_comp1: TComboBox;
     suggest_check1: TButton;
     hjd1: TCheckBox;
     delta_bv1: TEdit;
@@ -29,12 +28,12 @@ type
     Label11: TLabel;
     measure_all_mode1: TLabel;
     Label9: TLabel;
-    name_variable1: TComboBox;
+    abrv_variable1: TComboBox;
     name_variable2: TEdit;
     magnitude_slope1: TEdit;
     report_error1: TLabel;
     MenuItem1: TMenuItem;
-    name_check1: TComboBox;
+    abrv_check1: TComboBox;
     PopupMenu1: TPopupMenu;
     report_to_clipboard1: TButton;
     report_to_file1: TButton;
@@ -49,7 +48,6 @@ type
     Filter1: TComboBox;
     SaveDialog1: TSaveDialog;
     suggest_comp1: TButton;
-    procedure gaia_comparison1Change(Sender: TObject);
     procedure delta_bv2Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -57,10 +55,10 @@ type
     procedure Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState;
       X, Y: Integer);
     procedure MenuItem1Click(Sender: TObject);
-    procedure name_check1Change(Sender: TObject);
-    procedure name_check1DropDown(Sender: TObject);
-    procedure name_variable1Change(Sender: TObject);
-    procedure name_variable1DropDown(Sender: TObject);
+    procedure abrv_check1Change(Sender: TObject);
+    procedure abrv_check1DropDown(Sender: TObject);
+    procedure abrv_variable1Change(Sender: TObject);
+    procedure abrv_variable1DropDown(Sender: TObject);
     procedure report_to_clipboard1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormShow(Sender: TObject);
@@ -93,7 +91,7 @@ var
   magnitude_slope    : double=0;
 var
   aavso_report : string;
-  used_check_stars: string='';
+  used_vsp_stars: string='';
 
 procedure plot_graph; {plot curve}
 
@@ -121,34 +119,39 @@ begin
   str(x:0:3,result);
 end;
 
-function retrieve_check_star(variablestar: string): string;
+procedure retrieve_vsp_stars(variablestar: string);
 var
-  i,j,k : integer;
+  i,j,k,L : integer;
 begin
-  i:=pos(variablestar, used_check_stars);
+  i:=pos(variablestar, used_vsp_stars);
   if i<>0 then //already available
   begin
-    j:=posex(':',used_check_stars,i+1);
-    k:=posex(';',used_check_stars,j+1);
-    result:=copy(used_check_stars,j+1,k-j-1);
+    j:=posex(':',used_vsp_stars,i+1);
+    k:=posex(':',used_vsp_stars,j+1);
+    L:=posex(';',used_vsp_stars,j+1);
+    form_aavso1.abrv_check1.text:=copy(used_vsp_stars,j+1,k-j-1);
+    form_aavso1.abrv_comp1.text:=copy(used_vsp_stars,k+1,L-k-1);
   end
   else
-  result:='';
+  begin
+    form_aavso1.abrv_check1.text:='';
+    form_aavso1.abrv_comp1.text:='';
+  end;
 end;
 
-procedure store_check_star(variablestar,checkstar: string);
+procedure store_vsp_stars(variablestar,checkstar, compstar: string);
 var
    i,j: integer;
 begin
   if length(variablestar)=0 then exit;
-  i:=pos(variablestar, used_check_stars);
+  i:=pos(variablestar, used_vsp_stars);
   if i<>0 then //already available
   begin
-    j:=posex(';',used_check_stars,i);
-    delete(used_check_stars,i,j-i+1);
+    j:=posex(';',used_vsp_stars,i); //find end of entry
+    delete(used_vsp_stars,i,j-i+1); //delete entry
   end;
-  used_check_stars:=used_check_stars+  variablestar+':'+checkstar+';';
-  if length(used_check_stars)>10000 then used_check_stars:=copy(used_check_stars,20,10100);//limit size. Throw oldest part away.
+  used_vsp_stars:=used_vsp_stars+  variablestar+':'+checkstar+':'+compstar+';';
+  if length(used_vsp_stars)>10000 then used_vsp_stars:=copy(used_vsp_stars,20,10100);//limit size. Throw oldest part away.
 end;
 
 
@@ -195,9 +198,9 @@ begin
   with form_aavso1 do
   begin
     obscode:=obscode1.text;
-    abbrev_var:=remove_sigma_end(name_variable1.text);
-    abbrev_check:=name_check1.text;
-    abbrev_comp:=comparison1.text;
+    abbrev_var:=remove_sigma_end(abrv_variable1.text);
+    abbrev_check:=abrv_check1.text;
+    abbrev_comp:=abrv_comp1.text;
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
     hjd_date:=hjd1.checked;
@@ -246,7 +249,7 @@ var
     c,date_column  : integer;
     err,err_message,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrev_var_clean,abbrev_check_clean,abbrev_comp_clean,ensemble_str1,ensemble_str2,ensemble_str3,var_magn_str: string;
-    stdev_valid : boolean;
+    stdev_valid,use_instr_magnitude : boolean;
     snr_value,err_by_snr,comp_magnitude, instr_mag_correction,var_magn  : double;
     PNG: TPortableNetworkGraphic;{FPC}
 
@@ -257,32 +260,32 @@ begin
   abbrev_var_clean:=clean_abbreviation(abbrev_var);
   abbrev_check_clean:=clean_abbreviation(abbrev_check);
   abbrev_comp_clean:=clean_abbreviation(abbrev_comp);
-  store_check_star(clean_abbreviation(abbrev_var_clean {short}),abbrev_check_clean);
+  store_vsp_stars(clean_abbreviation(abbrev_var_clean {short}),remove_sigma_end(abbrev_check),remove_sigma_end(abbrev_comp));
 
 
   if ((length(abbrev_var_clean)<1) or (column_var<0)) then
   begin
-    name_variable1.color:=clred;
+    abrv_variable1.color:=clred;
     exit;
   end
   else
-    name_variable1.color:=cldefault;
+    abrv_variable1.color:=cldefault;
 
   if ((length(abbrev_check)<1) or (column_check<0)) then
   begin
-    name_check1.color:=clred;
+    abrv_check1.color:=clred;
     exit;
   end
   else
-    name_check1.color:=cldefault;
+    abrv_check1.color:=cldefault;
 
-  if ((comparison1.enabled) and (length(abbrev_check)<1)) then
+  if ((abrv_comp1.enabled) and (length(abbrev_check)<1)) then
   begin
-    comparison1.color:=clred;
+    abrv_comp1.color:=clred;
     exit;
   end
   else
-    comparison1.color:=cldefault;
+    abrv_comp1.color:=cldefault;
 
 
   stdev_valid:=(photometry_stdev>0.0001);
@@ -291,15 +294,14 @@ begin
   else
     err_message:='MERR:=2/SNR.';
 
+  use_instr_magnitude:=pos('V=',abbrev_comp)=0; //no correction with comparison stars
 
-
-  if gaia_comparison1.checked=false then
+  if use_instr_magnitude=false then
   begin
     comp_magnitude:=get_v_magnitude(abbrev_comp);
     ensemble_str1:=abbrev_comp_clean;
   end
   else
-  if gaia_comparison1.checked then
   begin
     comp_magnitude:=0;
     ensemble_str1:='ENSEMBLE';
@@ -386,17 +388,13 @@ begin
            else
              filter_used:=copy(filter1.text,1,2);//manual input
 
-           if gaia_comparison1.checked=false then
-           begin
-             ensemble_str2:=stringreplace(listview7.Items.item[c].subitems.Strings[column_comp{P_magn3}],',','.',[]);
-           end;
-
            var_magn:=strtofloat2(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}]);
 
-           if gaia_comparison1.checked=false then //Mode magnitude relative to comp star
+           if use_instr_magnitude=false then //Mode magnitude relative to comp star
            begin
-             instr_mag_correction:=comp_magnitude- strtofloat2(stackmenu1.listview7.Items.item[c].subitems.Strings[column_comp{P_magn3}]);
+             instr_mag_correction:=comp_magnitude-strtofloat2(stackmenu1.listview7.Items.item[c].subitems.Strings[column_comp{P_magn3}]);
              var_magn:=var_magn +instr_mag_correction;
+             ensemble_str2:=stringreplace(listview7.Items.item[c].subitems.Strings[column_comp{P_magn3}],',','.',[]);
              ensemble_str3:='Instr magn correction '+ floattostr4(instr_mag_correction)+'  '  +err_message;
            end;
 
@@ -434,7 +432,7 @@ begin
     Clipboard.AsText:=aavso_report
   else
   begin
-    savedialog1.filename:=name_variable1.text+'_'+date_observation+'_report.txt';
+    savedialog1.filename:=abrv_variable1.text+'_'+date_observation+'_report.txt';
     savedialog1.initialdir:=ExtractFilePath(filename2);
     savedialog1.Filter := '(*.txt)|*.txt';
     if savedialog1.execute then
@@ -474,7 +472,7 @@ begin
     Clipboard.Assign(Image_photometry1.Picture.Bitmap);
 end;
 
-procedure Tform_aavso1.name_check1Change(Sender: TObject);
+procedure Tform_aavso1.abrv_check1Change(Sender: TObject);
 begin
   plot_graph;
 end;
@@ -517,7 +515,7 @@ end;
 
 
 
-procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
+procedure Tform_aavso1.abrv_check1DropDown(Sender: TObject);
 var
   i,j,count: integer;
   abrv,old,filter,sdstr    : string;
@@ -531,17 +529,28 @@ begin
     items.clear;
     color:=cldefault;
 
-    if stackmenu1.measuring_method1.itemindex=0 then
+    if stackmenu1.measuring_method1.itemindex=0 then //maual star selection
     begin
-      name_check1.items.add(mainwindow.shape_check1.HINT);
-      name_check1.items.add(abbrev_check);//the last name
-      name_check1.items.add(name_check_IAU);// created from position
-      if gaia_comparison1.checked=false then
+      if tcombobox(sender)=abrv_check1 then
       begin
-        comparison1.items.add(mainwindow.shape_comp1.HINT);
-        comparison1.items.add(abbrev_comp);//the last name
-        comparison1.items.add(name_comp_IAU);// created from position
+        items.add(mainwindow.shape_check1.HINT);
+        //items.add(abbrev_check);//the last name
+        items.add(name_check_IAU);// created from position
+      end
+      else
+     // if gaia_comparison1.checked=false then
+      if tcombobox(sender)=abrv_comp1 then
+      begin
+        items.add(stackmenu1.reference_database1.text);
+        items.add(mainwindow.shape_comp1.HINT);
+        //items.add(abbrev_comp);//the last name
+        items.add(name_comp_IAU);// created from position
       end;
+    end
+    else
+    begin //measure all method
+      if tcombobox(sender)=abrv_comp1 then
+        items.add(stackmenu1.reference_database1.text); //add the database as comparison
     end;
 
     setlength(starinfo,p_nr-p_nr_norm);
@@ -586,6 +595,7 @@ begin
 end;
 
 
+
 function find_correct_check_column : integer;
 var
   i: integer;
@@ -598,11 +608,11 @@ begin
   end;
 
   result:=-99;//assume failure
-  name_check:=remove_sigma_end(form_aavso1.name_check1.text); //remove ', σ=' at the end
+  name_check:=remove_sigma_end(form_aavso1.abrv_check1.text); //remove ', σ=' at the end
   if name_check='' then  exit;
 
   for i:=p_nr_norm+1 to p_nr do
-    if ((odd(i)) and (name_check=stackmenu1.listview7.Column[i].Caption)) then
+    if ((odd(i)) and (pos(name_check,stackmenu1.listview7.Column[i].Caption)>0)) then
     begin
       result:=i-1;
       exit;
@@ -621,11 +631,11 @@ begin
   end;
 
   result:=-99;//assume failure
-  name_comp:=remove_sigma_end(form_aavso1.name_check1.text); //remove ', σ=' at the end
+  name_comp:=remove_sigma_end(form_aavso1.abrv_comp1.text);
   if name_comp='' then  exit;
 
   for i:=p_nr_norm+1 to p_nr do
-    if ((odd(i)) and (name_comp=stackmenu1.listview7.Column[i].Caption)) then
+    if ((odd(i)) and (pos(name_comp,stackmenu1.listview7.Column[i].Caption)>0)) then
     begin
       result:=i-1;
       exit;
@@ -646,12 +656,12 @@ begin
   end;
 
   result:=-99;//assume failure
-  name_var:=remove_sigma_end(form_aavso1.name_variable1.text); //remove ', σ=' at the end
+  name_var:=remove_sigma_end(form_aavso1.abrv_variable1.text);
   if name_var='' then  exit;
 
   for i:=p_nr_norm+1 to p_nr do
   begin
-    if ((odd(i)) and (name_var=stackmenu1.listview7.Column[i].Caption)) then
+    if ((odd(i)) and (pos(name_var,stackmenu1.listview7.Column[i].Caption)>0)) then
     begin
       result:=i-1;
       exit;
@@ -736,15 +746,15 @@ begin
 end;
 
 
-procedure Tform_aavso1.name_variable1Change(Sender: TObject);
+procedure Tform_aavso1.abrv_variable1Change(Sender: TObject);
 begin
    if stackmenu1.measuring_method1.itemindex>0  then
-     name_check1.text:=retrieve_check_star(clean_abbreviation(name_variable1.text));
+   retrieve_vsp_stars(clean_abbreviation(abrv_variable1.text));
    plot_graph;
 end;
 
 
-procedure Tform_aavso1.name_variable1DropDown(Sender: TObject);
+procedure Tform_aavso1.abrv_variable1DropDown(Sender: TObject);
 var
   i,j,count          : integer;
   abrv,sdstr         : string;
@@ -754,13 +764,13 @@ begin
 //  for filtering dropdown set
 //    AutoComplete := true;
 //    AutoDropDown := true;
-  name_variable1.items.clear;
+  abrv_variable1.items.clear;
   if stackmenu1.measuring_method1.itemindex=0  then
   begin
-    name_variable1.items.add(mainwindow.shape_var1.HINT);
-    name_variable1.items.add(object_name);//from header
-    name_variable1.items.add(abbreviation_var_IAU);
-    name_variable1.items.add(abbrev_var);
+    abrv_variable1.items.add(mainwindow.shape_var1.HINT);
+    abrv_variable1.items.add(object_name);//from header
+    abrv_variable1.items.add(abbreviation_var_IAU);
+    abrv_variable1.items.add(abbrev_var);
   end;
 
 
@@ -818,16 +828,6 @@ begin
   plot_graph;
 end;
 
-procedure Tform_aavso1.gaia_comparison1Change(Sender: TObject);
-var
-  gaia_comparison : boolean;
-begin
-  gaia_comparison:=gaia_comparison1.Checked;
-  comparison1.enabled:=gaia_comparison=false;
-  suggest_comp1.enabled:=gaia_comparison=false;
-  if gaia_comparison1.checked then Comparison1.Text:=name_database;
-end;
-
 
 procedure Tform_aavso1.FormCreate(Sender: TObject);
 begin
@@ -835,24 +835,33 @@ begin
 end;
 
 
-procedure annotate_star_of_column(column,column2: integer);
+procedure annotate_star_of_column(columnV,columnCheck,columnComp: integer);
 begin
   // RA, DEC position is stored as integers in tag   [0..864000], DEC[-324000..324000]
-  if column>0 then //valid
+  if columnV>0 then //valid
   begin
-    shape_var2_ra:= stackmenu1.listview7.column[column].tag*2*pi/864000;
-    shape_var2_dec:= stackmenu1.listview7.column[column+1].tag*0.5*pi/324000;
+    shape_var2_ra:= stackmenu1.listview7.column[columnV].tag*2*pi/864000;
+    shape_var2_dec:= stackmenu1.listview7.column[columnV+1].tag*0.5*pi/324000;
     mainwindow.shape_var2.visible:=true;
     place_marker_radec(mainwindow.shape_var2,shape_var2_ra,shape_var2_dec);{place ra,dec marker in image}
   end;
 
-  if column2>0 then //valid
+  if columnCheck>0 then //valid
   begin
-    shape_check2_ra:= stackmenu1.listview7.column[column2].tag*2*pi/864000;
-    shape_check2_dec:= stackmenu1.listview7.column[column2+1].tag*0.5*pi/324000;
+    shape_check2_ra:= stackmenu1.listview7.column[columnCheck].tag*2*pi/864000;
+    shape_check2_dec:= stackmenu1.listview7.column[columnCheck+1].tag*0.5*pi/324000;
     mainwindow.shape_check2.visible:=true;
     place_marker_radec(mainwindow.shape_check2,shape_check2_ra,shape_check2_dec);{place ra,dec marker in image}
   end;
+
+  if columnComp>0 then //valid
+  begin
+    shape_comp2_ra:= stackmenu1.listview7.column[columnComp].tag*2*pi/864000;
+    shape_comp2_dec:= stackmenu1.listview7.column[columnComp+1].tag*0.5*pi/324000;
+    mainwindow.shape_comp2.visible:=true;
+    place_marker_radec(mainwindow.shape_comp2,shape_comp2_ra,shape_comp2_dec);{place ra,dec marker in image}
+  end;
+
 end;
 
 
@@ -860,7 +869,7 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,wtext,date_column,count : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,wtext,date_column,count,count2 : integer;
   scale,range,madCheck, medianCheck     : double;
   text1,text2, date_format        : string;
   bmp: TBitmap;
@@ -923,7 +932,7 @@ begin
   if ((column_var<0) and (column_check<0)) then exit;//no var or check star specified
 
 
-  annotate_star_of_column(column_var,column_check);
+  annotate_star_of_column(column_var,column_check,column_comp);
 
   setlength(data,4, stackmenu1.listview7.items.count);
   setlength(listcheck,length(data[0]));//list with magnitudes check star
@@ -965,17 +974,18 @@ begin
         end;
       end;
 
-      dum:=(listview7.Items.item[c].subitems.Strings[P_magn3]); {3th star}
-      try
-      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[3,c]:=strtofloat(dum) else data[3,c]:=0;
-
-      except
-        data[3,c]:=0;
-      end;
-      if data[3,c]<>0 then
+      if column_comp>0 then
       begin
-        magn_max:=max(magn_max,data[3,c]);
-        magn_min:=min(magn_min,data[3,c]);
+        count2:=0;
+        dum:=(listview7.Items.item[c].subitems.Strings[column_comp]);{comparison star}
+        if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then data[3,c]:=strtofloat(dum) else data[3,c]:=0;
+        if data[3,c]<>0 then
+        begin
+          magn_max:=max(magn_max,data[3,c]);
+          magn_min:=min(magn_min,data[3,c]);
+          listcheck[count2]:= data[3,c];
+          inc(count2);
+        end;
       end;
     end;
 
@@ -1032,12 +1042,12 @@ begin
     bmp.canvas.textout(w-4*bspace,h-(bspace div 2),date_format{JD (mid) or HJD});
     bmp.canvas.font.style:=[];
 
-    text1:='Var ('+form_aavso1.name_variable1.text+')';
+    text1:='Var ('+form_aavso1.abrv_variable1.text+')';
     textp1:=10+wtext;
     bmp.canvas.textout(textp1,len*3,text1);
 
     textp2:=textp1+40+bmp.canvas.textwidth(text1);
-    text2:='Chk ('+form_aavso1.name_check1.text+')';
+    text2:='Chk ('+form_aavso1.abrv_check1.text+')';
     bmp.canvas.textout(textp2,len*3,text2);
 
     textp3:=textp2+40+bmp.canvas.textwidth(text2);
@@ -1132,8 +1142,9 @@ begin
 
   if stackmenu1.measuring_method1.itemindex=0 then
   begin
-    name_variable1.text:=mainwindow.Shape_var1.HINT;
-    name_check1.text:=mainwindow.shape_check1.HINT ;
+    abrv_variable1.text:=mainwindow.Shape_var1.HINT;
+    abrv_check1.text:=mainwindow.shape_check1.HINT ;
+    abrv_comp1.text:=mainwindow.shape_comp1.HINT ;
 
   end
   else
@@ -1145,7 +1156,7 @@ begin
         abrv:=stackmenu1.listview7.Column[i].Caption;
         if  Comparetext(object_name2,copy(abrv,1,length(object_name2)))=0 then
         begin
-         name_variable1.text:=abrv;
+         abrv_variable1.text:=abrv;
          break;
         end;
       end;
@@ -1154,10 +1165,10 @@ begin
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
   hjd1.checked:=hjd_date;
-  if stackmenu1.reference_database1.itemindex=0 then
-    Comparison1.Text:=name_database
-  else
-  Comparison1.Text:=stackmenu1.reference_database1.text;
+//  if stackmenu1.reference_database1.itemindex=0 then
+//    abrv_comp1.Text:=name_database
+//  else
+//  abrv_comp1.Text:=stackmenu1.reference_database1.text;
 
   filter1.itemindex:=aavso_filter_index;
 
@@ -1167,23 +1178,24 @@ begin
   aavso_report:='';
 
   suggest_check1.Enabled:=stackmenu1.measuring_method1.itemindex>0;
+  suggest_comp1.Enabled:=stackmenu1.measuring_method1.itemindex>0;
   plot_graph;
 end;
 
 procedure Tform_aavso1.suggest_check1Change(Sender: TObject);
 begin
-  form_aavso1.name_variable1Change(nil);
+  form_aavso1.abrv_variable1Change(nil);
 end;
 
 procedure Tform_aavso1.suggest_check1Click(Sender: TObject);
 begin
-  find_best_check_star(name_check1,comparison1.text);
+  find_best_check_star(abrv_check1,abrv_comp1.text);
   plot_graph;
 end;
 
 procedure Tform_aavso1.suggest_comp1Click(Sender: TObject);
 begin
-  find_best_check_star(comparison1,name_check1.text);
+  find_best_check_star(abrv_comp1,abrv_check1.text);
   plot_graph;
 
 end;

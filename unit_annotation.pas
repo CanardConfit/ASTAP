@@ -1451,7 +1451,7 @@ begin
 
             if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                       mainwindow.shape_check1.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
-            if ((abs(x-shape_star3_fitsX)<5) and  (abs(y-shape_star3_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+            if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                       mainwindow.shape_comp1.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
           end;
 
@@ -1691,7 +1691,7 @@ begin
 
             if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                   mainwindow.shape_check1.HINT:=name;
-            if ((abs(x-shape_star3_fitsX)<5) and  (abs(y-shape_star3_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+            if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                   mainwindow.shape_comp1.HINT:=name;//comparison star
 
           end;
