@@ -1447,10 +1447,12 @@ begin
           if ((database_nr>=3) and (database_nr<=5)) then //variables
           begin
             if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
-                  mainwindow.Shape_var1.HINT:=copy(naam2,1,posex(' ',naam2,4)-1);
+                  mainwindow.Shape_var1.HINT:=naam2; //copy(naam2,1,posex(' ',naam2,4)-1);
 
             if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                      mainwindow.shape_check1.HINT:=copy(naam2,1,posex(' ',naam2,4)-1);
+                      mainwindow.shape_check1.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
+            if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                      mainwindow.shape_comp1.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
           end;
 
           gx_orientation:=(pa+head.crota2)*flipped;
@@ -1672,8 +1674,6 @@ begin
           else
           begin //plot check stars
             name:=vsp[count].auid;
-            if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                  mainwindow.shape_check1.HINT:=name;
 
             name:=name+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
 
@@ -1687,7 +1687,13 @@ begin
             begin //UBVR
               if vsp[count].Bmag<>'?' then name:=name+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
               if vsp[count].Rmag<>'?' then name:=name+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
-            end
+            end;
+
+            if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                  mainwindow.shape_check1.HINT:=name;
+            if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                  mainwindow.shape_comp1.HINT:=name;//comparison star
+
           end;
 
           if name<>'' then
@@ -1797,14 +1803,12 @@ begin
 end;
 
 
-procedure get_best_mean(list: array of double; leng : integer; out mean,standard_error_mean,cv : double);{Remove outliers from population using MAD. }
+procedure get_best_mean(list: array of double; leng : integer; out mean,standard_error_mean: double);{Remove outliers from population using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   i,count         : integer;
   median, mad,sd  : double;
 
 begin
-  cv:=0;
-
   if leng=1 then begin mean:=list[0];exit end
   else
   if leng=2 then begin mean:=(list[0]+list[1])/2;exit end;
@@ -1812,7 +1816,6 @@ begin
   mad_median(list,leng,mad,median);{calculate mad and median without modifying the data}
 
   sd:=mad*1.4826;//standard deviation calculated from mad
-  if median>0 then cv:=sd/median;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
 
   count:=0;
   mean:=0;
@@ -1824,11 +1827,11 @@ begin
       mean:=mean+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
       inc(count);
     end;
-   if count>0 then
-   begin
-     mean:=mean/count;  {mean without using outliers}
-     standard_error_mean:=sd/sqrt(count); //https://onlinestatbook.com/2/estimation/mean.html
-   end;
+  if count>0 then
+  begin
+    mean:=mean/count;  {mean without using outliers}
+    standard_error_mean:=sd/sqrt(count); //https://onlinestatbook.com/2/estimation/mean.html
+  end;
 
 end;
 
@@ -1893,10 +1896,10 @@ end;
 procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
-  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,cv                                         : double;
+  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio                             : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
   flip_horizontal, flip_vertical     : boolean;
-  mzero_array,hfd_x_sd          : array of double;
+  flux_ratio_array,hfd_x_sd          : array of double;
   database_passband : string;
   data_max          : single;
   starlist1         : star_list;
@@ -1953,20 +1956,20 @@ var
                 (img[0,round(yc+1),round(xc-1)]<data_max-1000) and
                 (img[0,round(yc+1),round(xc+1)]<data_max-1000)  ) then {not saturated}
             begin
-              if counter_flux_measured>=length(mzero_array) then
+              if counter_flux_measured>=length(flux_ratio_array) then
               begin
-               SetLength(mzero_array,counter_flux_measured+500);{increase length array}
+               SetLength(flux_ratio_array,counter_flux_measured+500);{increase length array}
                if report_lim_magn then  SetLength(hfd_x_sd,counter_flux_measured+500);{increase length array}
               end;
+              flux_ratio_array[counter_flux_measured]:=flux/(power(10,(21 {bias}-magn/10)/2.5)); //Linear flux ratio,  should be constant for all stars.
 
-              mzero_array[counter_flux_measured]:=magn/10 + 2.5 * ln(flux)/ln(10); //should be constant for all stars
-
+             // memo2_message(#9+floattostr4(magn/10)+#9+floattostr4(2.5 * ln(flux)/ln(10) ));
               if report_lim_magn then
               begin
                 hfd_x_sd[counter_flux_measured]:=hfd1*sd_bg;{calculate hfd*SD. sd_bg  is a global variable from procedure hfd. The minimum diameter for star detection is 4}
               end;
 
-//              memo2_message(#9+floattostr4(snr)+#9+floattostr4(hfd1)+#9+floattostr4(R_aperture)+#9+floattostr4(sd_bg) );
+              //  memo2_message(#9+floattostr4(snr)+#9+floattostr4(hfd1)+#9+floattostr4(R_aperture)+#9+floattostr4(sd_bg) );
               inc(counter_flux_measured); {increase counter of number of stars analysed}
             end;
 
@@ -2023,7 +2026,7 @@ begin
 
       //max_nr_stars:=10;
 
-      setlength(mzero_array,max_nr_stars);
+      setlength(flux_ratio_array,max_nr_stars);
       if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
     end;
 
@@ -2062,7 +2065,7 @@ begin
       end;
       database_type:=0;//online
 
-      convert_magnitudes(database_passband {set in call to get_database_passband}) //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      convert_magnitudes(database_passband {set in call to get_database_passband}) //convert Gaia magnitude to a new magnitude. If the type is already correct, no action will follow
                         //database_passband will be stored in passband_active
     end; //online
 
@@ -2154,7 +2157,11 @@ begin
     begin
       if counter_flux_measured>=3 then {at least three stars}
       begin
-        get_best_mean(mzero_array,counter_flux_measured {length},head.mzero,standard_error_mean,cv );//calculate and store mzero in header
+        get_best_mean(flux_ratio_array,counter_flux_measured {length},avg_flux_ratio,standard_error_mean );//calculate average of flux ratio. Can't do that on mzero. Should be a linear scale
+        head.mzero:=21{bias} + ln(avg_flux_ratio)*2.5/ln(10);//from flux ratio to mzero
+        standard_error_mean:=ln((avg_flux_ratio+standard_error_mean)/avg_flux_ratio)*2.5/ln(10);//Convert ratio error to error in magnitudes. Note that log(a)−log(b)=log(a/b) and log():=ln()/ln(10)
+
+
         head.passband_database:=passband_active; //passband_active is global variable. Now store in the header. head.passband_database can also be retrieved using keyword MZEROPAS
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
@@ -2193,13 +2200,13 @@ begin
 
           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
-                        ' Coefficient of variation: '+floattostrF(cv*100,ffFixed,0,2)+
+                        ' Standard error MZERO [magn]: '+floattostrF(standard_error_mean,ffFixed,0,3)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.')
 
         else
           memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(head.mzero_radius*2, ffFixed, 0,2)+' pixels.'+
-                        ' Coefficient of variation: '+floattostrF(cv*100,ffFixed,0,2)+
+                        ' Standard error MZERO [magn]: '+floattostrF(standard_error_mean,ffFixed,0,3)+
                         '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 
         memo2_message('Photometric calibration is only valid if the filter passband ('+head.filter_name+') is compatible with the passband reference database ('+head.passband_database+'). This is indicated by the coloured square icons in tab photometry.');
@@ -2235,8 +2242,8 @@ begin
         memo2_message(magn_limit_str);
       end;
 
-      mzero_array:=nil;
-      hfd_x_sd:=nil;
+      //flux_ratio_array:=nil;
+      //hfd_x_sd:=nil;
     end;
 
     Screen.Cursor:=crDefault;

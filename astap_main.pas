@@ -1,4 +1,4 @@
-﻿unit astap_main;
+unit astap_main;
 {Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
@@ -62,13 +62,14 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.08.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.08.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
   Tmainwindow = class(TForm)
     add_marker_position1: TMenuItem;
     bin3x3: TMenuItem;
+    shape_comp2: TShape;
     sigma_button1: TBitBtn;
     boxshape1: TShape;
     data_range_groupBox1: TGroupBox;
@@ -155,7 +156,7 @@ type
     Separator3: TMenuItem;
     Shape_var1: TShape;
     shape_check1: TShape;
-    shape_star3: TShape;
+    shape_comp1: TShape;
     shape_var2: TShape;
     shape_histogram1: TShape;
     shape_manual_alignment1: TShape;
@@ -724,14 +725,14 @@ var {################# initialised variables #########################}
   shape_var1_fitsY: double=0;
   shape_check1_fitsX: double=0;
   shape_check1_fitsY: double=0;
-  shape_star3_fitsX: double=0;
-  shape_star3_fitsY: double=0;
+  shape_comp1_fitsX: double=0;
+  shape_comp1_fitsY: double=0;
   shape_var1_ra : double=0;
   shape_var1_dec : double=0;
   shape_check1_ra : double=0;
   shape_check1_dec : double=0;
-  shape_star3_ra : double=0;
-  shape_star3_dec : double=0;
+  shape_comp1_ra : double=0;
+  shape_comp1_dec : double=0;
 
 
   shape_nr: integer=1;
@@ -750,10 +751,14 @@ var {################# initialised variables #########################}
   shape_var2_fitsY: double=0;
   shape_check2_fitsX: double=0;
   shape_check2_fitsY: double=0;
+  shape_comp2_fitsX: double=0;
+  shape_comp2_fitsY: double=0;
   shape_var2_ra : double=0;
   shape_var2_dec : double=0;
   shape_check2_ra : double=0;
   shape_check2_dec : double=0;
+  shape_comp2_ra : double=0;
+  shape_comp2_dec : double=0;
 
 
   commandline_execution : boolean=false;{program executed in command line}
@@ -975,7 +980,7 @@ uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, 
 {$IFDEF fpc}
   {$R *.lfm}
 {$else}  {delphi}
- {$R *.dfm}
+ {$R *.lfm}
 {$endif}
 
 
@@ -4729,11 +4734,11 @@ begin
     show_marker_shape(shape,5 {circle},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
   end
   else
-  if tshape(shape)=tshape(mainwindow.shape_star3) then
+  if tshape(shape)=tshape(mainwindow.shape_comp1) then
   begin
-    shape_star3_fitsX:=fitsX;//store for zooming
-    shape_star3_fitsY:=fitsY;
-    show_marker_shape(shape,5 {circle},20,20,10,shape_star3_fitsX, shape_star3_fitsY);
+    shape_comp1_fitsX:=fitsX;//store for zooming
+    shape_comp1_fitsY:=fitsY;
+    show_marker_shape(shape,5 {circle},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
   end
   else
   if tshape(shape)=tshape(mainwindow.shape_marker3) then
@@ -4755,7 +4760,15 @@ begin
     shape_check2_fitsX:=fitsX;
     shape_check2_fitsY:=fitsY;
     show_marker_shape(shape,9 {no change},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
+  end
+  else
+  if tshape(shape)=tshape(mainwindow.shape_comp2) then
+  begin
+    shape_comp2_fitsX:=fitsX;
+    shape_comp2_fitsY:=fitsY;
+    show_marker_shape(shape,9 {no change},50,50,10,shape_comp2_fitsX, shape_comp2_fitsY);
   end;
+
   shape.pen.style:=psSolid;//for photometry, resturn from psClear;
 end;
 
@@ -5529,7 +5542,7 @@ begin
   if tshape(shape)=tshape(mainwindow.shape_check1) then
     begin mainwindow.labelCheck1.left:=ll+ww; mainwindow.labelCheck1.top:=tt+hh; mainwindow.labelCheck1.font.size:=max(hh div 4,14); mainwindow.labelCheck1.visible:=true;end
   else
-  if tshape(shape)=tshape(mainwindow.shape_star3) then
+  if tshape(shape)=tshape(mainwindow.shape_comp1) then
     begin mainwindow.labelThree1.left:=ll+ww; mainwindow.labelThree1.top:=tt+hh; mainwindow.labelThree1.font.size:=max(hh div 4,14); mainwindow.labelThree1.visible:=true;end;
 
   shape.pen.style:=psSolid;//for photometry, resturn from psClear;
@@ -5595,13 +5608,14 @@ begin
       show_marker_shape(mainwindow.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
     if mainwindow.shape_check1.visible then {For manual alignment. Do this only when visible}
       show_marker_shape(mainwindow.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
-    if mainwindow.shape_star3.visible then {For manual alignment. Do this only when visible}
-      show_marker_shape(mainwindow.shape_star3,9 {no change in shape and hint},20,20,10,shape_star3_fitsX, shape_star3_fitsY);
+    if mainwindow.shape_comp1.visible then {For manual alignment. Do this only when visible}
+      show_marker_shape(mainwindow.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
 
     if mainwindow.shape_var2.visible then //update the shape position based on ra,dec values
     begin
       show_marker_shape(mainwindow.shape_var2,9 {no change in shape and hint},50,50,10,shape_var2_fitsX, shape_var2_fitsY);
       show_marker_shape(mainwindow.shape_check2,9 {no change in shape and hint},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
+      show_marker_shape(mainwindow.shape_comp2,9 {no change in shape and hint},50,50,10,shape_comp2_fitsX, shape_comp2_fitsY);
     end;
 
   end;
@@ -7852,8 +7866,8 @@ begin
       place_marker_radec(mainwindow.shape_var1,shape_var1_ra,shape_var1_dec);//place ra,dec marker in image based on the ra,dec position
     if mainwindow.shape_check1.visible then {For manual alignment. Do this only when visible}
       place_marker_radec(mainwindow.shape_check1,shape_check1_ra,shape_check1_dec);//place ra,dec marker in image based on the ra,dec position
-    if mainwindow.shape_star3.visible then {For manual alignment. Do this only when visible}
-      place_marker_radec(mainwindow.shape_star3,shape_star3_ra,shape_star3_dec);//place ra,dec marker in image based on the ra,dec position
+    if mainwindow.shape_comp1.visible then {For manual alignment. Do this only when visible}
+      place_marker_radec(mainwindow.shape_comp1,shape_comp1_ra,shape_comp1_dec);//place ra,dec marker in image based on the ra,dec position
 
     if mainwindow.shape_var2.visible then //update the shape position based on ra,dec values
     begin
@@ -8186,7 +8200,7 @@ begin
     if show_console=false then
     begin
       dwFlags := STARTF_USESHOWWINDOW;
-      wShowWindow := SW_SHOWMINIMIZED;
+      wShowWindow := SW_SHOWMINNOACTIVE;//SW_SHOWMINIMIZED which causes it to steal keyboard focus from active window. SW_SHOWMINNOACTIVE which opens the window the same way minimized but does not steal focus?
     end
     else
     wShowWindow := SW_HIDE;
@@ -8637,7 +8651,7 @@ begin
       hjd_date:=Sett.ReadBool('aavso','hjd_date',false);{aavso report}
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
       magnitude_slope:=Sett.ReadFloat('aavso','slope',0);
-      used_check_stars:=Sett.ReadString('aavso','checkstars','');
+      used_vsp_stars:=Sett.ReadString('aavso','vsp_stars','');
 
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('live','live_stack_dir','');
       stackmenu1.monitoring_path1.caption:=Sett.ReadString('live','monitor_dir','');
@@ -9022,7 +9036,7 @@ begin
       sett.writeBool('aavso','hjd_date',hjd_date);{AAVSO report}
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
       sett.writeFloat('aavso','slope', magnitude_slope);
-      sett.writestring('aavso','checkstars',used_check_stars);
+      sett.writestring('aavso','vsp_stars',used_vsp_stars);
 
       sett.writestring('live','live_stack_dir',stackmenu1.live_stacking_path1.caption);{live stacking}
       sett.writestring('live','monitor_dir',stackmenu1.monitoring_path1.caption);
@@ -10237,7 +10251,7 @@ begin
 end;
 
 
-function download_vsp(limiting_mag: double) : boolean;//AAVSO API access
+function download_vsp(limiting_mag: double) : boolean;//AAVSO API access check & comparison stars
 var
   s,url   : string;
   val,val2 : char;
@@ -10384,7 +10398,7 @@ begin
   result:=true;
 end;
 
-function download_vsx(limiting_mag: double): boolean;//AAVSO API access
+function download_vsx(limiting_mag: double): boolean;//AAVSO API access variables
 var
   s,dummy,url   : string;
   count,i,j,k,errorRa,errorDec,err                : integer;
@@ -12886,8 +12900,8 @@ begin
   //     show_marker_shape(mainwindow.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
 //     if mainwindow.shape_check1.visible then {For manual alignment. Do this only when visible}
   //     show_marker_shape(mainwindow.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
- //    if mainwindow.shape_star3.visible then {For manual alignment. Do this only when visible}
-  //     show_marker_shape(mainwindow.shape_star3,9 {no change in shape and hint},20,20,10,shape_star3_fitsX, shape_star3_fitsY);
+ //    if mainwindow.shape_comp1.visible then {For manual alignment. Do this only when visible}
+  //     show_marker_shape(mainwindow.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
 
 //    if mainwindow.shape_var2.visible then //update the shape position based on ra,dec values
   //  begin
@@ -12947,13 +12961,15 @@ begin
     show_marker_shape(mainwindow.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
   if mainwindow.shape_check1.visible then {For manual alignment. Do this only when visible}
     show_marker_shape(mainwindow.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
-  if mainwindow.shape_star3.visible then {For manual alignment. Do this only when visible}
-    show_marker_shape(mainwindow.shape_star3,9 {no change in shape and hint},20,20,10,shape_star3_fitsX, shape_star3_fitsY);
+  if mainwindow.shape_comp1.visible then {For manual alignment. Do this only when visible}
+    show_marker_shape(mainwindow.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
 
   if mainwindow.shape_var2.visible then //update the shape position based on ra,dec values
   begin
     show_marker_shape(mainwindow.shape_var2,9 {no change in shape and hint},50,50,10,shape_var2_fitsX, shape_var2_fitsY);
     show_marker_shape(mainwindow.shape_check2,9 {no change in shape and hint},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
+    show_marker_shape(mainwindow.shape_comp2,9 {no change in shape and hint},50,50,10,shape_comp2_fitsX, shape_comp2_fitsY);
+
   end;
 
 
@@ -15028,12 +15044,10 @@ begin
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
-    url:='http://ned.ipac.caltech.edu/conesearch?in_csys=Equatorial&in_equinox=J2000&coordinates='+ra8+'d%20'+sgn+dec8+'d&radius=' +floattostr6(max(ang_w,ang_h)/(60*2))+'&corr_z=1&z_constraint=Unconstrained&z_unit=z&ot_include=ANY&nmp_op=ANY&search_type=Near%20Position%20Search&out_csys=Equatorial&out_equinox=Same%20as%20Input&obj_sort=Distance%20to%20search%20center'+'&in_objtypes1[Galaxies]=Galaxies&in_objtypes1[GPairs]=GPairs&in_objtypes1[GTriples]=GTriples&in_objtypes1[GGroups]=GGroups&in_objtypes1[GClusters]=GClusters&in_objtypes1[QSO]=QSO&in_objtypes1[QSOGroups]=QSOGroups&in_objtypes1[GravLens]=GravLens&in_objtypes1[AbsLineSys]=AbsLineSys&in_objtypes1[EmissnLine]=EmissnLine';
-    //http://ned.ipac.caltech.edu/conesearch?in_csys=Equatorial&in_equinox=J2000&coordinates=12.000d%20%2B45.0000d&radius=2&corr_z=1&z_constraint=Unconstrained&z_unit=z&ot_include=ANY&nmp_op=ANY&search_type=Near%20Position%20Search&out_csys=Equatorial&out_equinox=Same%20as%20Input&obj_sort=Distance%20to%20search%20center
+    ///url:=http://ned.ipac.caltech.edu/conesearch?search_type=Near%20Position%20Search&in_csys=Equatorial&in_equinox=J2000&ra=12.3&dec=33.95&radius=8.988333
+    url:='http://ned.ipac.caltech.edu/conesearch?search_type=Near%20Position%20Search&in_csys=Equatorial&in_equinox=J2000&ra='+ra8+'d&dec='+sgn+dec8+'&radius=' +floattostr6(max(ang_w,ang_h)/(60*2));
   end
   else
-
-
   begin {sender aavso_chart1}
     annotation_magn:=inputbox('Chart request','Limiting magnitude chart:' ,annotation_magn);
     annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
@@ -15168,12 +15182,12 @@ begin
             shape_check1_dec:=shape_var1_dec;
           end{swap, prevent overlapping}
         else
-          if ((abs(shape_star3_fitsX-xcf)<=3) and (abs(shape_star3_fitsY-ycf)<=3)) then
+          if ((abs(shape_comp1_fitsX-xcf)<=3) and (abs(shape_comp1_fitsY-ycf)<=3)) then
           begin
-            shape_star3_fitsX:=shape_var1_fitsX;
-            shape_star3_fitsY:=shape_var1_fitsY;
-            shape_star3_ra:=shape_var1_ra;
-            shape_star3_dec:=shape_var1_dec;
+            shape_comp1_fitsX:=shape_var1_fitsX;
+            shape_comp1_fitsY:=shape_var1_fitsY;
+            shape_comp1_ra:=shape_var1_ra;
+            shape_comp1_dec:=shape_var1_dec;
           end;
         shape_var1_fitsX:=xcf; shape_var1_fitsY:=ycf;
         if head.cd1_1<>0 then
@@ -15198,12 +15212,12 @@ begin
           shape_var1_dec:=shape_check1_dec;
         end{swap, prevent overlapping}
         else
-          if ((abs(shape_star3_fitsX-xcf)<=3) and (abs(shape_star3_fitsY-ycf)<=3)) then
+          if ((abs(shape_comp1_fitsX-xcf)<=3) and (abs(shape_comp1_fitsY-ycf)<=3)) then
           begin
-            shape_star3_fitsX:=shape_check1_fitsX;
-            shape_star3_fitsY:=shape_check1_fitsY;
-            shape_star3_ra:=shape_check1_ra;
-            shape_star3_dec:=shape_check1_dec;
+            shape_comp1_fitsX:=shape_check1_fitsX;
+            shape_comp1_fitsY:=shape_check1_fitsY;
+            shape_comp1_ra:=shape_check1_ra;
+            shape_comp1_dec:=shape_check1_dec;
           end;
         shape_check1_fitsX:=xcf; shape_check1_fitsY:=ycf; {calculate fits positions}
         if head.cd1_1<>0 then
@@ -15215,28 +15229,28 @@ begin
       begin
         if ((abs(shape_var1_fitsX-xcf)<=3) and (abs(shape_var1_fitsY-ycf)<=3)) then
           begin
-            shape_var1_fitsX:=shape_star3_fitsX;
-            shape_var1_fitsY:=shape_star3_fitsY;
-            shape_var1_ra:=shape_star3_ra;
-            shape_var1_dec:=shape_star3_dec;
+            shape_var1_fitsX:=shape_comp1_fitsX;
+            shape_var1_fitsY:=shape_comp1_fitsY;
+            shape_var1_ra:=shape_comp1_ra;
+            shape_var1_dec:=shape_comp1_dec;
           end{swap, prevent overlapping}
         else
           if ((abs(shape_check1_fitsX-xcf)<=3) and (abs(shape_check1_fitsY-ycf)<=3)) then
             begin
-              shape_check1_fitsX:=shape_star3_fitsX;
-              shape_check1_fitsY:=shape_star3_fitsY;
-              shape_check1_ra:=shape_star3_ra;
-              shape_check1_dec:=shape_star3_dec;
+              shape_check1_fitsX:=shape_comp1_fitsX;
+              shape_check1_fitsY:=shape_comp1_fitsY;
+              shape_check1_ra:=shape_comp1_ra;
+              shape_check1_dec:=shape_comp1_dec;
             end;
-        shape_star3_fitsX:=xcf; shape_star3_fitsY:=ycf;
+        shape_comp1_fitsX:=xcf; shape_comp1_fitsY:=ycf;
         if head.cd1_1<>0 then
-          pixel_to_celestial(head,xcf,ycf,0,shape_star3_ra,shape_star3_dec);{store shape position in ra,dec for positioning accurate at an other image}
+          pixel_to_celestial(head,xcf,ycf,0,shape_comp1_ra,shape_comp1_dec);{store shape position in ra,dec for positioning accurate at an other image}
       end;
       Shape_var1.HINT:='?';//reset any labels
       shape_check1.HINT:='?';
       show_marker_shape(mainwindow.shape_var1,shapetype,20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
       show_marker_shape(mainwindow.shape_check1,7 {shapetype},20,20,10{minimum},shape_check1_fitsX, shape_check1_fitsY);
-      show_marker_shape(mainwindow.shape_star3,shapetype,20,20,10{minimum},shape_star3_fitsX, shape_star3_fitsY);
+      show_marker_shape(mainwindow.shape_comp1,shapetype,20,20,10{minimum},shape_comp1_fitsX, shape_comp1_fitsY);
 
       inc(shape_nr);
       if shape_nr>=4 then
@@ -15805,13 +15819,14 @@ begin
            show_marker_shape(mainwindow.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
          if mainwindow.shape_check1.visible then {For manual alignment. Do this only when visible}
            show_marker_shape(mainwindow.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
-         if mainwindow.shape_star3.visible then {For manual alignment. Do this only when visible}
-           show_marker_shape(mainwindow.shape_star3,9 {no change in shape and hint},20,20,10,shape_star3_fitsX, shape_star3_fitsY);
+         if mainwindow.shape_comp1.visible then {For manual alignment. Do this only when visible}
+           show_marker_shape(mainwindow.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
 
           if mainwindow.shape_var2.visible then //update the shape position based on ra,dec values
           begin
             show_marker_shape(mainwindow.shape_var2,9 {no change in shape and hint},50,50,10,shape_var2_fitsX, shape_var2_fitsY);
             show_marker_shape(mainwindow.shape_check2,9 {no change in shape and hint},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
+            show_marker_shape(mainwindow.shape_comp2,9 {no change in shape and hint},50,50,10,shape_comp2_fitsX, shape_comp2_fitsY);
           end;
        end;
      end;

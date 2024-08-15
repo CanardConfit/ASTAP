@@ -911,7 +911,7 @@ object mainwindow: Tmainwindow
           ShowHint = True
           Visible = False
         end
-        object shape_star3: TShape
+        object shape_comp1: TShape
           Left = 9
           Height = 11
           Hint = '3'
@@ -961,8 +961,8 @@ object mainwindow: Tmainwindow
           Left = 39
           Height = 30
           Top = 161
-          Width = 11
-          Caption = '3'
+          Width = 55
+          Caption = 'Comp'
           Font.CharSet = ANSI_CHARSET
           Font.Color = clYellow
           Font.Height = -21
@@ -1025,6 +1025,22 @@ object mainwindow: Tmainwindow
           Height = 50
           Hint = 'Check'
           Top = 272
+          Width = 50
+          Brush.Style = bsClear
+          Enabled = False
+          ParentShowHint = False
+          Pen.Color = clLime
+          Pen.Mode = pmNotXor
+          Pen.Width = 3
+          Shape = stDiamond
+          ShowHint = True
+          Visible = False
+        end
+        object shape_comp2: TShape
+          Left = 18
+          Height = 50
+          Hint = 'Check'
+          Top = 328
           Width = 50
           Brush.Style = bsClear
           Enabled = False
