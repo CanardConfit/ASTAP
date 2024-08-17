@@ -430,7 +430,7 @@ begin
         median_best:=min(median_11,min(median_21,median_31));{find best corner}
         median_worst:=max(median_11,max(median_21,median_31));{find worst corner}
 
-        scale_factor:=head.width*0.3/median_worst;
+        scale_factor:=head.height*0.4/median_worst;
         x_11:=round(median_11*scale_factor*sin(screw1*pi/180)+head.width/2); {screw 1}
         y_11:=round(median_11*scale_factor*cos(screw1*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
 
@@ -505,7 +505,7 @@ begin
         median_best:=min(min(median_13, median_33),min(median_11,median_31));{find best corner}
         median_worst:=max(max(median_13, median_33),max(median_11,median_31));{find worst corner}
 
-        scale_factor:=head.width*0.25/median_worst;
+        scale_factor:=head.height*0.4/median_worst;
 
         x_11:=round(-median_11*scale_factor+head.width/2);  y_11:=round(-median_11*scale_factor+head.height/2);{calculate coordinates counter clockwise}
         x_21:=round( head.width/2);                         y_21:=round(-median_21*scale_factor+head.height/2);
