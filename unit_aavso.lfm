@@ -270,13 +270,15 @@ object form_aavso1: Tform_aavso1
   object measure_all_mode1: TLabel
     Left = 16
     Height = 15
-    Top = 48
+    Top = 35
     Width = 331
     Caption = 'Measure all mode . Select variable and check star for report'
+    Constraints.MaxWidth = 400
     Font.Style = [fsBold]
     ParentColor = False
     ParentFont = False
     Visible = False
+    WordWrap = True
   end
   object suggest_check1: TButton
     Left = 16

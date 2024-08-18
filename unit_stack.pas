@@ -59,6 +59,7 @@ type
     annotate_mode1: TComboBox;
     Annotations_visible2: TCheckBox;
     annulus_radius1: TComboBox;
+    ignore_saturation1: TCheckBox;
     nr_stars_to_detect1: TComboBox;
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
@@ -1009,6 +1010,8 @@ var
   asteroidlist: array of array of array of double;
   solve_show_log: boolean;
   process_as_osc: integer;//1=auto 2=forced process as OSC image
+  column_info: array of theauid;//will contain the star info of the photometry columna
+
 
 var  {################# initialised variables #########################}
   areaX1: integer = 0; {for set area}
@@ -4336,7 +4339,7 @@ begin
                 if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
                   Lv.Items.item[c].SubitemImages[P_filter] :=25  //raw OSC file
                 else
-                lv.Items.item[c].SubitemImages[P_filter]:=-1 //unknown
+                lv.Items.item[c].SubitemImages[P_filter]:=4 //assume CV
               end
               else
               if pos('S',filterstrUP)>0 then //sloan
@@ -7841,12 +7844,12 @@ var
   medianCheck, medianThree, hfd_med, apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt,pix1,pix2 : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, countVar,
-  countCheck, countThree, database_col,j, lvsx,lvsp,formalism,indicate : integer;
+  countCheck, countThree, database_col,j, lvsx,lvsp,formalism : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined : boolean;
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
-  astr, filename1,totalnrstr,vname,cname : string;
+  astr, filename1,totalnrstr,vname,cname,dummy : string;
   bck :tbackground;
   oldra0 : double=0;
   olddec0: double=-pi/2;
@@ -7924,7 +7927,6 @@ var
             procedure nil_all;{reactivate listview updating, nil all arrays and restore cursor}
             begin
               stop_updating(false);
-              variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
               //remove following line at the end of 2025
               if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
 
@@ -7936,7 +7938,11 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
+
   save_settings2;{too many lost selected files . so first save settings}
+
+  variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
+
 
   if pos('V', uppercase(star_database1.Text)) = 0 then
     memo2_message(star_database1.Text +  ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
@@ -8114,7 +8120,7 @@ begin
         annulus_radius := 14;{annulus radius}
       end;
 
-      {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
+        {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
       plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
 
       //icon for used database passband. Database selection could be in auto mode so do this after calibration
@@ -8134,8 +8140,7 @@ begin
       else
       database_col:=-1; // unknown. Should not happen
 
-      if stackmenu1.measuring_method1.itemindex>0  then indicate:=P_calibration else indicate:=P_magn1;
-      ListView7.Items.item[c].SubitemImages[indicate]:= database_col ; //show selected database passband
+      ListView7.Items.item[c].SubitemImages[P_calibration]:= database_col ; //show selected database passband
 
       listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 0);
 
@@ -8172,6 +8177,8 @@ begin
         else
           saturation_level := 60000; {could be dark subtracted changing the saturation level}
         saturation_level:=min(head.datamax_org-1,saturation_level);
+
+        if ignore_saturation1.checked then saturation_level:=64000;
 
         if stackmenu1.measuring_method1.itemindex=0 then // measure manual
         begin
@@ -8247,7 +8254,6 @@ begin
           oldra0:=head.ra0;
           olddec0:=head.dec0;
 
-
           case stackmenu1.annotate_mode1.itemindex of
             1,2,3 : //measure all AAVSO stars using the position from the local database
                 begin
@@ -8283,11 +8289,8 @@ begin
                             end;
                             listview7.Items.item[c].subitems.Strings[P_nr-2]:= astr;
                             listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(snr));
-
-                            //store RA, DEC position                 [0..864000], DEC[-324000..324000]
-                            stackmenu1.listview7.column[P_nr-2].tag:= round(variable_list[j].ra*864000/(2*pi));
-                            stackmenu1.listview7.column[P_nr-1].tag:= round(variable_list[j].dec*324000/(0.5*pi));
-
+                            stackmenu1.listview7.column[P_nr-2].tag:=j; //store star position in variable list
+                            stackmenu1.listview7.column[P_nr-1].tag:=0; //mark as local variable database
                           end;//new object
                         end;//enough snr
                       end;
@@ -8330,15 +8333,14 @@ begin
                             end;
                             listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
                             listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
-                            //store RA, DEC position                 [0..864000], DEC[-324000..324000]
-                            stackmenu1.listview7.column[P_nr-2].tag:= round(vsx[j].ra*864000/(2*pi));
-                            stackmenu1.listview7.column[P_nr-1].tag:= round(vsx[j].dec*324000/(0.5*pi));
-
+                            stackmenu1.listview7.column[P_nr-2].tag:=j; //store star position in vsx
+                            stackmenu1.listview7.column[P_nr-1].tag:=1; //mark as vsx variable star
                           end;//new object
                         end;//enough snr
                       end;
                     end;
 
+                    //VSP stars
                     lvsp:=length(vsp);
                     if lvsp>0 then
                     begin
@@ -8351,12 +8353,14 @@ begin
                           if snr>0 then
                           begin
                             new_object:=true;
-                            cname:=vsp[j].auid+' V='+vsp[j].Vmag+'('+vsp[j].Verr+')';//display V always
+                            cname:=vsp[j].auid;
+
 
 
                             for i:=p_nr_norm+1 to p_nr-1 do
-                            if ((odd(i)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=cname)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                            if ((odd(i)){not a snr column} and (pos(cname,stackmenu1.listview7.Column[i].Caption)>0)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
                             begin //existing object column
+                              dummy:=stackmenu1.listview7.Column[i].Caption;
                               listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
                               listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
                                new_object:=false;
@@ -8365,6 +8369,19 @@ begin
 
                             if new_object then
                             begin
+                              if head.passband_database='B' then
+                                       cname:=cname+' B='+vsp[j].Bmag+'('+vsp[j].Berr+')'
+                              else
+                              if head.passband_database='R' then cname:=cname+' R='+vsp[j].Vmag+'('+vsp[j].Rerr+')'
+                              else
+                              if head.passband_database='SG' then cname:=cname+' SG='+vsp[j].Vmag+'('+vsp[j].SGerr+')'
+                              else
+                              if head.passband_database='SR' then cname:=cname+' SR='+vsp[j].Vmag+'('+vsp[j].SRerr+')'
+                              else
+                              if head.passband_database='SI' then cname:=cname+' SI='+vsp[j].Vmag+'('+vsp[j].SIerr+')'
+                              else
+                              cname:=cname+' V='+vsp[j].Vmag+'('+vsp[j].Verr+')';
+
                               with listview7 do
                               begin //add column
                                 listview7_add_column(cname);
@@ -8373,9 +8390,8 @@ begin
                               end;
                               listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
                               listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
-                              //store RA, DEC position                 [0..864000], DEC[-324000..324000]
-                              stackmenu1.listview7.column[P_nr-2].tag:= round(vsp[j].ra*864000/(2*pi));
-                              stackmenu1.listview7.column[P_nr-1].tag:= round(vsp[j].dec*324000/(0.5*pi));
+                              stackmenu1.listview7.column[P_nr-2].tag:=j; //store star position in vsp in .tag
+                              stackmenu1.listview7.column[P_nr-1].tag:=2; //mark as vsp variable star
                             end;//new object
                           end;//enough snr
                         end;//within the image

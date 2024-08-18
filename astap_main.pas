@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.08.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.08.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -10403,7 +10403,7 @@ var
   s,dummy,url   : string;
   count,i,j,k,errorRa,errorDec,err                : integer;
   radius,ra,dec,ProperMotionRA,ProperMotionDEC,jd,years_since_2000,var_period : double;
-  skip,passband_filter,period_filter  : boolean;
+  skip,period_filter  : boolean;
 begin
   result:=false;
   radius:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //radius in degrees. Some solvers produce files with neagative cdelt2
@@ -10416,9 +10416,7 @@ begin
 
   if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); ////Required by AAVSO
 
-  passband_filter:=stackmenu1.annotate_mode1.itemindex <12;
   period_filter:=stackmenu1.annotate_mode1.itemindex <8;
-
 
 
   //https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
@@ -10536,9 +10534,6 @@ begin
 
     //filtering
     skip:=false;
-    if ((passband_filter) and (pos('V',vsx[count].minmag)=0)) then
-      skip:=true
-    else
     if period_filter then
     begin
       var_period:=strtofloat1(vsx[count].period);
