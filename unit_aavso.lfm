@@ -1,5 +1,5 @@
 object form_aavso1: Tform_aavso1
-  Left = 441
+  Left = 363
   Height = 483
   Hint = 'Enter your geographic location manually for airmass calculation.'
   Top = 157
@@ -11,10 +11,10 @@ object form_aavso1: Tform_aavso1
   OnCreate = FormCreate
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '3.4.0.0'
+  LCLVersion = '2.2.6.0'
   object obscode1: TEdit
     Left = 16
-    Height = 23
+    Height = 25
     Hint = 'The official AAVSO Observer Code for the observer which was previously assigned by the AAVSO.'
     Top = 8
     Width = 208
@@ -24,17 +24,17 @@ object form_aavso1: Tform_aavso1
   end
   object Label1: TLabel
     Left = 243
-    Height = 15
+    Height = 17
     Top = 8
-    Width = 53
+    Width = 66
     Caption = 'OBSCODE'
     ParentColor = False
   end
   object Label3: TLabel
-    Left = 368
-    Height = 15
-    Top = 272
-    Width = 55
+    Left = 104
+    Height = 17
+    Top = 248
+    Width = 69
     Caption = 'Check star'
     ParentColor = False
   end
@@ -45,16 +45,16 @@ object form_aavso1: Tform_aavso1
     Top = 448
     Width = 168
     Caption = 'Report to clipboard'
-    TabOrder = 11
     OnClick = report_to_clipboard1Click
+    TabOrder = 11
   end
   object Filter1: TComboBox
     Left = 16
-    Height = 23
+    Height = 27
     Hint = 'The filter used for the observation.'
     Top = 320
     Width = 208
-    ItemHeight = 15
+    ItemHeight = 0
     ItemIndex = 0
     Items.Strings = (
       'Take from file header'
@@ -70,27 +70,27 @@ object form_aavso1: Tform_aavso1
   end
   object Label6: TLabel
     Left = 243
-    Height = 15
+    Height = 17
     Top = 320
-    Width = 54
+    Width = 68
     Caption = 'Filter used'
     ParentColor = False
   end
   object Label8: TLabel
-    Left = 368
-    Height = 15
-    Top = 72
-    Width = 41
+    Left = 104
+    Height = 17
+    Top = 56
+    Width = 53
     Caption = 'Variable'
     ParentColor = False
   end
   object delimiter1: TComboBox
     Left = 16
-    Height = 23
+    Height = 25
     Hint = 'The delimiter used to separate fields in the report. Any will do. '
     Top = 360
     Width = 88
-    ItemHeight = 15
+    ItemHeight = 0
     ItemIndex = 0
     Items.Strings = (
       'tab'
@@ -106,17 +106,17 @@ object form_aavso1: Tform_aavso1
   end
   object Label4: TLabel
     Left = 243
-    Height = 15
+    Height = 17
     Top = 362
-    Width = 48
+    Width = 61
     Caption = 'Delimiter'
     ParentColor = False
   end
   object Label5: TLabel
-    Left = 368
-    Height = 15
-    Top = 216
-    Width = 65
+    Left = 104
+    Height = 17
+    Top = 192
+    Width = 78
     Caption = 'Comparison'
     ParentColor = False
   end
@@ -127,36 +127,36 @@ object form_aavso1: Tform_aavso1
     Top = 448
     Width = 168
     Caption = 'Report to file'
-    TabOrder = 12
     OnClick = report_to_clipboard1Click
+    TabOrder = 12
   end
   object abrv_check1: TComboBox
     Left = 16
-    Height = 23
+    Height = 27
     Hint = ' Check star  AUID  (much preferred) or designation. Alternatively you could select the IAU designation using the position. The dropdown will be filtered if a part of the designation is typed.'
     Top = 272
-    Width = 344
+    Width = 480
     AutoComplete = True
     AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
     AutoDropDown = True
     AutoSelect = False
     DropDownCount = 30
-    ItemHeight = 15
+    ItemHeight = 0
+    OnChange = abrv_check1Change
+    OnDropDown = abrv_check1DropDown
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
     TabOrder = 6
-    OnChange = abrv_check1Change
-    OnDropDown = abrv_check1DropDown
   end
   object Image_photometry1: TImage
     Cursor = crCross
-    Left = 450
+    Left = 500
     Height = 483
     Top = 0
-    Width = 1098
+    Width = 1048
     Align = alClient
-    BorderSpacing.Left = 450
+    BorderSpacing.Left = 500
     BorderSpacing.Right = 5
     OnMouseMove = Image_photometry1MouseMove
     PopupMenu = PopupMenu1
@@ -164,19 +164,19 @@ object form_aavso1: Tform_aavso1
   end
   object baa_style1: TCheckBox
     Left = 16
-    Height = 19
+    Height = 21
     Hint = 'Extras report lines will added conform BAA. Info is taken from FITS header.'
     Top = 400
-    Width = 68
+    Width = 87
     Caption = 'BAA style'
     ParentShowHint = False
     ShowHint = True
     TabOrder = 9
   end
   object report_error1: TLabel
-    Left = 456
+    Left = 528
     Height = 192
-    Top = 168
+    Top = 160
     Width = 700
     AutoSize = False
     Caption = 'Invalid report! View the first image in the list and click both on the variable && check star to mark them for measurement. Then press the ▶| button to measure the stars.'
@@ -189,41 +189,41 @@ object form_aavso1: Tform_aavso1
   end
   object delta_bv1: TEdit
     Left = 16
-    Height = 23
+    Height = 25
     Hint = 'Colour difference between variable and check star.  This will be used for differential magnitude correction for variable star based on the slope. '
     Top = 108
     Width = 64
+    OnChange = abrv_variable1Change
     ParentShowHint = False
     ShowHint = True
     TabOrder = 2
     Text = '0'
-    OnChange = abrv_variable1Change
   end
   object Label9: TLabel
     Left = 88
-    Height = 15
+    Height = 17
     Top = 108
-    Width = 43
+    Width = 51
     Caption = '∆(b-v)   '
     ParentColor = False
   end
   object magnitude_slope1: TEdit
     Left = 16
-    Height = 23
+    Height = 25
     Hint = 'Slope of magnitude difference caused by the colour difference between variable and check star. A differential correction will be applied on the variable magnitude in the final report. Enter here the slope found by pressing button "Transformation". '
     Top = 136
     Width = 64
+    OnChange = abrv_variable1Change
     ParentShowHint = False
     ShowHint = True
     TabOrder = 3
     Text = '0'
-    OnChange = abrv_variable1Change
   end
   object Label10: TLabel
     Left = 88
-    Height = 15
+    Height = 17
     Top = 136
-    Width = 28
+    Width = 35
     Caption = 'slope'
     ParentColor = False
   end
@@ -239,41 +239,42 @@ object form_aavso1: Tform_aavso1
   end
   object abrv_variable1: TComboBox
     Left = 16
-    Height = 23
+    Height = 27
     Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier.  Limit: 30 characters. The dropdown will be filtered if a part of the Var designation is typed.'
     Top = 72
-    Width = 344
+    Width = 480
     AutoComplete = True
     AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
     AutoDropDown = True
     DropDownCount = 30
-    ItemHeight = 15
+    ItemHeight = 0
+    OnChange = abrv_variable1Change
+    OnDropDown = abrv_variable1DropDown
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
     TabOrder = 1
-    OnChange = abrv_variable1Change
-    OnDropDown = abrv_variable1DropDown
   end
   object hjd1: TCheckBox
     Left = 116
-    Height = 19
+    Height = 21
     Hint = 'Report the date as Heliocentric Julian Day'
     Top = 400
-    Width = 39
+    Width = 47
     Caption = 'HJD'
+    OnChange = hjd1Change
     ParentShowHint = False
     ShowHint = True
     TabOrder = 10
-    OnChange = hjd1Change
   end
   object measure_all_mode1: TLabel
     Left = 16
-    Height = 15
-    Top = 35
-    Width = 331
+    Height = 14
+    Top = 40
+    Width = 371
     Caption = 'Measure all mode . Select variable and check star for report'
     Constraints.MaxWidth = 400
+    Font.Height = -11
     Font.Style = [fsBold]
     ParentColor = False
     ParentFont = False
@@ -287,27 +288,28 @@ object form_aavso1: Tform_aavso1
     Top = 246
     Width = 75
     Caption = 'Suggest'
-    TabOrder = 4
     OnClick = suggest_check1Click
+    TabOrder = 4
   end
   object abrv_comp1: TComboBox
     Left = 16
-    Height = 23
+    Height = 27
     Hint = 'Comparison star(s)'
     Top = 216
-    Width = 344
+    Width = 480
     AutoComplete = True
     AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
     AutoDropDown = True
     AutoSelect = False
     DropDownCount = 30
-    ItemHeight = 15
+    ItemHeight = 0
+    OnChange = abrv_check1Change
+    OnDropDown = abrv_check1DropDown
+    ParentBidiMode = False
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
     TabOrder = 5
-    OnChange = abrv_check1Change
-    OnDropDown = abrv_check1DropDown
   end
   object suggest_comp1: TButton
     Left = 16
@@ -316,12 +318,12 @@ object form_aavso1: Tform_aavso1
     Top = 190
     Width = 75
     Caption = 'Suggest'
-    TabOrder = 13
     OnClick = suggest_comp1Click
+    TabOrder = 13
   end
   object PopupMenu1: TPopupMenu
-    Left = 685
-    Top = 135
+    Left = 680
+    Top = 72
     object MenuItem1: TMenuItem
       Caption = 'Copy to clipboard'
       Hint = 'Copy graph to clipboard'

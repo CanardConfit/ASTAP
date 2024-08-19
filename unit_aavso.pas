@@ -855,6 +855,17 @@ end;
 procedure Tform_aavso1.FormCreate(Sender: TObject);
 begin
   measure_all_mode1.visible:=p_nr>p_nr_norm;
+
+  {$IFDEF linux}
+  abrv_variable1.autoDropDown:=false;//then only autocomplete works with more then one character  https://forum.lazarus.freepascal.org/index.php?topic=68250.new;topicseen#new
+  abrv_comp1.autoDropDown:=false;//then only autocomplete works with more then one character
+  abrv_check1.autoDropDown:=false;//then only autocomplete works with more then one character
+
+  {$ELSE}
+  abrv_variable1.autoDropDown:=true;
+  abrv_comp1.autoDropDown:=true;
+  abrv_check1.autoDropDown:=true;
+  {$ENDIF}
 end;
 
 
