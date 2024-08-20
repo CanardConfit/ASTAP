@@ -137,7 +137,7 @@ var
   x_11,x_21,x_31,y_11,y_21,y_31,
   x_12,x_22,x_32,y_12,y_22,y_32,
   x_13,x_23,x_33,y_13,y_23,y_33,
-  oldNaxis3, dummy,screenbottom              : integer;
+  oldNaxis3, dummy{,screenbottom},th,tw,th2,tw2,smx,smy   : integer;
 
   hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
   hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
@@ -191,6 +191,9 @@ begin
 
   with mainwindow do
   begin
+    smx:=head.width div 2;
+    smy:=head.height div 2;
+
     Flipv:=mainwindow.flip_vertical1.Checked;
     Fliph:=mainwindow.Flip_horizontal1.Checked;
 
@@ -371,7 +374,7 @@ begin
         //12   22   32
         //11   21   31
 
-        if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))>sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); end;{store out ring (>75% diameter) HFD values}
+        if  sqr(starX - (smx) )+sqr(starY - (smy))>sqr(0.75)*(sqr(smx)+sqr(smy)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); end;{store out ring (>75% diameter) HFD values}
         if triangle=false then
         begin
           if ( (starX<(head.width*1/3)) and (starY<(head.height*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); end;{store corner HFD values}
@@ -388,19 +391,19 @@ begin
         end
         else
         begin  {triangle. Measured in a circle divided by three sectors of 120 degrees except for the circular center}
-          x_centered:=starX- (head.width div 2); {array coordinates}
-          y_centered:=starY- (head.height div 2);
+          x_centered:=starX- (smx); {array coordinates}
+          y_centered:=starY- (smy);
           theangle:=arctan2(x_centered,y_centered)*180/pi;{angle in array from Y axis. So swap x, y}
           sqrradius:=sqr(x_centered)+sqr(x_centered);
           theradius:=sqrt(sqrradius);
 
-          if  sqrradius<=sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then {within circle}
+          if  sqrradius<=sqr(0.75)*(sqr(smx)+sqr(smy)) then {within circle}
           begin
-            if  sqrradius>=sqr(0.25)*(sqr(head.width div 2)+sqr(head.height div 2))  then {outside center}
+            if  sqrradius>=sqr(0.25)*(sqr(smx)+sqr(smy))  then {outside center}
             begin
-              if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+1000);end;{sector 1}
-              if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+1000);end;{sector 2}
-              if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+1000);end;{sector 3}
+              if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<smy) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+1000);end;{sector 1}
+              if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<smy) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+1000);end;{sector 2}
+              if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<smy) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+1000);end;{sector 3}
             end
             else
             begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22);end;{round center}
@@ -470,23 +473,45 @@ begin
 
           image1.Canvas.pen.color:=clyellow;
 
+
           image1.Canvas.moveto(x_11,y_11);{draw triangle}
           image1.Canvas.lineto(x_21,y_21);{draw triangle}
           image1.Canvas.lineto(x_31,y_31);{draw triangle}
           image1.Canvas.lineto(x_11,y_11);{draw triangle}
 
-          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(smx,smy);{draw diagonal}
           image1.Canvas.lineto(x_21,y_21);{draw diagonal}
-          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(smx,smy);{draw diagonal}
           image1.Canvas.lineto(x_31,y_31);{draw diagonal}
 
-          screenbottom:=head.height-fontsize*10;//put text not too much down. 2.5 times font size
           fontsize:=fontsize*4;
           image1.Canvas.font.size:=fontsize;
-          image1.Canvas.textout(x_11,min(y_11,screenbottom),floattostrF(median_11,ffFixed,0,2));
-          image1.Canvas.textout(x_21,min(y_21,screenbottom),floattostrF(median_21,ffFixed,0,2));
-          image1.Canvas.textout(x_31,min(y_31,screenbottom),floattostrF(median_31,ffFixed,0,2));
-          image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_22,ffFixed,0,2));
+          image1.Canvas.font.style:=[fsbold];
+          th:= image1.Canvas.textheight('5');
+          tw:= image1.Canvas.textwidth('2.35');
+          tw2:=tw div 2;
+          th2:=th div 2;
+
+
+         // image1.Canvas.font.color:= TColor($00AAFF);
+
+//          screenbottom:=head.height-round(th*1.5);//put text not too much down.
+//          image1.Canvas.textout(x_11,min(y_11,screenbottom),floattostrF(median_11,ffFixed,0,2));
+//          image1.Canvas.textout(x_21,min(y_21,screenbottom),floattostrF(median_21,ffFixed,0,2));
+//          image1.Canvas.textout(x_31,min(y_31,screenbottom),floattostrF(median_31,ffFixed,0,2));
+
+
+//image1.Canvas.textout(round(1.2*x_11-0.2*smx) -tw2, round( 1.2*y_11-0.2*smy) - th2,floattostrF(median_11,ffFixed,0,2));
+//          image1.Canvas.textout(round(1.2*x_21-0.2*smx) -tw2, round( 1.2*y_21-0.2*smy) - th2,floattostrF(median_21,ffFixed,0,2));
+//          image1.Canvas.textout(round(1.2*x_31-0.2*smx) -tw2, round( 1.2*y_31-0.2*smy) - th2,floattostrF(median_31,ffFixed,0,2));
+
+
+          image1.Canvas.textout(x_11-tw2, y_11-th2,floattostrF(median_11,ffFixed,0,2));
+          image1.Canvas.textout(x_21-tw2, y_21-th2,floattostrF(median_21,ffFixed,0,2));
+          image1.Canvas.textout(x_31-tw2, y_31-th2,floattostrF(median_31,ffFixed,0,2));
+
+//          image1.Canvas.textout(smx,smy,floattostrF(median_22,ffFixed,0,2));
+          image1.Canvas.textout(-tw2+smx,-th2+smy,floattostrF(median_22,ffFixed,0,2));
         end;
 
       end
@@ -515,7 +540,7 @@ begin
         x_31:=round(+median_31*scale_factor+head.width/2);  y_31:=round(-median_31*scale_factor+head.height/2);
 
         x_12:=round(-median_12*scale_factor+head.width/2);  y_12:=round(+head.height/2);
-        x_22:=head.width div 2;                             y_22:=head.height div 2;
+        x_22:=smx;                             y_22:=smy;
         x_32:=round(+median_32*scale_factor+head.width/2);  y_32:=round(+head.height/2);
 
         x_13:=round(-median_13*scale_factor+head.width/2);  y_13:=round(+median_13*scale_factor+head.height/2);
@@ -569,27 +594,30 @@ begin
           image1.Canvas.lineto(x_12,y_12);{draw trapezium}
           image1.Canvas.lineto(x_11,y_11);{draw trapezium}
 
-          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(smx,smy);{draw diagonal}
           image1.Canvas.lineto(x_31,y_31);{draw diagonal}
-          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(smx,smy);{draw diagonal}
           image1.Canvas.lineto(x_33,y_33);{draw diagonal}
-          image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
+          image1.Canvas.lineto(smx,smy);{draw diagonal}
           image1.Canvas.lineto(x_13,y_13);{draw diagonal}
 
           fontsize:=fontsize*4;
           image1.Canvas.font.size:=fontsize;
+          th:= image1.Canvas.textheight('5');
+          tw:= image1.Canvas.textwidth('2.35');
 
-          image1.Canvas.textout(x_11,y_11,floattostrF(median_11,ffFixed,0,2));
-          image1.Canvas.textout(x_21,y_21,floattostrF(median_21,ffFixed,0,2));
-          image1.Canvas.textout(x_31,y_31,floattostrF(median_31,ffFixed,0,2));
 
-          image1.Canvas.textout(x_12,y_12,floattostrF(median_12,ffFixed,0,2));
-          image1.Canvas.textout(x_22,y_22,floattostrF(median_22,ffFixed,0,2));
-          image1.Canvas.textout(x_32,y_32,floattostrF(median_32,ffFixed,0,2));
+          image1.Canvas.textout(x_11,y_11    ,floattostrF(median_11,ffFixed,0,2));
+          image1.Canvas.textout(x_21-tw div 2,y_21,floattostrF(median_21,ffFixed,0,2));
+          image1.Canvas.textout(x_31-tw      ,y_31,floattostrF(median_31,ffFixed,0,2));
 
-          image1.Canvas.textout(x_13,y_13,floattostrF(median_13,ffFixed,0,2));
-          image1.Canvas.textout(x_23,y_23,floattostrF(median_23,ffFixed,0,2));
-          image1.Canvas.textout(x_33,y_33,floattostrF(median_33,ffFixed,0,2));
+          image1.Canvas.textout(x_12          ,y_12 - th div 2,floattostrF(median_12,ffFixed,0,2));
+          image1.Canvas.textout(x_22-tw div 2 ,y_22 - th div 2,floattostrF(median_22,ffFixed,0,2));
+          image1.Canvas.textout(x_32-tw       ,y_32 - th div 2,floattostrF(median_32,ffFixed,0,2));
+
+          image1.Canvas.textout(x_13         ,y_13 - th,floattostrF(median_13,ffFixed,0,2));
+          image1.Canvas.textout(x_23-tw div 2,y_23 - th,floattostrF(median_23,ffFixed,0,2));
+          image1.Canvas.textout(x_33-tw      ,y_33 - th,floattostrF(median_33,ffFixed,0,2));
         end;
       end
       else
@@ -597,6 +625,7 @@ begin
         mess2:='';
       end;
 
+      image1.Canvas.font.style:=[];
 
       if screenplot then
       begin
@@ -636,23 +665,23 @@ begin
       image1.Canvas.textout(round(fontsize*2),head.height- round(fontsize*4),'No stars detected');
   end;{with mainwindow}
 
-  hfd_list:=nil;{release memory}
-  fwhm_list:=nil;{release memory}
+//  hfd_list:=nil;{release memory}
+//  fwhm_list:=nil;{release memory}
 
-  hfdlist_outer_ring:=nil;
-  hfdlist_13:=nil;
-  hfdlist_23:=nil;
-  hfdlist_33:=nil;
-  hfdlist_12:=nil;
-  hfdlist_22:=nil;
-  hfdlist_32:=nil;
-  hfdlist_11:=nil;
-  hfdlist_21:=nil;
-  hfdlist_31:=nil;
+//  hfdlist_outer_ring:=nil;
+//  hfdlist_13:=nil;
+//  hfdlist_23:=nil;
+//  hfdlist_33:=nil;
+//  hfdlist_12:=nil;
+//  hfdlist_22:=nil;
+//  hfdlist_32:=nil;
+//  hfdlist_11:=nil;
+//  hfdlist_21:=nil;
+//  hfdlist_31:=nil;
 
-  starlistXY:=nil;
+//  starlistXY:=nil;
 
-  img_sa:=nil;{free mem}
+//  img_sa:=nil;{free mem}
   Screen.Cursor:=crDefault;
 end;
 
