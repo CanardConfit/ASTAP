@@ -137,7 +137,7 @@ var
   x_11,x_21,x_31,y_11,y_21,y_31,
   x_12,x_22,x_32,y_12,y_22,y_32,
   x_13,x_23,x_33,y_13,y_23,y_33,
-  oldNaxis3, dummy                       : integer;
+  oldNaxis3, dummy,screenbottom              : integer;
 
   hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
   hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
@@ -431,6 +431,8 @@ begin
         median_worst:=max(median_11,max(median_21,median_31));{find worst corner}
 
         scale_factor:=head.height*0.4/median_worst;
+
+    //    scale_factor:=head.height*0.6/median_worst;
         x_11:=round(median_11*scale_factor*sin(screw1*pi/180)+head.width/2); {screw 1}
         y_11:=round(median_11*scale_factor*cos(screw1*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
 
@@ -478,11 +480,12 @@ begin
           image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
           image1.Canvas.lineto(x_31,y_31);{draw diagonal}
 
+          screenbottom:=head.height-fontsize*10;//put text not too much down. 2.5 times font size
           fontsize:=fontsize*4;
           image1.Canvas.font.size:=fontsize;
-          image1.Canvas.textout(x_11,y_11,floattostrF(median_11,ffFixed,0,2));
-          image1.Canvas.textout(x_21,y_21,floattostrF(median_21,ffFixed,0,2));
-          image1.Canvas.textout(x_31,y_31,floattostrF(median_31,ffFixed,0,2));
+          image1.Canvas.textout(x_11,min(y_11,screenbottom),floattostrF(median_11,ffFixed,0,2));
+          image1.Canvas.textout(x_21,min(y_21,screenbottom),floattostrF(median_21,ffFixed,0,2));
+          image1.Canvas.textout(x_31,min(y_31,screenbottom),floattostrF(median_31,ffFixed,0,2));
           image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_22,ffFixed,0,2));
         end;
 
