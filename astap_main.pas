@@ -14214,13 +14214,11 @@ end;
 
 procedure Tmainwindow.ra1Change(Sender: TObject);
 var
-    str1   : string;
    errorRA : boolean;
 begin
   ra_text_to_radians(ra1.text,ra_radians,errorRA); {convert ra in text to double in radians}
 
-  str(ra_radians*12/pi:0:6,str1);
-  ra_label.Caption:=str1;
+  ra_label.Caption:=floattostrF(ra_radians*12/pi,FFfixed,0,4);
 
   if errorRA then mainwindow.ra1.color:=clred else mainwindow.ra1.color:=clwindow;
 end;
@@ -14279,15 +14277,10 @@ end;
 
 procedure Tmainwindow.dec1Change(Sender: TObject);
 var
-   str1     : string;
    errorDEC : boolean;
 begin
-
   dec_text_to_radians(dec1.text,dec_radians,errorDEC); {convert dec in text to double in radians}
-
-  str(dec_radians*180/pi:0:6,str1);
-  dec_label.Caption:=str1;
-
+  dec_label.Caption:=floattostrF(dec_radians*180/pi,FFfixed,0,4);
   if (errorDEC) then mainwindow.dec1.color:=clred else mainwindow.dec1.color:=clwindow;
 end;
 
@@ -15143,19 +15136,17 @@ begin
   begin
     if find_reference_star(img_loaded) then
     begin
-     // if snr>10 then shapetype:=1 {circle} else shapetype:=0;{square}
       with stackmenu1 do
         for c := 0 to listview1.Items.Count - 1 do
           if listview1.Items[c].Selected then
           begin
             listview_add_xy(c,shape_var1_fitsX,shape_var1_fitsY);{add to list of listview1}
-//            {$ifdef darwin} {MacOS}
-//            {bugfix darwin green red colouring}
-//            stackmenu1.ListView1.Items.item[c].Subitems.strings[L_result]:='✓ star';
-//            {$endif}
+            {$ifdef darwin} {MacOS}
+            {bugfix darwin green red colouring}
+            stackmenu1.ListView1.Items.item[c].Subitems.strings[L_result]:='✓ star';
+            {$endif}
             break;
           end;
-      mainwindow.shape_manual_alignment1.visible:=true;
       show_marker_shape(mainwindow.shape_manual_alignment1,shapetype,20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
     end;
   end

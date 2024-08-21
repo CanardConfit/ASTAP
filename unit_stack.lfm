@@ -317,7 +317,6 @@ object stackmenu1: Tstackmenu1
             GridLines = True
             HideSelection = False
             MultiSelect = True
-            OwnerDraw = True
             ParentFont = False
             PopupMenu = PopupMenu1
             ReadOnly = True
@@ -333,6 +332,7 @@ object stackmenu1: Tstackmenu1
             OnCustomDraw = listview1CustomDraw
             OnCustomDrawItem = listview1CustomDrawItem
             OnDblClick = listview1DblClick
+            OnDrawItem = listview1DrawItem
             OnItemChecked = listview1ItemChecked
             OnKeyDown = listview1KeyDown
           end
