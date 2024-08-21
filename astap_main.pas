@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.08.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.08.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -15083,6 +15083,7 @@ var
   xc,yc,hfd2,fwhm_star2,snr,flux : double;
 begin
   result:=false; {assume failure}
+
   if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
   begin
     find_star_center(img,10,startX,startY,xc,yc);
@@ -15142,18 +15143,19 @@ begin
   begin
     if find_reference_star(img_loaded) then
     begin
-      if snr>10 then shapetype:=1 {circle} else shapetype:=0;{square}
+     // if snr>10 then shapetype:=1 {circle} else shapetype:=0;{square}
       with stackmenu1 do
         for c := 0 to listview1.Items.Count - 1 do
           if listview1.Items[c].Selected then
           begin
             listview_add_xy(c,shape_var1_fitsX,shape_var1_fitsY);{add to list of listview1}
-            {$ifdef darwin} {MacOS}
-            {bugfix darwin green red colouring}
-            stackmenu1.ListView1.Items.item[c].Subitems.strings[L_result]:='✓ star';
-            {$endif}
+//            {$ifdef darwin} {MacOS}
+//            {bugfix darwin green red colouring}
+//            stackmenu1.ListView1.Items.item[c].Subitems.strings[L_result]:='✓ star';
+//            {$endif}
             break;
           end;
+      mainwindow.shape_manual_alignment1.visible:=true;
       show_marker_shape(mainwindow.shape_manual_alignment1,shapetype,20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
     end;
   end

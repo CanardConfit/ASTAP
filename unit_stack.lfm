@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_photometry1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 8
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -317,6 +317,7 @@ object stackmenu1: Tstackmenu1
             GridLines = True
             HideSelection = False
             MultiSelect = True
+            OwnerDraw = True
             ParentFont = False
             PopupMenu = PopupMenu1
             ReadOnly = True
@@ -2790,6 +2791,13 @@ object stackmenu1: Tstackmenu1
               Style = csDropDownList
               TabOrder = 0
               Text = 'Star centering'
+            end
+            object Label74: TLabel
+              Left = 256
+              Height = 15
+              Top = 8
+              Width = 437
+              Caption = 'See lights tab popup menu for "Auto selection reference object in selected images"'
             end
           end
           object use_ephemeris_alignment1: TRadioButton
@@ -9279,8 +9287,8 @@ object stackmenu1: Tstackmenu1
       Caption = '-'
     end
     object auto_select1: TMenuItem
-      Caption = 'Auto alignment star for selected images'
-      Hint = 'For manual alignment, This will auto select automatic the alignment star in all selected images based on the star selected in the first image '
+      Caption = 'Auto selection reference object in selected images'
+      Hint = 'For manual alignment, This will automatically select the same object in all images based on the selection in the first image '
       OnClick = auto_select1Click
     end
     object MenuItem2: TMenuItem

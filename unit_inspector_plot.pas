@@ -141,7 +141,7 @@ var
 
   hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
   hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
-  fwhm_median,
+  fwhm_median,sm_x,sm_y,
   hfd_median, median_outer_ring,
   median_11, median_21, median_31,
   median_12, median_22, median_32,
@@ -193,6 +193,9 @@ begin
   begin
     smx:=head.width div 2;
     smy:=head.height div 2;
+
+    sm_x:=head.width/2;
+    sm_y:=head.height/2;
 
     Flipv:=mainwindow.flip_vertical1.Checked;
     Fliph:=mainwindow.Flip_horizontal1.Checked;
@@ -436,15 +439,15 @@ begin
         scale_factor:=head.height*0.4/median_worst;
 
     //    scale_factor:=head.height*0.6/median_worst;
-        x_11:=round(median_11*scale_factor*sin(screw1*pi/180)+head.width/2); {screw 1}
-        y_11:=round(median_11*scale_factor*cos(screw1*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
+        x_11:=round(median_11*scale_factor*sin(screw1*pi/180)+sm_x); {screw 1}
+        y_11:=round(median_11*scale_factor*cos(screw1*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
 
 
-        x_21:=round(median_21*scale_factor*sin(screw2*pi/180)+head.width/2); {screw 2}
-        y_21:=round(median_21*scale_factor*cos(screw2*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
+        x_21:=round(median_21*scale_factor*sin(screw2*pi/180)+sm_x); {screw 2}
+        y_21:=round(median_21*scale_factor*cos(screw2*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
 
-        x_31:=round(median_31*scale_factor*sin(screw3*pi/180)+head.width/2);{screw 3}
-        y_31:=round(median_31*scale_factor*cos(screw3*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
+        x_31:=round(median_31*scale_factor*sin(screw3*pi/180)+sm_x);{screw 3}
+        y_31:=round(median_31*scale_factor*cos(screw3*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
 
         flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}
         flip_xy(fliph,flipv,x_21,y_21);
@@ -535,17 +538,17 @@ begin
 
         scale_factor:=head.height*0.4/median_worst;
 
-        x_11:=round(-median_11*scale_factor+head.width/2);  y_11:=round(-median_11*scale_factor+head.height/2);{calculate coordinates counter clockwise}
-        x_21:=round( head.width/2);                         y_21:=round(-median_21*scale_factor+head.height/2);
-        x_31:=round(+median_31*scale_factor+head.width/2);  y_31:=round(-median_31*scale_factor+head.height/2);
+        x_11:=round(-median_11*scale_factor+sm_x);  y_11:=round(-median_11*scale_factor+sm_y);{calculate coordinates counter clockwise}
+        x_21:=round( sm_x);                         y_21:=round(-median_21*scale_factor+sm_y);
+        x_31:=round(+median_31*scale_factor+sm_x);  y_31:=round(-median_31*scale_factor+sm_y);
 
-        x_12:=round(-median_12*scale_factor+head.width/2);  y_12:=round(+head.height/2);
-        x_22:=smx;                             y_22:=smy;
-        x_32:=round(+median_32*scale_factor+head.width/2);  y_32:=round(+head.height/2);
+        x_12:=round(-median_12*scale_factor+sm_x);  y_12:=round(+sm_y);
+        x_22:=smx;                                  y_22:=smy;
+        x_32:=round(+median_32*scale_factor+sm_x);  y_32:=round(+sm_y);
 
-        x_13:=round(-median_13*scale_factor+head.width/2);  y_13:=round(+median_13*scale_factor+head.height/2);
-        x_23:=round(head.width/2);                          y_23:=round(+median_23*scale_factor+head.height/2);
-        x_33:=round(+median_33*scale_factor+head.width/2);  y_33:=round(+median_33*scale_factor+head.height/2);
+        x_13:=round(-median_13*scale_factor+sm_x);  y_13:=round(+median_13*scale_factor+sm_y);
+        x_23:=round(sm_x);                          y_23:=round(+median_23*scale_factor+sm_y);
+        x_33:=round(+median_33*scale_factor+sm_x);  y_33:=round(+median_33*scale_factor+sm_y);
 
 
         flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}

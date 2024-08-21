@@ -60,6 +60,7 @@ type
     Annotations_visible2: TCheckBox;
     annulus_radius1: TComboBox;
     ignore_saturation1: TCheckBox;
+    Label74: TLabel;
     nr_stars_to_detect1: TComboBox;
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
@@ -5471,9 +5472,15 @@ begin
   if stackmenu1.use_manual_alignment1.Checked then
   begin
     if length(Sender.Items.item[Item.Index].subitems.Strings[L_X]) > 1 then  {manual position added, colour it}
-      Sender.Canvas.Font.Color := clGreen
+    begin
+      Sender.Canvas.Font.Color := clGreen;//doesn't work for MacOS. https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
+      ListView1.Canvas.Brush.Color:= clMoneyGreen;//works for macOS but set listview1.OwnerDraw:=True!!!
+    end
     else
+    begin
       Sender.Canvas.Font.Color := clred;
+      ListView1.Canvas.Brush.Color:= clForm;
+    end;
   end
   else
   begin
