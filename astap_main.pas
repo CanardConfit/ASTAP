@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.08.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.08.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -14214,13 +14214,11 @@ end;
 
 procedure Tmainwindow.ra1Change(Sender: TObject);
 var
-    str1   : string;
    errorRA : boolean;
 begin
   ra_text_to_radians(ra1.text,ra_radians,errorRA); {convert ra in text to double in radians}
 
-  str(ra_radians*12/pi:0:6,str1);
-  ra_label.Caption:=str1;
+  ra_label.Caption:=floattostrF(ra_radians*12/pi,FFfixed,0,4);
 
   if errorRA then mainwindow.ra1.color:=clred else mainwindow.ra1.color:=clwindow;
 end;
@@ -14279,15 +14277,10 @@ end;
 
 procedure Tmainwindow.dec1Change(Sender: TObject);
 var
-   str1     : string;
    errorDEC : boolean;
 begin
-
   dec_text_to_radians(dec1.text,dec_radians,errorDEC); {convert dec in text to double in radians}
-
-  str(dec_radians*180/pi:0:6,str1);
-  dec_label.Caption:=str1;
-
+  dec_label.Caption:=floattostrF(dec_radians*180/pi,FFfixed,0,4);
   if (errorDEC) then mainwindow.dec1.color:=clred else mainwindow.dec1.color:=clwindow;
 end;
 
@@ -15083,6 +15076,7 @@ var
   xc,yc,hfd2,fwhm_star2,snr,flux : double;
 begin
   result:=false; {assume failure}
+
   if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
   begin
     find_star_center(img,10,startX,startY,xc,yc);
@@ -15142,7 +15136,6 @@ begin
   begin
     if find_reference_star(img_loaded) then
     begin
-      if snr>10 then shapetype:=1 {circle} else shapetype:=0;{square}
       with stackmenu1 do
         for c := 0 to listview1.Items.Count - 1 do
           if listview1.Items[c].Selected then

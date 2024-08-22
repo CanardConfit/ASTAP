@@ -60,6 +60,7 @@ type
     Annotations_visible2: TCheckBox;
     annulus_radius1: TComboBox;
     ignore_saturation1: TCheckBox;
+    Label74: TLabel;
     nr_stars_to_detect1: TComboBox;
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
@@ -732,6 +733,8 @@ type
     procedure ClearButton1Click(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure Label19Click(Sender: TObject);
+    procedure listview1DrawItem(Sender: TCustomListView; AItem: TListItem;
+      ARect: TRect; AState: TOwnerDrawState);
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
@@ -1321,6 +1324,7 @@ begin
     begin
       panel_manual1.bevelouter := bvSpace;
       panel_manual1.color := CLWindow;
+      mainwindow.shape_manual_alignment1.visible:=true;
     end
     else
     if use_ephemeris_alignment1.Checked then
@@ -5471,9 +5475,15 @@ begin
   if stackmenu1.use_manual_alignment1.Checked then
   begin
     if length(Sender.Items.item[Item.Index].subitems.Strings[L_X]) > 1 then  {manual position added, colour it}
-      Sender.Canvas.Font.Color := clGreen
+    begin
+      Sender.Canvas.Font.Color := clGreen;//doesn't work for MacOS. https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
+    //  ListView1.Canvas.Brush.Color:= clMoneyGreen;//works for macOS but set listview1.OwnerDraw:=True!!!
+    end
     else
+    begin
       Sender.Canvas.Font.Color := clred;
+    //  ListView1.Canvas.Brush.Color:= clForm;
+    end;
   end
   else
   begin
@@ -9791,6 +9801,23 @@ begin
   openurl('http://www.hnsky.org/astap#photometry');
 end;
 
+procedure Tstackmenu1.listview1DrawItem(Sender: TCustomListView;  AItem: TListItem; ARect: TRect; AState: TOwnerDrawState);
+begin
+  if stackmenu1.use_manual_alignment1.Checked then
+  begin
+    if length(Sender.Items.item[AItem.Index].subitems.Strings[L_X]) > 1 then  {manual position added, colour it}
+      Sender.Canvas.Font.Color := clGreen//doesn't work for MacOS. https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500. But no solution for font colour.
+    else
+      Sender.Canvas.Font.Color := clred;
+  end
+  else
+  begin
+    Sender.Canvas.Font.Color := clmenutext;  {required for high contrast settings. Otherwise it is always black}
+  end;
+
+
+end;
+
 
 procedure Tstackmenu1.measure_all1Change(Sender: TObject);
 begin
@@ -13136,6 +13163,7 @@ end;
 procedure Tstackmenu1.use_manual_alignment1Change(Sender: TObject);
 begin
   update_tab_alignment;
+  mainwindow.shape_manual_alignment1.visible:=use_manual_alignment1.Checked;
 end;
 
 
