@@ -11456,7 +11456,7 @@ begin
 end;
 
 
-function extract_letters_only(inp: string): string;
+function extract_letters_and_numbers_only(inp: string): string;
 var
   i: integer;
   ch: char;
@@ -11466,7 +11466,7 @@ begin
   begin
     ch := inp[i];
     case ch of // valid char
-      'A'..'Z', 'a'..'z', '-': Result := Result + ch;
+      'A'..'Z', 'a'..'z', '0'..'9','-': Result := Result + ch;
     end;{case}
   end;
 end;
@@ -11606,7 +11606,7 @@ begin
         head.naxis3 := 1; {any color is made mono in the routine}
         if flat_count <> 0 then
         begin
-          flat_filter := extract_letters_only(flat_filter);     {extract_letter is added for filter='N/A' for SIPS software}
+          flat_filter := extract_letters_and_numbers_only(flat_filter);     {extract_letter is added for filter='N/A' for SIPS software}
           if flat_filter = '' then  head.filter_name := copy(extractfilename(file_list[0]), 1, 10);{for DSLR images}
 
           path1 := extractfilepath(file_list[0]) + 'master_flat_corrected_with_flat_darks_' + flat_filter + '_' + IntToStr(flat_count) + 'xF_' + IntToStr(head.flatdark_count) + 'xFD_' + flat_exposure+'sec_'+copy(head.date_obs, 1, 10) + '.fit';

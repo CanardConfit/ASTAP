@@ -159,6 +159,26 @@ var
   img_bk,img_sa                         : image_array;
   style: TTextStyle;
   data_max: single;
+    procedure textout_octogram(x,y: integer;value : double); //center the text to the middle of the octogram
+    var
+       txt : string;
+    begin
+      with mainwindow.image1.canvas do
+      begin
+        txt:=floattostrF(value,ffFixed,0,2);
+        th:= textheight(txt);//not efficient but it is done only 9 times
+        tw:= textwidth(txt);
+        if x>smx then x:=x-tw //align right
+        else
+        if x=smx then x:=x-(tw div 2); //align centered
+
+        if y=smy then y:=y-(th div 2) //align vertical centered
+        else
+        if y>smy then y:=y-th; //text above Y
+        textout(x,y,txt);
+      end;
+    end;
+
 begin
   result:=100; //default indicating an error
   if head.naxis=0 then exit; {file loaded?}
@@ -490,30 +510,15 @@ begin
           fontsize:=fontsize*4;
           image1.Canvas.font.size:=fontsize;
           image1.Canvas.font.style:=[fsbold];
+
           th:= image1.Canvas.textheight('5');
           tw:= image1.Canvas.textwidth('2.35');
           tw2:=tw div 2;
           th2:=th div 2;
 
-
-         // image1.Canvas.font.color:= TColor($00AAFF);
-
-//          screenbottom:=head.height-round(th*1.5);//put text not too much down.
-//          image1.Canvas.textout(x_11,min(y_11,screenbottom),floattostrF(median_11,ffFixed,0,2));
-//          image1.Canvas.textout(x_21,min(y_21,screenbottom),floattostrF(median_21,ffFixed,0,2));
-//          image1.Canvas.textout(x_31,min(y_31,screenbottom),floattostrF(median_31,ffFixed,0,2));
-
-
-//image1.Canvas.textout(round(1.2*x_11-0.2*smx) -tw2, round( 1.2*y_11-0.2*smy) - th2,floattostrF(median_11,ffFixed,0,2));
-//          image1.Canvas.textout(round(1.2*x_21-0.2*smx) -tw2, round( 1.2*y_21-0.2*smy) - th2,floattostrF(median_21,ffFixed,0,2));
-//          image1.Canvas.textout(round(1.2*x_31-0.2*smx) -tw2, round( 1.2*y_31-0.2*smy) - th2,floattostrF(median_31,ffFixed,0,2));
-
-
           image1.Canvas.textout(x_11-tw2, y_11-th2,floattostrF(median_11,ffFixed,0,2));
           image1.Canvas.textout(x_21-tw2, y_21-th2,floattostrF(median_21,ffFixed,0,2));
           image1.Canvas.textout(x_31-tw2, y_31-th2,floattostrF(median_31,ffFixed,0,2));
-
-//          image1.Canvas.textout(smx,smy,floattostrF(median_22,ffFixed,0,2));
           image1.Canvas.textout(-tw2+smx,-th2+smy,floattostrF(median_22,ffFixed,0,2));
         end;
 
@@ -606,21 +611,41 @@ begin
 
           fontsize:=fontsize*4;
           image1.Canvas.font.size:=fontsize;
-          th:= image1.Canvas.textheight('5');
+
+          with image1.Canvas.TextStyle do Alignment := taRightJustify;
+
+          th:= (image1.Canvas.textheight('5'));
+          th2:=th div 2;
+
           tw:= image1.Canvas.textwidth('2.35');
 
+  {        image1.Canvas.textout(x_11        ,y_11    ,floattostrF(median_11,ffFixed,0,2));
+          image1.Canvas.textout(x_21-tw2    ,y_21    ,floattostrF(median_21,ffFixed,0,2));
+          image1.Canvas.textout(x_31-tw     ,y_31    ,floattostrF(median_31,ffFixed,0,2));
 
-          image1.Canvas.textout(x_11,y_11    ,floattostrF(median_11,ffFixed,0,2));
-          image1.Canvas.textout(x_21-tw div 2,y_21,floattostrF(median_21,ffFixed,0,2));
-          image1.Canvas.textout(x_31-tw      ,y_31,floattostrF(median_31,ffFixed,0,2));
-
-          image1.Canvas.textout(x_12          ,y_12 - th div 2,floattostrF(median_12,ffFixed,0,2));
-          image1.Canvas.textout(x_22-tw div 2 ,y_22 - th div 2,floattostrF(median_22,ffFixed,0,2));
-          image1.Canvas.textout(x_32-tw       ,y_32 - th div 2,floattostrF(median_32,ffFixed,0,2));
+          image1.Canvas.textout(x_12          ,y_12 - th2,floattostrF(median_12,ffFixed,0,2));
+          image1.Canvas.textout(x_22-tw2      ,y_22 - th2,floattostrF(median_22,ffFixed,0,2));
+          image1.Canvas.textout(x_32-tw       ,y_32 - th2,floattostrF(median_32,ffFixed,0,2));
 
           image1.Canvas.textout(x_13         ,y_13 - th,floattostrF(median_13,ffFixed,0,2));
-          image1.Canvas.textout(x_23-tw div 2,y_23 - th,floattostrF(median_23,ffFixed,0,2));
+          image1.Canvas.textout(x_23-tw2     ,y_23 - th,floattostrF(median_23,ffFixed,0,2));
           image1.Canvas.textout(x_33-tw      ,y_33 - th,floattostrF(median_33,ffFixed,0,2));
+
+          textout_octogram
+   }       textout_octogram(x_11,y_11    ,median_11);
+          textout_octogram(x_21 ,y_21    ,median_21);
+          textout_octogram(x_31 ,y_31    ,median_31);
+
+          textout_octogram(x_12 ,y_12,median_12);
+          textout_octogram(x_22 ,y_22,median_22);
+          textout_octogram(x_32 ,y_32,median_32);
+
+          textout_octogram(x_13 ,y_13,median_13);
+          textout_octogram(x_23 ,y_23,median_23);
+          textout_octogram(x_33 ,y_33,median_33);
+
+
+
         end;
       end
       else
