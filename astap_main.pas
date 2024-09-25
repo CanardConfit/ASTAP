@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.08.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.09.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -3460,7 +3460,7 @@ var sin_dec1,cos_dec1,sin_dec2,cos_dec2,cos_sep,t:double;
 begin
   sincos(dec1,sin_dec1,cos_dec1);{use sincos function for speed}
   sincos(dec2,sin_dec2,cos_dec2);
-  cos_sep:=min(1.0,sin_dec1*sin_dec2+ cos_dec1*cos_dec2*cos(ra1-ra2));{min function to prevent run time errors for 1.000000000002.  For correct compiling use 1.0 instead of 1. See https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html}
+  cos_sep:=max(-1.0,min(1.0,sin_dec1*sin_dec2+ cos_dec1*cos_dec2*cos(ra1-ra2)));{min function to prevent run time errors for 1.000000000002.  For correct compiling use 1.0 instead of 1. See https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html}
   sep:=arccos(cos_sep);
 end;
 
@@ -8648,6 +8648,8 @@ begin
       obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
       delim_pos:=Sett.ReadInteger('aavso','delim_pos',0);
       baa_style:=Sett.ReadBool('aavso','baa_style',false);{aavso report}
+      sort_alphabetically:=Sett.ReadBool('aavso','sort_alphabetically',false);{aavso report}
+
       hjd_date:=Sett.ReadBool('aavso','hjd_date',false);{aavso report}
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
       magnitude_slope:=Sett.ReadFloat('aavso','slope',0);
@@ -9033,6 +9035,9 @@ begin
       sett.writestring('aavso','obscode',obscode);
       sett.writeInteger('aavso','delim_pos',delim_pos);
       sett.writeBool('aavso','baa_style',baa_style);{AAVSO report}
+      sett.writeBool('aavso','sort_alphabetically',sort_alphabetically);{AAVSO report}
+
+
       sett.writeBool('aavso','hjd_date',hjd_date);{AAVSO report}
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
       sett.writeFloat('aavso','slope', magnitude_slope);
