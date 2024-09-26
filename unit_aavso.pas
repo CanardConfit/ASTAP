@@ -20,6 +20,7 @@ type
   Tform_aavso1 = class(TForm)
     baa_style1: TCheckBox;
     abrv_comp1: TComboBox;
+    sort_alphabetically1: TCheckBox;
     suggest_check1: TButton;
     hjd1: TCheckBox;
     delta_bv1: TEdit;
@@ -48,6 +49,7 @@ type
     Filter1: TComboBox;
     SaveDialog1: TSaveDialog;
     suggest_comp1: TButton;
+    procedure abrv_variable1Click(Sender: TObject);
     procedure delta_bv2Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -62,6 +64,7 @@ type
     procedure report_to_clipboard1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormShow(Sender: TObject);
+    procedure sort_alphabetically1Change(Sender: TObject);
     procedure suggest_check1Change(Sender: TObject);
     procedure suggest_check1Click(Sender: TObject);
     procedure suggest_comp1Click(Sender: TObject);
@@ -86,6 +89,7 @@ var
   delim_pos  : integer=0;
   to_clipboard  : boolean=true;
   baa_style  : boolean=false;
+  sort_alphabetically: boolean=false;
   hjd_date   : boolean=false;
   aavso_filter_index: integer=0;
   delta_bv : double=0;
@@ -206,6 +210,8 @@ begin
     abbrev_comp:=abrv_comp1.text;
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
+    sort_alphabetically:=sort_alphabetically1.checked;
+
     hjd_date:=hjd1.checked;
     aavso_filter_index:=filter1.itemindex;
     delta_bv:=strtofloat2(form_aavso1.delta_bv1.text);
@@ -609,7 +615,11 @@ begin
 
       if count>0 then
       begin
-        QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+        if sort_alphabetically1.checked=false then
+        begin
+          QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+          memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
+        end;
         for i:=0 to count-1  do  //display in ascending order
           if starinfo[i].x<>0 then items.add(starinfo[i].str+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3));//add including standard deviation
       end;
@@ -788,6 +798,7 @@ begin
 //    AutoComplete := true;
 //    AutoDropDown := true;
   abrv_variable1.items.clear;
+
   if stackmenu1.measuring_method1.itemindex=0  then
   begin
     abrv_variable1.items.add(mainwindow.shape_var1.HINT);
@@ -802,7 +813,7 @@ begin
 
   with tcombobox(sender) do
   begin
-  for i:=p_nr_norm+1 to p_nr do
+    for i:=p_nr_norm+1 to p_nr do
     if odd(i) then // not a snr column
     begin
       abrv:=stackmenu1.listview7.Column[i].Caption;
@@ -825,11 +836,14 @@ begin
 
     if count>0 then
     begin
-      QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+      if sort_alphabetically1.checked=false then
+      begin
+        QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+        memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
+      end;
       for i:= count-1 downto 0 do  //display in decending order
         if starinfo[i].x<>0 then items.add(starinfo[i].str+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3));//add including standard deviation
 
-      memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
     end;
   end;
 end;
@@ -846,10 +860,16 @@ begin
   plot_graph;
 end;
 
+procedure Tform_aavso1.abrv_variable1Click(Sender: TObject);
+begin
+
+end;
+
 procedure Tform_aavso1.delta_bv2Change(Sender: TObject);
 begin
   plot_graph;
 end;
+
 
 
 procedure Tform_aavso1.FormCreate(Sender: TObject);
@@ -1228,6 +1248,8 @@ begin
 
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
+  sort_alphabetically1.checked:=sort_alphabetically;//if true this will trigger a change and set the combobox.sorted
+
   hjd1.checked:=hjd_date;
 //  if stackmenu1.reference_database1.itemindex=0 then
 //    abrv_comp1.Text:=name_database
@@ -1244,6 +1266,13 @@ begin
   suggest_check1.Enabled:=stackmenu1.measuring_method1.itemindex>0;
   suggest_comp1.Enabled:=stackmenu1.measuring_method1.itemindex>0;
   plot_graph;
+end;
+
+procedure Tform_aavso1.sort_alphabetically1Change(Sender: TObject);
+begin
+  abrv_variable1.sorted:=sort_alphabetically1.checked;//can not do this during dropdown. This gives an error
+  abrv_comp1.sorted:=sort_alphabetically1.checked;
+  abrv_check1.sorted:=sort_alphabetically1.checked;
 end;
 
 procedure Tform_aavso1.suggest_check1Change(Sender: TObject);
