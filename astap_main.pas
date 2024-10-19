@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.09.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.10.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8651,6 +8651,8 @@ begin
       sort_alphabetically:=Sett.ReadBool('aavso','sort_alphabetically',false);{aavso report}
 
       hjd_date:=Sett.ReadBool('aavso','hjd_date',false);{aavso report}
+      ensemble_database:=Sett.ReadBool('aavso','ensemble',true);{aavso report}
+
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
       magnitude_slope:=Sett.ReadFloat('aavso','slope',0);
       used_vsp_stars:=Sett.ReadString('aavso','vsp_stars','');
@@ -9039,6 +9041,8 @@ begin
 
 
       sett.writeBool('aavso','hjd_date',hjd_date);{AAVSO report}
+      sett.writeBool('aavso','ensemble',ensemble_database);{AAVSO report}
+
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
       sett.writeFloat('aavso','slope', magnitude_slope);
       sett.writestring('aavso','vsp_stars',used_vsp_stars);
@@ -10407,7 +10411,7 @@ function download_vsx(limiting_mag: double): boolean;//AAVSO API access variable
 var
   s,dummy,url   : string;
   count,i,j,k,errorRa,errorDec,err                : integer;
-  radius,ra,dec,ProperMotionRA,ProperMotionDEC,jd,years_since_2000,var_period : double;
+  radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period : double;
   skip,period_filter  : boolean;
 begin
   result:=false;
@@ -13632,7 +13636,7 @@ begin
             if hasoption('sqm') then {sky quality}
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
-              if calculate_sqm(false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
+              if calculate_sqm(head,false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
               begin
                 if centalt=''  then //no old altitude
                 begin
@@ -13645,6 +13649,7 @@ begin
               end
               else
               update_text(mainwindow.memo1.lines,'SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
+
               if airmass=0 then
               begin
                 airmass:=AirMass_calc(altitudefloat);
@@ -13805,6 +13810,7 @@ var
   add_lim_magn,solution_overwrite,solved,maintain_date,success,image_changed : boolean;
   failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
+  az         : double;
   headx : theader;
   img_temp: image_array;
 
@@ -13890,24 +13896,35 @@ begin
               calibrate_photometry(img_temp,memoX,headX);
               update_float(memox,'LIM_MAGN=',' / estimated limiting magnitude for point sources',false ,magn_limit);
 
-              mess:='';
+              mess:='LIM_MAGN';
+
+              if centalt=''  then //no old altitude
+              begin
+                calculate_az_alt(1 {force calculation from ra, dec} ,headx,{out}az,altitudefloat);//altitudefloat is also calculated in SQM but it could skipped
+                centalt:=floattostr2(altitudefloat);
+                update_text(memox,'CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                update_text(memox,'OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+                mess:=mess+', CENT-ALT';
+              end
+              else
+              altitudefloat:=strtofloat2(centalt);
+
+              if ((airmass=0) or (airmass=999)) then
+              begin
+                airmass:=AirMass_calc(altitudefloat);
+                update_generic(memox,'AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
+                mess:=mess+', AIRMASS';
+              end;
 
               if ((pedestal<>0) or (pos('D',headx.calstat)>0)) then
               begin
                 //jd_start:=0; { if altitude missing then force an date to jd conversion'}
                 pedestal2:=pedestal; {protect pedestal setting}
-                if calculate_sqm(true {get backgr},true {get histogr},{var}pedestal2) then
+                if calculate_sqm(headx,true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
                   update_text(memox,'SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                   update_text(memox,'COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
-                  mess:=', SQM';
-                  if centalt=''  then //no old altitude
-                  begin
-                    centalt:=floattostr2(altitudefloat);
-                    update_text(memox,'CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
-                    update_text(memox,'OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
-                    mess:=mess+', CENT-ALT';
-                  end;
+                  mess:=mess+', SQM';
                 end
                 else
                 begin
@@ -13920,13 +13937,8 @@ begin
                 update_text(memox,'SQM     =',char(39)+'Error! Specify first fixed pedestal value in the SQM menu (ctrl+Q).'+char(39));
                 memo2_message('Can not measure SQM. Specifiy first a fixed pedestal value in the SQM menu. De pedestal value is the median dark or bias value');
               end;
-              if airmass=0 then
-              begin
-                airmass:=AirMass_calc(altitudefloat);
-                update_generic(memox,'AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
-                mess:=mess+', AIRMASS';
-              end;
-              memo2_message('Added keyword(s) LIM_MAGN'+mess);
+
+              memo2_message('Added keyword(s) '+mess);
             end;
 
             if maintain_date then file_age:=Fileage(filename2);

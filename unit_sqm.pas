@@ -66,7 +66,7 @@ var
 
   sqm_applyDF: boolean;
 
-function calculate_sqm(get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(headx : theader; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 
 
 implementation
@@ -79,14 +79,14 @@ var
   backup_made                         : boolean;
 
 
-function calculate_sqm(get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(headx : theader; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 var
   correction,az,airm         : double;
   bayer,form_exist           : boolean;
 begin
   form_exist:=form_sqm1<>nil;   {see form_sqm1.FormClose action to make this working reliable}
 
-  bayer:=((bayerpat<>'') and (head.Xbinning=1));
+  bayer:=((bayerpat<>'') and (headx.Xbinning=1));
 
   if form_exist then
   begin
@@ -105,18 +105,18 @@ begin
       form_sqm1.green_message1.caption:='';
   end;
 
-  if ((head.mzero=0) or (head.mzero_radius<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
+  if ((headx.mzero=0) or (headx.mzero_radius<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
-    head.mzero_radius:=99;{calibrate for extended objects}
+    headx.mzero_radius:=99;{calibrate for extended objects}
     plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,true {calibration},false {plot stars},false{report lim magnitude});
   end;
   result:=false;
-  if head.mzero>0 then
+  if headx.mzero>0 then
   begin
     if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}bck);
 
-    if (pos('D',head.calstat)>0) then
+    if (pos('D',headx.calstat)>0) then
     begin
       if pedestal2>0 then
       begin
@@ -144,11 +144,10 @@ begin
       pedestal2:=0; {prevent errors}
     end;
 
-    sqmfloat:=head.mzero - ln((bck.backgr-pedestal2-head.pedestal)/sqr(head.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;// +head.pedestal was the value added calibration calibration
+    sqmfloat:=headx.mzero - ln((bck.backgr-pedestal2-headx.pedestal)/sqr(headx.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;// +headx.pedestal was the value added calibration calibration
 
     calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,altitudefloat);
 
-   // centalt:=inttostr(round(alt));{for reporting in menu sqm1}
     if altitudefloat>0 then
     begin
       airm:=airmass_calc(altitudefloat);
@@ -255,7 +254,7 @@ begin
     end;
 
     {calc}
-    if calculate_sqm(true {get backgr},update_hist{get histogr},{var} pedestal2)=false then {failure in calculating sqm value}
+    if calculate_sqm(head,true {get backgr},update_hist{get histogr},{var} pedestal2)=false then {failure in calculating sqm value}
     begin
       if altitudefloat<1 then error_message1.caption:=warning_str;
       warning_str:=''; //clear error message
