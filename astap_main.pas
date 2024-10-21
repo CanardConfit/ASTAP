@@ -62,7 +62,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.10.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.10.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2076,9 +2076,10 @@ begin
     if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
     begin
       scalefactor:=1;
-      if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then
-        scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
-                                         {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
+      if measured_max>0 then
+        if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then
+          scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
+                                           {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
       if scalefactor<>1 then {not a 0..65535 range, rescale}
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
@@ -8613,6 +8614,7 @@ begin
       c:=Sett.ReadInteger('stack','annotate_m',0); stackmenu1.annotate_mode1.itemindex:=c;
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
       c:=Sett.ReadInteger('stack','measure_all',0); stackmenu1.measuring_method1.itemindex:=c;
+      stackmenu1.ignore_saturation1.checked:= Sett.ReadBool('stack','ign_saturation',true);//photometry tab
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
@@ -9008,6 +9010,8 @@ begin
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
 
       sett.writeInteger('stack','measure_all',stackmenu1.measuring_method1.itemindex);
+      sett.WriteBool('stack','ign_saturation', stackmenu1.ignore_saturation1.checked);//photometry tab
+
 
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
