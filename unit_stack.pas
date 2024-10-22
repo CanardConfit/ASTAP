@@ -7854,7 +7854,7 @@ var
   medianCheck, medianThree, hfd_med, apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt,pix1,pix2 : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, countVar,
-  countCheck, countThree, database_col,j, lvsx,lvsp,formalism : integer;
+  countCheck, countThree, database_col,j, lvsx,lvsp,formalism,dummy2: integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined : boolean;
   starlistx: star_list;
@@ -8264,6 +8264,7 @@ begin
           oldra0:=head.ra0;
           olddec0:=head.dec0;
 
+       //   dummy2:=stackmenu1.annotate_mode1.itemindex;
           case stackmenu1.annotate_mode1.itemindex of
             1,2,3 : //measure all AAVSO stars using the position from the local database
                 begin

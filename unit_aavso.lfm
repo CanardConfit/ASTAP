@@ -1,11 +1,11 @@
 object form_aavso1: Tform_aavso1
-  Left = 96
-  Height = 755
+  Left = 549
+  Height = 483
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 129
+  Top = 218
   Width = 1553
   Caption = 'AAVSO report'
-  ClientHeight = 755
+  ClientHeight = 483
   ClientWidth = 1553
   OnClose = FormClose
   OnCreate = FormCreate
@@ -33,7 +33,7 @@ object form_aavso1: Tform_aavso1
   object Label3: TLabel
     Left = 104
     Height = 15
-    Top = 520
+    Top = 248
     Width = 55
     Caption = 'Check star'
     ParentColor = False
@@ -42,17 +42,17 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 25
     Hint = 'Copies the report to the clipboard. Paste it into a text editor, save it and upload it to the AAVSO WebObs.'
-    Top = 722
+    Top = 448
     Width = 168
     Caption = 'Report to clipboard'
-    TabOrder = 10
+    TabOrder = 11
     OnClick = report_to_clipboard1Click
   end
   object Filter1: TComboBox
     Left = 16
     Height = 23
     Hint = 'The filter used for the observation.'
-    Top = 594
+    Top = 320
     Width = 208
     ItemHeight = 15
     ItemIndex = 0
@@ -65,13 +65,13 @@ object form_aavso1: Tform_aavso1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 6
+    TabOrder = 7
     Text = 'Take from file header'
   end
   object Label6: TLabel
     Left = 243
     Height = 15
-    Top = 594
+    Top = 320
     Width = 54
     Caption = 'Filter used'
     ParentColor = False
@@ -88,7 +88,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 23
     Hint = 'The delimiter used to separate fields in the report. Any will do. '
-    Top = 634
+    Top = 360
     Width = 88
     ItemHeight = 15
     ItemIndex = 0
@@ -101,13 +101,13 @@ object form_aavso1: Tform_aavso1
     ParentFont = False
     ParentShowHint = False
     Style = csDropDownList
-    TabOrder = 7
+    TabOrder = 8
     Text = 'tab'
   end
   object Label4: TLabel
     Left = 243
     Height = 15
-    Top = 636
+    Top = 362
     Width = 48
     Caption = 'Delimiter'
     ParentColor = False
@@ -124,17 +124,17 @@ object form_aavso1: Tform_aavso1
     Left = 218
     Height = 25
     Hint = 'Writes report to file in the same directory as the input files.'
-    Top = 722
+    Top = 448
     Width = 168
     Caption = 'Report to file'
-    TabOrder = 11
+    TabOrder = 12
     OnClick = report_to_clipboard1Click
   end
   object abrv_check1: TComboBox
     Left = 16
     Height = 23
     Hint = ' Check star  AUID  (much preferred) or designation. Alternatively you could select the IAU designation using the position. The dropdown will be filtered if a part of the designation is typed.'
-    Top = 546
+    Top = 272
     Width = 480
     AutoComplete = True
     AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
@@ -145,13 +145,13 @@ object form_aavso1: Tform_aavso1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 5
+    TabOrder = 6
     OnChange = abrv_check1Change
   end
   object Image_photometry1: TImage
     Cursor = crCross
     Left = 500
-    Height = 755
+    Height = 483
     Top = 0
     Width = 1048
     Align = alClient
@@ -165,12 +165,12 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 19
     Hint = 'Extras report lines will added conform BAA. Info is taken from FITS header.'
-    Top = 674
+    Top = 400
     Width = 68
     Caption = 'BAA style'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 8
+    TabOrder = 9
   end
   object report_error1: TLabel
     Left = 528
@@ -259,12 +259,12 @@ object form_aavso1: Tform_aavso1
     Left = 116
     Height = 19
     Hint = 'Report the date as Heliocentric Julian Day'
-    Top = 674
+    Top = 400
     Width = 39
     Caption = 'HJD'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 9
+    TabOrder = 10
     OnChange = hjd1Change
   end
   object measure_all_mode1: TLabel
@@ -285,11 +285,30 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 25
     Hint = 'Suggest a check star'
-    Top = 520
+    Top = 246
     Width = 75
     Caption = 'Suggest'
     TabOrder = 4
     OnClick = suggest_check1Click
+  end
+  object abrv_comp1: TComboBox
+    Left = 16
+    Height = 23
+    Hint = 'Comparison star(s)'
+    Top = 216
+    Width = 480
+    AutoComplete = True
+    AutoCompleteText = [cbactEnabled, cbactEndOfLineComplete, cbactSearchAscending]
+    AutoDropDown = True
+    AutoSelect = False
+    DropDownCount = 30
+    ItemHeight = 15
+    ParentBidiMode = False
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 5
+    OnChange = abrv_check1Change
   end
   object suggest_comp1: TButton
     Left = 16
@@ -298,7 +317,7 @@ object form_aavso1: Tform_aavso1
     Top = 190
     Width = 75
     Caption = 'Suggest'
-    TabOrder = 12
+    TabOrder = 13
     OnClick = suggest_comp1Click
   end
   object sort_alphabetically1: TCheckBox
@@ -308,28 +327,18 @@ object form_aavso1: Tform_aavso1
     Top = 8
     Width = 115
     Caption = 'Sort alphabetically'
-    TabOrder = 13
+    TabOrder = 14
     OnChange = sort_alphabetically1Change
   end
-  object CheckListBox1: TCheckListBox
-    Left = 16
-    Height = 270
-    Hint = 'Comparison star(s)'
-    Top = 216
-    Width = 480
-    ItemHeight = 0
-    MultiSelect = True
+  object ensemble_database1: TCheckBox
+    Left = 296
+    Height = 19
+    Hint = 'If enabled then Gaia  ensemble is used for calibration'
+    Top = 192
+    Width = 95
+    Caption = 'Gaia ensemble'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 14
-    OnItemClick = CheckListBox1ItemClick
-  end
-  object ensemble_database1: TCheckBox
-    Left = 248
-    Height = 19
-    Top = 192
-    Width = 119
-    Caption = 'Ensemble database'
     TabOrder = 15
     OnClick = ensemble_database1Click
   end
@@ -344,7 +353,7 @@ object form_aavso1: Tform_aavso1
     end
   end
   object SaveDialog1: TSaveDialog
-    Left = 400
-    Top = 640
+    Left = 352
+    Top = 334
   end
 end
