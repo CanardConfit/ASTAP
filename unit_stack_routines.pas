@@ -126,7 +126,7 @@ begin
   solution_vectorY[1]:=+(y_new_float- centerY);
 
  //Correction for image distortion. The solution was extracted by comparison the distorted image with a linear star database. The solution factors are then typical a tiny amount smaller then "one"
-  scale_correctionX:=sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]));//for scale to "one"
+{  scale_correctionX:=sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]));//for scale to "one"
   scale_correctionX:=scale_correctionX*head_ref.cdelt1/head.cdelt1;//relative scale to reference image. Note a temperature change is followed by a focus correction and therefore a change in image scale.
   solution_vectorX[0]:=solution_vectorX[0]/scale_correctionX;//apply correction
   solution_vectorX[1]:=solution_vectorX[1]/scale_correctionX;
@@ -135,11 +135,15 @@ begin
   scale_correctionY:=scale_correctionY*head_ref.cdelt2/head.cdelt2;//relative scale to reference image. Note a temperature change is followed by a focus correction and therefore a change in image scale.
   solution_vectorY[0]:=solution_vectorY[0]/scale_correctionY;//apply correction
   solution_vectorY[1]:=solution_vectorY[1]/scale_correctionY;
+}
+  solution_vectorX[2]:=  centerX-(head.crpix1-1);//range 0..width-1
+  solution_vectorY[2]:=  centerY-(head.crpix2-1);
+
+//  calc_newx_newy(false,(head.crpix1)*(1-scale_correctionX)+1, (head.crpix2)*(1-scale_correctionY)+1);
+//  solution_vectorX[2]:=  x_new_float;//range 0..width-1
+//  solution_vectorY[2]:=  Y_new_float;
 
 
-  calc_newx_newy(false,(head.crpix1)*(1-scale_correctionX)+1, (head.crpix2)*(1-scale_correctionY)+1);
-  solution_vectorX[2]:=  x_new_float;//range 0..width-1
-  solution_vectorY[2]:=  Y_new_float;
 
   flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   flipped_reference:=head_ref.cd1_1*head_ref.cd2_2 - head_ref.cd1_2*head_ref.cd2_1>0; {flipped reference image}

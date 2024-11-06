@@ -3511,7 +3511,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head,false);
 
   if head.passband_database='V'=false then
   begin
@@ -6058,10 +6058,10 @@ begin
     mainwindow.annotations_visible1.Checked := True;
     plot_annotations(False {use solution vectors}, True {fill combobox});
     stackmenu1.ephemeris_centering1.ItemIndex :=  stackmenu1.ephemeris_centering1.items.Count - 1;{show first found in the list}
+    memo2_message('Completed. Select an object in the dropdown to align on.');
   end
   else
-    memo2_message('No object locations found in the image. Increase the limiting count and/or limiting magnitude in Asteroid & Comet annotation menu, shortcut CTRL+R');
-  memo2_message('Completed. Select the object to align on.');
+    memo2_message('No object locations found in the image. Check if a comet or an asteroid database is available. See Asteroid & Comet annotation menu, shortcut CTRL+R.  Else increase the limiting count and/or limiting magnitude in the same menu.');
   Screen.Cursor := crDefault;    { back to normal }
 end;
 
@@ -8152,7 +8152,7 @@ begin
 
       ListView7.Items.item[c].SubitemImages[P_calibration]:= database_col ; //show selected database passband
 
-      listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(magn_limit, FFgeneral, 4, 0);
+      listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(head.magn_limit, FFgeneral, 4, 0);
 
       if head.mzero <> 0 then
         measure_magnitudes(annulus_radius,0,0,head.width-1,head.height-1, False {deep}, starlistx); {analyse}
@@ -9344,7 +9344,7 @@ begin
   memo2_message('Loading first image to calibrate photometry for the stack');
   listview_view(stackmenu1.listview6);//show first selected image
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head,false{update});
 
   if fits_file_name(filename2) then
     success := savefits_update_header(mainwindow.memo1.lines,filename2)
@@ -10005,7 +10005,7 @@ begin
           head.mzero:=0; //force a new calibration
           if head.cd1_1<>0 then
           begin
-            calibrate_photometry(img_loaded,memoX,headX);
+            calibrate_photometry(img_loaded,memoX,headX, false{update});
             if headX.mzero<>0 then
             begin
               result:=save_fits_tiff(filename1);
@@ -10140,7 +10140,7 @@ begin
   old_aperture:=stackmenu1.flux_aperture1.text;
   stackmenu1.flux_aperture1.text:='max';//full flux is here required
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});
 
   stackmenu1.flux_aperture1.text:=old_aperture;
 
@@ -10169,7 +10169,7 @@ begin
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_temp3[0,fitsY,fitsX]:=default;{clear}
-  plot_artificial_stars(img_temp3,head,magn_limit {measured});{create artificial image with database stars as pixels}
+  plot_artificial_stars(img_temp3,head);{create artificial image with database stars as pixels}
 
   analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only},hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
   backgrR:=bck.backgr;//defaults
