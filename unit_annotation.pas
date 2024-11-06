@@ -20,7 +20,7 @@ procedure load_variable_13;{load variable stars. If loaded no action}
 procedure load_variable_15;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(out stars_measured: integer);{measure or plot distortion}
-procedure plot_artificial_stars(img: image_array;head:theader;magnlimit: double);{plot stars as single pixel with a value as the mangitude. For super nova search}
+procedure plot_artificial_stars(img: image_array;head:theader);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(starlist1,starlist2: star_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
@@ -1896,17 +1896,15 @@ end;
 procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
-  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio                             : double;
+  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio                             : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
   flip_horizontal, flip_vertical     : boolean;
   flux_ratio_array,hfd_x_sd          : array of double;
-  database_passband : string;
+  selected_passband : string;
   data_max          : single;
   starlist1         : star_list;
 
     procedure plot_star;
-    var
-      u,v,u2,v2 : double;
     begin
       if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999){mono colour database})then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
       celestial_to_pixel(head,ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
@@ -2039,8 +2037,7 @@ begin
     end
     else
     begin  //Reading online database. Update if required
-      get_database_passband(head.filter_name,database_passband);//report local or online database and the database passband
-
+      get_database_passband(head.filter_name,{out} selected_passband);//report selected Gaia passband
       ang_sep(telescope_ra,telescope_dec,gaia_ra,gaia_dec,sep);
       if ((sep>0.15*fov_org) or (online_database=nil)) then  //other sky area, update Gaia database online
       begin
@@ -2065,7 +2062,7 @@ begin
       end;
       database_type:=0;//online
 
-      convert_magnitudes(database_passband {set in call to get_database_passband}) //convert Gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+      convert_magnitudes(selected_passband {set in call to get_database_passband}) //convert Gaia magnitude to a new magnitude. If the type is already correct, no action will follow
                         //database_passband will be stored in passband_active
     end; //online
 
@@ -2113,8 +2110,6 @@ begin
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
         while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
       end;
-
-
       close_star_database;
     end
     else
@@ -2228,8 +2223,10 @@ begin
           //encircled flux =1-EXP(-0.5*(apert*2.3548/2))^2)
           flux_snr_7:=flux_snr_7*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
 
-          magn_limit:=head.mzero-ln(flux_snr_7)*2.5/ln(10); //global variable.  same as:  mzero-ln(flux)*2.5/ln(10)
-          magn_limit_str:='Limiting magnitude is '+ floattostrF(magn_limit,ffFixed,0,2)+'   ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
+          head.magn_limit:=head.mzero-ln(flux_snr_7)*2.5/ln(10); //global variable.  same as:  mzero-ln(flux)*2.5/ln(10)
+          magn_limit_str:='Limiting magnitude is '+ floattostrF(head.magn_limit,ffFixed,0,2)+' ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
+
+          update_float(memo,'LIM_MAGN=',' / Limiting magnitude (SNR=7, aperture '+floattostr2(head.mzero_radius)+' px)',false ,head.magn_limit);
 
           memo2_message(magn_limit_str);
           mainwindow.caption:='Photometry calibration successful. '+magn_limit_str;
@@ -2499,7 +2496,7 @@ begin
 end;{measure distortion}
 
 
-procedure plot_artificial_stars(img: image_array;head: theader; magnlimit:double);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
+procedure plot_artificial_stars(img: image_array;head: theader);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, telescope_ra,telescope_dec,fov_org,ra2,dec2,
   mag2, m_limit,sep : double;
@@ -2537,7 +2534,7 @@ begin
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view with 0% extra}
 
-    m_limit:=magnlimit+1-0.5;//go one magnitude fainter
+    m_limit:=head.magn_limit+1-0.5;//go one magnitude fainter
     //since G magnitude is used to retrieve which about 0.5 magnitude fainter then mag limit. {BP~GP+0.5}
 
 

@@ -514,7 +514,6 @@ begin
            end;
 
 
-
            var_magn:=var_magn + delta_bv*magnitude_slope; //apply slope correction;//use magnitude of comparison star if specified and apply slope correctio
            str(var_magn:0:3,var_magn_str);
 

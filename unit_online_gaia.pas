@@ -14,7 +14,7 @@ uses
   Classes, SysUtils,strutils,forms,math,astap_main,unit_download,unit_star_align,unit_stack;
 
 function read_stars_online(telescope_ra,telescope_dec,search_field, magli: double): boolean;{read star from star database}
-procedure convert_magnitudes(filter : string); //convert gaia magnitude to a new magnitude
+procedure convert_magnitudes(passband : string); //convert gaia magnitude to a new magnitude
 function transform_gaia(filter : string; magG,magBP,magRP: double):double;//transformation of Gaia magnitudes
 procedure report_one_star_magnitudes(ra,dec : double; out b,v,r,sg,sr,si,g,bp,rp :double); //report the database magnitudes for a specfic position. Not efficient but simple
 
@@ -105,14 +105,14 @@ begin
 end;
 
 
-procedure convert_magnitudes(filter : string); //convert gaia magnitude to a new magnitude
+procedure convert_magnitudes(passband : string); //convert gaia magnitude to a new magnitude
 var
   i : integer;
 begin
-  if filter=passband_active then exit;//no action. Already the correct type
+  if passband=passband_active then exit;//no action. Already the correct type
   for i:=0 to length(online_database[0])-1 do
-    online_database[5,i]:=transform_gaia(filter,online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
-  passband_active:=filter;//remember last transformation
+    online_database[5,i]:=transform_gaia(passband,online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
+  passband_active:=passband;//remember last transformation
 end;
 
 

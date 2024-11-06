@@ -21,20 +21,14 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 {open compiler issues:
 
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
+https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
-MacOS
-Listview smallimages are not displayed.
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39193
 
 MacOS
 ScrollCode=scEndScroll does not appears at the end of scroll
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/37454
-
-Mac
-Listview event OnCustomDrawItem is never triggered/fired in Mac, widget Cocoa
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/40065
 }
+
 
 interface
 uses
@@ -62,7 +56,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.10.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.11.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -571,6 +565,7 @@ type
     ypixsz        : double;//Pixel height in microns (after binning)
     mzero         : double;//flux calibration factor for all flux
     mzero_radius    : double;//mzero diameter (aperture)
+    magn_limit      : double;//limiting magnitude
     pedestal        : double;//pedestal added during calibration or stacking
     set_temperature : integer;
     dark_count      : integer;
@@ -668,7 +663,7 @@ var
   his_mean             : array[0..2] of integer;
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
-  {star_level,}star_bg,sd_bg, magn_limit  : double;
+  star_bg,sd_bg  : double;
   object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
   focus_temp,{cblack,}cwhite,sqmfloat,altitudefloat, pressure,airmass   :double; {from FITS}
@@ -901,7 +896,7 @@ function find_reference_star(img : image_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 function noise_to_electrons(adu_e, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
-procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader);
+procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader; update:boolean);
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
 function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
@@ -1065,6 +1060,7 @@ begin
     head.ybinning:=1;
     head.mzero:=0;{factor to calculate magnitude from full flux, new file so set to zero}
     head.mzero_radius:=99;{circle where flux is measured}
+    head.magn_limit:=0;
     head.pedestal:=0; {value added during calibration or stacking}
 
     telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
@@ -3808,7 +3804,7 @@ begin
   img:=img_temp2;
   head.width:=w;
   head.height:=h;
-  img_temp2:=nil;
+//  img_temp2:=nil;
 
   memo.BeginUpdate;
 
@@ -9450,7 +9446,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);//calibrate photometry if required
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});//calibrate photometry if required
   minor_planet_at_cursor:=''; //clear last found
 
 //  plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
@@ -10575,7 +10571,7 @@ end;
 
 procedure variable_star_annotation(plot: boolean {if false, load only});
 var
-  lim_magn            : double;
+  lim_magnitude            : double;
 begin
 //0, No annotation
 //1, Annotation local DB mag 13
@@ -10590,25 +10586,25 @@ begin
 //10,Annotation online DB mag 99 & measure all
 
   case stackmenu1.annotate_mode1.itemindex of
-       0,1: begin lim_magn:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
-       2:   begin lim_magn:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
-       3:   begin lim_magn:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-       4,8,12:  lim_magn:=11;
-       5,9,13:  lim_magn:=13;
-       6,19,14: lim_magn:=15;
-       7,11,15: lim_magn:=99;
+       0,1: begin lim_magnitude:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+       2:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+       3:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+       4,8,12:  lim_magnitude:=11;
+       5,9,13:  lim_magnitude:=13;
+       6,19,14: lim_magnitude:=15;
+       7,11,15: lim_magnitude:=99;
        else
-          lim_magn:=99;
+          lim_magnitude:=99;
      end; //case
 
-  if lim_magn>0 then //online version
+  if lim_magnitude>0 then //online version
   begin
     repeat
       if aavso_update_required then
       begin
         memo2_message('Downloading online data from AAVSO as set in tab Photometry.');
-        if download_vsx(lim_magn)=false then begin memo2_message('No VSX data! Increasing the max magnitude could help.');break; end;
-        if download_vsp(lim_magn)=false then begin memo2_message('No VSP data!');break; end;
+        if download_vsx(lim_magnitude)=false then begin memo2_message('No VSX data! Increasing the max magnitude could help.');break; end;
+        if download_vsp(lim_magnitude)=false then begin memo2_message('No VSP data!');break; end;
 
       end;
       if plot then
@@ -10628,8 +10624,6 @@ end;
 
 
 procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
-var
-  lim_magn            : double;
 begin
   if head.cd1_1=0 then begin memo2_message('No solution!'); exit; end;//no solution
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -11399,21 +11393,25 @@ begin
 end;
 
 
-procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader);
+procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader; update: boolean);
 var
   apert,annul,hfd_med : double;
   hfd_counter                : integer;
+  selected_passband          : string;
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
-  if ((head.mzero=0) or (aperture_ratio<>apert){new calibration required} or (passband_active<>head.passband_database))  then
+
+
+   if ((update) or (head.mzero=0) or (aperture_ratio<>apert){new calibration required} or (passband_active<>head.passband_database))  then
   begin
     memo2_message('Photometric calibration of the measured stellar flux.');
     annulus_radius:=14;{calibrate for extended objects}
     head.mzero_radius:=99;{calibrate for extended objects}
 
-    aperture_ratio:=apert;{remember setting}
+    aperture_ratio:=apert;{remember setting for next call to this procedure}
+
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
       analyse_image(img,head,30,0 {report nr stars and hfd only}, hfd_counter,bck,hfd_med); {find background, number of stars, median HFD}
@@ -11449,7 +11447,7 @@ const
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});
 
 
   if head.mzero=0 then
@@ -11479,7 +11477,7 @@ const
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_temp3[0,fitsY,fitsX]:=default;{clear}
-  plot_artificial_stars(img_temp3,head,magn_limit {measured});{create artificial image with database stars as pixels}
+  plot_artificial_stars(img_temp3,head);{create artificial image with database stars as pixels}
 
 //  img_loaded:=img_temp3;
 //  plot_fits(mainwindow.image1,true,true);
@@ -11675,7 +11673,7 @@ begin
   subframe:=(sender=export_star_info1); //full frame or sub section
   formalism:=mainwindow.Polynomial1.itemindex;
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head,true);
 
   if head.mzero=0 then
   begin
@@ -11764,9 +11762,8 @@ begin
     image1.Canvas.font.size:=fontsize;
     image1.Canvas.font.color:=clwhite;
     text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-    image1.Canvas.textout(round(fontsize*2),head.height-text_height,magn_limit_str);  {magn_limit global variable calculate in plot_and_measure_stars}
-
-
+    if head.magn_limit<>0 then
+      image1.Canvas.textout(round(fontsize*2),head.height-text_height,'Limiting magnitude '+floattostrF(head.magn_limit,FFFixed,0,2)+ ' (SNR=7, aperture ⌀'+floattostrF(head.mzero_radius,FFFixed,0,2) + ')');  {magn_limit is calculated plot_and_measure_stars}
   end
   else
   begin// to Clipboard
@@ -11984,7 +11981,7 @@ end;
 procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, true {update});
   Screen.Cursor:=crDefault;
 end;
 
@@ -13897,8 +13894,7 @@ begin
           begin
             if add_lim_magn then
             begin
-              calibrate_photometry(img_temp,memoX,headX);
-              update_float(memox,'LIM_MAGN=',' / estimated limiting magnitude for point sources',false ,magn_limit);
+              calibrate_photometry(img_temp,memoX,headX, false{update});//this will add also head.magn_limit to memoX
 
               mess:='LIM_MAGN';
 
@@ -14049,7 +14045,7 @@ begin
 //  annotation_magn :=inputbox('Annotate stars','Annotate up to magnitude:' ,annotation_magn);
 //  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head);
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});
   plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,false {calibration},true {plot stars},false {measure lim magn});{plot stars}
 end;
 
