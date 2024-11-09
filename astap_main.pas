@@ -56,7 +56,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.11.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.11.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1053,8 +1053,6 @@ begin
 
     x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
     y_coeff[0]:=0;
-    a_order:=0; {SIP_polynomial, use for check if there is data}
-    ap_order:=0; {SIP_polynomial, use for check if there is data}
 
     head.xbinning:=1;{normal}
     head.ybinning:=1;
@@ -1136,7 +1134,7 @@ var
   x_double    : double absolute x_qword;{for conversion 64 bit "big-endian" data}
   int_64      : int64 absolute x_qword;{for 64 bit signed integer}
 
-  tfields,tform_counter,header_count,pointer,let, validate_double_error : integer;
+  tfields,tform_counter,header_count,pointer,let, validate_double_error,dum : integer;
   ttype,tform,tunit : array of string;
   tbcol,tform_nr    : array of integer;
   simple,image,bintable,asciitable    : boolean;
@@ -1897,69 +1895,80 @@ begin
        head.naxis3:=3; {will be converted while reading}
     end;
 
-    if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
-    begin //formalism 3
-      new_to_old_WCS(head);{ convert old WCS to new}
-    end
-    else
-    if ((head.cd1_1=0) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
+    if light then //not required for darks and lights since some variables are not reset and could be nan cause runtime error
     begin
-      if PC1_1<>0 then //formalism 2
-      begin
-        head.CD1_1:=PC1_1* head.cdelt1;
-        head.CD1_2:=PC1_2* head.cdelt1;
-        head.CD2_1:=PC2_1* head.cdelt2;
-        head.CD2_2:=PC2_2* head.cdelt2;
+      if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
+      begin //formalism 3
         new_to_old_WCS(head);{ convert old WCS to new}
       end
       else
-      if head.crota2<999 then {new style missing but valid old style solution}
-      begin //formalism 1
-        if head.crota1=999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
-        old_to_new_WCS(head);{ convert old WCS to new}
-       end;
-    end;
-
-    if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
-    begin
-     if ((focallen<>0) and (head.xpixsz<>0)) then
-        head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
-    end;
-
-    if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
-
-    if ((light) and ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) ) then
-    begin
-      if equinox<>2000 then //e.g. in SharpCap
+      if ((head.cd1_1=0) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
       begin
-        jd_obs:=(equinox-2000)*365.25+2451545;
-        precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
-        if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+        if PC1_1<>0 then //formalism 2
+        begin
+          head.CD1_1:=PC1_1* head.cdelt1;
+          head.CD1_2:=PC1_2* head.cdelt1;
+          head.CD2_1:=PC2_1* head.cdelt2;
+          head.CD2_2:=PC2_2* head.cdelt2;
+          new_to_old_WCS(head);{ convert old WCS to new}
+        end
+        else
+        if head.crota2<999 then {new style missing but valid old style solution}
+        begin //formalism 1
+          if head.crota1=999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
+          old_to_new_WCS(head);{ convert old WCS to new}
+         end;
       end;
 
-      mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
-      mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
-    end;
-    { condition           keyword    to
-     if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
-                               ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
-                           crval1--->head.ra0
+      if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
+      begin
+       if ((focallen<>0) and (head.xpixsz<>0)) then
+          head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+      end;
 
-     if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
+      sip:=(ap_order>0);
+      if sip then
+        mainwindow.Polynomial1.itemindex:=1//switch to sip
+      else
+      if x_coeff[0]<>0 then
+         mainwindow.Polynomial1.itemindex:=2//switch to DSS
+      else
+        mainwindow.Polynomial1.itemindex:=0;//switch to DSS
+
+      if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
+      begin
+        if equinox<>2000 then //e.g. in SharpCap
+        begin
+          jd_obs:=(equinox-2000)*365.25+2451545;
+          precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
+          if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+        end;
+
+        mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+        mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+      end;
+      { condition           keyword    to
+       if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
+                                 ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
+                             crval1--->head.ra0
+
+       if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
+
+    end; //lights
+
+    if head.set_temperature=999 then
+       head.set_temperature:=round(ccd_temperature); {temperature}
+
+
 
     unsaved_import:=false;{file is available for astrometry.net}
 
-    sip:=(ap_order>0);
-    if sip then
-      mainwindow.Polynomial1.itemindex:=1//switch to sip
-    else
-    if x_coeff[0]<>0 then
-       mainwindow.Polynomial1.itemindex:=2//switch to DSS
-    else
-      mainwindow.Polynomial1.itemindex:=0;//switch to DSS
 
-    if load_data=false then begin
-       close_fits_file; result:=true; exit;
+    if load_data=false then
+    begin
+       close_fits_file;
+       result:=true;
+       exit;
     end;{only read header for analyse or WCS file}
 
 
@@ -2214,8 +2223,6 @@ begin
     end;
     mainwindow.Memo3.lines.text:=aline;
     aline:=''; {release memory}
-   // if update_memo then
-   //      mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
     reader_position:=reader_position+head.width*head.height;
   end; {read table}
