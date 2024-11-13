@@ -4391,11 +4391,13 @@ begin
               else
                 lv.Items.item[c].subitems.Strings[P_calibration] := 'None';  {calibration headx.calstat info DFB}
 
-              if a_order>0 then
-                lv.Items.item[c].subitems.Strings[P_astrometric] := '✓✓' //SIP solution
-              else
               if headx.cd1_1 <> 0 then
-                lv.Items.item[c].subitems.Strings[P_astrometric] := '✓'
+              begin
+                if a_order>0 then
+                  lv.Items.item[c].subitems.Strings[P_astrometric] := '✓✓' //SIP solution
+                else
+                  lv.Items.item[c].subitems.Strings[P_astrometric] := '✓';
+              end
               else
                 lv.Items.item[c].subitems.Strings[P_astrometric] := '';
 
@@ -7204,6 +7206,23 @@ begin
   end;
 end;
 
+
+procedure clear_added_AAVSO_columns;
+var
+  i: integer;
+begin
+  //clear added AAVSO columns
+  with stackmenu1.listview7 do
+  begin
+    Items.beginUpdate;{photometry}
+    for i:=p_nr-1 downto p_nr_norm do
+      columns.Delete(ColumnCount-1);//delete last column;
+    p_nr:=ColumnCount-1;//is equal to p_nr_norm;
+    Items.EndUpdate;
+  end;
+end;
+
+
 procedure Tstackmenu1.reference_database1Change(Sender: TObject);
 begin
   if head.mzero <> 0 then
@@ -7211,8 +7230,8 @@ begin
     memo2_message('Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
     head.mzero := 0;
   end;
-  if reference_database1.itemindex>0 then
-  memo2_message('Note that the online reference database is limited to a field-of-view of about 3 degrees');
+  if reference_database1.itemindex>0 then  memo2_message('Note that the online reference database is limited to a field-of-view of about 3 degrees');
+  clear_added_AAVSO_columns;
 end;
 
 
@@ -7393,22 +7412,6 @@ begin
   Screen.Cursor := crDefault;
 end;
 
-
-
-procedure clear_added_AAVSO_columns;
-var
-  i: integer;
-begin
-  //clear added AAVSO columns
-  with stackmenu1.listview7 do
-  begin
-    Items.beginUpdate;{photometry}
-    for i:=p_nr-1 downto p_nr_norm do
-      columns.Delete(ColumnCount-1);//delete last column;
-    p_nr:=ColumnCount-1;//is equal to p_nr_norm;
-    Items.EndUpdate;
-  end;
-end;
 
 procedure Tstackmenu1.clear_photometry_list1Click(Sender: TObject);
 begin
@@ -7808,16 +7811,16 @@ begin
   result:=sqrt(x/leng)
 end;
 
+
 procedure create_all_star_list; //collect any star in the variable_list
 var
    i,j, nrstars, formalism:integer;
    hfd_min,ra2,dec2,sep  : double;
    starlist         : star_list;
    variable_listAAVSO: array of tvariable_list;
+   found               : boolean;
 begin
   variable_listAAVSO:=copy(variable_list,0,variable_list_length+1);//duplicate AAVSO list
-//  setlength(variable_listAAVSO,variable_list_length+1); //duplicate AAVSO list
-
 
   if img_loaded=nil then exit;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
@@ -7831,20 +7834,24 @@ begin
     pixel_to_celestial(head,starlist[0,i]+1,starlist[1,i]+1, formalism, ra2,dec2);
     variable_list[i].ra:=ra2;
     variable_list[i].dec:=dec2;
-    variable_list[i].abbr:=prepare_IAU_designation(ra2, dec2);
+    found:=false;
+    for j:=0 to length(variable_listAAVSO)-1 do
+    begin
+      ang_sep(ra2, dec2, variable_listAAVSO[j].ra, variable_listAAVSO[j].dec, {out}sep);
+      if sep < 10 * pi / (180*60*60) then //same star, position within 10 arcsec
+      begin
+        variable_list[i]:=variable_listAAVSO[j]; //same star. Use all AAVSO data, a,dec and magnitudes
+        found:=true;
+      end;
+    end;
+    if found=false then
+    begin
+       variable_list[i].abbr:=prepare_IAU_designation(ra2, dec2);
+       variable_list[i].source:=3;//not is AAVSO database
+    end;
   end;
   variable_list_length:=nrstars-1;
-
-  //try to use the AAVSO abbreviations
-  for i:=0 to  nrstars-1 do
-  for j:=0 to length(variable_listAAVSO)-1 do
-  begin
-    ang_sep(variable_list[i].ra, variable_list[i].dec, variable_listAAVSO[j].ra, variable_listAAVSO[j].dec, {out}sep);
-    if sep < 10 * pi / (180*60*60) then //same star, position within 10 arcsec
-      variable_list[i].abbr:=variable_listAAVSO[j].abbr; //same star. Use AAVSO abbr
-  end;
 end;
-
 
 
 
@@ -7954,10 +7961,6 @@ begin
   variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
 
 
-  if pos('V', uppercase(star_database1.Text)) = 0 then
-    memo2_message(star_database1.Text +  ' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
-
-
   {check is analyse is done}
   analysedP := True;
   for c := 0 to listview7.items.Count - 1 do
@@ -7965,7 +7968,8 @@ begin
     if ((listview7.Items.item[c].Checked) and
       (listview7.Items.item[c].subitems.Strings[B_width] = '' {width})) then analysedP := False;
   end;
-  if analysedP = False then stackmenu1.analysephotometry1Click(nil);
+  if analysedP = False then
+       stackmenu1.analysephotometry1Click(nil);
   application.ProcessMessages;{show result}
 
   flipvertical := mainwindow.flip_vertical1.Checked;
@@ -8241,7 +8245,6 @@ begin
               Inc(countThree);
             end;
           end;
-
           if p_nr>p_nr_norm then clear_added_AAVSO_columns;
         end
         else
@@ -8249,169 +8252,59 @@ begin
 
           if length(variable_list)=0 then
           begin
-            variable_star_annotation(false {extract AAVSO database  to variable_list});
+            variable_star_annotation(true {extract AAVSO database  to variable_list});
 
             if stackmenu1.measuring_method1.itemindex=2 then //add none AAVSO stars
               create_all_star_list;//collect any star in the variable_list
+
+            oldra0:=head.ra0;
+            olddec0:=head.dec0;
           end
           else
           begin
             ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
-              if sep>head.width*head.cdelt2*2*pi/180 then //different area of the sky, update fill_variable_list
+              if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
                   mainwindow.variable_star_annotation1Click(sender {new position, update variable list});
 
           end;
-          oldra0:=head.ra0;
-          olddec0:=head.dec0;
 
-       //   dummy2:=stackmenu1.annotate_mode1.itemindex;
-          case stackmenu1.annotate_mode1.itemindex of
-            1,2,3 : //measure all AAVSO stars using the position from the local database
+          //measure all AAVSO stars using the position from the local database
+          if variable_list_length>0 then
+          begin
+            for j:=0 to variable_list_length do
+            begin
+              celestial_to_pixel(head, variable_list[j].ra, variable_list[j].dec, xn, yn);
+              if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+              begin
+                astr := measure_star(xn, yn);
+                if snr>0 then
                 begin
-
-
-                  if variable_list_length>0 then
+                  new_object:=true;
+                  for i:=p_nr_norm+1 to p_nr-1 do
+                    if ((odd(i)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=variable_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                    begin //existing object column
+                     listview7.Items.item[c].subitems.Strings[i-1]:= astr;
+                     listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
+                     new_object:=false;
+                     break;
+                    end;
+                  if new_object then
                   begin
-                  //  obj_count:=0;
-                    for j:=0 to variable_list_length do
-                    begin
-                      celestial_to_pixel(head, variable_list[j].ra, variable_list[j].dec, xn, yn);
-                      if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
-                      begin
-                        astr := measure_star(xn, yn);
-                        if snr>0 then
-                        begin
-                          new_object:=true;
-                          for i:=p_nr_norm+1 to p_nr-1 do
-                            if ((odd(i)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=variable_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
-                            begin //existing object column
-                             listview7.Items.item[c].subitems.Strings[i-1]:= astr;
-                             listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
-                             new_object:=false;
-                             break;
-                            end;
-                          if new_object then
-                          begin
-                            with listview7 do
-                            begin //add column
-                              listview7_add_column(variable_list[j].abbr);
-                              listview7_add_column('SNR');
-                              memo2_message('Added a column for '+variable_list[j].abbr);
-                            end;
-                            listview7.Items.item[c].subitems.Strings[P_nr-2]:= astr;
-                            listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(snr));
-                            stackmenu1.listview7.column[P_nr-2].tag:=j; //store star position in variable list
-                            stackmenu1.listview7.column[P_nr-1].tag:=0; //mark as local variable database
-                          end;//new object
-                        end;//enough snr
-                      end;
-
+                    with listview7 do
+                    begin //add column
+                      listview7_add_column(variable_list[j].abbr);
+                      listview7_add_column('SNR');
+                      memo2_message('Added a column for '+variable_list[j].abbr);
                     end;
-                  end;
-                end;
-            4,5,6,7,8,9,10,11 :  //measure all AAVSO stars using the online vsx, vsp
-                begin
-             //     mainwindow.variable_star_annotation1Click(sender {photometry_button1Click, Result in load vsp,vsx and skip plotting. That will happen later}); //vsp & vsx
-                  lvsx:=length(vsx);
-                  if lvsx>0 then //database is loaded
-                  begin
-                    for j:=0 to lvsx-1 do
-                    begin
-                      celestial_to_pixel(head, vsx[j].ra, vsx[j].dec, xn, yn);
-                      if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
-                      begin
-                        astr := measure_star(xn, yn);
-                        if snr>0 then
-                        begin
-                          new_object:=true;
-                          vname:=vsx[j].name+' '+vsx[j].maxmag+'-'+vsx[j].minmag+'_'+vsx[j].category+'_Period_'+vsx[j].period;
-                          for i:=p_nr_norm+1 to p_nr-1 do
-                          if ((odd(i)){not a snr column} and (stackmenu1.listview7.Column[i].Caption=vname)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
-                          begin //existing object column
-                           listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
-                           listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
-                           new_object:=false;
-                           break;
-                          end;//test new object
-
-                          if new_object then
-                          begin
-                            with listview7 do
-                            begin //add column
-                              listview7_add_column(vname);
-                              listview7_add_column('SNR');
-                              memo2_message('Added a column for '+vsx[j].name);
-                            end;
-                            listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
-                            listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
-                            stackmenu1.listview7.column[P_nr-2].tag:=j; //store star position in vsx
-                            stackmenu1.listview7.column[P_nr-1].tag:=1; //mark as vsx variable star
-                          end;//new object
-                        end;//enough snr
-                      end;
-                    end;
-
-                    //VSP stars
-                    lvsp:=length(vsp);
-                    if lvsp>0 then
-                    begin
-                      for j:=0 to lvsp-1 do
-                      begin
-                        celestial_to_pixel(head, vsp[j].ra, vsp[j].dec, xn, yn);
-                        if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
-                        begin
-                          astr := measure_star(xn, yn);
-                          if snr>0 then
-                          begin
-                            new_object:=true;
-                            cname:=vsp[j].auid;
-
-
-
-                            for i:=p_nr_norm+1 to p_nr-1 do
-                            if ((odd(i)){not a snr column} and (pos(cname,stackmenu1.listview7.Column[i].Caption)>0)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
-                            begin //existing object column
-                              dummy:=stackmenu1.listview7.Column[i].Caption;
-                              listview7.Items.item[c].subitems.Strings[i-1]:= astr; //add magnitude
-                              listview7.Items.item[c].subitems.Strings[i]:= IntToStr(round(snr));
-                               new_object:=false;
-                              break;
-                            end;
-
-                            if new_object then
-                            begin
-                              if head.passband_database='B' then
-                                       cname:=cname+' B='+vsp[j].Bmag+'('+vsp[j].Berr+')'
-                              else
-                              if head.passband_database='R' then cname:=cname+' R='+vsp[j].Vmag+'('+vsp[j].Rerr+')'
-                              else
-                              if head.passband_database='SG' then cname:=cname+' SG='+vsp[j].Vmag+'('+vsp[j].SGerr+')'
-                              else
-                              if head.passband_database='SR' then cname:=cname+' SR='+vsp[j].Vmag+'('+vsp[j].SRerr+')'
-                              else
-                              if head.passband_database='SI' then cname:=cname+' SI='+vsp[j].Vmag+'('+vsp[j].SIerr+')'
-                              else
-                              cname:=cname+' V='+vsp[j].Vmag+'('+vsp[j].Verr+')';
-
-                              with listview7 do
-                              begin //add column
-                                listview7_add_column(cname);
-                                listview7_add_column('SNR');
-                                memo2_message('Added a column for '+vsp[j].auid);
-                              end;
-                              listview7.Items.item[c].subitems.Strings[p_nr-2] := astr;//add magnitude
-                              listview7.Items.item[c].subitems.Strings[p_nr-1] := IntToStr(round(snr));
-                              stackmenu1.listview7.column[P_nr-2].tag:=j; //store star position in vsp in .tag
-                              stackmenu1.listview7.column[P_nr-1].tag:=2; //mark as vsp variable star
-                            end;//new object
-                          end;//enough snr
-                        end;//within the image
-                      end;
-                    end;
-                  end;//vsx
-                end;
-             end;//case
-
+                    listview7.Items.item[c].subitems.Strings[P_nr-2]:= astr;
+                    listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(snr));
+                    stackmenu1.listview7.column[P_nr-2].tag:=j; //store star position in the variable list
+                  end;//new object
+                end;//enough snr
+              end;
+            end;
+          end;
+          memo2_message('Detected a total '+inttostr((p_nr-p_nr_norm) div 2)+' stars');
         end; //measure all
       end;
 
@@ -8539,7 +8432,7 @@ begin
         head.cd2_1:=head_ref.cd2_1;
         head.cd2_2:=head_ref.cd2_2;
 
-        variable_star_annotation(true {plot, do not extract to variable_list}); //vsp & vsx
+        variable_star_annotation(false  {plot, do not extract to variable_list}); //vsp & vsx
       end;
 
       stop_updating(false);//listview7.Items.endUpdate;
@@ -9046,8 +8939,8 @@ end;
 procedure Tstackmenu1.list_to_clipboard1Click(Sender: TObject);
 {copy seleced lines to clipboard}
 var
-  index, c: integer;
-  info: string;
+  index, c,dum,dum2: integer;
+  info,dummy: string;
   lv: tlistview;
 begin
   info := '';
@@ -9067,7 +8960,8 @@ begin
   end;
 
   {get column names}
-  for c := 0 to lv.Items[0].SubItems.Count do
+
+  for c := 0 to lv.columns.count-1 do
     try
       info := info + lv.columns[c].Caption + #9;
     except
@@ -9830,6 +9724,7 @@ begin
   hide_show_columns_listview7(true {tab8 photmetry});
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=2;
 end;
+
 
 
 procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);

@@ -12,7 +12,7 @@ uses
    forms,Classes, SysUtils,strutils, math,graphics, Controls {for tcursor},astap_main,  unit_stars_wide_field;
 
 procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the deep sky object on the image. If extract is true then extract visible to variable_list}
-procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
+procedure plot_vsx_vsp(extract_visible: boolean);{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
@@ -42,6 +42,8 @@ type
     ra  : double;
     dec  : double;
     abbr : string;
+    Source : integer; //0 local, 1=VSX, 2=VSP, 3=not in AAVSO
+    index  : integer; //source index
   end;
 
 var
@@ -1536,6 +1538,8 @@ begin
              variable_list[text_counter].ra:=ra2;
              variable_list[text_counter].dec:=dec2;
              variable_list[text_counter].abbr:=naam2;
+             variable_list[text_counter].source:=0; //local
+
              variable_list_length:=text_counter;
            end;
            inc(text_counter);
@@ -1575,7 +1579,7 @@ begin
 end;{plot deep_sky}
 
 
-procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
+procedure plot_vsx_vsp(extract_visible: boolean);{plot downloaded variable and comp stars}
 type
   textarea = record
      x1,y1,x2,y2 : integer;
@@ -1586,10 +1590,8 @@ var
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount : integer;
   overlap      : boolean;
-
-
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
@@ -1618,6 +1620,14 @@ begin
     mainwindow.image1.canvas.pen.mode:=pmXor;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.size:=stackmenu1.font_size_photometry_UpDown1.position;
+
+   if extract_visible then //for photometry
+   begin
+     variable_list:=nil;
+     variable_list_length:=0;//declare empthy
+     setlength(variable_list,1000);//make space
+     nrcount:=0;
+   end;
 
     text_counter:=0;
     setlength(text_dimensions,200);
@@ -1657,7 +1667,6 @@ begin
             if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
               mainwindow.Shape_var1.HINT:=vsx[count].name;
 
-
             var_epoch:=strtofloat1(vsx[count].epoch);
             var_period:=strtofloat1(vsx[count].period);
             if ((var_epoch<>0) and (var_period<>0)) then
@@ -1669,6 +1678,18 @@ begin
                  //  if pos('AD CMi',name)>0 then
                  //  memo2_message(filename2+',  '+floattostr(jd_mid)+ ',   '+floattostr(delta));
             end;
+
+            if ((extract_visible) and (nrcount<length(variable_list))) then //special option to add objects to list for photometry
+            begin
+              variable_list[nrcount].ra:=vsx[count].ra;
+              variable_list[nrcount].dec:=vsx[count].dec;
+              variable_list[nrcount].abbr:=name;
+              variable_list[nrcount].source:=1;//vsx
+              variable_list[nrcount].index:=count;//to retrieve all mangitudes
+              variable_list_length:=nrcount;
+              inc(nrcount);
+            end;
+
 
           end
           else
@@ -1694,6 +1715,16 @@ begin
             if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                   mainwindow.shape_comp1.HINT:=name;//comparison star
 
+            if ((extract_visible) and (nrcount<length(variable_list))) then //special option to add objects to list for photometry
+            begin
+              variable_list[nrcount].ra:=vsp[count].ra;
+              variable_list[nrcount].dec:=vsp[count].dec;
+              variable_list[nrcount].abbr:=name;
+              variable_list[nrcount].source:=2;//vsp
+              variable_list[nrcount].index:=count;//to retrieve all mangitudes
+              variable_list_length:=nrcount;
+              inc(nrcount);
+            end;
           end;
 
           if name<>'' then

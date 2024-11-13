@@ -56,7 +56,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.11.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.11.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -904,7 +904,7 @@ procedure remove_photometric_calibration;//from header
 procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
 procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
 procedure place_marker_radec(shape: tshape; ra,dec:double);{place ra,dec marker in image}
-procedure variable_star_annotation(plot: boolean {if false, load only});
+procedure variable_star_annotation(extract_visible: boolean {extract to variable_list});
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -10576,7 +10576,7 @@ begin
 end;
 
 
-procedure variable_star_annotation(plot: boolean {if false, load only});
+procedure variable_star_annotation(extract_visible: boolean {extract to variable_list});
 var
   lim_magnitude            : double;
 begin
@@ -10614,17 +10614,15 @@ begin
         if download_vsp(lim_magnitude)=false then begin memo2_message('No VSP data!');break; end;
 
       end;
-      if plot then
-      begin
-         date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
-         plot_vsx_vsp;
-      end;
+
+      date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
+      plot_vsx_vsp(extract_visible {extract also data});
     until true;//allow breaks to skip and go to cursor statement
   end
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    plot_deepsky(plot=false {if false then extract visible to variable_list},stackmenu1.font_size_photometry_UpDown1.position); {Plot the variables on the image. }
+    plot_deepsky(extract_visible{then extract visible to variable_list},stackmenu1.font_size_photometry_UpDown1.position); {Plot the variables on the image. }
   end;
 end;
 
