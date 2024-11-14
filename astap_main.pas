@@ -56,7 +56,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.11.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.11.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -11431,7 +11431,7 @@ begin
     else
     memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
 
-    plot_and_measure_stars(img,memo, head,true {calibration},false {plot stars},true{report lim magnitude});
+    plot_and_measure_stars(img,memo, head,true {calibration},false {plot stars},true{report lim magnitude});//mzero calibration
   end;
 end;
 
@@ -11722,6 +11722,7 @@ begin
   else
     measure_magnitudes(14,0,0,head.width-1,head.height-1,true {deep},stars);
 
+  memo2_message('Annotated '+inttostr(length(stars[0]))+' stars down to SNR 7');
 
   if length(stars[0])>0 then
   begin

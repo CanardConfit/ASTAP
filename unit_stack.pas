@@ -61,6 +61,7 @@ type
     annulus_radius1: TComboBox;
     ignore_saturation1: TCheckBox;
     Label74: TLabel;
+    MenuItem34: TMenuItem;
     nr_stars_to_detect1: TComboBox;
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
@@ -729,6 +730,7 @@ type
     procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
+    procedure copyRowsandColumnsswapped1Click(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -7416,18 +7418,13 @@ end;
 procedure Tstackmenu1.clear_photometry_list1Click(Sender: TObject);
 begin
   esc_pressed := True; {stop any running action}
-
   listview7.Items.BeginUpdate;
-
   listview7.Clear;
-
   clear_added_AAVSO_columns;
-
   listview7.Items.EndUpdate;
-
   bakfiles:=nil; //unrename function
-
 end;
+
 
 procedure Tstackmenu1.export_aligned_files1Click(Sender: TObject);
 var
@@ -8939,11 +8936,13 @@ end;
 procedure Tstackmenu1.list_to_clipboard1Click(Sender: TObject);
 {copy seleced lines to clipboard}
 var
-  index, c,dum,dum2: integer;
+  row, c,dum,dum2: integer;
   info,dummy: string;
   lv: tlistview;
 begin
   info := '';
+
+
   if Sender = list_to_clipboard9 then lv := listview9
   else
   if Sender = list_to_clipboard8 then lv := listview8
@@ -8959,8 +8958,7 @@ begin
     exit;
   end;
 
-  {get column names}
-
+  {get column titles}
   for c := 0 to lv.columns.count-1 do
     try
       info := info + lv.columns[c].Caption + #9;
@@ -8970,15 +8968,15 @@ begin
   info := info + slinebreak;
 
   {get data}
-  for index := 0 to lv.items.Count - 1 do
+  for row := 0 to lv.items.Count - 1 do
   begin
-    if lv.Items[index].Selected then
+    if lv.Items[row].Selected then
     begin
-      info := info + lv.items[index].Caption;
+      info := info + lv.items[row].Caption;
       {get sub items}
-      for c := 0 to lv.Items[index].SubItems.Count - 1 do
+      for c := 0 to lv.Items[row].SubItems.Count - 1 do
         try
-          info := info + #9 + lv.Items.item[index].subitems.Strings[c];
+          info := info + #9 + lv.Items.item[row].subitems.Strings[c];
         except
           info := info + #9 + 'Error';
         end;
@@ -9632,33 +9630,46 @@ begin
 end;
 
 
+procedure Tstackmenu1.copyRowsandColumnsswapped1Click(Sender: TObject);
+var
+   column, row : integer;
+   info        : string;
+   lv: tlistview;
+begin
+  info:='';
+  lv:=listview7;
+  for column := 0 to lv.columns.count-1 do //go trough column titles
+  begin
+    for row := -1 to lv.items.Count - 1 do //go from title row then through next rows
+    begin
+      if row=-1 then //column title row
+         info := info + lv.columns[column].Caption + #9   //column title. There  X titles, one caption column and X-1 subitems columns
+      else
+      if lv.Items[row].Selected then
+      begin
+        if column=0 then info := info + extractfilename(lv.items[row].Caption) + #9     //first row
+        else
+        begin
+          if column<=lv.Items[row].SubItems.Count then //does the field exist ?
+            info := info + lv.Items.item[row].subitems.Strings[column-1]+ #9; //Report subitem rows. Subitem rows have a position equals title position -1
+        end;
+      end;//rows
+    end;
+    info := info + slinebreak;
+  end;//columns
+  Clipboard.AsText := info;
+end;
+
+
 procedure Tstackmenu1.detect_contour1Click(Sender: TObject);
-//var
-//  img_bk                           : image_array;
-//  oldNaxis3                        : integer;
-//  restore_req                      : boolean;
 begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   plot_fits(mainwindow.image1,false,true);//clear
 
-//  img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-//  setlength(img_bk,head.naxis3,head.height,head.width);{force a duplication}
-
-//  oldNaxis3:=head.naxis3;//for case it is converted to mono
-
   memo2_message('Satellite streak detection started.');
   contour(true {plot}, img_loaded,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));
-
-//  img_bk:=nil;
-
-
-//  if restore_req then {raw Bayer image or colour image}
-//  begin
-//    head.naxis3:=oldNaxis3;
-//    get_hist(0,img_loaded);{get histogram of img and his_total}
-//  end;
 
   Screen.Cursor:=crDefault;
   memo2_message('Satellite streak detection completed.');
@@ -9721,6 +9732,7 @@ end;
 
 procedure Tstackmenu1.measuring_method1Change(Sender: TObject);
 begin
+  clear_added_AAVSO_columns;
   hide_show_columns_listview7(true {tab8 photmetry});
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=2;
 end;
