@@ -11,7 +11,7 @@ object form_aavso1: Tform_aavso1
   OnCreate = FormCreate
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '3.4.0.0'
+  LCLVersion = '3.6.0.0'
   object obscode1: TEdit
     Left = 16
     Height = 23

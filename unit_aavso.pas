@@ -264,7 +264,7 @@ end;
 
 function get_comp_magnitude(filter,columnr: integer; s: string): double;//get comp magnitude from the abbrv string
 var
-  v,e,err,thetag,b  : integer;
+  v,e,err,b,theindex,source  : integer;
   s2 : string;
   Bmagnitude : double;
 begin
@@ -272,29 +272,33 @@ begin
   if columnr<0 then
     exit;
 
-  thetag:=stackmenu1.listview7.column[columnr+1].tag;
-  if thetag=2 then //online vsp list
+//  index:=stackmenu1.listview7.column[columnr+1].tag;
+  theindex:=stackmenu1.listview7.column[columnr].tag;
+  source:=variable_list[theindex].source;//local, vsp,vsx
+
+  if source=2 then //online vsp list
   begin
     if ((filter=-1) or (filter=1)) then //V
-     result:=strtofloat(vsp[stackmenu1.listview7.column[columnr].tag].Vmag)
+      result:=strtofloat1(vsp[variable_list[theindex].index].Vmag)
     else
     if ((filter=0) or (filter =24)) then  //R or Cousins red
-      result:=strtofloat(vsp[stackmenu1.listview7.column[columnr].tag].Rmag)
+      result:=strtofloat1(vsp[variable_list[theindex].index].Rmag)
     else
     if filter=2 then  //Blue
-      result:=strtofloat(vsp[stackmenu1.listview7.column[columnr].tag].Bmag)
+      result:=strtofloat1(vsp[variable_list[theindex].index].Bmag)
     else
     if filter=21 then  //SDSS-i
-      result:=strtofloat(vsp[stackmenu1.listview7.column[columnr].tag].SImag)
+      result:=strtofloat1(vsp[variable_list[theindex].index].SImag)
     else
     if filter=22 then //SDDS=r
-      result:=strtofloat(vsp[stackmenu1.listview7.column[columnr].tag].SRmag)
+      result:=strtofloat1(vsp[variable_list[theindex].index].SRmag)
     else
     if filter=23 then //SDDS=g
-      result:=strtofloat(vsp[stackmenu1.listview7.column[columnr].tag].SGmag);
+      result:=strtofloat1(vsp[variable_list[theindex].index].SGmag);
+
   end
   else
-  if thetag=0 then
+  if source=0 then //local database
   begin
     if ((filter=-1) or (filter=1)) then //local variable
     begin //V magnitude
@@ -369,7 +373,7 @@ begin
   else
     abrv_check1.color:=cldefault;
 
-  if ((abrv_comp1.enabled) and (length(abbrev_check)<1)) then
+  if ((abrv_comp1.enabled) and (length(abbrev_comp)<1)) then
   begin
     abrv_comp1.color:=clred;
     exit;
@@ -459,12 +463,13 @@ begin
              filter_used:=copy(filter1.text,1,2);//manual input
 
            var_magn:=strtofloat2(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}]);
-           comp_magn_str:=stackmenu1.listview7.Items.item[c].subitems.Strings[column_comp];//measured comp magnitude
-           comp_magn:=strtofloat2(comp_magn_str);//measured comp magnitude
+
+
            check_magn_str:=stringreplace(listview7.Items.item[c].subitems.Strings[column_check],',','.',[]);
 
-           ensemble_str2:='na';
            ensemble_str1:='ENSEMBLE';
+           ensemble_str2:='na';
+
            if stackmenu1.reference_database1.itemindex=0 then //local database
            if pos('v',name_database)>0 then magn_type:=' transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
            else  //online database
@@ -475,6 +480,9 @@ begin
 
            if ensemble_database1.checked=false then //Mode magnitude relative to comp star
            begin
+             if column_comp<0 then exit;
+             comp_magn_str:=stackmenu1.listview7.Items.item[c].subitems.Strings[column_comp];//measured comp magnitude
+             comp_magn:=strtofloat2(comp_magn_str);//measured comp magnitude
              if  comp_magn>0 then
              begin
                  ensemble_str1:=abbrev_comp_clean;
@@ -969,25 +977,13 @@ end;
 
 
 procedure retrieve_ra_dec(columnr: integer; out ra,dec:double);//retrieve from database arrays using the .tag
+var
+  theindex : integer;
 begin
   try
-  if stackmenu1.listview7.column[columnr+1].tag=0 then
-  begin
-    ra:=variable_list[stackmenu1.listview7.column[columnr].tag].ra;
-    dec:=variable_list[stackmenu1.listview7.column[columnr].tag].dec;
-  end
-  else
-  if stackmenu1.listview7.column[columnr+1].tag=1 then
-  begin
-    ra:=vsx[stackmenu1.listview7.column[columnr].tag].ra;
-    dec:=vsx[stackmenu1.listview7.column[columnr].tag].dec;
-  end
-  else
-  if stackmenu1.listview7.column[columnr+1].tag=2 then
-  begin
-    ra:=vsp[stackmenu1.listview7.column[columnr].tag].ra;
-    dec:=vsp[stackmenu1.listview7.column[columnr].tag].dec
-  end;
+    theindex:=stackmenu1.listview7.column[columnr].tag;
+    ra:=variable_list[theindex].ra;
+    dec:=variable_list[theindex].dec;
   except;
   end;
 end;
@@ -996,8 +992,6 @@ procedure annotate_star_of_column(columnV,columnCheck,columnComp: integer);
 var
   ra,dec : double;
 begin
-  // RA, DEC position is stored as integers in tag   [0..864000], DEC[-324000..324000]
-
   try
   if columnV>0 then //valid
   begin
