@@ -2227,13 +2227,13 @@ begin
           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
                         ' Standard error MZERO [magn]: '+floattostrF(standard_error_mean,ffFixed,0,3)+
-                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.')
+                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values close to '+inttostr(round(head.datamax_org))+' are ignored.')
 
         else
           memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(head.mzero_radius*2, ffFixed, 0,2)+' pixels.'+
                         ' Standard error MZERO [magn]: '+floattostrF(standard_error_mean,ffFixed,0,3)+
-                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
+                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values close to '+inttostr(round(head.datamax_org))+' are ignored.');
 
         memo2_message('Photometric calibration is only valid if the filter passband ('+head.filter_name+') is compatible with the passband reference database ('+head.passband_database+'). This is indicated by the coloured square icons in tab photometry.');
 
@@ -2243,10 +2243,10 @@ begin
           for faint stars  snr ≈flux/sqrt( 0 + r*r*pi* sd^2)
                            flux≈snr*sqrt( 0 + r*r*pi* sd^2)
                            flux≈snr*r*sqrt(pi)*sd
-                           flux≈snr*(hfd*0.8)*sqrt(pi)*sd   assuming star diameter is 2*hfd, so radius is hfd
-                           flux≈snr*sqrt(pi)*sd*hfd*0.8  }
-          flux_snr_7:=7*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length}){*0.8{fiddle factor} ;{Assuming minimum SNR is 7 and the aperture is reduced to about hfd for the faintest stars.}
-          apert:=strtofloat2(stackmenu1.flux_aperture1.text);{aperture diamater expressed in HFD's. If aperture diameter is HFD, half of the star flux is lost}
+                           flux≈snr*(hfd*1.0)*sqrt(pi)*sd   assuming star diameter for the faintest stars is reduced to 2 * hfd average, so radius is 1*hfd
+                           flux≈snr*sqrt(pi)*sd*hfd*0.6  }
+          flux_snr_7:=7*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length});{Assuming minimum SNR is 7 and the aperture is reduced to about 2 * hfd for the faintest stars. So r=HFD}
+          apert:=strtofloat2(stackmenu1.flux_aperture1.text);{aperture diameter expressed in HFD's. If aperture diameter is HFD, half of the star flux is lost}
           if apert=0 then apert:=10; {aperture is zero if is set at max text. Set very high}
 
           //encircled flux =1-EXP(-0.5*(radial_distance/sigma)^2)
