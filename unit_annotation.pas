@@ -2244,7 +2244,7 @@ begin
                            flux≈snr*sqrt( 0 + r*r*pi* sd^2)
                            flux≈snr*r*sqrt(pi)*sd
                            flux≈snr*(hfd*1.0)*sqrt(pi)*sd   assuming star diameter for the faintest stars is reduced to 2 * hfd average, so radius is 1*hfd
-                           flux≈snr*sqrt(pi)*sd*hfd*0.6  }
+                             }
           flux_snr_7:=7*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length});{Assuming minimum SNR is 7 and the aperture is reduced to about 2 * hfd for the faintest stars. So r=HFD}
           apert:=strtofloat2(stackmenu1.flux_aperture1.text);{aperture diameter expressed in HFD's. If aperture diameter is HFD, half of the star flux is lost}
           if apert=0 then apert:=10; {aperture is zero if is set at max text. Set very high}
@@ -2277,6 +2277,7 @@ begin
     Screen.Cursor:=crDefault;
   end;{fits file}
 end;{plot stars}
+
 
 
 

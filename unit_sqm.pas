@@ -66,7 +66,7 @@ var
 
   sqm_applyDF: boolean;
 
-function calculate_sqm(headx : theader; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(img: image_array; headx : theader; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 
 
 implementation
@@ -79,7 +79,7 @@ var
   backup_made                         : boolean;
 
 
-function calculate_sqm(headx : theader; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(img: image_array; headx : theader; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 var
   correction,az,airm         : double;
   bayer,form_exist           : boolean;
@@ -99,7 +99,7 @@ begin
         backup_img; {move viewer data to img_backup}
         backup_made:=true;
       end;
-      bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,2); //bin 2x2
+      bin_X2X3X4(img,headx,mainwindow.memo1.lines,2); //bin 2x2
     end
     else
       form_sqm1.green_message1.caption:='';
@@ -109,12 +109,12 @@ begin
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
     headx.mzero_radius:=99;{calibrate for extended objects}
-    plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,headx,true {calibration},false {plot stars},false{report lim magnitude});
+    plot_and_measure_stars(img,mainwindow.Memo1.lines,headx,true {calibration},false {plot stars},false{report lim magnitude});
   end;
   result:=false;
   if headx.mzero>0 then
   begin
-    if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}bck);
+    if get_bk then get_background(0,img,get_his {histogram},false {calculate also noise level} ,{var}bck);
 
     if (pos('D',headx.calstat)>0) then
     begin
@@ -254,7 +254,7 @@ begin
     end;
 
     {calc}
-    if calculate_sqm(head,true {get backgr},update_hist{get histogr},{var} pedestal2)=false then {failure in calculating sqm value}
+    if calculate_sqm(img_loaded,head,true {get backgr},update_hist{get histogr},{var} pedestal2)=false then {failure in calculating sqm value}
     begin
       if altitudefloat<1 then error_message1.caption:=warning_str;
       warning_str:=''; //clear error message
