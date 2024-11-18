@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.07.21';
+  astap_version: string='2024.11.18';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -1782,6 +1782,16 @@ begin
 end;
 
 
+function FileSize1(const Filename: string): int64;
+var F : file of byte;
+begin
+ assign (F, Filename);
+ reset (F);
+ result := System.FileSize(F);
+ close (F);
+end;
+
+
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j,width2,height2,naxis3,naxis   : integer;
@@ -1799,7 +1809,13 @@ begin
   saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
   try
-    Image := TFPMemoryImage.Create(10, 10);
+
+
+    if filesize1(filen)<300*1024*1024 then //less then 300 mbytes. Should fit TFPMemoryImage for colour and grayscale
+      Image := TFPMemoryImage.Create(10, 10) //for colour and grayscale up to 2gbyte/3
+    else
+      Image := TFPCompactImgGray16Bit.Create(10, 10);//compact up to 2gbyte for grayscale images only   //See https://gitlab.com/freepascal.org/fpc/source/-/issues/41022
+
 
     if ((ext='.TIF') or (ext='.TIFF')) then
     begin

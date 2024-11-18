@@ -81,7 +81,7 @@ begin
     '-s  max_number_of_stars  {default 500}'+#10+
     '-t  tolerance  {default 0.007}'+#10+
     '-m  minimum_star_size["]  {default 1.5}'+#10+
-    '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto.}'+#10+
+    '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. 0 is auto.}'+#10+
 
     '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
     '-d  path {specify a path to the star database}'+#10+

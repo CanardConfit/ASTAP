@@ -23,6 +23,8 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
 https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
+https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
+
 
 MacOS
 ScrollCode=scEndScroll does not appears at the end of scroll
@@ -56,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.11.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.11.18';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2801,6 +2803,16 @@ begin
 end;
 
 
+function FileSize1(const Filename: string): int64;
+var F : file of byte;
+begin
+ assign (F, Filename);
+ reset (F);
+ result := System.FileSize(F);
+ close (F);
+end;
+
+
 function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: image_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
@@ -2818,7 +2830,11 @@ begin
   saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
   try
-    Image := TFPMemoryImage.Create(10, 10);
+    if filesize1(filen)<300*1024*1024 then //less then 300 mbytes. Should fit TFPMemoryImage for colour and grayscale
+      Image := TFPMemoryImage.Create(10, 10) //for colour and grayscale up to 2gbyte/3
+    else
+      Image := TFPCompactImgGray16Bit.Create(10, 10);//compact up to 2gbyte for grayscale images only   //See https://gitlab.com/freepascal.org/fpc/source/-/issues/41022
+
 
     if ((ext='.TIF') or (ext='.TIFF')) then
     begin
@@ -3745,15 +3761,15 @@ end;
 
 
 procedure bin_X2X3X4(var img :image_array; var head : theader;memo:tstrings; binfactor:integer);{bin img_loaded 2x or 3x}
-  var fitsX,fitsY,k, w,h  : integer;
+  var fitsX,fitsY,k, w,h   : integer;
       img_temp2 : image_array;
       fact      : string;
-
 begin
   binfactor:=min(4,binfactor);{max factor is 4}
   w:=trunc(head.width/binfactor);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
   h:=trunc(head.height/binfactor);
   setlength(img_temp2,head.naxis3,h,w);
+
   if binfactor=2 then
   begin
     for k:=0 to head.naxis3-1 do
@@ -3785,7 +3801,8 @@ begin
            end;
   end
   else
-  begin {bin4x4}
+  if binfactor=4 then
+  begin //bin4x4
     for k:=0 to head.naxis3-1 do
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
@@ -3807,7 +3824,9 @@ begin
                                       img[k,fitsY*4 +3,fitsX*4+2]+
                                       img[k,fitsY*4 +3,fitsX*4+3])/16;
            end;
+
   end;
+
   img:=img_temp2;
   head.width:=w;
   head.height:=h;
@@ -7718,16 +7737,18 @@ begin
 end;
 
 procedure plot_fits(img:timage; center_image,show_header:boolean);
+type
+  PByteArray2 = ^TByteArray2;
+  TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
 var
    i,j,col,col_r,col_g,col_b,linenr,columnr :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
    Bitmap  : TBitmap;{for fast pixel routine}
-   xLine :  PByteArray;{for fast pixel routine}
+   xLine :  PByteArray2;{for fast pixel routine}
    flipv, fliph : boolean;
+   ratio     : double;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-//  if img.visible=false then img.visible:=true;
 
   {create bitmap}
   bitmap := TBitmap.Create;
@@ -7738,13 +7759,12 @@ begin
       height := head.height;
         // Unclear why this must follow width/height to work correctly.
         // If PixelFormat precedes width/height, bitmap will always be black.
-      bitmap.PixelFormat := pf24bit;
+        bitmap.PixelFormat := pf24bit;
     end;
     except;
   end;
 
   sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
-
 
   bck.backgr:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
@@ -7836,6 +7856,16 @@ begin
       {$endif}
     end;{j}
   end; {i}
+
+ //check 2gbyte limit of Timage, about 26500x27000 pixels
+  ratio:=3*(bitmap.height+1)*bitmap.width/$7FFFFFFF; //3 bytes per pixel
+  if ratio>=1 then
+  begin
+    ratio:=sqrt(ratio);//reduce surface by ratio
+    bitmap.height:=trunc(bitmap.height/ratio);//show up to 2 gbytes
+    bitmap.width:=trunc(bitmap.width/ratio);
+    memo2_message('Warning view has reached 2 gbyte limit! View width and height will be cropped at '+floattostrF(100/ratio,FFgeneral,0,0)+'%. This does not effect the image itself.');
+  end;
 
   img.picture.Graphic := Bitmap; {show image}
   Bitmap.Free;
@@ -9163,7 +9193,7 @@ begin
     pixelrow1:=image1.Picture.Bitmap.ScanLine[y];
     pixelrow2:=bmp.ScanLine[y];
       for x := 0 to w-1 do {swap left and right}
-        pixelrow2[x] := pixelrow1[w-1 -x];  {faster solution then using pbytearray as in vertical flip}
+        pixelrow2[x] := pixelrow1[w-1 -x];  {faster solution then using PByteArray as in vertical flip}
   end;
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
@@ -9199,9 +9229,12 @@ end;
 
 
 procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
+type
+  PByteArray2 = ^TByteArray2;
+  TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
 var bmp: TBitmap;
     w, h, y  : integer;
-    pixelrow1,pixelrow2 :  PByteArray;
+    pixelrow1,pixelrow2 :  PByteArray2;
 begin
   w:=image1.Picture.Width;
   h:=image1.Picture.Height;
@@ -9954,7 +9987,7 @@ begin
       end;
 
       filen:=ChangeFileExt(filen,'.fits');
-      result:=save_fits(img_loaded,memox,filen,nrbits,false);
+      result:=save_fits(img_temp,memox,filen,nrbits,false);
     end;
   end;
 end;
@@ -12081,11 +12114,14 @@ end;
 
 
 procedure Tmainwindow.stretch_draw_fits1Click(Sender: TObject);
+type
+  PByteArray2 = ^TByteArray2;
+  TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
 var
   tmpbmp: TBitmap;
   ARect: TRect;
   x, y,x2,y2 : Integer;
-  xLine: PByteArray;
+  xLine: PByteArray2;
   ratio    : double;
   flipH,flipV : boolean;
 begin
@@ -13475,7 +13511,7 @@ begin
         '-s  max_number_of_stars {typical 500}'+#10+
         '-t  tolerance'+#10+
         '-m  minimum_star_size["]'+#10+
-        '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
+        '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. 0 is auto}'+#10+
         #10+
         '-check  {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
         '-d  path {Specify a path to the star database}'+#10+
@@ -13643,7 +13679,7 @@ begin
             if hasoption('sqm') then {sky quality}
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
-              if calculate_sqm(head,false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
+              if calculate_sqm(img_loaded,head,false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
               begin
                 if centalt=''  then //no old altitude
                 begin
@@ -13926,7 +13962,7 @@ begin
               begin
                 //jd_start:=0; { if altitude missing then force an date to jd conversion'}
                 pedestal2:=pedestal; {protect pedestal setting}
-                if calculate_sqm(headx,true {get backgr},true {get histogr},{var}pedestal2) then
+                if calculate_sqm(img_temp,headx,true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
                   update_text(memox,'SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                   update_text(memox,'COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
@@ -16419,20 +16455,23 @@ end;
 
 function save_tiff16(img: image_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 var
-  i, j, k,m,colours5,width5,height5      :integer;
+  i, j, k,m,nrcolours,w,h      :integer;
   image: TFPCustomImage;
   writer: TFPCustomImageWriter;
   thecolor  : Tfpcolor;
   format    : string;
   factor    : single;
 begin
-  colours5:=length(img);{nr colours}
-  width5:=length(img[0,0]);{width}
-  height5:=length(img[0]);{height}
+  nrcolours:=length(img);{nr colours}
+  w:=length(img[0,0]);{width}
+  h:=length(img[0]);{height}
 
-  Image := TFPMemoryImage.Create(width5, height5);
+  if nrcolours>1 then
+     Image := TFPMemoryImage.Create(w, h)//colour buffer, allows ups up to 2gbyte/3
+   else
+     Image := TFPCompactImgGray16Bit.Create(w, h);//allows ups up to 2gbyte
+
   Writer := TFPWriterTIFF.Create;
-
 
   Image.Extra[TiffAlphaBits]:='0';
 
@@ -16452,7 +16491,7 @@ begin
   Image.Extra[TiffBlueBits]:=format;
   Image.Extra[TiffGrayBits]:=format;   {add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081}
 
-  if colours5=1 then {grayscale}
+  if nrcolours=1 then {grayscale}
     Image.Extra[TiffPhotoMetric]:='1' {PhotometricInterpretation = 0 (Min-is-White), 1 (Min-is-Black),  so for 1  black is $0000, White is $FFFF}
   else
     Image.Extra[TiffPhotoMetric]:='2';{RGB colour}
@@ -16464,15 +16503,15 @@ begin
   Image.Extra[TiffCompression]:= '8'; {FPWriteTiff only support only writing Deflate compression. Any other compression setting is silently replaced in FPWriteTiff at line 465 for Deflate. FPReadTiff that can read other compressed files including LZW.}
 
 
-  For i:=0 to height5-1 do
+  For i:=0 to h-1 do
   begin
-    if flip_V=false then k:=height5-1-i else k:=i;{reverse fits down to counting}
-    for j:=0 to width5-1 do
+    if flip_V=false then k:=h-1-i else k:=i;{reverse fits down to counting}
+    for j:=0 to w-1 do
     begin
-      if flip_H=true then m:=width5-1-j else m:=j;
+      if flip_H=true then m:=w-1-j else m:=j;
       thecolor.red:=min(max(0,round(img[0,k,m]*factor)), $FFFF);
-      if colours5>1 then thecolor.green:=min(max(0,round(img[1,k,m]*factor)), $FFFF)  else thecolor.green:=thecolor.red;
-      if colours5>2 then thecolor.blue:=min(max(0,round(img[2,k,m]*factor)), $FFFF)   else thecolor.blue:=thecolor.red;
+      if nrcolours>1 then thecolor.green:=min(max(0,round(img[1,k,m]*factor)), $FFFF)  else thecolor.green:=thecolor.red;
+      if nrcolours>2 then thecolor.blue:=min(max(0,round(img[2,k,m]*factor)), $FFFF)   else thecolor.blue:=thecolor.red;
       thecolor.alpha:=65535;
       image.Colors[j,i]:=thecolor;
     end;

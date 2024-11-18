@@ -395,7 +395,7 @@ begin
   if head.naxis3>1 then {colour image}
   begin
     memo2_message('Converting image to mono');
-    binX1_crop(1, img, img_bk);{crop image, make mono, no binning}
+    bin_mono_and_crop(1 {binning}, 1{cropping}, img, img_bk);// Make mono, bin and crop
     get_hist(0,img_bk);{get histogram of img and his_total. Required to get correct background value}
     restore_his:=true;
   end
@@ -403,7 +403,7 @@ begin
   if (bayerpat<>'') then {raw Bayer image}
   begin
     memo2_message('Binning raw image for streak detection');
-    binX2_crop(1, img {out}, img_bk);{combine values of 4 pixels and crop is required, Result is mono}
+    bin_mono_and_crop(2 {binning}, 1{cropping}, img {out}, img_bk);// Make mono, bin and crop
     get_hist(0,img_bk);{get histogram of img and his_total. Required to get correct background value}
     restore_his:=true;
     binning:=2;

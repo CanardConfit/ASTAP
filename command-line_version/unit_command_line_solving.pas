@@ -126,7 +126,7 @@ procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 
 function solve_image(img :image_array ) : boolean;{find match between image and star database}
-procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height:double) : integer;{select the binning}
 var
   star1   : array[0..2] of array of single;
@@ -148,9 +148,11 @@ begin
   sincos(dec1,sin_dec1,cos_dec1);{use sincos function for speed}
   sincos(dec2,sin_dec2,cos_dec2);
 
-  cos_sep:=min(1,sin_dec1*sin_dec2+ cos_dec1*cos_dec2*cos(ra1-ra2));{min function to prevent run time errors for 1.000000000002}
+  cos_sep:=max(-1.0,min(1.0,sin_dec1*sin_dec2+ cos_dec1*cos_dec2*cos(ra1-ra2)));{min function to prevent run time errors for 1.000000000002.  For correct compiling use 1.0 instead of 1. See https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html}
   sep:=arccos(cos_sep);
 end;
+
+
 
 
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
@@ -1024,168 +1026,133 @@ begin
 end;
 
 
-procedure binX1_crop(crop {0..1}:double; img : image_array; var img2: image_array);{crop image, make mono, no binning}
-  var fitsX,fitsY,k, w,h, shiftX,shiftY, nrcolors,width5,height5: integer;
-      val       : single;
+procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : image_array; out img2: image_array);// Make mono, bin and crop
+var
+  fitsX,fitsY,k, w,h, shiftX,shiftY,nrcolors,width5,height5,i,j,x,y: integer;
+  val       : single;
 begin
   nrcolors:=Length(img);
-  width5:=Length(img[0,0]);  {width}
-  height5:=Length(img[0]);   {height}
+  width5:=Length(img[0,0]);{width}
+  height5:=Length(img[0]); {height}
 
-  w:=trunc(crop*width5);  {cropped}
-  h:=trunc(crop*height5);
+  w:=trunc(crop*width5/binning);  {dimensions after binning and crop}
+  h:=trunc(crop*height5/binning);
 
   setlength(img2,1,h,w); {set length of image array}
 
-  shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
-  shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
+  shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*head.width}
+  shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*head.height}
 
-  for fitsY:=0 to h-1 do
-    for fitsX:=0 to w-1  do
-    begin
-      val:=0;
-      for k:=0 to nrcolors-1 do {all colors and make mono}
-         val:=val + img[k,shiftY+fitsY   ,shiftX+fitsX];
-      img2[0,fitsY,fitsX]:=val/nrcolors;
-    end;
-end;
-
-
-procedure binX2_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 4 pixels and crop is required, Result is mono}
-  var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
-      val       : single;
-begin
-   nrcolors:=Length(img);
-   width5:=Length(img[0,0]);  {width}
-   height5:=Length(img[0]);   {height}
-
-   w:=trunc(crop*width5/2);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
-   h:=trunc(crop*height5/2);
-
-   setlength(img2,1,h,w);{set length of image array}
-
-   shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
-   shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
-
-   for fitsY:=0 to h-1 do
+  if binning=1 then
+  begin
+    for fitsY:=0 to h-1 do
       for fitsX:=0 to w-1  do
-     begin
-       val:=0;
-       for k:=0 to nrcolors-1 do {all colors}
-         val:=val+(img[k,shiftY+fitsY*2   ,shiftX+fitsX*2]+
-                   img[k,shiftY+fitsy*2 +1,shiftX+fitsX*2]+
-                   img[k,shiftY+fitsy*2   ,shiftX+fitsX*2+1]+
-                   img[k,shiftY+fitsy*2 +1,shiftX+fitsX*2+1])/4;
-       img2[0,fitsY,fitsX]:=val/nrcolors;
-     end;
+      begin
+        val:=0;
+        for k:=0 to nrcolors-1 do {all colors and make mono}
+           val:=val + img[k ,shiftY+fitsY,shiftX+fitsx];
+        img2[0,fitsY,fitsX]:=val/nrcolors;
+      end;
+  end
+  else
+  if binning=2 then
+  begin
+    for fitsY:=0 to h-1 do
+       for fitsX:=0 to w-1  do
+      begin
+        val:=0;
+        for k:=0 to nrcolors-1 do {all colors}
+          val:=val+(img[k,shiftY+fitsY*2   ,shiftX+fitsX*2]+
+                    img[k,shiftY+fitsY*2 +1,shiftX+fitsX*2]+
+                    img[k,shiftY+fitsY*2   ,shiftX+fitsX*2+1]+
+                    img[k,shiftY+fitsY*2 +1,shiftX+fitsX*2+1])/4;
+        img2[0,fitsY,fitsX]:=val/nrcolors;
+      end;
+  end
+  else
+  if binning=3 then
+  begin
+    for fitsY:=0 to h-1 do {bin & mono image}
+      for fitsX:=0 to w-1  do
+      begin
+        val:=0;
+        for k:=0 to nrcolors-1 do {all colors}
+          val:=val+(img[k,shiftY+fitsY*3   ,shiftX+fitsX*3  ]+
+                    img[k,shiftY+fitsY*3   ,shiftX+fitsX*3+1]+
+                    img[k,shiftY+fitsY*3   ,shiftX+fitsX*3+2]+
+                    img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3  ]+
+                    img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3+1]+
+                    img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3+2]+
+                    img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3  ]+
+                    img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+1]+
+                    img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+2])/9;
+        img2[0,fitsY,fitsX]:=val/nrcolors;
+      end;
+  end
+  else
+  if binning=4 then
+  begin
+    for fitsY:=0 to h-1 do //bin & mono image
+      for fitsX:=0 to w-1  do
+      begin
+        val:=0;
+        for k:=0 to nrcolors-1 do //all colors to mono. Test shows this loop doesn't introduce much delay for mono images
+          val:=val+(img[k,shiftY+fitsY*4   ,shiftX+fitsX*4  ]+
+                    img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+1]+
+                    img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+2]+
+                    img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+3]+
+                    img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4  ]+
+                    img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+1]+
+                    img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+2]+
+                    img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+3]+
+                    img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4  ]+
+                    img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+1]+
+                    img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+2]+
+                    img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+3]+
+                    img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4  ]+
+                    img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+1]+
+                    img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+2]+
+                    img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+3])/16;
+        img2[0,fitsY,fitsX]:=val/nrcolors; //mono result
+      end;
+
+  end
+  else
+  begin //any bin factor. This routine is at bin 4x4 about twice slower then the above routine
+    for fitsY:=0 to h-1 do
+      for fitsX:=0 to w-1  do
+      begin
+        val:=0;
+        x:=shiftX+fitsX*binning;
+        y:=shiftY+fitsY*binning;
+        for k:=0 to nrcolors-1 do {all colors to mono. Test shows this loop doesn't introduce much delay for mono images}
+        begin
+          for i:=0 to binning-1 do
+          for j:=0 to binning-1 do
+             val:=val + img[k,y+i   ,x+j];
+        end;
+        img2[0,fitsY,fitsX]:=val/(nrcolors*sqr(binning)); //mono result
+      end;
+  end;
 end;
 
-procedure binX3_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 9 pixels and crop is required. Result is mono}
-  var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
-      val       : single;
-begin
-  nrcolors:=Length(img);
-  width5:=Length(img[0,0]);    {width}
-  height5:=Length(img[0]); {height}
 
-  w:=trunc(crop*width5/3);  {1/3 size and cropped}
-  h:=trunc(crop*height5/3);
-
-  setlength(img2,1,h,w); {set length of image array}
-
-  shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
-  shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
-
-  for fitsY:=0 to h-1 do {bin & mono image}
-    for fitsX:=0 to w-1  do
-    begin
-      val:=0;
-      for k:=0 to nrcolors-1 do {all colors}
-                     val:=val+(img[k,shiftY+fitsY*3   ,shiftX+fitsX*3  ]+
-                               img[k,shiftY+fitsY*3   ,shiftX+fitsX*3+1]+
-                               img[k,shiftY+fitsY*3   ,shiftX+fitsX*3+2]+
-                               img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3  ]+
-                               img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3+1]+
-                               img[k,shiftY+fitsY*3 +1,shiftX+fitsX*3+2]+
-                               img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3  ]+
-                               img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+1]+
-                               img[k,shiftY+fitsY*3 +2,shiftX+fitsX*3+2])/9;
-       img2[0,fitsY,fitsX]:=val/nrcolors;
-    end;
-end;
-
-
-procedure binX4_crop(crop {0..1}:double;img : image_array; var img2: image_array);{combine values of 16 pixels and crop is required. Result is mono}
-  var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
-      val       : single;
-begin
-  nrcolors:=Length(img);
-  width5:=Length(img[0,0]);    {width}
-  height5:=Length(img[0]); {height}
-
-  w:=trunc(crop*width5/4);  {1/4 size and cropped}
-  h:=trunc(crop*height5/4);
-
-  setlength(img2,1,h,w); {set length of image array}
-
-  shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*width2}
-  shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*height2}
-
-  for fitsY:=0 to h-1 do {bin & mono image}
-    for fitsX:=0 to w-1  do
-    begin
-      val:=0;
-      for k:=0 to nrcolors-1 do {all colors}
-                     val:=val+(img[k,shiftY+fitsY*4   ,shiftX+fitsX*4  ]+
-                               img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+1]+
-                               img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+2]+
-                               img[k,shiftY+fitsY*4   ,shiftX+fitsX*4+3]+
-                               img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4  ]+
-                               img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+1]+
-                               img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+2]+
-                               img[k,shiftY+fitsY*4 +1,shiftX+fitsX*4+3]+
-                               img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4  ]+
-                               img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+1]+
-                               img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+2]+
-                               img[k,shiftY+fitsY*4 +2,shiftX+fitsX*4+3]+
-                               img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4  ]+
-                               img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+1]+
-                               img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+2]+
-                               img[k,shiftY+fitsY*4 +3,shiftX+fitsX*4+3])/16;
-         img2[0,fitsY,fitsX]:=val/nrcolors;
-    end;
-end;
-
-
-procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 var
   width2,height2,nrstars,i : integer;
   img_binned : image_array;
-
 begin
   short_warning:='';{clear string}
 
   width2:=length(img[0,0]);{width}
   height2:=length(img[0]);{height}
 
-  if ((binning>1) or (cropping<1)) then
+  if ((binfactor>1) or (cropping<1)) then
   begin
-    if binning>1 then memo2_message('Creating grayscale x '+inttostr(binning)+' binning image for solving/star alignment.');
+    if binfactor>1 then memo2_message('Creating grayscale x '+inttostr(binfactor)+' binning image for solving/star alignment.');
     if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
 
-    if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}
-    else
-    if binning=3 then binX3_crop(cropping,img,img_binned) {combine values of 9 pixels}
-    else
-    if binning=4 then binX4_crop(cropping,img,img_binned) {combine values of 16 pixels}
-    else
-    if binning=1 then binX1_crop(cropping,img,img_binned); {crop image, no binning}
-
-    {test routine, to show bin result}
-    //    img_loaded:=img_binned;
-    //    naxis3:=1;
-    //    plot_fits(mainwindow.image1,true);{plot real}
-    //    exit;
+    bin_mono_and_crop(binfactor, cropping,img,img_binned); // Make mono, bin and crop
 
     get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level,star_level2 );{get back ground}
     find_stars(img_binned,hfd_min,starlist3); {find stars of the image and put them in a list}
@@ -1200,13 +1167,13 @@ begin
 
     for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
-      starlist3[0,i]:=(binning-1)*0.5+starlist3[0,i]*binning +(width2*(1-cropping)/2);//correct star positions for binning/ cropping. Position [3.5,3,5] becomes after 2x2 binning [1,1] after x2 [3,3]. So correct for 0.5 pixel
-      starlist3[1,i]:=(binning-1)*0.5+starlist3[1,i]*binning +(height2*(1-cropping)/2);
+      starlist3[0,i]:=(binfactor-1)*0.5+starlist3[0,i]*binfactor +(width2*(1-cropping)/2);//correct star positions for binfactor/ cropping. Position [3.5,3,5] becomes after 2x2 binfactor [1,1] after x2 [3,3]. So correct for 0.5 pixel
+      starlist3[1,i]:=(binfactor-1)*0.5+starlist3[1,i]*binfactor +(height2*(1-cropping)/2);
       // For zero based indexing:
-      // A star of 2x2 pixels at position [2.5,2.5] is after 2x2 binning at position [1,1]. If doubled to [2,2] then the position has 0.5 pixel shifted.
-      // A star of 3x3 pixels at position [4,4] is after 3x3 binning at position [1,1]. If tripled to [3,3] then the position has 1.0 pixel shifted.
-      // A star of 4x4 pixels at position [5.5,5.5] is after 4x4 binning at position [1,1]. If quadruped to [4,4] then the position has 1.5 pixel shifted.
-      // So positions measured in a binned image should be corrected as x:=(binning-1)*0.5+binning*x and y:=(binning-1)*0.5+binning*y
+      // A star of 2x2 pixels at position [2.5,2.5] is after 2x2 binfactor at position [1,1]. If doubled to [2,2] then the position has 0.5 pixel shifted.
+      // A star of 3x3 pixels at position [4,4] is after 3x3 binfactor at position [1,1]. If tripled to [3,3] then the position has 1.0 pixel shifted.
+      // A star of 4x4 pixels at position [5.5,5.5] is after 4x4 binfactor at position [1,1]. If quadruped to [4,4] then the position has 1.5 pixel shifted.
+      // So positions measured in a binned image should be corrected as x:=(binfactor-1)*0.5+binfactor*x and y:=(binfactor-1)*0.5+binfactor*y
     end;
   end
   else
