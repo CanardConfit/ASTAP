@@ -23,6 +23,8 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
 https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
+https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
+
 
 MacOS
 ScrollCode=scEndScroll does not appears at the end of scroll
@@ -56,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.11.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.11.18';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -2801,6 +2803,16 @@ begin
 end;
 
 
+function FileSize1(const Filename: string): int64;
+var F : file of byte;
+begin
+ assign (F, Filename);
+ reset (F);
+ result := System.FileSize(F);
+ close (F);
+end;
+
+
 function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: image_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
@@ -2810,7 +2822,6 @@ var
   tiff, png,jpeg,colour,saved_header  : boolean;
   ext,descrip   : string;
 begin
-  //Note there seems to be a 2/3 gbyte limit for FPimage
   head.naxis:=0; {0 dimensions}
   result:=false; {assume failure}
   tiff:=false;
@@ -2819,7 +2830,11 @@ begin
   saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
   try
-    Image := TFPMemoryImage.Create(10, 10);
+    if filesize1(filen)<300*1024*1024 then //less then 300 mbytes. Should fit TFPMemoryImage for colour and grayscale
+      Image := TFPMemoryImage.Create(10, 10) //for colour and grayscale up to 2gbyte/3
+    else
+      Image := TFPCompactImgGray16Bit.Create(10, 10);//compact up to 2gbyte for grayscale images only   //See https://gitlab.com/freepascal.org/fpc/source/-/issues/41022
+
 
     if ((ext='.TIF') or (ext='.TIFF')) then
     begin
@@ -16440,20 +16455,23 @@ end;
 
 function save_tiff16(img: image_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 var
-  i, j, k,m,colours5,width5,height5      :integer;
+  i, j, k,m,nrcolours,w,h      :integer;
   image: TFPCustomImage;
   writer: TFPCustomImageWriter;
   thecolor  : Tfpcolor;
   format    : string;
   factor    : single;
 begin
-  colours5:=length(img);{nr colours}
-  width5:=length(img[0,0]);{width}
-  height5:=length(img[0]);{height}
+  nrcolours:=length(img);{nr colours}
+  w:=length(img[0,0]);{width}
+  h:=length(img[0]);{height}
 
-  Image := TFPMemoryImage.Create(width5, height5);
+  if nrcolours>1 then
+     Image := TFPMemoryImage.Create(w, h)//colour buffer, allows ups up to 2gbyte/3
+   else
+     Image := TFPCompactImgGray16Bit.Create(w, h);//allows ups up to 2gbyte
+
   Writer := TFPWriterTIFF.Create;
-
 
   Image.Extra[TiffAlphaBits]:='0';
 
@@ -16473,7 +16491,7 @@ begin
   Image.Extra[TiffBlueBits]:=format;
   Image.Extra[TiffGrayBits]:=format;   {add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081}
 
-  if colours5=1 then {grayscale}
+  if nrcolours=1 then {grayscale}
     Image.Extra[TiffPhotoMetric]:='1' {PhotometricInterpretation = 0 (Min-is-White), 1 (Min-is-Black),  so for 1  black is $0000, White is $FFFF}
   else
     Image.Extra[TiffPhotoMetric]:='2';{RGB colour}
@@ -16485,15 +16503,15 @@ begin
   Image.Extra[TiffCompression]:= '8'; {FPWriteTiff only support only writing Deflate compression. Any other compression setting is silently replaced in FPWriteTiff at line 465 for Deflate. FPReadTiff that can read other compressed files including LZW.}
 
 
-  For i:=0 to height5-1 do
+  For i:=0 to h-1 do
   begin
-    if flip_V=false then k:=height5-1-i else k:=i;{reverse fits down to counting}
-    for j:=0 to width5-1 do
+    if flip_V=false then k:=h-1-i else k:=i;{reverse fits down to counting}
+    for j:=0 to w-1 do
     begin
-      if flip_H=true then m:=width5-1-j else m:=j;
+      if flip_H=true then m:=w-1-j else m:=j;
       thecolor.red:=min(max(0,round(img[0,k,m]*factor)), $FFFF);
-      if colours5>1 then thecolor.green:=min(max(0,round(img[1,k,m]*factor)), $FFFF)  else thecolor.green:=thecolor.red;
-      if colours5>2 then thecolor.blue:=min(max(0,round(img[2,k,m]*factor)), $FFFF)   else thecolor.blue:=thecolor.red;
+      if nrcolours>1 then thecolor.green:=min(max(0,round(img[1,k,m]*factor)), $FFFF)  else thecolor.green:=thecolor.red;
+      if nrcolours>2 then thecolor.blue:=min(max(0,round(img[2,k,m]*factor)), $FFFF)   else thecolor.blue:=thecolor.red;
       thecolor.alpha:=65535;
       image.Colors[j,i]:=thecolor;
     end;
