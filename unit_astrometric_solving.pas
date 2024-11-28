@@ -477,7 +477,6 @@ begin
 
     bin_mono_and_crop(binfactor, cropping,img,img_binned); //{Make mono, bin and crop}
 
-
     {test routine, to show bin result}
     //    img_loaded:=img_binned;
     //    head.naxis3:=1;
@@ -497,7 +496,7 @@ begin
     img_binned:=nil;
 
     nrstars:=Length(starlist3[0]);
-    for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
+    for i:=0 to nrstars-1 do {correct star positions for binning and cropping. Simplest method}
     begin
       starlist3[0,i]:=(binfactor-1)*0.5+starlist3[0,i]*binfactor +(width5*(1-cropping)/2);//correct star positions for binfactor/ cropping. Position [3.5,3,5] becomes after 2x2 binfactor [1,1] after x2 [3,3]. So correct for 0.5 pixel
       starlist3[1,i]:=(binfactor-1)*0.5+starlist3[1,i]*binfactor +(height5*(1-cropping)/2);

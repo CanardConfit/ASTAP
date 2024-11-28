@@ -620,8 +620,8 @@ end;
 procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
     fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3                     : integer;
-    background_correction, weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                                   : double;
-    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                                   : boolean;
+    background_correction, weightF,hfd_min,aa,bb,cc,dd,ee,ff,ra_movement,dec_movement,posX,posY                                : double;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,solar_drift_compensation          : boolean;
     tempval                                                                                                                    : single;
     warning             : string;
     starlist1,starlist2 : star_list;
@@ -636,6 +636,7 @@ begin
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
     use_sip:=stackmenu1.add_sip1.checked;
+    solar_drift_compensation:=solar_drift_compensation1.checked;
 
     counter:=0;
     sum_exp:=0;
@@ -797,11 +798,21 @@ begin
             ee:=solution_vectorY[1];
             ff:=solution_vectorY[2];
 
+            if ((solar_drift_compensation) and (use_ephemeris_alignment=false)) then
+            begin
+              ra_movement:=(jd_start-jd_start_first)*strtofloat2(solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
+              ra_movement:=ra_movement/COS_dec_ref;//convert angular distance to ra distance
+              dec_movement:=(jd_start-jd_start_first)*strtofloat2(solar_drift_dec1.text {arcsec/hour})*(pi/180)*24/3600;//dec movement in radians
+              celestial_to_pixel(head,head.ra0 + ra_movement,head.dec0 + dec_movement, posX,posY); //calculate drift of center of image by asteroid
+              cc:=cc+head.crpix1-posX;//correct for asteroid movement
+              ff:=ff+head.crpix2-posY;
+            end;
+
             for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
             for fitsX:=0 to head.width-1  do
             begin
-              x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
-              y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+              x_new:=round(aa*(fitsX)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+              y_new:=round(dd*(fitsX)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
 
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
