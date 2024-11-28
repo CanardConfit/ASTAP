@@ -59,6 +59,11 @@ type
     annotate_mode1: TComboBox;
     Annotations_visible2: TCheckBox;
     annulus_radius1: TComboBox;
+    label_delta_ra1: TLabel;
+    label_delta_dec1: TLabel;
+    solar_drift_ra1: TEdit;
+    solar_drift_compensation1: TCheckBox;
+    copyRowsandColumnsswapped1: TMenuItem;
     ignore_saturation1: TCheckBox;
     Label74: TLabel;
     MenuItem34: TMenuItem;
@@ -137,10 +142,12 @@ type
     smooth_stars1: TComboBox;
     smooth_diameter1: TComboBox;
     lrgb_smooth_stars1: TComboBox;
+    solar_drift_dec1: TEdit;
     SpeedButton2: TSpeedButton;
     SpeedButton3: TSpeedButton;
     undo_button23: TBitBtn;
     font_size_photometry_UpDown1: TUpDown;
+    use_astrometry_alignment2: TRadioButton;
     view_next1: TMenuItem;
     view_previous1: TMenuItem;
     view_next6: TMenuItem;
@@ -739,6 +746,7 @@ type
       ARect: TRect; AState: TOwnerDrawState);
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
+    procedure solar_drift_compensation1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
     procedure unsharp_edit_amount1Change(Sender: TObject);
@@ -7811,9 +7819,9 @@ end;
 
 procedure create_all_star_list; //collect any star in the variable_list
 var
-   i,j, nrstars, formalism:integer;
-   hfd_min,ra2,dec2,sep  : double;
-   starlist         : star_list;
+   i,j, nrstars, formalism   :integer;
+   hfd_min,ra2,dec2,sep      : double;
+   starlist                  : star_list;
    variable_listAAVSO: array of tvariable_list;
    found               : boolean;
 begin
@@ -9737,6 +9745,17 @@ begin
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=2;
 end;
 
+
+procedure Tstackmenu1.solar_drift_compensation1Change(Sender: TObject);
+var
+  show: boolean;
+begin
+  show:=solar_drift_compensation1.checked;
+  solar_drift_ra1.visible:=show;
+  label_delta_ra1.visible:=show;
+  solar_drift_dec1.visible:=show;
+  label_delta_dec1.visible:=show;
+end;
 
 
 procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);

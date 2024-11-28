@@ -2698,7 +2698,6 @@ object stackmenu1: Tstackmenu1
                 Width = 75
                 Caption = 'Save'
                 TabOrder = 7
-                Visible = False
                 OnClick = save_settings_extra_button1Click
               end
               object use_triples1: TCheckBox
@@ -2726,6 +2725,52 @@ object stackmenu1: Tstackmenu1
                 ParentColor = False
                 ParentFont = False
                 TabOrder = 9
+              end
+              object solar_drift_compensation1: TCheckBox
+                Left = 381
+                Height = 19
+                Hint = 'Use this to stack alligned on moving solar objects. Solar movement can be calculated by JPL Horizons with option "Rates; RA & DEC"'
+                Top = 128
+                Width = 148
+                Caption = 'Solar drift compensation'
+                TabOrder = 10
+                OnChange = solar_drift_compensation1Change
+              end
+              object solar_drift_ra1: TEdit
+                Left = 624
+                Height = 23
+                Hint = 'Drift RA*cos(DEC)  in arcsec/hours. Get this from JPL Horizons'
+                Top = 128
+                Width = 80
+                TabOrder = 11
+                Text = '0'
+                Visible = False
+              end
+              object label_delta_ra1: TLabel
+                Left = 576
+                Height = 15
+                Top = 128
+                Width = 42
+                Caption = 'Δα[''/hr]'
+                Visible = False
+              end
+              object solar_drift_dec1: TEdit
+                Left = 784
+                Height = 23
+                Hint = 'Drift DEC in arcsec/hours. Get this from JPL Horizons'
+                Top = 128
+                Width = 80
+                TabOrder = 12
+                Text = '0'
+                Visible = False
+              end
+              object label_delta_dec1: TLabel
+                Left = 736
+                Height = 15
+                Top = 128
+                Width = 42
+                Caption = 'Δδ[''/hr]'
+                Visible = False
               end
             end
           end
