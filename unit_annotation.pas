@@ -1927,7 +1927,7 @@ end;
 procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
-  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio                             : double;
+  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e                             : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
   flip_horizontal, flip_vertical     : boolean;
   flux_ratio_array,hfd_x_sd          : array of double;
@@ -1970,7 +1970,7 @@ var
        //   annulus_radius:=8;
       //    head.mzero_radius:=3.9;
 
-          HFD(img,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,0 {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,adu_e {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img. 30 is found emperical}
           begin
@@ -2057,6 +2057,7 @@ begin
 
       setlength(flux_ratio_array,max_nr_stars);
       if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
+      adu_e := retrieve_ADU_to_e_unbinned(head.egain);
     end;
 
     {sets file290 so do before fov selection}
@@ -2191,11 +2192,11 @@ begin
         head.passband_database:=passband_active; //passband_active is global variable. Now store in the header. head.passband_database can also be retrieved using keyword MZEROPAS
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
-          update_float(memo,'MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux)+MZERO',false,head.mzero)
+          update_float(memo,'MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux_e)+MZERO',false,head.mzero)
         else
           update_text(memo,'MZERO   =','                   0 / Unknown. Set aperture to MAX for ext. objects  ');//use update_text to also clear any old comment
 
-        update_float(memo,'MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
+        update_float(memo,'MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux_e)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
         update_float(memo,'MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
         update_text(memo,'MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used.');
 
