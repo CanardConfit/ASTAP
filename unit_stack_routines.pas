@@ -108,7 +108,6 @@ var
   centerX,centerY,scale_correctionX,scale_correctionY    : double;
 
 begin
-
   a_order:=0; {SIP correction should be zero by definition}
 
   calc_newx_newy(false,head.crpix1, head.crpix2) ;//this will only work well for 1th orde solutions
@@ -125,9 +124,6 @@ begin
   solution_vectorY[0]:=-(x_new_float- centerX);
   solution_vectorY[1]:=+(y_new_float- centerY);
 
-  calc_newx_newy(false,1,1) ;//position 1,1. tested with artifical images
-  solution_vectorX[2]:=x_new_float;
-  solution_vectorY[2]:=y_new_float;
 
   flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   flipped_reference:=head_ref.cd1_1*head_ref.cd2_2 - head_ref.cd1_2*head_ref.cd2_1>0; {flipped reference image}
@@ -137,6 +133,12 @@ begin
     solution_vectorX[1]:=-solution_vectorX[1];
     solution_vectorY[0]:=-solution_vectorY[0];
   end;
+
+  //  centerX:=solution_vectorX[0]*crpix1 + solution_vectorX[1]*crpix2 + solution_vectorX[2] therfore ==>
+  //  solution_vectorX[2]:=centerX - solution_vectorX[0]*crpix1 - solution_vectorX[1]*crpix2
+  solution_vectorX[2]:=centerX - solution_vectorX[0]*head.crpix1 - solution_vectorX[1]*head.crpix2;
+  solution_vectorY[2]:=centerY - solution_vectorY[0]*head.crpix1 - solution_vectorY[1]*head.crpix2;
+
   if stackmenu1.solve_show_log1.checked then memo2_message('Astrometric vector solution '+solution_str)
 end;
 
@@ -776,7 +778,11 @@ begin
             airmass_sum:=airmass_sum+airmass;
 
             if use_astrometry_internal then
+            begin
               astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
+
+              //astrometric_to_vector2(head_ref,head);
+            end;
 
             aa:=solution_vectorX[0]; //move to local variables for some speed improvement
             bb:=solution_vectorX[1];
@@ -790,9 +796,21 @@ begin
               ra_movement:=(jd_mid-jd_mid_reference)*strtofloat2(solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
               ra_movement:=ra_movement/COS_dec_ref;//convert angular distance to ra distance
               dec_movement:=(jd_mid-jd_mid_reference)*strtofloat2(solar_drift_dec1.text {arcsec/hour})*(pi/180)*24/3600;//dec movement in radians
+
+
               celestial_to_pixel(head,head.ra0 + ra_movement,head.dec0 + dec_movement, posX,posY); //calculate drift of center of image by asteroid
-              cc:=cc+head.crpix1-posX;//correct for asteroid movement
-              ff:=ff+head.crpix2-posY;
+              if sign(head_ref.cd1_1)<>sign(head.cd1_1) then
+                 cc:=cc-(head.crpix1-posX)//correct for asteroid movement
+              else
+                 cc:=cc+(head.crpix1-posX);//correct for asteroid movement
+
+              if sign(head_ref.cd2_2)<>sign(head.cd2_2) then
+                ff:=ff-(head.crpix2-posY) //correct for asteroid movement
+              else
+                ff:=ff+(head.crpix2-posY);//correct for asteroid movement
+
+//              cc:=cc+(head.crpix1-posX);//correct for asteroid movement
+//              ff:=ff+)head.crpix2-posY);
             end;
 
             for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
