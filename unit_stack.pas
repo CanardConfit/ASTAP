@@ -7866,12 +7866,12 @@ var
   medianCheck, medianThree, hfd_med, apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt,pix1,pix2 : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, countVar,
-  countCheck, countThree, database_col,j, lvsx,lvsp,formalism,dummy2: integer;
+  countCheck, countThree, database_col,j                          : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined : boolean;
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
-  astr, filename1,totalnrstr,vname,cname,dummy : string;
+  astr, filename1,totalnrstr                   : string;
   bck :tbackground;
   oldra0 : double=0;
   olddec0: double=-pi/2;
@@ -7982,7 +7982,6 @@ begin
   apert := strtofloat2(flux_aperture1.Text);
   aperture_ratio := apert;{remember apert setting}
   annul := strtofloat2(annulus_radius1.Text);
-  formalism:=mainwindow.Polynomial1.itemindex;
 
   esc_pressed := False;
   warned := False;
@@ -11632,7 +11631,7 @@ var
 
 begin
   Result := False;
-  date_to_jd(hd.date_obs,'', hd.exposure {light}); {convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light}
+  date_to_jd(hd.date_obs,hd.date_avg, hd.exposure {light}); // convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light. JD dates are also used later in stacking
 
   if pos('D', hd.calstat) <> 0 then {is the light already calibrated}
     memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
@@ -13070,6 +13069,8 @@ begin
   begin
     memo2_message( 'Method Comet & Stars sharp. Will switch to ephemeris alignment!! Check your comet or asteroid database. See menu CTRL+R');
   end;
+
+  solar_drift_compensation1.enabled:=(method=0); //only in method average.
 
   set_icon_stackbutton;  //update glyph stack button to colour or gray
 end;

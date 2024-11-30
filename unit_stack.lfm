@@ -2729,17 +2729,18 @@ object stackmenu1: Tstackmenu1
               object solar_drift_compensation1: TCheckBox
                 Left = 381
                 Height = 19
-                Hint = 'Use this to stack alligned on moving solar objects. Solar movement can be calculated by JPL Horizons with option "Rates; RA & DEC"'
+                Hint = 'Use this to stack alligned on moving solar objects. Stack method "average" should be selected. Solar movement can be calculated by JPL Horizons with option "Rates; RA & DEC"'
                 Top = 128
                 Width = 148
                 Caption = 'Solar drift compensation'
+                Enabled = False
                 TabOrder = 10
                 OnChange = solar_drift_compensation1Change
               end
               object solar_drift_ra1: TEdit
                 Left = 624
                 Height = 23
-                Hint = 'Drift RA*cos(DEC)  in arcsec/hours. Get this from JPL Horizons'
+                Hint = 'Drift RA*cos(DEC)  in arcsec/hours. Get this "dRA*cosD" value from JPL Horizons'
                 Top = 128
                 Width = 80
                 TabOrder = 11
@@ -2757,7 +2758,7 @@ object stackmenu1: Tstackmenu1
               object solar_drift_dec1: TEdit
                 Left = 784
                 Height = 23
-                Hint = 'Drift DEC in arcsec/hours. Get this from JPL Horizons'
+                Hint = 'Drift DEC in arcsec/hours. Get this "d(DEC)/dt" value from JPL Horizons'
                 Top = 128
                 Width = 80
                 TabOrder = 12

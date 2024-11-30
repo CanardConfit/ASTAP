@@ -125,25 +125,9 @@ begin
   solution_vectorY[0]:=-(x_new_float- centerX);
   solution_vectorY[1]:=+(y_new_float- centerY);
 
- //Correction for image distortion. The solution was extracted by comparison the distorted image with a linear star database. The solution factors are then typical a tiny amount smaller then "one"
-{  scale_correctionX:=sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]));//for scale to "one"
-  scale_correctionX:=scale_correctionX*head_ref.cdelt1/head.cdelt1;//relative scale to reference image. Note a temperature change is followed by a focus correction and therefore a change in image scale.
-  solution_vectorX[0]:=solution_vectorX[0]/scale_correctionX;//apply correction
-  solution_vectorX[1]:=solution_vectorX[1]/scale_correctionX;
-
-  scale_correctionY:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]));//for scale to "one"
-  scale_correctionY:=scale_correctionY*head_ref.cdelt2/head.cdelt2;//relative scale to reference image. Note a temperature change is followed by a focus correction and therefore a change in image scale.
-  solution_vectorY[0]:=solution_vectorY[0]/scale_correctionY;//apply correction
-  solution_vectorY[1]:=solution_vectorY[1]/scale_correctionY;
-}
-  solution_vectorX[2]:=  centerX-(head.crpix1-1);//range 0..width-1
-  solution_vectorY[2]:=  centerY-(head.crpix2-1);
-
-//  calc_newx_newy(false,(head.crpix1)*(1-scale_correctionX)+1, (head.crpix2)*(1-scale_correctionY)+1);
-//  solution_vectorX[2]:=  x_new_float;//range 0..width-1
-//  solution_vectorY[2]:=  Y_new_float;
-
-
+  calc_newx_newy(false,1,1) ;//position 1,1. tested with artifical images
+  solution_vectorX[2]:=x_new_float;
+  solution_vectorY[2]:=y_new_float;
 
   flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   flipped_reference:=head_ref.cd1_1*head_ref.cd2_2 - head_ref.cd1_2*head_ref.cd2_1>0; {flipped reference image}
@@ -427,6 +411,7 @@ begin
             if ((c<>0) and (solution)) then  {do not add reference channel c=0, in most case luminance file.}
             begin
               inc(counter);{count number of colour files involved}
+              //Julian days are  -- NOT ---  calculated in apply_dark_and_flat as in the other routines
               date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
               jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
               jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
@@ -528,6 +513,7 @@ begin
                 end;
               end;
             end;
+
             progress_indicator(94+c,' LRGB');{show progress, 95..99}
             except
               beep;
@@ -702,7 +688,8 @@ begin
 
           if init=false then {init}
           begin
-            jd_mid_reference:=jd_mid; //for ephemeris stacking
+            //Julian days are already calculated in apply_dark_and_flat
+            jd_mid_reference:=jd_mid; //for ephemeris stacking and astrometric option "compensate solar movement". Julian dates are calculated in apply_dark_and_flat
             height_max:=head.height;
             width_max:=head.width;
             binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
@@ -782,7 +769,7 @@ begin
 
             weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 
-            date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+            //Julian days are already calculated in apply_dark_and_flat
             jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
             jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
             jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
@@ -800,9 +787,9 @@ begin
 
             if ((solar_drift_compensation) and (use_ephemeris_alignment=false)) then
             begin
-              ra_movement:=(jd_start-jd_start_first)*strtofloat2(solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
+              ra_movement:=(jd_mid-jd_mid_reference)*strtofloat2(solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
               ra_movement:=ra_movement/COS_dec_ref;//convert angular distance to ra distance
-              dec_movement:=(jd_start-jd_start_first)*strtofloat2(solar_drift_dec1.text {arcsec/hour})*(pi/180)*24/3600;//dec movement in radians
+              dec_movement:=(jd_mid-jd_mid_reference)*strtofloat2(solar_drift_dec1.text {arcsec/hour})*(pi/180)*24/3600;//dec movement in radians
               celestial_to_pixel(head,head.ra0 + ra_movement,head.dec0 + dec_movement, posX,posY); //calculate drift of center of image by asteroid
               cc:=cc+head.crpix1-posX;//correct for asteroid movement
               ff:=ff+head.crpix2-posY;
@@ -1074,7 +1061,7 @@ begin
             sum_exp:=sum_exp+head.exposure;
             sum_temp:=sum_temp+head.set_temperature;
 
-            date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+            //Julian days are already calculated in apply_dark_and_flat
             jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
             jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
             jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
@@ -1235,10 +1222,10 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars,old_naxis3      : integer;
-    variance_factor, value,weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                      : double;
-    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                      : boolean;
-    tempval, sumpix, newpix,target_background,background_correction                                               : single;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars,old_naxis3           : integer;
+    variance_factor, value,weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                           : double;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                           : boolean;
+    tempval, sumpix, newpix,target_background,background_correction                                                    : single;
     warning     : string;
     starlist1,starlist2 : star_list;
     img_temp,img_average,img_final,img_variance : image_array;
@@ -1251,6 +1238,7 @@ begin
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
     use_sip:=stackmenu1.add_sip1.checked;
+
 
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
@@ -1328,7 +1316,6 @@ begin
         if init=false then
         begin
           binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
-
           if  use_astrometry_internal=false then {first image and not astrometry_internal}
           begin
             if ((use_manual_align) or (use_ephemeris_alignment)) then
@@ -1412,7 +1399,7 @@ begin
           head.datamax_org:=min($FFFF,head.datamax_org-background_correction);{note head.datamax_org is already corrected in apply dark}
           {1}
 
-          date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+          //Julian days are already calculated in apply_dark_and_flat
           jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
           jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
           jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
@@ -1873,7 +1860,7 @@ begin
           head.datamax_org:=min($FFFF,head.datamax_org-background_correction[0]);{note head.datamax_org is already corrected in apply dark}
           {1}
 
-          date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+          //Julian days are already calculated in apply_dark_and_flat
           jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
           jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
           jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
