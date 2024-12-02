@@ -76,22 +76,22 @@ begin
     '-f  filename  {fits, tiff, png, jpg files}'+#10+
     '-r  radius_area_to_search[degrees]'+#10+      {changed}
     '-fov diameter_field[degrees] {enter zero for auto}'+#10+   {changed}
-    '-ra  center_right_ascension[hours]'+#10+
-    '-spd center_south_pole_distance[degrees]'+#10+
+    '-ra  right_ascension[hours]'+#10+
+    '-spd south_pole_distance[degrees]'+#10+
     '-s  max_number_of_stars  {default 500}'+#10+
     '-t  tolerance  {default 0.007}'+#10+
     '-m  minimum_star_size["]  {default 1.5}'+#10+
-    '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. 0 is auto.}'+#10+
+    '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. Specify 0 for auto selection}'+#10+
 
     '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
     '-d  path {specify a path to the star database}'+#10+
     '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
     '-o  file {Name the output files with this base path & file name.}'+#10+
     '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
-    '-speed mode[auto/slow] {Slow is forcing reading a larger database area for more overlap to improve initial detection}'+#10+
+    '-speed mode[auto/slow] {Slow is forcing more area overlap while searching to improve detection}'+#10+
     '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style}' +#10+
-    '-log  {Write the solver log to file}'+#10+
-    '-update  {update the FITS header with the found solution. Jpeg, png, tiff will be written as fits}' +#10+
+    '-log  {Write the solver log to a .log text file.}'+#10+
+    '-update  {Add the solution to the input fits/tiff file header. Jpeg, png, tiff will be written as fits}' +#10+
     '-progress   {Log all progress steps and messages}'+#10+
     #10+
     'Analyse options:' +#10+
