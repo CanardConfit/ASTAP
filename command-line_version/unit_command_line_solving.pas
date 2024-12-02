@@ -1165,7 +1165,7 @@ begin
       memo2_message('Warning, remaining image dimensions too low! Try to REDUCE OR REMOVE DOWNSAMPLING.');
     end;
 
-    for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
+    for i:=0 to nrstars-1 do {correct star positions for binning and cropping. Simplest method}
     begin
       starlist3[0,i]:=(binfactor-1)*0.5+starlist3[0,i]*binfactor +(width2*(1-cropping)/2);//correct star positions for binfactor/ cropping. Position [3.5,3,5] becomes after 2x2 binfactor [1,1] after x2 [3,3]. So correct for 0.5 pixel
       starlist3[1,i]:=(binfactor-1)*0.5+starlist3[1,i]*binfactor +(height2*(1-cropping)/2);

@@ -11434,8 +11434,7 @@ end;
 procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader; update: boolean);
 var
   apert,annul,hfd_med : double;
-  hfd_counter                : integer;
-  selected_passband          : string;
+  hfd_counter         : integer;
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
@@ -13506,22 +13505,22 @@ begin
         '-f  filename'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
         '-fov height_field[degrees]'+#10+
-        '-ra  center_right_ascension[hours]'+#10+
-        '-spd center_south_pole_distance[degrees]'+#10+
+        '-ra  right_ascension[hours]'+#10+
+        '-spd south_pole_distance[degrees]'+#10+
         '-s  max_number_of_stars {typical 500}'+#10+
         '-t  tolerance'+#10+
         '-m  minimum_star_size["]'+#10+
-        '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. 0 is auto}'+#10+
+        '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. Specify 0 for auto selection}'+#10+
         #10+
         '-check  {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
         '-d  path {Specify a path to the star database}'+#10+
         '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
-        '-speed mode[auto/slow] {Slow is forcing reading a larger database area for more overlap to improve initial detection}'+#10+
+        '-speed mode[auto/slow] {Slow is forcing more area overlap while searching to improve detection}'+#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
-        '-log   {Write the solver log to file}'+#10+
-        '-update  {update the FITS/TIFF header with the found solution.  Jpeg, png will be written as fits}' +#10+
+        '-log   {Write the solver log to a .log text file.}'+#10+
+        '-update  {Add the solution to the input fits/tiff file header. Jpeg, png will be written as fits}' +#10+
         #10+
         'Analyse options:' +#10+
         '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+

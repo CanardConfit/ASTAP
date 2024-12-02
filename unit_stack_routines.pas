@@ -778,11 +778,7 @@ begin
             airmass_sum:=airmass_sum+airmass;
 
             if use_astrometry_internal then
-            begin
               astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
-
-              //astrometric_to_vector2(head_ref,head);
-            end;
 
             aa:=solution_vectorX[0]; //move to local variables for some speed improvement
             bb:=solution_vectorX[1];
