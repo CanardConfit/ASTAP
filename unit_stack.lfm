@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = alignment1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 6
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2282,7 +2282,7 @@ object stackmenu1: Tstackmenu1
             ShowHint = True
             OnClick = help_astrometric_solving1Click
           end
-          object use_astrometry_alignment1: TRadioButton
+          object use_astrometric_alignment1: TRadioButton
             Left = 8
             Height = 19
             Hint = 'Use this for mosaic building.'
@@ -2291,7 +2291,7 @@ object stackmenu1: Tstackmenu1
             Caption = 'Astrometric alignment'
             ParentFont = False
             TabOrder = 3
-            OnChange = use_astrometry_alignment1Change
+            OnChange = use_astrometric_alignment1Change
           end
           object GroupBox_astrometric_solver_settings1: TGroupBox
             Left = 208
@@ -2751,8 +2751,8 @@ object stackmenu1: Tstackmenu1
                 Left = 576
                 Height = 15
                 Top = 128
-                Width = 42
-                Caption = 'Δα[''/hr]'
+                Width = 44
+                Caption = 'Δα["/hr]'
                 Visible = False
               end
               object solar_drift_dec1: TEdit
@@ -2769,8 +2769,8 @@ object stackmenu1: Tstackmenu1
                 Left = 736
                 Height = 15
                 Top = 128
-                Width = 42
-                Caption = 'Δδ[''/hr]'
+                Width = 44
+                Caption = 'Δδ["/hr]'
                 Visible = False
               end
             end

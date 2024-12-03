@@ -218,7 +218,7 @@ begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_alignment1.checked;
+    use_astrometry_internal:=use_astrometric_alignment1.checked;
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
     use_sip:=stackmenu1.add_sip1.checked;
@@ -619,7 +619,7 @@ begin
   begin
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_alignment1.checked;
+    use_astrometry_internal:=use_astrometric_alignment1.checked;
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
@@ -787,7 +787,7 @@ begin
             ee:=solution_vectorY[1];
             ff:=solution_vectorY[2];
 
-            if ((solar_drift_compensation) and (use_ephemeris_alignment=false)) then
+            if ((solar_drift_compensation) and (use_astrometry_internal)) then
             begin
               ra_movement:=(jd_mid-jd_mid_reference)*strtofloat2(solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
               ra_movement:=ra_movement/COS_dec_ref;//convert angular distance to ra distance
@@ -804,9 +804,6 @@ begin
                 ff:=ff-(head.crpix2-posY) //correct for asteroid movement
               else
                 ff:=ff+(head.crpix2-posY);//correct for asteroid movement
-
-//              cc:=cc+(head.crpix1-posX);//correct for asteroid movement
-//              ff:=ff+)head.crpix2-posY);
             end;
 
             for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
@@ -1256,7 +1253,7 @@ begin
 
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_alignment1.checked;
+    use_astrometry_internal:=use_astrometric_alignment1.checked;
 
     counter:=0;
     sum_exp:=0;
@@ -1753,7 +1750,7 @@ begin
 
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_alignment1.checked;
+    use_astrometry_internal:=use_astrometric_alignment1.checked;
 
     counter:=0;
     sum_exp:=0;
@@ -2101,7 +2098,7 @@ begin
 
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_alignment1.checked;
+    use_astrometry_internal:=use_astrometric_alignment1.checked;
 
     init:=false;
     background_correction:=0;{required for astrometric alignment}
