@@ -12,7 +12,7 @@ object form_inspection1: Tform_inspection1
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   Position = poDesktopCenter
-  LCLVersion = '3.4.0.0'
+  LCLVersion = '3.6.0.0'
   object undo_button1: TBitBtn
     Left = 712
     Height = 30

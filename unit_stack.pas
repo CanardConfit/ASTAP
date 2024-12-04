@@ -611,7 +611,7 @@ type
     update_solution1: TCheckBox;
     UpDown1: TUpDown;
     UpDown_nebulosity1: TUpDown;
-    use_astrometry_alignment1: TRadioButton;
+    use_astrometric_alignment1: TRadioButton;
     use_ephemeris_alignment1: TRadioButton;
     use_manual_alignment1: TRadioButton;
     use_star_alignment1: TRadioButton;
@@ -959,7 +959,7 @@ type
       Data: integer; var Compare: integer);
     procedure apply_artificial_flat_correction1Click(Sender: TObject);
     procedure stack_method1Change(Sender: TObject);
-    procedure use_astrometry_alignment1Change(Sender: TObject);
+    procedure use_astrometric_alignment1Change(Sender: TObject);
     procedure use_ephemeris_alignment1Change(Sender: TObject);
     procedure use_manual_alignment1Change(Sender: TObject);
     procedure use_star_alignment1Change(Sender: TObject);
@@ -1315,6 +1315,7 @@ begin
     panel_ephemeris1.color := clForm;
 
     min_star_size_stacking1.Enabled := False;
+    solar_drift_compensation1.enabled:=false;
 
     if use_star_alignment1.Checked then
     begin
@@ -1323,11 +1324,13 @@ begin
       min_star_size_stacking1.Enabled := True;
     end
     else
-    if use_astrometry_alignment1.Checked then
+    if use_astrometric_alignment1.Checked then
     begin
       Panel_solver1.bevelouter := bvSpace;
       Panel_solver1.color := CLWindow;
       Panel_star_detection1.color := CLWindow;
+
+      solar_drift_compensation1.enabled:=stack_method1.ItemIndex=0; // method average. See also Tstackmenu1.stack_method1Change()
     end
     else
     if use_manual_alignment1.Checked then
@@ -2678,7 +2681,7 @@ begin
 
     binning := report_binning(head.Height{*cropping});
     {select binning on dimensions of cropped image}
-    if use_astrometry_alignment1.Checked then
+    if use_astrometric_alignment1.Checked then
     begin
       if head.cdelt2 = 0 {jpeg} then
         head.cdelt2 := binning * strtofloat2(search_fov1.Text) / head.Height;
@@ -12150,7 +12153,7 @@ begin
   stackmenu1.memo2.SelStart := Length(stackmenu1.memo2.Lines.Text);
   stackmenu1.memo2.SelLength := 0;
 
-  if ((use_astrometry_alignment1.Checked) or (use_ephemeris_alignment1.Checked) or (stitching_mode)) then  {astrometric alignment}
+  if ((use_astrometric_alignment1.Checked) or (use_ephemeris_alignment1.Checked) or (stitching_mode)) then  {astrometric alignment}
   begin
     memo2_message('Checking astrometric solutions');
     if use_ephemeris_alignment1.Checked then
@@ -12959,7 +12962,7 @@ begin
     memo2.Lines.add('No images in tab lights to stack.');
     if classify_filter then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
     if classify_object then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
-    if use_astrometry_alignment1.Checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
+    if use_astrometric_alignment1.Checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
   end
   else
     memo2.Lines.add('Finished in ' + IntToStr(round((gettickcount64 - startTick) / 1000)) +' sec. The FITS header contains a detailed history.');
@@ -13046,9 +13049,9 @@ begin
 
   sd_factor1.Enabled := sigm;
 
-  if ((use_astrometry_alignment1.Checked = False) and (mosa)) then
+  if ((use_astrometric_alignment1.Checked = False) and (mosa)) then
   begin
-    use_astrometry_alignment1.Checked := True;
+    use_astrometric_alignment1.Checked := True;
     memo2_message('Switched to ASTROMETRIC alignment.');
   end;
   if mosa then memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
@@ -13070,13 +13073,13 @@ begin
     memo2_message( 'Method Comet & Stars sharp. Will switch to ephemeris alignment!! Check your comet or asteroid database. See menu CTRL+R');
   end;
 
-  solar_drift_compensation1.enabled:=(method=0); //only in method average.
+  solar_drift_compensation1.enabled:=((method=0) and (use_astrometric_alignment1.Checked)); //only in method average.
 
   set_icon_stackbutton;  //update glyph stack button to colour or gray
 end;
 
 
-procedure Tstackmenu1.use_astrometry_alignment1Change(Sender: TObject);
+procedure Tstackmenu1.use_astrometric_alignment1Change(Sender: TObject);
 begin
   update_tab_alignment;
 end;

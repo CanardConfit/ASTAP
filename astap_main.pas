@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.11.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.12.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -8560,7 +8560,7 @@ begin
       stackmenu1.blur_factor1.text:= Sett.ReadString('stack','blur_factor','');
 
       stackmenu1.use_manual_alignment1.checked:=Sett.ReadString('stack','align_method','')='4';
-      stackmenu1.use_astrometry_alignment1.checked:=Sett.ReadString('stack','align_method','')='3';
+      stackmenu1.use_astrometric_alignment1.checked:=Sett.ReadString('stack','align_method','')='3';
       stackmenu1.use_star_alignment1.checked:=Sett.ReadString('stack','align_method','')='2';
       stackmenu1.use_ephemeris_alignment1.checked:=Sett.ReadString('stack','align_method','')='1';
 
@@ -8966,7 +8966,7 @@ begin
 
       if  stackmenu1.use_manual_alignment1.checked then sett.writestring('stack','align_method','4')
       else
-      if  stackmenu1.use_astrometry_alignment1.checked then sett.writestring('stack','align_method','3')
+      if  stackmenu1.use_astrometric_alignment1.checked then sett.writestring('stack','align_method','3')
       else
       if  stackmenu1.use_star_alignment1.checked then sett.writestring('stack','align_method','2')
       else
@@ -9368,12 +9368,15 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+
 procedure Tmainwindow.batch_add_tilt1Click(Sender: TObject);
 var
   I: integer;
   err,success   : boolean;
   dobackup : boolean;
   tilt     : double;
+  headx : theader;
+  img_temp: image_array;
 begin
   OpenDialog1.Title:='Select multiple  files to measure and store tilt in header using keyword TILT';
   OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -9385,8 +9388,6 @@ begin
   if OpenDialog1.Execute then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-    dobackup:=img_loaded<>nil;
-    if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
     try { Do some lengthy operation }
       with OpenDialog1.Files do
@@ -9396,20 +9397,19 @@ begin
         if esc_pressed then begin err:=true;break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-        if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false {recenter},false {plot}) then
+        if load_fits(filename2,true {light},true,true {update memo},0,memox,headx,img_temp) then {load image success}
         begin
           if extra_stars=false then
-            tilt:=CCDinspector(30,false {screenplot},false{three_corners},strtofloat(measuring_angle))
+            tilt:=CCDinspector(img_temp,headx,memox,30,false {screenplot},false{three_corners},strtofloat(measuring_angle))
           else
-            tilt:=CCDinspector(10,false {screenplot},false{three_corners},strtofloat(measuring_angle));
+            tilt:=CCDinspector(img_temp,headx,memox,10,false {screenplot},false{three_corners},strtofloat(measuring_angle));
 
-          if tilt<100 then
+          if tilt<100 then //success. Tilt= is added to memox in function CCDinspector
           begin
-            update_text(mainwindow.memo1.lines,'TILT    = ',floattostr2(tilt)+'                / Delta HFD between worst and best corner');;//two decimals only for nice reporting
             if fits_file_name(filename2) then
-              success:=savefits_update_header(mainwindow.memo1.lines,filename2)
+              success:=savefits_update_header(memox,filename2)
             else
-              success:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2);{guarantee no file is lost}
+              success:=save_tiff16_secure(img_temp,memox,filename2);{guarantee no file is lost}
             if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
           end
           else
@@ -9428,7 +9428,6 @@ begin
         ShowMessage('Errors!! Files modified but with errors or stopped!!');
       end;
       finally
-      if dobackup then restore_img;{for the viewer}
       Screen.Cursor:=crDefault;  { Always restore to normal }
     end;
   end;
@@ -10685,9 +10684,9 @@ end;
 procedure Tmainwindow.inspection1click(Sender: TObject);
 begin
   if extra_stars=false then
-    CCDinspector(30,true {screenplot},three_corners,strtofloat(measuring_angle))
+    CCDinspector(img_loaded,head,mainwindow.memo1.lines,30,true {screenplot},three_corners,strtofloat(measuring_angle))
   else
-    CCDinspector(10,true {screenplot},three_corners,strtofloat(measuring_angle));
+    CCDinspector(img_loaded,head,mainwindow.memo1.lines,10,true {screenplot},three_corners,strtofloat(measuring_angle));
 end;
 
 
