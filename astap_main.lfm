@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 247
+  Left = 588
   Height = 634
   Hint = ' '
-  Top = 216
+  Top = 439
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'

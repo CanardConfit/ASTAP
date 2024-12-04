@@ -604,11 +604,31 @@ begin
   end;
 end;
 
+procedure compensate_solar_drift(head : theader; var cc, ff : double);//compendate movement solar objects
+var
+  ra_movement,dec_movement,posX,posY : double;
+begin
+  ra_movement:=(jd_mid-jd_mid_reference)*strtofloat2(stackmenu1.solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
+  ra_movement:=ra_movement/COS_dec_ref;//convert angular distance to ra distance
+  dec_movement:=(jd_mid-jd_mid_reference)*strtofloat2(stackmenu1.solar_drift_dec1.text {arcsec/hour})*(pi/180)*24/3600;//dec movement in radians
+
+  celestial_to_pixel(head,head.ra0 + ra_movement,head.dec0 + dec_movement, posX,posY); //calculate drift of center of image by asteroid
+  if sign(head_ref.cd1_1)<>sign(head.cd1_1) then
+     cc:=cc-(head.crpix1-posX)//correct for asteroid movement
+  else
+     cc:=cc+(head.crpix1-posX);//correct for asteroid movement
+
+  if sign(head_ref.cd2_2)<>sign(head.cd2_2) then
+    ff:=ff-(head.crpix2-posY) //correct for asteroid movement
+  else
+    ff:=ff+(head.crpix2-posY);//correct for asteroid movement
+end;
+
 
 procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
     fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3                     : integer;
-    background_correction, weightF,hfd_min,aa,bb,cc,dd,ee,ff,ra_movement,dec_movement,posX,posY                                : double;
+    background_correction, weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                                   : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,solar_drift_compensation          : boolean;
     tempval                                                                                                                    : single;
     warning             : string;
@@ -624,7 +644,7 @@ begin
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
     use_sip:=stackmenu1.add_sip1.checked;
-    solar_drift_compensation:=solar_drift_compensation1.checked;
+    solar_drift_compensation:=((solar_drift_compensation1.checked) and (use_astrometry_internal));
 
     counter:=0;
     sum_exp:=0;
@@ -787,24 +807,8 @@ begin
             ee:=solution_vectorY[1];
             ff:=solution_vectorY[2];
 
-            if ((solar_drift_compensation) and (use_astrometry_internal)) then
-            begin
-              ra_movement:=(jd_mid-jd_mid_reference)*strtofloat2(solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
-              ra_movement:=ra_movement/COS_dec_ref;//convert angular distance to ra distance
-              dec_movement:=(jd_mid-jd_mid_reference)*strtofloat2(solar_drift_dec1.text {arcsec/hour})*(pi/180)*24/3600;//dec movement in radians
-
-
-              celestial_to_pixel(head,head.ra0 + ra_movement,head.dec0 + dec_movement, posX,posY); //calculate drift of center of image by asteroid
-              if sign(head_ref.cd1_1)<>sign(head.cd1_1) then
-                 cc:=cc-(head.crpix1-posX)//correct for asteroid movement
-              else
-                 cc:=cc+(head.crpix1-posX);//correct for asteroid movement
-
-              if sign(head_ref.cd2_2)<>sign(head.cd2_2) then
-                ff:=ff-(head.crpix2-posY) //correct for asteroid movement
-              else
-                ff:=ff+(head.crpix2-posY);//correct for asteroid movement
-            end;
+            if solar_drift_compensation then
+              compensate_solar_drift(head, {var} cc, ff);//compendate movement solar objects
 
             for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
             for fitsX:=0 to head.width-1  do
@@ -1235,7 +1239,7 @@ var
     solutions      : array of tsolution;
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars,old_naxis3           : integer;
     variance_factor, value,weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                           : double;
-    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                           : boolean;
+    init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip, solar_drift_compensation : boolean;
     tempval, sumpix, newpix,target_background,background_correction                                                    : single;
     warning     : string;
     starlist1,starlist2 : star_list;
@@ -1254,6 +1258,8 @@ begin
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometric_alignment1.checked;
+
+    solar_drift_compensation:=((solar_drift_compensation1.checked) and (use_astrometry_internal));
 
     counter:=0;
     sum_exp:=0;
@@ -1285,6 +1291,7 @@ begin
         if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
         if init=false then {first image}
         begin
+          jd_mid_reference:=jd_mid; //for  "compensate solar movement". Julian dates are calculated in apply_dark_and_flat
           old_width:=head.width;
           old_height:=head.height;
           old_naxis3:=head.naxis3;
@@ -1427,6 +1434,9 @@ begin
           ee:=solution_vectorY[1];
           ff:=solution_vectorY[2];
 
+          if solar_drift_compensation then
+            compensate_solar_drift(head, {var} cc, ff);//compendate movement solar objects
+
           for fitsY:=0 to head.height-1 do {average}
           for fitsX:=0 to head.width-1  do
           begin
@@ -1495,6 +1505,7 @@ begin
           end;
           if init=false then {init (2) for standard deviation step}
           begin
+            jd_mid_reference:=jd_mid; //for  "compensate solar movement". Julian dates are calculated in apply_dark_and_flat
             setlength(img_variance,head.naxis3,height_max,width_max);{mono}
             for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
@@ -1542,6 +1553,9 @@ begin
           dd:=solution_vectorY[0];
           ee:=solution_vectorY[1];
           ff:=solution_vectorY[2];
+
+          if solar_drift_compensation then
+            compensate_solar_drift(head, {var} cc, ff);//compendate movement solar objects
 
 
           for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
@@ -1603,6 +1617,7 @@ begin
 
           if init=false then {init, (3) step throw outliers out}
           begin
+            jd_mid_reference:=jd_mid; //for  "compensate solar movement". Julian dates are calculated in apply_dark_and_flat
             setlength(img_temp,head.naxis3,height_max,width_max);
             setlength(img_final,head.naxis3,height_max,width_max);
             for fitsY:=0 to height_max-1 do
@@ -1655,6 +1670,9 @@ begin
           dd:=solution_vectorY[0];
           ee:=solution_vectorY[1];
           ff:=solution_vectorY[2];
+
+          if solar_drift_compensation then
+            compensate_solar_drift(head, {var} cc, ff);//compendate movement solar objects
 
            //phase 3
           for fitsY:=0 to head.height-1 do
