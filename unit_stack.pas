@@ -8540,7 +8540,7 @@ begin
 end;
 
 
-procedure star_smooth_not_used(img: image_array; x1, y1: integer);
+procedure star_smooth_not_usedzzzzzzzzzzzzzzz(img: image_array; x1, y1: integer);
 const
   max_ri = 50; //sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
@@ -8548,7 +8548,6 @@ var
   val, bg_average, rgb, luminance: double;
   color, bg, bg_standard_deviation: array[0..2] of double;
   value_histogram: array [0..max_ri] of double;
-  img_temp : image_array;
 
 begin
   rs := 14;{14 is test box of 28, HFD maximum is about 28}

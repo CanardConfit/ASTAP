@@ -570,7 +570,7 @@ begin
 
 
         result:=median_worst-median_best; //for export
-        update_text(memo,'TILT    = ',floattostr2(result)+'                / Delta HFD between worst and best corner');;//two decimals only for nice reporting
+        update_text(memo,'TILT    = ',floattostr2(result)+'                / Delta HFD between worst and best corner. SNR>'+floattostrF(snr_min,FFgeneral,0,0));;//two decimals only for nice reporting
 
 
         tilt_value:=100*(median_worst-median_best)/hfd_median;
