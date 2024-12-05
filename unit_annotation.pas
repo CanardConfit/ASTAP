@@ -1927,10 +1927,10 @@ end;
 procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
-  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e                             : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                                : integer;
+  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e,mag_saturation,correction  : double;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                               : integer;
   flip_horizontal, flip_vertical     : boolean;
-  flux_ratio_array,hfd_x_sd          : array of double;
+  flux_ratio_array,hfd_x_sd, flux_peak_ratio          : array of double;
   selected_passband : string;
   data_max          : single;
   starlist1         : star_list;
@@ -1988,7 +1988,11 @@ var
               if counter_flux_measured>=length(flux_ratio_array) then
               begin
                SetLength(flux_ratio_array,counter_flux_measured+500);{increase length array}
-               if report_lim_magn then  SetLength(hfd_x_sd,counter_flux_measured+500);{increase length array}
+               if report_lim_magn then
+               begin
+                 SetLength(hfd_x_sd,counter_flux_measured+500);{increase length array}
+                 SetLength(flux_peak_ratio,counter_flux_measured+500);{increase length array}
+               end;
               end;
               flux_ratio_array[counter_flux_measured]:=flux/(power(10,(21 {bias}-magn/10)/2.5)); //Linear flux ratio,  should be constant for all stars.
 
@@ -1996,6 +2000,7 @@ var
               if report_lim_magn then
               begin
                 hfd_x_sd[counter_flux_measured]:=hfd1*sd_bg;{calculate hfd*SD. sd_bg  is a global variable from procedure hfd. The minimum diameter for star detection is 4}
+                flux_peak_ratio[counter_flux_measured]:=flux/img[0,round(yc),round(xc)];
               end;
 
               //  memo2_message(#9+floattostr4(snr)+#9+floattostr4(hfd1)+#9+floattostr4(R_aperture)+#9+floattostr4(sd_bg) );
@@ -2042,6 +2047,7 @@ begin
     mainwindow.image1.Canvas.font.color:=$00B0FF ;{orange}
 
 
+//    flux_peak_ratio:=0;
     star_total_counter:=0;{total counter}
     counter_flux_measured:=0;
     data_max:=head.datamax_org-1;
@@ -2056,7 +2062,11 @@ begin
       //max_nr_stars:=10;
 
       setlength(flux_ratio_array,max_nr_stars);
-      if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
+      if report_lim_magn then
+      begin
+        setlength(hfd_x_sd,max_nr_stars);
+        setlength(flux_peak_ratio,max_nr_stars);
+      end;
       adu_e := retrieve_ADU_to_e_unbinned(head.egain);
     end;
 
@@ -2253,10 +2263,15 @@ begin
           //encircled flux =1-EXP(-0.5*(radial_distance/sigma)^2)
           //encircled flux =1-EXP(-0.5*((apert*HFD/2)/(HFD/2.3548))^2)
           //encircled flux =1-EXP(-0.5*(apert*2.3548/2))^2)
-          flux_snr_7:=flux_snr_7*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
+          correction:=(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma})));
+          flux_snr_7:=flux_snr_7*correction; {Correction for reduced aparture.}
 
           head.magn_limit:=head.mzero-ln(flux_snr_7)*2.5/ln(10); //global variable.  same as:  mzero-ln(flux)*2.5/ln(10)
-          magn_limit_str:='Limiting magnitude is '+ floattostrF(head.magn_limit,ffFixed,0,2)+' ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
+
+          //mag:=MZERO - 2.5*ln(flux)/ln(10);
+          mag_saturation:=head.mzero-ln( 0.95*data_max*Smedian(flux_peak_ratio,counter_flux_measured {length} ) )*2.5/ln(10);
+
+          magn_limit_str:='Limiting magnitude is '+ floattostrF(head.magn_limit,ffFixed,0,2)+' ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+') Saturation at ≈ '+floattostrF(mag_saturation,ffFixed,0,1);
 
           update_float(memo,'LIM_MAGN=',' / Limiting magnitude (SNR=7, aperture '+floattostr2(head.mzero_radius)+' px)',false ,head.magn_limit);
 

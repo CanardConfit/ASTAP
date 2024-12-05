@@ -1330,7 +1330,7 @@ begin
       Panel_solver1.color := CLWindow;
       Panel_star_detection1.color := CLWindow;
 
-      solar_drift_compensation1.enabled:=stack_method1.ItemIndex=0; // method average. See also Tstackmenu1.stack_method1Change()
+      solar_drift_compensation1.enabled:=stack_method1.ItemIndex<=1; // method average or sigma clip average. See also Tstackmenu1.stack_method1Change()
     end
     else
     if use_manual_alignment1.Checked then
@@ -13073,7 +13073,7 @@ begin
     memo2_message( 'Method Comet & Stars sharp. Will switch to ephemeris alignment!! Check your comet or asteroid database. See menu CTRL+R');
   end;
 
-  solar_drift_compensation1.enabled:=((method=0) and (use_astrometric_alignment1.Checked)); //only in method average.
+  solar_drift_compensation1.enabled:=((method<=1) and (use_astrometric_alignment1.Checked)); //only in method average and sigma clip average.
 
   set_icon_stackbutton;  //update glyph stack button to colour or gray
 end;

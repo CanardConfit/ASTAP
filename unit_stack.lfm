@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = alignment1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 6
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2729,7 +2729,7 @@ object stackmenu1: Tstackmenu1
               object solar_drift_compensation1: TCheckBox
                 Left = 381
                 Height = 19
-                Hint = 'Use this to stack alligned on moving solar objects. Stack method "average" should be selected. Solar movement can be calculated by JPL Horizons with option "Rates; RA & DEC"'
+                Hint = 'Use this to stack alligned on moving solar objects. Solar movement can be calculated by JPL Horizons with option "Rates; RA & DEC"'
                 Top = 128
                 Width = 148
                 Caption = 'Solar drift compensation'
