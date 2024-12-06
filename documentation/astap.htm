@@ -188,7 +188,7 @@ of the
 external astrometry.net&nbsp;solver&nbsp;</a></big></li></ul></ul><big><br></big>
         <ul>
           <li><big><a href="#stack_process">Appendix
-                1 stack process</a></big></li><li><big><a href="#why-flat-darks">Appendix 2 Why using flat-darks or bias</a></big></li><li><big><a href="astap.htm#1476">Appendix 3 the star database 1476 and 001 format.</a></big></li><li><big><a href="astap.htm#sip">Developer information</a><a href="sip.htm">: Using&nbsp;SIP Coefficients&nbsp;for optical distortion correction</a></big></li>
+                1 stack process</a></big></li><li><big><a href="#why-flat-darks">Appendix 2 Why using flat-darks or bias</a></big></li><li><big><a href="astap.htm#1476">Appendix 3 the star database 1476 and 001 format.</a></big></li><li><big><a href="astap.htm#solver_input_keywords">Appendix 4 FITS keywords read for solving.</a></big></li><li><big><a href="astap.htm#sip">Developer information</a><a href="sip.htm">: Using&nbsp;SIP Coefficients&nbsp;for optical distortion correction</a></big></li>
           <li><big><a href="astap_astrometric_solving.htm">Background
                 info, ASTAP star pattern recognition and astrometric (plate) solving algorithm.</a></big></li><big>
         </big></ul><big>
@@ -2562,7 +2562,7 @@ errorlevel is focuspos*1E4 + rem.error*1E3. Linux: see stdout</td></tr><tr><td s
         </tbody>
       </table>
       <font face="Courier New, Courier, monospace">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font>
-      <p style="text-align: left;"><big>Commandline parameters have priority above fits header values. Front-end
+      <p style="text-align: left;"><big>Command-line parameters have priority above fits header values. Front-end
           programs
           should provide access to -z and -r options as a minimum. Default value for -z should be 0 (auto).</big></p><p style="text-align: left;"><br>
       </p><p style="text-align: left;"><big>Typical command
@@ -2577,7 +2577,7 @@ errorlevel is focuspos*1E4 + rem.error*1E3. Linux: see stdout</td></tr><tr><td s
       <p style="text-align: left;"><big>For most FITS
           files the command line
           can be short since telescope position and field of view can be
-          retrieved from the FITS header. If
+          retrieved from the FITS header. The keywords read are documented in <a href="astap.htm#solver_input_keywords">appendix 4 FITS keywords read for solving</a>. If
           a FITS file is not available, preference is a non lossless
           image format
           like .PNG or .TIFF or RAW like .CR2.&nbsp; If possible in 16
@@ -2586,12 +2586,12 @@ errorlevel is focuspos*1E4 + rem.error*1E3. Linux: see stdout</td></tr><tr><td s
           possible.
           For formats other then FITS the RA,DEC position and -fov
           (image HEIGHT
-          in degrees !!) should be added.</big></p><p style="text-align: left;">If the&nbsp;FOV  (image height in degrees) &nbsp;is
+          in degrees !!) should be added.</big></p><p style="text-align: left;"><big>If the&nbsp;FOV  (image height in degrees) &nbsp;is
 unspecified in the command-line for RAW, PNG, TIFF files, ASTAP will
 use the FOV as set in the program, stack menu, tab alignment. This
 setting can be learned and updated automatically with the parameters
 -fov 0. ASTAP will try all FOV between 10 degrees and&nbsp;0.3 degrees.
-E.g.</p><p style="text-align: left; font-family: monospace;"><big>&nbsp; &nbsp; <span style="font-weight: bold;">astap.exe
+E.g.</big></p><p style="text-align: left; font-family: monospace;"><big>&nbsp; &nbsp; <span style="font-weight: bold;">astap.exe
           -f c:\images\image.png &nbsp;-ra 23.000&nbsp; -spd 179.000
           &nbsp;&nbsp;-r
           30&nbsp;</span></big><big style="font-weight: bold;">-fov 0</big></p><p style="text-align: left;"><big>After
@@ -3556,7 +3556,141 @@ following array (first star is Sirius):<br><br><span style="font-family: monospa
 2.003995701&nbsp;&nbsp;&nbsp; ,&nbsp;&nbsp;&nbsp;
 0.091067934&nbsp;&nbsp; ),</span><br>
       &nbsp; <br><big style="font-weight: bold;"><span style="text-decoration: underline;"></span></big><p align="left"><a href="astap.htm#index">Back
-            to index</a></p><br><hr style="width: 100%; height: 2px;"><big style="font-weight: bold;"><span style="text-decoration: underline;"><br><a name="sip"></a></span> &nbsp;SIP </big><big style="font-weight: bold;">polynomial coefficients</big><big style="font-weight: bold;"><span style="font-weight: bold;">:</span><span style="text-decoration: underline;"><br><br></span></big><big><span style="text-decoration: underline;">The ASTAP&nbsp;</span></big><big>solver can add 3th order <a href="astap.htm#sip">SIP</a> polynomial coefficients to the header to cope with </big><big>image distortion.</big><big> <br><br></big><big>Adding SIP coefficients&nbsp;ensures accurate positional 
+            to index</a></p><br><hr style="width: 100%; height: 2px;"><br><a name="solver_input_keywords"></a><big style="text-decoration: underline;"> Appendix 4, FITS header keywords read for solving</big><br><br><big>The
+following FITS header keywords are read to determine the initial
+celestial position for the solver search and the field of view:</big><br><br>
+ <table x:str="" style="border-collapse: collapse; background-color: silver; width: 670px;" border="2" cellpadding="1" cellspacing="2"><col style="width: 119pt;" width="159">
+ <col style="width: 77pt;" width="103">
+ <col style="width: 210pt;" width="280">
+ <col style="width: 163pt;" width="217">
+ <col style="width: 101pt;" width="134">
+ <tbody><tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt; width: 119pt; font-weight: bold;" height="17" width="159">Celestial position</td>
+  <td class="xl24" style="width: 77pt; font-weight: bold;" width="103">Keyword</td>
+  <td class="xl24" style="width: 210pt; font-weight: bold;" width="280">Unit</td>
+  <td class="xl24" style="width: 163pt; font-weight: bold;" width="217">Description</td>
+  <td class="xl24" style="width: 101pt; font-weight: bold;" width="134">Source</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;"></td>
+  <td>RA</td>
+  <td>degrees or hh:mm:ss</td>
+  <td x:str="Telescope pointing RA ">Telescope pointing RA<span style="">&nbsp;</span></td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>DEC</td>
+  <td>degrees or dd:mm:ss</td>
+  <td>Telescope pointing DEC</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>OBJCTRA</td>
+  <td>hh:mm:ss</td>
+  <td>RA of object being imaged</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;"></td>
+  <td>OBJCTDEC</td>
+  <td>dd:mm:ss</td>
+  <td>DEC of object being imaged</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>CRVAL1</td>
+  <td>degrees</td>
+  <td>RA of reference pixel</td>
+  <td>solver output</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>CRVAL2</td>
+  <td>degrees</td>
+  <td>DEC of reference pixel</td>
+  <td>solver output</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt; font-weight: bold;" height="17">Field of view</td>
+  <td>SECPIX1</td>
+  <td>arcsec/pixel</td>
+  <td>X pixel size</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>SECPIX2</td>
+  <td>arcsec/pixel</td>
+  <td>Y pixel size</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>SCALE</td>
+  <td>arcsec/pixel</td>
+  <td>Pixel size</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>PIXSCALE</td>
+  <td>arcsec/pixel</td>
+  <td>Pixel size</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>FOCALLEN</td>
+  <td>meter</td>
+  <td></td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>XPIXSZ</td>
+  <td><span class="BxUVEf ILfuVd" lang="en"><span class="hgKElc">&#956;m</span></span></td>
+  <td>X pixel scale in microns. Includes binning.</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>YPIXSZ</td>
+  <td><span class="BxUVEf ILfuVd" lang="en"><span class="hgKElc">&#956;m</span></span></td>
+  <td>Y pixel scale in microns. Includes binning.</td>
+  <td>input</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>CDELT1</td>
+  <td>deg/pixel</td>
+  <td>X pixel size</td>
+  <td>solver output</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>CDELT2</td>
+  <td>deg/pixel</td>
+  <td>Y pixel size</td>
+  <td>solver output</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td style="height: 12.75pt;" height="17"></td>
+  <td>CD keywords</td>
+  <td>deg/pixel</td>
+  <td>The four solution keywords </td>
+  <td>solver output</td>
+ </tr></tbody></table><br><br><a href="astap.htm#index">Back
+            to index</a><br><br><hr style="width: 100%; height: 2px;"><big style="font-weight: bold;"><span style="text-decoration: underline;"><br><a name="sip"></a></span> &nbsp;SIP </big><big style="font-weight: bold;">polynomial coefficients</big><big style="font-weight: bold;"><span style="font-weight: bold;">:</span><span style="text-decoration: underline;"><br><br></span></big><big><span style="text-decoration: underline;">The ASTAP&nbsp;</span></big><big>solver can add 3th order <a href="astap.htm#sip">SIP</a> polynomial coefficients to the header to cope with </big><big>image distortion.</big><big> <br><br></big><big>Adding SIP coefficients&nbsp;ensures accurate positional 
 information of celestial objects and to facilitate precise image 
 stitching. Astronomical images often suffer from barrel distortion, 
 where stars near the edges appear to move outward from the center of the

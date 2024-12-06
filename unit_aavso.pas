@@ -272,9 +272,14 @@ begin
   if columnr<0 then
     exit;
 
-//  index:=stackmenu1.listview7.column[columnr+1].tag;
-  theindex:=stackmenu1.listview7.column[columnr].tag;
-  source:=variable_list[theindex].source;//local, vsp,vsx
+
+  if ((columnr=14) {manual star selection} or (variable_list=nil){should not happen})  then
+    source:=0 //mode manual star selection. Extract magnitude from from annotation text
+  else
+  begin
+    theindex:=stackmenu1.listview7.column[columnr].tag;
+    source:=variable_list[theindex].source;//local, vsp,vsx
+  end;
 
   if source=2 then //online vsp list
   begin
@@ -298,7 +303,7 @@ begin
 
   end
   else
-  if source=0 then //local database
+  if source=0 then //extract from annotation, local database or manual
   begin
     if ((filter=-1) or (filter=1)) then //local variable
     begin //V magnitude
@@ -490,7 +495,7 @@ begin
                  documented_comp_magn:=get_comp_magnitude(listview7.Items.item[c].SubitemImages[P_filter]{filter icon nr},column_comp, abbrev_comp);//  retrieve the documented magnitude at passband used from the abbrev_comp string
 
                  if documented_comp_magn=-99 then
-                 begin //COMP mangitude unknow.
+                 begin //COMP magnitude unknow.
                    ensemble_str1:='ENSEMBLE';
                    ensemble_str2:='na';
                    ensemble_str3:='Ensemble of Gaia DR3 stars. Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloans filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
