@@ -348,8 +348,8 @@ procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c,date_column  : integer;
     err,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
-    abbrev_var_clean,abbrev_check_clean,abbrev_comp_clean,ensemble_str1,ensemble_str2,ensemble_str3,var_magn_str,check_magn_str,comp_magn_str,comments: string;
-    stdev_valid : boolean;
+    abbrev_var_clean,abbrev_check_clean,abbrev_comp_clean,ensemble_str1,ensemble_str2,ensemble_str3,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr: string;
+    stdev_valid,invalid_var,invalid_check : boolean;
     snr_value,err_by_snr,comp_magn, documented_comp_magn, var_magn,check_magn, magn_correction : double;
     PNG: TPortableNetworkGraphic;{FPC}
 
@@ -467,10 +467,13 @@ begin
            else
              filter_used:=copy(filter1.text,1,2);//manual input
 
-           var_magn:=strtofloat2(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}]);
-
+           var_magn_str:=(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}]);
+           invalid_var:=(copy(var_magn_str,1,1)='S');
+           if invalid_var=false then var_magn:=strtofloat2(var_magn_str);
 
            check_magn_str:=stringreplace(listview7.Items.item[c].subitems.Strings[column_check],',','.',[]);
+           invalid_check:=(copy(check_magn_str,1,1)='S');
+           if ((invalid_var) or (invalid_check)) then invalidstr:='# ';
 
            ensemble_str1:='ENSEMBLE';
            ensemble_str2:='na';
@@ -502,14 +505,18 @@ begin
                  end
                  else
                  begin //COMP magnitude known
-                   magn_correction:=documented_comp_magn-comp_magn;//no need to calculate flux. Magnitude delta are valid for all values
+                   if invalid_var=false then
+                   begin
+                     magn_correction:=documented_comp_magn-comp_magn;//no need to calculate flux. Magnitude delta are valid for all values
+                     var_magn:=var_magn+magn_correction;//apply correction. No need to calculate flux. Magnitude delta are valid for all values
+                   end;
 
-                   var_magn:=var_magn+magn_correction;//apply correction. No need to calculate flux. Magnitude delta are valid for all values
-
-
-                   check_magn:=strtofloat2(check_magn_str);
-                   check_magn:=check_magn+magn_correction;//apply correction. No need to calculate flux. Magnitude delta are valid for all values
-                   str(check_magn:0:3,check_magn_str);
+                   if invalid_check=false then
+                   begin
+                     check_magn:=strtofloat2(check_magn_str);
+                     check_magn:=check_magn+magn_correction;//apply correction. No need to calculate flux. Magnitude delta are valid for all values
+                     str(check_magn:0:3,check_magn_str);
+                   end;
 
                    str(documented_comp_magn:0:3,comp_magn_str); //should be same as documented
                    ensemble_str2:=comp_magn_str;//documentated comp magnitude
@@ -526,13 +533,16 @@ begin
 
            end;
 
+           if invalid_var=false then
+           begin
+             var_magn:=var_magn + delta_bv*magnitude_slope; //apply slope correction;//use magnitude of comparison star if specified and apply slope correctio
+             str(var_magn:0:3,var_magn_str);
+           end;
 
-           var_magn:=var_magn + delta_bv*magnitude_slope; //apply slope correction;//use magnitude of comparison star if specified and apply slope correctio
-           str(var_magn:0:3,var_magn_str);
 
            if ListView7.Items.item[c].SubitemImages[P_calibration]<>ListView7.Items.item[c].SubitemImages[P_filter] then ensemble_str3:=ensemble_str3+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND!';
 
-           aavso_report:= aavso_report+ abbrev_var_clean + delim +
+           aavso_report:= aavso_report+ invalidstr+ abbrev_var_clean + delim +
                           StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
                           var_magn_str+delim+
                           err+
