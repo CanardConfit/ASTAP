@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.12.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.12.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -9410,7 +9410,9 @@ begin
               success:=savefits_update_header(memox,filename2)
             else
               success:=save_tiff16_secure(img_temp,memox,filename2);{guarantee no file is lost}
-            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
+            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end
+            else
+            memo2_message(filename2+', tilt = '+floattostrF(tilt,FFgeneral,0,2));
           end
           else
           memo2_message('Error adding tilt measurement: '+filename2);
