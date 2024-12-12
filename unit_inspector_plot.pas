@@ -184,7 +184,7 @@ begin
   if headx.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  memo2_message('Inspection of: '+filename2);
+  if screenplot then memo2_message('Inspection of: '+filename2);//else in the batch routine
   restore_req:=false;
   oldNaxis3:=headx.naxis3;//for case it is converted to mono
 
@@ -251,7 +251,7 @@ begin
     setlength(img_sa,1,headx.height,headx.width);{set length of image array}
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-    get_background(0,img,{cblack=0} false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
+    get_background(0,img,{cblack=0} screenplot=false{histogram is available if in viewer},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
 
     data_max:=headx.datamax_org-1;
 
