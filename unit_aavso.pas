@@ -346,10 +346,10 @@ end;
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
-    c,date_column  : integer;
+    c,date_column,invalid_var,invalid_check,invalid_comp,dummy,dummy2  : integer;
     err,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
-    abbrev_var_clean,abbrev_check_clean,abbrev_comp_clean,ensemble_str1,ensemble_str2,ensemble_str3,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr: string;
-    stdev_valid,invalid_var,invalid_check : boolean;
+    abbrev_var_clean,abbrev_check_clean,abbrev_comp_clean,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr: string;
+    stdev_valid : boolean;
     snr_value,err_by_snr,comp_magn, documented_comp_magn, var_magn,check_magn, magn_correction : double;
     PNG: TPortableNetworkGraphic;{FPC}
 
@@ -468,79 +468,71 @@ begin
              filter_used:=copy(filter1.text,1,2);//manual input
 
            var_magn_str:=(listview7.Items.item[c].subitems.Strings[column_var{P_magn1}]);
-           invalid_var:=(copy(var_magn_str,1,1)='S');
-           if invalid_var=false then var_magn:=strtofloat2(var_magn_str);
-
+           var_magn:=strtofloat3(var_magn_str,invalid_var);
            check_magn_str:=stringreplace(listview7.Items.item[c].subitems.Strings[column_check],',','.',[]);
-           invalid_check:=(copy(check_magn_str,1,1)='S');
-           if ((invalid_var) or (invalid_check)) then invalidstr:='# ';
-
-           ensemble_str1:='ENSEMBLE';
-           ensemble_str2:='na';
+           check_magn:=strtofloat3(check_magn_str,invalid_check );
+           comp_magn_info:='';//clear summation of messages;
 
            if stackmenu1.reference_database1.itemindex=0 then //local database
            if pos('v',name_database)>0 then magn_type:=' transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
            else  //online database
              magn_type:=' transformed '+stackmenu1.reference_database1.text;
 
-           ensemble_str3:='Ensemble of Gaia DR3 stars ('+ magn_type+')';
-
-
            if ensemble_database1.checked=false then //Mode magnitude relative to comp star
            begin
              if column_comp<0 then exit;
              comp_magn_str:=stackmenu1.listview7.Items.item[c].subitems.Strings[column_comp];//measured comp magnitude
-             comp_magn:=strtofloat2(comp_magn_str);//measured comp magnitude
-             if  comp_magn>0 then
+             comp_magn:=strtofloat3(comp_magn_str,invalid_comp);//measured comp magnitude
+             if invalid_comp=0 then //valid conversion string to float
              begin
-                 ensemble_str1:=abbrev_comp_clean;
-
                  documented_comp_magn:=get_comp_magnitude(listview7.Items.item[c].SubitemImages[P_filter]{filter icon nr},column_comp, abbrev_comp);//  retrieve the documented magnitude at passband used from the abbrev_comp string
-
                  if documented_comp_magn=-99 then
                  begin //COMP magnitude unknow.
-                   ensemble_str1:='ENSEMBLE';
-                   ensemble_str2:='na';
-                   ensemble_str3:='Ensemble of Gaia DR3 stars. Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloans filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
+                   abbrev_comp_clean:='ENSEMBLE';
+                   comp_magn_str:='na';
+                   comp_magn_info:='Ensemble of Gaia DR3 stars ('+ magn_type+'). Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloans filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
                  end
                  else
                  begin //COMP magnitude known
-                   if invalid_var=false then
+                   if invalid_var=0 then //valid conversion string to float
                    begin
                      magn_correction:=documented_comp_magn-comp_magn;//no need to calculate flux. Magnitude delta are valid for all values
                      var_magn:=var_magn+magn_correction;//apply correction. No need to calculate flux. Magnitude delta are valid for all values
                    end;
 
-                   if invalid_check=false then
+                   if invalid_check=0 then //valid conversion string to float
                    begin
-                     check_magn:=strtofloat2(check_magn_str);
                      check_magn:=check_magn+magn_correction;//apply correction. No need to calculate flux. Magnitude delta are valid for all values
                      str(check_magn:0:3,check_magn_str);
                    end;
 
                    str(documented_comp_magn:0:3,comp_magn_str); //should be same as documented
-                   ensemble_str2:=comp_magn_str;//documentated comp magnitude
-                   ensemble_str3:='Instr magn correction using CMAG is  '+ floattostr2(magn_correction);
+                   comp_magn_info:='Instr magn correction using CMAG is  '+ floattostr2(magn_correction);
                  end;
-             end
-             else
-             begin
-               ensemble_str1:='ENSEMBLE';
-               ensemble_str2:='na';
-               ensemble_str3:='Ensemble of Gaia DR3 stars. Warning could not retrieve magnitude AAVSO VSP stars for this filter! Select annotation online.';
-
-             end;
-
+             end ;//valid comp_str
+           end //no ensemble mode
+           else
+           begin
+             invalid_comp:=0; //ensemble mode, no conversion error because comp is not used
+             abbrev_comp_clean:='ENSEMBLE';
+             comp_magn_str:='na';
+             comp_magn_info:='Ensemble of Gaia DR3 stars ('+ magn_type+')';
            end;
 
-           if invalid_var=false then
+
+           if invalid_var=0 then //valid conversion string to float
            begin
              var_magn:=var_magn + delta_bv*magnitude_slope; //apply slope correction;//use magnitude of comparison star if specified and apply slope correctio
              str(var_magn:0:3,var_magn_str);
            end;
 
+           if ((invalid_var<>0) or (invalid_comp<>0) or (invalid_check<>0)) then invalidstr:='# ' else invalidstr:='';
 
-           if ListView7.Items.item[c].SubitemImages[P_calibration]<>ListView7.Items.item[c].SubitemImages[P_filter] then ensemble_str3:=ensemble_str3+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND!';
+           dummy:=ListView7.Items.item[c].SubitemImages[P_calibration];
+           dummy2:=ListView7.Items.item[c].SubitemImages[P_filter];
+
+           if ListView7.Items.item[c].SubitemImages[P_calibration]<>ListView7.Items.item[c].SubitemImages[P_filter] then
+              comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV,(V,G,TG),B,RC,SI,SR,SG.';
 
            aavso_report:= aavso_report+ invalidstr+ abbrev_var_clean + delim +
                           StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
@@ -549,14 +541,14 @@ begin
                           delim+filter_used+delim+
                           'NO'+delim+
                           'STD'+delim+
-                          ensemble_str1+delim+
-                          ensemble_str2+delim+
+                          abbrev_comp_clean+delim+
+                          comp_magn_str+delim+
                           abbrev_check_clean+delim+
                           check_magn_str+delim+
                           airmass_str+delim+
                           'na'+delim+ {group}
                           'na'+delim+
-                          ensemble_str3+#13+#10;
+                          comp_magn_info+#13+#10;
 
            date_observation:=copy(listview7.Items.item[c].subitems.Strings[P_date],1,10);
          end;

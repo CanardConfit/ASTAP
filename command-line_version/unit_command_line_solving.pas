@@ -318,7 +318,7 @@ end;
 
 procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
-   i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads,Sstart,Send,tolerance  : integer;
+   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,tolerance  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
    dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
    identical_quad : boolean;
@@ -345,9 +345,9 @@ begin
   nrquads:=0;
   SetLength(quad_star_distances,8,nrstars);{will contain the six distances and the central position}
 
-  j_used1:=0;{give it a default value}
-  j_used2:=0;
-  j_used3:=0;
+  j_index1:=0;{give it a default value}
+  j_index2:=0;
+  j_index3:=0;
 
   for i:=0 to nrstars-1 do
   begin
@@ -372,28 +372,28 @@ begin
             if distance<distance1 then
             begin
               distance3:=distance2;{distance third closest star}
-              j_used3:=j_used2;{remember the star position in the list}
+              j_index3:=j_index2;{remember the star position in the list}
 
               distance2:=distance1;{distance second closest star}
-              j_used2:=j_used1;{remember the star position in the list}
+              j_index2:=j_index1;{remember the star position in the list}
 
               distance1:=distance;{distance closest star}
-              j_used1:=j;{mark later as used}
+              j_index1:=j;{mark later as used}
             end
             else
             if distance<distance2 then
             begin
               distance3:=distance2;{distance third closest star}
-              j_used3:=j_used2;{remember the star position in the list}
+              j_index3:=j_index2;{remember the star position in the list}
 
               distance2:=distance;{distance second closest star}
-              j_used2:=j;
+              j_index2:=j;
             end
             else
             if distance<distance3 then
             begin
               distance3:=distance;{third closest star}
-              j_used3:=j;{remember the star position in the list}
+              j_index3:=j;{remember the star position in the list}
             end;
           end;{not an identical star. Mod 2021-6-25}
 
@@ -404,14 +404,14 @@ begin
     x1:=starlist[0,i]; {copy first star position to the quad array}
     y1:=starlist[1,i];
 
-    x2:=starlist[0,j_used1]; {copy the second star position to the quad array}
-    y2:=starlist[1,j_used1];
+    x2:=starlist[0,j_index1]; {copy the second star position to the quad array}
+    y2:=starlist[1,j_index1];
 
-    x3:=starlist[0,j_used2];
-    y3:=starlist[1,j_used2];
+    x3:=starlist[0,j_index2];
+    y3:=starlist[1,j_index2];
 
-    x4:=starlist[0,j_used3];
-    y4:=starlist[1,j_used3];
+    x4:=starlist[0,j_index3];
+    y4:=starlist[1,j_index3];
 
     xt:=(x1+x2+x3+x4)/4; {mean x position quad}
     yt:=(y1+y2+y3+y4)/4; {mean y position quad}

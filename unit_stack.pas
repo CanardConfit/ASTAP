@@ -2694,7 +2694,14 @@ begin
     {to ignore hot pixels which are too small}
 
     bin_and_find_stars(img_loaded, binning, 1 {cropping}, hfd_min, max_stars, False{update hist}, starlist1, warning_downsample);{bin, measure background}
-    find_quads_xy(starlist1, starlistquads);{find quads}
+
+//    memo2_message('Start');
+//    for i:=1 to 12000 do
+      find_quads_xy(starlist1, starlistquads);{find quads}
+//    memo2_message('End new routine');
+//    for i:=1 to 12000 do
+//      find_quads_xyold(starlist1, starlistquads);{find quads}
+//    memo2_message('End old routine');
 
     display_quads(starlistquads);
     quads_displayed := True;
@@ -4372,13 +4379,14 @@ begin
               else //Johnson-Cousins
               if pos('V',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //Green or G or TG
               else
-              if pos('G',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //GREEN, G, TG
+              if pos('G',filterstrUP)>0 then lv.Items.item[c].SubitemImages[P_filter]:=1 //GREEN, G, TG
               else
               if pos('B',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //BLUE, B, TB
               else
               if pos('RC',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red. Note Green also contains a R so first test Green
               else
-              if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //red, R, TR.  Note Green also contains a R so first test Green
+              if pos('R',filterstrUP)>0  then
+                 lv.Items.item[c].SubitemImages[P_filter]:=0 //red, R, TR.  Note Green also contains a R so first test Green
               else
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 
