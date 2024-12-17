@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.12.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.12.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -807,8 +807,9 @@ procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in
 
 function fnmodulo (x,range: double):double;
 function strtoint2(s: string;default:integer):integer; {str to integer, fault tolerant}
-function strtofloat1(s:string): double;{string to float for dot seperator, error tolerant}
+function strtofloat3(s:string; out error1 :integer): double;{works with either dot or komma as decimal separator}
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
+function strtofloat1(s:string): double;{string to float for dot seperator, error tolerant}
 function TextfileSize(const name: string): LongInt;
 function floattostr8(x:double):string;//always with dot decimal seperator  Eight decimals
 function floattostr6(x:double):string;//always with dot decimal seperator
@@ -6470,6 +6471,14 @@ begin
     result:=round(value);
 end;
 
+function strtofloat3(s:string; out error1 :integer): double;{works with either dot or komma as decimal separator}
+begin
+  s:=StringReplace(s,',','.',[]); {replaces komma by dot}
+  s:=trim(s); {remove spaces}
+  val(s,result,error1);
+  if error1<>0 then result:=0;
+end;
+
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 var
   error1:integer;
@@ -11911,7 +11920,6 @@ begin
 end;
 
 
-
 {type
    adata = array of word;
 function rice_encoding(inp : adata; k,bitdepth : integer; out  outp : adata ; out compressedSize : integer) : boolean;
@@ -12003,20 +12011,6 @@ end;      }
 //  inp:=nil;
 //  outp:=nil;
 //end;
-
-
-procedure standard_equatorial2(ra0,dec0,x,y,cdelt: double; var ra,dec : double); inline;{transformation from CCD coordinates into equatorial coordinates}
-var sin_dec0 ,cos_dec0 : double;
-begin
-  sincos(dec0  ,sin_dec0 ,cos_dec0);
-  x:=x *cdelt/ (3600*180/pi);{scale CCD pixels to standard coordinates (tang angle)}
-  y:=y *cdelt/ (3600*180/pi);
-
-  ra  := ra0 + arctan2 (-x, cos_DEC0- y*sin_DEC0);{atan2 is required for images containing celestial pole}
-  if ra>pi*2 then ra:=ra-pi*2; {prevent values above 2*pi which confuses the direction detection later}
-  if ra<0 then ra:=ra+pi*2;
-  dec := arcsin ( (sin_dec0+y*cos_dec0)/sqrt(1.0+x*x+y*y) );
-end;
 
 
 procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);

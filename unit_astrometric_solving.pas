@@ -207,11 +207,9 @@ begin
   delta:=cos_dec0-y*sin_dec0;
   ra:=ra0+arctan2(-x,delta); //atan2 is required for images containing celestial pole
   dec:=arctan((sin_dec0+y*cos_dec0)/sqrt(sqr(x)+sqr(delta)));
-
   if ra>pi*2 then ra:=ra-pi*2; //prevent values above 2*pi which confuses the direction detection later
   if ra<0 then ra:=ra+pi*2;
 end;
-
 
 
 //procedure give_spiral_position(position : integer; out x,y : integer); {give x,y position of square spiral as function of input value}
@@ -929,14 +927,14 @@ begin
       yes_use_triples:=((nrstars<30) and  (use_triples));
       if yes_use_triples then
       begin
-        find_triples_using_quads(starlist2,quad_star_distances2); {find star triples for new image. Quads and quad_smallest are binning independent}
+        find_triples_using_quads(starlist2,quad_star_distances2); {find star triples for new image. Quads are binning independent}
         quad_tolerance:=0.002;
         quads_str:=' triples';
          if solve_show_log then memo2_message('For triples the hash code tolerance is forced to '+floattostr(quad_tolerance)+'.');
       end
       else
       begin
-        find_quads(starlist2,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independent}
+        find_quads(starlist2,quad_star_distances2);{find star quads for new image. Quads are binning independent}
         quads_str:=' quads';
       end;
 
@@ -1084,10 +1082,18 @@ begin
 
               if yes_use_triples then
                 find_triples_using_quads(starlist1,quad_star_distances1){find quads for reference image/database. Filter out too small quads for Earth based telescopes}
-                {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
               else
-                find_quads(starlist1, quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
-                {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
+                find_quads(starlist1, quad_star_distances1);{find quads for reference image/database.}
+
+   //               memo2_message('Start');
+     //             for i:=1 to 12000 do
+       //             find_quadsnew(starlist1, quad_star_distances1);{find quads}
+         //         memo2_message('End new routine');
+           //       for i:=1 to 12000 do
+             //       find_quads(starlist1, quad_star_distances1);{find quads}
+//                  memo2_message('End old routine');
+       //      exit;
+
 
 
               if solve_show_log then {global variable set in find stars}
