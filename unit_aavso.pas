@@ -121,7 +121,7 @@ type
                  end;
 var
   jd_min,jd_max,magn_min,magn_max : double;
-  w,h,bspace,column_var,column_check,column_comp  :integer;
+  w,h,bspace,column_var,column_check,column_comp,wtext  :integer;
 
 function floattostr3(x:double):string;
 begin
@@ -589,15 +589,16 @@ begin
 end;
 
 
-procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject;
-  Shift: TShiftState; X, Y: Integer);
+procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   w2,h2 :integer;
 begin
   if jd_min=0 then exit;
   w2:=image_photometry1.width;
   h2:=image_photometry1.height;
-  form_aavso1.caption:= floattostrF(jd_min+(jd_max-jd_min)*((x*w/w2)-bspace)/(w-bspace*2),ffFixed,12,5)+', '+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
+ // x zero at x=wtext
+ // x range is (w-bspace*2)
+ form_aavso1.caption:= floattostrF(jd_min+(jd_max-jd_min)*((x*w/w2)-wtext)/(w-bspace*2),ffFixed,12,5)+', '+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
 end;
 
 procedure Tform_aavso1.MenuItem1Click(Sender: TObject);
@@ -1029,7 +1030,7 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,wtext,date_column,count : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count : integer;
   scale,range,madCheck, medianCheck     : double;
   text1,text2, date_format,firstfilter  : string;
   bmp: TBitmap;

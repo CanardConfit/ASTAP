@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.12.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2024.12.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -1206,7 +1206,7 @@ begin
 
   if tiff_file_name(filen) then  {load Astro-TIFF instead of FITS}
   begin
-    result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2,mainwindow.memo1.lines);{load TIFF image}
+    result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2,memo {mainwindow.memo1.lines});{load TIFF image}
     exit;
   end;
 
@@ -1442,7 +1442,8 @@ begin
           begin
             if ((header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
             else
-            if ((header[i+5]='A') and (header[i+6]='V')) then head.date_avg:=get_string; //date-avg
+            if ((header[i+5]='A') and (header[i+6]='V')) then
+                              head.date_avg:=get_string; //date-avg
           end
           else
           if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
@@ -3279,6 +3280,7 @@ var
 begin
 
   count1:=memo.Count-1;
+
   while count1>=0 do {update keyword}
   begin
     if pos(inpt,memo[count1])>0 then {found}

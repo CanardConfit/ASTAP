@@ -174,6 +174,7 @@ begin
 
   datalines:=false;
   count2:=0;
+  passband_active:=''; //By definition since new stars are loaded. So the procedure convert_magnitudes should convert the magnitudes again.
 
   setlength(online_database,6,slist.count);//position 5 will contain later the converted magnitude
   count:=35;{skip first part}
@@ -181,7 +182,6 @@ begin
   begin
     regel:=slist[count];
     inc(count);
-
     if datalines then //Data from Vizier
     begin
       {magnitude}
