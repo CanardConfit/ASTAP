@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 364
+  Left = 770
   Height = 707
-  Top = 204
+  Top = 172
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_stackmethod1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 5
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -1237,6 +1237,7 @@ object stackmenu1: Tstackmenu1
               'Average, skip LRGB  combine'
               'Sigma clip, skip LRGB combine'
               'Comet and stars sharp'
+              'Nova search, difference '
             )
             ParentFont = False
             Style = csDropDownList
@@ -8263,6 +8264,161 @@ object stackmenu1: Tstackmenu1
             Visible = False
           end
         end
+        object SN_ref1: TTabSheet
+          Hint = 'Reference images for nova search'
+          Caption = 'SN references'
+          ClientHeight = 472
+          ClientWidth = 1912
+          object listview10: TListView
+            Left = 0
+            Height = 436
+            Hint = 'Double click to view image'
+            Top = 36
+            Width = 1912
+            Align = alClient
+            AutoSortIndicator = True
+            BorderSpacing.Top = 36
+            Checkboxes = True
+            Columns = <            
+              item
+                AutoSize = True
+                Caption = 'File'
+                MinWidth = 150
+                Width = 33
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Exposure'
+                MinWidth = 80
+                Width = 80
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Temperature'
+                MinWidth = 100
+                Width = 100
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Binning'
+                MinWidth = 70
+                Width = 70
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Width'
+                MinWidth = 55
+                Width = 60
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Height'
+                MinWidth = 60
+                Width = 60
+              end            
+              item
+                AutoSize = True
+                Caption = 'Type'
+                MinWidth = 50
+                Width = 40
+              end            
+              item
+                AutoSize = True
+                Caption = 'Date'
+                MinWidth = 70
+                Width = 39
+              end            
+              item
+                Caption = 'Object'
+                MinWidth = 90
+                Width = 90
+              end            
+              item
+                Caption = 'Filter'
+                MinWidth = 50
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'σ'
+                MinWidth = 60
+                Width = 60
+              end            
+              item
+                Caption = 'δ'
+                MinWidth = 60
+                Width = 60
+              end            
+              item
+                Caption = 'Astrometric'
+                MinWidth = 50
+              end            
+              item
+                Caption = 'Calibration'
+                MinWidth = 50
+              end            
+              item
+                Caption = 'Gain'
+                MinWidth = 50
+              end>
+            GridLines = True
+            HideSelection = False
+            MultiSelect = True
+            ParentFont = False
+            PopupMenu = PopupMenu10
+            ReadOnly = True
+            RowSelect = True
+            ScrollBars = ssAutoBoth
+            SmallImages = ImageList_colors
+            SortColumn = 8
+            SortType = stText
+            TabOrder = 0
+            ViewStyle = vsReport
+            OnColumnClick = listview1ColumnClick
+            OnCompare = listview1Compare
+            OnCustomDraw = listview4CustomDraw
+            OnCustomDrawItem = listview4CustomDrawItem
+            OnDblClick = listview1DblClick
+            OnKeyDown = listview1KeyDown
+          end
+          object browse_snref1: TBitBtn
+            Left = 16
+            Height = 26
+            Hint = 'Browse and select nova reference frames'
+            Top = 6
+            Width = 92
+            AutoSize = True
+            Caption = 'Browse'
+            Constraints.MinWidth = 92
+            Images = ImageList2
+            ImageIndex = 23
+            OnClick = browse_snref1Click
+            TabOrder = 1
+          end
+          object analyseSNrefbutton1: TButton
+            Left = 136
+            Height = 25
+            Hint = 'Analyse image frames'
+            Top = 6
+            Width = 67
+            AutoSize = True
+            Caption = 'Analyse'
+            ParentFont = False
+            TabOrder = 2
+            OnClick = analyseSNrefbutton1Click
+          end
+          object clear_selectionSNref1: TButton
+            Left = 664
+            Height = 25
+            Hint = 'Clear the frame list'
+            Top = 6
+            Width = 71
+            AutoSize = True
+            Caption = 'Clear list'
+            ParentFont = False
+            TabOrder = 3
+            OnClick = clear_selectionSNref1Click
+          end
+        end
       end
     end
     object PairSplitterSide2: TPairSplitterSide
@@ -8502,7 +8658,7 @@ object stackmenu1: Tstackmenu1
     Top = 592
   end
   object ImageList2: TImageList
-    Left = 1336
+    Left = 1376
     Top = 592
     Bitmap = {
       4C7A1F00000010000000100000001E0700000000000078DAED5CDB4E153D14E6
@@ -8566,8 +8722,8 @@ object stackmenu1: Tstackmenu1
     }
   end
   object ImageList_colors: TImageList
-    Left = 1416
-    Top = 592
+    Left = 1456
+    Top = 600
     Bitmap = {
       4C7A1A0000001000000010000000710500000000000078DAED997F4C556518C7
       DFA1260A98E50273B565B9D688988CC1D05A69C4955F17BC172E791511081207
@@ -8878,7 +9034,7 @@ object stackmenu1: Tstackmenu1
       'ColorS=F0FBFF'
       'ColorT=A4A0A0'
     )
-    Left = 1256
+    Left = 1304
     Top = 592
   end
   object PopupMenu8: TPopupMenu
@@ -9357,6 +9513,73 @@ object stackmenu1: Tstackmenu1
       Caption = '-'
     end
     object renametobak1: TMenuItem
+      Caption = 'Rename selected files to *.bak'
+      Hint = 'In preperation for deleting later. '
+      ImageIndex = 10
+      ShortCut = 16430
+      OnClick = renametobak1Click
+    end
+  end
+  object PopupMenu10: TPopupMenu
+    Images = ImageList2
+    OnPopup = PopupMenu1Popup
+    Left = 1248
+    Top = 592
+    object Viewimage10: TMenuItem
+      Caption = 'View image'
+      OnClick = Viewimage1Click
+    end
+    object MenuItem34: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem36: TMenuItem
+      Caption = '-'
+    end
+    object unselect10: TMenuItem
+      Caption = 'Uncheck selected'
+      ImageIndex = 9
+      OnClick = unselect1Click
+    end
+    object select10: TMenuItem
+      Caption = 'Check mark selected'
+      ImageIndex = 8
+      OnClick = select1Click
+    end
+    object selectall10: TMenuItem
+      Caption = 'Select all'
+      Hint = 'Select all items'
+      ShortCut = 16449
+      OnClick = selectall1Click
+    end
+    object MenuItem37: TMenuItem
+      Caption = '-'
+    end
+    object removeselected10: TMenuItem
+      Caption = 'Remove selected'
+      OnClick = removeselected1Click
+    end
+    object list_to_clipboard10: TMenuItem
+      Caption = 'Copy selected list to clipboard'
+      Hint = 'Data will be in clipboard and can be pasted in a spreadsheet'
+      ImageIndex = 13
+      ShortCut = 16451
+      OnClick = list_to_clipboard1Click
+    end
+    object MenuItem39: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem40: TMenuItem
+      Caption = '-'
+    end
+    object refresh_solutions_selectedSN_reference1: TMenuItem
+      Caption = 'Refresh astrometrical solutions of selected files'
+      Hint = 'Refresh astrometrical solutions of selected files'
+      OnClick = refresh_solutions_selectedSN_reference1Click
+    end
+    object Separator8: TMenuItem
+      Caption = '-'
+    end
+    object renametobak10: TMenuItem
       Caption = 'Rename selected files to *.bak'
       Hint = 'In preperation for deleting later. '
       ImageIndex = 10

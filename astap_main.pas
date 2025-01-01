@@ -1,5 +1,5 @@
 unit astap_main;
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2024.12.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.1.1';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -537,7 +537,15 @@ type
 
 var
   mainwindow: Tmainwindow;
+
 type
+  Tbackground = record
+                  backgr : double;//background value
+                  star_level : double;//star level
+                  star_level2: double;//star level
+                  noise_level: double;///noise level background
+               end;
+
   image_array = array of array of array of Single;// note fasted processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
   star_list   = array of array of double;
 
@@ -550,8 +558,8 @@ type
     crpix2 : double;
     cdelt1 : double; {X pixel size (deg)}
     cdelt2 : double; {Y pixel size (deg)}
-    ra0    : double; {mount position}
-    dec0   : double;
+    ra0    : double; {mount position. Accurate if solved}
+    dec0   : double; {mount position. Accurate if solved}
     crota1 : double; {image rotation at center in degrees}
     crota2 : double; {image rotation at center in degrees}
     cd1_1  : double; {solution matrix}
@@ -569,6 +577,16 @@ type
     mzero_radius    : double;//mzero diameter (aperture)
     magn_limit      : double;//limiting magnitude
     pedestal        : double;//pedestal added during calibration or stacking
+    sqmfloat        : double;
+    hfd_median      : double;//median hfd, use in reporting in write_ini
+    hfd_counter     : integer;//star counter (for hfd_median), use in reporting in write_ini
+
+    backgr : double;//background value
+    star_level : double;//star level
+    star_level2: double;//star level
+    noise_level: double;///noise level background
+
+
     set_temperature : integer;
     dark_count      : integer;
     light_count     : integer;
@@ -592,15 +610,6 @@ type
      filen   : string; {filename}
      img     : image_array;
    end;
-
-   Tbackground = record
-                   backgr : double;//background value
-                   star_level : double;//star level
-                   star_level2: double;//star level
-                   noise_level: double;///noise level background
-                end;
-
-
 
   theauid = record
               auid: string;
@@ -642,7 +651,7 @@ var
   head_flat,
   head_dark : Theader;{contains the most important header info}
   memox : tstrings;//work memo
-  bck : Tbackground;
+//  bck : Tbackground;//global variable. Note there is also one in Theader
 
   settingstring : tstrings; {settings for save and loading}
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
@@ -668,7 +677,7 @@ var
   star_bg,sd_bg  : double;
   object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
-  focus_temp,{cblack,}cwhite,sqmfloat,altitudefloat, pressure,airmass   :double; {from FITS}
+  focus_temp,{cblack,}cwhite, altitudefloat, pressure,airmass   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
   telescop,instrum,origin,sqm_value   : string;
 
@@ -711,8 +720,6 @@ var {################# initialised variables #########################}
   sqm_key   :  ansistring='SQM     ';
   centaz_key   :  ansistring='CentAz  ';
 
-  hfd_median : double=0;{median hfd, use in reporting in write_ini}
-  hfd_counter: integer=0;{star counter (for hfd_median), use in reporting in write_ini}
   aperture_ratio: double=0; {ratio flux_aperture/hfd_median}
   annulus_radius  : integer=14;{inner of square where background is measured. Square has width and height twice annulus_radius}
   copy_paste :boolean=false;
@@ -849,7 +856,7 @@ function unpack_cfitsio(var filename3: string): boolean; {convert .fz to .fits u
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
 function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img: image_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :image_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
@@ -1063,7 +1070,10 @@ begin
     head.mzero_radius:=99;{circle where flux is measured}
     head.magn_limit:=0;
     head.pedestal:=0; {value added during calibration or stacking}
-
+    head.sqmfloat:=0;
+    head.hfd_median:=0;{median hfd, use in reporting in write_ini}
+    head.hfd_counter:=0;{star counter (for hfd_median), use in reporting in write_ini}
+    head.backgr:=0;
     telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';siteelev:='';
 
@@ -2111,7 +2121,7 @@ begin
     else {16 bit}
     head.datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
 
-    bck.backgr:=head.datamin_org;{for case histogram is not called}
+    head.backgr:=head.datamin_org;{for case histogram is not called}
     cwhite:=head.datamax_org;
 
     result:=head.naxis<>0;{success};
@@ -2672,7 +2682,7 @@ begin
 
     head.datamin_org:=0;
 
-    bck.backgr:=head.datamin_org;{for case histogram is not called}
+    head.backgr:=head.datamin_org;{for case histogram is not called}
     cwhite:=head.datamax_org;
 
     if color7 then
@@ -2918,7 +2928,7 @@ begin
   nrbits:=16;
   head.datamin_org:=0;
   head.datamax_org:=$FFFF;
-  bck.backgr:=head.datamin_org;{for case histogram is not called}
+  head.backgr:=head.datamin_org;{for case histogram is not called}
   cwhite:=head.datamax_org;
 
 
@@ -3042,14 +3052,15 @@ begin
 end;
 
 
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
+//procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :image_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
   value,sd, sd_old,factor,factor2 : double;
 begin
   if calc_hist then  get_hist(colour,img);{get histogram of img_loaded and his_total}
 
-  back.backgr:=img[0,0,0];{define something for images containing 0 or 65535 only}
+  head.backgr:=img[0,0,0];{define something for images containing 0 or 65535 only}
 
   {find peak in histogram which should be the average background}
   pixels:=0;
@@ -3058,14 +3069,14 @@ begin
     if histogram[colour,i]>pixels then {find colour peak}
     begin
       pixels:= histogram[colour,i];
-      back.backgr:=i;
+      head.backgr:=i;
     end;
 
   {check alternative mean value}
-  if his_mean[colour]>1.5*back.backgr {1.5* most common} then
+  if his_mean[colour]>1.5*head.backgr {1.5* most common} then
   begin
-    memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(back.backgr)));
-    back.backgr:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}
+    memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(head.backgr)));
+    head.backgr:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}
   end;
 
   if calc_noise_level then  {find star level and background noise level}
@@ -3089,11 +3100,11 @@ begin
         while fitsY<=height5-1-15 do
         begin
           value:=img[colour,fitsY,fitsX];
-          if ((value<back.backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
+          if ((value<head.backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
           begin
-            if ((iterations=0) or (abs(value-back.backgr)<=3*sd_old)) then {ignore outliers after first run}
+            if ((iterations=0) or (abs(value-head.backgr)<=3*sd_old)) then {ignore outliers after first run}
             begin
-              sd:=sd+sqr(value-back.backgr); {sd}
+              sd:=sd+sqr(value-head.backgr); {sd}
               inc(counter);{keep record of number of pixels processed}
             end;
           end;
@@ -3104,30 +3115,30 @@ begin
       sd:=sqrt(sd/counter); {standard deviation}
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
-    back.noise_level:= sd;   {this noise level could be too high if no flat is applied. So for images where center is brighter then the corners.}
+    head.noise_level:= sd;   {this noise level could be too high if no flat is applied. So for images where center is brighter then the corners.}
 
 
     {calculate star level}
     if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
-    back.star_level:=0;
-    back.star_level2:=0;
+    head.star_level:=0;
+    head.star_level2:=0;
     i:=max_range;
     factor:=  6*strtoint2(stackmenu1.max_stars1.text,500);// Number of pixels to test. This produces about 700 stars at hfd=2.25
     factor2:=24*strtoint2(stackmenu1.max_stars1.text,500);// Number of pixels to test. This produces about 700 stars at hfd=4.5.
     above:=0;
-    while ((back.star_level=0) and (i>back.backgr+1)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
+    while ((head.star_level=0) and (i>head.backgr+1)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
       dec(i);
       above:=above+histogram[colour,i];//sum of pixels above pixel level i
       if above>=factor then
-        back.star_level:=i;//level found for stars with HFD=2.25.
+        head.star_level:=i;//level found for stars with HFD=2.25.
     end;
-    while ((back.star_level2=0) and (i>back.backgr+1)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
+    while ((head.star_level2=0) and (i>head.backgr+1)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
       dec(i);
       above:=above+histogram[colour,i];//sum of pixels above pixel level i
       if above>=factor2 then
-        back.star_level2:=i;//level found for stars with HFD=4.5.
+        head.star_level2:=i;//level found for stars with HFD=4.5.
     end;
 
 
@@ -3136,8 +3147,8 @@ begin
     // Clip calculated star level:
     // 1) above 3.5*noise minimum, but also above background value when there is no noise so minimum is 1
     // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
-    back.star_level:= max(max(3.5*sd,1 {1})  ,back.star_level-back.backgr-1 {2) below saturation}); //star_level is relative to background
-    back.star_level2:=max(max(3.5*sd,1 {1})  ,back.star_level2-back.backgr-1 {2) below saturation}); //star_level is relative to background
+    head.star_level:= max(max(3.5*sd,1 {1})  ,head.star_level-head.backgr-1 {2) below saturation}); //star_level is relative to background
+    head.star_level2:=max(max(3.5*sd,1 {1})  ,head.star_level2-head.backgr-1 {2) below saturation}); //star_level is relative to background
   end;
 end;
 
@@ -3685,7 +3696,7 @@ begin
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2024 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
+  #13+#10+'© 2018, 2025 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3976,7 +3987,7 @@ begin
         begin
           update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
           update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
-          update_integer(memo,'CBLACK  =',' / Black point used for displaying image.         ' ,round(bck.backgr) ); {2019-4-9}
+          update_integer(memo,'CBLACK  =',' / Black point used for displaying image.         ' ,round(head.backgr) ); {2019-4-9}
           update_integer(memo,'CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
         end
         else
@@ -7777,9 +7788,9 @@ begin
 
   sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
 
-  bck.backgr:=mainwindow.minimum1.position;
+  head.backgr:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
-  if cwhite<=bck.backgr then cwhite:=bck.backgr+1;
+  if cwhite<=head.backgr then cwhite:=head.backgr+1;
 
   flipv:=mainwindow.flip_vertical1.Checked;
   fliph:=mainwindow.Flip_horizontal1.Checked;
@@ -7792,12 +7803,12 @@ begin
     begin
       if fliph then columnr:=(head.width-1)-j else columnr:=j;{flip horizontal?}
       col:=round(img_loaded[0,i,columnr]);
-      colrr:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
+      colrr:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
 
       if head.naxis3>=2 then {at least two colours}
       begin
         col:=round(img_loaded[1,i,columnr]);
-        colgg:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
+        colgg:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
       end
       else
       colgg:=colrr;
@@ -7805,7 +7816,7 @@ begin
       if head.naxis3>=3 then {at least three colours}
       begin
         col:=round(img_loaded[2,i,columnr]);
-        colbb:=(col-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
+        colbb:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
 
         if sat_factor<>1 then {adjust saturation}
         begin  {see same routine as stretch_img}
@@ -8760,24 +8771,32 @@ begin
 
       c:=0;
       repeat {add blink files}
-        dum:=Sett.ReadString('files','blink'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview6,dum,Sett.ReadBool('files','blink'+inttostr(c)+'_check',true),B_nr);
+        dum:=Sett.ReadString('files6','blink'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview6,dum,Sett.ReadBool('files6','blink'+inttostr(c)+'_check',true),B_nr);
         inc(c);
       until (dum='');
 
       c:=0;
       repeat {add photometry files}
-        dum:=Sett.ReadString('files','photometry'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview7,dum,Sett.ReadBool('files','photometry'+inttostr(c)+'_check',true),P_nr);
+        dum:=Sett.ReadString('files7','photometry'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview7,dum,Sett.ReadBool('files7','photometry'+inttostr(c)+'_check',true),P_nr);
         inc(c);
       until (dum='');
 
       c:=0;
       repeat {add inspector files}
-        dum:=Sett.ReadString('files','inspector'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then  listview_add(stackmenu1.listview8,dum,Sett.ReadBool('files','inspector'+inttostr(c)+'_check',true),L_nr);
+        dum:=Sett.ReadString('files8','inspector'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then  listview_add(stackmenu1.listview8,dum,Sett.ReadBool('files8','inspector'+inttostr(c)+'_check',true),L_nr);
         inc(c);
       until (dum='');
+
+      c:=0;
+      repeat {add SN reference files}
+        dum:=Sett.ReadString('files10','sn'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then  listview_add(stackmenu1.listview10,dum,Sett.ReadBool('files10','sn'+inttostr(c)+'_check',true),SN_nr);
+        inc(c);
+      until (dum='');
+
 
       stackmenu1.visible:=((paramcount=0) and (Sett.ReadBool('stack','stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
       listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
@@ -9144,19 +9163,25 @@ begin
       end;
       for c:=0 to stackmenu1.ListView6.items.count-1  do {add blink files}
       begin
-        sett.writestring('files','blink'+inttostr(c),stackmenu1.ListView6.items[c].caption);
-        sett.writeBool('files','blink'+inttostr(c)+'_check',stackmenu1.ListView6.items[c].Checked);
+        sett.writestring('files6','blink'+inttostr(c),stackmenu1.ListView6.items[c].caption);
+        sett.writeBool('files6','blink'+inttostr(c)+'_check',stackmenu1.ListView6.items[c].Checked);
       end;
       for c:=0 to stackmenu1.ListView7.items.count-1  do {add photometry files}
       begin
-        sett.writestring('files','photometry'+inttostr(c),stackmenu1.ListView7.items[c].caption);
-        sett.writeBool('files','photometry'+inttostr(c)+'_check',stackmenu1.ListView7.items[c].Checked);
+        sett.writestring('files7','photometry'+inttostr(c),stackmenu1.ListView7.items[c].caption);
+        sett.writeBool('files7','photometry'+inttostr(c)+'_check',stackmenu1.ListView7.items[c].Checked);
       end;
       for c:=0 to stackmenu1.ListView8.items.count-1  do {add inspector files}
       begin
-        sett.writestring('files','inspector'+inttostr(c),stackmenu1.ListView8.items[c].caption);
-        sett.writeBool('files','inspector'+inttostr(c)+'_check',stackmenu1.ListView8.items[c].Checked);
+        sett.writestring('files8','inspector'+inttostr(c),stackmenu1.ListView8.items[c].caption);
+        sett.writeBool('files8','inspector'+inttostr(c)+'_check',stackmenu1.ListView8.items[c].Checked);
       end;
+      for c:=0 to stackmenu1.ListView10.items.count-1  do {add inspector files}
+      begin
+        sett.writestring('files10','sn'+inttostr(c),stackmenu1.ListView10.items[c].caption);
+        sett.writeBool('files10','sn'+inttostr(c)+'_check',stackmenu1.ListView10.items[c].Checked);
+      end;
+
     end;{mainwindow}
   finally
     Sett.Free; {Note error detection seems not possible with tmeminifile. Tried everything}
@@ -11364,9 +11389,9 @@ begin
 
   setlength(img_sa,1,head.height,head.width);{set length of image array}
 
-  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
+  get_background(0,img_loaded,head,false{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
 
-  if deep then detection_level:=5*bck.noise_level else detection_level:=bck.star_level;
+  if deep then detection_level:=5*head.noise_level else detection_level:=head.star_level;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   nrstars:=0;{set counters at zero}
@@ -11386,7 +11411,7 @@ begin
   begin
     for fitsX:=x1 to x2-1  do
     begin
-      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- bck.backgr> detection_level)) then {new star}
+      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- head.backgr> detection_level)) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},head.mzero_radius,adu_e, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
@@ -11447,7 +11472,7 @@ end;
 
 procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader; update: boolean);
 var
-  apert,annul,hfd_med : double;
+  apert,annul         : double;
   hfd_counter         : integer;
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
@@ -11465,13 +11490,13 @@ begin
 
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
-      analyse_image(img,head,30,0 {report nr stars and hfd only}, hfd_counter,bck,hfd_med); {find background, number of stars, median HFD}
-      if hfd_med<>0 then
+      analyse_image(img,head,30,0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
+      if head.hfd_median<>0 then
       begin
-        memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,0)+'. Aperture and annulus will be adapted accordingly.');;
-        head.mzero_radius:=hfd_med*apert/2;{radius}
+        memo2_message('Median HFD is '+floattostrf(head.hfd_median, ffgeneral, 2,0)+'. Aperture and annulus will be adapted accordingly.');;
+        head.mzero_radius:=head.hfd_median*apert/2;{radius}
         annul:=strtofloat2(stackmenu1.annulus_radius1.text);
-        annulus_radius:=min(50,round(hfd_med*annul/2)-1);{Radius. Limit to 50 to prevent runtime errors}
+        annulus_radius:=min(50,round(head.hfd_median*annul/2)-1);{Radius. Limit to 50 to prevent runtime errors}
       end;
     end
     else
@@ -11484,10 +11509,10 @@ end;
 
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
-  size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter,search_radius,countN,countO     : integer;
+  size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,search_radius,countN,countO     : integer;
   Fliphorizontal, Flipvertical,saturated : boolean;
   hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit_database,
-  sqr_radius, hfd_median : double;
+  sqr_radius             : double;
   messg : string;
   img_temp3,img_sa :image_array;
   data_max: single;
@@ -11536,8 +11561,8 @@ const
 
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only},hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
-  search_radius:=max(3,round(hfd_median));
+  analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
+  search_radius:=max(3,round(head.hfd_median));
 
   setlength(img_sa,1,head.height,head.width);{set length of image array}
    for fitsY:=0 to head.height-1 do
@@ -11553,10 +11578,10 @@ const
   begin
     for fitsX:=0 to head.width-1  do
     begin
-      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- bck.backgr>5*bck.noise_level {star_level} ){star}) then {new star}
+      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- head.backgr>5*head.noise_level {star_level} ){star}) then {new star}
       begin
 
-        HFD(img_loaded,fitsX,fitsY,round(1.5* hfd_median){annulus radius},3.0*hfd_median {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,fitsX,fitsY,round(1.5* head.hfd_median){annulus radius},3.0*head.hfd_median {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
         //memo2_message(floattostr(xc)+',  ' +floattostr(yc));
 
@@ -11575,7 +11600,7 @@ const
                         (img_loaded[0,yci+1,xci+1]<data_max)  )
         else saturated:=false;
 
-        if (((hfd1<hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=hfd_median*0.75) and (snr>10)) then {star detected in img_loaded}
+        if (((hfd1<head.hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=head.hfd_median*0.75) and (snr>10)) then {star detected in img_loaded}
         begin
                       {for testing}
               //      if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
@@ -11586,7 +11611,7 @@ const
               //      if ((abs(xc-2294)<4) and  (abs(yc-274)<4)) then
               //      beep;
 
-          radius:=round(3.0*hfd_median);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+          radius:=round(3.0*head.hfd_median);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
           sqr_radius:=sqr(radius);
           for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
             for m:=-radius to +radius do
@@ -12734,7 +12759,7 @@ begin
    deltaY:=stopY-startY;
    len:=round(sqrt(sqr(deltaX)+sqr(deltaY)));
    for i:=0 to len-1 do
-     img_loaded[0,startY+round(i*deltaY/len) ,startX+round(i*deltaX/len)]:=round((cwhite+bck.backgr)/2);
+     img_loaded[0,startY+round(i*deltaY/len) ,startX+round(i*deltaX/len)]:=round((cwhite+head.backgr)/2);
 
   {convert to screen coordinates. Screen coordinates are used to have the font with the correct orientation}
   if mainwindow.flip_horizontal1.checked then begin startX:=head.width-startX; stopX:=head.width-stopX;  end;
@@ -12748,7 +12773,7 @@ begin
       x2:=3-length(value)*7*fontsize;{place the first pixel or last pixel of the text at the location}
   if deltaY>=0 then y2:=8*fontsize else y2:=0;
 
-  annotation_to_array(value, true{transparant},round((cwhite+bck.backgr)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+  annotation_to_array(value, true{transparant},round((cwhite+head.backgr)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 
   plot_fits(mainwindow.image1,false,true);
 end;
@@ -13112,9 +13137,9 @@ begin
     writeln(f,'CD2_1='+floattostrE(head.cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
     writeln(f,'CD2_2='+floattostrE(head.cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
 
-    if sqmfloat>0 then writeln(f,'SQM='+floattostrE(sqmfloat));  // sky background
-    if hfd_median>0 then writeln(f,'HFD='+floattostrE(hfd_median));
-    if hfd_counter>0 then  writeln(f,'STARS='+floattostrE(hfd_counter));//number of stars
+    if head.sqmfloat>0 then writeln(f,'SQM='+floattostrE(head.sqmfloat));  // sky background
+    if head.hfd_median>0 then writeln(f,'HFD='+floattostrE(head.hfd_median));
+    if head.hfd_counter>0 then  writeln(f,'STARS='+floattostrE(head.hfd_counter));//number of stars
   end
   else
   begin
@@ -13648,14 +13673,14 @@ begin
               report:=2; {report nr stars and hfd and export csv file}
             end;
             if snr_min=0 then snr_min:=30;
-            analyse_image(img_loaded,head,snr_min,report, hfd_counter,bck,hfd_median); {find background, number of stars, median HFD}
+            analyse_image(img_loaded,head,snr_min,report); {find background, number of stars, median HFD}
             if isConsole then {stdout available, compile targe option -wh used}
             begin
-              writeln('HFD_MEDIAN='+floattostrF(hfd_median,ffFixed,0,1));
-              writeln('STARS='+inttostr(hfd_counter));
+              writeln('HFD_MEDIAN='+floattostrF(head.hfd_median,ffFixed,0,1));
+              writeln('STARS='+inttostr(head.hfd_counter));
             end;
             {$IFDEF msWindows}
-            halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+            halt(round(head.hfd_median*100)*1000000+head.hfd_counter);{report in errorlevel the hfd and the number of stars used}
             {$ELSE}
             halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
             {$ENDIF}
@@ -13685,7 +13710,7 @@ begin
                   update_text(mainwindow.memo1.lines,'CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
                   update_text(mainwindow.memo1.lines,'OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
                 end;
-                update_text(mainwindow.memo1.lines,'SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
+                update_text(mainwindow.memo1.lines,'SQM     = ',floattostr2(head.sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                 update_text(mainwindow.memo1.lines,'COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
               end
               else
@@ -13762,7 +13787,7 @@ begin
           begin
             snr_min:=strtofloat2(getoptionvalue('extract2'));
             if snr_min=0 then snr_min:=30;
-            analyse_image(img_loaded,head,snr_min,2{export CSV only}, hfd_counter,bck,hfd_median); {find background, number of stars, median HFD}
+            analyse_image(img_loaded,head,snr_min,2{export CSV only}); {find background, number of stars, median HFD}
           end;
 
 
@@ -13962,7 +13987,7 @@ begin
                 pedestal2:=pedestal; {protect pedestal setting}
                 if calculate_sqm(img_temp,headx,true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
-                  update_text(memox,'SQM     = ',floattostr2(sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
+                  update_text(memox,'SQM     = ',floattostr2(headx.sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
                   update_text(memox,'COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
                   mess:=mess+', SQM';
                 end
@@ -15947,8 +15972,8 @@ begin
    if head.naxis3=3 then {for star temperature}
    begin
      try
-       r:=img_loaded[0,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-bck.backgr;
-       b:=img_loaded[2,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-bck.backgr;
+       r:=img_loaded[0,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-head.backgr;
+       b:=img_loaded[2,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-head.backgr;
      except
        {some rounding error, just outside dimensions}
      end;
@@ -16152,7 +16177,7 @@ begin
 end;
 
 
-function stretch_img(img: image_array):image_array;{stretch image, three colour or mono}
+function stretch_img(img: image_array; head : theader):image_array;{stretch image, three colour or mono}
 var
  colrr,colgg,colbb,col_r,col_g,col_b, largest,luminance,luminance_stretched,factor,sat_factor,h,s,v : single;
  width5,height5,colours5,fitsX,fitsY :integer;
@@ -16174,9 +16199,9 @@ begin
         col_g:=img[1,fitsY,fitsX];
         col_b:=img[2,fitsY,fitsX];
 
-        colrr:=(col_r-bck.backgr)/(cwhite-bck.backgr);{scale to 0..1}
-        colgg:=(col_g-bck.backgr)/(cwhite-bck.backgr);{scale to 0..1}
-        colbb:=(col_b-bck.backgr)/(cwhite-bck.backgr);{scale to 0..1}
+        colrr:=(col_r-head.backgr)/(cwhite-head.backgr);{scale to 0..1}
+        colgg:=(col_g-head.backgr)/(cwhite-head.backgr);{scale to 0..1}
+        colbb:=(col_b-head.backgr)/(cwhite-head.backgr);{scale to 0..1}
 
         if sat_factor<>1 then {adjust saturation}
         begin
@@ -16224,7 +16249,7 @@ begin
       else
       begin {mono, naxis3=1}
         col_r:=img[0,fitsY,fitsX];
-        colrr:=(col_r-bck.backgr)/(cwhite-bck.backgr);{scale to 1}
+        colrr:=(col_r-head.backgr)/(cwhite-head.backgr);{scale to 1}
         if colrr<=0.00000000001 then colrr:=0.00000000001;
         if colrr>1 then colrr:=1;
         if stretch_on then
@@ -17060,7 +17085,7 @@ begin
     begin
       if savedialog1.filterindex=1 then
       begin
-        img_temp:=stretch_img(img_loaded);
+        img_temp:=stretch_img(img_loaded,head);
         save_png16(img_temp,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);  {Change extension is only required due to bug in macOS only. 2021-10-9 See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39423}
       end
       else
@@ -17069,7 +17094,7 @@ begin
       else
       if savedialog1.filterindex=3 then
       begin
-        img_temp:=stretch_img(img_loaded);
+        img_temp:=stretch_img(img_loaded,head);
         save_tiff16(img_temp,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
@@ -17081,7 +17106,7 @@ begin
       else
       if savedialog1.filterindex=6 then
       begin
-        img_temp:=stretch_img(img_loaded);
+        img_temp:=stretch_img(img_loaded,head);
         save_PPM_PGM_PFM(img_temp,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
@@ -17095,7 +17120,7 @@ begin
     begin {gray}
       if savedialog1.filterindex=1 then
       begin
-        img_temp:=stretch_img(img_loaded);
+        img_temp:=stretch_img(img_loaded,head);
         save_png16(img_temp,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
@@ -17104,7 +17129,7 @@ begin
       else
       if savedialog1.filterindex=3 then
       begin
-        img_temp:=stretch_img(img_loaded);
+        img_temp:=stretch_img(img_loaded,head);
         save_tiff16(img_temp,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
@@ -17116,7 +17141,7 @@ begin
       else
       if savedialog1.filterindex=6 then
       begin
-        img_temp:=stretch_img(img_loaded);
+        img_temp:=stretch_img(img_loaded,head);
         save_PPM_PGM_PFM(img_temp,16{colour depth}, ChangeFileExt(savedialog1.filename,'.pgm'), flip_horizontal1.checked,flip_vertical1.checked);
       end
       else

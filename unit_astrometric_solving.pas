@@ -1,5 +1,5 @@
 unit unit_astrometric_solving;
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
 email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -103,7 +103,9 @@ uses   Classes,SysUtils,controls,forms,math,stdctrls,
        unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field, unit_calc_trans_cubic;
 
 function solve_image(img :image_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
-procedure bin_and_find_stars(img :image_array;binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+//procedure bin_and_find_stars(img :image_array;binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+
 function report_binning(height :double) : integer;{select the binning}
 function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
 procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
@@ -447,8 +449,7 @@ begin
 end;
 
 
-
-procedure bin_and_find_stars(img :image_array;binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 var
   width5,height5,nrstars,i : integer;
   img_binned : image_array;
@@ -483,8 +484,8 @@ begin
     //    plot_fits(mainwindow.image1,true,true);//plot real
     //    exit;  }
 
-    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{out}bck {cblack,star_level} );{get back ground}
-    find_stars(img_binned,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
+    get_background(0,img_binned,head ,true {load hist},true {calculate also standard deviation background});{get back ground}
+    find_stars(img_binned,head,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
 
     if length(img_binned[0])<960 then
     begin
@@ -519,8 +520,8 @@ begin
       memo2_message('█ █ █ █ █ █ Warning, small image dimensions!');
     end;
 
-    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {out}bck{ cblack,star_level});{get back ground}
-    find_stars(img,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
+    get_background(0,img,head,get_hist {load hist},true {calculate also standard deviation background});{get back ground}
+    find_stars(img,head,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
   end;
 
  //  for i:=0 to length(starlist3[0])-1 do
@@ -884,7 +885,7 @@ begin
     binning:=report_binning(hd.height*cropping); {select binning on dimensions of cropped image}
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/hd.height) );{to ignore hot pixels which are too small}
 
-    bin_and_find_stars(img,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+    bin_and_find_stars(img,hd,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
     nrstars:=Length(starlist2[0]);
 
     if ((hd.xpixsz<>0) and (hd.ypixsz<>0) and (abs(hd.xpixsz-hd.ypixsz)>0.1)) then //non-square pixels, correct. Remove in future?

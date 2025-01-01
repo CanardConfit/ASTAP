@@ -11,7 +11,7 @@ object form_sqm1: Tform_sqm1
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '3.2.0.0'
+  LCLVersion = '3.6.0.0'
   object help_sqm_measurement1: TLabel
     Cursor = crHandPoint
     Left = 544
@@ -231,7 +231,7 @@ object form_sqm1: Tform_sqm1
     Width = 111
     Caption = 'Apply dark && flat '
     TabOrder = 8
-    OnChange = sqm_applydf1Change
+    OnClick = sqm_applydf1Click
   end
   object green_message1: TLabel
     Left = 176

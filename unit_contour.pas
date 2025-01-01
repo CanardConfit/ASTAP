@@ -438,9 +438,9 @@ begin
     setlength(img_sa,1,hh,ww);{set length of image array}
 
     gaussian_blur2(img_bk, blur);{apply gaussian blur }
-    get_background(0,img_bk,{cblack=0} false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
+    get_background(0,img_bk,head,{cblack=0} false{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
 
-    detection_level:=sigmafactor*bck.noise_level+ bck.backgr;
+    detection_level:=sigmafactor*head.noise_level+ head.backgr;
     detection_grid:=strtoint2(stackmenu1.detection_grid1.text,400) div binning;
 
     for fitsY:=0 to hh-1 do

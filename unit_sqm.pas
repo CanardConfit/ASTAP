@@ -54,7 +54,7 @@ type
     procedure longitude1Exit(Sender: TObject);
     procedure ok1Click(Sender: TObject);
     procedure pedestal1Exit(Sender: TObject);
-    procedure sqm_applydf1Change(Sender: TObject);
+    procedure sqm_applydf1Click(Sender: TObject);
   private
 
   public
@@ -114,7 +114,7 @@ begin
   result:=false;
   if headx.mzero>0 then
   begin
-    if get_bk then get_background(0,img,get_his {histogram},false {calculate also noise level} ,{var}bck);
+    if get_bk then get_background(0,img,headX, get_his {histogram},false {calculate also noise level});
 
     if (pos('D',headx.calstat)>0) then
     begin
@@ -133,7 +133,7 @@ begin
          warning_str:=warning_str+'Pedestal value missing!';
        end;
 
-    if pedestal2>=bck.backgr then
+    if pedestal2>=headX.backgr then
     begin
       if form_exist then form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'Too high pedestal value!'+#10 else
       begin
@@ -144,7 +144,7 @@ begin
       pedestal2:=0; {prevent errors}
     end;
 
-    sqmfloat:=headx.mzero - ln((bck.backgr-pedestal2-headx.pedestal)/sqr(headx.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;// +headx.pedestal was the value added calibration calibration
+    headX.sqmfloat:=headx.mzero - ln((headX.backgr-pedestal2-headx.pedestal)/sqr(headx.cdelt2*3600){flux per arc sec})*2.5/ln(10) ;// +headx.pedestal was the value added calibration calibration
 
     calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,altitudefloat);
 
@@ -152,7 +152,7 @@ begin
     begin
       airm:=airmass_calc(altitudefloat);
       correction:= atmospheric_absorption(airm)- 0.28 {correction at zenith is defined as zero by subtracting 0.28};
-      sqmfloat:=sqmfloat+correction;
+      headX.sqmfloat:=headX.sqmfloat+correction;
       result:=true;
     end
     else
@@ -170,6 +170,8 @@ begin
   if backup_made then
   begin
     restore_img;
+    head.sqmfloat:=headX.sqmfloat;
+    head.backgr:=headX.backgr;
     backup_made:=false;
   end;
 end;
@@ -266,10 +268,10 @@ begin
     end;
 
     {report}
-    background1.caption:=inttostr(round(bck.backgr));
+    background1.caption:=inttostr(round(head.backgr));
     altitude1.caption:=inttostr(round(altitudefloat));
-    sqm1.caption:=floattostrF(sqmfloat,ffFixed,0,2);
-    bortle1.caption:=bortle(sqmfloat);
+    sqm1.caption:=floattostrF(head.sqmfloat,ffFixed,0,2);
+    bortle1.caption:=bortle(head.sqmfloat);
   end;
 end;
 
@@ -325,7 +327,8 @@ begin
   display_sqm;
 end;
 
-procedure Tform_sqm1.sqm_applydf1Change(Sender: TObject);
+
+procedure Tform_sqm1.sqm_applydf1Click(Sender: TObject);
 begin
   pedestal1.enabled:=sqm_applydf1.checked=false;
   display_sqm;
