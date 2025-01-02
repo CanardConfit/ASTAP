@@ -50,6 +50,7 @@ type
     analyseblink1: TButton;
     analysedarksButton2: TButton;
     analyseflatdarksButton1: TButton;
+    analyseSNrefbutton1: TButton;
     analyseflatsButton3: TButton;
     analysephotometry1: TButton;
     analysephotometrymore1: TButton;
@@ -59,8 +60,23 @@ type
     annotate_mode1: TComboBox;
     Annotations_visible2: TCheckBox;
     annulus_radius1: TComboBox;
+    browse_snref1: TBitBtn;
+    clear_selectionSNref1: TButton;
     label_delta_ra1: TLabel;
     label_delta_dec1: TLabel;
+    listview10: TListView;
+    list_to_clipboard10: TMenuItem;
+    MenuItem36: TMenuItem;
+    MenuItem37: TMenuItem;
+    MenuItem39: TMenuItem;
+    MenuItem40: TMenuItem;
+    PopupMenu10: TPopupMenu;
+    refresh_solutions_selectedSN_reference1: TMenuItem;
+    removeselected10: TMenuItem;
+    renametobak10: TMenuItem;
+    select10: TMenuItem;
+    selectall10: TMenuItem;
+    Separator8: TMenuItem;
     solar_drift_ra1: TEdit;
     solar_drift_compensation1: TCheckBox;
     copyRowsandColumnsswapped1: TMenuItem;
@@ -145,9 +161,12 @@ type
     solar_drift_dec1: TEdit;
     SpeedButton2: TSpeedButton;
     SpeedButton3: TSpeedButton;
+    SN_ref1: TTabSheet;
     undo_button23: TBitBtn;
     font_size_photometry_UpDown1: TUpDown;
+    unselect10: TMenuItem;
     use_astrometry_alignment2: TRadioButton;
+    Viewimage10: TMenuItem;
     view_next1: TMenuItem;
     view_previous1: TMenuItem;
     view_next6: TMenuItem;
@@ -727,6 +746,7 @@ type
     procedure add_noise1Click(Sender: TObject);
     procedure alignment1Show(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
+    procedure analyseSNrefbutton1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
     procedure apply_star_smooth1Click(Sender: TObject);
@@ -735,7 +755,9 @@ type
     procedure blend1Change(Sender: TObject);
     procedure blink_annotate_and_solve1Click(Sender: TObject);
     procedure apply_unsharp_mask1Click(Sender: TObject);
+    procedure browse_snref1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
+    procedure clear_selectionSNref1Click(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure copyRowsandColumnsswapped1Click(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
@@ -746,6 +768,7 @@ type
       ARect: TRect; AState: TOwnerDrawState);
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
+    procedure refresh_solutions_selectedSN_reference1Click(Sender: TObject);
     procedure solar_drift_compensation1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
@@ -987,7 +1010,7 @@ type
 
 type
   bakfile = record
-    tab : integer;  //from which tab
+    tab : integer;  //from which listview
     thetime: Tdatetime;
     index  : integer;//original listview index position
     name   : string;
@@ -1076,7 +1099,8 @@ procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert date_obs 
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio: double); {resize img_loaded in free ratio}
 function median_background(var img: image_array; color, sizeX, sizeY, x, y: integer): double; {find median value of an area at position x,y with sizeX,sizeY}
-procedure analyse_image(img: image_array; head: Theader; snr_min: double; report_type: integer;  out star_counter: integer; out bck :Tbackground;out hfd_median: double);{find background, number of stars, median HFD}
+procedure analyse_image(img: image_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer;out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
+
 
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc, dest: image_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
@@ -1221,6 +1245,18 @@ const
   M_foctemp = 21;
   M_pressure = 22;
   M_nr = 23;{number of fields}
+
+  SN_date = 6;
+  SN_object = 7;
+  SN_filter =8;
+  SN_ra = 9;
+  SN_dec = 10;
+
+  SN_solution=11;
+  SN_calibration= 12;
+  SN_gain = 13;
+  SN_nr = 14;{ Nova reference frames}
+
 
 
   icon_thumb_down = 8; {image index for outlier}
@@ -1396,6 +1432,7 @@ begin
   stackmenu1.listview6.Items.beginUpdate;
   stackmenu1.listview7.Items.beginUpdate;
   stackmenu1.listview8.Items.beginUpdate;
+  stackmenu1.listview10.Items.beginUpdate;
   //  stackmenu1.listview9.Items.beginUpdate;{not stored}
 end;
 
@@ -1410,7 +1447,8 @@ begin
   stackmenu1.listview6.Items.EndUpdate;
   stackmenu1.listview7.Items.EndUpdate;
   stackmenu1.listview8.Items.EndUpdate;
-  //  stackmenu1.listview9.Items.EndUpdate;
+
+  stackmenu1.listview10.Items.EndUpdate;
 end;
 
 
@@ -1604,11 +1642,10 @@ begin
   end;{with stackmenu1}
 end;
 
-
-procedure analyse_image(img: image_array; head: Theader; snr_min: double; report_type: integer; out star_counter: integer; out bck:Tbackground; out hfd_median: double);//find background, number of stars, median HFD
+procedure analyse_image(img: image_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer; out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
 var
   width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, m,
-  xci, yci, sqr_radius, formalism: integer;
+  xci, yci, sqr_radius, formalism, star_counter: integer;
   hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background,ra,decl: double;
   hfd_list:  array of double;
   img_sa  : image_array;
@@ -1629,8 +1666,8 @@ begin
   max_stars := strtoint2(stackmenu1.max_stars1.Text,500);
   SetLength(hfd_list, len);{set array length to len}
 
-  get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
-  detection_level:=bck.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
+  get_background(0, img,head, True, True {calculate background and also star level end noise level});
+  detection_level:=head.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
 
   if ap_order>0 then formalism:=1{sip} else formalism:=0{1th order};
 
@@ -1642,17 +1679,17 @@ begin
   if ((nrbits = 8) or (head.datamax_org <= 255)) then min_background := 0
   else
     min_background := 8;
-  if ((bck.backgr < 60000) and (bck.backgr > min_background)) then {not an abnormal file}
+  if ((head.backgr < 60000) and (head.backgr > min_background)) then {not an abnormal file}
   begin
     repeat {try three time to find enough stars}
       if retries=3 then
-        begin if bck.star_level >30*bck.noise_level then detection_level:=bck.star_level  else retries:=2;{skip} end;//stars are dominant
+        begin if head.star_level >30*head.noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
       if retries=2 then
-        begin if bck.star_level2>30*bck.noise_level then detection_level:=bck.star_level2 else retries:=1;{skip} end;//stars are dominant
+        begin if head.star_level2>30*head.noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
       if retries=1 then
-        begin detection_level:=30*bck.noise_level; end;
+        begin detection_level:=30*head.noise_level; end;
       if retries=0 then
-        begin detection_level:= 7*bck.noise_level; end;
+        begin detection_level:= 7*head.noise_level; end;
 
       star_counter := 0;
 
@@ -1674,7 +1711,7 @@ begin
         for fitsX := 0 to width5 - 1 do
         begin
           if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and
-            (img[0, fitsY, fitsX] - bck.backgr > detection_level)) then
+            (img[0, fitsY, fitsX] - head.backgr > detection_level)) then
             {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
@@ -1724,10 +1761,12 @@ begin
 
     until ((star_counter >= max_stars) or (retries < 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-    if ((star_counter > 0) and (report_type<=1)) then hfd_median := SMedian(hfd_List, star_counter) else  hfd_median := 99;
+    if ((star_counter > 0) and (report_type<=1)) then head.hfd_median := SMedian(hfd_List, star_counter) else  head.hfd_median := 99;
   end {backgr is normal}
   else
-    hfd_median := 99; {Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
+    head.hfd_median := 99; {Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
+
+  head.hfd_counter:=star_counter;
 
   if report_type>0 then
   begin
@@ -1755,7 +1794,6 @@ var
   hfdlist_13, hfdlist_23, hfdlist_33, hfdlist_outer_ring: array of double;
   starlistXY: array of array of integer;
   len, starX, starY: integer;
-  bck : tbackground;
 
 begin
   if head.naxis3 > 1 then {colour image}
@@ -1778,22 +1816,22 @@ begin
 
   setlength(img_sa, 1, head.Height, head.Width);{set length of image array}
 
-  get_background(0, img, True, True {calculate background and also star level end noise level},{out}bck);
+  get_background(0, img, head,True, True {calculate background and also star level end noise level});
 
   retries:=3; {try up to four times to get enough stars from the image}
   repeat
     if retries=3 then
-      begin if bck.star_level >30*bck.noise_level then detection_level:=bck.star_level  else retries:=2;{skip} end;//stars are dominant
+      begin if head.star_level >30*head.noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
     if retries=2 then
-      begin if bck.star_level2>30*bck.noise_level then detection_level:=bck.star_level2 else retries:=1;{skip} end;//stars are dominant
+      begin if head.star_level2>30*head.noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
     if retries=1 then
-      begin detection_level:=30*bck.noise_level; end;
+      begin detection_level:=30*head.noise_level; end;
     if retries=0 then
-      begin detection_level:= 7*bck.noise_level; end;
+      begin detection_level:= 7*head.noise_level; end;
 
     nhfd := 0;{set counter at zero}
 
-    if bck.backgr > 8 then
+    if head.backgr > 8 then
     begin
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
@@ -1809,7 +1847,7 @@ begin
         for fitsX := 0 to head.Width - 1 do
         begin
           if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and
-            (img[0, fitsY, fitsX] - bck.backgr > detection_level){star}) then   {new star. For analyse used sigma is 5, so not too low.}
+            (img[0, fitsY, fitsX] - head.backgr > detection_level){star}) then   {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99  {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
             {star HFD and FWHM}
@@ -2097,13 +2135,12 @@ end;
 
 procedure analyse_tab_lights(analyse_level : integer);
 var
-  c, star_counter, i, counts                 : integer;
-  hfd_median, alt, az                        : double;
-  red, green, blue, planetary                : boolean;
+  c,  i, counts                             : integer;
+  alt, az                                   : double;
+  red, green, blue, planetary               : boolean;
   key, filename1, rawstr      : string;
   img                         : image_array;
   headx                       : theader;
-  bck                         : Tbackground;
 
 begin
   with stackmenu1 do
@@ -2267,23 +2304,20 @@ begin
           begin {light frame}
 
             if ((planetary = False) and (analyse_level>0)) then
-              analyse_image(img, headx, 10 {snr_min}, 0, star_counter, bck, hfd_median) {find background, number of stars, median HFD}
+              analyse_image(img, headx, 10 {snr_min}, 0) {find background, number of stars, median HFD}
             else
             begin
-              star_counter := 0;
-              bck.backgr := 0;
-              bck.star_level:= 0;
-              hfd_median := -1;
+              headx.hfd_counter := 0;
+              headx.backgr := 0;
+              headx.star_level:= 0;
+              headx.hfd_median := -1;
             end;
 
             ListView1.Items.BeginUpdate;
             try
               begin
-                ListView1.Items.item[c].subitems.Strings[L_object] := object_name;
-                {object name, without spaces}
-
-                ListView1.Items.item[c].subitems.Strings[L_filter] := headx.filter_name;
-                {filter name, without spaces}
+                ListView1.Items.item[c].subitems.Strings[L_object] := object_name; {object name, without spaces}
+                ListView1.Items.item[c].subitems.Strings[L_filter] := headx.filter_name; {filter name, without spaces}
 
                 if headx.naxis3 >= 3 then
                 begin
@@ -2301,16 +2335,16 @@ begin
                 {Binning CCD}
 
                 ListView1.Items.item[c].subitems.Strings[L_hfd] :=
-                  floattostrF(hfd_median, ffFixed, 0, 1);
+                  floattostrF(headX.hfd_median, ffFixed, 0, 1);
                 ListView1.Items.item[c].subitems.Strings[L_quality] :=
-                  inttostr5(round(star_counter / sqr(hfd_median*headx.Xbinning))); {quality number of stars divided by hfd, binning neutral}
+                  inttostr5(round(headx.hfd_counter / sqr(headX.hfd_median*headx.Xbinning))); {quality number of stars divided by hfd, binning neutral}
 
-                if hfd_median >= 99 then
+                if headX.hfd_median >= 99 then
                   ListView1.Items.item[c].Checked := False {no stars, can't process this image}
                 else
                 begin {image can be futher analysed}
-                  ListView1.Items.item[c].subitems.Strings[L_nrstars]:= inttostr5(round(star_counter {star_level}));//nr of stars
-                  ListView1.Items.item[c].subitems.Strings[L_background]:=inttostr5(round(bck.backgr));
+                  ListView1.Items.item[c].subitems.Strings[L_nrstars]:= inttostr5(round(headx.hfd_counter));//nr of stars
+                  ListView1.Items.item[c].subitems.Strings[L_background]:=inttostr5(round(headx.backgr));
                   if planetary then ListView1.Items.item[c].subitems.Strings[L_streaks] :=floattostrF(image_sharpness(img), ffFixed, 0, 3)  {sharpness test}
                   else
                   if analyse_level>1 then
@@ -2693,7 +2727,7 @@ begin
         stackmenu1.min_star_size_stacking1.Caption){hfd});
     {to ignore hot pixels which are too small}
 
-    bin_and_find_stars(img_loaded, binning, 1 {cropping}, hfd_min, max_stars, False{update hist}, starlist1, warning_downsample);{bin, measure background}
+    bin_and_find_stars(img_loaded, head,binning, 1 {cropping}, hfd_min, max_stars, False{update hist}, starlist1, warning_downsample);{bin, measure background}
 
 //    memo2_message('Start');
 //    for i:=1 to 12000 do
@@ -2756,6 +2790,7 @@ begin
   if Sender = removeselected7 then listview_removeselect(listview7);{from popup menu photometry}
   if Sender = removeselected8 then listview_removeselect(listview8);{inspector}
   if Sender = removeselected9 then listview_removeselect(listview9);{mount analyse}
+  if Sender = removeselected10 then listview_removeselect(listview10);{SN reference}
 end;
 
 
@@ -2907,6 +2942,7 @@ begin
   if Sender = select7 then listview_select(listview7);{from popupmenu photometry}
   if Sender = select8 then listview_select(listview8);
   if Sender = select9 then listview_select(listview9);
+  if Sender = select10 then listview_select(listview10);
 end;
 
 
@@ -2914,7 +2950,7 @@ procedure Tstackmenu1.browse_bias1Click(Sender: TObject);
 var
   i: integer;
 begin
-  OpenDialog1.Title := 'Select flat dark (bias) images';
+  OpenDialog1.Title := 'Select flat dark (bias) frames';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
   opendialog1.filename := '';
   opendialog1.Filter := dialog_filter;
@@ -2953,7 +2989,7 @@ procedure Tstackmenu1.browse_flats1Click(Sender: TObject);
 var
   i: integer;
 begin
-  OpenDialog1.Title := 'Select flat images';
+  OpenDialog1.Title := 'Select flat frames';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
   opendialog1.filename := '';
   opendialog1.Filter := dialog_filter;
@@ -3088,14 +3124,13 @@ begin
 end;
 
 
-procedure artificial_flatV2(var img: image_array; centrum_diameter: integer);
+procedure artificial_flatV2(var img: image_array;head:theader; centrum_diameter: integer);
 var
   fitsx, fitsy, dist, col, centerX, centerY, colors, w, h, leng, angle,
   Count, largest_distX, largest_distY: integer;
   offset, oldoffset: single;
   sn, cs: double;
   median, test: array of double;
-  bck : Tbackground;
 begin
   colors := Length(img); {colors}
   w := Length(img[0,0]); {width}
@@ -3127,7 +3162,7 @@ begin
 
   for col := 0 to colors - 1 do {do all colours}
   begin
-    get_background(col, img, True, False{do not calculate noise_level}, bck);
+    get_background(col, img,head, True, False{do not calculate noise_level});
     {should be about 500 for mosaic since that is the target value}
     oldoffset := 0;
     for dist := leng downto 0 do
@@ -3145,12 +3180,12 @@ begin
             {within the image}
           begin
             //memo2_message(inttostr(angle)+'    ' +floattostr(fitsX)+'     '+floattostr(fitsY) );
-            offset := img[col, fitsY, fitsX] - bck.backgr;
+            offset := img[col, fitsY, fitsX] - head.backgr;
 
             if oldoffset <> 0 then offset := 0.1 * offset + 0.9 * oldoffset;{smoothing}
             oldoffset := offset;
 
-            test[Count] := img[col, fitsY, fitsX] - bck.backgr;
+            test[Count] := img[col, fitsY, fitsX] - head.backgr;
             Inc(Count, 1);
           end;
         end;
@@ -3207,8 +3242,7 @@ begin
     if Sender <> apply_artificial_flat_correctionV2 then
       artificial_flatV1(img_loaded, box_size)
     else
-      artificial_flatV2(img_loaded,
-        StrToInt(StringReplace(ring_equalise_factor1.Text, '%', '', [])));
+      artificial_flatV2(img_loaded, head,    StrToInt(StringReplace(ring_equalise_factor1.Text, '%', '', [])));
 
     plot_fits(mainwindow.image1, False, True);{plot real}
     Screen.Cursor := crDefault;
@@ -3402,7 +3436,6 @@ var
   Save_Cursor: TCursor;
   fitsx, fitsy, col: integer;
   a_factor, k_factor, bf, min, colr: single;
-  bck : tbackground;
 begin
   if head.naxis <> 0 then
   begin
@@ -3415,8 +3448,8 @@ begin
     {find background}
     if auto_background1.Checked then
     begin
-      get_background(0, img_loaded, True, False{do not calculate noise_level}, bck);
-      min := bck.backgr * 0.9;
+      get_background(0, img_loaded, head,True, False{do not calculate noise_level});
+      min := head.backgr * 0.9;
       edit_background1.Text := floattostrf(min, ffgeneral, 4, 0); //floattostr6(min);
 
       for col := 0 to head.naxis3 - 1 do {all colors}
@@ -3790,10 +3823,11 @@ begin
   if Sender = renametobak3 then listview_rename_bak(listview3,2);{from popupmenu}
   if Sender = renametobak4 then listview_rename_bak(listview4,3);{from popupmenu}
   if Sender = renametobak5 then listview_rename_bak(listview5,4);{from popupmenu}
-  if Sender = renametobak6 then listview_rename_bak(listview6,5);{from popupmenu blink}
-  if Sender = renametobak7 then listview_rename_bak(listview7,6);{from popupmenu photometry}
-  if Sender = renametobak8 then listview_rename_bak(listview8,7);{from popupmenu inspector}
-  if Sender = renametobak9 then listview_rename_bak(listview9,8);
+  if Sender = renametobak6 then listview_rename_bak(listview6,7);{from popupmenu blink}
+  if Sender = renametobak7 then listview_rename_bak(listview7,8);{from popupmenu photometry}
+  if Sender = renametobak8 then listview_rename_bak(listview8,9);{from popupmenu inspector}
+  if Sender = renametobak9 then listview_rename_bak(listview9,10);
+  if Sender = renametobak10 then listview_rename_bak(listview10,15);//SN reference
   {from popupmenu mount analyse}
 end;
 
@@ -3996,6 +4030,7 @@ begin
   if Sender = unselect7 then listview_unselect(listview7);
   if Sender = unselect8 then listview_unselect(listview8);{inspector}
   if Sender = unselect9 then listview_unselect(listview9);{inspector}
+  if Sender = unselect10 then listview_unselect(listview10);{SN reference}
 end;
 
 
@@ -4152,13 +4187,12 @@ procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);
 {analyse list of FITS files}
 var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
-  hfd_median, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, adu_e :double;
+  hfd_median2, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, adu_e :double;
   filename1,filterstr,filterstrUP  : string;
   loaded, red, green, blue         : boolean;
   img: image_array;
   headx : theader;
   nr_stars, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33: double;
-  bck : Tbackground;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -4219,6 +4253,8 @@ begin
   if lv.Name = stackmenu1.listview8.Name then tabnr := 8 {inspector tab}
   else
   if lv.Name = stackmenu1.listview9.Name then tabnr := 9 {mount analyse tab}
+  else
+  if lv.Name = stackmenu1.listview10.Name then tabnr := 15 {SN reference tab}
   else
     tabnr := 0;
 
@@ -4290,8 +4326,8 @@ begin
 
               if ((full = True) and (tabnr in [2, 3, 4, 7])) then  {get background for dark, flats, flat-darks, photometry}
               begin {analyse background and noise}
-                get_background(0, img, True {update_hist}, False {calculate noise level}, {var} bck);
-                lv.Items.item[c].subitems.Strings[D_background] := inttostr5(round(bck.backgr));
+                get_background(0, img,headx, True {update_hist}, False {calculate noise level});
+                lv.Items.item[c].subitems.Strings[D_background] := inttostr5(round(headx.backgr));
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
@@ -4337,8 +4373,7 @@ begin
             else
             if tabnr = 6 then {blink tab}
             begin
-              lv.Items.item[c].subitems.Strings[B_date] :=
-                StringReplace(copy(headx.date_obs, 1, 19), 'T', ' ', []); {date/time for blink. Remove fractions of seconds}
+              lv.Items.item[c].subitems.Strings[B_date] :=StringReplace(copy(headx.date_obs, 1, 19), 'T', ' ', []); {date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[B_calibration] := headx.calstat;  {calibration headx.calstat info DFB}
               //Remark. Do not fill [B_solution]. Will contain numbers instead of ✓ used by the blink routine
               if annotated then lv.Items.item[c].subitems.Strings[B_annotated] := '✓' else lv.Items.item[c].subitems.Strings[B_annotated] := '';
@@ -4426,11 +4461,11 @@ begin
               if full {amode=3} then {listview7 photometry plus mode}
               begin
 
-                analyse_image(img, headx, 10 {snr_min}, 0 {report nr stars and hfd only}, hfd_counter, bck, hfd_median);
+                analyse_image(img, headx, 10 {snr_min}, 0 {report nr stars and hfd only});
                 {find background, number of stars, median HFD}
-                lv.Items.item[c].subitems.Strings[P_background]:= inttostr5(round(bck.backgr));
-                lv.Items.item[c].subitems.Strings[P_hfd] := floattostrF(hfd_median, ffFixed, 0, 1);
-                lv.Items.item[c].subitems.Strings[P_stars] := inttostr5(hfd_counter);
+                lv.Items.item[c].subitems.Strings[P_background]:= inttostr5(round(headx.backgr));
+                lv.Items.item[c].subitems.Strings[P_hfd] := floattostrF(headx.hfd_median, ffFixed, 0, 1);
+                lv.Items.item[c].subitems.Strings[P_stars] := inttostr5(headx.hfd_counter);
                 {number of stars}
               end;
             end
@@ -4443,9 +4478,9 @@ begin
 
               lv.Items.item[c].subitems.Strings[I_focus_pos] := IntToStr(focus_pos);
 
-              analyse_image_extended(img, headx, nr_stars, hfd_median, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33); {analyse several areas}
+              analyse_image_extended(img, headx, nr_stars, hfd_median2, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33); {analyse several areas}
 
-              if ((hfd_median > 25) or (median_22 > 25) or (hfd_outer_ring > 25) or (median_11 > 25) or (median_31 > 25) or (median_13 > 25) or (median_33 > 25)) then
+              if ((hfd_median2 > 25) or (median_22 > 25) or (hfd_outer_ring > 25) or (median_11 > 25) or (median_31 > 25) or (median_13 > 25) or (median_33 > 25)) then
               begin
                 lv.Items.item[c].Checked := False; {uncheck}
                 lv.Items.item[c].subitems.Strings[I_nr_stars] := '❌';
@@ -4454,7 +4489,7 @@ begin
                 lv.Items.item[c].subitems.Strings[I_nr_stars] :=
                   floattostrF(nr_stars, ffFixed, 0, 0);
 
-              lv.Items.item[c].subitems.Strings[I_nr_stars + 2] := floattostrF(hfd_median, ffFixed, 0, 3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars + 2] := floattostrF(hfd_median2, ffFixed, 0, 3);
               lv.Items.item[c].subitems.Strings[I_nr_stars + 3] := floattostrF(median_22, ffFixed, 0, 3);
               lv.Items.item[c].subitems.Strings[I_nr_stars + 4] := floattostrF(hfd_outer_ring, ffFixed, 0, 3);
               lv.Items.item[c].subitems.Strings[I_nr_stars + 5] := floattostrF(median_11, ffFixed, 0, 3);
@@ -4588,6 +4623,35 @@ begin
               if focus_temp <> 999 then
                 Lv.Items.item[c].subitems.Strings[M_foctemp] := floattostrF(focus_temp, ffFixed, 0, 1);
               Lv.Items.item[c].subitems.Strings[M_pressure] :=  floattostrF(pressure, ffFixed, 0, 1);
+
+            end
+            else
+
+            if tabnr = 15 then {SN reference tab}
+            begin
+              lv.Items.item[c].subitems.Strings[SN_date] :=StringReplace(copy(headx.date_obs, 1, 19), 'T', ' ', []); {date/time for blink. Remove fractions of seconds}
+
+              lv.Items.item[c].subitems.Strings[SN_object] := object_name; {object name, without spaces}
+              lv.Items.item[c].subitems.Strings[SN_filter] := headx.filter_name; {filter name, without spaces}
+              lv.Items.item[c].subitems.Strings[SN_ra] := floattostrF(headx.ra0*180/pi,ffFixed,0,4); {ra}
+              lv.Items.item[c].subitems.Strings[SN_dec] := floattostrF(headx.dec0*180/pi,FFfixed,0,4); {dec}
+
+              {is internal solution available?}
+              if A_ORDER>0 then
+                lv.Items.item[c].subitems.Strings[SN_solution]:='✓✓'
+              else
+              if headx.cd1_1 <> 0 then
+                lv.Items.item[c].subitems.Strings[SN_solution] := '✓'
+              else
+                lv.Items.item[c].subitems.Strings[SN_solution] := '-';
+
+              lv.Items.item[c].subitems.Strings[SN_calibration] := headx.calstat;
+
+              if headx.egain<>'' then
+                lv.Items.item[c].subitems.Strings[SN_gain]:=headx.egain {e-/adu}
+              else
+              if headx.gain<>'' then
+                lv.Items.item[c].subitems.Strings[SN_gain]:=headx.gain;
 
             end;
           end;
@@ -4995,8 +5059,7 @@ end;
 
 procedure Tstackmenu1.analyseflatdarksButton1Click(Sender: TObject);
 begin
-  analyse_listview(listview4, False {light}, True
-    {full fits, include background and noise}, False{refresh});
+  analyse_listview(listview4, False {light}, True {full fits, include background and noise}, False{refresh});
 
   {temporary fix for CustomDraw not called}
   {$ifdef darwin} {MacOS}
@@ -5047,13 +5110,12 @@ procedure Tstackmenu1.dark_spot_filter1Click(Sender: TObject);
 var
   fitsx, fitsy, i, j, k, x2, y2, radius, most_common, progress_value,greylevels: integer;
   neg_noise_level: double;
-  bck : tbackground;
 begin
   if head.naxis <> 0 then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-    get_background(0, img_loaded, True, False{do not calculate noise_level}, bck); {should be about 500 for mosaic since that is the target value}
+    get_background(0, img_loaded,head, True, False{do not calculate noise_level}); {should be about 500 for mosaic since that is the target value}
 
     backup_img;  {store array in img_backup}
     {equalize background}
@@ -5089,7 +5151,7 @@ begin
                 y2 := fitsY + j;
                 if ((x2 >= 0) and (x2 < head.Width) and (y2 >= 0) and
                   (y2 < head.Height)) then
-                  if img_loaded[k, y2, x2] < bck.backgr then {below global most common level}
+                  if img_loaded[k, y2, x2] < head.backgr then {below global most common level}
                     if img_loaded[k, y2, x2] < most_common - neg_noise_level then
                       {local dark spot}
                       img_loaded[k, y2, x2] := most_common - neg_noise_level;
@@ -5356,7 +5418,8 @@ begin
             7 : listview_insert(listview6,bakfiles[i].index,bakfiles[i].name,B_nr);//blink
             8 : listview_insert(listview7,bakfiles[i].index,bakfiles[i].name,P_nr);//photometry
             9 : listview_insert(listview8,bakfiles[i].index,bakfiles[i].name,I_nr);//inspector
-           10 : listview_insert(listview9,bakfiles[i].index,bakfiles[i].name,M_nr);//mount
+            10 : listview_insert(listview9,bakfiles[i].index,bakfiles[i].name,M_nr);//mount
+            15 : listview_insert(listview10,bakfiles[i].index,bakfiles[i].name,SN_nr);//SN reference
           end; //case
           bakfiles[i].tab:=-1; //mark as processedand ignore till is bakfiles is cleared/nilled;
           memo2_message('Restored: '+bakfiles[i].name);
@@ -5666,9 +5729,8 @@ begin
             begin
               memo2_message(
                 'Working on star alignment solutions. Blink frequency will increase after completion.');
-              get_background(0, img_loaded, False {no histogram already done},
-                True {unknown, calculate also datamax}, {out} bck);
-              find_stars(img_loaded, hfd_min, max_stars, starlist1);
+              get_background(0, img_loaded,head, False {no histogram already done},  True {unknown, calculate also datamax});
+              find_stars(img_loaded, head, hfd_min, max_stars, starlist1);
               {find stars and put them in a list}
               find_quads(starlist1,quad_star_distances1);
               {find quads for reference image}
@@ -5687,8 +5749,8 @@ begin
             else
             begin
               mainwindow.Caption := filename2 + ' Working on star solutions........';
-              get_background(0, img_loaded, False {no histogram already done}, True {unknown, calculate also noise_level}, {out} bck);
-              find_stars(img_loaded, hfd_min, max_stars, starlist2);
+              get_background(0, img_loaded, head,False {no histogram already done}, True {unknown, calculate also noise_level} );
+              find_stars(img_loaded, head,hfd_min, max_stars, starlist2);
               {find stars and put them in a list}
               find_quads(starlist2,quad_star_distances2);
               {find star quads for new image}
@@ -5849,7 +5911,7 @@ begin
 
   head.datamin_org := 1000;{for case histogram is not called}
   head.datamax_org := 65535;
-  bck.backgr := head.datamin_org;{for case histogram is not called}
+  head.backgr := head.datamin_org;{for case histogram is not called}
   cwhite := head.datamax_org;
 
   gradient := stackmenu1.artificial_image_gradient1.Checked;
@@ -5994,7 +6056,7 @@ procedure Tstackmenu1.browse_dark1Click(Sender: TObject);
 var
   i: integer;
 begin
-  OpenDialog1.Title := 'Select dark images';
+  OpenDialog1.Title := 'Select dark frames';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
   opendialog1.filename := '';
   opendialog1.Filter := dialog_filter;
@@ -6232,8 +6294,8 @@ begin
       {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=m, a, b of hyperbola}
 
       if i = 1 then  memo2_message(#9+'full image              ' + #9 +
-          'Focus=' + floattostrf(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
-          ' b=' + floattostrf(b, ffFixed, 9, 5) + #9 + '            ' + #9 +
+          'Focus=' + floattostrF(m, ffFixed, 0, 0) + #9 + 'a=' + floattostrf(a, ffFixed, 0, 5) + #9 +
+          ' b=' + floattostrF(b, ffFixed, 9, 5) + #9 + '            ' + #9 +
           #9 + 'error=' + floattostrf(lowest_error, ffFixed, 0, 5) + #9 + ' iteration cycles=' +
           floattostrf(iteration_cycles, ffFixed, 0, 0));
       if i = 2 then
@@ -6605,9 +6667,9 @@ begin
       end;
     end;
   if counter = 0 then exit;
-  colrr := ((colrr / counter) - bck.backgr) / (cwhite - bck.backgr);{scale to 0..1}
-  colgg := ((colgg / counter) - bck.backgr) / (cwhite - bck.backgr);{scale to 0..1}
-  colbb := ((colbb / counter) - bck.backgr) / (cwhite - bck.backgr);{scale to 0..1}
+  colrr := ((colrr / counter) - head.backgr) / (cwhite - head.backgr);{scale to 0..1}
+  colgg := ((colgg / counter) - head.backgr) / (cwhite - head.backgr);{scale to 0..1}
+  colbb := ((colbb / counter) - head.backgr) / (cwhite - head.backgr);{scale to 0..1}
 
   if colrr <= 0.00000000001 then colrr := 0.00000000001;
   if colgg <= 0.00000000001 then colgg := 0.00000000001;
@@ -7372,7 +7434,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img; {move copy to img_backup}
 
-  get_background(0, img_loaded, False {do not calculate hist}, False {do not calculate noise_level}, {out} bck);
+  get_background(0, img_loaded, head,False {do not calculate hist}, False {do not calculate noise_level});
 
   try
     radius := StrToInt(stackmenu1.filter_artificial_colouring1.Text);
@@ -7417,8 +7479,8 @@ begin
       else {nebula}
       begin
         img_loaded[0, fitsY, fitsX] := org_value;
-        img_loaded[1, fitsY, fitsX] := bck.backgr + (org_value - bck.backgr) * Value / star_level_colouring;
-        img_loaded[2, fitsY, fitsX] := bck.backgr + (org_value - bck.backgr) * Value / star_level_colouring;
+        img_loaded[1, fitsY, fitsX] := head.backgr + (org_value - head.backgr) * Value / star_level_colouring;
+        img_loaded[2, fitsY, fitsX] := head.backgr + (org_value - head.backgr) * Value / star_level_colouring;
       end;
 
     end;
@@ -7840,7 +7902,7 @@ begin
 
   if img_loaded=nil then exit;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-  find_stars(img_loaded, hfd_min, round(strtofloat2(stackmenu1.nr_stars_to_detect1.text)), starlist);
+  find_stars(img_loaded, head,hfd_min, round(strtofloat2(stackmenu1.nr_stars_to_detect1.text)), starlist);
   nrstars:=length(starlist[0]);
   setlength(variable_list,nrstars);//make space
   formalism:=mainwindow.Polynomial1.itemindex;
@@ -7874,7 +7936,7 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
-  medianCheck, medianThree, hfd_med, apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt,pix1,pix2 : double;
+  medianCheck, medianThree, apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, countVar,
   countCheck, countThree, database_col,j                          : integer;
@@ -7883,7 +7945,6 @@ var
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   astr, filename1,totalnrstr                   : string;
-  bck :tbackground;
   oldra0 : double=0;
   olddec0: double=-pi/2;
   headx : theader;
@@ -8132,12 +8193,12 @@ begin
 
       if apert <> 0 then {aperture<>auto}
       begin
-        analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only}, hfd_counter, bck, hfd_med);
+        analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only});
         {find background, number of stars, median HFD}
-        if hfd_med <> 0 then
+        if head.hfd_median <> 0 then
         begin
-          head.mzero_radius := hfd_med * apert / 2;{radius}
-          annulus_radius := min(50, round(hfd_med * annul / 2) - 1);
+          head.mzero_radius := head.hfd_median * apert / 2;{radius}
+          annulus_radius := min(50, round(head.hfd_median * annul / 2) - 1);
           {radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
         end
         else
@@ -8149,7 +8210,7 @@ begin
         annulus_radius := 14;{annulus radius}
       end;
 
-        {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
+        {calibrate using POINT SOURCE calibration using hfd_median found earlier!!!}
       plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
 
       //icon for used database passband. Database selection could be in auto mode so do this after calibration
@@ -8683,7 +8744,7 @@ var
   top, bg, r2, g2, b2, {noise_level1,} peak, bgR2, bgB2, bgG2, highest_colour, lumr: single;
   bgR, bgB, bgG, star_level: double;
   copydata, red_nebula: boolean;
-  bckR,bckG,bckB : Tbackground;
+  headR,headG,headB : Theader;
 begin
   if length(img) < 3 then exit;{not a three colour image}
 
@@ -8694,21 +8755,21 @@ begin
 
   step := round(wide) div 2;
 
-  get_background(0, img, measurehist {hist}, True  {noise level},bckR);{calculate red background, noise_level and star_level}
-  bgR:=bckR.backgr;
+  get_background(0, img, headR,measurehist {hist}, True  {noise level});{calculate red background, noise_level and star_level}
+  bgR:=headR.backgr;
 
-  get_background(1, img, measurehist {hist}, True{noise level},bckG);{calculate green background, noise_level and star_level}
-  bgG:=bckG.backgr;
+  get_background(1, img, headG, measurehist {hist}, True{noise level});{calculate green background, noise_level and star_level}
+  bgG:=headG.backgr;
 
-  get_background(2, img, measurehist {hist}, True {noise level},bckB);{calculate blue background, noise_level and star_level}
-  bgB:=bckB.backgr;
+  get_background(2, img, headB, measurehist {hist}, True {noise level});{calculate blue background, noise_level and star_level}
+  bgB:=headB.backgr;
 
 
 
 //  star_level:=max(bckR.star_level,max(bckG.star_level,bckB.star_level));
 //  star_level:=max(bckR.star_level2,max(bckG.star_level2,bckB.star_level2));
 
-  star_level:=30*max(bckR.noise_level,max(bckG.noise_level,bckB.noise_level));
+  star_level:=30*max(headR.noise_level,max(headG.noise_level,headB.noise_level));
 
   bg := (bgR + bgG + bgB) / 3; {average background}
 
@@ -8729,7 +8790,7 @@ begin
       b2 := img[2, fitsY, fitsX] - bgB;
 
 
-      if ((r2 > sd * bckR.noise_level) or (g2 > sd * bckG.noise_level) or (b2 > sd * bckB.noise_level)) then  {some relative flux}
+      if ((r2 > sd * headR.noise_level) or (g2 > sd * headG.noise_level) or (b2 > sd * headB.noise_level)) then  {some relative flux}
       begin
         for y := -step to step do
           for x := -step to step do
@@ -8785,7 +8846,7 @@ begin
           highest_colour := max(r2, max(g2, b2));
           if preserve_r_nebula then
             red_nebula := ((highest_colour = r2) and (r2 - (bgR2 - bgR) < 150){not the star} and
-              (bgR2 - bgR > 3 * bckR.noise_level))
+              (bgR2 - bgR > 3 * headR.noise_level))
           else
             red_nebula := False;
 
@@ -8970,6 +9031,8 @@ begin
   else
   if Sender = list_to_clipboard1 then lv := listview1
   else
+  if Sender = list_to_clipboard10 then lv := listview10
+  else
   begin
     beep;
     exit;
@@ -9010,33 +9073,38 @@ begin
   begin
     listview1.selectall;
     listview1.SetFocus;{set focus for next ctrl-C. Somehow it is lost}
-  end;
+  end
+  else
   if Sender = selectall2 then
   begin
     listview2.selectall;
     listview2.SetFocus;
-  end;
+  end
+  else
   if Sender = selectall3 then
   begin
     listview3.selectall;
     listview3.SetFocus;
-  end;
+  end
+  else
   if Sender = selectall4 then
   begin
     listview4.selectall;
     listview4.SetFocus;
-  end;
+  end
+  else
   if Sender = selectall5 then
   begin
     listview5.selectall;
     listview5.SetFocus;
-  end;
-
+  end
+  else
   if Sender = selectall6 then
   begin
     listview6.selectall;
     listview6.SetFocus;
-  end;
+  end
+  else
   if Sender = selectall7 then
   begin
     listview7.selectall;
@@ -9046,12 +9114,20 @@ begin
   begin
     listview8.selectall;
     listview8.SetFocus;
-  end;
+  end
+  else
   if Sender = selectall9 then
   begin
     listview9.selectall;
     listview9.SetFocus;
+  end
+  else
+  if Sender = selectall10 then
+  begin
+    listview10.selectall;
+    listview10.SetFocus;
   end;
+
 end;
 
 procedure remove_background(var img: image_array);
@@ -9084,7 +9160,7 @@ var
   fitsX, fitsY: integer;
   red, green, blue, signal_R,
   signal_G, signal_B, sigma, lumn: double;
-  bckR,bckG,bckB : Tbackground;
+  headR,headG,headB : Theader;
 begin
   if head.naxis3 < 3 then exit;{prevent run time error mono lights}
 
@@ -9093,10 +9169,10 @@ begin
   backup_img;
   sigma := strtofloat2(sigma_decolour1.Text);{standard deviation factor used}
 
-  get_background(1, img_loaded, True {hist}, True {noise level},bckG);{calculate background and noise_level}
-  get_background(2, img_loaded, True {hist}, True {noise level},bckB);{calculate background and noise_level}
+  get_background(1, img_loaded,headG, True {hist}, True {noise level});{calculate background and noise_level}
+  get_background(2, img_loaded,headB, True {hist}, True {noise level});{calculate background and noise_level}
   {red at last since all brigthness/contrast display is based on red}
-  get_background(0, img_loaded, True {hist}, True {noise level}, bckR);{calculate background and noise_level}
+  get_background(0, img_loaded,headR, True {hist}, True {noise level});{calculate background and noise_level}
 
 
 
@@ -9107,15 +9183,15 @@ begin
       green := img_loaded[1, fitsY, fitsX];
       blue := img_loaded[2, fitsY, fitsX];
 
-      if ((red - bckR.backgr < sigma * bckR.noise_level) and (green - bckG.backgr < sigma * bckG.noise_level) and (blue - bckB.backgr < sigma * bckB.noise_level)) then {low luminance signal}
+      if ((red - headR.backgr < sigma * headR.noise_level) and (green - headG.backgr < sigma * headG.noise_level) and (blue - headB.backgr < sigma * headB.noise_level)) then {low luminance signal}
       begin {distribute the colour to luminance}
-        signal_R := red - bckR.backgr;
-        signal_G := green - bckG.backgr;
-        signal_B := blue - bckB.backgr;
+        signal_R := red - headR.backgr;
+        signal_G := green - headG.backgr;
+        signal_B := blue - headB.backgr;
         lumn := (signal_R + signal_G + signal_B) / 3;{make mono}
-        red := bckR.backgr + lumn;
-        green := bckG.backgr + lumn;
-        blue := bckB.backgr + lumn;
+        red := headR.backgr + lumn;
+        green := headG.backgr + lumn;
+        blue := headB.backgr + lumn;
       end;
       img_loaded[0, fitsY, fitsX] := red;
       img_loaded[1, fitsY, fitsX] := green;
@@ -9416,6 +9492,16 @@ begin
   {update counting info}
 end;
 
+procedure Tstackmenu1.analyseSNrefbutton1Click(Sender: TObject);
+begin
+  analyse_listview(listview10, true {light}, false {full fits, include background and noise}, False{refresh});
+
+  {temporary fix for CustomDraw not called}
+  {$ifdef darwin} {MacOS}
+   stackmenu1.nr_total_flats1.caption:=inttostr(listview10.items.count);{update counting info}
+  {$endif}
+end;
+
 
 procedure Tstackmenu1.annotate_mode1Change(Sender: TObject);
 var
@@ -9452,7 +9538,7 @@ begin
   nr_stars:=strtoint(smooth_stars);
   // find_stars(img_loaded, hfd_min, 500, starlist);
   binning:=report_binning(head.height);{select binning based on the height of the light}
-  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,nr_stars{max_stars},false{update hist},starlist,warning);{bin, measure background, find stars}
+  bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,nr_stars{max_stars},false{update hist},starlist,warning);{bin, measure background, find stars}
 
   nrstars:=Length(starlist[0]);
   for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
@@ -9569,7 +9655,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
-  get_background(0,img_loaded, false{histogram is already available},true {calculate noise level},{out}bck);{calculate background level from peek histogram}
+  get_background(0,img_loaded,head, false{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
 
 
   tmp:=duplicate(img_loaded);//fastest way to duplicate an image
@@ -9592,7 +9678,7 @@ begin
   end
   else
   begin //use threshold
-    threshold_value:=threshold*bck.noise_level;//express in ADU
+    threshold_value:=threshold*head.noise_level;//express in ADU
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       for fitsY:=0 to head.height-1 do
@@ -9634,10 +9720,35 @@ begin
    }
 end;
 
+procedure Tstackmenu1.browse_snref1Click(Sender: TObject);
+var
+  i: integer;
+begin
+  OpenDialog1.Title := 'Select Nova reference frames';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
+  opendialog1.filename := '';
+  opendialog1.Filter := dialog_filter;
+  if opendialog1.Execute then
+  begin
+    listview10.Items.beginupdate;
+    for i := 0 to OpenDialog1.Files.Count - 1 do {add}
+    begin
+      listview_add(listview10, OpenDialog1.Files[i], True, SN_nr);
+    end;
+    listview10.Items.endupdate;
+  end;
+end;
+
 
 procedure Tstackmenu1.classify_dark_temperature1Change(Sender: TObject);
 begin
   delta_dark_temperature_visibility;
+end;
+
+procedure Tstackmenu1.clear_selectionSNref1Click(Sender: TObject);
+begin
+  listview10.Clear;
+  bakfiles:=nil; //unrename function
 end;
 
 
@@ -9714,7 +9825,7 @@ begin
   then
   begin
     tabind:=pagecontrol1.tabindex;
-    if tabind in [0,1,2,3,4,7,8,9,10] then //only in the listview tabs. Do not block ctrl+z in the other tabs
+    if tabind in [0,1,2,3,4,7,8,9,10,15] then //only in the listview tabs. Do not block ctrl+z in the other tabs
         undo_rename_to_bak(tabind);//ctrl+z
   end;
 end;
@@ -9979,7 +10090,14 @@ begin
     end;
 
   Screen.Cursor := crDefault;{back to normal }
+end;
 
+
+procedure Tstackmenu1.refresh_solutions_selectedSN_reference1Click(
+  Sender: TObject);
+begin
+  save_settings2;{too many lost selected files . so first save settings}
+  process_selected_files(listview10,SN_solution {column},'S');
 end;
 
 
@@ -10025,7 +10143,7 @@ end;
 procedure remove_stars;
 var
   fitsX,fitsY,hfd_counter,position,x,y,x1,y1,counter_noflux  : integer;
-  magnd, hfd_median, backgrR,backgrG,backgrB,delta                           : double;
+  magnd, backgrR,backgrG,backgrB,delta                           : double;
   img_temp3 :image_array;
   old_aperture : string;
 
@@ -10106,10 +10224,10 @@ begin
       img_temp3[0,fitsY,fitsX]:=default;{clear}
   plot_artificial_stars(img_temp3,head);{create artificial image with database stars as pixels}
 
-  analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only},hfd_counter,bck, hfd_median); {find background, number of stars, median HFD}
-  backgrR:=bck.backgr;//defaults
-  backgrG:=bck.backgr;
-  backgrB:=bck.backgr;
+  analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
+  backgrR:=head.backgr;//defaults
+  backgrG:=head.backgr;
+  backgrB:=head.backgr;
 
 
 
@@ -10122,7 +10240,7 @@ begin
      //     if ((abs(fitsX-2602)<5) and (abs(fitsY-1224)<5)) then
     //      beep;
 
-          star_background(round(4*hfd_median) {radius},fitsX,fitsY);//calculate background(s)
+          star_background(round(4*head.hfd_median) {radius},fitsX,fitsY);//calculate background(s)
 //          flux:=power(10,0.4*(head.mzero-magnd/10));
 
 //          flux:=flux*1.1;//compensate for flux errors
@@ -10143,7 +10261,7 @@ begin
       //              max_radius:=1+sqrt(sqr(x1)+sqr(y1));//allow to continue for one pixel ring max
         //        end
           //      else
-                if sqrt(sqr(x1)+sqr(y1))>=hfd_median*4 then
+                if sqrt(sqr(x1)+sqr(y1))>=head.hfd_median*4 then
                   break;
 
 //                delta:=min(flux,(img_loaded[0,y,x]-backgrR));//all photometry is only done in the red channel
@@ -10189,7 +10307,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   backup_img;{preserve img array and fits header of the viewer}
-  bck.backgr:=0;
+  head.backgr:=0;
 
   remove_stars;
   memo2_message('Stars removed.');
@@ -10200,7 +10318,7 @@ begin
     for col:=0 to head.naxis3-1 do //all colour
       for fitsX:=0 to head.width-1 do
         for fitsY:=0 to head.height-1 do
-          img_loaded[col, fitsY, fitsX]:=img_backup[index_backup].img[col, fitsY, fitsX] + (img_loaded[col, fitsY, fitsX]-bck.backgr {reduce background})*gain;
+          img_loaded[col, fitsY, fitsX]:=img_backup[index_backup].img[col, fitsY, fitsX] + (img_loaded[col, fitsY, fitsX]-head.backgr {reduce background})*gain;
 
     memo2_message('Nebulosity signal increased.');
   end;
@@ -10711,14 +10829,14 @@ var
   close,close2 : double;
           function colour_close(y,x : integer) : boolean;
           begin
-            RGB2HSV(max(0, img_loaded[0, Y, X] - bck.backgr), max(0, img_loaded[1, Y, X] - bck.backgr), max(0, img_loaded[2, Y, X] - bck.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+            RGB2HSV(max(0, img_loaded[0, Y, X] - head.backgr), max(0, img_loaded[1, Y, X] - head.backgr), max(0, img_loaded[2, Y, X] - head.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
             dhue := min(360-abs(oldhue - h),abs(oldhue - h)); //angular distance
             result:=(((dhue <= fuzziness) or (dhue >= 360 - fuzziness)) and  (abs(s - s_old) < saturation_tol {saturation speed_tolerance1})) {colour close enough, replace colour}
           end;
 
           function colour_closeness(y,x : integer) : double;//calcualte how far the colour of pixel x,y  differs from the reference colour
           begin
-            RGB2HSV(max(0, img_loaded[0, Y, X] - bck.backgr), max(0, img_loaded[1, Y, X] - bck.backgr), max(0, img_loaded[2, Y, X] - bck.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+            RGB2HSV(max(0, img_loaded[0, Y, X] - head.backgr), max(0, img_loaded[1, Y, X] - head.backgr), max(0, img_loaded[2, Y, X] - head.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
             dhue := min(360-abs(oldhue - h),abs(oldhue - h));
             result:=sqrt( sqr(dhue/360) + sqr(s - s_old));
           end;
@@ -10757,9 +10875,9 @@ begin
         if blend=false then
         begin
           HSV2RGB(newhue, min(1, s_new * saturation_factor) {s 0..1}, v * v_adjust{v 0..1}, r, g, b);   {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-          img_loaded[0, fitsY, fitsX] := r + bck.backgr;
-          img_loaded[1, fitsY, fitsX] := g + bck.backgr;
-          img_loaded[2, fitsY, fitsX] := b + bck.backgr;
+          img_loaded[0, fitsY, fitsX] := r + head.backgr;
+          img_loaded[1, fitsY, fitsX] := g + head.backgr;
+          img_loaded[2, fitsY, fitsX] := b + head.backgr;
         end
         else
         begin //use nearby colour which differs the most.
@@ -10788,23 +10906,23 @@ end;
 
 procedure Tstackmenu1.auto_background_level1Click(Sender: TObject);
 var
-  bckR,bckG,bckB : tbackground;
+  headR,headG,headB : theader;
 begin
   if length(img_loaded) < 3 then exit;{not a three colour image}
 
   apply_factor1.Enabled := False;{block apply button temporary}
   application.ProcessMessages;
 
-  get_background(1, img_loaded, True {get hist}, True {get noise},{var} bckG);
-  get_background(2, img_loaded, True {get hist}, True {get noise},{var} bckB);
-  get_background(0, img_loaded, True {get hist}, True {get noise},{var} bckR); {Do red last to maintain current histogram}
+  get_background(1, img_loaded,headG, True{get hist}, True {get noise});
+  get_background(2, img_loaded,headB, True {get hist}, True {get noise});
+  get_background(0, img_loaded,headR, True {get hist}, True {get noise}); {Do red last to maintain current histogram}
 
   add_valueR1.Text := floattostrf(0, ffgeneral, 5, 0);
-  add_valueG1.Text := floattostrf(bckR.backgr * (bckG.star_level / bckR.star_level) - bckG.backgr, ffgeneral, 5, 0);
-  add_valueB1.Text := floattostrf(bckR.backgr * (bckB.star_level / bckR.star_level) - bckB.backgr, ffgeneral, 5, 0);
+  add_valueG1.Text := floattostrf(headR.backgr * (headG.star_level / headR.star_level) - headG.backgr, ffgeneral, 5, 0);
+  add_valueB1.Text := floattostrf(headR.backgr * (headB.star_level / headR.star_level) - headB.backgr, ffgeneral, 5, 0);
 
-  multiply_green1.Text := floattostrf(bckR.star_level / bckG.star_level, ffgeneral, 5, 0);  {make stars white}
-  multiply_blue1.Text := floattostrf(bckR.star_level / bckB.star_level, ffgeneral, 5, 0);
+  multiply_green1.Text := floattostrf(headR.star_level / headG.star_level, ffgeneral, 5, 0);  {make stars white}
+  multiply_blue1.Text := floattostrf(headR.star_level / headB.star_level, ffgeneral, 5, 0);
   multiply_red1.Text := '1';
 
   apply_factor1.Enabled := True;{enable apply button}
@@ -12003,7 +12121,7 @@ var
   extra1, extra2, object_to_process, stack_info, thefilters                       : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
-  success, classify_filter, classify_object, sender_photometry, sender_stack_groups,comet     : boolean;
+  success, classify_filter, classify_object, sender_photometry, sender_stack_groups,comet,sn_search  : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr    : double;
   filters_used: array [0..4] of string;
@@ -12017,6 +12135,7 @@ begin
   comet:=pos('Comet', stackmenu1.stack_method1.Text) > 0;
   skip_combine := pos('skip', stackmenu1.stack_method1.Text) > 0;
   cal_and_align := pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
+  sn_search:=pos('Nova', stackmenu1.stack_method1.Text) > 0;  {SN search, subtract darks from lights}
   sender_photometry := (Sender = photom_stack1);//stack instruction from photometry tab?
   sender_stack_groups := (Sender =stack_groups1);//stack instruction from photometry tab?
 
@@ -12387,7 +12506,7 @@ begin
     for i := 0 to 4 do filters_used[i] := '';
     Inc(object_counter);
 
-    lrgb := ((classify_filter) and (cal_and_align = False)); {ignore lrgb for calibration and alignment is true}
+    lrgb := ((classify_filter) and (cal_and_align = False) and (sn_search=false)); {ignore lrgb for calibration and alignment is true}
     if lrgb = False then
     begin
       SetLength(files_to_process, ListView1.items.Count);{set array length to listview}
@@ -12449,6 +12568,13 @@ begin
         begin
           memo2_message('---------- Calibration & alignment for object: ' + object_to_process + ' -----------');
           calibration_and_alignment(process_as_osc, {var}files_to_process, counterL);{saturation clip average}
+        end
+        else
+        if sn_search then {sn searchonly}
+        begin
+          stackmenu1.analyseSNrefbutton1Click(nil);//get positions in the list
+          memo2_message('---------- Nova search. Subtract matching images in tab SN search: ' + object_to_process + ' -----------');
+          sn_search_subtraction(process_as_osc, {var}files_to_process, counterL);{subtract for SN search}
         end
         else
         if comet then
@@ -12685,7 +12811,7 @@ begin
     end;
 
 
-    if ((cal_and_align = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
+    if ((cal_and_align = False) and (sn_search = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
     begin  //fits_file:=true;
       nrbits := -32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
@@ -13070,8 +13196,7 @@ begin
   if classify_filter1.Checked then mode := 'LRGB ' else mode := '';
   stack_button1.Caption := 'STACK ' + mode + '(' + stack_method1.Text + ')';
 
-  if ((method >= 6 {Skip average or sigma clip LRGB combine}) and (method <=7) and
-    (classify_filter1.Checked = False)) then
+  if ((method >= 6 {Skip average or sigma clip LRGB combine}) and (method <=7) and (classify_filter1.Checked = False)) then
     memo2_message( '█ █ █ █ █ █ Warning, classify on Light Filter is not check marked !!! █ █ █ █ █ █ ');
 
 
@@ -13200,6 +13325,7 @@ begin
   if Sender = Viewimage7 then listview_view(listview7);//photometry
   if Sender = Viewimage8 then listview_view(listview8);//inspector
   if Sender = Viewimage9 then listview_view(listview9);//mount
+  if Sender = Viewimage10 then listview_view(listview10);//SN reference
 end;
 
 procedure Tstackmenu1.view_previous7Click(Sender: TObject);//blink tab

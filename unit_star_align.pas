@@ -1,5 +1,5 @@
 unit unit_star_align;
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
  This Source Code Form is subject to the terms of the Mozilla Public
@@ -30,7 +30,7 @@ var
 
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
-procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :image_array;head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 procedure find_quads(starlist :star_list; out quad_star_distances :star_list); {find more quads build quads using closest stars}
 procedure find_triples_using_quads(starlist :star_list;  out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
@@ -1207,7 +1207,7 @@ end;
 //  nrstars:=count;
 //end;
 
-procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :image_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,k : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level : double;
@@ -1245,13 +1245,13 @@ begin
   retries:=3; {try up to four times to get enough stars from the image}
   repeat
     if retries=3 then
-      begin if bck.star_level >30*bck.noise_level then detection_level:=bck.star_level  else retries:=2;{skip} end;//stars are dominant
+      begin if head.star_level >30*head.noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
     if retries=2 then
-      begin if bck.star_level2>30*bck.noise_level then detection_level:=bck.star_level2 else retries:=1;{skip} end;//stars are dominant
+      begin if head.star_level2>30*head.noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
     if retries=1 then
-      begin detection_level:=30*bck.noise_level; end;
+      begin detection_level:=30*head.noise_level; end;
     if retries=0 then
-      begin detection_level:= 7*bck.noise_level; end;
+      begin detection_level:= 7*head.noise_level; end;
 
     highest_snr:=0;
     nrstars:=0;{set counters at zero}
@@ -1264,7 +1264,7 @@ begin
     begin
       for fitsX:=0 to width2-1-1  do
       begin
-        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]- bck.backgr{cblack}>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
+        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]- head.backgr{cblack}>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
           HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
@@ -1307,8 +1307,8 @@ begin
       end;
     end;
 
-    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(bck.backgr))+ '. Detection level used '+inttostr( round(detection_level))
-                                                          +' above background. Star level is '+inttostr(round(bck.star_level))+' above background. Noise level is '+floattostrF(bck.noise_level,ffFixed,0,0));
+    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(head.backgr))+ '. Detection level used '+inttostr( round(detection_level))
+                                                          +' above background. Star level is '+inttostr(round(head.star_level))+' above background. Noise level is '+floattostrF(head.noise_level,ffFixed,0,0));
 
     dec(retries);{Try again with lower detection level}
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}

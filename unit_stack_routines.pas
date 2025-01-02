@@ -18,6 +18,7 @@ procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of T
 
 procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
+procedure sn_search_subtraction(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {subtraction reference images for SN search}
 
 {$inline on}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
@@ -215,7 +216,7 @@ begin
   with stackmenu1 do
   begin
 
-    {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
+    {move often used setting to booleans. Great speed improved if use in a loop and read many times}
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometric_alignment1.checked;
@@ -302,29 +303,29 @@ begin
 
             if c=1 then
             begin
-               get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
-               background_r:=bck.backgr;
+               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+               background_r:=head.backgr;
                //cblack:=round( background_r);
                counterR:=head.light_count ;counterRdark:=head.dark_count; counterRflat:=head.flat_count; counterRbias:=head.flatdark_count; exposureR:=round(head.exposure);temperatureR:=head.set_temperature;{for historical reasons}
             end;
             if c=2 then
             begin
-              get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
-              background_g:=bck.backgr;
+              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              background_g:=head.backgr;
               //cblack:=round( background_g);
               counterG:=head.light_count;counterGdark:=head.dark_count; counterGflat:=head.flat_count; counterGbias:=head.flatdark_count; exposureG:=round(head.exposure);temperatureG:=head.set_temperature;
             end;
             if c=3 then
             begin
-              get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
-              background_b:=bck.backgr;
+              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              background_b:=head.backgr;
               //cblack:=round( background_b);
               counterB:=head.light_count; counterBdark:=head.dark_count; counterBflat:=head.flat_count; counterBbias:=head.flatdark_count; exposureB:=round(head.exposure);temperatureB:=head.set_temperature;
             end;
             if c=4 then
             begin
-              get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
-              background_r:=bck.backgr;
+              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              background_r:=head.backgr;
 
               //cblack:=round( background_r);
               background_g:=background_r;
@@ -333,8 +334,8 @@ begin
             end;
             if c=5 then {Luminance}
             begin
-              get_background(0,img_loaded,true,false, {out} bck);{unknown, do not calculate noise_level}
-              background_L:=bck.backgr;
+              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              background_L:=head.backgr;
               //cblack:=round( background_L);
               counterL:=head.light_count; counterLdark:=head.dark_count; counterLflat:=head.flat_count; counterLbias:=head.flatdark_count; exposureL:=round(head.exposure);temperatureL:=head.set_temperature;
             end;
@@ -356,7 +357,7 @@ begin
               else
               begin
                 binning:=report_binning(head.height);{select binning based on the height of the light}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
                 find_quads(starlist1,quad_star_distances1);{find quads for reference image/database}
               end;
             end;
@@ -390,7 +391,7 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                   find_quads(starlist2,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -734,12 +735,12 @@ begin
             else
             if  use_astrometry_internal=false then
             begin
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
               find_quads(starlist1, quad_star_distances1);{find quads for reference image}
-              pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
+              pedestal_s:=head.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
               if pedestal_s<500 then
                 pedestal_s:=500;{prevent image noise could go below zero}
-              background_correction:=pedestal_s-bck.backgr;
+              background_correction:=pedestal_s-head.backgr;
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
               head.pedestal:=background_correction;
             end;
@@ -757,9 +758,9 @@ begin
               end
               else
               begin{internal alignment}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
-                background_correction:=pedestal_s-bck.backgr;
+                background_correction:=pedestal_s-head.backgr;
                 head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
                 head.pedestal:=background_correction;
 
@@ -955,7 +956,7 @@ begin
     if abs(x_max-x_min)<1 then begin memo2_message('Abort. Failed to calculate mosaic dimensions!');exit;end;
 
 
-    {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
+    {move often used setting to booleans. Great speed improved if use in a loop and read many times}
     merge_overlap:=merge_overlap1.checked;
     Equalise_background:=Equalise_background1.checked;
     counter:=0;
@@ -1247,7 +1248,7 @@ var
 begin
   with stackmenu1 do
   begin
-    {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
+    {move often used setting to booleans. Great speed improved if use in a loop and read many times}
     variance_factor:=sqr(strtofloat2(stackmenu1.sd_factor1.text));
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
@@ -1327,8 +1328,8 @@ begin
         end;
         if use_astrometry_internal then
         begin //for making all background the same for better sigma clip function
-          get_background(0, img_loaded, True {update_hist}, False {calculate noise level}, {var} bck);
-          solutions[c].cblack:=bck.backgr;  //background after applying dark and flats!! Not the same as in listview1
+          get_background(0, img_loaded,head, True {update_hist}, False {calculate noise level});
+          solutions[c].cblack:=head.backgr;  //background after applying dark and flats!! Not the same as in listview1
         end;
 
         if init=false then
@@ -1343,7 +1344,7 @@ begin
             end
             else
             begin
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
               find_quads(starlist1, quad_star_distances1);{find quads for reference image}
             end;
           end;
@@ -1360,7 +1361,7 @@ begin
                 img_average[col,fitsY,fitsX]:=0; {clear img_average}
                 img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
               end;
-             target_background:=max(500,bck.backgr); //target for all images. Background of reference image or when lower then 500 then 500.
+             target_background:=max(500,head.backgr); //target for all images. Background of reference image or when lower then 500 then 500.
            memo2_message('Target background for all images is '+floattostrF(target_background,FFFixed,0,0));
         end;{init, c=0}
 
@@ -1376,14 +1377,14 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
                   find_quads(starlist2, quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                   begin
                     memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str);
                     solutions[c].solution_vectorX:= solution_vectorX;{store solutions}
                     solutions[c].solution_vectorY:= solution_vectorY;
-                    solutions[c].cblack:=bck.backgr;
+                    solutions[c].cblack:=head.backgr;
                   end
                     else
                     begin
@@ -1400,7 +1401,7 @@ begin
                 reset_solution_vectors(1);{no influence on the first image}
                 solutions[c].solution_vectorX:= solution_vectorX; {store solutions for later}
                 solutions[c].solution_vectorY:= solution_vectorY;
-                solutions[c].cblack:=bck.backgr;
+                solutions[c].cblack:=head.backgr;
                end;
 
         end;
@@ -1534,7 +1535,7 @@ begin
             begin  {reuse solution from first step average}
               solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
               solution_vectorY:=solutions[c].solution_vectorY;
-              bck.backgr:=solutions[c].cblack;
+              head.backgr:=solutions[c].cblack;
             end;
           end;
           init:=true;{initialize for first image done}
@@ -1651,7 +1652,7 @@ begin
             begin  {reuse solution from first step average}
               solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
               solution_vectorY:=solutions[c].solution_vectorY;
-              bck.backgr:=solutions[c].cblack;
+              head.backgr:=solutions[c].cblack;
             end;
           end;
           init:=true;{initialize for first image done}
@@ -1762,7 +1763,7 @@ var
 begin
   with stackmenu1 do
   begin
-    {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
+    {move often used setting to booleans. Great speed improved if use in a loop and read many times}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     use_sip:=stackmenu1.add_sip1.checked;
 
@@ -1838,8 +1839,8 @@ begin
           memo2_message('Measuring background for all colours');
           for col:=0 to head.naxis3-1 do /// for all colours
           begin
-            get_background(col, img_loaded, True {update_hist}, False {calculate noise level}, {var} bck);
-            solutions[c].cblack[col]:=bck.backgr;
+            get_background(col, img_loaded,head, True {update_hist}, False {calculate noise level});
+            solutions[c].cblack[col]:=head.backgr;
           end;
 
         end;
@@ -2108,7 +2109,7 @@ var
 begin
   with stackmenu1 do
   begin
-    {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
+    {move often used settings to booleans. Great speed improved if use in a loop and read many times}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
     use_sip:=stackmenu1.add_sip1.checked;
@@ -2189,12 +2190,12 @@ begin
           end
           else
           begin
-            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
+            bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
             find_quads(starlist1, quad_star_distances1);{find quads for reference image}
-            pedestal_s:=bck.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
+            pedestal_s:=head.backgr;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then
               pedestal_s:=500;{prevent image noise could go below zero}
-            background_correction:=pedestal_s-bck.backgr;
+            background_correction:=pedestal_s-head.backgr;
             head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
             head.pedestal:=background_correction;
           end;
@@ -2237,9 +2238,9 @@ begin
             end
             else
             begin{internal alignment}
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
-              background_correction:=pedestal_s-bck.backgr;
+              background_correction:=pedestal_s-head.backgr;
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
               head.pedestal:=background_correction;
 
@@ -2364,6 +2365,344 @@ begin
 
   {arrays will be nilled later. This is done for early exits}
 end;   {calibration and alignment}
+
+
+procedure Find_reference_image(ra,dec,fov : double; out filenameR : string);
+var
+  c : integer;
+  raR, decR,sep : double;
+begin
+  with stackmenu1 do
+  for c:=0 to ListView10.items.Count - 1 do
+  begin
+    if ((esc_pressed = False) and (listview10.Items.item[c].Checked)) then
+    begin
+      raR:=strtofloat2(listView10.Items.item[c].Subitems[SN_ra]);
+      decR:=strtofloat2(listView10.Items.item[c].Subitems[SN_dec]);
+      ang_sep(ra,dec,raR*pi/180,decR*pi/180, {out} sep);
+      if sep<0.1*fov then
+      begin
+         filenameR:=listView10.Items.item[c].caption;
+         exit;
+      end;
+    end;
+  end;
+  filenameR:='';//no match found
+end;
+
+
+procedure sn_search_subtraction(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {subtraction reference images for SN search}
+var
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, max_stars,old_naxis3,m,n,i  : integer;
+    {background_correction,} hfd_min,aa,bb,cc,dd,ee,ff,flux_remain,val_ref,sum_flux_img,sum_flux_ref,noise           : double;
+    solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip                               : boolean;
+    warning, filenameR      : string;
+    starlist1,starlist2 : star_list;
+    img_temp,img_average : image_array;
+const
+  CircularSpiralSearch: array[0..1, 0..316] of Integer = (
+  (+0,-1,+0,+0,+1,-1,-1,+1,+1,-2,+0,+0,+2,-2,-2,-1,-1,+1,+1,+2,+2,-2,-2,+2,+2,-3,+0,+0,+3,-3,-3,-1,-1,+1,+1,+3,+3,-3,-3,-2,-2,+2,+2,+3,+3,-4,+0,+0,+4,-4,-4,-1,-1,+1,+1,+4,+4,-3,-3,+3,+3,-4,-4,-2,-2,+2,+2,+4,+4,-5,-4,-4,-3,-3,+0,+0,+3,+3,+4,+4,+5,-5,-5,-1,-1,+1,+1,+5,+5,-5,-5,-2,-2,+2,+2,+5,+5,-4,-4,+4,+4,-5,-5,-3,-3,+3,+3,+5,+5,-6,+0,+0,+6,-6,-6,-1,-1,+1,+1,+6,+6,-6,-6,-2,-2,+2,+2,+6,+6,-5,-5,-4,-4,+4,+4,+5,+5,-6,-6,-3,-3,+3,+3,+6,+6,-7,+0,+0,+7,-7,-7,-5,-5,-1,-1,+1,+1,+5,+5,+7,+7,-6,-6,-4,-4,+4,+4,+6,+6,-7,-7,-2,-2,+2,+2,+7,+7,-7,-7,-3,-3,+3,+3,+7,+7,-6,-6,-5,-5,+5,+5,+6,+6,-8,+0,+0,+8,-8,-8,-7,-7,-4,-4,-1,-1,+1,+1,+4,+4,+7,+7,+8,+8,-8,-8,-2,-2,+2,+2,+8,+8,-6,-6,+6,+6,-8,-8,-3,-3,+3,+3,+8,+8,-7,-7,-5,-5,+5,+5,+7,+7,-8,-8,-4,-4,+4,+4,+8,+8,-9,+0,+0,+9,-9,-9,-1,-1,+1,+1,+9,+9,-9,-9,-7,-7,-6,-6,-2,-2,+2,+2,+6,+6,+7,+7,+9,+9,-8,-8,-5,-5,+5,+5,+8,+8,-9,-9,-3,-3,+3,+3,+9,+9,-9,-9,-4,-4,+4,+4,+9,+9,-7,-7,+7,+7,-10,-8,-8,-6,-6,+0,+0,+6,+6,+8,+8,+10),
+  (+0,+0,-1,+1,+0,-1,+1,-1,+1,+0,-2,+2,+0,-1,+1,-2,+2,-2,+2,-1,+1,-2,+2,-2,+2,+0,-3,+3,+0,-1,+1,-3,+3,-3,+3,-1,+1,-2,+2,-3,+3,-3,+3,-2,+2,+0,-4,+4,+0,-1,+1,-4,+4,-4,+4,-1,+1,-3,+3,-3,+3,-2,+2,-4,+4,-4,+4,-2,+2,+0,-3,+3,-4,+4,-5,+5,-4,+4,-3,+3,+0,-1,+1,-5,+5,-5,+5,-1,+1,-2,+2,-5,+5,-5,+5,-2,+2,-4,+4,-4,+4,-3,+3,-5,+5,-5,+5,-3,+3,+0,-6,+6,+0,-1,+1,-6,+6,-6,+6,-1,+1,-2,+2,-6,+6,-6,+6,-2,+2,-4,+4,-5,+5,-5,+5,-4,+4,-3,+3,-6,+6,-6,+6,-3,+3,+0,-7,+7,+0,-1,+1,-5,+5,-7,+7,-7,+7,-5,+5,-1,+1,-4,+4,-6,+6,-6,+6,-4,+4,-2,+2,-7,+7,-7,+7,-2,+2,-3,+3,-7,+7,-7,+7,-3,+3,-5,+5,-6,+6,-6,+6,-5,+5,+0,-8,+8,+0,-1,+1,-4,+4,-7,+7,-8,+8,-8,+8,-7,+7,-4,+4,-1,+1,-2,+2,-8,+8,-8,+8,-2,+2,-6,+6,-6,+6,-3,+3,-8,+8,-8,+8,-3,+3,-5,+5,-7,+7,-7,+7,-5,+5,-4,+4,-8,+8,-8,+8,-4,+4,+0,-9,+9,+0,-1,+1,-9,+9,-9,+9,-1,+1,-2,+2,-6,+6,-7,+7,-9,+9,-9,+9,-7,+7,-6,+6,-2,+2,-5,+5,-8,+8,-8,+8,-5,+5,-3,+3,-9,+9,-9,+9,-3,+3,-4,+4,-9,+9,-9,+9,-4,+4,-7,+7,-7,+7,+0,-6,+6,-8,+8,-10,+10,-8,+8,-6,+6,+0));
+
+        function subtract_flux(x,y : integer; val_ref: double): double;//subtract ref image from image. Result is remaining flux if any.
+        var
+          val_img,val_diff : double;
+        begin
+          if ((x<0) or (x>=width_max) or (y<0) or (y>=height_max) ) then //outside image
+          begin
+            result:=val_ref;
+            exit;
+          end;
+          val_img:=img_loaded[col,y,x]-head.backgr;
+          val_diff:=val_img-val_ref;
+
+          if abs(val_diff)<noise*3 then
+          begin  //about equal flux
+            img_loaded[col,y,x]:=val_diff;
+            result:=0;
+          end
+          else
+          begin //flux unbalance
+            img_loaded[col,y,x]:=0;//set temporary at zero
+             result:=val_diff; //remaining flux to allocate nearby
+          end;
+         end;
+
+begin //1
+  with stackmenu1 do
+  begin //2
+    {move often used settings to booleans. Great speed improved if use in a loop and read many times}
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
+    use_sip:=stackmenu1.add_sip1.checked;
+
+
+    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
+    use_astrometry_internal:=use_astrometric_alignment1.checked;
+
+    counter:=0;
+    sum_exp:=0;
+
+    for c:=0 to length(files_to_process)-1 do
+    if length(files_to_process[c].name)>0 then
+    begin //3
+    try { Do some lengthy operation }
+      ListView1.Selected :=nil; {remove any selection}
+      ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
+      Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
+
+      filename2:=files_to_process[c].name;
+
+      {load image}
+      Application.ProcessMessages;
+      if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+
+      if load_fits(filename2,true {light},true,true {init=false} {update memo for saving},0,mainwindow.memo1.Lines,head, img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+      initialise_calc_sincos_dec0;{set variables correct}
+
+      if ((bayerpat='') and (process_as_osc=2 {forced})) then
+        if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
+        else
+        if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
+
+      if process_as_osc>0 then {do demosaic bayer}
+      begin
+        if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+        else
+          demosaic_bayer(img_loaded); {convert OSC image to colour}
+          {head.naxis3 is now 3}
+      end
+      else
+      if bayerpat<>'' then memo2_message('█ █ █ █ █ █ Warning, alignment (shifting, rotating) will ruin Bayer pattern!! Select calibrate only for photometry or checkmark "Convert OSC image to colour" █ █ █ █ █ █');
+
+
+
+      find_reference_image(head.ra0,head.dec0,head.cdelt2*head.height*pi/180, {out} filenameR);
+
+      if filenameR<>'' then //reference file found
+      begin //4
+        if load_fits(filenameR,true {light},true,false {update memo for saving},0,mainwindow.memo1.Lines,head_ref, img_dark {img_loaded})=false then begin memo2_message('Error loading '+filename2);exit;end;
+
+
+        if head_ref.Width<>head.width then memo2_message('█ █ █ █ █ █  Warning different size image!');
+        if head_ref.naxis3>head.naxis3 then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
+
+
+        if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
+
+        memo2_message('Applying reference image to: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2) ;
+        Application.ProcessMessages;
+        if esc_pressed then exit;
+
+        if process_as_osc>0 then {do demosaic bayer}
+        begin
+          if head_ref.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+          else
+            demosaic_bayer(img_dark); {convert OSC image to colour}
+            {head_ref.naxis3 is now 3}
+        end
+        else
+        if bayerpat<>'' then memo2_message('█ █ █ █ █ █ Warning, alignment (shifting, rotating) will ruin Bayer pattern!! Select calibrate only for photometry or checkmark "Convert OSC image to colour" █ █ █ █ █ █');
+
+//        if init=false then
+        binning:=report_binning(head_ref.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
+        if ({(init=false ) and }(use_astrometry_internal=false)) then {first image and not astrometry_internal}
+        begin
+          bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
+          find_quads(starlist1, quad_star_distances1);{find quads for reference image}
+          pedestal_s:=500;{prevent image noise could go below zero}
+          head.pedestal:=0;
+        end;
+
+
+        height_max:=head.height;
+        width_max:=head.width;
+        setlength(img_temp,head.naxis3,height_max,width_max);
+
+        {clearing image_average and img_temp is done for each image}
+        for fitsY:=0 to height_max-1 do
+          for fitsX:=0 to width_max-1 do
+            for col:=0 to head.naxis3-1 do
+            begin //7
+//              img_dark[col,fitsY,fitsX]:=0; {clear img_dark}
+              img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
+            end; //7
+
+        solution:=true;
+        if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+        else
+        begin //8 {align using star match}
+     //     if init=true then {second image}
+     //     begin //9
+//            if ((use_manual_align) or (use_ephemeris_alignment)) then
+  //          begin //10 {manual alignment}
+    //          calculate_manual_vector(c);//includes memo2_message with solution vector
+      //      end //10
+//            else
+//            begin //11{internal alignment}
+              bin_and_find_stars(img_dark, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
+              find_quads(starlist2, quad_star_distances2);{find star quads for new image}
+              if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
+                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str)
+              else
+              begin //12
+                memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
+                files_to_process[c].name:=''; {remove file from list}
+                solution:=false;
+                ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
+                ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
+              end; //12
+//            end; //11{internal alignment}
+//        end; //9
+//        else
+//        reset_solution_vectors(1);{no influence on the first image}
+        end;//8
+//        init:=true;{initialize for first image done}
+
+
+        get_background(0, img_dark, head_ref,True, true{calculate noise_level});
+        sum_flux_ref:=0;
+        for i:=65000 downto round(head_ref.backgr) do
+           sum_flux_ref:=sum_flux_ref+i*histogram[0,i];
+
+        get_background(0, img_loaded,head, True, true{calculate noise_level});
+        sum_flux_img:=0;
+        for i:=65000 downto round(head.backgr) do //calculate total flux
+           sum_flux_img:=sum_flux_img+i*histogram[0,i];
+
+        noise:=sqrt(sqr( head_ref.noise_level)+sqr( head.noise_level));
+
+        if solution then
+        begin //13
+          inc(counter);
+
+          if use_astrometry_internal then
+             astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
+
+          aa:=solution_vectorX[0];//move to local variable for minor faster processing
+          bb:=solution_vectorX[1];
+          cc:=solution_vectorX[2];
+          dd:=solution_vectorY[0];
+          ee:=solution_vectorY[1];
+          ff:=solution_vectorY[2];
+
+
+          for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
+          for fitsX:=0 to head.width-1 do
+          begin //14
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  result in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+
+            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+            begin
+              for col:=0 to head.naxis3-1 do
+              begin
+
+                val_ref:=(img_dark[col,fitsY,fitsX]-head_ref.backgr)*sum_flux_img/sum_flux_ref;//scale ref values to image values
+
+                if ((x_new=392-1) and (y_new=817-1)) then
+                 beep;
+
+
+             //   flux_remain:=subtract_flux(x_new,y_new,val_ref );//subtract ref image from image. Result is remaining flux if any.
+             //   if flux_remain<>0 then //try to find the flux nearby
+                for i:=0 to 8 {length(CircularSpiralSearch)-1} do
+             //   if ((CircularSpiralSearch[0,i]<=0) and (CircularSpiralSearch[1,i]<=0)) then
+                begin
+                  if i=0 then
+                     flux_remain:=subtract_flux(x_new,y_new,val_ref )//subtract ref image from image. Result is remaining flux if any.
+                  else //try to find flux nearby
+                    flux_remain:=subtract_flux(x_new+CircularSpiralSearch[0,i],y_new+CircularSpiralSearch[1,i],-flux_remain);//subtract ref image from image. Result is remaining flux if any.
+                  if  flux_remain=0 then break;
+                end;
+                if  flux_remain<>0 then img_loaded[col,y_new,x_new]:=-flux_remain + head.backgr;//could not allocate the remaining delta flux. Nova?
+              end;
+     //           img_loaded[col,y_new,x_new]:=img_loaded[col,y_new,x_new]- img_dark[col,fitsY,fitsX] +1000{background_correction};{Note fits count from 1, image from zero}
+               // img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+1;{count the number of image pixels added=samples}
+            end;
+          end;
+
+
+        {scale to number of pixels}
+//        head.height:=height_max;
+//        head.width:=width_max;
+//        setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
+
+//       for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
+//          For fitsY:=0 to head.height-1 do
+  //          for fitsX:=0 to head.width-1 do
+    //        begin //17
+      //        if img_temp[col,fitsY,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:=1000 {pedestal}+img_loaded[col,fitsY,fitsX]/img_temp[col,fitsY,fitsX] {scale to one image by diving by the number of pixels added}
+        //      else
+//              begin  //18{ black spot filter. Note for this version img_temp is counting for each color since they could be different}
+  //              if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
+    //            begin //19
+      //            if ((img_temp[col,fitsY,fitsX-1]<>0){and (img_temp[col,fitsY-1,fitsX]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
+        //          else
+          //        if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
+            //      else
+              //    img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
+//                end  //19{fill black spots}
+  //              else
+    //            img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
+      //        end; //19{black spot filter}
+//            end; //17
+        end;
+
+
+        for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
+          For fitsY:=0 to head.height-1 do
+            for fitsX:=0 to head.width-1 do
+              img_loaded[col,fitsY,fitsX]:=1000 {pedestal}+img_loaded[col,fitsY,fitsX];
+        {save}
+        filename2:=ChangeFileExt(Filename2,'_delta.fit');{rename}
+
+        mainwindow.Memo1.Lines.beginUpdate;
+        if head.cd1_1<>0 then
+        begin //20
+          {quick and dirty method to roughly correct existing solutions}
+          head.crpix1:=solution_vectorX[0]*(head.crpix1-1)+solution_vectorX[1]*(head.crpix2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
+          head.crpix2:=solution_vectorY[0]*(head.crpix1-1)+solution_vectorY[1]*(head.crpix2-1)+solution_vectorY[2];
+          update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+          update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+          update_text(mainwindow.memo1.lines,'COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
+        end; //20
+        update_text(mainwindow.memo1.lines,'COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
+  //        update_float(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
+  //        update_integer(mainwindow.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+  //        update_integer(mainwindow.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+  //        update_integer(mainwindow.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+        mainwindow.Memo1.Lines.EndUpdate;
+
+        { ASTAP keyword standard:}
+        { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+        { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+
+        if nrbits=16 then
+        begin //21
+          if save_fits(img_loaded,mainwindow.memo1.lines,filename2,16,true)=false then exit;//exit if save error
+        end //2
+        else
+        begin
+          if save_fits(img_loaded,mainwindow.memo1.lines,filename2,-32,true)=false then exit;//exit if save error
+        end;
+         memo2_message('New aligned image created: '+filename2);
+        report_results(object_name,inttostr(round(head.exposure)),0,999 {color icon});{report result in tab result using modified filename2}
+        progress_indicator(10+round(90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),'Cal');{show progress}
+
+      end;//4 reference file found
+      finally
+      end;
+    end;//3
+  end;  {with stackmenu1}
+
+  plot_fits(mainwindow.image1,true,true);{update to last image, activate memo1}
+
+  memo2_message('NOT FULLY IMPLEMENTED YET !!!!!!');
+  {arrays will be nilled later. This is done for early exits}
+end;   {calibration and alignment}
+
 
 
 
