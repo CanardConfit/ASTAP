@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.1.1';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.1.2';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -539,13 +539,6 @@ var
   mainwindow: Tmainwindow;
 
 type
-  Tbackground = record
-                  backgr : double;//background value
-                  star_level : double;//star level
-                  star_level2: double;//star level
-                  noise_level: double;///noise level background
-               end;
-
   image_array = array of array of array of Single;// note fasted processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
   star_list   = array of array of double;
 
@@ -651,7 +644,6 @@ var
   head_flat,
   head_dark : Theader;{contains the most important header info}
   memox : tstrings;//work memo
-//  bck : Tbackground;//global variable. Note there is also one in Theader
 
   settingstring : tstrings; {settings for save and loading}
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
@@ -3052,7 +3044,6 @@ begin
 end;
 
 
-//procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out back : Tbackground); {get background and star level from peek histogram}
 procedure get_background(colour: integer; img :image_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
@@ -13495,7 +13486,6 @@ var
   histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,extractspecified2,focusrequest,checkfilter, wresult : boolean;
   snr_min                     : double;
   binning,focus_count,report  : integer;
-  bck                         : Tbackground;
   filename_output             : string;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}

@@ -1794,7 +1794,6 @@ var
   hfdlist_13, hfdlist_23, hfdlist_33, hfdlist_outer_ring: array of double;
   starlistXY: array of array of integer;
   len, starX, starY: integer;
-  bck : tbackground;
 
 begin
   if head.naxis3 > 1 then {colour image}
@@ -1832,7 +1831,7 @@ begin
 
     nhfd := 0;{set counter at zero}
 
-    if bck.backgr > 8 then
+    if head.backgr > 8 then
     begin
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
@@ -1848,7 +1847,7 @@ begin
         for fitsX := 0 to head.Width - 1 do
         begin
           if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and
-            (img[0, fitsY, fitsX] - bck.backgr > detection_level){star}) then   {new star. For analyse used sigma is 5, so not too low.}
+            (img[0, fitsY, fitsX] - head.backgr > detection_level){star}) then   {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99  {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
             {star HFD and FWHM}
@@ -2142,7 +2141,6 @@ var
   key, filename1, rawstr      : string;
   img                         : image_array;
   headx                       : theader;
-  bck                         : Tbackground;
 
 begin
   with stackmenu1 do
@@ -3133,7 +3131,6 @@ var
   offset, oldoffset: single;
   sn, cs: double;
   median, test: array of double;
-  bck : Tbackground;
 begin
   colors := Length(img); {colors}
   w := Length(img[0,0]); {width}
@@ -3183,12 +3180,12 @@ begin
             {within the image}
           begin
             //memo2_message(inttostr(angle)+'    ' +floattostr(fitsX)+'     '+floattostr(fitsY) );
-            offset := img[col, fitsY, fitsX] - bck.backgr;
+            offset := img[col, fitsY, fitsX] - head.backgr;
 
             if oldoffset <> 0 then offset := 0.1 * offset + 0.9 * oldoffset;{smoothing}
             oldoffset := offset;
 
-            test[Count] := img[col, fitsY, fitsX] - bck.backgr;
+            test[Count] := img[col, fitsY, fitsX] - head.backgr;
             Inc(Count, 1);
           end;
         end;
@@ -3439,7 +3436,6 @@ var
   Save_Cursor: TCursor;
   fitsx, fitsy, col: integer;
   a_factor, k_factor, bf, min, colr: single;
-  bck : tbackground;
 begin
   if head.naxis <> 0 then
   begin
@@ -4197,7 +4193,6 @@ var
   img: image_array;
   headx : theader;
   nr_stars, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33: double;
-  bck : Tbackground;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -4332,7 +4327,7 @@ begin
               if ((full = True) and (tabnr in [2, 3, 4, 7])) then  {get background for dark, flats, flat-darks, photometry}
               begin {analyse background and noise}
                 get_background(0, img,headx, True {update_hist}, False {calculate noise level});
-                lv.Items.item[c].subitems.Strings[D_background] := inttostr5(round(bck.backgr));
+                lv.Items.item[c].subitems.Strings[D_background] := inttostr5(round(headx.backgr));
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
@@ -5115,7 +5110,6 @@ procedure Tstackmenu1.dark_spot_filter1Click(Sender: TObject);
 var
   fitsx, fitsy, i, j, k, x2, y2, radius, most_common, progress_value,greylevels: integer;
   neg_noise_level: double;
-  bck : tbackground;
 begin
   if head.naxis <> 0 then
   begin
@@ -5157,7 +5151,7 @@ begin
                 y2 := fitsY + j;
                 if ((x2 >= 0) and (x2 < head.Width) and (y2 >= 0) and
                   (y2 < head.Height)) then
-                  if img_loaded[k, y2, x2] < bck.backgr then {below global most common level}
+                  if img_loaded[k, y2, x2] < head.backgr then {below global most common level}
                     if img_loaded[k, y2, x2] < most_common - neg_noise_level then
                       {local dark spot}
                       img_loaded[k, y2, x2] := most_common - neg_noise_level;
@@ -7951,7 +7945,6 @@ var
   starlistx: star_list;
   starVar, starCheck, starThree: array of double;
   astr, filename1,totalnrstr                   : string;
-  bck :tbackground;
   oldra0 : double=0;
   olddec0: double=-pi/2;
   headx : theader;
