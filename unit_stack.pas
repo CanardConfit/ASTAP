@@ -1105,7 +1105,7 @@ procedure analyse_image(img: image_array; var head: Theader; snr_min: double; re
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc, dest: image_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
 
-procedure report_results(object_to_process, stack_info: string; object_counter, colorinfo: integer);{report on tab results}
+procedure report_results(object_to_process, stack_info: string; object_counter, color_icon,stack_icon: integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
 procedure listviews_begin_update; {speed up making stackmenu visible having a many items}
 procedure listviews_end_update;{speed up making stackmenu visible having a many items}
@@ -2334,10 +2334,8 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_bin] := floattostrf(headx.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf( headx.Ybinning, ffgeneral, 0, 0);
                 {Binning CCD}
 
-                ListView1.Items.item[c].subitems.Strings[L_hfd] :=
-                  floattostrF(headX.hfd_median, ffFixed, 0, 1);
-                ListView1.Items.item[c].subitems.Strings[L_quality] :=
-                  inttostr5(round(headx.hfd_counter / sqr(headX.hfd_median*headx.Xbinning))); {quality number of stars divided by hfd, binning neutral}
+                ListView1.Items.item[c].subitems.Strings[L_hfd]:= floattostrF(headX.hfd_median, ffFixed, 0, 1);
+                ListView1.Items.item[c].subitems.Strings[L_quality]:= inttostr5(round(headx.hfd_counter / sqr(headX.hfd_median*headx.Xbinning))); {quality number of stars divided by hfd, binning neutral}
 
                 if headX.hfd_median >= 99 then
                   ListView1.Items.item[c].Checked := False {no stars, can't process this image}
@@ -2545,8 +2543,7 @@ begin
 end;
 
 
-procedure report_results(object_to_process, stack_info: string;
-  object_counter, colorinfo: integer);{report on tab results}
+procedure report_results(object_to_process, stack_info: string; object_counter, color_icon,stack_icon: integer);{report on tab results}
 begin
   {report result in results}
   with stackmenu1 do
@@ -2558,10 +2555,8 @@ begin
       , IntToStr(head.Height)
       , head.calstat
       , head.issues);
-    ListView5.Items.item[ListView5.Items.Count - 1].SubitemImages[1] := 5;
-    {mark 2th columns as done using a stacked icon}
-    ListView5.Items.item[ListView5.Items.Count - 1].SubitemImages[0] := colorinfo;
-    {color, gray icon}
+    ListView5.Items.item[ListView5.Items.Count - 1].SubitemImages[1] := stack_icon; {mark 2th columns as done using a stacked icon=5}
+    ListView5.Items.item[ListView5.Items.Count - 1].SubitemImages[0] := color_icon; {color, gray icon}
   end;
   application.ProcessMessages;
   {end report result in results}
@@ -2649,7 +2644,7 @@ begin
   if fileexists(filename2) then
   begin
     save_as_new_file1.caption:='Save current view as new file ✔';
-    report_results(object_name, '', 0, -1{no icon});{report result in tab results}
+    report_results(object_name, '', 0, -1{no icon},5 {stack icon});{report result in tab results}
   end
   else
   save_as_new_file1.caption:='Save current view as new file';
@@ -3668,8 +3663,7 @@ begin
     begin
       if oldposition=-1 then oldposition:=index;
       filename2 := tl.items[index].Caption;
-      deletefile(changeFileExt(filename2, '.bak'));
-      {delete *.bak left over from astrometric solution}
+      deletefile(changeFileExt(filename2, '.bak'));     {delete *.bak left over from astrometric solution}
       if RenameFile(filename2, ChangeFileExt(filename2, '.bak')) then
       begin
         tl.Items.Delete(Index);
@@ -3827,7 +3821,8 @@ begin
   if Sender = renametobak7 then listview_rename_bak(listview7,8);{from popupmenu photometry}
   if Sender = renametobak8 then listview_rename_bak(listview8,9);{from popupmenu inspector}
   if Sender = renametobak9 then listview_rename_bak(listview9,10);
-  if Sender = renametobak10 then listview_rename_bak(listview10,15);//SN reference
+  if Sender = renametobak10 then
+           listview_rename_bak(listview10,15);//SN reference
   {from popupmenu mount analyse}
 end;
 
@@ -8174,7 +8169,7 @@ begin
         abbreviation_var_IAU := prepare_IAU_designation(shape_var1_ra, shape_var1_dec);
         name_check_iau := prepare_IAU_designation(shape_check1_ra, shape_check1_dec);
         name_comp_iau := prepare_IAU_designation(shape_comp1_ra, shape_comp1_dec);
-        initialise_calc_sincos_dec0; {set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
+        sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
         head_ref := head;{backup solution for deepsky annotation}
       end;
       use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
@@ -8591,7 +8586,7 @@ begin
   begin
     save_as_new_file1.caption:='Save current view as new file ✔';
 
-    report_results(object_name, '', 0, -1{no icon});{report result in tab results}
+    report_results(object_name, '', 0, -1{no icon},5 {stack icon});{report result in tab results}
   end
   else
   save_as_new_file1.caption:='Save current view as new file';
@@ -11972,7 +11967,7 @@ begin
               IntToStr(head.flat_count) + 'x' + 'F  ' +
               IntToStr(head.dark_count) + 'x' + 'D  ' + '1x' + head.filter_name;
 
-            report_results(object_to_process, stack_info, 0, -1{no icon});
+            report_results(object_to_process, stack_info, 0, -1{no icon},5 {stack icon});
             {report result in tab results}
 
           end //calibration
@@ -12744,7 +12739,7 @@ begin
             end;
 
             stack_info := 'Interim result ' + head.filter_name + ' x ' + IntToStr(counterL);
-            report_results(object_to_process, stack_info, object_counter, i {color icon}); {report result in tab result using modified filename2}
+            report_results(object_to_process, stack_info, object_counter, i {color icon},5 {stack icon}); {report result in tab result using modified filename2}
             filename2 := filename3;{restore last filename}
             extra1 := extra1 + head.filter_name;
           end{nrfiles>1}
@@ -13077,9 +13072,9 @@ begin
         if save_settings_image_path1.Checked then save_settings(changefileext(filename2, '.cfg'));
 
 
-        if head.naxis3 > 1 then report_results(object_to_process, stack_info, object_counter, 3 {color icon}) {report result in tab results}
+        if head.naxis3 > 1 then report_results(object_to_process, stack_info, object_counter, 3 {color icon},5 {stack icon}) {report result in tab results}
         else
-          report_results(object_to_process, stack_info, object_counter, 4 {gray icon});{report result in tab results}
+          report_results(object_to_process, stack_info, object_counter, 4 {gray icon},5 {stack icon});{report result in tab results}
 
         {close the window}
       end; {not zero count}
@@ -13454,7 +13449,7 @@ begin
       mainwindow.savedialog1.filename);
 
     filename2 := mainwindow.savedialog1.filename;
-    report_results('Video file', '', 0, 15 {video icon});{report result in tab results}
+    report_results('Video file', '', 0, 15 {video icon},5 {stack icon});{report result in tab results}
   end;
 end;
 

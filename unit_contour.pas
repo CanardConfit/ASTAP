@@ -432,7 +432,6 @@ begin
       image1.Canvas.Pen.width := round(1+head.height/image1.height);{thickness lines}
       fontsize:=round(max(10,8*head.height/image1.height));{adapt font to image dimensions}
       image1.Canvas.font.size:=fontsize;
-
     end;
 
     setlength(img_sa,1,hh,ww);{set length of image array}
