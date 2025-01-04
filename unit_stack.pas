@@ -66,6 +66,7 @@ type
     label_delta_dec1: TLabel;
     listview10: TListView;
     list_to_clipboard10: TMenuItem;
+    sn_rename_selected_files1: TMenuItem;
     MenuItem36: TMenuItem;
     MenuItem37: TMenuItem;
     MenuItem39: TMenuItem;
@@ -74,6 +75,7 @@ type
     refresh_solutions_selectedSN_reference1: TMenuItem;
     removeselected10: TMenuItem;
     renametobak10: TMenuItem;
+    rename_selectedfiles1: TMenuItem;
     select10: TMenuItem;
     selectall10: TMenuItem;
     Separator8: TMenuItem;
@@ -769,6 +771,8 @@ type
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
     procedure refresh_solutions_selectedSN_reference1Click(Sender: TObject);
+    procedure rename_selectedfiles1Click(Sender: TObject);
+    procedure sn_rename_selected_files1Click(Sender: TObject);
     procedure solar_drift_compensation1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
@@ -851,7 +855,6 @@ type
     procedure remove_luminance1Change(Sender: TObject);
     procedure remove_stars1Click(Sender: TObject);
     procedure result_compress1Click(Sender: TObject);
-    procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
@@ -7350,31 +7353,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.rename_result1Click(Sender: TObject);
-var
-  index, counter: integer;
-  thepath, newfilen: string;
-begin
-  index := 0;
-  counter := listview5.Items.Count;
-  while index < counter do
-  begin
-    if listview5.Items[index].Selected then
-    begin
-      filename2 := listview5.items[index].Caption;
-      thepath := extractfilepath(filename2);
-      newfilen := thepath + InputBox('New name:', '', extractfilename(filename2));
-      if ((newfilen = '') or (newfilen = filename2)) then exit;
-      if RenameFile(filename2, newfilen) then
-        listview5.items[index].Caption := newfilen
-      else
-        beep;
-    end;
-    Inc(index); {go to next file}
-  end;
-
-end;
-
 procedure Tstackmenu1.restore_file_ext1Click(Sender: TObject);
 var
   searchResult: TSearchRec;
@@ -10095,6 +10073,53 @@ begin
   process_selected_files(listview10,SN_solution {column},'S');
 end;
 
+procedure Tstackmenu1.rename_selectedfiles1Click(Sender: TObject);
+var
+  index, counter: integer;
+  thepath, newfilen: string;
+begin
+  index := 0;
+  counter := listview5.Items.Count;
+  while index < counter do
+  begin
+    if listview5.Items[index].Selected then
+    begin
+      filename2 := listview5.items[index].Caption;
+      thepath := extractfilepath(filename2);
+      newfilen := thepath + InputBox('New name:', '', extractfilename(filename2));
+      if ((newfilen = '') or (newfilen = filename2)) then exit;
+      if RenameFile(filename2, newfilen) then
+        listview5.items[index].Caption := newfilen
+      else
+        beep;
+    end;
+    Inc(index); {go to next file}
+  end;
+end;
+
+procedure Tstackmenu1.sn_rename_selected_files1Click(Sender: TObject);
+var
+  index, counter: integer;
+  thepath, newfilen: string;
+begin
+  index := 0;
+  counter := listview10.Items.Count;
+  while index < counter do
+  begin
+    if listview10.Items[index].Selected then
+    begin
+      filename2 := listview10.items[index].Caption;
+      thepath := extractfilepath(filename2);
+      newfilen := thepath + InputBox('New name:', '', extractfilename(filename2));
+      if ((newfilen = '') or (newfilen = filename2)) then exit;
+      if RenameFile(filename2, newfilen) then
+        listview10.items[index].Caption := newfilen
+      else
+        beep;
+    end;
+    Inc(index); {go to next file}
+  end;
+end;
 
 procedure Tstackmenu1.bin2x2_selectedP1Click(Sender: TObject);
 begin
@@ -12515,15 +12540,15 @@ begin
         if ((ListView1.items[c].Checked = True) and (ListView1.Items.item[c].SubitemImages[L_result] < 0)) then {not done yet}
         begin
           if object_to_process = '' then object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name to stack}
-          if ((classify_object = False) or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))
-          then
-            {correct object?}
+          if ((classify_object = False) or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))))  then  {correct object?}
           begin {correct object}
             files_to_process[c].Name := ListView1.items[c].Caption;
             Inc(image_counter);{one image more}
 
+
             ListView1.Items.item[c].SubitemImages[L_result] := 5; {mark 3th columns as done using a stacked icon}
             ListView1.Items.item[c].subitems.Strings[L_result] := IntToStr(object_counter) + '  ';{show image result number}
+
 
 
             {$ifdef darwin} {MacOS}
@@ -12547,7 +12572,7 @@ begin
       end;
       if nrfiles > 1 then {need at least two files to sort}
       begin
-        if stitching_mode = False then put_best_quality_on_top(files_to_process);
+        if ((stitching_mode = False) and (sn_search=false)) then put_best_quality_on_top(files_to_process);
           {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
         if sigma_clip then

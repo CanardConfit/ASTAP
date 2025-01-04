@@ -166,8 +166,6 @@ begin
   end
   else
   begin
-//    pixel_to_celestial(head,1,1,1 {formalism},  ra1,dec1 );
-
     sincos(head.dec0,SIN_dec0,COS_dec0);//intilialize SIN_dec0,COS_dec0
     astrometric_to_vector;{convert 1th order astrometric solution to a vector solution}
 
@@ -294,7 +292,7 @@ begin
             if init=false then
             begin
               head_ref:=head;{backup solution}
-              sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+              sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
             end;
 
             if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
@@ -681,7 +679,7 @@ begin
 
             add_text(mainwindow.memo1.lines,'COMMENT 9', '  Reference file was ' + filename2);
             head_ref:=head;{backup solution}
-            sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+            sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
             if ((bayerpat='') and (process_as_osc=2 {forced})) then
                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -1296,7 +1294,7 @@ begin
           old_naxis3:=head.naxis3;
 
           head_ref:=head;{backup solution}
-          sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+          sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -1801,7 +1799,7 @@ begin
           old_naxis3:=head.naxis3;
 
           head_ref:=head;{backup solution}
-          sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+          sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -2145,7 +2143,7 @@ begin
           old_naxis3:=head.naxis3;
 
           head_ref:=head;{backup solution}
-          sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+          sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -2375,7 +2373,7 @@ begin
       raR:=strtofloat2(listView10.Items.item[c].Subitems[SN_ra]);
       decR:=strtofloat2(listView10.Items.item[c].Subitems[SN_dec]);
       ang_sep(ra,dec,raR*pi/180,decR*pi/180, {out} sep);
-      if sep<0.1*fov then
+      if sep<0.3*fov then
       begin
          filenameR:=listView10.Items.item[c].caption;
          exit;
@@ -2431,7 +2429,6 @@ begin //1
 
       nova_counter:=0;
       if load_fits(filename2,true {light},true,true {init=false} {update memo for saving},0,mainwindow.memo1.Lines,head_ref, img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-      sincos(head_ref.dec0{head_ref!!},SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
       if ((bayerpat='') and (process_as_osc=2 {forced})) then
         if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the head_refer! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -2458,6 +2455,7 @@ begin //1
 
         if load_fits(filenameR,true {light},true,false {update memo for saving},0,mainwindow.memo1.Lines,head, img_dark {img_loaded})=false then begin memo2_message('Error loading '+filename2);exit;end;
    //    initialise_calc_sincos_dec0;{set variables correct}
+//if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
 
 
        // reset_solution_vectors(1);{no influence on the first image}
@@ -2500,7 +2498,11 @@ begin //1
               img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
 
         solution:=true;
-        if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+if use_astrometry_internal then
+        begin
+          sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+          sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+        end
         else
         begin //8 {align using star match}
           bin_and_find_stars(img_dark, head_ref, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
@@ -2647,13 +2649,13 @@ begin //1
           add_text(mainwindow.memo1.lines,'COMMENT  ','Ref img:' + extractfilename(filenameR));
           add_text(mainwindow.memo1.lines,'COMMENT  ','flux ratio '+ fluxratioS);
 
-          bin_and_find_stars(img_loaded, head_ref, binning,1  {cropping},hfd_min,10 {max_stars},true{update hist},starlist2,warning);{bin, measure background, find stars}
+          bin_and_find_stars(img_loaded, head_ref, binning,1  {cropping},hfd_min,10{max_stars},true{update hist},starlist2,warning);{bin, measure background, find stars}
           average_hfd:=strtofloat2(stackmenu1.ListView1.Items.item[c].subitems.Strings[L_hfd]);
           for i:=0 to length(starlist2[0])-1 do
           begin
 
             HFD(img_loaded,round(starlist2[0,i]),round(starlist2[1,i]),14{annulus_radius},99{head.mzero_radius},1{adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-            if ((hfd1>0.7* average_hfd) and (hfd1<1.5*average_hfd)) then
+            if ((hfd1>0.7* average_hfd) and (hfd1<1.3*average_hfd)) then
             begin
               add_text(mainwindow.memo1.lines,'ANNOTATE=',#39+copy(floattostrF(xc-sizebox,FFFixed,0,0)+';'+floattostrF(yc-sizebox,FFFixed,0,0)+';'+floattostrF(xc+sizebox,fffixed,0,0)+';'+floattostrF(yc+sizebox,FFFixed,0,0)+';-5'+';UO;',1,68)+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
@@ -2681,14 +2683,31 @@ begin //1
 
 
           report_results(object_name,inttostr(round(head_ref.exposure)),nova_counter,999 {colour icon},26 {stack icon});{report result in tab result using modified filename2}
+
+
           progress_indicator(10+round(90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),'Cal');{show progress}
 
         end;//solution
 
 
-      end;//4 reference file found
-      finally
+      end//4, reference file found
+      else
+        memo2_message('█ █ █ █ █ █ No compatible reference image found for '+filename2+'!');
+      except
       end;
+
+      if nova_counter<>0 then
+      begin
+        ListView1.Items.item[c].SubitemImages[L_result] :=26; {mark 3th columns nova star}
+        ListView1.Items.item[c].subitems.Strings[L_result] := IntToStr(nova_counter);{show inumber of detections in lights tab}
+      end
+      else
+      begin
+        ListView1.Items.item[c].SubitemImages[L_result] :=999; {no icon. Required to mark as done (>=0)}
+        ListView1.Items.item[c].subitems.Strings[L_result] :='';
+      end;
+
+
     end;//3
   end;  {with stackmenu1}
 
