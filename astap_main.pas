@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.1.3';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.1.4a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }

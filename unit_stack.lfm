@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 368
+  Left = 100
   Height = 707
-  Top = 157
+  Top = 156
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = SN_ref1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 13
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -4896,6 +4896,161 @@ object stackmenu1: Tstackmenu1
             Visible = False
           end
         end
+        object SN_ref1: TTabSheet
+          Hint = 'Reference images for nova search'
+          Caption = 'SN references'
+          ClientHeight = 472
+          ClientWidth = 1912
+          object listview10: TListView
+            Left = 0
+            Height = 436
+            Hint = 'Double click to view image'
+            Top = 36
+            Width = 1912
+            Align = alClient
+            AutoSortIndicator = True
+            BorderSpacing.Top = 36
+            Checkboxes = True
+            Columns = <            
+              item
+                AutoSize = True
+                Caption = 'File'
+                MinWidth = 150
+                Width = 33
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Exposure'
+                MinWidth = 80
+                Width = 80
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Temperature'
+                MinWidth = 100
+                Width = 100
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Binning'
+                MinWidth = 70
+                Width = 70
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Width'
+                MinWidth = 55
+                Width = 60
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'Height'
+                MinWidth = 60
+                Width = 60
+              end            
+              item
+                AutoSize = True
+                Caption = 'Type'
+                MinWidth = 50
+                Width = 40
+              end            
+              item
+                AutoSize = True
+                Caption = 'Date'
+                MinWidth = 70
+                Width = 39
+              end            
+              item
+                Caption = 'Object'
+                MinWidth = 90
+                Width = 90
+              end            
+              item
+                Caption = 'Filter'
+                MinWidth = 50
+              end            
+              item
+                Alignment = taRightJustify
+                Caption = 'σ'
+                MinWidth = 60
+                Width = 60
+              end            
+              item
+                Caption = 'δ'
+                MinWidth = 60
+                Width = 60
+              end            
+              item
+                Caption = 'Astrometric'
+                MinWidth = 50
+              end            
+              item
+                Caption = 'Calibration'
+                MinWidth = 50
+              end            
+              item
+                Caption = 'Gain'
+                MinWidth = 50
+              end>
+            GridLines = True
+            HideSelection = False
+            MultiSelect = True
+            ParentFont = False
+            PopupMenu = PopupMenu10
+            ReadOnly = True
+            RowSelect = True
+            ScrollBars = ssAutoBoth
+            SmallImages = ImageList_colors
+            SortColumn = 8
+            SortType = stText
+            TabOrder = 0
+            ViewStyle = vsReport
+            OnColumnClick = listview1ColumnClick
+            OnCompare = listview1Compare
+            OnCustomDraw = listview4CustomDraw
+            OnCustomDrawItem = listview4CustomDrawItem
+            OnDblClick = listview1DblClick
+            OnKeyDown = listview1KeyDown
+          end
+          object browse_snref1: TBitBtn
+            Left = 16
+            Height = 26
+            Hint = 'Browse and select nova reference frames'
+            Top = 6
+            Width = 92
+            AutoSize = True
+            Caption = 'Browse'
+            Constraints.MinWidth = 92
+            Images = ImageList2
+            ImageIndex = 23
+            OnClick = browse_snref1Click
+            TabOrder = 1
+          end
+          object analyseSNrefbutton1: TButton
+            Left = 136
+            Height = 25
+            Hint = 'Analyse image frames'
+            Top = 6
+            Width = 67
+            AutoSize = True
+            Caption = 'Analyse'
+            ParentFont = False
+            TabOrder = 2
+            OnClick = analyseSNrefbutton1Click
+          end
+          object clear_selectionSNref1: TButton
+            Left = 664
+            Height = 25
+            Hint = 'Clear the frame list'
+            Top = 6
+            Width = 71
+            AutoSize = True
+            Caption = 'Clear list'
+            ParentFont = False
+            TabOrder = 3
+            OnClick = clear_selectionSNref1Click
+          end
+        end
         object tab_Pixelmath1: TTabSheet
           Hint = 'Pixel math tools 1'
           Caption = 'Pixel math 1'
@@ -8264,161 +8419,6 @@ object stackmenu1: Tstackmenu1
             Visible = False
           end
         end
-        object SN_ref1: TTabSheet
-          Hint = 'Reference images for nova search'
-          Caption = 'SN references'
-          ClientHeight = 472
-          ClientWidth = 1912
-          object listview10: TListView
-            Left = 0
-            Height = 436
-            Hint = 'Double click to view image'
-            Top = 36
-            Width = 1912
-            Align = alClient
-            AutoSortIndicator = True
-            BorderSpacing.Top = 36
-            Checkboxes = True
-            Columns = <            
-              item
-                AutoSize = True
-                Caption = 'File'
-                MinWidth = 150
-                Width = 33
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'Exposure'
-                MinWidth = 80
-                Width = 80
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'Temperature'
-                MinWidth = 100
-                Width = 100
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'Binning'
-                MinWidth = 70
-                Width = 70
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'Width'
-                MinWidth = 55
-                Width = 60
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'Height'
-                MinWidth = 60
-                Width = 60
-              end            
-              item
-                AutoSize = True
-                Caption = 'Type'
-                MinWidth = 50
-                Width = 40
-              end            
-              item
-                AutoSize = True
-                Caption = 'Date'
-                MinWidth = 70
-                Width = 39
-              end            
-              item
-                Caption = 'Object'
-                MinWidth = 90
-                Width = 90
-              end            
-              item
-                Caption = 'Filter'
-                MinWidth = 50
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'σ'
-                MinWidth = 60
-                Width = 60
-              end            
-              item
-                Caption = 'δ'
-                MinWidth = 60
-                Width = 60
-              end            
-              item
-                Caption = 'Astrometric'
-                MinWidth = 50
-              end            
-              item
-                Caption = 'Calibration'
-                MinWidth = 50
-              end            
-              item
-                Caption = 'Gain'
-                MinWidth = 50
-              end>
-            GridLines = True
-            HideSelection = False
-            MultiSelect = True
-            ParentFont = False
-            PopupMenu = PopupMenu10
-            ReadOnly = True
-            RowSelect = True
-            ScrollBars = ssAutoBoth
-            SmallImages = ImageList_colors
-            SortColumn = 8
-            SortType = stText
-            TabOrder = 0
-            ViewStyle = vsReport
-            OnColumnClick = listview1ColumnClick
-            OnCompare = listview1Compare
-            OnCustomDraw = listview4CustomDraw
-            OnCustomDrawItem = listview4CustomDrawItem
-            OnDblClick = listview1DblClick
-            OnKeyDown = listview1KeyDown
-          end
-          object browse_snref1: TBitBtn
-            Left = 16
-            Height = 26
-            Hint = 'Browse and select nova reference frames'
-            Top = 6
-            Width = 92
-            AutoSize = True
-            Caption = 'Browse'
-            Constraints.MinWidth = 92
-            Images = ImageList2
-            ImageIndex = 23
-            OnClick = browse_snref1Click
-            TabOrder = 1
-          end
-          object analyseSNrefbutton1: TButton
-            Left = 136
-            Height = 25
-            Hint = 'Analyse image frames'
-            Top = 6
-            Width = 67
-            AutoSize = True
-            Caption = 'Analyse'
-            ParentFont = False
-            TabOrder = 2
-            OnClick = analyseSNrefbutton1Click
-          end
-          object clear_selectionSNref1: TButton
-            Left = 664
-            Height = 25
-            Hint = 'Clear the frame list'
-            Top = 6
-            Width = 71
-            AutoSize = True
-            Caption = 'Clear list'
-            ParentFont = False
-            TabOrder = 3
-            OnClick = clear_selectionSNref1Click
-          end
-        end
       end
     end
     object PairSplitterSide2: TPairSplitterSide
@@ -8658,8 +8658,8 @@ object stackmenu1: Tstackmenu1
     Top = 592
   end
   object ImageList2: TImageList
-    Left = 1400
-    Top = 592
+    Left = 1408
+    Top = 600
     Bitmap = {
       4C7A1F00000010000000100000001E0700000000000078DAED5CDB4E153D14E6
       51FE47F18A17402E848040624039A880220909202A180E9210F5061220846838
@@ -8999,10 +8999,10 @@ object stackmenu1: Tstackmenu1
       Caption = 'Remove selected'
       OnClick = removeselected1Click
     end
-    object rename_result1: TMenuItem
+    object rename_selectedfiles1: TMenuItem
       Caption = 'Rename selected files as'
       Hint = 'Rename the file'
-      OnClick = rename_result1Click
+      OnClick = rename_selectedfiles1Click
     end
     object MenuItem25: TMenuItem
       Caption = '-'
@@ -9580,6 +9580,10 @@ object stackmenu1: Tstackmenu1
     end
     object MenuItem39: TMenuItem
       Caption = '-'
+    end
+    object sn_rename_selected_files1: TMenuItem
+      Caption = 'Rename selected files'
+      OnClick = sn_rename_selected_files1Click
     end
     object MenuItem40: TMenuItem
       Caption = '-'
