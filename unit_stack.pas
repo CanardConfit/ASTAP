@@ -50,7 +50,6 @@ type
     analyseblink1: TButton;
     analysedarksButton2: TButton;
     analyseflatdarksButton1: TButton;
-    analyseSNrefbutton1: TButton;
     analyseflatsButton3: TButton;
     analysephotometry1: TButton;
     analysephotometrymore1: TButton;
@@ -60,11 +59,8 @@ type
     annotate_mode1: TComboBox;
     Annotations_visible2: TCheckBox;
     annulus_radius1: TComboBox;
-    browse_snref1: TBitBtn;
-    clear_selectionSNref1: TButton;
     label_delta_ra1: TLabel;
     label_delta_dec1: TLabel;
-    listview10: TListView;
     list_to_clipboard10: TMenuItem;
     sn_rename_selected_files1: TMenuItem;
     MenuItem36: TMenuItem;
@@ -163,7 +159,6 @@ type
     solar_drift_dec1: TEdit;
     SpeedButton2: TSpeedButton;
     SpeedButton3: TSpeedButton;
-    SN_ref1: TTabSheet;
     undo_button23: TBitBtn;
     font_size_photometry_UpDown1: TUpDown;
     unselect10: TMenuItem;
@@ -748,7 +743,6 @@ type
     procedure add_noise1Click(Sender: TObject);
     procedure alignment1Show(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
-    procedure analyseSNrefbutton1Click(Sender: TObject);
     procedure annotate_mode1Change(Sender: TObject);
     procedure Annotations_visible2Click(Sender: TObject);
     procedure apply_star_smooth1Click(Sender: TObject);
@@ -757,9 +751,7 @@ type
     procedure blend1Change(Sender: TObject);
     procedure blink_annotate_and_solve1Click(Sender: TObject);
     procedure apply_unsharp_mask1Click(Sender: TObject);
-    procedure browse_snref1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
-    procedure clear_selectionSNref1Click(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure copyRowsandColumnsswapped1Click(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
@@ -770,9 +762,7 @@ type
       ARect: TRect; AState: TOwnerDrawState);
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
-    procedure refresh_solutions_selectedSN_reference1Click(Sender: TObject);
     procedure rename_selectedfiles1Click(Sender: TObject);
-    procedure sn_rename_selected_files1Click(Sender: TObject);
     procedure solar_drift_compensation1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
@@ -1435,7 +1425,6 @@ begin
   stackmenu1.listview6.Items.beginUpdate;
   stackmenu1.listview7.Items.beginUpdate;
   stackmenu1.listview8.Items.beginUpdate;
-  stackmenu1.listview10.Items.beginUpdate;
   //  stackmenu1.listview9.Items.beginUpdate;{not stored}
 end;
 
@@ -1450,8 +1439,6 @@ begin
   stackmenu1.listview6.Items.EndUpdate;
   stackmenu1.listview7.Items.EndUpdate;
   stackmenu1.listview8.Items.EndUpdate;
-
-  stackmenu1.listview10.Items.EndUpdate;
 end;
 
 
@@ -2788,7 +2775,6 @@ begin
   if Sender = removeselected7 then listview_removeselect(listview7);{from popup menu photometry}
   if Sender = removeselected8 then listview_removeselect(listview8);{inspector}
   if Sender = removeselected9 then listview_removeselect(listview9);{mount analyse}
-  if Sender = removeselected10 then listview_removeselect(listview10);{SN reference}
 end;
 
 
@@ -2940,7 +2926,6 @@ begin
   if Sender = select7 then listview_select(listview7);{from popupmenu photometry}
   if Sender = select8 then listview_select(listview8);
   if Sender = select9 then listview_select(listview9);
-  if Sender = select10 then listview_select(listview10);
 end;
 
 
@@ -3579,7 +3564,7 @@ begin
     exit;
   end;
 
-  measure_magnitudes(14,0,0,head.width-1,head.height-1,true {deep},stars);
+  measure_magnitudes(img_loaded,head, 14,0,0,head.width-1,head.height-1,false{histogram update},true {deep},stars);
   formalism:=mainwindow.Polynomial1.itemindex;
 
   setlength(xylist,2, length(stars[0]));
@@ -3824,8 +3809,6 @@ begin
   if Sender = renametobak7 then listview_rename_bak(listview7,8);{from popupmenu photometry}
   if Sender = renametobak8 then listview_rename_bak(listview8,9);{from popupmenu inspector}
   if Sender = renametobak9 then listview_rename_bak(listview9,10);
-  if Sender = renametobak10 then
-           listview_rename_bak(listview10,15);//SN reference
   {from popupmenu mount analyse}
 end;
 
@@ -4028,7 +4011,6 @@ begin
   if Sender = unselect7 then listview_unselect(listview7);
   if Sender = unselect8 then listview_unselect(listview8);{inspector}
   if Sender = unselect9 then listview_unselect(listview9);{inspector}
-  if Sender = unselect10 then listview_unselect(listview10);{SN reference}
 end;
 
 
@@ -4251,8 +4233,6 @@ begin
   if lv.Name = stackmenu1.listview8.Name then tabnr := 8 {inspector tab}
   else
   if lv.Name = stackmenu1.listview9.Name then tabnr := 9 {mount analyse tab}
-  else
-  if lv.Name = stackmenu1.listview10.Name then tabnr := 15 {SN reference tab}
   else
     tabnr := 0;
 
@@ -5417,7 +5397,6 @@ begin
             8 : listview_insert(listview7,bakfiles[i].index,bakfiles[i].name,P_nr);//photometry
             9 : listview_insert(listview8,bakfiles[i].index,bakfiles[i].name,I_nr);//inspector
             10 : listview_insert(listview9,bakfiles[i].index,bakfiles[i].name,M_nr);//mount
-            15 : listview_insert(listview10,bakfiles[i].index,bakfiles[i].name,SN_nr);//SN reference
           end; //case
           bakfiles[i].tab:=-1; //mark as processedand ignore till is bakfiles is cleared/nilled;
           memo2_message('Restored: '+bakfiles[i].name);
@@ -8208,7 +8187,7 @@ begin
       listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(head.magn_limit, FFgeneral, 4, 0);
 
       if head.mzero <> 0 then
-        measure_magnitudes(annulus_radius,0,0,head.width-1,head.height-1, False {deep}, starlistx); {analyse}
+        measure_magnitudes(img_loaded,head,annulus_radius,0,0,head.width-1,head.height-1,false{histogram update}, False {deep}, starlistx); {analyse}
 
       setlength(img_temp,head.naxis3, head.Height, head.Width);{new size}
 
@@ -9004,8 +8983,6 @@ begin
   else
   if Sender = list_to_clipboard1 then lv := listview1
   else
-  if Sender = list_to_clipboard10 then lv := listview10
-  else
   begin
     beep;
     exit;
@@ -9093,12 +9070,6 @@ begin
   begin
     listview9.selectall;
     listview9.SetFocus;
-  end
-  else
-  if Sender = selectall10 then
-  begin
-    listview10.selectall;
-    listview10.SetFocus;
   end;
 
 end;
@@ -9465,16 +9436,6 @@ begin
   {update counting info}
 end;
 
-procedure Tstackmenu1.analyseSNrefbutton1Click(Sender: TObject);
-begin
-  analyse_listview(listview10, true {light}, false {full fits, include background and noise}, False{refresh});
-
-  {temporary fix for CustomDraw not called}
-  {$ifdef darwin} {MacOS}
-   stackmenu1.nr_total_flats1.caption:=inttostr(listview10.items.count);{update counting info}
-  {$endif}
-end;
-
 
 procedure Tstackmenu1.annotate_mode1Change(Sender: TObject);
 var
@@ -9693,35 +9654,10 @@ begin
    }
 end;
 
-procedure Tstackmenu1.browse_snref1Click(Sender: TObject);
-var
-  i: integer;
-begin
-  OpenDialog1.Title := 'Select Nova reference frames';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
-  opendialog1.filename := '';
-  opendialog1.Filter := dialog_filter;
-  if opendialog1.Execute then
-  begin
-    listview10.Items.beginupdate;
-    for i := 0 to OpenDialog1.Files.Count - 1 do {add}
-    begin
-      listview_add(listview10, OpenDialog1.Files[i], True, SN_nr);
-    end;
-    listview10.Items.endupdate;
-  end;
-end;
-
 
 procedure Tstackmenu1.classify_dark_temperature1Change(Sender: TObject);
 begin
   delta_dark_temperature_visibility;
-end;
-
-procedure Tstackmenu1.clear_selectionSNref1Click(Sender: TObject);
-begin
-  listview10.Clear;
-  bakfiles:=nil; //unrename function
 end;
 
 
@@ -9930,22 +9866,21 @@ begin
 end;
 
 
-function process_selected_files(lv: tlistview; column: integer; mode : char) : boolean;
+function process_selected_files(lv: tlistview; column: integer; mode : string) : boolean;// S= Solve selected/ U solve any without ✓ / 'P' photometry, add mzero / '2' bin 2x2
 var
   c,nrcolumns,i : integer;
   filename1     : string;
   img_temp      : image_array;
   headx        : theader;
 
-  function save_fits_tiff(filename1: string) : boolean;
-  begin
-    if fits_file_name(filename1) then
-      result:=savefits_update_header(memox,filename1)
-    else
-      result:=save_tiff16_secure(img_temp,memox, filename1);{guarantee no file is lost}
-    if result=false then ShowMessage('Write error !!' + filename1);
-  end;
-
+        function save_fits_tiff(filename1: string) : boolean;
+        begin
+          if fits_file_name(filename1) then
+            result:=savefits_update_header(memox,filename1)
+          else
+            result:=save_tiff16_secure(img_temp,memox, filename1);{guarantee no file is lost}
+          if result=false then ShowMessage('Write error !!' + filename1);
+        end;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -9953,18 +9888,20 @@ begin
   update_menu(False);  //do not allow to save fits. img_load is still valid but Memo3 is cleared. Could be recovered but is not done
 
   for c := 0 to lv.items.Count - 1 do {check for astrometric solutions}
-    if lv.Items[c].Selected then
-      lv.Items.item[c].SubitemImages[column]:=26 //mark selected row {file} to be processed with white icon. Note -2 or 99 is not possible. Should be existing in Linux.
+  begin
+    if ( ((pos('U',mode)>0) and (length(lv.Items.item[c].subitems.Strings[column])<=1)) or   //add missing solutions for any file. Note ✓ is stored with three characters
+           (lv.Items[c].Selected)) then   //solve all selected
+      lv.Items.item[c].SubitemImages[column]:=27 //mark selected row {file} to be processed with an icon. Note -2 or 99 is not possible. Should be existing in Linux.
     else
       lv.Items.item[c].SubitemImages[column]:=-1; //mark as no icon
-
+  end;
   lv.Selected := nil; {remove any selection}
 
   esc_pressed := False;
   with stackmenu1 do
     for c := 0 to lv.items.Count - 1 do {check for astrometric solutions}
     begin
-      if lv.Items.item[c].SubitemImages[column ] = 26  then //was marked for processing
+      if lv.Items.item[c].SubitemImages[column]=27  then //was marked for processing
       begin
         filename1 := lv.items[c].Caption;
         lv.Items.item[c].SubitemImages[column]:=-1; //mark as no icon
@@ -9986,13 +9923,11 @@ begin
         if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,memox, headx, img_temp) = False)) then
           break;
 
-        if mode='S' then //solve selected files
+        if ((pos('S',mode)>0) or (pos('U',mode)>0)) then //S is force solve selected files, U is solve none solved files
         begin
           lv.ItemIndex := c;
           {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
           lv.Items[c].MakeVisible(False);{scroll to selected item}
-          Application.ProcessMessages;
-
           memo2_message(filename1 + ' Adding astrometric solution to file.');
           Application.ProcessMessages;
 
@@ -10017,14 +9952,14 @@ begin
             else
               lv.Items.item[c].subitems.Strings[column] := '';
           end;
-        end//mode='S'
-        else
-        if mode='P' then //photometry, add mzero
+
+        end;//mode='S'
+        if pos('P',mode)>0 then //photometry, add mzero
         begin
-          head.mzero:=0; //force a new calibration
-          if head.cd1_1<>0 then
+          headx.mzero:=0; //force a new calibration
+          if headx.cd1_1<>0 then
           begin
-            calibrate_photometry(img_loaded,memoX,headX, false{update});
+            calibrate_photometry(img_temp,memoX,headX, false{update});
             if headX.mzero<>0 then
             begin
               result:=save_fits_tiff(filename1);
@@ -10033,8 +9968,8 @@ begin
           end
           else
           memo2_message('Can not calibrate '+filename1+'. Add first an astrometrical solution.');
-        end //mode='P'
-        else
+        end; //mode='P'
+
         if mode='2' then //bin 2x2
         begin
           bin_X2X3X4(img_temp,headx,memox,2);{bin img_loaded 2x or 3x}
@@ -10066,13 +10001,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.refresh_solutions_selectedSN_reference1Click(
-  Sender: TObject);
-begin
-  save_settings2;{too many lost selected files . so first save settings}
-  process_selected_files(listview10,SN_solution {column},'S');
-end;
-
 procedure Tstackmenu1.rename_selectedfiles1Click(Sender: TObject);
 var
   index, counter: integer;
@@ -10097,29 +10025,6 @@ begin
   end;
 end;
 
-procedure Tstackmenu1.sn_rename_selected_files1Click(Sender: TObject);
-var
-  index, counter: integer;
-  thepath, newfilen: string;
-begin
-  index := 0;
-  counter := listview10.Items.Count;
-  while index < counter do
-  begin
-    if listview10.Items[index].Selected then
-    begin
-      filename2 := listview10.items[index].Caption;
-      thepath := extractfilepath(filename2);
-      newfilen := thepath + InputBox('New name:', '', extractfilename(filename2));
-      if ((newfilen = '') or (newfilen = filename2)) then exit;
-      if RenameFile(filename2, newfilen) then
-        listview10.items[index].Caption := newfilen
-      else
-        beep;
-    end;
-    Inc(index); {go to next file}
-  end;
-end;
 
 procedure Tstackmenu1.bin2x2_selectedP1Click(Sender: TObject);
 begin
@@ -12074,7 +11979,6 @@ begin
 end;
 
 
-
 function RemoveSpecialChars(const str: string): string;
   {remove ['.','\','/','*','"',':','|','<','>']}
 var {################# initialised variables #########################}
@@ -12141,7 +12045,7 @@ var
   extra1, extra2, object_to_process, stack_info, thefilters                       : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
-  success, classify_filter, classify_object, sender_photometry, sender_stack_groups,comet,sn_search  : boolean;
+  success, classify_filter, classify_object, sender_photometry, sender_stack_groups,comet  : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr    : double;
   filters_used: array [0..4] of string;
@@ -12155,7 +12059,6 @@ begin
   comet:=pos('Comet', stackmenu1.stack_method1.Text) > 0;
   skip_combine := pos('skip', stackmenu1.stack_method1.Text) > 0;
   cal_and_align := pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
-  sn_search:=pos('Nova', stackmenu1.stack_method1.Text) > 0;  {SN search, subtract darks from lights}
   sender_photometry := (Sender = photom_stack1);//stack instruction from photometry tab?
   sender_stack_groups := (Sender =stack_groups1);//stack instruction from photometry tab?
 
@@ -12254,6 +12157,7 @@ begin
       exit;
     end;
   end;
+
 
   light_exposure := 987654321;{not done indication}
   light_temperature := 987654321;
@@ -12526,7 +12430,7 @@ begin
     for i := 0 to 4 do filters_used[i] := '';
     Inc(object_counter);
 
-    lrgb := ((classify_filter) and (cal_and_align = False) and (sn_search=false)); {ignore lrgb for calibration and alignment is true}
+    lrgb := ((classify_filter) and (cal_and_align = False)); {ignore lrgb for calibration and alignment is true}
     if lrgb = False then
     begin
       SetLength(files_to_process, ListView1.items.Count);{set array length to listview}
@@ -12572,7 +12476,7 @@ begin
       end;
       if nrfiles > 1 then {need at least two files to sort}
       begin
-        if ((stitching_mode = False) and (sn_search=false)) then put_best_quality_on_top(files_to_process);
+        if stitching_mode= False then put_best_quality_on_top(files_to_process);
           {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
         if sigma_clip then
@@ -12588,13 +12492,6 @@ begin
         begin
           memo2_message('---------- Calibration & alignment for object: ' + object_to_process + ' -----------');
           calibration_and_alignment(process_as_osc, {var}files_to_process, counterL);{saturation clip average}
-        end
-        else
-        if sn_search then {sn searchonly}
-        begin
-          stackmenu1.analyseSNrefbutton1Click(nil);//get positions in the list
-          memo2_message('---------- Nova search. Subtract matching images in tab SN search: ' + object_to_process + ' -----------');
-          sn_search_subtraction(process_as_osc, {var}files_to_process, counterL);{subtract for SN search}
         end
         else
         if comet then
@@ -12831,7 +12728,7 @@ begin
     end;
 
 
-    if ((cal_and_align = False) and (sn_search = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
+    if ((cal_and_align = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
     begin  //fits_file:=true;
       nrbits := -32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
@@ -13345,7 +13242,6 @@ begin
   if Sender = Viewimage7 then listview_view(listview7);//photometry
   if Sender = Viewimage8 then listview_view(listview8);//inspector
   if Sender = Viewimage9 then listview_view(listview9);//mount
-  if Sender = Viewimage10 then listview_view(listview10);//SN reference
 end;
 
 procedure Tstackmenu1.view_previous7Click(Sender: TObject);//blink tab

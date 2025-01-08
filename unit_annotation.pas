@@ -2046,8 +2046,6 @@ begin
 
     mainwindow.image1.Canvas.font.color:=$00B0FF ;{orange}
 
-
-//    flux_peak_ratio:=0;
     star_total_counter:=0;{total counter}
     counter_flux_measured:=0;
     data_max:=head.datamax_org-1;
@@ -2058,9 +2056,6 @@ begin
     if flux_calibration then
     begin
       max_nr_stars:=round(head.width*head.height*(730/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
-
-      //max_nr_stars:=10;
-
       setlength(flux_ratio_array,max_nr_stars);
       if report_lim_magn then
       begin
@@ -2080,7 +2075,11 @@ begin
     else
     begin  //Reading online database. Update if required
       get_database_passband(head.filter_name,{out} selected_passband);//report selected Gaia passband
-      ang_sep(telescope_ra,telescope_dec,gaia_ra,gaia_dec,sep);
+
+      if gaia_magn_limit+0.01<mag2/10 then sep:=999 //update required based on magnitude
+      else
+      ang_sep(telescope_ra,telescope_dec,gaia_ra,gaia_dec,sep);//update required based on position
+
       if ((sep>0.15*fov_org) or (online_database=nil)) then  //other sky area, update Gaia database online
       begin
         if select_star_database(stackmenu1.star_database1.text,fov_org {fov})=false then exit;
@@ -2585,6 +2584,7 @@ begin
     m_limit:=head.magn_limit+1-0.5;//go one magnitude fainter
     //since G magnitude is used to retrieve which about 0.5 magnitude fainter then mag limit. {BP~GP+0.5}
 
+    m_limit:=head.magn_limit+1-0.5;//go one magnitude fainter
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
@@ -2651,15 +2651,17 @@ begin
       //    else
     begin //Database_type=0, Vizier online, Gaia
 
-       ang_sep(telescope_ra,telescope_dec,gaia_ra,gaia_dec,sep);
+       if gaia_magn_limit+0.01<m_limit then sep:=999 //update required based on magnitude
+       else
+       ang_sep(telescope_ra,telescope_dec,gaia_ra,gaia_dec,sep);//update required based on position
+
        if ((sep>0.15*fov_org) or (online_database=nil)) then  //other sky area, update Gaia database online
        begin
-       if read_stars_online(telescope_ra,telescope_dec,fov_org,m_limit {max_magnitude}) then
-       begin
-         get_database_passband(head.filter_name,passband);//report local or online database and the database passband
-         convert_magnitudes(passband) //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
-        end;
-
+         if read_stars_online(telescope_ra,telescope_dec,fov_org,m_limit {max_magnitude}) then
+         begin
+           get_database_passband(head.filter_name,passband);//report local or online database and the database passband
+           convert_magnitudes(passband) //convert gaia magnitude to a new magnitude. If the type is already correct, no action will follow
+         end;
        end;
        count:=0;
 

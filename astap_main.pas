@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.1.4a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.1.7';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -856,7 +856,7 @@ function extract_temperature_from_filename(filename8: string): integer; {try to 
 function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
-procedure measure_magnitudes(annulus_rad,x1,y1,x2,y2:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
+procedure measure_magnitudes(img : image_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
@@ -8781,14 +8781,6 @@ begin
         inc(c);
       until (dum='');
 
-      c:=0;
-      repeat {add SN reference files}
-        dum:=Sett.ReadString('files10','sn'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then  listview_add(stackmenu1.listview10,dum,Sett.ReadBool('files10','sn'+inttostr(c)+'_check',true),SN_nr);
-        inc(c);
-      until (dum='');
-
-
       stackmenu1.visible:=((paramcount=0) and (Sett.ReadBool('stack','stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
       listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
     end; //with mainwindow
@@ -9167,12 +9159,6 @@ begin
         sett.writestring('files8','inspector'+inttostr(c),stackmenu1.ListView8.items[c].caption);
         sett.writeBool('files8','inspector'+inttostr(c)+'_check',stackmenu1.ListView8.items[c].Checked);
       end;
-      for c:=0 to stackmenu1.ListView10.items.count-1  do {add inspector files}
-      begin
-        sett.writestring('files10','sn'+inttostr(c),stackmenu1.ListView10.items[c].caption);
-        sett.writeBool('files10','sn'+inttostr(c)+'_check',stackmenu1.ListView10.items[c].Checked);
-      end;
-
     end;{mainwindow}
   finally
     Sett.Free; {Note error detection seems not possible with tmeminifile. Tried everything}
@@ -11367,7 +11353,7 @@ begin
 end;
 
 
-procedure measure_magnitudes(annulus_rad,x1,y1,x2,y2:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
+procedure measure_magnitudes(img : image_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 var
   fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min,adu_e  : double;
@@ -11378,38 +11364,38 @@ begin
 
   SetLength(stars,5,5000);{set array length}
 
-  setlength(img_sa,1,head.height,head.width);{set length of image array}
+  setlength(img_sa,1,headx.height,headx.width);{set length of image array}
 
-  get_background(0,img_loaded,head,false{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
+  get_background(0,img,headx,histogram_update{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
 
-  if deep then detection_level:=5*head.noise_level else detection_level:=head.star_level;
+  if deep then detection_level:=5*headx.noise_level else detection_level:=headx.star_level;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   nrstars:=0;{set counters at zero}
-  adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+  adu_e:=retrieve_ADU_to_e_unbinned(headx.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 
 
-  if head.calstat = '' then saturation_level := 64000
+  if headx.calstat = '' then saturation_level := 64000
   else
     saturation_level := 60000; {could be dark subtracted changing the saturation level}
-  saturation_level:=min(head.datamax_org-1,saturation_level);
+  saturation_level:=min(headx.datamax_org-1,saturation_level);
 
-  for fitsY:=0 to head.height-1 do
-    for fitsX:=0 to head.width-1  do
+  for fitsY:=0 to headx.height-1 do
+    for fitsX:=0 to headx.width-1  do
       img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
   for fitsY:=y1 to y2-1 do
   begin
     for fitsX:=x1 to x2-1  do
     begin
-      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- head.backgr> detection_level)) then {new star}
+      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img[0,fitsY,fitsX]- headx.backgr> detection_level)) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},head.mzero_radius,adu_e, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
+        HFD(img,fitsX,fitsY,annulus_rad {typical 14, annulus radius},headx.mzero_radius,adu_e, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10)) then {star detected in img}
         begin
           {for testing}
-          //if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
-          //if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
+          //if flipvertical=false  then  starY:=round(headx.height-yc) else starY:=round(yc);
+          //if fliphorizontal=true then starX:=round(headx.width-xc)  else starX:=round(xc);
           //  size:=round(5*hfd1);
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
@@ -11423,20 +11409,20 @@ begin
             begin
               j:=n+yci;
               i:=m+xci;
-              if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
+              if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
                 img_sa[0,j,i]:=1;
             end;
 
-          if ((img_loaded[0,round(yc),round(xc)]<saturation_level) and
-              (img_loaded[0,round(yc),round(xc-1)]<saturation_level) and
-              (img_loaded[0,round(yc),round(xc+1)]<saturation_level) and
-              (img_loaded[0,round(yc-1),round(xc)]<saturation_level) and
-              (img_loaded[0,round(yc+1),round(xc)]<saturation_level) and
+          if ((img[0,round(yc),round(xc)]<saturation_level) and
+              (img[0,round(yc),round(xc-1)]<saturation_level) and
+              (img[0,round(yc),round(xc+1)]<saturation_level) and
+              (img[0,round(yc-1),round(xc)]<saturation_level) and
+              (img[0,round(yc+1),round(xc)]<saturation_level) and
 
-              (img_loaded[0,round(yc-1),round(xc-1)]<saturation_level) and
-              (img_loaded[0,round(yc+1),round(xc-1)]<saturation_level) and
-              (img_loaded[0,round(yc-1),round(xc+1)]<saturation_level) and
-              (img_loaded[0,round(yc+1),round(xc+1)]<saturation_level)  ) then {not saturated}
+              (img[0,round(yc-1),round(xc-1)]<saturation_level) and
+              (img[0,round(yc+1),round(xc-1)]<saturation_level) and
+              (img[0,round(yc-1),round(xc+1)]<saturation_level) and
+              (img[0,round(yc+1),round(xc+1)]<saturation_level)  ) then {not saturated}
           begin
             {store values}
             inc(nrstars);
@@ -11546,9 +11532,10 @@ const
       img_temp3[0,fitsY,fitsX]:=default;{clear}
   plot_artificial_stars(img_temp3,head);{create artificial image with database stars as pixels}
 
-//  img_loaded:=img_temp3;
-//  plot_fits(mainwindow.image1,true,true);
-//  exit;
+// for testing
+// img_loaded:=img_temp3;
+// plot_fits(mainwindow.image1,true,true);
+// exit;
 
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
@@ -11572,7 +11559,7 @@ const
       if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- head.backgr>5*head.noise_level {star_level} ){star}) then {new star}
       begin
 
-        HFD(img_loaded,fitsX,fitsY,round(1.5* head.hfd_median){annulus radius},3.0*head.hfd_median {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,fitsX,fitsY, round(5* head.hfd_median){annulus radius},3.0*head.hfd_median {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
         //memo2_message(floattostr(xc)+',  ' +floattostr(yc));
 
@@ -11620,6 +11607,9 @@ const
                for j:=-search_radius to search_radius do
                if sqr(i)+sqr(j)<=sqr(search_radius) then //circle tolerance area
                begin {database star available?}
+                    //        if ((round(xc)+i=218) and (round(yc)+j=9)) then
+                    //               beep;
+
                  magnd:=img_temp3[0,round(yc)+j,round(xc)+i];
                  if magnd<default then {a star from the database}
                    if magn_database=default then //empthy
@@ -11631,7 +11621,7 @@ const
              delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
              if  delta_magn<-10 then {unknown star, 1 magnitude brighter then database}
              begin {mark}
-               if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
+               if Flipvertical=false then starY:=round(head.height-yc) else starY:=round(yc);
                if Fliphorizontal     then starX:=round(head.width-xc)  else starX:=round(xc);
                if magn_database=1000 then
                begin
@@ -11737,7 +11727,7 @@ begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  subframe:=(sender=export_star_info1); //full frame or sub section
+  subframe:=(sender=export_star_info1); //report. full frame or sub section
   formalism:=mainwindow.Polynomial1.itemindex;
 
   calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head,true);
@@ -11767,11 +11757,22 @@ begin
   mainwindow.image1.Canvas.Pen.mode := pmXor;
 
 
-  if subframe then
+  if subframe then //report
   begin
+    if head.magn_limit>gaia_magn_limit then //go deeper
+      if read_stars_online(head.ra0,head.dec0,(pi/180)*min(180,max(head.height,head.width)*abs(head.cdelt2)), head.magn_limit+0.5 {max_magnitude})= false then
+       begin
+         memo2_message('Error. failure accessing Vizier for Gaia star database!');
+         Screen.Cursor:=crDefault;
+         exit;
+       end;
+
+
+
+
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
-    measure_magnitudes(14,startX,startY,stopX,stopY,true {deep},stars);
+    measure_magnitudes(img_loaded,head,14,startX,startY,stopX,stopY,false{histogram update},true {deep},stars);
     report:=magn_limit_str+#10;
     report:=report+'Passband filter used: '+head.filter_name+#10;
     report:=report+'Passband database='+head.passband_database+#10;
@@ -11782,7 +11783,7 @@ begin
     report:=report+'fitsX'+#9+'fitsY'+#9+'HFD'+#9+'α[°]'+#9+'δ[°]'+#9+'ADU'+#9+'SNR'+#9+'Magn_measured'+#9+'|'+#9+'Gaia-V'+#9+'Gaia-B'+#9+'Gaia-R'+#9+'Gaia-SG'+#9+'Gaia-SR'+#9+'Gaia-SI'+#9+'Gaia-G'+#9+'Gaia-BP'+#9+'Gaia-RP'+#10;
   end
   else
-    measure_magnitudes(14,0,0,head.width-1,head.height-1,true {deep},stars);
+    measure_magnitudes(img_loaded,head,14,0,0,head.width-1,head.height-1,false{histogram update},true {deep},stars);
 
   memo2_message('Annotated '+inttostr(length(stars[0]))+' stars down to SNR 7');
 
@@ -11804,7 +11805,7 @@ begin
       magn:=round(10*magnitude);
       image1.Canvas.textout(starX,starY-text_height,inttostr(magn) );{add magnitude as text}
 
-      if subframe then
+      if subframe then //report
       begin
         pixel_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
         rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
