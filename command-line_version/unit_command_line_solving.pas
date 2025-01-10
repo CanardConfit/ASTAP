@@ -318,7 +318,7 @@ end;
 
 procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
-   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,tolerance  : integer;
+   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
    dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
    identical_quad : boolean;
@@ -337,10 +337,10 @@ begin
   if nrstars>=150 then
   begin
     quickSort_starlist(starlist,0,nrstars-1); {sort in X only}
-    tolerance:=round(0.5*sqrt(nrstars));{tolerance band is about twice the every star distance}
+    bandw:=round(2*sqrt(nrstars));{resulting tolerance band will be about twice the average star distance assuming the stars are equally distributed}
   end
   else
-  tolerance:=1;{switch pre-filtering in X off}
+  bandw:=nrstars;{switch off pre-filtering in X}
 
   nrquads:=0;
   SetLength(quad_star_distances,8,nrstars);{will contain the six distances and the central position}
@@ -355,18 +355,20 @@ begin
     distance2:=1E99;{distance second closest star}
     distance3:=1E99;{distance third closest star}
 
+    Sstart:=max(0,i-bandw);
+    Send:=min(nrstars-1,i+bandw); {search in a limited X band only. The stars list is sorted in X. Search speed increases with about 30%}
 
-    Sstart:=max(0,i-(nrstars div tolerance));
-    Send:=min(nrstars-1,i+(nrstars div tolerance)); {search in a limited X band only. The stars list is sorted in X. Search speed increases with about 30%}
+    x1:=starlist[0,i]; //first star position quad array
+    y1:=starlist[1,i];
 
     for j:=Sstart to Send do {find closest stars}
     begin
       if j<>i{not the first star} then
       begin
-        disty:=sqr(starlist[1,j]-starlist[1,i]);
+        disty:=sqr(starlist[1,j]-y1);
         if disty<distance3 then {pre-check to increase processing speed with a small amount}
         begin
-          distance:=sqr(starlist[0,j]-starlist[0,i])+distY ;{square distances are used}
+          distance:=sqr(starlist[0,j]-x1)+distY ;{square distances are used}
           if distance>1 then {not an identical star. Mod 2021-6-25}
           begin
             if distance<distance1 then
@@ -401,71 +403,71 @@ begin
       end;
     end;{j}
 
-    x1:=starlist[0,i]; {copy first star position to the quad array}
-    y1:=starlist[1,i];
-
-    x2:=starlist[0,j_index1]; {copy the second star position to the quad array}
-    y2:=starlist[1,j_index1];
-
-    x3:=starlist[0,j_index2];
-    y3:=starlist[1,j_index2];
-
-    x4:=starlist[0,j_index3];
-    y4:=starlist[1,j_index3];
-
-    xt:=(x1+x2+x3+x4)/4; {mean x position quad}
-    yt:=(y1+y2+y3+y4)/4; {mean y position quad}
-
-    identical_quad:=false;
-    if nrquads>=1 then {already a quad stored}
+    if  distance3<1E99 then //found 4 stars in the restricted area
     begin
-     k:=0;
-     repeat {check for identical quads}
-       if ( (abs(xt-quad_star_distances[6,k])<1) and
-            (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
-           begin
-             identical_quad:=true;
-             k:=999999999;{stop}
-           end;
 
-       inc(k);
-     until k>=nrquads;
-    end;
+      x2:=starlist[0,j_index1];  //second star position quad array
+      y2:=starlist[1,j_index1];
 
-    if identical_quad=false then  {new quad found}
-    begin
-      try {sort the six distances on length. Largest first and scale the others relative to largest distance}
-        begin
-          dist1:=sqrt(distance1);{distance star1-star2, use previous value already calculated}
-          dist2:=sqrt(distance2);{distance star1-star3}
-          dist3:=sqrt(distance3);{distance star1-star4}
-          dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
-          dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
-          dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
-          {sort six distances on size in five steps}
-          for j:=1 to 5 do {sort on distance}
-          begin
-            if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
-            if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
-            if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
-            if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
-            if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
-          end;
-          quad_star_distances[0,nrquads]:=dist1;{largest distance}
-          quad_star_distances[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
-          quad_star_distances[2,nrquads]:=dist3/dist1;
-          quad_star_distances[3,nrquads]:=dist4/dist1;
-          quad_star_distances[4,nrquads]:=dist5/dist1;
-          quad_star_distances[5,nrquads]:=dist6/dist1;
+      x3:=starlist[0,j_index2];
+      y3:=starlist[1,j_index2];
 
-        end;
-      except
+      x4:=starlist[0,j_index3];
+      y4:=starlist[1,j_index3];
+
+      xt:=(x1+x2+x3+x4)/4; {mean x position quad}
+      yt:=(y1+y2+y3+y4)/4; {mean y position quad}
+
+      identical_quad:=false;
+      if nrquads>=1 then {already a quad stored}
+      begin
+       k:=0;
+       repeat {check for identical quads}
+         if ( (abs(xt-quad_star_distances[6,k])<1) and
+              (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
+             begin
+               identical_quad:=true;
+               k:=999999999;{stop}
+             end;
+
+         inc(k);
+       until k>=nrquads;
       end;
-      quad_star_distances[6,nrquads]:=xt;{store mean x position}
-      quad_star_distances[7,nrquads]:=yt;{store mean y position}
-      inc(nrquads); {new unique quad found}
 
-    end;
+      if identical_quad=false then  {new quad found}
+      begin
+        try {sort the six distances on length. Largest first and scale the others relative to largest distance}
+          begin
+            dist1:=sqrt(distance1);{distance star1-star2, use previous value already calculated}
+            dist2:=sqrt(distance2);{distance star1-star3}
+            dist3:=sqrt(distance3);{distance star1-star4}
+            dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
+            dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
+            dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
+            {sort six distances on size in five steps}
+            for j:=1 to 5 do {sort on distance}
+            begin
+              if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
+              if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
+              if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
+              if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+              if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+            end;
+            quad_star_distances[0,nrquads]:=dist1;{largest distance}
+            quad_star_distances[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
+            quad_star_distances[2,nrquads]:=dist3/dist1;
+            quad_star_distances[3,nrquads]:=dist4/dist1;
+            quad_star_distances[4,nrquads]:=dist5/dist1;
+            quad_star_distances[5,nrquads]:=dist6/dist1;
+
+          end;
+        except
+        end;
+        quad_star_distances[6,nrquads]:=xt;{store mean x position}
+        quad_star_distances[7,nrquads]:=yt;{store mean y position}
+        inc(nrquads); {new unique quad found}
+      end;
+    end;//found 4 stars
   end;{i}
 
   SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
@@ -660,7 +662,7 @@ begin
         if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
           HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
+          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes}) then
           begin
             radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
             sqr_radius:=sqr(radius);
