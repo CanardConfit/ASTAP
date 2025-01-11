@@ -62,6 +62,14 @@ type
     label_delta_ra1: TLabel;
     label_delta_dec1: TLabel;
     list_to_clipboard10: TMenuItem;
+    MenuItem35: TMenuItem;
+    listview1_photometric_calibration1: TMenuItem;
+    MenuItem41: TMenuItem;
+    annotate_unknown1: TMenuItem;
+    Refresh_astrometrical_solutions1: TMenuItem;
+    Separator10: TMenuItem;
+    Separator11: TMenuItem;
+    Separator9: TMenuItem;
     sn_rename_selected_files1: TMenuItem;
     MenuItem36: TMenuItem;
     MenuItem37: TMenuItem;
@@ -410,7 +418,6 @@ type
     manual_centering1: TComboBox;
     max_stars1: TComboBox;
     memo2: TMemo;
-    refresh_solutions_selected1: TMenuItem;
     merge_overlap1: TCheckBox;
     min_star_size1: TComboBox;
     min_star_size_stacking1: TComboBox;
@@ -760,8 +767,12 @@ type
     procedure Label19Click(Sender: TObject);
     procedure listview1DrawItem(Sender: TCustomListView; AItem: TListItem;
       ARect: TRect; AState: TOwnerDrawState);
+    procedure listview1_photometric_calibration1Click(Sender: TObject);
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
+    procedure MenuItem41Click(Sender: TObject);
+    procedure annotate_unknown1Click(Sender: TObject);
+    procedure Refresh_astrometrical_solutions1Click(Sender: TObject);
     procedure rename_selectedfiles1Click(Sender: TObject);
     procedure solar_drift_compensation1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
@@ -1705,7 +1716,7 @@ begin
             {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
-            if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum}) then
+            if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
             begin
               hfd_list[star_counter] := hfd1;{store}
               Inc(star_counter);
@@ -1841,7 +1852,7 @@ begin
           begin
             HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99  {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
             {star HFD and FWHM}
-            if ((hfd1 <= 35) and (snr > 30) and (hfd1 > 0.8) {two pixels minimum}) then
+            if ((hfd1 <= 35) and (snr > 30) and (hfd1 > 0.8) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
             begin    {store values}
               radius := round(3.0 * hfd1);  {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
               sqr_radius := sqr(radius);
@@ -9757,8 +9768,6 @@ begin
   begin
     Sender.Canvas.Font.Color := clmenutext;  {required for high contrast settings. Otherwise it is always black}
   end;
-
-
 end;
 
 
@@ -9866,12 +9875,12 @@ begin
 end;
 
 
-function process_selected_files(lv: tlistview; column: integer; mode : string) : boolean;// S= Solve selected/ U solve any without ✓ / 'P' photometry, add mzero / '2' bin 2x2
+function process_selected_files(lv: tlistview; column: integer; mode : string) : boolean;// S= Solve selected/ U annotate unknow stars / 'P' photometric calibration, add mzero / '2' bin 2x2
 var
-  c,nrcolumns,i : integer;
-  filename1     : string;
-  img_temp      : image_array;
-  headx        : theader;
+  c,nrcolumns,i,countN        : integer;
+  filename1                   : string;
+  img_temp                    : image_array;
+  headx                       : theader;
 
         function save_fits_tiff(filename1: string) : boolean;
         begin
@@ -9881,6 +9890,8 @@ var
             result:=save_tiff16_secure(img_temp,memox, filename1);{guarantee no file is lost}
           if result=false then ShowMessage('Write error !!' + filename1);
         end;
+const
+     icon_marker=26;//red star. Used to mark files to process
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -9889,9 +9900,8 @@ begin
 
   for c := 0 to lv.items.Count - 1 do {check for astrometric solutions}
   begin
-    if ( ((pos('U',mode)>0) and (length(lv.Items.item[c].subitems.Strings[column])<=1)) or   //add missing solutions for any file. Note ✓ is stored with three characters
-           (lv.Items[c].Selected)) then   //solve all selected
-      lv.Items.item[c].SubitemImages[column]:=27 //mark selected row {file} to be processed with an icon. Note -2 or 99 is not possible. Should be existing in Linux.
+    if lv.Items[c].Selected then   //solve all selected
+      lv.Items.item[c].SubitemImages[column]:=icon_marker //mark selected row {file} to be processed with an icon. Note -2 or 99 is not possible. Should be existing in Linux.
     else
       lv.Items.item[c].SubitemImages[column]:=-1; //mark as no icon
   end;
@@ -9901,7 +9911,7 @@ begin
   with stackmenu1 do
     for c := 0 to lv.items.Count - 1 do {check for astrometric solutions}
     begin
-      if lv.Items.item[c].SubitemImages[column]=27  then //was marked for processing
+      if lv.Items.item[c].SubitemImages[column]=icon_marker  then //was marked for processing
       begin
         filename1 := lv.items[c].Caption;
         lv.Items.item[c].SubitemImages[column]:=-1; //mark as no icon
@@ -9923,7 +9933,7 @@ begin
         if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,memox, headx, img_temp) = False)) then
           break;
 
-        if ((pos('S',mode)>0) or (pos('U',mode)>0)) then //S is force solve selected files, U is solve none solved files
+        if ((mode='S') or ((headx.cd1_1=0) and ((mode='P') or (mode='U'))) ) then //S is force solve selected files, U is solve none solved files
         begin
           lv.ItemIndex := c;
           {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
@@ -9938,9 +9948,9 @@ begin
           end
           else
           begin
-            if errorlevel=32 then break;//no star database found
             lv.Items[c].Checked := False;
             memo2_message(filename1 + 'No astrometric solution found for this file!!');
+            if errorlevel=32 then break;//no star database found
           end;
           if lv=listview1 then
           begin
@@ -9954,7 +9964,7 @@ begin
           end;
 
         end;//mode='S'
-        if pos('P',mode)>0 then //photometry, add mzero
+        if ((mode='P') or (mode='U')) then //photometry, add mzero
         begin
           headx.mzero:=0; //force a new calibration
           if headx.cd1_1<>0 then
@@ -9969,6 +9979,31 @@ begin
           else
           memo2_message('Can not calibrate '+filename1+'. Add first an astrometrical solution.');
         end; //mode='P'
+
+        if mode='U' then //Annotate unknown stars
+        begin
+          if  annotate_unknown_stars(memox, img_temp,headX,countN) then //unknow stars found
+          begin
+            if countN>0 then
+            begin
+              Lv.Items.item[c].SubitemImages[L_result] :=27; {mark 3th columns nova star}
+              Lv.Items.item[c].subitems.Strings[L_result] := IntToStr(countN);{show inumber of detections in lights tab}
+            end
+            else
+            begin
+              Lv.Items.item[c].SubitemImages[L_result] :=-1; {no icon. Required to mark as done (>=0)}
+              Lv.Items.item[c].subitems.Strings[L_result] :='';
+            end;
+
+            result:=save_fits_tiff(filename1);
+            if result=false then break;
+          end
+          else
+          begin
+            memo2_message('Abort!. Batch failure!');
+            exit;
+          end;
+        end; //mode='U'
 
         if mode='2' then //bin 2x2
         begin
@@ -9998,6 +10033,33 @@ begin
     end;
 
   Screen.Cursor := crDefault;{back to normal }
+end;
+
+
+procedure Tstackmenu1.listview1_photometric_calibration1Click(Sender: TObject);
+begin
+  save_settings2;{too many lost selected files . so first save settings}
+  process_selected_files(listview1,L_solution {column},'P');
+end;
+
+
+procedure Tstackmenu1.Refresh_astrometrical_solutions1Click(Sender: TObject);
+begin
+  save_settings2;{too many lost selected files . so first save settings}
+  process_selected_files(listview1,L_solution {column},'S');
+end;
+
+
+procedure Tstackmenu1.MenuItem41Click(Sender: TObject);
+begin
+  save_settings2;{too many lost selected files . so first save settings}
+  process_selected_files(listview1,L_solution {column},'2');
+end;
+
+procedure Tstackmenu1.annotate_unknown1Click(Sender: TObject);
+begin
+  save_settings2;{too many lost selected files . so first save settings}
+  process_selected_files(listview1,L_solution {column},'U');
 end;
 
 

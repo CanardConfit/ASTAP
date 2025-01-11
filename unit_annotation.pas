@@ -20,7 +20,7 @@ procedure load_variable_13;{load variable stars. If loaded no action}
 procedure load_variable_15;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(out stars_measured: integer);{measure or plot distortion}
-procedure plot_artificial_stars(img: image_array;head:theader);{plot stars as single pixel with a value as the mangitude. For super nova search}
+function plot_artificial_stars(img: image_array;head:theader) : boolean;{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(starlist1,starlist2: star_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
@@ -1964,12 +1964,7 @@ var
         end;
 
         if ((flux_calibration) and (Bp_Rp<>-128 {if -128 then unreliable Johnson-V magnitude, either Bp or Rp is missing in Gaia})) then
-//        if ((x>70) and (x<head.width-70) and (y>70) and (y<head.height-70)) then // at least 10 pixels from sides
-//        if  sqrt(sqr(x-head.width/2)+sqr(y-head.height/2))<(head.height/2)-20  then //within a circle of center
         begin
-       //   annulus_radius:=8;
-      //    head.mzero_radius:=3.9;
-
           HFD(img,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,adu_e {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img. 30 is found emperical}
@@ -2543,7 +2538,7 @@ begin
 end;{measure distortion}
 
 
-procedure plot_artificial_stars(img: image_array;head: theader);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
+function plot_artificial_stars(img: image_array;head: theader): boolean;{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, telescope_ra,telescope_dec,fov_org,ra2,dec2,
   mag2, m_limit,sep : double;
@@ -2567,10 +2562,9 @@ var
 
 
 begin
+  result:=false;//assume failure
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
     counter_flux_measured:=0;
 
     {find middle of the image}
@@ -2581,10 +2575,11 @@ begin
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view with 0% extra}
 
-    m_limit:=head.magn_limit+1-0.5;//go one magnitude fainter
-    //since G magnitude is used to retrieve which about 0.5 magnitude fainter then mag limit. {BP~GP+0.5}
+    m_limit:=head.magn_limit+1;//go one magnitude fainter
 
-    m_limit:=head.magn_limit+1-0.5;//go one magnitude fainter
+
+    //not longer used. Use now BP xxxxxxxxxxxxxxx since G magnitude is used to retrieve which about 0.5 magnitude fainter then mag limit. {BP~GP+0.5}
+
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
@@ -2651,7 +2646,7 @@ begin
       //    else
     begin //Database_type=0, Vizier online, Gaia
 
-       if gaia_magn_limit+0.01<m_limit then sep:=999 //update required based on magnitude
+       if gaia_magn_limit+0.1<m_limit then sep:=999 //update required based on magnitude
        else
        ang_sep(telescope_ra,telescope_dec,gaia_ra,gaia_dec,sep);//update required based on position
 
@@ -2678,9 +2673,11 @@ begin
          inc(count);
        end;
      end;
-    Screen.Cursor:=crDefault;
-
-  end;{fits file}
+     if count>0 then
+       result:=true
+     else
+       memo2_message('Online database empthy!');
+  end;{solved fits file}
 end;{plot stars}
 
 

@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.1.7';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.1.9';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -784,7 +784,7 @@ procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small, adu_e {unbinned}:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
+procedure HFD(img: image_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
 procedure backup_img;
 procedure restore_img;
 function load_image(filename2: string; out img: image_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
@@ -907,6 +907,7 @@ procedure remove_solution(keep_wcs:boolean);//remove all solution key words effi
 procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
 procedure place_marker_radec(shape: tshape; ra,dec:double);{place ra,dec marker in image}
 procedure variable_star_annotation(extract_visible: boolean {extract to variable_list});
+function annotate_unknown_stars(const memox:tstrings; img : image_array; headx : theader; out countN: integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -5055,7 +5056,7 @@ const resolution=6;
       qrs=rs div resolution;
 var
   i, j,distance,hh,diam1,diam2  : integer;
-  val,valmax,valmin  : double;
+  val,valmax,valmin,diff,    h  : double;
   profile: array[0..1,-rs..rs] of double;
 begin
   with mainwindow.image_north_arrow1 do
@@ -5081,7 +5082,7 @@ begin
       for j:=-qrs to qrs do
       begin
         distance:=round(resolution*sqrt(i*i + j*j)); {distance in resolution 1/6 pixel}
-        if distance<=rs then {build histogram for circel with radius qrs}
+        if distance<=rs then {build histogram for circle with radius qrs}
         begin
           if ((i<0) or ((i=0) and (j<0)) ) then distance:=-distance;//split star in two equal areas.
           val:=img_loaded[0,cY+j,cX+i];
@@ -5092,6 +5093,7 @@ begin
         end;
       end;
     end;
+
 
     if valmax>valmin then //prevent runtime errors
     for i:=-rs to rs do
@@ -5106,10 +5108,26 @@ begin
       end;
     end;
 
+// test draw a Gaussian
+//    if valmax>valmin then //prevent runtime errors
+//    for i:=-rs to rs do
+//    begin
+//      begin
+//      h:=height-height*EXP(-0.5*sqr(9*(i/rs)/ (3{sigma}))) ;
+//        hh:=round(h);
+//        if i=-rs then
+//          moveToex(Canvas.handle,(width div 2)+i,hh,nil)
+//        else
+//          lineTo(Canvas.handle,(width div 2)+i,hh);
+//      end;
+//    end;
+//   mainwindow.caption:=floattostr(diff);
+
+
     diam1:=round((width/2 + (resolution/4) * object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));//in 1/6 pixel resolution
     diam2:=round((width/2 - (resolution/4) * object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));
 
-    if diam2>=0 then  //show aperture
+    if diam2>=0 then  //show aperture if aperture setting is less then maximum as set in tap photometry.
     begin
       Canvas.Pen.style := psdot;
       Canvas.Pen.Color := clGreen;
@@ -5122,6 +5140,8 @@ begin
 
     canvas.pen.mode:=pmcopy; //back to default
   end;
+
+ ;
 end;
 
 procedure plot_text;
@@ -11484,53 +11504,30 @@ begin
 end;
 
 
-procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
+function annotate_unknown_stars(const memox:tstrings; img : image_array; headx : theader; out countN : integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 var
-  size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,search_radius,countN,countO     : integer;
-  Fliphorizontal, Flipvertical,saturated : boolean;
-  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit_database,
-  sqr_radius             : double;
+  sizebox,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,search_radius,ratio_counter     : integer;
+  saturated,galaxy                                                             : boolean;
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit_database,  sqr_radius,flux2,ratio,ratio_sum,hfd2 : double;
   messg : string;
   img_temp3,img_sa :image_array;
   data_max: single;
+
+
 const
    default=1000;
 
  begin
-  if head.naxis=0 then exit; {file loaded?}
+  if headx.naxis=0 then exit; {file loaded?}
+
+  result:=false;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});
-
-
-  if head.mzero=0 then
-  begin
-    beep;
-    img_sa:=nil;
-    img_temp3:=nil;
-    Screen.Cursor:=crDefault;
-    exit;
-  end;
-
-  Flipvertical:=mainwindow.flip_vertical1.Checked;
-  Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
-
   magn_limit_database:=10*21;//magn, Online Gaia via Vizier
-
-  image1.Canvas.Pen.Mode := pmMerge;
-  image1.Canvas.Pen.width :=1;
-  image1.Canvas.brush.Style:=bsClear;
-  image1.Canvas.font.color:=clyellow;
-  image1.Canvas.font.name:='default';
-  image1.Canvas.font.size:=10;
-  mainwindow.image1.Canvas.Pen.Color := clred;
-
-
-  setlength(img_temp3,1,head.height,head.width);{set size of image array}
-  for fitsY:=0 to head.height-1 do
-    for fitsX:=0 to head.width-1  do
+  setlength(img_temp3,1,headx.height,headx.width);{set size of image array}
+  for fitsY:=0 to headx.height-1 do
+    for fitsX:=0 to headx.width-1  do
       img_temp3[0,fitsY,fitsX]:=default;{clear}
-  plot_artificial_stars(img_temp3,head);{create artificial image with database stars as pixels}
+  if plot_artificial_stars(img_temp3,headx)=false then exit;{create artificial image with database stars as pixels}
 
 // for testing
 // img_loaded:=img_temp3;
@@ -11539,67 +11536,74 @@ const
 
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
-  search_radius:=max(3,round(head.hfd_median));
+  remove_key(memox,'ANNOTATE',true{all});{remove older annotations.}
 
-  setlength(img_sa,1,head.height,head.width);{set length of image array}
-   for fitsY:=0 to head.height-1 do
-    for fitsX:=0 to head.width-1  do
+  analyse_image(img,headx,10 {snr_min},0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
+  search_radius:=max(3,round(headx.hfd_median));
+
+  setlength(img_sa,1,headx.height,headx.width);{set length of image array}
+   for fitsY:=0 to headx.height-1 do
+    for fitsX:=0 to headx.width-1  do
       img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
 
   countN:=0;
-  countO:=0;
-  data_max:=head.datamax_org-1;
+  data_max:=headx.datamax_org-1;
+  ratio_counter:=0;
+  ratio_sum:=0;
 
-  for fitsY:=0 to head.height-1 do
+  for fitsY:=0 to headx.height-1 do
   begin
-    for fitsX:=0 to head.width-1  do
+    for fitsX:=0 to headx.width-1  do
     begin
-      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- head.backgr>5*head.noise_level {star_level} ){star}) then {new star}
+
+      //if ((FITSX=1574-1) and  (FITSy=1013)) then
+      //beep;
+
+      if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img[0,fitsY,fitsX]- headx.backgr>5*headx.noise_level {star_level} ){star}) then {new star}
       begin
 
-        HFD(img_loaded,fitsX,fitsY, round(5* head.hfd_median){annulus radius},3.0*head.hfd_median {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img,fitsX,fitsY,14{annulus radius},98{3.0*headx.hfd_median} {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
         //memo2_message(floattostr(xc)+',  ' +floattostr(yc));
 
         xci:=round(xc);{star center as integer}
         yci:=round(yc);
-        if ((xci>0) and (xci<head.width-1) and (yci>0) and (yci<head.height-1)) then
-        saturated:=not ((img_loaded[0,yci,xci]<data_max) and
-                        (img_loaded[0,yci,xci-1]<data_max) and
-                        (img_loaded[0,yci,xci+1]<data_max) and
-                        (img_loaded[0,yci-1,xci]<data_max) and
-                        (img_loaded[0,yci+1,xci]<data_max) and
+        if ((xci>0) and (xci<headx.width-1) and (yci>0) and (yci<headx.height-1)) then
+        saturated:=not ((img[0,yci,xci]<data_max) and
+                        (img[0,yci,xci-1]<data_max) and
+                        (img[0,yci,xci+1]<data_max) and
+                        (img[0,yci-1,xci]<data_max) and
+                        (img[0,yci+1,xci]<data_max) and
 
-                        (img_loaded[0,yci-1,xci-1]<data_max) and
-                        (img_loaded[0,yci+1,xci-1]<data_max) and
-                        (img_loaded[0,yci-1,xci+1]<data_max) and
-                        (img_loaded[0,yci+1,xci+1]<data_max)  )
+                        (img[0,yci-1,xci-1]<data_max) and
+                        (img[0,yci+1,xci-1]<data_max) and
+                        (img[0,yci-1,xci+1]<data_max) and
+                        (img[0,yci+1,xci+1]<data_max)  )
         else saturated:=false;
 
-        if (((hfd1<head.hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=head.hfd_median*0.75) and (snr>10)) then {star detected in img_loaded}
+        if (((hfd1<headx.hfd_median*1.5) or (saturated){larger then normal}) and (hfd1>=headx.hfd_median*0.75) and (snr>10) and (img_sa[0,fitsY,fitsX]<=0) {prevent double detection due to spikes}) then {star detected in img}
         begin
                       {for testing}
-              //      if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
-              //      if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
+              //      if flipvertical=false  then  starY:=round(headx.height-yc) else starY:=round(yc);
+              //      if fliphorizontal=true then starX:=round(headx.width-xc)  else starX:=round(xc);
               //      size:=round(5*hfd1);
               //      mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
               //      mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,0));{add hfd as text}
-              //      if ((abs(xc-2294)<4) and  (abs(yc-274)<4)) then
-              //      beep;
 
-          radius:=round(3.0*head.hfd_median);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+          radius:=round(3.0*headx.hfd_median);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
           sqr_radius:=sqr(radius);
           for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
             for m:=-radius to +radius do
             begin
               j:=n+yci;
               i:=m+xci;
-              if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
+              if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
               img_sa[0,j,i]:=+1;{mark as star area}
+              //if img_sa[0,1013,1574]>1 then
+              //beep;
             end;
-           measured_magn:=round(10*(head.MZERO - ln(flux)*2.5/ln(10)));{magnitude x 10}
+           measured_magn:=round(10*(headx.MZERO - ln(flux)*2.5/ln(10)));{magnitude x 10}
            if measured_magn<magn_limit_database-10 then {bright enough to be in the database}
            begin
              magn_database:=default;{1000}
@@ -11607,8 +11611,8 @@ const
                for j:=-search_radius to search_radius do
                if sqr(i)+sqr(j)<=sqr(search_radius) then //circle tolerance area
                begin {database star available?}
-                    //        if ((round(xc)+i=218) and (round(yc)+j=9)) then
-                    //               beep;
+                //        if ((abs(xc+i-1574)<5) and (abs(yc+j-1013)<5)) then
+                //                   beep;
 
                  magnd:=img_temp3[0,round(yc)+j,round(xc)+i];
                  if magnd<default then {a star from the database}
@@ -11618,43 +11622,89 @@ const
                       magn_database:=-2.5*ln(power(10,-0.4*magn_database) + power(10,-0.4*magnd))/ln(10);//combine magnitudes of the stars
                end;
 
+             //preperation for galaxy test
+             HFD(img,fitsX,fitsY,14{annulus radius},0.5*hfd1 {radius of flux aperture restriction},0 {adu_e}, hfd2,star_fwhm,snr,flux2,xc,yc);//star HFD and FWHM
+             if ((snr>0) and (abs(xci-xc)<=1) and (abs(yci-yc)<=1)) then //same star. Errors happen
+             begin
+               ratio:=(flux-flux2)/flux; //flux beyond HFD
+               ratio_sum:=ratio_sum+ratio;
+               inc(ratio_counter);
+               //memo2_message('Ratio '+floattostrF(ratio_sum/ratio_counter,FFFixed,0,2));
+             end;
+
+
              delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
              if  delta_magn<-10 then {unknown star, 1 magnitude brighter then database}
              begin {mark}
-               if Flipvertical=false then starY:=round(head.height-yc) else starY:=round(yc);
-               if Fliphorizontal     then starX:=round(head.width-xc)  else starX:=round(xc);
+
+               //test for galaxy
+               if ((ratio_counter>0) and (ratio>1.05*(ratio_sum/ratio_counter)) ) then //larger then average. Too slow drop off of flux
+                 galaxy:=true//galaxy
+               else
+                 galaxy:=false;
+
                if magn_database=1000 then
                begin
-                  messg:=''; {unknown star}
-                  inc(countN);
+                 messg:=''; //unknown star
                end
                else
                begin
-                 messg:=' Δ'+inttostr(round(delta_magn)); {star but wrong magnitude}
-                 inc(countO);
+                 messg:=' \u0394'+inttostr(round(delta_magn)); //star but wrong magnitude.  Pack Δ as in ascii as escape unicode. So \uAAAA where AAAA is hexdec unicode character
                end;
-               size:=round(5*hfd1); {for rectangle annotation}
-               image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-               image1.Canvas.textout(starX+size,starY,inttostr(round(measured_magn))  +messg );{add magnitude as text}
+               sizebox:=round(5*hfd1); //for rectangle annotation
+
+               if galaxy=false then
+               begin
+              //   messg:=messg+' '+floattostrF(ratio,FFFixed,0,2);
+                 add_text(memox,'ANNOTATE=',#39+copy(floattostrF(xc-sizebox,FFFixed,0,0)+';'+floattostrF(yc-sizebox,FFFixed,0,0)+';'+floattostrF(xc+sizebox,fffixed,0,0)+';'+floattostrF(yc+sizebox,FFFixed,0,0)+';-1;'+messg+';;',1,68)+#39); {store in FITS coordinates 1..}
+                 inc(countN);
+               end
+               else
+               begin
+                 add_text(memox,'ANNOTATE=',#39+copy(floattostrF(xc+5,FFFixed,0,0)+';'+floattostrF(yc+5,FFFixed,0,0)+';'+floattostrF(xc+10,fffixed,0,0)+';'+floattostrF(yc+10,FFFixed,0,0)+';1;\u2601;;',1,68)+#39); {store in FITS coordinates 1..}
+               // add_text(memox,'ANNOTATE=',#39+copy(floattostrF(xc+5,FFFixed,0,0)+';'+floattostrF(yc+5,FFFixed,0,0)+';'+floattostrF(xc+10,fffixed,0,0)+';'+floattostrF(yc+10,FFFixed,0,0)+';1;\u2601'+' '+floattostrF(ratio,FFFixed,0,2)+';;',1,68)+#39); {store in FITS coordinates 1..}
+               end;
+
+
+               annotated:=true;{header contains annotations}
+
+
+               //memo2_message(floattostrF(ratio_sum/ratio_counter,FFFixed,0,2));
+
              end;
            end;
-
         end;{HFD good}
       end;
-    end;
-  end;
+    end;//fits loop
+  end; //fits loop
 
-
-  img_temp3:=nil;{free mem}
-  img_sa:=nil;{free mem}
-
-  mainwindow.image1.Canvas.font.size:=10;
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.textout(20,head.height-20,inttostr(countN)+' unknown stars, '+inttostr(countO)+' magnitude offsets.' );
-
-  Screen.Cursor:=crDefault;
+  result:=true;
+  screen.cursor:=crdefault;
 end;
 
+
+procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
+var
+  countN,countO : integer;
+begin
+  mainwindow.Memo1.Lines.beginUpdate;
+
+  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});
+  if head.mzero=0 then
+  begin
+     beep;
+     Screen.Cursor:=crDefault;
+     exit;
+   end;
+  Screen.Cursor:=crDefault;
+  annotate_unknown_stars(mainwindow.Memo1.lines,img_loaded, head,countN);// add unknow stars to header
+
+  mainwindow.Memo1.Lines.endUpdate;
+
+  mainwindow.image1.Canvas.textout(30,head.height-20,inttostr(countN)+' Nova candidates.' );
+
+  plot_annotations(false {use solution vectors},false);
+end;
 
 procedure Tmainwindow.inspector1Click(Sender: TObject);
 begin
@@ -11760,7 +11810,7 @@ begin
   if subframe then //report
   begin
     if head.magn_limit>gaia_magn_limit then //go deeper
-      if read_stars_online(head.ra0,head.dec0,(pi/180)*min(180,max(head.height,head.width)*abs(head.cdelt2)), head.magn_limit+0.5 {max_magnitude})= false then
+      if read_stars_online(head.ra0,head.dec0,(pi/180)*min(180,max(head.height,head.width)*abs(head.cdelt2)), head.magn_limit+1.0 {max_magnitude, one magnitude extra})= false then
        begin
          memo2_message('Error. failure accessing Vizier for Gaia star database!');
          Screen.Cursor:=crDefault;
@@ -12552,7 +12602,7 @@ end;
 
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name :string);{plot annotation from header in ASTAP format}
 var                                                                               {typ >0 line, value defines thickness line}
-  size,xcenter,ycenter,text_height,text_width,fontsize,left,top  :integer;                          {type<=0 rectangle or two lines, value defines thickness lines}
+  size,xcenter,ycenter,text_height,text_width,fontsize,left,top  :integer;        {type<=0 rectangle or two lines, value defines thickness lines}
 begin
   dec(x1); {convert to screen coordinates 0..}
   dec(y1);
@@ -12610,10 +12660,10 @@ end;
 
 procedure plot_annotations(use_solution_vectors,fill_combo : boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
-  count1,x1,y1,x2,y2 : integer;
+  count1,x1,y1,x2,y2,pos1,pos2,charnr : integer;
   typ     : double;
   List: TStrings;
-  name,magn : string;
+  annotation,magn,dummy : string;
 begin
   if head.naxis=0 then exit; {file loaded?}
 
@@ -12642,7 +12692,7 @@ begin
         ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,posex(#39,mainwindow.Memo1.Lines[count1],20)-12)),List);
 
 
-        if list.count>=6  then {correct annotation}
+        if list.count>=5  then {correct annotation}
         begin
           x1:=round(strtofloat2(list[0]));
           y1:=round(strtofloat2(list[1]));
@@ -12661,21 +12711,37 @@ begin
             y1:=round(solution_vectorY[0]*(x1)+solution_vectorY[1]*(y1)+solution_vectorY[2]); {correction y:=aX+bY+c}
             x2:=round(solution_vectorX[0]*(x2)+solution_vectorX[1]*(y2)+solution_vectorX[2]); {correction x:=aX+bY+c}
             y2:=round(solution_vectorY[0]*(x2)+solution_vectorY[1]*(y2)+solution_vectorY[2]); {correction y:=aX+bY+c}
-
           end;
 
-
           typ:=strtofloat2(list[4]);
-          name:=list[5];
+
+          if list.count>5 then //empthy positions are not in the list
+          begin
+            annotation:=list[5];
+            pos1:=1;
+            repeat //reconstruct escaped unicode. \uAAAA where AAAA is hexdec unicode character
+              pos1:=posex('\u',annotation,pos1);
+              if pos1>0 then
+              begin
+                  dummy:=copy(annotation,pos1+2,4);
+                  charnr:=hex2dec(copy(annotation,pos1+2,4));
+                  delete(annotation,pos1,6);
+                  insert(widechar(charnr),annotation,pos1);
+              end;
+            until pos1=0;
+          end
+          else
+          annotation:='';
+
           if list.count>6  then  magn:=list[6] else magn:='';
 
-          plot_the_annotation(x1,y1,x2,y2,typ, name+magn);
+          plot_the_annotation(x1,y1,x2,y2,typ, annotation+magn);
 
           if ((list.count>7) and (abs( (x1+x2)/2 - (startx+stopx)/2)<15 ) and  (abs((y1+y2)/2 - (starty+stopy)/2)<15)) then
               minor_planet_at_cursor:=list[7];//for mpc1992 report line
 
           if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
-            stackmenu1.ephemeris_centering1.Additem(name,nil);
+            stackmenu1.ephemeris_centering1.Additem(annotation,nil);
 
         end;
       end;
@@ -15383,10 +15449,10 @@ end;
 
 
 
-{calculates star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
+{calculates star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurement. All x,y coordinates in array[0..] positions}
 {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
-procedure HFD(img: image_array;x1,y1,rs {annulus diameter}: integer;aperture_small, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
+procedure HFD(img: image_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
 const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
   samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
@@ -15569,6 +15635,7 @@ begin
     end;
     flux:=max(sumval,0.00001);//prevent dividing by zero or negative values
     radius:=r_aperture;
+    hfd1:=2*SumValR/flux;
   end
   else
   begin //photometry mode. Measure only the bright center of the star for a better SNR
@@ -15586,13 +15653,13 @@ begin
       SumVal:=SumVal+Val;//Sumval will be star total star flux
       SumValR:=SumValR+Val*r; //Method Kazuhisa Miyashita, see notes of HFD calculation method, note calculate HFD over square area. Works more accurate then for round area
     end;
-    flux:=max(sumval_small,0.00001);//prevent dividing by zero or negative values
+    flux:=max(sumval_small,0.00001);//Flux in the restricted aperture only. Prevent dividing by zero or negative values
     radius:=aperture_small; // use smaller aperture
+    hfd1:=2*SumValR/max(SumVal,0.00001);//divide by the all flux of the star
   end; //photometry mode
 
-  star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
-  hfd1:=2*SumValR/flux;
   hfd1:=max(0.7,hfd1);
+  star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
   if adu_e<>0 then
   begin //adu to e- correction

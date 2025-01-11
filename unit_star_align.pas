@@ -1267,7 +1267,7 @@ begin
         if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]- head.backgr{cblack}>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
           HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
+          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes} ) then
           begin
             {for testing}
           //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);

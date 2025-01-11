@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2024.11.18';
+  astap_version: string='2025.01.10';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
