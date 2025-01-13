@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.1.9';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.1.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 
 type
   { Tmainwindow }
@@ -772,7 +772,6 @@ var {################# initialised variables #########################}
                                          'GGGG');// last pattern is used for Fuji X-trans GGGGBRGGGGRBGGGG'
   annotation_color: tcolor=clyellow;
   annotation_diameter : integer=20;
-  pedestal            : integer=0;
   egain_extra_factor  : integer=16;
   egain_default       : double=1;
   passband_active: string=''; //Indicates current Gaia conversion active
@@ -5155,7 +5154,7 @@ begin
   if ((head.naxis=0) or ((posanddate=false) and (freet=false))) then exit;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.font.name:='default';
+  mainwindow.image1.Canvas.font.name:='Default';
   fontsize:=max(annotation_diameter,font_size);
   mainwindow.image1.Canvas.font.size:=round(fontsize);
   letter_height:=mainwindow.image1.Canvas.textheight('M');
@@ -5185,13 +5184,13 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   {$ifdef mswindows}
-   mainwindow.image1.Canvas.Font.Name :='default';
+   mainwindow.image1.Canvas.Font.Name:='Default';
   {$endif}
   {$ifdef linux}
-  mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+  mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
   {$endif}
   {$ifdef darwin} {MacOS}
-  mainwindow.image1.Canvas.Font.Name :='Helvetica';
+  mainwindow.image1.Canvas.Font.Name:='Helvetica';
   {$endif}
 
   flip_vertical:=mainwindow.flip_vertical1.Checked;
@@ -5292,13 +5291,13 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   {$ifdef mswindows}
-   mainwindow.image1.Canvas.Font.Name :='default';
+   mainwindow.image1.Canvas.Font.Name:='Default';
   {$endif}
   {$ifdef linux}
-  mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+  mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
   {$endif}
   {$ifdef darwin} {MacOS}
-  mainwindow.image1.Canvas.Font.Name :='Helvetica';
+  mainwindow.image1.Canvas.Font.Name:='Helvetica';
   {$endif}
 
 
@@ -8425,7 +8424,7 @@ begin
       font_name:=Sett.ReadString('main', 'font_name2',font_name);
       dum:=Sett.ReadString('main','font_style','');if dum<>'' then font_style:= strtostyle(dum);
       font_charset:=sett.ReadInteger('main','font_charset',font_charset);
-      pedestal:=sett.ReadInteger('main','pedestal',pedestal);
+      pedestal_m:=sett.ReadInteger('main','pedestal',pedestal_m);
 
 
 
@@ -8833,7 +8832,7 @@ begin
       sett.writestring('main','font_name2',font_name);
       sett.writestring('main','font_style',StyleToStr(font_style));
       sett.writeInteger('main','font_charset',font_charset);
-      sett.writeInteger('main','pedestal',pedestal);
+      sett.writeInteger('main','pedestal',pedestal_m);
 
 
       sett.writeInteger('main','minimum_position',MINIMUM1.position);
@@ -10689,7 +10688,7 @@ begin
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    plot_deepsky(extract_visible{then extract visible to variable_list},stackmenu1.font_size_photometry_UpDown1.position); {Plot the variables on the image. }
+    plot_deepsky(extract_visible{then extract visible to variable_list},max(6,stackmenu1.font_size_photometry_UpDown1.position)); {Plot the variables on the image. }
   end;
 end;
 
@@ -10888,7 +10887,7 @@ begin
     font_height:=round(canvas.Textheight('0')*1.0);{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
     {$endif}
 
-    image1.Canvas.font.name:='default';
+    image1.Canvas.font.name:='Default';
 
     image1.Canvas.textout(3+tx,round(-font_height + ty), mag_str);
 
@@ -11797,7 +11796,7 @@ begin
   image1.Canvas.Pen.color :=clred;
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
-  image1.Canvas.font.name:='default';
+  image1.Canvas.font.name:='Default';
 
   fontsize:=8;
   image1.Canvas.font.size:=fontsize;
@@ -13758,8 +13757,8 @@ begin
           begin
             if hasoption('sqm') then {sky quality}
             begin
-              pedestal:=round(strtofloat2(GetOptionValue('sqm')));
-              if calculate_sqm(img_loaded,head,false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
+              pedestal_m:=round(strtofloat2(GetOptionValue('sqm')));
+              if calculate_sqm(img_loaded,head,false {get backgr},false{get histogr},{var} pedestal_m) then {sqm found}
               begin
                 if centalt=''  then //no old altitude
                 begin
@@ -13768,7 +13767,7 @@ begin
                   update_text(mainwindow.memo1.lines,'OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
                 end;
                 update_text(mainwindow.memo1.lines,'SQM     = ',floattostr2(head.sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
-                update_text(mainwindow.memo1.lines,'COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
+                update_text(mainwindow.memo1.lines,'COMMENT SQM',', used '+inttostr(pedestal_m)+' as pedestal value');
               end
               else
               update_text(mainwindow.memo1.lines,'SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
@@ -14038,10 +14037,10 @@ begin
                 mess:=mess+', AIRMASS';
               end;
 
-              if ((pedestal<>0) or (pos('D',headx.calstat)>0)) then
+              if ((pedestal_m<>0) or (pos('D',headx.calstat)>0)) then
               begin
                 //jd_start:=0; { if altitude missing then force an date to jd conversion'}
-                pedestal2:=pedestal; {protect pedestal setting}
+                pedestal2:=pedestal_m; {protect pedestal setting}
                 if calculate_sqm(img_temp,headx,true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
                   update_text(memox,'SQM     = ',floattostr2(headx.sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting

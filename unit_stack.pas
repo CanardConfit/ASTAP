@@ -4407,11 +4407,10 @@ begin
               else
               if pos('B',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //BLUE, B, TB
               else
-              if pos('RC',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red. Note Green also contains a R so first test Green
+              if pos('RED',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //rgb RED, INVALID
               else
-              if pos('R',filterstrUP)>0  then
-                 lv.Items.item[c].SubitemImages[P_filter]:=0 //red, R, TR.  Note Green also contains a R so first test Green
-              else
+              if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red. Note Green also contains a R so first test Green
+              else                                                                         //The official abbreviation for Cousins R is R. See https://www.aavso.org/filters
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 
               date_to_jd(headx.date_obs,headx.date_avg, headx.exposure); {convert headx.date_obs string and headx.exposure time to global variables jd_start (julian day start headx.exposure) and jd_mid (julian day middle of the headx.exposure)}
@@ -10200,7 +10199,7 @@ begin
 //  image1.Canvas.Pen.width :=1;
 //  image1.Canvas.brush.Style:=bsClear;
 //  image1.Canvas.font.color:=clyellow;
-//  image1.Canvas.font.name:='default';
+//  image1.Canvas.font.name:='Default';
 //  image1.Canvas.font.size:=10;
 //  mainwindow.image1.Canvas.Pen.Color := clred;
 
@@ -11936,7 +11935,7 @@ begin
             {head.naxis3 is now 3}
 
             update_text(mainwindow.memo1.lines,'COMMENT 1', '  Calibrated by ASTAP. www.hnsky.org');
-            update_float(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
+            update_integer(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
             update_text(mainwindow.memo1.lines,'CALSTAT =', #39 + head.calstat+#39); {calibration status.}
             add_integer(mainwindow.memo1.lines,'DARK_CNT=', ' / Darks used for luminance.               ' , head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
             add_integer(mainwindow.memo1.lines,'FLAT_CNT=', ' / Flats used for luminance.               ' , head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
@@ -12686,7 +12685,7 @@ begin
             if pos('D', head.calstat) > 0 then
             begin
               update_integer(mainwindow.memo1.lines,'DATAMAX =', ' / Maximum data value                             ', round(head.datamax_org)); {datamax is updated in stacking process. Use the last one}
-              update_integer(mainwindow.memo1.lines,'DATAMIN =', ' / Minimum data value                             ', round(pedestal_s));
+              update_integer(mainwindow.memo1.lines,'DATAMIN =', ' / Minimum data value                             ', round(head.pedestal));
               add_text(mainwindow.memo1.lines,'COMMENT ', ' D=' + ExtractFileName(last_dark_loaded));
             end;
             if pos('F', head.calstat) > 0 then
@@ -12896,7 +12895,7 @@ begin
         update_text(mainwindow.memo1.lines,'COMMENT 1', '  Written by ASTAP. www.hnsky.org');
 
         head.calstat := head.calstat + 'S'; {status stacked}
-        update_float(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',false ,head.pedestal);//pedestal value added during calibration or stacking
+        update_integer(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
         update_text(mainwindow.memo1.lines,'CALSTAT =', #39 + head.calstat + #39); {calibration status}
         add_text(mainwindow.memo1.lines,'ISSUES  =', #39 + head.issues + #39);//add issues from flat and applying dark
 

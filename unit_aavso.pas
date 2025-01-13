@@ -346,7 +346,7 @@ end;
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
-    c,date_column,invalid_var,invalid_check,invalid_comp,dummy,dummy2  : integer;
+    c,date_column,invalid_var,invalid_check,invalid_comp : integer;
     err,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrev_var_clean,abbrev_check_clean,abbrev_comp_clean,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr: string;
     stdev_valid : boolean;
@@ -418,7 +418,7 @@ begin
     date_column:=P_jd_mid;
   end;
 
-  if stackmenu1.reference_database1.ItemIndex=0 then settings:=stackmenu1.reference_database1.text+' '+uppercase(name_database)
+  if stackmenu1.reference_database1.ItemIndex=0 then settings:=stackmenu1.reference_database1.text
   else
     settings:=stackmenu1.reference_database1.text;
   settings:=settings+', aperture='+stackmenu1.flux_aperture1.text+' HFD, annulus='+stackmenu1.annulus_radius1.text+' HFD';
@@ -431,7 +431,7 @@ begin
 
   aavso_report:= '#TYPE='+detype+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, v'+astap_version+' ('+settings+ ')'+#13+#10+
+                 '#SOFTWARE=ASTAP, v'+astap_version+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE='+date_format+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -528,11 +528,11 @@ begin
 
            if ((invalid_var<>0) or (invalid_comp<>0) or (invalid_check<>0)) then invalidstr:='# ' else invalidstr:='';
 
-           dummy:=ListView7.Items.item[c].SubitemImages[P_calibration];
-           dummy2:=ListView7.Items.item[c].SubitemImages[P_filter];
+        //   dummy:=ListView7.Items.item[c].SubitemImages[P_calibration];
+        //   dummy2:=ListView7.Items.item[c].SubitemImages[P_filter];
 
            if ListView7.Items.item[c].SubitemImages[P_calibration]<>ListView7.Items.item[c].SubitemImages[P_filter] then
-              comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV,(V,G,TG),B,RC,SI,SR,SG.';
+              comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV,(V,G,TG),B,R,SI,SR,SG.';
 
            aavso_report:= aavso_report+ invalidstr+ abbrev_var_clean + delim +
                           StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
@@ -548,7 +548,7 @@ begin
                           airmass_str+delim+
                           'na'+delim+ {group}
                           'na'+delim+
-                          comp_magn_info+#13+#10;
+                          comp_magn_info+' ('+settings+ ')'+#13+#10;
 
            date_observation:=copy(listview7.Items.item[c].subitems.Strings[P_date],1,10);
          end;

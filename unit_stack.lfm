@@ -3758,7 +3758,7 @@ object stackmenu1: Tstackmenu1
           object font_size_photometry1: TEdit
             Left = 1120
             Height = 23
-            Hint = 'Font size of image annotations'
+            Hint = 'Font size of image annotations. Using the online database for size 4 only abbreviation are plotted.'
             Top = 35
             Width = 32
             TabOrder = 14
@@ -3767,12 +3767,12 @@ object stackmenu1: Tstackmenu1
           object font_size_photometry_UpDown1: TUpDown
             Left = 1152
             Height = 23
-            Hint = 'Font size of image annotations'
+            Hint = 'Font size of image annotations. Using the online database for size 4 only abbreviation are plotted.'
             Top = 35
             Width = 17
             Associate = font_size_photometry1
             Max = 20
-            Min = 6
+            Min = 4
             ParentShowHint = False
             Position = 8
             ShowHint = True

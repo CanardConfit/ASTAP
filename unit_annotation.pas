@@ -1414,13 +1414,13 @@ begin
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
     if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
     {$ifdef mswindows}
-     mainwindow.image1.Canvas.Font.Name :='default';
+     mainwindow.image1.Canvas.Font.Name:='Default';
     {$endif}
     {$ifdef linux}
-    mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+    mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
     {$endif}
     {$ifdef darwin} {MacOS}
-    mainwindow.image1.Canvas.Font.Name :='Helvetica';
+    mainwindow.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
 
@@ -1584,13 +1584,14 @@ type
   textarea = record
      x1,y1,x2,y2 : integer;
   end;
+
 var
   dra,ddec, telescope_ra,telescope_dec, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,
   COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
-  name: string;
+  abbreviation: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount, font_size  : integer;
   overlap      : boolean;
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
@@ -1605,21 +1606,29 @@ begin
 
     cos_telescope_dec:=cos(telescope_dec);
 
+    font_size:=stackmenu1.font_size_photometry_UpDown1.position;
     {$ifdef mswindows}
-     mainwindow.image1.Canvas.Font.Name :='default';
+     if font_size<6 then
+        mainwindow.image1.Canvas.Font.Name:='Small fonts'
+     else
+        mainwindow.image1.Canvas.Font.Name:='Default';
     {$endif}
     {$ifdef linux}
-    mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+    mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
     {$endif}
     {$ifdef darwin} {MacOS}
-    mainwindow.image1.Canvas.Font.Name :='Helvetica';
+    mainwindow.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
 
     mainwindow.image1.canvas.pen.color:=annotation_color;
     mainwindow.image1.canvas.pen.mode:=pmXor;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
-    mainwindow.image1.Canvas.font.size:=stackmenu1.font_size_photometry_UpDown1.position;
+
+    mainwindow.image1.Canvas.font.size:=max(6,font_size);
+
+
+
 
    if extract_visible then //for photometry
    begin
@@ -1661,8 +1670,10 @@ begin
 
           if mode=1 then //plot variable
           begin
-
-            name:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
+            if font_size<5 then
+              abbreviation:=vsx[count].name
+            else
+              abbreviation:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
 
             if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
               mainwindow.Shape_var1.HINT:=vsx[count].name;
@@ -1673,9 +1684,9 @@ begin
             begin
               delta:=frac((jd_mid-var_epoch)/var_period);//in periods. Should jd_helio but that takes more computing
               if ((delta>0.95) or (delta<0.05)) then
-                 name:=name+ '[AT MAX]';
+                 abbreviation:=abbreviation+ '[AT MAX]';
 
-                 //  if pos('AD CMi',name)>0 then
+                 //  if pos('AD CMi',abbreviation)>0 then
                  //  memo2_message(filename2+',  '+floattostr(jd_mid)+ ',   '+floattostr(delta));
             end;
 
@@ -1683,7 +1694,7 @@ begin
             begin
               variable_list[nrcount].ra:=vsx[count].ra;
               variable_list[nrcount].dec:=vsx[count].dec;
-              variable_list[nrcount].abbr:=name;
+              variable_list[nrcount].abbr:=abbreviation;
               variable_list[nrcount].source:=1;//vsx
               variable_list[nrcount].index:=count;//to retrieve all mangitudes
               variable_list_length:=nrcount;
@@ -1694,32 +1705,32 @@ begin
           end
           else
           begin //plot check stars
-            name:=vsp[count].auid;
+            abbreviation:=vsp[count].auid;
 
-            name:=name+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
+            abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
 
             if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
             begin //Sloan filters used
-              if vsp[count].SGmag<>'?' then name:=name+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
-              if vsp[count].SRmag<>'?' then name:=name+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-              if vsp[count].SImag<>'?' then name:=name+'_SI='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+              if vsp[count].SGmag<>'?' then abbreviation:=abbreviation+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
+              if vsp[count].SRmag<>'?' then abbreviation:=abbreviation+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+              if vsp[count].SImag<>'?' then abbreviation:=abbreviation+'_SI='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
             end
             else
             begin //UBVR
-              if vsp[count].Bmag<>'?' then name:=name+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-              if vsp[count].Rmag<>'?' then name:=name+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+              if vsp[count].Bmag<>'?' then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+              if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
             end;
 
             if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                  mainwindow.shape_check1.HINT:=name;
+                  mainwindow.shape_check1.HINT:=abbreviation;
             if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                  mainwindow.shape_comp1.HINT:=name;//comparison star
+                  mainwindow.shape_comp1.HINT:=abbreviation;//comparison star
 
             if ((extract_visible) and (nrcount<length(variable_list))) then //special option to add objects to list for photometry
             begin
               variable_list[nrcount].ra:=vsp[count].ra;
               variable_list[nrcount].dec:=vsp[count].dec;
-              variable_list[nrcount].abbr:=name;
+              variable_list[nrcount].abbr:=abbreviation;
               variable_list[nrcount].source:=2;//vsp
               variable_list[nrcount].index:=count;//to retrieve all mangitudes
               variable_list_length:=nrcount;
@@ -1727,15 +1738,15 @@ begin
             end;
           end;
 
-          if name<>'' then
+          if abbreviation<>'' then
           begin
             if flip_horizontal then begin x:=(head.width-1)-x;  end;
             if flip_vertical then  else y:=(head.height-1)-y;
 
 
             {get text dimensions}
-            th:=mainwindow.image1.Canvas.textheight(name);
-            tw:=mainwindow.image1.Canvas.textwidth(name);
+            th:=mainwindow.image1.Canvas.textheight(abbreviation);
+            tw:=mainwindow.image1.Canvas.textwidth(abbreviation);
             x1:=x;
             y1:=y;
             x2:=x+ tw;
@@ -1784,7 +1795,9 @@ begin
               mainwindow.image1.Canvas.moveto(x,round(y+th/4));
               mainwindow.image1.Canvas.lineto(x,y1);
             end;
-            mainwindow.image1.Canvas.textout(x1,y1,name);
+
+
+              mainwindow.image1.Canvas.textout(x1,y1,abbreviation);
             inc(text_counter);
             if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
 
@@ -1793,12 +1806,13 @@ begin
 
 
 
+
             mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
             mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
             mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
             mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
 
-          end;//name<>''
+          end;//abbreviation<>''
 
         end;
         inc(count);
@@ -2027,13 +2041,13 @@ begin
 
 
     {$ifdef mswindows}
-    mainwindow.image1.Canvas.Font.Name :='default';
+    mainwindow.image1.Canvas.Font.Name:='Default';
     {$endif}
     {$ifdef linux}
-    mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+    mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
     {$endif}
     {$ifdef darwin} {MacOS}
-    mainwindow.image1.Canvas.Font.Name :='Helvetica';
+    mainwindow.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
     mainwindow.image1.Canvas.font.size:=8; //round(14*head.height/mainwindow.image1.height);{adapt font to image dimensions}
@@ -2468,13 +2482,13 @@ begin
     end;
 
     {$ifdef mswindows}
-     mainwindow.image1.Canvas.Font.Name :='default';
+     mainwindow.image1.Canvas.Font.Name:='Default';
     {$endif}
     {$ifdef linux}
-    mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+    mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
     {$endif}
     {$ifdef darwin} {MacOS}
-    mainwindow.image1.Canvas.Font.Name :='Helvetica';
+    mainwindow.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
     astrometric_error_innner:=smedian(errors_sky_pixel1,sub_counter); //pixels

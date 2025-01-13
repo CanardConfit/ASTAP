@@ -68,6 +68,9 @@ var
 
 function calculate_sqm(img: image_array; headx : theader; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 
+const
+  pedestal_m: integer=0;
+
 
 implementation
 
@@ -77,7 +80,6 @@ implementation
 var
   site_lat_radians,site_long_radians  : double;
   backup_made                         : boolean;
-
 
 function calculate_sqm(img: image_array; headx : theader; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 var
@@ -230,7 +232,7 @@ begin
       exit;
     end;
 
-    pedestal2:=pedestal;{protect pedestal setting}
+    pedestal2:=pedestal_m;{protect pedestal setting}
     if sqm_applydf1.checked then
     begin
       analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
@@ -323,7 +325,7 @@ end;
 
 procedure Tform_sqm1.pedestal1Exit(Sender: TObject);
 begin
-  pedestal:=round(strtofloat2(pedestal1.Text));
+  pedestal_m:=round(strtofloat2(pedestal1.Text));
   display_sqm;
 end;
 
@@ -393,7 +395,7 @@ begin
 
   latitude1.Text:=trim(sitelat); {copy the string to tedit}
   longitude1.Text:=trim(sitelong);
-  pedestal1.Text:=inttostr(pedestal);
+  pedestal1.Text:=inttostr(pedestal_m);
 
   display_sqm;
 end;
