@@ -679,13 +679,13 @@ begin
   form_existing:=assigned(form_asteroids1);{form existing}
 
   {$ifdef mswindows}
-  mainwindow.image1.Canvas.Font.Name :='default';
+  mainwindow.image1.Canvas.Font.Name:='Default';
   {$endif}
   {$ifdef linux}
-  mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+  mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
   {$endif}
   {$ifdef darwin} {MacOS}
-  mainwindow.image1.Canvas.Font.Name :='Helvetica';
+  mainwindow.image1.Canvas.Font.Name:='Helvetica';
   {$endif}
 
   mainwindow.image1.canvas.pen.color:=annotation_color;{color circel}
