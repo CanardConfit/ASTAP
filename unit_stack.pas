@@ -29,6 +29,7 @@ uses
   Math, ExtCtrls, Menus, Buttons,
   LCLIntf,{for for getkeystate, selectobject, openURL}
   clipbrd, PairSplitter, Types, strutils,
+  fileutil,
   unit_star_database,
   astap_main;
 
@@ -7729,6 +7730,53 @@ end;
 procedure Tstackmenu1.FormDropFiles(Sender: TObject; const FileNames: array of string);
 var
   i, pageindex: integer;
+  dirFiles : Tstringlist;
+
+    procedure add_a_single_file(filen : string);
+    begin
+      if image_file_name(FileN) = True then {readable image file}
+      begin
+        case pagecontrol1.pageindex of
+          1: listview_add(listview2, FileN, True, D_nr);{darks}
+          2: listview_add(listview3, FileN, True, F_nr);{flats}
+          3: listview_add(listview4, FileN, True, FD_nr);{flat darks}
+          7: listview_add(listview6, FileN, True, B_nr);{blink}
+          8: listview_add(listview7, FileN, True, P_nr);{photometry}
+          9: listview_add(listview8, FileN, True, I_nr); {inspector}
+          10: listview_add(listview9, FileN, True, M_nr);{mount}
+          else
+          begin {lights}
+            listview_add(listview1, FileN, True, L_nr);
+            if pos('_stacked', FileN) <> 0 then
+              {do not check mark lights already stacked}
+              listview1.items[
+                ListView1.items.Count - 1].Checked := False;
+          end;
+        end;
+      end;
+    end;
+
+    procedure add_thefiles(fileX: string);
+    var
+       j: integer;
+    begin
+      if ExtractFileExt(FileX)='' then //directory
+      begin
+        try
+        dirFiles := FindAllFiles(FileX, '*.*'); //including directories
+        for j := 0 to dirFiles.count-1 do //add all image files of this directory
+        begin
+          memo2_message(dirFiles[j]);
+          add_thefiles(dirFiles[j]);//call this procedure again to either look into subdirectories or add this file
+        end;
+        finally
+          dirFiles.Free;
+        end;
+      end // a directory
+      else //a normal file
+        add_a_single_file(fileX);
+    end;
+
 begin
   pageindex := pagecontrol1.pageindex;
 
@@ -7742,31 +7790,11 @@ begin
     10: listview9.Items.beginUpdate;{mount}
     else
       listview1.Items.beginUpdate; {lights}
-
   end;
 
   for i := Low(FileNames) to High(FileNames) do
   begin
-    if image_file_name(FileNames[i]) = True then {readable image file}
-    begin
-      case pagecontrol1.pageindex of
-        1: listview_add(listview2, FileNames[i], True, D_nr);{darks}
-        2: listview_add(listview3, FileNames[i], True, F_nr);{flats}
-        3: listview_add(listview4, FileNames[i], True, FD_nr);{flat darks}
-        7: listview_add(listview6, FileNames[i], True, B_nr);{blink}
-        8: listview_add(listview7, FileNames[i], True, P_nr);{photometry}
-        9: listview_add(listview8, FileNames[i], True, I_nr); {inspector}
-        10: listview_add(listview9, FileNames[i], True, M_nr);{mount}
-        else
-        begin {lights}
-          listview_add(listview1, FileNames[i], True, L_nr);
-          if pos('_stacked', FileNames[i]) <> 0 then
-            {do not check mark lights already stacked}
-            listview1.items[
-              ListView1.items.Count - 1].Checked := False;
-        end;
-      end;
-    end;
+    add_thefiles(filenames[I]);
   end;
 
   case pageindex of
@@ -7784,7 +7812,6 @@ begin
       {report the number of lights selected in images_selected and update menu indication}
     end;
   end;
-
 end;
 
 
