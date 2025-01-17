@@ -565,7 +565,7 @@ begin
     Clipboard.AsText:=aavso_report
   else
   begin
-    savedialog1.filename:=abrv_variable1.text+'_'+date_observation+'_report.txt';
+    savedialog1.filename:=stringreplace(abrv_variable1.text,'?','',[rfReplaceAll]) +'_'+date_observation+'_report.txt';
     savedialog1.initialdir:=ExtractFilePath(filename2);
     savedialog1.Filter := '(*.txt)|*.txt';
     if savedialog1.execute then
