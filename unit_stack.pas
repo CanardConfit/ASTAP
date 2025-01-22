@@ -773,6 +773,7 @@ type
     procedure measuring_method1Change(Sender: TObject);
     procedure MenuItem41Click(Sender: TObject);
     procedure annotate_unknown1Click(Sender: TObject);
+    procedure planetary_image1Exit(Sender: TObject);
     procedure Refresh_astrometrical_solutions1Click(Sender: TObject);
     procedure rename_selectedfiles1Click(Sender: TObject);
     procedure solar_drift_compensation1Change(Sender: TObject);
@@ -10086,6 +10087,11 @@ procedure Tstackmenu1.annotate_unknown1Click(Sender: TObject);
 begin
   save_settings2;{too many lost selected files . so first save settings}
   process_selected_files(listview1,L_solution {column},'U');
+end;
+
+procedure Tstackmenu1.planetary_image1Exit(Sender: TObject);
+begin
+  if planetary_image1.checked then new_analyse_required:=true;
 end;
 
 
