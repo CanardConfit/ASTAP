@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 581
+  Left = 179
   Height = 707
-  Top = 190
+  Top = 149
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -8503,6 +8503,7 @@ object stackmenu1: Tstackmenu1
     Top = 592
   end
   object ImageList2: TImageList
+    Scaled = True
     Left = 1408
     Top = 600
     Bitmap = {
@@ -8567,6 +8568,7 @@ object stackmenu1: Tstackmenu1
     }
   end
   object ImageList_colors: TImageList
+    Scaled = True
     Left = 1488
     Top = 600
     Bitmap = {

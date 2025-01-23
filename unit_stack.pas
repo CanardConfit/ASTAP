@@ -12482,6 +12482,7 @@ begin
   begin
     ListView1.Items.item[c].SubitemImages[L_result] := -1;{remove any icons. Mark third columns as not done using the image index of first column}
     ListView1.Items.item[c].subitems.Strings[L_result] := '';{no stack result}
+    //for displaying ICONS in high DPI situations see https://forum.lazarus.freepascal.org/index.php?topic=64364.0
   end;
 
   repeat {do all objects}
