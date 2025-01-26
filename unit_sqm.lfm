@@ -39,7 +39,7 @@ object form_sqm1: Tform_sqm1
     ShowHint = True
     TabOrder = 1
     Text = '2020-02-11T22:10:41.222'
-    OnExit = date_obs1Exit
+    OnEditingDone = date_obs1EditingDone
   end
   object date_label1: TLabel
     Left = 78
@@ -68,7 +68,7 @@ object form_sqm1: Tform_sqm1
     TabOrder = 2
     Text = '0'
     OnChange = latitude1Change
-    OnExit = latitude1Exit
+    OnEditingDone = latitude1EditingDone
   end
   object Label2: TLabel
     Left = 114
@@ -96,8 +96,7 @@ object form_sqm1: Tform_sqm1
     ShowHint = True
     TabOrder = 3
     Text = '0'
-    OnChange = longitude1Change
-    OnExit = longitude1Exit
+    OnEditingDone = longitude1EditingDone
   end
   object ok1: TButton
     Left = 280
@@ -165,7 +164,7 @@ object form_sqm1: Tform_sqm1
     ShowHint = True
     TabOrder = 4
     Text = '0'
-    OnExit = pedestal1Exit
+    OnEditingDone = pedestal1EditingDone
   end
   object background1: TEdit
     Left = 176
@@ -179,7 +178,6 @@ object form_sqm1: Tform_sqm1
     ShowHint = True
     TabOrder = 5
     Text = '0'
-    OnChange = longitude1Change
   end
   object altitude1: TEdit
     Left = 176
@@ -193,7 +191,6 @@ object form_sqm1: Tform_sqm1
     ShowHint = True
     TabOrder = 6
     Text = '0'
-    OnChange = longitude1Change
   end
   object sqm1: TEdit
     Left = 176
@@ -209,7 +206,6 @@ object form_sqm1: Tform_sqm1
     ShowHint = True
     TabOrder = 7
     Text = '0'
-    OnChange = longitude1Change
   end
   object error_message1: TLabel
     Left = 16
