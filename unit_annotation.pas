@@ -1848,10 +1848,10 @@ begin
 end;
 
 
-procedure get_best_mean(list: array of double; leng : integer; out mean,standard_error_mean: double);{Remove outliers from population using MAD. }
+procedure get_best_mean(list,snr_list: array of double; leng : integer; out mean,standard_error_mean: double);{Remove outliers from population using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
-  i,count         : integer;
-  median, mad,sd  : double;
+  i                     : integer;
+  median, mad,sd,count,noise  : double;
 
 begin
   if leng=1 then begin mean:=list[0];exit end
@@ -1867,15 +1867,20 @@ begin
   standard_error_mean:=0;
 
   for i:=0 to leng-1 do
-    if abs(list[i]-median)<1.50*sd then {offset less the 1.5*sigma.}
+  begin
+    noise:=abs(list[i]-median);
+    if noise<1.50*sd then {offset less the 1.5*sigma.}
+//     if noise<2*sd then {offset less the 1.5*sigma.}
     begin
-      mean:=mean+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
-      inc(count);
+      mean:=mean+list[i]*snr_list[i];//Calculate weighted mean. This gives a little less noise then calculating median again.
+      count:=count+snr_list[i];
+      standard_error_mean:=standard_error_mean+sqr(noise*snr_list[i]);//for weighted standard error
     end;
+  end;
   if count>0 then
   begin
     mean:=mean/count;  {mean without using outliers}
-    standard_error_mean:=sd/sqrt(count); //https://onlinestatbook.com/2/estimation/mean.html
+    standard_error_mean:=sqrt(standard_error_mean/sqr(count));
   end;
 
 end;
@@ -1943,8 +1948,8 @@ var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
   standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e,mag_saturation,correction  : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                               : integer;
-  flip_horizontal, flip_vertical     : boolean;
-  flux_ratio_array,hfd_x_sd, flux_peak_ratio          : array of double;
+  flip_horizontal, flip_vertical                        : boolean;
+  flux_ratio_array,hfd_x_sd, flux_peak_ratio,snr_list   : array of double;
   selected_passband : string;
   data_max          : single;
   starlist1         : star_list;
@@ -1981,7 +1986,7 @@ var
         begin
           HFD(img,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,adu_e {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
-          if snr>30 then {star detected in img. 30 is found emperical}
+           if snr>30 then {star detected in img. 30 is found emperical}
           begin
             if ((img[0,round(yc),round(xc)]<data_max-1000) and
                 (img[0,round(yc-1),round(xc)]<data_max-1000) and
@@ -1994,21 +1999,23 @@ var
                 (img[0,round(yc+1),round(xc-1)]<data_max-1000) and
                 (img[0,round(yc+1),round(xc+1)]<data_max-1000)  ) then {not saturated}
             begin
-              if counter_flux_measured>=length(flux_ratio_array) then
+              if counter_flux_measured>=length(flux_ratio_array) then //increase array sizes
               begin
-               SetLength(flux_ratio_array,counter_flux_measured+500);{increase length array}
-               if report_lim_magn then
-               begin
-                 SetLength(hfd_x_sd,counter_flux_measured+500);{increase length array}
-                 SetLength(flux_peak_ratio,counter_flux_measured+500);{increase length array}
-               end;
+                SetLength(flux_ratio_array,counter_flux_measured+500);
+                SetLength(snr_list,counter_flux_measured+500);
+                if report_lim_magn then
+                begin
+                  SetLength(hfd_x_sd,counter_flux_measured+500);
+                  SetLength(flux_peak_ratio,counter_flux_measured+500);
+                end;
               end;
               flux_ratio_array[counter_flux_measured]:=flux/(power(10,(21 {bias}-magn/10)/2.5)); //Linear flux ratio,  should be constant for all stars.
+              snr_list[counter_flux_measured]:=snr;
 
              // memo2_message(#9+floattostr4(magn/10)+#9+floattostr4(2.5 * ln(flux)/ln(10) ));
               if report_lim_magn then
               begin
-                hfd_x_sd[counter_flux_measured]:=hfd1*sd_bg;{calculate hfd*SD. sd_bg  is a global variable from procedure hfd. The minimum diameter for star detection is 4}
+                hfd_x_sd[counter_flux_measured]:=hfd1*sd_bg;//calculate hfd*SD. sd_bg  is a global variable from procedure hfd. The minimum diameter for star detection is 4
                 flux_peak_ratio[counter_flux_measured]:=flux/img[0,round(yc),round(xc)];
               end;
 
@@ -2066,6 +2073,7 @@ begin
     begin
       max_nr_stars:=round(head.width*head.height*(730/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
       setlength(flux_ratio_array,max_nr_stars);
+      setlength(snr_list,max_nr_stars);
       if report_lim_magn then
       begin
         setlength(hfd_x_sd,max_nr_stars);
@@ -2202,7 +2210,7 @@ begin
     begin
       if counter_flux_measured>=3 then {at least three stars}
       begin
-        get_best_mean(flux_ratio_array,counter_flux_measured {length},avg_flux_ratio,standard_error_mean );//calculate average of flux ratio. Can't do that on mzero. Should be a linear scale
+        get_best_mean(flux_ratio_array,snr_list,counter_flux_measured {length},avg_flux_ratio,standard_error_mean );//calculate average of flux ratio. Can't do that on mzero. Should be a linear scale
         head.mzero:=21{bias} + ln(avg_flux_ratio)*2.5/ln(10);//from flux ratio to mzero
         standard_error_mean:=ln((avg_flux_ratio+standard_error_mean)/avg_flux_ratio)*2.5/ln(10);//Convert ratio error to error in magnitudes. Note that log(a)−log(b)=log(a/b) and log():=ln()/ln(10)
 
@@ -2217,8 +2225,6 @@ begin
         update_float(memo,'MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux_e)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
         update_float(memo,'MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
         update_text(memo,'MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used.');
-
-
 
 
          // The magnitude measured is
@@ -2242,7 +2248,6 @@ begin
          //flux_ratio:=exp(mzero*ln(10)/2.5);
 
         if head.mzero_radius=99 then
-
           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
                         ' Standard error MZERO [magn]: '+floattostrF(standard_error_mean,ffFixed,0,3)+
@@ -2293,9 +2298,6 @@ begin
         mainwindow.caption:=magn_limit_str;
         memo2_message(magn_limit_str);
       end;
-
-      //flux_ratio_array:=nil;
-      //hfd_x_sd:=nil;
     end;
 
     Screen.Cursor:=crDefault;

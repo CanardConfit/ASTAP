@@ -43,17 +43,16 @@ type
     latitude1: TEdit;
     longitude1: TEdit;
     ok1: TButton;
-    procedure date_obs1Exit(Sender: TObject);
+    procedure date_obs1EditingDone(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
     procedure help_sqm_measurement1Click(Sender: TObject);
     procedure latitude1Change(Sender: TObject);
-    procedure latitude1Exit(Sender: TObject);
-    procedure longitude1Change(Sender: TObject);
-    procedure longitude1Exit(Sender: TObject);
+    procedure latitude1EditingDone(Sender: TObject);
+    procedure longitude1EditingDone(Sender: TObject);
     procedure ok1Click(Sender: TObject);
-    procedure pedestal1Exit(Sender: TObject);
+    procedure pedestal1EditingDone(Sender: TObject);
     procedure sqm_applydf1Click(Sender: TObject);
   private
 
@@ -288,7 +287,7 @@ procedure Tform_sqm1.latitude1Change(Sender: TObject);{han.k}
 begin
 end;
 
-procedure Tform_sqm1.latitude1Exit(Sender: TObject);
+procedure Tform_sqm1.latitude1EditingDone(Sender: TObject);
 var
   errordecode:boolean;
 begin
@@ -299,11 +298,7 @@ begin
 end;
 
 
-procedure Tform_sqm1.longitude1Change(Sender: TObject);{han.k}
-begin
-end;
-
-procedure Tform_sqm1.longitude1Exit(Sender: TObject);
+procedure Tform_sqm1.longitude1EditingDone(Sender: TObject);
 var
     errordecode:boolean;
 begin
@@ -323,7 +318,7 @@ begin
   mainwindow.save_settings1Click(nil);{save pedestal value}
 end;
 
-procedure Tform_sqm1.pedestal1Exit(Sender: TObject);
+procedure Tform_sqm1.pedestal1EditingDone(Sender: TObject);
 begin
   pedestal_m:=round(strtofloat2(pedestal1.Text));
   display_sqm;
@@ -362,13 +357,12 @@ begin {set form keypreview:=on}
   end;
 end;
 
-procedure Tform_sqm1.date_obs1Exit(Sender: TObject);
+
+procedure Tform_sqm1.date_obs1EditingDone(Sender: TObject);
 begin
   head.date_obs:=date_obs1.text;
-   display_sqm;
+  display_sqm;
 end;
-
-
 
 procedure Tform_sqm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
