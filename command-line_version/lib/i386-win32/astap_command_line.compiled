@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Compiler Value="d:\lazarus\fpc\3.2.2\bin\x86_64-win64\fpc.exe" Date="1497193866"/>
+  <Params Value=" -Twin32 -Pi386 -MObjFPC -Scghi -O1 -l -vewnhibq -FiC:\astap.fpc\astap_sourceforge_upload\code\command-line_version\lib\i386-win32 -FuC:\astap.fpc\astap_sourceforge_upload\code\command-line_version\ -FUC:\astap.fpc\astap_sourceforge_upload\code\command-line_version\lib\i386-win32\ -FEC:\astap.fpc\astap_sourceforge_upload\code\command-line_version\ -oC:\astap.fpc\astap_sourceforge_upload\code\command-line_version\astap_cli.exe -XX -Si -vh astap_command_line.lpr"/>
+</CONFIG>

@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 179
+  Left = 85
   Height = 707
-  Top = 149
+  Top = 232
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_photometry1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 8
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3411,30 +3411,6 @@ object stackmenu1: Tstackmenu1
               end            
               item
                 Alignment = taRightJustify
-                Caption = 'Magn. Var'
-                MinWidth = 100
-                Width = 100
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'SNR Var'
-                MinWidth = 80
-                Width = 80
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'Magn. Check'
-                MinWidth = 100
-                Width = 100
-              end            
-              item
-                Alignment = taRightJustify
-                Caption = 'Magn. Comp'
-                MinWidth = 100
-                Width = 100
-              end            
-              item
-                Alignment = taRightJustify
                 Caption = 'HFD'
                 MinWidth = 50
               end            
@@ -3773,7 +3749,7 @@ object stackmenu1: Tstackmenu1
             Width = 17
             Associate = font_size_photometry1
             Max = 20
-            Min = 4
+            Min = 3
             ParentShowHint = False
             Position = 8
             ShowHint = True
@@ -9284,14 +9260,17 @@ object stackmenu1: Tstackmenu1
       Caption = '-'
     end
     object menukeywordchange1: TMenuItem
-      Caption = 'Change optional column keyword'
+      Caption = 'Change last column keyword'
       Hint = 'This will change the keyword displayed in the last column '
       object keywordchangelast1: TMenuItem
         AutoCheck = True
-        Caption = 'Change keyword last column'
+        Caption = 'Enter the keyword'
         Hint = 'Enter a new keyword to be listed in this column'
         RadioItem = True
         OnClick = keywordchangelast1Click
+      end
+      object Separator12: TMenuItem
+        Caption = '-'
       end
       object column_fov1: TMenuItem
         AutoCheck = True
@@ -9386,6 +9365,11 @@ object stackmenu1: Tstackmenu1
         Caption = 'Refresh astrometrical solutions of selected files'
         Hint = 'Refresh astrometrical solutions of selected files'
         OnClick = Refresh_astrometrical_solutions1Click
+      end
+      object report_sqm1: TMenuItem
+        Caption = 'Add SQM value to the file header of selected files. '
+        Hint = 'Will report SQM at optional column (last)'
+        OnClick = report_sqm1Click
       end
       object Separator9: TMenuItem
         Caption = '-'
