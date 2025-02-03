@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.2.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.2.03a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -5534,18 +5534,18 @@ begin
      if shape_type=0 then {rectangle}
      begin
        shape:=stRectangle;{0}
-       visible:=true;
+      // visible:=true;
      end
      else
      if shape_type=5 then {circle}
      begin {good lock on object}
        shape:=stcircle; {5}
-       visible:=true;
+      // visible:=true;
      end
      else
      if shape_type=2 then {star}
      begin {good lock on object}
-       visible:=true;
+      // visible:=true;
      end;
      {else keep as it is}
   end;
@@ -10934,6 +10934,7 @@ begin
     copy_paste:=true;
     if CTRLbutton then copy_paste_shape:=1 //ellipse
                   else copy_paste_shape:=0;//rectangle
+    shape_paste1.visible:=true;
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
