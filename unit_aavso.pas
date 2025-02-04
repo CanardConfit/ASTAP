@@ -495,11 +495,18 @@ begin
     result:=0;
 
     //now calculate the standard deviation. So the weighted difference between the COMP stars in one image
+    //Standard deviation so noise has to combine the uncertainties quadratically. The reason that a star ensemble has a lower standard deviation then a single comparison star is that
+    //the signal is averaged. So the total noise of an ensemble of four equal star would be
+    //σ_total= ( (0.25σ)^2 + (0.25σ)^2+ (0.25σ)^2+ (0.25^σ)^2 )^0.5  equals  σ/2.
+    //This doesn't happen when you use the ensemble mzero value for measuring the check star.
+    //For a standard deviation so noise calculation either subtraction or addition you have to combine the uncertainties quadratically.
+    //The standard deviation of the check measurement result is higher and equal to σ_total= (σ_check^2 + σ_ensemble^2)^0.5
+
     standard_deviation:=0;
     for i:=0 to count-1 do
-       standard_deviation:=standard_deviation+ fluxes[i]*sqr(ratio_average-ratios[i]);//fluxes[i] is the weight factor base on flux
+       standard_deviation:=standard_deviation+ sqr((fluxes[i]/sum_all_fluxes)*(ratio_average-ratios[i]));//fluxes[i] is the weight factor base on flux
 
-    standard_deviation:=2.5/ln(10)*sqrt(standard_deviation/sum_all_fluxes);
+    standard_deviation:=2.5/ln(10)*sqrt(standard_deviation);
   end
   else
   begin
@@ -570,7 +577,7 @@ begin
     if length(column_comps)=1 then
       form_aavso1.sigma_mzero1.caption:='Single comparison star.'
     else
-      form_aavso1.sigma_mzero1.caption:='σ='+floattostrF(mean_sd_comp/count,FFfixed,0,3)+', weighted standard deviation between '+inttostr(length(column_comps))+' ensemble stars.'  //  Weighted noise between the comp star(s)
+      form_aavso1.sigma_mzero1.caption:='σ='+floattostrF(mean_sd_comp/count,FFfixed,0,4)+', weighted standard deviation between '+inttostr(length(column_comps))+' ensemble stars.'  //  Weighted noise between the comp star(s)
   end
   else
     form_aavso1.sigma_mzero1.caption:='No star(s) selected.';
@@ -1335,7 +1342,7 @@ begin
   if count>0 then
   begin
     calc_sd_and_mean(listcheck, count{counter},{var}photometry_stdev, mean);// calculate sd and mean of an array of doubles}
-    form_aavso1.sigma_check1.caption:='Check σ='+floattostrF(photometry_stdev,ffFixed,5,3)+', mean='+floattostrF(mean,ffFixed,0,3)+' using Gaia ensemble.';//report sigma check
+    form_aavso1.sigma_check1.caption:='Check σ='+floattostrF(photometry_stdev,ffFixed,0,3)+', mean='+floattostrF(mean,ffFixed,0,3)+' using Gaia ensemble.';//report sigma check
   end
   else
     form_aavso1.sigma_check1.caption:='No check star selected.';
