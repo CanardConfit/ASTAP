@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 303
+  Left = 593
   Height = 634
   Hint = ' '
-  Top = 156
+  Top = 185
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -331,7 +331,6 @@ object mainwindow: Tmainwindow
           Top = 51
           Width = 125
           Font.CharSet = ANSI_CHARSET
-          Font.Color = clBlack
           Font.Height = -12
           Font.Name = 'Segoe UI'
           Font.Pitch = fpVariable
@@ -474,6 +473,12 @@ object mainwindow: Tmainwindow
             Top = 56
             Width = 49
             Enabled = False
+            Font.CharSet = ANSI_CHARSET
+            Font.Height = -12
+            Font.Name = 'Segoe UI'
+            Font.Pitch = fpVariable
+            Font.Quality = fqDraft
+            ParentFont = False
             ParentShowHint = False
             ShowHint = True
             TabOrder = 2
@@ -487,6 +492,12 @@ object mainwindow: Tmainwindow
             Top = 77
             Width = 49
             Enabled = False
+            Font.CharSet = ANSI_CHARSET
+            Font.Height = -12
+            Font.Name = 'Segoe UI'
+            Font.Pitch = fpVariable
+            Font.Quality = fqDraft
+            ParentFont = False
             ParentShowHint = False
             ShowHint = True
             TabOrder = 3
@@ -501,6 +512,11 @@ object mainwindow: Tmainwindow
             Width = 100
             DropDownCount = 20
             Enabled = False
+            Font.CharSet = ANSI_CHARSET
+            Font.Height = -12
+            Font.Name = 'Segoe UI'
+            Font.Pitch = fpVariable
+            Font.Quality = fqDraft
             ItemHeight = 15
             ItemIndex = 2
             Items.Strings = (
@@ -517,6 +533,7 @@ object mainwindow: Tmainwindow
             )
             ParentBidiMode = False
             ParentColor = True
+            ParentFont = False
             ParentShowHint = False
             ShowHint = True
             Style = csDropDownList
@@ -532,6 +549,11 @@ object mainwindow: Tmainwindow
             Width = 100
             DropDownCount = 20
             Enabled = False
+            Font.CharSet = ANSI_CHARSET
+            Font.Height = -12
+            Font.Name = 'Segoe UI'
+            Font.Pitch = fpVariable
+            Font.Quality = fqDraft
             ItemHeight = 15
             ItemIndex = 0
             Items.Strings = (
@@ -551,6 +573,7 @@ object mainwindow: Tmainwindow
               '800'
             )
             ParentColor = True
+            ParentFont = False
             ParentShowHint = False
             ShowHint = True
             TabOrder = 5
@@ -795,21 +818,6 @@ object mainwindow: Tmainwindow
           Stretch = True
           Visible = False
         end
-        object Shape_var1: TShape
-          Left = 9
-          Height = 11
-          Top = 105
-          Width = 11
-          Brush.Style = bsClear
-          Enabled = False
-          ParentShowHint = False
-          Pen.Color = clLime
-          Pen.Mode = pmNotXor
-          Pen.Width = 3
-          Shape = stCircle
-          ShowHint = True
-          Visible = False
-        end
         object shape_marker1: TShape
           Left = 17
           Height = 31
@@ -896,82 +904,6 @@ object mainwindow: Tmainwindow
           ShowHint = True
           Visible = False
         end
-        object shape_check1: TShape
-          Left = 9
-          Height = 11
-          Top = 137
-          Width = 11
-          Brush.Style = bsClear
-          Enabled = False
-          ParentShowHint = False
-          Pen.Color = clLime
-          Pen.Mode = pmNotXor
-          Pen.Width = 3
-          Shape = stDiamond
-          ShowHint = True
-          Visible = False
-        end
-        object shape_comp1: TShape
-          Left = 9
-          Height = 11
-          Hint = '3'
-          Top = 169
-          Width = 11
-          Brush.Style = bsClear
-          Enabled = False
-          ParentShowHint = False
-          Pen.Color = clLime
-          Pen.Mode = pmNotXor
-          Pen.Width = 3
-          Shape = stDiamond
-          ShowHint = True
-          Visible = False
-        end
-        object LabelVar1: TLabel
-          Left = 39
-          Height = 30
-          Top = 97
-          Width = 29
-          Caption = 'Var'
-          Font.CharSet = ANSI_CHARSET
-          Font.Color = clYellow
-          Font.Height = -21
-          Font.Pitch = fpVariable
-          Font.Quality = fqDraft
-          ParentColor = False
-          ParentFont = False
-          Visible = False
-        end
-        object LabelCheck1: TLabel
-          Left = 39
-          Height = 30
-          Top = 129
-          Width = 56
-          Caption = 'Check'
-          Font.CharSet = ANSI_CHARSET
-          Font.Color = clYellow
-          Font.Height = -21
-          Font.Pitch = fpVariable
-          Font.Quality = fqDraft
-          ParentColor = False
-          ParentFont = False
-          Visible = False
-        end
-        object LabelThree1: TLabel
-          Left = 39
-          Height = 30
-          Top = 161
-          Width = 55
-          Caption = 'Comp'
-          Font.CharSet = ANSI_CHARSET
-          Font.Color = clYellow
-          Font.Height = -21
-          Font.Pitch = fpVariable
-          Font.Quality = fqDraft
-          ParentColor = False
-          ParentFont = False
-          Visible = False
-        end
         object shape_manual_alignment1: TShape
           Left = 321
           Height = 11
@@ -1002,54 +934,6 @@ object mainwindow: Tmainwindow
           Pen.EndCap = pecSquare
           Pen.JoinStyle = pjsMiter
           Pen.Mode = pmXor
-          Visible = False
-        end
-        object shape_var2: TShape
-          Left = 16
-          Height = 50
-          Hint = 'Var'
-          Top = 216
-          Width = 50
-          Brush.Style = bsClear
-          Enabled = False
-          ParentShowHint = False
-          Pen.Color = clLime
-          Pen.Mode = pmNotXor
-          Pen.Width = 3
-          Shape = stDiamond
-          ShowHint = True
-          Visible = False
-        end
-        object shape_check2: TShape
-          Left = 16
-          Height = 50
-          Hint = 'Check'
-          Top = 272
-          Width = 50
-          Brush.Style = bsClear
-          Enabled = False
-          ParentShowHint = False
-          Pen.Color = clLime
-          Pen.Mode = pmNotXor
-          Pen.Width = 3
-          Shape = stDiamond
-          ShowHint = True
-          Visible = False
-        end
-        object shape_comp2: TShape
-          Left = 18
-          Height = 50
-          Hint = 'Check'
-          Top = 328
-          Width = 50
-          Brush.Style = bsClear
-          Enabled = False
-          ParentShowHint = False
-          Pen.Color = clLime
-          Pen.Mode = pmNotXor
-          Pen.Width = 3
-          Shape = stDiamond
-          ShowHint = True
           Visible = False
         end
       end

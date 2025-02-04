@@ -1414,7 +1414,11 @@ begin
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
     if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
     {$ifdef mswindows}
-     mainwindow.image1.Canvas.Font.Name:='Default';
+    if font_size<6 then
+       mainwindow.image1.Canvas.Font.Name:='Small fonts'
+    else
+       mainwindow.image1.Canvas.Font.Name:='Default';
+
     {$endif}
     {$ifdef linux}
     mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
@@ -1448,13 +1452,11 @@ begin
         begin
           if ((database_nr>=3) and (database_nr<=5)) then //variables
           begin
-            if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
-                  mainwindow.Shape_var1.HINT:=naam2; //copy(naam2,1,posex(' ',naam2,4)-1);
+            with mainwindow do
+            for i:=0 to high(Fshapes) do
+            if ((abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                     Fshapes[i].shape.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
 
-            if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                      mainwindow.shape_check1.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
-            if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                      mainwindow.shape_comp1.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
           end;
 
           gx_orientation:=(pa+head.crota2)*flipped;
@@ -1476,9 +1478,17 @@ begin
             else
             name:=naam2+'/'+naam3+'/'+naam4;
 
-            mainwindow.image1.Canvas.font.size:=round(min(20,max(font_size,len /2)));
+            mainwindow.image1.Canvas.font.size:=round(min(20,max(max(6,font_size),len /2)));
 
-            if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star, Plot green}
+            if copy(naam2,1,1)='0' then
+            begin
+               mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star, Plot green}
+               if font_size<=3 then
+                  name:=copy(name,5,7) //remove 000-
+               else
+               if font_size<=4 then
+                 name:=copy(name,1,11); //remove all after abbreviation
+            end;
 
             {get text dimensions}
             th:=mainwindow.image1.Canvas.textheight(name);
@@ -1675,8 +1685,13 @@ begin
             else
               abbreviation:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
 
-            if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
-              mainwindow.Shape_var1.HINT:=vsx[count].name;
+//            if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
+//              mainwindow.Shape_var1.HINT:=vsx[count].name;
+            with mainwindow do
+            for i:=0 to high(Fshapes) do
+            if ((abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                     Fshapes[i].shape.HINT:=vsx[count].name;
+
 
             var_epoch:=strtofloat1(vsx[count].epoch);
             var_period:=strtofloat1(vsx[count].period);
@@ -1707,24 +1722,39 @@ begin
           begin //plot check stars
             abbreviation:=vsp[count].auid;
 
-            abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
+            if font_size>=5 then
+            begin
+              abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
 
-            if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
-            begin //Sloan filters used
-              if vsp[count].SGmag<>'?' then abbreviation:=abbreviation+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
-              if vsp[count].SRmag<>'?' then abbreviation:=abbreviation+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-              if vsp[count].SImag<>'?' then abbreviation:=abbreviation+'_SI='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+              if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
+              begin //Sloan filters used
+                if vsp[count].SGmag<>'?' then abbreviation:=abbreviation+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
+                if vsp[count].SRmag<>'?' then abbreviation:=abbreviation+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+                if vsp[count].SImag<>'?' then abbreviation:=abbreviation+'_SI='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+              end
+              else
+              begin //UBVR
+                if vsp[count].Bmag<>'?' then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+                if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+              end;
             end
             else
-            begin //UBVR
-              if vsp[count].Bmag<>'?' then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-              if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+            if font_size=3 then
+            begin
+               if copy(abbreviation,1,2)='00' then
+               delete(abbreviation,1,4);//remove 000-
             end;
 
-            if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                  mainwindow.shape_check1.HINT:=abbreviation;
-            if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                  mainwindow.shape_comp1.HINT:=abbreviation;//comparison star
+//            if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+//                  mainwindow.shape_check1.HINT:=abbreviation;
+//            if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+//                  mainwindow.shape_comp1.HINT:=abbreviation;//comparison star
+
+            with mainwindow do
+            for i:=0 to high(Fshapes) do
+            if ((abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                     Fshapes[i].shape.HINT:=abbreviation;//copy(naam2,1,posex(' ',naam2,4)-1);
+
 
             if ((extract_visible) and (nrcount<length(variable_list))) then //special option to add objects to list for photometry
             begin

@@ -2266,8 +2266,9 @@ begin
         if head.cd1_1<>0 then
         begin
           {quick and dirty method to roughly correct existing solutions}
-          head.crpix1:=solution_vectorX[0]*(head.crpix1-1)+solution_vectorX[1]*(head.crpix2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
-          head.crpix2:=solution_vectorY[0]*(head.crpix1-1)+solution_vectorY[1]*(head.crpix2-1)+solution_vectorY[2];
+          head.crpix1:=1+solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] * (head.crpix2 - 1) + solution_vectorX[2];// correct for marker_position at ra_dec position
+          head.crpix2:=1+solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] * (head.crpix2 - 1) + solution_vectorY[2];
+
           update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
           update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
           update_text(mainwindow.memo1.lines,'COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
