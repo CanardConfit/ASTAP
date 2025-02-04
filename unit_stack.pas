@@ -6934,37 +6934,16 @@ end;
 
 procedure hide_show_columns_listview7(tab8 : boolean); //photometry tab
 var
-  p_single,p_multi,measure_all  : boolean;
   i  : integer;
 begin
-  measure_all:=stackmenu1.measuring_method1.itemindex>0;
+  if stackmenu1.measuring_method1.itemindex>0 then
+    mainwindow.clear_fshapes_array;//nil fshapes array
 
-  p_single:=((tab8) and (measure_all=false)); //photometry single var
-  p_multi:= ((tab8) and (measure_all=true));
-
-{  mainwindow.shape_var1.visible := p_single;  //hide shape if stacked image is plotted
-  mainwindow.shape_check1.Visible := p_single; //hide shape if stacked image is plotted
-  mainwindow.shape_comp1.Visible := p_single;  //hide shape if stacked image is plotted
-  mainwindow.labelVar1.Visible := p_single;
-  mainwindow.labelCheck1.Visible := p_single;
-  mainwindow.labelThree1.Visible := p_single;
- }
-  if p_single then
+  with mainwindow do //hide/show markers
   begin
-    with mainwindow do //remove markers
-    begin
-      for i:=high(fshapes) downto 0 do
-          freeandnil(fshapes[i]);//essential
-      setlength(fshapes,0);
-    end;
+    for i:=high(fshapes) downto 0 do
+       fshapes[i].shape.visible:=tab8;//hide when in an other tab
   end;
-
-
-  //hide/show columns
-  stackmenu1.listview7.column[12].visible:=p_multi=false;//magn var
-  stackmenu1.listview7.column[13].visible:=p_multi=false;//
-  stackmenu1.listview7.column[14].visible:=p_multi=false;//
-  stackmenu1.listview7.column[15].visible:=p_multi=false;//magn 3
 end;
 
 
@@ -7489,6 +7468,7 @@ begin
   clear_added_AAVSO_columns;
   listview7.Items.EndUpdate;
   bakfiles:=nil; //unrename function
+  mainwindow.clear_fshapes_array;//nil fshapes array
 end;
 
 
@@ -8163,17 +8143,8 @@ begin
   end;
 
   reference_defined:=false;
-//  setlength(starVar, listview7.items.Count);
-//  setlength(starCheck, listview7.items.Count);
-  {number of stars could fluctuate so set maximum space each loop}
-//  setlength(starThree, listview7.items.Count);
-//  countVar := 0;
-//  countCheck := 0;
-//  countThree := 0;
-
   clear_added_AAVSO_columns;
 
-  //    mainwindow.shape_marker3.pen.style:=psClear; //not visible else psSolid
   with mainwindow do
   for ww:=0 to high(fshapes) do
      fshapes[ww].shape.visible:=false;//hide all since aperture & annulus is plotted
@@ -8206,6 +8177,8 @@ begin
         sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
         head_ref := head;{backup solution for deepsky annotation}
       end;
+      reference_defined:=true;
+
       use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
       if  ((pos('F', head.calstat) = 0) or (head.naxis3 > 1)) then
@@ -9767,7 +9740,7 @@ var
   i: integer;
 begin
   clear_added_AAVSO_columns;
-  hide_show_columns_listview7(true {tab8 photmetry});
+  hide_show_columns_listview7(true {tab8 photometry});
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=2;
 end;
 
