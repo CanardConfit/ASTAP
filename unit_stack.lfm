@@ -3735,7 +3735,7 @@ object stackmenu1: Tstackmenu1
           object font_size_photometry1: TEdit
             Left = 1120
             Height = 23
-            Hint = 'Font size of image annotations. Using the online database for size 4 only abbreviation are plotted.'
+            Hint = 'Font size of image annotations. Use font size 3 or 4 to shorten abbreviations'
             Top = 35
             Width = 32
             TabOrder = 14

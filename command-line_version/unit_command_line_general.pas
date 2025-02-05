@@ -40,7 +40,7 @@ var {################# initialised variables #########################}
   add_sip1        : boolean=false;
 
 type
-  image_array = array of array of array of Single;
+  Timage_array = array of array of array of Single;
   star_list   = array of array of double;
   solution_vector   = array[0..2] of double;
 
@@ -49,7 +49,7 @@ type
     memo1,memo2 :tstrings; {settings for save and loading}
 
     user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
-    img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
+    img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : Timage_array;
     filename2: string;
     nrbits,Xbinning,Ybinning    : integer;
     size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
@@ -152,9 +152,9 @@ function floattostr6(x:double):string;{float to string with 6 decimals and dot a
 function floattostr4(x:double):string;
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
-procedure analyse_image(img : image_array;snr_min:double;report_type:integer;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
+procedure analyse_image(img : Timage_array;snr_min:double;report_type:integer;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
+procedure HFD(img: Timage_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
+procedure get_background(colour: integer; img :Timage_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
 procedure write_astronomy_wcs(filen: string);
@@ -162,7 +162,7 @@ procedure write_ini(filen: string;solution:boolean);{write solution to ini file}
 function load_image : boolean; {load fits or PNG, BMP, TIF}
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 
-function save_fits16bit(img: image_array;filen2:ansistring): boolean;{save to 16 fits file}
+function save_fits16bit(img: Timage_array;filen2:ansistring): boolean;{save to 16 fits file}
 
 procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
 procedure update_text(inpt,comment1:string);{update or insert text in header}
@@ -547,7 +547,7 @@ begin
 end;
 
 
-function save_fits16bit(img: image_array;filen2:ansistring): boolean;{save to 16 fits file}
+function save_fits16bit(img: Timage_array;filen2:ansistring): boolean;{save to 16 fits file}
 var
   TheFile4 : tfilestream;
   I,j,k,bzero2, dum, remain,dimensions, naxis3_local,height5,width5 : integer;
@@ -687,7 +687,7 @@ begin
 end;
 
 
-function load_fits(filen:string;out img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;out img_loaded2: Timage_array): boolean;{load fits file}
 var
   header    : array[0..2880] of ansichar;
   i,j,k,error3,naxis1,width2,height2, reader_position,validate_double_error,naxis,naxis3   : integer;
@@ -1519,7 +1519,7 @@ begin
 end;
 
 
-function load_PPM_PGM_PFM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
+function load_PPM_PGM_PFM(filen:string; var img_loaded2: Timage_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
    i,j, reader_position,naxis  : integer;
    aline,w1,h1,bits,comm  : ansistring;
@@ -1792,7 +1792,7 @@ begin
 end;
 
 
-function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string; var img_loaded2: Timage_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j,width2,height2,naxis3,naxis   : integer;
   jd2                               : double;
@@ -1987,7 +1987,7 @@ begin
 end;
 
 
-procedure get_hist(colour:integer; img :image_array);
+procedure get_hist(colour:integer; img :Timage_array);
 var
      i,j,col,his_total,count, width5, height5,offsetW,offsetH : integer;
      total_value                                : double;
@@ -2027,7 +2027,7 @@ begin
 end;
 
 
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :Timage_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
   value,sd, sd_old,factor,factor2 : double;
@@ -2126,7 +2126,7 @@ begin
 end;
 
 
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
+procedure HFD(img: Timage_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
 const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
 var
@@ -2393,12 +2393,12 @@ end;
 
 
 
-procedure analyse_image(img : image_array;snr_min:double;report_type:integer;out star_counter : integer;out backgr, hfd_median : double); {find background, number of stars, median HFD}
+procedure analyse_image(img : Timage_array;snr_min:double;report_type:integer;out star_counter : integer;out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
    width2,height2,fitsX,fitsY,diam,i,j,retries,m,n,xci,yci,sqr_diam : integer;
    hfd1,star_fwhm,snr,flux,xc,yc,detection_level,ra,decl            : double;
    hfd_list                                                         : array of double;
-   img_sa                                                           : image_array;
+   img_sa                                                           : Timage_array;
 var
   f   :  textfile;
 const

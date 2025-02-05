@@ -131,7 +131,7 @@ var
     starlist1,starlist2 : star_list;
     rename_counter: integer=0;
     count         : integer=0;
-    img_average   : image_array;
+    img_average   : Timage_array;
 
     procedure reset_var;{reset variables  including init:=false}
     begin
@@ -397,7 +397,7 @@ begin
               if counter=1 then {set range correct}
                    use_histogram(img_loaded,true);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
-              plot_fits(mainwindow.image1,false,false{do not show header in memo1});{plot real}
+              plot_fits(mainwindow.image1,false);{plot real}
 
               if stackmenu1.write_jpeg1.checked then save_as_jpg(ExtractFileDir(filename2)+ {$ifdef mswindows}'\'{$else}{unix} '/' {$endif}+'stack.jpeg');
               if stackmenu1.interim_to_clipboard1.checked then Clipboard.Assign(mainwindow.Image1.Picture.Bitmap);

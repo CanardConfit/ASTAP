@@ -391,8 +391,6 @@ function Calc_Trans_Cubic(stars_reference: TStarArray; // First array of s_star 
 var
   matrix      : Tmatrix;
   vector      : Tsolutionvector;//array[0..9] of Double;
-  s1,
-  s2          : s_star;
   sumx2,
   sumx2x1,
   sumx2y1,

@@ -101,7 +101,7 @@ var
   inspector_gradations: integer=10;
 
 
-function CCDinspector(img:image_array; headx:theader;const memo : tstrings; snr_min: double; screenplot,triangle : boolean; measuring_angle: double) : double;
+function CCDinspector(img:Timage_array; headx:theader;const memo : tstrings; snr_min: double; screenplot,triangle : boolean; measuring_angle: double) : double;
 
 
 implementation
@@ -127,7 +127,7 @@ end;
 
 
 
-function CCDinspector(img:image_array; headx:theader;const memo : tstrings; snr_min: double; screenplot,triangle : boolean; measuring_angle: double) : double;
+function CCDinspector(img:Timage_array; headx:theader;const memo : tstrings; snr_min: double; screenplot,triangle : boolean; measuring_angle: double) : double;
 var
   fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,len,
   nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
@@ -156,7 +156,7 @@ var
   mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr,fwhm_value,fwhm_arcsec : string;
 
   Fliph, Flipv,restore_req  : boolean;
-  img_bk,img_sa                         : image_array;
+  img_bk,img_sa                         : Timage_array;
   style: TTextStyle;
   data_max: single;
     procedure textout_octogram(x,y: integer;value : double); //center the text to the middle of the octogram
@@ -746,7 +746,7 @@ end;
 procedure voronoi_plot(min_value,max_value : single; nr:integer;hfd_values: star_list);
 var
     i,size,fitsx,fitsY,x,y,x2,y2,w,h,scaledown:  integer;
-    img_hfd: image_array;
+    img_hfd: Timage_array;
     zeros_left : boolean;
     col        : double;
 
@@ -805,7 +805,7 @@ begin
 procedure contour_plot(mean: single; nr:integer;hfd_values: star_list);
 var
     i,fitsx,fitsY,x,y,w,h,x2,y2,scaledown : integer;
-    img_hfd: image_array;
+    img_hfd: Timage_array;
     cols,min_value,max_value,step_adjust  : single;
     distance,factor,influence, sum_influence,pixels_per_star: double;
 
@@ -868,10 +868,10 @@ begin
 end;
 
 
-procedure measure_star_aspect(img: image_array;x1,y1: double; rs:integer;  out aspect : double; out orientation : integer); {measures the aspect and orientation [0..179] of a single star }
+procedure measure_star_aspect(img: Timage_array;x1,y1: double; rs:integer;  out aspect : double; out orientation : integer); {measures the aspect and orientation [0..179] of a single star }
 var
   i, j,angle,pixel_counter,orientationMin : integer;
-  val,r,themax,themin,g,delta_angle,distance : double;
+  val,r,themax,themin,g,delta_angle,impact : double;
   data : array[-51..51,-51..51] of double;
   function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
   var
@@ -891,7 +891,6 @@ var
     except
     end;
   end;
-
 begin
   aspect:=999;{failure indication}
   rs:=min(rs,51);
@@ -905,7 +904,7 @@ begin
     begin
       val:=value_subpixel(x1+i,y1+j)- star_bg {from procedure hfd};
 
-      if val>7*sd_bg {from procedure hfd} then
+      if val>7*sd_bg {from procedure hfd} then //SNR>7
       begin
         val:=sqrt(val);{reduce contrast}
         r:=sqrt(sqr(i)+sqr(j));{distance}
@@ -925,7 +924,7 @@ begin
     themin:=1E99;
     for angle:=0 to 179 do {rotate 180 degr}
     begin
-      distance:=0;
+      impact:=0;
       for i:=-rs to rs do
       for j:=-rs to rs do
       begin
@@ -933,20 +932,18 @@ begin
         begin
           g:=arctan2(j,i);
           delta_angle:=((angle*pi/180) - g);
-          //split star with a line with "angle" and measure the sum (average) of distances to line. This distance will be smallest if the line splits the star in the length
-          // Distance to split line is r*sin(delta_angle). r is already included in the data.
-          distance:=distance+data[i,j]*abs(sin(delta_angle));{add to get sum of the distances}
-          //  img_loaded[0,round(x1+i),round(y1+j)]:=50000;
+          //split star with a line with "angle" and measure the sum (average) of distances*sqrt(brightness) to line. This impact sum will be smallest if the line splits the star in the length
+          //distance to split line is r*sin(delta_angle). r is already included in the data.
+          impact:=impact+data[i,j]*abs(sin(delta_angle));{add to get sum of the impact}
         end;
       end;
-      if distance>themax then
+      if impact>themax then
       begin
-        themax:=distance;
-//        orientationMax:=angle;
+        themax:=impact;
       end;
-      if distance<themin then
+      if impact<themin then
       begin
-        themin:=distance;
+        themin:=impact;
         orientationMin:=angle;
       end;
     end;
@@ -1003,7 +1000,7 @@ var
  hfds        : array of double;
  Fliphorizontal, Flipvertical: boolean;
  mess: string;
- img_sa : image_array;
+ img_sa : Timage_array;
 
 begin
   if head.naxis=0 then exit; {file loaded?}
@@ -1145,7 +1142,7 @@ begin
   memo2_message(mess);
   annotation_to_array(mess,true {transparent},65535,size*2 {size},5,10+size*2*9,img_loaded); {report median value}
 
-  plot_fits(mainwindow.image1,false,true);{plot image included text in pixel data}
+  plot_fits(mainwindow.image1,false);{plot image included text in pixel data}
 
   if ((aspect) and (vectors)) then
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
@@ -1273,7 +1270,7 @@ end;
 
 procedure Tform_inspection1.undo_button1Click(Sender: TObject);
 begin
-  if executed=1 then plot_fits(mainwindow.image1,false,true) {only refresh required}
+  if executed=1 then plot_fits(mainwindow.image1,false) {only refresh required}
   else
   if ((executed=2) and (mainwindow.Undo1.enabled)) then
   begin
@@ -1333,7 +1330,7 @@ procedure Tform_inspection1.background_values1Click(Sender: TObject);
 var
   tx,ty,fontsize,halfstepX,halfstepY,stepX,stepY,fx,fy: integer;
   X,Y,stepsizeX,stepsizeY,median,median_center,factor : double;
-  img_bk                                     : image_array;
+  img_bk                                     : Timage_array;
   Flipvertical, Fliphorizontal, restore_req  : boolean;
   detext  : string;
 begin
@@ -1431,7 +1428,7 @@ procedure Tform_inspection1.background_contour1Click(Sender: TObject);
 var
   fx,fy                       : integer;
   high_level,low_level,srange : double;
-  img_bk                      : image_array;
+  img_bk                      : Timage_array;
 begin
   if head.naxis=0 then exit; {file loaded?}
 
@@ -1475,7 +1472,7 @@ begin
   mainwindow.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  use_histogram doesn't work that well for blurred image.
   mainwindow.minimum1.position:=round(low_level-0.05*srange);
 
-  plot_fits(mainwindow.image1, False, True);{plot real}
+  plot_fits(mainwindow.image1, False);{plot real}
 
   img_bk:=nil;//free mem
 
@@ -1491,7 +1488,7 @@ end;
 procedure Tform_inspection1.aberration_inspector1Click(Sender: TObject);
 var
    fitsX,fitsY,col, widthN,heightN                : integer;
-   img_temp : image_array;
+   img_temp : Timage_array;
 
 var  {################# initialised variables #########################}
    side :integer=250;
@@ -1596,7 +1593,7 @@ begin
    update_text(mainwindow.memo1.lines,'COMMENT A','  Aberration view '+filename2);
 
    filename2:=ChangeFileExt(filename2,'_aberration_view.fits');
-   plot_fits(mainwindow.image1,true,true);
+   plot_fits(mainwindow.image1,true);
    image_move_to_center:=true;
 
    Screen.Cursor:=crDefault;

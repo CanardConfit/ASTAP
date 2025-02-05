@@ -14,14 +14,14 @@ uses
 type
    pixel = array[0..2] of double;
 
-   function bilinear_interpolation(const img :image_array; x,y:double; out colour: pixel): boolean; {calculate image pixel value on subpixel level}
-   function BicubicInterpolate(const Img: Image_Array; X, Y: Double; out colour: pixel): boolean;
+   function bilinear_interpolation(const img :Timage_array; x,y:double; out colour: pixel): boolean; {calculate image pixel value on subpixel level}
+   function BicubicInterpolate(const Img: Timage_array; X, Y: Double; out colour: pixel): boolean;
 
 
 implementation
 
 //the following function is not used since calculating the rectangle areas covered by an imaginary square pixel works a little better. See function hfd()
-function bilinear_interpolation(const img :image_array; x,y:double; out colour: pixel): boolean; //calculate image pixel value on subpixel level
+function bilinear_interpolation(const img :Timage_array; x,y:double; out colour: pixel): boolean; //calculate image pixel value on subpixel level
 var
   X0, Y0, X1, Y1,width5,height5,col,nrcolours: Integer;
   Q11, Q12, Q21, Q22: Double;
@@ -104,7 +104,7 @@ begin
 end;
 
 
-function BicubicInterpolate(const Img: Image_Array; X, Y: Double; out colour: pixel): boolean;
+function BicubicInterpolate(const Img: Timage_array; X, Y: Double; out colour: pixel): boolean;
 var
   i, j, width5,height5,nrcolours,col: Integer;
   Row: array[0..3] of Double;

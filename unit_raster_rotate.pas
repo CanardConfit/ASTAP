@@ -15,7 +15,7 @@ interface
 uses
   Classes, SysUtils, Math,forms {application.processmessages},astap_main;
 
-procedure raster_rotate(angle, CX, CY: double; var img: image_array); {accurate raster rotation}
+procedure raster_rotate(angle, CX, CY: double; var img: Timage_array); {accurate raster rotation}
 
 
 implementation
@@ -1101,13 +1101,13 @@ begin
 end;
 
 
-procedure raster_rotate(angle, CX, CY: double; var img: image_array);
+procedure raster_rotate(angle, CX, CY: double; var img: Timage_array);
 var
   ug, R, red, green, blue, dx, dy                        : double;
   i, j, k, rw, rh, xd, yd, U90,progressC,progress_value  : integer;
   ep1, ep2, ep3, ep4: expoint;
   X: flux;
-  temp_img: image_array;
+  temp_img: Timage_array;
 begin
   if angle >= 360 then
     angle := angle - 360 * trunc(angle / 360); // Zero 360 °

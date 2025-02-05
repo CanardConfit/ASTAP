@@ -17,7 +17,7 @@ interface
 uses
   astap_main;
 
-procedure gaussian_blur2(var img :image_array; radius: double);{apply gaussian blur on array}
+procedure gaussian_blur2(var img :Timage_array; radius: double);{apply gaussian blur on array}
 
 
 implementation
@@ -80,7 +80,7 @@ begin
 end;
 
 
-procedure BlurH (scl, tcl :image_array; K: TKernel; h, w ,colors : integer);
+procedure BlurH (scl, tcl :Timage_array; K: TKernel; h, w ,colors : integer);
 var i,j,jx, x : integer;
     valr,valg,valb,weight  : single;
 begin
@@ -107,7 +107,7 @@ begin
      end;
 end;
 
-procedure BlurV (scl, tcl :image_array; K: TKernel; h, w,colors : integer);
+procedure BlurV (scl, tcl :Timage_array; K: TKernel; h, w,colors : integer);
 var i,j,iy, y :integer;
     valr,valg,valb,weight  : single;
 
@@ -135,10 +135,10 @@ begin
 end;
 
 
-procedure gaussian_blur2(var img :image_array; radius: double);{apply gaussian blur on array}
+procedure gaussian_blur2(var img :Timage_array; radius: double);{apply gaussian blur on array}
 var
   K: TKernel;
-  img_temp2 : image_array;
+  img_temp2 : Timage_array;
   w,h,colors  :integer;
 
 begin

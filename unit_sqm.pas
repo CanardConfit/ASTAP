@@ -66,7 +66,7 @@ var
 
   sqm_applyDF: boolean;
 
-function calculate_sqm(img: image_array; var headx : theader; memox : tstrings; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(img: Timage_array; var headx : theader; memox : tstrings; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 
 const
   pedestal_m: integer=0;
@@ -80,11 +80,11 @@ implementation
 var
   site_lat_radians,site_long_radians  : double;
 
-function calculate_sqm(img: image_array; var headx : theader; memox : tstrings; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(img: Timage_array; var headx : theader; memox : tstrings; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 var
   correction,az,airm                         : double;
   bayer,form_exist                           : boolean;
-  img2                                       : image_array;
+  img2                                       : Timage_array;
 begin
   form_exist:=form_sqm1<>nil;   {see form_sqm1.FormClose action to make this working reliable}
 

@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.2.04c';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.2.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -539,7 +539,7 @@ var
   mainwindow: Tmainwindow;
 
 type
-  image_array = array of array of array of Single;// note fasted processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
+  Timage_array = array of array of array of Single;// note fasted processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
   star_list   = array of array of double;
 
   Theader =record    {contains the most important header info}
@@ -601,7 +601,7 @@ type
      head_val: Theader;{most important header values}
      header  : string; {full header text}
      filen   : string; {filename}
-     img     : image_array;
+     img     : Timage_array;
    end;
 
   theauid = record
@@ -642,7 +642,7 @@ var
   vsp : array of theauid;//for comparison stars AUID
   vsx : array of thevar;//for variable stars AUID
   img_backup      : array of timgbackup;{dynamic so memory can be freed}
-  img_loaded,img_dark,img_flat :  image_array;
+  img_loaded,img_dark,img_flat :  Timage_array;
   head,    {for lights}
   head_ref, {for reference light in stacking}
   head_flat,
@@ -771,18 +771,18 @@ var {################# initialised variables #########################}
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
-function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
-procedure plot_fits(img: timage;center_image,show_header:boolean);
-procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
-procedure HFD(img: image_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
+procedure plot_fits(img: timage;center_image:boolean);
+procedure use_histogram(img: Timage_array; update_hist: boolean);{get histogram}
+procedure HFD(img: Timage_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
 procedure backup_img;
 procedure restore_img;
-function load_image(filename2: string; out img: image_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
+function load_image(filename2: string; out img: Timage_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
 
-procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
+procedure demosaic_bayer(var img: Timage_array); {convert OSC image to colour}
 
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
-function save_fits(img: image_array;memo:tstrings;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+function save_fits(img: Timage_array;memo:tstrings;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 procedure update_text(memo:tstrings;inpt,comment1:string);{update or insert text in header}
 procedure add_text(memo:tstrings;inpt,comment1:string);{add text to header memo}
 procedure update_longstr(memo:tstrings;inpt,thestr:string);{update or insert long str including single quotes}
@@ -805,7 +805,7 @@ function floattostr6(x:double):string;//always with dot decimal seperator
 function floattostr4(x:double):string;//always with dot decimal seperator
 function floattostr2(x:double):string;//always with dot decimal seperator.
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
-procedure get_hist(colour:integer;img :image_array);{get histogram of img_loaded}
+procedure get_hist(colour:integer;img :Timage_array);{get histogram of img_loaded}
 procedure save_settings2;
 procedure save_settings(lpath:string); //save settings at any path
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
@@ -815,8 +815,8 @@ procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
 procedure execute_unix(const execut:string; param: TStringList; show_output: boolean);{execute linux program and report output}
 procedure execute_unix2(s:string);
 {$endif}
-function mode(img :image_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
-function get_negative_noise_level(img :image_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
+function mode(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function get_negative_noise_level(img :Timage_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
 function prepare_ra6(rax:double; sep:string):string; {radialen to text  format 24h 00 00}
 function prepare_dec4(decx:double;sep:string):string; {radialen to text  format 90d 00 }
@@ -832,13 +832,13 @@ procedure new_to_old_WCS(var head:theader);{convert new style FITS to old style}
 procedure old_to_new_WCS(var head:theader);{ convert old WCS to new}
 procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
-function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: Theader; out img: image_array ): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
+function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: Theader; out img: Timage_array ): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
 
 function unpack_cfitsio(var filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img: image_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
-procedure get_background(colour: integer; img :image_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
+function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img: Timage_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
@@ -846,7 +846,7 @@ function extract_temperature_from_filename(filename8: string): integer; {try to 
 function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
-procedure measure_magnitudes(img : image_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
+procedure measure_magnitudes(img : Timage_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
@@ -860,9 +860,9 @@ function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
 procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
-procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
-procedure bin_X2X3X4(var img :image_array; var head : theader;memo:tstrings; binfactor:integer);{bin img 2x,3x or 4x}
-procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure demosaic_advanced(var img : Timage_array);{demosaic img_loaded}
+procedure bin_X2X3X4(var img :Timage_array; var head : theader;memo:tstrings; binfactor:integer);{bin img 2x,3x or 4x}
+procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : Timage_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 function fits_file_name(inp : string): boolean; {fits file name?}
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
@@ -877,26 +877,26 @@ procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name :string);{pl
 procedure reset_fits_global_variables(light :boolean; out head:theader ); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
-procedure convert_mono(var img: image_array; var head: Theader);
+procedure convert_mono(var img: Timage_array; var head: Theader);
 procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
-function save_tiff16(img: image_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
-function save_tiff16_secure(img : image_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
-function find_reference_star(img : image_array) : boolean;{for manual alignment}
+function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
+function save_tiff16_secure(img : Timage_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
+function find_reference_star(img : Timage_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 function noise_to_electrons(adu_e, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
-procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader; update:boolean);
-procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
-function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
+procedure calibrate_photometry(img : Timage_array; memo : tstrings; var head : Theader; update:boolean);
+procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : Timage_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
+function duplicate(img:Timage_array) :Timage_array;//fastest way to duplicate an image
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 procedure remove_photometric_calibration;//from header
 procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
 procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
 procedure variable_star_annotation(extract_visible: boolean {extract to variable_list});
-function annotate_unknown_stars(const memox:tstrings; img : image_array; headx : theader; out countN: integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
+function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx : theader; out countN: integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -1104,7 +1104,7 @@ end;{reset global variables}
 //end;
 
 
-function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo: tstrings;out head: Theader; out img_loaded2: image_array): boolean;{load a fits or Astro-TIFF file}
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo: tstrings;out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
 {if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
@@ -2277,7 +2277,7 @@ begin
 end;
 
 
-function duplicate(img:image_array) :image_array;//fastest way to duplicate an image
+function duplicate(img:Timage_array) :Timage_array;//fastest way to duplicate an image
 var
   c,w,h,k,i: integer;
 begin
@@ -2520,7 +2520,7 @@ begin
 end;
 
 
-function load_PPM_PGM_PFM(filen:string; out head :theader; out img_loaded2: image_array; memo :Tstrings) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
+function load_PPM_PGM_PFM(filen:string; out head :theader; out img_loaded2: Timage_array; memo :Tstrings) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
   TheFile  : tfilestream;
   i,j, reader_position  : integer;
@@ -2808,7 +2808,7 @@ begin
 end;
 
 
-function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: image_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: Timage_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
   jd2   : double;
@@ -3035,7 +3035,7 @@ begin
 end;
 
 
-procedure get_background(colour: integer; img :image_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
   value,sd, sd_old,factor,factor2 : double;
@@ -3481,7 +3481,7 @@ begin
 end;
 
 
-function mode(img :image_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function mode(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 var
    i,j,val,value_count,width3,height3  :integer;
    histogram : array of integer;
@@ -3536,7 +3536,7 @@ begin
 end;
 
 
-function get_negative_noise_level(img :image_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
+function get_negative_noise_level(img :Timage_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 var
    i,j,col,count_neg  :integer;
 begin
@@ -3608,7 +3608,7 @@ begin
     img_loaded:=duplicate(img_backup[index_backup].img);//duplicate image fast
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_fits(mainwindow.image1,resized,true);{restore image1}
+    plot_fits(mainwindow.image1,resized);{restore image1}
 
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
@@ -3787,7 +3787,7 @@ end;
 
 procedure Tmainwindow.image_cleanup1Click(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 end;
 
 
@@ -3798,9 +3798,9 @@ begin
 end;
 
 
-procedure bin_X2X3X4(var img :image_array; var head : theader;memo:tstrings; binfactor:integer);{bin img_loaded 2x or 3x}
+procedure bin_X2X3X4(var img :Timage_array; var head : theader;memo:tstrings; binfactor:integer);{bin img_loaded 2x or 3x}
   var fitsX,fitsY,k, w,h   : integer;
-      img_temp2 : image_array;
+      img_temp2 : Timage_array;
       fact      : string;
 begin
   binfactor:=min(4,binfactor);{max factor is 4}
@@ -3935,7 +3935,7 @@ begin
 end;
 
 
-function save_fits(img: image_array;memo:tstrings;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+function save_fits(img: Timage_array;memo:tstrings;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
   I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
@@ -4269,7 +4269,7 @@ end;
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
 var
   headX : theader;
-  img_temp: image_array;
+  img_temp: Timage_array;
 begin
   result:=false;
   if load_fits(filename2,true {light},true {load data},true {update memo for naxis1,...},0,memox,headX,img_temp)=false then exit;
@@ -4353,7 +4353,7 @@ begin
     if histo_update then {redraw histogram with new range}
        use_histogram(img_loaded,false {update}); {plot histogram, set sliders}
 
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end;
 end;
 
@@ -4369,7 +4369,7 @@ end;
 procedure Tmainwindow.localgaussian1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k : integer;
-   img_temp : image_array;
+   img_temp : Timage_array;
 begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
@@ -4404,7 +4404,7 @@ begin
     end;{k color}
 
     img_temp:=nil;{clean memory}
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
@@ -4467,7 +4467,7 @@ end;
 
 procedure Tmainwindow.clean_up1Click(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 end;
 
 
@@ -4504,7 +4504,7 @@ begin
         img_loaded[2,fitsY,fitsX]:=val;
       end;
     end;
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
@@ -5483,14 +5483,14 @@ end;
 procedure Tmainwindow.saturation_factor_plot1KeyUp(Sender: TObject;
   var Key: Word; Shift: TShiftState);
 begin
-  plot_fits(mainwindow.image1,false,true);{plot real}
+  plot_fits(mainwindow.image1,false);{plot real}
 end;
 
 
 procedure Tmainwindow.saturation_factor_plot1MouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  plot_fits(mainwindow.image1,false,true);{plot real}
+  plot_fits(mainwindow.image1,false);{plot real}
 end;
 
 
@@ -5511,7 +5511,7 @@ end;
 
 procedure Tmainwindow.remove_markers1Click(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 end;
 
 
@@ -6049,7 +6049,7 @@ begin
   begin
     minimum1.Position:=edit_value;
     mainwindow.range1.itemindex:=7; {manual}
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end;
 end;
 
@@ -6117,7 +6117,7 @@ end;
 
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 var
-  img_temp11 : image_array;
+  img_temp11 : Timage_array;
   FitsX, fitsY,w,h,xp2,yp2,pattern,pattern2  : integer;
   ratio                             : double;
   get_green                         : boolean;
@@ -6324,7 +6324,7 @@ begin
       begin
         if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-        plot_fits(mainwindow.image1,false {re_center},true);
+        plot_fits(mainwindow.image1,false {re_center});
       end;
     end;
   end;
@@ -6412,7 +6412,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
     Screen.Cursor:=crDefault;
   end {fits file}
   else
@@ -6728,11 +6728,11 @@ begin
 end;
 
 
-procedure demosaic_bilinear_interpolation(var img:image_array;pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_bilinear_interpolation(var img:Timage_array;pattern: integer);{make from sensor bayer pattern the three colors}
 var
     X,Y,offsetx, offsety: integer;
     red,green_odd,green_even,blue : boolean;
-    img_temp2 : image_array;
+    img_temp2 : Timage_array;
 begin
   case pattern  of
      0: begin offsetx:=0; offsety:=0; end;{'GRBG'}
@@ -6787,11 +6787,11 @@ begin
 end;
 
 
-procedure demosaic_x_trans(var img:image_array);{make from Fuji X-trans three colors}
+procedure demosaic_x_trans(var img:Timage_array);{make from Fuji X-trans three colors}
 var
     X,Y,x2,y2,xpos,ypos,xpos6,ypos6: integer;
     red,blue  : single;
-    img_temp2 : image_array;
+    img_temp2 : Timage_array;
 begin
   setlength(img_temp2,3,head.height,head.width);{set length of image array color}
 
@@ -6870,11 +6870,11 @@ begin
 end;
 
 
-procedure demosaic_astrosimple(var img:image_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
+procedure demosaic_astrosimple(var img:Timage_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
 var
     X,Y,offsetx, offsety: integer;
     red,green_odd,green_even,blue : boolean;
-    img_temp2 : image_array;
+    img_temp2 : Timage_array;
     value     : single;
 begin
   case pattern  of
@@ -6941,11 +6941,11 @@ begin
 end;
 
 {not used}
-procedure demosaic_astrosimplebayercombined(var img:image_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
+procedure demosaic_astrosimplebayercombined(var img:Timage_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
 var
     X,Y,offsetx, offsety: integer;
     red,green_odd,green_even,blue : boolean;
-    img_temp2 : image_array;
+    img_temp2 : Timage_array;
     value     : single;
 begin
   case pattern  of
@@ -7022,11 +7022,11 @@ begin
 end;
 
 
-procedure demosaic_astroM_bilinear_interpolation(var img:image_array;pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_astroM_bilinear_interpolation(var img:Timage_array;pattern: integer);{make from sensor bayer pattern the three colors}
 var
     X,Y,offsetx, offsety, count: integer;
     red,green_odd,green_even,blue : boolean;
-    img_temp2 : image_array;
+    img_temp2 : Timage_array;
     a1,a2,a3,a4,a5,a6,a7,a8, average1,average2,average3,luminance,signal,signal2,bg : single;
 
 begin
@@ -7203,11 +7203,11 @@ begin
 end;
 
 
-procedure demosaic_astroC_bilinear_interpolation(var img:image_array;saturation {saturation point}, pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_astroC_bilinear_interpolation(var img:Timage_array;saturation {saturation point}, pattern: integer);{make from sensor bayer pattern the three colors}
 var
     X,Y,offsetx, offsety, counter,fitsX,fitsY,x2,y2,sat_counter: integer;
     red,green_odd,green_even,blue : boolean;
-    img_temp2 : image_array;
+    img_temp2 : Timage_array;
     a1,a2,a3,a4,a5,a6,a7,a8, average1,average2,average3,luminance, r,g,b,colred,colgreen,colblue,rgb,lowest: single;
     bg, sqr_dist   :  double;
 const
@@ -7447,10 +7447,10 @@ begin
 end;
 
 
-procedure demosaic_superpixel(var img:image_array; pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_superpixel(var img:Timage_array; pattern: integer);{make from sensor bayer pattern the three colors}
 var
     x,y,x2,y2,w,h: integer;
-    img_temp2 : image_array;
+    img_temp2 : Timage_array;
 begin
   w:=head.width div 2;
   h:=head.height div 2;
@@ -7532,7 +7532,7 @@ begin
 end;
 
 
-procedure preserve_colour_saturated_bayer(img: image_array);{for bayer matrix}
+procedure preserve_colour_saturated_bayer(img: Timage_array);{for bayer matrix}
 var
     fitsX,fitsY,w,h : integer;
 begin
@@ -7616,7 +7616,7 @@ begin
 end;
 
 
-procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
+procedure demosaic_bayer(var img: Timage_array); {convert OSC image to colour}
 var
    pattern : integer;
 begin
@@ -7647,7 +7647,7 @@ begin
 end;
 
 
-procedure demosaic_advanced(var img : image_array);{demosaic img}
+procedure demosaic_advanced(var img : Timage_array);{demosaic img}
 begin
   demosaic_bayer(img);
   memo2_message('De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
@@ -7741,7 +7741,7 @@ begin
   show_marker_shape(mainwindow.shape_manual_alignment1, 1 {circle, assume a good lock},20,20,10 {minimum size},X,Y);
 end;
 
-procedure plot_fits(img:timage; center_image,show_header:boolean);
+procedure plot_fits(img:timage; center_image: boolean);
 type
   PByteArray2 = ^TByteArray2;
   TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
@@ -7934,7 +7934,7 @@ begin
 end;
 
 
-procedure get_hist(colour:integer; img :image_array);
+procedure get_hist(colour:integer; img :Timage_array);
 var
      i,j,col,his_total,count, width5, height5,offsetW,offsetH : integer;
      total_value                                : double;
@@ -7975,7 +7975,7 @@ begin
 
 end;
 
-procedure use_histogram(img: image_array; update_hist: boolean);{calculate histogram}
+procedure use_histogram(img: Timage_array; update_hist: boolean);{calculate histogram}
 var
   i, minm,maxm,max_range, countR,countG,countB,stopXpos,Xpos,max_color,histo_peakR,number_colors, histo_peak_position,h,w,col : integer;
   above, above_R          : double;
@@ -8113,7 +8113,7 @@ begin
 end;
 
 
-function save_tiff16_secure(img : image_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
+function save_tiff16_secure(img : Timage_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
 var
   filename_tmp : string;
 begin
@@ -9304,7 +9304,7 @@ procedure Tmainwindow.dust_spot_removal1Click(Sender: TObject);
 var
   fitsX,fitsY,dum,k,w,h,greylevels : integer;
   center_X, center_Y, line_bottom,line_top,expected_value, mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,a,b         : double;
-  img_delta : image_array;
+  img_delta : Timage_array;
 
 begin
   if head.naxis=0 then exit;
@@ -9363,7 +9363,7 @@ begin
       end;{fits loop}
     end;
 
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
     Screen.Cursor:=crDefault;
   end {usefull area}
   else
@@ -9378,7 +9378,7 @@ var
   dobackup : boolean;
   tilt     : double;
   headx : theader;
-  img_temp: image_array;
+  img_temp: Timage_array;
 begin
   OpenDialog1.Title:='Select multiple  files to measure and store tilt in header using keyword TILT';
   OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -9722,7 +9722,7 @@ begin
 end;
 {$endif}
 
-function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: Theader; out img: image_array ): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
+function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: Theader; out img: Timage_array ): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
 var
   filename4 :string;
   JD2                               : double;
@@ -9956,7 +9956,7 @@ end;
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 var
   ext : string;
-  img_temp : image_array;
+  img_temp : Timage_array;
   headX : theader;
 begin
   ext:=uppercase(ExtractFileExt(filen));
@@ -10045,7 +10045,7 @@ begin
 end;
 
 
-function load_image(filename2: string; out img: image_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
+function load_image(filename2: string; out img: Timage_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
 var
    ext1,filename_org   : string;
 begin
@@ -10101,7 +10101,7 @@ begin
     if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img);{demosaic and set levels}
     use_histogram(img,true {update}); {plot histogram, set sliders}
     image_move_to_center:=re_center;
-    plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+    plot_fits(mainwindow.image1,re_center);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
     update_equalise_background_step(1);{update equalise background menu}
 
@@ -10127,10 +10127,10 @@ begin
 end;
 
 
-procedure convert_mono(var img: image_array; var head: Theader);
+procedure convert_mono(var img: Timage_array; var head: Theader);
 var
    fitsX,fitsY: integer;
-   img_temp : image_array;
+   img_temp : Timage_array;
 begin
   if head.naxis3<3 then exit;{prevent run time error mono images}
   memo2_message('Converting to mono.');
@@ -10160,7 +10160,7 @@ begin
 
   {colours are now mixed, redraw histogram}
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1,false,true);{plot}
+  plot_fits(mainwindow.image1,false);{plot}
   Screen.cursor:=crDefault;
 end;
 
@@ -10261,7 +10261,7 @@ begin
   if head.naxis=0 then exit;
   if grid_ra_dec1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end
   else
   plot_grid(true);
@@ -10296,7 +10296,7 @@ begin
     end;
 
     remove_photometric_calibration;//from header
-    plot_fits(mainwindow.image1,true,true);{plot real}
+    plot_fits(mainwindow.image1,true);{plot real}
     mainwindow.caption:=Filename2;
     Screen.Cursor:=crDefault;
   end;
@@ -10452,8 +10452,8 @@ end;
 
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access variables
 var
-  s,dummy,url   : string;
-  count,i,j,k,errorRa,errorDec,err                : integer;
+  s,dummy,url                                : string;
+  count,i,j,k,errorRa,errorDec,err           : integer;
   radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period : double;
   skip,period_filter  : boolean;
 begin
@@ -10679,7 +10679,7 @@ begin
   if head.naxis=0 then exit;
   if positionanddate1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end
   else
   plot_text;
@@ -10741,7 +10741,7 @@ procedure Tmainwindow.histogram_range1MouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   use_histogram(img_loaded,false {update});{get histogram}
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 end;
 
 procedure Tmainwindow.histogram_values_to_clipboard1Click(Sender: TObject); {copy histogram values to clipboard}
@@ -11095,7 +11095,7 @@ begin
     image1.refresh;{important, show update}
   end
   else
-    plot_fits(mainwindow.image1,false,true); {clear indicator}
+    plot_fits(mainwindow.image1,false); {clear indicator}
 end;
 
 
@@ -11117,7 +11117,7 @@ begin
   if mainwindow.stretch1.enabled then {file loaded}
   begin
     use_histogram(img_loaded,false {update});{get histogram}
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end;
 end;
 
@@ -11181,7 +11181,7 @@ begin
       end;
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_fits(mainwindow.image1,false {re_center},true);
+    plot_fits(mainwindow.image1,false {re_center});
 
     Screen.Cursor:=crDefault;
   end {fits file}
@@ -11343,11 +11343,11 @@ begin
 end;
 
 
-procedure measure_magnitudes(img : image_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
+procedure measure_magnitudes(img : Timage_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 var
   fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min,adu_e  : double;
-  img_sa : image_array;
+  img_sa : Timage_array;
   saturation_level : single;
 
 begin
@@ -11437,7 +11437,7 @@ begin
 end;
 
 
-procedure calibrate_photometry(img : image_array; memo : tstrings; var head : Theader; update: boolean);
+procedure calibrate_photometry(img : Timage_array; memo : tstrings; var head : Theader; update: boolean);
 var
   apert,annul         : double;
   hfd_counter         : integer;
@@ -11474,13 +11474,13 @@ begin
 end;
 
 
-function annotate_unknown_stars(const memox:tstrings; img : image_array; headx : theader; out countN : integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
+function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx : theader; out countN : integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 var
-  sizebox,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,search_radius,ratio_counter     : integer;
+  sizebox,radius, i,j, fitsX,fitsY,n,m,xci,yci,search_radius,ratio_counter     : integer;
   saturated,galaxy                                                             : boolean;
   hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit_database,  sqr_radius,flux2,ratio,ratio_sum,hfd2 : double;
   messg : string;
-  img_temp3,img_sa :image_array;
+  img_temp3,img_sa :Timage_array;
   data_max: single;
 
 
@@ -11871,7 +11871,7 @@ begin
   stackmenu1.annotations_visible2.checked:=annotations_visible1.checked; {follow in stack menu}
   if head.naxis=0 then exit;
   if annotations_visible1.checked=false then  {clear screen}
-    plot_fits(mainwindow.image1,false,true)
+    plot_fits(mainwindow.image1,false)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
 
@@ -12064,7 +12064,7 @@ begin
   if head.naxis=0 then exit;
   if Constellations1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end
   else
   plot_constellations;
@@ -12075,7 +12075,7 @@ procedure Tmainwindow.freetext1Click(Sender: TObject);
 begin
   if freetext1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end
   else
   begin
@@ -12089,7 +12089,7 @@ begin
   if head.naxis=0 then exit;
   if grid_az_alt1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end
   else
   plot_grid(false);//az,alt grid
@@ -12241,7 +12241,7 @@ begin
 
       {plot result}
       use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-      plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
+      plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
 
     finally
        TmpBmp.Free;
@@ -12268,7 +12268,7 @@ begin
          demosaic_advanced(img_loaded) {demosaic and set levels}
       else
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-      plot_fits(mainwindow.image1,false {re_center},true);
+      plot_fits(mainwindow.image1,false {re_center});
     end;
   end;
 end;
@@ -12807,7 +12807,7 @@ begin
 
   annotation_to_array(value, true{transparant},round((cwhite+head.backgr)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 end;
 
 
@@ -13760,7 +13760,7 @@ begin
             begin
               use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
               histogram_done:=true;
-              plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
+              plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
               save_annotated_jpg(filename_output);{save viewer as annotated jpg}
             end;
             if hasoption('tofits') then {still to be tested}
@@ -13883,7 +13883,7 @@ var
   startTick  : qword;{for timing/speed purposes}
   az         : double;
   headx : theader;
-  img_temp: image_array;
+  img_temp: Timage_array;
 
 begin
   OpenDialog1.Title :='Select multiple files to add astrometric solution';
@@ -14097,7 +14097,7 @@ begin
   remove_key(mainwindow.memo1.lines,'XBAYROFF',false{all});{remove key word in header}
   remove_key(mainwindow.memo1.lines,'YBAYROFF',false{all});{remove key word in header}
 
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
   stackmenu1.test_pattern1.Enabled:=false;{do no longer allow debayer}
 
   update_header_for_colour; {update naxis and naxis3 keywords}
@@ -14142,7 +14142,7 @@ end;
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
 var fitsX,fitsY,col,dum, formalism      : integer;
     fxc,fyc, ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
-    img_temp : image_array;
+    img_temp : Timage_array;
 begin
   if ((head.naxis<>0) and (abs(stopX-startX)>3)and (abs(stopY-starty)>3)) then
   begin
@@ -14234,7 +14234,7 @@ begin
    update_text(mainwindow.memo1.lines,'COMMENT C','  Cropped image');
 
 
-   plot_fits(mainwindow.image1,true,true);
+   plot_fits(mainwindow.image1,true);
    image_move_to_center:=true;
 
    Screen.Cursor:=crDefault;
@@ -14373,7 +14373,7 @@ begin
 end;
 
 
-procedure find_star_center(img: image_array;box, x1,y1: integer; out xc,yc:double);{}
+procedure find_star_center(img: Timage_array;box, x1,y1: integer; out xc,yc:double);{}
 var
   i,j,k,w,h  : integer;
   value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
@@ -14550,7 +14550,7 @@ begin
     mainwindow.Memo1.Lines.EndUpdate;
 
     update_menu_related_to_solver(true); {update menu section related to solver succesfull}
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
   end;
 end;
 
@@ -14576,7 +14576,7 @@ begin
 
   head.datamax_org:=max_range;
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
@@ -14686,7 +14686,7 @@ begin
 
   rotate_arbitrary(angle,flipped_view,flipped_image);
 
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 
   progress_indicator(-100,'');{back to normal}
   Screen.Cursor:=crDefault;  { Always restore to normal }
@@ -15155,11 +15155,11 @@ begin
     image1.refresh;{important, show update}
   end
   else
-    plot_fits(mainwindow.image1,false,true); {clear indiicator}
+    plot_fits(mainwindow.image1,false); {clear indicator}
 end;
 
 
-function find_reference_star(img : image_array) : boolean;{for manual alignment}
+function find_reference_star(img : Timage_array) : boolean;{for manual alignment}
 var
   xc,yc,hfd2,fwhm_star2,snr,flux : double;
 begin
@@ -15320,7 +15320,7 @@ begin
             img_loaded[k ,max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2)))),max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))) ]:=img_backup[index_backup].img[k,fy,fx];{use backup for case overlap occurs}
         end;
       end;{k color}
-      plot_fits(mainwindow.image1,false,true);
+      plot_fits(mainwindow.image1,false);
       if ((ssCtrl in shift) or (ssAlt in shift) or (ssShift in shift))=false then
       begin
         copy_paste:=false;
@@ -15335,7 +15335,7 @@ end;
 {calculates star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurement. All x,y coordinates in array[0..] positions}
 {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
-procedure HFD(img: image_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
+procedure HFD(img: Timage_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
 const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
   samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
@@ -15622,7 +15622,7 @@ end;
 
 
 
-procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : image_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels percentage and RMS value}
+procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : Timage_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels percentage and RMS value}
 var i,j,counter,counter2,w,h : integer;
     value                    : double;
 
@@ -15661,7 +15661,7 @@ begin
 end;
 
 
-procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; out sd,mean : double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : Timage_array; out sd,mean : double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 var i,j,counter,w,h                 : integer;
     value, sd_old,meanx             : double;
 
@@ -16122,7 +16122,7 @@ begin
 end;
 
 
-function stretch_img(img: image_array; head : theader):image_array;{stretch image, three colour or mono}
+function stretch_img(img: Timage_array; head : theader):Timage_array;{stretch image, three colour or mono}
 var
  colrr,colgg,colbb,col_r,col_g,col_b, largest,luminance,luminance_stretched,factor,sat_factor,h,s,v : single;
  width5,height5,colours5,fitsX,fitsY :integer;
@@ -16211,7 +16211,7 @@ begin
 end;
 
 
-function save_PPM_PGM_PFM(img: image_array; colourdepth:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) or 32 bit PFM file}
+function save_PPM_PGM_PFM(img: Timage_array; colourdepth:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) or 32 bit PFM file}
 var
   ppmbuffer32: array[0..trunc(bufwide/4)] of Dword; {bufwide is set in astap_main and is 120000}
   ppmbuffer: array[0..bufwide] of byte absolute ppmbuffer32;
@@ -16335,7 +16335,7 @@ begin
   result:=true;
 end;
 
-function save_PNG16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNG file }
+function save_PNG16(img: Timage_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNG file }
 var
   i, j, k,m,colours5,width5,height5      :integer;
   image: TFPCustomImage;
@@ -16382,7 +16382,7 @@ begin
   writer.Free;
 end;
 
-//function save_PNM16(img: image_array; colors,wide2,head.height:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNM file }
+//function save_PNM16(img: Timage_array; colors,wide2,head.height:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNM file }
 //var
 //  i, j, k,m      :integer;
 //  image: TFPCustomImage;
@@ -16421,7 +16421,7 @@ end;
 //end;
 
 
-function save_tiff16(img: image_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
+function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 var
   i, j, k,m,nrcolours,w,h      :integer;
   image: TFPCustomImage;
@@ -16504,7 +16504,7 @@ var
   fileDate    : Integer;
   err,written   : boolean;
   dobackup : boolean;
-  img_temp :image_array;
+  img_temp :Timage_array;
   headx : theader;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert to (Astro) TIFF. Date will preserved.';
@@ -16574,7 +16574,7 @@ procedure Tmainwindow.convert_to_ppm1Click(Sender: TObject);
 var
   I: integer;
   err   : boolean;
-  img_temp: image_array;
+  img_temp: Timage_array;
   headx : theader;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
@@ -16676,7 +16676,7 @@ procedure Tmainwindow.flip_H1Click(Sender: TObject);
 var
   col,fitsX,fitsY : integer;
   vertical        : boolean;
-  img_temp        : image_array;
+  img_temp        : Timage_array;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -16732,7 +16732,7 @@ begin
 
     add_text(mainwindow.memo1.lines,'HISTORY   ','Flipped.                                                           ');
   end;
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
@@ -16854,7 +16854,7 @@ begin
     backup_img;
     local_color_smooth(startX,stopX,startY,stopY);
 
-    plot_fits(mainwindow.image1,false,true);
+    plot_fits(mainwindow.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
@@ -16874,7 +16874,7 @@ var
   succ,err : boolean;
   thepath:string;
   headx : theader;
-  img_temp : image_array;
+  img_temp : Timage_array;
 begin
   OpenDialog1.Title := 'Select multiple files to move';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -16954,7 +16954,7 @@ var
   I    : integer;
   err : boolean;
   headx : theader;
-  img_temp : image_array;
+  img_temp : Timage_array;
 begin
   OpenDialog1.Title := 'Select multiple FITS files to set "modified date" to DATE-OBS';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -17013,7 +17013,7 @@ end;
 procedure Tmainwindow.Export_image1Click(Sender: TObject);
 var
   filename3:ansistring;
-  img_temp : image_array;
+  img_temp : Timage_array;
 begin
   filename3:=ChangeFileExt(FileName2,'');
   savedialog1.filename:=filename3;
@@ -17230,7 +17230,7 @@ begin
       if scrollcode=scEndScroll then
      {$ENDIF}
     begin
-      plot_fits(mainwindow.image1,false,true);
+      plot_fits(mainwindow.image1,false);
       shape_histogram1.visible:=false;
     end
     else

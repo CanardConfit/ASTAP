@@ -102,15 +102,15 @@ interface
 uses   Classes,SysUtils,controls,forms,math,stdctrls,
        unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field, unit_calc_trans_cubic;
 
-function solve_image(img :image_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
-//procedure bin_and_find_stars(img :image_array;binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
-procedure bin_and_find_stars(img :image_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+function solve_image(img :Timage_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
+//procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 
 function report_binning(height :double) : integer;{select the binning}
 function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
 procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
 function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer;out starlist : star_list; out nrstars:integer): boolean;{read star from star database}
-procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : image_array; out img2: image_array); // Make mono, bin and crop
+procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : Timage_array; out img2: Timage_array); // Make mono, bin and crop
 
 
 var
@@ -338,7 +338,7 @@ begin
 end;
 
 
-procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : image_array; out img2: image_array);// Make mono, bin and crop
+procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : Timage_array; out img2: Timage_array);// Make mono, bin and crop
 var
   fitsX,fitsY,k, w,h, shiftX,shiftY,nrcolors,width5,height5,i,j,x,y: integer;
   val       : single;
@@ -449,10 +449,10 @@ begin
 end;
 
 
-procedure bin_and_find_stars(img :image_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 var
   width5,height5,nrstars,i : integer;
-  img_binned : image_array;
+  img_binned : Timage_array;
 
 begin
   short_warning:='';{clear string}
@@ -756,7 +756,7 @@ begin
 end;
 
 
-function solve_image(img :image_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
+function solve_image(img :Timage_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;

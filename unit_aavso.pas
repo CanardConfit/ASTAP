@@ -11,7 +11,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
-  clipbrd, ExtCtrls, Menus, Buttons, FileCtrl, ComboEx, CheckLst,strutils,
+  clipbrd, ExtCtrls, Menus, Buttons, CheckLst,strutils,
   astap_main;
 
 type
@@ -35,7 +35,7 @@ type
     Label11: TLabel;
     measure_all_mode1: TLabel;
     Label9: TLabel;
-    abrv_variable1: TComboBox;
+    abbrv_variable1: TComboBox;
     name_variable2: TEdit;
     magnitude_slope1: TEdit;
     report_error1: TLabel;
@@ -64,8 +64,8 @@ type
       X, Y: Integer);
     procedure MenuItem1Click(Sender: TObject);
     procedure abrv_check1Change(Sender: TObject);
-    procedure abrv_variable1Change(Sender: TObject);
-    procedure abrv_variable1DropDown(Sender: TObject);
+    procedure abbrv_variable1Change(Sender: TObject);
+    procedure abbrv_variable1DropDown(Sender: TObject);
     procedure report_to_clipboard1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormShow(Sender: TObject);
@@ -148,8 +148,8 @@ end;
 
 procedure retrieve_vsp_stars(variablestar: string);//very simple database system
 var
-  i,j,k,L,m,count : integer;
-  comp_stars,check_star,comp_star,all_comp : string ;
+  i,j,k,L,m                    : integer;
+  check_star,comp_star,all_comp : string ;
 begin
   //Format:   'SS Cyg:000-BCP-306:000-BCP-142 000-BCP-174 000-BCP-183 000-BCP-261 ;SS And:000-BCP-206:000-BCP-242 000-BCP-274 000-BCP-283 000-BCP-161 ;......'
   //Var1:Check: Comp1 Comp2 Comp3 ;Var2:Check: Comp1 Comp2 ;....
@@ -266,7 +266,7 @@ begin
   with form_aavso1 do
   begin
     obscode:=obscode1.text;
-    abbrev_var:=remove_sigma_end(abrv_variable1.text);
+    abbrev_var:=remove_sigma_end(abbrv_variable1.text);
     abbrev_check:=abrv_check1.text;
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
@@ -423,17 +423,15 @@ end;
 
 function find_correct_var_column : integer;
 var
-  i        : integer;
-  name_var,s : string;
+  i          : integer;
+  name_var   : string;
 begin
   result:=-99;//assume failure
-  name_var:=remove_sigma_end(form_aavso1.abrv_variable1.text);
+  name_var:=remove_sigma_end(form_aavso1.abbrv_variable1.text);
   if name_var='' then  exit;
 
   for i:=p_nr_norm to p_nr-1 do
   begin
-    s:=stackmenu1.listview7.Column[i+1].Caption;
-
     if ((frac((i-p_nr_norm)/3)=0) and (pos(name_var,stackmenu1.listview7.Column[i+1].Caption)>0)) then
     begin
       result:=i;
@@ -445,10 +443,10 @@ end;
 
 function process_comp_stars(c : integer; out ratio_average: double; out standard_deviation, documented_comp_magn: double; out  warning : string): integer;// Get flux ratio for ensemble. Documented_comp_magn is only used for single comp star.
 var
-   i,invalid_comp,invalid,count               : integer;
-   abbrv_c,comp_magn_str,abbrv_comp_clean,flux_str: string;
+   i,invalid_comp,invalid,count                   : integer;
+   abbrv_c,comp_magn_str,flux_str                 : string;
    comp_magn, flux_documented,flux,sum_all_fluxes : double;
-   ratios,fluxes     : array of double;
+   ratios,fluxes                                  : array of double;
 begin
   warning:='';
   sum_all_fluxes:=0;
@@ -461,7 +459,6 @@ begin
   for i:=0 to high(column_comps) do
   begin
     abbrv_c:=stackmenu1.listview7.Column[column_comps[i]+1].Caption ;
-    abbrv_comp_clean:=clean_abbreviation(abbrv_c);
     comp_magn_str:=stackmenu1.listview7.Items.item[c].subitems.Strings[column_comps[i]];//measured comp magnitude
     comp_magn:=strtofloat3(comp_magn_str,invalid_comp);//measured comp magnitude
     if invalid_comp=0 then //valid conversion string to float
@@ -518,8 +515,8 @@ end;
 
 procedure report_sigma_and_mean_of_check ;
 var
-  c, invalid_comp,count, count2,invalid_check         : integer;
-  check_magnitudes                                  : array of double;
+  c, invalid_comp,count, count2,invalid_check                     : integer;
+  check_magnitudes                                                : array of double;
   comp_magn,ratio,check_flux, sd, mean,sd_comp, mean_sd_comp      : double;
   warning,check_flux_str                                          : string;
 
@@ -591,7 +588,7 @@ var
     err,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,var_flux_str,check_flux_str,warning: string;
     stdev_valid : boolean;
-    snr_value,err_by_snr,comp_magn, var_magn,check_magn, magn_correction,var_flux,ratio,check_flux,sd_comp : double;
+    snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp : double;
     PNG: TPortableNetworkGraphic;{FPC}
 
 begin
@@ -617,11 +614,11 @@ begin
 
   if ((length(abbrv_var_clean)<1) or (column_var<0)) then
   begin
-    abrv_variable1.color:=clred;
+    abbrv_variable1.color:=clred;
     exit;
   end
   else
-    abrv_variable1.color:=cldefault;
+    abbrv_variable1.color:=cldefault;
 
   if ((length(abbrev_check)<1) or (column_check<0)) then
   begin
@@ -827,7 +824,7 @@ begin
     Clipboard.AsText:=aavso_report
   else
   begin
-    savedialog1.filename:=stringreplace(abrv_variable1.text,'?','',[rfReplaceAll]) +'_'+date_observation+'_report.txt';
+    savedialog1.filename:=stringreplace(abbrv_variable1.text,'?','',[rfReplaceAll]) +'_'+date_observation+'_report.txt';
     savedialog1.initialdir:=ExtractFilePath(filename2);
     savedialog1.Filter := '(*.txt)|*.txt';
     if savedialog1.execute then
@@ -887,8 +884,8 @@ end;
 
 function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable
 var
-   count, c,count_checked: integer;
-   magn,sd, mean : double;
+   count, c,count_checked  : integer;
+   magn, mean              : double;
    dum: string;
    listMagnitudes : array of double;
 begin
@@ -962,7 +959,7 @@ begin
         end
         else
         begin
-          abrv_variable1.text:=abrv;
+          abbrv_variable1.text:=abrv;
           varfound:=true;
         end;
         if ((checkfound) and (varfound)) then break;
@@ -979,7 +976,7 @@ begin
           abrv:=stackmenu1.listview7.Column[i+1].Caption;
           if  Comparetext(object_name2,copy(abrv,1,length(object_name2)))=0 then
           begin
-           abrv_variable1.text:=abrv;
+           abbrv_variable1.text:=abrv;
            break;
           end;
         end;
@@ -1024,25 +1021,25 @@ begin
 end;
 
 
-procedure Tform_aavso1.abrv_variable1Change(Sender: TObject);
+procedure Tform_aavso1.abbrv_variable1Change(Sender: TObject);
 begin
    if stackmenu1.measuring_method1.itemindex>0  then
-     retrieve_vsp_stars(clean_abbreviation(abrv_variable1.text));
+     retrieve_vsp_stars(clean_abbreviation(abbrv_variable1.text));
    plot_graph;
 end;
 
 
-procedure Tform_aavso1.abrv_variable1DropDown(Sender: TObject);
+procedure Tform_aavso1.abbrv_variable1DropDown(Sender: TObject);
 var
-  i,j,count          : integer;
-  abrv,sdstr         : string;
+  i,count            : integer;
+  abrv               : string;
   starinfo : array of Tstarinfo;
 
 begin
 //  for filtering dropdown set
 //    AutoComplete := true;
 //    AutoDropDown := true;
-  abrv_variable1.items.clear;
+  abbrv_variable1.items.clear;
 
   setlength(starinfo,p_nr-p_nr_norm);
   count:=0;
@@ -1136,11 +1133,11 @@ begin
   measure_all_mode1.visible:=p_nr>p_nr_norm;
 
   {$IFDEF linux}
-  abrv_variable1.autoDropDown:=false;//then only autocomplete works with more then one character  https://forum.lazarus.freepascal.org/index.php?topic=68250.new;topicseen#new
+  abbrv_variable1.autoDropDown:=false;//then only autocomplete works with more then one character  https://forum.lazarus.freepascal.org/index.php?topic=68250.new;topicseen#new
   abrv_check1.autoDropDown:=false;//then only autocomplete works with more then one character
 
   {$ELSE}
-  abrv_variable1.autoDropDown:=true;
+  abbrv_variable1.autoDropDown:=true;
   abrv_check1.autoDropDown:=true;
   {$ENDIF}
 end;
@@ -1342,7 +1339,7 @@ begin
   if count>0 then
   begin
     calc_sd_and_mean(listcheck, count{counter},{var}photometry_stdev, mean);// calculate sd and mean of an array of doubles}
-    form_aavso1.sigma_check1.caption:='Check σ='+floattostrF(photometry_stdev,ffFixed,0,3)+', mean='+floattostrF(mean,ffFixed,0,3)+' using Gaia ensemble.';//report sigma check
+    form_aavso1.sigma_check1.caption:='Check σ='+floattostrF(photometry_stdev,ffFixed,0,3)+', mean='+floattostrF(mean,ffFixed,0,3)+' using database ensemble.';//report sigma check
   end
   else
     form_aavso1.sigma_check1.caption:='No check star selected.';
@@ -1393,7 +1390,7 @@ begin
     bmp.canvas.textout(w-4*bspace,h-(bspace div 2),date_format{JD (mid) or HJD});
     bmp.canvas.font.style:=[];
 
-    text1:='Var ('+form_aavso1.abrv_variable1.text+')';
+    text1:='Var ('+form_aavso1.abbrv_variable1.text+')';
     textp1:=10+wtext;
     bmp.canvas.textout(textp1,len*3,text1);
 
@@ -1489,9 +1486,6 @@ end;
 
 
 procedure Tform_aavso1.FormShow(Sender: TObject);
-var
-  dum,abrv : string;
-  i : integer;
 begin
   if p_nr=p_nr_norm then
   begin
@@ -1523,16 +1517,18 @@ begin
   plot_graph;
 end;
 
+
 procedure Tform_aavso1.sort_alphabetically1Change(Sender: TObject);
 begin
-  abrv_variable1.sorted:=sort_alphabetically1.checked;//can not do this during dropdown. This gives an error
+  abbrv_variable1.sorted:=sort_alphabetically1.checked;//can not do this during dropdown. This gives an error
   abrv_comp1.sorted:=sort_alphabetically1.checked;
   abrv_check1.sorted:=sort_alphabetically1.checked;
 end;
 
+
 procedure Tform_aavso1.suggest_check1Change(Sender: TObject);
 begin
-  form_aavso1.abrv_variable1Change(nil);
+  form_aavso1.abbrv_variable1Change(nil);
 end;
 
 end.

@@ -1095,24 +1095,24 @@ procedure listview_add_xy(c:integer;fitsX, fitsY: double);{add x,y position to l
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 procedure update_tab_alignment;{update stackmenu1 menus}
-procedure box_blur(colors, range : integer; var img: image_array);{blur by combining values of pixels, ignore zeros}
-procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
-procedure black_spot_filter(var img: image_array); {remove black spots with value zero}{execution time about 0.4 sec}
+procedure box_blur(colors, range : integer; var img: Timage_array);{blur by combining values of pixels, ignore zeros}
+procedure check_pattern_filter(var img: Timage_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
+procedure black_spot_filter(var img: Timage_array); {remove black spots with value zero}{execution time about 0.4 sec}
 
-function update_solution_and_save(img: image_array;var hd: theader; memo:tstrings): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
-function apply_dark_and_flat(var img: image_array; var hd : theader): boolean;{apply dark and flat if required, renew if different head.exposure or ccd temp}
+function update_solution_and_save(img: Timage_array;var hd: theader; memo:tstrings): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
+function apply_dark_and_flat(var img: Timage_array; var hd : theader): boolean;{apply dark and flat if required, renew if different head.exposure or ccd temp}
 
-procedure smart_colour_smooth(var img: image_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
-procedure green_purple_filter(var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
+procedure smart_colour_smooth(var img: Timage_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure green_purple_filter(var img: Timage_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
 procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio: double); {resize img_loaded in free ratio}
-function median_background(var img: image_array; color, sizeX, sizeY, x, y: integer): double; {find median value of an area at position x,y with sizeX,sizeY}
-procedure analyse_image(img: image_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer;out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
+function median_background(var img: Timage_array; color, sizeX, sizeY, x, y: integer): double; {find median value of an area at position x,y with sizeX,sizeY}
+procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer;out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
 
 
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
-procedure apply_most_common(sourc, dest: image_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
+procedure apply_most_common(sourc, dest: Timage_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
 
 procedure report_results(object_to_process, stack_info: string; object_counter, color_icon,stack_icon: integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
@@ -1646,13 +1646,13 @@ begin
   end;{with stackmenu1}
 end;
 
-procedure analyse_image(img: image_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer; out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
+procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer; out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
 var
   width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, m,
   xci, yci, sqr_radius, formalism, star_counter: integer;
   hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background,ra,decl: double;
   hfd_list:  array of double;
-  img_sa  : image_array;
+  img_sa  : Timage_array;
   startext: string;
 var
   f: textfile;
@@ -1786,14 +1786,14 @@ end;
 
 
 
-procedure analyse_image_extended(img: image_array; head: Theader; out nr_stars, hfd_median, median_outer_ring, median_11, median_21, median_31,  median_12, median_22, median_32, median_13, median_23, median_33: double);{analyse several areas}
+procedure analyse_image_extended(img: Timage_array; head: Theader; out nr_stars, hfd_median, median_outer_ring, median_11, median_21, median_31,  median_12, median_22, median_32, median_13, median_23, median_33: double);{analyse several areas}
 var
   fitsX, fitsY, radius, i, j,
   retries, max_stars, n, m, xci, yci, sqr_radius, nhfd, nhfd_outer_ring,
   nhfd_11, nhfd_21, nhfd_31, nhfd_12, nhfd_22, nhfd_32,
   nhfd_13, nhfd_23, nhfd_33: integer;
   hfd1, star_fwhm, snr, flux, xc, yc, detection_level: double;
-  img_sa: image_array;
+  img_sa: Timage_array;
   hfdlist, hfdlist_11, hfdlist_21, hfdlist_31, hfdlist_12, hfdlist_22, hfdlist_32,
   hfdlist_13, hfdlist_23, hfdlist_33, hfdlist_outer_ring: array of double;
   starlistXY: array of array of integer;
@@ -2143,7 +2143,7 @@ var
   alt, az                                   : double;
   red, green, blue, planetary               : boolean;
   key, filename1, rawstr      : string;
-  img                         : image_array;
+  img                         : Timage_array;
   headx                       : theader;
 
 begin
@@ -2660,7 +2660,7 @@ end;
 procedure Tstackmenu1.subtract_background1Click(Sender: TObject);
 var
   fitsX, fitsY, col, col2, nrcolours: integer;
-  img_temp : image_array;
+  img_temp : Timage_array;
 begin
   if head.naxis = 0 then exit;
   Screen.Cursor := crHourglass;
@@ -2685,7 +2685,7 @@ begin
     img_loaded := img_temp; {use result}
 
     use_histogram(img_loaded, True);
-    plot_fits(mainwindow.image1, False, True);{plot real}
+    plot_fits(mainwindow.image1, False);{plot real}
   end;
   update_equalise_background_step(5 {force 5 since equalise background is set to 1 by loading fits file});{update menu}
   Screen.Cursor := crDefault;
@@ -2710,7 +2710,7 @@ begin
     max_stars := strtoint2(stackmenu1.max_stars1.Text,500);  {maximum star to process, if so filter out brightest stars later}
 
     if quads_displayed then
-      plot_fits(mainwindow.image1, False, True); {remove quads}
+      plot_fits(mainwindow.image1, False); {remove quads}
 
     binning := report_binning(head.Height{*cropping});
     {select binning on dimensions of cropped image}
@@ -2910,7 +2910,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
   gaussian_blur2(img_loaded, 2 * strtofloat2(most_common_filter_radius1.Text));
-  plot_fits(mainwindow.image1, False, True);{plot}
+  plot_fits(mainwindow.image1, False);{plot}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
 end;
@@ -3004,7 +3004,7 @@ begin
 end;
 
 
-function median_background(var img: image_array; color, sizeX, sizeY, x, y: integer): double;
+function median_background(var img: Timage_array; color, sizeX, sizeY, x, y: integer): double;
   {find median value of an area at position x,y with sizeX,sizeY}
 var
   i, j, Count, size2, stepX, stepY: integer;
@@ -3048,12 +3048,12 @@ begin
 end;
 
 
-procedure artificial_flatV1(var img: image_array; box_size: integer);
+procedure artificial_flatV1(var img: Timage_array; box_size: integer);
 var
   fitsx, fitsy, i, j, col, step, colors, w, h,greylevels: integer;
   offset: single;
   bg: double;
-  img_temp2: image_array;
+  img_temp2: Timage_array;
 begin
   esc_pressed:=false;
   colors := Length(img); {colors}
@@ -3121,7 +3121,7 @@ begin
 end;
 
 
-procedure artificial_flatV2(var img: image_array;head:theader; centrum_diameter: integer);
+procedure artificial_flatV2(var img: Timage_array;head:theader; centrum_diameter: integer);
 var
   fitsx, fitsy, dist, col, centerX, centerY, colors, w, h, leng, angle,
   Count, largest_distX, largest_distY: integer;
@@ -3241,7 +3241,7 @@ begin
     else
       artificial_flatV2(img_loaded, head,    StrToInt(StringReplace(ring_equalise_factor1.Text, '%', '', [])));
 
-    plot_fits(mainwindow.image1, False, True);{plot real}
+    plot_fits(mainwindow.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3324,7 +3324,7 @@ begin
 
     apply_factors;
     use_histogram(img_loaded, True);
-    plot_fits(mainwindow.image1, False, True);{plot real}
+    plot_fits(mainwindow.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3336,7 +3336,7 @@ var
   flat_norm_value, flat_factor,factor: single;
   idx : integer;
   value : string='';
-  img_temp : image_array;
+  img_temp : Timage_array;
   headx   : theader;
 begin
   if head.naxis <> 0 then
@@ -3410,7 +3410,7 @@ begin
     end;
     add_text(mainwindow.memo1.lines,'HISTORY   ', add_substract1.text+' '+ExtractFileName(image_to_add1.Caption));
     use_histogram(img_loaded, True);
-    plot_fits(mainwindow.image1, False, True);{plot real}
+    plot_fits(mainwindow.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3478,14 +3478,14 @@ begin
         end;
     //apply_dpp_button1.Enabled := False;
     use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-    plot_fits(mainwindow.image1, True, True);{plot real}
+    plot_fits(mainwindow.image1, True);{plot real}
 
     Screen.Cursor := crDefault;
   end;
 end;
 
 
-procedure apply_most_common(sourc, dest: image_array; datamax: double; radius: integer);
+procedure apply_most_common(sourc, dest: Timage_array; datamax: double; radius: integer);
 {apply most common filter on first array and place result in second array}
 var
   fitsX, fitsY, i, j, k, x, y, x2, y2, diameter, most_common, colors3, height3, width3,greylevels: integer;
@@ -3537,7 +3537,7 @@ begin
   apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
-  plot_fits(mainwindow.image1, False, True);{plot real}
+  plot_fits(mainwindow.image1, False);{plot real}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
 end;
@@ -3989,7 +3989,7 @@ begin
         {succes load}
       begin
         use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-        plot_fits(mainwindow.image1, False, True);{plot real}
+        plot_fits(mainwindow.image1, False);{plot real}
         update_equalise_background_step(0); {go to step 0}
       end;
     end
@@ -4056,7 +4056,7 @@ begin
   backup_img;
   gaussian_blur2(img_loaded, strtofloat2(blur_factor1.Text));
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False, True);{plot}
+  plot_fits(mainwindow.image1, False);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -4186,7 +4186,7 @@ var
   hfd_median2, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, adu_e :double;
   filename1,filterstr,filterstrUP  : string;
   loaded, red, green, blue         : boolean;
-  img: image_array;
+  img: Timage_array;
   headx : theader;
   nr_stars, hfd_outer_ring, median_11, median_21, median_31, median_12, median_22, median_32, median_13, median_23, median_33: double;
 begin
@@ -4670,12 +4670,12 @@ begin
 end;
 
 
-procedure average(mess: string; file_list: array of string; var file_count: integer; out img2: image_array);
+procedure average(mess: string; file_list: array of string; var file_count: integer; out img2: Timage_array);
 {combine to average or mean, make also mono from three colors if color}
 var
   {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw lights}
   c, fitsX, fitsY,w,h,count: integer;
-  img_tmp1: image_array;
+  img_tmp1: Timage_array;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   count:=0;
@@ -4739,7 +4739,7 @@ begin
 end;
 
 
-function average_flatdarks(flat_exposure: string; out img_bias: image_array; out flatdark_exposure,flatdark_temperature,flatdark_gain: string): boolean;
+function average_flatdarks(flat_exposure: string; out img_bias: Timage_array; out flatdark_exposure,flatdark_temperature,flatdark_gain: string): boolean;
 var
   c, file_count: integer;
   file_list: array of string;
@@ -4781,10 +4781,10 @@ end;
 
 
 
-procedure box_blur(colors, range : integer; var img: image_array);{blur by combining values of pixels, ignore value above max_value and zeros}
+procedure box_blur(colors, range : integer; var img: Timage_array);{blur by combining values of pixels, ignore value above max_value and zeros}
 var
   fitsX, fitsY, k, x1, y1, col, w, h, i, j, counter, minimum, maximum: integer;
-  img_temp2: image_array;
+  img_temp2: Timage_array;
   Value, value2: single;
 begin
   col := length(img);{the real number of colours}
@@ -4859,7 +4859,7 @@ begin
 end;
 
 
-procedure check_pattern_filter(var img: image_array);
+procedure check_pattern_filter(var img: Timage_array);
 {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 var
   fitsX, fitsY, col, h, w, counter1, counter2, counter3, counter4: integer;
@@ -4949,11 +4949,11 @@ begin
 end;
 
 
-procedure black_spot_filter(var img: image_array);
+procedure black_spot_filter(var img: Timage_array);
 {remove black spots with value zero}{execution time about 0.4 sec}
 var
   fitsX, fitsY, k, x1, y1, col, w, h, i, j, counter, range, left, right, bottom, top: integer;
-  img_temp2: image_array;
+  img_temp2: Timage_array;
   Value, value2: single;
   black: boolean;
 begin
@@ -5153,7 +5153,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainwindow.image1, False, True);{plot real}
+    plot_fits(mainwindow.image1, False);{plot real}
     progress_indicator(-100, '');{back to normal}
     Screen.Cursor := crDefault;
   end;
@@ -5163,7 +5163,7 @@ end;
 
 procedure resize_img_loaded(ratio: double); {resize img_loaded in free ratio}
 var
-  img_temp2: image_array;
+  img_temp2: Timage_array;
   FitsX, fitsY, k, w, h, w2, h2,colours,col : integer;
   x, y: double;
   colour : pixel;
@@ -5256,7 +5256,7 @@ begin
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   remove_photometric_calibration;//from header
-  plot_fits(mainwindow.image1, True, True);{plot}
+  plot_fits(mainwindow.image1, True);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -5353,7 +5353,7 @@ begin
         exit;
       end;
      use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-     plot_fits(mainwindow.image1, False {re_center}, True);
+     plot_fits(mainwindow.image1, False {re_center});
 
      {show alignment marker}
       if (stackmenu1.use_manual_alignment1.Checked) then
@@ -5449,7 +5449,7 @@ procedure Tstackmenu1.splitRGB1Click(Sender: TObject);
 var
   fitsx, fitsY: integer;
   filename1            : string;
-  img_buffer           : image_array;
+  img_buffer           : Timage_array;
 begin
   if ((head.naxis = 0) or (head.naxis3 <> 3)) then
   begin
@@ -5644,7 +5644,7 @@ var
   reference_done, init, store_annotated, res                        : boolean;
   st                  : string;
   starlist1,starlist2 : star_list;
-  img_temp : image_array;
+  img_temp : Timage_array;
 begin
   if listview6.items.Count <= 1 then exit; {no files}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -5835,7 +5835,7 @@ begin
 
         store_annotated := annotated;{store temporary annotated}
         annotated := False;{prevent annotations are plotted in plot_fits}
-        plot_fits(mainwindow.image1, False {re_center}, True);
+        plot_fits(mainwindow.image1, False {re_center});
         annotated := store_annotated;{restore anotated value}
         if ((annotated) and (mainwindow.annotations_visible1.Checked)) then
           plot_annotations(True {use solution vectors!!!!}, False);  {corrected annotations in case a part of the lights are flipped in the alignment routien}
@@ -6018,7 +6018,7 @@ begin
 
   mainwindow.memo1.lines.endupdate;
 
-  plot_fits(mainwindow.image1, True, True);{plot test image}
+  plot_fits(mainwindow.image1, True);{plot test image}
 end;
 
 
@@ -6846,7 +6846,7 @@ var
   refresh_solutions, success: boolean;
   thefile, filename1: string;
   headx : theader;
-  img_temp : image_array;
+  img_temp : Timage_array;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -7386,7 +7386,7 @@ var
   radius, fitsX, fitsY: integer;
   Value, org_value: single;
   star_level_colouring: double;
-  img_temp : image_array;
+  img_temp : Timage_array;
 
 begin
   if Length(img_loaded) = 0 then
@@ -7455,7 +7455,7 @@ begin
   add_text(mainwindow.memo1.lines,'HISTORY   ', 'Artificial colour applied.');
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False, True);{plot real}
+  plot_fits(mainwindow.image1, False);{plot real}
   Screen.Cursor := crDefault;
 end;
 
@@ -7476,7 +7476,7 @@ procedure Tstackmenu1.export_aligned_files1Click(Sender: TObject);
 var
   c, fitsX, fitsY, x_new, y_new, col, ps: integer;
   st: string;
-  img_temp : image_array;
+  img_temp : Timage_array;
 
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -7574,7 +7574,7 @@ begin
   img_temp := nil;
 
   if head.naxis <> 0 then
-    plot_fits(mainwindow.image1, False {re_center}, True);
+    plot_fits(mainwindow.image1, False {re_center});
   {the last displayed image doesn't match with header. Just plot last image to fix}
   Screen.Cursor := crDefault;{back to normal }
 end;
@@ -7938,7 +7938,7 @@ var
   oldra0 : double=0;
   olddec0: double=-pi/2;
   headx : theader;
-  img_temp : image_array;
+  img_temp : Timage_array;
 
             function measure_star(deX, deY: double): string;{measure position and flux}
             begin
@@ -8401,7 +8401,7 @@ begin
       store_annotated := annotated;{store temporary annotated}
       annotated := False;{prevent annotations are plotted in plot_fits}
 
-      plot_fits(mainwindow.image1, False {re_center}, True);
+      plot_fits(mainwindow.image1, False {re_center});
 
       annotated := store_annotated;{restore anotated value}
       if ((annotated) and (mainwindow.annotations_visible1.Checked)) then  //header annotations
@@ -8531,7 +8531,7 @@ begin
 end;
 
 
-procedure star_smooth_not_usedzzzzzzzzzzzzzzz(img: image_array; x1, y1: integer);
+procedure star_smooth_not_usedzzzzzzzzzzzzzzz(img: Timage_array; x1, y1: integer);
 const
   max_ri = 50; //sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
@@ -8657,11 +8657,11 @@ begin
 end;
 
 
-procedure smart_colour_smooth(var img: image_array; wide, sd: double;  preserve_r_nebula, measurehist: boolean);
+procedure smart_colour_smooth(var img: Timage_array; wide, sd: double;  preserve_r_nebula, measurehist: boolean);
 {Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 var
   fitsX, fitsY, x, y, step, x2, y2, Count, width5, height5: integer;
-  img_temp2: image_array;
+  img_temp2: Timage_array;
   flux, red, green, blue, rgb, r, g, b, sqr_dist, strongest_colour_local,
   top, bg, r2, g2, b2, {noise_level1,} peak, bgR2, bgB2, bgG2, highest_colour, lumr: single;
   bgR, bgB, bgG, star_level: double;
@@ -8812,7 +8812,7 @@ begin
 end;
 
 
-procedure green_purple_filter(var img: image_array);
+procedure green_purple_filter(var img: Timage_array);
 {Balances RGB to remove green and purple. For e.g. Hubble palette}
 var
   fitsX, fitsY: integer;
@@ -8889,7 +8889,7 @@ begin
 
   smart_colour_smooth(img_loaded, strtofloat2(smart_smooth_width1.Text), strtofloat2(smart_colour_sd1.Text), preserve_red_nebula1.Checked, False);
 
-  plot_fits(mainwindow.image1, False, True);{plot real}
+  plot_fits(mainwindow.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
   memo2_message('Ready colour smooth.');
@@ -8915,7 +8915,7 @@ begin
     except
     end;
     apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);  {apply most common filter on first array and place result in second array}
-    plot_fits(mainwindow.image1, True, True);{plot real}
+    plot_fits(mainwindow.image1, True);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -9044,7 +9044,7 @@ begin
 
 end;
 
-procedure remove_background(var img: image_array);
+procedure remove_background(var img: Timage_array);
 var
   fitsX, fitsY: integer;
   luminance, red, green, blue: double;
@@ -9111,7 +9111,7 @@ begin
       img_loaded[1, fitsY, fitsX] := green;
       img_loaded[2, fitsY, fitsX] := blue;
     end;
-  plot_fits(mainwindow.image1, False, True);{plot}
+  plot_fits(mainwindow.image1, False);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -9324,7 +9324,7 @@ begin
   box_blur(1 {nr of colors}, blur_factor, img_loaded);
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False, True);{plot real}
+  plot_fits(mainwindow.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -9387,7 +9387,7 @@ begin
   check_pattern_filter(img_loaded);
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False, True);{plot real}
+  plot_fits(mainwindow.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -9424,7 +9424,7 @@ begin
   mainwindow.annotations_visible1.checked:=annotations_visible2.checked; {follow in main menu viewer}
   if head.naxis=0 then exit;
   if annotations_visible2.checked=false then  {clear screen}
-    plot_fits(mainwindow.image1,false,true)
+    plot_fits(mainwindow.image1,false)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
 end;
@@ -9465,7 +9465,7 @@ begin
 
   apply_star_smooth(smooth_diameter1.Text, smooth_stars1.Text);
 
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 
   Screen.Cursor:=crDefault;
 end;
@@ -9550,7 +9550,7 @@ end;
 
 procedure Tstackmenu1.apply_unsharp_mask1Click(Sender: TObject);
 var
-  tmp : image_array;
+  tmp : Timage_array;
   fitsX,fitsY,k,threshold: integer;
   factor1,factor2   : double;
   value,threshold_value   : single;
@@ -9596,7 +9596,7 @@ begin
 
   end;
 
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
   Screen.Cursor:=crDefault;
 
   {
@@ -9673,7 +9673,7 @@ begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  plot_fits(mainwindow.image1,false,true);//clear
+  plot_fits(mainwindow.image1,false);//clear
 
   memo2_message('Satellite streak detection started.');
   contour(true {plot}, img_loaded,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));
@@ -9687,7 +9687,7 @@ end;
 procedure Tstackmenu1.ClearButton1Click(Sender: TObject);
 begin
   memo2_message('Removing streak annotations from header');
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false);
 end;
 
 procedure Tstackmenu1.FormKeyDown(Sender: TObject; var Key: Word;
@@ -9840,7 +9840,7 @@ function process_selected_files(lv: tlistview; column: integer; mode : string) :
 var
   c,nrcolumns,i,countN        : integer;
   filename1                   : string;
-  img_temp                    : image_array;
+  img_temp                    : Timage_array;
   headx                       : theader;
 
         function save_fits_tiff(filename1: string) : boolean;
@@ -10165,7 +10165,7 @@ procedure remove_stars;
 var
   fitsX,fitsY,hfd_counter,position,x,y,x1,y1,counter_noflux  : integer;
   magnd, backgrR,backgrG,backgrB,delta                           : double;
-  img_temp3 :image_array;
+  img_temp3 :Timage_array;
   old_aperture : string;
 
 const
@@ -10350,7 +10350,7 @@ begin
   letter_height:=mainwindow.image1.Canvas.textheight('M');
   mainwindow.image1.Canvas.textout(20,head.height-letter_height,stackmenu1.reference_database1.text);//show which database was used
 
-  plot_fits(mainwindow.image1,false,true);//refresh screen
+  plot_fits(mainwindow.image1,false);//refresh screen
 
   Screen.Cursor:=crDefault;
 end;
@@ -10916,7 +10916,7 @@ begin
         end;
       end;
     end;
-  plot_fits(mainwindow.image1, False, True);{plot real}
+  plot_fits(mainwindow.image1, False);{plot real}
 
   HueRadioButton1.Checked := False;
   HueRadioButton2.Checked := False;
@@ -10949,11 +10949,11 @@ begin
 end;
 
 
-procedure background_noise_filter(img: image_array; max_deviation, blur: double);
+procedure background_noise_filter(img: Timage_array; max_deviation, blur: double);
 var
   fitsX, fitsY, Count, i, j, col, stepsize: integer;
   SD1, average1, SD, average, maxoffs, val: double;
-  img_outliers: image_array;
+  img_outliers: Timage_array;
 const
   step = 100;
 begin
@@ -11065,7 +11065,7 @@ begin
     strtofloat2(stackmenu1.noisefilter_blur1.Text));
 
   //  use_histogram(true);{get histogram}
-  plot_fits(mainwindow.image1, False, True);{plot real}
+  plot_fits(mainwindow.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -11092,7 +11092,7 @@ begin
     end;
 
     remove_photometric_calibration;//from header
-    plot_fits(mainwindow.image1, True, True);{plot real}
+    plot_fits(mainwindow.image1, True);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -11119,7 +11119,7 @@ begin
           img_loaded[col, fitsY, fitsX] :=
             max(0, img_loaded[col, fitsY, fitsX] + randg(mean, noise){gaussian noise});
 
-    plot_fits(mainwindow.image1, False, True);{plot real}
+    plot_fits(mainwindow.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
   use_histogram(img_loaded, True {update}); {update for the noise, plot histogram, set sliders}
@@ -11183,7 +11183,7 @@ begin
 
         use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
-        plot_fits(mainwindow.image1, False {re_center}, True);
+        plot_fits(mainwindow.image1, False {re_center});
 
         {show alignment marker}
         if (stackmenu1.use_manual_alignment1.Checked) then
@@ -11571,7 +11571,7 @@ var
   flat_width,flat_height   : integer;
   flatdark_used: boolean;
   file_list: array of string;
-  img_bias  : image_array;
+  img_bias  : Timage_array;
 begin
   with stackmenu1 do
   begin
@@ -11754,7 +11754,7 @@ begin
 end;
 
 
-function update_solution_and_save(img: image_array; var hd: theader;memo:tstrings): boolean;  {plate solving, image should be already loaded create internal solution using the internal solver}
+function update_solution_and_save(img: Timage_array; var hd: theader;memo:tstrings): boolean;  {plate solving, image should be already loaded create internal solution using the internal solver}
 begin
   if solve_image(img, hd,memo, True,false) then {match between loaded image and star database}
   begin
@@ -11772,7 +11772,7 @@ begin
 end;
 
 
-function apply_dark_and_flat(var img: image_array; var hd : theader): boolean; {apply dark and flat if required, renew if different head.exposure or ccd temp}
+function apply_dark_and_flat(var img: Timage_array; var hd : theader): boolean; {apply dark and flat if required, renew if different head.exposure or ccd temp}
 var
   fitsX, fitsY, k: integer;
   Value, flat_factor, flatNorm11, flatNorm12, flatNorm21, flatNorm22, flat_norm_value: double;
@@ -12007,7 +12007,7 @@ begin
       end;
   end;{with stackmenu1 do}
 
-  plot_fits(mainwindow.image1, True, True);{update to last image, activate Memo3}
+  plot_fits(mainwindow.image1, True);{update to last image, activate Memo3}
 
   Screen.Cursor := crDefault;
   memo2_message('Calibration of the individual files is complete. New files are posted in the results tab');
@@ -12907,7 +12907,7 @@ begin
             use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
         end;
 
-        plot_fits(mainwindow.image1, True, True);{plot real}
+        plot_fits(mainwindow.image1, True);{plot real}
 
         mainwindow.Memo1.Lines.BeginUpdate;
 
@@ -13319,7 +13319,7 @@ begin
   end;{k color}
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False, True);
+  plot_fits(mainwindow.image1, False);
 
   memo2_message('Remove gradient done.');
 

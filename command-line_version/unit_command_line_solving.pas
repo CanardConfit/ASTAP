@@ -104,7 +104,7 @@ uses
   Classes, SysUtils,math, unit_command_line_calc_trans_cubic;
 
 type
-  image_array = array of array of array of Single;
+  Timage_array = array of array of array of Single;
   star_list   = array of array of double;
   solution_vector   = array[0..2] of double;
 
@@ -118,15 +118,15 @@ var
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
 
-procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
 procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 
-function solve_image(img :image_array ) : boolean;{find match between image and star database}
-procedure bin_and_find_stars(img :image_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+function solve_image(img :Timage_array ) : boolean;{find match between image and star database}
+procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height:double) : integer;{select the binning}
 var
   star1   : array[0..2] of array of single;
@@ -618,11 +618,11 @@ begin
 end;
 
 
-procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2  : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level                     : double;
-   img_sa     : image_array;
+   img_sa     : Timage_array;
    snr_list        : array of double;
    startTick2  : qword;{for timing/speed purposes}
 const
@@ -972,7 +972,7 @@ begin
 end;
 
 
-procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
+procedure check_pattern_filter(var img: Timage_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 var
   fitsX,fitsY,col,h,w,counter1,counter2, counter3,counter4 : integer;
   value1,value2,value3,value4,maxval : double;
@@ -1028,7 +1028,7 @@ begin
 end;
 
 
-procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : image_array; out img2: image_array);// Make mono, bin and crop
+procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : Timage_array; out img2: Timage_array);// Make mono, bin and crop
 var
   fitsX,fitsY,k, w,h, shiftX,shiftY,nrcolors,width5,height5,i,j,x,y: integer;
   val       : single;
@@ -1139,10 +1139,10 @@ begin
 end;
 
 
-procedure bin_and_find_stars(img :image_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 var
   width2,height2,nrstars,i : integer;
-  img_binned : image_array;
+  img_binned : Timage_array;
 begin
   short_warning:='';{clear string}
 
@@ -1401,7 +1401,7 @@ begin
 end;
 
 
-function solve_image(img :image_array) : boolean;{find match between image and star database}
+function solve_image(img :Timage_array) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,database_density,limit,err, width2, height2                      : integer;

@@ -15,18 +15,18 @@ uses
   SysUtils, Classes,dialogs;
 
 type
-  image_array = array of array of array of Single;
+  Timage_array = array of array of array of Single;
 
 const   bufwide=1024*120;{buffer size in bytes}
 
 
 {16 bit procedures. not used in astap}
-function save_tiff_16(img: image_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit gray scale TIFF file }
-function save_tiff_48(img: image_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file }
+function save_tiff_16(img: Timage_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit gray scale TIFF file }
+function save_tiff_48(img: Timage_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file }
 
 {32 bit procedures}
-function save_tiff_32(img: image_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 32 bit float gray scale TIFF file }
-function save_tiff_96(img: image_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 96=3x32 color TIFF file }
+function save_tiff_32(img: Timage_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 32 bit float gray scale TIFF file }
+function save_tiff_96(img: Timage_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 96=3x32 color TIFF file }
 
 implementation
 type
@@ -148,7 +148,7 @@ const
 
 
 {Not used in ASTAP}
-function save_tiff_16(img: image_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit grascale TIFF file }
+function save_tiff_16(img: Timage_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit grascale TIFF file }
 var
   OffsetXRes     : LongInt;
   OffsetYRes     : LongInt;
@@ -245,7 +245,7 @@ begin
 end;
 
 
-function save_tiff_32(img: image_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 32 bit float gray scale TIFF file }
+function save_tiff_32(img: Timage_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 32 bit float gray scale TIFF file }
 var
   OffsetXRes     : LongInt;
   OffsetYRes     : LongInt;
@@ -337,7 +337,7 @@ end;
 
 
 {Not used in ASTAP}
-function save_tiff_48(img: image_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file}
+function save_tiff_48(img: Timage_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file}
 
 var
   OffsetXRes     : LongInt;
@@ -458,7 +458,7 @@ end;
 
 
 
-function save_tiff_96(img: image_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 96=3x32 color TIFF file }
+function save_tiff_96(img: Timage_array; filen2,description:ansistring;flip_H,flip_V:boolean): boolean;{save to 96=3x32 color TIFF file }
 var
   OffsetXRes     : LongInt;
   OffsetYRes     : LongInt;

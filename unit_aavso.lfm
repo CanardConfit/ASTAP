@@ -1,8 +1,8 @@
 object form_aavso1: Tform_aavso1
-  Left = 423
+  Left = 665
   Height = 630
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 145
+  Top = 214
   Width = 1553
   Caption = 'AAVSO report'
   ClientHeight = 630
@@ -175,7 +175,7 @@ object form_aavso1: Tform_aavso1
     ShowHint = True
     TabOrder = 2
     Text = '0'
-    OnChange = abrv_variable1Change
+    OnChange = abbrv_variable1Change
   end
   object Label9: TLabel
     Left = 88
@@ -195,7 +195,7 @@ object form_aavso1: Tform_aavso1
     ShowHint = True
     TabOrder = 3
     Text = '0'
-    OnChange = abrv_variable1Change
+    OnChange = abbrv_variable1Change
   end
   object Label10: TLabel
     Left = 88
@@ -215,7 +215,7 @@ object form_aavso1: Tform_aavso1
     ParentColor = False
     WordWrap = True
   end
-  object abrv_variable1: TComboBox
+  object abbrv_variable1: TComboBox
     Left = 16
     Height = 23
     Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier.  Limit: 30 characters. The dropdown will be filtered if a part of the Var designation is typed.  Standard deviation is based on Gaia as a reference'
@@ -231,8 +231,8 @@ object form_aavso1: Tform_aavso1
     ShowHint = True
     Sorted = True
     TabOrder = 1
-    OnChange = abrv_variable1Change
-    OnDropDown = abrv_variable1DropDown
+    OnChange = abbrv_variable1Change
+    OnDropDown = abbrv_variable1DropDown
   end
   object hjd1: TCheckBox
     Left = 392

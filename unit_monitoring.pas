@@ -237,7 +237,7 @@ begin
           else
             use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-          plot_fits(mainwindow.image1,false,true{do not show header in memo1});{plot real}
+          plot_fits(mainwindow.image1,false);{plot real}
 
           monitor_date1.caption:= DateTimeToStr(FileDateToDateTime(latest_time));
 

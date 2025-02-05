@@ -17,12 +17,12 @@ uses
   Classes, SysUtils,math, astap_main;
 
 
-function image_sharpness(img: image_array): double;// Measure the sharpeness of an image by gradient. The result is reversed and scaled to be roughly identical to a HFD curve So value decreases with sharpness
+function image_sharpness(img: Timage_array): double;// Measure the sharpeness of an image by gradient. The result is reversed and scaled to be roughly identical to a HFD curve So value decreases with sharpness
 
 implementation
 
 
-function image_sharpness(img: image_array): Double;// Measure the sharpeness of an image by gradient. The result is reversed and scaled to be roughly identical to a HFD curve So value decreases with sharpness
+function image_sharpness(img: Timage_array): Double;// Measure the sharpeness of an image by gradient. The result is reversed and scaled to be roughly identical to a HFD curve So value decreases with sharpness
 Var
   x, y, Width, Height         : Integer;
   Sharpness, Center, Up, Right: double;

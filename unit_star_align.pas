@@ -30,7 +30,7 @@ var
 
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
-procedure find_stars(img :image_array;head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :Timage_array;head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 procedure find_quads(starlist :star_list; out quad_star_distances :star_list); {find more quads build quads using closest stars}
 procedure find_triples_using_quads(starlist :star_list;  out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
@@ -1207,11 +1207,11 @@ end;
 //  nrstars:=count;
 //end;
 
-procedure find_stars(img :image_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,k : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level : double;
-   img_sa     : image_array;
+   img_sa     : Timage_array;
    snr_list   : array of double;
 
 // flip_vertical,flip_horizontal  : boolean;
