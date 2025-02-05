@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.2.03a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.2.04c';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -525,6 +525,7 @@ type
     procedure maximum1Change(Sender: TObject);
     procedure minimum1Change(Sender: TObject);
     procedure GenerateShapes(position,top,left,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
+    procedure clear_fshapes_array;
   private
     { Private declarations }
 
@@ -532,7 +533,6 @@ type
     { Public declarations }
     FShapes: array of TShapes;//for photometry
     procedure DisplayHint(Sender: TObject);
-
   end;
 
 var
@@ -3661,6 +3661,16 @@ begin
 end;
 
 
+procedure Tmainwindow.clear_fshapes_array;//nil fshapes array
+var
+  i : integer;
+begin
+  for i:=high(fshapes) downto 0 do
+      freeandnil(fshapes[i]);//essential
+  setlength(fshapes,0);
+end;
+
+
 procedure Tmainwindow.About1Click(Sender: TObject);
 var
     about_message, about_message4, about_message5 : string;
@@ -5510,9 +5520,7 @@ var
    xf,yf,x,y : double;
    ll,tt,hh,ww     : integer;
 begin
-
-  if head.naxis=0 then exit;
-  if shape.visible=false then exit;
+  if ((head.naxis=0) or (shape=nil) or (shape.visible=false)) then exit;
 
   xF:=(fitsX-0.5)*(mainwindow.image1.width/head.width)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/head.width);{starts at 1}
   yF:=-(fitsY-head.height-0.5)*(mainwindow.image1.height/head.height)-0.5; //inverse of fitsy:=0.5+head.height-(0.5+yf)/(image1.height/head.height); {from bottom to top, starts at 1}
