@@ -18,12 +18,12 @@ procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
 procedure load_variable_13;{load variable stars. If loaded no action}
 procedure load_variable_15;{load variable stars. If loaded no action}
-procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
+procedure plot_and_measure_stars(img : Timage_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(out stars_measured: integer);{measure or plot distortion}
-function plot_artificial_stars(img: image_array;head:theader) : boolean;{plot stars as single pixel with a value as the mangitude. For super nova search}
+function plot_artificial_stars(img: Timage_array;head:theader) : boolean;{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(starlist1,starlist2: star_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
-procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: Timage_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
 
 
@@ -1002,7 +1002,7 @@ const font_5x9 : packed array[33..126,0..8,0..4] of byte=  {ASTAP native font fo
 (0,0,0,0,0)){~}
 );
 
-procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: Timage_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 var                                                                                       {Screen coordinates are used to have the font with the correct orientation}
  w,h,i,j,k,value,flipV, flipH,len,x2,y2: integer;
  ch : pansichar;
@@ -1973,7 +1973,7 @@ begin
 end;
 
 
-procedure plot_and_measure_stars(img : image_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
+procedure plot_and_measure_stars(img : Timage_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
   standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e,mag_saturation,correction  : double;
@@ -2584,7 +2584,7 @@ begin
 end;{measure distortion}
 
 
-function plot_artificial_stars(img: image_array;head: theader): boolean;{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
+function plot_artificial_stars(img: Timage_array;head: theader): boolean;{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, telescope_ra,telescope_dec,fov_org,ra2,dec2,
   mag2, m_limit,sep : double;

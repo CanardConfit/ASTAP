@@ -22,7 +22,7 @@ procedure calibration_and_alignment(process_as_osc:integer; var files_to_process
 {$inline off}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
-function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
+function test_bayer_matrix(img: Timage_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 procedure stack_comet(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 
 
@@ -205,7 +205,7 @@ var
   init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip : boolean;
   warning             : string;
   starlist1,starlist2 : star_list;
-  img_temp,img_average : image_array;
+  img_temp,img_average : Timage_array;
 begin
   with stackmenu1 do
   begin
@@ -531,7 +531,7 @@ begin
 end;
 
 
-function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
+function test_bayer_matrix(img: Timage_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 var
   fitsX,w,h,middleY,step_size       : integer;
   p11,p12,p21,p22                   : array of double;
@@ -628,7 +628,7 @@ var
     tempval                                                                                                                    : single;
     warning             : string;
     starlist1,starlist2 : star_list;
-    img_temp,img_average : image_array;
+    img_temp,img_average : Timage_array;
 begin
   with stackmenu1 do
   begin
@@ -911,7 +911,7 @@ var
     counter_overlap                                                  : array[0..2] of integer;
     bck                                                              : array[0..3] of double;
     oldsip                                                           : boolean;
-    img_temp,img_average : image_array;
+    img_temp,img_average : Timage_array;
 
 begin
   with stackmenu1 do
@@ -1236,7 +1236,7 @@ var
     tempval, sumpix, newpix, background, pedestal                                                                      : single;
     warning     : string;
     starlist1,starlist2 : star_list;
-    img_temp,img_average,img_final,img_variance : image_array;
+    img_temp,img_average,img_final,img_variance : Timage_array;
 begin
   with stackmenu1 do
   begin
@@ -1709,7 +1709,7 @@ var
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip   : boolean;
     tempval,jd_fraction                                                                        : single;
     background_correction : array[0..2] of single;
-    img_temp,img_final,img_variance : image_array;
+    img_temp,img_final,img_variance : Timage_array;
 begin
   with stackmenu1 do
   begin
@@ -2053,7 +2053,7 @@ var
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,use_star_alignment: boolean;
     warning             : string;
     starlist1,starlist2 : star_list;
-    img_temp,img_average : image_array;
+    img_temp,img_average : Timage_array;
 begin
   with stackmenu1 do
   begin
@@ -2301,7 +2301,7 @@ begin
     end;{}
   end;  {with stackmenu1}
 
-  plot_fits(mainwindow.image1,true,true);{update to last image, activate memo1}
+  plot_fits(mainwindow.image1,true);{update to last image, activate memo1}
 
   {arrays will be nilled later. This is done for early exits}
 end;   {calibration and alignment}

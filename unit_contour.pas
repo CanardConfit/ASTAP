@@ -14,7 +14,7 @@ uses
   astap_main;
 
 
-procedure contour( plot : boolean;img : image_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
+procedure contour( plot : boolean;img : Timage_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
 function line_distance(fitsX,fitsY,slope,intercept: double) : double;
 procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 
@@ -172,12 +172,12 @@ end;
 
 
 
-procedure contour( plot : boolean;img : image_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
+procedure contour( plot : boolean;img : Timage_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
 var
   fitsX,fitsY,ww,hh,fontsize,minX,minY,maxX,maxY,x,y,detection_grid,binning  : integer;
   detection_level,surface,{leng,}maxleng,slope, intercept,sd                 : double;
   restore_his, Fliph, Flipv            : boolean;
-  img_sa,img_bk                        : image_array;
+  img_sa,img_bk                        : Timage_array;
   contour_array                    : array of array of integer;
   contour_array2                   : star_list;
   bg,sd_bg                         : double;
