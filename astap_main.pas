@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.2.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.2.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -5626,16 +5626,8 @@ begin
     show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},30,30,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
     show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
-//    if mainwindow.shape_var1.visible then {For manual alignment. Do this only when visible}
-//      show_marker_shape(mainwindow.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
-//    if mainwindow.shape_check1.visible then {For manual alignment. Do this only when visible}
-//      show_marker_shape(mainwindow.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
-//    if mainwindow.shape_comp1.visible then {For manual alignment. Do this only when visible}
-//      show_marker_shape(mainwindow.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
-
     with mainwindow do
-    for i:=0 to high(fshapes) do
-//       if FShapes[i].shape.visible then
+      for i:=0 to high(fshapes) do
          show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
 
   end;
@@ -10668,7 +10660,7 @@ procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 begin
   if head.cd1_1=0 then begin memo2_message('No solution!'); exit; end;//no solution
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  variable_star_annotation(true {load and plot});
+  variable_star_annotation(false  {plot, do not extract to variable_list});
   Screen.Cursor:=crDefault;
 end;
 

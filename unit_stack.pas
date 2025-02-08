@@ -8016,10 +8016,7 @@ var
               //remove following line at the end of 2025
               if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
 
-//              with mainwindow do
-  //            for ww:=0 to high(fshapes) do
-    //               fshapes[ww].shape.visible:=true;//show all
-               annulus_plotted:=false;//allow shapes again
+              annulus_plotted:=false;//allow shapes again
 
               Screen.Cursor := crDefault;{back to normal }
             end;
@@ -8283,8 +8280,8 @@ begin
             begin
               mainwindow.image1.Canvas.Pen.Color := clRed;
 
-              celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec, Fshapes[i].fitsX, Fshapes[i].FitsY); //ra,dec to fitsX,fitsY
-              astr := measure_star(Fshapes[i].fitsX, Fshapes[i].FitsY);
+              celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec, xn, yn); //ra,dec to xn,yn. Do not update Fshapes[i].fitsX,Fshapes[i].fitsY since the refer to the reference image and are required later for drawing aperture
+              astr := measure_star(xn, yn);
               listview7.Items.item[c].subitems.Strings[p_nr_norm+i*3] := astr;
               listview7.Items.item[c].subitems.Strings[p_nr_norm+1+i*3] := IntToStr(round(snr));
               listview7.Items.item[c].subitems.Strings[p_nr_norm+2+i*3] := IntToStr(round(Flux));
@@ -8323,7 +8320,7 @@ begin
               celestial_to_pixel(head, variable_list[j].ra, variable_list[j].dec, xn, yn);
               if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
               begin
-                astr := measure_star(xn, yn);
+                astr := measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
                 if snr>0 then
                 begin
                   new_object:=true;
@@ -8420,23 +8417,24 @@ begin
       begin
         mainwindow.image1.Canvas.Pen.mode := pmCopy;
 
-      with mainwindow do
-      if ((measuring_method1.itemindex=0) and (Fshapes<>nil)) then
-      begin
-        for i:=0 to high(Fshapes) do
-        begin  //do all manual marked stars
-          case i of 0: image1.Canvas.Pen.Color := clRed;
-            1: image1.Canvas.Pen.Color := clLime;//light green
-            2: image1.Canvas.Pen.Color := clYellow;
-            3: image1.Canvas.Pen.Color := clFuchsia ;
-            4: image1.Canvas.Pen.Color := clAqua;
-            5: image1.Canvas.Pen.Color := clPurple;
-            6: image1.Canvas.Pen.Color := clSkyBlue;
-          else image1.Canvas.Pen.Color := clLtGray;
-          end;
-          plot_annulus(head,round(Fshapes[i].fitsX), round(Fshapes[i].fitsY), head.mzero_radius,annulus_radius);
-         end;//for
-       end;
+        with mainwindow do
+        if ((measuring_method1.itemindex=0) and (Fshapes<>nil)) then
+        begin
+          for i:=0 to high(Fshapes) do
+          begin  //do all manual marked stars
+            case i of 0: image1.Canvas.Pen.Color := clRed;
+              1: image1.Canvas.Pen.Color := clLime;//light green
+              2: image1.Canvas.Pen.Color := clYellow;
+              3: image1.Canvas.Pen.Color := clFuchsia ;
+              4: image1.Canvas.Pen.Color := clAqua;
+              5: image1.Canvas.Pen.Color := clPurple;
+              6: image1.Canvas.Pen.Color := clSkyBlue;
+            else image1.Canvas.Pen.Color := clLtGray;
+            end;
+            celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec, xn, yn);//calculate the position for the alligned image. No need to update Fshapes[i].fitsX,fitsY
+            plot_annulus(head,round(xn), round(yn), head.mzero_radius,annulus_radius);
+          end;//for
+        end;
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.Width :=round(1 + head.Height / mainwindow.image1.Height);{thickness lines}
@@ -8464,13 +8462,6 @@ begin
 
         if annotate_mode1.ItemIndex > 0 then
         begin
-          head.ra0:=head_ref.ra0;//use head_ref for annotating. Images are aligned so this will work. Note head:=head_ref doesn't work !!. Seems to make a local head. The head values in the function aavso_update_required are different;
-          head.dec0:=head_ref.dec0;
-          head.cd1_1:=head_ref.cd1_1;
-          head.cd1_2:=head_ref.cd1_2;
-          head.cd2_1:=head_ref.cd2_1;
-          head.cd2_2:=head_ref.cd2_2;
-
           variable_star_annotation(false  {plot, do not extract to variable_list}); //vsp & vsx
         end;
 

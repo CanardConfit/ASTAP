@@ -519,19 +519,31 @@ var
   check_magnitudes                                                : array of double;
   comp_magn,ratio,check_flux, sd, mean,sd_comp, mean_sd_comp      : double;
   warning,check_flux_str                                          : string;
+  go_boolean                                                      : boolean;
 
 begin
   count:=0;
   count2:=0;
   mean_sd_comp:=0;
 
+  go_boolean:=true;
   //column_check is found in plot_graph
   if column_check<0 then
   begin
-    form_aavso1.sigma_mzero1.caption:='No check star selected.';
     form_aavso1.sigma_check2.caption:='No check star selected.';
-    exit;
-  end;
+     go_boolean:=false;
+  end
+  else
+  form_aavso1.sigma_check2.caption:='';
+  if length(column_comps)=0 then
+  begin
+    form_aavso1.sigma_mzero1.caption:='No comparison star selected.';
+    go_boolean:=false;
+  end
+  else
+  form_aavso1.sigma_mzero1.caption:='';
+  if go_boolean=false then exit;
+
 
   with stackmenu1 do
   begin
@@ -566,8 +578,12 @@ begin
       form_aavso1.sigma_check2.caption:='Check σ='+floattostrF(sd,ffFixed,0,3)+', mean='+floattostrF(mean,ffFixed,0,3)+' using '+inttostr(length(column_comps))+' ensemble stars';//report sigma check
   end
   else
-    form_aavso1.sigma_check2.caption:='No star selected.';
-
+  begin
+//    if form_aavso1.abrv_check1.text='' then
+//     form_aavso1.sigma_check2.caption:='No star selected'
+//    else
+      form_aavso1.sigma_check2.caption:='Saturated/No documented magnitude for used filter';
+  end;
 
   if count2>0 then
   begin
@@ -577,8 +593,9 @@ begin
       form_aavso1.sigma_mzero1.caption:='σ='+floattostrF(mean_sd_comp/count,FFfixed,0,4)+', weighted standard deviation between '+inttostr(length(column_comps))+' ensemble stars.'  //  Weighted noise between the comp star(s)
   end
   else
-    form_aavso1.sigma_mzero1.caption:='No star(s) selected.';
-
+  begin
+    form_aavso1.sigma_mzero1.caption:='Saturated//No documented magnitude for used filter';
+  end;
 end;
 
 
@@ -754,7 +771,7 @@ begin
 
                    if length(column_comps)>1 then //ensemble, else single comp star
                    begin
-                     comp_magn_info:='COMP ensemble '+ abbrv_comp_clean;
+                     comp_magn_info:='Ensemble: '+ abbrv_comp_clean;
                      abbrv_comp_clean_report:='ENSEMBLE';
                      comp_magn_str:='na';
                    end
@@ -941,12 +958,6 @@ begin
 
     if stackmenu1.measuring_method1.itemindex=0 then //manual star selection
     begin
-      for i:=0 to high(mainwindow.Fshapes) do
-      begin
-//        abrv_check1.items.add(mainwindow.Fshapes[i].shape.HINT);
-//        abrv_comp1.items.add(mainwindow.Fshapes[i].shape.HINT);
-      end;
-
       varfound:=false;
       checkfound:=false;
       for i:=0 to high(mainwindow.Fshapes) do
@@ -1006,7 +1017,7 @@ begin
       if sort_alphabetically1.checked=false then
       begin
         QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
-        memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
+        //memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
       end;
       for i:=0 to count-1  do  //display in ascending order
         if starinfo[i].x>0 then //not saturated
@@ -1072,7 +1083,7 @@ begin
       if sort_alphabetically1.checked=false then
       begin
         QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
-        memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
+        //memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
       end;
       for i:= count-1 downto 0 do  //display in decending order
         if starinfo[i].x<>0 then items.add(starinfo[i].str+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3));//add including standard deviation
@@ -1151,6 +1162,7 @@ begin
     theindex:=stackmenu1.listview7.column[columnr].tag;
     ra:=variable_list[theindex].ra;
     dec:=variable_list[theindex].dec;
+    //memo2_message('column:  '+inttostr(columnr)+',    index:  '+inttostr(theindex)+',    '+ floattostr(ra*180/pi)+',    '+floattostr(dec*180/pi));//testing
   except;
   end;
 end;
@@ -1189,6 +1201,7 @@ begin
     begin
       for i:=0 to length(column_Comps)-1 do
       begin
+        //memo2_message(stackmenu1.listview7.Column[column_comps[i]+1].Caption);  //testing
         mainwindow.GenerateShapes(indx+i,100,100,100,100,3 {penwidth},stDiamond, clLime,'Comp'+inttostr(i));
         retrieve_ra_dec(column_Comps[i],fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
         celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
