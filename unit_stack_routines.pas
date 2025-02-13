@@ -172,7 +172,7 @@ begin
     //convert the astroid position to ra, dec
     pixel_to_celestial(head,strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]),1 {formalism},  ra1,dec1 );
     //calculate the astroid position to x,y coordinated of the reference image
-    celestial_to_pixel(head_ref, ra1,dec1,x1,y1);//ra,dec  ref image to fitsX,fitsY second image
+    celestial_to_pixel(head_ref, ra1,dec1,true,x1,y1);//ra,dec  ref image to fitsX,fitsY second image
 
 
     //convert the center based solution to solution with origin at 0,0
@@ -606,7 +606,7 @@ begin
   ra_movement:=ra_movement/COS_dec_ref;//convert angular distance to ra distance
   dec_movement:=(jd_mid-jd_mid_reference)*strtofloat2(stackmenu1.solar_drift_dec1.text {arcsec/hour})*(pi/180)*24/3600;//dec movement in radians
 
-  celestial_to_pixel(head,head.ra0 + ra_movement,head.dec0 + dec_movement, posX,posY); //calculate drift of center of image by asteroid
+  celestial_to_pixel(head,head.ra0 + ra_movement,head.dec0 + dec_movement,true, posX,posY); //calculate drift of center of image by asteroid
   if sign(head_ref.cd1_1)<>sign(head.cd1_1) then
      cc:=cc-(head.crpix1-posX)//correct for asteroid movement
   else
@@ -865,25 +865,25 @@ var
 begin
   formalism:=mainwindow.Polynomial1.itemindex;
   pixel_to_celestial(head,1,1,formalism , ra, dec); //left bottom
-  celestial_to_pixel(head_ref, ra,dec, x,y);{ra,dec to fitsX,fitsY}
+  celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
   x_max:=max(x_max,x);
   y_min:=min(y_min,y);
   y_max:=max(y_max,y);
   pixel_to_celestial(head,head.width,1,formalism , ra, dec);  //right bottom
-  celestial_to_pixel(head_ref, ra,dec, x,y);{ra,dec to fitsX,fitsY}
+  celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
   x_max:=max(x_max,x);
   y_min:=min(y_min,y);
   y_max:=max(y_max,y);
   pixel_to_celestial(head,1,head.height,formalism , ra, dec); //left top
-  celestial_to_pixel(head_ref, ra,dec, x,y);{ra,dec to fitsX,fitsY}
+  celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
   x_max:=max(x_max,x);
   y_min:=min(y_min,y);
   y_max:=max(y_max,y);
   pixel_to_celestial(head,head.width,head.height,formalism, ra, dec); //right top
-  celestial_to_pixel(head_ref, ra,dec, x,y);{ra,dec to fitsX,fitsY}
+  celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
   x_max:=max(x_max,x);
   y_min:=min(y_min,y);
@@ -927,8 +927,7 @@ begin
     count:=0;
     total_fov:=0;
     init:=false;
-    oldsip:=sip;
-    sip:=false;//prevent large error due to sip outside image
+
     for c:=0 to length(files_to_process)-1 do
       if length(files_to_process[c].name)>0 then
       begin
@@ -943,9 +942,8 @@ begin
         total_fov:=total_fov+head.cdelt1*head.cdelt2*head.width*head.height;
         inc(count);
       end;
-    sip:=oldsip;
-    if abs(x_max-x_min)<1 then begin memo2_message('Abort. Failed to calculate mosaic dimensions!');exit;end;
 
+    if abs(x_max-x_min)<1 then begin memo2_message('Abort. Failed to calculate mosaic dimensions!');exit;end;
 
     {move often used setting to booleans. Great speed improved if use in a loop and read many times}
     merge_overlap:=merge_overlap1.checked;

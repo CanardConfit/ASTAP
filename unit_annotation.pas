@@ -1390,6 +1390,7 @@ var
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y : integer;
   overlap          : boolean;
+  annotation_color2 : tcolor;
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
@@ -1428,10 +1429,8 @@ begin
     {$endif}
 
 
-    mainwindow.image1.canvas.pen.color:=annotation_color;
     mainwindow.image1.canvas.pen.Mode:=pmXor;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
-    mainwindow.image1.Canvas.font.color:=annotation_color;
 
     text_counter:=0;
     setlength(text_dimensions,200);
@@ -1440,7 +1439,7 @@ begin
 
     while read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa) {deepsky database search} do
     begin
-      celestial_to_pixel(head,ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head,ra2,dec2,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
       y:=round(fitsY-1);
 
@@ -1454,7 +1453,7 @@ begin
           begin
             with mainwindow do
             for i:=0 to high(Fshapes) do
-            if ((abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+            if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                      Fshapes[i].shape.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
 
           end;
@@ -1482,13 +1481,19 @@ begin
 
             if copy(naam2,1,1)='0' then
             begin
-               mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star, Plot green}
+              annotation_color2:=cllime;
                if font_size<=3 then
                   name:=copy(name,5,7) //remove 000-
                else
                if font_size<=4 then
                  name:=copy(name,1,11); //remove all after abbreviation
-            end;
+            end
+            else
+              annotation_color2:=annotation_color;
+
+            mainwindow.image1.Canvas.font.color:=annotation_color2;
+            mainwindow.image1.canvas.pen.color:=annotation_color2;
+
 
             {get text dimensions}
             th:=mainwindow.image1.Canvas.textheight(name);
@@ -1563,10 +1568,10 @@ begin
          {len is already calculated earlier for the font size}
          if len<=2 then {too small to plot an elipse or circle, plot just four dots}
          begin
-           mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
-           mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
-           mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
-           mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
+           mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color2;
+           mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color2;
+           mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color2;
+           mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color2;
          end
          else
          begin
@@ -1666,7 +1671,7 @@ begin
       while count<counts do //go through data
       begin
         if mode=1 then begin ra:=vsx[count].ra; dec:=vsx[count].dec;end else begin ra:=vsp[count].ra; dec:=vsp[count].dec;end;
-        celestial_to_pixel(head,ra,dec, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+        celestial_to_pixel(head,ra,dec,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
         x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
         y:=round(fitsY-1);
 
@@ -1689,8 +1694,8 @@ begin
 //              mainwindow.Shape_var1.HINT:=vsx[count].name;
             with mainwindow do
             for i:=0 to high(Fshapes) do
-            if ((abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-                     Fshapes[i].shape.HINT:=vsx[count].name;
+              if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+                Fshapes[i].shape.HINT:=vsx[count].name;
 
 
             var_epoch:=strtofloat1(vsx[count].epoch);
@@ -1745,14 +1750,9 @@ begin
                delete(abbreviation,1,4);//remove 000-
             end;
 
-//            if ((abs(x-shape_check1_fitsX)<5) and  (abs(y-shape_check1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-//                  mainwindow.shape_check1.HINT:=abbreviation;
-//            if ((abs(x-shape_comp1_fitsX)<5) and  (abs(y-shape_comp1_fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
-//                  mainwindow.shape_comp1.HINT:=abbreviation;//comparison star
-
             with mainwindow do
             for i:=0 to high(Fshapes) do
-            if ((abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
+            if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                      Fshapes[i].shape.HINT:=abbreviation;//copy(naam2,1,posex(' ',naam2,4)-1);
 
 
@@ -1987,7 +1987,7 @@ var
     procedure plot_star;
     begin
       if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999){mono colour database})then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
-      celestial_to_pixel(head,ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head,ra2,dec2,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       x:=(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
       y:=(fitsY-1);
 
@@ -2351,7 +2351,7 @@ var
     var
       fitsX,fitsY : double;
     begin
-      celestial_to_pixel(head,ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head,ra2,dec2,false, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       x:=fitsX-1;//fits count from 1, image from zero therefore subtract 1
       y:=fitsY-1;
 
@@ -2423,8 +2423,7 @@ begin
 
     mainwindow.image1.Canvas.Pen.mode:=pmCopy;
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
-    if sip=false then mainwindow.image1.canvas.pen.color:=$00B0FF {orange}
-                 else mainwindow.image1.canvas.pen.color:=$00FF00; {green}
+    mainwindow.image1.canvas.pen.color:=$00B0FF; {orange}
 
     star_total_counter:=0;{total counter}
     sub_counter:=0;
@@ -2593,7 +2592,7 @@ var
 
     procedure plot_star;
     begin
-      celestial_to_pixel(head, ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra2,dec2,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       x:=round(fitsX-1); {0..head.width-1}
       y:=round(fitsY-1); {0..head.height-1}
 
