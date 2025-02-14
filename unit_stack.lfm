@@ -2719,9 +2719,9 @@ object stackmenu1: Tstackmenu1
                 Height = 19
                 Hint = 'Use SIP coeficients for accurate positional information of celestial objects and  image stitching.'
                 Top = 33
-                Width = 98
+                Width = 123
                 BorderSpacing.Around = 5
-                Caption = 'SIP coefficients'
+                Caption = 'Add SIP coefficients'
                 Color = clBtnFace
                 ParentColor = False
                 ParentFont = False

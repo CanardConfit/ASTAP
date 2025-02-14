@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.2.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.2.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -708,7 +708,6 @@ var {################# initialised variables #########################}
   database_path:string='';{to be set in main}
   bayerpat: string='';{bayer pattern}
   bayerpattern_final :integer=2; {ASI294, ASI071, most common pattern}
-  sip               : boolean=false; {use SIP coefficients}
 
   xbayroff: double=0;{additional bayer pattern offset to apply}
   Ybayroff: double=0;{additional bayer pattern offset to apply}
@@ -869,7 +868,7 @@ function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure pixel_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
-procedure celestial_to_pixel(head: theader;ra,dec: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure celestial_to_pixel(head: theader;ra,dec: double;usethesip : boolean; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
 function savefits_update_header(memo:tstrings;filen2:string) : boolean;{save fits file with updated header}
@@ -1923,8 +1922,7 @@ begin
           head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
       end;
 
-      sip:=(ap_order>0);
-      if sip then
+      if ap_order>0 then
         mainwindow.Polynomial1.itemindex:=1//switch to sip
       else
       if x_coeff[0]<>0 then
@@ -4525,7 +4523,7 @@ begin
 end;
 
 
-procedure celestial_to_pixel(head: theader;ra,dec: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure celestial_to_pixel(head: theader;ra,dec: double;usethesip : boolean; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 var
   SIN_dec,COS_dec,
   SIN_dec_ref,COS_dec_ref,det,SIN_delta_ra,COS_delta_ra, H, xi,eta,u0,v0 : double;
@@ -4546,7 +4544,7 @@ begin
   v0:= + (head.cd1_1*eta - head.cd2_1*xi) / det;
 
 
-  if sip then {apply SIP correction, sky to pixel}
+  if ((usethesip) and (ap_order<>0)) then {apply SIP correction, sky to pixel}
   begin
     fitsX:=(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
     fitsY:=(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
@@ -4785,10 +4783,10 @@ begin
 //  shape.pen.style:=psSolid;//for photometry, resturn from psClear;
 //    mainwindow.shape_marker3.pen.style:=psClear; //not visible else psSolid
 
-    celestial_to_pixel(head, ra_new,dec_new, shape_marker3_fitsX,shape_marker3_fitsY); {ra,dec to fitsX,fitsY}
+    celestial_to_pixel(head, ra_new,dec_new,true, shape_marker3_fitsX,shape_marker3_fitsY); {ra,dec to fitsX,fitsY}
     show_marker_shape(mainwindow.shape_marker3,0 {rectangle},50,50,10,shape_marker3_fitsX, shape_marker3_fitsY);
 
-    if sip then sipwcs:='SIP' else sipwcs:='WCS';
+    if ap_order<>0 then sipwcs:='SIP' else sipwcs:='WCS';
     mainwindow.shape_marker3.hint:=data1+#10+sipwcs+'  x='+floattostrF(shape_marker3_fitsX,ffFixed,0,1)+'  y='+ floattostrF(shape_marker3_fitsY,ffFixed,0,1); ;
   end
   else
@@ -4934,7 +4932,7 @@ var
 begin
   if ra_mount<99 then {ra mount was specified}
   begin
-    celestial_to_pixel(head, ra_mount,dec_mount, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+    celestial_to_pixel(head, ra_mount,dec_mount,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
     shape_marker4_fitsX:=FITSX;
     shape_marker4_fitsY:=FITSY;
@@ -5188,7 +5186,7 @@ begin
     ang_sep(ra2,dec2,head.ra0,head.dec0, sep);
     if   sep<pi*0.6 then
     begin
-      celestial_to_pixel(head, ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra2,dec2,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       if ((fitsx>0) and (fitsx<head.width) and (fitsy>0) and (fitsy<head.height)) then {within screen}
       begin
         if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
@@ -5207,7 +5205,7 @@ begin
     ang_sep(ra2,dec2,head.ra0,head.dec0, sep);
     if   sep<pi*0.6 then
     begin
-      celestial_to_pixel(head, ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra2,dec2, true,fitsX,fitsY);{ra,dec to fitsX,fitsY}
       if ((fitsx>-overshoot) and (fitsx<head.width+overshoot) and (fitsy>-overshoot) and (fitsy<head.height+overshoot)) then {within screen}
       begin
         if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
@@ -5302,9 +5300,9 @@ begin
 
     {angle}
     az_ra(az-0.01*pi/180,alt,site_lat_radians,0,wtime2actual,{out} r1,d1);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
-    celestial_to_pixel(head, r1,d1, fX1,fY1);{ra,dec to fitsX,fitsY}
+    celestial_to_pixel(head, r1,d1,true, fX1,fY1);{ra,dec to fitsX,fitsY}
     az_ra(az+0.01*pi/180,alt,site_lat_radians,0,wtime2actual,{out} r2,d2);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
-    celestial_to_pixel(head, r2,d2, fX2,fY2);{ra,dec to fitsX,fitsY}
+    celestial_to_pixel(head, r2,d2,true, fX2,fY2);{ra,dec to fitsX,fitsY}
     angle:=arctan2(fy2-fy1,fx2-fx1)*180/pi;
     mainwindow.image1.Canvas.font.size:=14;
     mainwindow.image1.Canvas.textout(10,head.height-25,'Angle: '+floattostrF(angle,FFfixed,0,2)+ '°    ('+head.date_obs+', '+sitelong+', '+sitelat+')');
@@ -5390,7 +5388,7 @@ begin
         precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
       end;
 
-      celestial_to_pixel(head, ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra,dcr,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
       if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
       if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
@@ -5404,7 +5402,7 @@ begin
         precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
       end;
 
-      celestial_to_pixel(head, ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra,dcr, true,fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
 
       if flip_horizontal then x2:=round((head.width-1)-(fitsX-1)) else x2:=round(fitsX-1);
@@ -5447,7 +5445,7 @@ begin
        precession3(jd_mid,2451545 {J2000},ra,dcr); {from Jnow mean to J2000, precession only. without refraction}
      end;
 
-      celestial_to_pixel(head, ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra,dcr, true,fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
       if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
       if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
@@ -5461,7 +5459,7 @@ begin
       end;
 
 
-      celestial_to_pixel(head, ra,dcr, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      celestial_to_pixel(head, ra,dcr, true,fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
       if flip_horizontal then x2:=round((head.width-1)-(fitsX-1)) else x2:=round(fitsX-1);
       if flip_vertical=false then y2:=round((head.height-1)-(fitsY-1)) else y2:=round(fitsY-1);
@@ -5503,9 +5501,6 @@ begin
    mainwindow.Polynomial1.color:=clred
    else
    mainwindow.Polynomial1.color:=cldefault;
-
-  sip:=((ap_order>0) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
-
 end;
 
 
@@ -5628,7 +5623,7 @@ begin
 
     with mainwindow do
       for i:=0 to high(fshapes) do
-         show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
+         if Fshapes[i].shape<>nil then show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
 
   end;
 end;
@@ -7893,14 +7888,16 @@ begin
     if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
 
     with mainwindow do
-    if annulus_plotted=false then ////hide all since aperture & annulus are plotted is plotted skip first time shapes. See photometry_buttonclick1
+    if ((head.cd1_1<>0) and (annulus_plotted=false)) then ////hide all since aperture & annulus are plotted is plotted skip first time shapes. See photometry_buttonclick1
     for i:=0 to high(fshapes) do
-//       if FShapes[i].shape.visible then
-       begin
-         celestial_to_pixel(head, fshapes[i].ra,fshapes[i].dec, fshapes[i].fitsX,fshapes[i].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
-         FShapes[i].shape.visible:=true;//where set false in photometry_buttonclick1
-         show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
-       end;
+    begin
+      if FShapes[i].shape<>nil then
+      begin
+        celestial_to_pixel(head, fshapes[i].ra,fshapes[i].dec, true,fshapes[i].fitsX,fshapes[i].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
+        FShapes[i].shape.visible:=true;//where set false in photometry_buttonclick1
+        show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
+      end;
+    end;
 
 
 
@@ -9476,7 +9473,7 @@ var
    line,mag_str : string;
    hfd2,fwhm_star2,snr,flux,object_xc,object_yc,object_raM,object_decM  : double;
 begin
-  if sip=false then
+  if ap_order=0 then
      memo2_message('Warning image not solved with SIP polynomial correction! See settings tab alignment');
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -12663,7 +12660,7 @@ begin
 
           with mainwindow do
           for i:=0 to high(fshapes) do
-          if (  ( abs(fshapes[i].fitsX-(x1+x2)/2) <30) and (abs(fshapes[i].fitsY-(y1+y2)/2)<30)) then
+          if ((Fshapes[i].shape<>nil) and ( abs(fshapes[i].fitsX-(x1+x2)/2) <30) and (abs(fshapes[i].fitsY-(y1+y2)/2)<30)) then
           begin
 //            var_lock:=list[5];
             mainwindow.fshapes[i].shape.HINT:=list[5];
@@ -13047,8 +13044,8 @@ begin
 
   with mainwindow do
   for i:=0 to high(fshapes) do
-//     if FShapes[i].shape.visible then
-       show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
+     if Fshapes[i].shape<>nil then
+        show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
 
 end;
 
@@ -15252,13 +15249,13 @@ begin
           GenerateShapes(shape_nr,round(xcf),round(ycf),60,60,3 {penwidth},stEllipse, clLime,'?');
           fshapes[shape_nr].fitsX:=xcf;
           fshapes[shape_nr].fitsY:=ycf;
-          pixel_to_celestial(head,xcf,ycf,0,fshapes[shape_nr].ra,fshapes[shape_nr].dec);{store shape position in ra,dec for accurate positioning on an other image}
+          pixel_to_celestial(head,xcf,ycf,1 {try sip if available},fshapes[shape_nr].ra,fshapes[shape_nr].dec);{store shape position in ra,dec for accurate positioning on an other image   fshapes[i].ra}
           fshapes[shape_nr].Shape.hint:=prepare_IAU_designation(fshapes[shape_nr].ra,fshapes[shape_nr].dec);//IAU designation till overriden by match with database
           show_marker_shape(FShapes[shape_nr].shape,9 {no change},20,20,10,FShapes[shape_nr].fitsX, FShapes[shape_nr].fitsY);
         end
         else
         begin
-          error_label1.caption:='Variable position undefined due to missing image solution!';
+          error_label1.caption:='Can not annotate due to missing image solution!';
           error_label1.visible:=true;
         end;
 
@@ -15833,7 +15830,7 @@ begin
 
           with mainwindow do
           for i:=0 to high(fshapes) do
-//             if FShapes[i].shape.visible then
+            if Fshapes[i].shape<>nil then
                show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
        end;
      end;

@@ -4146,9 +4146,6 @@ begin
           application.ProcessMessages;
           mainwindow.variable_star_annotation1Click(nil); //show variable star annotations
         end;
-//        for i:=0 to high(mainwindow.fShapes) do
- //            mainwindow.FShapes[i].shape.visible:=true;// Show the shapes again after been hiding in procedure photometry_buttonClick
-
       end
       else
         beep;{image not found}
@@ -6942,7 +6939,8 @@ begin
   with mainwindow do //hide/show markers
   begin
     for i:=high(fshapes) downto 0 do
-       fshapes[i].shape.visible:=tab8;//hide when in an other tab
+      if Fshapes[i].shape<>nil then
+         fshapes[i].shape.visible:=tab8;//hide when in an other tab
   end;
 end;
 
@@ -8118,7 +8116,7 @@ begin
         begin
           listview7.Items[c].Checked := False;
           listview7.Items.item[c].subitems.Strings[P_astrometric] := '';
-          memo2_message(filename1 + 'Uncheck, no astrometric solution found for this file. Can' + #39 + 't measure magnitude!');
+          memo2_message(filename1 + ' Uncheck, no astrometric solution found for this file. Can' + #39 + 't measure magnitude!');
         end;
       end
       else
@@ -8144,7 +8142,7 @@ begin
 
   with mainwindow do
   for ww:=0 to high(fshapes) do
-     fshapes[ww].shape.visible:=false;//hide all since aperture & annulus is plotted
+     if fshapes[ww].shape<>nil then fshapes[ww].shape.visible:=false;//hide all since aperture & annulus is plotted
   annulus_plotted:=true; // keep shapes hidden
 
   for c := 0 to listview7.items.Count - 1 do
@@ -8209,6 +8207,8 @@ begin
         annulus_radius := 14;{annulus radius}
       end;
 
+
+
         {calibrate using POINT SOURCE calibration using hfd_median found earlier!!!}
       plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
 
@@ -8267,7 +8267,6 @@ begin
             begin
               for i:=0 to high(Fshapes) do
               with listview7 do
-              //if fshapes[i].shape.Visible then
               begin //add columns
                 listview7_add_column('????????????????????????????');//hint has not the abbbvr. Only after the first plot
                 listview7_add_column('SNR');
@@ -8278,15 +8277,18 @@ begin
 
             for i:=0 to high(Fshapes) do
             begin
-              mainwindow.image1.Canvas.Pen.Color := clRed;
+              if Fshapes[i].shape<>nil then
+              begin
+                mainwindow.image1.Canvas.Pen.Color := clRed;
 
-              celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec, xn, yn); //ra,dec to xn,yn. Do not update Fshapes[i].fitsX,Fshapes[i].fitsY since the refer to the reference image and are required later for drawing aperture
-              astr := measure_star(xn, yn);
-              listview7.Items.item[c].subitems.Strings[p_nr_norm+i*3] := astr;
-              listview7.Items.item[c].subitems.Strings[p_nr_norm+1+i*3] := IntToStr(round(snr));
-              listview7.Items.item[c].subitems.Strings[p_nr_norm+2+i*3] := IntToStr(round(Flux));
+                celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true, xn, yn); //ra,dec to xn,yn. Do not update Fshapes[i].fitsX,Fshapes[i].fitsY since the refer to the reference image and are required later for drawing aperture
+                astr := measure_star(xn, yn);
+                listview7.Items.item[c].subitems.Strings[p_nr_norm+i*3] := astr;
+                listview7.Items.item[c].subitems.Strings[p_nr_norm+1+i*3] := IntToStr(round(snr));
+                listview7.Items.item[c].subitems.Strings[p_nr_norm+2+i*3] := IntToStr(round(Flux));
 
-              listview7.Column[p_nr_norm+1+i*3].Caption:=Fshapes[i].shape.hint; //abbrv hint is only available after plot. Is updated for second image Caption counting is one different
+                listview7.Column[p_nr_norm+1+i*3].Caption:=Fshapes[i].shape.hint; //abbrv hint is only available after plot. Is updated for second image Caption counting is one different
+              end;
             end;//for
 
           end;//mainwindow
@@ -8317,7 +8319,7 @@ begin
           begin
             for j:=0 to variable_list_length do
             begin
-              celestial_to_pixel(head, variable_list[j].ra, variable_list[j].dec, xn, yn);
+              celestial_to_pixel(head, variable_list[j].ra, variable_list[j].dec,true, xn, yn);
               if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
               begin
                 astr := measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
@@ -8385,15 +8387,9 @@ begin
       img_loaded := nil;
       img_loaded := img_temp;
 
-      {quick and dirty method to correct annotations for aligned lights}
-      head.crpix1:=1+solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] * (head.crpix2 - 1) + solution_vectorX[2];// correct for marker_position at ra_dec position
-      head.crpix2:=1+solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] * (head.crpix2 - 1) + solution_vectorY[2];
 
-      head.cd1_1:=abs(head.cd1_1) * sign(head_ref.CD1_1);
-      head.cd1_2:=abs(head.cd1_2) * sign(head_ref.CD1_2);
-      head.cd2_1:=abs(head.cd2_1) * sign(head_ref.CD2_1);
-      head.cd2_2:=abs(head.cd2_2) * sign(head_ref.CD2_2);
-
+      head_ref.mzero:=head.mzero;//preserve mzero for next line
+      head:=head_ref;//use reference header for plotting since the image should be aligned to the reference image
 
       store_annotated := annotated;{store temporary annotated}
       annotated := False;{prevent annotations are plotted in plot_fits}
@@ -8421,19 +8417,20 @@ begin
         if ((measuring_method1.itemindex=0) and (Fshapes<>nil)) then
         begin
           for i:=0 to high(Fshapes) do
-          begin  //do all manual marked stars
-            case i of 0: image1.Canvas.Pen.Color := clRed;
-              1: image1.Canvas.Pen.Color := clLime;//light green
-              2: image1.Canvas.Pen.Color := clYellow;
-              3: image1.Canvas.Pen.Color := clFuchsia ;
-              4: image1.Canvas.Pen.Color := clAqua;
-              5: image1.Canvas.Pen.Color := clPurple;
-              6: image1.Canvas.Pen.Color := clSkyBlue;
-            else image1.Canvas.Pen.Color := clLtGray;
-            end;
-            celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec, xn, yn);//calculate the position for the alligned image. No need to update Fshapes[i].fitsX,fitsY
-            plot_annulus(head,round(xn), round(yn), head.mzero_radius,annulus_radius);
-          end;//for
+           if Fshapes[i].shape<>nil then
+           begin  //do all manual marked stars
+             case i of 0: image1.Canvas.Pen.Color := clRed;
+               1: image1.Canvas.Pen.Color := clLime;//light green
+               2: image1.Canvas.Pen.Color := clYellow;
+               3: image1.Canvas.Pen.Color := clFuchsia ;
+               4: image1.Canvas.Pen.Color := clAqua;
+               5: image1.Canvas.Pen.Color := clPurple;
+               6: image1.Canvas.Pen.Color := clSkyBlue;
+             else image1.Canvas.Pen.Color := clLtGray;
+             end;
+             celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true, xn, yn);//calculate the position for the alligned image. No need to update Fshapes[i].fitsX,fitsY
+             plot_annulus(head,round(xn), round(yn), head.mzero_radius,annulus_radius);
+           end;//for
         end;
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;

@@ -677,7 +677,6 @@ begin
     exit(false);
   end;
 
-  sip:=true;
   // SIP definitions https://irsa.ipac.caltech.edu/data/SPITZER/docs/files/spitzer/shupeADASS.pdf
 
   //Pixel to sky coefficients
@@ -1296,6 +1295,7 @@ begin
   if warning_str<>'' then
   begin
     update_longstr(memo,'WARNING =',warning_str);{update or insert long str including single quotes}
+    memo2_message(warning_str);
   end;
 
   Screen.Cursor:=crDefault;    { back to normal }

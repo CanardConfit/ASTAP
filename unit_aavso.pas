@@ -12,7 +12,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
   clipbrd, ExtCtrls, Menus, Buttons, CheckLst,strutils,
-  astap_main;
+  astap_main, Types;
 
 type
 
@@ -927,12 +927,8 @@ begin
   end;
   if count>count_checked/2 then //at least 50% valid measurements Not 50% because it will not report if two filter are in the list
   begin
- //   mad_median(listMagnitudes, count{counter},{out}sd, mean);
- //   result:=1.4826 * sd;
-
-    //calc standard deviation using the classic method. This will show the effect of outliers
+     //calc standard deviation using the classic method. This will show the effect of outliers
     calc_sd_and_mean(listMagnitudes, count{counter},{out}result, mean);// calculate sd and mean of an array of doubles}
-
   end
   else
     result:=-99;//unknown
@@ -962,26 +958,27 @@ begin
       checkfound:=false;
       for i:=0 to high(mainwindow.Fshapes) do
       begin
-        abrv:=mainwindow.Fshapes[i].shape.HINT;
-        if pos('000-',abrv)>0 then
+        if mainwindow.Fshapes[i].shape<> nil then
         begin
-           abrv_check1.text:=abrv;
-           checkfound:=true;
-        end
-        else
-        begin
-          abbrv_variable1.text:=abrv;
-          varfound:=true;
+          abrv:=mainwindow.Fshapes[i].shape.HINT;
+          if pos('000-',abrv)>0 then
+          begin
+             abrv_check1.text:=abrv;
+             checkfound:=true;
+          end
+          else
+          begin
+            abbrv_variable1.text:=abrv;
+            varfound:=true;
+          end;
+          if ((checkfound) and (varfound)) then break;
         end;
-        if ((checkfound) and (varfound)) then break;
       end;
-
-
     end
     else
     begin //find the variable of interest for header object
       object_name2:=stringreplace(object_name,' ','_',[]);//object_name from fits header
-      for i:=p_nr_norm to p_nr do
+      for i:=p_nr_norm to p_nr-1 do
         if frac((i-p_nr_norm)/3)=0 then // not a snr column
         begin
           abrv:=stackmenu1.listview7.Column[i+1].Caption;
@@ -1020,10 +1017,9 @@ begin
         //memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
       end;
       for i:=0 to count-1  do  //display in ascending order
-        if starinfo[i].x>0 then //not saturated
+        if starinfo[i].x>0 then //not saturated and sd found
           abrv_comp1.items.add(starinfo[i].str+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3))//add including standard deviation
-        else
-        if starinfo[i].x=-99 then //not all images analysed
+        else  //not all images analysed for SD
            abrv_comp1.items.add(starinfo[i].str);
 
         abrv_check1.items:=abrv_comp1.items;//duplicate
@@ -1128,6 +1124,7 @@ begin
   plot_graph;
 end;
 
+
 procedure Tform_aavso1.ensemble_database1Click(Sender: TObject);
 begin
   ensemble_database:=ensemble_database1.checked;
@@ -1186,7 +1183,7 @@ begin
       mainwindow.GenerateShapes(indx,100,100,100,100,3 {penwidth},stEllipse, clLime,'Var');
       inc(indx);
       retrieve_ra_dec(columnV,fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
-      celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
+      celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
     end;
 
     if columnCheck>0 then //valid
@@ -1194,7 +1191,7 @@ begin
       mainwindow.GenerateShapes(indx,100,100,100,100,3 {penwidth},stSquare, clLime,'Check');
       inc(indx);
       retrieve_ra_dec(columnCheck,fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
-      celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
+      celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
     end;
 
     if ((length(column_Comps)>0) and (head.cd1_1<>0)) then //valid
@@ -1204,7 +1201,7 @@ begin
         //memo2_message(stackmenu1.listview7.Column[column_comps[i]+1].Caption);  //testing
         mainwindow.GenerateShapes(indx+i,100,100,100,100,3 {penwidth},stDiamond, clLime,'Comp'+inttostr(i));
         retrieve_ra_dec(column_Comps[i],fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
-        celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
+        celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
       end;
     end;
 
