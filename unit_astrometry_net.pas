@@ -254,7 +254,7 @@ begin
 
   mainwindow.OpenDialog1.Title := 'Select multiple  files to add astrometric solution';
   mainwindow.OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  mainwindow.opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
+  mainwindow.OpenDialog1.Filter := 'FITS files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;
 
   failed:=0;

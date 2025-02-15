@@ -9,7 +9,7 @@ object form_astrometry_net1: Tform_astrometry_net1
   KeyPreview = True
   OnKeyPress = FormKeyPress
   OnShow = FormShow
-  LCLVersion = '2.2.4.0'
+  LCLVersion = '3.6.0.0'
   object cygwin1: TComboBox
     Left = 112
     Height = 23
@@ -27,12 +27,12 @@ object form_astrometry_net1: Tform_astrometry_net1
       '/usr/local/astrometry/bin'
       '/usr/bin'
     )
-    OnChange = cygwin1Change
-    OnDropDown = cygwin1DropDown
     ParentColor = True
     ParentFont = False
     TabOrder = 0
     Text = 'C:\Users\user_name\AppData\Local\cygwin_ansvr\bin\bash.exe'
+    OnChange = cygwin1Change
+    OnDropDown = cygwin1DropDown
   end
   object Label22: TLabel
     Left = 0
@@ -57,8 +57,9 @@ object form_astrometry_net1: Tform_astrometry_net1
     Items.Strings = (
       '--downsample 2 --crpix-center'
       '--downsample 2 --no-verify --crpix-center'
-      '--downsample 2 --no-verify --sigma 20 --crpix-center'
-      '--downsample 2 --no-verify --sigma 7 --crpix-center'
+      '--downsample 2 --no-verify --crpix-center --tweak-order 3 --guess-scale'
+      '--downsample 2 --no-verify --sigma 20 --crpix-center --tweak-order 3 --guess-scale'
+      '--downsample 2 --no-verify --sigma 7 --crpix-center --tweak-order 3 --guess-scale'
     )
     ParentColor = True
     ParentFont = False
@@ -70,28 +71,28 @@ object form_astrometry_net1: Tform_astrometry_net1
     Height = 19
     Hint = 'Keep solver window open'
     Top = 124
-    Width = 120
+    Width = 118
     BorderSpacing.Around = 5
     Caption = 'Keep console open'
-    OnChange = keep_console_open1Change
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
     TabOrder = 2
+    OnChange = keep_console_open1Change
   end
   object show_console1: TCheckBox
     Left = 25
     Height = 19
     Hint = 'If grayed show only minimised.'
     Top = 92
-    Width = 93
+    Width = 91
     BorderSpacing.Around = 5
     Caption = 'Show console'
-    OnChange = show_console1Change
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
     TabOrder = 3
+    OnChange = show_console1Change
   end
   object Button1: TButton
     Left = 184
@@ -100,8 +101,8 @@ object form_astrometry_net1: Tform_astrometry_net1
     Width = 173
     AutoSize = True
     Caption = 'Browse for files and execute'
-    OnClick = Button1Click
     TabOrder = 4
+    OnClick = Button1Click
   end
   object solved1: TLabel
     Left = 544
@@ -145,9 +146,9 @@ object form_astrometry_net1: Tform_astrometry_net1
     Width = 50
     AutoSize = True
     Caption = 'Stop'
-    OnClick = Button2Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 5
+    OnClick = Button2Click
   end
 end
