@@ -9747,40 +9747,69 @@ end;
 
 procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);
 var
-  i : integer;
-  best, best_aperture : double;
-  results,beststr,oldstr   : string;
+  j,i,count : integer;
+  best, best_aperture,sd : double;
+  results,beststr,oldstr,abrv   : string;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed:=false;
   best:=99;
   results:='';
   oldstr:=flux_aperture1.text;
-  if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which gives the lowest standard deviation for the check star. Assure that ten or more images are in the list, mode is "manual star selection" and a check-star is selected. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
+  if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which gives the lowest standard deviation for the comparison stars. In manual mode you should select comparison stars first. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
   begin
-    for i:=14 to 22 do
+    if ((mainwindow.Fshapes=nil) and (stackmenu1.measuring_method1.itemindex=0)) then
     begin
-     flux_aperture1.text:=floattostr(i/10);
+      application.messagebox(PChar('Abort!'+#10+#10+ 'No comparison stars selected with an AUID (000-...) selected!'), PChar('Missing comparison stars'), MB_OK);
+      Screen.Cursor := crDefault;{back to normal }
+      exit;
+    end;
+    for j:=14 to 22 do
+    begin
+     flux_aperture1.text:=floattostr(j/10);
      application.processmessages;
      if esc_pressed then exit;
      sd_check_star:=0;
      stackmenu1.photometry_button1Click(nil);
-     if sd_check_star>0 then
-     begin
-       if sd_check_star<best then
-       begin
-         best:=sd_check_star;
-         best_aperture:=i/10;
-       end;
-     end
-     else
-     begin
-       flux_aperture1.text:=oldstr;
-       memo2_message('Abort, no check star selected');
-       break;
-     end;
 
-     results:=results+'Aperture '+floattostrF(i/10,FFgeneral,2,1)+',   σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+#13+#10;
+     count:=0;
+     sd_check_star:=0;
+     for i:=p_nr_norm to p_nr-1 do
+       if frac((i-p_nr_norm)/3)=0 then //not snr column
+       begin
+         abrv:=stackmenu1.listview7.Column[i+1].Caption;
+         if pos('000-',abrv)>0 then  //check star or iau code
+         begin
+           sd:=find_sd_star(i);
+           if sd>0 then //not saturated and sd found
+           begin
+             sd_check_star:=sd_check_star+sd;
+             inc(count);
+           end;
+         end;
+       end;
+       if count>0 then
+       begin
+         sd_check_star:=sd_check_star/count;
+         if sd_check_star<best then
+         begin
+           best:=sd_check_star;
+           best_aperture:=j/10;
+         end;
+
+       end
+       else
+       begin
+        if stackmenu1.measuring_method1.itemindex=0 then
+           application.messagebox(PChar('Abort!'+#10+#10+ 'Select one or more comparison stars starting with 000- !'), PChar('Missing comparison stars'), MB_OK)
+        else
+           application.messagebox(PChar('Abort!'+#10+#10+ 'No suitable comparison star(s) starting with 000- found! '), PChar('Missing comparison stars'), MB_OK);
+        flux_aperture1.text:=oldstr;
+        memo2_message('Abort, no suitable comparison star(s) selected or found');
+        break;
+       end;
+
+     results:=results+'Aperture '+floattostrF(j/10,FFgeneral,2,1)+',   σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+#13+#10;
     end;
   end;
   if sd_check_star>0 then

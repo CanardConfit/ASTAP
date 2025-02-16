@@ -101,6 +101,7 @@ var
   used_vsp_stars: string='';
 
 procedure plot_graph; {plot curve}
+function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable
 
 
 implementation
@@ -961,7 +962,7 @@ begin
         if mainwindow.Fshapes[i].shape<> nil then
         begin
           abrv:=mainwindow.Fshapes[i].shape.HINT;
-          if pos('000-',abrv)>0 then
+          if pos('000-',abrv)>0 then // labeled with an AUID
           begin
              abrv_check1.text:=abrv;
              checkfound:=true;
