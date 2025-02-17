@@ -869,13 +869,16 @@ end;
 procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   w2,h2 :integer;
+  jd_mouse: double;
+
 begin
   if jd_min=0 then exit;
   w2:=image_photometry1.width;
   h2:=image_photometry1.height;
  // x zero at x=wtext
  // x range is (w-bspace*2)
- form_aavso1.caption:= floattostrF(jd_min+(jd_max-jd_min)*((x*w/w2)-wtext)/(w-bspace*2),ffFixed,12,5)+', '+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
+ jd_mouse:=jd_min+(jd_max-jd_min)*((x*w/w2)-wtext)/(w-bspace*2);
+ form_aavso1.caption:= 'JDmid='+floattostrF(jd_mouse,ffFixed,12,5)+', TimeMid='+prepare_ra6((frac(jd_mouse)+0.5)*2*pi,':')+', Magnitude='+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
 end;
 
 procedure Tform_aavso1.MenuItem1Click(Sender: TObject);

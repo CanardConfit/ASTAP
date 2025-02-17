@@ -8114,9 +8114,14 @@ begin
         end
         else
         begin
+          if errorlevel=32  then // no database
+          begin
+            nil_all;
+            exit;
+          end;
           listview7.Items[c].Checked := False;
           listview7.Items.item[c].subitems.Strings[P_astrometric] := '';
-          memo2_message(filename1 + ' Uncheck, no astrometric solution found for this file. Can' + #39 + 't measure magnitude!');
+          memo2_message(filename1 + ' Unchecked, no astrometric solution found for this file. Can' + #39 + 't measure magnitude!');
         end;
       end
       else
@@ -8428,8 +8433,8 @@ begin
                6: image1.Canvas.Pen.Color := clSkyBlue;
              else image1.Canvas.Pen.Color := clLtGray;
              end;
-             celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true, xn, yn);//calculate the position for the alligned image. No need to update Fshapes[i].fitsX,fitsY
-             plot_annulus(head,round(xn), round(yn), head.mzero_radius,annulus_radius);
+             celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true,  Fshapes[i].FitsX, Fshapes[i].FitsY);//calculate the position for the alligned image. Update FitsX,Y for updating hint with abbreviation in  variable_star_annotation
+             plot_annulus(head,round(Fshapes[i].FitsX), round(Fshapes[i].FitsY), head.mzero_radius,annulus_radius);
            end;//for
         end;
 
