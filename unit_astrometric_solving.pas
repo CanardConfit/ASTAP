@@ -1085,16 +1085,6 @@ begin
               else
                 find_quads(starlist1, quad_star_distances1);{find quads for reference image/database.}
 
-   //               memo2_message('Start');
-     //             for i:=1 to 12000 do
-       //             find_quadsnew(starlist1, quad_star_distances1);{find quads}
-         //         memo2_message('End new routine');
-           //       for i:=1 to 12000 do
-             //       find_quads(starlist1, quad_star_distances1);{find quads}
-//                  memo2_message('End old routine');
-       //      exit;
-
-
 
               if solve_show_log then {global variable set in find stars}
                 memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(ra_database,': ')+#9+prepare_dec(dec_database,'° ')+#9+' Down to magn '+ floattostrF(mag2/10,ffFixed,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
