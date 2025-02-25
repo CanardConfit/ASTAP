@@ -223,231 +223,11 @@ begin
   if Lo < iHi then QuickSort_starlist(A, Lo, iHi) ;  {executes itself recursively}
 end;
 
-{procedure QuickSort_records_on_X(var A: array of Tstar_long_record; iLo, iHi: Integer) ;// Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi
-var
-  Lo, Hi : integer;
-  Pivot : double;
-  T: Tstar_long_record;
-begin
-  Lo := iLo;
-  Hi := iHi;
-  Pivot := A[(Lo + Hi) div 2].x;
-  repeat
-    while A[Lo].x < Pivot do Inc(Lo) ;
-    while A[Hi].x > Pivot do Dec(Hi) ;
-    if Lo <= Hi then
-    begin //swap
-      T := A[Lo];
-      A[Lo] := A[Hi];
-      A[Hi] := T;
-      Inc(Lo) ;
-      Dec(Hi) ;
-    end;
-  until Lo > Hi;
-  if Hi > iLo then QuickSort_records_on_X(A, iLo, Hi) ; //executes itself recursively
-  if Lo < iHi then QuickSort_records_on_X(A, Lo, iHi) ; //executes itself recursively
-end;
-}
-{procedure QuickSort_records_on_Y(var A: array of Tstar_long_record; iLo, iHi: Integer) ;// Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi
-var
-  Lo, Hi : integer;
-  Pivot : double;
-  T: Tstar_long_record;
-begin
-  Lo := iLo;
-  Hi := iHi;
-  Pivot := A[(Lo + Hi) div 2].y;
-  repeat
-    while A[Lo].y < Pivot do Inc(Lo) ;
-    while A[Hi].y > Pivot do Dec(Hi) ;
-    if Lo <= Hi then
-    begin //swap
-      T := A[Lo];
-      A[Lo] := A[Hi];
-      A[Hi] := T;
-      Inc(Lo) ;
-      Dec(Hi) ;
-    end;
-  until Lo > Hi;
-  if Hi > iLo then QuickSort_records_on_Y(A, iLo, Hi) ; //executes itself recursively
-  if Lo < iHi then QuickSort_records_on_Y(A, Lo, iHi) ; //executes itself recursively
-end;
-}
 
-{
-//Advanced but slower. Not used
-procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  //build quads using closest stars, revised 2024-12-16
-var
-   nrstars,i,j,k,j_index1,j_index2,j_index3,nrquads,neighbourdistance,m,n,Xposition,YpositionRef, Yposition,starnr : integer;
-   distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
-   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
-   identical_quad : boolean;
-   star_list_sorted_X, star_list_sorted_Y: array of Tstar_long_record;
-   index_y_stars: array of integer;
-begin
-  nrstars:=Length(starlist[0]);
-
-  if nrstars<4 then
-  begin //not enough stars for quads
-    SetLength(quad_star_distances,8,0);
-    exit;
-  end;
-
-  setlength(star_list_sorted_X,nrstars);
-  setlength(star_list_sorted_Y,nrstars);
-  for i:=0 to nrstars-1 do
-  begin
-    star_list_sorted_X[i].nr:=i; //give it a star number
-    star_list_sorted_Y[i].nr:=i; //give it a star number
-    star_list_sorted_X[i].x:=starlist[0,i]; //store X
-    star_list_sorted_Y[i].x:=starlist[0,i];
-    star_list_sorted_X[i].y:=starlist[1,i];
-    star_list_sorted_Y[i].y:=starlist[1,i];
-  end;
-  QuickSort_records_on_X(star_list_sorted_X, 0,nrstars-1);
-  QuickSort_records_on_Y(star_list_sorted_Y, 0,nrstars-1);
-
-  setlength(index_y_stars,nrstars);
-  for i:=0 to nrstars-1 do
-       index_y_stars[star_list_sorted_Y[i].nr]:=i;
-
-
-  //memo2_message(inttostr(nrstars_min_one+1)+' stars found.');
-
-  neighbourdistance:=2*round(sqrt(Length(starlist[0])));
-
-
-//  neighbourdistance:=strtoint(mainwindow.Edit1.caption);
-
-  nrquads:=0;
-  SetLength(quad_star_distances,8,nrstars);//will contain the six distances and the central position
-
-  j_index1:=0;//give it a default value
-  j_index2:=0;
-  j_index3:=0;
-
-  for i:=0 to nrstars-1 do
-  begin
-    x1:=star_list_sorted_X[i].x; //1e star position
-    y1:=star_list_sorted_X[i].y;
-    YpositionRef:=index_y_stars[star_list_sorted_X[i].nr];
-
-    distance1:=1E99;//distance closest star
-    distance2:=1E99;//distance second closest star
-    distance3:=1E99;//distance third closest star
-
-    //restrict search area in X and Y by a square with sides of neighbour distance. So ± neighbour stars in X and ± neighbour stars in Y
-    for k:=-neighbourdistance to neighbourdistance do //use all stars close in X
-    begin
-      if k<>0 then //not the same star
-      begin
-        j:=i+k;
-        if ((j>0) and (j<=nrstars-1)) then
-        begin
-          starnr:= star_list_sorted_X[j].nr;//new star with simular X value
-          Yposition:=index_y_stars[starnr];//the corresponding Y position
-
-          if  abs(YpositionRef- Yposition)<=neighbourdistance then //simular Y position
-          begin
-            distance:=sqr( star_list_sorted_X[j].x - x1)+ distY ;
-
-            if distance<distance1 then
-            begin
-              distance3:=distance2;//distance third closest star
-              j_index3:=j_index2;
-
-              distance2:=distance1;//distance second closest star
-              j_index2:=j_index1;
-
-              distance1:=distance;//distance closest star
-              j_index1:=j;//mark later as used
-            end
-            else
-            if distance<distance2 then
-            begin
-              distance3:=distance2;//distance third closest star
-              j_index3:=j_index2;
-
-              distance2:=distance;//distance second closest star
-              j_index2:=j;
-            end
-            else
-            if distance<distance3 then
-            begin
-              distance3:=distance;//third closest star
-              j_index3:=j;
-            end;
-
-          end;
-        end;
-      end;
-    end;
-
-    if  distance3<1E99 then //found enough stars in the restricted area
-    begin
-
-      x2:=star_list_sorted_X[j_index1].x;//2e star position
-      y2:=star_list_sorted_X[j_index1].y;//2e star position
-
-      x3:=star_list_sorted_X[j_index2].x;//3e star position
-      y3:=star_list_sorted_X[j_index2].y;//3e star position
-
-      x4:=star_list_sorted_X[j_index3].x;//4e star position
-      y4:=star_list_sorted_X[j_index3].y;//4e star position
-
-      xt:=(x1+x2+x3+x4)/4; //mean x position quad
-      yt:=(y1+y2+y3+y4)/4; //mean y position quad
-
-
-      identical_quad:=false;
-      for k:=0 to nrquads-1 do // check for an identical quad
-      begin
-        if ( (abs(xt-quad_star_distances[6,k])<1) and
-             (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
-        begin
-          identical_quad:=true;
-          break;//stop searching
-        end;
-      end;
-
-      if identical_quad=false then  //new quad found
-      begin
-        dist1:=sqrt(distance1);//distance star1-star2, use previous value already calculated
-        dist2:=sqrt(distance2);//distance star1-star3
-        dist3:=sqrt(distance3);//distance star1-star4
-        dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));//distance star2-star3
-        dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));//distance star2-star4
-        dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));//distance star3-star4
-        //sort six distances on size in five steps
-        for j:=1 to 5 do //sort on distance
-        begin
-          if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
-          if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
-          if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
-          if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
-          if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
-        end;
-        quad_star_distances[0,nrquads]:=dist1;//largest distance
-        quad_star_distances[1,nrquads]:=dist2/dist1;//cale relative to largest distance
-        quad_star_distances[2,nrquads]:=dist3/dist1;
-        quad_star_distances[3,nrquads]:=dist4/dist1;
-        quad_star_distances[4,nrquads]:=dist5/dist1;
-        quad_star_distances[5,nrquads]:=dist6/dist1;
-
-        quad_star_distances[6,nrquads]:=xt;//store mean x position
-        quad_star_distances[7,nrquads]:=yt;//store mean y position
-        inc(nrquads);//new unique quad found
-      end;
-    end;
-  end;
-  SetLength(quad_star_distances,8,nrquads);//adapt to the number found
-end;
-}
-
-
+//Note a threaded version was not really faster. So this procedure stay single processor
 procedure find_quads(starlist :star_list; out quad_star_distances :star_list); //build quads using closest stars, revised 2022-4-10
 var
-   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw       : integer;
+   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,startp: integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
    dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
    identical_quad : boolean;
@@ -547,7 +327,12 @@ begin
       yt:=(y1+y2+y3+y4)/4; {mean y position quad}
 
       identical_quad:=false;
-      for k:=0 to nrquads-1 do // check for an identical quad
+      if nrstars>=150 then
+        startp:=max(0,nrquads-(nrstars div 4))//limit search for double quads. This is possible by sorting the starlist in X in the beginning. So first quads are to far away to be a double
+      else
+        startp:=0;
+
+      for k:=startp to nrquads-1 do // check for an identical quad
       begin
         if ( (abs(xt-quad_star_distances[6,k])<1) and
              (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
@@ -878,164 +663,6 @@ begin
 end;
 
 
-{
-not used
-procedure find_quads_xynew(starlist :star_list; out starlistquads :star_list);  //FOR DISPLAY ONLY, build quads using closest stars, revised 2024-12-16
-var
-   i,j,k,nrstars_min_one,j_index1,j_index2,j_index3,nrquads,neighbourdistance,m,n,Xposition,YpositionRef, Yposition,starnr : integer;
-   distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
-   identical_quad : boolean;
-
-   star_list_sorted_X, star_list_sorted_Y: array of Tstar_long_record;
-   index_y_stars: array of integer;
-begin
-  nrstars_min_one:=Length(starlist[0])-1;
-
-  if nrstars_min_one<3 then
-  begin //not enough stars for quads
-    SetLength(starlistquads,10,0);
-    exit;
-  end;
-
-  setlength(star_list_sorted_X,nrstars_min_one+1);
-  setlength(star_list_sorted_Y,nrstars_min_one+1);
-  for i:=0 to nrstars_min_one do
-  begin
-    star_list_sorted_X[i].nr:=i; //give it a star number
-    star_list_sorted_Y[i].nr:=i; //give it a star number
-    star_list_sorted_X[i].x:=starlist[0,i]; //store X
-    star_list_sorted_Y[i].x:=starlist[0,i];
-    star_list_sorted_X[i].y:=starlist[1,i];
-    star_list_sorted_Y[i].y:=starlist[1,i];
-  end;
-  QuickSort_records_on_X(star_list_sorted_X, 0,nrstars_min_one);
-  QuickSort_records_on_Y(star_list_sorted_Y, 0,nrstars_min_one);
-
-  setlength(index_y_stars,nrstars_min_one+1);
-  for i:=0 to nrstars_min_one do
-       index_y_stars[star_list_sorted_Y[i].nr]:=i;
-
-
-  //memo2_message(inttostr(nrstars_min_one+1)+' stars found.');
-
-  neighbourdistance:=2*round(sqrt(Length(starlist[0])));
-
-
-//  neighbourdistance:=strtoint(mainwindow.Edit1.caption);
-
-  nrquads:=0;
-  SetLength(starlistquads,10,nrstars_min_one);//number of quads will be lower
-
-  j_index1:=0;//give it a default value
-  j_index2:=0;
-  j_index3:=0;
-
-  for i:=0 to nrstars_min_one do
-  begin
-    x1:=star_list_sorted_X[i].x; //1e star position
-    y1:=star_list_sorted_X[i].y;
-    YpositionRef:=index_y_stars[star_list_sorted_X[i].nr];
-
-    distance1:=1E99;//distance closest star
-    distance2:=1E99;//distance second closest star
-    distance3:=1E99;//distance third closest star
-
-    //restrict search area in X and Y by a square with sides of neighbour distance. So ± neighbour stars in X and ± neighbour stars in Y
-    for k:=-neighbourdistance to neighbourdistance do //use all stars close in X
-    begin
-      if k<>0 then //not the same star
-      begin
-        j:=i+k;
-        if ((j>0) and (j<=nrstars_min_one)) then
-        begin
-          starnr:= star_list_sorted_X[j].nr;//new star with simular X value
-          Yposition:=index_y_stars[starnr];//the corresponding Y position
-
-          if  abs(YpositionRef- Yposition)<=neighbourdistance then //simular Y position
-          begin
-            distance:=sqr( star_list_sorted_X[j].x - x1)+ sqr( star_list_sorted_X[j].y-y1);
-
-            if distance<distance1 then
-            begin
-              distance3:=distance2;//distance third closest star
-              j_index3:=j_index2;
-
-              distance2:=distance1;//distance second closest star
-              j_index2:=j_index1;
-
-              distance1:=distance;//distance closest star
-              j_index1:=j;//mark later as used
-            end
-            else
-            if distance<distance2 then
-            begin
-              distance3:=distance2;//distance third closest star
-              j_index3:=j_index2;
-
-              distance2:=distance;//distance second closest star
-              j_index2:=j;
-            end
-            else
-            if distance<distance3 then
-            begin
-              distance3:=distance;//third closest star
-              j_index3:=j;
-            end;
-          end;
-        end;
-      end;
-    end;
-
-    if  distance3<1E99 then //found enough stars in the restricted area
-    begin
-
-      x2:=star_list_sorted_X[j_index1].x;//2e star position
-      y2:=star_list_sorted_X[j_index1].y;//2e star position
-
-      x3:=star_list_sorted_X[j_index2].x;//3e star position
-      y3:=star_list_sorted_X[j_index2].y;//3e star position
-
-      x4:=star_list_sorted_X[j_index3].x;//4e star position
-      y4:=star_list_sorted_X[j_index3].y;//4e star position
-
-      xt:=(x1+x2+x3+x4)/4; //mean x position quad
-      yt:=(y1+y2+y3+y4)/4; //mean y position quad
-
-      identical_quad:=false;
-      for k:=0 to nrquads-1 do // check for an identical quad
-      begin
-        if ( (abs(xt-starlistquads[8,k])<1) and
-             (abs(yt-starlistquads[9,k])<1) ) then // same center position, found an identical quad already in the list
-        begin
-          identical_quad:=true;
-          break;//stop searching
-        end;
-      end;
-
-      if identical_quad=false then  //new quad found
-      begin
-        starlistquads[0,nrquads]:=x1; //copy first star position to the quad array
-        starlistquads[1,nrquads]:=y1;
-        starlistquads[2,nrquads]:=x2; //copy the second star position to the quad array
-        starlistquads[3,nrquads]:=y2;
-        starlistquads[4,nrquads]:=x3;
-        starlistquads[5,nrquads]:=y3;
-        starlistquads[6,nrquads]:=x4;
-        starlistquads[7,nrquads]:=y4;
-
-        starlistquads[8,nrquads]:=xt;//store mean x position
-        starlistquads[9,nrquads]:=yt;//store mean y position
-        inc(nrquads); //new unique quad found
-      end;
-    end;
-  end;
-
-  SetLength(starlistquads,10,nrquads);//reduce array length to number quads one shorter since last entry is not filled
-end;
-}
-
-
-
 function find_fit( minimum_count: integer; quad_tolerance: double) : boolean;
 var
    nrquads1,nrquads2, i,j,k: integer;
@@ -1052,26 +679,27 @@ begin
 
   {Find a tolerance resulting in 6 or more of the best matching quads}
   setlength(matchlist2,2,1000);
+
   nr_references2:=0;
   i:=0;
   repeat
     j:=0;
-    repeat          {database}                         {image }
-      if abs(quad_star_distances1[1,i] - quad_star_distances2[1,j])<=quad_tolerance then {all length are scaled to the longest length so scale independent}
+    repeat //       ==database==                ==image==
+      if abs(quad_star_distances1[1,i] - quad_star_distances2[1,j])<=quad_tolerance then //all length are scaled to the longest length so scale independent
       if abs(quad_star_distances1[2,i] - quad_star_distances2[2,j])<=quad_tolerance then
       if abs(quad_star_distances1[3,i] - quad_star_distances2[3,j])<=quad_tolerance then
       if abs(quad_star_distances1[4,i] - quad_star_distances2[4,j])<=quad_tolerance then
       if abs(quad_star_distances1[5,i] - quad_star_distances2[5,j])<=quad_tolerance then
       begin
-        matchlist2[0,nr_references2]:=i;{store match position}
+        matchlist2[0,nr_references2]:=i;//store match position
         matchlist2[1,nr_references2]:=j;
         inc(nr_references2);
-        if nr_references2>=length(matchlist2[0]) then setlength(matchlist2,2,nr_references2+1000);{get more space}
+        if nr_references2>=length(matchlist2[0]) then setlength(matchlist2,2,nr_references2+1000);//get more space
       end;
       inc(j);
-    until j>=nrquads2;{j loop}
+    until j>=nrquads2;//j loop
     inc(i);
-  until i>=nrquads1;{i loop}
+  until i>=nrquads1;//i loop
 
  //memo2_message('Found '+inttostr( nr_references2)+ ' references');
 
@@ -1206,6 +834,7 @@ end;
 //  end;
 //  nrstars:=count;
 //end;
+
 
 procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 var
@@ -1374,6 +1003,691 @@ begin
     result:=true;
 end;
 
+{
+//Not used
+{procedure find_quadsClassic(starlist :star_list; out quad_star_distances :star_list); //build quads using closest stars, revised 2022-4-10
+var
+   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads                         : integer;
+   distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
+   identical_quad : boolean;
+begin
+
+  nrstars:=Length(starlist[0]);//number of quads will lower
+
+  if nrstars<4 then
+  begin //not enough stars for quads
+    SetLength(quad_star_distances,8,0);
+    exit;
+  end;
+
+  nrquads:=0;
+  SetLength(quad_star_distances,8,nrstars);//will contain the six distances and the central position
+
+  j_index1:=0;//set a default value
+  j_index2:=0;
+  j_index3:=0;
+
+  for i:=0 to nrstars-1 do
+  begin
+    distance1:=1E99;//distance closest star
+    distance2:=1E99;//distance second closest star
+    distance3:=1E99;//distance third closest star
+
+    x1:=starlist[0,i]; // first star position quad array
+    y1:=starlist[1,i];
+
+    for j:=0 to nrstars-1  do //find closest stars
+    begin
+      if j<>i then //not the first star
+      begin
+        disty:=sqr(starlist[1,j]- y1);
+        if disty<distance3 then //pre-check to increase processing speed with a small amount
+        begin
+          distance:=sqr(starlist[0,j]-x1)+distY ;//square distances are used
+          if distance>1 then //not an identical star. Mod 2021-6-25
+          begin
+            if distance<distance1 then
+            begin
+              distance3:=distance2;//distance third closest star
+              j_index3:=j_index2;//remember the star position in the list
+
+              distance2:=distance1;//distance second closest star
+              j_index2:=j_index1;//remember the star position in the list
+
+              distance1:=distance;//distance closest star
+              j_index1:=j;{mark later as used
+            end
+            else
+            if distance<distance2 then
+            begin
+              distance3:=distance2;//distance third closest star
+              j_index3:=j_index2;//remember the star position in the list
+
+              distance2:=distance;//distance second closest star
+              j_index2:=j;
+            end
+            else
+            if distance<distance3 then
+            begin
+              distance3:=distance;//third closest star
+              j_index3:=j;//remember the star position in the list
+            end;
+          end;//not an identical star. Mod 2021-6-25
+
+        end; //pre-check
+      end;
+    end;//j
+
+    if  distance3<1E99 then //found 4 stars in the restricted area
+    begin
+      x2:=starlist[0,j_index1]; // second star position quad array
+      y2:=starlist[1,j_index1];
+
+      x3:=starlist[0,j_index2];
+      y3:=starlist[1,j_index2];
+
+      x4:=starlist[0,j_index3];
+      y4:=starlist[1,j_index3];
+
+
+      xt:=(x1+x2+x3+x4)/4; //mean x position quad
+      yt:=(y1+y2+y3+y4)/4; //mean y position quad
+
+      identical_quad:=false;
+      for k:=0 to nrquads-1 do // check for an identical quad
+      begin
+        if ( (abs(xt-quad_star_distances[6,k])<1) and
+             (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
+        begin
+          identical_quad:=true;
+          break;//stop searching
+        end;
+      end;
+
+      if identical_quad=false then  //new quad found
+      begin
+        dist1:=sqrt(distance1);//distance star1-star2, use previous value already calculated
+        dist2:=sqrt(distance2);//distance star1-star3
+        dist3:=sqrt(distance3);//distance star1-star4
+        dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));//distance star2-star3
+        dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));//distance star2-star4
+        dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));//distance star3-star4
+        //sort six distances on size in five steps
+        for j:=1 to 5 do //sort on distance
+        begin
+          if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
+          if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
+          if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
+          if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+          if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+        end;
+        quad_star_distances[0,nrquads]:=dist1;//largest distance
+        quad_star_distances[1,nrquads]:=dist2/dist1;//scale relative to largest distance
+        quad_star_distances[2,nrquads]:=dist3/dist1;
+        quad_star_distances[3,nrquads]:=dist4/dist1;
+        quad_star_distances[4,nrquads]:=dist5/dist1;
+        quad_star_distances[5,nrquads]:=dist6/dist1;
+        quad_star_distances[6,nrquads]:=xt;//store mean x position
+        quad_star_distances[7,nrquads]:=yt;//store mean y position
+        inc(nrquads); //new unique quad found
+      end;
+    end;//found 4 stars
+  end;//i
+  SetLength(quad_star_distances,8,nrquads);//adapt to the number found
+end;
+}
+{
+//Not used
+//procedure find_quadsExperimental(starlist :star_list; out quad_star_distances :star_list); //build quads using closest stars, revised 2025
+var
+   i,j,k,nrstars,nrquads,startp                   : integer;
+   x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy     : double;
+   identical_quad : boolean;
+   table : star_list;
+begin
+
+  nrstars:=Length(starlist[0]);//number of quads will lower
+
+  if nrstars<4 then
+  begin //not enough stars for quads
+    SetLength(quad_star_distances,8,0);
+    exit;
+  end;
+
+  QuickSort_starlist(table,0,nrstars-1);//sort on X or first element. This allow limiting the search for double quads
+
+  nrquads:=0;
+  SetLength(quad_star_distances,8,nrstars);//will contain the six distances and the central position
+
+
+  setlength(table,2,nrstars);
+
+  for i:=0 to nrstars-1 do
+  begin
+
+    for j:=0 to nrstars-1 do
+    begin
+      table[0,j]:=sqr(starlist[0,i]-starlist[0,j])+sqr(starlist[1,i]-starlist[1,j]);//sqr(x1-x2)+sqr(y1-y2) so sqr(distance)
+      table[1,j]:=j;//orginal starlist position of star to investigate
+    end;
+
+    QuickSort_starlist(table,0,nrstars-1);//sort on X or first element
+
+    x1:=starlist[0,trunc(table[1,0])]; //copy star position X to the quad array
+    y1:=starlist[1,trunc(table[1,0])]; //copy star position Y to the quad array
+    x2:=starlist[0,trunc(table[1,1])];
+    y2:=starlist[1,trunc(table[1,1])];
+    x3:=starlist[0,trunc(table[1,2])];
+    y3:=starlist[1,trunc(table[1,2])];
+    x4:=starlist[0,trunc(table[1,3])];
+    y4:=starlist[1,trunc(table[1,3])];
+
+    xt:=(x1+x2+x3+x4)/4; //mean x position quad
+    yt:=(y1+y2+y3+y4)/4; //mean y position quad
+
+    identical_quad:=false;
+    startp:=max(0,nrquads-(nrstars div 4));//limit search for double quads. This is possible by sorting the starlist in X in the beginning
+    for k:=startp to nrquads-1 do // check for an identical quad
+    begin
+      if ( (abs(xt-quad_star_distances[6,k])<1) and
+           (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
+      begin
+        identical_quad:=true;
+        break;//stop searching
+      end;
+    end;
+
+    if identical_quad=false then  //new quad found
+    begin
+      dist1:=sqrt(table[1,1]);//distance star1-star2, use previous value already calculated
+      dist2:=sqrt(table[1,2]);//distance star1-star3
+      dist3:=sqrt(table[1,3]);//distance star1-star4
+      dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));//distance star2-star3
+      dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));//distance star2-star4
+      dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));//distance star3-star4
+      //sort six distances on size in five steps
+      for j:=1 to 5 do //sort on distance
+      begin
+        if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
+        if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
+        if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
+        if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+        if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+      end;
+      quad_star_distances[0,nrquads]:=dist1;//largest distance
+      quad_star_distances[1,nrquads]:=dist2/dist1;//scale relative to largest distance
+      quad_star_distances[2,nrquads]:=dist3/dist1;
+      quad_star_distances[3,nrquads]:=dist4/dist1;
+      quad_star_distances[4,nrquads]:=dist5/dist1;
+      quad_star_distances[5,nrquads]:=dist6/dist1;
+      quad_star_distances[6,nrquads]:=xt;//store mean x position
+      quad_star_distances[7,nrquads]:=yt;//store mean y position
+      inc(nrquads); //new unique quad found
+    end;
+  end;//i
+  SetLength(quad_star_distances,8,nrquads);//adapt to the number found
+end;
+}
+
+
+{
+//Not used
+procedure find_quads_xynew(starlist :star_list; out starlistquads :star_list);  //FOR DISPLAY ONLY, build quads using closest stars, revised 2024-12-16
+var
+   i,j,k,nrstars_min_one,j_index1,j_index2,j_index3,nrquads,neighbourdistance,m,n,Xposition,YpositionRef, Yposition,starnr : integer;
+   distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
+   identical_quad : boolean;
+
+   star_list_sorted_X, star_list_sorted_Y: array of Tstar_long_record;
+   index_y_stars: array of integer;
+begin
+  nrstars_min_one:=Length(starlist[0])-1;
+
+  if nrstars_min_one<3 then
+  begin //not enough stars for quads
+    SetLength(starlistquads,10,0);
+    exit;
+  end;
+
+  setlength(star_list_sorted_X,nrstars_min_one+1);
+  setlength(star_list_sorted_Y,nrstars_min_one+1);
+  for i:=0 to nrstars_min_one do
+  begin
+    star_list_sorted_X[i].nr:=i; //give it a star number
+    star_list_sorted_Y[i].nr:=i; //give it a star number
+    star_list_sorted_X[i].x:=starlist[0,i]; //store X
+    star_list_sorted_Y[i].x:=starlist[0,i];
+    star_list_sorted_X[i].y:=starlist[1,i];
+    star_list_sorted_Y[i].y:=starlist[1,i];
+  end;
+  QuickSort_records_on_X(star_list_sorted_X, 0,nrstars_min_one);
+  QuickSort_records_on_Y(star_list_sorted_Y, 0,nrstars_min_one);
+
+  setlength(index_y_stars,nrstars_min_one+1);
+  for i:=0 to nrstars_min_one do
+       index_y_stars[star_list_sorted_Y[i].nr]:=i;
+
+
+  //memo2_message(inttostr(nrstars_min_one+1)+' stars found.');
+
+  neighbourdistance:=2*round(sqrt(Length(starlist[0])));
+
+
+//  neighbourdistance:=strtoint(mainwindow.Edit1.caption);
+
+  nrquads:=0;
+  SetLength(starlistquads,10,nrstars_min_one);//number of quads will be lower
+
+  j_index1:=0;//give it a default value
+  j_index2:=0;
+  j_index3:=0;
+
+  for i:=0 to nrstars_min_one do
+  begin
+    x1:=star_list_sorted_X[i].x; //1e star position
+    y1:=star_list_sorted_X[i].y;
+    YpositionRef:=index_y_stars[star_list_sorted_X[i].nr];
+
+    distance1:=1E99;//distance closest star
+    distance2:=1E99;//distance second closest star
+    distance3:=1E99;//distance third closest star
+
+    //restrict search area in X and Y by a square with sides of neighbour distance. So ± neighbour stars in X and ± neighbour stars in Y
+    for k:=-neighbourdistance to neighbourdistance do //use all stars close in X
+    begin
+      if k<>0 then //not the same star
+      begin
+        j:=i+k;
+        if ((j>0) and (j<=nrstars_min_one)) then
+        begin
+          starnr:= star_list_sorted_X[j].nr;//new star with simular X value
+          Yposition:=index_y_stars[starnr];//the corresponding Y position
+
+          if  abs(YpositionRef- Yposition)<=neighbourdistance then //simular Y position
+          begin
+            distance:=sqr( star_list_sorted_X[j].x - x1)+ sqr( star_list_sorted_X[j].y-y1);
+
+            if distance<distance1 then
+            begin
+              distance3:=distance2;//distance third closest star
+              j_index3:=j_index2;
+
+              distance2:=distance1;//distance second closest star
+              j_index2:=j_index1;
+
+              distance1:=distance;//distance closest star
+              j_index1:=j;//mark later as used
+            end
+            else
+            if distance<distance2 then
+            begin
+              distance3:=distance2;//distance third closest star
+              j_index3:=j_index2;
+
+              distance2:=distance;//distance second closest star
+              j_index2:=j;
+            end
+            else
+            if distance<distance3 then
+            begin
+              distance3:=distance;//third closest star
+              j_index3:=j;
+            end;
+          end;
+        end;
+      end;
+    end;
+
+    if  distance3<1E99 then //found enough stars in the restricted area
+    begin
+
+      x2:=star_list_sorted_X[j_index1].x;//2e star position
+      y2:=star_list_sorted_X[j_index1].y;//2e star position
+
+      x3:=star_list_sorted_X[j_index2].x;//3e star position
+      y3:=star_list_sorted_X[j_index2].y;//3e star position
+
+      x4:=star_list_sorted_X[j_index3].x;//4e star position
+      y4:=star_list_sorted_X[j_index3].y;//4e star position
+
+      xt:=(x1+x2+x3+x4)/4; //mean x position quad
+      yt:=(y1+y2+y3+y4)/4; //mean y position quad
+
+      identical_quad:=false;
+      for k:=0 to nrquads-1 do // check for an identical quad
+      begin
+        if ( (abs(xt-starlistquads[8,k])<1) and
+             (abs(yt-starlistquads[9,k])<1) ) then // same center position, found an identical quad already in the list
+        begin
+          identical_quad:=true;
+          break;//stop searching
+        end;
+      end;
+
+      if identical_quad=false then  //new quad found
+      begin
+        starlistquads[0,nrquads]:=x1; //copy first star position to the quad array
+        starlistquads[1,nrquads]:=y1;
+        starlistquads[2,nrquads]:=x2; //copy the second star position to the quad array
+        starlistquads[3,nrquads]:=y2;
+        starlistquads[4,nrquads]:=x3;
+        starlistquads[5,nrquads]:=y3;
+        starlistquads[6,nrquads]:=x4;
+        starlistquads[7,nrquads]:=y4;
+
+        starlistquads[8,nrquads]:=xt;//store mean x position
+        starlistquads[9,nrquads]:=yt;//store mean y position
+        inc(nrquads); //new unique quad found
+      end;
+    end;
+  end;
+
+  SetLength(starlistquads,10,nrquads);//reduce array length to number quads one shorter since last entry is not filled
+end;
+}
+{
+//not used
+//procedure QuickSort_records_on_X(var A: array of Tstar_long_record; iLo, iHi: Integer) ;// Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi
+var
+  Lo, Hi : integer;
+  Pivot : double;
+  T: Tstar_long_record;
+begin
+  Lo := iLo;
+  Hi := iHi;
+  Pivot := A[(Lo + Hi) div 2].x;
+  repeat
+    while A[Lo].x < Pivot do Inc(Lo) ;
+    while A[Hi].x > Pivot do Dec(Hi) ;
+    if Lo <= Hi then
+    begin //swap
+      T := A[Lo];
+      A[Lo] := A[Hi];
+      A[Hi] := T;
+      Inc(Lo) ;
+      Dec(Hi) ;
+    end;
+  until Lo > Hi;
+  if Hi > iLo then QuickSort_records_on_X(A, iLo, Hi) ; //executes itself recursively
+  if Lo < iHi then QuickSort_records_on_X(A, Lo, iHi) ; //executes itself recursively
+end;
+
+//procedure QuickSort_records_on_Y(var A: array of Tstar_long_record; iLo, iHi: Integer) ;// Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi
+var
+  Lo, Hi : integer;
+  Pivot : double;
+  T: Tstar_long_record;
+begin
+  Lo := iLo;
+  Hi := iHi;
+  Pivot := A[(Lo + Hi) div 2].y;
+  repeat
+    while A[Lo].y < Pivot do Inc(Lo) ;
+    while A[Hi].y > Pivot do Dec(Hi) ;
+    if Lo <= Hi then
+    begin //swap
+      T := A[Lo];
+      A[Lo] := A[Hi];
+      A[Hi] := T;
+      Inc(Lo) ;
+      Dec(Hi) ;
+    end;
+  until Lo > Hi;
+  if Hi > iLo then QuickSort_records_on_Y(A, iLo, Hi) ; //executes itself recursively
+  if Lo < iHi then QuickSort_records_on_Y(A, Lo, iHi) ; //executes itself recursively
+end;
+}
+
+{
+//Advanced but slower. Not used
+procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  //build quads using closest stars, revised 2024-12-16
+var
+   nrstars,i,j,k,j_index1,j_index2,j_index3,nrquads,neighbourdistance,m,n,Xposition,YpositionRef, Yposition,starnr : integer;
+   distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
+   identical_quad : boolean;
+   star_list_sorted_X, star_list_sorted_Y: array of Tstar_long_record;
+   index_y_stars: array of integer;
+begin
+  nrstars:=Length(starlist[0]);
+
+  if nrstars<4 then
+  begin //not enough stars for quads
+    SetLength(quad_star_distances,8,0);
+    exit;
+  end;
+
+  setlength(star_list_sorted_X,nrstars);
+  setlength(star_list_sorted_Y,nrstars);
+  for i:=0 to nrstars-1 do
+  begin
+    star_list_sorted_X[i].nr:=i; //give it a star number
+    star_list_sorted_Y[i].nr:=i; //give it a star number
+    star_list_sorted_X[i].x:=starlist[0,i]; //store X
+    star_list_sorted_Y[i].x:=starlist[0,i];
+    star_list_sorted_X[i].y:=starlist[1,i];
+    star_list_sorted_Y[i].y:=starlist[1,i];
+  end;
+  QuickSort_records_on_X(star_list_sorted_X, 0,nrstars-1);
+  QuickSort_records_on_Y(star_list_sorted_Y, 0,nrstars-1);
+
+  setlength(index_y_stars,nrstars);
+  for i:=0 to nrstars-1 do
+       index_y_stars[star_list_sorted_Y[i].nr]:=i;
+
+
+  //memo2_message(inttostr(nrstars_min_one+1)+' stars found.');
+
+  neighbourdistance:=2*round(sqrt(Length(starlist[0])));
+
+
+//  neighbourdistance:=strtoint(mainwindow.Edit1.caption);
+
+  nrquads:=0;
+  SetLength(quad_star_distances,8,nrstars);//will contain the six distances and the central position
+
+  j_index1:=0;//give it a default value
+  j_index2:=0;
+  j_index3:=0;
+
+  for i:=0 to nrstars-1 do
+  begin
+    x1:=star_list_sorted_X[i].x; //1e star position
+    y1:=star_list_sorted_X[i].y;
+    YpositionRef:=index_y_stars[star_list_sorted_X[i].nr];
+
+    distance1:=1E99;//distance closest star
+    distance2:=1E99;//distance second closest star
+    distance3:=1E99;//distance third closest star
+
+    //restrict search area in X and Y by a square with sides of neighbour distance. So ± neighbour stars in X and ± neighbour stars in Y
+    for k:=-neighbourdistance to neighbourdistance do //use all stars close in X
+    begin
+      if k<>0 then //not the same star
+      begin
+        j:=i+k;
+        if ((j>0) and (j<=nrstars-1)) then
+        begin
+          starnr:= star_list_sorted_X[j].nr;//new star with simular X value
+          Yposition:=index_y_stars[starnr];//the corresponding Y position
+
+          if  abs(YpositionRef- Yposition)<=neighbourdistance then //simular Y position
+          begin
+            distance:=sqr( star_list_sorted_X[j].x - x1)+ distY ;
+
+            if distance<distance1 then
+            begin
+              distance3:=distance2;//distance third closest star
+              j_index3:=j_index2;
+
+              distance2:=distance1;//distance second closest star
+              j_index2:=j_index1;
+
+              distance1:=distance;//distance closest star
+              j_index1:=j;//mark later as used
+            end
+            else
+            if distance<distance2 then
+            begin
+              distance3:=distance2;//distance third closest star
+              j_index3:=j_index2;
+
+              distance2:=distance;//distance second closest star
+              j_index2:=j;
+            end
+            else
+            if distance<distance3 then
+            begin
+              distance3:=distance;//third closest star
+              j_index3:=j;
+            end;
+
+          end;
+        end;
+      end;
+    end;
+
+    if  distance3<1E99 then //found enough stars in the restricted area
+    begin
+
+      x2:=star_list_sorted_X[j_index1].x;//2e star position
+      y2:=star_list_sorted_X[j_index1].y;//2e star position
+
+      x3:=star_list_sorted_X[j_index2].x;//3e star position
+      y3:=star_list_sorted_X[j_index2].y;//3e star position
+
+      x4:=star_list_sorted_X[j_index3].x;//4e star position
+      y4:=star_list_sorted_X[j_index3].y;//4e star position
+
+      xt:=(x1+x2+x3+x4)/4; //mean x position quad
+      yt:=(y1+y2+y3+y4)/4; //mean y position quad
+
+
+      identical_quad:=false;
+      for k:=0 to nrquads-1 do // check for an identical quad
+      begin
+        if ( (abs(xt-quad_star_distances[6,k])<1) and
+             (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
+        begin
+          identical_quad:=true;
+          break;//stop searching
+        end;
+      end;
+
+      if identical_quad=false then  //new quad found
+      begin
+        dist1:=sqrt(distance1);//distance star1-star2, use previous value already calculated
+        dist2:=sqrt(distance2);//distance star1-star3
+        dist3:=sqrt(distance3);//distance star1-star4
+        dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));//distance star2-star3
+        dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));//distance star2-star4
+        dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));//distance star3-star4
+        //sort six distances on size in five steps
+        for j:=1 to 5 do //sort on distance
+        begin
+          if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
+          if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
+          if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
+          if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+          if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+        end;
+        quad_star_distances[0,nrquads]:=dist1;//largest distance
+        quad_star_distances[1,nrquads]:=dist2/dist1;//cale relative to largest distance
+        quad_star_distances[2,nrquads]:=dist3/dist1;
+        quad_star_distances[3,nrquads]:=dist4/dist1;
+        quad_star_distances[4,nrquads]:=dist5/dist1;
+        quad_star_distances[5,nrquads]:=dist6/dist1;
+
+        quad_star_distances[6,nrquads]:=xt;//store mean x position
+        quad_star_distances[7,nrquads]:=yt;//store mean y position
+        inc(nrquads);//new unique quad found
+      end;
+    end;
+  end;
+  SetLength(quad_star_distances,8,nrquads);//adapt to the number found
+end;
+}
+
+{Not used
+procedure find_quads_xy(starlist:star_list; out starlistquads :star_list);  //FOR DISPLAY ONLY, build quads using closest stars, revision 2025
+var
+   i,j,k,nrstars,nrquads,startp   : integer;
+   x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
+   identical_quad : boolean;
+   table       : star_list;
+begin
+  nrstars:=Length(starlist[0]);
+
+  if nrstars<4 then
+  begin //not enough stars for quads
+    SetLength(starlistquads,10,0);
+    exit;
+  end;
+
+  QuickSort_starlist(starlist,0,nrstars-1);//for limiting check for doubles
+
+  setlength(table,2,nrstars);
+  nrquads:=0;
+  SetLength(starlistquads,10,nrstars);//number of quads will be lower
+
+  for i:=0 to nrstars-1 do
+  begin
+    for j:=0 to nrstars-1 do
+    begin
+      table[0,j]:=sqr(starlist[0,i]-starlist[0,j])+sqr(starlist[1,i]-starlist[1,j]);//sqr(x1-x2)+sqr(y1-y2)
+      table[1,j]:=j;//orginal starlist position of star to investigate
+    end;
+
+    QuickSort_starlist(table,0,nrstars-1);//sort on X or first element
+
+
+    x1:=starlist[0,trunc(table[1,0])]; //1e star position
+    y1:=starlist[1,trunc(table[1,0])];
+    x2:=starlist[0,trunc(table[1,1])]; //2e star position
+    y2:=starlist[1,trunc(table[1,1])];
+    x3:=starlist[0,trunc(table[1,2])]; //3e star position
+    y3:=starlist[1,trunc(table[1,2])];
+    x4:=starlist[0,trunc(table[1,3])]; //4e star position
+    y4:=starlist[1,trunc(table[1,3])];
+
+
+    xt:=(x1+x2+x3+x4)/4; //mean x position quad
+    yt:=(y1+y2+y3+y4)/4; //mean y position quad
+
+    identical_quad:=false;
+    startp:=max(0,nrquads-(nrstars div 4));//limit search for double quads. This is possible by sorting the starlist in X
+    for k:=startp to nrquads-1 do // check for an identical quad
+    begin
+      if ( (abs(xt-starlistquads[8,k])<1) and
+           (abs(yt-starlistquads[9,k])<1) ) then // same center position, found an identical quad already in the list
+      begin
+        identical_quad:=true;
+        break;//stop searching
+      end;
+    end;
+
+
+    if identical_quad=false then  //new quad found
+    begin
+      starlistquads[0,nrquads]:=x1; //copy first star position to the quad array
+      starlistquads[1,nrquads]:=y1;
+      starlistquads[2,nrquads]:=x2; //copy the second star position to the quad array
+      starlistquads[3,nrquads]:=y2;
+      starlistquads[4,nrquads]:=x3;
+      starlistquads[5,nrquads]:=y3;
+      starlistquads[6,nrquads]:=x4;
+      starlistquads[7,nrquads]:=y4;
+
+      starlistquads[8,nrquads]:=xt;//store mean x position
+      starlistquads[9,nrquads]:=yt;//store mean y position
+      inc(nrquads);//new unique quad found
+    end;
+  end;
+  SetLength(starlistquads,10,nrquads);//reduce array length to number quads one shorter since last entry is not filled
+end;
+}
 
 end.
 

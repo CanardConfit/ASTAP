@@ -936,6 +936,14 @@ begin
       begin
         find_quads(starlist2,quad_star_distances2);{find star quads for new image. Quads are binning independent}
         quads_str:=' quads';
+
+     //   for i:=0 to length(quad_star_distances2[0])-1 do
+     //   begin
+     //        memo2_message(#9+floattostr(quad_star_distances2[0,i])+#9+floattostr(quad_star_distances2[1,i])+#9+floattostr(quad_star_distances2[2,i])+#9+floattostr(quad_star_distances2[3,i])+#9+
+     //                     floattostr(quad_star_distances2[4,i])+#9+floattostr(quad_star_distances2[5,i])+#9+floattostr(quad_star_distances2[6,i])+#9+floattostr(quad_star_distances2[7,i])   );
+     //   end;
+     //   exit;
+
       end;
 
 

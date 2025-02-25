@@ -1282,7 +1282,7 @@ uses
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
   unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
-  unit_contour, unit_interpolate, unit_sqm;
+  unit_contour, unit_interpolate, unit_sqm, unit_threads_calibration;
 
 type
   blink_solution = record
@@ -11816,13 +11816,14 @@ begin
           dark_norm_value := dark_norm_value + img_dark[0, fitsY,fitsX];
       dark_norm_value := dark_norm_value /(16*16);  {scale factor to apply flat. The norm value will result in a factor one for the center.}
 
-      for fitsY := 0 to hd.Height - 1 do  {apply the dark}
-        for fitsX := 0 to hd.Width - 1 do
-        begin
-          Value := img_dark[0, fitsY, fitsX];{Darks are always made mono when making master dark}
-          for k := 0 to hd.naxis3 - 1 do {do all colors}
-            img[k, fitsY, fitsX] := img[k, fitsY, fitsX] - Value;
-        end;
+
+
+      //for fitsY := 0 to hd.Height - 1 do  {apply the dark}
+      //  for fitsX := 0 to hd.Width - 1 do
+      //    img[0, fitsY, fitsX] := img[0, fitsY, fitsX] - img_dark[0, fitsY, fitsX];//{Darks are always made mono when making master dark}
+
+      calibrate_image(img, img_dark, '-',0,0,0,0,0);//subtract dark in threads
+
 
       {for stacking}
       head_ref.calstat := 'D';
@@ -11885,42 +11886,47 @@ begin
         flatNorm21 :={flat_norm_value/} (flatNorm21 /(8*8));
         flatNorm22 :={flat_norm_value/} (flatNorm22 /(8*8));
 
-        for fitsY := 0 to hd.Height-1 do  {apply the OSC flat}
-          for fitsX := 0 to hd.Width-1 do
-          begin //thread the red, green and blue pixels seperately
-            //bias is already combined in flat in combine_flat
-            if odd(fitsX) then
-            begin
-              if odd(fitsY) then
-                flat_factor :=  flatNorm11 / (img_flat[0, fitsY , fitsX] + 0.001)  //normalise flat for colour 11
-              else
-                flat_factor :=  flatNorm12 / (img_flat[0, fitsY , fitsX] + 0.001)  //normalise flat for colour 12
-            end
-            else
-            begin
-              if odd(fitsY) then
-                flat_factor :=  flatNorm21 / (img_flat[0, fitsY , fitsX] + 0.001) //normalise flat for colour 21
-              else
-                flat_factor :=  flatNorm22 / (img_flat[0, fitsY , fitsX] + 0.001) //normalise flat for colour 22
-            end;
+        //for fitsY := 0 to hd.Height-1 do  {apply the OSC flat}
+        //  for fitsX := 0 to hd.Width-1 do
+        //  begin //thread the red, green and blue pixels seperately
+        //    //bias is already combined in flat in combine_flat
+        //    if odd(fitsX) then
+        //    begin
+        //     if odd(fitsY) then
+        //      flat_factor :=  flatNorm11 / (img_flat[0, fitsY , fitsX] + 0.001)  //normalise flat for colour 11
+        //    else
+        //      flat_factor :=  flatNorm12 / (img_flat[0, fitsY , fitsX] + 0.001)  //normalise flat for colour 12
+        //  end
+        //  else
+        //  begin
+        //    if odd(fitsY) then
+        //      flat_factor :=  flatNorm21 / (img_flat[0, fitsY , fitsX] + 0.001) //normalise flat for colour 21
+        //    else
+        //      flat_factor :=  flatNorm22 / (img_flat[0, fitsY , fitsX] + 0.001) //normalise flat for colour 22
+        //  end;
 
-            flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
+        //  flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
 
-            img[0, fitsY, fitsX] := img[0, fitsY, fitsX] * flat_factor;
-          end;
+        //  img[0, fitsY, fitsX] := img[0, fitsY, fitsX] * flat_factor;
+        //end;
+        calibrate_image(img, img_flat, 'O',flat_norm_value,flatNorm11,flatNorm12,flatNorm21,flatNorm22);//apply flat in threads
       end
       else //monochrome images (or weird images already in colour)
       begin
-        for k := 0 to hd.naxis3 - 1 do {do all colors}
-        for fitsY := 0 to hd.Height-1 do  {apply the flat}
-          for fitsX := 0 to hd.Width-1 do
-          begin
-            flat_factor := flat_norm_value / (img_flat[0, fitsY, fitsX] + 0.001);  {bias is already combined in flat in combine_flat}
-            flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
+       // for k := 0 to hd.naxis3 - 1 do {do all colors}
+       //   for fitsY := 0 to hd.Height-1 do  {apply the flat}
+       //     for fitsX := 0 to hd.Width-1 do
+       //     begin
+       //       flat_factor := flat_norm_value / (img_flat[0, fitsY, fitsX] + 0.001);  {bias is already combined in flat in combine_flat}
+       //       flat_factor:=min(4,max(flat_factor,-4)); {un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
+       //       img[k, fitsY, fitsX] := img[k, fitsY, fitsX] * flat_factor;
+       //     end;
 
-            img[k, fitsY, fitsX] := img[k, fitsY, fitsX] * flat_factor;
-          end;
+        calibrate_image(img, img_flat, '/',flat_norm_value,0,0,0,0);//apply flat in threads
+
       end;
+
+
       {for stacking}
       head_ref.calstat := head_ref.calstat + 'F' + head_flat.calstat{B from flat}; {mark that flat and bias have been applied. Store in the header of the reference file since it is not modified while stacking}
       head_ref.flat_count := head_flat.flat_count;
