@@ -318,9 +318,9 @@ end;
 
 procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
-   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw  : integer;
+   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,startp  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
-   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                            : double;
    identical_quad : boolean;
 begin
 
@@ -419,19 +419,18 @@ begin
       yt:=(y1+y2+y3+y4)/4; {mean y position quad}
 
       identical_quad:=false;
-      if nrquads>=1 then {already a quad stored}
+      if nrstars>=150 then
+        startp:=max(0,nrquads-(nrstars div 4))//limit search for double quads. This is possible by sorting the starlist in X in the beginning. So first quads are to far away to be a double
+      else
+        startp:=0;
+      for k:=startp to nrquads-1 do // check for an identical quad
       begin
-       k:=0;
-       repeat {check for identical quads}
-         if ( (abs(xt-quad_star_distances[6,k])<1) and
-              (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
-             begin
-               identical_quad:=true;
-               k:=999999999;{stop}
-             end;
-
-         inc(k);
-       until k>=nrquads;
+        if ( (abs(xt-quad_star_distances[6,k])<1) and
+             (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
+        begin
+          identical_quad:=true;
+          break;//stop searching
+        end;
       end;
 
       if identical_quad=false then  {new quad found}
