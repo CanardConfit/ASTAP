@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.2.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.02.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -7728,6 +7728,25 @@ begin
   show_marker_shape(mainwindow.shape_manual_alignment1, 1 {circle, assume a good lock},20,20,10 {minimum size},X,Y);
 end;
 
+
+procedure SmoothResize(bmp: tbitmap; imgMainPicture : timage);
+var pt:TPoint;
+    h: HDC;
+begin
+  h := imgMainPicture.Canvas.Handle;
+  // Previous call to StretchDraw
+  // imgMainPicture.Canvas.StretchDraw(Rect(0, 0, imgMainPicture.Width - 1,
+  // imgMainPicture.Height - 1), curPicture.AnnotatedBitmap);
+  // Normal StretchDraw uses STRETCH_DELETESCANS as StretchBltMode , HALFTONE should give better results
+  GetBrushOrgEx(h, pt);
+  SetStretchBltMode(h, HALFTONE);
+  SetBrushOrgEx(h, pt.x, pt.y, @pt);
+  StretchBlt(h, 0, 0, imgMainPicture.Width - 1,
+    imgMainPicture.Height - 1, bmp.Canvas.Handle,
+    0, 0, bmp.Width,bmp.Height,SRCCOPY);
+end;
+
+
 procedure plot_fits(img:timage; center_image: boolean);
 type
   PByteArray2 = ^TByteArray2;
@@ -7735,7 +7754,7 @@ type
 var
    i,j,col,col_r,col_g,col_b,linenr,columnr :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
-   Bitmap  : TBitmap;{for fast pixel routine}
+   Bitmap,bmp2  : TBitmap;{for fast pixel routine}
    xLine :  PByteArray2;{for fast pixel routine}
    flipv, fliph : boolean;
    ratio     : double;
@@ -7907,6 +7926,8 @@ begin
 
     update_menu(true);{2020-2-15 moved from load_fits to plot_image.  file loaded, update menu for fits}
   end;
+
+
 
   {do refresh at the end for smooth display, especially for blinking }
 //  img.refresh;{important, show update}
@@ -8682,6 +8703,7 @@ begin
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
       magnitude_slope:=Sett.ReadFloat('aavso','slope',0);
       used_vsp_stars:=Sett.ReadString('aavso','vsp-stars','');
+      obstype:=Sett.Readinteger('aavso','obstype',0); {photometry}
 
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('live','live_stack_dir','');
       stackmenu1.monitoring_path1.caption:=Sett.ReadString('live','monitor_dir','');
@@ -9074,6 +9096,7 @@ begin
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
       sett.writeFloat('aavso','slope', magnitude_slope);
       sett.writestring('aavso','vsp-stars',used_vsp_stars);
+      sett.writeinteger('aavso','obstype',obstype);//CCD, DSLR, PEP
 
       sett.writestring('live','live_stack_dir',stackmenu1.live_stacking_path1.caption);{live stacking}
       sett.writestring('live','monitor_dir',stackmenu1.monitoring_path1.caption);

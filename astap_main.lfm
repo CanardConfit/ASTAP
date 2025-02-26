@@ -805,7 +805,7 @@ object mainwindow: Tmainwindow
         object Image1: TImage
           Left = 122
           Height = 264
-          Top = -1
+          Top = 0
           Width = 608
           Anchors = []
           OnMouseDown = Image1MouseDown

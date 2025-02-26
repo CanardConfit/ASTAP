@@ -23,6 +23,7 @@ type
     baa_style1: TCheckBox;
     abrv_comp1: TCheckListBox;
     ensemble_database1: TCheckBox;
+    obstype1: TComboBox;
     sigma_mzero1: TLabel;
     Label7: TLabel;
     sigma_check2: TLabel;
@@ -94,6 +95,7 @@ var
   delta_bv : double=0;
   magnitude_slope    : double=0;
   ensemble_database : boolean=true;
+  obstype : integer=0;
 
 
 var
@@ -278,6 +280,7 @@ begin
     delta_bv:=strtofloat2(form_aavso1.delta_bv1.text);
     magnitude_slope:=strtofloat2(form_aavso1.magnitude_slope1.text);
     ensemble_database:=ensemble_database1.checked;
+    obstype:=obstype1.ItemIndex;
   end;
 end;
 
@@ -468,7 +471,7 @@ begin
 
       if documented_comp_magn=-99 then
       begin //COMP magnitude unknown.
-        warning:='Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloans filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
+        warning:=warning+'Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloans filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
       end
       else
       begin //COMP magnitude known
@@ -485,7 +488,9 @@ begin
         fluxes[count]:=flux_documented;//for standard deviation calculation
         inc(count);
       end;
-    end;
+    end
+    else
+    warning:=warning+'Ignored invalid '+copy(abbrv_c,1,11)+'. ';
   end;//for loop
   if sum_all_fluxes<>0 then
   begin
@@ -687,6 +692,7 @@ begin
     date_column:=P_jd_mid;
   end;
 
+
   if stackmenu1.reference_database1.ItemIndex=0 then settings:=stackmenu1.reference_database1.text
   else
     settings:=stackmenu1.reference_database1.text;
@@ -703,7 +709,7 @@ begin
                  '#SOFTWARE=ASTAP, v'+astap_version+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE='+date_format+#13+#10+
-                 '#OBSTYPE=CCD'+#13+#10+
+                 '#OBSTYPE='+obstype1.text+#13+#10+
                  '#COMMENTS='+comments+#13+#10+
                   baa_extra+
                  '#'+#13+#10+
@@ -772,7 +778,7 @@ begin
 
                    if length(column_comps)>1 then //ensemble, else single comp star
                    begin
-                     comp_magn_info:='Ensemble: '+ abbrv_comp_clean;
+                     comp_magn_info:=comp_magn_info+'Ensemble: '+ abbrv_comp_clean;
                      abbrv_comp_clean_report:='ENSEMBLE';
                      comp_magn_str:='na';
                    end
@@ -1034,9 +1040,8 @@ end;
 
 procedure Tform_aavso1.abbrv_variable1Change(Sender: TObject);
 begin
-   if stackmenu1.measuring_method1.itemindex>0  then
-     retrieve_vsp_stars(clean_abbreviation(abbrv_variable1.text));
-   plot_graph;
+  retrieve_vsp_stars(clean_abbreviation(abbrv_variable1.text));
+  plot_graph;
 end;
 
 
@@ -1501,12 +1506,6 @@ end;
 
 procedure Tform_aavso1.FormShow(Sender: TObject);
 begin
-  if p_nr=p_nr_norm then
-  begin
-     report_error1.visible:=true;
-     exit;
-  end;
-
   obscode1.text:=obscode;
   ensemble_database1.checked:=ensemble_database;
   abrv_comp1.enabled:=ensemble_database=false;
@@ -1524,10 +1523,18 @@ begin
   filter1.itemindex:=aavso_filter_index;
   form_aavso1.delta_bv1.text:=floattostrF(delta_bv,ffFixed,5,3);
   form_aavso1.magnitude_slope1.text:=floattostrF(magnitude_slope,ffFixed,5,3);
+  obstype1.ItemIndex:=obstype;
 
   aavso_report:='';
 
   form_aavso1.height:=report_to_clipboard1.top+report_to_clipboard1.height+5;//autosize in height. note form_aavso1.autosize:=true doesn't work welll for the timage
+
+  if p_nr=p_nr_norm then
+  begin
+     report_error1.visible:=true;
+     exit;
+  end;
+
   plot_graph;
 end;
 

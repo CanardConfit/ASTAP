@@ -32,7 +32,7 @@ var
 
 implementation
 
-uses unit_astrometric_solving, unit_contour;
+uses unit_astrometric_solving, unit_contour,unit_threads_stacking,unit_threads_file_loading;
 
 
 procedure  calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
@@ -621,14 +621,18 @@ end;
 
 procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3                     : integer;
+    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3,mm                     : integer;
     background, weightF,hfd_min,aa,bb,cc,dd,ee,ff,pedestal                                                                     : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,solar_drift_compensation,
     use_star_alignment                                                                                                         : boolean;
     tempval                                                                                                                    : single;
     warning             : string;
     starlist1,starlist2 : star_list;
-    img_temp,img_average : Timage_array;
+    img_temp,img_average,img_early : Timage_array;
+    Loader:  TLoadThread;
+    Success,start_early : Boolean;
+    head_early : theader;
+
 begin
   with stackmenu1 do
   begin
@@ -667,7 +671,22 @@ begin
           Application.ProcessMessages;
           {load image}
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+      //    if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+
+          if init=false then
+          begin
+            Loader := TLoadThread.Create(filename2, True {light}, True, init=false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head,img_loaded);
+            Loader.WaitFor;  // Wait for the thread to finish
+            Success := Loader.WasSuccessful;
+            Loader.Free;
+            if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
+          end
+          else
+          begin //duplicate use image loaded during stack process
+            img_loaded:=duplicate(img_early);
+            head:=head_early;
+          end;
+
           if init=false then
           begin {init is false, first image}
             old_width:=head.width;
@@ -691,6 +710,11 @@ begin
           if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
 
           apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+
+          //start loading the second or third, .... image early. do this after applying dark where the procedure load fits is also accessed
+          start_early:=((c+1<=length(files_to_process)-1) and (length(files_to_process[c+1].name)>0));
+          if start_early then Loader:= TLoadThread.Create(files_to_process[c+1].name, True {light}, True, false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head_early,img_early);
+
 
           memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
           Application.ProcessMessages;
@@ -797,21 +821,34 @@ begin
             ff:=solution_vectorY[2];
 
             if solar_drift_compensation then
-              compensate_solar_drift(head, {var} cc, ff);//compendate movement solar objects
+              compensate_solar_drift(head, {var} cc, ff);//compensate movement solar objects
 
-            for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
-            for fitsX:=0 to head.width-1  do
+//            for fitsY:=0 to head.height-1 do //skip outside "bad" pixels if mosaic mode
+//            for fitsX:=0 to head.width-1  do
+//            begin
+  //            x_new:=round(aa*(fitsX)+bb*(fitsY)+cc); //correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1
+    //          y_new:=round(dd*(fitsX)+ee*(fitsY)+ff); //correction y:=aX+bY+c
+
+      //        if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+        //      begin
+          //      for col:=0 to head.naxis3-1 do {all colors}
+            //      img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ (img_loaded[col,fitsY,fitsX]-background)*weightf;//Sum flux only. image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero
+
+//                img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+weightF{typical 1};{count the number of image pixels added=samples.}
+  //            end;
+    //        end;
+
+
+
+            Add_Array( img_average, img_loaded, img_temp, aa,bb,cc,dd,ee,ff, background, weightf);//add B to A
+
+            if start_early then
             begin
-              x_new:=round(aa*(fitsX)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
-              y_new:=round(dd*(fitsX)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
-
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-              begin
-                for col:=0 to head.naxis3-1 do {all colors}
-                  img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ (img_loaded[col,fitsY,fitsX]-background)*weightf;{Sum flux only. image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-
-                img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+weightF{typical 1};{count the number of image pixels added=samples.}
-              end;
+              //wait for image_early to be loaded
+              Loader.WaitFor;  // Wait for the thread to finish
+              Success := Loader.WasSuccessful;
+              Loader.Free;
+              if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
             end;
 
           end;
