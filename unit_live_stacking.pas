@@ -128,7 +128,7 @@ var
     file_ext,filen,filename_org                 :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
     warning  : string;
-    starlist1,starlist2 : star_list;
+    starlist1,starlist2 : Tstar_list;
     rename_counter: integer=0;
     count         : integer=0;
     img_average   : Timage_array;

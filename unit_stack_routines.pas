@@ -32,7 +32,7 @@ var
 
 implementation
 
-uses unit_astrometric_solving, unit_contour,unit_threads_stacking,unit_threads_file_loading;
+uses unit_astrometric_solving, unit_contour,unit_threaded_stacking,unit_thread_file_loading;
 
 
 procedure  calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
@@ -204,7 +204,7 @@ var
   saturated_level,hfd_min,tempval,aa,bb,cc,dd,ee,ff                                        : double;
   init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip : boolean;
   warning             : string;
-  starlist1,starlist2 : star_list;
+  starlist1,starlist2 : Tstar_list;
   img_temp,img_average : Timage_array;
 begin
   with stackmenu1 do
@@ -598,7 +598,7 @@ begin
   end;
 end;
 
-procedure compensate_solar_drift(head : theader; var cc, ff : double);//compendate movement solar objects
+procedure compensate_solar_drift(head : theader; var solution_vectorX,solution_vectorY : Tsolution_vector);//compendate movement solar objects
 var
   ra_movement,dec_movement,posX,posY : double;
 begin
@@ -608,27 +608,27 @@ begin
 
   celestial_to_pixel(head,head.ra0 + ra_movement,head.dec0 + dec_movement,true, posX,posY); //calculate drift of center of image by asteroid
   if sign(head_ref.cd1_1)<>sign(head.cd1_1) then
-     cc:=cc-(head.crpix1-posX)//correct for asteroid movement
+     solution_vectorX[2]:=solution_vectorX[2]-(head.crpix1-posX)//correct for asteroid movement
   else
-     cc:=cc+(head.crpix1-posX);//correct for asteroid movement
+     solution_vectorX[2]:=solution_vectorX[2]+(head.crpix1-posX);//correct for asteroid movement
 
   if sign(head_ref.cd2_2)<>sign(head.cd2_2) then
-    ff:=ff-(head.crpix2-posY) //correct for asteroid movement
+    solution_vectorY[2]:=solution_vectorY[2]-(head.crpix2-posY) //correct for asteroid movement
   else
-    ff:=ff+(head.crpix2-posY);//correct for asteroid movement
+    solution_vectorY[2]:=solution_vectorY[2]+(head.crpix2-posY);//correct for asteroid movement
 end;
 
 
 procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
     fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3,mm                     : integer;
-    background, weightF,hfd_min,aa,bb,cc,dd,ee,ff,pedestal                                                                     : double;
+    background, weightF,hfd_min,aa,bb,cc,dd,ee,ff,pedestal,dummy                                                                  : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,solar_drift_compensation,
     use_star_alignment                                                                                                         : boolean;
     tempval                                                                                                                    : single;
     warning             : string;
-    starlist1,starlist2 : star_list;
-    img_temp,img_average,img_early : Timage_array;
+    starlist1,starlist2 : Tstar_list;
+    img_temp,img_average,img_early,dummy_img : Timage_array;
     Loader:  TLoadThread;
     Success,start_early : Boolean;
     head_early : theader;
@@ -675,7 +675,7 @@ begin
 
           if init=false then
           begin
-            Loader := TLoadThread.Create(filename2, True {light}, True, init=false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head,img_loaded);
+            Loader := TLoadThread.Create(filename2, True {light}, True, init=false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head,img_loaded);//load image
             Loader.WaitFor;  // Wait for the thread to finish
             Success := Loader.WasSuccessful;
             Loader.Free;
@@ -683,7 +683,7 @@ begin
           end
           else
           begin //duplicate use image loaded during stack process
-            img_loaded:=duplicate(img_early);
+            img_loaded:=duplicate(img_early); //use image already loaded parallel to stacking
             head:=head_early;
           end;
 
@@ -813,15 +813,8 @@ begin
 
             background:=head.backgr;//calculated in bin_find_stars/get_background()
 
-            aa:=solution_vectorX[0]; //move to local variables for some speed improvement
-            bb:=solution_vectorX[1];
-            cc:=solution_vectorX[2];
-            dd:=solution_vectorY[0];
-            ee:=solution_vectorY[1];
-            ff:=solution_vectorY[2];
-
             if solar_drift_compensation then
-              compensate_solar_drift(head, {var} cc, ff);//compensate movement solar objects
+              compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
 //            for fitsY:=0 to head.height-1 do //skip outside "bad" pixels if mosaic mode
 //            for fitsX:=0 to head.width-1  do
@@ -840,7 +833,7 @@ begin
 
 
 
-            Add_Array( img_average, img_loaded, img_temp, aa,bb,cc,dd,ee,ff, background, weightf);//add B to A
+            stack_arrays( img_average, img_loaded, img_temp,dummy_img,dummy_img,'A', solution_vectorX,solution_vectorY, background, weightf,dummy);//add B to A
 
             if start_early then
             begin
@@ -948,6 +941,7 @@ var
     counter_overlap                                                  : array[0..2] of integer;
     bck                                                              : array[0..3] of double;
     oldsip                                                           : boolean;
+    Loader:  TLoadThread;
     img_temp,img_average : Timage_array;
 
 begin
@@ -969,6 +963,7 @@ begin
       if length(files_to_process[c].name)>0 then
       begin
         if load_fits(files_to_process[c].name,true {light},false{load data},false {update memo} ,0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+
         if init=false then
         begin
           head_ref:=head;{backup solution}
@@ -1258,20 +1253,23 @@ end;
 procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 type
    tsolution  = record
-     solution_vectorX : solution_vector {array[0..2] of double};
-     solution_vectorY : solution_vector;
+     solution_vectorX : Tsolution_vector {array[0..2] of double};
+     solution_vectorY : Tsolution_vector;
      cblack : double;
    end;
 var
     solutions      : array of tsolution;
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars,old_naxis3           : integer;
-    variance_factor, value,weightF,hfd_min,aa,bb,cc,dd,ee,ff                                                           : double;
+    variance_factor, value,weightF,hfd_min,dummy                                                                       : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip, solar_drift_compensation,
     use_star_alignment                                                                                                 : boolean;
     tempval, sumpix, newpix, background, pedestal                                                                      : single;
     warning     : string;
-    starlist1,starlist2 : star_list;
-    img_temp,img_average,img_final,img_variance : Timage_array;
+    starlist1,starlist2 : Tstar_list;
+    img_temp,img_average,img_final,img_variance,img_early,dummy_img : Timage_array;
+    Loader:  TLoadThread;
+    Success,start_early : Boolean;
+    head_early : theader;
 begin
   with stackmenu1 do
   begin
@@ -1314,7 +1312,23 @@ begin
         {load image}
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        //if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+
+        if init=false then
+        begin
+          Loader := TLoadThread.Create(filename2, True {light}, True, init=false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head,img_loaded);//load image
+          Loader.WaitFor;  // Wait for the thread to finish
+          Success := Loader.WasSuccessful;
+          Loader.Free;
+          if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
+        end
+        else
+        begin //duplicate use image loaded during stack process
+          img_loaded:=duplicate(img_early); //use image already loaded parallel to stacking
+          head:=head_early;
+        end;
+
+
         if init=false then {first image}
         begin
           old_width:=head.width;
@@ -1338,6 +1352,11 @@ begin
         if use_sip=false then a_order:=0; //stop using SIP from the header in astrometric mode
 
         apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+        //start loading the second or third, .... image early. do this after applying dark where the procedure load fits is also accessed
+        start_early:=((c+1<=length(files_to_process)-1) and (length(files_to_process[c+1].name)>0));
+        if start_early then Loader:= TLoadThread.Create(files_to_process[c+1].name, True {light}, True, false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head_early,img_early);
+
+
 
         memo2_message('Adding light file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
@@ -1446,31 +1465,20 @@ begin
           if use_astrometry_internal then
              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          aa:=solution_vectorX[0];//move to local variable for minor faster processing
-          bb:=solution_vectorX[1];
-          cc:=solution_vectorX[2];
-          dd:=solution_vectorY[0];
-          ee:=solution_vectorY[1];
-          ff:=solution_vectorY[2];
-
           if solar_drift_compensation then
-            compensate_solar_drift(head, {var} cc, ff);//compendate movement solar objects
+            compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
-          for fitsY:=0 to head.height-1 do {average}
-          for fitsX:=0 to head.width-1  do
+          stack_arrays(img_average, img_loaded, img_temp,dummy_img,dummy_img,'A', solution_vectorX,solution_vectorY, background, weightf,dummy);//add B to A
+
+          if start_early then
           begin
-            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
-            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
-
-            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-            begin
-              for col:=0 to head.naxis3-1 do
-              begin
-                img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ (img_loaded[col,fitsY,fitsX]- background) *weightF;{Note fits count from 1, image from zero}
-                img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
-              end;
-            end;
+            //wait for image_early to be loaded
+            Loader.WaitFor;  // Wait for the thread to finish
+            Success := Loader.WasSuccessful;
+            Loader.Free;
+            if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
           end;
+
 
         end;
         progress_indicator(10+round(0.3333*90*(counter)/images_selected),' ■□□');{show progress}
@@ -1503,13 +1511,32 @@ begin
           {load image}
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+//          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+
+          if init=false then
+          begin
+            Loader := TLoadThread.Create(filename2, True {light}, True, init=false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head,img_loaded);//load image
+            Loader.WaitFor;  // Wait for the thread to finish
+            Success := Loader.WasSuccessful;
+            Loader.Free;
+            if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
+          end
+          else
+          begin //duplicate use image loaded during stack process
+            img_loaded:=duplicate(img_early); //use image already loaded parallel to stacking
+            head:=head_early;
+          end;
+
           if init=false then
           begin
             {not required. Done in first step}
           end;
 
           apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+          //start loading the second or third, .... image early. do this after applying dark where the procedure load fits is also accessed
+          start_early:=((c+1<=length(files_to_process)-1) and (length(files_to_process[c+1].name)>0));
+          if start_early then Loader:= TLoadThread.Create(files_to_process[c+1].name, True {light}, True, false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head_early,img_early);
+
 
           memo2_message('Calculating pixels σ of light file '+inttostr(counter+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
@@ -1549,27 +1576,17 @@ begin
           if use_astrometry_internal then
              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          aa:=solution_vectorX[0];//move to local variable for minor faster processing
-          bb:=solution_vectorX[1];
-          cc:=solution_vectorX[2];
-          dd:=solution_vectorY[0];
-          ee:=solution_vectorY[1];
-          ff:=solution_vectorY[2];
-
           if solar_drift_compensation then
-            compensate_solar_drift(head, {var} cc, ff);//compendate movement solar objects
+            compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
-
-          for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
-          for fitsX:=0 to head.width-1  do
+          stack_arrays(img_variance, img_loaded, img_average,img_temp,dummy_img,'V', solution_vectorX,solution_vectorY, background, weightf,dummy);//add B to A
+          if start_early then
           begin
-            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
-            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
-
-            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-            begin
-              for col:=0 to head.naxis3-1 do img_variance[col,y_new,x_new]:=img_variance[col,y_new,x_new] +  sqr( (img_loaded[col,fitsY,fitsX]- background)*weightF - img_average[col,y_new,x_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
-            end;
+            //wait for image_early to be loaded
+            Loader.WaitFor;  // Wait for the thread to finish
+            Success := Loader.WasSuccessful;
+            Loader.Free;
+            if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
           end;
 
           progress_indicator(10+30+round(0.33333*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■□');{show progress}
@@ -1602,8 +1619,26 @@ begin
           {load file}
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+     //     if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+
+          if init=false then
+          begin
+            Loader := TLoadThread.Create(filename2, True {light}, True, init=false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head,img_loaded);//load image
+            Loader.WaitFor;  // Wait for the thread to finish
+            Success := Loader.WasSuccessful;
+            Loader.Free;
+            if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
+          end
+          else
+          begin //duplicate use image loaded during stack process
+            img_loaded:=duplicate(img_early); //use image already loaded parallel to stacking
+            head:=head_early;
+          end;
+
           apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+          //start loading the second or third, .... image early. do this after applying dark where the procedure load fits is also accessed
+          start_early:=((c+1<=length(files_to_process)-1) and (length(files_to_process[c+1].name)>0));
+          if start_early then Loader:= TLoadThread.Create(files_to_process[c+1].name, True {light}, True, false {update memo only for first ref img}, 0,mainwindow.memo1.Lines,head_early,img_early);
 
           memo2_message('Combining '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
@@ -1649,35 +1684,18 @@ begin
           if use_astrometry_internal then
              astrometric_to_vector;{convert 1th order astrometric solution to vector solution}
 
-          aa:=solution_vectorX[0];//move to local variable for minor faster processing
-          bb:=solution_vectorX[1];
-          cc:=solution_vectorX[2];
-          dd:=solution_vectorY[0];
-          ee:=solution_vectorY[1];
-          ff:=solution_vectorY[2];
-
           if solar_drift_compensation then
-            compensate_solar_drift(head, {var} cc, ff);//compendate movement solar objects
+            compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
-           //phase 3
-          for fitsY:=0 to head.height-1 do
-          for fitsX:=0 to head.width-1  do
+          //phase 3
+          stack_arrays(img_final, img_loaded, img_average,img_variance,img_temp,'C', solution_vectorX,solution_vectorY, background, weightf,variance_factor);//add B to A
+          if start_early then
           begin
-            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
-            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
-
-            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-            begin
-              for col:=0 to head.naxis3-1 do {do all colors}
-              begin
-                value:=(img_loaded[col,fitsY,fitsX]- background)*weightF;
-                if sqr (value - img_average[col,y_new,x_new])< variance_factor*{sd sqr}( img_variance[col,y_new,x_new])  then {not an outlier}
-                begin
-                  img_final[col,y_new,x_new]:=img_final[col,y_new,x_new]+ value;{dark and flat, flat dark already applied}
-                  img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
-                end;
-              end;
-            end;
+            //wait for image_early to be loaded
+            Loader.WaitFor;  // Wait for the thread to finish
+            Success := Loader.WasSuccessful;
+            Loader.Free;
+            if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
           end;
 
           progress_indicator(10+60+round(0.33333*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■■');{show progress}
@@ -1733,8 +1751,8 @@ end;   {stack using sigma clip average}
 procedure stack_comet(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack comets using ephemeris method. Comet is stacked aligned. Driting stars are surpressed except for first frame}
 type
    tsolution  = record
-     solution_vectorX : solution_vector {array[0..2] of double};
-     solution_vectorY : solution_vector;
+     solution_vectorX : Tsolution_vector {array[0..2] of double};
+     solution_vectorY : Tsolution_vector;
      cblack : array[0..2] of single;
    end;
 var
@@ -2087,7 +2105,7 @@ var
     background, hfd_min,aa,bb,cc,dd,ee,ff,pedestal                                                             : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,use_star_alignment: boolean;
     warning             : string;
-    starlist1,starlist2 : star_list;
+    starlist1,starlist2 : Tstar_list;
     img_temp,img_average : Timage_array;
 begin
   with stackmenu1 do

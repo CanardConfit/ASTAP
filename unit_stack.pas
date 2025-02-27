@@ -1282,12 +1282,12 @@ uses
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
   unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
-  unit_contour, unit_interpolate, unit_sqm, unit_threads_calibration;
+  unit_contour, unit_interpolate, unit_sqm, unit_threaded_calibration;
 
 type
   blink_solution = record
-    solution_vectorX: solution_vector {array[0..2] of double};
-    solution_vectorY: solution_vector;
+    solution_vectorX: Tsolution_vector {array[0..2] of double};
+    solution_vectorY: Tsolution_vector;
   end;
 
 var
@@ -2696,9 +2696,9 @@ procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
   hfd_min: double;
   max_stars, binning,i: integer;
-  starlistquads: star_list;
+  starlistquads: Tstar_list;
   warning_downsample: string;
-  starlist1         : star_list;
+  starlist1         : Tstar_list;
 
 begin
   if head.naxis = 0 then application.messagebox(
@@ -3548,7 +3548,7 @@ var
   i, countxy,formalism     : integer;
   magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
 
-  stars,xylist  : star_list;
+  stars,xylist  : Tstar_list;
   slope, intercept, sd : double;
 
 
@@ -5640,7 +5640,7 @@ var
   cycle, step, ps, bottom, top, left, w, h, max_stars               : integer;
   reference_done, init, store_annotated, res                        : boolean;
   st                  : string;
-  starlist1,starlist2 : star_list;
+  starlist1,starlist2 : Tstar_list;
   img_temp : Timage_array;
 begin
   if listview6.items.Count <= 1 then exit; {no files}
@@ -7883,7 +7883,7 @@ procedure create_all_star_list; //collect any star in the variable_list
 var
    i,j, nrstars, formalism   :integer;
    hfd_min,ra2,dec2,sep      : double;
-   starlist                  : star_list;
+   starlist                  : Tstar_list;
    variable_listAAVSO: array of tvariable_list;
    found               : boolean;
 begin
@@ -7931,7 +7931,7 @@ var
   countCheck, countThree, database_col,j,ww                                         : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined                   : boolean;
-  starlistx: star_list;
+  starlistx: Tstar_list;
   astr, filename1,totalnrstr,dummy             : string;
   oldra0 : double=0;
   olddec0: double=-pi/2;
@@ -9425,7 +9425,7 @@ end;
 
 procedure apply_star_smooth(smooth_diameter, smooth_stars: string);
 var
-  starlist         : star_list;
+  starlist         : Tstar_list;
   i,nrstars,binning,nr_stars   : integer;
   hfd_min,hfd1,star_fwhm,snr,flux,xc,yc,rad,radius : double;
   warning : string;

@@ -1,4 +1,10 @@
-unit unit_threads_stacking;
+unit unit_threaded_stacking;
+{Copyright (C) 2025 by Han Kleijn, www.hnsky.org
+ email: han.k.. at...hnsky.org
+
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 interface
 
@@ -107,14 +113,6 @@ begin
         begin
           for col := 0 to Fcolors - 1 do
           begin
-
-//          value:=(img_loaded[col,fitsY,fitsX]- background)*weightF;
-//          if sqr (value - img_average[col,y_new,x_new])< variance_factor*{sd sqr}( img_variance[col,y_new,x_new])  then {not an outlier}
-//          begin
-//            img_final[col,y_new,x_new]:=img_final[col,y_new,x_new]+ value;{dark and flat, flat dark already applied}
-//            img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
-//          end;
-
 //          img_final, img_loaded, img_average,img_variance, img_temp
 //           dest      source      arrayA      arrayB          arrayC
 
@@ -128,13 +126,6 @@ begin
         end;
     end;
   end;
-
-
-
-
-
-
-
 end;
 
 procedure stack_arrays(var dest, source, arrayA,arrayB,arrayC: Timage_array;mode:string; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf,variance_factor: double);// add source to dest

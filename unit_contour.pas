@@ -16,7 +16,7 @@ uses
 
 procedure contour( plot : boolean;img : Timage_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
 function line_distance(fitsX,fitsY,slope,intercept: double) : double;
-procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+procedure trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 
 //procedure add_to_storage;//add streaks to storage
 //procedure clear_storage;//clear streak storage
@@ -109,7 +109,7 @@ begin
 end;
 
 
-procedure trendline(xylist: star_list; len{length xylist} : integer; out  slope, intercept:double); //find linear trendline Y = magnitude_slope*X + intercept
+procedure trendline(xylist: Tstar_list; len{length xylist} : integer; out  slope, intercept:double); //find linear trendline Y = magnitude_slope*X + intercept
 var                                                                   //idea from https://stackoverflow.com/questions/43224/how-do-i-calculate-a-trendline-for-a-graph
   sumX,sumX2,sumY, sumXY,median,mad  : double;
   count, i                           : integer;
@@ -138,10 +138,10 @@ begin
 end;
 
 
-procedure trendline_without_outliers(xylist: star_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+procedure trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 var
   e        : double;
-  xylist2  : star_list;
+  xylist2  : Tstar_list;
   counter,i  : integer;
 begin
   trendline(xylist, len{length xylist}, {out}  slope, intercept);
@@ -179,7 +179,7 @@ var
   restore_his, Fliph, Flipv            : boolean;
   img_sa,img_bk                        : Timage_array;
   contour_array                    : array of array of integer;
-  contour_array2                   : star_list;
+  contour_array2                   : Tstar_list;
   bg,sd_bg                         : double;
 
 

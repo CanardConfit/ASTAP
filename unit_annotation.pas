@@ -21,7 +21,7 @@ procedure load_variable_15;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(img : Timage_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(out stars_measured: integer);{measure or plot distortion}
 function plot_artificial_stars(img: Timage_array;head:theader) : boolean;{plot stars as single pixel with a value as the mangitude. For super nova search}
-procedure plot_stars_used_for_solving(starlist1,starlist2: star_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
+procedure plot_stars_used_for_solving(starlist1,starlist2: Tstar_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: Timage_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
@@ -1982,7 +1982,7 @@ var
   flux_ratio_array,hfd_x_sd, flux_peak_ratio,snr_list   : array of double;
   selected_passband : string;
   data_max          : single;
-  starlist1         : star_list;
+  starlist1         : Tstar_list;
 
     procedure plot_star;
     begin
@@ -2726,7 +2726,7 @@ begin
 end;{plot stars}
 
 
-procedure plot_stars_used_for_solving(starlist1,starlist2: star_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
+procedure plot_stars_used_for_solving(starlist1,starlist2: Tstar_list; hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 var
   nrstars,i, starX, starY,size,flipped  : integer;
   flip_horizontal, flip_vertical        : boolean;

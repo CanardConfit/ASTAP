@@ -685,7 +685,7 @@ begin
 end;
 
 
-procedure filter_hfd(var mean,min_value,max_value : single; nr : integer; hfd_values: star_list); {filter array of hfd values}
+procedure filter_hfd(var mean,min_value,max_value : single; nr : integer; hfd_values: Tstar_list); {filter array of hfd values}
 var
   i,j,nr_closest,nr_second_closest  :  integer;
   closest_distance,second_closest_distance,distance_sqr   : single;
@@ -743,7 +743,7 @@ begin
  {useful length is nr}
 end;
 
-procedure voronoi_plot(min_value,max_value : single; nr:integer;hfd_values: star_list);
+procedure voronoi_plot(min_value,max_value : single; nr:integer;hfd_values: Tstar_list);
 var
     i,size,fitsx,fitsY,x,y,x2,y2,w,h,scaledown:  integer;
     img_hfd: Timage_array;
@@ -802,7 +802,7 @@ begin
  end;
 
 
-procedure contour_plot(mean: single; nr:integer;hfd_values: star_list);
+procedure contour_plot(mean: single; nr:integer;hfd_values: Tstar_list);
 var
     i,fitsx,fitsY,x,y,w,h,x2,y2,scaledown : integer;
     img_hfd: Timage_array;
@@ -996,7 +996,7 @@ var
  fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,n,m,xci,yci,sqr_radius,orientation,starX,starY,x2,y2,font_luminance : integer;
  hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med : double;
  mean, min_value,max_value,data_max : single;
- hfd_values  : star_list; {array of aray of doubles}
+ hfd_values  : Tstar_list; {array of aray of doubles}
  hfds        : array of double;
  Fliphorizontal, Flipvertical: boolean;
  mess: string;
