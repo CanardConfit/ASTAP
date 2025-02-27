@@ -834,16 +834,14 @@ begin
 
 
             stack_arrays( img_average, img_loaded, img_temp,dummy_img,dummy_img,'A', solution_vectorX,solution_vectorY, background, weightf,dummy);//add B to A
-
-            if start_early then
-            begin
-              //wait for image_early to be loaded
-              Loader.WaitFor;  // Wait for the thread to finish
-              Success := Loader.WasSuccessful;
-              Loader.Free;
-              if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
-            end;
-
+          end; //end solution
+          if start_early then
+          begin
+            //wait for image_early to be loaded
+            Loader.WaitFor;  // Wait for the thread to finish
+            Success := Loader.WasSuccessful;
+            Loader.Free;
+            if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
           end;
 
           progress_indicator(10+89*counter/images_selected,' Stacking');{show progress}
@@ -1469,18 +1467,17 @@ begin
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
           stack_arrays(img_average, img_loaded, img_temp,dummy_img,dummy_img,'A', solution_vectorX,solution_vectorY, background, weightf,dummy);//add B to A
-
-          if start_early then
-          begin
-            //wait for image_early to be loaded
-            Loader.WaitFor;  // Wait for the thread to finish
-            Success := Loader.WasSuccessful;
-            Loader.Free;
-            if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
-          end;
-
-
+        end;//solution
+        if start_early then
+        begin
+          //wait for image_early to be loaded
+          Loader.WaitFor;  // Wait for the thread to finish
+          Success := Loader.WasSuccessful;
+          Loader.Free;
+          if Success=false then begin memo2_message('Error loading '+filename2);exit;end;
         end;
+
+
         progress_indicator(10+round(0.3333*90*(counter)/images_selected),' ■□□');{show progress}
         finally
         end;
