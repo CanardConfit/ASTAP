@@ -2194,6 +2194,7 @@ begin
         end;
         update_text(mainwindow.memo1.lines,'COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
         update_integer(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
+        update_text(mainwindow.memo1.lines,'CALSTAT =', #39 + head.calstat+#39); {calibration status.}
         update_integer(mainwindow.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
         update_integer(mainwindow.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
         update_integer(mainwindow.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
