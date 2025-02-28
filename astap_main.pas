@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.02.27a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.02.28';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -8081,6 +8081,7 @@ begin
       stackmenu1.save_settings_image_path1.checked:= Sett.ReadBool('stack','copy_sett',false); {add time to resulting stack file name}
 
       stackmenu1.uncheck_outliers1.checked:= Sett.ReadBool('stack','uncheck_outliers',false);
+      stackmenu1.analyse_quick1.checked:= Sett.ReadBool('stack','analyse_quick',true);
 
       stackmenu1.blur_factor1.text:= Sett.ReadString('stack','blur_factor','');
 
@@ -8480,6 +8481,7 @@ begin
       sett.writeBool('stack','copy_sett',stackmenu1.save_settings_image_path1.Checked);
 
       sett.writeBool('stack','uncheck_outliers',stackmenu1.uncheck_outliers1.Checked);
+      sett.writeBool('stack','analyse_quick',stackmenu1.analyse_quick1.Checked);
 
       sett.writeBool('stack','write_log',stackmenu1.write_log1.checked);{write log to file}
 
