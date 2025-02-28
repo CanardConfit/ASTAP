@@ -7242,24 +7242,6 @@ begin
 end;
 
 
-procedure SmoothResize(bmp: tbitmap; imgMainPicture : timage);
-var pt:TPoint;
-    h: HDC;
-begin
-  h := imgMainPicture.Canvas.Handle;
-  // Previous call to StretchDraw
-  // imgMainPicture.Canvas.StretchDraw(Rect(0, 0, imgMainPicture.Width - 1,
-  // imgMainPicture.Height - 1), curPicture.AnnotatedBitmap);
-  // Normal StretchDraw uses STRETCH_DELETESCANS as StretchBltMode , HALFTONE should give better results
-  GetBrushOrgEx(h, pt);
-  SetStretchBltMode(h, HALFTONE);
-  SetBrushOrgEx(h, pt.x, pt.y, @pt);
-  StretchBlt(h, 0, 0, imgMainPicture.Width - 1,
-    imgMainPicture.Height - 1, bmp.Canvas.Handle,
-    0, 0, bmp.Width,bmp.Height,SRCCOPY);
-end;
-
-
 procedure plot_fits(img:timage; center_image: boolean);
 type
   PByteArray2 = ^TByteArray2;
