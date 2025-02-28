@@ -32,7 +32,7 @@ var
 
 implementation
 
-uses unit_astrometric_solving, unit_contour,unit_threaded_stacking;
+uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3;
 
 
 procedure  calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
@@ -794,7 +794,8 @@ begin
             if solar_drift_compensation then
               compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
-            stack_arrays( img_average, img_loaded, img_temp,dummy_img,dummy_img,'A', solution_vectorX,solution_vectorY, background, weightf,dummy);//add B to A
+            stack_arrays( img_average, img_loaded, img_temp, solution_vectorX,solution_vectorY, background, weightf);//add B to A
+
           end; //end solution
 
           progress_indicator(10+89*counter/images_selected,' Stacking');{show progress}
@@ -1394,7 +1395,7 @@ begin
           if solar_drift_compensation then
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
-          stack_arrays(img_average, img_loaded, img_temp,dummy_img,dummy_img,'A', solution_vectorX,solution_vectorY, background, weightf,dummy);//add B to A
+          stack_arrays(img_average, img_loaded, img_temp, solution_vectorX,solution_vectorY, background, weightf);//add B to A
         end;//solution
 
         progress_indicator(10+round(0.3333*90*(counter)/images_selected),' ■□□');{show progress}
@@ -1477,7 +1478,7 @@ begin
           if solar_drift_compensation then
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
-          stack_arrays(img_variance, img_loaded, img_average,img_temp,dummy_img,'V', solution_vectorX,solution_vectorY, background, weightf,dummy);//add B to A
+          variance_array(img_variance, img_loaded, img_average,img_temp, solution_vectorX,solution_vectorY, background, weightf);//add B to A
 
           progress_indicator(10+30+round(0.33333*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■□');{show progress}
         finally
@@ -1561,7 +1562,7 @@ begin
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
           //phase 3
-          stack_arrays(img_final, img_loaded, img_average,img_variance,img_temp,'C', solution_vectorX,solution_vectorY, background, weightf,variance_factor);//add B to A
+          finalise_array(img_final, img_loaded, img_average,img_variance,img_temp, solution_vectorX,solution_vectorY, background, weightf,variance_factor);//add B to A
 
           progress_indicator(10+60+round(0.33333*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■■');{show progress}
           finally
