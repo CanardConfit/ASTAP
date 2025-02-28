@@ -104,12 +104,12 @@ uses   Classes,SysUtils,controls,forms,math,stdctrls,
 
 function solve_image(img :Timage_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
 //procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
-procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
 
 function report_binning(height :double) : integer;{select the binning}
 function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
 procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
-function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer;out starlist : star_list; out nrstars:integer): boolean;{read star from star database}
+function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer;out starlist : Tstar_list; out nrstars:integer): boolean;{read star from star database}
 procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : Timage_array; out img2: Timage_array); // Make mono, bin and crop
 
 
@@ -239,7 +239,7 @@ end;
 //end;
 
 
-function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer;out starlist : star_list; out nrstars:integer): boolean;{read star from star database}
+function read_stars(telescope_ra,telescope_dec,search_field : double; database_type,nrstars_required: integer;out starlist : Tstar_list; out nrstars:integer): boolean;{read star from star database}
 var
    Bp_Rp, ra2,dec2,
    frac1,frac2,frac3,frac4,sep                      : double;
@@ -449,7 +449,7 @@ begin
 end;
 
 
-procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
 var
   width5,height5,nrstars,i : integer;
   img_binned : Timage_array;
@@ -767,7 +767,7 @@ var
   startTick  : qword;{for timing/speed purposes}
   distancestr,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
   offset_found,ra_offset_str,dec_offset_str,mount_info_str,mount_offset_str,warning_downsample   : string;
-  starlist1,starlist2                                                                            : star_list;
+  starlist1,starlist2                                                                            : Tstar_list;
 var {with value}
   quads_str: string=' quads';
 const

@@ -19,7 +19,7 @@ function transform_gaia(filter : string; magG,magBP,magRP: double):double;//tran
 procedure report_one_star_magnitudes(ra,dec : double; out b,v,r,sg,sr,si,g,bp,rp :double); //report the database magnitudes for a specfic position. Not efficient but simple
 
 var
-  online_database : star_list;//The output. Filled with ra,dec,magn
+  online_database : Tstar_list;//The output. Filled with ra,dec,magn
   gaia_ra: double=0;
   gaia_dec: double=0;
   gaia_magn_limit : double=0;

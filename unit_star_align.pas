@@ -12,7 +12,7 @@ uses
    Classes, SysUtils,Graphics,math,
    astap_main, unit_stack;
 type
-   solution_vector   = array[0..2] of double;
+   Tsolution_vector   = array[0..2] of double;
 
 type
     Tstar_long_record = record
@@ -22,21 +22,21 @@ type
 
 var
    //starlist2,
-   quad_star_distances1, quad_star_distances2: star_list;
-   A_XYpositions                          : star_list;
+   quad_star_distances1, quad_star_distances2: Tstar_list;
+   A_XYpositions                          : Tstar_list;
    b_Xrefpositions,b_Yrefpositions        : array of double;
    nr_references,nr_references2           : integer;
-   solution_vectorX, solution_vectorY,solution_cblack   : solution_vector ;
+   solution_vectorX, solution_vectorY,solution_cblack   : Tsolution_vector ;
 
-   Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
+   Savefile: file of Tsolution_vector;{to save solution if required for second and third step stacking}
 
-procedure find_stars(img :Timage_array;head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
-procedure find_quads(starlist :star_list; out quad_star_distances :star_list); {find more quads build quads using closest stars}
-procedure find_triples_using_quads(starlist :star_list;  out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
-procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
+procedure find_stars(img :Timage_array;head: theader; hfd_min:double; max_stars :integer;out starlist1: Tstar_list);{find stars and put them in a list}
+procedure find_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list); {find more quads build quads using closest stars}
+procedure find_triples_using_quads(starlist :Tstar_list;  out quad_star_distances :Tstar_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
+procedure find_quads_xy(starlist :Tstar_list; out starlistquads :Tstar_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
-procedure display_quads(starlistquads :star_list);{draw quads}
+procedure display_quads(starlistquads :Tstar_list);{draw quads}
 function solution_str: string;
 
 implementation
@@ -59,14 +59,14 @@ end;
 {   Find the solution vector of an overdetermined system of linear equations according to the method of least squares using GIVENS rotations     }
 {                                                                                                                                                }
 {   Solve x of A x = b with the least-squares method                                                                                             }
-{   In matrix calculations, b_matrix[0..nr_columns-1,0..nr_equations-1]:=solution_vector[0..2] * A_XYpositions[0..nr_columns-1,0..nr_equations-1]}
+{   In matrix calculations, b_matrix[0..nr_columns-1,0..nr_equations-1]:=Tsolution_vector[0..2] * A_XYpositions[0..nr_columns-1,0..nr_equations-1]}
 {                                                                                                                              }
 {   see also Montenbruck & Pfleger, Astronomy on the personal computer}
-function lsq_fit( A_matrix: star_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector ): boolean;
+function lsq_fit( A_matrix: Tstar_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: Tsolution_vector ): boolean;
   const tiny = 1E-10;  {accuracy}
   var i,j,k, nr_equations,nr_columns,hhh  : integer;
       p,q,h                           : double;
-      temp_matrix                     : star_list;
+      temp_matrix                     : Tstar_list;
 
 begin
   nr_equations:=length(A_matrix[0]);
@@ -138,7 +138,7 @@ begin
 end; {lsq_fit}
 
 
-procedure display_quads(starlistquads :star_list);{display quads in the viewer}
+procedure display_quads(starlistquads :Tstar_list);{display quads in the viewer}
 var
    i, nrquads,x,y, flipx,flipy: integer;
 begin
@@ -196,7 +196,7 @@ begin
 end;
 
 
-procedure QuickSort_starlist(var A: star_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
+procedure QuickSort_starlist(var A: Tstar_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
 var
   Lo, Hi : integer;
   Pivot, Tx,Ty: double;{ pivot, T are the same type as the elements of array }
@@ -225,7 +225,7 @@ end;
 
 
 //Note a threaded version was not really faster. So this procedure stay single processor
-procedure find_quads(starlist :star_list; out quad_star_distances :star_list); //build quads using closest stars, revised 2022-4-10
+procedure find_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list); //build quads using closest stars, revised 2022-4-10
 var
    i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,startp: integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
@@ -375,7 +375,7 @@ begin
 end;
 
 
-procedure find_triples_using_quads(starlist :star_list; out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
+procedure find_triples_using_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
 var
    i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,tolerance, nrrealquads  : integer;
    distance,distance1,distance2,distance3,x1a,x2a,x3a,x4a,xt,y1a,y2a,y3a,y4a,yt,
@@ -384,7 +384,7 @@ var
    dist12,dist13,dist14,dist23,dist24,dist34, quad_tolerance                                : double;
 
    identical_quad : boolean;
-   quad_centers :   star_list;
+   quad_centers :   Tstar_list;
 
           procedure get_triple(x1,y1,x2,y2,x3,y3,dist1,dist2,dist3: double);
           var
@@ -555,7 +555,7 @@ begin
 end;
 
 
-procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
+procedure find_quads_xy(starlist :Tstar_list; out starlistquads :Tstar_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 var
    i,j,k,nrstars_min_one,j_index1,j_index2,j_index3,nrquads         : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
@@ -768,7 +768,7 @@ begin
 end;
 
 
-procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double;snr_list : array of double; var starlist1 : star_list);{ get the brightest star from a star list}
+procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double;snr_list : array of double; var starlist1 : Tstar_list);{ get the brightest star from a star list}
 const
    range=200;
 var
@@ -815,7 +815,7 @@ begin
   setlength(starlist1,2,count);{reduce length to used length}
 end;
 
-//procedure hfd_filter(var nrstars : integer; var hfd_list,snr_list : array of double; var starlist1 : star_list);//filter out hot pixels
+//procedure hfd_filter(var nrstars : integer; var hfd_list,snr_list : array of double; var starlist1 : Tstar_list);//filter out hot pixels
 //var
 //  median_hfd : double;
 //  i,count :integer;
@@ -836,7 +836,7 @@ end;
 //end;
 
 
-procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: Tstar_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,k : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level : double;
@@ -1005,7 +1005,7 @@ end;
 
 {
 //Not used
-{procedure find_quadsClassic(starlist :star_list; out quad_star_distances :star_list); //build quads using closest stars, revised 2022-4-10
+{procedure find_quadsClassic(starlist :Tstar_list; out quad_star_distances :Tstar_list); //build quads using closest stars, revised 2022-4-10
 var
    i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads                         : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
@@ -1139,13 +1139,13 @@ end;
 }
 {
 //Not used
-//procedure find_quadsExperimental(starlist :star_list; out quad_star_distances :star_list); //build quads using closest stars, revised 2025
+//procedure find_quadsExperimental(starlist :Tstar_list; out quad_star_distances :Tstar_list); //build quads using closest stars, revised 2025
 var
    i,j,k,nrstars,nrquads,startp                   : integer;
    x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
    dist1,dist2,dist3,dist4,dist5,dist6,dummy     : double;
    identical_quad : boolean;
-   table : star_list;
+   table : Tstar_list;
 begin
 
   nrstars:=Length(starlist[0]);//number of quads will lower
@@ -1234,7 +1234,7 @@ end;
 
 {
 //Not used
-procedure find_quads_xynew(starlist :star_list; out starlistquads :star_list);  //FOR DISPLAY ONLY, build quads using closest stars, revised 2024-12-16
+procedure find_quads_xynew(starlist :Tstar_list; out starlistquads :Tstar_list);  //FOR DISPLAY ONLY, build quads using closest stars, revised 2024-12-16
 var
    i,j,k,nrstars_min_one,j_index1,j_index2,j_index3,nrquads,neighbourdistance,m,n,Xposition,YpositionRef, Yposition,starnr : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
@@ -1442,7 +1442,7 @@ end;
 
 {
 //Advanced but slower. Not used
-procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  //build quads using closest stars, revised 2024-12-16
+procedure find_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list);  //build quads using closest stars, revised 2024-12-16
 var
    nrstars,i,j,k,j_index1,j_index2,j_index3,nrquads,neighbourdistance,m,n,Xposition,YpositionRef, Yposition,starnr : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
@@ -1611,12 +1611,12 @@ end;
 }
 
 {Not used
-procedure find_quads_xy(starlist:star_list; out starlistquads :star_list);  //FOR DISPLAY ONLY, build quads using closest stars, revision 2025
+procedure find_quads_xy(starlist:Tstar_list; out starlistquads :Tstar_list);  //FOR DISPLAY ONLY, build quads using closest stars, revision 2025
 var
    i,j,k,nrstars,nrquads,startp   : integer;
    x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
    identical_quad : boolean;
-   table       : star_list;
+   table       : Tstar_list;
 begin
   nrstars:=Length(starlist[0]);
 
