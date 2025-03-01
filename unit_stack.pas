@@ -60,6 +60,7 @@ type
     annotate_mode1: TComboBox;
     Annotations_visible2: TCheckBox;
     annulus_radius1: TComboBox;
+    analyse_quick1: TCheckBox;
     label_delta_ra1: TLabel;
     label_delta_dec1: TLabel;
     list_to_clipboard10: TMenuItem;
@@ -2136,14 +2137,28 @@ begin
 end;
 
 
+//var
+//  detime: double;
+//function getseconds : double;
+//Var
+//  myDate: TDateTime;
+//  myYear, myMonth, myDay: Word;
+//  myHour, myMin, mySec, myMilli: Word;
+
+//begin
+//  myDate := Now;
+//  DecodeDateTime(myDate, myYear, myMonth, myDay, myHour, myMin, mySec, myMilli);
+//  result:=(myMilli/1000 + (mySec) + (myMin * 60 ) + (myHour * 60 * 60));
+//end;
+
 
 procedure analyse_tab_lights(analyse_level : integer);
 var
-  c,  i, counts                             : integer;
+  c,  i, counts,binning                     : integer;
   alt, az                                   : double;
   red, green, blue, planetary               : boolean;
   key, filename1, rawstr      : string;
-  img                         : Timage_array;
+  img,img_binned              : Timage_array;
   headx                       : theader;
 
 begin
@@ -2308,7 +2323,16 @@ begin
           begin {light frame}
 
             if ((planetary = False) and (analyse_level>0)) then
-              analyse_image(img, headx, 10 {snr_min}, 0) {find background, number of stars, median HFD}
+            begin
+              if analyse_quick1.Checked then
+              begin
+                bin_mono_and_crop(2, 1,img,img_binned); //{Make mono, bin and crop}
+                analyse_image(img_binned, headx, 10 {snr_min}, 0); {find background, number of stars, median HFD}
+                headx.hfd_median:=headx.hfd_median*2;
+              end
+              else
+                analyse_image(img, headx, 10 {snr_min}, 0); {find background, number of stars, median HFD}
+            end
             else
             begin
               headx.hfd_counter := 0;
@@ -10448,7 +10472,7 @@ begin
   begin
     listview1.columns.Items[l_centaz + 1].Caption := centaz_key; {lv.items[l_sqm].caption:=sqm_key; doesn't work}
     listview1.columns.Items[l_sqm + 1].Caption := sqm_key;  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
-    analyse_lights_extra1.left:=Analyse1.left+analyse1.width;//align button analyse_lights_extra1 to analyse1
+    analyse_quick1.Left:=Analyse1.left+analyse1.width+5;//align quick check to analyse1
   end;
 end;
 
@@ -12222,9 +12246,16 @@ begin
   begin
     memo2_message('Analysing lights.');
 
-    if calibration_mode then analyse_level:=0 // almost none
+
+//    if calibration_mode then analyse_level:=0 // almost none
+//    else
+//    analyse_level:=1; //medium
+
+    if uncheck_outliers1.checked then
+      analyse_level:=1 //medium
     else
-    analyse_level:=1; //medium
+      analyse_level:=0; //almost none
+
 
     analyse_tab_lights(analyse_level); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
