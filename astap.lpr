@@ -3,9 +3,13 @@ program astap;
 {$MODE Delphi}
 
 uses
-  Forms, Interfaces,
+  {$ifdef unix}
+    cthreads,
+    cmem, // the c memory manager is on some systems much faster for multi-threading
+  {$endif}
+  forms, Interfaces,
   astap_main in 'astap_main.pas', {mainwindow}
-  unit_stack in 'unit_stack.pas'; {stackmenu1}
+  unit_stack; {stackmenu1}
   {other units are linked to this two units}
 
 {mainwindow}
@@ -17,4 +21,4 @@ begin
   Application.CreateForm(Tmainwindow, mainwindow);
   Application.CreateForm(Tstackmenu1, stackmenu1);
   Application.Run;
- end.
+end.

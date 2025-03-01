@@ -42,6 +42,9 @@ object mainwindow: Tmainwindow
   }
   KeyPreview = True
   Menu = MainMenu1
+  ParentFont = True
+  Position = poDesktopCenter
+  LCLVersion = '4.0.0.2'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -50,9 +53,6 @@ object mainwindow: Tmainwindow
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
-  ParentFont = True
-  Position = poDesktopCenter
-  LCLVersion = '3.6.0.0'
   object error_get_it: TLabel
     Left = 217
     Height = 15
@@ -220,10 +220,10 @@ object mainwindow: Tmainwindow
             FFFFFFFFA4FFFFFFFFFFFFFFFFFFFFA4FFFFFFA4FFFFFFFFFFFFFFFFFFFFFFFF
             A4FFA4FFFFFFFFFFFFFFFFFFFFFFFFFFFFA4FFFFFFFFFFFFFFFF
           }
-          OnClick = SpeedButton1Click
           ShowHint = True
           ParentFont = False
           ParentShowHint = False
+          OnClick = SpeedButton1Click
         end
         object ra1: TEdit
           Left = 67
@@ -278,11 +278,11 @@ object mainwindow: Tmainwindow
           AutoSize = True
           Caption = '∑ '
           Font.Height = -24
-          OnClick = Stackimages1Click
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 2
+          OnClick = Stackimages1Click
         end
         object solve_button1: TButton
           Left = 305
@@ -410,12 +410,12 @@ object mainwindow: Tmainwindow
             Height = 54
             Top = 0
             Width = 210
-            OnMouseMove = histogram1MouseMove
             ParentShowHint = False
             PopupMenu = PopupMenu_histogram1
             ShowHint = True
             StretchOutEnabled = False
             StretchInEnabled = False
+            OnMouseMove = histogram1MouseMove
           end
           object Label5: TLabel
             Left = 4
@@ -598,12 +598,12 @@ object mainwindow: Tmainwindow
             Font.Name = 'Segoe UI'
             Font.Pitch = fpVariable
             Font.Quality = fqDraft
-            OnMouseUp = saturation_factor_plot1MouseUp
-            OnKeyUp = saturation_factor_plot1KeyUp
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
             TabOrder = 6
+            OnMouseUp = saturation_factor_plot1MouseUp
+            OnKeyUp = saturation_factor_plot1KeyUp
           end
           object shape_histogram1: TShape
             Left = 72
@@ -723,13 +723,13 @@ object mainwindow: Tmainwindow
           Top = 2
           Width = 47
           Min = 0
-          OnClick = UpDown1Click
           Orientation = udHorizontal
           ParentShowHint = False
           Position = 0
           ShowHint = True
           TabOrder = 9
           Visible = False
+          OnClick = UpDown1Click
         end
         object rotation1: TLabel
           Left = 523
@@ -808,15 +808,15 @@ object mainwindow: Tmainwindow
           Top = 0
           Width = 608
           Anchors = []
+          ParentShowHint = False
+          PopupMenu = PopupMenu1
+          Stretch = True
+          Visible = False
           OnMouseDown = Image1MouseDown
           OnMouseEnter = Image1MouseEnter
           OnMouseMove = Image1MouseMove
           OnMouseUp = Image1MouseUp
           OnPaint = Image1Paint
-          ParentShowHint = False
-          PopupMenu = PopupMenu1
-          Stretch = True
-          Visible = False
         end
         object shape_marker1: TShape
           Left = 17
