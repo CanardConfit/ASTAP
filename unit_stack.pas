@@ -1098,7 +1098,7 @@ procedure memo2_message(s: string);{message to memo2}
 procedure update_tab_alignment;{update stackmenu1 menus}
 procedure box_blur(colors, range : integer; var img: Timage_array);{blur by combining values of pixels, ignore zeros}
 procedure check_pattern_filter(var img: Timage_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
-procedure black_spot_filter(var img: Timage_array); {remove black spots with value zero}{execution time about 0.4 sec}
+procedure black_spot_filter_for_aligned(var img: Timage_array); {remove black spots with value zero}{execution time about 0.4 sec}
 
 function update_solution_and_save(img: Timage_array;var hd: theader; memo:tstrings): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function apply_dark_and_flat(var img: Timage_array; var hd : theader): boolean;{apply dark and flat if required, renew if different head.exposure or ccd temp}
@@ -3706,8 +3706,9 @@ begin
     Dec(index); {go to next file}
   end;
 
-  oldposition:=max(0,oldposition-count);
-  tl.Items[oldposition].Selected:=true;//go to old position
+  oldposition:=oldposition-count;
+  if oldposition>=0 then
+    tl.Items[oldposition].Selected:=true;//go to old position
 
   if count>0 then
   begin
@@ -4086,8 +4087,18 @@ end;
 
 
 procedure Tstackmenu1.listview1ColumnClick(Sender: TObject; Column: TListColumn);
+var
+  detag: integer;
 begin
   SortedColumn := Column.Index;
+
+//  detag:=column.tag;
+//  if column.tag<>0 then
+//  begin
+  //  variable_list[detag].ra
+  //  ffffff
+//    beep;
+//  end;
 end;
 
 
@@ -4970,7 +4981,7 @@ begin
 end;
 
 
-procedure black_spot_filter(var img: Timage_array);
+procedure black_spot_filter_for_aligned(var img: Timage_array);
 {remove black spots with value zero}{execution time about 0.4 sec}
 var
   fitsX, fitsY, k, x1, y1, col, w, h, i, j, counter, range, left, right, bottom, top: integer;
@@ -7570,7 +7581,7 @@ begin
 
       {fix black holes}
       img_loaded := img_temp;
-      black_spot_filter(img_loaded);
+      black_spot_filter_for_aligned(img_loaded);
 
       if pos('_aligned.fit', filename2) = 0 then
         filename2 := ChangeFileExt(Filename2, '_aligned.fit');{rename only once}
@@ -7949,7 +7960,8 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
-  medianCheck, medianThree, apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt : double;
+  medianCheck, medianThree, apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt,
+  snr_min                                                                           : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, countVar,
   countCheck, countThree, database_col,j,ww                                         : integer;
@@ -8329,7 +8341,7 @@ begin
           begin
             variable_star_annotation(true {extract AAVSO database  to variable_list});
 
-            if stackmenu1.measuring_method1.itemindex=2 then //add none AAVSO stars
+            if stackmenu1.measuring_method1.itemindex=3 then //add none AAVSO stars
               create_all_star_list;//collect any star in the variable_list
 
             oldra0:=head.ra0;
@@ -8343,6 +8355,8 @@ begin
 
           end;
 
+          if stackmenu1.measuring_method1.itemindex=1 then snr_min:=30 else snr_min:=10; //onlt bright enough stars
+
           //measure all AAVSO stars using the position from the local database
           if variable_list_length>0 then
           begin
@@ -8352,7 +8366,7 @@ begin
               if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
               begin
                 astr := measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
-                if snr>0 then
+                if snr>=snr_min then
                 begin
                   new_object:=true;
                   for i:=p_nr_norm to p_nr-3 do
@@ -8378,7 +8392,7 @@ begin
                     listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
                     listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
                     listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
-                    stackmenu1.listview7.column[P_nr-3].tag:=j; //store star position in the variable list
+                    stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
                   end;//new object
                 end;//enough snr
               end;
@@ -9366,7 +9380,7 @@ end;
 procedure Tstackmenu1.tab_photometry1Show(Sender: TObject);
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
-  nr_stars_to_detect1.enabled:=measuring_method1.itemindex=2;//enabled only if method is measure all
+  nr_stars_to_detect1.enabled:=measuring_method1.itemindex=3;//enabled only if method is measure all
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
 end;
@@ -9758,7 +9772,7 @@ var
 begin
   clear_added_AAVSO_columns;
   hide_show_columns_listview7(true {tab8 photometry});
-  nr_stars_to_detect1.enabled:=measuring_method1.itemindex=2;
+  nr_stars_to_detect1.enabled:=measuring_method1.itemindex=3;
 end;
 
 
@@ -10116,6 +10130,8 @@ begin
   save_settings2;{Too many lost selected files, so first save settings.}
   process_selected_files(listview1,L_solution {column},'P');
 end;
+
+
 
 
 procedure Tstackmenu1.Refresh_astrometrical_solutions1Click(Sender: TObject);

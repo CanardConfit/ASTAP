@@ -4,7 +4,7 @@ program astap;
 
 uses
   {$ifdef unix}
-    cthreads,
+    cthreads, // https://wiki.lazarus.freepascal.org/Multithreaded_Application_Tutorial
     cmem, // the c memory manager is on some systems much faster for multi-threading
   {$endif}
   forms, Interfaces,
