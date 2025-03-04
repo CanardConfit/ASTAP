@@ -14,8 +14,7 @@ interface
 uses
    Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls,
    LCLIntf, Buttons,{for for getkeystate, selectobject, openURL}
-   astap_main, unit_annotation,unit_hjd,unit_stack,
-   unit_astrometric_solving; //for binning without changing the header
+   astap_main, unit_annotation,unit_hjd,unit_stack;
 
 type
 
@@ -66,7 +65,7 @@ var
 
   sqm_applyDF: boolean;
 
-function calculate_sqm(img: Timage_array; var headx : theader; memox : tstrings; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(img: Timage_array; var headx : theader; memo3 : tstrings; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 
 const
   pedestal_m: integer=0;
@@ -80,13 +79,22 @@ implementation
 var
   site_lat_radians,site_long_radians  : double;
 
-function calculate_sqm(img: Timage_array; var headx : theader; memox : tstrings; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(img: Timage_array; var headx : theader; memo3 : tstrings; get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 var
   correction,az,airm                         : double;
   bayer,form_exist                           : boolean;
-  img2                                       : Timage_array;
+  c,h,w,k,i                                  : integer;
+  val                                        : single;
+  img_tmp                                    : Timage_array;
 begin
   form_exist:=form_sqm1<>nil;   {see form_sqm1.FormClose action to make this working reliable}
+
+  if pos('S', headx.calstat)>0 then
+  begin
+    warning_str:='Can not evaluate stacked images';
+    if form_exist then form_sqm1.green_message1.caption:=warning_str;
+    exit;
+  end;
 
   bayer:=((bayerpat<>'') and (headx.Xbinning=1));
 
@@ -94,27 +102,58 @@ begin
   begin
     if bayer then
     begin
-      form_sqm1.green_message1.caption:='This OSC image is automatically binned 2x2.'+#10;
+      form_sqm1.green_message1.caption:='OSC image'+#10;
       application.processmessages;
-      bin_mono_and_crop(2, 1{crop},img,img2);// Make mono, bin and crop without changing the header. Bin result in img2
+
+      c:=length(img);
+      h:=length(img[0]);
+      w:=length(img[0,0]);
+
+      setlength(img_tmp,1,h,w);
+      for k:=0 to (h div 2)-1 do
+        for i:=0 to (w div 2)-1 do
+       begin //remove checker pattern
+         val:=(img[0,k,i]+
+               img[0,k+1,i]+
+               img[0,k,i+1]+
+               img[0,k+1,i+1])/4;
+         img_tmp[0,k,i]:=val;
+         img_tmp[0,k+1,i]:=val;
+         img_tmp[0,k,i+1]:=val;
+         img_tmp[0,k+1,i+1]:=val;
+       end;
+
+
     end
     else
       form_sqm1.green_message1.caption:='';
   end;
+
+
 
   if ((headx.mzero=0) or (headx.mzero_radius<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
     headx.mzero_radius:=99;{calibrate for extended objects}
     if bayer=false then
-       plot_and_measure_stars(img,memox,headx,true {calibration},false {plot stars},false{report lim magnitude})
+       plot_and_measure_stars(img,memo3,headx,true {calibration},false {plot stars},false{report lim magnitude})
     else
-       plot_and_measure_stars(img2,memox,headx,true {calibration},false {plot stars},false{report lim magnitude})//measure binned image
+    begin
+        plot_and_measure_stars(img_tmp,memo3,headx,true {calibration},false {plot stars},false{report lim magnitude});//measure binned image
+    end;
   end;
   result:=false;
   if headx.mzero>0 then
   begin
-    if get_bk then get_background(0,img,headX, get_his {histogram},false {calculate also noise level});
+    if get_bk then
+    begin
+      if bayer=false then
+        get_background(0,img,headX, get_his {histogram},false {calculate also noise level})
+      else
+      begin
+        get_background(0,img_tmp,headX, true {histogram required},false {calculate also noise level});
+      end;
+    end;
 
     if (pos('D',headx.calstat)>0) then
     begin
@@ -139,7 +178,7 @@ begin
       begin
         memo2_message('Too high pedestal value!');
         warning_str:=warning_str+'Too high pedestal value!';
-        update_text(memox,'SQM     =',char(39)+'Error calculating SQM value! Too high pedestal value!'+char(39));
+        update_text(memo3,'SQM     =',char(39)+'Error calculating SQM value! Too high pedestal value!'+char(39));
       end;
       beep;
       pedestal2:=0; {prevent errors}
@@ -152,8 +191,8 @@ begin
     if centalt=''  then //no old altitude
     begin
       centalt:=floattostr2(altitudefloat);
-      update_text(memox,'CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
-      update_text(memox,'OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+      update_text(memo3,'CENTALT =',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
+      update_text(memo3,'OBJCTALT=',#39+centalt+#39+'              / [deg] Nominal altitude of center of image    ');
     end;
 
     if altitudefloat>0 then
@@ -163,21 +202,21 @@ begin
       headX.sqmfloat:=headX.sqmfloat+correction;
       result:=true;
 
-      update_text(memox,'SQM     = ',floattostr2(headx.sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
-      update_text(memox,'COMMENT SQM',' Used '+inttostr(pedestal2)+' as pedestal value. CALSTAT='+headx.calstat);
+      update_text(memo3,'SQM     = ',floattostr2(headx.sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
+      update_text(memo3,'COMMENT SQM',' Used '+inttostr(pedestal2)+' as pedestal value. CALSTAT='+headx.calstat);
     end
     else
     begin
       memo2_message('Negative altitude calculated!');
       warning_str:=warning_str+'Negative altitude calculated!';
-      update_text(memox,'SQM     =',char(39)+'Error calculating SQM value! Negative altitude calculated!'+char(39));
+      update_text(memo3,'SQM     =',char(39)+'Error calculating SQM value! Negative altitude calculated!'+char(39));
     end;
   end
   else
   begin
     memo2_message('MZERO calibration failure!');
     warning_str:=warning_str+'MZERO calibration failure!';
-    update_text(memox,'SQM     =',char(39)+'Error calculating SQM value! MZERO calculating failure!'+char(39));
+    update_text(memo3,'SQM     =',char(39)+'Error calculating SQM value! MZERO calculating failure!'+char(39));
   end;
 end;
 

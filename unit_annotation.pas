@@ -1976,7 +1976,7 @@ end;
 procedure plot_and_measure_stars(img : Timage_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
-  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e,mag_saturation,correction  : double;
+  standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e,mag_saturation,correction,val  : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                               : integer;
   flip_horizontal, flip_vertical                        : boolean;
   flux_ratio_array,hfd_x_sd, flux_peak_ratio,snr_list   : array of double;
@@ -1995,11 +1995,11 @@ var
       begin
         inc(star_total_counter);
 
-        if flip_horizontal then x2:=(head.width-1)-x else x2:=x;
-        if flip_vertical   then y2:=y            else y2:=(head.height-1)-y;
-
         if plot_stars then
         begin {annotate}
+          if flip_horizontal then x2:=(head.width-1)-x else x2:=x;
+          if flip_vertical   then y2:=y            else y2:=(head.height-1)-y;
+
           if Bp_Rp<>999 then {colour version}
           begin
             mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });

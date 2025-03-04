@@ -39,36 +39,8 @@ object form_aavso1: Tform_aavso1
     Caption = 'Report to clipboard'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 8
+    TabOrder = 7
     OnClick = report_to_clipboard1Click
-  end
-  object Filter1: TComboBox
-    Left = 15
-    Height = 23
-    Hint = 'The filter used for the observation.'
-    Top = 512
-    Width = 208
-    ItemHeight = 15
-    ItemIndex = 0
-    Items.Strings = (
-      'Take from file header'
-      'CV  (unfiltered)'
-      'TG  (green filter or green of OSC)'
-      'V    (Johnson-V)'
-    )
-    ParentFont = False
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 4
-    Text = 'Take from file header'
-  end
-  object Label6: TLabel
-    Left = 240
-    Height = 15
-    Top = 512
-    Width = 54
-    Caption = 'Filter used'
-    ParentColor = False
   end
   object Label8: TLabel
     Left = 16
@@ -96,7 +68,7 @@ object form_aavso1: Tform_aavso1
     ParentShowHint = False
     ShowHint = True
     Style = csDropDownList
-    TabOrder = 5
+    TabOrder = 4
     Text = 'tab'
   end
   object Label4: TLabel
@@ -124,7 +96,7 @@ object form_aavso1: Tform_aavso1
     Caption = 'Report to file'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 9
+    TabOrder = 8
     OnClick = report_to_clipboard1Click
   end
   object Image_photometry1: TImage
@@ -149,7 +121,7 @@ object form_aavso1: Tform_aavso1
     Caption = 'BAA style'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 6
+    TabOrder = 5
   end
   object report_error1: TLabel
     Left = 528
@@ -243,7 +215,7 @@ object form_aavso1: Tform_aavso1
     Caption = 'HJD'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 7
+    TabOrder = 6
     OnChange = hjd1Change
   end
   object measure_all_mode1: TLabel
@@ -267,7 +239,7 @@ object form_aavso1: Tform_aavso1
     Top = 8
     Width = 115
     Caption = 'Sort alphabetically'
-    TabOrder = 10
+    TabOrder = 9
     OnChange = sort_alphabetically1Change
   end
   object ensemble_database1: TCheckBox
@@ -279,7 +251,7 @@ object form_aavso1: Tform_aavso1
     Caption = 'Gaia ensemble'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 11
+    TabOrder = 10
     OnClick = ensemble_database1Click
   end
   object abrv_comp1: TCheckListBox
@@ -292,7 +264,7 @@ object form_aavso1: Tform_aavso1
     MultiSelect = True
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 12
+    TabOrder = 11
     OnClickCheck = abrv_comp1ClickCheck
     OnItemClick = abbrv_comp1ItemClick
   end
@@ -311,7 +283,7 @@ object form_aavso1: Tform_aavso1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 13
+    TabOrder = 12
     OnChange = abrv_check1Change
   end
   object sigma_check1: TLabel
@@ -368,7 +340,7 @@ object form_aavso1: Tform_aavso1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 14
+    TabOrder = 13
     Text = 'CCD'
   end
   object PopupMenu1: TPopupMenu

@@ -47,11 +47,9 @@ type
     delimiter1: TComboBox;
     Label4: TLabel;
     Label5: TLabel;
-    Label6: TLabel;
     Label8: TLabel;
     obscode1: TEdit;
     Label1: TLabel;
-    Filter1: TComboBox;
     SaveDialog1: TSaveDialog;
     procedure abrv_comp1Change(Sender: TObject);
     procedure abbrv_comp1ItemClick(Sender: TObject; Index: integer);
@@ -276,7 +274,6 @@ begin
     sort_alphabetically:=sort_alphabetically1.checked;
 
     hjd_date:=hjd1.checked;
-    aavso_filter_index:=filter1.itemindex;
     delta_bv:=strtofloat2(form_aavso1.delta_bv1.text);
     magnitude_slope:=strtofloat2(form_aavso1.magnitude_slope1.text);
     ensemble_database:=ensemble_database1.checked;
@@ -311,7 +308,7 @@ begin
     source:=0 //mode manual star selection. Extract magnitude from from annotation text
   else
   begin
-    theindex:=stackmenu1.listview7.column[columnr].tag;
+    theindex:=stackmenu1.listview7.column[columnr+1].tag; //Caption position is always one position higher then data
     source:=variable_list[theindex].source;//local, vsp,vsx
   end;
 
@@ -737,10 +734,7 @@ begin
 
          if snr_str<>'' then
          begin
-           if filter1.itemindex=0 then
-             filter_used:=listview7.Items.item[c].subitems.Strings[P_filter] //take from header
-           else
-             filter_used:=copy(filter1.text,1,2);//manual input
+           filter_used:=listview7.Items.item[c].subitems.Strings[P_filter]; //take from header
 
            comp_magn_info:='';//clear summation of messages;
 
@@ -1003,7 +997,7 @@ begin
     setlength(starinfo,p_nr-p_nr_norm);
     count:=0;
 
-    measure_any:=stackmenu1.measuring_method1.itemindex=2;
+    measure_any:=stackmenu1.measuring_method1.itemindex=3;
 
 
     for i:=p_nr_norm to p_nr-1 do
@@ -1165,10 +1159,10 @@ var
   theindex : integer;
 begin
   try
-    theindex:=stackmenu1.listview7.column[columnr].tag;
+    theindex:=stackmenu1.listview7.column[columnr+1].tag;//Caption position is always one position higher then data
     ra:=variable_list[theindex].ra;
     dec:=variable_list[theindex].dec;
-    //memo2_message('column:  '+inttostr(columnr)+',    index:  '+inttostr(theindex)+',    '+ floattostr(ra*180/pi)+',    '+floattostr(dec*180/pi));//testing
+    memo2_message('column:  '+inttostr(columnr)+',    index:  '+inttostr(theindex)+',    '+ floattostr(ra*180/pi)+',    '+floattostr(dec*180/pi)+',  '+ stackmenu1.listview7.column[columnr+1].caption);//testing
   except;
   end;
 end;
@@ -1520,7 +1514,6 @@ begin
   sort_alphabetically1.checked:=sort_alphabetically;//if true this will trigger a change and set the combobox.sorted
 
   hjd1.checked:=hjd_date;
-  filter1.itemindex:=aavso_filter_index;
   form_aavso1.delta_bv1.text:=floattostrF(delta_bv,ffFixed,5,3);
   form_aavso1.magnitude_slope1.text:=floattostrF(magnitude_slope,ffFixed,5,3);
   obstype1.ItemIndex:=obstype;
