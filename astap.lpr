@@ -1,11 +1,9 @@
 program astap;
 
-{$MODE Delphi}
-
+{$mode objfpc}{$H+}
 uses
   {$ifdef unix}
-    cthreads, // https://wiki.lazarus.freepascal.org/Multithreaded_Application_Tutorial
-    cmem, // the c memory manager is on some systems much faster for multi-threading
+  cthreads, // https://wiki.lazarus.freepascal.org/Multithreaded_Application_Tutorial
   {$endif}
   forms, Interfaces,
   astap_main in 'astap_main.pas', {mainwindow}
