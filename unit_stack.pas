@@ -10488,7 +10488,6 @@ begin
   begin
     listview1.columns.Items[l_centaz + 1].Caption := centaz_key; {lv.items[l_sqm].caption:=sqm_key; doesn't work}
     listview1.columns.Items[l_sqm + 1].Caption := sqm_key;  {lv.items[l_sqm].caption:=sqm_key; doesn't work}
-    analyse_quick1.Left:=Analyse1.left+analyse1.width+5;//align quick check to analyse1
   end;
 end;
 
