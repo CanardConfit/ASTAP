@@ -106,7 +106,7 @@ begin
   // Limit thread arrayA to available CPU cores or height
   THREAD_COUNT := Min(System.CPUCount, height_source);
 
- // THREAD_COUNT :=2;
+ // THREAD_COUNT :=1;
 
   SetLength(Threads, THREAD_COUNT);
   RowsPerThread := height_source div THREAD_COUNT;
