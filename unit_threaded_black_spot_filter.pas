@@ -52,47 +52,44 @@ var
   tempval : single;
   h,w,col : integer;
 begin
-//  for h := FRowStart to FRowEnd do
-//    for w := 0 to Fwidth_source - 1 do
-//    begin
-//      x_new := Round(Faa * w + Fbb * h + Fcc);//correction x:=aX+bY+c
-//      y_new := Round(Fdd * w + Fee * h + Fff);//correction y:=aX+bY+c
-
-//      if ((x_new >= 0) and (x_new < Fwidth_dest) and (y_new >= 0) and (y_new < Fheight_dest)) then
-//      begin
-//        for col := 0 to Fcolors - 1 do
-//          dest^[col,y_new,x_new]:=dest^[col,y_new,x_new]+ (source^[col,h,w]-Fbackground)*Fweightf;//Sum flux only. image loaded is already corrected with dark and flat}{NOTE: fits arrayA from 1, image from zero
-
-//        arrayA^[0,y_new,x_new]:=arrayA^[0,y_new,x_new]+FweightF{typical 1}
-//      end;
-//    end;
-
-  for h:=0 to Fheight_dest-1 do
-  for w:=0 to Fwidth_dest-1 do
-  begin {pixel loop}
-    tempval:=arrayA^[0,h,w];
-    for col:=0 to Fcolors-1 do
-    begin {colour loop}
-      if tempval<>0 then dest^[col,h,w]:=Fpedestal+source^[col,h,w]/tempval {scale to one image by diving by the number of pixels added}
-      else
-      begin { black spot filter or missing value filter due to image rotation}
-        if ((w>0) and (arrayA^[0,h,w-1]<>0)) then dest^[col,h,w]:=Fpedestal+dest^[col,h,w-1]{take nearest pixel x-1 as replacement}
+  if length(arrayA^)=1 then //version for average
+  begin
+    for h:=0 to Fheight_dest-1 do
+    for w:=0 to Fwidth_dest-1 do
+    begin {pixel loop}
+      tempval:=arrayA^[0,h,w];
+      for col:=0 to Fcolors-1 do
+      begin {colour loop}
+        if tempval<>0 then dest^[col,h,w]:=Fpedestal+source^[col,h,w]/tempval {scale to one image by diving by the number of pixels added}
         else
-        if ((h>0) and (arrayA^[0,h-1,w]<>0)) then dest^[col,h,w]:=Fpedestal+dest^[col,h-1,w]{take nearest pixel y-1 as replacement}
-        else
-        dest^[col,h,w]:=0;{clear img_loaded since it is resized}
-      end; {black spot}
-    end;{colour loop}
-  end;{pixel loop}
-
-
-
-
-
-
-
-
-
+        begin { black spot filter or missing value filter due to image rotation}
+          if ((w>0) and (arrayA^[0,h,w-1]<>0)) then dest^[col,h,w]:=dest^[col,h,w-1]{take nearest pixel x-1 as replacement}
+          else
+          if ((h>0) and (arrayA^[0,h-1,w]<>0)) then dest^[col,h,w]:=dest^[col,h-1,w]{take nearest pixel y-1 as replacement}
+          else
+          dest^[col,h,w]:=0;{clear img_loaded since it is resized}
+        end; {black spot}
+      end;{colour loop}
+    end;{pixel loop}
+  end
+  else
+  begin //black spot filter for sigma clip
+    for col:=0 to Fcolors-1 do {do one or three colors} {compensate for number of pixel values added per position}
+      for h:=0 to Fheight_dest-1 do
+        for w:=0 to Fwidth_dest-1 do
+        begin
+          tempval:=arrayA^[col,h,w];
+          if tempval<>0 then  dest^[col,h,w]:=Fpedestal+source^[col,h,w]/tempval {scale to one image by diving by the number of pixels added}
+          else
+          begin { black spot filter fix black spots which show up if one image is rotated. Note for this version img_temp is counting for each color since they could be different}
+            if ((w>0) and (arrayA^[0,h,w-1]<>0)) then dest^[col,h,w]:=dest^[col,h,w-1]{take nearest pixel x-1 as replacement}
+            else
+            if ((h>0) and (arrayA^[0,h-1,w]<>0)) then dest^[col,h,w]:=dest^[col,h-1,w]{take nearest pixel y-1 as replacement}
+            else
+            dest^[col,h,w]:=0;{clear img_loaded since it is resized}
+          end; {black spot filter}
+        end;
+  end;
 end;
 
 procedure black_spot_filter(var dest, source, arrayA: Timage_array; pedestal : single);// add source to dest
