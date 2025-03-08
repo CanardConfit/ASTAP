@@ -1215,7 +1215,7 @@ var
     variance_factor, value,weightF,hfd_min,dummy                                                                       : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip, solar_drift_compensation,
     use_star_alignment                                                                                                 : boolean;
-    tempval, sumpix, newpix, background, pedestal                                                                      : single;
+    tempval, sumpix, newpix, background, pedestal,val                                                                  : single;
     warning     : string;
     starlist1,starlist2 : Tstar_list;
     img_temp,img_average,img_final,img_variance,img_early,dummy_img : Timage_array;
@@ -1407,9 +1407,12 @@ begin
       if counter<>0 then
       for fitsY:=0 to height_max-1 do
         for fitsX:=0 to width_max-1 do
-            for col:=0 to head.naxis3-1 do
-            if img_temp[col,fitsY,fitsX]<>0 then
-               img_average[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX]/img_temp[col,fitsY,fitsX];{scale to one image by diving by the number of pixels added}
+        begin
+          val:=img_temp[0,fitsY,fitsX];
+          if val<>0 then
+          for col:=0 to head.naxis3-1 do
+             img_average[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX]/val;{scale to one image by diving by the number of pixels added}
+        end;
     end;  {light average}
 
     {standard deviation of light images}  {stack using sigma clip average}
@@ -1489,9 +1492,12 @@ begin
       if counter<>0 then
         For fitsY:=0 to height_max-1 do
           for fitsX:=0 to width_max-1 do
+          begin
+            val:=img_temp[0,fitsY,fitsX];{re-use the img_temp from light average}
+            if val<>0 then
             for col:=0 to head.naxis3-1 do
-              if img_temp[col,fitsY,fitsX]<>0 then {reuse the img_temp from light average}
-                 img_variance[col,fitsY,fitsX]:=1+img_variance[col,fitsY,fitsX]/img_temp[col,fitsY,fitsX]; {the extra 1 is for saturated images giving a SD=0}{scale to one image by diving by the number of pixels tested}
+              img_variance[col,fitsY,fitsX]:=1+img_variance[col,fitsY,fitsX]/val; {the extra 1 is for saturated images giving a SD=0}{scale to one image by diving by the number of pixels tested}
+            end;
     end; {standard deviation of light images}
 
 
@@ -1583,26 +1589,30 @@ begin
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
 
-        for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
-          For fitsY:=0 to head.height-1 do
-            for fitsX:=0 to head.width-1 do
-            begin
-              tempval:=img_temp[col,fitsY,fitsX];
-              if tempval<>0 then img_loaded[col,fitsY,fitsX]:=pedestal+img_final[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
-              else
-              begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
-                if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
-                begin
-                  if img_temp[col,fitsY,fitsX-1]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
-                  else
-                  if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
-                  else
-                  img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-                end {fill black spots}
-                else
-                img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-              end; {black spot filter}
-            end;
+//        for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
+//          For fitsY:=0 to head.height-1 do
+//            for fitsX:=0 to head.width-1 do
+//            begin
+//              tempval:=img_temp[col,fitsY,fitsX];
+//              if tempval<>0 then img_loaded[col,fitsY,fitsX]:=pedestal+img_final[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
+//              else
+//              begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
+//                if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
+//                begin
+//                  if img_temp[col,fitsY,fitsX-1]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
+//                  else
+//                  if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
+//                  else
+//                  img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
+//                end {fill black spots}
+//                else
+//                img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
+//              end; {black spot filter}
+//            end;
+
+
+         black_spot_filter(img_loaded, img_final, img_temp, pedestal);// correct black spots due to alignment. The pixel count is in arrayA
+
       end;{counter<>0}
 
       //restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}

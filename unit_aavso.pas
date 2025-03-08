@@ -1062,15 +1062,6 @@ begin
       abrv:=stackmenu1.listview7.Column[i+1].Caption;
       if copy(abrv,1,4)<>'000-' then //Not a check star
       begin
-        {$ifdef mswindows}
-        {begin adjust width automatically}
-        if (Canvas.TextWidth(abrv)> ItemWidth) then
-        ItemWidth:=2*Canvas.TextWidth((abrv));{adjust dropdown with if required}
-        Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
-        {end adjust width automatically}
-        {$else} {unix}
-        ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
-        {$endif}
         starinfo[count].str:=abrv;//store in an array
         starinfo[count].x:=find_sd_star(i);
         inc(count);
@@ -1084,9 +1075,24 @@ begin
         QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
         //memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
       end;
-      for i:= count-1 downto 0 do  //display in decending order
-        if starinfo[i].x<>0 then items.add(starinfo[i].str+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3));//add including standard deviation
 
+
+      for i:= count-1 downto 0 do  //display in decending order
+        if starinfo[i].x<>0 then
+        begin
+          abrv:=starinfo[i].str+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3);
+          items.add(abrv);//add including standard deviation
+          {$ifdef mswindows}
+          {begin adjust width automatically}
+          if (Canvas.TextWidth(abrv)> ItemWidth) then
+          begin
+             ItemWidth:=10+Canvas.TextWidth(abrv);{adjust dropdown with if required}
+             Perform(352{windows,CB_SETDROPPEDWIDTH}, ItemWidth, 0);
+           end; {end adjust width automatically}
+          {$else} {unix}
+          ItemWidth:=form_aavso1.Canvas.TextWidth((abrv));{works only second time};
+          {$endif}
+        end;
     end;
   end;
 end;
