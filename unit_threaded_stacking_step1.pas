@@ -9,7 +9,7 @@ unit unit_threaded_stacking_step1;
 interface
 
 uses
-  Classes, SysUtils, astap_main, unit_star_align;  // Include necessary units
+  Classes, SysUtils, astap_main, unit_star_align, unit_mtpcpu;  // Include necessary units
 
 procedure stack_arrays(var dest, source, arrayA: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf: double);// add source to dest
 
@@ -90,10 +90,12 @@ begin
   height_source := Length(source[0]);
   width_source := Length(source[0, 0]);
 
-  // Limit thread arrayA to available CPU cores or height
-  THREAD_COUNT := Min(System.CPUCount, height_source);
-
- // THREAD_COUNT :=1;
+  // Limit threads to available CPU logical cores or height
+  {$ifdef mswindows}
+  THREAD_COUNT := Min(System.CPUCount, height_source);//work in Windows and Linux virtual machine but not in native Linux or Darwin and return then 1.
+  {$else} {unix}
+  THREAD_COUNT := Min(GetSystemThreadCount, height_source);
+  {$endif}
 
   SetLength(Threads, THREAD_COUNT);
   RowsPerThread := height_source div THREAD_COUNT;
