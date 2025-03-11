@@ -116,7 +116,7 @@ begin
   {$ifdef mswindows}
   THREAD_COUNT := Min(System.CPUCount, height_d);//work in Windows and Linux virtual machine but not in native Linux or Darwin and return then 1.
   {$else} {unix}
-  THREAD_COUNT := Min(GetSystemThreadCount, height_d);
+  THREAD_COUNT := Min(GetSystemThreadCount, height_d);  //unit_mtpcpu;
   {$endif}
 
   SetLength(Threads, THREAD_COUNT);

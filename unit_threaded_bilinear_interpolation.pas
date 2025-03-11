@@ -114,7 +114,7 @@ begin
   {$ifdef mswindows}
   NumThreads := Min(System.CPUCount, Length(img[0]));//work in Windows and Linux virtual machine but not in native Linux or Darwin and returns then 1.
   {$else} {unix}
-  NumThreads := Min(GetSystemThreadCount, Length(img[0]));
+  NumThreads := Min(GetSystemThreadCount, Length(img[0]));  //unit_mtpcpu;
   {$endif}
 
   SectionHeight := Head.Height div NumThreads;

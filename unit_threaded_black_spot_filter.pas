@@ -9,7 +9,7 @@ unit unit_threaded_black_spot_filter;
 interface
 
 uses
-  Classes, SysUtils, astap_main, unit_star_align;  // Include necessary units
+  Classes, SysUtils, astap_main, unit_star_align, unit_mtpcpu;  // Include necessary units
 
 procedure black_spot_filter(var dest, source, arrayA: Timage_array; pedestal : single);// correct black spots due to alignment. The pixel count is in arrayA
 
@@ -104,9 +104,11 @@ begin
   width_dest := Length(dest[0, 0]);
 
   // Limit thread arrayA to available CPU cores or height
-  THREAD_COUNT := Min(System.CPUCount, height_dest);
-
- // THREAD_COUNT :=1;
+  {$ifdef mswindows}
+  THREAD_COUNT := Min(System.CPUCount, height_dest);//work in Windows and Linux virtual machine but not in native Linux or Darwin and return then 1.
+  {$else} {unix}
+  THREAD_COUNT := Min(GetSystemThreadCount, height_dest);  //unit_mtpcpu;
+  {$endif}
 
   SetLength(Threads, THREAD_COUNT);
   RowsPerThread := height_dest div THREAD_COUNT;
