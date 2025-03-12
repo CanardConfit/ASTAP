@@ -458,7 +458,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 9
           end
           object analyse_lights_extra1: TButton
-            Left = 400
+            Left = 424
             Height = 25
             Hint = 'Report satellite streaks. For streak detection settings see tab "pixel math 2"'
             Top = 5
@@ -481,7 +481,7 @@ object stackmenu1: Tstackmenu1
             Visible = False
           end
           object analyse_quick1: TCheckBox
-            Left = 304
+            Left = 328
             Height = 19
             Hint = 'Analyse the images binned 2x2 to speed up.'
             Top = 5
@@ -1887,9 +1887,9 @@ object stackmenu1: Tstackmenu1
               Text = '0'
             end
             object mosaic_crop1: TUpDown
-              Left = 186
-              Height = 18
-              Top = 32
+              Left = 232
+              Height = 23
+              Top = 40
               Width = 17
               Associate = mosaic_crop2
               Max = 99
@@ -3754,10 +3754,10 @@ object stackmenu1: Tstackmenu1
             Text = '8'
           end
           object font_size_photometry_UpDown1: TUpDown
-            Left = 922
-            Height = 18
+            Left = 1152
+            Height = 23
             Hint = 'Font size of image annotations. Using the online database for size 4 only abbreviation are plotted.'
-            Top = 28
+            Top = 35
             Width = 17
             Associate = font_size_photometry1
             Max = 20
@@ -6736,9 +6736,9 @@ object stackmenu1: Tstackmenu1
               TabOrder = 7
             end
             object UpDown1: TUpDown
-              Left = 133
-              Height = 18
-              Top = 144
+              Left = 166
+              Height = 23
+              Top = 180
               Width = 16
               Associate = edit_background1
               Max = 32767
@@ -7257,9 +7257,9 @@ object stackmenu1: Tstackmenu1
               OnChange = Edit_width1Change
             end
             object width_UpDown1: TUpDown
-              Left = 118
-              Height = 18
-              Top = 4
+              Left = 148
+              Height = 23
+              Top = 5
               Width = 17
               Associate = Edit_width1
               Increment = 10
@@ -8258,14 +8258,14 @@ object stackmenu1: Tstackmenu1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 186
-      Top = 504
+      Height = 185
+      Top = 505
       Width = 1920
       ClientWidth = 1920
-      ClientHeight = 186
+      ClientHeight = 185
       object memo2: TMemo
         Left = 0
-        Height = 92
+        Height = 91
         Top = 94
         Width = 1920
         Align = alBottom
@@ -8416,8 +8416,8 @@ object stackmenu1: Tstackmenu1
             Text = '3'
           end
           object delta_temp_updown1: TUpDown
-            Left = 453
-            Height = 18
+            Left = 566
+            Height = 23
             Top = -2
             Width = 17
             Associate = delta_temp1

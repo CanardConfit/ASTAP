@@ -8,7 +8,7 @@ unit unit_threaded_demosaic_astroM_bilinear_interpolation;
 interface
 
 uses
-  Classes, SysUtils, astap_main;
+  Classes, SysUtils, astap_main, unit_mtpcpu;
 
 type
   TDemosaicThread = class(TThread)
@@ -236,10 +236,12 @@ begin
 //  SetLength(img_temp2, 3, Head.Height, Head.Width);
   SetLength(img_Temp2, 3, Length(Img[0]), Length(img[0, 0])); // Set length of image array color
 
-  // Limit thread arrayA to available CPU cores or height
-  NumThreads := System.CPUCount;  // Adjust based on CPU cores
-
-  //NumThreads := 1;
+  // Limit threads to available CPU logical cores or height
+  {$ifdef mswindows}
+  NumThreads := Min(System.CPUCount, Length(img[0]));//work in Windows and Linux virtual machine but not in native Linux or Darwin and returns then 1.
+  {$else} {unix}
+  NumThreads := Min(GetSystemThreadCount, Length(img[0]));
+  {$endif}
 
   SectionHeight := Head.Height div NumThreads;
   if odd(SectionHeight) then SectionHeight:=SectionHeight+1;//Keep always even for correct handling Bayer pattern

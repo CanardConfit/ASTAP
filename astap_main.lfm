@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 890
+  Left = 235
   Height = 634
   Hint = ' '
-  Top = 302
+  Top = 228
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -773,19 +773,19 @@ object mainwindow: Tmainwindow
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 431
-      Top = 180
+      Height = 430
+      Top = 181
       Width = 1333
       ClientWidth = 1333
-      ClientHeight = 431
+      ClientHeight = 430
       object Panel1: TPanel
         Left = 0
-        Height = 431
+        Height = 430
         Hint = 'hint'
         Top = 0
         Width = 1333
         Align = alClient
-        ClientHeight = 431
+        ClientHeight = 430
         ClientWidth = 1333
         Color = 2105376
         Font.CharSet = ANSI_CHARSET

@@ -10,7 +10,7 @@ unit unit_threaded_demosaic_astroc_bilinear_interpolation;
 interface
 
 uses
-  Classes, SysUtils, Math;
+  Classes, SysUtils, Math,unit_mtpcpu;
 
 type
   TImage_Array = array of array of array of Single;
@@ -300,7 +300,12 @@ var
   img_temp2: TImage_Array;
   warning_given : boolean;
 begin
-  NumThreads := System.CPUCount;
+  // Limit threads to available CPU logical cores or height
+  {$ifdef mswindows}
+  NumThreads := Min(System.CPUCount, Length(img[0]));//work in Windows and Linux virtual machine but not in native Linux or Darwin and returns then 1.
+  {$else} {unix}
+  NumThreads := Min(GetSystemThreadCount, Length(img[0]));
+  {$endif}
 
   SectionHeight := Length(img[0]) div NumThreads;
   if Odd(SectionHeight) then Inc(SectionHeight);

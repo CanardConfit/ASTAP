@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.03.07';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.03.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -539,7 +539,7 @@ var
   mainwindow: Tmainwindow;
 
 type
-  Timage_array = array of array of array of Single;// note fasted processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
+  Timage_array = array of array of array of Single;// note fastest processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
   Tstar_list   = array of array of double;
 
   Theader =record    {contains the most important header info}
@@ -1662,7 +1662,14 @@ begin
           end; //MZERO
 
 
-
+          if header[i]='L' then   //maxim 7 or ASP
+          begin
+            if ((header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='O') and (header[i+5]='B'))  then  {LAT-OBS}
+              sitelat:=floattostr6(validate_double)
+            else
+            if ((header[i+1]='O')  and (header[i+2]='N') and (header[i+3]='G')  and (header[i+4]='-') and (header[i+5]='O'))  then  {LONG-OBS}
+               sitelong:=floattostr6(validate_double);
+          end;
           if header[i]='O' then
           begin
             if ((header[i+1]='B')  and (header[i+2]='S'))  then  {OBS    site latitude, longitude}
@@ -8884,7 +8891,6 @@ procedure Tmainwindow.batch_add_tilt1Click(Sender: TObject);
 var
   I: integer;
   err,success   : boolean;
-  dobackup : boolean;
   tilt     : double;
   headx : theader;
   img_temp: Timage_array;
@@ -10949,7 +10955,6 @@ end;
 procedure calibrate_photometry(img : Timage_array; memo : tstrings; var head : Theader; update: boolean);
 var
   apert,annul         : double;
-  hfd_counter         : integer;
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
@@ -11164,7 +11169,7 @@ end;
 
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
-  countN,countO : integer;
+  countN : integer;
 begin
   mainwindow.Memo1.Lines.beginUpdate;
 

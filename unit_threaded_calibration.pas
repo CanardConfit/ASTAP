@@ -8,7 +8,7 @@ unit unit_threaded_calibration;
 
 interface
 uses
-  Classes, SysUtils, astap_main;  // Include necessary units
+  Classes, SysUtils, astap_main, unit_mtpcpu;  // Include necessary units
 
 procedure Calibrate_image(var dest, source : Timage_array;mode:string;flat_norm_value,flatnorm11,flatnorm12,flatnorm21,flatnorm22:double);//calibrate img dest with source
 
@@ -112,10 +112,12 @@ begin
   height_d := Length(dest[0]);
   width_d := Length(dest[0, 0]);
 
-  // Limit thread count to available CPU cores or height
-  THREAD_COUNT := Min(System.CPUCount, height_d);
-
- // THREAD_COUNT :=2;
+  // Limit threads to available CPU logical cores or height
+  {$ifdef mswindows}
+  THREAD_COUNT := Min(System.CPUCount, height_d);//work in Windows and Linux virtual machine but not in native Linux or Darwin and return then 1.
+  {$else} {unix}
+  THREAD_COUNT := Min(GetSystemThreadCount, height_d);  //unit_mtpcpu;
+  {$endif}
 
   SetLength(Threads, THREAD_COUNT);
   RowsPerThread := height_d div THREAD_COUNT;
