@@ -218,20 +218,6 @@ object form_aavso1: Tform_aavso1
     TabOrder = 6
     OnChange = hjd1Change
   end
-  object measure_all_mode1: TLabel
-    Left = 48
-    Height = 13
-    Top = 40
-    Width = 306
-    Caption = 'Measure all mode . Select variable and check star for report'
-    Constraints.MaxWidth = 400
-    Font.Height = -11
-    Font.Style = [fsBold]
-    ParentColor = False
-    ParentFont = False
-    Visible = False
-    WordWrap = True
-  end
   object sort_alphabetically1: TCheckBox
     Left = 376
     Height = 19
