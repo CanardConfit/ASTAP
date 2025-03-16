@@ -16298,7 +16298,7 @@ procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color s
 var
   fitsX,fitsY,dum,k,counter            : integer;
   flux,center_x,center_y,a,b,rgb, lumr : single;
-  colour,mean : array[0..2] of single;
+  colour,median : array[0..2] of single;
   bk  : array of double;
 begin
   if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
@@ -16313,30 +16313,6 @@ begin
   a:=(stopX-1-startx)/2;
   b:=(stopY-1-startY)/2;
 
-
-  colour[0]:=0;
-  colour[1]:=0;
-  colour[2]:=0;
-  mean[0]:=0;
-  mean[1]:=0;
-  mean[2]:=0;
-
-  counter:=0;
-  //mean background
-//  for fitsY:=startY to stopY-1 do
-//  for fitsX:=startX to stopX-1 do
-//  begin
-//    if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
-//    begin
-//      for k:=0 to head.naxis3-1 do {do all colors}
-//       mean[k]:=mean[k]+img_loaded[k,fitsY,fitsX];
-//       counter:=counter+1;
-//    end;
-//  end;
-//  if counter=0 then exit;
-//  for k:=0 to head.naxis3-1 do mean[k]:=mean[k]/counter;
-
-//  beep;
   for k:=0 to head.naxis3-1 do {do all colors}
   begin
     counter:=0;
@@ -16351,14 +16327,14 @@ begin
          counter:=counter+1;
       end;
     end;
-    mean[k]:=smedian(bk,counter);
+    median[k]:=smedian(bk,counter);
     if counter=0 then exit;
   end;
 
-
-
-
-  //mean colour
+  //sum colour flux
+  colour[0]:=0;
+  colour[1]:=0;
+  colour[2]:=0;
   for fitsY:=startY to stopY-1 do
   for fitsX:=startX to stopX-1 do
   begin
@@ -16366,32 +16342,26 @@ begin
     begin
       for k:=0 to head.naxis3-1 do {do all colors}
       begin
-        colour[k]:=colour[k]+img_loaded[k,fitsY,fitsX]-mean[k];
+        colour[k]:=colour[k]+img_loaded[k,fitsY,fitsX]-median[k];//sum(red) or sum(green) or sum(blue)
       end;
     end;
   end;
 
-  rgb:=colour[0]+colour[1]+colour[2]+0.00001; {mean pixel flux. Factor 0.00001, prevent dividing by zero}
-
+  rgb:=colour[0]+colour[1]+colour[2]+0.00001; {sum pixel flux. Factor 0.00001, prevent dividing by zero}
   for fitsY:=startY to stopY-1 do
   for fitsX:=startX to stopX-1 do
   begin
     if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
     begin
-      flux:=(img_loaded[0,fitsY,fitsX]-mean[0]
-            +img_loaded[1,fitsY,fitsX]-mean[1]
-            +img_loaded[2,fitsY,fitsX]-mean[2]);//flux of one pixel
-
-
-//        strongest_colour_local:=max(red,max(green,blue));
-//        top:=bg + strongest_colour_local*(flux/rgb);{calculate the highest colour value}
-//        if top>=65534.99 then flux:=flux-(top-65534.99)*rgb/strongest_colour_local;{prevent values above 65535}
+      flux:=(img_loaded[0,fitsY,fitsX]-median[0]
+            +img_loaded[1,fitsY,fitsX]-median[1]
+            +img_loaded[2,fitsY,fitsX]-median[2]);//flux of one pixel
 
       {apply average colour to pixel}
       lumr:=flux/rgb;
-      img_loaded[0,fitsY,fitsX]:={new_noise[k]}+ mean[0]+colour[0]*lumr;
-      img_loaded[1,fitsY,fitsX]:={new_noise[k]}+ mean[1]+colour[1]*lumr;
-      img_loaded[2,fitsY,fitsX]:={new_noise[k]}+ mean[2]+colour[2]*lumr;
+      img_loaded[0,fitsY,fitsX]:=median[0]+colour[0]*lumr;//sum(red)  * flux[x,y]/(sum(red)+sum(green)+sum(blue))
+      img_loaded[1,fitsY,fitsX]:=median[1]+colour[1]*lumr;//sum(green)* flux[x,y]/(sum(red)+sum(green)+sum(blue))
+      img_loaded[2,fitsY,fitsX]:=median[2]+colour[2]*lumr;//sum(blue) * flux[x,y]/(sum(red)+sum(green)+sum(blue))
 
     end;
   end;

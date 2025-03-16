@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_stackmethod1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 5
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -1341,12 +1341,12 @@ object stackmenu1: Tstackmenu1
           end
           object filter_groupbox1: TGroupBox
             Left = 528
-            Height = 304
+            Height = 296
             Hint = 'Settings for LRGB stacking, LRGB  stacking is activated if "Classify by light filter" is check marked.'
             Top = 112
             Width = 328
             Caption = 'LRGB stacking'
-            ClientHeight = 284
+            ClientHeight = 276
             ClientWidth = 324
             Color = clForm
             ParentBackground = False
@@ -1745,7 +1745,7 @@ object stackmenu1: Tstackmenu1
               Text = '3.0'
             end
             object lrgb_preserve_r_nebula1: TCheckBox
-              Left = 164
+              Left = 160
               Height = 19
               Hint = 'Preserve red nebula around bright stars. The red nebula will come closer to the star.'
               Top = 192
@@ -1759,7 +1759,7 @@ object stackmenu1: Tstackmenu1
               Left = 0
               Height = 19
               Hint = 'Balances RGB to remove green and purple.'
-              Top = 256
+              Top = 248
               Width = 144
               Caption = 'Remove green && purple'
               Checked = True
@@ -1773,7 +1773,7 @@ object stackmenu1: Tstackmenu1
               Left = 0
               Height = 19
               Hint = 'Colour smooth the detected stars after stacking'
-              Top = 228
+              Top = 224
               Width = 119
               Caption = 'Star colour smooth'
               Checked = True
@@ -1784,10 +1784,10 @@ object stackmenu1: Tstackmenu1
               TabOrder = 26
             end
             object lrgb_star_colour_smooth_diameter1: TComboBox
-              Left = 164
+              Left = 160
               Height = 23
               Hint = 'Diameter times HFD to smooth'
-              Top = 228
+              Top = 224
               Width = 56
               ItemHeight = 15
               ItemIndex = 3
@@ -1804,10 +1804,10 @@ object stackmenu1: Tstackmenu1
               Text = '4.5'
             end
             object lrgb_star_colour_smooth_nrstars1: TComboBox
-              Left = 255
+              Left = 251
               Height = 23
               Hint = 'Number of stars to smooth'
-              Top = 228
+              Top = 224
               Width = 62
               BorderSpacing.Around = 5
               DropDownCount = 20
@@ -1931,12 +1931,12 @@ object stackmenu1: Tstackmenu1
           end
           object raw_box1: TGroupBox
             Left = 24
-            Height = 304
+            Height = 296
             Hint = 'Settings for OSC images.. If disabled uncheck "Classify by light filter".'
             Top = 112
             Width = 464
             Caption = 'RAW one shot colour images'
-            ClientHeight = 284
+            ClientHeight = 276
             ClientWidth = 460
             ParentBackground = False
             ParentFont = False
