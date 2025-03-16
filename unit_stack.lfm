@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 302
+  Left = 348
   Height = 707
-  Top = 211
+  Top = 239
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_stackmethod1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 5
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -1279,7 +1279,7 @@ object stackmenu1: Tstackmenu1
             Text = '2.0'
           end
           object Label_masterflat1: TLabel
-            Left = 1216
+            Left = 1248
             Height = 15
             Top = 96
             Width = 246
@@ -1301,7 +1301,7 @@ object stackmenu1: Tstackmenu1
             Transparent = False
           end
           object Label1: TLabel
-            Left = 1216
+            Left = 1248
             Height = 15
             Top = 72
             Width = 189
@@ -1341,13 +1341,13 @@ object stackmenu1: Tstackmenu1
           end
           object filter_groupbox1: TGroupBox
             Left = 528
-            Height = 304
+            Height = 296
             Hint = 'Settings for LRGB stacking, LRGB  stacking is activated if "Classify by light filter" is check marked.'
             Top = 112
-            Width = 297
+            Width = 328
             Caption = 'LRGB stacking'
-            ClientHeight = 284
-            ClientWidth = 293
+            ClientHeight = 276
+            ClientWidth = 324
             Color = clForm
             ParentBackground = False
             ParentColor = False
@@ -1688,13 +1688,13 @@ object stackmenu1: Tstackmenu1
               TabOrder = 20
               OnChange = lrgb_auto_level1Change
             end
-            object lrgb_colour_smooth1: TCheckBox
+            object global_colour_smooth1: TCheckBox
               Left = 0
               Height = 19
-              Hint = 'Apply colour smooth after stacking. Settings as set in pixel math 1.'
+              Hint = 'Apply smart global colour smooth after stacking.'
               Top = 168
-              Width = 98
-              Caption = 'Colour smooth'
+              Width = 133
+              Caption = 'Global colour smooth'
               Checked = True
               Color = clDefault
               ParentColor = False
@@ -1702,8 +1702,8 @@ object stackmenu1: Tstackmenu1
               State = cbChecked
               TabOrder = 21
             end
-            object lrgb_smart_smooth_width1: TComboBox
-              Left = 136
+            object lrgb_global_colour_smooth_width1: TComboBox
+              Left = 160
               Height = 23
               Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10, Set this as high as eight times the HFD value.'
               Top = 168
@@ -1724,8 +1724,8 @@ object stackmenu1: Tstackmenu1
               TabOrder = 22
               Text = '10'
             end
-            object lrgb_smart_colour_sd1: TComboBox
-              Left = 227
+            object lrgb_global_colour_smooth_sd1: TComboBox
+              Left = 251
               Height = 23
               Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
               Top = 168
@@ -1745,7 +1745,7 @@ object stackmenu1: Tstackmenu1
               Text = '3.0'
             end
             object lrgb_preserve_r_nebula1: TCheckBox
-              Left = 140
+              Left = 160
               Height = 19
               Hint = 'Preserve red nebula around bright stars. The red nebula will come closer to the star.'
               Top = 192
@@ -1759,7 +1759,7 @@ object stackmenu1: Tstackmenu1
               Left = 0
               Height = 19
               Hint = 'Balances RGB to remove green and purple.'
-              Top = 256
+              Top = 248
               Width = 144
               Caption = 'Remove green && purple'
               Checked = True
@@ -1769,13 +1769,13 @@ object stackmenu1: Tstackmenu1
               State = cbChecked
               TabOrder = 25
             end
-            object lrgb_stars_smooth1: TCheckBox
+            object star_colour_smooth1: TCheckBox
               Left = 0
               Height = 19
-              Hint = 'Smooth the stars after stacking as set in pixel math1'
-              Top = 228
-              Width = 107
-              Caption = 'Smooth the stars'
+              Hint = 'Colour smooth the detected stars after stacking'
+              Top = 224
+              Width = 119
+              Caption = 'Star colour smooth'
               Checked = True
               Color = clDefault
               ParentColor = False
@@ -1783,11 +1783,11 @@ object stackmenu1: Tstackmenu1
               State = cbChecked
               TabOrder = 26
             end
-            object lrgb_smooth_diameter1: TComboBox
-              Left = 140
+            object lrgb_star_colour_smooth_diameter1: TComboBox
+              Left = 160
               Height = 23
               Hint = 'Diameter times HFD to smooth'
-              Top = 228
+              Top = 224
               Width = 56
               ItemHeight = 15
               ItemIndex = 3
@@ -1803,11 +1803,11 @@ object stackmenu1: Tstackmenu1
               TabOrder = 27
               Text = '4.5'
             end
-            object lrgb_smooth_stars1: TComboBox
-              Left = 231
+            object lrgb_star_colour_smooth_nrstars1: TComboBox
+              Left = 251
               Height = 23
               Hint = 'Number of stars to smooth'
-              Top = 228
+              Top = 224
               Width = 62
               BorderSpacing.Around = 5
               DropDownCount = 20
@@ -1830,7 +1830,7 @@ object stackmenu1: Tstackmenu1
             end
           end
           object Label18: TLabel
-            Left = 864
+            Left = 888
             Height = 105
             Top = 240
             Width = 559
@@ -1843,7 +1843,7 @@ object stackmenu1: Tstackmenu1
             WordWrap = True
           end
           object mosaic_box1: TGroupBox
-            Left = 864
+            Left = 888
             Height = 208
             Hint = 'Tools for equalizing the tiles of the mosaic.'
             Top = 16
@@ -1931,12 +1931,12 @@ object stackmenu1: Tstackmenu1
           end
           object raw_box1: TGroupBox
             Left = 24
-            Height = 304
+            Height = 296
             Hint = 'Settings for OSC images.. If disabled uncheck "Classify by light filter".'
             Top = 112
             Width = 464
             Caption = 'RAW one shot colour images'
-            ClientHeight = 284
+            ClientHeight = 276
             ClientWidth = 460
             ParentBackground = False
             ParentFont = False
@@ -5668,7 +5668,7 @@ object stackmenu1: Tstackmenu1
             Hint = 'Improves colour of saturated stars'
             Top = 120
             Width = 430
-            Caption = 'Smart colour smoothing'
+            Caption = 'Global colour smoothing'
             ClientHeight = 64
             ClientWidth = 426
             ParentBackground = False
@@ -5677,7 +5677,7 @@ object stackmenu1: Tstackmenu1
             object smart_colour_smooth_button1: TButton
               Left = 213
               Height = 30
-              Hint = 'This routine smoothes the colour of and try to preserve nebula.'
+              Hint = 'This routine globally colour smooths the image but tries to preserve nebula.'
               Top = 0
               Width = 156
               Caption = 'Apply'
@@ -5685,7 +5685,7 @@ object stackmenu1: Tstackmenu1
               TabOrder = 1
               OnClick = smart_colour_smooth_button1Click
             end
-            object smart_smooth_width1: TComboBox
+            object global_colour_smooth_width1: TComboBox
               Left = 23
               Height = 23
               Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10. Set this as high as eight times the HFD value.'
@@ -5751,7 +5751,7 @@ object stackmenu1: Tstackmenu1
               ParentFont = False
               TabOrder = 2
             end
-            object smart_colour_sd1: TComboBox
+            object global_colour_smooth_sd1: TComboBox
               Left = 115
               Height = 23
               Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
@@ -6474,7 +6474,7 @@ object stackmenu1: Tstackmenu1
             ClientWidth = 426
             ParentBackground = False
             TabOrder = 10
-            object smooth_diameter1: TComboBox
+            object star_colour_smooth_diameter1: TComboBox
               Left = 23
               Height = 23
               Hint = 'Diameter times HFD to smooth'
@@ -6497,7 +6497,7 @@ object stackmenu1: Tstackmenu1
             object apply_star_smooth1: TButton
               Left = 213
               Height = 30
-              Hint = 'This command smooth the stars in the image in the viewer'
+              Hint = 'This command colour smooth the detected stars in the image in the viewer'
               Top = -2
               Width = 156
               Caption = 'Apply'
@@ -6551,7 +6551,7 @@ object stackmenu1: Tstackmenu1
               ParentFont = False
               TabOrder = 2
             end
-            object smooth_stars1: TComboBox
+            object star_colour_smooth_nrstars1: TComboBox
               Left = 104
               Height = 23
               Hint = 'Number of stars to smooth'

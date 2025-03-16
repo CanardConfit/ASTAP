@@ -158,16 +158,16 @@ type
     Label72: TLabel;
     Label73: TLabel;
     Label75: TLabel;
-    lrgb_stars_smooth1: TCheckBox;
-    lrgb_smooth_diameter1: TComboBox;
+    star_colour_smooth1: TCheckBox;
+    lrgb_star_colour_smooth_diameter1: TComboBox;
     MenuItem14: TMenuItem;
     bin2x2_selectedP1: TMenuItem;
     bin_selectedB1: TMenuItem;
     measuring_method1: TComboBox;
     Separator7: TMenuItem;
-    smooth_stars1: TComboBox;
-    smooth_diameter1: TComboBox;
-    lrgb_smooth_stars1: TComboBox;
+    star_colour_smooth_nrstars1: TComboBox;
+    star_colour_smooth_diameter1: TComboBox;
+    lrgb_star_colour_smooth_nrstars1: TComboBox;
     solar_drift_dec1: TEdit;
     SpeedButton2: TSpeedButton;
     SpeedButton3: TSpeedButton;
@@ -412,10 +412,10 @@ type
     live_stacking_pause1: TButton;
     live_stacking_restart1: TButton;
     lrgb_auto_level1: TCheckBox;
-    lrgb_colour_smooth1: TCheckBox;
+    global_colour_smooth1: TCheckBox;
     lrgb_preserve_r_nebula1: TCheckBox;
-    lrgb_smart_colour_sd1: TComboBox;
-    lrgb_smart_smooth_width1: TComboBox;
+    lrgb_global_colour_smooth_sd1: TComboBox;
+    lrgb_global_colour_smooth_width1: TComboBox;
     luminance_filter1: TEdit;
     luminance_filter2: TEdit;
     make_osc_color1: TCheckBox;
@@ -535,9 +535,9 @@ type
     Separator6: TMenuItem;
     show_quads1: TBitBtn;
     sigma_decolour1: TComboBox;
-    smart_colour_sd1: TComboBox;
+    global_colour_smooth_sd1: TComboBox;
     smart_colour_smooth_button1: TButton;
-    smart_smooth_width1: TComboBox;
+    global_colour_smooth_width1: TComboBox;
     solve1: TButton;
     solve_show_log1: TCheckBox;
     SpeedButton1: TSpeedButton;
@@ -1103,7 +1103,7 @@ procedure black_spot_filter_for_aligned(var img: Timage_array); {remove black sp
 function update_solution_and_save(img: Timage_array;var hd: theader; memo:tstrings): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function apply_dark_and_flat(var img: Timage_array; var hd : theader): boolean;{apply dark and flat if required, renew if different head.exposure or ccd temp}
 
-procedure smart_colour_smooth(var img: Timage_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure global_colour_smooth(var img: Timage_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure green_purple_filter(var img: Timage_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
 procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
@@ -1122,6 +1122,7 @@ procedure listviews_end_update;{speed up making stackmenu visible having a many 
 procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);{analyse list of FITS files}
 function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): double;{##### calculate julian day, revised 2017}
 function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*','"',':','|','<','>']}
+function calc_saturation_level(head :theader) : double;//calculate saturation level image
 
 
 
@@ -7957,6 +7958,21 @@ end;
 
 
 
+function calc_saturation_level(head :theader) : double;//calculate saturation level image
+begin
+  if stackmenu1.ignore_saturation1.checked then
+    result:=64000
+  else
+  begin
+    if head.calstat = '' then result:= 64000
+    else
+      result:=60000; {could be dark subtracted changing the saturation level}
+
+    result:=min(head.datamax_org-1,result);
+  end;
+end;
+
+
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
@@ -7979,17 +7995,7 @@ var
               HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
               if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
               begin
-                if
-                 ((img_loaded[0, round(yc)    , round(xc)] < saturation_level) and
-                  (img_loaded[0, round(yc - 1), round(xc)] < saturation_level) and
-                  (img_loaded[0, round(yc + 1), round(xc)] < saturation_level) and
-                  (img_loaded[0, round(yc)    , round(xc - 1)] < saturation_level) and
-                  (img_loaded[0, round(yc)    , round(xc + 1)] < saturation_level) and
-                  (img_loaded[0, round(yc - 1), round(xc - 1)] < saturation_level) and
-                  (img_loaded[0, round(yc - 1), round(xc + 1)] < saturation_level) and
-                  (img_loaded[0, round(yc + 1), round(xc - 1)] < saturation_level) and
-                  (img_loaded[0, round(yc + 1), round(xc + 1)] < saturation_level)) then
-                  {not saturated star}
+                if saturation(img_loaded,round(xc),round(yc),saturation_level)=false then {not saturated}
                 begin
                   magn:=head.mzero - ln(flux)*2.5/ln(10);
 
@@ -8292,12 +8298,14 @@ begin
       begin // do var star
         adu_e := retrieve_ADU_to_e_unbinned(head.egain);
 
-        if head.calstat = '' then saturation_level := 64000
-        else
-          saturation_level := 60000; {could be dark subtracted changing the saturation level}
-        saturation_level:=min(head.datamax_org-1,saturation_level);
+//        if head.calstat = '' then saturation_level := 64000
+//        else
+//          saturation_level := 60000; {could be dark subtracted changing the saturation level}
+//        saturation_level:=min(head.datamax_org-1,saturation_level);
 
-        if ignore_saturation1.checked then saturation_level:=64000;
+//        if ignore_saturation1.checked then saturation_level:=64000;
+
+        saturation_level:=calc_saturation_level(head);
 
         if stackmenu1.measuring_method1.itemindex=0 then // measure manual
         begin
@@ -8688,7 +8696,7 @@ begin
 end;
 
 
-procedure smart_colour_smooth(var img: Timage_array; wide, sd: double;  preserve_r_nebula, measurehist: boolean);
+procedure global_colour_smooth(var img: Timage_array; wide, sd: double;  preserve_r_nebula, measurehist: boolean);
 {Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 var
   fitsX, fitsY, x, y, step, x2, y2, Count, width5, height5: integer;
@@ -8918,7 +8926,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
-  smart_colour_smooth(img_loaded, strtofloat2(smart_smooth_width1.Text), strtofloat2(smart_colour_sd1.Text), preserve_red_nebula1.Checked, False);
+  global_colour_smooth(img_loaded, strtofloat2(global_colour_smooth_width1.Text), strtofloat2(global_colour_smooth_sd1.Text), preserve_red_nebula1.Checked, False);
 
   plot_fits(mainwindow.image1, False);{plot real}
 
@@ -9482,6 +9490,11 @@ begin
     if snr>3 then //should always be the case
     begin
       radius:=rad*hfd1;
+
+//      if abs(xc-2377)<10 then
+//        if abs(yc-2389)<10 then
+//        beep;
+
       local_color_smooth(round(xc-radius),round(xc+radius),round(yc-radius),round(yc+radius));
     end;
   end;
@@ -9494,7 +9507,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
-  apply_star_smooth(smooth_diameter1.Text, smooth_stars1.Text);
+  apply_star_smooth(star_colour_smooth_diameter1.Text, star_colour_smooth_nrstars1.Text);
 
   plot_fits(mainwindow.image1,false);
 
@@ -10584,10 +10597,10 @@ var
   au: boolean;
 begin
   au := lrgb_auto_level1.Checked;
-  lrgb_colour_smooth1.Enabled := au;
+  global_colour_smooth1.Enabled := au;
   lrgb_preserve_r_nebula1.Enabled := au;
-  lrgb_smart_smooth_width1.Enabled := au;
-  lrgb_smart_colour_sd1.Enabled := au;
+  lrgb_global_colour_smooth_width1.Enabled := au;
+  lrgb_global_colour_smooth_sd1.Enabled := au;
 end;
 
 
@@ -12929,15 +12942,15 @@ begin
 
             use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
-            if stackmenu1.lrgb_colour_smooth1.Checked then
+            if stackmenu1.global_colour_smooth1.Checked then
             begin
               memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
-              smart_colour_smooth(img_loaded, strtofloat2(lrgb_smart_smooth_width1.Text), strtofloat2(lrgb_smart_colour_sd1.Text),  lrgb_preserve_r_nebula1.Checked, False {get  hist});{histogram doesn't needs an update}
+              global_colour_smooth(img_loaded, strtofloat2(lrgb_global_colour_smooth_width1.Text), strtofloat2(lrgb_global_colour_smooth_sd1.Text),  lrgb_preserve_r_nebula1.Checked, False {get  hist});{histogram doesn't needs an update}
             end;
-            if stackmenu1.lrgb_stars_smooth1.Checked then
+            if stackmenu1.star_colour_smooth1.Checked then
             begin
               memo2_message('Applying star-smoothing filter image as set in tab "stack method"');
-              apply_star_smooth(stackmenu1.lrgb_smooth_diameter1.Text, stackmenu1.lrgb_smooth_stars1.Text);
+              apply_star_smooth(stackmenu1.lrgb_star_colour_smooth_diameter1.Text, stackmenu1.lrgb_star_colour_smooth_nrstars1.Text);
             end;
 
             if stackmenu1.green_purple_filter1.Checked then
@@ -12968,7 +12981,7 @@ begin
               if stackmenu1.osc_colour_smooth1.Checked then
               begin
                 memo2_message( 'Applying colour-smoothing filter image as set in tab "stack method".');
-                smart_colour_smooth(img_loaded, strtofloat2(osc_smart_smooth_width1.Text), strtofloat2(osc_smart_colour_sd1.Text), osc_preserve_r_nebula1.Checked, False {get  hist});{histogram doesn't needs an update}
+                global_colour_smooth(img_loaded, strtofloat2(osc_smart_smooth_width1.Text), strtofloat2(osc_smart_colour_sd1.Text), osc_preserve_r_nebula1.Checked, False {get  hist});{histogram doesn't needs an update}
               end;
             end
             else

@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.03.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.03.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -896,6 +896,7 @@ procedure remove_solution(keep_wcs:boolean);//remove all solution key words effi
 procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
 procedure variable_star_annotation(extract_visible: boolean {extract to variable_list});
 function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx : theader; out countN: integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
+function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -7169,7 +7170,7 @@ begin
   if stackmenu1.osc_colour_smooth1.checked then
   begin
     memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab "pixel math 1"');
-    smart_colour_smooth(img,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),stackmenu1.osc_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
+    global_colour_smooth(img,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),stackmenu1.osc_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
   end;
   end
   else
@@ -8030,24 +8031,24 @@ begin
       dum:=Sett.ReadString('stack','osc_cw','');if dum<>'' then   stackmenu1.osc_smart_smooth_width1.text:=dum;
       dum:=Sett.ReadString('stack','osc_sd','');  if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:=dum;
 
-      dum:=Sett.ReadString('stack','smooth_dia','');if dum<>'' then   stackmenu1.smooth_diameter1.text:=dum;
-      dum:=Sett.ReadString('stack','smooth_stars','');  if dum<>'' then stackmenu1.smooth_stars1.text:=dum;
+      dum:=Sett.ReadString('stack','smooth_dia','');if dum<>'' then   stackmenu1.star_colour_smooth_diameter1.text:=dum;
+      dum:=Sett.ReadString('stack','smooth_stars','');  if dum<>'' then stackmenu1.star_colour_smooth_nrstars1.text:=dum;
 
       dum:=Sett.ReadString('stack','sqm_key',''); if dum<>'' then sqm_key:=copy(dum,1,8);{remove * character used for protection spaces}
       dum:=Sett.ReadString('stack','centaz_key',''); if dum<>'' then centaz_key:=copy(dum,1,8);{remove * character used for protection spaces}
 
       stackmenu1.lrgb_auto_level1.checked:=Sett.ReadBool('stack','lrgb_al',true);
       stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','green_fl',false);
-      stackmenu1.lrgb_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
+      stackmenu1.global_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
       stackmenu1.lrgb_preserve_r_nebula1.checked:=Sett.ReadBool('stack','lrgb_pr',true);
 
-      stackmenu1.lrgb_stars_smooth1.checked:=Sett.ReadBool('stack','lrgb_sm',true);
-      dum:=Sett.ReadString('stack','lrgb_smd','');if dum<>'' then   stackmenu1.lrgb_smooth_diameter1.text:=dum;
-      dum:=Sett.ReadString('stack','lrgb_sms','');  if dum<>'' then stackmenu1.lrgb_smooth_stars1.text:=dum;
+      stackmenu1.star_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_sm',true);
+      dum:=Sett.ReadString('stack','lrgb_smd','');if dum<>'' then   stackmenu1.lrgb_star_colour_smooth_diameter1.text:=dum;
+      dum:=Sett.ReadString('stack','lrgb_sms','');  if dum<>'' then stackmenu1.lrgb_star_colour_smooth_nrstars1.text:=dum;
 
 
-      dum:=Sett.ReadString('stack','lrgb_sw','');if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:=dum;
-      dum:=Sett.ReadString('stack','lrgb_sd','');if dum<>'' then  stackmenu1.lrgb_smart_colour_sd1.text:=dum;
+      dum:=Sett.ReadString('stack','lrgb_sw','');if dum<>'' then stackmenu1.lrgb_global_colour_smooth_width1.text:=dum;
+      dum:=Sett.ReadString('stack','lrgb_sd','');if dum<>'' then  stackmenu1.lrgb_global_colour_smooth_sd1.text:=dum;
 
       stackmenu1.ignore_header_solution1.Checked:= Sett.ReadBool('stack','ignore_header_solution',true);
       stackmenu1.Equalise_background1.checked:= Sett.ReadBool('stack','equalise_background',true);{for mosaic mode}
@@ -8149,7 +8150,8 @@ begin
       dum:=Sett.ReadString('stack','multiply_G',''); if dum<>'' then stackmenu1.multiply_green1.text:=dum;
       dum:=Sett.ReadString('stack','multiply_B',''); if dum<>'' then stackmenu1.multiply_blue1.text:=dum;
 
-      dum:=Sett.ReadString('stack','smart_smooth_width',''); if dum<>'' then stackmenu1.smart_smooth_width1.text:=dum;
+      dum:=Sett.ReadString('stack','cs_width',''); if dum<>'' then stackmenu1.global_colour_smooth_width1.text:=dum;
+      dum:=Sett.ReadString('stack','cs_sd',''); if dum<>'' then stackmenu1.global_colour_smooth_sd1.text:=dum;
 
       dum:=Sett.ReadString('stack','star_level_colouring',''); if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','filter_artificial_colouring',''); if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
@@ -8427,24 +8429,23 @@ begin
       sett.writeString('stack','osc_sw',stackmenu1.osc_smart_smooth_width1.text);
       sett.writestring('stack','osc_sd',stackmenu1.osc_smart_colour_sd1.text);
 
-      sett.writeString('stack','smooth_dia',stackmenu1.smooth_diameter1.text);
-      sett.writestring('stack','smooth_stars',stackmenu1.smooth_stars1.text);
+      sett.writeString('stack','smooth_dia',stackmenu1.star_colour_smooth_diameter1.text);
+      sett.writestring('stack','smooth_stars',stackmenu1.star_colour_smooth_nrstars1.text);
 
       sett.writestring('stack','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
 
       sett.writeBool('stack','lrgb_al',stackmenu1.lrgb_auto_level1.checked);
       sett.writeBool('stack','green_fl',stackmenu1.green_purple_filter1.checked);
 
-      sett.writeBool('stack','lrgb_cs',stackmenu1.lrgb_colour_smooth1.checked);
+      sett.writeBool('stack','lrgb_cs',stackmenu1.global_colour_smooth1.checked);
       sett.writeBool('stack','lrgb_pr',stackmenu1.lrgb_preserve_r_nebula1.checked);
 
-      sett.writeBool('stack','lrgb_sm',stackmenu1.lrgb_stars_smooth1.checked);
-      sett.writeString('stack','lrgb_smd',stackmenu1.lrgb_smooth_diameter1.text);
-      sett.writestring('stack','lrgb_sms',stackmenu1.lrgb_smooth_stars1.text);
+      sett.writeBool('stack','lrgb_sm',stackmenu1.star_colour_smooth1.checked);
+      sett.writeString('stack','lrgb_smd',stackmenu1.lrgb_star_colour_smooth_diameter1.text);
+      sett.writestring('stack','lrgb_sms',stackmenu1.lrgb_star_colour_smooth_nrstars1.text);
 
-
-      sett.writestring('stack','lrgb_sw',stackmenu1.lrgb_smart_smooth_width1.text);
-      sett.writestring('stack','lrgb_sd',stackmenu1.lrgb_smart_colour_sd1.text);
+      sett.writestring('stack','lrgb_sw',stackmenu1.lrgb_global_colour_smooth_width1.text);
+      sett.writestring('stack','lrgb_sd',stackmenu1.lrgb_global_colour_smooth_sd1.text);
 
       sett.writeBool('stack','ignore_header_solution',stackmenu1.ignore_header_solution1.Checked);
       sett.writeBool('stack','equalise_background',stackmenu1.Equalise_background1.Checked);
@@ -8545,7 +8546,8 @@ begin
       sett.writestring('stack','multiply_G',stackmenu1.multiply_green1.text);
       sett.writestring('stack','multiply_B',stackmenu1.multiply_blue1.text);
 
-      sett.writestring('stack','smart_smooth_width',stackmenu1.smart_smooth_width1.text);
+      sett.writestring('stack','cs_width',stackmenu1.global_colour_smooth_width1.text);
+      sett.writestring('stack','cs_sd',stackmenu1.global_colour_smooth_sd1.text);
 
       sett.writestring('stack','star_level_colouring',stackmenu1.star_level_colouring1.text);
       sett.writestring('stack','filter_artificial_colouring',stackmenu1.filter_artificial_colouring1.text);
@@ -10858,6 +10860,33 @@ begin
 end;
 
 
+function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
+begin
+//  if ((x>0) and (x<length(img[0,0])-1) and (y>0) and (y<length(img[0])-1)) then //within image
+    result:=((img[0,y  ,x]>=saturation_level) or
+             (img[0,y  ,x-1]>=saturation_level) or
+             (img[0,y  ,x+1]>=saturation_level) or
+             (img[0,y-1,x]>=saturation_level) or
+             (img[0,y+1,x]>=saturation_level) or
+             (img[0,y-1,x-1]>=saturation_level) or
+             (img[0,y+1,x-1]>=saturation_level) or
+             (img[0,y-1,x+1]>=saturation_level) or
+             (img[0,y+1,x+1]>=saturation_level))
+  //else
+ //   result:=true;//not reliable near edge image
+   ;
+end;
+
+procedure textout_at_fitscoordinates(s : string; fitsX,fitsY : integer);//text at fitsX, fitsY
+var
+   x,y :integer;
+begin
+  if mainwindow.flip_horizontal1.Checked then x:=round((head.width-1)-(fitsX-1)) else x:=round(fitsX-1);
+  if mainwindow.flip_vertical1.Checked=false then y:=round((head.height-1)-(fitsY-1)) else y:=round(fitsY-1);
+  mainwindow.image1.Canvas.textout(x,y,s);
+end;
+
+
 procedure measure_magnitudes(img : Timage_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :Tstar_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 var
   fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
@@ -10884,6 +10913,7 @@ begin
   else
     saturation_level := 60000; {could be dark subtracted changing the saturation level}
   saturation_level:=min(headx.datamax_org-1,saturation_level);
+
 
   for fitsY:=0 to headx.height-1 do
     for fitsX:=0 to headx.width-1  do
@@ -10917,17 +10947,7 @@ begin
               if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
                 img_sa[0,j,i]:=1;
             end;
-
-          if ((img[0,round(yc),round(xc)]<saturation_level) and
-              (img[0,round(yc),round(xc-1)]<saturation_level) and
-              (img[0,round(yc),round(xc+1)]<saturation_level) and
-              (img[0,round(yc-1),round(xc)]<saturation_level) and
-              (img[0,round(yc+1),round(xc)]<saturation_level) and
-
-              (img[0,round(yc-1),round(xc-1)]<saturation_level) and
-              (img[0,round(yc+1),round(xc-1)]<saturation_level) and
-              (img[0,round(yc-1),round(xc+1)]<saturation_level) and
-              (img[0,round(yc+1),round(xc+1)]<saturation_level)  ) then {not saturated}
+          if saturation(img,round(xc),round(yc),saturation_level)=false then {not saturated}
           begin
             {store values}
             inc(nrstars);
@@ -11053,20 +11073,11 @@ const
 
         xci:=round(xc);{star center as integer}
         yci:=round(yc);
-        if ((xci>0) and (xci<headx.width-1) and (yci>0) and (yci<headx.height-1)) then
-        saturated:=not ((img[0,yci,xci]<data_max) and
-                        (img[0,yci,xci-1]<data_max) and
-                        (img[0,yci,xci+1]<data_max) and
-                        (img[0,yci-1,xci]<data_max) and
-                        (img[0,yci+1,xci]<data_max) and
 
-                        (img[0,yci-1,xci-1]<data_max) and
-                        (img[0,yci+1,xci-1]<data_max) and
-                        (img[0,yci-1,xci+1]<data_max) and
-                        (img[0,yci+1,xci+1]<data_max)  )
-        else saturated:=false;
+//        saturated:=saturation(img,xci,yci,data_max);//star saturated?
+//        saturation(img,round(xc),round(yc),data_max)
 
-        if (((hfd1<headx.hfd_median*1.5) or (saturated){larger then normal}) and (hfd1>=headx.hfd_median*0.75) and (snr>10) and (img_sa[0,fitsY,fitsX]<=0) {prevent double detection due to spikes}) then {star detected in img}
+        if ((snr>10) and ((hfd1<headx.hfd_median*1.5) or (saturation(img,round(xc),round(yc),data_max)){larger then normal}) and (hfd1>=headx.hfd_median*0.75)) then {star detected in img}
         begin
                       {for testing}
               //      if flipvertical=false  then  starY:=round(headx.height-yc) else starY:=round(yc);
@@ -14716,7 +14727,7 @@ end;
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  width5,height5, xf,yf,k, fx,fy, shapetype,c                  : integer;
+  width5,height5, xf,yf,k, fx,fy, shapetype,c,xint,yint        : integer;
   hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b : double;
 begin
   if head.naxis=0 then exit;
@@ -14734,7 +14745,7 @@ begin
   hfd2:=2;{just a good value}
 
   {for manual alignment and photometry}
-  if  ((stackmenu1.pagecontrol1.tabindex=0) and (stackmenu1.use_manual_alignment1.checked) and (pos('S',head.calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) then
+  if  ((stackmenu1.pagecontrol1.tabindex=0) and (stackmenu1.use_manual_alignment1.checked) and (pos('S',head.calstat)=0 {ignore stacked images unless called from listview1. See doubleclick listview1} )) then
   begin
     if find_reference_star(img_loaded) then
     begin
@@ -14749,7 +14760,7 @@ begin
             {$endif}
             break;
           end;
-      show_marker_shape(mainwindow.shape_manual_alignment1,shapetype,20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
+      show_marker_shape(mainwindow.shape_manual_alignment1,1 {shapetype},20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
     end;
   end
   else
@@ -14757,9 +14768,6 @@ begin
   begin
     {star alignment}
     HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
-
-
-
 
     if hfd2<90 then {detected something}
     begin
@@ -14771,12 +14779,21 @@ begin
           pixel_to_celestial(head,xcf,ycf,0,shape_var1_ra,shape_var1_dec);{store shape position in ra,dec for positioning accurate at an other image}
           error_label1.visible:=false;
 
-          GenerateShapes(shape_nr,round(xcf),round(ycf),60,60,3 {penwidth},stEllipse, clLime,'?');
+          xint:=round(xcf);
+          yint:=round(ycf);
+
+          GenerateShapes(shape_nr,xint,yint,60,60,3 {penwidth},stEllipse, clLime,'?');
           fshapes[shape_nr].fitsX:=xcf;
           fshapes[shape_nr].fitsY:=ycf;
           pixel_to_celestial(head,xcf,ycf,1 {try sip if available},fshapes[shape_nr].ra,fshapes[shape_nr].dec);{store shape position in ra,dec for accurate positioning on an other image   fshapes[i].ra}
           fshapes[shape_nr].Shape.hint:=prepare_IAU_designation(fshapes[shape_nr].ra,fshapes[shape_nr].dec);//IAU designation till overriden by match with database
           show_marker_shape(FShapes[shape_nr].shape,9 {no change},20,20,10,FShapes[shape_nr].fitsX, FShapes[shape_nr].fitsY);
+
+          if saturation(img_loaded,xint,yint,calc_saturation_level(head)) then {saturated star}
+          begin
+             mainwindow.image1.Canvas.font.color:=clred;
+             textout_at_fitscoordinates('SATURATED',xint,yint+14);//text at fitsX, fitsY
+          end;
         end
         else
         begin
@@ -15299,6 +15316,7 @@ begin
     result:=result+' e-' // in electrons
 
 end;
+
 
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
@@ -16278,9 +16296,10 @@ end;
 
 procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
 var
-  fitsX,fitsY,dum,k,counter    : integer;
+  fitsX,fitsY,dum,k,counter            : integer;
   flux,center_x,center_y,a,b,rgb, lumr : single;
-  colour,mean : array[0..2] of single;
+  colour,median : array[0..2] of single;
+  bk  : array of double;
 begin
   if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
   if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -16294,31 +16313,28 @@ begin
   a:=(stopX-1-startx)/2;
   b:=(stopY-1-startY)/2;
 
+  for k:=0 to head.naxis3-1 do {do all colors}
+  begin
+    counter:=0;
+    bk:=nil;//free memory to prevent resize
+    setlength(bk,abs((stopx-startx)*(stopy-starty)));
+    for fitsY:=startY to stopY-1 do
+    for fitsX:=startX to stopX-1 do
+    begin
+      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
+      begin
+         bk[counter]:=img_loaded[k,fitsY,fitsX];
+         counter:=counter+1;
+      end;
+    end;
+    median[k]:=smedian(bk,counter);
+    if counter=0 then exit;
+  end;
 
+  //sum colour flux
   colour[0]:=0;
   colour[1]:=0;
   colour[2]:=0;
-  mean[0]:=0;
-  mean[1]:=0;
-  mean[2]:=0;
-
-  counter:=0;
-
-  //mean background
-  for fitsY:=startY to stopY-1 do
-  for fitsX:=startX to stopX-1 do
-  begin
-    if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
-    begin
-      for k:=0 to head.naxis3-1 do {do all colors}
-       mean[k]:=mean[k]+img_loaded[k,fitsY,fitsX];
-       counter:=counter+1;
-    end;
-  end;
-  if counter=0 then exit;
-  for k:=0 to head.naxis3-1 do mean[k]:=mean[k]/counter;
-
-  //mean colour
   for fitsY:=startY to stopY-1 do
   for fitsX:=startX to stopX-1 do
   begin
@@ -16326,32 +16342,26 @@ begin
     begin
       for k:=0 to head.naxis3-1 do {do all colors}
       begin
-        colour[k]:=colour[k]+img_loaded[k,fitsY,fitsX]-mean[k];
+        colour[k]:=colour[k]+img_loaded[k,fitsY,fitsX]-median[k];//sum(red) or sum(green) or sum(blue)
       end;
     end;
   end;
 
-  rgb:=colour[0]+colour[1]+colour[2]+0.00001; {mean pixel flux. Factor 0.00001, prevent dividing by zero}
-
+  rgb:=colour[0]+colour[1]+colour[2]+0.00001; {sum pixel flux. Factor 0.00001, prevent dividing by zero}
   for fitsY:=startY to stopY-1 do
   for fitsX:=startX to stopX-1 do
   begin
     if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
     begin
-      flux:=(img_loaded[0,fitsY,fitsX]-mean[0]
-            +img_loaded[1,fitsY,fitsX]-mean[1]
-            +img_loaded[2,fitsY,fitsX]-mean[2]);//flux of one pixel
-
-
-//        strongest_colour_local:=max(red,max(green,blue));
-//        top:=bg + strongest_colour_local*(flux/rgb);{calculate the highest colour value}
-//        if top>=65534.99 then flux:=flux-(top-65534.99)*rgb/strongest_colour_local;{prevent values above 65535}
+      flux:=(img_loaded[0,fitsY,fitsX]-median[0]
+            +img_loaded[1,fitsY,fitsX]-median[1]
+            +img_loaded[2,fitsY,fitsX]-median[2]);//flux of one pixel
 
       {apply average colour to pixel}
       lumr:=flux/rgb;
-      img_loaded[0,fitsY,fitsX]:={new_noise[k]}+ mean[0]+colour[0]*lumr;
-      img_loaded[1,fitsY,fitsX]:={new_noise[k]}+ mean[1]+colour[1]*lumr;
-      img_loaded[2,fitsY,fitsX]:={new_noise[k]}+ mean[2]+colour[2]*lumr;
+      img_loaded[0,fitsY,fitsX]:=median[0]+colour[0]*lumr;//sum(red)  * flux[x,y]/(sum(red)+sum(green)+sum(blue))
+      img_loaded[1,fitsY,fitsX]:=median[1]+colour[1]*lumr;//sum(green)* flux[x,y]/(sum(red)+sum(green)+sum(blue))
+      img_loaded[2,fitsY,fitsX]:=median[2]+colour[2]*lumr;//sum(blue) * flux[x,y]/(sum(red)+sum(green)+sum(blue))
 
     end;
   end;
