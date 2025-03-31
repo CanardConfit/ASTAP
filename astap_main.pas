@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.03.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.03.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -3678,34 +3678,37 @@ begin
 end;
 
 
+
 procedure Tmainwindow.About1Click(Sender: TObject);
 var
-    about_message, about_message4, about_message5 : string;
+  about_message, about_message5, arch : string;
 var {################# initialised variables #########################}
   {$IfDef Darwin}// {MacOS}
-    about_title  : string= 'About ASTAP for MacOS:';
+  about_title : string= 'About ASTAP for MacOS:';
   {$ELSE}
-     {$IFDEF unix}
-        about_title  : string= 'About ASTAP for Linux:';
-     {$ELSE}
-       about_title  : string= 'About ASTAP for Windows:';
-     {$ENDIF}
+  {$IFDEF unix}
+  about_title : string= 'About ASTAP for Linux:';
+  {$ELSE}
+  about_title : string= 'About ASTAP for Windows:';
   {$ENDIF}
+  {$ENDIF}
+  const
+  TargetOS = {$I %FPCTARGETOS%};
+  TargetCPU = {$I %FPCTARGETCPU%};
 begin
-  if sizeof(IntPtr) = 8 then
-  about_message4:='64 bit'
-  else
-  about_message4:='32 bit';
-
- {$IFDEF fpc}
- {$MACRO ON} {required for FPC_fullversion info}
+  {$IFDEF fpc}
+  {$MACRO ON} {required for FPC_fullversion info}
+  if TargetCPU='aarch64' then arch:= 'ARM 64 bit';
+  if TargetCPU='arm' then arch:= 'ARM 32 bit';
+  if TargetCPU='i386' then arch:= 'Intel 32 bit';
+  if TargetCPU='x86_64' then arch:= 'Intel 64 bit';
   about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+'.'+
   #13+#10+
   #13+#10+
   'Application path '+application_path;
- {$ELSE} {delphi}
+  {$ELSE} {delphi}
   about_message5:='';
- {$ENDIF}
+  {$ENDIF}
   if ord(database2[0])<>0 then
     about_message5:=about_message5+
     #13+#10+
@@ -3713,8 +3716,7 @@ begin
     'Active star database:'+copy(database2,1,108)+ {primary star database. Do not display last byte (110) used for record type. Byte 109 is used for maximum magnitude}
     #13+#10;
 
-  about_message:=
-  'ASTAP version '+astap_version+', '+about_message4+
+  about_message:= 'ASTAP version '+astap_version+', '+arch {about_message4}+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -3728,8 +3730,7 @@ begin
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
   #13+#10+'© 2018, 2025 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
-
-   application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
+  application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
 
 

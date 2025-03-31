@@ -52,7 +52,7 @@ object mainwindow: Tmainwindow
   OnShow = FormShow
   ParentFont = True
   Position = poDesktopCenter
-  LCLVersion = '3.6.0.0'
+  LCLVersion = '3.8.0.0'
   object error_get_it: TLabel
     Left = 217
     Height = 15
