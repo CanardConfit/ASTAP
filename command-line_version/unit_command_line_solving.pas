@@ -105,28 +105,28 @@ uses
 
 type
   Timage_array = array of array of array of Single;
-  star_list   = array of array of double;
+  Tstar_list   = array of array of double;
   solution_vector   = array[0..2] of double;
 
 var
-   quad_star_distances1, quad_star_distances2: star_list;
-   A_XYpositions                          : star_list;
+   quad_star_distances1, quad_star_distances2: Tstar_list;
+   A_XYpositions                          : Tstar_list;
    b_Xrefpositions,b_Yrefpositions        :  array of double;
-   quad_smallest                          : double;
+//   quad_smallest                          : double;
    nr_references,nr_references2               : integer;
    solution_vectorX, solution_vectorY,solution_cblack   : solution_vector ;
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
 
-procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
-procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
+procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: Tstar_list);{find stars and put them in a list}
+procedure find_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list);  {build quads using closest stars, revised 2020-9-28}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 
 function solve_image(img :Timage_array ) : boolean;{find match between image and star database}
-procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height:double) : integer;{select the binning}
 var
   star1   : array[0..2] of array of single;
@@ -212,11 +212,11 @@ end;
 {   In matrix calculations, b_matrix[0..nr_columns-1,0..nr_equations-1]:=solution_vector[0..2] * A_XYpositions[0..nr_columns-1,0..nr_equations-1]}
 {                                                                                                                              }
 {   see also Montenbruck & Pfleger, Astronomy on the personal computer}
-function lsq_fit( A_matrix: star_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector ): boolean;
+function lsq_fit( A_matrix: Tstar_list; {[, 0..3,0..nr_equations-1]} b_matrix  : array of double;{equations result, b=A*s}  out x_matrix: solution_vector ): boolean;
   const tiny = 1E-10;  {accuracy}
   var i,j,k, nr_equations,nr_columns  : integer;
       p,q,h                           : double;
-      temp_matrix                     : star_list;
+      temp_matrix                     : Tstar_list;
 
 begin
   nr_equations:=length(A_matrix[0]);
@@ -288,7 +288,7 @@ begin
 end; {lsq_fit}
 
 
-procedure QuickSort_starlist(var A: star_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
+procedure QuickSort_starlist(var A: Tstar_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
 var
   Lo, Hi : integer;
   Pivot, Tx,Ty: double;{ pivot, T are the same type as the elements of array }
@@ -316,7 +316,195 @@ begin
 end;
 
 
-procedure find_quads(starlist :star_list; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
+
+procedure find_many_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list); //Find 5 times more quads by using closest groups of 5 stars.
+var
+   i,j,k,q, nrstars,j_index1,j_index2,j_index3,j_index4,nrquads  : integer;
+   distance,distance1,distance2,distance3,distance4,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
+   identical_quad : boolean;
+begin
+
+  nrstars:=Length(starlist[0]);
+
+  if nrstars<5 then
+  begin {not enough stars for quads}
+    SetLength(quad_star_distances,8,0);
+    exit;
+  end;
+
+  nrquads:=0;
+//  SetLength(quad_star_distances,8,nrstars);{will contain the six distances and the central position}
+  SetLength(quad_star_distances,8,nrstars*5);{will contain the six distances and the central position}
+
+  j_index1:=0;{set a default value}
+  j_index2:=0;
+  j_index3:=0;
+  j_index4:=0;
+
+  for i:=0 to nrstars-1 do
+  begin
+    distance1:=1E99;{distance closest star}
+    distance2:=1E99;{distance second closest star}
+    distance3:=1E99;{distance third closest star}
+    distance4:=1E99;{distance fourth closest star}
+
+    x1:=starlist[0,i]; // first star position quad array}
+    y1:=starlist[1,i];
+
+    for j:=0 to nrstars-1 do {find closest stars}
+    begin
+      if j<>i{not the first star} then
+      begin
+        disty:=sqr(starlist[1,j]- y1);
+        if disty<distance4 then {pre-check to increase processing speed with a small amount}
+        begin
+          distance:=sqr(starlist[0,j]-x1)+distY ;{square distances are used}
+          if distance>1 then {not an identical star. Mod 2021-6-25}
+          begin
+
+            if distance<distance1 then
+            begin
+              distance4:=distance3;{distance third closest star}
+              j_index4:=j_index3;
+
+              distance3:=distance2;{distance third closest star}
+              j_index3:=j_index2;
+
+              distance2:=distance1;{distance second closest star}
+              j_index2:=j_index1;
+
+              distance1:=distance;{distance closest star}
+              j_index1:=j;{mark later as used}
+            end
+            else
+            if distance<distance2 then
+            begin
+              distance4:=distance3;{distance third closest star}
+              j_index4:=j_index3;
+
+              distance3:=distance2;{distance third closest star}
+              j_index3:=j_index2;
+
+              distance2:=distance;{distance second closest star}
+              j_index2:=j;
+            end
+            else
+            if distance<distance3 then
+            begin
+              distance4:=distance3;{distance third closest star}
+              j_index4:=j_index3;
+
+              distance3:=distance;{third closest star}
+              j_index3:=j;
+            end
+            else
+            if distance<distance4 then
+            begin
+              distance4:=distance;{fourth closest star}
+              j_index4:=j;
+            end;
+          end;{not an identical star. Mod 2021-6-25}
+        end; {pre-check}
+      end;
+    end;{j}
+
+    if  distance4<1E99 then //found 5 stars in the restricted area
+    begin
+      for q:=0 to 4 do//make 5 quads from 5 stars
+      begin
+        if q=0 then
+        begin  //stars 0,1,2,3
+       //   x1:=starlist[0,i]; {1e star position}
+       //   y1:=starlist[1,i];
+
+          x2:=starlist[0,j_index1];
+          y2:=starlist[1,j_index1];
+
+          x3:=starlist[0,j_index2];
+          y3:=starlist[1,j_index2];
+
+          x4:=starlist[0,j_index3];
+          y4:=starlist[1,j_index3];
+        end
+        else
+        if q=1 then
+        begin  //stars 4,1,2,3
+          x1:=starlist[0,j_index4]; {5e star}
+          y1:=starlist[1,j_index4];
+        end
+        else
+        if q=2 then
+        begin  //star 4,0,2,3
+          x2:=starlist[0,i];
+          y2:=starlist[1,i];
+        end
+        else
+        if q=3 then
+        begin  //stars 4,0,1,3
+          x3:=starlist[0,j_index1];
+          y3:=starlist[1,j_index1];
+        end
+        else
+        if q=4 then
+        begin  //starS 4,0,1,2
+          x4:=starlist[0,j_index2];
+          y4:=starlist[1,j_index2];
+        end;
+
+
+      xt:=(x1+x2+x3+x4)/4; {mean x position quad}
+      yt:=(y1+y2+y3+y4)/4; {mean y position quad}
+
+      identical_quad:=false;
+
+      for k:=0 to nrquads-1 do // check for an identical quad
+      begin
+        if ( (abs(xt-quad_star_distances[6,k])<1) and
+             (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
+        begin
+          identical_quad:=true;
+          break;//stop searching
+        end;
+      end;
+
+      if identical_quad=false then  {new quad found}
+      begin
+        dist1:=sqrt(sqr(x1-x2)+ sqr(y1-y2));{distance star1-star2}
+        dist2:=sqrt(sqr(x1-x3)+ sqr(y1-y3));{distance star1-star3}
+        dist3:=sqrt(sqr(x1-x4)+ sqr(y1-y4));{distance star1-star4}
+        dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
+        dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
+        dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
+        {sort six distances on size in five steps}
+        for j:=1 to 5 do {sort on distance}
+        begin
+          if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
+          if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
+          if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
+          if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+          if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+        end;
+        quad_star_distances[0,nrquads]:=dist1;{largest distance}
+        quad_star_distances[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
+        quad_star_distances[2,nrquads]:=dist3/dist1;
+        quad_star_distances[3,nrquads]:=dist4/dist1;
+        quad_star_distances[4,nrquads]:=dist5/dist1;
+        quad_star_distances[5,nrquads]:=dist6/dist1;
+        quad_star_distances[6,nrquads]:=xt;{store mean x position}
+        quad_star_distances[7,nrquads]:=yt;{store mean y position}
+        inc(nrquads); {new unique quad found}
+      end;
+
+      end;//make 5 quads (4x star) from 5 stars
+    end;//found 5 stars
+  end;{i}
+  SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
+end;
+
+
+
+procedure find_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list);  {build quads using closest stars, revised 2022-4-10}
 var
    i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,startp  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
@@ -325,12 +513,19 @@ var
 begin
 
   nrstars:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
-  quad_smallest:=9999999;
+//  quad_smallest:=9999999;
 
 
   if nrstars<4 then
   begin {not enough stars for quads}
     SetLength(quad_star_distances,8,0);
+    exit;
+  end;
+
+
+  if nrstars<60 then
+  begin
+    find_many_quads(starlist, {out} quad_star_distances);//Find 5 times more quads by find closest groups of 5 stars to make 5 quads of 4 stars
     exit;
   end;
 
@@ -571,7 +766,7 @@ begin
 end;
 
 
-procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double;snr_list : array of double; var starlist1 : star_list);{ get the brightest star from a star list}
+procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double;snr_list : array of double; var starlist1 : Tstar_list);{ get the brightest star from a star list}
 const
    range=200;
 var
@@ -617,7 +812,7 @@ begin
 end;
 
 
-procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: Tstar_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2  : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level                     : double;
@@ -870,7 +1065,7 @@ end;
 //end;
 
 
-function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out starlist: star_list; out nrstars:integer): boolean;{read star from star database}
+function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out starlist: Tstar_list; out nrstars:integer): boolean;{read star from star database}
 var
    Bp_Rp, ra2,dec2,
    frac1,frac2,frac3,frac4,sep                      : double;
@@ -1138,7 +1333,7 @@ begin
 end;
 
 
-procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
 var
   width2,height2,nrstars,i : integer;
   img_binned : Timage_array;
@@ -1410,7 +1605,7 @@ var
   solution, go_ahead ,autoFOV                                                                                        : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
-  starlist1,starlist2 : star_list;
+  starlist1,starlist2 : Tstar_list;
 
 begin
   result:=false;
@@ -1533,7 +1728,7 @@ begin
     nrstars_required:=round(nrstars*(height2/width2));{square search field based on height.}
 
     solution:=false; {assume no match is found}
-    go_ahead:=(nrstars>=6); {bare minimum for three quads}
+    go_ahead:=(nrstars>=5); {bare minimum. Should be more but let's try}
 
     if go_ahead then {enough stars, lets find quads}
     begin
@@ -1541,12 +1736,13 @@ begin
       nr_quads:=Length(quad_star_distances2[0]);
       go_ahead:=nr_quads>=3; {enough quads?}
 
-      {The step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
-      if nr_quads<25  then oversize:=2 {make dimensions of square search window twice then the image height}
+      {The step size is fixed. If a low amount of stars are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
+      if nrstars<35  then oversize:=2 {make dimensions of square search window twice then the image height}
       else
-      if nr_quads>100 then oversize:=1 {make dimensions of square search window equal to the image height}
+      if nrstars>140 {at least 100 quads} then oversize:=1 {make dimensions of square search window equal to the image height}
       else
-      oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
+      oversize:=2*sqrt(35/nrstars);{calculate between 35 th=2 and 140 th=1, stars/quads are area related so take sqrt to get oversize}
+
 
       if force_oversize1 then oversize:=2;
 
@@ -1574,9 +1770,9 @@ begin
       else
       max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
 
-      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '
-                             +inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'d square search window. '
-                             +'Step size '+floattostrF(fov2,FFfixed,0,2) +'d.');
+      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(round(nrstars_required*sqr(oversize)))+' database stars, '
+                             +inttostr(round(nr_quads*nrstars_required*sqr(oversize)/nrstars))+' database quads required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'d square search window. '
+                             +'Step size '+floattostrF(fov2,FFfixed,0,2) +'d. Oversize '+floattostrF(oversize,FFfixed,0,2));
 
       match_nr:=0;
       repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}

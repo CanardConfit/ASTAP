@@ -4420,7 +4420,7 @@ begin
 
               filterstr:=headx.filter_name;// R, G or V, B or TG
               filterstrUP:=uppercase(filterstr);
-              if ((length(filterstr)=0) or (pos('CV',filterstrUP)>0))  then
+              if ((length(filterstr)=0) or (pos('CV',filterstrUP)>0) or (pos('LUM',filterstrUP)>0))  then
               begin
                 if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
                   Lv.Items.item[c].SubitemImages[P_filter] :=25  //raw OSC file

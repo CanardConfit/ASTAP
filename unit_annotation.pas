@@ -2737,7 +2737,7 @@ begin
 
   {do image stars}
   nrstars:=length(starlist2[0]);
-  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
+  mainwindow.image1.Canvas.Pen.Mode := pmCopy;
   mainwindow.image1.Canvas.Pen.width := round(1+hd.height/mainwindow.image1.height);{thickness lines}
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.Pen.Color :=clred;

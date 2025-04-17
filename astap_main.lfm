@@ -227,7 +227,7 @@ object mainwindow: Tmainwindow
         end
         object ra1: TEdit
           Left = 67
-          Height = 23
+          Height = 27
           Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
           Top = 2
           Width = 95
@@ -619,7 +619,7 @@ object mainwindow: Tmainwindow
         end
         object dec1: TEdit
           Left = 67
-          Height = 23
+          Height = 27
           Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database.'
           Top = 28
           Width = 95
@@ -671,11 +671,11 @@ object mainwindow: Tmainwindow
           TabOrder = 8
           object TabSheet1: TTabSheet
             Caption = 'Header'
-            ClientHeight = 146
+            ClientHeight = 142
             ClientWidth = 728
             object Memo1: TMemo
               Left = 0
-              Height = 146
+              Height = 142
               Top = 0
               Width = 728
               Align = alClient
@@ -695,11 +695,11 @@ object mainwindow: Tmainwindow
           end
           object TabSheet2: TTabSheet
             Caption = 'Table'
-            ClientHeight = 146
+            ClientHeight = 142
             ClientWidth = 728
             object Memo3: TMemo
               Left = 0
-              Height = 146
+              Height = 142
               Top = 0
               Width = 728
               Align = alClient
@@ -798,6 +798,7 @@ object mainwindow: Tmainwindow
         ParentFont = False
         ParentShowHint = False
         TabOrder = 0
+        OnClick = Panel1Click
         OnMouseDown = Panel1MouseDown
         OnMouseMove = Panel1MouseMove
         OnMouseWheelDown = Panel1MouseWheelDown
