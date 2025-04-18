@@ -20,7 +20,7 @@ var
   Client: TFPHttpClient;
 begin
   result:=''; //for early exit
-  if InitSSLInterface=false then begin application.messagebox(pchar('Install OpenSSL. Required for https conections to AAVSO'), pchar('Missing library'),0);exit;end;
+  if InitSSLInterface=false then begin application.messagebox(pchar('Install additonally OpenSSL. Required for https conections. See webpage for more information'), pchar('Missing libraries'),0);exit;end;
   Client := TFPHttpClient.Create(nil);
   try
     try

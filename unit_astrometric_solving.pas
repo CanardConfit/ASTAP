@@ -919,12 +919,13 @@ begin
     nrstars_required:=round(nrstars*(hd.height/hd.width));{A little less. The square search field is based on height only.}
 
     solution:=false; {assume no match is found}
-    go_ahead:=(nrstars>=6); {bare minimum for three quads. Should be more but let's try}
+    go_ahead:=(nrstars>=5); {bare minimum. Should be more but let's try}
 
 
     if go_ahead then {enough stars, lets find quads}
     begin
       yes_use_triples:=((nrstars<30) and  (use_triples));
+
       if yes_use_triples then
       begin
         find_triples_using_quads(starlist2,quad_star_distances2); {find star triples for new image. Quads are binning independent}
@@ -950,12 +951,12 @@ begin
       nr_quads:=Length(quad_star_distances2[0]);
       go_ahead:=nr_quads>=3; {enough quads?}
 
-      {The step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
-      if nr_quads<25  then oversize:=2 {make dimensions of square search window twice then the image height}
+      {The step size is fixed. If a low amount of stars are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
+      if nrstars<35  then oversize:=2 {make dimensions of square search window twice then the image height}
       else
-      if nr_quads>100 then oversize:=1 {make dimensions of square search window equal to the image height}
+      if nrstars>140 {at least 100 quads} then oversize:=1 {make dimensions of square search window equal to the image height}
       else
-      oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
+      oversize:=2*sqrt(35/nrstars);{calculate between 35 th=2 and 140 th=1, quads are area related so take sqrt to get oversize}
 
       if stackmenu1.force_oversize1.checked then oversize:=2;
 
@@ -983,10 +984,9 @@ begin
       else
       max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
 
-      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(nrstars_required)+' database stars, '
-                             +inttostr(round(nr_quads*nrstars_required/nrstars))+' database'+quads_str+' required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'° square search window. '
-                             +'Step size '+floattostrF(fov2,FFfixed,0,2) +'°.');
-
+      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(round(nrstars_required*sqr(oversize)))+' database stars, '
+                              +inttostr(round(nr_quads*nrstars_required*sqr(oversize)/nrstars))+' database'+quads_str+' required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'° square search window. '
+                              +'Step size '+floattostrF(fov2,FFfixed,0,2) +'°. Oversize '+floattostrF(oversize,FFfixed,0,2) );
 
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
       stackmenu1.Memo2.disablealign;{prevent paint messages from other controls to update tmemo and make it grey. Mod 2021-06-26}
@@ -1080,7 +1080,7 @@ begin
                 {$IFDEF linux}
                  //keep till 2026
                  if ((name_database='d50') and (dec_database>pi*(90-15)/180)) then //Files 3502,3503 and 3601.1476 had permission error. Star database fixed on 2023-11-27
-                   application.messagebox(pchar('Star database file permission error near pole. Update the D50 database to crrect !!'), pchar('ASTAP error:'),0)
+                   application.messagebox(pchar('Star database file permission error near pole. Update the D50 database to correct !!'), pchar('ASTAP error:'),0)
                  else
                 {$ENDIF}
                 application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download and install one star database.'), pchar('ASTAP error:'),0);

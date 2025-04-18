@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.02.25';
+  astap_version: string='2025.04.12';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -41,7 +41,7 @@ var {################# initialised variables #########################}
 
 type
   Timage_array = array of array of array of Single;
-  star_list   = array of array of double;
+  Tstar_list   = array of array of double;
   solution_vector   = array[0..2] of double;
 
 
@@ -2292,7 +2292,10 @@ begin
 
   star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
-  snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd_bg));
+  // snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd_bg));
+  snr:=flux /(sqrt(pi)*r_aperture*sd_bg);//adu_e is often unknown. Remove the shot noise factor
+
+
     {For both bright stars (shot-noise limited) or skybackground limited situations
     snr := signal/noise
     snr := star_signal/sqrt(total_signal)
