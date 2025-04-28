@@ -11421,7 +11421,7 @@ procedure load_master_flat(jd_int: integer;hd: theader);
 var
   c: integer;
   d, day_offset: double;
-  filen: string;
+  filen,calst: string;
 begin
   c := 0;
   day_offset := 99999999;
@@ -11436,13 +11436,19 @@ begin
         begin
           if hd.height = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]) then
           begin
-            d := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
-            if abs(d - jd_int) < day_offset then {find flat with closest date}
+            calst:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_calibration];
+            if  ((pos('D',calst)=0) and (pos('F',calst)=0)) then //not a calibrated light or a dark?
             begin
-              filen := stackmenu1.ListView3.items[c].Caption;
-              day_offset := abs(d - jd_int);
-            end;
-            stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='';//clear fatal issues
+              d := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
+              if abs(d - jd_int) < day_offset then {find flat with closest date}
+              begin
+                filen := stackmenu1.ListView3.items[c].Caption;
+                day_offset := abs(d - jd_int);
+              end;
+              stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='';//clear fatal issues
+            end
+            else
+            stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='Calibration, not a flat!';//add fatal compatibility issue
           end
           else
           stackmenu1.listview3.Items.item[c].subitems.Strings[F_issues]:='height<>'+inttostr(hd.height);//add fatal compatibility issue
@@ -11638,7 +11644,7 @@ procedure replace_by_master_flat(full_analyse: boolean);
 var
   fitsX, fitsY, flat_count: integer;
   path1, filen, flat_filter, flat_temperature,flat_gain,
-  flat_exposure, flatdark_exposure,flatdark_temperature,flatdark_gain,issues: string;
+  flat_exposure, flatdark_exposure,flatdark_temperature,flatdark_gain,issues,calst: string;
   day : double;
   c, counter, i: integer;
   specified                : boolean;
@@ -11652,7 +11658,7 @@ begin
     save_settings2;
     memo2_message('Analysing flats');
     analyse_listview(listview3, False {light}, False {full fits},  new_analyse_required3{refresh});{update the tab information. Convert to FITS if required}
-    analyseflatdarksButton1Click(nil); {head.exposure lengths are required for selection}
+    analyseflatdarksButton1Click(nil);//analyse flat darks, {head.exposure lengths are required for selection
     if esc_pressed then exit;{esc could be pressed in analyse}
     new_analyse_required3 := False;
     img_bias:=nil;
@@ -11669,7 +11675,9 @@ begin
         if stackmenu1.listview3.items[c].Checked = True then
         begin
           filen := stackmenu1.ListView3.items[c].Caption;
-          if pos('master_flat', ExtractFileName(filen)) = 0 then {not a master file}
+          calst:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_calibration];
+          if ((pos('master_flat', ExtractFileName(filen)) = 0) and (length(calst)=0)) then {not a master file and not calibrated}
+
           begin {set specification master}
             if specified = False then
             begin
