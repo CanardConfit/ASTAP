@@ -2261,10 +2261,11 @@ begin
     repeat {check all files, remove darks, bias}
       if ((ListView1.Items.item[c].Checked) and
       (
-      ((analyse_level<=1) and  (length(ListView1.Items.item[c].subitems.Strings[L_hfd]) <= 0){hfd empthy}) or
+      ((analyse_level<=1) and  (length(ListView1.Items.item[c].subitems.Strings[L_hfd]) = 0){hfd empthy}) or
+//      ((analyse_level<=1) and  (analyse_quick1.checked=false)  and (strtofloat2(ListView1.Items.item[c].subitems.Strings[L_hfd]) =-1){previouse quick analyse result}) or
       ((analyse_level=2) and  (length(ListView1.Items.item[c].subitems.Strings[L_streaks]) <= 0){streak/sharpness}) or
        (new_analyse_required))
-       ) then
+      ) then
       begin {checked}
 
         if counts <> 0 then progress_indicator(100 * c / counts, ' Analysing');
@@ -9444,6 +9445,7 @@ begin
   {$endif}
   {update counting info}
 end;
+
 
 
 procedure Tstackmenu1.annotate_mode1Change(Sender: TObject);

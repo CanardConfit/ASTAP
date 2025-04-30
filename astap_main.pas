@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.04.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.04.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -14886,8 +14886,8 @@ const
   samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
 
 var
-  width5,height5,i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
-  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg,radius,dx,dy    : double;
+  width5,height5,i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width : integer;
+  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg,radius,dx,dy,flux_e,sd_bg_e            : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
@@ -15089,21 +15089,37 @@ begin
   hfd1:=max(0.7,hfd1);
   star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
-  if flux>1 then
-  begin
-    if adu_e<>0 then
-    begin //adu to e- correction
-      flux:=flux*adu_e*sqr(head.xbinning);// if an image is binned the adu's are averaged. So bin2x2 result in four times less adu. Star flux should be independend of binning
-      sd_bg:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
-      snr:=flux /sqrt(flux +sqr(radius)*pi*sqr(sd_bg));//noise in electrons
-    end
-    else
-      snr:=flux /(sqrt(pi)*radius*sd_bg);//if adu_e is unknown. Remove the shot noise factor
-  //    snr:=flux /sqrt(flux +sqr(radius)*pi*sqr(sd_bg));//noise in electrons
+  //if flux>1 then
+//  begin
+  //  if adu_e<>0 then
+//    begin //adu to e- correction
+//      flux:=flux*adu_e*sqr(head.xbinning);// if an image is binned the adu's are averaged. So bin2x2 result in four times less adu. Star flux should be independend of binning
+//      sd_bg:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
+//      snr:=flux /sqrt(flux +sqr(radius)*pi*sqr(sd_bg));//noise in electrons
+//    end
+//    else
+//      snr:=flux /(sqrt(pi)*radius*sd_bg);//if adu_e is unknown. Remove the shot noise factor
+//  end
+//  else
+//    snr:=0;//rare but happens. Prevent runtime errors  by /flux
 
+
+  if adu_e=0 then
+  begin {no adu to e correction}
+    flux_e:=flux;
+    sd_bg_e:=sd_bg;
   end
   else
+  begin //adu to e- correction
+    flux_e:=flux*adu_e*sqr(head.xbinning);// if an image is binned the adu's are averaged. So bin2x2 result in four times less adu.
+    sd_bg_e:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
+  end;
+
+  if flux>=1 then
+    snr:=flux_e /sqrt(flux_e +sqr(radius)*pi*sqr(sd_bg_e))
+  else
     snr:=0;//rare but happens. Prevent runtime errors  by /flux
+
 
   {For both bright stars (shot-noise limited) or skybackground limited situations
     snr := signal/noise

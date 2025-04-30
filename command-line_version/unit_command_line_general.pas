@@ -21,7 +21,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.04.12';
+  astap_version: string='2025.04.30';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -2292,10 +2292,7 @@ begin
 
   star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
-  // snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd_bg));
-  snr:=flux /(sqrt(pi)*r_aperture*sd_bg);//adu_e is often unknown. Remove the shot noise factor
-
-
+  snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd_bg));
     {For both bright stars (shot-noise limited) or skybackground limited situations
     snr := signal/noise
     snr := star_signal/sqrt(total_signal)
