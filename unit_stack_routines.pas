@@ -193,19 +193,25 @@ end;
 
 
 
-procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
+procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer ); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,R2,G2,B2,L]}
 var
   fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,max_stars,col  : integer;
-  background_r, background_g, background_b, background_l ,
+  background_r, background_g, background_b, background_l,
+  background_r2,background_g2,background_b2,
   rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, red_add,green_add,blue_add,
-  rr_factor, rg_factor, rb_factor,
-  gr_factor, gg_factor, gb_factor,
-  br_factor, bg_factor, bb_factor,
-  saturated_level,hfd_min,tempval,aa,bb,cc,dd,ee,ff                                        : double;
+  rr_factor_1, rg_factor_1, rb_factor_1,
+  gr_factor_1, gg_factor_1, gb_factor_1,
+  br_factor_1, bg_factor_1, bb_factor_1,
+  rr_factor_2, rg_factor_2, rb_factor_2,
+  gr_factor_2, gg_factor_2, gb_factor_2,
+  br_factor_2, bg_factor_2, bb_factor_2,
+  saturated_level,hfd_min,tempval,tempval2,
+  aa,bb,cc,dd,ee,ff,
+  col1,col2                                                                                : double;
   init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip : boolean;
-  warning             : string;
-  starlist1,starlist2 : Tstar_list;
-  img_temp,img_average : Timage_array;
+  warning               : string;
+  starlist1,starlist2   : Tstar_list;
+  img_temp,img_average  : Timage_array;
 begin
   with stackmenu1 do
   begin
@@ -228,17 +234,29 @@ begin
     {LRGB method}
     begin
       memo2_message('Combining colours.');
-      rr_factor:=strtofloat2(rr1.text);
-      rg_factor:=strtofloat2(rg1.text);
-      rb_factor:=strtofloat2(rb1.text);
+      rr_factor_1:=strtofloat2(rr1.text);
+      rg_factor_1:=strtofloat2(rg1.text);
+      rb_factor_1:=strtofloat2(rb1.text);
 
-      gr_factor:=strtofloat2(gr1.text);
-      gg_factor:=strtofloat2(gg1.text);
-      gb_factor:=strtofloat2(gb1.text);
+      gr_factor_1:=strtofloat2(gr1.text);
+      gg_factor_1:=strtofloat2(gg1.text);
+      gb_factor_1:=strtofloat2(gb1.text);
 
-      br_factor:=strtofloat2(br1.text);
-      bg_factor:=strtofloat2(bg1.text);
-      bb_factor:=strtofloat2(bb1.text);
+      br_factor_1:=strtofloat2(br1.text);
+      bg_factor_1:=strtofloat2(bg1.text);
+      bb_factor_1:=strtofloat2(bb1.text);
+
+      rr_factor_2:=strtofloat2(rr2.text);
+      rg_factor_2:=strtofloat2(rg2.text);
+      rb_factor_2:=strtofloat2(rb2.text);
+
+      gr_factor_2:=strtofloat2(gr2.text);
+      gg_factor_2:=strtofloat2(gg2.text);
+      gb_factor_2:=strtofloat2(gb2.text);
+
+      br_factor_2:=strtofloat2(br2.text);
+      bg_factor_2:=strtofloat2(bg2.text);
+      bb_factor_2:=strtofloat2(bb2.text);
 
 
       background_r:=0;
@@ -250,35 +268,55 @@ begin
       blue_add:=strtofloat2(blue_filter_add1.text);
 
 
-      for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,rgb,l}
+      for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,r2.g2,b2,gb,l}
       begin
-        if c=5 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
+        if c=7 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
         begin {fix RGB stack}
           memo2_message('Correcting the number of pixels added together.');
+
+          for col:=0 to 5 do  //do 2 x 3colours
+          begin
+            if length(files_to_process[col+1].name)>0 then //there is data
+            begin
+              for fitsY:=0 to height_max-1 do
+              for fitsX:=0 to width_max-1 do
+              begin
+                tempval:=img_temp[col,fitsY,fitsX];
+                if tempval>0 then //Note tempval>1 is very very rare. In 99.99% cases tempval is 1 and no more then one pixel combined. Seen more then one pixel only for astrometric stacking
+                   img_average[col,fitsY,fitsX]:=500+img_average[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
+                 else
+                 img_average[col,fitsY,fitsX]:=0;//This will set all colours of a single pixel to zero if one of the colour is saturated and marked by image_temp[]:=-9;
+              end;
+            end;
+          end;
+          memo2_message('Applying black spot filter on interim RGBx2 image.');
+          black_spot_filter_for_aligned(img_average); //Black spot filter and add bias. Note for 99,99% zero means black spot but it could also be coincidence
+
+          //combine the 2 x RGB
           for fitsY:=0 to height_max-1 do
           for fitsX:=0 to width_max-1 do
           for col:=0 to 2 do
           begin
-            tempval:=img_temp[col,fitsY,fitsX];
-            if tempval>0 then //Note tempval>1 is very very rare. In 99.99% cases tempval is 1 and no more then one pixel combined. Seen more then one pixel only for astrometric stacking
-               img_average[col,fitsY,fitsX]:=500+img_average[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
-             else
-             img_average[col,fitsY,fitsX]:=0;//This will set all colours of a single pixel to zero if one of the colour is saturated and marked by image_temp[]:=-9;
+            img_average[col,fitsY,fitsX]:= img_average[col,fitsY,fitsX]+ img_average[col+3,fitsY,fitsX];
+            img_average[col,fitsY,fitsX]:= img_average[col,fitsY,fitsX]+ img_average[col+3,fitsY,fitsX];
           end;
-          memo2_message('Applying black spot filter on interim RGB image.');
-          black_spot_filter_for_aligned(img_average); //Black spot filter and add bias. Note for 99,99% zero means black spot but it could also be coincidence
-        end;{c=5, all colour files added}
+          setlength(img_average,3,height_max,width_max);//throw the second RGB data away
 
-        if length(files_to_process[c].name)>0 then
+
+        end;{c=7, all colour files added}
+
+        if length(files_to_process[c].name)>0 then //file available?
         begin
           try { Do some lengthy operation }
             filename2:=files_to_process[c].name;
             if c=0 then memo2_message('Loading reference image: "'+filename2+'".');
-            if c=1 then memo2_message('Adding red file: "'+filename2+'"  to final image.');
-            if c=2 then memo2_message('Adding green file: "'+filename2+'"  to final image.');
-            if c=3 then memo2_message('Adding blue file: "'+filename2+'"  to final image.');
-            if c=4 then memo2_message('Adding RGB file: "'+filename2+'"  to final image.');
-            if c=5 then memo2_message('Using luminance file: "'+filename2+'"  for final image.');
+            if c=1 then memo2_message('Adding red1 file: "'+filename2+'"  to final image.');
+            if c=2 then memo2_message('Adding green1 file: "'+filename2+'"  to final image.');
+            if c=3 then memo2_message('Adding blue1 file: "'+filename2+'"  to final image.');
+            if c=4 then memo2_message('Adding red2 file: "'+filename2+'"  to final image.');
+            if c=5 then memo2_message('Adding green2 file: "'+filename2+'"  to final image.');
+            if c=6 then memo2_message('Adding blue2 file: "'+filename2+'"  to final image.');
+            if c=7 then memo2_message('Using luminance file: "'+filename2+'"  for final image.');
 
             {load image}
             Application.ProcessMessages;
@@ -317,15 +355,27 @@ begin
             end;
             if c=4 then
             begin
-              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
-              background_r:=head.backgr;
-
-              //cblack:=round( background_r);
-              background_g:=background_r;
-              background_b:=background_r;
-              counterRGB:=head.light_count; counterRGBdark:=head.dark_count; counterRGBflat:=head.flat_count; counterRGBbias:=head.flatdark_count; exposureRGB:=round(head.exposure);;temperatureRGB:=head.set_temperature;
+               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+               background_r2:=head.backgr;
+               //cblack:=round( background_r);
+               counterR2:=head.light_count ;counterR2dark:=head.dark_count; counterR2flat:=head.flat_count; counterR2bias:=head.flatdark_count; exposureR2:=round(head.exposure);temperatureR2:=head.set_temperature;{for historical reasons}
             end;
-            if c=5 then {Luminance}
+            if c=5 then
+            begin
+              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              background_g2:=head.backgr;
+              //cblack:=round( background_g);
+              counterG2:=head.light_count;counterG2dark:=head.dark_count; counterG2flat:=head.flat_count; counterG2bias:=head.flatdark_count; exposureG2:=round(head.exposure);temperatureG2:=head.set_temperature;
+            end;
+            if c=6 then
+            begin
+              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              background_b2:=head.backgr;
+              //cblack:=round( background_b);
+              counterB2:=head.light_count; counterB2dark:=head.dark_count; counterB2flat:=head.flat_count; counterB2bias:=head.flatdark_count; exposureB2:=round(head.exposure);temperatureB2:=head.set_temperature;
+            end;
+
+            if c=7 then {Luminance}
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
               background_L:=head.backgr;
@@ -360,12 +410,12 @@ begin
               height_max:=head.height;
               width_max:=head.width;
 
-              setlength(img_average,3,height_max,width_max);{will be color}
-              setlength(img_temp,3,height_max,width_max);
+              setlength(img_average,6,height_max,width_max);{2 x 3 colours}
+              setlength(img_temp,6,height_max,width_max);   {2 x 3 colours}
 
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
-                  for col:=0 to 2 do
+                  for col:=0 to 2+3 do //rgb x 2 is 6 colours
                   begin
                     img_average[col,fitsY,fitsX]:=0; //clear img_average
                     img_temp[col,fitsY,fitsX]:=0;//clear counter
@@ -437,15 +487,15 @@ begin
                     value:=img_loaded[0,fitsY,fitsX];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
-                      for col:=0 to 2 do
+                      for col:=0 to 2+3 do
                         img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
                     end
                     else
                     begin
                       value:=(value-background_r);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if rr_factor>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + rr_factor*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1; end;
-                      if rg_factor>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + rg_factor*value; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
-                      if rb_factor>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + rb_factor*value; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
+                      if rr_factor_1>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + rr_factor_1*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1; end;
+                      if rg_factor_1>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + rg_factor_1*value; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
+                      if rb_factor_1>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + rb_factor_1*value; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
                     end;
                   end;
                   if c=2 {green} then
@@ -453,15 +503,15 @@ begin
                     value:=img_loaded[0,fitsY,fitsX];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
-                      for col:=0 to 2 do
+                      for col:=0 to 2+3 do
                          img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
                     end
                     else
                     begin
                       value:=(value-background_g);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if gr_factor>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + gr_factor*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1;  end;
-                      if gg_factor>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + gg_factor*value;img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
-                      if gb_factor>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + gb_factor*value;img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
+                      if gr_factor_1>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + gr_factor_1*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1;  end;
+                      if gg_factor_1>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + gg_factor_1*value;img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
+                      if gb_factor_1>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + gb_factor_1*value;img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
                     end;
                   end;
                   if c=3 {blue}  then
@@ -469,24 +519,69 @@ begin
                     value:=img_loaded[0,fitsY,fitsX];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
-                      for col:=0 to 2 do
+                      for col:=0 to 2+3 do
                          img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
                     end
                     else
                     begin
                       value:=(value-background_b);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if br_factor>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + br_factor*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1;  end;
-                      if bg_factor>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + bg_factor*value; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1;end;
-                      if bb_factor>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + bb_factor*value; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1;end;
+                      if br_factor_1>0.00001 then begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + br_factor_1*value;{execute only if greater then zero for speed}img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1;  end;
+                      if bg_factor_1>0.00001 then begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + bg_factor_1*value; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1;end;
+                      if bb_factor_1>0.00001 then begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + bb_factor_1*value; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1;end;
                     end;
                   end;
-                  if c=4 {RGB image, naxis3=3}   then
+
+                  if c=4 {red2} then
                   begin
-                    begin img_average[0,y_new,x_new]:=img_average[0,y_new,x_new] + img_loaded[0,fitsY,fitsX]-background_r; img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1; end;
-                    begin img_average[1,y_new,x_new]:=img_average[1,y_new,x_new] + img_loaded[1,fitsY,fitsX]-background_g; img_temp[1,y_new,x_new]:=img_temp[1,y_new,x_new]+1; end;
-                    begin img_average[2,y_new,x_new]:=img_average[2,y_new,x_new] + img_loaded[2,fitsY,fitsX]-background_b; img_temp[2,y_new,x_new]:=img_temp[2,y_new,x_new]+1; end;
+                    value:=img_loaded[0,fitsY,fitsX];
+                    if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
+                    begin
+                      for col:=0 to 2+3 do
+                        img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
+                    end
+                    else
+                    begin
+                      value:=(value-background_r2);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      if rr_factor_2>0.00001 then begin img_average[0+3,y_new,x_new]:=img_average[0+3,y_new,x_new] + rr_factor_2*value;{execute only if greater then zero for speed}img_temp[0+3,y_new,x_new]:=img_temp[0+3,y_new,x_new]+1; end;
+                      if rg_factor_2>0.00001 then begin img_average[1+3,y_new,x_new]:=img_average[1+3,y_new,x_new] + rg_factor_2*value; img_temp[1+3,y_new,x_new]:=img_temp[1+3,y_new,x_new]+1; end;
+                      if rb_factor_2>0.00001 then begin img_average[2+3,y_new,x_new]:=img_average[2+3,y_new,x_new] + rb_factor_2*value; img_temp[2+3,y_new,x_new]:=img_temp[2+3,y_new,x_new]+1; end;
+                    end;
                   end;
-                  if c=5 {Luminance} then
+                  if c=5 {green3} then
+                  begin
+                    value:=img_loaded[0,fitsY,fitsX];
+                    if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
+                    begin
+                      for col:=0 to 2+3 do
+                         img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
+                    end
+                    else
+                    begin
+                      value:=(value-background_g2);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      if gr_factor_2>0.00001 then begin img_average[0+3,y_new,x_new]:=img_average[0+3,y_new,x_new] + gr_factor_2*value;{execute only if greater then zero for speed}img_temp[0+3,y_new,x_new]:=img_temp[0+3,y_new,x_new]+1;  end;
+                      if gg_factor_2>0.00001 then begin img_average[1+3,y_new,x_new]:=img_average[1+3,y_new,x_new] + gg_factor_2*value;img_temp[1+3,y_new,x_new]:=img_temp[1+3,y_new,x_new]+1; end;
+                      if gb_factor_2>0.00001 then begin img_average[2+3,y_new,x_new]:=img_average[2+3,y_new,x_new] + gb_factor_2*value;img_temp[2+3,y_new,x_new]:=img_temp[2+3,y_new,x_new]+1; end;
+                    end;
+                  end;
+                  if c=6 {blue2}  then
+                  begin
+                    value:=img_loaded[0,fitsY,fitsX];
+                    if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
+                    begin
+                      for col:=0 to 2+3 do
+                         img_temp[col,y_new,x_new]:=-9;//mark all colours as saturated if one colour is saturated.
+                    end
+                    else
+                    begin
+                      value:=(value-background_b2);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      if br_factor_2>0.00001 then begin img_average[0+3,y_new,x_new]:=img_average[0+3,y_new,x_new] + br_factor_2*value;{execute only if greater then zero for speed}img_temp[0+3,y_new,x_new]:=img_temp[0+3,y_new,x_new]+1;  end;
+                      if bg_factor_2>0.00001 then begin img_average[1+3,y_new,x_new]:=img_average[1+3,y_new,x_new] + bg_factor_2*value; img_temp[1+3,y_new,x_new]:=img_temp[1+3,y_new,x_new]+1;end;
+                      if bb_factor_2>0.00001 then begin img_average[2+3,y_new,x_new]:=img_average[2+3,y_new,x_new] + bb_factor_2*value; img_temp[2+3,y_new,x_new]:=img_temp[2+3,y_new,x_new]+1;end;
+                    end;
+                  end;
+
+
+                  if c=7 {Luminance} then
                   begin
                     {r:=l*(0.33+r)/(r+g+b)}
                     colr:=img_average[0,y_new,x_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
@@ -507,7 +602,7 @@ begin
                     img_average[2,y_new,x_new]:=1000+(img_loaded[0,fitsY,fitsX] - background_l)*(blue_f);
                   end;
                 end;
-              end;
+              end;//for fits:=0 ....
             end;
 
             progress_indicator(94+c,' LRGB');{show progress, 95..99}

@@ -61,15 +61,27 @@ type
     Annotations_visible2: TCheckBox;
     annulus_radius1: TComboBox;
     analyse_quick1: TCheckBox;
+    bb2: TEdit;
+    bg2: TEdit;
+    br2: TEdit;
+    gb2: TEdit;
+    gg2: TEdit;
+    gr2: TEdit;
+    Label76: TLabel;
+    Label77: TLabel;
+    Label78: TLabel;
     label_delta_ra1: TLabel;
     label_delta_dec1: TLabel;
     list_to_clipboard10: TMenuItem;
     MenuItem35: TMenuItem;
     listview1_photometric_calibration1: TMenuItem;
+    rb2: TEdit;
     report_sqm1: TMenuItem;
     MenuItem41: TMenuItem;
     annotate_unknown1: TMenuItem;
     Refresh_astrometrical_solutions1: TMenuItem;
+    rg2: TEdit;
+    rr2: TEdit;
     Separator10: TMenuItem;
     Separator11: TMenuItem;
     Separator12: TMenuItem;
@@ -1033,12 +1045,25 @@ var
 
 var
   calc_scale: double;
-  counterR, counterG, counterB, counterRGB, counterL, counterRdark, counterGdark,
-  counterBdark, counterRGBdark, counterLdark, counterRflat, counterGflat,
-  counterBflat, counterRGBflat, counterLflat, counterRbias, counterGbias,
-  counterBbias, counterRGBbias, counterLbias,
-  temperatureL, temperatureR, temperatureG, temperatureB, temperatureRGB,
-  exposureR, exposureG, exposureB, exposureRGB, exposureL: integer;
+  counterR, counterG, counterB, counterRGB,
+  counterR2, counterG2, counterB2,
+  counterL,
+  counterRdark, counterGdark, counterBdark, counterRGBdark,
+  counterR2dark, counterG2dark, counterB2dark,
+  counterLdark,
+  counterRflat, counterGflat, counterBflat, counterRGBflat,
+  counterR2flat, counterG2flat, counterB2flat,
+  counterLflat,
+  counterRbias, counterGbias, counterBbias, counterRGBbias,
+  counterR2bias, counterG2bias, counterB2bias,
+  counterLbias,
+  temperatureL,
+  temperatureR, temperatureG, temperatureB, temperatureRGB,
+  temperatureR2, temperatureG2, temperatureB2,
+
+  exposureR, exposureG, exposureB,
+  exposureR2, exposureG2, exposureB2,
+  exposureRGB, exposureL: integer;
   sum_exp, sum_temp, photometry_stdev : double;
   referenceX, referenceY: double;{reference position used stacking}
   jd_mid: double;{julian day of mid head.exposure}
@@ -5026,7 +5051,7 @@ begin
     until ((black = False) or (top <= 0));
 
 
-
+    if top>bottom then //not an empthy colour
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
       begin
@@ -7976,16 +8001,14 @@ end;
 
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
-  magn, hfd1, star_fwhm, snr, flux, xc, yc, madVar, madCheck, madThree, medianVar,
-  medianCheck, medianThree, apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt,
-  snr_min                                                                           : double;
+  magn, hfd1, star_fwhm, snr, flux, xc, yc,
+  apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt, snr_min                             : double;
   saturation_level:  single;
-  c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY, countVar,
-  countCheck, countThree, database_col,j,ww                                         : integer;
+  c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY,  database_col,j,ww    : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
-  warned, success,new_object,listview_updating, reference_defined                   : boolean;
-  starlistx: Tstar_list;
-  astr, filename1,totalnrstr,dummy             : string;
+  warned, success,new_object,listview_updating, reference_defined                               : boolean;
+  starlistx                                     : Tstar_list;
+  astr, filename1,totalnrstr,dummy              : string;
   oldra0 : double=0;
   olddec0: double=-pi/2;
   headx : theader;
@@ -11009,16 +11032,33 @@ begin
   apply_factor1.Enabled := False;{block apply button temporary}
   application.ProcessMessages;
 
-  get_background(1, img_loaded,headG, True{get hist}, True {get noise});
-  get_background(2, img_loaded,headB, True {get hist}, True {get noise});
-  get_background(0, img_loaded,headR, True {get hist}, True {get noise}); {Do red last to maintain current histogram}
+  get_background(1, img_loaded,headG, True{get hist},  true {get noise and star_level});
+  get_background(2, img_loaded,headB, True {get hist}, true {get noise and star_level});
+  get_background(0, img_loaded,headR, True {get hist}, true {get noise and star_level}); {Do red last to maintain current histogram}
 
-  add_valueR1.Text := floattostrf(0, ffgeneral, 5, 0);
-  add_valueG1.Text := floattostrf(headR.backgr * (headG.star_level / headR.star_level) - headG.backgr, ffgeneral, 5, 0);
-  add_valueB1.Text := floattostrf(headR.backgr * (headB.star_level / headR.star_level) - headB.backgr, ffgeneral, 5, 0);
+  if ((headG.star_level<>1) and (headR.star_level<>1)) then
+  begin
+    add_valueG1.Text := floattostrf(headR.backgr * (headG.star_level / headR.star_level) - headG.backgr, ffgeneral, 5, 0);
+    multiply_green1.Text := floattostrf(headR.star_level / headG.star_level, ffgeneral, 5, 0);  {make stars white}
+  end
+  else
+  begin
+    add_valueG1.Text :='0';
+    multiply_green1.Text :='1';//no green signal
+  end;
 
-  multiply_green1.Text := floattostrf(headR.star_level / headG.star_level, ffgeneral, 5, 0);  {make stars white}
-  multiply_blue1.Text := floattostrf(headR.star_level / headB.star_level, ffgeneral, 5, 0);
+  if ((headB.star_level<>1) and (headR.star_level<>1)) then
+  begin
+    add_valueB1.Text := floattostrf(headR.backgr * (headB.star_level / headR.star_level) - headB.backgr, ffgeneral, 5, 0);
+    multiply_blue1.Text := floattostrf(headR.star_level / headB.star_level, ffgeneral, 5, 0)
+  end
+  else
+  begin
+    add_valueB1.Text := '0';
+    multiply_blue1.Text :='1';//no blue signal
+  end;
+
+  add_valueR1.Text := '0';
   multiply_red1.Text := '1';
 
   apply_factor1.Enabled := True;{enable apply button}
@@ -12719,30 +12759,33 @@ begin
     end
     else
     begin {lrgb lights, classify on filter is true}
-      SetLength(files_to_process_LRGB, 6);{will contain [reference,r,g,b,colour,l]}
+ //     SetLength(files_to_process_LRGB, 6);{will contain [reference,r,g,b,colour,l]}
+      SetLength(files_to_process_LRGB, 8);{will contain [reference,r,g,b,r2,g2,b2,l]}
       for i := 0 to 5 do files_to_process_LRGB[i].Name := '';{clear}
 
       SetLength(files_to_process, ListView1.items.Count);{set array length to listview}
 
-      for i := 0 to 4 do
+      for i := 0 to 6 do
       begin
         case i of
           0: begin
-            filter_name1 := (red_filter1.Text);
-            filter_name2 := (red_filter2.Text);
-          end;
+               filter_name1 := (red_filter1.Text);
+             end;
           1: begin
-            filter_name1 := (green_filter1.Text);
-            filter_name2 := (green_filter2.Text);
-          end;
+               filter_name1 := (green_filter1.Text);
+             end;
           2: begin
-            filter_name1 := (blue_filter1.Text);
-            filter_name2 := (blue_filter2.Text);
-          end;
+               filter_name1 := (blue_filter1.Text);
+             end;
           3: begin
-            filter_name1 := 'colour';
-            filter_name2 := 'Colour';
-          end;
+               filter_name2 := (red_filter2.Text);
+             end;
+          4: begin
+               filter_name2 := (green_filter2.Text);
+             end;
+          5: begin
+               filter_name2 := (blue_filter2.Text);
+             end;
           else
           begin
             filter_name1 := (luminance_filter1.Text);
@@ -12887,7 +12930,7 @@ begin
 
       if skip_combine = False then
       begin {combine colours}
-        if length(extra2) >= 2 then {at least two colors required}
+        if length(extra2) >= 1 then {at least two colors required}      //modification
         begin
           memo2_message('Combine method '+extra2);
           files_to_process_LRGB[0] := files_to_process_LRGB[5]; {use luminance as reference for alignment}{contains, REFERENCE, R,G,B,RGB,L}

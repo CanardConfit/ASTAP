@@ -3055,6 +3055,11 @@ begin
   {find peak in histogram which should be the average background}
   pixels:=0;
   max_range:=his_mean[colour]; {mean value from histogram}
+  if max_range=0 then //mean value
+  begin //empthy colour
+    head.backgr:=0;
+  end
+  else
   for i := 1 to max_range do {find peak, ignore value 0 from oversize}
     if histogram[colour,i]>pixels then {find colour peak}
     begin
@@ -3082,7 +3087,7 @@ begin
     iterations:=0;
     repeat  {repeat until sd is stable or 7 iterations}
       fitsX:=15;
-      counter:=1; {never divide by zero}
+      counter:=0;
       sd_old:=sd;
       while fitsX<=width5-1-15 do
       begin
@@ -3102,7 +3107,10 @@ begin
         end;
         inc(fitsX,stepsize);{skip pixels for speed}
       end;
-      sd:=sqrt(sd/counter); {standard deviation}
+      if counter<>0 then
+        sd:=sqrt(sd/counter) {standard deviation}
+      else
+        sd:=0;
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
     head.noise_level:= sd;   {this noise level could be too high if no flat is applied. So for images where center is brighter then the corners.}
@@ -7474,7 +7482,7 @@ begin
   begin
     for j:=0+offsetW to width5-1-offsetW do
     begin
-      col:=round(img[colour,i,j]);{red}
+      col:=round(img[colour,i,j]);{pixel value for this colour}
       if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
       begin
         inc(histogram[colour,col],1);{calculate histogram}
@@ -15086,26 +15094,12 @@ begin
     hfd1:=2*SumValR/max(SumVal,0.00001);//divide by the all flux of the star
   end; //photometry mode
 
-  hfd1:=max(0.7,hfd1);
+  hfd1:=max(0.8,hfd1);
   star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
-
-  //if flux>1 then
-//  begin
-  //  if adu_e<>0 then
-//    begin //adu to e- correction
-//      flux:=flux*adu_e*sqr(head.xbinning);// if an image is binned the adu's are averaged. So bin2x2 result in four times less adu. Star flux should be independend of binning
-//      sd_bg:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
-//      snr:=flux /sqrt(flux +sqr(radius)*pi*sqr(sd_bg));//noise in electrons
-//    end
-//    else
-//      snr:=flux /(sqrt(pi)*radius*sd_bg);//if adu_e is unknown. Remove the shot noise factor
-//  end
-//  else
-//    snr:=0;//rare but happens. Prevent runtime errors  by /flux
 
 
   if adu_e=0 then
-  begin {no adu to e correction}
+  begin //no adu to e correction
     flux_e:=flux;
     sd_bg_e:=sd_bg;
   end
@@ -15119,7 +15113,6 @@ begin
     snr:=flux_e /sqrt(flux_e +sqr(radius)*pi*sqr(sd_bg_e))
   else
     snr:=0;//rare but happens. Prevent runtime errors  by /flux
-
 
   {For both bright stars (shot-noise limited) or skybackground limited situations
     snr := signal/noise
@@ -15329,6 +15322,7 @@ begin
   result:=0;// zero is calculate snr using ADU's
 end;
 
+
 function noise_to_electrons(adu_e, sd : double): string;
 begin
 //  CMOS camera/software binning. Sky noise dominant. Software binning is sum pixels divide by four.
@@ -15349,7 +15343,6 @@ begin
 
   if adu_e<>0 then
     result:=result+' e-' // in electrons
-
 end;
 
 
