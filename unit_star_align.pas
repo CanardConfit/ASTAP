@@ -1235,7 +1235,7 @@ end;
 procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: Tstar_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2 : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level : double;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level                    : double;
    img_sa     : Timage_array;
    snr_list   : array of double;
 
@@ -1260,7 +1260,6 @@ begin
 
   solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details, global variable}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
-
 
   SetLength(starlist1,2,buffersize);{set array length}
   setlength(snr_list,buffersize);{set array length}

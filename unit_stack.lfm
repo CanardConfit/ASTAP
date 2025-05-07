@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 86
+  Left = 208
   Height = 707
-  Top = 193
+  Top = 211
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_stackmethod1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 5
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -1342,12 +1342,12 @@ object stackmenu1: Tstackmenu1
           end
           object filter_groupbox1: TGroupBox
             Left = 528
-            Height = 296
+            Height = 384
             Hint = 'Settings for LRGB stacking, LRGB  stacking is activated if "Classify by light filter" is check marked.'
-            Top = 112
+            Top = 24
             Width = 328
             Caption = 'LRGB stacking'
-            ClientHeight = 272
+            ClientHeight = 360
             ClientWidth = 324
             Color = clForm
             ParentBackground = False
@@ -1357,7 +1357,7 @@ object stackmenu1: Tstackmenu1
             ShowHint = True
             TabOrder = 2
             object red_filter1: TEdit
-              Left = 0
+              Left = 72
               Height = 27
               Hint = 'Enter here a filter name for red'
               Top = 16
@@ -1369,10 +1369,10 @@ object stackmenu1: Tstackmenu1
               OnExit = luminance_filter1exit
             end
             object green_filter1: TEdit
-              Left = 0
+              Left = 72
               Height = 27
               Hint = 'Enter here a filter name for green'
-              Top = 40
+              Top = 66
               Width = 72
               Color = 11861940
               ParentFont = False
@@ -1381,10 +1381,10 @@ object stackmenu1: Tstackmenu1
               OnExit = luminance_filter1exit
             end
             object blue_filter1: TEdit
-              Left = 0
+              Left = 72
               Height = 27
               Hint = 'Enter here a filter name for blue'
-              Top = 64
+              Top = 120
               Width = 72
               Color = 16757940
               ParentFont = False
@@ -1396,7 +1396,7 @@ object stackmenu1: Tstackmenu1
               Left = 72
               Height = 27
               Hint = 'Enter here a second filter name for red'
-              Top = 16
+              Top = 40
               Width = 72
               Color = 11842815
               ParentFont = False
@@ -1408,7 +1408,7 @@ object stackmenu1: Tstackmenu1
               Left = 72
               Height = 27
               Hint = 'Enter here a second filter name for green'
-              Top = 40
+              Top = 92
               Width = 72
               Color = 11861940
               ParentFont = False
@@ -1420,7 +1420,7 @@ object stackmenu1: Tstackmenu1
               Left = 72
               Height = 27
               Hint = 'Enter here a second filter name for blue'
-              Top = 64
+              Top = 144
               Width = 72
               Color = 16757940
               ParentFont = False
@@ -1440,34 +1440,31 @@ object stackmenu1: Tstackmenu1
               Text = '0.0'
             end
             object Label8: TLabel
-              Left = 147
-              Height = 13
+              Left = 150
+              Height = 19
               Top = 20
-              Width = 15
+              Width = 6
               Alignment = taCenter
-              AutoSize = False
               Caption = 'x'
               ParentColor = False
               ParentFont = False
             end
             object Label10: TLabel
-              Left = 147
-              Height = 13
+              Left = 150
+              Height = 19
               Top = 42
-              Width = 15
+              Width = 6
               Alignment = taCenter
-              AutoSize = False
               Caption = 'x'
               ParentColor = False
               ParentFont = False
             end
             object Label11: TLabel
-              Left = 147
-              Height = 13
+              Left = 150
+              Height = 19
               Top = 66
-              Width = 15
+              Width = 6
               Alignment = taCenter
-              AutoSize = False
               Caption = 'x'
               ParentColor = False
               ParentFont = False
@@ -1476,7 +1473,7 @@ object stackmenu1: Tstackmenu1
               Left = 203
               Height = 27
               Hint = 'Colour matrix'
-              Top = 40
+              Top = 66
               Width = 40
               Color = 11861940
               ParentFont = False
@@ -1487,7 +1484,7 @@ object stackmenu1: Tstackmenu1
               Left = 203
               Height = 27
               Hint = 'Colour matrix'
-              Top = 64
+              Top = 120
               Width = 40
               Color = 11861940
               ParentFont = False
@@ -1498,7 +1495,7 @@ object stackmenu1: Tstackmenu1
               Left = 0
               Height = 27
               Hint = 'Enter here a filter name for Luminance'
-              Top = 112
+              Top = 187
               Width = 72
               ParentFont = False
               TabOrder = 0
@@ -1509,7 +1506,7 @@ object stackmenu1: Tstackmenu1
               Left = 72
               Height = 27
               Hint = 'Enter here a second filter name for Luminance'
-              Top = 112
+              Top = 187
               Width = 72
               ParentFont = False
               TabOrder = 1
@@ -1520,7 +1517,7 @@ object stackmenu1: Tstackmenu1
               Left = 203
               Height = 27
               Hint = 'For LRGB only. Add a fixed value if this colour is missing.'
-              Top = 112
+              Top = 187
               Width = 40
               Color = 11861940
               ParentFont = False
@@ -1529,11 +1526,10 @@ object stackmenu1: Tstackmenu1
             end
             object Label38: TLabel
               Left = 147
-              Height = 13
-              Top = 116
-              Width = 15
+              Height = 19
+              Top = 187
+              Width = 6
               Alignment = taCenter
-              AutoSize = False
               Caption = 'x'
               ParentColor = False
               ParentFont = False
@@ -1542,7 +1538,7 @@ object stackmenu1: Tstackmenu1
               Left = 243
               Height = 27
               Hint = 'For LRGB only. Add a fixed value if this colour is missing.'
-              Top = 112
+              Top = 187
               Width = 40
               Color = 16757940
               ParentFont = False
@@ -1553,7 +1549,7 @@ object stackmenu1: Tstackmenu1
               Left = 163
               Height = 27
               Hint = 'For LRGB only. Add a fixed value if this colour is missing.'
-              Top = 112
+              Top = 187
               Width = 40
               Color = 11842815
               ParentFont = False
@@ -1586,7 +1582,7 @@ object stackmenu1: Tstackmenu1
               Left = 163
               Height = 27
               Hint = 'Colour matrix'
-              Top = 40
+              Top = 66
               Width = 40
               Color = 11842815
               ParentFont = False
@@ -1597,7 +1593,7 @@ object stackmenu1: Tstackmenu1
               Left = 243
               Height = 27
               Hint = 'Colour matrix'
-              Top = 40
+              Top = 66
               Width = 40
               Color = 16757940
               ParentFont = False
@@ -1608,7 +1604,7 @@ object stackmenu1: Tstackmenu1
               Left = 163
               Height = 27
               Hint = 'Colour matrix'
-              Top = 64
+              Top = 120
               Width = 40
               Color = 11842815
               ParentFont = False
@@ -1616,10 +1612,10 @@ object stackmenu1: Tstackmenu1
               Text = '0.0'
             end
             object bb1: TEdit
-              Left = 243
+              Left = 242
               Height = 27
               Hint = 'Colour matrix'
-              Top = 64
+              Top = 120
               Width = 40
               Color = 16757940
               ParentFont = False
@@ -1637,7 +1633,7 @@ object stackmenu1: Tstackmenu1
               ParentFont = False
             end
             object Label57: TLabel
-              Left = 203
+              Left = 200
               Height = 19
               Hint = 'Green signal'
               Top = 0
@@ -1659,14 +1655,14 @@ object stackmenu1: Tstackmenu1
             object Label59: TLabel
               Left = 163
               Height = 19
-              Top = 96
+              Top = 168
               Width = 35
               Caption = 'L Bias'
               ParentColor = False
               ParentFont = False
             end
             object Label47: TLabel
-              Left = 2
+              Left = 65
               Height = 19
               Top = 0
               Width = 74
@@ -1678,7 +1674,7 @@ object stackmenu1: Tstackmenu1
               Left = 0
               Height = 23
               Hint = 'Auto adjust the colour levels after stacking.'
-              Top = 144
+              Top = 224
               Width = 85
               Caption = 'Auto levels'
               Checked = True
@@ -1690,10 +1686,10 @@ object stackmenu1: Tstackmenu1
               OnChange = lrgb_auto_level1Change
             end
             object global_colour_smooth1: TCheckBox
-              Left = 0
+              Left = 2
               Height = 23
               Hint = 'Apply smart global colour smooth after stacking.'
-              Top = 168
+              Top = 248
               Width = 150
               Caption = 'Global colour smooth'
               Checked = True
@@ -1704,10 +1700,10 @@ object stackmenu1: Tstackmenu1
               TabOrder = 21
             end
             object lrgb_global_colour_smooth_width1: TComboBox
-              Left = 160
+              Left = 162
               Height = 27
               Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10, Set this as high as eight times the HFD value.'
-              Top = 168
+              Top = 248
               Width = 62
               ItemHeight = 19
               ItemIndex = 2
@@ -1726,10 +1722,10 @@ object stackmenu1: Tstackmenu1
               Text = '10'
             end
             object lrgb_global_colour_smooth_sd1: TComboBox
-              Left = 251
+              Left = 253
               Height = 27
               Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
-              Top = 168
+              Top = 248
               Width = 62
               ItemHeight = 19
               ItemIndex = 2
@@ -1746,10 +1742,10 @@ object stackmenu1: Tstackmenu1
               Text = '3.0'
             end
             object lrgb_preserve_r_nebula1: TCheckBox
-              Left = 160
+              Left = 163
               Height = 23
               Hint = 'Preserve red nebula around bright stars. The red nebula will come closer to the star.'
-              Top = 192
+              Top = 276
               Width = 131
               Caption = 'preserve_R_nebula'
               Checked = True
@@ -1757,10 +1753,10 @@ object stackmenu1: Tstackmenu1
               TabOrder = 24
             end
             object green_purple_filter1: TCheckBox
-              Left = 0
+              Left = 2
               Height = 23
               Hint = 'Balances RGB to remove green and purple.'
-              Top = 248
+              Top = 332
               Width = 164
               Caption = 'Remove green && purple'
               Checked = True
@@ -1771,10 +1767,10 @@ object stackmenu1: Tstackmenu1
               TabOrder = 25
             end
             object star_colour_smooth1: TCheckBox
-              Left = 0
+              Left = 2
               Height = 23
               Hint = 'Colour smooth the detected stars after stacking'
-              Top = 224
+              Top = 308
               Width = 135
               Caption = 'Star colour smooth'
               Checked = True
@@ -1785,10 +1781,10 @@ object stackmenu1: Tstackmenu1
               TabOrder = 26
             end
             object lrgb_star_colour_smooth_diameter1: TComboBox
-              Left = 160
+              Left = 162
               Height = 27
               Hint = 'Diameter times HFD to smooth'
-              Top = 224
+              Top = 308
               Width = 56
               ItemHeight = 19
               ItemIndex = 3
@@ -1805,10 +1801,10 @@ object stackmenu1: Tstackmenu1
               Text = '4.5'
             end
             object lrgb_star_colour_smooth_nrstars1: TComboBox
-              Left = 251
+              Left = 253
               Height = 27
               Hint = 'Number of stars to smooth'
-              Top = 224
+              Top = 308
               Width = 62
               BorderSpacing.Around = 5
               DropDownCount = 20
@@ -1828,6 +1824,135 @@ object stackmenu1: Tstackmenu1
               ParentFont = False
               TabOrder = 28
               Text = '500'
+            end
+            object rr2: TEdit
+              Left = 163
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 40
+              Width = 40
+              Color = 11842815
+              ParentFont = False
+              TabOrder = 29
+              Text = '1.0'
+            end
+            object rg2: TEdit
+              Left = 203
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 40
+              Width = 40
+              Color = 11861940
+              ParentFont = False
+              TabOrder = 30
+              Text = '0.0'
+            end
+            object rb2: TEdit
+              Left = 243
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 40
+              Width = 40
+              Color = 16757940
+              ParentFont = False
+              TabOrder = 31
+              Text = '0.0'
+            end
+            object gr2: TEdit
+              Left = 163
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 92
+              Width = 40
+              Color = 11842815
+              ParentFont = False
+              TabOrder = 32
+              Text = '0.0'
+            end
+            object gg2: TEdit
+              Left = 203
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 92
+              Width = 40
+              Color = 11861940
+              ParentFont = False
+              TabOrder = 33
+              Text = '1.0'
+            end
+            object gb2: TEdit
+              Left = 243
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 92
+              Width = 40
+              Color = 16757940
+              ParentFont = False
+              TabOrder = 34
+              Text = '0.0'
+            end
+            object br2: TEdit
+              Left = 163
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 144
+              Width = 40
+              Color = 11842815
+              ParentFont = False
+              TabOrder = 35
+              Text = '0.0'
+            end
+            object bg2: TEdit
+              Left = 203
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 144
+              Width = 40
+              Color = 11861940
+              ParentFont = False
+              TabOrder = 36
+              Text = '0.0'
+            end
+            object bb2: TEdit
+              Left = 242
+              Height = 27
+              Hint = 'Colour matrix'
+              Top = 144
+              Width = 40
+              Color = 16757940
+              ParentFont = False
+              TabOrder = 37
+              Text = '1.0'
+            end
+            object Label76: TLabel
+              Left = 150
+              Height = 19
+              Top = 94
+              Width = 6
+              Alignment = taCenter
+              Caption = 'x'
+              ParentColor = False
+              ParentFont = False
+            end
+            object Label77: TLabel
+              Left = 150
+              Height = 19
+              Top = 120
+              Width = 6
+              Alignment = taCenter
+              Caption = 'x'
+              ParentColor = False
+              ParentFont = False
+            end
+            object Label78: TLabel
+              Left = 150
+              Height = 19
+              Top = 142
+              Width = 6
+              Alignment = taCenter
+              Caption = 'x'
+              ParentColor = False
+              ParentFont = False
             end
           end
           object Label18: TLabel
