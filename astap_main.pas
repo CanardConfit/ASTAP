@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.04.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.05.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -7180,7 +7180,7 @@ begin
   if stackmenu1.osc_colour_smooth1.checked then
   begin
     memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab "pixel math 1"');
-    global_colour_smooth(img,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),stackmenu1.osc_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
+    global_colour_smooth(img,strtofloat2(stackmenu1.osc_smart_smooth_width1.text), strtofloat2(stackmenu1.luminance_slope1.text),false {get  hist});{histogram doesn't needs an update}
   end;
   end
   else
@@ -8050,15 +8050,12 @@ begin
       stackmenu1.lrgb_auto_level1.checked:=Sett.ReadBool('stack','lrgb_al',true);
       stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','green_fl',false);
       stackmenu1.global_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
-      stackmenu1.lrgb_preserve_r_nebula1.checked:=Sett.ReadBool('stack','lrgb_pr',true);
+      dum:=Sett.ReadString('stack','lrgb_slope','');if dum<>'' then stackmenu1.luminance_slope1.text:=dum;
 
       stackmenu1.star_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_sm',true);
       dum:=Sett.ReadString('stack','lrgb_smd','');if dum<>'' then   stackmenu1.lrgb_star_colour_smooth_diameter1.text:=dum;
       dum:=Sett.ReadString('stack','lrgb_sms','');  if dum<>'' then stackmenu1.lrgb_star_colour_smooth_nrstars1.text:=dum;
-
-
       dum:=Sett.ReadString('stack','lrgb_sw','');if dum<>'' then stackmenu1.lrgb_global_colour_smooth_width1.text:=dum;
-      dum:=Sett.ReadString('stack','lrgb_sd','');if dum<>'' then  stackmenu1.lrgb_global_colour_smooth_sd1.text:=dum;
 
       stackmenu1.ignore_header_solution1.Checked:= Sett.ReadBool('stack','ignore_header_solution',true);
       stackmenu1.Equalise_background1.checked:= Sett.ReadBool('stack','equalise_background',true);{for mosaic mode}
@@ -8139,17 +8136,25 @@ begin
       dum:=Sett.ReadString('stack','rg_factor',''); if dum<>'' then stackmenu1.rg1.text:=dum;
       dum:=Sett.ReadString('stack','rb_factor',''); if dum<>'' then stackmenu1.rb1.text:=dum;
 
-      dum:=Sett.ReadString('stack','gr_factor',''); if dum<>'' then stackmenu1.gr1.text:=dum;
-      dum:=Sett.ReadString('stack','gg_factor',''); if dum<>'' then stackmenu1.gg1.text:=dum;
-      dum:=Sett.ReadString('stack','gb_factor',''); if dum<>'' then stackmenu1.gb1.text:=dum;
+      dum:=Sett.ReadString('stack','gr_fact1',''); if dum<>'' then stackmenu1.gr1.text:=dum;
+      dum:=Sett.ReadString('stack','gg_fact1',''); if dum<>'' then stackmenu1.gg1.text:=dum;
+      dum:=Sett.ReadString('stack','gb_fact1',''); if dum<>'' then stackmenu1.gb1.text:=dum;
 
-      dum:=Sett.ReadString('stack','br_factor',''); if dum<>'' then stackmenu1.br1.text:=dum;
-      dum:=Sett.ReadString('stack','bg_factor',''); if dum<>'' then stackmenu1.bg1.text:=dum;
-      dum:=Sett.ReadString('stack','bb_factor',''); if dum<>'' then stackmenu1.bb1.text:=dum;
+      dum:=Sett.ReadString('stack','br_fact1',''); if dum<>'' then stackmenu1.br1.text:=dum;
+      dum:=Sett.ReadString('stack','bg_fact1',''); if dum<>'' then stackmenu1.bg1.text:=dum;
+      dum:=Sett.ReadString('stack','bb_fact1',''); if dum<>'' then stackmenu1.bb1.text:=dum;
 
-      dum:=Sett.ReadString('stack','red_filter_add',''); if dum<>'' then stackmenu1.red_filter_add1.text:=dum;
-      dum:=Sett.ReadString('stack','green_filter_add',''); if dum<>'' then stackmenu1.green_filter_add1.text:=dum;
-      dum:=Sett.ReadString('stack','blue_filter_add',''); if dum<>'' then stackmenu1.blue_filter_add1.text:=dum;
+      dum:=Sett.ReadString('stack','rr_fact2',''); if dum<>'' then stackmenu1.rr2.text:=dum;
+      dum:=Sett.ReadString('stack','rg_fact2',''); if dum<>'' then stackmenu1.rg2.text:=dum;
+      dum:=Sett.ReadString('stack','rb_fact2',''); if dum<>'' then stackmenu1.rb2.text:=dum;
+
+      dum:=Sett.ReadString('stack','gr_fact2',''); if dum<>'' then stackmenu1.gr2.text:=dum;
+      dum:=Sett.ReadString('stack','gg_fact2',''); if dum<>'' then stackmenu1.gg2.text:=dum;
+      dum:=Sett.ReadString('stack','gb_fact2',''); if dum<>'' then stackmenu1.gb2.text:=dum;
+
+      dum:=Sett.ReadString('stack','br_fact2',''); if dum<>'' then stackmenu1.br2.text:=dum;
+      dum:=Sett.ReadString('stack','bg_fact2',''); if dum<>'' then stackmenu1.bg2.text:=dum;
+      dum:=Sett.ReadString('stack','bb_fact2',''); if dum<>'' then stackmenu1.bb2.text:=dum;
 
 
      {Six colour correction factors}
@@ -8448,14 +8453,13 @@ begin
       sett.writeBool('stack','green_fl',stackmenu1.green_purple_filter1.checked);
 
       sett.writeBool('stack','lrgb_cs',stackmenu1.global_colour_smooth1.checked);
-      sett.writeBool('stack','lrgb_pr',stackmenu1.lrgb_preserve_r_nebula1.checked);
+      sett.writestring('stack','lrgb_slope',stackmenu1.luminance_slope1.text);
 
       sett.writeBool('stack','lrgb_sm',stackmenu1.star_colour_smooth1.checked);
       sett.writeString('stack','lrgb_smd',stackmenu1.lrgb_star_colour_smooth_diameter1.text);
       sett.writestring('stack','lrgb_sms',stackmenu1.lrgb_star_colour_smooth_nrstars1.text);
 
       sett.writestring('stack','lrgb_sw',stackmenu1.lrgb_global_colour_smooth_width1.text);
-      sett.writestring('stack','lrgb_sd',stackmenu1.lrgb_global_colour_smooth_sd1.text);
 
       sett.writeBool('stack','ignore_header_solution',stackmenu1.ignore_header_solution1.Checked);
       sett.writeBool('stack','equalise_background',stackmenu1.Equalise_background1.Checked);
@@ -8532,21 +8536,30 @@ begin
       sett.writestring('stack','luminance_filter1',stackmenu1.luminance_filter1.text);
       sett.writestring('stack','luminance_filter2',stackmenu1.luminance_filter2.text);
 
-      sett.writestring('stack','rr_factor',stackmenu1.rr1.text);
-      sett.writestring('stack','rg_factor',stackmenu1.rg1.text);
-      sett.writestring('stack','rb_factor',stackmenu1.rb1.text);
+      sett.writestring('stack','rr_fact1',stackmenu1.rr1.text);
+      sett.writestring('stack','rg_fact1',stackmenu1.rg1.text);
+      sett.writestring('stack','rb_fact1',stackmenu1.rb1.text);
 
-      sett.writestring('stack','gr_factor',stackmenu1.gr1.text);
-      sett.writestring('stack','gg_factor',stackmenu1.gg1.text);
-      sett.writestring('stack','gb_factor',stackmenu1.gb1.text);
+      sett.writestring('stack','gr_fact1',stackmenu1.gr1.text);
+      sett.writestring('stack','gg_fact1',stackmenu1.gg1.text);
+      sett.writestring('stack','gb_fact1',stackmenu1.gb1.text);
 
-      sett.writestring('stack','br_factor',stackmenu1.br1.text);
-      sett.writestring('stack','bg_factor',stackmenu1.bg1.text);
-      sett.writestring('stack','bb_factor',stackmenu1.bb1.text);
+      sett.writestring('stack','br_fact1',stackmenu1.br1.text);
+      sett.writestring('stack','bg_fact1',stackmenu1.bg1.text);
+      sett.writestring('stack','bb_fact1',stackmenu1.bb1.text);
 
-      sett.writestring('stack','red_filter_add',stackmenu1.red_filter_add1.text);
-      sett.writestring('stack','green_filter_add',stackmenu1.green_filter_add1.text);
-      sett.writestring('stack','blue_filter_add',stackmenu1.blue_filter_add1.text);
+      sett.writestring('stack','rr_fact2',stackmenu1.rr2.text);
+      sett.writestring('stack','rg_fact2',stackmenu1.rg2.text);
+      sett.writestring('stack','rb_fact2',stackmenu1.rb2.text);
+
+      sett.writestring('stack','gr_fact2',stackmenu1.gr2.text);
+      sett.writestring('stack','gg_fact2',stackmenu1.gg2.text);
+      sett.writestring('stack','gb_fact2',stackmenu1.gb2.text);
+
+      sett.writestring('stack','br_fact2',stackmenu1.br2.text);
+      sett.writestring('stack','bg_fact2',stackmenu1.bg2.text);
+      sett.writestring('stack','bb_fact2',stackmenu1.bb2.text);
+
 
       {Colour correction factors}
       sett.writestring('stack','add_value_R',stackmenu1.add_valueR1.text);
@@ -9850,8 +9863,10 @@ begin
     limiting_mag:=min(limiting_mag,12); ////Required by AAVSO
   end;
 
-  //https://www.aavso.org/apps/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000
-  url:='https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
+  //old  https://www.aavso.org/apps/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000
+  //new  https://apps.aavso.org/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000
+
+  url:='https://apps.aavso.org/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
 
   if stackmenu1.annotate_mode1.itemindex>11 then
            url:=url+'&special=std_field';//standard field for specific purpose of calibrating their equipment
@@ -10006,8 +10021,9 @@ begin
   period_filter:=stackmenu1.annotate_mode1.itemindex <8;
 
 
-  //https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
-  url:='https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
+  //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
+  //new https://vsx.aavso.org/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
+  url:='https://vsx.aavso.org/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
   s:=get_http(url);
   if length(s)=0 then begin beep; exit end;//network error
   if length(s)<25 then begin exit end;//no stars in this field
@@ -14685,9 +14701,9 @@ begin
     dec8:=prepare_dec(object_decM,' '); {radialen to text, format 90d 00 00}
 
     if dec8[1]='+' then dec_degrees:=copy(dec8,2,2) else dec_degrees:=copy(dec8,1,3);
-    url:='https://app.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+dec_degrees+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(annotation_magn)+'&resolution=150&north=up&east=left'
+    url:='https://apps.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+dec_degrees+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(annotation_magn)+'&resolution=150&north=up&east=left'
 
-    //  https://app.aavso.org/vsp/chart/?ra=08%3A40%3A29.63&dec=40%3A07%3A24.4&scale=C&orientation=visual&type=chart&fov=120.0&maglimit=12.0&resolution=150&north=up&east=left
+    //  https://apps.aavso.org/vsp/chart/?ra=08%3A40%3A29.63&dec=40%3A07%3A24.4&scale=C&orientation=visual&type=chart&fov=120.0&maglimit=12.0&resolution=150&north=up&east=left
   end;
   openurl(url);
   Screen.Cursor:=crDefault;

@@ -198,7 +198,7 @@ var
   fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,max_stars,col  : integer;
   background_r, background_g, background_b, background_l,
   background_r2,background_g2,background_b2,
-  rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, red_add,green_add,blue_add,
+  rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb,
   rr_factor_1, rg_factor_1, rb_factor_1,
   gr_factor_1, gg_factor_1, gb_factor_1,
   br_factor_1, bg_factor_1, bb_factor_1,
@@ -263,16 +263,15 @@ begin
       background_g:=0;
       background_b:=0;
       background_l:=0;
-      red_add:=strtofloat2(red_filter_add1.text);
-      green_add:=strtofloat2(green_filter_add1.text);
-      blue_add:=strtofloat2(blue_filter_add1.text);
 
 
-      for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,r2.g2,b2,gb,l}
+      for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,r2,g2,b2,gb,l}
       begin
         if c=7 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
         begin {fix RGB stack}
           memo2_message('Correcting the number of pixels added together.');
+
+
 
           for col:=0 to 5 do  //do 2 x 3colours
           begin
@@ -289,20 +288,31 @@ begin
               end;
             end;
           end;
-          memo2_message('Applying black spot filter on interim RGBx2 image.');
+          memo2_message('Applying black spot filter on the interim RRGGBB image.');
           black_spot_filter_for_aligned(img_average); //Black spot filter and add bias. Note for 99,99% zero means black spot but it could also be coincidence
 
           //combine the 2 x RGB
-          for fitsY:=0 to height_max-1 do
-          for fitsX:=0 to width_max-1 do
           for col:=0 to 2 do
-          begin
-            img_average[col,fitsY,fitsX]:= img_average[col,fitsY,fitsX]+ img_average[col+3,fitsY,fitsX];
-            img_average[col,fitsY,fitsX]:= img_average[col,fitsY,fitsX]+ img_average[col+3,fitsY,fitsX];
-          end;
-          setlength(img_average,3,height_max,width_max);//throw the second RGB data away
+            if ((length(files_to_process[col+1].name)>0) and (length(files_to_process[col+1+3].name)>0)) then //there is twice RGB data
+            begin
+              for fitsY:=0 to height_max-1 do
+                for fitsX:=0 to width_max-1 do
+                begin
+               //    if ((fitsX=1262) and (fitsY=3699)) then
+                //         beep;
 
-
+                  img_average[col,fitsY,fitsX]:= img_average[col,fitsY,fitsX]+ img_average[col+3,fitsY,fitsX]-500;
+                end;
+            end
+            else
+            begin
+            if ((length(files_to_process[col+1].name)=0) and (length(files_to_process[col+1+3].name)>0)) then //only second RGB data
+            for fitsY:=0 to height_max-1 do
+              for fitsX:=0 to width_max-1 do
+                img_average[col,fitsY,fitsX]:= img_average[col+3,fitsY,fitsX];
+            end;
+            //else nothing to do  only first contains RGB data
+            setlength(img_average,3,height_max,width_max);{throw away second RGB storage space}
         end;{c=7, all colour files added}
 
         if length(files_to_process[c].name)>0 then //file available?
@@ -583,10 +593,11 @@ begin
 
                   if c=7 {Luminance} then
                   begin
-                    {r:=l*(0.33+r)/(r+g+b)}
-                    colr:=img_average[0,y_new,x_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
-                    colg:=img_average[1,y_new,x_new] - 475 + green_add;
-                    colb:=img_average[2,y_new,x_new] - 475 + blue_add;
+                    {r:=l* r/(r+g+b)}
+
+                    colr:=img_average[0,y_new,x_new] - 475; {lowest_most_common is around 450 to 500}
+                    colg:=img_average[1,y_new,x_new] - 475;
+                    colb:=img_average[2,y_new,x_new] - 475;
 
                     rgbsum:=colr+colg+colb;
                     if rgbsum<0.1 then begin rgbsum:=0.1; red_f:=rgbsum/3; green_f:=red_f; blue_f:=red_f;end

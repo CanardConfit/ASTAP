@@ -73,6 +73,7 @@ type
     label_delta_ra1: TLabel;
     label_delta_dec1: TLabel;
     list_to_clipboard10: TMenuItem;
+    luminance_slope1: TComboBox;
     MenuItem35: TMenuItem;
     listview1_photometric_calibration1: TMenuItem;
     rb2: TEdit;
@@ -145,7 +146,6 @@ type
     blink_unaligned_multi_step_backwards1: TButton;
     blue_filter1: TEdit;
     blue_filter2: TEdit;
-    blue_filter_add1: TEdit;
     blur_factor1: TComboBox;
     box_blur_factor1: TComboBox;
     br1: TEdit;
@@ -277,7 +277,6 @@ type
     gradient_filter_factor1: TEdit;
     green_filter1: TEdit;
     green_filter2: TEdit;
-    green_filter_add1: TEdit;
     green_purple_filter1: TCheckBox;
     GroupBox1: TGroupBox;
     GroupBox10: TGroupBox;
@@ -362,7 +361,6 @@ type
     Label34: TLabel;
     Label35: TLabel;
     Label36: TLabel;
-    Label38: TLabel;
     Label39: TLabel;
     Label4: TLabel;
     Label40: TLabel;
@@ -385,7 +383,6 @@ type
     Label56: TLabel;
     Label57: TLabel;
     Label58: TLabel;
-    Label59: TLabel;
     Label60: TLabel;
     Label61: TLabel;
     Label62: TLabel;
@@ -425,8 +422,6 @@ type
     live_stacking_restart1: TButton;
     lrgb_auto_level1: TCheckBox;
     global_colour_smooth1: TCheckBox;
-    lrgb_preserve_r_nebula1: TCheckBox;
-    lrgb_global_colour_smooth_sd1: TComboBox;
     lrgb_global_colour_smooth_width1: TComboBox;
     luminance_filter1: TEdit;
     luminance_filter2: TEdit;
@@ -519,7 +514,6 @@ type
     rb1: TEdit;
     red_filter1: TEdit;
     red_filter2: TEdit;
-    red_filter_add1: TEdit;
     reference_database1: TComboBox;
     remove_deepsky_label1: TLabel;
     remove_stars1: TBitBtn;
@@ -1128,7 +1122,7 @@ procedure black_spot_filter_for_aligned(var img: Timage_array); {remove black sp
 function update_solution_and_save(img: Timage_array;var hd: theader; memo:tstrings): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function apply_dark_and_flat(var img: Timage_array; var hd : theader): boolean;{apply dark and flat if required, renew if different head.exposure or ccd temp}
 
-procedure global_colour_smooth(var img: Timage_array; wide, sd: double; preserve_r_nebula, measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure global_colour_smooth(var img: Timage_array; wide, luminance_slope_min: double; measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure green_purple_filter(var img: Timage_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
 procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
@@ -8720,14 +8714,14 @@ begin
 end;
 
 
-procedure global_colour_smooth(var img: Timage_array; wide, sd: double;  preserve_r_nebula, measurehist: boolean);
+procedure global_colour_smooth(var img: Timage_array; wide, luminance_slope_min : double;  measurehist: boolean);
 {Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 var
   fitsX, fitsY, x, y, step, x2, y2, Count, width5, height5: integer;
   img_temp2: Timage_array;
   flux, red, green, blue, rgb, r, g, b, sqr_dist, strongest_colour_local,
   top, bg, r2, g2, b2, {noise_level1,} peak, bgR2, bgB2, bgG2, highest_colour, lumr: single;
-  bgR, bgB, bgG, star_level: double;
+  bgR, bgB, bgG, star_level, luminance_slope  : double;
   copydata, red_nebula: boolean;
   headR,headG,headB : Theader;
 begin
@@ -8769,26 +8763,29 @@ begin
       bgR2 := 65535;
       bgG2 := 65535;
       bgB2 := 65535;
+//      colour_slope:=0;
+      luminance_slope:=0;
 
       r2 := img[0, fitsY, fitsX] - bgR;
       g2 := img[1, fitsY, fitsX] - bgG;
       b2 := img[2, fitsY, fitsX] - bgB;
 
 
-      if ((r2 > sd * headR.noise_level) or (g2 > sd * headG.noise_level) or (b2 > sd * headB.noise_level)) then  {some relative flux}
+      if ((r2 > 3 * headR.noise_level) or (g2 > 3 * headG.noise_level) or (b2 > 3 * headB.noise_level)) then  {some relative flux}
       begin
+
         for y := -step to step do
           for x := -step to step do
           begin
             x2 := fitsX + x;
             y2 := fitsY + y;
 
-            if ((x2 >= 0) and (x2 < width5) and (y2 >= 0) and (y2 < height5)) then {within image}
+            if ((x2 >= 0) and (x2 < width5-1) and (y2 >= 0) and (y2 < height5-1)) then {within image}
             begin
               sqr_dist := x * x + y * y;
               if sqr_dist <= step * step then {circle only}
               begin
-                r := img[0, y2, x2];
+                R := img[0, y2, x2];
                 G := img[1, y2, x2];
                 B := img[2, y2, x2];
 
@@ -8801,12 +8798,26 @@ begin
                 if g < bgG2 then bgG2 := g;
                 if b < bgB2 then bgB2 := b;
 
+//                colour_slope:=colour_slope+
+//                sqr(r-img[0, y2, x2+1])+sqr(r-img[0, y2+1, x2])+
+//                sqr(g-img[1, y2, x2+1])+sqr(r-img[1, y2+1, x2])+
+//                sqr(b-img[2, y2, x2+1])+sqr(r-img[2, y2+1, x2]);
+
+                luminance_slope:=luminance_slope +
+                sqr(r-img[0, y2, x2+1])+
+                sqr(r-img[0, y2+1, x2])+
+                sqr(g-img[1, y2, x2+1])+
+                sqr(g-img[1, y2+1, x2])+
+                sqr(b-img[2, y2, x2+1])+
+                sqr(b-img[2, y2+1, x2]);
+
+//                          sqr(r+g+b-  img[0, y2, x2+1] - img[1, y2, x2+1] -img[2, y2, x2+1])+
+//                          sqr(r+g+b-  img[0, y2+1, x2] - img[1, y2+1, x2] -img[2, y2+1, x2]);
+
                 if ((r < 60000) and (g < 60000) and (b < 60000)) then  {no saturation, ignore saturated pixels}
                 begin
                   begin
-                    if (r - bgR) > 0 then
-                      red := red + (r - bgR);
-                    {level >0 otherwise centre of M31 get yellow circle}
+                    if (r - bgR) > 0 then red := red + (r - bgR);   {level >0 otherwise centre of M31 get yellow circle}
                     if (g - bgG) > 0 then green := green + (g - bgG);
                     if (b - bgB) > 0 then blue := blue + (b - bgB);
                     Inc(Count);
@@ -8825,17 +8836,26 @@ begin
         red := red / Count;{scale using the number of data points=count}
         green := green / Count;
         blue := blue / Count;
+//        colour_slope:=sqrt(colour_slope/count);
+        luminance_slope:=sqrt(luminance_slope/(6*count));
+//      if ((fitsx=2471) and (fitsy=1806)) then
+//        beep;
 
+
+        if luminance_slope>luminance_slope_min then
+      //  if colour_slope/luminance_slope>1.5 then
         if peak > star_level then {star level very close}
         begin
-          highest_colour := max(r2, max(g2, b2));
-          if preserve_r_nebula then
-            red_nebula := ((highest_colour = r2) and (r2 - (bgR2 - bgR) < 150){not the star} and
-              (bgR2 - bgR > 3 * headR.noise_level))
-          else
-            red_nebula := False;
+//        if ((fitsx=2320) and (fitsy=1740)) then
+ //           beep;
 
-          if red_nebula = False then
+//          highest_colour := max(r2, max(g2, b2));
+//          if preserve_r_nebula then
+//            red_nebula := ((highest_colour = r2) and (r2 - (bgR2 - bgR) < 150){not the star} and  (bgR2 - bgR > 3 * headR.noise_level))
+//          else
+//            red_nebula := False;
+
+//          if red_nebula = False then
           begin
             if red < blue * 1.06 then{>6000k}
               green := max(green, 0.6604 * red + 0.3215 * blue);
@@ -8863,8 +8883,7 @@ begin
       end;
       if copydata then {keep original data but adjust zero level}
       begin
-        img_temp2[0, fitsY, fitsX] := max(0, bg + r2);
-        {copy data, but equalise background levels by using the same background value}
+        img_temp2[0, fitsY, fitsX] := max(0, bg + r2); {copy data, but equalise background levels by using the same background value}
         img_temp2[1, fitsY, fitsX] := max(0, bg + g2);
         img_temp2[2, fitsY, fitsX] := max(0, bg + b2);
       end;
@@ -8950,7 +8969,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
-  global_colour_smooth(img_loaded, strtofloat2(global_colour_smooth_width1.Text), strtofloat2(global_colour_smooth_sd1.Text), preserve_red_nebula1.Checked, False);
+  global_colour_smooth(img_loaded, strtofloat2(global_colour_smooth_width1.Text), strtofloat2(luminance_slope1.text), False);
 
   plot_fits(mainwindow.image1, False);{plot real}
 
@@ -10623,9 +10642,8 @@ var
 begin
   au := lrgb_auto_level1.Checked;
   global_colour_smooth1.Enabled := au;
-  lrgb_preserve_r_nebula1.Enabled := au;
+  luminance_slope1.Enabled := au;
   lrgb_global_colour_smooth_width1.Enabled := au;
-  lrgb_global_colour_smooth_sd1.Enabled := au;
 end;
 
 
@@ -12273,7 +12291,7 @@ var
   success, classify_filter, classify_object, sender_photometry, sender_stack_groups,comet  : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr    : double;
-  filters_used: array [0..4] of string;
+  filters_used: array [0..6] of string;//r,g,b,r2,g2,b2,L
 begin
   save_settings2;{too many lost selected files, so first save settings}
   esc_pressed := False;
@@ -12660,7 +12678,7 @@ begin
     exposureB := 0;
     exposureRGB := 0;
     exposureL := 0;
-    for i := 0 to 4 do filters_used[i] := '';
+    for i := 0 to 6 do filters_used[i] := '';
     Inc(object_counter);
 
     lrgb := ((classify_filter) and (cal_and_align = False)); {ignore lrgb for calibration and alignment is true}
@@ -12761,7 +12779,7 @@ begin
     begin {lrgb lights, classify on filter is true}
  //     SetLength(files_to_process_LRGB, 6);{will contain [reference,r,g,b,colour,l]}
       SetLength(files_to_process_LRGB, 8);{will contain [reference,r,g,b,r2,g2,b2,l]}
-      for i := 0 to 5 do files_to_process_LRGB[i].Name := '';{clear}
+      for i := 0 to 7 do files_to_process_LRGB[i].Name := '';{clear}
 
       SetLength(files_to_process, ListView1.items.Count);{set array length to listview}
 
@@ -12770,6 +12788,7 @@ begin
         case i of
           0: begin
                filter_name1 := (red_filter1.Text);
+               filter_name2:='';
              end;
           1: begin
                filter_name1 := (green_filter1.Text);
@@ -12778,13 +12797,13 @@ begin
                filter_name1 := (blue_filter1.Text);
              end;
           3: begin
-               filter_name2 := (red_filter2.Text);
+               filter_name1 := (red_filter2.Text);
              end;
           4: begin
-               filter_name2 := (green_filter2.Text);
+               filter_name1 := (green_filter2.Text);
              end;
           5: begin
-               filter_name2 := (blue_filter2.Text);
+               filter_name1 := (blue_filter2.Text);
              end;
           else
           begin
@@ -12890,9 +12909,9 @@ begin
 
             if ((AnsiCompareText(luminance_filter1.Text, filters_used[i]) = 0) or (AnsiCompareText(luminance_filter2.Text, filters_used[i]) = 0)) then
             begin
-              files_to_process_LRGB[5].Name := filename2;
+              files_to_process_LRGB[7].Name := filename2;
               {use this colour also for luminance!!}
-              filters_used[4] := filters_used[i];{store luminance filter}
+              filters_used[6] := filters_used[i];{store luminance filter, r,g,b,r2,g2,b2,L}
               memo2_message('Filter ' + filters_used[i] + ' will also be used for luminance.');
             end;
 
@@ -12908,8 +12927,8 @@ begin
 
             if ((AnsiCompareText(luminance_filter1.Text, filters_used[i]) = 0) or (AnsiCompareText(luminance_filter2.Text, filters_used[i]) = 0)) then
             begin
-              files_to_process_LRGB[5] := files_to_process[first_file]; {use this colour also for luminance!!}
-              filters_used[4] := filters_used[i];{store luminance filter}
+              files_to_process_LRGB[7] := files_to_process[first_file]; {use this colour also for luminance!!}
+              filters_used[6] := filters_used[i];{store luminance filter}
               memo2_message('Filter ' + filters_used[i] + ' will also be used for luminance.');
             end;
             counterL := 1;
@@ -12933,7 +12952,7 @@ begin
         if length(extra2) >= 1 then {at least two colors required}      //modification
         begin
           memo2_message('Combine method '+extra2);
-          files_to_process_LRGB[0] := files_to_process_LRGB[5]; {use luminance as reference for alignment}{contains, REFERENCE, R,G,B,RGB,L}
+          files_to_process_LRGB[0] := files_to_process_LRGB[7]; {use luminance as reference for alignment}{contains, REFERENCE, R,G,B,RGB,L}
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0] := files_to_process_LRGB[1]; {use red channel as reference if no luminance is available}
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0] := files_to_process_LRGB[2]; {use green channel as reference if no luminance is available}
           counterL := 0; //reset counter for case no Luminance files are available, so RGB stacking.
@@ -12998,7 +13017,7 @@ begin
             if stackmenu1.global_colour_smooth1.Checked then
             begin
               memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
-              global_colour_smooth(img_loaded, strtofloat2(lrgb_global_colour_smooth_width1.Text), strtofloat2(lrgb_global_colour_smooth_sd1.Text),  lrgb_preserve_r_nebula1.Checked, False {get  hist});{histogram doesn't needs an update}
+              global_colour_smooth(img_loaded, strtofloat2(lrgb_global_colour_smooth_width1.Text), strtofloat2(luminance_slope1.text), False {get  hist});{histogram doesn't needs an update}
             end;
             if stackmenu1.star_colour_smooth1.Checked then
             begin
@@ -13034,7 +13053,7 @@ begin
               if stackmenu1.osc_colour_smooth1.Checked then
               begin
                 memo2_message( 'Applying colour-smoothing filter image as set in tab "stack method".');
-                global_colour_smooth(img_loaded, strtofloat2(osc_smart_smooth_width1.Text), strtofloat2(osc_smart_colour_sd1.Text), osc_preserve_r_nebula1.Checked, False {get  hist});{histogram doesn't needs an update}
+                global_colour_smooth(img_loaded, strtofloat2(osc_smart_smooth_width1.Text), strtofloat2(luminance_slope1.text), False {get  hist});{histogram doesn't needs an update}
               end;
             end
             else
@@ -13192,11 +13211,15 @@ begin
             add_integer(mainwindow.memo1.lines,'RGB_TEMP=', ' / Set temperature used for OSC.                  ' , temperatureRGB);
           end;
 
-          if counterL > 0 then add_text(mainwindow.memo1.lines,'COMMENT 2', '  Total luminance exposure ' + IntToStr( round(counterL * exposureL)) + ', filter ' + filters_used[4]);
+          if counterL > 0 then add_text(mainwindow.memo1.lines,'COMMENT 2', '  Total luminance exposure ' + IntToStr( round(counterL * exposureL)) + ', filter ' + filters_used[6]);
           if counterR > 0 then add_text(mainwindow.memo1.lines,'COMMENT 3', '  Total red exposure       ' + IntToStr( round(counterR * exposureR)) + ', filter ' + filters_used[0]);
           if counterG > 0 then add_text(mainwindow.memo1.lines,'COMMENT 4', '  Total green exposure     ' + IntToStr( round(counterG * exposureG)) + ', filter ' + filters_used[1]);
           if counterB > 0 then add_text(mainwindow.memo1.lines,'COMMENT 5', '  Total blue exposure      ' + IntToStr( round(counterB * exposureB)) + ', filter ' + filters_used[2]);
-          if counterRGB > 0 then add_text(mainwindow.memo1.lines,'COMMENT 6', '  Total RGB exposure      ' + IntToStr(round(counterRGB * exposureRGB)) + ', filter ' + filters_used[3]);
+          if counterR2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 6', '  Total red2 exposure      ' + IntToStr( round(counterR2 * exposureR2)) + ', filter ' + filters_used[3]);
+          if counterG2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 7', '  Total green2 exposure    ' + IntToStr( round(counterG2 * exposureG2)) + ', filter ' + filters_used[4]);
+          if counterB2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 8', '  Total blue2 exposure     ' + IntToStr( round(counterB2 * exposureB2)) + ', filter ' + filters_used[5]);
+
+//          if counterRGB>0 then add_text(mainwindow.memo1.lines,'COMMENT 9', '  Total RGB exposure       ' + IntToStr(round(counterRGB * exposureRGB)) + ', filter ' + filters_used[3]);
           { ASTAP keyword standard:}
           { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
@@ -13204,7 +13227,7 @@ begin
 
 
           thefilters := '';
-          for i := 0 to 4 do if length(filters_used[i]) > 0 then thefilters := thefilters + ' ' + filters_used[i];
+          for i := 0 to 6 do if length(filters_used[i]) > 0 then thefilters := thefilters + ' ' + filters_used[i];
           thefilters := trim(thefilters);
 
           stack_info := ' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' +
@@ -13213,6 +13236,10 @@ begin
             IntToStr(counterR) + 'x' + IntToStr(exposureR) + 'R  ' +
             IntToStr(counterG) + 'x' + IntToStr(exposureG) + 'G  ' +
             IntToStr(counterB) + 'x' + IntToStr(exposureB) + 'B  ' +
+            IntToStr(counterR2) + 'x' + IntToStr(exposureR2) + 'R2  ' +
+            IntToStr(counterG2) + 'x' + IntToStr(exposureG2) + 'G2  ' +
+            IntToStr(counterB2) + 'x' + IntToStr(exposureB2) + 'B2  ' +
+
             IntToStr(counterRGB) + 'x' + IntToStr(exposureRGB) + 'RGB  ' +
             IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L  (' + thefilters + ')';
           {head.exposure}
