@@ -782,7 +782,7 @@ begin
             old_height:=head.height;
             old_naxis3:=head.naxis3;
 
-            add_text(mainwindow.memo1.lines,'COMMENT 9', '  Reference file was ' + filename2);
+            //add_long_comment(mainwindow.memo1.lines,'Reference file was ' + filename2);
             head_ref:=head;{backup solution}
             sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
@@ -920,26 +920,7 @@ begin
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
 
-//        for fitsY:=0 to head.height-1 do
-//        for fitsX:=0 to head.width-1 do
-//        begin {pixel loop}
-//          tempval:=img_temp[0,fitsY,fitsX];
-//          for col:=0 to head.naxis3-1 do
-//          begin {colour loop}
-//            if tempval<>0 then img_loaded[col,fitsY,fitsX]:=pedestal+img_average[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
-//            else
-//            begin { black spot filter or missing value filter due to image rotation}
-//              if ((fitsX>0) and (img_temp[0,fitsY,fitsX-1]<>0)) then img_loaded[col,fitsY,fitsX]:=pedestal+img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
-//              else
-//              if ((fitsY>0) and (img_temp[0,fitsY-1,fitsX]<>0)) then img_loaded[col,fitsY,fitsX]:=pedestal+img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
-//              else
-//              img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-//            end; {black spot}
-//          end;{colour loop}
-//        end;{pixel loop}
-
-      black_spot_filter(img_loaded, img_average, img_temp, pedestal);// correct black spots due to alignment. The pixel count is in arrayA
-
+        black_spot_filter(img_loaded, img_average, img_temp, pedestal);// correct black spots due to alignment. The pixel count is in arrayA
       end; {counter<>0}
     end;{simple average}
   end;{with stackmenu1}
@@ -1694,31 +1675,7 @@ begin
         head.height:=height_max;
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
-
-//        for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
-//          For fitsY:=0 to head.height-1 do
-//            for fitsX:=0 to head.width-1 do
-//            begin
-//              tempval:=img_temp[col,fitsY,fitsX];
-//              if tempval<>0 then img_loaded[col,fitsY,fitsX]:=pedestal+img_final[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
-//              else
-//              begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
-//                if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
-//                begin
-//                  if img_temp[col,fitsY,fitsX-1]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
-//                  else
-//                  if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
-//                  else
-//                  img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-//                end {fill black spots}
-//                else
-//                img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-//              end; {black spot filter}
-//            end;
-
-
-         black_spot_filter(img_loaded, img_final, img_temp, pedestal);// correct black spots due to alignment. The pixel count is in arrayA
-
+        black_spot_filter(img_loaded, img_final, img_temp, pedestal);// correct black spots due to alignment. The pixel count is in arrayA
       end;{counter<>0}
 
       //restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
@@ -2053,29 +2010,7 @@ begin
         head.height:=height_max;
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
-
-      //  for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
-        //  For fitsY:=0 to head.height-1 do
-//            for fitsX:=0 to head.width-1 do
-  //          begin
-    //          tempval:=img_temp[0,fitsY,fitsX];
-      //        if tempval<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_final[col,fitsY,fitsX]/tempval {scale to one image by diving by the number of pixels added}
-//              else
-  //            begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
-    //            if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
-      //          begin
-       //           if img_temp[0,fitsY,fitsX-1]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
-         //         else
-           //       if img_temp[0,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:={background_correction+}img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
-             //     else
-//                  img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-  //              end {fill black spots}
-    //            else
-      //          img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-        //      end; {black spot filter}
-//            end;
         black_spot_filter(img_loaded, img_final, img_temp, 0);// correct black spots due to alignment. The pixel count is in arrayA
-
       end;{counter<>0}
     end;// combine images but throw out the moments when a star is at the pixel. This moment is detected by the max value.
   end;{with stackmenu1}
