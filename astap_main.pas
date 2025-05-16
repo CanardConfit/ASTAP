@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.05.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.05.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -12192,7 +12192,7 @@ end;
 
 procedure plot_annotations(use_solution_vectors,fill_combo : boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
-  count1,x1,y1,x2,y2,pos1,pos2,charnr,i : integer;
+  count1,x1,y1,x2,y2,pos1,charnr,i : integer;
   typ     : double;
   List: TStrings;
   annotation,magn,dummy : string;
@@ -16079,7 +16079,6 @@ var
   I: integer;
   fileDate    : Integer;
   err,written   : boolean;
-  dobackup : boolean;
   img_temp :Timage_array;
   headx : theader;
 begin

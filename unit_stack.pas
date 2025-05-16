@@ -1039,16 +1039,16 @@ var
 
 var
   calc_scale: double;
-  counterR, counterG, counterB, counterRGB,
+  counterR, counterG, counterB,
   counterR2, counterG2, counterB2,
   counterL,
-  counterRdark, counterGdark, counterBdark, counterRGBdark,
+  counterRdark, counterGdark, counterBdark,
   counterR2dark, counterG2dark, counterB2dark,
   counterLdark,
-  counterRflat, counterGflat, counterBflat, counterRGBflat,
+  counterRflat, counterGflat, counterBflat,
   counterR2flat, counterG2flat, counterB2flat,
   counterLflat,
-  counterRbias, counterGbias, counterBbias, counterRGBbias,
+  counterRbias, counterGbias, counterBbias,
   counterR2bias, counterG2bias, counterB2bias,
   counterLbias,
   temperatureL,
@@ -12256,7 +12256,6 @@ begin
   if counterR <> 0 then Result := Result + IntToStr(counterR) + 'x' + IntToStr(exposureR) + 'R ';
   if counterG <> 0 then Result := Result + IntToStr(counterG) + 'x' + IntToStr(exposureG) + 'G ';
   if counterB <> 0 then Result := Result + IntToStr(counterB) + 'x' + IntToStr(exposureB) + 'B ';
-  if counterRGB <> 0 then Result := Result + IntToStr(counterRGB) + 'x' + IntToStr(exposureRGB) + 'RGB ';
   if counterL <> 0 then Result := Result + IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L ';
   {head.exposure}
   Result := StringReplace(trim(Result), ' ,', ',', [rfReplaceAll]);
@@ -12649,7 +12648,6 @@ begin
     counterR := 0;
     counterG := 0;
     counterB := 0;
-    counterRGB := 0;
     counterL := 0;
     monofile := False;{mono file success}
     head.light_count := 0;
@@ -12658,19 +12656,16 @@ begin
     counterRdark := 0;
     counterGdark := 0;
     counterBdark := 0;
-    counterRGBdark := 0;
     counterLdark := 0;
 
     counterRflat := 0;
     counterGflat := 0;
     counterBflat := 0;
-    counterRGBflat := 0;
     counterLflat := 0;
 
     counterRbias := 0;
     counterGbias := 0;
     counterBbias := 0;
-    counterRGBbias := 0;
     counterLbias := 0;
 
     exposureR := 0;
@@ -12777,7 +12772,6 @@ begin
     end
     else
     begin {lrgb lights, classify on filter is true}
- //     SetLength(files_to_process_LRGB, 6);{will contain [reference,r,g,b,colour,l]}
       SetLength(files_to_process_LRGB, 8);{will contain [reference,r,g,b,r2,g2,b2,l]}
       for i := 0 to 7 do files_to_process_LRGB[i].Name := '';{clear}
 
@@ -13117,10 +13111,6 @@ begin
           head.date_obs := JdToDate((jd_mid) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
         end;
 
-        head.exposure := sum_exp;
-        update_integer(mainwindow.memo1.lines,'EXPTIME =', ' / Total exposure time in seconds.      ', round(head.exposure));
-
-
         if pos('D', head.calstat) > 0 then
           add_text(mainwindow.memo1.lines,'COMMENT ', '   D=' + ExtractFileName(last_dark_loaded));
         if pos('F', head.calstat) > 0 then
@@ -13161,6 +13151,7 @@ begin
           {head.exposure}
         end
         else {made LRGB color}
+        with stackmenu1 do
         begin
           head.naxis := 3; {will be written in save routine}
           head.naxis3 := 3;{will be written in save routine, head.naxis3 is updated in  save_fits}
@@ -13176,50 +13167,66 @@ begin
           end;
           if counterR > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'RED_EXP =', ' / Red exposure time.                             ', exposureR);
-            add_integer(mainwindow.memo1.lines,'RED_CNT =', ' / Red filter images combined.                    ', counterR);
-            add_integer(mainwindow.memo1.lines,'RED_DARK=', ' / Darks used for red.                            ', counterRdark);
-            add_integer(mainwindow.memo1.lines,'RED_FLAT=', ' / Flats used for red.                            ', counterRflat);
-            add_integer(mainwindow.memo1.lines,'RED_BIAS=', ' / Flat-darks used for red.                       ', counterRbias);
-            add_integer(mainwindow.memo1.lines,'RED_TEMP=', ' / Set temperature used for red.                  ', temperatureR);
+            add_integer(mainwindow.memo1.lines,'RED_EXP =', ' / '+filters_used[0]+' exposure time.               ', exposureR);//length will be adjusted to 80 char in save routine.
+            add_integer(mainwindow.memo1.lines,'RED_CNT =', ' / '+filters_used[0]+' filter images combined.      ', counterR);
+            add_integer(mainwindow.memo1.lines,'RED_DARK=', ' / Darks used for '+filters_used[0]+'.              ', counterRdark);
+            add_integer(mainwindow.memo1.lines,'RED_FLAT=', ' / Flats used for '+filters_used[0]+'.              ', counterRflat);
+            add_integer(mainwindow.memo1.lines,'RED_BIAS=', ' / Flat-darks used for '+filters_used[0]+'.         ', counterRbias);
+            add_integer(mainwindow.memo1.lines,'RED_TEMP=', ' / Set temperature used for '+red_filter1.text+'.   ', temperatureR);
           end;
           if counterG > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'GRN_EXP =', ' / Green exposure time.                           ' , exposureG);
-            add_integer(mainwindow.memo1.lines,'GRN_CNT =', ' / Green filter images combined.                  ' , counterG);
-            add_integer(mainwindow.memo1.lines,'GRN_DARK=', ' / Darks used for green.                          ' , counterGdark);
-            add_integer(mainwindow.memo1.lines,'GRN_FLAT=', ' / Flats used for green.                          ' , counterGflat);
-            add_integer(mainwindow.memo1.lines,'GRN_BIAS=', ' / Flat-darks used for green.                     ' , counterGbias);
-            add_integer(mainwindow.memo1.lines,'GRN_TEMP=', ' / Set temperature used for green.                ' , temperatureG);
+            add_integer(mainwindow.memo1.lines,'GRN_EXP =', ' / '+filters_used[1]+' exposure time.               ' , exposureG);
+            add_integer(mainwindow.memo1.lines,'GRN_CNT =', ' / '+filters_used[1]+' filter images combined.      ' , counterG);
+            add_integer(mainwindow.memo1.lines,'GRN_DARK=', ' / Darks used for '+filters_used[1]+'.              ' , counterGdark);
+            add_integer(mainwindow.memo1.lines,'GRN_FLAT=', ' / Flats used for '+filters_used[1]+'.              ' , counterGflat);
+            add_integer(mainwindow.memo1.lines,'GRN_BIAS=', ' / Flat-darks used for '+filters_used[1]+'.         ' , counterGbias);
+            add_integer(mainwindow.memo1.lines,'GRN_TEMP=', ' / Set temperature used for '+filters_used[1]+'.    ' , temperatureG);
           end;
           if counterB > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'BLU_EXP =', ' / Blue exposure time.                            ' , exposureB);
-            add_integer(mainwindow.memo1.lines,'BLU_CNT =', ' / Blue filter images combined.                   ' , counterB);
-            add_integer(mainwindow.memo1.lines,'BLU_DARK=', ' / Darks used for blue.                           ' , counterBdark);
-            add_integer(mainwindow.memo1.lines,'BLU_FLAT=', ' / Flats used for blue.                           ' , counterBflat);
-            add_integer(mainwindow.memo1.lines,'BLU_BIAS=', ' / Flat-darks used for blue.                      ' , counterBbias);
-            add_integer(mainwindow.memo1.lines,'BLU_TEMP=', ' / Set temperature used for blue.                 ' , temperatureB);
+            add_integer(mainwindow.memo1.lines,'BLU_EXP =', ' / '+filters_used[2]+' exposure time.               ' , exposureB);
+            add_integer(mainwindow.memo1.lines,'BLU_CNT =', ' / '+filters_used[2]+' filter images combined.      ' , counterB);
+            add_integer(mainwindow.memo1.lines,'BLU_DARK=', ' / Darks used for '+filters_used[2]+'.              ' , counterBdark);
+            add_integer(mainwindow.memo1.lines,'BLU_FLAT=', ' / Flats used for '+filters_used[2]+'.              ' , counterBflat);
+            add_integer(mainwindow.memo1.lines,'BLU_BIAS=', ' / Flat-darks used for '+filters_used[2]+'.         ' , counterBbias);
+            add_integer(mainwindow.memo1.lines,'BLU_TEMP=', ' / Set temperature used for '+filters_used[2]+'.    ' , temperatureB);
           end;
-          if counterRGB > 0 then
+          if counterR2 > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'RGB_EXP =', ' / OSC exposure time.                             ' , exposureRGB);
-            add_integer(mainwindow.memo1.lines,'RGB_CNT =', ' / OSC images combined.                           ' , counterRGB);
-            add_integer(mainwindow.memo1.lines,'RGB_DARK=', ' / Darks used for OSC.                            ' , counterRGBdark);
-            add_integer(mainwindow.memo1.lines,'RGB_FLAT=', ' / Flats used for OSC.                            ' , counterRGBflat);
-            add_integer(mainwindow.memo1.lines,'RGB_BIAS=', ' / Flat-darks used for OSC.                       ' , counterRGBbias);
-            add_integer(mainwindow.memo1.lines,'RGB_TEMP=', ' / Set temperature used for OSC.                  ' , temperatureRGB);
+            add_integer(mainwindow.memo1.lines,'RED_EXP2=', ' / '+filters_used[3]+' exposure time.               ', exposureR2);
+            add_integer(mainwindow.memo1.lines,'RED_CNT2=', ' / '+filters_used[3]+' filter images combined.      ', counterR2);
+            add_integer(mainwindow.memo1.lines,'RED_DRK2=', ' / Darks used for '+filters_used[3]+'.              ', counterR2dark);
+            add_integer(mainwindow.memo1.lines,'RED_FLT2=', ' / Flats used for '+filters_used[3]+'.              ', counterR2flat);
+            add_integer(mainwindow.memo1.lines,'RED_BIA2=', ' / Flat-darks used for '+filters_used[3]+'.         ', counterR2bias);
+            add_integer(mainwindow.memo1.lines,'RED_TMP2=', ' / Set temperature used for '+filters_used[3]+'.    ', temperatureR2);
+          end;
+          if counterG2> 0 then
+          begin
+            add_integer(mainwindow.memo1.lines,'GRN_EXP2=', ' / '+filters_used[4]+' exposure time.               ' , exposureG2);
+            add_integer(mainwindow.memo1.lines,'GRN_CNT2=', ' / '+filters_used[4]+' filter images combined.      ' , counterG2);
+            add_integer(mainwindow.memo1.lines,'GRN_DRK2=', ' / Darks used for '+filters_used[4]+'.              ' , counterG2dark);
+            add_integer(mainwindow.memo1.lines,'GRN_FLT2=', ' / Flats used for '+filters_used[4]+'.              ' , counterG2flat);
+            add_integer(mainwindow.memo1.lines,'GRN_BIA2=', ' / Flat-darks used for '+filters_used[4]+'.         ' , counterG2bias);
+            add_integer(mainwindow.memo1.lines,'GRN_TMP2=', ' / Set temperature used for '+filters_used[4]+'.    ' , temperatureG2);
+          end;
+          if counterB2 > 0 then
+          begin
+            add_integer(mainwindow.memo1.lines,'BLU_EXP2=', ' / '+filters_used[5]+' exposure time.                ' , exposureB2);
+            add_integer(mainwindow.memo1.lines,'BLU_CNT2=', ' / '+filters_used[5]+' filter images combined.       ' , counterB2);
+            add_integer(mainwindow.memo1.lines,'BLU_DRK2=', ' / Darks used for '+filters_used[5]+'.               ' , counterB2dark);
+            add_integer(mainwindow.memo1.lines,'BLU_FLT2=', ' / Flats used for '+filters_used[5]+'.               ' , counterB2flat);
+            add_integer(mainwindow.memo1.lines,'BLU_BIA2=', ' / Flat-darks used for '+filters_used[5]+'.          ' , counterB2bias);
+            add_integer(mainwindow.memo1.lines,'BLU_TMP2=', ' / Set temperature used for '+filters_used[5]+'.     ' , temperatureB2);
           end;
 
-          if counterL > 0 then add_text(mainwindow.memo1.lines,'COMMENT 2', '  Total luminance exposure ' + IntToStr( round(counterL * exposureL)) + ', filter ' + filters_used[6]);
-          if counterR > 0 then add_text(mainwindow.memo1.lines,'COMMENT 3', '  Total red exposure       ' + IntToStr( round(counterR * exposureR)) + ', filter ' + filters_used[0]);
-          if counterG > 0 then add_text(mainwindow.memo1.lines,'COMMENT 4', '  Total green exposure     ' + IntToStr( round(counterG * exposureG)) + ', filter ' + filters_used[1]);
-          if counterB > 0 then add_text(mainwindow.memo1.lines,'COMMENT 5', '  Total blue exposure      ' + IntToStr( round(counterB * exposureB)) + ', filter ' + filters_used[2]);
-          if counterR2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 6', '  Total red2 exposure      ' + IntToStr( round(counterR2 * exposureR2)) + ', filter ' + filters_used[3]);
-          if counterG2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 7', '  Total green2 exposure    ' + IntToStr( round(counterG2 * exposureG2)) + ', filter ' + filters_used[4]);
-          if counterB2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 8', '  Total blue2 exposure     ' + IntToStr( round(counterB2 * exposureB2)) + ', filter ' + filters_used[5]);
-
-//          if counterRGB>0 then add_text(mainwindow.memo1.lines,'COMMENT 9', '  Total RGB exposure       ' + IntToStr(round(counterRGB * exposureRGB)) + ', filter ' + filters_used[3]);
+          if counterL > 0 then add_text(mainwindow.memo1.lines,'COMMENT 2', '  Total '+filters_used[6]+' exposure '+ IntToStr( round(counterL * exposureL)));
+          if counterR > 0 then add_text(mainwindow.memo1.lines,'COMMENT 3', '  Total '+filters_used[0]+' exposure ' + IntToStr( round(counterR * exposureR)));
+          if counterG > 0 then add_text(mainwindow.memo1.lines,'COMMENT 4', '  Total '+filters_used[1]+' exposure ' + IntToStr( round(counterG * exposureG)));
+          if counterB > 0 then add_text(mainwindow.memo1.lines,'COMMENT 5', '  Total '+filters_used[2]+' exposure ' + IntToStr( round(counterB * exposureB)));
+          if counterR2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 6', '  Total '+filters_used[3]+' exposure ' + IntToStr( round(counterR2 * exposureR2)));
+          if counterG2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 7', '  Total '+filters_used[4]+' exposure ' + IntToStr( round(counterG2 * exposureG2)));
+          if counterB2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 8', '  Total '+filters_used[5]+' exposure ' + IntToStr( round(counterB2 * exposureB2)));
           { ASTAP keyword standard:}
           { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
@@ -13239,8 +13246,6 @@ begin
             IntToStr(counterR2) + 'x' + IntToStr(exposureR2) + 'R2  ' +
             IntToStr(counterG2) + 'x' + IntToStr(exposureG2) + 'G2  ' +
             IntToStr(counterB2) + 'x' + IntToStr(exposureB2) + 'B2  ' +
-
-            IntToStr(counterRGB) + 'x' + IntToStr(exposureRGB) + 'RGB  ' +
             IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L  (' + thefilters + ')';
           {head.exposure}
         end;
