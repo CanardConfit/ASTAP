@@ -481,7 +481,7 @@ begin
     //    head.naxis3:=1;
     //    head.width:=length(img_binned[0,0]);
     //    head.height:=length(img_binned[0]);
-    //    plot_fits(mainwindow.image1,true,true);//plot real
+    //    plot_fits(mainform1.image1,true,true);//plot real
     //    exit;  }
 
     get_background(0,img_binned,head ,true {load hist},true {calculate also standard deviation background});{get back ground}
@@ -913,7 +913,7 @@ begin
     info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+info_message+#9+inttostr(nrstars)+' 🟊' +
                     #10+'↕ '+floattostrf(fov_org,ffFixed,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(hd.width)+'x'+inttostr(hd.height)+
                     popup_warningG05+popup_warningSample+
-                    #10+mainwindow.ra1.text+'h, '+mainwindow.dec1.text+'° '+#9+{for tray icon} extractfilename(filename2)+
+                    #10+mainform1.ra1.text+'h, '+mainform1.dec1.text+'° '+#9+{for tray icon} extractfilename(filename2)+
                     #10+extractfileDir(filename2);
 
     nrstars_required:=round(nrstars*(hd.height/hd.width));{A little less. The square search field is based on height only.}
@@ -1048,20 +1048,20 @@ begin
 
                 stackmenu1.actual_search_distance1.caption:=distancestr;
                 stackmenu1.caption:= 'Search distance:  '+distancestr;
-                mainwindow.caption:= 'Search distance:  '+distancestr;
+                mainform1.caption:= 'Search distance:  '+distancestr;
 
                 if commandline_execution then {command line execution}
                 begin
                    {$ifdef CPUARM}
                    { tray icon  gives a fatal execution error in the old compiler for armhf}
                    {$else}
-                   mainwindow.TrayIcon1.hint:=distancestr+info_message;
+                   mainform1.TrayIcon1.hint:=distancestr+info_message;
                    {$endif}
 
                    if distance>2*fov_org then {prevent flash for short distance solving}
                    begin
-                     if popupnotifier_visible=false then begin mainwindow.popupnotifier1.visible:=true; popupnotifier_visible:=true; end; {activate only once}
-                     mainwindow.popupnotifier1.text:=distancestr+info_message;
+                     if popupnotifier_visible=false then begin mainform1.popupnotifier1.visible:=true; popupnotifier_visible:=true; end; {activate only once}
+                     mainform1.popupnotifier1.text:=distancestr+info_message;
                    end;
                 end;
               end; {info reporting}
@@ -1223,7 +1223,7 @@ begin
     mount_info_str:='';{no mount info}
 
     memo2_message('Solution found: '+  prepare_ra8(hd.ra0,': ')+#9+prepare_dec2(hd.dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info_str+' Used stars down to magnitude: '+floattostrF(mag2/10,ffFixed,0,1) );
-    mainwindow.caption:=('Solution found:    '+  prepare_ra(hd.ra0,': ')+'     '+prepare_dec(hd.dec0,'° ')  );
+    mainform1.caption:=('Solution found:    '+  prepare_ra(hd.ra0,': ')+'     '+prepare_dec(hd.dec0,'° ')  );
     result:=true;
 
     memo.BeginUpdate;
@@ -1233,7 +1233,7 @@ begin
     begin //SIP added
       update_text(memo,'CTYPE1  =',#39+'RA---TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
       update_text(memo,'CTYPE2  =',#39+'DEC--TAN-SIP'+#39+'       / TAN (gnomic) projection + SIP distortions      ');
-      mainwindow.Polynomial1.itemindex:=1;//switch to sip
+      mainform1.Polynomial1.itemindex:=1;//switch to sip
     end
     else
     begin //No SIP added.
@@ -1284,7 +1284,7 @@ begin
   else
   begin
     memo2_message('No solution found!  :(');
-    mainwindow.caption:='No solution found!  :(';
+    mainform1.caption:='No solution found!  :(';
     update_text(memo,'PLTSOLVD=','                   F / No plate solution found.   ');
     remove_key(memo,'COMMENT 7',false{all});
   end;

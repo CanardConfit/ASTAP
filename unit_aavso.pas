@@ -861,7 +861,7 @@ begin
   save_settings2; {for aavso settings}
 
   form_aavso1.close;   {transfer variables. Normally this form is not loaded}
-  mainwindow.setfocus;
+  mainform1.setfocus;
 end;
 
 
@@ -959,11 +959,11 @@ begin
     begin
       varfound:=false;
       checkfound:=false;
-      for i:=0 to high(mainwindow.Fshapes) do
+      for i:=0 to high(mainform1.Fshapes) do
       begin
-        if mainwindow.Fshapes[i].shape<> nil then
+        if mainform1.Fshapes[i].shape<> nil then
         begin
-          abrv:=mainwindow.Fshapes[i].shape.HINT;
+          abrv:=mainform1.Fshapes[i].shape.HINT;
           if pos('000-',abrv)>0 then // labeled with an AUID
           begin
              abrv_check1.text:=abrv;
@@ -1179,7 +1179,7 @@ begin
   if head.cd1_1=0 then exit;
 
   indx:=0;
-  with mainwindow do
+  with mainform1 do
   begin
     for i:=high(fshapes) downto 0 do //remove markers
         freeandnil(fshapes[i]);//essential
@@ -1188,7 +1188,7 @@ begin
     try
     if columnV>0 then //valid
     begin
-      mainwindow.GenerateShapes(indx,100,100,100,100,3 {penwidth},stEllipse, clLime,'Var');
+      mainform1.GenerateShapes(indx,100,100,100,100,3 {penwidth},stEllipse, clLime,'Var');
       inc(indx);
       retrieve_ra_dec(columnV,fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
       celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
@@ -1196,7 +1196,7 @@ begin
 
     if columnCheck>0 then //valid
     begin
-      mainwindow.GenerateShapes(indx,100,100,100,100,3 {penwidth},stSquare, clLime,'Check');
+      mainform1.GenerateShapes(indx,100,100,100,100,3 {penwidth},stSquare, clLime,'Check');
       inc(indx);
       retrieve_ra_dec(columnCheck,fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
       celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
@@ -1207,7 +1207,7 @@ begin
       for i:=0 to length(column_Comps)-1 do
       begin
         //memo2_message(stackmenu1.listview7.Column[column_comps[i]+1].Caption);  //testing
-        mainwindow.GenerateShapes(indx+i,100,100,100,100,3 {penwidth},stDiamond, clLime,'Comp'+inttostr(i));
+        mainform1.GenerateShapes(indx+i,100,100,100,100,3 {penwidth},stDiamond, clLime,'Comp'+inttostr(i));
         retrieve_ra_dec(column_Comps[i],fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
         celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
       end;
@@ -1280,8 +1280,8 @@ begin
 
   w:=max(form_aavso1.Image_photometry1.width,(len*2)*stackmenu1.listview7.items.count);{make graph large enough for all points}
   h:=max(100,form_aavso1.Image_photometry1.height);
-  bspace:=3*mainwindow.image1.Canvas.textheight('T');{{border space graph. Also for 4k with "make everything bigger"}
-  wtext:=mainwindow.image1.Canvas.textwidth('12.3456');
+  bspace:=3*mainform1.image1.Canvas.textheight('T');{{border space graph. Also for 4k with "make everything bigger"}
+  wtext:=mainform1.image1.Canvas.textwidth('12.3456');
 
   column_var:=find_correct_var_column;
   column_check:=find_correct_check_column;
@@ -1574,8 +1574,8 @@ begin
 
   closeaction:=caFree; {delete form}
   form_aavso1:=nil;
-  mainwindow.shape_marker3.visible:=false;
-  mainwindow.shape_marker4.visible:=false;
+  mainform1.shape_marker3.visible:=false;
+  mainform1.shape_marker4.visible:=false;
 
 end;
 

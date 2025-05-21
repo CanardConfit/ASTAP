@@ -524,7 +524,7 @@ var
            if add_annot then
            begin
               {store annotation. Fractions are for ephemeride alignment stacking}
-              add_text(mainwindow.memo1.lines,'ANNOTATE=',#39+copy(floattostrF(x-sizebox,FFFixed,0,2)+';'+floattostrF(y-sizebox,FFFixed,0,2)+';'+floattostrF(x+sizebox,fffixed,0,2)+';'+floattostrF(y+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+desn+';',1,68)+#39); {store in FITS coordinates 1..}
+              add_text(mainform1.memo1.lines,'ANNOTATE=',#39+copy(floattostrF(x-sizebox,FFFixed,0,2)+';'+floattostrF(y-sizebox,FFFixed,0,2)+';'+floattostrF(x+sizebox,fffixed,0,2)+';'+floattostrF(y+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+desn+';',1,68)+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
            end;
            plot_the_annotation(round(x-sizebox) {x1},round(y-sizebox) {y1},round(x+sizebox){x2},round(y+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1+thetext2); {plot annotation}
@@ -673,39 +673,39 @@ begin
   if head.cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
   cos_telescope_dec:=cos(head.dec0);
   fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
-//  flip_vertical:=mainwindow.flip_vertical1.Checked;
-//  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
+//  flip_vertical:=mainform1.flip_vertical1.Checked;
+//  flip_horizontal:=mainform1.flip_horizontal1.Checked;
+  mainform1.image1.Canvas.brush.Style:=bsClear;
   form_existing:=assigned(form_asteroids1);{form existing}
 
   {$ifdef mswindows}
-  mainwindow.image1.Canvas.Font.Name:='Default';
+  mainform1.image1.Canvas.Font.Name:='Default';
   {$endif}
   {$ifdef linux}
-  mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
+  mainform1.image1.Canvas.Font.Name:='DejaVu Sans';
   {$endif}
   {$ifdef darwin} {MacOS}
-  mainwindow.image1.Canvas.Font.Name:='Helvetica';
+  mainform1.image1.Canvas.Font.Name:='Helvetica';
   {$endif}
 
-  mainwindow.image1.canvas.pen.color:=annotation_color;{color circel}
-  mainwindow.image1.Canvas.font.color:=annotation_color;
+  mainform1.image1.canvas.pen.color:=annotation_color;{color circel}
+  mainform1.image1.Canvas.font.color:=annotation_color;
   fontsize:=round(min(20,max(10,head.height*20/4176)));
 
   if font_follows_diameter then
   begin
     fontsize:=max(annotation_diameter,fontsize);
-    mainwindow.image1.Canvas.Pen.width := 1+annotation_diameter div 10;{thickness lines}
+    mainform1.image1.Canvas.Pen.width := 1+annotation_diameter div 10;{thickness lines}
   end;
-  mainwindow.image1.Canvas.font.size:=fontsize;
+  mainform1.image1.Canvas.font.size:=fontsize;
   str(max(1,fontsize/12):0:1,fontsize_str); {store font size for header annotations}
 
   date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-OBS to jd_start and jd_mid}
 
   if jd_start<=2400000 then {no date, found year <1858}
   begin
-    mainwindow.error_label1.caption:=('Error converting DATE-OBS or DATE-AVG from the file header!');
-    mainwindow.error_label1.visible:=true;
+    mainform1.error_label1.caption:=('Error converting DATE-OBS or DATE-AVG from the file header!');
+    mainform1.error_label1.visible:=true;
     memo2_message(filename2+ ' Error converting DATE-OBS or DATE-AVG from the file header!');
     exit;
   end;
@@ -726,7 +726,7 @@ begin
 
   if add_annot then
   begin
-     remove_key(mainwindow.memo1.lines,'ANNOTATE',true{all});{remove key annotate words from header}
+     remove_key(mainform1.memo1.lines,'ANNOTATE',true{all});{remove key annotate words from header}
      annotated:=false;
   end;
 
@@ -762,12 +762,12 @@ begin
   {write some info at bottom screen}
   if form_existing then
   begin
-    with mainwindow do
+    with mainform1 do
     begin
       if add_date then
       begin
-        mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
-        mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
+        mainform1.image1.Canvas.textout(round(0.5*fontsize),head.height-round(4*fontsize),'Position[α,δ]:  '+mainform1.ra1.text+'    '+mainform1.dec1.text);{}
+        mainform1.image1.Canvas.textout(round(0.5*fontsize),head.height-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
       end;
     end;
   end;
@@ -864,7 +864,7 @@ begin
   Screen.Cursor:=crDefault;
 
   form_asteroids1.close;   {normal this form is not loaded}
-  mainwindow.setfocus;
+  mainform1.setfocus;
 
 
 end;
@@ -890,7 +890,7 @@ procedure Tform_asteroids1.cancel_button1Click(Sender: TObject); {han.k}
 begin
   esc_pressed:=true;
   form_asteroids1.close;   {normal this form is not loaded}
-  mainwindow.setfocus;
+  mainform1.setfocus;
 end;
 
 

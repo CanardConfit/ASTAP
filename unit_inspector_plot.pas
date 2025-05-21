@@ -163,7 +163,7 @@ var
     var
        txt : string;
     begin
-      with mainwindow.image1.canvas do
+      with mainform1.image1.canvas do
       begin
         txt:=floattostrF(value,ffFixed,0,2);
         th:= textheight(txt);//not efficient but it is done only 9 times
@@ -209,7 +209,7 @@ begin
   max_stars:=500;
   len:=4*max_stars; {should be enough, if not size is adapted}
 
-  with mainwindow do
+  with mainform1 do
   begin
     smx:=headx.width div 2;
     smy:=headx.height div 2;
@@ -217,8 +217,8 @@ begin
     sm_x:=headx.width/2;
     sm_y:=headx.height/2;
 
-    Flipv:=mainwindow.flip_vertical1.Checked;
-    Fliph:=mainwindow.Flip_horizontal1.Checked;
+    Flipv:=mainform1.flip_vertical1.Checked;
+    Fliph:=mainform1.Flip_horizontal1.Checked;
 
 
     image1.Canvas.Pen.Mode := pmMerge;
@@ -388,8 +388,8 @@ begin
           starX2:=starX;
           starY2:=starY;
           flip_xy(fliph,flipv,starX2,starY2); {from array to image coordinates}
-          mainwindow.image1.Canvas.Rectangle(starX2-size,starY2-size, starX2+size, starY2+size);{indicate hfd with rectangle}
-          mainwindow.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffFixed, 0,2));{add hfd as text}
+          mainform1.image1.Canvas.Rectangle(starX2-size,starY2-size, starX2+size, starY2+size);{indicate hfd with rectangle}
+          mainform1.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffFixed, 0,2));{add hfd as text}
         end;
 
         //the nine areas. FITS 1,1 is left bottom:
@@ -661,11 +661,11 @@ begin
         end;
         mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
-        text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
+        text_width:=mainform1.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
         fontsize:=min(60,trunc(fontsize*(headx.width*0.9)/text_width));{use 90% of width}
         image1.Canvas.font.size:=fontsize;
         image1.Canvas.font.color:=clwhite;
-        text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+        text_height:=mainform1.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
         left_margin:=min(headx.width div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
 
@@ -679,7 +679,7 @@ begin
     end
     else
       image1.Canvas.textout(round(fontsize*2),headx.height- round(fontsize*4),'No stars detected');
-  end;{with mainwindow}
+  end;{with mainform1}
 
   Screen.Cursor:=crDefault;
 end;
@@ -797,8 +797,8 @@ begin
 
   head.backgr:=min_value-5;
   cwhite:=max_value+5;
-  mainwindow.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
-  mainwindow.maximum1.position:=round(max_value+5);
+  mainform1.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
+  mainform1.maximum1.position:=round(max_value+5);
  end;
 
 
@@ -863,8 +863,8 @@ begin
 
   head.backgr:=min_value-5;
   cwhite:=max_value+5;
-  mainwindow.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
-  mainwindow.maximum1.position:=round(max_value+5);
+  mainform1.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
+  mainform1.maximum1.position:=round(max_value+5);
 end;
 
 
@@ -965,29 +965,29 @@ var sinO,cosO,xstep,ystep              : double;
     wd                                 : integer;
 begin
   wd:=max(1,head.height div 1000);
-  mainwindow.image1.Canvas.Pen.mode:=pmXor;
-  mainwindow.image1.canvas.Pen.Color := clred;
-  mainwindow.image1.canvas.Pen.width := wd;
+  mainform1.image1.Canvas.Pen.mode:=pmXor;
+  mainform1.image1.canvas.Pen.Color := clred;
+  mainform1.image1.canvas.Pen.width := wd;
 
   r:=r*wd;
   sincos(orientation,sinO,cosO);
   xstep:=r*cosO;
   ystep:=r*sinO;
 
-  if mainwindow.flip_horizontal1.checked then
+  if mainform1.flip_horizontal1.checked then
   begin
     x:=head.width-x;
     xstep:=-xstep;
   end;
 
-  if mainwindow.flip_vertical1.checked=false then
+  if mainform1.flip_vertical1.checked=false then
   begin
     y:=head.height-y;
     ystep:=-ystep;
   end;
 
-  moveToex(mainwindow.image1.Canvas.handle,round(x-xstep),round(y-ystep),nil);
-  lineTo(mainwindow.image1.Canvas.handle,round(x+xstep),round(y+ystep)); {line}
+  moveToex(mainform1.image1.Canvas.handle,round(x-xstep),round(y-ystep),nil);
+  lineTo(mainform1.image1.Canvas.handle,round(x+xstep),round(y+ystep)); {line}
 end;
 
 
@@ -1109,8 +1109,8 @@ begin
   else
   if detype='2' then contour_plot(mean,nhfd,hfd_values);
 
-  Flipvertical:=mainwindow.flip_vertical1.Checked;
-  Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
+  Flipvertical:=mainform1.flip_vertical1.Checked;
+  Fliphorizontal:=mainform1.Flip_horizontal1.Checked;
   size:=max(1,head.height div 1000);{font size, 1 is 9x5 pixels}
 
   setlength(hfds,nhfd);
@@ -1142,7 +1142,7 @@ begin
   memo2_message(mess);
   annotation_to_array(mess,true {transparent},65535,size*2 {size},5,10+size*2*9,img_loaded); {report median value}
 
-  plot_fits(mainwindow.image1,false);{plot image included text in pixel data}
+  plot_fits(mainform1.image1,false);{plot image included text in pixel data}
 
   if ((aspect) and (vectors)) then
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
@@ -1177,9 +1177,9 @@ begin
   else
     aspect:=((sender=hfd_button1)=false);
 
-  if nrbits=8 then {convert to 16 bit}
+  if head.nrbits=8 then {convert to 16 bit}
   begin
-    nrbits:=16;
+    head.nrbits:=16;
     head.datamax_org:=65535;
   end;
 
@@ -1202,21 +1202,21 @@ begin
   {$ELSE}{linux}
   filename2:=ExtractFileDir(filename2)+'/hfd_values.fit';
   {$ENDIF}
-  mainwindow.memo1.lines.clear;
+  mainform1.memo1.lines.clear;
   for j:=0 to 10 do {create an header with fixed sequence}
     if (j<>5)  then {skip head.naxis3 for mono images}
-        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
-  mainwindow.memo1.lines.add(head1[27]); {add end}
+        mainform1.memo1.lines.add(head1[j]); {add lines to empthy memo1}
+  mainform1.memo1.lines.add(head1[27]); {add end}
 
-  update_integer(mainwindow.memo1.lines,'BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
-  if head.naxis3=1 then  remove_key(mainwindow.memo1.lines,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+  update_integer(mainform1.memo1.lines,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
+  update_integer(mainform1.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(mainform1.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+  if head.naxis3=1 then  remove_key(mainform1.memo1.lines,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
-  update_integer(mainwindow.memo1.lines,'DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer(mainwindow.memo1.lines,'DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
-  update_text(mainwindow.memo1.lines,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-  if demode='V'  then update_text(mainwindow.memo1.lines,'COMMENT G','  Grey values indicate measured values * 1000');
+  update_integer(mainform1.memo1.lines,'DATAMIN =',' / Minimum data value                             ' ,0);
+  update_integer(mainform1.memo1.lines,'DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
+  update_text(mainform1.memo1.lines,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  if demode='V'  then update_text(mainform1.memo1.lines,'COMMENT G','  Grey values indicate measured values * 1000');
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
@@ -1256,9 +1256,9 @@ begin
     form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
   if extra_stars=false then
-    CCDinspector(img_loaded, head,mainwindow.memo1.lines, 30,true {screenplot},three_corners,strtofloat(measuring_angle))
+    CCDinspector(img_loaded, head,mainform1.memo1.lines, 30,true {screenplot},three_corners,strtofloat(measuring_angle))
   else
-    CCDinspector(img_loaded, head,mainwindow.memo1.lines,10,true {screenplot},three_corners,strtofloat(measuring_angle));
+    CCDinspector(img_loaded, head,mainform1.memo1.lines,10,true {screenplot},three_corners,strtofloat(measuring_angle));
 end;
 
 
@@ -1270,9 +1270,9 @@ end;
 
 procedure Tform_inspection1.undo_button1Click(Sender: TObject);
 begin
-  if executed=1 then plot_fits(mainwindow.image1,false) {only refresh required}
+  if executed=1 then plot_fits(mainform1.image1,false) {only refresh required}
   else
-  if ((executed=2) and (mainwindow.Undo1.enabled)) then
+  if ((executed=2) and (mainform1.Undo1.enabled)) then
   begin
     restore_img;
   end;
@@ -1302,7 +1302,7 @@ end;
 procedure Tform_inspection1.close_button1Click(Sender: TObject);
 begin
   form_inspection1.close;   {normal this form is not loaded}
-  mainwindow.setfocus;
+  mainform1.setfocus;
 end;
 
 procedure Tform_inspection1.contour1Change(Sender: TObject);
@@ -1321,7 +1321,7 @@ procedure Tform_inspection1.FormClose(Sender: TObject;
 begin
   insp_left:=left;
   insp_top:=top;
-  mainwindow.setfocus;
+  mainform1.setfocus;
   toclipboard1:=to_clipboard1.checked;
 end;
 
@@ -1361,10 +1361,10 @@ begin
   end;
 
 
-  with mainwindow do
+  with mainform1 do
   begin
-    Flipvertical:=mainwindow.flip_vertical1.Checked;
-    Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
+    Flipvertical:=mainform1.flip_vertical1.Checked;
+    Fliphorizontal:=mainform1.Flip_horizontal1.Checked;
 
 
     image1.Canvas.Pen.Mode := pmMerge;
@@ -1403,9 +1403,9 @@ begin
         if Flipvertical=false then  tY:=head.height-tY;
         if Fliphorizontal then tX:=head.width-tX;
 
-        tx:=round(X)-( mainwindow.image1.canvas.Textwidth(detext) div 2);{make text centered at x, y}
-        ty:=round(Y)-( mainwindow.image1.canvas.Textheight(detext) div 2);
-        mainwindow.image1.Canvas.textout(tX,tY,detext);{add as text}
+        tx:=round(X)-( mainform1.image1.canvas.Textwidth(detext) div 2);{make text centered at x, y}
+        ty:=round(Y)-( mainform1.image1.canvas.Textheight(detext) div 2);
+        mainform1.image1.Canvas.textout(tX,tY,detext);{add as text}
 
         X:=X+stepsizeX;
       until X>=head.width-1;
@@ -1440,9 +1440,9 @@ begin
 
 
   case inspector_binning of
-    1: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,2);
-    2: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,3);
-    3: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,4);
+    1: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,2);
+    2: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,3);
+    3: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,4);
   end;
 
   img_bk:=duplicate(img_loaded);
@@ -1469,10 +1469,10 @@ begin
       img_loaded[0,fy,fx]:= low_level +  ((high_level-low_level)/inspector_gradations)*round( (img_loaded[0,fy,fx]-low_level)*inspector_gradations/(high_level-low_level));
 
   srange:=high_level-low_level;
-  mainwindow.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  use_histogram doesn't work that well for blurred image.
-  mainwindow.minimum1.position:=round(low_level-0.05*srange);
+  mainform1.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  use_histogram doesn't work that well for blurred image.
+  mainform1.minimum1.position:=round(low_level-0.05*srange);
 
-  plot_fits(mainwindow.image1, False);{plot real}
+  plot_fits(mainform1.image1, False);{plot real}
 
   img_bk:=nil;//free mem
 
@@ -1584,16 +1584,16 @@ begin
    head.width:=widthN;
    head.height:=heightN;
 
-   update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
-   update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+   update_integer(mainform1.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+   update_integer(mainform1.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
    if head.cd1_1<>0 then {remove solution}
      remove_solution(false {keep wcs});
 
-   update_text(mainwindow.memo1.lines,'COMMENT A','  Aberration view '+filename2);
+   update_text(mainform1.memo1.lines,'COMMENT A','  Aberration view '+filename2);
 
    filename2:=ChangeFileExt(filename2,'_aberration_view.fits');
-   plot_fits(mainwindow.image1,true);
+   plot_fits(mainform1.image1,true);
    image_move_to_center:=true;
 
    Screen.Cursor:=crDefault;

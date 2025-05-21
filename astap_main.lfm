@@ -1,4 +1,4 @@
-object mainwindow: Tmainwindow
+object mainform1: Tmainform1
   Left = 235
   Height = 634
   Hint = ' '
@@ -6,8 +6,8 @@ object mainwindow: Tmainwindow
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 634
-  ClientWidth = 1333
+  ClientHeight = 0
+  ClientWidth = 0
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000

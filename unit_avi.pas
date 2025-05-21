@@ -278,7 +278,7 @@ begin
     setlength(row, nrcolors*w {width});
     for yy := y+h-1 downto y {height} do
     begin // scan each timage line
-      xLine:=mainwindow.image1.Picture.Bitmap.ScanLine[yy];
+      xLine:=mainform1.image1.Picture.Bitmap.ScanLine[yy];
       for xx := x to x+w-1 {width} do
       begin
        {$ifdef mswindows}

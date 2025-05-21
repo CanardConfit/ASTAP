@@ -1010,14 +1010,14 @@ begin
   w:=Length(img[0,0]); {width}
   h:=Length(img[0]); {height}
 
-  if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
+  if mainform1.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
     x:=(w-1)-x;
     flipH:=-1;
   end
   else flipH:=1;
 
-  if mainwindow.flip_vertical1.Checked then
+  if mainform1.flip_vertical1.Checked then
   begin
     y:=(h-1)-y;
     flipV:=-1;
@@ -1395,8 +1395,8 @@ begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-    flip_vertical:=mainwindow.flip_vertical1.Checked;
-    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+    flip_vertical:=mainform1.flip_vertical1.Checked;
+    flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
     if extract_visible then //for photometry
     begin
@@ -1408,7 +1408,7 @@ begin
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     {find RA, DEC position of the middle of the image}
     {FITS range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainform1.Polynomial1.itemindex,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     cos_telescope_dec:=cos(telescope_dec);
     fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
@@ -1416,21 +1416,21 @@ begin
     if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
     {$ifdef mswindows}
     if font_size<6 then
-       mainwindow.image1.Canvas.Font.Name:='Small fonts'
+       mainform1.image1.Canvas.Font.Name:='Small fonts'
     else
-       mainwindow.image1.Canvas.Font.Name:='Default';
+       mainform1.image1.Canvas.Font.Name:='Default';
 
     {$endif}
     {$ifdef linux}
-    mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
+    mainform1.image1.Canvas.Font.Name:='DejaVu Sans';
     {$endif}
     {$ifdef darwin} {MacOS}
-    mainwindow.image1.Canvas.Font.Name:='Helvetica';
+    mainform1.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
 
-    mainwindow.image1.canvas.pen.Mode:=pmXor;
-    mainwindow.image1.Canvas.brush.Style:=bsClear;
+    mainform1.image1.canvas.pen.Mode:=pmXor;
+    mainform1.image1.Canvas.brush.Style:=bsClear;
 
     text_counter:=0;
     setlength(text_dimensions,200);
@@ -1451,7 +1451,7 @@ begin
         begin
           if ((database_nr>=3) and (database_nr<=5)) then //variables
           begin
-            with mainwindow do
+            with mainform1 do
             for i:=0 to high(Fshapes) do
             if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                      Fshapes[i].shape.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
@@ -1477,7 +1477,7 @@ begin
             else
             name:=naam2+'/'+naam3+'/'+naam4;
 
-            mainwindow.image1.Canvas.font.size:=round(min(20,max(max(6,font_size),len /2)));
+            mainform1.image1.Canvas.font.size:=round(min(20,max(max(6,font_size),len /2)));
 
             if copy(naam2,1,1)='0' then
             begin
@@ -1491,13 +1491,13 @@ begin
             else
               annotation_color2:=annotation_color;
 
-            mainwindow.image1.Canvas.font.color:=annotation_color2;
-            mainwindow.image1.canvas.pen.color:=annotation_color2;
+            mainform1.image1.Canvas.font.color:=annotation_color2;
+            mainform1.image1.canvas.pen.color:=annotation_color2;
 
 
             {get text dimensions}
-            th:=mainwindow.image1.Canvas.textheight(name);
-            tw:=mainwindow.image1.Canvas.textwidth(name);
+            th:=mainform1.image1.Canvas.textheight(name);
+            tw:=mainform1.image1.Canvas.textwidth(name);
             x1:=x;
             y1:=y;
             x2:=x+ tw;
@@ -1543,10 +1543,10 @@ begin
 
            if y1<>y then {there was textual overlap}
            begin
-             mainwindow.image1.Canvas.moveto(x,round(y+th/4));
-             mainwindow.image1.Canvas.lineto(x,y1);
+             mainform1.image1.Canvas.moveto(x,round(y+th/4));
+             mainform1.image1.Canvas.lineto(x,y1);
            end;
-           mainwindow.image1.Canvas.textout(x1,y1,name);
+           mainform1.image1.Canvas.textout(x1,y1,name);
 
            if ((extract_visible) and (text_counter<length(variable_list))) then //special option to add objects to list for photometry
            begin
@@ -1563,22 +1563,22 @@ begin
 
          {plot deepsky object}
          if width1=0 then begin width1:=length1;pa:=999;end;
-         mainwindow.image1.Canvas.Pen.width :=min(4,max(1,round(len/70)));
+         mainform1.image1.Canvas.Pen.width :=min(4,max(1,round(len/70)));
 
          {len is already calculated earlier for the font size}
          if len<=2 then {too small to plot an elipse or circle, plot just four dots}
          begin
-           mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color2;
-           mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color2;
-           mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color2;
-           mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color2;
+           mainform1.image1.canvas.pixels[x-2,y+2]:=annotation_color2;
+           mainform1.image1.canvas.pixels[x+2,y+2]:=annotation_color2;
+           mainform1.image1.canvas.pixels[x-2,y-2]:=annotation_color2;
+           mainform1.image1.canvas.pixels[x+2,y-2]:=annotation_color2;
          end
          else
          begin
            if PA<>999 then
-             plot_glx(mainwindow.image1.canvas,x,y,len,width1/length1,gx_orientation*pi/180) {draw oval or galaxy}
+             plot_glx(mainform1.image1.canvas,x,y,len,width1/length1,gx_orientation*pi/180) {draw oval or galaxy}
            else
-           mainwindow.image1.canvas.ellipse(round(x-len),round(y-len),round(x+1+len),round(y+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+           mainform1.image1.canvas.ellipse(round(x-len),round(y-len),round(x+1+len),round(y+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
          end;
        end;//min size for large FOV
      end;
@@ -1611,36 +1611,36 @@ var
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-    flip_vertical:=mainwindow.flip_vertical1.Checked;
-    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+    flip_vertical:=mainform1.flip_vertical1.Checked;
+    flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     {find RA, DEC position of the middle of the image}
     {FITS range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainform1.Polynomial1.itemindex,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     cos_telescope_dec:=cos(telescope_dec);
 
     font_size:=stackmenu1.font_size_photometry_UpDown1.position;
     {$ifdef mswindows}
      if font_size<6 then
-        mainwindow.image1.Canvas.Font.Name:='Small fonts'
+        mainform1.image1.Canvas.Font.Name:='Small fonts'
      else
-        mainwindow.image1.Canvas.Font.Name:='Default';
+        mainform1.image1.Canvas.Font.Name:='Default';
     {$endif}
     {$ifdef linux}
-    mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
+    mainform1.image1.Canvas.Font.Name:='DejaVu Sans';
     {$endif}
     {$ifdef darwin} {MacOS}
-    mainwindow.image1.Canvas.Font.Name:='Helvetica';
+    mainform1.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
 
-    mainwindow.image1.canvas.pen.color:=annotation_color;
-    mainwindow.image1.canvas.pen.mode:=pmXor;
-    mainwindow.image1.Canvas.brush.Style:=bsClear;
+    mainform1.image1.canvas.pen.color:=annotation_color;
+    mainform1.image1.canvas.pen.mode:=pmXor;
+    mainform1.image1.Canvas.brush.Style:=bsClear;
 
-    mainwindow.image1.Canvas.font.size:=max(6,font_size);
+    mainform1.image1.Canvas.font.size:=max(6,font_size);
 
 
 
@@ -1661,9 +1661,9 @@ begin
     for mode:=1 to 2 do //do both vsx and vsp
     begin
       if mode=1 then
-        mainwindow.image1.Canvas.font.color:=annotation_color{variable}
+        mainform1.image1.Canvas.font.color:=annotation_color{variable}
       else
-        mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star}
+        mainform1.image1.Canvas.font.color:=cllime;{AAVSO reference star}
 
       if mode=1 then counts:=length(vsx) else counts:=length(vsp);
       count:=0;
@@ -1691,8 +1691,8 @@ begin
               abbreviation:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
 
 //            if ((abs(x-shape_var1_fitsX)<5) and  (abs(y-shape_var1_fitsY)<5)) then // note shape_var1_fitsX/Y are in sensor coordinates
-//              mainwindow.Shape_var1.HINT:=vsx[count].name;
-            with mainwindow do
+//              mainform1.Shape_var1.HINT:=vsx[count].name;
+            with mainform1 do
             for i:=0 to high(Fshapes) do
               if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                 Fshapes[i].shape.HINT:=vsx[count].name;
@@ -1750,7 +1750,7 @@ begin
                delete(abbreviation,1,4);//remove 000-
             end;
 
-            with mainwindow do
+            with mainform1 do
             for i:=0 to high(Fshapes) do
             if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_var1_fitsX/Y are in sensor coordinates
                      Fshapes[i].shape.HINT:=abbreviation;//copy(naam2,1,posex(' ',naam2,4)-1);
@@ -1775,8 +1775,8 @@ begin
 
 
             {get text dimensions}
-            th:=mainwindow.image1.Canvas.textheight(abbreviation);
-            tw:=mainwindow.image1.Canvas.textwidth(abbreviation);
+            th:=mainform1.image1.Canvas.textheight(abbreviation);
+            tw:=mainform1.image1.Canvas.textwidth(abbreviation);
             x1:=x;
             y1:=y;
             x2:=x+ tw;
@@ -1822,25 +1822,25 @@ begin
 
             if y1<>y then {there was textual overlap}
             begin
-              mainwindow.image1.Canvas.moveto(x,round(y+th/4));
-              mainwindow.image1.Canvas.lineto(x,y1);
+              mainform1.image1.Canvas.moveto(x,round(y+th/4));
+              mainform1.image1.Canvas.lineto(x,y1);
             end;
 
 
-              mainwindow.image1.Canvas.textout(x1,y1,abbreviation);
+              mainform1.image1.Canvas.textout(x1,y1,abbreviation);
             inc(text_counter);
             if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
 
             {plot deepsky object}
-            mainwindow.image1.Canvas.Pen.width :=1;//min(4,max(1,round(len/70)));
+            mainform1.image1.Canvas.Pen.width :=1;//min(4,max(1,round(len/70)));
 
 
 
 
-            mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
-            mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
-            mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
-            mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
+            mainform1.image1.canvas.pixels[x-2,y+2]:=annotation_color;
+            mainform1.image1.canvas.pixels[x+2,y+2]:=annotation_color;
+            mainform1.image1.canvas.pixels[x-2,y-2]:=annotation_color;
+            mainform1.image1.canvas.pixels[x+2,y-2]:=annotation_color;
 
           end;//abbreviation<>''
 
@@ -2002,14 +2002,14 @@ var
 
           if Bp_Rp<>999 then {colour version}
           begin
-            mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
-            mainwindow.image1.canvas.pen.color:=Gaia_star_color(round(Bp_Rp));{color circel}
+            mainform1.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
+            mainform1.image1.canvas.pen.color:=Gaia_star_color(round(Bp_Rp));{color circel}
           end
           else
-            mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn)) );
+            mainform1.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn)) );
 
           len:=round((200-magn)/5.02);
-          mainwindow.image1.canvas.ellipse(round(x2-len),round(y2-len),round(x2+1+len),round(y2+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+          mainform1.image1.canvas.ellipse(round(x2-len),round(y2-len),round(x2+1+len),round(y2+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
 
         if ((flux_calibration) and (Bp_Rp<>-128 {if -128 then unreliable Johnson-V magnitude, either Bp or Rp is missing in Gaia})) then
@@ -2062,35 +2062,35 @@ begin
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-    flip_vertical:=mainwindow.flip_vertical1.Checked;
-    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+    flip_vertical:=mainform1.flip_vertical1.Checked;
+    flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
-//    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}  Already set
+//    sip:=((ap_order>=2) and (mainform1.Polynomial1.itemindex=1));{use sip corrections?}  Already set
 
     bp_rp:=999;{not defined in mono versions of the database}
 
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
     pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,1{wcs and sip if available},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
-    mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
-    mainwindow.image1.Canvas.Pen.mode:=pmCopy;
-    mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
+    mainform1.image1.Canvas.Pen.width :=1; // round(1+head.height/mainform1.image1.height);{thickness lines}
+    mainform1.image1.Canvas.Pen.mode:=pmCopy;
+    mainform1.image1.canvas.pen.color:=$00B0FF ;{orange}
 
 
     {$ifdef mswindows}
-    mainwindow.image1.Canvas.Font.Name:='Default';
+    mainform1.image1.Canvas.Font.Name:='Default';
     {$endif}
     {$ifdef linux}
-    mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
+    mainform1.image1.Canvas.Font.Name:='DejaVu Sans';
     {$endif}
     {$ifdef darwin} {MacOS}
-    mainwindow.image1.Canvas.Font.Name:='Helvetica';
+    mainform1.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
-    mainwindow.image1.Canvas.font.size:=8; //round(14*head.height/mainwindow.image1.height);{adapt font to image dimensions}
-    mainwindow.image1.Canvas.brush.Style:=bsClear;
+    mainform1.image1.Canvas.font.size:=8; //round(14*head.height/mainform1.image1.height);{adapt font to image dimensions}
+    mainform1.image1.Canvas.brush.Style:=bsClear;
 
-    mainwindow.image1.Canvas.font.color:=$00B0FF ;{orange}
+    mainform1.image1.Canvas.font.color:=$00B0FF ;{orange}
 
     star_total_counter:=0;{total counter}
     counter_flux_measured:=0;
@@ -2319,13 +2319,13 @@ begin
           update_float(memo,'LIM_MAGN=',' / Limiting magnitude (SNR=7, aperture '+floattostr2(head.mzero_radius)+' px)',false ,head.magn_limit);
 
           memo2_message(magn_limit_str);
-          mainwindow.caption:='Photometry calibration successful. '+magn_limit_str;
+          mainform1.caption:='Photometry calibration successful. '+magn_limit_str;
         end;
       end
       else
       begin
         magn_limit_str:='Calibration failure! Less then three usable stars found.';
-        mainwindow.caption:=magn_limit_str;
+        mainform1.caption:=magn_limit_str;
         memo2_message(magn_limit_str);
       end;
     end;
@@ -2365,10 +2365,10 @@ var
         HFD(img_loaded,round(x),round(y), 14 {annulus_radius},99 {flux_aperture},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
         begin
-          mainwindow.image1.Canvas.Pen.width :=3;
-          mainwindow.image1.Canvas.MoveTo(round(x2), round(y2));
-          mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
-          mainwindow.image1.Canvas.Pen.width :=1;
+          mainform1.image1.Canvas.Pen.width :=3;
+          mainform1.image1.Canvas.MoveTo(round(x2), round(y2));
+          mainform1.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
+          mainform1.image1.Canvas.Pen.width :=1;
 
           {for median errror}
           if  ( (sqr(x-head.crpix1)+sqr(y-head.crpix2)<sqr(0.25*head.height)) and (sub_counter<length(errors_sky_pixel1))) then
@@ -2413,17 +2413,17 @@ begin
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-    flip_vertical:=mainwindow.flip_vertical1.Checked;
-    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+    flip_vertical:=mainform1.flip_vertical1.Checked;
+    flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
     bp_rp:=999;{not defined in mono versions of the database}
 
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
     pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,0{wcs only},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
-    mainwindow.image1.Canvas.Pen.mode:=pmCopy;
-    mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
-    mainwindow.image1.canvas.pen.color:=$00B0FF; {orange}
+    mainform1.image1.Canvas.Pen.mode:=pmCopy;
+    mainform1.image1.Canvas.Pen.width :=1; // round(1+head.height/mainform1.image1.height);{thickness lines}
+    mainform1.image1.canvas.pen.color:=$00B0FF; {orange}
 
     star_total_counter:=0;{total counter}
     sub_counter:=0;
@@ -2445,7 +2445,7 @@ begin
     stars_measured:=0;{star number}
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
-    formalism:=mainwindow.Polynomial1.itemindex;
+    formalism:=mainform1.Polynomial1.itemindex;
 
     if database_type>1 then {1476 or 290 files}
     begin
@@ -2513,13 +2513,13 @@ begin
     end;
 
     {$ifdef mswindows}
-     mainwindow.image1.Canvas.Font.Name:='Default';
+     mainform1.image1.Canvas.Font.Name:='Default';
     {$endif}
     {$ifdef linux}
-    mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
+    mainform1.image1.Canvas.Font.Name:='DejaVu Sans';
     {$endif}
     {$ifdef darwin} {MacOS}
-    mainwindow.image1.Canvas.Font.Name:='Helvetica';
+    mainform1.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
     astrometric_error_innner:=smedian(errors_sky_pixel1,sub_counter); //pixels
@@ -2536,44 +2536,44 @@ begin
 
 
 
-    mainwindow.image1.Canvas.Pen.mode:=pmXor;
-    mainwindow.image1.canvas.pen.color:=annotation_color;
-    mainwindow.image1.Canvas.brush.Style:=bsClear;
-    mainwindow.image1.Canvas.font.color:=annotation_color;
-    mainwindow.image1.Canvas.font.size:=8;
+    mainform1.image1.Canvas.Pen.mode:=pmXor;
+    mainform1.image1.canvas.pen.color:=annotation_color;
+    mainform1.image1.Canvas.brush.Style:=bsClear;
+    mainform1.image1.Canvas.font.color:=annotation_color;
+    mainform1.image1.Canvas.font.size:=8;
 
-    mainwindow.image1.Canvas.Pen.width :=3;
+    mainform1.image1.Canvas.Pen.width :=3;
 
     {scale in pixels}
-    mainwindow.image1.Canvas.MoveTo(20, head.height-30);
-    mainwindow.image1.Canvas.LineTo(20+50*3,head.height-30);
+    mainform1.image1.Canvas.MoveTo(20, head.height-30);
+    mainform1.image1.Canvas.LineTo(20+50*3,head.height-30);
     for i:=0 to 3 do
     begin
-      mainwindow.image1.Canvas.MoveTo(20+50*i,head.height-25);
-      mainwindow.image1.Canvas.LineTo(20+50*i,head.height-35);
-      mainwindow.image1.Canvas.textout(17+50*i,head.height-25,inttostr(i));
+      mainform1.image1.Canvas.MoveTo(20+50*i,head.height-25);
+      mainform1.image1.Canvas.LineTo(20+50*i,head.height-35);
+      mainform1.image1.Canvas.textout(17+50*i,head.height-25,inttostr(i));
     end;
-    mainwindow.image1.Canvas.textout(20,head.height-60,'Scale in pixels');
+    mainform1.image1.Canvas.textout(20,head.height-60,'Scale in pixels');
 
 
     {scale in arc seconds}
     scale:=round(50/(head.cdelt2*3600));
-    mainwindow.image1.Canvas.MoveTo(220, head.height-30);
-    mainwindow.image1.Canvas.LineTo(220+scale*3,head.height-30);
+    mainform1.image1.Canvas.MoveTo(220, head.height-30);
+    mainform1.image1.Canvas.LineTo(220+scale*3,head.height-30);
 
 
     for i:=0 to 3 do
     begin
-      mainwindow.image1.Canvas.MoveTo(220+scale*i,head.height-25);
-      mainwindow.image1.Canvas.LineTo(220+scale*i,head.height-35);
-      mainwindow.image1.Canvas.textout(217+scale*i,head.height-25,inttostr(i)+'"');
+      mainform1.image1.Canvas.MoveTo(220+scale*i,head.height-25);
+      mainform1.image1.Canvas.LineTo(220+scale*i,head.height-35);
+      mainform1.image1.Canvas.textout(217+scale*i,head.height-25,inttostr(i)+'"');
     end;
-    mainwindow.image1.Canvas.textout(220,head.height-60,'Scale in arcsecs');
+    mainform1.image1.Canvas.textout(220,head.height-60,'Scale in arcsecs');
 
-    mainwindow.image1.Canvas.font.size:=12;
+    mainform1.image1.Canvas.font.size:=12;
 
-    mainwindow.image1.Canvas.textout(500,head.height-50,'Pixel->Sky error inside '+floattostr4(astrometric_error_innnerPS*3600)+'", outside '+floattostr4(astrometric_error_outerPS*3600)+'"');
-    mainwindow.image1.Canvas.textout(500,head.height-25,'Sky->Pixel error inside '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outside '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"');
+    mainform1.image1.Canvas.textout(500,head.height-50,'Pixel->Sky error inside '+floattostr4(astrometric_error_innnerPS*3600)+'", outside '+floattostr4(astrometric_error_outerPS*3600)+'"');
+    mainform1.image1.Canvas.textout(500,head.height-25,'Sky->Pixel error inside '+floattostr4(astrometric_error_innner*head.cdelt2*3600)+'", outside '+floattostr4(astrometric_error_outer*head.cdelt2*3600)+'"');
 
     //  errors_sky_pixel1 :=nil;  not required auto deallocated
     //  errors_sky_pixel2:=nil;
@@ -2732,15 +2732,15 @@ var
   flip_horizontal, flip_vertical        : boolean;
   xx,yy,x,y                             : double;
 begin
-  flip_vertical:=mainwindow.flip_vertical1.Checked;
-  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+  flip_vertical:=mainform1.flip_vertical1.Checked;
+  flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
   {do image stars}
   nrstars:=length(starlist2[0]);
-  mainwindow.image1.Canvas.Pen.Mode := pmCopy;
-  mainwindow.image1.Canvas.Pen.width := round(1+hd.height/mainwindow.image1.height);{thickness lines}
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.Pen.Color :=clred;
+  mainform1.image1.Canvas.Pen.Mode := pmCopy;
+  mainform1.image1.Canvas.Pen.width := round(1+hd.height/mainform1.image1.height);{thickness lines}
+  mainform1.image1.Canvas.brush.Style:=bsClear;
+  mainform1.image1.Canvas.Pen.Color :=clred;
 
   for i:=0 to nrstars-1 do
   begin
@@ -2748,7 +2748,7 @@ begin
     if flip_horizontal=true then starX:=round((hd.width-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
     if flip_vertical=false  then starY:=round((hd.height-starlist2[1,i])) else starY:=round(starlist2[1,i]);
     size:=15;
-    mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+    mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
  end;
 
   {do database stars}
@@ -2759,7 +2759,7 @@ begin
     flipped:=+1;
 
   nrstars:=length(starlist1[0]);
-  mainwindow.image1.Canvas.Pen.Color := annotation_color;
+  mainform1.image1.Canvas.Pen.Color := annotation_color;
   for i:=0 to nrstars-1 do
   begin
     xx:=(starlist1[0,i]-correctionX)/(hd.cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
@@ -2770,7 +2770,7 @@ begin
     if flip_vertical=false   then begin starY:=round(hd.crpix2-y); end else begin starY:=round(hd.crpix2+y); end;
 
     size:=20;
-    mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+    mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
   end;
 end;
 

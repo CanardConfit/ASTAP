@@ -2255,17 +2255,6 @@ object stackmenu1: Tstackmenu1
               TabOrder = 9
               Text = '10'
             end
-            object osc_preserve_r_nebula1: TCheckBox
-              Left = 296
-              Height = 23
-              Hint = 'Preserve red nebula around bright stars'
-              Top = 72
-              Width = 131
-              Caption = 'preserve_R_nebula'
-              Checked = True
-              State = cbChecked
-              TabOrder = 10
-            end
           end
           object most_right6: TStaticText
             Left = 1456

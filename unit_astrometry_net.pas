@@ -121,7 +121,7 @@ begin
 
   result:=false;
 
-  mainwindow.caption:='Solving: '+ExtractFileName(filename3);
+  mainform1.caption:='Solving: '+ExtractFileName(filename3);
 
   fpath:=ExtractFilePath(filename3);
   {$ifdef mswindows}
@@ -234,7 +234,7 @@ begin
   end;
 
   form_astrometry_net1.close;   {normal this form is not loaded}
-  mainwindow.setfocus;
+  mainform1.setfocus;
 end;
 
 { Tform_astrometry_net1 }
@@ -252,20 +252,20 @@ begin
 
   save_settings2;
 
-  mainwindow.OpenDialog1.Title := 'Select multiple  files to add astrometric solution';
-  mainwindow.OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  mainwindow.OpenDialog1.Filter := 'FITS files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+  mainform1.OpenDialog1.Title := 'Select multiple  files to add astrometric solution';
+  mainform1.OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  mainform1.OpenDialog1.Filter := 'FITS files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;
 
   failed:=0;
   solved:=0;
 
-  if mainwindow.OpenDialog1.Execute then
+  if mainform1.OpenDialog1.Execute then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     try { Do some lengthy operation }
-        with mainwindow.OpenDialog1.Files do
+        with mainform1.OpenDialog1.Files do
         for I := 0 to Count - 1 do
         begin
           filename2:=Strings[I];

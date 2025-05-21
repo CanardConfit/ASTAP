@@ -143,11 +143,11 @@ var
    i, nrquads,x,y, flipx,flipy: integer;
 begin
   if head.naxis=0 then exit; {file loaded?}
-  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-  mainwindow.image1.Canvas.Pen.width := round(1+head.height/mainwindow.image1.height);{thickness lines}
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainform1.image1.Canvas.Pen.Mode := pmMerge;
+  mainform1.image1.Canvas.Pen.width := round(1+head.height/mainform1.image1.height);{thickness lines}
+  mainform1.image1.Canvas.brush.Style:=bsClear;
 
-  if mainwindow.flip_horizontal1.Checked=true then
+  if mainform1.flip_horizontal1.Checked=true then
   begin
     flipx:=-1;
     x:=head.width;
@@ -157,7 +157,7 @@ begin
     flipx:=1;
     x:=0;
   end;
-  if mainwindow.flip_vertical1.Checked=false then
+  if mainform1.flip_vertical1.Checked=false then
   begin
     flipy:=-1;
     y:=head.height;
@@ -170,24 +170,24 @@ begin
 
   nrquads:=Length(starlistquads[0])-1;
 
-  mainwindow.image1.Canvas.Pen.mode:=pmXor;
+  mainform1.image1.Canvas.Pen.mode:=pmXor;
 
   for i:=0 to nrquads do
   begin
-    mainwindow.image1.Canvas.Pen.Color :=$606060 +random($9F9F9F);
-    if odd(i) then mainwindow.image1.Canvas.Pen.Style := pssolid
-       else  mainwindow.image1.Canvas.Pen.Style := psdot;
+    mainform1.image1.Canvas.Pen.Color :=$606060 +random($9F9F9F);
+    if odd(i) then mainform1.image1.Canvas.Pen.Style := pssolid
+       else  mainform1.image1.Canvas.Pen.Style := psdot;
 
     try
-    mainwindow.image1.Canvas.moveto(x+flipx*round(starlistquads[0,i]),y+flipy*round(starlistquads[1,i]));{move to star 1}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[2,i]),y+flipy*round(starlistquads[3,i]));{draw line star1-star2}
+    mainform1.image1.Canvas.moveto(x+flipx*round(starlistquads[0,i]),y+flipy*round(starlistquads[1,i]));{move to star 1}
+    mainform1.image1.Canvas.lineto(x+flipx*round(starlistquads[2,i]),y+flipy*round(starlistquads[3,i]));{draw line star1-star2}
 
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[4,i]),y+flipy*round(starlistquads[5,i]));{draw line star2-star3}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[0,i]),y+flipy*round(starlistquads[1,i]));{draw line star3-star1}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[6,i]),y+flipy*round(starlistquads[7,i]));{draw line star1-star4}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[4,i]),y+flipy*round(starlistquads[5,i]));{draw line star4-star3}
-    mainwindow.image1.Canvas.moveto(x+flipx*round(starlistquads[6,i]),y+flipy*round(starlistquads[7,i]));{move to star4}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[2,i]),y+flipy*round(starlistquads[3,i]));{draw line star4-star2}
+    mainform1.image1.Canvas.lineto(x+flipx*round(starlistquads[4,i]),y+flipy*round(starlistquads[5,i]));{draw line star2-star3}
+    mainform1.image1.Canvas.lineto(x+flipx*round(starlistquads[0,i]),y+flipy*round(starlistquads[1,i]));{draw line star3-star1}
+    mainform1.image1.Canvas.lineto(x+flipx*round(starlistquads[6,i]),y+flipy*round(starlistquads[7,i]));{draw line star1-star4}
+    mainform1.image1.Canvas.lineto(x+flipx*round(starlistquads[4,i]),y+flipy*round(starlistquads[5,i]));{draw line star4-star3}
+    mainform1.image1.Canvas.moveto(x+flipx*round(starlistquads[6,i]),y+flipy*round(starlistquads[7,i]));{move to star4}
+    mainform1.image1.Canvas.lineto(x+flipx*round(starlistquads[2,i]),y+flipy*round(starlistquads[3,i]));{draw line star4-star2}
 
     except
     end;
@@ -1199,11 +1199,11 @@ begin
       starlist1[1,count]:=starlist1[1,i];
    //  For testing:
    //  memo2_message(#9+floattostr(snr_list[i])+#9+floattostr(starlist2[0,count])+ #9 +floattostr(starlist2[1,count]));
-   //  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-   //  mainwindow.image1.Canvas.Pen.width := round(1+head.height/mainwindow.image1.height);{thickness lines}
-   //  mainwindow.image1.Canvas.brush.Style:=bsClear;
-   //  mainwindow.image1.Canvas.Pen.Color := clred;
-   //  mainwindow.image1.Canvas.Rectangle(round(starlist1[0,i])-15,head.height-round(starlist1[1,i])-15, round(starlist1[0,i])+15, head.height-round(starlist1[1,i])+15);{indicate hfd with rectangle}
+   //  mainform1.image1.Canvas.Pen.Mode := pmMerge;
+   //  mainform1.image1.Canvas.Pen.width := round(1+head.height/mainform1.image1.height);{thickness lines}
+   //  mainform1.image1.Canvas.brush.Style:=bsClear;
+   //  mainform1.image1.Canvas.Pen.Color := clred;
+   //  mainform1.image1.Canvas.Rectangle(round(starlist1[0,i])-15,head.height-round(starlist1[1,i])-15, round(starlist1[0,i])+15, head.height-round(starlist1[1,i])+15);{indicate hfd with rectangle}
 
        inc(count);
 
@@ -1246,14 +1246,14 @@ const
     buffersize=5000;{5000}
 begin
   {for testing}
-//   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-//   mainwindow.image1.Canvas.Pen.width := round(1+hd.height/mainwindow.image1.height);{thickness lines}
-//   mainwindow.image1.Canvas.brush.Style:=bsClear;
-//   mainwindow.image1.Canvas.font.color:=$FF;
-//   mainwindow.image1.Canvas.font.size:=10;
-//   mainwindow.image1.Canvas.Pen.Color := $FF;
-//   flip_vertical:=mainwindow.flip_vertical1.Checked;
-//   flip_horizontal:=mainwindow.Flip_horizontal1.Checked;
+//   mainform1.image1.Canvas.Pen.Mode := pmMerge;
+//   mainform1.image1.Canvas.Pen.width := round(1+hd.height/mainform1.image1.height);{thickness lines}
+//   mainform1.image1.Canvas.brush.Style:=bsClear;
+//   mainform1.image1.Canvas.font.color:=$FF;
+//   mainform1.image1.Canvas.font.size:=10;
+//   mainform1.image1.Canvas.Pen.Color := $FF;
+//   flip_vertical:=mainform1.flip_vertical1.Checked;
+//   flip_horizontal:=mainform1.Flip_horizontal1.Checked;
 
   width2:=length(img[0,0]);{width}
   height2:=length(img[0]);{height}
@@ -1297,9 +1297,9 @@ begin
           //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
           //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
           //  size:=round(5*hfd1);
-          //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
+          //  mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+          //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+          //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
 
             radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
             sqr_radius:=sqr(radius);
@@ -1670,7 +1670,7 @@ begin
   neighbourdistance:=2*round(sqrt(Length(starlist[0])));
 
 
-//  neighbourdistance:=strtoint(mainwindow.Edit1.caption);
+//  neighbourdistance:=strtoint(mainform1.Edit1.caption);
 
   nrquads:=0;
   SetLength(starlistquads,10,nrstars_min_one);//number of quads will be lower
@@ -1878,7 +1878,7 @@ begin
   neighbourdistance:=2*round(sqrt(Length(starlist[0])));
 
 
-//  neighbourdistance:=strtoint(mainwindow.Edit1.caption);
+//  neighbourdistance:=strtoint(mainform1.Edit1.caption);
 
   nrquads:=0;
   SetLength(quad_star_distances,8,nrstars);//will contain the six distances and the central position

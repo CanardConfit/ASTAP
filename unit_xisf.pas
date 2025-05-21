@@ -78,7 +78,7 @@ var
 
 begin
   result:=false;{assume failure}
-  mainwindow.caption:=ExtractFileName(filen);
+  mainform1.caption:=ExtractFileName(filen);
 
   {add header data to memo}
   memo.beginupdate;
@@ -88,11 +88,11 @@ begin
     TheFile:=tfilestream.Create( filen, fmOpenRead );
   except
     sysutils.beep;
-    mainwindow.statusbar1.panels[5].text:=('Error loading file!');
-    mainwindow.error_label1.visible:=true;
+    mainform1.statusbar1.panels[5].text:=('Error loading file!');
+    mainform1.error_label1.visible:=true;
     exit;
   end;
-  mainwindow.error_label1.visible:=false;
+  mainform1.error_label1.visible:=false;
 
   reset_fits_global_variables(true{light},head);  {Reset variables for case they are not specified in the file}
 
@@ -107,15 +107,15 @@ begin
     reader.read(header2[0],16);{read XISF signature}
   except;
     close_fits_file;
-    mainwindow.error_label1.caption:='Error';
-    mainwindow.statusbar1.panels[5].text:='Error';
-    mainwindow.error_label1.visible:=true;
+    mainform1.error_label1.caption:='Error';
+    mainform1.statusbar1.panels[5].text:='Error';
+    mainform1.error_label1.visible:=true;
     exit;
   end;
-  mainwindow.error_label1.visible:=false;
+  mainform1.error_label1.visible:=false;
   inc(reader_position,16);
   if ((header2[0]='X') and (header2[1]='I')  and (header2[2]='S') and (header2[3]='F') and (header2[4]='0') and (header2[5]='1') and (header2[6]='0') and (header2[7]='0'))=false then
-        begin close_fits_file;mainwindow.error_label1.visible:=true; mainwindow.statusbar1.panels[5].text:=('Error loading XISF file!! Keyword XSIF100 not found.'); exit; end;
+        begin close_fits_file;mainform1.error_label1.visible:=true; mainform1.statusbar1.panels[5].text:=('Error loading XISF file!! Keyword XSIF100 not found.'); exit; end;
   header_length:=ord(header2[8])+(ord(header2[9]) shl 8) + (ord(header2[10]) shl 16)+(ord(header2[11]) shl 24); {signature length}
 
   setlength(header2,header_length);{could be very large}
@@ -133,7 +133,7 @@ begin
   SetString(aline, Pansichar(@header2[0]),header_length);{convert header to string starting <Image}
   start_image:=pos('<Image ',aline);{find range <image..../image>}
 
-  if posex('compression=',aline,start_image)>0 then begin close_fits_file;mainwindow.error_label1.caption:='Error, can not read compressed XISF files!!'; mainwindow.error_label1.visible:=true; exit; end;
+  if posex('compression=',aline,start_image)>0 then begin close_fits_file;mainform1.error_label1.caption:='Error, can not read compressed XISF files!!'; mainform1.error_label1.visible:=true; exit; end;
 
   a:=posex('geometry=',aline,start_image);
   if a>0 then
@@ -174,8 +174,8 @@ begin
   if ((a=0) or (error2<>0)) then
   begin
     close_fits_file;
-    mainwindow.error_label1.caption:='Error!. Can not read this format, no attachment';
-    mainwindow.error_label1.visible:=true;
+    mainform1.error_label1.caption:='Error!. Can not read this format, no attachment';
+    mainform1.error_label1.visible:=true;
     head.naxis:=0;
     exit;
   end;
@@ -187,28 +187,28 @@ begin
     b:=posex('"',aline,a);inc(b,1); {find begin};
     c:=posex('"',aline,b); {find end};
     message1:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
-    if message1='Float32' then nrbits:=-32 {sometimes there is another Uintf8 behind stop _image, so test first only}  else
-    if message1='UInt16' then nrbits:=16 else
-    if message1='UInt8' then nrbits:=8 else
-    if message1='Float64' then nrbits:=-64 else
-    if message1='UInt32' then nrbits:=32 else
+    if message1='Float32' then head.nrbits:=-32 {sometimes there is another Uintf8 behind stop _image, so test first only}  else
+    if message1='UInt16' then head.nrbits:=16 else
+    if message1='UInt8' then head.nrbits:=8 else
+    if message1='Float64' then head.nrbits:=-64 else
+    if message1='UInt32' then head.nrbits:=32 else
     error2:=1;
   end;
   if ((a=0) or (error2<>0)) then
   begin
     close_fits_file;
-    mainwindow.error_label1.caption:='Can not read this format.';
-    mainwindow.error_label1.enabled:=true;
+    mainform1.error_label1.caption:='Can not read this format.';
+    mainform1.error_label1.enabled:=true;
     Memo.endupdate;
     head.naxis:=0;
     exit;
   end;
 
-  if nrbits=8 then  begin head.datamin_org:=0;head.datamax_org:=255; {8 bits files} end
+  if head.nrbits=8 then  begin head.datamin_org:=0;head.datamax_org:=255; {8 bits files} end
     else {16, -32 files} begin head.datamin_org:=0;head.datamax_org:=$FFFF;end;{not always specified. For example in skyview. So refresh here for case brightness is adjusted}
 
   {update memo keywords}
-  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
   update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
   if head.naxis3=1 then  remove_key(memo,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
@@ -360,11 +360,11 @@ begin
 
   if head.ra0<>0 then
   begin
-    mainwindow.ra1.text:=prepare_ra(head.ra0,' ');
-    mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+    mainform1.ra1.text:=prepare_ra(head.ra0,' ');
+    mainform1.dec1.text:=prepare_dec(head.dec0,' ');
    {$IfDef Darwin}// {MacOS}
-    //mainwindow.ra1change(nil);{OSX doesn't trigger an event}
-    //mainwindow.dec1change(nil);
+    //mainform1.ra1change(nil);{OSX doesn't trigger an event}
+    //mainform1.dec1change(nil);
    {$ENDIF}
   end;
 
@@ -381,12 +381,12 @@ begin
   memo.endupdate;
 
   {check if buffer is wide enough for one image line}
-  i:=round(bufwide/(abs(nrbits/8)));
+  i:=round(bufwide/(abs(head.nrbits/8)));
   if head.width>i then
   begin
     sysutils.beep;
-    mainwindow.error_label1.caption:='Too wide XISF file !!!!!';
-    mainwindow.error_label1.visible:=true;
+    mainform1.error_label1.caption:='Too wide XISF file !!!!!';
+    mainform1.error_label1.visible:=true;
     close_fits_file;
     head.naxis:=0;{failure}
     exit;
@@ -398,23 +398,23 @@ begin
     begin
       For i:=head.height-1 downto 0 do //XISF is top-down
       begin
-        try reader.read(fitsbuffer,head.width*round(abs(nrbits/8)));except; head.naxis:=0;{failure} end; {read file info}
+        try reader.read(fitsbuffer,head.width*round(abs(head.nrbits/8)));except; head.naxis:=0;{failure} end; {read file info}
 
         for j:=0 to head.width-1 do
         begin
-          if nrbits=16 then {16 bit FITS}
+          if head.nrbits=16 then {16 bit FITS}
            img_loaded2[k-1,i,j]:=fitsbuffer2[j]
           else
-          if nrbits=-32 then {4 byte floating point  FITS image}
+          if head.nrbits=-32 then {4 byte floating point  FITS image}
             img_loaded2[k-1,i,j]:=65535*fitsbufferSINGLE[j]{store in memory array, scale from 0..1 to 0..65535}
           else
-          if nrbits=8  then
+          if head.nrbits=8  then
             img_loaded2[k-1,i,j]:=(fitsbuffer[j])
           else
-          if nrbits=-64 then {8 byte, floating point bit FITS image}
+          if head.nrbits=-64 then {8 byte, floating point bit FITS image}
             img_loaded2[k-1,i,j]:=65535*fitsbufferDouble[j]{store in memory array, scale from 0..1 to 0..65535}
           else
-          if nrbits=+32 then {4 byte, +32 bit FITS image}
+          if head.nrbits=+32 then {4 byte, +32 bit FITS image}
             img_loaded2[k-1,i,j]:=fitsbuffer4[j]/65535;{scale to 0..64535 float}
         end;
       end;

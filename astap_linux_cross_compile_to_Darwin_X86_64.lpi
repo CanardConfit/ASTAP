@@ -131,13 +131,12 @@
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
-      <TargetCPU Value="aarch64"/>
+      <TargetCPU Value="x86_64"/>
       <TargetOS Value="darwin"/>
     </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
-        <RunWithoutDebug Value="True"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
       <Options>

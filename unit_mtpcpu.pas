@@ -86,6 +86,10 @@ end;
 {$ELSEIF defined(linux)}
   begin
     Result:=sysconf(_SC_NPROCESSORS_ONLN);
+    if result>=128 then //failure? 2025.05.20 temporary solution for Lubuntu 24   https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41659
+    begin
+      result:=4;
+    end;
   end;
 
 {$ELSE}
