@@ -44,10 +44,10 @@ var
    w,h             : integer;
    flipV,fliph     : boolean;
 begin
-  with mainwindow do
+  with mainform1 do
   begin
-    Flipv:=mainwindow.flip_vertical1.Checked;
-    Fliph:=mainwindow.Flip_horizontal1.Checked;
+    Flipv:=mainform1.flip_vertical1.Checked;
+    Fliph:=mainform1.Flip_horizontal1.Checked;
     w:=image1.Canvas.Width-1;
     h:=image1.Canvas.height-1;
   end;
@@ -95,8 +95,8 @@ begin
     y2:=h-y2;
   end;
 
-  mainwindow.image1.Canvas.MoveTo(round(x1),round(y1));
-  mainwindow.image1.Canvas.lineTo(round(x2),round(y2));
+  mainform1.image1.Canvas.MoveTo(round(x1),round(y1));
+  mainform1.image1.Canvas.lineTo(round(x2),round(y2));
 end;
 
 
@@ -185,19 +185,19 @@ var
 
      procedure mark_pixel(x,y : integer);{flip if required for plotting. From array to image1 coordinates}
      begin
-   //    show_marker_shape(mainwindow.shape_var1,1,10,10,10{minimum},X,Y);
+   //    show_marker_shape(mainform1.shape_var1,1,10,10,10{minimum},X,Y);
        if Fliph       then x:=ww-1-x;
        if Flipv=false then y:=hh-1-y;
-       mainwindow.image1.Canvas.pixels[x*binning,y*binning]:=clYellow;
+       mainform1.image1.Canvas.pixels[x*binning,y*binning]:=clYellow;
     //   application.processmessages;
 
      end;
      procedure mark_pixel_blue(x,y : integer);{flip if required for plotting. From array to image1 coordinates}
      begin
-   //    show_marker_shape(mainwindow.shape_var1,1,10,10,10{minimum},X,Y);
+   //    show_marker_shape(mainform1.shape_var1,1,10,10,10{minimum},X,Y);
        if Fliph       then x:=ww-1-x;
        if Flipv=false then y:=hh-1-y;
-       mainwindow.image1.Canvas.pixels[x*binning,y*binning]:=clBlue;
+       mainform1.image1.Canvas.pixels[x*binning,y*binning]:=clBlue;
    //   application.processmessages;
      end;
 
@@ -206,7 +206,7 @@ var
      begin
        if Fliph       then x:=ww-1-x;
        if Flipv=false then y:=hh-1-y;
-       mainwindow.image1.Canvas.textout(min(ww*binning-600,x*binning),y*binning,tex);{}
+       mainform1.image1.Canvas.textout(min(ww*binning-600,x*binning),y*binning,tex);{}
      end;
 
 //    procedure local_background(x1,y1:integer; out bg,sd: double);
@@ -365,11 +365,11 @@ var
             begin  // A real line, sd max is about line thickness plus a nearby star.
               if plot then
               begin
-                mainwindow.image1.Canvas.Pen.mode:=pmXor;
-                mainwindow.image1.Canvas.Pen.Color := clred;
+                mainform1.image1.Canvas.Pen.mode:=pmXor;
+                mainform1.image1.Canvas.Pen.Color := clred;
                 draw_streak_line(slope,intercept);//draw satellite streak
 
-                mainwindow.image1.Canvas.pen.color:=clyellow;
+                mainform1.image1.Canvas.pen.color:=clyellow;
               end;
                if plot then writetext(min(ww*binning,contour_array[0,counterC div 2]),contour_array[1,counterC div 2],' Y='+floattostrf(slope,FFgeneral,5,0)+'*X + '+Floattostrf(intercept,FFgeneral,5,0)+ ',  σ='+ Floattostrf(sd,FFgeneral,3,0));
               memo2_message('Streak found: '+filename2+',     Y='+floattostrf(slope,FFgeneral,5,0)+'*X + '+Floattostrf(intercept,FFgeneral,5,0)+ ',  σ='+ Floattostrf(sd,FFgeneral,3,0));
@@ -418,12 +418,12 @@ begin
   nr_streak_lines:=0;
   setlength(streak_lines,20);//allow 20 streak lines
 
-  with mainwindow do
+  with mainform1 do
   begin
     if plot then
     begin
-      Flipv:=mainwindow.flip_vertical1.Checked;
-      Fliph:=mainwindow.Flip_horizontal1.Checked;
+      Flipv:=mainform1.flip_vertical1.Checked;
+      Fliph:=mainform1.Flip_horizontal1.Checked;
 
       image1.Canvas.Pen.Mode := pmMerge;
       image1.Canvas.brush.Style:=bsClear;
@@ -464,7 +464,7 @@ begin
       end;
     end;
 
-  end;{with mainwindow}
+  end;{with mainform1}
 
   if restore_his then
   begin

@@ -486,7 +486,6 @@ type
     nr_total_photometry1: TLabel;
     osc_auto_level1: TCheckBox;
     osc_colour_smooth1: TCheckBox;
-    osc_preserve_r_nebula1: TCheckBox;
     osc_smart_colour_sd1: TComboBox;
     osc_smart_smooth_width1: TComboBox;
     pagecontrol1: TPageControl;
@@ -1401,7 +1400,7 @@ begin
     begin
       panel_manual1.bevelouter := bvSpace;
       panel_manual1.color := CLWindow;
-      mainwindow.shape_manual_alignment1.visible:=true;
+      mainform1.shape_manual_alignment1.visible:=true;
     end
     else
     if use_ephemeris_alignment1.Checked then
@@ -1701,7 +1700,7 @@ begin
   hfd_min := max(0.8 {two pixels}, strtofloat2(
   stackmenu1.min_star_size_stacking1.Caption){hfd});  {to ignore hot pixels which are too small}
 
-  if ((nrbits = 8) or (head.datamax_org <= 255)) then min_background := 0
+  if ((head.nrbits = 8) or (head.datamax_org <= 255)) then min_background := 0
   else
     min_background := 8;
   if ((head.backgr < 60000) and (head.backgr > min_background)) then {not an abnormal file}
@@ -2428,7 +2427,7 @@ begin
 
                 if ((headx.naxis3 = 1) and (headx.Xbinning = 1) and (bayerpat <> '')) then rawstr:=' raw' else rawstr:= '';
 
-                ListView1.Items.item[c].subitems.Strings[L_type]:= copy(imagetype, 1, 5) + IntToStr(nrbits) + rawstr;{type}
+                ListView1.Items.item[c].subitems.Strings[L_type]:= copy(imagetype, 1, 5) + IntToStr(headx.nrbits) + rawstr;{type}
 
                 ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(headx.date_obs, 'T', ' ', []), 1, 23);{date/time up to ms}
                 ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(headx.ra0, ': ') + ', ' + prepare_dec4(headx.dec0, '° ');
@@ -2689,7 +2688,7 @@ begin
   until ((filename2[dot_pos] = '.') or (dot_pos <= 1));
   insert(' original', filename2, dot_pos);
 
-  save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, True);
+  save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True);
   if fileexists(filename2) then
   begin
     save_as_new_file1.caption:='Save current view as new file ✔';
@@ -2714,7 +2713,7 @@ begin
   backup_img;
 
 
-  if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_temp) then
+  if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_temp) then
     {success load}
   begin
     nrcolours := length(img_loaded) - 1;{nr colours - 1}
@@ -2730,7 +2729,7 @@ begin
     img_loaded := img_temp; {use result}
 
     use_histogram(img_loaded, True);
-    plot_fits(mainwindow.image1, False);{plot real}
+    plot_fits(mainform1.image1, False);{plot real}
   end;
   update_equalise_background_step(5 {force 5 since equalise background is set to 1 by loading fits file});{update menu}
   Screen.Cursor := crDefault;
@@ -2755,7 +2754,7 @@ begin
     max_stars := strtoint2(stackmenu1.max_stars1.Text,500);  {maximum star to process, if so filter out brightest stars later}
 
     if quads_displayed then
-      plot_fits(mainwindow.image1, False); {remove quads}
+      plot_fits(mainform1.image1, False); {remove quads}
 
     binning := report_binning(head.Height{*cropping});
     {select binning on dimensions of cropped image}
@@ -2955,7 +2954,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
   gaussian_blur2(img_loaded, 2 * strtofloat2(most_common_filter_radius1.Text));
-  plot_fits(mainwindow.image1, False);{plot}
+  plot_fits(mainform1.image1, False);{plot}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
 end;
@@ -3286,7 +3285,7 @@ begin
     else
       artificial_flatV2(img_loaded, head,    StrToInt(StringReplace(ring_equalise_factor1.Text, '%', '', [])));
 
-    plot_fits(mainwindow.image1, False);{plot real}
+    plot_fits(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3369,7 +3368,7 @@ begin
 
     apply_factors;
     use_histogram(img_loaded, True);
-    plot_fits(mainwindow.image1, False);{plot real}
+    plot_fits(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3453,9 +3452,9 @@ begin
         memo2_message('Error, files of different format!');
       end;{file loaded}
     end;
-    add_text(mainwindow.memo1.lines,'HISTORY   ', add_substract1.text+' '+ExtractFileName(image_to_add1.Caption));
+    add_text(mainform1.memo1.lines,'HISTORY   ', add_substract1.text+' '+ExtractFileName(image_to_add1.Caption));
     use_histogram(img_loaded, True);
-    plot_fits(mainwindow.image1, False);{plot real}
+    plot_fits(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3463,7 +3462,7 @@ end;
 
 procedure Tstackmenu1.undo_button2Click(Sender: TObject);
 begin
-  if mainwindow.Undo1.Enabled then restore_img;
+  if mainform1.Undo1.Enabled then restore_img;
 end;
 
 
@@ -3482,7 +3481,7 @@ begin
   if head.naxis <> 0 then
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-    mainwindow.stretch1.Text := 'off';{switch off gamma}
+    mainform1.stretch1.Text := 'off';{switch off gamma}
 
     a_factor := strtofloat2(edit_a1.Text);
     k_factor := strtofloat2(edit_k1.Text);
@@ -3523,7 +3522,7 @@ begin
         end;
     //apply_dpp_button1.Enabled := False;
     use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-    plot_fits(mainwindow.image1, True);{plot real}
+    plot_fits(mainform1.image1, True);{plot real}
 
     Screen.Cursor := crDefault;
   end;
@@ -3582,7 +3581,7 @@ begin
   apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
-  plot_fits(mainwindow.image1, False);{plot real}
+  plot_fits(mainform1.image1, False);{plot real}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
 end;
@@ -3606,7 +3605,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head,false);
+  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head,false);
 
   if head.passband_database='V'=false then
   begin
@@ -3624,7 +3623,7 @@ begin
   end;
 
   measure_magnitudes(img_loaded,head, 14,0,0,head.width-1,head.height-1,false{histogram update},true {deep},stars);
-  formalism:=mainwindow.Polynomial1.itemindex;
+  formalism:=mainform1.Polynomial1.itemindex;
 
   setlength(xylist,2, length(stars[0]));
   countxy:=0;
@@ -3773,13 +3772,13 @@ begin
       filename2 := tl.items[index].Caption;
       filename_old := filename2;
 
-      if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,False, False {plot}) then {load}
+      if load_image(filename2,img_loaded,head,mainform1.memo1.lines,False, False {plot}) then {load}
       begin
         while length(keyw) < 8 do keyw := keyw + ' ';{increase length to 8}
         keyw := copy(keyw, 1, 8);{decrease if longer then 8}
 
         if uppercase(Value) = 'DELETE' then
-          remove_key(mainwindow.memo1.lines,keyw, True {all})
+          remove_key(mainform1.memo1.lines,keyw, True {all})
         {remove key word in header. If all=true then remove multiple of the same keyword}
         else
         if dateObs then //keyw is DATE-OBS
@@ -3788,8 +3787,8 @@ begin
           if jd_start=0 then exit;
           jd:=jd_start+strtofloat2(value)/24;
           new_date:=jdtodate(jd);
-          update_text(mainwindow.memo1.lines,keyw + '=', #39 + new_date + #39);//new date
-          update_text(mainwindow.memo1.lines,keywOldTime+'=', #39 + head.date_obs + #39+'/ Backup of previous DATE-OBS'); //backup date in unused keyword
+          update_text(mainform1.memo1.lines,keyw + '=', #39 + new_date + #39);//new date
+          update_text(mainform1.memo1.lines,keywOldTime+'=', #39 + head.date_obs + #39+'/ Backup of previous DATE-OBS'); //backup date in unused keyword
           memo2_message('Old date is stored in '+keywOldTime+'. To recover delete keyword DATE-OBS and rename '+keywOldTime+' to DATE-OBS.');
 
           if tl = stackmenu1.listview1 then
@@ -3805,10 +3804,10 @@ begin
             while length(Value) < 8 do
               Value := Value + ' ';
             {increase length to minimum 8, one space will be added  in front later. See FITS standard 4.2.1.1 Single-record string keywords}
-            update_text(mainwindow.memo1.lines,keyw + '=', #39 + Value + #39);//spaces will be added later
+            update_text(mainform1.memo1.lines,keyw + '=', #39 + Value + #39);//spaces will be added later
           end
           else
-            update_float(mainwindow.memo1.lines,keyw + '=', ' /                                                ',true , waarde);
+            update_float(mainform1.memo1.lines,keyw + '=', ' /                                                ',true , waarde);
 
           {update listview}
           if keyw = 'OBJECT  ' then
@@ -3825,16 +3824,16 @@ begin
         end;
 
         if fits_file_name(filename_old) then
-          success := savefits_update_header(mainwindow.memo1.lines,filename2)
+          success := savefits_update_header(mainform1.memo1.lines,filename2)
         else
         if tiff_file_name(filename_old) then
-          success := save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2){guarantee no file is lost}
+          success := save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2){guarantee no file is lost}
         else
         begin
           filename2 := changefileExt(filename_old, '.fits');//xisf and raw files
           tl.items[index].Caption := filename2;
           {converted cr2 or other format when loaded. Update list with correct filename}
-          success := save_fits(img_loaded,mainwindow.memo1.lines, filename2, nrbits, True); //save as fits file
+          success := save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True); //save as fits file
         end;
         if success = False then
         begin
@@ -4027,15 +4026,15 @@ end;
 
 procedure Tstackmenu1.undo_button_equalise_background1Click(Sender: TObject);
 begin
-  if mainwindow.Undo1.Enabled then
+  if mainform1.Undo1.Enabled then
   begin
     if equalise_background_step = 5 then
     begin {restart from step 1}
-      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) then
+      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) then
         {succes load}
       begin
         use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-        plot_fits(mainwindow.image1, False);{plot real}
+        plot_fits(mainform1.image1, False);{plot real}
         update_equalise_background_step(0); {go to step 0}
       end;
     end
@@ -4102,7 +4101,7 @@ begin
   backup_img;
   gaussian_blur2(img_loaded, strtofloat2(blur_factor1.Text));
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False);{plot}
+  plot_fits(mainform1.image1, False);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -4186,7 +4185,7 @@ begin
       if theext = '.wcs' then filename2 := changefileext(filename2, '.fit');{for tab mount}
       if theext = '.wcss' then filename2 := changefileext(filename2, '.fits');{for tab mount}
 
-      if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,mainwindow.image1.Visible = False, True {plot})
+      if load_image(filename2,img_loaded,head,mainform1.memo1.lines,mainform1.image1.Visible = False, True {plot})
       {for the first image set the width and length of image1 correct} then
       begin
         if ((tl = stackmenu1.listview1) and
@@ -4195,12 +4194,12 @@ begin
             show_shape_manual_alignment(index){show the marker on the reference star}
           end
         else
-          mainwindow.shape_manual_alignment1.Visible := False;
+          mainform1.shape_manual_alignment1.Visible := False;
         if ((tl = stackmenu1.listview7) and (stackmenu1.annotate_mode1.ItemIndex > 0)) then
           {show variable stars}
         begin
           application.ProcessMessages;
-          mainwindow.variable_star_annotation1Click(nil); //show variable star annotations
+          mainform1.variable_star_annotation1Click(nil); //show variable star annotations
         end;
       end
       else
@@ -4216,7 +4215,7 @@ procedure Tstackmenu1.listview1DblClick(Sender: TObject);
 begin
   listview_view(TListView(Sender));
 //  if ((pagecontrol1.tabindex = 8) {photometry} and (annotate_mode1.ItemIndex > 0)) then
-//    mainwindow.variable_star_annotation1Click(nil); //plot variable stars and comp star annotations
+//    mainform1.variable_star_annotation1Click(nil); //plot variable stars and comp star annotations
   Screen.Cursor := crDefault;;//just to be sure for Mac.
 end;
 
@@ -4740,7 +4739,7 @@ begin
 
     {load image}
     Application.ProcessMessages;
-    if ((esc_pressed) or (load_fits(file_list[c], False {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_tmp1) = False)) then
+    if ((esc_pressed) or (load_fits(file_list[c], False {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_tmp1) = False)) then
     begin
       Screen.Cursor := crDefault;
       exit;
@@ -5206,7 +5205,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainwindow.image1, False);{plot real}
+    plot_fits(mainform1.image1, False);{plot real}
     progress_indicator(-100, '');{back to normal}
     Screen.Cursor := crDefault;
   end;
@@ -5249,54 +5248,54 @@ begin
 
   img_temp2 := nil;
 
-  mainwindow.Memo1.Lines.BeginUpdate;
-  update_integer(mainwindow.memo1.lines,'NAXIS1  =', ' / length of x axis                               ' , head.Width);
-  update_integer(mainwindow.memo1.lines,'NAXIS2  =', ' / length of y axis                               ' , head.Height);
+  mainform1.Memo1.Lines.BeginUpdate;
+  update_integer(mainform1.memo1.lines,'NAXIS1  =', ' / length of x axis                               ' , head.Width);
+  update_integer(mainform1.memo1.lines,'NAXIS2  =', ' / length of y axis                               ' , head.Height);
 
 
   if head.cdelt1 <> 0 then
   begin
     head.cdelt1 := head.cdelt1 / ratio;
-    update_float(mainwindow.memo1.lines,'CDELT1  =', ' / X pixel size (deg)                             ',false, head.cdelt1);
+    update_float(mainform1.memo1.lines,'CDELT1  =', ' / X pixel size (deg)                             ',false, head.cdelt1);
   end;
   if head.cdelt2 <> 0 then
   begin
     head.cdelt2 := head.cdelt2 / ratio;
-    update_float(mainwindow.memo1.lines,'CDELT2  =', ' / Y pixel size (deg)                             ',false, head.cdelt2);
+    update_float(mainform1.memo1.lines,'CDELT2  =', ' / Y pixel size (deg)                             ',false, head.cdelt2);
   end;
 
   if head.cd1_1 <> 0 then
   begin
     head.crpix1:=head.crpix1 * ratio;
-    update_float(mainwindow.memo1.lines,'CRPIX1  =', ' / X of reference pixel                           ',false, head.crpix1);
+    update_float(mainform1.memo1.lines,'CRPIX1  =', ' / X of reference pixel                           ',false, head.crpix1);
     head.crpix2 := head.crpix2 * ratio;
-    update_float(mainwindow.memo1.lines,'CRPIX2  =', ' / Y of reference pixel                           ',false, head.crpix2);
+    update_float(mainform1.memo1.lines,'CRPIX2  =', ' / Y of reference pixel                           ',false, head.crpix2);
     head.cd1_1 := head.cd1_1 / ratio;
     head.cd1_2 := head.cd1_2 / ratio;
     head.cd2_1 := head.cd2_1 / ratio;
     head.cd2_2 := head.cd2_2 / ratio;
-    update_float(mainwindow.memo1.lines,'CD1_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd1_1);
-    update_float(mainwindow.memo1.lines,'CD1_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd1_2);
-    update_float(mainwindow.memo1.lines,'CD2_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd2_1);
-    update_float(mainwindow.memo1.lines,'CD2_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd2_2);
+    update_float(mainform1.memo1.lines,'CD1_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd1_1);
+    update_float(mainform1.memo1.lines,'CD1_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd1_2);
+    update_float(mainform1.memo1.lines,'CD2_1   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd2_1);
+    update_float(mainform1.memo1.lines,'CD2_2   =', ' / CD matrix to convert (x,y) to (Ra, Dec)        ',false, head.cd2_2);
   end;
 
   head.XBINNING := head.XBINNING / ratio;
   head.YBINNING := head.YBINNING / ratio;
-  update_float(mainwindow.memo1.lines,'XBINNING=', ' / Binning factor in width                         ',false, head.XBINNING);
-  update_float(mainwindow.memo1.lines,'YBINNING=', ' / Binning factor in height                        ',false, head.YBINNING);
+  update_float(mainform1.memo1.lines,'XBINNING=', ' / Binning factor in width                         ',false, head.XBINNING);
+  update_float(mainform1.memo1.lines,'YBINNING=', ' / Binning factor in height                        ',false, head.YBINNING);
 
   if head.XPIXSZ <> 0 then
   begin
     head.XPIXSZ := head.XPIXSZ / ratio;
     head.YPIXSZ := head.YPIXSZ / ratio;
-    update_float(mainwindow.memo1.lines,'XPIXSZ  =', ' / Pixel width in microns (after stretching)       ',false, head.XPIXSZ);
-    update_float(mainwindow.memo1.lines,'YPIXSZ  =', ' / Pixel height in microns (after stretching)      ',false, head.YPIXSZ);
-    update_float(mainwindow.memo1.lines,'PIXSIZE1=', ' / Pixel width in microns (after stretching)       ',false, head.XPIXSZ);
-    update_float(mainwindow.memo1.lines,'PIXSIZE2=', ' / Pixel height in microns (after stretching)      ',false, head.YPIXSZ);
+    update_float(mainform1.memo1.lines,'XPIXSZ  =', ' / Pixel width in microns (after stretching)       ',false, head.XPIXSZ);
+    update_float(mainform1.memo1.lines,'YPIXSZ  =', ' / Pixel height in microns (after stretching)      ',false, head.YPIXSZ);
+    update_float(mainform1.memo1.lines,'PIXSIZE1=', ' / Pixel width in microns (after stretching)       ',false, head.XPIXSZ);
+    update_float(mainform1.memo1.lines,'PIXSIZE2=', ' / Pixel height in microns (after stretching)      ',false, head.YPIXSZ);
   end;
-  add_text(mainwindow.memo1.lines,'HISTORY   ', 'Image resized with factor ' + floattostr6(ratio));
-  mainwindow.Memo1.Lines.EndUpdate;
+  add_text(mainform1.memo1.lines,'HISTORY   ', 'Image resized with factor ' + floattostr6(ratio));
+  mainform1.Memo1.Lines.EndUpdate;
 end;
 
 
@@ -5309,7 +5308,7 @@ begin
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   remove_photometric_calibration;//from header
-  plot_fits(mainwindow.image1, True);{plot}
+  plot_fits(mainform1.image1, True);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -5395,10 +5394,10 @@ begin
       lv.ItemIndex := c; {mark where we are. Important set in object inspector    lv.HideSelection := false; lv.Rowselect := true}
       lv.Items[c].MakeVisible(False);{scroll to selected item}
       filename2 := lv.items[c].Caption;
-      mainwindow.Caption := filename2;
+      mainform1.Caption := filename2;
 
       {load image}
-      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head,img_loaded) = False then
+      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head,img_loaded) = False then
       begin
         memo2_message('repeat exit');
 
@@ -5406,13 +5405,13 @@ begin
         exit;
       end;
      use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-     plot_fits(mainwindow.image1, False {re_center});
+     plot_fits(mainform1.image1, False {re_center});
 
      {show alignment marker}
       if (stackmenu1.use_manual_alignment1.Checked) then
         show_shape_manual_alignment(c) {show the marker on the reference star}
       else
-        mainwindow.shape_manual_alignment1.Visible := False;
+        mainform1.shape_manual_alignment1.Visible := False;
 
     end; //checkf=true
     inc(watchdog);
@@ -5492,7 +5491,7 @@ end;
 procedure Tstackmenu1.solve1Click(Sender: TObject);
 begin
   if ((head.Width <> 100) or (head.Height <> 100)) then {is image loaded?,  assigned(img_loaded) doesn't work for jpegs}
-    mainwindow.astrometric_solve_image1Click(nil)
+    mainform1.astrometric_solve_image1Click(nil)
   else
     memo2_message('Abort solve, no image in the viewer.');
 end;
@@ -5510,7 +5509,7 @@ begin
     exit;
   end;
 
-  memox.assign(mainwindow.memo1.lines);//copy content. memox is already created
+  memox.assign(mainform1.memo1.lines);//copy content. memox is already created
   filename1 := ChangeFileExt(FileName2, '.fit');{make it lowercase fit also if FTS or FIT}
 
   setlength(img_buffer,1, head.Height, head.Width);{create a new mono image}
@@ -5522,7 +5521,7 @@ begin
   update_text(memox,'FILTER  =',copy(#39+'Red     '+#39+'                   ',1,21)+'/ Filter name');
 
 
-  save_fits(img_buffer,memox, filename2, -32, False);{fits header will be updated in save routine}
+  save_fits(img_buffer,memox, head,filename2, False);{fits header will be updated in save routine}
 
   for fitsY := 0 to head.Height - 1 do
     for fitsX := 0 to head.Width - 1 do
@@ -5530,7 +5529,7 @@ begin
   filename2 := StringReplace(filename1, '.fit', '_green.fit', []);{give new file name }
   update_text(memox,'FILTER  =',copy(#39+'Green   '+#39+'                   ',1,21)+'/ Filter name');
 
-  save_fits(img_buffer,memox, filename2, -32, False);{fits header will be updated in save routine}
+  save_fits(img_buffer,memox,head, filename2, False);{fits header will be updated in save routine}
 
   for fitsY := 0 to head.Height - 1 do
     for fitsX := 0 to head.Width - 1 do
@@ -5538,7 +5537,7 @@ begin
   filename2 := StringReplace(filename1, '.fit', '_blue.fit', []);{give new file name }
   update_text(memox,'FILTER  =',copy(#39+'Blue    '+#39+'                   ',1,21)+'/ Filter name');
 
-  save_fits(img_buffer,memox, filename2, -32, False);{fits header will be updated in save routine}
+  save_fits(img_buffer,memox, head,filename2, False);{fits header will be updated in save routine}
 
   img_buffer := nil;{release memory}
 
@@ -5685,7 +5684,7 @@ end;
 procedure Tstackmenu1.test_pattern1Click(Sender: TObject);
 begin
   if head.naxis <> 0 then
-    mainwindow.demosaic_bayermatrix1Click(nil);{including back and wait cursor}
+    mainform1.demosaic_bayermatrix1Click(nil);{including back and wait cursor}
 end;
 
 
@@ -5709,8 +5708,8 @@ begin
     stackmenu1.min_star_size_stacking1.Caption){hfd}); {to ignore hot pixels which are too small}
   max_stars := strtoint2(stackmenu1.max_stars1.Text,500);  {maximum star to process, if so filter out brightest stars later}
 
-  mainwindow.image1.Canvas.brush.Style := bsClear;
-  mainwindow.image1.canvas.font.color := $00B0FF;{orange}
+  mainform1.image1.Canvas.brush.Style := bsClear;
+  mainform1.image1.canvas.font.color := $00B0FF;{orange}
 
   esc_pressed := False;
   first_image := -1;
@@ -5749,12 +5748,12 @@ begin
         listview6.Items[c].MakeVisible(False);{scroll to selected item}
 
         filename2 := listview6.items[c].Caption;
-        mainwindow.Caption := filename2;
+        mainform1.Caption := filename2;
 
         Application.ProcessMessages;
         if esc_pressed then break;
         {load image}
-        if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
+        if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False then
         begin
           esc_pressed := True;
           break;
@@ -5793,7 +5792,7 @@ begin
             end
             else
             begin
-              mainwindow.Caption := filename2 + ' Working on star solutions........';
+              mainform1.Caption := filename2 + ' Working on star solutions........';
               get_background(0, img_loaded, head,False {no histogram already done}, True {unknown, calculate also noise_level} );
               find_stars(img_loaded, head,hfd_min, max_stars, starlist2);
               {find stars and put them in a list}
@@ -5826,7 +5825,7 @@ begin
             solution_vectorY := bsolutions[ps].solution_vectorY;
           end;
 
-          if ((head.naxis3 = 1) and (mainwindow.preview_demosaic1.Checked)) then
+          if ((head.naxis3 = 1) and (mainform1.preview_demosaic1.Checked)) then
           begin
             demosaic_advanced(img_loaded);{demosaic and set levels}
           end;
@@ -5868,10 +5867,10 @@ begin
         bottom := 0;
         if ((Sender = write_video1) and (areax1 <> areaX2)) then {cropped video}
         begin {crop video, convert array coordinates to screen coordinates}
-          if mainwindow.flip_horizontal1.Checked then left := head.Width - 1 - areaX2 {left}
+          if mainform1.flip_horizontal1.Checked then left := head.Width - 1 - areaX2 {left}
           else
             left := areaX1;{left}
-          if mainwindow.flip_vertical1.Checked then
+          if mainform1.flip_vertical1.Checked then
             bottom := head.Height - 1 - areaY2 {bottom}
           else
             bottom := areaY1;{bottom}
@@ -5888,9 +5887,9 @@ begin
 
         store_annotated := annotated;{store temporary annotated}
         annotated := False;{prevent annotations are plotted in plot_fits}
-        plot_fits(mainwindow.image1, False {re_center});
+        plot_fits(mainform1.image1, False {re_center});
         annotated := store_annotated;{restore anotated value}
-        if ((annotated) and (mainwindow.annotations_visible1.Checked)) then
+        if ((annotated) and (mainform1.annotations_visible1.Checked)) then
           plot_annotations(True {use solution vectors!!!!}, False);  {corrected annotations in case a part of the lights are flipped in the alignment routien}
 
         if Sender = write_video1 then {write video frame}
@@ -5901,7 +5900,7 @@ begin
           {left is already calculated}
           if areax1 <> areaX2 then {crop active, convert array screen coordinates}
           begin
-            if mainwindow.flip_vertical1.Checked = False then
+            if mainform1.flip_vertical1.Checked = False then
               top := head.Height - 1 - areaY2 {top}
             else
               top := areaY1;{top}
@@ -5940,13 +5939,13 @@ var
   gradient, diagn_star: boolean;
 begin
 
-  mainwindow.memo1.lines.beginupdate;
+  mainform1.memo1.lines.beginupdate;
   {stop visualising Memo3 for speed. Will be activated in plot routine}
-  mainwindow.memo1.Clear;{clear memo for new header}
+  mainform1.memo1.Clear;{clear memo for new header}
 
   reset_fits_global_variables(True, head);
 
-  nrbits := 16;
+  head.nrbits := 16;
   extend_type := 0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
   head.Height := 1800;//1800;
@@ -5971,24 +5970,24 @@ begin
   filename2 := 'star_test_image.fit';
   for j := 0 to 10 do {create an header with fixed sequence}
     if (j <> 5) then {skip head.naxis3 for mono images}
-      mainwindow.memo1.Lines.add(head1[j]); {add lines to empthy Memo3}
-  mainwindow.memo1.Lines.add(head1[27]); {add end}
+      mainform1.memo1.Lines.add(head1[j]); {add lines to empthy Memo3}
+  mainform1.memo1.Lines.add(head1[27]); {add end}
 
-  update_integer(mainwindow.memo1.lines,'BITPIX  =', ' / Bits per entry                                 ' , nrbits);
-  update_integer(mainwindow.memo1.lines,'NAXIS1  =', ' / length of x axis                               ' , head.Width);
-  update_integer(mainwindow.memo1.lines,'NAXIS2  =', ' / length of y axis                               ' , head.Height);
-  if head.naxis3 = 1 then  remove_key(mainwindow.memo1.lines,'NAXIS3  ', False{all});  {remove key word in header. Some program don't like naxis3=1}
-  update_integer(mainwindow.memo1.lines,'DATAMIN =', ' / Minimum data value                             ', 0);
-  update_integer(mainwindow.memo1.lines,'DATAMAX =', ' / Maximum data value                             ',  round(head.datamax_org));
-  add_text(mainwindow.memo1.lines,'COMMENT 1', '  Written by Astrometric Stacking Program. www.hnsky.org');
+  update_integer(mainform1.memo1.lines,'BITPIX  =', ' / Bits per entry                                 ' , head.nrbits);
+  update_integer(mainform1.memo1.lines,'NAXIS1  =', ' / length of x axis                               ' , head.Width);
+  update_integer(mainform1.memo1.lines,'NAXIS2  =', ' / length of y axis                               ' , head.Height);
+  if head.naxis3 = 1 then  remove_key(mainform1.memo1.lines,'NAXIS3  ', False{all});  {remove key word in header. Some program don't like naxis3=1}
+  update_integer(mainform1.memo1.lines,'DATAMIN =', ' / Minimum data value                             ', 0);
+  update_integer(mainform1.memo1.lines,'DATAMAX =', ' / Maximum data value                             ',  round(head.datamax_org));
+  add_text(mainform1.memo1.lines,'COMMENT 1', '  Written by Astrometric Stacking Program. www.hnsky.org');
 
-  add_text(mainwindow.memo1.lines,'COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
-  add_text(mainwindow.memo1.lines,'COMMENT B', '  Top rows contain hotpixels with value 65535');
-  add_text(mainwindow.memo1.lines,'COMMENT C', '  Rows below have Gaussian stars with a sigma of ' +  floattostr6(sigma));
-  add_text(mainwindow.memo1.lines,'COMMENT D', '  Which will be measured as HFD ' + stackmenu1.hfd_simulation1.Text);
-  add_text(mainwindow.memo1.lines,'COMMENT E', '  Note that theoretical Gaussian stars with a sigma of 1 are');
-  add_text(mainwindow.memo1.lines,'COMMENT F', '  equivalent to a HFD of 2.354 if subsampled enough.');
-  add_text(mainwindow.memo1.lines,'COMMENT  ', ' ,Star_nr, X, Y, Flux                               ');
+  add_text(mainform1.memo1.lines,'COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
+  add_text(mainform1.memo1.lines,'COMMENT B', '  Top rows contain hotpixels with value 65535');
+  add_text(mainform1.memo1.lines,'COMMENT C', '  Rows below have Gaussian stars with a sigma of ' +  floattostr6(sigma));
+  add_text(mainform1.memo1.lines,'COMMENT D', '  Which will be measured as HFD ' + stackmenu1.hfd_simulation1.Text);
+  add_text(mainform1.memo1.lines,'COMMENT E', '  Note that theoretical Gaussian stars with a sigma of 1 are');
+  add_text(mainform1.memo1.lines,'COMMENT F', '  equivalent to a HFD of 2.354 if subsampled enough.');
+  add_text(mainform1.memo1.lines,'COMMENT  ', ' ,Star_nr, X, Y, Flux                               ');
 
 
   setlength(img_loaded, head.naxis3, head.Height, head.Width);{set length of image array}
@@ -6058,9 +6057,9 @@ begin
                 end;
               end;
           end;
-          add_text(mainwindow.memo1.lines,'COMMENT  ', ' ,star' + IntToStr(starcounter) + ', ' + floattostr4(j + shiftX + 1) + ', ' + floattostr4(i + shiftY + 1) + ', ' + floattostr4(flux_star)); {add the star coordinates to the header}
+          add_text(mainform1.memo1.lines,'COMMENT  ', ' ,star' + IntToStr(starcounter) + ', ' + floattostr4(j + shiftX + 1) + ', ' + floattostr4(i + shiftY + 1) + ', ' + floattostr4(flux_star)); {add the star coordinates to the header}
           if diagn_star then
-            add_text(mainwindow.memo1.lines,'COMMENT  ', ' ,star' + IntToStr(starcounter) + 'D, ' + floattostr4(j + shiftX + 1 + 180 + starcounter) + ', ' + floattostr4( i + shiftY + 1 + 130 + starcounter) + ', ' + floattostr4(flux_star)); {diagonal stars}
+            add_text(mainform1.memo1.lines,'COMMENT  ', ' ,star' + IntToStr(starcounter) + 'D, ' + floattostr4(j + shiftX + 1 + 180 + starcounter) + ', ' + floattostr4( i + shiftY + 1 + 130 + starcounter) + ', ' + floattostr4(flux_star)); {diagonal stars}
         end;
       end;
 
@@ -6069,9 +6068,9 @@ begin
   update_menu(True);{file loaded, update menu for fits. Set fits_file:=true}
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
-  mainwindow.memo1.lines.endupdate;
+  mainform1.memo1.lines.endupdate;
 
-  plot_fits(mainwindow.image1, True);{plot test image}
+  plot_fits(mainform1.image1, True);{plot test image}
 end;
 
 
@@ -6163,7 +6162,7 @@ begin
     lv.ItemIndex := 0;{show wich file is processed}
   filename2 := lv.selected.Caption;
 
-  if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
+  if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False then
   begin
     memo2_message('Abort, can' + #39 + 't load ' + filename2);
     Screen.Cursor := crDefault;    { back to normal }
@@ -6173,7 +6172,7 @@ begin
     {no solution or ignore solution}
   begin
     memo2_message('Solving file: ' + filename2);
-    if update_solution_and_save(img_loaded, head,mainwindow.memo1.lines) = False then
+    if update_solution_and_save(img_loaded, head,mainform1.memo1.lines) = False then
     begin
       memo2_message('Abort, can' + #39 + 't solve ' + filename2);
       Screen.Cursor := crDefault;    { back to normal }
@@ -6185,7 +6184,7 @@ begin
   plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations},false);
   if annotated then
   begin
-    mainwindow.annotations_visible1.Checked := True;
+    mainform1.annotations_visible1.Checked := True;
     plot_annotations(False {use solution vectors}, True {fill combobox});
     stackmenu1.ephemeris_centering1.ItemIndex :=  stackmenu1.ephemeris_centering1.items.Count - 1;{show first found in the list}
     memo2_message('Completed. Select an object in the dropdown to align on.');
@@ -6223,7 +6222,7 @@ end;
 
 procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
 begin
-  if ((measuring_method1.itemindex=0) and (length(mainwindow.fshapes)<2)) then
+  if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<2)) then
   begin
     application.messagebox('First click on the two stars minimum (VAR, CHECK) of the first image. The press on play to measure.','Can not proceed!',0);
     exit;
@@ -6478,7 +6477,7 @@ end;
 
 procedure Tstackmenu1.go_step_two1Click(Sender: TObject);
 begin
-  load_image(filename2,img_loaded,head,mainwindow.memo1.lines,mainwindow.image1.Visible = False, True {plot});
+  load_image(filename2,img_loaded,head,mainform1.memo1.lines,mainform1.image1.Visible = False, True {plot});
   update_equalise_background_step(2); {go to step 3}
 end;
 
@@ -6855,7 +6854,7 @@ begin
     DropFiles^.pFiles := SizeOf(TDropFiles);
     Move(FileList[1], (PChar(DropFiles) + SizeOf(TDropFiles))^, iLen);
     GlobalUnlock(hGlobal);
-    OpenClipboard(mainwindow.Handle);
+    OpenClipboard(mainform1.Handle);
     EmptyClipboard;
     SetClipboardData(CF_HDROP, hGlobal);
     CloseClipboard;
@@ -6889,7 +6888,7 @@ end;
 
 procedure Tstackmenu1.most_common_mono1Click(Sender: TObject);
 begin
-  mainwindow.convertmono1Click(nil); {back is made in mono procedure}
+  mainform1.convertmono1Click(nil); {back is made in mono procedure}
 end;
 
 
@@ -6914,7 +6913,7 @@ begin
         (listview9.Items.item[c].subitems.Strings[M_ra] = '')) then
       begin
         filename1 := listview9.items[c].Caption;
-        mainwindow.Caption := filename1;
+        mainform1.Caption := filename1;
 
         Application.ProcessMessages;
 
@@ -6990,9 +6989,9 @@ var
   i  : integer;
 begin
   if stackmenu1.measuring_method1.itemindex>0 then
-    mainwindow.clear_fshapes_array;//nil fshapes array
+    mainform1.clear_fshapes_array;//nil fshapes array
 
-  with mainwindow do //hide/show markers
+  with mainform1 do //hide/show markers
   begin
     for i:=high(fshapes) downto 0 do
       if Fshapes[i].shape<>nil then
@@ -7386,7 +7385,7 @@ begin
       if ((esc_pressed) or (pack_cfitsio(filen) = False)) then
       begin
         beep;
-        mainwindow.Caption := 'Exit with error!!';
+        mainform1.Caption := 'Exit with error!!';
         Screen.Cursor := crDefault;
         exit;
       end;
@@ -7506,10 +7505,10 @@ begin
   head.naxis3 := 3;
   head.naxis := 3;
   update_header_for_colour; {update header naxis and naxis3 keywords}
-  add_text(mainwindow.memo1.lines,'HISTORY   ', 'Artificial colour applied.');
+  add_text(mainform1.memo1.lines,'HISTORY   ', 'Artificial colour applied.');
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False);{plot real}
+  plot_fits(mainform1.image1, False);{plot real}
   Screen.Cursor := crDefault;
 end;
 
@@ -7522,7 +7521,7 @@ begin
   clear_added_AAVSO_columns;
   listview7.Items.EndUpdate;
   bakfiles:=nil; //unrename function
-  mainwindow.clear_fshapes_array;//nil fshapes array
+  mainform1.clear_fshapes_array;//nil fshapes array
 end;
 
 
@@ -7557,14 +7556,14 @@ begin
     if st <> '' then {Solution available}
     begin
       filename2 := listview6.items[c].Caption;
-      mainwindow.Caption := filename2;
+      mainform1.Caption := filename2;
 
       listview6.Selected := nil; {remove any selection}
       listview6.ItemIndex := c;
       {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
       listview6.Items[c].MakeVisible(False);{scroll to selected item}
 
-      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
+      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False then
       begin
         esc_pressed := True;
         break;
@@ -7613,13 +7612,10 @@ begin
         else
           annotation_to_array('date_avg: ' + head.date_avg, False, 65535, 1{size}, 1, 10, img_loaded);  {head.date_obs to image array as annotation}
       end;
-      add_text(mainwindow.memo1.lines,'COMMENT ',
+      add_text(mainform1.memo1.lines,'COMMENT ',
         ' Image aligned with other images.                                    ');
 
-      if nrbits = 16 then
-        save_fits(img_loaded,mainwindow.memo1.lines, filename2, 16, True)
-      else
-        save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, True);
+      save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True);
       memo2_message('New aligned image created: ' + filename2);
       listview6.items[c].Caption := filename2;
     end;
@@ -7628,7 +7624,7 @@ begin
   img_temp := nil;
 
   if head.naxis <> 0 then
-    plot_fits(mainwindow.image1, False {re_center});
+    plot_fits(mainform1.image1, False {re_center});
   {the last displayed image doesn't match with header. Just plot last image to fix}
   Screen.Cursor := crDefault;{back to normal }
 end;
@@ -7787,6 +7783,7 @@ procedure Tstackmenu1.FormDropFiles(Sender: TObject; const FileNames: array of s
 var
   i, pageindex: integer;
   dirFiles : Tstringlist;
+  dummy : string;
 
     procedure add_a_single_file(filen : string);
     begin
@@ -7820,10 +7817,15 @@ var
       begin
         try
         dirFiles := FindAllFiles(FileX, '*.*'); //including directories
+        if dirFiles.count<>0 then
         for j := 0 to dirFiles.count-1 do //add all image files of this directory
         begin
-          memo2_message(dirFiles[j]);
-          add_thefiles(dirFiles[j]);//call this procedure again to either look into subdirectories or add this file
+          dummy:=dirFiles[j];
+          if copy(extractfilename(dirFiles[j]),1,1)<> '.' then  //.filename give run time error
+          begin
+            memo2_message(dirFiles[j]);
+            add_thefiles(dirFiles[j]);//call this procedure again to either look into subdirectories or add this file
+          end;
         end;
         finally
           dirFiles.Free;
@@ -7950,7 +7952,7 @@ begin
   find_stars(img_loaded, head,hfd_min, round(strtofloat2(stackmenu1.nr_stars_to_detect1.text)), starlist);
   nrstars:=length(starlist[0]);
   setlength(variable_list,nrstars);//make space
-  formalism:=mainwindow.Polynomial1.itemindex;
+  formalism:=mainform1.Polynomial1.itemindex;
 
   for i:=0 to nrstars-1 do
   begin
@@ -8020,8 +8022,8 @@ var
 
                   Result := floattostrf(magn, ffFixed, 5, 3);
                   {write measured magnitude to list}
-                  //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,0) );
-                  //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
+                  //        mainform1.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,0) );
+                  //        mainform1.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
                   //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_ratio, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
                 end
                 else
@@ -8036,9 +8038,9 @@ var
               if Flipvertical = False then  starY := (head.Height - y) else starY := (y);
               if Fliphorizontal then starX := (head.Width - x) else starX := (x);
               if apr < 99 {<>max setting} then
-              mainwindow.image1.canvas.ellipse(round(starX - apr - 1), round(starY - apr - 1), round( starX +apr + 1), round(starY + apr + 1)); {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-              mainwindow.image1.canvas.ellipse(round(starX - anr), round(starY - anr), round(starX + anr), round(starY + anr)); {three pixels, 1,2,3}
-              mainwindow.image1.canvas.ellipse(round(starX - anr - 4), round(starY - anr - 4), round(starX + anr + 4), round( starY + anr + 4));
+              mainform1.image1.canvas.ellipse(round(starX - apr - 1), round(starY - apr - 1), round( starX +apr + 1), round(starY + apr + 1)); {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+              mainform1.image1.canvas.ellipse(round(starX - anr), round(starY - anr), round(starX + anr), round(starY + anr)); {three pixels, 1,2,3}
+              mainform1.image1.canvas.ellipse(round(starX - anr - 4), round(starY - anr - 4), round(starX + anr + 4), round( starY + anr + 4));
             end;
 
             procedure stop_updating(stopupdating : boolean);//prevent run time error by twice endupdate;
@@ -8072,7 +8074,7 @@ var
 begin
   if listview7.items.Count <= 0 then exit; {no files}
 
-  if ((measuring_method1.itemindex=0) and (length(mainwindow.fshapes)<2)) then
+  if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<2)) then
   begin
     application.messagebox('First click on the two stars minimum (VAR, CHECK) of the first image','Can not proceed!',MB_OK);
     exit;
@@ -8099,8 +8101,8 @@ begin
        stackmenu1.analysephotometry1Click(nil);
   application.ProcessMessages;{show result}
 
-  flipvertical := mainwindow.flip_vertical1.Checked;
-  fliphorizontal := mainwindow.flip_horizontal1.Checked;
+  flipvertical := mainform1.flip_vertical1.Checked;
+  fliphorizontal := mainform1.flip_horizontal1.Checked;
   apert := strtofloat2(flux_aperture1.Text);
   aperture_ratio := apert;{remember apert setting}
   annul := strtofloat2(annulus_radius1.Text);
@@ -8121,7 +8123,7 @@ begin
       (listview7.Items.item[c].subitems.Strings[P_astrometric] = '')) then
     begin
       filename1 := listview7.items[c].Caption;
-      mainwindow.Caption := filename1;
+      mainform1.Caption := filename1;
 
       Application.ProcessMessages;
       stop_updating(true);//listview7.Items.BeginUpdate;
@@ -8196,7 +8198,7 @@ begin
   reference_defined:=false;
   clear_added_AAVSO_columns;
 
-  with mainwindow do
+  with mainform1 do
   for ww:=0 to high(fshapes) do
      if fshapes[ww].shape<>nil then fshapes[ww].shape.visible:=false;//hide all since aperture & annulus is plotted
   annulus_plotted:=true; // keep shapes hidden
@@ -8216,7 +8218,7 @@ begin
       stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename2;
 
       {load image}
-      if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False)) then
+      if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False)) then
       begin
         esc_pressed := True;
         nil_all;{reactivate listview updating, nil all arrays and restore cursor}
@@ -8266,7 +8268,7 @@ begin
 
 
         {calibrate using POINT SOURCE calibration using hfd_median found earlier!!!}
-      plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
+      plot_and_measure_stars(img_loaded,mainform1.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
 
       //icon for used database passband. Database selection could be in auto mode so do this after calibration
       if head.passband_database='BP' then database_col:=4 //gray
@@ -8294,14 +8296,14 @@ begin
 
       setlength(img_temp,head.naxis3, head.Height, head.Width);{new size}
 
-      mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-      mainwindow.image1.Canvas.Pen.Width := 1;{thickness lines}
-      mainwindow.image1.Canvas.Pen.Color := clRed;
-      mainwindow.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
+      mainform1.image1.Canvas.Pen.Mode := pmMerge;
+      mainform1.image1.Canvas.Pen.Width := 1;{thickness lines}
+      mainform1.image1.Canvas.Pen.Color := clRed;
+      mainform1.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
 
-      mainwindow.image1.Canvas.brush.Style := bsClear;
-      mainwindow.image1.Canvas.font.color := clyellow;
-      mainwindow.image1.Canvas.font.size := 10;
+      mainform1.image1.Canvas.brush.Style := bsClear;
+      mainform1.image1.Canvas.font.color := clyellow;
+      mainform1.image1.Canvas.font.size := 10;
 
       if head.mzero <> 0 then {valid flux calibration}
       begin // do var star
@@ -8318,7 +8320,7 @@ begin
 
         if stackmenu1.measuring_method1.itemindex=0 then // measure manual
         begin
-          with mainwindow do
+          with mainform1 do
           if Fshapes<>nil then
           begin
             if p_nr<(p_nr_norm+2*length(Fshapes)) then //new columns required
@@ -8337,7 +8339,7 @@ begin
             begin
               if Fshapes[i].shape<>nil then
               begin
-                mainwindow.image1.Canvas.Pen.Color := clRed;
+                mainform1.image1.Canvas.Pen.Color := clRed;
 
                 celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true, xn, yn); //ra,dec to xn,yn. Do not update Fshapes[i].fitsX,Fshapes[i].fitsY since the refer to the reference image and are required later for drawing aperture
                 astr := measure_star(xn, yn);
@@ -8349,7 +8351,7 @@ begin
               end;
             end;//for
 
-          end;//mainwindow
+          end;//mainform1
         end
         else
         begin //mode measure all AAVSO objects
@@ -8368,7 +8370,7 @@ begin
           begin
             ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
               if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
-                  mainwindow.variable_star_annotation1Click(sender {new position, update variable list});
+                  mainform1.variable_star_annotation1Click(sender {new position, update variable list});
 
           end;
 
@@ -8455,26 +8457,26 @@ begin
       store_annotated := annotated;{store temporary annotated}
       annotated := False;{prevent annotations are plotted in plot_fits}
 
-      plot_fits(mainwindow.image1, False {re_center});
+      plot_fits(mainform1.image1, False {re_center});
 
       annotated := store_annotated;{restore anotated value}
-      if ((annotated) and (mainwindow.annotations_visible1.Checked)) then  //header annotations
+      if ((annotated) and (mainform1.annotations_visible1.Checked)) then  //header annotations
          plot_annotations(True {use solution vectors!!!!}, False); {corrected annotations in case a part of the lights are flipped in the alignment routine}
 
-      mainwindow.image1.Canvas.Pen.Width := 1;{thickness lines}
-      mainwindow.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
-      mainwindow.image1.Canvas.Pen.style := psSolid;
+      mainform1.image1.Canvas.Pen.Width := 1;{thickness lines}
+      mainform1.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
+      mainform1.image1.Canvas.Pen.style := psSolid;
 
-      mainwindow.image1.Canvas.brush.Style := bsClear;
-      mainwindow.image1.Canvas.font.color := clyellow;
-      mainwindow.image1.Canvas.font.size := 10;
+      mainform1.image1.Canvas.brush.Style := bsClear;
+      mainform1.image1.Canvas.font.color := clyellow;
+      mainform1.image1.Canvas.font.size := 10;
 
       {plot the aperture and annulus}
       if head.mzero<>0 then {valid flux calibration}
       begin
-        mainwindow.image1.Canvas.Pen.mode := pmCopy;
+        mainform1.image1.Canvas.Pen.mode := pmCopy;
 
-        with mainwindow do
+        with mainform1 do
         if ((measuring_method1.itemindex=0) and (Fshapes<>nil)) then
         begin
           for i:=0 to high(Fshapes) do
@@ -8494,10 +8496,10 @@ begin
            end;//for
         end;
 
-        mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-        mainwindow.image1.Canvas.Pen.Width :=round(1 + head.Height / mainwindow.image1.Height);{thickness lines}
-        mainwindow.image1.Canvas.Pen.style := psSolid;
-        mainwindow.image1.Canvas.Pen.Color := $000050; {dark red}
+        mainform1.image1.Canvas.Pen.Mode := pmMerge;
+        mainform1.image1.Canvas.Pen.Width :=round(1 + head.Height / mainform1.image1.Height);{thickness lines}
+        mainform1.image1.Canvas.Pen.style := psSolid;
+        mainform1.image1.Canvas.Pen.Color := $000050; {dark red}
 
         for i := 0 to length(starlistx[0]) - 2 do
         begin
@@ -8509,11 +8511,11 @@ begin
           if flipvertical = False then  starY := (head.Height - y_new) else starY := (y_new);
           if Fliphorizontal then starX := (head.Width - x_new) else starX := (x_new);
 
-          mainwindow.image1.Canvas.Rectangle(starX - size, starY - size,
+          mainform1.image1.Canvas.Rectangle(starX - size, starY - size,
           starX + size, starY + size);{indicate hfd with rectangle}
           magn:=head.mzero - ln(starlistX[3, i]{flux})*2.5/ln(10);
 
-          mainwindow.image1.Canvas.textout(starX + size, starY - size,inttostr(round(magn * 10)) );{add magnitude as text}
+          mainform1.image1.Canvas.textout(starX + size, starY - size,inttostr(round(magn * 10)) );{add magnitude as text}
         end;{measure marked stars}
 
 
@@ -8557,7 +8559,7 @@ begin
     until ((filename2[dot_pos] = '.') or (dot_pos <= 1));
     insert(' equalised', filename2, dot_pos);
   end;
-  save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, False);
+  save_fits(img_loaded,mainform1.memo1.lines,head, filename2, False);
   if fileexists(filename2) then
   begin
     save_as_new_file1.caption:='Save current view as new file ✔';
@@ -8963,7 +8965,7 @@ begin
 
   global_colour_smooth(img_loaded, strtofloat2(global_colour_smooth_width1.Text), strtofloat2(luminance_slope1.text), False);
 
-  plot_fits(mainwindow.image1, False);{plot real}
+  plot_fits(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
   memo2_message('Ready colour smooth.');
@@ -8989,7 +8991,7 @@ begin
     except
     end;
     apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);  {apply most common filter on first array and place result in second array}
-    plot_fits(mainwindow.image1, True);{plot real}
+    plot_fits(mainform1.image1, True);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -9185,7 +9187,7 @@ begin
       img_loaded[1, fitsY, fitsX] := green;
       img_loaded[2, fitsY, fitsX] := blue;
     end;
-  plot_fits(mainwindow.image1, False);{plot}
+  plot_fits(mainform1.image1, False);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -9317,12 +9319,12 @@ begin
   memo2_message('Loading first image to calibrate photometry for the stack');
   listview_view(stackmenu1.listview6);//show first selected image
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head,false{update});
+  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head,false{update});
 
   if fits_file_name(filename2) then
-    success := savefits_update_header(mainwindow.memo1.lines,filename2)
+    success := savefits_update_header(mainform1.memo1.lines,filename2)
   else
-    success := save_tiff16_secure(img_loaded,mainwindow.memo1.lines, filename2);
+    success := save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);
   {guarantee no file is lost}
   if success = False then
   begin
@@ -9398,7 +9400,7 @@ begin
   box_blur(1 {nr of colors}, blur_factor, img_loaded);
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False);{plot real}
+  plot_fits(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -9406,7 +9408,7 @@ end;
 
 procedure Tstackmenu1.tab_blink1Show(Sender: TObject);
 begin
-  stackmenu1.annotations_visible2.checked:=mainwindow.annotations_visible1.checked; {follow in stack menu}
+  stackmenu1.annotations_visible2.checked:=mainform1.annotations_visible1.checked; {follow in stack menu}
 end;
 
 
@@ -9461,7 +9463,7 @@ begin
   check_pattern_filter(img_loaded);
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False);{plot real}
+  plot_fits(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -9496,10 +9498,10 @@ end;
 
 procedure Tstackmenu1.Annotations_visible2Click(Sender: TObject);
 begin
-  mainwindow.annotations_visible1.checked:=annotations_visible2.checked; {follow in main menu viewer}
+  mainform1.annotations_visible1.checked:=annotations_visible2.checked; {follow in main menu viewer}
   if head.naxis=0 then exit;
   if annotations_visible2.checked=false then  {clear screen}
-    plot_fits(mainwindow.image1,false)
+    plot_fits(mainform1.image1,false)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
 end;
@@ -9545,7 +9547,7 @@ begin
 
   apply_star_smooth(star_colour_smooth_diameter1.Text, star_colour_smooth_nrstars1.Text);
 
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 
   Screen.Cursor:=crDefault;
 end;
@@ -9576,12 +9578,12 @@ begin
       listview6.Items[c].MakeVisible(False);{scroll to selected item}
 
       filename2 := listview6.items[c].Caption;
-      mainwindow.Caption := filename2;
+      mainform1.Caption := filename2;
       memo2_message('Annotating '+filename2);
       Application.ProcessMessages;
       if esc_pressed then break;
       {load image}
-      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded) = False then
+      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False then
       begin
         esc_pressed := True;
         break;
@@ -9597,7 +9599,7 @@ begin
         listview6.Items[c].MakeVisible(False);{scroll to selected item}
         memo2_message(filename2 + ' Adding astrometric solution to files.');
 
-        if solve_image(img_loaded, head,mainwindow.memo1.lines, True  {get hist},false {check filter}) then
+        if solve_image(img_loaded, head,mainform1.memo1.lines, True  {get hist},false {check filter}) then
         begin{match between loaded image and star database}
           memo2_message(filename2 + ' astrometric solved.');
         end
@@ -9612,9 +9614,9 @@ begin
         listview6.Items.item[c].subitems.Strings[B_annotated] := '✓';
 
         if fits_file_name(filename2) then
-          success := savefits_update_header(mainwindow.memo1.lines,filename2)
+          success := savefits_update_header(mainform1.memo1.lines,filename2)
         else
-          success := save_tiff16_secure(img_loaded,mainwindow.memo1.lines, filename2);
+          success := save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);
         {guarantee no file is lost}
         if success = False then
         begin
@@ -9676,7 +9678,7 @@ begin
 
   end;
 
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
   Screen.Cursor:=crDefault;
 
   {
@@ -9753,7 +9755,7 @@ begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  plot_fits(mainwindow.image1,false);//clear
+  plot_fits(mainform1.image1,false);//clear
 
   memo2_message('Satellite streak detection started.');
   contour(true {plot}, img_loaded,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));
@@ -9767,7 +9769,7 @@ end;
 procedure Tstackmenu1.ClearButton1Click(Sender: TObject);
 begin
   memo2_message('Removing streak annotations from header');
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 end;
 
 procedure Tstackmenu1.FormKeyDown(Sender: TObject; var Key: Word;
@@ -9850,7 +9852,7 @@ begin
   oldstr:=flux_aperture1.text;
   if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which gives the lowest standard deviation for the comparison stars. In manual mode you should select comparison stars first. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
   begin
-    if ((mainwindow.Fshapes=nil) and (stackmenu1.measuring_method1.itemindex=0)) then
+    if ((mainform1.Fshapes=nil) and (stackmenu1.measuring_method1.itemindex=0)) then
     begin
       application.messagebox(PChar('Abort!'+#10+#10+ 'No comparison stars selected with an AUID (000-...) selected!'), PChar('Missing comparison stars'), MB_OK);
       Screen.Cursor := crDefault;{back to normal }
@@ -9966,12 +9968,12 @@ var
           if fits_file_name(filename1) then
           begin
             filename1:=ChangeFileExt(Filename1,newend+'.fit');
-            result:=save_fits(img_temp,memox,filename1,nrbits,true)
+            result:=save_fits(img_temp,memox,head,filename1,true)
           end
           else
           begin
             filename1:=ChangeFileExt(Filename1,newend+'.tif');
-            result:=save_tiff16(img_temp,memox,filename1,false {flip H},false {flip V});
+            result:=save_tiff16(img_temp,memox,filename1,false {flip H},false {flip V},16);
           end;
         end;
 
@@ -10015,7 +10017,7 @@ begin
           break;
         end;
 
-        mainwindow.Caption := filename1;
+        mainform1.Caption := filename1;
         lv.ItemIndex := c; {mark where we are. Important set in object inspector    lv.HideSelection := false; lv.Rowselect := true}
         lv.Items[c].MakeVisible(False);{scroll to selected item}
 
@@ -10325,7 +10327,7 @@ begin
   old_aperture:=stackmenu1.flux_aperture1.text;
   stackmenu1.flux_aperture1.text:='max';//full flux is here required
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});
+  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head, false{update});
 
   stackmenu1.flux_aperture1.text:=old_aperture;
 
@@ -10347,7 +10349,7 @@ begin
 //  image1.Canvas.font.color:=clyellow;
 //  image1.Canvas.font.name:='Default';
 //  image1.Canvas.font.size:=10;
-//  mainwindow.image1.Canvas.Pen.Color := clred;
+//  mainform1.image1.Canvas.Pen.Color := clred;
 
 
   setlength(img_temp3,1,head.height,head.width);{set size of image array}
@@ -10455,13 +10457,13 @@ begin
     memo2_message('Nebulosity signal increased.');
   end;
 
-  mainwindow.image1.Canvas.font.size:=10;
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainform1.image1.Canvas.font.size:=10;
+  mainform1.image1.Canvas.brush.Style:=bsClear;
 
-  letter_height:=mainwindow.image1.Canvas.textheight('M');
-  mainwindow.image1.Canvas.textout(20,head.height-letter_height,stackmenu1.reference_database1.text);//show which database was used
+  letter_height:=mainform1.image1.Canvas.textheight('M');
+  mainform1.image1.Canvas.textout(20,head.height-letter_height,stackmenu1.reference_database1.text);//show which database was used
 
-  plot_fits(mainwindow.image1,false);//refresh screen
+  plot_fits(mainform1.image1,false);//refresh screen
 
   Screen.Cursor:=crDefault;
 end;
@@ -10584,7 +10586,7 @@ begin
       end
       else
       if shape_var1_fitsX > 0 {at least one reference found} then
-        if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,True, False {plot}) then {load}
+        if load_image(filename2,img_loaded,head,mainform1.memo1.lines,True, False {plot}) then {load}
         begin
           if find_reference_star(img_loaded) then
           begin
@@ -11025,7 +11027,7 @@ begin
         end;
       end;
     end;
-  plot_fits(mainwindow.image1, False);{plot real}
+  plot_fits(mainform1.image1, False);{plot real}
 
   HueRadioButton1.Checked := False;
   HueRadioButton2.Checked := False;
@@ -11191,7 +11193,7 @@ begin
     strtofloat2(stackmenu1.noisefilter_blur1.Text));
 
   //  use_histogram(true);{get histogram}
-  plot_fits(mainwindow.image1, False);{plot real}
+  plot_fits(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -11212,13 +11214,13 @@ begin
 
     backup_img; {move viewer data to img_backup}
     case bin_factor1.ItemIndex of
-      0: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,2);
-      1: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,3);
-      2: bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,4);
+      0: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,2);
+      1: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,3);
+      2: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,4);
     end;
 
     remove_photometric_calibration;//from header
-    plot_fits(mainwindow.image1, True);{plot real}
+    plot_fits(mainform1.image1, True);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -11245,7 +11247,7 @@ begin
           img_loaded[col, fitsY, fitsX] :=
             max(0, img_loaded[col, fitsY, fitsX] + randg(mean, noise){gaussian noise});
 
-    plot_fits(mainwindow.image1, False);{plot real}
+    plot_fits(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
   use_histogram(img_loaded, True {update}); {update for the noise, plot histogram, set sliders}
@@ -11295,13 +11297,13 @@ begin
         listview1.Items[c].MakeVisible(False);{scroll to selected item}
 
         filename2 := listview1.items[c].Caption;
-        mainwindow.Caption := filename2;
+        mainform1.Caption := filename2;
 
         Application.ProcessMessages;
         if esc_pressed then
           break;
         {load image}
-        if load_fits(filename2, True {light}, True, True {update memo},0,mainwindow.memo1.lines, head, img_loaded) = False then
+        if load_fits(filename2, True {light}, True, True {update memo},0,mainform1.memo1.lines, head, img_loaded) = False then
         begin
           esc_pressed := True;
           break;
@@ -11309,13 +11311,13 @@ begin
 
         use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
-        plot_fits(mainwindow.image1, False {re_center});
+        plot_fits(mainform1.image1, False {re_center});
 
         {show alignment marker}
         if (stackmenu1.use_manual_alignment1.Checked) then
           show_shape_manual_alignment(c) {show the marker on the reference star}
         else
-          mainwindow.shape_manual_alignment1.Visible := False;
+          mainform1.shape_manual_alignment1.Visible := False;
 
       end;
       Inc(c, step);
@@ -11427,7 +11429,7 @@ begin
     if ((head_ref.dark_count = 0){restart} or (filen <> last_dark_loaded)) then
     begin
       memo2_message('Loading master dark file ' + filen);
-      if load_fits(filen, False {light}, True, False {update memo}, 0,mainwindow.memo1.lines, head_dark, img_dark) = False then
+      if load_fits(filen, False {light}, True, False {update memo}, 0,mainform1.memo1.lines, head_dark, img_dark) = False then
       begin
         memo2_message('Error');
         head_ref.dark_count := 0;
@@ -11518,7 +11520,7 @@ begin
     if ((head_ref.flat_count = 0){restart} or (filen <> last_flat_loaded)) then {new file}
     begin
       memo2_message('Loading master flat file ' + filen);
-      if load_fits(filen, False {light}, True, False {update memo}, 0,mainwindow.memo1.lines, head_flat, img_flat) = False then
+      if load_fits(filen, False {light}, True, False {update memo}, 0,mainform1.memo1.lines, head_flat, img_flat) = False then
       begin
         memo2_message('Error');
         head_flat.flat_count := 0;
@@ -11608,9 +11610,9 @@ begin
         temperatureRound:=round(temperature_avg/file_count);
 
         path1 := extractfilepath(file_list[0]) + 'master_dark_' + IntToStr(head.dark_count) + 'x' + IntToStr(round(exposure)) + 's_at_' + IntToStr( temperatureRound) + 'C_' + copy(head.date_obs, 1, 10) + '.fit';
-        update_integer(mainwindow.memo1.lines,'DARK_CNT=', ' / Number of dark image combined                  ' , head.dark_count);
-        update_integer(mainwindow.memo1.lines,'CCD-TEMP=', ' / Average sensor temperature (Celsius)           ' , temperatureRound);
-        add_text(mainwindow.memo1.lines,'COMMENT 8', '  Dark temperature tolerance setting was ' + IntToStr(stackmenu1.delta_temp_updown1.position)+ ' degrees Celsius' );
+        update_integer(mainform1.memo1.lines,'DARK_CNT=', ' / Number of dark image combined                  ' , head.dark_count);
+        update_integer(mainform1.memo1.lines,'CCD-TEMP=', ' / Average sensor temperature (Celsius)           ' , temperatureRound);
+        add_text(mainform1.memo1.lines,'COMMENT 8', '  Dark temperature tolerance setting was ' + IntToStr(stackmenu1.delta_temp_updown1.position)+ ' degrees Celsius' );
 
         { ASTAP keyword standard:}
         { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
@@ -11619,10 +11621,11 @@ begin
         head.naxis3:= 1;{any color is made mono in the routine. Keywords are updated in the save routine}
         head.naxis := 2; {any color is made mono in the routine. Keywords are updated in the save routine}
 
-        update_text(mainwindow.memo1.lines,'COMMENT 1', '  Written by ASTAP. www.hnsky.org');
+        update_text(mainform1.memo1.lines,'COMMENT 1', '  Written by ASTAP. www.hnsky.org');
         head.naxis3 := 1; {any color is made mono in the routine}
+        head.nrbits:=-32;
 
-        if save_fits(img_dark,mainwindow.memo1.lines, path1, -32, False) then {saved}
+        if save_fits(img_dark,mainform1.memo1.lines,head, path1, False) then {saved}
         begin
           listview2.Items.BeginUpdate;
           for i := 0 to file_count - 1 do
@@ -11819,23 +11822,24 @@ begin
 
           path1 := extractfilepath(file_list[0]) + 'master_flat_corrected_with_flat_darks_' + flat_filter + '_' + IntToStr(flat_count) + 'xF_' + IntToStr(head.flatdark_count) + 'xFD_' + flat_exposure+'sec_'+copy(head.date_obs, 1, 10) + '.fit';
           ;
-          update_integer(mainwindow.memo1.lines,'FLAT_CNT=', ' / Number of flat images combined.                ' , flat_count);
-          update_integer(mainwindow.memo1.lines,'BIAS_CNT=', ' / Number of flat-dark or bias images combined.   ' , head.flatdark_count);
+          update_integer(mainform1.memo1.lines,'FLAT_CNT=', ' / Number of flat images combined.                ' , flat_count);
+          update_integer(mainform1.memo1.lines,'BIAS_CNT=', ' / Number of flat-dark or bias images combined.   ' , head.flatdark_count);
           if head.flatdark_count <> 0 then head.calstat := head.calstat + 'B';
-          update_text(mainwindow.memo1.lines,'CALSTAT =', #39 + head.calstat + #39); {calibration status}
-          add_text(mainwindow.memo1.lines,'COMMENT ', 'Flat-dark exposure='+flatdark_exposure+', temperature='+flatdark_temperature+', gain='+flatdark_gain);
-          if length(issues)>0 then update_text(mainwindow.memo1.lines,'ISSUES  =', #39 + issues + #39); {issues}
+          update_text(mainform1.memo1.lines,'CALSTAT =', #39 + head.calstat + #39); {calibration status}
+          add_text(mainform1.memo1.lines,'COMMENT ', 'Flat-dark exposure='+flatdark_exposure+', temperature='+flatdark_temperature+', gain='+flatdark_gain);
+          if length(issues)>0 then update_text(mainform1.memo1.lines,'ISSUES  =', #39 + issues + #39); {issues}
 
 
           { ASTAP keyword standard:}
           { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-          update_text(mainwindow.memo1.lines,'COMMENT 1', '  Created by ASTAP www.hnsky.org');
+          update_text(mainform1.memo1.lines,'COMMENT 1', '  Created by ASTAP www.hnsky.org');
           head.naxis3 := 1; {any color is made mono in the routine. Keywords are updated in the save routine}
           head.naxis := 2;  {any color is made mono in the routine. Keywords are updated in the save routine}
+          head.nrbits:=-32;
 
-          if save_fits(img_flat,mainwindow.memo1.lines, path1, -32, False) then {saved}
+          if save_fits(img_flat,mainform1.memo1.lines,head, path1,False) then {saved}
           begin
             memo2_message('Saved '+path1);
             application.processmessages;
@@ -11897,7 +11901,7 @@ begin
       Result := savefits_update_header(memo,filename2);
     end
     else
-      Result := save_tiff16(img,memo, filename2, False {flip H}, False {flip V});
+      Result := save_tiff16(img,memo, filename2, False {flip H}, False {flip V},16);
 
     if Result = False then ShowMessage('Write error !!' + filename2);
   end
@@ -12078,7 +12082,7 @@ begin
 
           {load image}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo, required for updates}, 0,mainwindow.memo1.lines, head, img_loaded) = False)) then
+          if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo, required for updates}, 0,mainform1.memo1.lines, head, img_loaded) = False)) then
           begin
             memo2_message('Error loading file ' + filename2);
             Screen.Cursor := crDefault;
@@ -12108,12 +12112,12 @@ begin
               demosaic_bayer(img_loaded); {convert OSC image to colour}
             {head.naxis3 is now 3}
 
-            update_text(mainwindow.memo1.lines,'COMMENT 1', '  Calibrated by ASTAP. www.hnsky.org');
-            update_integer(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
-            update_text(mainwindow.memo1.lines,'CALSTAT =', #39 + head.calstat+#39); {calibration status.}
-            add_integer(mainwindow.memo1.lines,'DARK_CNT=', ' / Darks used for luminance.               ' , head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-            add_integer(mainwindow.memo1.lines,'FLAT_CNT=', ' / Flats used for luminance.               ' , head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-            add_integer(mainwindow.memo1.lines,'BIAS_CNT=', ' / Flat-darks used for luminance.          ' , head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+            update_text(mainform1.memo1.lines,'COMMENT 1', '  Calibrated by ASTAP. www.hnsky.org');
+            update_integer(mainform1.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
+            update_text(mainform1.memo1.lines,'CALSTAT =', #39 + head.calstat+#39); {calibration status.}
+            add_integer(mainform1.memo1.lines,'DARK_CNT=', ' / Darks used for luminance.               ' , head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+            add_integer(mainform1.memo1.lines,'FLAT_CNT=', ' / Flats used for luminance.               ' , head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+            add_integer(mainform1.memo1.lines,'BIAS_CNT=', ' / Flat-darks used for luminance.          ' , head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
             { ASTAP keyword standard:}
             { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
             { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
@@ -12124,7 +12128,8 @@ begin
 
             filename2 := StringReplace(ChangeFileExt(filename2, '.fit'), '.fit', '_cal.fit', []); {give new file name }
             memo2_message('█ █ █  Saving calibrated file as ' + filename2);
-            save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, True);
+            head.nrbits:=-32;
+            save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True);
             ListView1.items[c].Caption := filename2;//update list. Also used for photometry
 
             object_to_process := uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name}
@@ -12147,7 +12152,7 @@ begin
       end;
   end;{with stackmenu1 do}
 
-  plot_fits(mainwindow.image1, True);{update to last image, activate Memo3}
+  plot_fits(mainform1.image1, True);{update to last image, activate Memo3}
 
   Screen.Cursor := crDefault;
   memo2_message('Calibration of the individual files is complete. New files are posted in the results tab');
@@ -12474,13 +12479,13 @@ begin
           end;
 
           {load file}
-          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
+          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
           begin
             memo2_message('Error loading file ' + filename2); {failed to load}
             Screen.Cursor := crDefault;
             exit;
           end;
-          solution := update_solution_and_save(img_loaded, head,mainwindow.memo1.lines);//solve and save
+          solution := update_solution_and_save(img_loaded, head,mainform1.memo1.lines);//solve and save
 
           if solution = False then
           begin {no solution found}
@@ -12536,7 +12541,7 @@ begin
           end;
 
           {load file}
-          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
+          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
           begin
             memo2_message('Error loading file ' + filename2);{failed to load}
             Screen.Cursor := crDefault;
@@ -12548,7 +12553,7 @@ begin
           begin
             memo2_message('Rotating ' + filename2 + ' 180°');
             raster_rotate(180, head.Width / 2, head.Height / 2, img_loaded); {fast rotation 180 degrees}
-            if nrbits = 16 then save_fits(img_loaded,mainwindow.memo1.lines, filename2, 16, True) else save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, True);
+            save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True);
           end;
 
         finally
@@ -12583,7 +12588,7 @@ begin
           end;
 
           {load file}
-          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainwindow.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
+          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
           begin
             memo2_message('Error loading file ' + filename2); {failed to load}
             Screen.Cursor := crDefault;
@@ -12592,9 +12597,9 @@ begin
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add_annotations},true {use asteroid buffer. Was loaded by analyse_objects_visible});
 
           if fits_file_name(filename2) then
-            success := savefits_update_header(mainwindow.memo1.lines,filename2)
+            success := savefits_update_header(mainform1.memo1.lines,filename2)
           else
-            success := save_tiff16_secure(img_loaded,mainwindow.memo1.lines, filename2);{guarantee no file is lost}
+            success := save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);{guarantee no file is lost}
           if success = False then
           begin
             ShowMessage('Write error !!' + filename2);
@@ -12602,7 +12607,7 @@ begin
             exit;
           end;
 
-          get_annotation_position(c,mainwindow.Memo1.lines);{fill the x,y with annotation position}
+          get_annotation_position(c,mainform1.Memo1.lines);{fill the x,y with annotation position}
         finally
         end;
       end;
@@ -12858,29 +12863,29 @@ begin
               exit;
             end;
 
-            update_text(mainwindow.memo1.lines,'COMMENT 1', '  Written by ASTAP. www.hnsky.org');
-            update_text(mainwindow.memo1.lines,'CALSTAT =', #39 + head.calstat + #39);
-            add_text(mainwindow.memo1.lines,'ISSUES  =', #39 + head.issues + #39);//add issues from flat and applying dark
+            update_text(mainform1.memo1.lines,'COMMENT 1', '  Written by ASTAP. www.hnsky.org');
+            update_text(mainform1.memo1.lines,'CALSTAT =', #39 + head.calstat + #39);
+            add_text(mainform1.memo1.lines,'ISSUES  =', #39 + head.issues + #39);//add issues from flat and applying dark
 
             if pos('D', head.calstat) > 0 then
             begin
-              update_integer(mainwindow.memo1.lines,'DATAMAX =', ' / Maximum data value                             ', round(head.datamax_org)); {datamax is updated in stacking process. Use the last one}
-              update_integer(mainwindow.memo1.lines,'DATAMIN =', ' / Minimum data value                             ', round(head.pedestal));
-              add_text(mainwindow.memo1.lines,'COMMENT ', ' D=' + ExtractFileName(last_dark_loaded));
+              update_integer(mainform1.memo1.lines,'DATAMAX =', ' / Maximum data value                             ', round(head.datamax_org)); {datamax is updated in stacking process. Use the last one}
+              update_integer(mainform1.memo1.lines,'DATAMIN =', ' / Minimum data value                             ', round(head.pedestal));
+              add_text(mainform1.memo1.lines,'COMMENT ', ' D=' + ExtractFileName(last_dark_loaded));
             end;
             if pos('F', head.calstat) > 0 then
-              add_text(mainwindow.memo1.lines,'COMMENT ', ' F=' + ExtractFileName(last_flat_loaded));
+              add_text(mainform1.memo1.lines,'COMMENT ', ' F=' + ExtractFileName(last_flat_loaded));
 
             if sigma_clip then
-              update_text(mainwindow.memo1.lines,'HISTORY 1', '  Stacking method SIGMA CLIP AVERAGE')
+              update_text(mainform1.memo1.lines,'HISTORY 1', '  Stacking method SIGMA CLIP AVERAGE')
             else
-              update_text(mainwindow.memo1.lines,'HISTORY 1', '  Stacking method AVERAGE');
+              update_text(mainform1.memo1.lines,'HISTORY 1', '  Stacking method AVERAGE');
 
-            update_text(mainwindow.memo1.lines,'HISTORY 2', '  Active filter: ' + head.filter_name);  {show which filter was used to combine}   {original head.exposure is still maintained  }
-            add_integer(mainwindow.memo1.lines,'LIGH_CNT=', ' / Light frames combined.                  ', counterL);       {for interim lum,red,blue...files.}
-            add_integer(mainwindow.memo1.lines,'DARK_CNT=', ' / Darks used for luminance.               ', head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-            add_integer(mainwindow.memo1.lines,'FLAT_CNT=', ' / Flats used for luminance.               ', head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-            add_integer(mainwindow.memo1.lines,'BIAS_CNT=', ' / Flat-darks used for luminance.          ', head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+            update_text(mainform1.memo1.lines,'HISTORY 2', '  Active filter: ' + head.filter_name);  {show which filter was used to combine}   {original head.exposure is still maintained  }
+            add_integer(mainform1.memo1.lines,'LIGH_CNT=', ' / Light frames combined.                  ', counterL);       {for interim lum,red,blue...files.}
+            add_integer(mainform1.memo1.lines,'DARK_CNT=', ' / Darks used for luminance.               ', head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+            add_integer(mainform1.memo1.lines,'FLAT_CNT=', ' / Flats used for luminance.               ', head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+            add_integer(mainform1.memo1.lines,'BIAS_CNT=', ' / Flat-darks used for luminance.          ', head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
             { ASTAP keyword standard:}
             { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
             { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
@@ -12890,7 +12895,8 @@ begin
             filename3 := filename2;
             filename2 := StringReplace(ChangeFileExt(filename2, '.fit'),'.fit', '@ ' + stack_info + '_stacked.fit', []); {give new file name for any extension, FIT, FTS, fits}
             memo2_message('█ █ █ Saving as ' + filename2);
-            save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, True {override});
+            head.nrbits:=-32;
+            save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True {override});
             files_to_process_LRGB[i + 1].Name := filename2;{should contain [nil,r,g,b,l]}
 
             if ((AnsiCompareText(luminance_filter1.Text, filters_used[i]) = 0) or (AnsiCompareText(luminance_filter2.Text, filters_used[i]) = 0)) then
@@ -12971,7 +12977,7 @@ begin
 
     if ((cal_and_align = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
     begin  //fits_file:=true;
-      nrbits := -32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
+      head.nrbits := -32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
       if ((monofile){success none lrgb loop} or (counter_colours <> 0{length(extra2)>=2} {lrgb loop})) then
       begin
@@ -12984,7 +12990,7 @@ begin
           stopX:=referenceX+150;
           startY:=referenceY-150;
           stopY:=referenceY+150;
-          mainwindow.CropFITSimage1Click(Sender);
+          mainform1.CropFITSimage1Click(Sender);
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations},true {buffer_loaded});//removes also the old keywords
         end;
 
@@ -13052,37 +13058,37 @@ begin
             use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
         end;
 
-        plot_fits(mainwindow.image1, True);{plot real}
+        plot_fits(mainform1.image1, True);{plot real}
 
-        mainwindow.Memo1.Lines.BeginUpdate;
+        mainform1.Memo1.Lines.BeginUpdate;
 
         //remove_solution(false {keep wcs});//fast and efficient
 
-        remove_key(mainwindow.memo1.lines,'DATE    ', False{all});{no purpose anymore for the original date written}
-        remove_key(mainwindow.memo1.lines,'EXPTIME', False{all}); {remove, will be added later in the header}
-        remove_key(mainwindow.memo1.lines,'EXPOSURE', False{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
-        remove_key(mainwindow.memo1.lines,'CCD-TEMP', False{all});{remove, will be replaced by SET-TEMP.....}
-        remove_key(mainwindow.memo1.lines,'SET-TEMP', False{all});{remove, will be added later in mono or for colour as LUM_TEMP, RED_TEMP.....}
-        remove_key(mainwindow.memo1.lines,'LIGH_CNT', False{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
-        remove_key(mainwindow.memo1.lines,'DARK_CNT', False{all});{remove, will be replaced by LUM_DARK, RED_DARK.....}
-        remove_key(mainwindow.memo1.lines,'FLAT_CNT', False{all});{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
-        remove_key(mainwindow.memo1.lines,'BIAS_CNT', False{all});{remove, will be replaced by LUM_BIAS, RED_BIAS.....}
+        remove_key(mainform1.memo1.lines,'DATE    ', False{all});{no purpose anymore for the original date written}
+        remove_key(mainform1.memo1.lines,'EXPTIME', False{all}); {remove, will be added later in the header}
+        remove_key(mainform1.memo1.lines,'EXPOSURE', False{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+        remove_key(mainform1.memo1.lines,'CCD-TEMP', False{all});{remove, will be replaced by SET-TEMP.....}
+        remove_key(mainform1.memo1.lines,'SET-TEMP', False{all});{remove, will be added later in mono or for colour as LUM_TEMP, RED_TEMP.....}
+        remove_key(mainform1.memo1.lines,'LIGH_CNT', False{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
+        remove_key(mainform1.memo1.lines,'DARK_CNT', False{all});{remove, will be replaced by LUM_DARK, RED_DARK.....}
+        remove_key(mainform1.memo1.lines,'FLAT_CNT', False{all});{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
+        remove_key(mainform1.memo1.lines,'BIAS_CNT', False{all});{remove, will be replaced by LUM_BIAS, RED_BIAS.....}
 
         { ASTAP keyword standard:}
         { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-        update_text(mainwindow.memo1.lines,'COMMENT 1', '  Written by ASTAP. www.hnsky.org');
+        update_text(mainform1.memo1.lines,'COMMENT 1', '  Written by ASTAP. www.hnsky.org');
 
         head.calstat := head.calstat + 'S'; {status stacked}
-        update_integer(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
-        update_text(mainwindow.memo1.lines,'CALSTAT =', #39 + head.calstat + #39); {calibration status}
-        add_text(mainwindow.memo1.lines,'ISSUES  =', #39 + head.issues + #39);//add issues from flat and applying dark
+        update_integer(mainform1.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
+        update_text(mainform1.memo1.lines,'CALSTAT =', #39 + head.calstat + #39); {calibration status}
+        add_text(mainform1.memo1.lines,'ISSUES  =', #39 + head.issues + #39);//add issues from flat and applying dark
 
 
         head.date_obs := jdToDate(jd_start_first);
-        update_text(mainwindow.memo1.lines,'DATE-OBS=', #39 + head.date_obs + #39 + '/ Date and time of the start of the observation.'); //add_text
-        update_text(mainwindow.memo1.lines,'DATE-END=', #39 + jdToDate(jd_end_last) + #39 + '/ Date and time of the end of the observation.'); //add_text
+        update_text(mainform1.memo1.lines,'DATE-OBS=', #39 + head.date_obs + #39 + '/ Date and time of the start of the observation.'); //add_text
+        update_text(mainform1.memo1.lines,'DATE-END=', #39 + jdToDate(jd_end_last) + #39 + '/ Date and time of the end of the observation.'); //add_text
 
 
         if (((head.naxis3 = 1) or (process_as_osc>0)) and (counterL > 0)) then {works only for mono}
@@ -13091,52 +13097,52 @@ begin
           begin
             jd_mid:=jd_sum / counterL;  //average of jd_mid
             airmass:=airmass_sum/ counterL;
-            update_generic(mainwindow.memo1.lines,'AIRMASS ',floattostr4(airmass),'Average relative optical path.                ');{update header using text only}
+            update_generic(mainform1.memo1.lines,'AIRMASS ',floattostr4(airmass),'Average relative optical path.                ');{update header using text only}
           end
           else
             jd_mid:=jd_mid_reference;//stacked aligned to the minor planet of the reference image.
 
-          update_generic(mainwindow.memo1.lines,'JD-AVG  ',floattostr6(jd_mid),'Julian Day of the observation mid-point.       ');{update header using text only}
+          update_generic(mainform1.memo1.lines,'JD-AVG  ',floattostr6(jd_mid),'Julian Day of the observation mid-point.       ');{update header using text only}
 
           head.date_avg := JdToDate(jd_mid);  {update date_avg for asteroid annotation}
-          update_text(mainwindow.memo1.lines,'DATE-AVG=', #39 + head.date_avg + #39);{give midpoint of exposures}
+          update_text(mainform1.memo1.lines,'DATE-AVG=', #39 + head.date_avg + #39);{give midpoint of exposures}
           head.date_obs := JdToDate((jd_mid) - head.exposure / (2 * 24 * 60 * 60));{Estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
         end;
 
         if pos('D', head.calstat) > 0 then
-          add_text(mainwindow.memo1.lines,'COMMENT ', '   D=' + ExtractFileName(last_dark_loaded));
+          add_text(mainform1.memo1.lines,'COMMENT ', '   D=' + ExtractFileName(last_dark_loaded));
         if pos('F', head.calstat) > 0 then
-          add_text(mainwindow.memo1.lines,'COMMENT ', '   F=' + ExtractFileName(last_flat_loaded));
+          add_text(mainform1.memo1.lines,'COMMENT ', '   F=' + ExtractFileName(last_flat_loaded));
 
         if sigma_clip then
-          update_text(mainwindow.memo1.lines,'HISTORY 1', '  Stacking method SIGMA CLIP AVERAGE')
+          update_text(mainform1.memo1.lines,'HISTORY 1', '  Stacking method SIGMA CLIP AVERAGE')
         else
-          update_text(mainwindow.memo1.lines,'HISTORY 1', '  Stacking method AVERAGE');{overwrite also any existing header info}
+          update_text(mainform1.memo1.lines,'HISTORY 1', '  Stacking method AVERAGE');{overwrite also any existing header info}
 
         if head.naxis3 > 1 then
         begin
           if process_as_osc > 0 then
           begin
-            remove_key(mainwindow.memo1.lines,'BAYERPAT', False{all});{remove key word in header}
-            remove_key(mainwindow.memo1.lines,'XBAYROFF', False{all});{remove key word in header}
-            remove_key(mainwindow.memo1.lines,'YBAYROFF', False{all});{remove key word in header}
-            update_text(mainwindow.memo1.lines,'HISTORY 2', '  De-mosaic bayer pattern used ' + bayer_pattern[bayerpattern_final]);
-            update_text(mainwindow.memo1.lines,'HISTORY 3', '  Colour conversion: ' + stackmenu1.demosaic_method1.Text + ' interpolation.');
+            remove_key(mainform1.memo1.lines,'BAYERPAT', False{all});{remove key word in header}
+            remove_key(mainform1.memo1.lines,'XBAYROFF', False{all});{remove key word in header}
+            remove_key(mainform1.memo1.lines,'YBAYROFF', False{all});{remove key word in header}
+            update_text(mainform1.memo1.lines,'HISTORY 2', '  De-mosaic bayer pattern used ' + bayer_pattern[bayerpattern_final]);
+            update_text(mainform1.memo1.lines,'HISTORY 3', '  Colour conversion: ' + stackmenu1.demosaic_method1.Text + ' interpolation.');
           end
           else
-            update_text(mainwindow.memo1.lines,'HISTORY 2', '  Combined to colour image.');
+            update_text(mainform1.memo1.lines,'HISTORY 2', '  Combined to colour image.');
         end
         else
-          update_text(mainwindow.memo1.lines,'HISTORY 2', '  Processed as gray scale images.');
+          update_text(mainform1.memo1.lines,'HISTORY 2', '  Processed as gray scale images.');
 
         if lrgb = False then {monochrome}
         begin {adapt astrometric solution. For colour this is already done during luminance stacking}
-          update_integer(mainwindow.memo1.lines,'SET-TEMP=', ' / Average set temperature used for luminance.    ', temperatureL);
-          add_integer(mainwindow.memo1.lines,'LUM_EXP =', ' / Average luminance exposure time.               ', exposureL);
-          add_integer(mainwindow.memo1.lines,'LUM_CNT =', ' / Luminance images combined.                     ', counterL);
-          add_integer(mainwindow.memo1.lines,'LUM_DARK=', ' / Darks used for luminance.                      ', head.dark_count);
-          add_integer(mainwindow.memo1.lines,'LUM_FLAT=', ' / Flats used for luminance.                      ', head.flat_count);
-          add_integer(mainwindow.memo1.lines,'LUM_BIAS=', ' / Flat-darks used for luminance.                 ', head.flatdark_count);
+          update_integer(mainform1.memo1.lines,'SET-TEMP=', ' / Average set temperature used for luminance.    ', temperatureL);
+          add_integer(mainform1.memo1.lines,'LUM_EXP =', ' / Average luminance exposure time.               ', exposureL);
+          add_integer(mainform1.memo1.lines,'LUM_CNT =', ' / Luminance images combined.                     ', counterL);
+          add_integer(mainform1.memo1.lines,'LUM_DARK=', ' / Darks used for luminance.                      ', head.dark_count);
+          add_integer(mainform1.memo1.lines,'LUM_FLAT=', ' / Flats used for luminance.                      ', head.flat_count);
+          add_integer(mainform1.memo1.lines,'LUM_BIAS=', ' / Flat-darks used for luminance.                 ', head.flatdark_count);
 
           thefilters := head.filter_name; {used later for file name}
           stack_info := ' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' + IntToStr(counterL) + 'x' + IntToStr(exposureL) +  'L  (' + thefilters + ')';
@@ -13147,78 +13153,78 @@ begin
         begin
           head.naxis := 3; {will be written in save routine}
           head.naxis3 := 3;{will be written in save routine, head.naxis3 is updated in  save_fits}
-          if length(extra2) > 1 then update_text(mainwindow.memo1.lines,'FILTER  =', #39 + '        ' + #39); {wipe filter info}
+          if length(extra2) > 1 then update_text(mainform1.memo1.lines,'FILTER  =', #39 + '        ' + #39); {wipe filter info}
           if counterL > 0 then  //counter number of luminance used in LRGB stacking
           begin
-            add_integer(mainwindow.memo1.lines,'LUM_EXP =', ' / Luminance exposure time.                       ' , exposureL);
-            add_integer(mainwindow.memo1.lines,'LUM_CNT =', ' / Luminance images combined.                     ' , counterL);
-            add_integer(mainwindow.memo1.lines,'LUM_DARK=', ' / Darks used for luminance.                      ' , counterLdark);
-            add_integer(mainwindow.memo1.lines,'LUM_FLAT=', ' / Flats used for luminance.                      ' , counterLflat);
-            add_integer(mainwindow.memo1.lines,'LUM_BIAS=', ' / Flat-darks used for luminance.                 ' , counterLbias);
-            add_integer(mainwindow.memo1.lines,'LUM_TEMP=', ' / Average set temperature used for luminance.    ' , temperatureL);
+            add_integer(mainform1.memo1.lines,'LUM_EXP =', ' / Luminance exposure time.                       ' , exposureL);
+            add_integer(mainform1.memo1.lines,'LUM_CNT =', ' / Luminance images combined.                     ' , counterL);
+            add_integer(mainform1.memo1.lines,'LUM_DARK=', ' / Darks used for luminance.                      ' , counterLdark);
+            add_integer(mainform1.memo1.lines,'LUM_FLAT=', ' / Flats used for luminance.                      ' , counterLflat);
+            add_integer(mainform1.memo1.lines,'LUM_BIAS=', ' / Flat-darks used for luminance.                 ' , counterLbias);
+            add_integer(mainform1.memo1.lines,'LUM_TEMP=', ' / Average set temperature used for luminance.    ' , temperatureL);
           end;
           if counterR > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'RED_EXP =', ' / '+filters_used[0]+' exposure time.               ', exposureR);//length will be adjusted to 80 char in save routine.
-            add_integer(mainwindow.memo1.lines,'RED_CNT =', ' / '+filters_used[0]+' filter images combined.      ', counterR);
-            add_integer(mainwindow.memo1.lines,'RED_DARK=', ' / Darks used for '+filters_used[0]+'.              ', counterRdark);
-            add_integer(mainwindow.memo1.lines,'RED_FLAT=', ' / Flats used for '+filters_used[0]+'.              ', counterRflat);
-            add_integer(mainwindow.memo1.lines,'RED_BIAS=', ' / Flat-darks used for '+filters_used[0]+'.         ', counterRbias);
-            add_integer(mainwindow.memo1.lines,'RED_TEMP=', ' / Set temperature used for '+red_filter1.text+'.   ', temperatureR);
+            add_integer(mainform1.memo1.lines,'RED_EXP =', ' / '+filters_used[0]+' exposure time.               ', exposureR);//length will be adjusted to 80 char in save routine.
+            add_integer(mainform1.memo1.lines,'RED_CNT =', ' / '+filters_used[0]+' filter images combined.      ', counterR);
+            add_integer(mainform1.memo1.lines,'RED_DARK=', ' / Darks used for '+filters_used[0]+'.              ', counterRdark);
+            add_integer(mainform1.memo1.lines,'RED_FLAT=', ' / Flats used for '+filters_used[0]+'.              ', counterRflat);
+            add_integer(mainform1.memo1.lines,'RED_BIAS=', ' / Flat-darks used for '+filters_used[0]+'.         ', counterRbias);
+            add_integer(mainform1.memo1.lines,'RED_TEMP=', ' / Set temperature used for '+red_filter1.text+'.   ', temperatureR);
           end;
           if counterG > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'GRN_EXP =', ' / '+filters_used[1]+' exposure time.               ' , exposureG);
-            add_integer(mainwindow.memo1.lines,'GRN_CNT =', ' / '+filters_used[1]+' filter images combined.      ' , counterG);
-            add_integer(mainwindow.memo1.lines,'GRN_DARK=', ' / Darks used for '+filters_used[1]+'.              ' , counterGdark);
-            add_integer(mainwindow.memo1.lines,'GRN_FLAT=', ' / Flats used for '+filters_used[1]+'.              ' , counterGflat);
-            add_integer(mainwindow.memo1.lines,'GRN_BIAS=', ' / Flat-darks used for '+filters_used[1]+'.         ' , counterGbias);
-            add_integer(mainwindow.memo1.lines,'GRN_TEMP=', ' / Set temperature used for '+filters_used[1]+'.    ' , temperatureG);
+            add_integer(mainform1.memo1.lines,'GRN_EXP =', ' / '+filters_used[1]+' exposure time.               ' , exposureG);
+            add_integer(mainform1.memo1.lines,'GRN_CNT =', ' / '+filters_used[1]+' filter images combined.      ' , counterG);
+            add_integer(mainform1.memo1.lines,'GRN_DARK=', ' / Darks used for '+filters_used[1]+'.              ' , counterGdark);
+            add_integer(mainform1.memo1.lines,'GRN_FLAT=', ' / Flats used for '+filters_used[1]+'.              ' , counterGflat);
+            add_integer(mainform1.memo1.lines,'GRN_BIAS=', ' / Flat-darks used for '+filters_used[1]+'.         ' , counterGbias);
+            add_integer(mainform1.memo1.lines,'GRN_TEMP=', ' / Set temperature used for '+filters_used[1]+'.    ' , temperatureG);
           end;
           if counterB > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'BLU_EXP =', ' / '+filters_used[2]+' exposure time.               ' , exposureB);
-            add_integer(mainwindow.memo1.lines,'BLU_CNT =', ' / '+filters_used[2]+' filter images combined.      ' , counterB);
-            add_integer(mainwindow.memo1.lines,'BLU_DARK=', ' / Darks used for '+filters_used[2]+'.              ' , counterBdark);
-            add_integer(mainwindow.memo1.lines,'BLU_FLAT=', ' / Flats used for '+filters_used[2]+'.              ' , counterBflat);
-            add_integer(mainwindow.memo1.lines,'BLU_BIAS=', ' / Flat-darks used for '+filters_used[2]+'.         ' , counterBbias);
-            add_integer(mainwindow.memo1.lines,'BLU_TEMP=', ' / Set temperature used for '+filters_used[2]+'.    ' , temperatureB);
+            add_integer(mainform1.memo1.lines,'BLU_EXP =', ' / '+filters_used[2]+' exposure time.               ' , exposureB);
+            add_integer(mainform1.memo1.lines,'BLU_CNT =', ' / '+filters_used[2]+' filter images combined.      ' , counterB);
+            add_integer(mainform1.memo1.lines,'BLU_DARK=', ' / Darks used for '+filters_used[2]+'.              ' , counterBdark);
+            add_integer(mainform1.memo1.lines,'BLU_FLAT=', ' / Flats used for '+filters_used[2]+'.              ' , counterBflat);
+            add_integer(mainform1.memo1.lines,'BLU_BIAS=', ' / Flat-darks used for '+filters_used[2]+'.         ' , counterBbias);
+            add_integer(mainform1.memo1.lines,'BLU_TEMP=', ' / Set temperature used for '+filters_used[2]+'.    ' , temperatureB);
           end;
           if counterR2 > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'RED_EXP2=', ' / '+filters_used[3]+' exposure time.               ', exposureR2);
-            add_integer(mainwindow.memo1.lines,'RED_CNT2=', ' / '+filters_used[3]+' filter images combined.      ', counterR2);
-            add_integer(mainwindow.memo1.lines,'RED_DRK2=', ' / Darks used for '+filters_used[3]+'.              ', counterR2dark);
-            add_integer(mainwindow.memo1.lines,'RED_FLT2=', ' / Flats used for '+filters_used[3]+'.              ', counterR2flat);
-            add_integer(mainwindow.memo1.lines,'RED_BIA2=', ' / Flat-darks used for '+filters_used[3]+'.         ', counterR2bias);
-            add_integer(mainwindow.memo1.lines,'RED_TMP2=', ' / Set temperature used for '+filters_used[3]+'.    ', temperatureR2);
+            add_integer(mainform1.memo1.lines,'RED_EXP2=', ' / '+filters_used[3]+' exposure time.               ', exposureR2);
+            add_integer(mainform1.memo1.lines,'RED_CNT2=', ' / '+filters_used[3]+' filter images combined.      ', counterR2);
+            add_integer(mainform1.memo1.lines,'RED_DRK2=', ' / Darks used for '+filters_used[3]+'.              ', counterR2dark);
+            add_integer(mainform1.memo1.lines,'RED_FLT2=', ' / Flats used for '+filters_used[3]+'.              ', counterR2flat);
+            add_integer(mainform1.memo1.lines,'RED_BIA2=', ' / Flat-darks used for '+filters_used[3]+'.         ', counterR2bias);
+            add_integer(mainform1.memo1.lines,'RED_TMP2=', ' / Set temperature used for '+filters_used[3]+'.    ', temperatureR2);
           end;
           if counterG2> 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'GRN_EXP2=', ' / '+filters_used[4]+' exposure time.               ' , exposureG2);
-            add_integer(mainwindow.memo1.lines,'GRN_CNT2=', ' / '+filters_used[4]+' filter images combined.      ' , counterG2);
-            add_integer(mainwindow.memo1.lines,'GRN_DRK2=', ' / Darks used for '+filters_used[4]+'.              ' , counterG2dark);
-            add_integer(mainwindow.memo1.lines,'GRN_FLT2=', ' / Flats used for '+filters_used[4]+'.              ' , counterG2flat);
-            add_integer(mainwindow.memo1.lines,'GRN_BIA2=', ' / Flat-darks used for '+filters_used[4]+'.         ' , counterG2bias);
-            add_integer(mainwindow.memo1.lines,'GRN_TMP2=', ' / Set temperature used for '+filters_used[4]+'.    ' , temperatureG2);
+            add_integer(mainform1.memo1.lines,'GRN_EXP2=', ' / '+filters_used[4]+' exposure time.               ' , exposureG2);
+            add_integer(mainform1.memo1.lines,'GRN_CNT2=', ' / '+filters_used[4]+' filter images combined.      ' , counterG2);
+            add_integer(mainform1.memo1.lines,'GRN_DRK2=', ' / Darks used for '+filters_used[4]+'.              ' , counterG2dark);
+            add_integer(mainform1.memo1.lines,'GRN_FLT2=', ' / Flats used for '+filters_used[4]+'.              ' , counterG2flat);
+            add_integer(mainform1.memo1.lines,'GRN_BIA2=', ' / Flat-darks used for '+filters_used[4]+'.         ' , counterG2bias);
+            add_integer(mainform1.memo1.lines,'GRN_TMP2=', ' / Set temperature used for '+filters_used[4]+'.    ' , temperatureG2);
           end;
           if counterB2 > 0 then
           begin
-            add_integer(mainwindow.memo1.lines,'BLU_EXP2=', ' / '+filters_used[5]+' exposure time.                ' , exposureB2);
-            add_integer(mainwindow.memo1.lines,'BLU_CNT2=', ' / '+filters_used[5]+' filter images combined.       ' , counterB2);
-            add_integer(mainwindow.memo1.lines,'BLU_DRK2=', ' / Darks used for '+filters_used[5]+'.               ' , counterB2dark);
-            add_integer(mainwindow.memo1.lines,'BLU_FLT2=', ' / Flats used for '+filters_used[5]+'.               ' , counterB2flat);
-            add_integer(mainwindow.memo1.lines,'BLU_BIA2=', ' / Flat-darks used for '+filters_used[5]+'.          ' , counterB2bias);
-            add_integer(mainwindow.memo1.lines,'BLU_TMP2=', ' / Set temperature used for '+filters_used[5]+'.     ' , temperatureB2);
+            add_integer(mainform1.memo1.lines,'BLU_EXP2=', ' / '+filters_used[5]+' exposure time.                ' , exposureB2);
+            add_integer(mainform1.memo1.lines,'BLU_CNT2=', ' / '+filters_used[5]+' filter images combined.       ' , counterB2);
+            add_integer(mainform1.memo1.lines,'BLU_DRK2=', ' / Darks used for '+filters_used[5]+'.               ' , counterB2dark);
+            add_integer(mainform1.memo1.lines,'BLU_FLT2=', ' / Flats used for '+filters_used[5]+'.               ' , counterB2flat);
+            add_integer(mainform1.memo1.lines,'BLU_BIA2=', ' / Flat-darks used for '+filters_used[5]+'.          ' , counterB2bias);
+            add_integer(mainform1.memo1.lines,'BLU_TMP2=', ' / Set temperature used for '+filters_used[5]+'.     ' , temperatureB2);
           end;
 
-          if counterL > 0 then add_text(mainwindow.memo1.lines,'COMMENT 2', '  Total '+filters_used[6]+' exposure '+ IntToStr( round(counterL * exposureL)));
-          if counterR > 0 then add_text(mainwindow.memo1.lines,'COMMENT 3', '  Total '+filters_used[0]+' exposure ' + IntToStr( round(counterR * exposureR)));
-          if counterG > 0 then add_text(mainwindow.memo1.lines,'COMMENT 4', '  Total '+filters_used[1]+' exposure ' + IntToStr( round(counterG * exposureG)));
-          if counterB > 0 then add_text(mainwindow.memo1.lines,'COMMENT 5', '  Total '+filters_used[2]+' exposure ' + IntToStr( round(counterB * exposureB)));
-          if counterR2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 6', '  Total '+filters_used[3]+' exposure ' + IntToStr( round(counterR2 * exposureR2)));
-          if counterG2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 7', '  Total '+filters_used[4]+' exposure ' + IntToStr( round(counterG2 * exposureG2)));
-          if counterB2> 0 then add_text(mainwindow.memo1.lines,'COMMENT 8', '  Total '+filters_used[5]+' exposure ' + IntToStr( round(counterB2 * exposureB2)));
+          if counterL > 0 then add_text(mainform1.memo1.lines,'COMMENT 2', '  Total '+filters_used[6]+' exposure '+ IntToStr( round(counterL * exposureL)));
+          if counterR > 0 then add_text(mainform1.memo1.lines,'COMMENT 3', '  Total '+filters_used[0]+' exposure ' + IntToStr( round(counterR * exposureR)));
+          if counterG > 0 then add_text(mainform1.memo1.lines,'COMMENT 4', '  Total '+filters_used[1]+' exposure ' + IntToStr( round(counterG * exposureG)));
+          if counterB > 0 then add_text(mainform1.memo1.lines,'COMMENT 5', '  Total '+filters_used[2]+' exposure ' + IntToStr( round(counterB * exposureB)));
+          if counterR2> 0 then add_text(mainform1.memo1.lines,'COMMENT 6', '  Total '+filters_used[3]+' exposure ' + IntToStr( round(counterR2 * exposureR2)));
+          if counterG2> 0 then add_text(mainform1.memo1.lines,'COMMENT 7', '  Total '+filters_used[4]+' exposure ' + IntToStr( round(counterG2 * exposureG2)));
+          if counterB2> 0 then add_text(mainform1.memo1.lines,'COMMENT 8', '  Total '+filters_used[5]+' exposure ' + IntToStr( round(counterB2 * exposureB2)));
           { ASTAP keyword standard:}
           { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
@@ -13242,14 +13248,15 @@ begin
           {head.exposure}
         end;
 
-        mainwindow.Memo1.Lines.EndUpdate;
+        mainform1.Memo1.Lines.EndUpdate;
 
         filename2 := extractfilepath(filename2) + propose_file_name(stitching_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, thefilters);{give it a nice file name}
 
         if head.cd1_1 <> 0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result ' + IntToStr(image_counter) + ' as ' + filename2);
 
-        if save_fits(img_loaded,mainwindow.memo1.lines, filename2, -32, True) = False then exit;
+        head.nrbits:=-32;
+        if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True) = False then exit;
         inc(total_counter);
         if save_settings_image_path1.Checked then save_settings(changefileext(filename2, '.cfg'));
 
@@ -13281,7 +13288,7 @@ begin
   {$IFDEF fpc}
   progress_indicator(-100,'');{back to normal}
   {$else}{delphi}
-  mainwindow.taskbar1.progressstate := TTaskBarProgressState.None;
+  mainform1.taskbar1.progressstate := TTaskBarProgressState.None;
   {$endif}
 
   update_menu(True);
@@ -13305,7 +13312,7 @@ begin
       Dec(i);
     until i <= 0;
    {$ifdef mswindows}
-    mainwindow.Caption := ShutMeDown;
+    mainform1.Caption := ShutMeDown;
    {$else} {unix}
      fpSystem('/sbin/shutdown -P now');
    {$endif}
@@ -13403,7 +13410,7 @@ end;
 procedure Tstackmenu1.use_manual_alignment1Change(Sender: TObject);
 begin
   update_tab_alignment;
-  mainwindow.shape_manual_alignment1.visible:=use_manual_alignment1.Checked;
+  mainform1.shape_manual_alignment1.visible:=use_manual_alignment1.Checked;
 end;
 
 
@@ -13483,7 +13490,7 @@ begin
   end;{k color}
 
   use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1, False);
+  plot_fits(mainform1.image1, False);
 
   memo2_message('Remove gradient done.');
 
@@ -13562,23 +13569,23 @@ begin
     #10 + #10 + 'Enter video frame rate in [frames/second]:',
     frame_rate) = False then exit;
 
-  mainwindow.savedialog1.initialdir := ExtractFilePath(filename2);
-  mainwindow.savedialog1.Filter :=
+  mainform1.savedialog1.initialdir := ExtractFilePath(filename2);
+  mainform1.savedialog1.Filter :=
     ' Currently selected Y4M|*.y4m|AVI uncompressed| *.avi';
   if video_index = 2 then
   begin
-    mainwindow.savedialog1.filename := ChangeFileExt(FileName2, '.avi');
-    mainwindow.savedialog1.filterindex := 2; {avi}
+    mainform1.savedialog1.filename := ChangeFileExt(FileName2, '.avi');
+    mainform1.savedialog1.filterindex := 2; {avi}
   end
   else
   begin
-    mainwindow.savedialog1.filename := ChangeFileExt(FileName2, '.y4m');
-    mainwindow.savedialog1.filterindex := 1;
+    mainform1.savedialog1.filename := ChangeFileExt(FileName2, '.y4m');
+    mainform1.savedialog1.filterindex := 1;
   end;
 
-  if mainwindow.savedialog1.Execute then
+  if mainform1.savedialog1.Execute then
   begin
-    filen := mainwindow.savedialog1.filename;
+    filen := mainform1.savedialog1.filename;
     if pos('.avi', filen) > 0 then video_index := 2 {avi}
     else
       video_index := 1; {y4m}
@@ -13603,7 +13610,7 @@ begin
       if video_index = 2 then
         res := write_avi_head(filen, frame_rate, nrframes, blink_Width, blink_Height) {open/create file. Result is false if failure}
       else
-        res := write_YUV4MPEG2_header(filen, frame_rate,((blink_naxis3 > 1) or (mainwindow.preview_demosaic1.Checked)), blink_Width, blink_Height);
+        res := write_YUV4MPEG2_header(filen, frame_rate,((blink_naxis3 > 1) or (mainform1.preview_demosaic1.Checked)), blink_Width, blink_Height);
     end
     else {crop is set by the mouse}
     begin
@@ -13612,7 +13619,7 @@ begin
       if video_index = 2 then
         res := write_avi_head(filen, frame_rate, nrframes, areax2 - areax1 + 1, areay2 - areay1 + 1) {open/create file. Result is false if failure}
       else
-        res := write_YUV4MPEG2_header(filen, frame_rate, ((head.naxis3 > 1) or (mainwindow.preview_demosaic1.Checked)), areax2 - areax1 + 1, areay2 - areay1 + 1);
+        res := write_YUV4MPEG2_header(filen, frame_rate, ((head.naxis3 > 1) or (mainform1.preview_demosaic1.Checked)), areax2 - areax1 + 1, areay2 - areay1 + 1);
     end;
 
     if res = False then
@@ -13627,9 +13634,9 @@ begin
     else
       close_YUV4MPEG2;
     memo2_message('Ready!. See tab results. The video written as ' +
-      mainwindow.savedialog1.filename);
+      mainform1.savedialog1.filename);
 
-    filename2 := mainwindow.savedialog1.filename;
+    filename2 := mainform1.savedialog1.filename;
     report_results('Video file', '', 0, 15 {video icon},5 {stack icon});{report result in tab results}
   end;
 end;

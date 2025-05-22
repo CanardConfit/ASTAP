@@ -123,7 +123,7 @@ begin
       begin
         canvas.brush.color:=clmenu;
         Canvas.FillRect(rect(0,0,width,height));
-        mainwindow.image1.Canvas.Pen.mode:=pmXor;
+        mainform1.image1.Canvas.Pen.mode:=pmXor;
         Canvas.Pen.Color := clred;
         canvas.pen.Width:=5;
         Canvas.brush.Style:=bsClear;
@@ -205,7 +205,7 @@ begin
         try { Do some lengthy operation }
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false,false {plot})=false)) then
+          if ((esc_pressed) or (load_image(filename2,img_loaded,head,mainform1.memo1.lines,false,false {plot})=false)) then
           begin
 
             if esc_pressed=false then
@@ -223,7 +223,7 @@ begin
           begin
             apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
             {these global variables are passed-on in procedure to protect against overwriting}
-            update_text(mainwindow.memo1.lines,'CALSTAT =',#39+head.calstat+#39);
+            update_text(mainform1.memo1.lines,'CALSTAT =',#39+head.calstat+#39);
             if ((pos('D',head.calstat)>0) or (pos('F',head.calstat)>0))  then {status of dark application}
               memo2_message('Calibration status '+head.calstat+'. Used '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
           end;
@@ -232,25 +232,25 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
+          if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then
              demosaic_advanced(img_loaded) {demosaic and set levels}
           else
             use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-          plot_fits(mainwindow.image1,false);{plot real}
+          plot_fits(mainform1.image1,false);{plot real}
 
           monitor_date1.caption:= DateTimeToStr(FileDateToDateTime(latest_time));
 
           solver:=false;
-          case stackmenu1.monitor_action1.itemindex of 1: CCDinspector(img_loaded, head,mainwindow.memo1.lines,30,true {screenplot},false,strtofloat(measuring_angle));
-                                                       2: CCDinspector(img_loaded, head,mainwindow.memo1.lines,30,true {screenplot},true,strtofloat(measuring_angle));
+          case stackmenu1.monitor_action1.itemindex of 1: CCDinspector(img_loaded, head,mainform1.memo1.lines,30,true {screenplot},false,strtofloat(measuring_angle));
+                                                       2: CCDinspector(img_loaded, head,mainform1.memo1.lines,30,true {screenplot},true,strtofloat(measuring_angle));
                                                        3: form_inspection1.aberration_inspector1Click(nil);
                                                        4: solver:=true;
                                                        5: form_inspection1.background_contour1Click(nil);
           end;{case}
           if solver then
           begin
-            mainwindow.astrometric_solve_image1Click(nil);
+            mainform1.astrometric_solve_image1Click(nil);
             report_delta;
           end
           else

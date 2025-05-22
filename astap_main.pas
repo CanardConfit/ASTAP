@@ -23,6 +23,15 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
 https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
+CPUcount
+https://gitlab.com/freepascal.org/fpc/source/-/issues/41265
+
+line colourss GTK3
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41655
+pairspliter GTK3
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41654
+
+
 https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
 
 
@@ -58,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.05.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.05.21a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -67,8 +76,8 @@ type
             end;
 
 type
-  { Tmainwindow }
-  Tmainwindow = class(TForm)
+  { Tmainform1 }
+  Tmainform1 = class(TForm)
     add_marker_position1: TMenuItem;
     bin3x3: TMenuItem;
     boxshape1: TShape;
@@ -537,13 +546,14 @@ type
   end;
 
 var
-  mainwindow: Tmainwindow;
+  mainform1: Tmainform1;
 
 type
   Timage_array = array of array of array of Single;// note fastest processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
   Tstar_list   = array of array of double;
 
   Theader =record    {contains the most important header info}
+    nrbits : integer;{almost always equivalent to bitpix}
     width  : integer;{image width}
     height : integer;{image height}
     naxis  : integer;{number of dimensions}
@@ -654,7 +664,7 @@ var
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
   distortion_data : Tstar_list;
   filename2: string;
-  nrbits,size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
+  size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
   ra_mount,dec_mount,{telescope ra,dec}
   equinox, bandpass,
   ra_radians,dec_radians, pixel_size     : double;
@@ -782,7 +792,7 @@ function load_image(filename2: string; out img: Timage_array; out head: theader;
 procedure demosaic_bayer(var img: Timage_array); {convert OSC image to colour}
 
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
-function save_fits(img: Timage_array;memo:tstrings;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+function save_fits(img: Timage_array;memo:tstrings;headX: theader; filen2:ansistring;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 procedure update_text(memo:tstrings;inpt,comment1:string);{update or insert text in header}
 procedure add_text(memo:tstrings;inpt,comment1:string);{add text to header memo}
 procedure update_longstr(memo:tstrings;inpt,thestr:string);{update or insert long str including single quotes}
@@ -882,7 +892,7 @@ procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
-function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
+function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean;nrbits:integer): boolean;{save to 8 or 16 bit TIFF file }
 function save_tiff16_secure(img : Timage_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
 function find_reference_star(img : Timage_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
@@ -1196,12 +1206,12 @@ begin
   {some house keeping}
   result:=false; {assume failure}
 
-  if load_data then mainwindow.caption:=ExtractFileName(filen);
+  if load_data then mainform1.caption:=ExtractFileName(filen);
   {house keeping done}
 
   if tiff_file_name(filen) then  {load Astro-TIFF instead of FITS}
   begin
-    result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2,memo {mainwindow.memo1.lines});{load TIFF image}
+    result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2,memo {mainform1.memo1.lines});{load TIFF image}
     exit;
   end;
 
@@ -1209,8 +1219,8 @@ begin
     TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
-     mainwindow.error_label1.caption:=('Error accessing file!');
-     mainwindow.error_label1.visible:=true;
+     mainform1.error_label1.caption:=('Error accessing file!');
+     mainform1.error_label1.visible:=true;
      exit;
   end;
   file_size:=TheFile.size;
@@ -1253,8 +1263,8 @@ begin
         begin
           close_fits_file;
           beep;
-          mainwindow.error_label1.caption:=('Error loading FITS file!! Keyword SIMPLE not found.');
-          mainwindow.error_label1.visible:=true;
+          mainform1.error_label1.caption:=('Error loading FITS file!! Keyword SIMPLE not found.');
+          mainform1.error_label1.visible:=true;
           exit;
         end; {should start with SIMPLE  =,  MaximDL compressed files start with SIMPLE‚=”}
         if ((header_count<get_ext) and (header[0]='X') and (header[1]='T')  and (header[2]='E') and (header[3]='N') and (header[4]='S') and (header[5]='I') and (header[6]='O') and (header[7]='N') and (header[8]='=')) then
@@ -1270,16 +1280,16 @@ begin
             else
             begin
               extend_type:=1; {image in the extension}
-              mainwindow.Memo3.lines.text:='File contains image(s) in the extension. Can be extracted and saved as a single image.';
-              mainwindow.pagecontrol1.showtabs:=true;{show tabs}
+              mainform1.Memo3.lines.text:='File contains image(s) in the extension. Can be extracted and saved as a single image.';
+              mainform1.pagecontrol1.showtabs:=true;{show tabs}
             end;
           end;
         end;
       except;
         close_fits_file;
         beep;
-        mainwindow.error_label1.caption:='Read exception error!!';
-        mainwindow.error_label1.visible:=true;
+        mainform1.error_label1.caption:='Read exception error!!';
+        mainform1.error_label1.visible:=true;
         exit;
       end;
     until ((simple) and (header_count>=get_ext)); {simple is true and correct header found}
@@ -1326,7 +1336,7 @@ begin
              bayerpat:=get_string {BAYERPAT, bayer pattern such as RGGB}
           else
           if ((header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
-            nrbits:=round(validate_double) {BITPIX, read integer using double routine}
+            head.nrbits:=round(validate_double) {BITPIX, read integer using double routine}
           else
           if ( (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
           begin
@@ -1698,13 +1708,13 @@ begin
               begin {OBJCT}
                 if ((header[i+5]='R') and (header[i+6]='A') and (ra_mount>=999) {ra_mount value is unfilled, preference for keyword RA}) then
                 begin
-                  mainwindow.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+                  mainform1.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
                   ra_mount:=ra_radians;{preference for keyword RA}
                 end
                 else
                 if ((header[i+5]='D') and (header[i+6]='E') and (dec_mount>=999){dec_mount value is unfilled, preference for keyword DEC}) then
                 begin
-                  mainwindow.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
+                  mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
                   dec_mount:=dec_radians;
                 end
                 else {for older MaximDL5}
@@ -1889,7 +1899,7 @@ begin
   begin
     if head.naxis=0 then result:=true {wcs file}
                else result:=false; {no image}
-    mainwindow.image1.visible:=false;
+    mainform1.image1.visible:=false;
     image:=false;
   end;
 
@@ -1897,7 +1907,7 @@ begin
   begin
     if ((head.naxis=3) and (naxis1=3)) then
     begin
-       nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
+       head.nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
        head.naxis3:=3; {will be converted while reading}
     end;
 
@@ -1933,12 +1943,12 @@ begin
       end;
 
       if ap_order>0 then
-        mainwindow.Polynomial1.itemindex:=1//switch to sip
+        mainform1.Polynomial1.itemindex:=1//switch to sip
       else
       if x_coeff[0]<>0 then
-         mainwindow.Polynomial1.itemindex:=2//switch to DSS
+         mainform1.Polynomial1.itemindex:=2//switch to DSS
       else
-        mainwindow.Polynomial1.itemindex:=0;//switch to DSS
+        mainform1.Polynomial1.itemindex:=0;//switch to DSS
 
       if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
       begin
@@ -1949,8 +1959,8 @@ begin
           if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
         end;
 
-        mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
-        mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+        mainform1.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+        mainform1.dec1.text:=prepare_dec(head.dec0,' ');
       end;
       { condition           keyword    to
        if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
@@ -1978,18 +1988,18 @@ begin
 
 
     {############################## read image}
-    i:=round(bufwide/(abs(nrbits/8)));{check if buffer is wide enough for one image line}
+    i:=round(bufwide/(abs(head.nrbits/8)));{check if buffer is wide enough for one image line}
     if head.width>i then
     begin
       beep;
-      textout(mainwindow.image1.canvas.handle,30,30,'Too wide FITS file !!!!!',25);
+      textout(mainform1.image1.canvas.handle,30,30,'Too wide FITS file !!!!!',25);
       close_fits_file;
       exit;
     end;
 
     setlength(img_loaded2,head.naxis3,head.height,head.width);
 
-    if nrbits=16 then
+    if head.nrbits=16 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2005,7 +2015,7 @@ begin
       end;
     end {colors head.naxis3 times}
     else
-    if nrbits=-32 then
+    if head.nrbits=-32 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2022,7 +2032,7 @@ begin
       end;
     end {colors head.naxis3 times}
     else
-    if nrbits=8 then
+    if head.nrbits=8 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2035,7 +2045,7 @@ begin
       end;
     end {colors head.naxis3 times}
     else
-    if nrbits=24 then
+    if head.nrbits=24 then
     For j:=0 to head.height-1 do
     begin
       try reader.read(fitsbuffer,head.width*3);except; head.naxis:=0;{failure} end; {read file info}
@@ -2048,7 +2058,7 @@ begin
       end;
     end
     else
-    if nrbits=+32 then
+    if head.nrbits=+32 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2065,7 +2075,7 @@ begin
       end;
     end {colors head.naxis3 times}
     else
-    if nrbits=-64 then
+    if head.nrbits=-64 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2083,7 +2093,7 @@ begin
     end; {colors head.naxis3 times}
 
     {rescale if required}
-    if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
+    if ((head.nrbits<=-32){-32 or -64} or (head.nrbits=+32)) then
     begin
       scalefactor:=1;
       if measured_max>0 then
@@ -2102,12 +2112,12 @@ begin
 
     end
     else
-    if nrbits=8 then head.datamax_org:=255 {not measured}
+    if head.nrbits=8 then head.datamax_org:=255 {not measured}
     else
-    if nrbits=24 then
+    if head.nrbits=24 then
     begin
       head.datamax_org:=255;
-      nrbits:=8; {already converted to array with separate colour sections}
+      head.nrbits:=8; {already converted to array with separate colour sections}
     end
     else {16 bit}
     head.datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
@@ -2116,7 +2126,7 @@ begin
     cwhite:=head.datamax_org;
 
     result:=head.naxis<>0;{success};
-    reader_position:=reader_position+head.width*head.height*(abs(nrbits) div 8)
+    reader_position:=reader_position+head.width*head.height*(abs(head.nrbits) div 8)
   end{image block}
 
   else
@@ -2226,9 +2236,9 @@ begin
       end;
       aline:=aline+sLineBreak ;
     end;
-    mainwindow.Memo3.lines.text:=aline;
+    mainform1.Memo3.lines.text:=aline;
     aline:=''; {release memory}
-    mainwindow.pagecontrol1.showtabs:=true;{show tabs}
+    mainform1.pagecontrol1.showtabs:=true;{show tabs}
     reader_position:=reader_position+head.width*head.height;
   end; {read table}
 
@@ -2238,15 +2248,15 @@ begin
     if file_size-reader_position>2880 then {file size confirms extension}
     begin
       if get_ext=0 then
-         mainwindow.Memo3.lines.text:='File contains extension image(s) or table(s).';
-      mainwindow.pagecontrol1.showtabs:=true;{show tabs}
+         mainform1.Memo3.lines.text:='File contains extension image(s) or table(s).';
+      mainform1.pagecontrol1.showtabs:=true;{show tabs}
 
       last_extension:=false;
       if head.naxis<2 then
       begin
-        mainwindow.error_label1.caption:=('Contains extension(s). Click on the arrows to scroll.');
-        mainwindow.error_label1.visible:=true;
-        //mainwindow.memo1.visible:=true;{show memo1 since no plotting is coming}
+        mainform1.error_label1.caption:=('Contains extension(s). Click on the arrows to scroll.');
+        mainform1.error_label1.visible:=true;
+        //mainform1.memo1.visible:=true;{show memo1 since no plotting is coming}
       end;
     end
     else
@@ -2255,7 +2265,7 @@ begin
     end;
   end;
   if ((last_extension=false) or (extend_type>0)) then
-     mainwindow.tabsheet1.caption:='Header '+inttostr(get_ext);
+     mainform1.tabsheet1.caption:='Header '+inttostr(get_ext);
 
   close_fits_file;
 end;
@@ -2408,12 +2418,12 @@ begin
     end else
     if ((key='OBJCTRA =') and (ra_mount>=999)) {ra_mount value is unfilled, preference for keyword RA} then
     begin
-      mainwindow.ra1.text:=read_string;{triggers an onchange event which will convert the string to ra_radians}
+      mainform1.ra1.text:=read_string;{triggers an onchange event which will convert the string to ra_radians}
       ra_mount:=ra_radians;{preference for keyword RA}
     end  else
     if ((key='OBJCTDEC=') and (dec_mount>=999)) {dec_mount value is unfilled, preference for keyword DEC} then
     begin
-      mainwindow.dec1.text:=read_string;{triggers an onchange event which will convert the string to dec_radians}
+      mainform1.dec1.text:=read_string;{triggers an onchange event which will convert the string to dec_radians}
       dec_mount:=dec_radians;
     end else
     if key='OBJECT  =' then object_name:=read_string else
@@ -2492,8 +2502,8 @@ begin
       precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
       if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
     end;
-    mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
-    mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+    mainform1.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+    mainform1.dec1.text:=prepare_dec(head.dec0,' ');
   end;
   { condition           keyword    to
    if ra_mount>999 then objctra--->ra1.text--------------->  ra_radians--->ra_mount
@@ -2558,12 +2568,12 @@ begin
     TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
-     mainwindow.error_label1.caption:=('Error, accessing the file!');
-     mainwindow.error_label1.visible:=true;
+     mainform1.error_label1.caption:=('Error, accessing the file!');
+     mainform1.error_label1.visible:=true;
      exit;
   end;
   memo.beginupdate;
- // mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
+ // mainform1.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   memo.clear;{clear memo for new header}
 
   Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
@@ -2581,8 +2591,8 @@ begin
     begin
       close_fits_file;
       beep;
-      mainwindow.error_label1.caption:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF. Pf not found.');
-      mainwindow.error_label1.visible:=true;
+      mainform1.error_label1.caption:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF. Pf not found.');
+      mainform1.error_label1.visible:=true;
       exit;
     end ;{should start with P6}
 
@@ -2651,21 +2661,21 @@ begin
 
     val(bits,range,err3);{number of bits}
 
-    nrbits:=round(range);
+    head.nrbits:=round(range);
 
-    if pfm then begin nrbits:=-32; head.datamax_org:=$FFFF;end     {little endian PFM format. If nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+    if pfm then begin head.nrbits:=-32; head.datamax_org:=$FFFF;end     {little endian PFM format. If nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
     else
-    if nrbits=65535 then begin nrbits:=16; head.datamax_org:=$FFFF;end
+    if head.nrbits=65535 then begin head.nrbits:=16; head.datamax_org:=$FFFF;end
     else
-    if nrbits=255 then begin nrbits:=8;head.datamax_org:=$FF; end
+    if head.nrbits=255 then begin head.nrbits:=8;head.datamax_org:=$FF; end
     else
       err3:=999;
 
     if ((err<>0) or (err2<>0) or (err3<>0)) then
     begin
       beep;
-      mainwindow.error_label1.caption:=('Incompatible PPM/PGM/PFM file !!');
-      mainwindow.error_label1.visible:=true;
+      mainform1.error_label1.caption:=('Incompatible PPM/PGM/PFM file !!');
+      mainform1.error_label1.visible:=true;
       close_fits_file;
       head.naxis:=0;
       exit;
@@ -2678,13 +2688,13 @@ begin
 
     if color7 then
     begin
-       package:=round((abs(nrbits)*3/8));{package size, 3 or 6 bytes}
+       package:=round((abs(head.nrbits)*3/8));{package size, 3 or 6 bytes}
        head.naxis3:=3; {head.naxis3 number of colors}
        head.naxis:=3; {number of dimensions}
     end
     else
     begin {gray image without bayer matrix applied}
-      package:=round((abs(nrbits)/8));{package size, 1 or 2 bytes}
+      package:=round((abs(head.nrbits)/8));{package size, 1 or 2 bytes}
       head.naxis3:=1; {head.naxis3 number of colors}
       head.naxis:=2;{number of dimensions}
     end;
@@ -2692,7 +2702,7 @@ begin
     if head.width>i then
     begin
       beep;
-      textout(mainwindow.image1.canvas.handle,30,30,'Too large FITS file !!!!!',25);
+      textout(mainform1.image1.canvas.handle,30,30,'Too large FITS file !!!!!',25);
       close_fits_file;
       exit;
     end
@@ -2708,10 +2718,10 @@ begin
           begin
             if color7=false then {gray scale without bayer matrix applied}
             begin
-              if nrbits=8 then  {8 BITS, mono 1x8bits}
+              if head.nrbits=8 then  {8 BITS, mono 1x8bits}
                 img_loaded2[0,i,j]:=fitsbuffer[j]{RGB fits with naxis1=3, treated as 48 bits coded pixels}
               else
-              if nrbits=16 then {big endian integer}
+              if head.nrbits=16 then {big endian integer}
                 img_loaded2[0,i,j]:=swap(fitsbuffer2[j])
               else {PFM 32 bits grayscale}
               if pfm then
@@ -2727,7 +2737,7 @@ begin
             end
             else
             begin
-              if nrbits=8 then {24 BITS, colour 3x8bits}
+              if head.nrbits=8 then {24 BITS, colour 3x8bits}
               begin
                 rgbdummy:=fitsbufferRGB[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
                 img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
@@ -2735,7 +2745,7 @@ begin
                 img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
               end
               else
-              if nrbits=16 then {48 BITS colour, 3x16 big endian}
+              if head.nrbits=16 then {48 BITS colour, 3x16 big endian}
               begin {48 bits}
                 rgb16dummy:=fitsbufferRGB16[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
                 img_loaded2[0,i,j]:=swap(rgb16dummy[0]);{store in memory array}
@@ -2784,7 +2794,7 @@ begin
         memo.add(head1[j]); {add lines to empthy memo1}
   memo.add(head1[27]); {add end}
 
-  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
   update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
   update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
@@ -2865,8 +2875,8 @@ begin
     Image.LoadFromFile(filen, Reader);
   except
      beep;
-     mainwindow.error_label1.caption:=('Error, accessing the file!');
-     mainwindow.error_label1.visible:=true;
+     mainform1.error_label1.caption:=('Error, accessing the file!');
+     mainform1.error_label1.visible:=true;
      exit;
   end;
 
@@ -2911,12 +2921,12 @@ begin
   end;
 
   memo.beginupdate;
-//  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
+//  mainform1.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   memo.clear;{clear memo for new header}
 
   {set data}
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
-  nrbits:=16;
+  head.nrbits:=16;
   head.datamin_org:=0;
   head.datamax_org:=$FFFF;
   head.backgr:=head.datamin_org;{for case histogram is not called}
@@ -2964,7 +2974,7 @@ begin
     if descrip<>'' then add_long_comment(memo,descrip);{add TIFF describtion}
   end;
 
-  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
   update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
   update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
@@ -2992,7 +3002,7 @@ begin
 end;
 
 
-procedure Tmainwindow.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
+procedure Tmainform1.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Open in viewer';
   opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
@@ -3011,7 +3021,7 @@ begin
     filename2:=opendialog1.filename;
     if opendialog1.FilterIndex<>4 then {<> preview FITS files, not yet loaded}
     {loadimage}
-    load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});{load and center}
+    load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});{load and center}
     LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
     Screen.Cursor:=crDefault;
   end;
@@ -3117,7 +3127,7 @@ begin
 
 
     {calculate star level}
-    if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
+    if ((head.nrbits=8) or (head.nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
     head.star_level:=0;
     head.star_level2:=0;
     i:=max_range;
@@ -3371,14 +3381,14 @@ var
        cnt:=pos(inpt,buf);
        if cnt>0 then
        begin //remove;
-         line_end:=posex(LineEnding,mainwindow.Memo1.text,cnt+1);//lines length could be different then 80 due to editing
+         line_end:=posex(LineEnding,mainform1.Memo1.text,cnt+1);//lines length could be different then 80 due to editing
          delete(buf,cnt,line_end-cnt+length(LineEnding));//delete the line
        end;
      end;
 
 begin
 
-  buf:=mainwindow.Memo1.text;
+  buf:=mainform1.Memo1.text;
   if keep_wcs=false then
   begin
     head.cd1_1:=0;//no WCS
@@ -3441,7 +3451,7 @@ begin
   remove    ('CROTA2  =');
 
 
-  mainwindow.Memo1.text:=buf;
+  mainform1.Memo1.text:=buf;
 end;
 
 procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
@@ -3470,17 +3480,17 @@ begin
     else
     application.title:='ASTAP';
 
-    mainwindow.statusbar1.SimplePanel:=false;
+    mainform1.statusbar1.SimplePanel:=false;
 
-    mainwindow.caption:=ExtractFileName(filename2);
+    mainform1.caption:=ExtractFileName(filename2);
     stackmenu1.caption:='stack menu';
   end
   else
   begin
     application.title:=inttostr(round(i))+'%'+info;{show progress in taksbar}
 
-    mainwindow.statusbar1.SimplePanel:=true;
-    mainwindow.statusbar1.Simpletext:=inttostr(round(i))+'%'+info;{show progress in statusbar}
+    mainform1.statusbar1.SimplePanel:=true;
+    mainform1.statusbar1.Simpletext:=inttostr(round(i))+'%'+info;{show progress in statusbar}
 
     stackmenu1.caption:=inttostr(round(i))+'%'+info;{show progress in stack menu}
   end;
@@ -3588,12 +3598,12 @@ begin
     inc(index_backup,1);
     if index_backup>size_backup then index_backup:=0;
     img_backup[index_backup].head_val:=head;
-    img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
+    img_backup[index_backup].header:=mainform1.Memo1.Text;{backup fits header}
     img_backup[index_backup].filen:=filename2;{backup filename}
 
     img_backup[index_backup].img:=duplicate(img_loaded);//duplicate image fast
 
-    mainwindow.Undo1.Enabled:=true;
+    mainform1.Undo1.Enabled:=true;
   end;
 end;
 
@@ -3604,7 +3614,7 @@ var
    old_width2,old_height2 : integer;
    fitsx,fitsy: integer;
 begin
-   if mainwindow.Undo1.Enabled=true then
+   if mainform1.Undo1.Enabled=true then
   begin
     if img_backup=nil then exit;{for some rare cases}
 
@@ -3615,16 +3625,16 @@ begin
 
     head:=img_backup[index_backup].head_val;{restore main header values}
     resized:=((head.width<>old_width2) or ( head.height<>old_height2));
-    mainwindow.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
+    mainform1.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
     filename2:=img_backup[index_backup].filen;{backup filename}
-    mainwindow.caption:=filename2; //show old filename is case image was binned
+    mainform1.caption:=filename2; //show old filename is case image was binned
 
     stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{allow debayer if mono again}
 
     img_loaded:=duplicate(img_backup[index_backup].img);//duplicate image fast
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_fits(mainwindow.image1,resized);{restore image1}
+    plot_fits(mainform1.image1,resized);{restore image1}
 
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
@@ -3635,7 +3645,7 @@ begin
 
     if img_backup[index_backup].img=nil then
     begin
-      mainwindow.Undo1.Enabled:=false;  //No more backups
+      mainform1.Undo1.Enabled:=false;  //No more backups
     end
     else
     memo2_message('Restored backup index '+inttostr(index_backup));
@@ -3645,7 +3655,7 @@ begin
 end;
 
 
-procedure Tmainwindow.GenerateShapes(position,top,left,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
+procedure Tmainform1.GenerateShapes(position,top,left,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
 var
    f,g : integer;
 begin
@@ -3677,7 +3687,7 @@ begin
 end;
 
 
-procedure Tmainwindow.clear_fshapes_array;//nil fshapes array
+procedure Tmainform1.clear_fshapes_array;//nil fshapes array
 var
   i : integer;
 begin
@@ -3688,7 +3698,7 @@ end;
 
 
 
-procedure Tmainwindow.About1Click(Sender: TObject);
+procedure Tmainform1.About1Click(Sender: TObject);
 var
   about_message, about_message5, arch : string;
 var {################# initialised variables #########################}
@@ -3743,7 +3753,7 @@ begin
 end;
 
 
-procedure Tmainwindow.FormKeyPress(Sender: TObject; var Key: char);
+procedure Tmainform1.FormKeyPress(Sender: TObject; var Key: char);
 begin {set form keypreview:=on}
    if key=#27 then
    begin
@@ -3760,7 +3770,7 @@ begin {set form keypreview:=on}
 end;
 
 
-procedure Tmainwindow.helponline1Click(Sender: TObject);
+procedure Tmainform1.helponline1Click(Sender: TObject);
 begin
    openurl('http://www.hnsky.org/astap.htm');
 end;
@@ -3768,14 +3778,14 @@ end;
 
 procedure update_recent_file_menu;{recent file menu update}
 begin
-  if recent_files.count>=1 then begin mainwindow.recent1.visible:=true;mainwindow.recent1.caption:=recent_files[0];end else mainwindow.recent1.visible:=false;
-  if recent_files.count>=2 then begin mainwindow.recent2.visible:=true;mainwindow.recent2.caption:=recent_files[1];end else mainwindow.recent2.visible:=false;
-  if recent_files.count>=3 then begin mainwindow.recent3.visible:=true;mainwindow.recent3.caption:=recent_files[2];end else mainwindow.recent3.visible:=false;
-  if recent_files.count>=4 then begin mainwindow.recent4.visible:=true;mainwindow.recent4.caption:=recent_files[3];end else mainwindow.recent4.visible:=false;
-  if recent_files.count>=5 then begin mainwindow.recent5.visible:=true;mainwindow.recent5.caption:=recent_files[4];end else mainwindow.recent5.visible:=false;
-  if recent_files.count>=6 then begin mainwindow.recent6.visible:=true;mainwindow.recent6.caption:=recent_files[5];end else mainwindow.recent6.visible:=false;
-  if recent_files.count>=7 then begin mainwindow.recent7.visible:=true;mainwindow.recent7.caption:=recent_files[6];end else mainwindow.recent7.visible:=false;
-  if recent_files.count>=8 then begin mainwindow.recent8.visible:=true;mainwindow.recent8.caption:=recent_files[7];end else mainwindow.recent8.visible:=false;
+  if recent_files.count>=1 then begin mainform1.recent1.visible:=true;mainform1.recent1.caption:=recent_files[0];end else mainform1.recent1.visible:=false;
+  if recent_files.count>=2 then begin mainform1.recent2.visible:=true;mainform1.recent2.caption:=recent_files[1];end else mainform1.recent2.visible:=false;
+  if recent_files.count>=3 then begin mainform1.recent3.visible:=true;mainform1.recent3.caption:=recent_files[2];end else mainform1.recent3.visible:=false;
+  if recent_files.count>=4 then begin mainform1.recent4.visible:=true;mainform1.recent4.caption:=recent_files[3];end else mainform1.recent4.visible:=false;
+  if recent_files.count>=5 then begin mainform1.recent5.visible:=true;mainform1.recent5.caption:=recent_files[4];end else mainform1.recent5.visible:=false;
+  if recent_files.count>=6 then begin mainform1.recent6.visible:=true;mainform1.recent6.caption:=recent_files[5];end else mainform1.recent6.visible:=false;
+  if recent_files.count>=7 then begin mainform1.recent7.visible:=true;mainform1.recent7.caption:=recent_files[6];end else mainform1.recent7.visible:=false;
+  if recent_files.count>=8 then begin mainform1.recent8.visible:=true;mainform1.recent8.caption:=recent_files[7];end else mainform1.recent8.visible:=false;
 end;
 
 
@@ -3795,20 +3805,20 @@ begin
 end;
 
 
-procedure Tmainwindow.Image1MouseEnter(Sender: TObject);
+procedure Tmainform1.Image1MouseEnter(Sender: TObject);
 begin
-  mainwindow.caption:=filename2;{restore filename in caption}
+  mainform1.caption:=filename2;{restore filename in caption}
 //  if mouse_enter=0 then mouse_enter:=1;
 end;
 
 
-procedure Tmainwindow.image_cleanup1Click(Sender: TObject);
+procedure Tmainform1.image_cleanup1Click(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 end;
 
 
-procedure Tmainwindow.deepsky_overlay1Click(Sender: TObject);
+procedure Tmainform1.deepsky_overlay1Click(Sender: TObject);
 begin
   load_deep;{load the deepsky database once. If loaded no action}
   plot_deepsky(false,8);
@@ -3952,7 +3962,7 @@ begin
 end;
 
 
-function save_fits(img: Timage_array;memo:tstrings;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+function save_fits(img: Timage_array;memo:tstrings; headX : theader;filen2:ansistring;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
   I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
@@ -3973,7 +3983,7 @@ begin
   height5:=length(img[0]);{height}
   if colours5=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
 
-  if ((type1=24) and (colours5<3)) then
+  if ((headX.nrbits=24) and (colours5<3)) then
   begin
     application.messagebox(pchar('Abort, can not save grayscale image as colour image!!'),pchar('Error'),MB_OK);
     exit;
@@ -3995,8 +4005,8 @@ begin
   {$IFDEF fpc}
   progress_indicator(0,'');
   {$else} {delphi}
-  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.Normal;
-  mainwindow.taskbar1.progressvalue:=0; {show progress}
+  mainform1.taskbar1.progressstate:=TTaskBarProgressState.Normal;
+  mainform1.taskbar1.progressvalue:=0; {show progress}
 
   {$endif}
 
@@ -4008,9 +4018,9 @@ begin
       progressC:=0;
 
      {update FITs header}
-      if type1<>24 then {standard FITS}
+      if headX.nrbits<>24 then {standard FITS}
       begin
-        update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
+        update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,headX.nrbits); {16 or -32}
         update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
         update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,width5);
         update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,height5);
@@ -4019,15 +4029,15 @@ begin
           else
           remove_key(memo,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
-        if type1=16 then bzero2:=32768 else bzero2:=0;
+        if headX.nrbits=16 then bzero2:=32768 else bzero2:=0;
 
         update_integer(memo,'BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
         update_integer(memo,'BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
-        if type1<>8 then
+        if headX.nrbits<>8 then
         begin
-          update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
-          update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
-          update_integer(memo,'CBLACK  =',' / Black point used for displaying image.         ' ,round(head.backgr) ); {2019-4-9}
+          update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,round(headX.datamin_org));
+          update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(headX.datamax_org));
+          update_integer(memo,'CBLACK  =',' / Black point used for displaying image.         ' ,round(headX.backgr) ); {2019-4-9}
           update_integer(memo,'CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
         end
         else
@@ -4067,10 +4077,10 @@ begin
          inc(i);
       until ((i>=memo.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
-      if type1=8 then
+      if headX.nrbits=8 then
       begin
-        minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
-        maximum:=max(255,mainwindow.maximum1.position);
+        minimum:=min(0,mainform1.minimum1.position); {stretch later if required}
+        maximum:=max(255,mainform1.maximum1.position);
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
         begin
@@ -4079,7 +4089,7 @@ begin
           {$IFDEF fpc}
           if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
           {$else} {delphi}
-          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          if frac(progress_value/5)=0 mainform1.taskbar1.progressvalue:=progress_value;
           {$endif}
 
           for j:=0 to width5-1 do
@@ -4094,10 +4104,10 @@ begin
         end;
       end
       else
-      if type1=24 then
+      if headX.nrbits=24 then
       begin
-        minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
-        maximum:=max(255,mainwindow.maximum1.position);
+        minimum:=min(0,mainform1.minimum1.position); {stretch later if required}
+        maximum:=max(255,mainform1.maximum1.position);
 
         for i:=0 to height5-1 do
         begin
@@ -4106,7 +4116,7 @@ begin
           {$IFDEF fpc}
           if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
           {$else} {delphi}
-          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          if frac(progress_value/5)=0 mainform1.taskbar1.progressvalue:=progress_value;
           {$endif}
 
           for j:=0 to width5-1 do
@@ -4126,7 +4136,7 @@ begin
       end
       else
 
-      if type1=16 then
+      if headX.nrbits=16 then
       begin
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
@@ -4136,7 +4146,7 @@ begin
           {$IFDEF fpc}
           if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
           {$else} {delphi}
-          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          if frac(progress_value/5)=0 mainform1.taskbar1.progressvalue:=progress_value;
           {$endif}
 
           for j:=0 to width5-1 do
@@ -4159,7 +4169,7 @@ begin
         end;
       end
       else
-      if type1=-32 then
+      if headX.nrbits=-32 then
       begin
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
@@ -4169,7 +4179,7 @@ begin
           {$IFDEF fpc}
           if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
           {$else} {delphi}
-          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          if frac(progress_value/5)=0 mainform1.taskbar1.progressvalue:=progress_value;
           {$endif}
           for j:=0 to width5-1 do
             fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,i,j]);{in FITS file hi en low bytes are swapped}
@@ -4185,8 +4195,8 @@ begin
 
     //  if extend_type>=3 then {write bintable extension}
     //  begin
-    //    rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
-    //    tal:=mainwindow.memo3.lines[0];
+    //    rows:=number_of_fields(#9,mainform1.memo3.lines[3]); {first lines could be blank or incomplete}
+    //    tal:=mainform1.memo3.lines[0];
     //    i:=0;
     //    strplcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ',80);{copy 80 and not more or less in position aline[80] should be #0 from string}
     //    thefile4.writebuffer(aline,80); inc(i);
@@ -4198,7 +4208,7 @@ begin
     //    strplcopy(        aline,'NAXIS1  =        '+tal+' / Bytes in row                                             ',80);
     //    thefile4.writebuffer(aline,80);inc(i);
 
-    //    str(mainwindow.memo3.lines.count-1-1 :13,tal);
+    //    str(mainform1.memo3.lines.count-1-1 :13,tal);
     //    strplcopy(aline,      'NAXIS2  =        '+tal  +' /                                                          ',80);
     //    thefile4.writebuffer(aline,80);inc(i);
 
@@ -4240,7 +4250,7 @@ begin
 
     //    {write datablock}
     //    i:=0;
-    //    for r:=2 to mainwindow.memo3.lines.count-1 do {rows}
+    //    for r:=2 to mainform1.memo3.lines.count-1 do {rows}
     //    begin
     //       for j:=0 to rows-1 do {columns}
     //      begin
@@ -4272,12 +4282,12 @@ begin
   except
     memo2_message('█ █ █ █ █ █ Write error!!  █ █ █ █ █ █');
   end;
-  mainwindow.image1.stretch:=true;
+  mainform1.image1.stretch:=true;
   Screen.Cursor:=crDefault;
   {$IFDEF fpc}
   progress_indicator(-100,'');{back to normal}
   {$else} {delphi}
-  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.None;
+  mainform1.taskbar1.progressstate:=TTaskBarProgressState.None;
   {$endif}
 end;
 
@@ -4297,18 +4307,18 @@ begin
   begin
     if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.fit')
                    else filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
-    result:=save_fits(img_temp,memox,filename2,nrbits,true)
+    result:=save_fits(img_temp,memox,headX,filename2,true)
   end
   else
   begin
     if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.tif')
                    else filename2:=ChangeFileExt(Filename2,'_bin3x3.tif');
-    result:=save_tiff16(img_temp,memox,filename2,false {flip H},false {flip V});
+    result:=save_tiff16(img_temp,memox,filename2,false {flip H},false {flip V},16);
   end;
 end;
 
 
-procedure Tmainwindow.bin2x2Click(Sender: TObject);
+procedure Tmainform1.bin2x2Click(Sender: TObject);
 var
   I, binfactor   : integer;
   dobackup : boolean;
@@ -4352,7 +4362,7 @@ begin
 end;
 
 
-procedure Tmainwindow.max2EditingDone(Sender: TObject);
+procedure Tmainform1.max2EditingDone(Sender: TObject);
 var
   edit_value: integer;
   histo_update : boolean;
@@ -4365,25 +4375,25 @@ begin
     if histo_update then maximum1.max:=round(edit_value);{update maximum1..max to allow storing the edit value in maximum1.position}
 
     maximum1.Position:=edit_value;
-    mainwindow.range1.itemindex:=7; {manual}
+    mainform1.range1.itemindex:=7; {manual}
 
     if histo_update then {redraw histogram with new range}
        use_histogram(img_loaded,false {update}); {plot histogram, set sliders}
 
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
   end;
 end;
 
 
-procedure Tmainwindow.Memo1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure Tmainform1.Memo1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-   mainwindow.caption:='Position '+ inttostr(tmemo(sender).CaretPos.y)+':'+inttostr(tmemo(sender).CaretPos.x);
+   mainform1.caption:='Position '+ inttostr(tmemo(sender).CaretPos.y)+':'+inttostr(tmemo(sender).CaretPos.x);
    statusbar1.SimplePanel:=true;
-   statusbar1.Simpletext:=mainwindow.caption;
+   statusbar1.Simpletext:=mainform1.caption;
 end;
 
 
-procedure Tmainwindow.localgaussian1Click(Sender: TObject);
+procedure Tmainform1.localgaussian1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k : integer;
    img_temp : Timage_array;
@@ -4421,7 +4431,7 @@ begin
     end;{k color}
 
     img_temp:=nil;{clean memory}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
@@ -4447,7 +4457,7 @@ begin                                               {range 2000 till 20000k}
 end;
 
 
-procedure Tmainwindow.hyperleda_annotation1Click(Sender: TObject);
+procedure Tmainform1.hyperleda_annotation1Click(Sender: TObject);
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   load_hyperleda;   { Load the database once. If loaded no action}
@@ -4482,13 +4492,13 @@ begin
 end;
 
 
-procedure Tmainwindow.clean_up1Click(Sender: TObject);
+procedure Tmainform1.clean_up1Click(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 end;
 
 
-procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area grayscale}
+procedure Tmainform1.remove_colour1Click(Sender: TObject);{make local area grayscale}
 var
    fitsX,fitsY,dum    : integer;
    val  : single;
@@ -4521,7 +4531,7 @@ begin
         img_loaded[2,fitsY,fitsX]:=val;
       end;
     end;
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
@@ -4529,13 +4539,13 @@ begin
 end;
 
 
-procedure Tmainwindow.Returntodefaultsettings1Click(Sender: TObject);
+procedure Tmainform1.Returntodefaultsettings1Click(Sender: TObject);
 begin
   if (IDYES= Application.MessageBox('This will set all ASTAP settings to default and close the program. Are you sure?', 'Default settings?', MB_ICONQUESTION + MB_YESNO) ) then
   begin
     if deletefile(user_path+'astap.cfg') then
     begin
-      halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close will save the setting again, so don't use}
+      halt(0); {don't save only do mainform1.destroy. Note  mainform1.close will save the setting again, so don't use}
     end
     else beep;
   end;
@@ -4673,7 +4683,7 @@ begin
     begin
       u2:=fitsx-head.crpix1;
       v2:=fitsy-head.crpix2;
-    end; {mainwindow.Polynomial1.itemindex=0}
+    end; {mainform1.Polynomial1.itemindex=0}
 
     //for formalism 0 and 1
     xi :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
@@ -4731,7 +4741,7 @@ begin
 
   if ((data0='c') or (data0='C')) then {place marker in middle}
   begin
-    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainwindow.Polynomial1.itemindex,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
+    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainform1.Polynomial1.itemindex,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
     data1:='Center image '; {for hint}
@@ -4790,27 +4800,27 @@ var
   ra_new,dec_new, fitsx,fitsy : double;
   data1,sipwcs  : string;
 begin
-  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainform1.shape_marker3.visible=false)) then exit;{no solution to place marker}
 
   if decode_string(data0,ra_new,dec_new) then
   begin
     result:=true;
-    mainwindow.shape_marker3.visible:=true;
+    mainform1.shape_marker3.visible:=true;
 
 
-//    place_marker_radec(mainwindow.shape_marker3,ra_new,dec_new);{place ra,dec marker in image}
+//    place_marker_radec(mainform1.shape_marker3,ra_new,dec_new);{place ra,dec marker in image}
 //  shape.pen.style:=psSolid;//for photometry, resturn from psClear;
-//    mainwindow.shape_marker3.pen.style:=psClear; //not visible else psSolid
+//    mainform1.shape_marker3.pen.style:=psClear; //not visible else psSolid
 
     celestial_to_pixel(head, ra_new,dec_new,true, shape_marker3_fitsX,shape_marker3_fitsY); {ra,dec to fitsX,fitsY}
-    show_marker_shape(mainwindow.shape_marker3,0 {rectangle},50,50,10,shape_marker3_fitsX, shape_marker3_fitsY);
+    show_marker_shape(mainform1.shape_marker3,0 {rectangle},50,50,10,shape_marker3_fitsX, shape_marker3_fitsY);
 
     if ap_order<>0 then sipwcs:='SIP' else sipwcs:='WCS';
-    mainwindow.shape_marker3.hint:=data1+#10+sipwcs+'  x='+floattostrF(shape_marker3_fitsX,ffFixed,0,1)+'  y='+ floattostrF(shape_marker3_fitsY,ffFixed,0,1); ;
+    mainform1.shape_marker3.hint:=data1+#10+sipwcs+'  x='+floattostrF(shape_marker3_fitsX,ffFixed,0,1)+'  y='+ floattostrF(shape_marker3_fitsY,ffFixed,0,1); ;
   end
   else
   begin
-    mainwindow.shape_marker3.visible:=false;
+    mainform1.shape_marker3.visible:=false;
     result:=false;
     beep;
     exit;
@@ -4824,7 +4834,7 @@ var
       cdelt1_a, det,x,y :double;
       flipV, flipH,xpos,ypos,leng : integer;
 begin
-  with mainwindow.image_north_arrow1 do
+  with mainform1.image_north_arrow1 do
   begin
     {clear}
     canvas.brush.color:=clmenu;
@@ -4835,18 +4845,18 @@ begin
 
     if ((head.naxis=0) or (head.cd1_1=0)) then {No solution, remove rotation and flipped indication and exit}
     begin
-      mainwindow.rotation1.caption:='';// clear rotation indication
-      mainwindow.flip_indication1.Visible:=false;// remove any flipped indication
+      mainform1.rotation1.caption:='';// clear rotation indication
+      mainform1.flip_indication1.Visible:=false;// remove any flipped indication
       exit;
     end;
 
-    mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
-    mainwindow.flip_indication1.Visible:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0;// flipped image?
+    mainform1.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
+    mainform1.flip_indication1.Visible:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0;// flipped image?
 
     Canvas.Pen.Color := clred;
 
-    if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
-    if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
+    if mainform1.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
+    if mainform1.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
     cdelt1_a:=sqrt(head.cd1_1*head.cd1_1+head.cd1_2*head.cd1_2);{length of one pixel step to the north}
 
@@ -4894,54 +4904,54 @@ var
   wd,
   flipV, flipH : integer;
 begin
-  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.northeast1.checked=false)) then exit;
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainform1.northeast1.checked=false)) then exit;
 
   xpos:=head.height div 50;
   ypos:=head.height div 50;
   leng:=head.height div 50;
   wd:=max(1,head.height div 1000);
-  mainwindow.image1.canvas.Pen.Color := clred;
-  mainwindow.image1.canvas.Pen.width := wd;
+  mainform1.image1.canvas.Pen.Color := clred;
+  mainform1.image1.canvas.Pen.width := wd;
 
 
-  if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
-  if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
+  if mainform1.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
+  if mainform1.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
   cdelt1_a:=sqrt(head.cd1_1*head.cd1_1+head.cd1_2*head.cd1_2);{length of one pixel step to the north}
 
-  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
+  moveToex(mainform1.image1.Canvas.handle,round(xpos),round(ypos),nil);
   det:=head.cd2_2*head.cd1_1-head.cd1_2*head.cd2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
 
 
   dRa:=cdelt1_a*-3*wd;
   dDec:=cdelt1_a*(leng-8*wd);
   x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=cdelt1_a*+3*wd;
   dDec:=cdelt1_a*(leng-8*wd);
   x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
-  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  moveToex(mainform1.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
   x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
 
 
@@ -4955,7 +4965,7 @@ begin
 
     shape_marker4_fitsX:=FITSX;
     shape_marker4_fitsY:=FITSY;
-    show_marker_shape(mainwindow.shape_marker4,2 {activate},40,40,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+    show_marker_shape(mainform1.shape_marker4,2 {activate},40,40,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
   end;
 end;
 
@@ -4972,72 +4982,72 @@ var
 begin
   {clear}
 
-  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.mountposition1.checked=false)) then
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainform1.mountposition1.checked=false)) then
   begin
-    mainwindow.shape_marker4.visible:=false;{could be visible from previous image}
+    mainform1.shape_marker4.visible:=false;{could be visible from previous image}
     exit;
   end;
 
-  mainwindow.image1.canvas.Pen.Color := clred;
+  mainform1.image1.canvas.Pen.Color := clred;
 
   xpos:=-1+(head.width+1)/2;{fits coordinates -1}
   ypos:=-1+(head.height+1)/2;
   leng:=head.height div 3;
   wd:=max(2,head.height div 700);
 
-  mainwindow.image1.canvas.Pen.width := wd;
+  mainform1.image1.canvas.Pen.width := wd;
 
 
-  if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
-  if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
+  if mainform1.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
+  if mainform1.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
   cdelt1_a:=sqrt(head.cd1_1*head.cd1_1+head.cd1_2*head.cd1_2);{length of one pixel step to the north}
 
-  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
+  moveToex(mainform1.image1.Canvas.handle,round(xpos),round(ypos),nil);
 
   det:=head.cd2_2*head.cd1_1-head.cd1_2*head.cd2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x :=-1+(head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
 
 
   dRa:=cdelt1_a*-6*wd;
   dDec:=cdelt1_a*(leng-16*wd);
   x :=-1+ (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=cdelt1_a*+6*wd;
   dDec:=cdelt1_a*(leng-16*wd);
   x :=-1+ (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x :=-1+ (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
 
-  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  moveToex(mainform1.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
 
-  mainwindow.histogram1.canvas.rectangle(-1,-1, mainwindow.histogram1.width+1, mainwindow.histogram1.height+1);
+  mainform1.histogram1.canvas.rectangle(-1,-1, mainform1.histogram1.width+1, mainform1.histogram1.height+1);
 
-//  mainwindow.image1.Canvas.arc(round(xpos)-size,round(ypos)-size,round(xpos)+size,round(ypos)+size,
+//  mainform1.image1.Canvas.arc(round(xpos)-size,round(ypos)-size,round(xpos)+size,round(ypos)+size,
 //       round(xpos)-size,round(ypos)-size,round(xpos)-size,round(ypos)-size);{draw empty circel without changing background . That means do not cover moon with hyades}
 
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
   x := -1+(head.cd1_2*dDEC - head.cd2_2*dRA) / det;
   y := -1+(head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+  lineTo(mainform1.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 
   for i:= trunc(xpos-1) to  round(xpos+1.00001) do
   for j:= trunc(ypos-1) to  round(ypos+1.00001) do
-    mainwindow.image1.Canvas.pixels[i,j]:=cllime; {perfect center indication}
+    mainform1.image1.Canvas.pixels[i,j]:=cllime; {perfect center indication}
   plot_mount;
 end;
 
@@ -5051,7 +5061,7 @@ var
   val,valmax,valmin,diff,    h  : double;
   profile: array[0..1,-rs..rs] of double;
 begin
-  with mainwindow.image_north_arrow1 do
+  with mainform1.image_north_arrow1 do
   begin
     {clear}
     canvas.brush.color:=clmenu;
@@ -5113,7 +5123,7 @@ begin
 //          lineTo(Canvas.handle,(width div 2)+i,hh);
 //      end;
 //    end;
-//   mainwindow.caption:=floattostr(diff);
+//   mainform1.caption:=floattostr(diff);
 
 
     diam1:=round((width/2 + (resolution/4) * object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));//in 1/6 pixel resolution
@@ -5142,27 +5152,27 @@ var
   letter_height,letter_width: integer;
   posanddate, freet : boolean;
 begin
-  posanddate:=mainwindow.positionanddate1.checked;
-  freet:=mainwindow.freetext1.checked;
+  posanddate:=mainform1.positionanddate1.checked;
+  freet:=mainform1.freetext1.checked;
   if ((head.naxis=0) or ((posanddate=false) and (freet=false))) then exit;
 
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.font.name:='Default';
+  mainform1.image1.Canvas.brush.Style:=bsClear;
+  mainform1.image1.Canvas.font.name:='Default';
   fontsize:=max(annotation_diameter,font_size);
-  mainwindow.image1.Canvas.font.size:=round(fontsize);
-  letter_height:=mainwindow.image1.Canvas.textheight('M');
-  letter_width:=mainwindow.image1.Canvas.textwidth('M');
+  mainform1.image1.Canvas.font.size:=round(fontsize);
+  letter_height:=mainform1.image1.Canvas.textheight('M');
+  letter_width:=mainform1.image1.Canvas.textwidth('M');
 
-  mainwindow.image1.Canvas.font.color:=annotation_color; {default clyellow}
+  mainform1.image1.Canvas.font.color:=annotation_color; {default clyellow}
 
   if posanddate then
   begin
-    if head.cd1_1<>0 then  mainwindow.image1.Canvas.textout(round(0.3*letter_width),head.height-2*letter_height,'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
+    if head.cd1_1<>0 then  mainform1.image1.Canvas.textout(round(0.3*letter_width),head.height-2*letter_height,'Position[α,δ]:  '+mainform1.ra1.text+'    '+mainform1.dec1.text);{}
     date_to_jd(head.date_obs,head.date_avg, head.exposure);{convert jd_start and jd_mid}
-    mainwindow.image1.Canvas.textout(round(0.3*letter_width),head.height-letter_height,'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
+    mainform1.image1.Canvas.textout(round(0.3*letter_width),head.height-letter_height,'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
   end;
   if ((freet) and (freetext<>'')) then
-    mainwindow.image1.Canvas.textout(head.width -round(0.3*letter_width) -mainwindow.image1.canvas.textwidth(freetext),head.height-letter_height,freetext);{right bottom corner, right aligned}
+    mainform1.image1.Canvas.textout(head.width -round(0.3*letter_width) -mainform1.image1.canvas.textwidth(freetext),head.height-letter_height,freetext);{right bottom corner, right aligned}
 end;
 
 
@@ -5172,30 +5182,30 @@ var
   x1,y1,dia                             : integer;
   flip_horizontal, flip_vertical,outside: boolean;
 begin
-  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.constellations1.checked=false)) then exit;
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainform1.constellations1.checked=false)) then exit;
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   {$ifdef mswindows}
-   mainwindow.image1.Canvas.Font.Name:='Default';
+   mainform1.image1.Canvas.Font.Name:='Default';
   {$endif}
   {$ifdef linux}
-  mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
+  mainform1.image1.Canvas.Font.Name:='DejaVu Sans';
   {$endif}
   {$ifdef darwin} {MacOS}
-  mainwindow.image1.Canvas.Font.Name:='Helvetica';
+  mainform1.image1.Canvas.Font.Name:='Helvetica';
   {$endif}
 
-  flip_vertical:=mainwindow.flip_vertical1.Checked;
-  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+  flip_vertical:=mainform1.flip_vertical1.Checked;
+  flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
-  mainwindow.image1.Canvas.Pen.Mode:= pmXor;
-  mainwindow.image1.Canvas.Pen.width :=max(1, head.height div 1000);
-  mainwindow.image1.Canvas.Pen.color:= $009000;
+  mainform1.image1.Canvas.Pen.Mode:= pmXor;
+  mainform1.image1.Canvas.Pen.width :=max(1, head.height div 1000);
+  mainform1.image1.Canvas.Pen.color:= $009000;
 
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.font.color:= clgray;
-  mainwindow.image1.Canvas.font.size:=max(8,head.height div 120);
+  mainform1.image1.Canvas.brush.Style:=bsClear;
+  mainform1.image1.Canvas.font.color:= clgray;
+  mainform1.image1.Canvas.font.size:=max(8,head.height div 120);
 
 
   for dia:=0 to length(constpos)-1 do  {constellations abreviations}
@@ -5210,7 +5220,7 @@ begin
       begin
         if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
         if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
-        mainwindow.image1.Canvas.textout(x1,y1,Constshortname[dia]);
+        mainform1.image1.Canvas.textout(x1,y1,Constshortname[dia]);
       end;
     end;
   end;
@@ -5231,10 +5241,10 @@ begin
         if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
 
         if ((constellation[dia].dm=-2) or (outside)) then
-          mainwindow.image1.Canvas.moveto(x1,y1)
+          mainform1.image1.Canvas.moveto(x1,y1)
         else
-          mainwindow.image1.Canvas.lineto(x1,y1);
-        TextOut(mainwindow.image1.Canvas.handle,  x1,y1, constellation[dia].bay,length(constellation[dia].bay) );{do not use here dc.textout since it will move position}
+          mainform1.image1.Canvas.lineto(x1,y1);
+        TextOut(mainform1.image1.Canvas.handle,  x1,y1, constellation[dia].bay,length(constellation[dia].bay) );{do not use here dc.textout since it will move position}
         outside:=false;
       end
       else
@@ -5278,35 +5288,35 @@ var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr syste
 
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
-  if ((radec) and (mainwindow.grid_ra_dec1.checked=false)) then exit;
-  if ((radec=false) and (mainwindow.grid_az_alt1.checked=false)) then exit;
+  if ((radec) and (mainform1.grid_ra_dec1.checked=false)) then exit;
+  if ((radec=false) and (mainform1.grid_az_alt1.checked=false)) then exit;
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   {$ifdef mswindows}
-   mainwindow.image1.Canvas.Font.Name:='Default';
+   mainform1.image1.Canvas.Font.Name:='Default';
   {$endif}
   {$ifdef linux}
-  mainwindow.image1.Canvas.Font.Name:='DejaVu Sans';
+  mainform1.image1.Canvas.Font.Name:='DejaVu Sans';
   {$endif}
   {$ifdef darwin} {MacOS}
-  mainwindow.image1.Canvas.Font.Name:='Helvetica';
+  mainform1.image1.Canvas.Font.Name:='Helvetica';
   {$endif}
 
 
-  flip_vertical:=mainwindow.flip_vertical1.Checked;
-  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+  flip_vertical:=mainform1.flip_vertical1.Checked;
+  flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
-  mainwindow.image1.Canvas.Pen.Mode:= pmXor;
-  mainwindow.image1.Canvas.Pen.width :=max(1,round(head.height/mainwindow.image1.height));
+  mainform1.image1.Canvas.Pen.Mode:= pmXor;
+  mainform1.image1.Canvas.Pen.width :=max(1,round(head.height/mainform1.image1.height));
 
   if radec then
-    mainwindow.image1.Canvas.Pen.color:= $909000
+    mainform1.image1.Canvas.Pen.color:= $909000
   else
-    mainwindow.image1.Canvas.Pen.color:= $009090;
+    mainform1.image1.Canvas.Pen.color:= $009090;
 
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.font.color:= $909090;
+  mainform1.image1.Canvas.brush.Style:=bsClear;
+  mainform1.image1.Canvas.font.color:= $909090;
 
   range:=head.cdelt2*sqrt(sqr(head.width/2)+sqr(head.height/2));{range in degrees, FROM CENTER}
 
@@ -5323,14 +5333,14 @@ begin
     az_ra(az+0.01*pi/180,alt,site_lat_radians,0,wtime2actual,{out} r2,d2);{conversion az,alt to ra,dec} {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
     celestial_to_pixel(head, r2,d2,true, fX2,fY2);{ra,dec to fitsX,fitsY}
     angle:=arctan2(fy2-fy1,fx2-fx1)*180/pi;
-    mainwindow.image1.Canvas.font.size:=14;
-    mainwindow.image1.Canvas.textout(10,head.height-25,'Angle: '+floattostrF(angle,FFfixed,0,2)+ '°    ('+head.date_obs+', '+sitelong+', '+sitelat+')');
+    mainform1.image1.Canvas.font.size:=14;
+    mainform1.image1.Canvas.textout(10,head.height-25,'Angle: '+floattostrF(angle,FFfixed,0,2)+ '°    ('+head.date_obs+', '+sitelong+', '+sitelat+')');
 
     ra0:=az;//make az,alt grid
     dec0:=alt;
   end;
 
-  mainwindow.image1.Canvas.font.size:=8;
+  mainform1.image1.Canvas.font.size:=8;
 
 
   {calculate DEC step size}
@@ -5440,10 +5450,10 @@ begin
           end
           else ra_text:=inttostr(round(fnmodulo(i,360)));//az, alt grid
 
-          mainwindow.image1.Canvas.textout(x1,y1,ra_text+','+prepare_dec4(j*pi/180,' '));
+          mainform1.image1.Canvas.textout(x1,y1,ra_text+','+prepare_dec4(j*pi/180,' '));
         end;
-        mainwindow.image1.Canvas.moveto(x1,y1);
-        mainwindow.image1.Canvas.lineto(x2,y2);
+        mainform1.image1.Canvas.moveto(x1,y1);
+        mainform1.image1.Canvas.lineto(x2,y2);
       end;
       j:=j+step;
     until j>=min(centDEC+6*step,90);
@@ -5486,8 +5496,8 @@ begin
       if (  ((x1>=0) and (y1>=0) and (x1<head.width)and (y1<head.height)) or
             ((x2>=0) and (y2>=0) and (x2<head.width)and (y2<head.height)) ) then
       begin {line is partly within image1. Strictly not necessary but more secure}
-        mainwindow.image1.Canvas.moveto(x1,y1);
-        mainwindow.image1.Canvas.lineto(x2,y2);
+        mainform1.image1.Canvas.moveto(x1,y1);
+        mainform1.image1.Canvas.lineto(x2,y2);
       end;
       i:=i+step;
     until ((i>=centRa+stepRA*6) or (i>=(centRA-6*stepRA)+360));
@@ -5497,35 +5507,35 @@ begin
 end;
 
 
-procedure Tmainwindow.saturation_factor_plot1KeyUp(Sender: TObject;
+procedure Tmainform1.saturation_factor_plot1KeyUp(Sender: TObject;
   var Key: Word; Shift: TShiftState);
 begin
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainform1.image1,false);{plot real}
 end;
 
 
-procedure Tmainwindow.saturation_factor_plot1MouseUp(Sender: TObject;
+procedure Tmainform1.saturation_factor_plot1MouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainform1.image1,false);{plot real}
 end;
 
 
-procedure Tmainwindow.Polynomial1Change(Sender: TObject);
+procedure Tmainform1.Polynomial1Change(Sender: TObject);
 begin
   if  (
-     ((mainwindow.polynomial1.itemindex=1) and (ap_order=0)) or {SIP polynomial selected but no data}
-     ((mainwindow.polynomial1.itemindex=2) and (x_coeff[0]=0)) {DSS polynomial selected but no data}
+     ((mainform1.polynomial1.itemindex=1) and (ap_order=0)) or {SIP polynomial selected but no data}
+     ((mainform1.polynomial1.itemindex=2) and (x_coeff[0]=0)) {DSS polynomial selected but no data}
      ) then
-   mainwindow.Polynomial1.color:=clred
+   mainform1.Polynomial1.color:=clred
    else
-   mainwindow.Polynomial1.color:=cldefault;
+   mainform1.Polynomial1.color:=cldefault;
 end;
 
 
-procedure Tmainwindow.remove_markers1Click(Sender: TObject);
+procedure Tmainform1.remove_markers1Click(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 end;
 
 
@@ -5536,21 +5546,21 @@ var
 begin
   if ((head.naxis=0) or (shape=nil) or (shape.visible=false)) then exit;
 
-  xF:=(fitsX-0.5)*(mainwindow.image1.width/head.width)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/head.width);{starts at 1}
-  yF:=-(fitsY-head.height-0.5)*(mainwindow.image1.height/head.height)-0.5; //inverse of fitsy:=0.5+head.height-(0.5+yf)/(image1.height/head.height); {from bottom to top, starts at 1}
+  xF:=(fitsX-0.5)*(mainform1.image1.width/head.width)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/head.width);{starts at 1}
+  yF:=-(fitsY-head.height-0.5)*(mainform1.image1.height/head.height)-0.5; //inverse of fitsy:=0.5+head.height-(0.5+yf)/(image1.height/head.height); {from bottom to top, starts at 1}
 
-  if mainwindow.Flip_horizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
-  if mainwindow.flip_vertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
+  if mainform1.Flip_horizontal1.Checked then x:=mainform1.image1.width-xF else x:=xF;
+  if mainform1.flip_vertical1.Checked then y:=mainform1.image1.height-yF else y:=yF;
 
   with shape do
   begin
-     hh:=max(minimum,round(h*mainwindow.image1.height/head.height));
+     hh:=max(minimum,round(h*mainform1.image1.height/head.height));
      height:=hh;
-     ww:= max(minimum,round(w*mainwindow.image1.width/head.width));
+     ww:= max(minimum,round(w*mainform1.image1.width/head.width));
      width:=ww;
-     ll:=round(mainwindow.image1.left + x - (width)/2);
+     ll:=round(mainform1.image1.left + x - (width)/2);
      left:=ll;
-     tt:=round(mainwindow.image1.top   + y - height/2);
+     tt:=round(mainform1.image1.top   + y - height/2);
      top:=tt;
 
      if shape_type=0 then {rectangle}
@@ -5571,14 +5581,14 @@ begin
      end;
      {else keep as it is}
   end;
-//  if tshape(shape)=tshape(mainwindow.shape_var1) then
-//    begin mainwindow.labelVar1.left:=ll+ww; mainwindow.labelVar1.top:=tt+hh; mainwindow.labelVar1.font.size:=max(hh div 4,14);  mainwindow.labelVar1.visible:=true;end
+//  if tshape(shape)=tshape(mainform1.shape_var1) then
+//    begin mainform1.labelVar1.left:=ll+ww; mainform1.labelVar1.top:=tt+hh; mainform1.labelVar1.font.size:=max(hh div 4,14);  mainform1.labelVar1.visible:=true;end
 //  else
-//  if tshape(shape)=tshape(mainwindow.shape_check1) then
-//    begin mainwindow.labelCheck1.left:=ll+ww; mainwindow.labelCheck1.top:=tt+hh; mainwindow.labelCheck1.font.size:=max(hh div 4,14); mainwindow.labelCheck1.visible:=true;end
+//  if tshape(shape)=tshape(mainform1.shape_check1) then
+//    begin mainform1.labelCheck1.left:=ll+ww; mainform1.labelCheck1.top:=tt+hh; mainform1.labelCheck1.font.size:=max(hh div 4,14); mainform1.labelCheck1.visible:=true;end
 //  else
-//  if tshape(shape)=tshape(mainwindow.shape_comp1) then
-//    begin mainwindow.labelThree1.left:=ll+ww; mainwindow.labelThree1.top:=tt+hh; mainwindow.labelThree1.font.size:=max(hh div 4,14); mainwindow.labelThree1.visible:=true;end;
+//  if tshape(shape)=tshape(mainform1.shape_comp1) then
+//    begin mainform1.labelThree1.left:=ll+ww; mainform1.labelThree1.top:=tt+hh; mainform1.labelThree1.font.size:=max(hh div 4,14); mainform1.labelThree1.visible:=true;end;
 
 //  shape.pen.style:=psSolid;//for photometry, resturn from psClear;
 end;
@@ -5599,48 +5609,48 @@ begin
   {$endif}
   {$endif}
 
-  if ( (((mainwindow.image1.width<=maxw) and (mainwindow.image1.height<=maxw)) or (mousewheelfactor<1){zoom out}) and {increased to 65535 for Windows only. Was above 12000 unequal stretch}
-        ((mainwindow.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
+  if ( (((mainform1.image1.width<=maxw) and (mainform1.image1.height<=maxw)) or (mousewheelfactor<1){zoom out}) and {increased to 65535 for Windows only. Was above 12000 unequal stretch}
+        ((mainform1.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
   then
   begin
     {limit the mouse positions to positions within the image1}
-    mousepos.x:=max(MousePos.X,mainwindow.Image1.Left);
-    mousepos.y:=max(MousePos.Y,mainwindow.Image1.top);
-    mousepos.x:=min(MousePos.X,mainwindow.Image1.Left+mainwindow.image1.width);
-    mousepos.y:=min(MousePos.Y,mainwindow.Image1.top+mainwindow.image1.height);
+    mousepos.x:=max(MousePos.X,mainform1.Image1.Left);
+    mousepos.y:=max(MousePos.Y,mainform1.Image1.top);
+    mousepos.x:=min(MousePos.X,mainform1.Image1.Left+mainform1.image1.width);
+    mousepos.y:=min(MousePos.Y,mainform1.Image1.top+mainform1.image1.height);
 
     {scroll to compensate zoom}
-    mainwindow.image1.Left := Round((1 - mousewheelfactor) * MousePos.X + mousewheelfactor * mainwindow.Image1.Left);
-    mainwindow.image1.Top  := Round((1 - mousewheelfactor) * MousePos.Y + mousewheelfactor * mainwindow.Image1.Top);
+    mainform1.image1.Left := Round((1 - mousewheelfactor) * MousePos.X + mousewheelfactor * mainform1.Image1.Left);
+    mainform1.image1.Top  := Round((1 - mousewheelfactor) * MousePos.Y + mousewheelfactor * mainform1.Image1.Top);
 
     {zoom}
-    mainwindow.image1.height:=round(mainwindow.image1.height * mousewheelfactor);
-    mainwindow.image1.width:= round(mainwindow.image1.width * mousewheelfactor);
+    mainform1.image1.height:=round(mainform1.image1.height * mousewheelfactor);
+    mainform1.image1.width:= round(mainform1.image1.width * mousewheelfactor);
 
-    //mainwindow.caption:=inttostr(mainwindow.image1.width)+' x '+inttostr(mainwindow.image1.height);
+    //mainform1.caption:=inttostr(mainform1.image1.width)+' x '+inttostr(mainform1.image1.height);
 
     {marker}
-      show_marker_shape(mainwindow.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
-      show_marker_shape(mainwindow.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
-      show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},30,30,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-      show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+      show_marker_shape(mainform1.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
+      show_marker_shape(mainform1.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
+      show_marker_shape(mainform1.shape_marker3,9 {no change in shape and hint},30,30,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+      show_marker_shape(mainform1.shape_marker4,9 {no change in shape and hint},60,60,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
      if copy_paste then
      begin
-       show_marker_shape(mainwindow.shape_paste1,copy_paste_shape {rectangle or ellipse},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
+       show_marker_shape(mainform1.shape_paste1,copy_paste_shape {rectangle or ellipse},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
      end;
 
     {reference point manual alignment}
-     if mainwindow.shape_manual_alignment1.visible then {For manual alignment. Do this only when visible}
-       show_marker_shape(mainwindow.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
+     if mainform1.shape_manual_alignment1.visible then {For manual alignment. Do this only when visible}
+       show_marker_shape(mainform1.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
 
      //update shape positions using the known fitxY, fitsY position. Ra,dec position is not required
-    show_marker_shape(mainwindow.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
-    show_marker_shape(mainwindow.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
-    show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},30,30,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-    show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+    show_marker_shape(mainform1.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
+    show_marker_shape(mainform1.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
+    show_marker_shape(mainform1.shape_marker3,9 {no change in shape and hint},30,30,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+    show_marker_shape(mainform1.shape_marker4,9 {no change in shape and hint},60,60,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
-    with mainwindow do
+    with mainform1 do
       for i:=0 to high(fshapes) do
          if Fshapes[i].shape<>nil then show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
 
@@ -5648,19 +5658,19 @@ begin
 end;
 
 
-procedure Tmainwindow.zoomin1Click(Sender: TObject);
+procedure Tmainform1.zoomin1Click(Sender: TObject);
 begin
   zoom(1.2, TPoint.Create(Panel1.Width div 2, Panel1.Height div 2){zoom center panel1} );
 end;
 
 
-procedure Tmainwindow.zoomout1Click(Sender: TObject);
+procedure Tmainform1.zoomout1Click(Sender: TObject);
 begin
   zoom(1/1.2, TPoint.Create(Panel1.Width div 2, Panel1.Height div 2));
 end;
 
 
-procedure Tmainwindow.Panel1MouseWheelDown(Sender: TObject; Shift: TShiftState;
+procedure Tmainform1.Panel1MouseWheelDown(Sender: TObject; Shift: TShiftState;
   MousePos: TPoint; var Handled: Boolean);
 var
   P: TPoint;
@@ -5668,16 +5678,16 @@ begin
   GetCursorPos(p);  {use this since in Lazarus the mousepos varies depending control under the mouse}
   p:=panel1.Screentoclient(p);
 
-//  mainwindow.statusbar1.simpletext:=inttostr(p.x)+'   ' +inttostr(p.Y)+'   '+inttostr(mousepos.x)+'   '+inttostr(mousepos.y);
+//  mainform1.statusbar1.simpletext:=inttostr(p.x)+'   ' +inttostr(p.Y)+'   '+inttostr(mousepos.x)+'   '+inttostr(mousepos.y);
 
   if p.y<0 then exit; {not in image range}
 
-  if mainwindow.inversemousewheel1.checked then  zoom(1.2,p) else zoom(1/1.2,p);
+  if mainform1.inversemousewheel1.checked then  zoom(1.2,p) else zoom(1/1.2,p);
   Handled := True;{prevent that in win7 the combobox is moving up/down if it has focus}
 end;
 
 
-procedure Tmainwindow.Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState; //zoom
+procedure Tmainform1.Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState; //zoom
   MousePos: TPoint; var Handled: Boolean);
 var
   P: TPoint;
@@ -5687,12 +5697,12 @@ begin
   if p.y<0 then
       exit; {not in image range}
 
-  if mainwindow.inversemousewheel1.checked then  zoom(1/1.2,p) else zoom(1.2,p);
+  if mainform1.inversemousewheel1.checked then  zoom(1/1.2,p) else zoom(1.2,p);
   Handled := True;{prevent that in win7 the combobox is moving up/down if it has focus}
 end;
 
 
-procedure Tmainwindow.show_statistics1Click(Sender: TObject);
+procedure Tmainform1.show_statistics1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i,band,flux_counter,greylevels,greylevels2 : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
@@ -5862,7 +5872,7 @@ begin
   end;
 
 
-  if ((nrbits=16) or (nrbits=8)) then info_message:=info_message+#10+'Greyscale levels: '+ inttostr(greylevels);
+  if ((head.nrbits=16) or (head.nrbits=8)) then info_message:=info_message+#10+'Greyscale levels: '+ inttostr(greylevels);
 
   if head.Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
 
@@ -5900,94 +5910,94 @@ procedure update_statusbar_section5;{update section 5 with image dimensions in d
 begin
   if head.cdelt2<>0 then
   begin
-    mainwindow.statusbar1.panels[6].text:=floattostrF(head.width*abs(head.cdelt2),ffFixed,0,2)+' x '+floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2)+' °';{give image dimensions and bit per pixel info}
+    mainform1.statusbar1.panels[6].text:=floattostrF(head.width*abs(head.cdelt2),ffFixed,0,2)+' x '+floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2)+' °';{give image dimensions and bit per pixel info}
     stackmenu1.search_fov1.text:=floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2); {negative head.cdelt2 are produced by PI}
   end
-  else mainwindow.statusbar1.panels[6].text:='';
+  else mainform1.statusbar1.panels[6].text:='';
 end;
 
 
 procedure update_menu_related_to_solver(yes :boolean); {update menu section related to solver succesfull}
 begin
-  if mainwindow.deepsky_annotation1.enabled=yes then exit;{no need to update}
+  if mainform1.deepsky_annotation1.enabled=yes then exit;{no need to update}
 
-  mainwindow.annotate_with_measured_magnitudes1.enabled:=yes;{enable menu}
-  mainwindow.annotate_unknown_stars1.enabled:=yes;{enable menu}
-  mainwindow.variable_star_annotation1.enabled:=yes;{enable menu}
-  mainwindow.annotate_minor_planets1.enabled:=yes;{enable menu}
-  mainwindow.hyperleda_annotation1.enabled:=yes;{enable menu}
-  mainwindow.deepsky_annotation1.enabled:=yes;{enable menu}
-  mainwindow.star_annotation1.enabled:=yes;{enable menu}
-  mainwindow.hyperleda_annotation1.enabled:=yes;{enable menu}
-  mainwindow.deepsky_annotation1.enabled:=yes;{enable menu}
-  mainwindow.calibrate_photometry1.enabled:=yes;{enable menu}
-  mainwindow.sqm1.enabled:=yes;{enable menu}
-  mainwindow.add_marker_position1.enabled:=yes;{enable popup menu}
-  mainwindow.measuretotalmagnitude1.enabled:=yes;{enable popup menu}
-  mainwindow.writepositionshort1.enabled:=yes;{enable popup menu}
-  mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
-  mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
-  mainwindow.export_star_info1.enabled:=yes;{enable popup menu}
-  mainwindow.online_query1.enabled:=yes;{enable popup menu}
-  mainwindow.Polynomial1Change(nil);{update color for SIP}
+  mainform1.annotate_with_measured_magnitudes1.enabled:=yes;{enable menu}
+  mainform1.annotate_unknown_stars1.enabled:=yes;{enable menu}
+  mainform1.variable_star_annotation1.enabled:=yes;{enable menu}
+  mainform1.annotate_minor_planets1.enabled:=yes;{enable menu}
+  mainform1.hyperleda_annotation1.enabled:=yes;{enable menu}
+  mainform1.deepsky_annotation1.enabled:=yes;{enable menu}
+  mainform1.star_annotation1.enabled:=yes;{enable menu}
+  mainform1.hyperleda_annotation1.enabled:=yes;{enable menu}
+  mainform1.deepsky_annotation1.enabled:=yes;{enable menu}
+  mainform1.calibrate_photometry1.enabled:=yes;{enable menu}
+  mainform1.sqm1.enabled:=yes;{enable menu}
+  mainform1.add_marker_position1.enabled:=yes;{enable popup menu}
+  mainform1.measuretotalmagnitude1.enabled:=yes;{enable popup menu}
+  mainform1.writepositionshort1.enabled:=yes;{enable popup menu}
+  mainform1.Copyposition1.enabled:=yes;{enable popup menu}
+  mainform1.Copypositionindeg1.enabled:=yes;{enable popup menu}
+  mainform1.export_star_info1.enabled:=yes;{enable popup menu}
+  mainform1.online_query1.enabled:=yes;{enable popup menu}
+  mainform1.Polynomial1Change(nil);{update color for SIP}
   stackmenu1.focallength1Exit(nil); {update output calculator after a SOLVE}
 end;
 
 
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 begin
-  mainwindow.Saveasfits1.enabled:=fits; {only allow saving images}
-  mainwindow.updown1.visible:=((last_extension=false) or (extend_type>0));
+  mainform1.Saveasfits1.enabled:=fits; {only allow saving images}
+  mainform1.updown1.visible:=((last_extension=false) or (extend_type>0));
 
-  if ((last_extension=true) and (extend_type=0) and  (mainwindow.pagecontrol1.showtabs {do it only when necessary to avoid blink})) then
+  if ((last_extension=true) and (extend_type=0) and  (mainform1.pagecontrol1.showtabs {do it only when necessary to avoid blink})) then
   begin
-    mainwindow.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
-    mainwindow.pagecontrol1.Tabindex:=0;{show first tab}
+    mainform1.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
+    mainform1.pagecontrol1.Tabindex:=0;{show first tab}
   end;
 
-  if fits<>mainwindow.data_range_groupBox1.Enabled then  {menu requires update}
+  if fits<>mainform1.data_range_groupBox1.Enabled then  {menu requires update}
   begin
-    mainwindow.data_range_groupBox1.Enabled:=fits;
-    mainwindow.Export_image1.enabled:=fits;
-    mainwindow.SaveasJPGPNGBMP1.Enabled:=fits;
+    mainform1.data_range_groupBox1.Enabled:=fits;
+    mainform1.Export_image1.enabled:=fits;
+    mainform1.SaveasJPGPNGBMP1.Enabled:=fits;
 
-    mainwindow.imageinspection1.enabled:=fits;
-    mainwindow.ShowFITSheader1.enabled:=fits;
-    mainwindow.demosaic_Bayermatrix1.Enabled:=fits;
-    mainwindow.autocorrectcolours1.Enabled:=fits;
-    mainwindow.removegreenpurple1.enabled:=fits;
-    mainwindow.bin_2x2menu1.Enabled:=fits;
-    mainwindow.bin_3x3menu1.Enabled:=fits;
-    mainwindow.stretch_draw1.Enabled:=fits;
-    mainwindow.stretch_draw_fits1.Enabled:=fits;
+    mainform1.imageinspection1.enabled:=fits;
+    mainform1.ShowFITSheader1.enabled:=fits;
+    mainform1.demosaic_Bayermatrix1.Enabled:=fits;
+    mainform1.autocorrectcolours1.Enabled:=fits;
+    mainform1.removegreenpurple1.enabled:=fits;
+    mainform1.bin_2x2menu1.Enabled:=fits;
+    mainform1.bin_3x3menu1.Enabled:=fits;
+    mainform1.stretch_draw1.Enabled:=fits;
+    mainform1.stretch_draw_fits1.Enabled:=fits;
 
-    mainwindow.CropFITSimage1.Enabled:=fits;
+    mainform1.CropFITSimage1.Enabled:=fits;
 
-    mainwindow.stretch1.enabled:=fits;
-    mainwindow.inversimage1.enabled:=fits;
-    mainwindow.rotate1.enabled:=fits;
+    mainform1.stretch1.enabled:=fits;
+    mainform1.inversimage1.enabled:=fits;
+    mainform1.rotate1.enabled:=fits;
 
-    mainwindow.minimum1.enabled:=fits;
-    mainwindow.maximum1.enabled:=fits;
-    mainwindow.range1.enabled:=fits;
-    mainwindow.min2.enabled:=fits;
-    mainwindow.max2.enabled:=fits;
+    mainform1.minimum1.enabled:=fits;
+    mainform1.maximum1.enabled:=fits;
+    mainform1.range1.enabled:=fits;
+    mainform1.min2.enabled:=fits;
+    mainform1.max2.enabled:=fits;
 
-    mainwindow.convertmono1.enabled:=fits;
+    mainform1.convertmono1.enabled:=fits;
 
-    mainwindow.solve_button1.enabled:=fits;
-    mainwindow.astrometric_solve_image1.enabled:=fits;
+    mainform1.solve_button1.enabled:=fits;
+    mainform1.astrometric_solve_image1.enabled:=fits;
 
     stackmenu1.tab_Pixelmath1.enabled:=fits;
     stackmenu1.tab_Pixelmath2.enabled:=fits;
   end;{menu change}
 
-  //mainwindow.error_label1.visible:=(fits=false);
-  if fits then mainwindow.error_label1.visible:=false;;
+  //mainform1.error_label1.visible:=(fits=false);
+  if fits then mainform1.error_label1.visible:=false;;
 
-  mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
-  mainwindow.saturation_factor_plot1.enabled:=head.naxis3=3;{colour};
-  mainwindow.Polynomial1Change(nil);{update color after an image LOAD}
+  mainform1.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
+  mainform1.saturation_factor_plot1.enabled:=head.naxis3=3;{colour};
+  mainform1.Polynomial1Change(nil);{update color after an image LOAD}
 
   update_menu_related_to_solver((fits) and (head.cd1_1<>0));
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
@@ -6000,7 +6010,7 @@ begin
 end;
 
 
-procedure Tmainwindow.astrometric_solve_image1Click(Sender: TObject);
+procedure Tmainform1.astrometric_solve_image1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit;
 
@@ -6016,15 +6026,15 @@ begin
   memo1.lines.beginupdate;
 
   {solve internal}
-  mainwindow.caption:='Solving.......';
-  save1.Enabled:=solve_image(img_loaded,head,mainwindow.memo1.lines,false {get hist, is already available},false {check filter});{match between loaded image and star database}
+  mainform1.caption:='Solving.......';
+  save1.Enabled:=solve_image(img_loaded,head,mainform1.memo1.lines,false {get hist, is already available},false {check filter});{match between loaded image and star database}
   if head.cd1_1<>0 then
   begin
-    mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
-    mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+    mainform1.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
+    mainform1.dec1.text:=prepare_dec(head.dec0,' ');
     {$IfDef Darwin}// {MacOS}
       //ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-      //mainwindow.dec1change(nil);
+      //mainform1.dec1change(nil);
     {$ENDIF}
     plot_north;
     plot_north_on_image;
@@ -6046,7 +6056,7 @@ begin
   Screen.Cursor:=crDefault;
 end;
 
-procedure Tmainwindow.min2EditingDone(Sender: TObject);
+procedure Tmainform1.min2EditingDone(Sender: TObject);
 var
    edit_value: integer;
 begin
@@ -6054,54 +6064,54 @@ begin
   if edit_value<> minimum1.Position then {something has really changed}
   begin
     minimum1.Position:=edit_value;
-    mainwindow.range1.itemindex:=7; {manual}
-    plot_fits(mainwindow.image1,false);
+    mainform1.range1.itemindex:=7; {manual}
+    plot_fits(mainform1.image1,false);
   end;
 end;
 
 
-procedure Tmainwindow.remove_above1Click(Sender: TObject);
+procedure Tmainform1.remove_above1Click(Sender: TObject);
 begin
   {calculate in array coordinates}
   {startY is already defined by mousedown}
   if flip_vertical1.checked=false then stopY:=0 else stopY:=head.height-1;
   startx:=0;
   stopX:=head.width-1;
-  mainwindow.CropFITSimage1Click(nil);
+  mainform1.CropFITSimage1Click(nil);
  end;
 
 
-procedure Tmainwindow.remove_below1Click(Sender: TObject);
+procedure Tmainform1.remove_below1Click(Sender: TObject);
 begin
   {calculate in array coordinates}
   {startY is already defined by mousedown}
   if flip_vertical1.checked then stopY:=0 else stopY:=head.height-1;
   startx:=0;
   stopX:=head.width-1;
-  mainwindow.CropFITSimage1Click(nil);
+  mainform1.CropFITSimage1Click(nil);
 end;
 
-procedure Tmainwindow.remove_left1Click(Sender: TObject);
+procedure Tmainform1.remove_left1Click(Sender: TObject);
 begin
   {calculate in array coordinates}
   starty:=0;{no change in y}
   stopY:=head.height-1;
   {startx is already defined by mousedown}
   if flip_horizontal1.checked then stopX:=0 else stopX:=head.width-1;
-  mainwindow.CropFITSimage1Click(nil);
+  mainform1.CropFITSimage1Click(nil);
 end;
 
-procedure Tmainwindow.remove_right1Click(Sender: TObject);
+procedure Tmainform1.remove_right1Click(Sender: TObject);
 begin
   {calculate in array coordinates}
   starty:=0;{no change in y}
   stopY:=head.height-1;
   {startx is already defined by mousedown}
   if flip_horizontal1.checked=false then stopX:=0 else stopX:=head.width-1;
-  mainwindow.CropFITSimage1Click(nil);
+  mainform1.CropFITSimage1Click(nil);
 end;
 
-procedure Tmainwindow.select_directory_thumb1Click(Sender: TObject);
+procedure Tmainform1.select_directory_thumb1Click(Sender: TObject);
 begin
   if SelectDirectory('Select a directory', ExtractFileDir(filename2){initialdir} , chosenDirectory) then
   begin
@@ -6111,7 +6121,7 @@ begin
   end;
 end;
 
-procedure Tmainwindow.SpeedButton1Click(Sender: TObject);
+procedure Tmainform1.SpeedButton1Click(Sender: TObject);
 var
   oldvalue:integer;
 begin
@@ -6130,7 +6140,7 @@ var
   val                               : single;
 begin
   result:='';
-  if load_fits(filename7,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false then
+  if load_fits(filename7,true {light},true,true {update memo},0,mainform1.memo1.lines,head,img_loaded)=false then
   begin
     beep;
     exit;
@@ -6210,22 +6220,22 @@ begin
     head.width:=w;
     head.height:=h;
 
-    mainwindow.Memo1.Lines.BeginUpdate;
+    mainform1.Memo1.Lines.BeginUpdate;
 
-    update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
-    update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
-
-
-    update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
-    update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+    update_integer(mainform1.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+    update_integer(mainform1.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
 
+    update_integer(mainform1.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+    update_integer(mainform1.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-    if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
-    if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
 
-    if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float(mainwindow.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
-    if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float(mainwindow.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
+
+    if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
+    if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
+
+    if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float(mainform1.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
+    if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float(mainform1.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
 
     if head.cd1_1<>0 then
     begin
@@ -6233,39 +6243,39 @@ begin
       head.cd1_2:=head.cd1_2/ratio;
       head.cd2_1:=head.cd2_1/ratio;
       head.cd2_2:=head.cd2_2/ratio;
-      update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-      update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-      update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-      update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+      update_float(mainform1.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+      update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+      update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+      update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
     end;
 
     head.XBINNING:=head.XBINNING/ratio;
     head.YBINNING:=head.YBINNING/ratio;
-    update_float(mainwindow.memo1.lines,'XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
-    update_float(mainwindow.memo1.lines,'YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
+    update_float(mainform1.memo1.lines,'XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
+    update_float(mainform1.memo1.lines,'YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
 
 
     if head.XPIXSZ<>0 then
     begin
       head.XPIXSZ:=head.XPIXSZ/ratio;
       head.YPIXSZ:=head.YPIXSZ/ratio;
-      update_float(mainwindow.memo1.lines,'XPIXSZ  =',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);{note: comment will be never used since it is an existing keyword}
-      update_float(mainwindow.memo1.lines,'YPIXSZ  =',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
-      update_float(mainwindow.memo1.lines,'PIXSIZE1=',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);
-      update_float(mainwindow.memo1.lines,'PIXSIZE2=',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
+      update_float(mainform1.memo1.lines,'XPIXSZ  =',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);{note: comment will be never used since it is an existing keyword}
+      update_float(mainform1.memo1.lines,'YPIXSZ  =',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
+      update_float(mainform1.memo1.lines,'PIXSIZE1=',' / Pixel width in microns (after binning)          ',false ,head.XPIXSZ);
+      update_float(mainform1.memo1.lines,'PIXSIZE2=',' / Pixel height in microns (after binning)         ',false ,head.YPIXSZ);
 
     end;
 
-    add_text(mainwindow.memo1.lines,'HISTORY   ','One raw colour extracted.');
+    add_text(mainform1.memo1.lines,'HISTORY   ','One raw colour extracted.');
 
-    remove_key(mainwindow.memo1.lines,'BAYERPAT=',false{all});
-    update_text(mainwindow.memo1.lines,'FILTER  =',copy(#39+filtern+#39+'                   ',1,21)+'/ Filter name');
+    remove_key(mainform1.memo1.lines,'BAYERPAT=',false{all});
+    update_text(mainform1.memo1.lines,'FILTER  =',copy(#39+filtern+#39+'                   ',1,21)+'/ Filter name');
 
-    mainwindow.Memo1.Lines.EndUpdate;
+    mainform1.Memo1.Lines.EndUpdate;
 
     img_loaded:=img_temp11;
     result:=ChangeFileExt(FileName7,'_'+filtern+'.fit');
-    if save_fits(img_loaded,mainwindow.memo1.lines,result,16,true{overwrite}) =false then result:='';
+    if save_fits(img_loaded,mainform1.memo1.lines,head,result,true{overwrite}) =false then result:='';
     img_temp11:=nil;
   end
   else
@@ -6283,7 +6293,7 @@ var
   i           : integer;
 
 begin
-  with mainwindow do
+  with mainform1 do
   begin
     OpenDialog1.Title := 'Select multiple RAW fits files to extract Bayer matrix position '+filtern+' from them';
     OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -6317,37 +6327,37 @@ begin
 end;
 
 
-procedure Tmainwindow.OpenDialog1SelectionChange(Sender: TObject);
+procedure Tmainform1.OpenDialog1SelectionChange(Sender: TObject);
 begin
   if opendialog1.FilterIndex=4 then {preview FITS files}
   begin
     if (  (pos('.fit',opendialog1.FileName)>0) or (pos('.FIT',opendialog1.FileName)>0)  )  then
     begin
-      mainwindow.caption:=opendialog1.filename;
+      mainform1.caption:=opendialog1.filename;
       application.processmessages;{show file selection}
       {load image}
-      if load_fits(opendialog1.filename,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then
+      if load_fits(opendialog1.filename,true {light},true,true {update memo},0,mainform1.memo1.lines,head,img_loaded) then
       begin
-        if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
+        if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-        plot_fits(mainwindow.image1,false {re_center});
+        plot_fits(mainform1.image1,false {re_center});
       end;
     end;
   end;
 end;
 
 
-procedure Tmainwindow.Panel1MouseMove(Sender: TObject; Shift: TShiftState; X,
+procedure Tmainform1.Panel1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 begin
   Image1MouseMove(Sender,Shift, X-image1.Left, Y-image1.top);// transfer mouse move to image1
 end;
 
 
-procedure Tmainwindow.recent1Click(Sender: TObject);
+procedure Tmainform1.recent1Click(Sender: TObject);
 begin
   filename2:= (Sender as Tmenuitem).caption;
-  if fileexists(filename2) then load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot}) {load and center, plot}
+  if fileexists(filename2) then load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot}) {load and center, plot}
   else
   begin {file gone/deleted}
      application.messagebox(pchar('File not found:'+#13+#10+#13+#10+(Sender as Tmenuitem).caption),pchar('Error'),MB_ICONWARNING+MB_OK);
@@ -6357,7 +6367,7 @@ begin
 end;
 
 
-procedure Tmainwindow.Remove_deep_sky_object1Click(Sender: TObject);
+procedure Tmainform1.Remove_deep_sky_object1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,bsize,greylevels  : integer;
    mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
@@ -6418,7 +6428,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end {fits file}
   else
@@ -7256,7 +7266,7 @@ var
 begin
   X:=strtofloat2(stackmenu1.listview1.Items.item[index].subitems.Strings[L_X]);
   Y:=strtofloat2(stackmenu1.listview1.Items.item[index].subitems.Strings[L_Y]);
-  show_marker_shape(mainwindow.shape_manual_alignment1, 1 {circle, assume a good lock},20,20,10 {minimum size},X,Y);
+  show_marker_shape(mainform1.shape_manual_alignment1, 1 {circle, assume a good lock},20,20,10 {minimum size},X,Y);
 end;
 
 
@@ -7288,14 +7298,14 @@ begin
     except;
   end;
 
-  sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
+  sat_factor:=1-mainform1.saturation_factor_plot1.position/10;
 
-  head.backgr:=mainwindow.minimum1.position;
-  cwhite:=mainwindow.maximum1.position;
+  head.backgr:=mainform1.minimum1.position;
+  cwhite:=mainform1.maximum1.position;
   if cwhite<=head.backgr then cwhite:=head.backgr+1;
 
-  flipv:=mainwindow.flip_vertical1.Checked;
-  fliph:=mainwindow.Flip_horizontal1.Checked;
+  flipv:=mainform1.flip_vertical1.Checked;
+  fliph:=mainform1.Flip_horizontal1.Checked;
 
   for i:=0 to head.height-1 do
   begin
@@ -7400,26 +7410,26 @@ begin
   if center_image then {image new of resized}
   begin
     img.top:=0;
-    img.height:=mainwindow.panel1.height;
-    img.left:=(mainwindow.width - round(mainwindow.panel1.height*head.width/head.height)) div 2;
+    img.height:=mainform1.panel1.height;
+    img.left:=(mainform1.width - round(mainform1.panel1.height*head.width/head.height)) div 2;
   end;
   img.width:=round(img.height*head.width/head.height); {lock image aspect always for case a image with a different is clicked on in stack menu}
 
 
-  if img=mainwindow.image1 then {plotting to mainwindow?}
+  if img=mainform1.image1 then {plotting to mainform1?}
   begin
     plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
     plot_north_on_image;
     plot_large_north_indicator;
-    if mainwindow.add_marker_position1.checked then
-      mainwindow.add_marker_position1.checked:=place_marker3(marker_position);{place a marker}
+    if mainform1.add_marker_position1.checked then
+      mainform1.add_marker_position1.checked:=place_marker3(marker_position);{place a marker}
     plot_grid(true);
     plot_grid(false);//az,alt
     plot_constellations;
     plot_text;
-    if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
+    if ((annotated) and (mainform1.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
 
-    with mainwindow do
+    with mainform1 do
     if ((head.cd1_1<>0) and (annulus_plotted=false)) then ////hide all since aperture & annulus are plotted is plotted skip first time shapes. See photometry_buttonclick1
     for i:=0 to high(fshapes) do
     begin
@@ -7433,9 +7443,9 @@ begin
 
 
 
-    mainwindow.statusbar1.panels[5].text:=inttostr(head.width)+' x '+inttostr(head.height)+' x '+inttostr(head.naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
+    mainform1.statusbar1.panels[5].text:=inttostr(head.width)+' x '+inttostr(head.height)+' x '+inttostr(head.naxis3)+'   '+inttostr(head.nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
-    mainwindow.statusbar1.panels[7].text:=''; {2020-2-15 moved from load_fits to plot_image. Clear any outstanding error}
+    mainform1.statusbar1.panels[7].text:=''; {2020-2-15 moved from load_fits to plot_image. Clear any outstanding error}
 
     update_menu(true);{2020-2-15 moved from load_fits to plot_image.  file loaded, update menu for fits}
   end;
@@ -7519,7 +7529,7 @@ begin
 
   max_range:=round(min(head.datamax_org,65535)); {measured while loading, Prevent runtime error if head.datamax_org>65535}
 
-  case mainwindow.range1.itemindex of
+  case mainform1.range1.itemindex of
     -1,0,1: above_R:=0.001;{low range}
        2,3: above_R:=0.003; {medium range}
        4,5: above_R:=0.01;  {high range}
@@ -7530,7 +7540,7 @@ begin
 
   {calculate peak values }
 
-  if mainwindow.range1.itemindex<=5 then {auto detect mode}
+  if mainform1.range1.itemindex<=5 then {auto detect mode}
   begin
     minm:=0;
     maxm:=0;
@@ -7557,30 +7567,30 @@ begin
   end;
 
   hist_range:=min(65535,round(min(head.datamax_org,2*maxm)));{adapt histogram range}
-  mainwindow.minimum1.max:= max(hist_range,1); {set minimum to 1 to prevent runtime failure for fully black image}
-  mainwindow.maximum1.max:= max(hist_range,1);
+  mainform1.minimum1.max:= max(hist_range,1); {set minimum to 1 to prevent runtime failure for fully black image}
+  mainform1.maximum1.max:= max(hist_range,1);
 
-  if mainwindow.range1.itemindex<>7 then {<> manual}
+  if mainform1.range1.itemindex<>7 then {<> manual}
   begin
-    case mainwindow.range1.itemindex of
-              1,3,5: mainwindow.minimum1.position:=max(0,round(minm - (maxm-minm)*0.05));{set black at 5%}
-              else mainwindow.minimum1.position:=minm;
+    case mainform1.range1.itemindex of
+              1,3,5: mainform1.minimum1.position:=max(0,round(minm - (maxm-minm)*0.05));{set black at 5%}
+              else mainform1.minimum1.position:=minm;
     end;
-    mainwindow.maximum1.position:=maxm;
+    mainform1.maximum1.position:=maxm;
 
-    mainwindow.maximum1.smallchange:=1+round(maxm/100);
-    mainwindow.minimum1.smallchange:=1+round(maxm/100);
-    mainwindow.maximum1.largechange:=1+round(maxm/20);
-    mainwindow.minimum1.largechange:=1+round(maxm/20);
+    mainform1.maximum1.smallchange:=1+round(maxm/100);
+    mainform1.minimum1.smallchange:=1+round(maxm/100);
+    mainform1.maximum1.largechange:=1+round(maxm/20);
+    mainform1.minimum1.largechange:=1+round(maxm/20);
   end;
 
 
-  mainwindow.histogram1.canvas.brush.color:=clblack;
-  mainwindow.histogram1.canvas.rectangle(-1,-1, mainwindow.histogram1.width+1, mainwindow.histogram1.height+1);
-  mainwindow.histogram1.Canvas.Pen.Color := clred;
+  mainform1.histogram1.canvas.brush.color:=clblack;
+  mainform1.histogram1.canvas.rectangle(-1,-1, mainform1.histogram1.width+1, mainform1.histogram1.height+1);
+  mainform1.histogram1.Canvas.Pen.Color := clred;
 
-  h:=mainwindow.histogram1.height;
-  w:=mainwindow.histogram1.width;
+  h:=mainform1.histogram1.height;
+  w:=mainform1.histogram1.width;
 
   setlength(histogram2,number_colors,w); {w variable and dependend of windows desktop settings!}
   histo_peakR:=0;
@@ -7592,7 +7602,7 @@ begin
     for col:=0 to number_colors-1 do histogram2[col,i]:=0;
 
   except
-     beep; {histogram array size it too small adapt to mainwindow.histogram1.width;!!}
+     beep; {histogram array size it too small adapt to mainform1.histogram1.width;!!}
      exit;
   end;
 
@@ -7622,12 +7632,12 @@ begin
     if ((countR>0) or (countG>0) or (countB>0)) then {something to plot}
     begin
       max_color:=max(countR,max(countG,countB));
-      mainwindow.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);{set pen colour}
+      mainform1.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);{set pen colour}
 
       max_color:=round(256*ln(max_color)/ln(256));{make scale logarithmic}
 
-      moveToex(mainwindow.histogram1.Canvas.handle,i,h,nil);
-      lineTo(mainwindow.histogram1.Canvas.handle,i ,h-round(h*max_color/256) ); {draw vertical line}
+      moveToex(mainform1.histogram1.Canvas.handle,i,h,nil);
+      lineTo(mainform1.histogram1.Canvas.handle,i ,h-round(h*max_color/256) ); {draw vertical line}
     end;
   end;
 
@@ -7642,7 +7652,7 @@ var
 begin
   result:=false;{assume failure}
   filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
-  if  save_tiff16(img, memo, filename_tmp,false {flip H},false {flip V}) then
+  if  save_tiff16(img, memo, filename_tmp,false {flip H},false {flip V},16) then
   begin
     if deletefile(filen2) then
       result:=renamefile(filename_tmp,filen2);
@@ -7891,25 +7901,25 @@ begin
   try
     Sett := TmemIniFile.Create(lpath);
     result:=false; {assume failure}
-    with mainwindow do
+    with mainform1 do
     begin
       c:=Sett.ReadInteger('main','window_left',987654321);
       if c<>987654321 then
       begin
         result:=true; {Important read error detection. No other read error method works for Tmeminifile. Important for creating directories for new installations}
-        mainwindow.left:=c;
+        mainform1.left:=c;
       end
       else
       begin
-        mainwindow.top:=0;{for case the form was not set at the main screen}
-        mainwindow.left:=0;
+        mainform1.top:=0;{for case the form was not set at the main screen}
+        mainform1.left:=0;
         exit;
       end;
 
 
-      c:=Sett.ReadInteger('main','window_top',987654321); if c<>987654321 then mainwindow.top:=c;
-      c:=Sett.ReadInteger('main','window_height',987654321);if c<>987654321 then mainwindow.height:=c;
-      c:=Sett.ReadInteger('main','window_width',987654321);if c<>987654321 then mainwindow.width:=c;
+      c:=Sett.ReadInteger('main','window_top',987654321); if c<>987654321 then mainform1.top:=c;
+      c:=Sett.ReadInteger('main','window_height',987654321);if c<>987654321 then mainform1.height:=c;
+      c:=Sett.ReadInteger('main','window_width',987654321);if c<>987654321 then mainform1.width:=c;
 
 
       font_color:=sett.ReadInteger('main','font_color',font_color);
@@ -7938,7 +7948,7 @@ begin
       flip_vertical1.checked:=Sett.ReadBool('main','flipvertical',false);
 
       bool:=Sett.ReadBool('main','annotations',false);
-      mainwindow.annotations_visible1.checked:=bool;{set both indicators}
+      mainform1.annotations_visible1.checked:=bool;{set both indicators}
       stackmenu1.annotations_visible2.checked:=bool;{set both indicators}
 
 
@@ -7959,15 +7969,15 @@ begin
 
       add_marker_position1.checked:=Sett.ReadBool('main','add_marker',false);{popup marker selected?}
 
-      mainwindow.preview_demosaic1.Checked:=Sett.ReadBool('main','preview_demosaic',false);
-      mainwindow.batch_overwrite1.checked:=Sett.ReadBool('main','s_overwrite',false);
-      mainwindow.maintain_date1.Checked:=Sett.ReadBool('main','maintain_date',false);
+      mainform1.preview_demosaic1.Checked:=Sett.ReadBool('main','preview_demosaic',false);
+      mainform1.batch_overwrite1.checked:=Sett.ReadBool('main','s_overwrite',false);
+      mainform1.maintain_date1.Checked:=Sett.ReadBool('main','maintain_date',false);
 
 
-      mainwindow.add_limiting_magn_check1.Checked:=Sett.ReadBool('main','add_lim_magn',false);
+      mainform1.add_limiting_magn_check1.Checked:=Sett.ReadBool('main','add_lim_magn',false);
 
       marker_position :=Sett.ReadString('main','marker_position','');{ra, dec marker}
-      mainwindow.shape_marker3.hint:=marker_position;
+      mainform1.shape_marker3.hint:=marker_position;
 
       ra1.text:= Sett.ReadString('main','ra','0');
       dec1.text:= Sett.ReadString('main','dec','0');
@@ -8037,7 +8047,6 @@ begin
       stackmenu1.make_osc_color1.checked:=Sett.ReadBool('stack','osc_color_convert',false);
       stackmenu1.osc_auto_level1.checked:=Sett.ReadBool('stack','osc_al',true);
       stackmenu1.osc_colour_smooth1.checked:=Sett.ReadBool('stack','osc_cs',true);
-      stackmenu1.osc_preserve_r_nebula1.checked:=Sett.ReadBool('stack','osc_pr',true);
       dum:=Sett.ReadString('stack','osc_cw','');if dum<>'' then   stackmenu1.osc_smart_smooth_width1.text:=dum;
       dum:=Sett.ReadString('stack','osc_sd','');  if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:=dum;
 
@@ -8303,13 +8312,13 @@ begin
 
       stackmenu1.visible:=((paramcount=0) and (Sett.ReadBool('stack','stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
       listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
-    end; //with mainwindow
+    end; //with mainform1
 
   finally {also for error it end's here}
     Sett.Free;
   end;
 
-//  mainwindow.Caption := floattostr((GetTickCount-t1)/1000);
+//  mainform1.Caption := floattostr((GetTickCount-t1)/1000);
 end;
 
 
@@ -8321,12 +8330,12 @@ begin
   try
     Sett := TmemIniFile.Create(lpath);
     sett.clear; {clear any section in the old ini file}
-    with mainwindow do
+    with mainform1 do
     begin
-      sett.writeInteger('main','window_left',mainwindow.left);
-      sett.writeInteger('main','window_top',mainwindow.top);
-      sett.writeInteger('main','window_height',mainwindow.height);
-      sett.writeInteger('main','window_width',mainwindow.width);
+      sett.writeInteger('main','window_left',mainform1.left);
+      sett.writeInteger('main','window_top',mainform1.top);
+      sett.writeInteger('main','window_height',mainform1.height);
+      sett.writeInteger('main','window_width',mainform1.width);
 
       sett.writeInteger('main','font_color',font_color);
       sett.writeInteger('main','font_size',font_size);
@@ -8369,12 +8378,12 @@ begin
 
       sett.writeBool('main','add_marker',add_marker_position1.checked);
 
-      sett.writeBool('main','preview_demosaic',mainwindow.preview_demosaic1.Checked);
-      sett.writeBool('main','s_overwrite',mainwindow.batch_overwrite1.checked);
-      sett.writeBool('main','maintain_date',mainwindow.maintain_date1.Checked);
+      sett.writeBool('main','preview_demosaic',mainform1.preview_demosaic1.Checked);
+      sett.writeBool('main','s_overwrite',mainform1.batch_overwrite1.checked);
+      sett.writeBool('main','maintain_date',mainform1.maintain_date1.Checked);
 
 
-      sett.writeBool('main','add_lim_magn',mainwindow.add_limiting_magn_check1.Checked);
+      sett.writeBool('main','add_lim_magn',mainform1.add_limiting_magn_check1.Checked);
 
       sett.writestring('main','ra',ra1.text);
       sett.writestring('main','dec',dec1.text);
@@ -8440,7 +8449,6 @@ begin
       sett.writeBool('stack','osc_color_convert',stackmenu1.make_osc_color1.checked);
       sett.writeBool('stack','osc_al',stackmenu1.osc_auto_level1.checked);
       sett.writeBool('stack','osc_cs',stackmenu1.osc_colour_smooth1.checked);
-      sett.writeBool('stack','osc_pr',stackmenu1.osc_preserve_r_nebula1.checked);
       sett.writeString('stack','osc_sw',stackmenu1.osc_smart_smooth_width1.text);
       sett.writestring('stack','osc_sd',stackmenu1.osc_smart_colour_sd1.text);
 
@@ -8689,7 +8697,7 @@ begin
         sett.writestring('files8','inspector'+inttostr(c),stackmenu1.ListView8.items[c].caption);
         sett.writeBool('files8','inspector'+inttostr(c)+'_check',stackmenu1.ListView8.items[c].Checked);
       end;
-    end;{mainwindow}
+    end;{mainform1}
   finally
     Sett.Free; {Note error detection seems not possible with tmeminifile. Tried everything}
   end;
@@ -8702,7 +8710,7 @@ begin
 end;
 
 
-procedure Tmainwindow.savesettings1Click(Sender: TObject);
+procedure Tmainform1.savesettings1Click(Sender: TObject);
 begin
   savedialog1.filename:=user_path+'astap.cfg';
   savedialog1.Filter := 'configuration file|*.cfg';
@@ -8711,7 +8719,7 @@ begin
 end;
 
 
-procedure Tmainwindow.flip_horizontal1Click(Sender: TObject);
+procedure Tmainform1.flip_horizontal1Click(Sender: TObject);
 var bmp: TBitmap;
     w, h, x, y : integer;
 type
@@ -8746,7 +8754,7 @@ end;
 
 
 
-//procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
+//procedure Tmainform1.flip_vertical1Click(Sender: TObject);
 //var src, dest: TRect;
 //    bmp: TBitmap;
 //    w, h: integer;
@@ -8771,7 +8779,7 @@ end;
 //end;
 
 
-procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
+procedure Tmainform1.flip_vertical1Click(Sender: TObject);
 type
   PByteArray2 = ^TByteArray2;
   TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
@@ -8805,7 +8813,7 @@ begin
 end;
 
 
-procedure Tmainwindow.flipVH1Click(Sender: TObject);
+procedure Tmainform1.flipVH1Click(Sender: TObject);
 var bmp: TBitmap;
     w, h, x, y : integer;
 type
@@ -8841,7 +8849,7 @@ begin
 end;
 
 
-procedure Tmainwindow.dust_spot_removal1Click(Sender: TObject);
+procedure Tmainform1.dust_spot_removal1Click(Sender: TObject);
 var
   fitsX,fitsY,dum,k,w,h,greylevels : integer;
   center_X, center_Y, line_bottom,line_top,expected_value, mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,a,b         : double;
@@ -8904,7 +8912,7 @@ begin
       end;{fits loop}
     end;
 
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end {usefull area}
   else
@@ -8912,7 +8920,7 @@ begin
 end;
 
 
-procedure Tmainwindow.batch_add_tilt1Click(Sender: TObject);
+procedure Tmainform1.batch_add_tilt1Click(Sender: TObject);
 var
   I: integer;
   err,success   : boolean;
@@ -8938,7 +8946,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin err:=true;break; end;
         filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        mainform1.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
         if load_fits(filename2,true {light},true,true {update memo},0,memox,headx,img_temp) then {load image success}
         begin
           if extra_stars=false then
@@ -8963,7 +8971,7 @@ begin
       end;
       if err=false then
       begin
-         mainwindow.caption:='Completed, all files processed.';
+         mainform1.caption:='Completed, all files processed.';
          memo2_message('Completed, all files processed.');
       end
       else
@@ -9019,7 +9027,7 @@ begin
 end;
 
 
-procedure Tmainwindow.mpcreport1Click(Sender: TObject);
+procedure Tmainform1.mpcreport1Click(Sender: TObject);
 var
    line,mag_str : string;
    hfd2,fwhm_star2,snr,flux,object_xc,object_yc,object_raM,object_decM  : double;
@@ -9029,7 +9037,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});//calibrate photometry if required
+  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head, false{update});//calibrate photometry if required
   minor_planet_at_cursor:=''; //clear last found
 
 //  plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
@@ -9068,7 +9076,7 @@ begin
 
 
     {centered coordinates}
-    pixel_to_celestial(head,object_xc+1,object_yc+1,mainwindow.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
+    pixel_to_celestial(head,object_xc+1,object_yc+1,mainform1.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
     if ((object_raM<>0) and (object_decM<>0)) then
     begin
       line:=line+prepare_ra8(object_raM,' ')+' '+prepare_dec2(object_decM,' ');{object position in RA,DEC}
@@ -9100,13 +9108,13 @@ begin
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
 
-procedure Tmainwindow.Panel1Click(Sender: TObject);
+procedure Tmainform1.Panel1Click(Sender: TObject);
 begin
 
 end;
 
 
-procedure Tmainwindow.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
+procedure Tmainform1.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
 begin
   maintype:=InputBox('Simbad search by criteria.','Enter the object main type (E.g. star=*, galaxy=G, quasar=QSO):',maintype);
   gaia_star_position1Click(sender);
@@ -9141,7 +9149,7 @@ begin
     val(exposure_str,result,err);
     if err=0 then
     begin
-      update_integer(mainwindow.memo1.lines,'EXPOSURE=',' / exposure extracted from file name.                     ' ,result);
+      update_integer(mainform1.memo1.lines,'EXPOSURE=',' / exposure extracted from file name.                     ' ,result);
       memo2_message('Extracted exposure from file name');
     end
     else
@@ -9184,7 +9192,7 @@ begin
   val(temp_str,result,err);
   if err=0 then
   begin
-    update_integer(mainwindow.memo1.lines,'CCD-TEMP=',' / Sensor temperature extracted from file name            ' ,result);
+    update_integer(mainform1.memo1.lines,'CCD-TEMP=',' / Sensor temperature extracted from file name            ' ,result);
     memo2_message('Extracted temperature from file name');
   end
   else
@@ -9455,7 +9463,7 @@ begin
 
   if ExtractFileExt(filename4)='.pgm' then {pgm file}
   begin
-    if load_PPM_PGM_PFM(fileName4,head,img,mainwindow.memo1.lines) then {succesfull PGM load}
+    if load_PPM_PGM_PFM(fileName4,head,img,mainform1.memo1.lines) then {succesfull PGM load}
     begin
 
       deletefile(filename4);{delete temporary pgm file}
@@ -9465,10 +9473,10 @@ begin
       begin
         JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage raw, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
         head.date_obs:=JdToDate(jd2);
-        update_text(mainwindow.memo1.lines,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
+        update_text(mainform1.memo1.lines,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
       end;
-      update_text(mainwindow.memo1.lines,'BAYERPAT=',#39+'????'+#39);{identify raw OSC image}
-      add_text(mainwindow.memo1.lines,'HISTORY  ','Converted from '+filename3);
+      update_text(mainform1.memo1.lines,'BAYERPAT=',#39+'????'+#39);{identify raw OSC image}
+      add_text(mainform1.memo1.lines,'HISTORY  ','Converted from '+filename3);
       result:=true;
     end
     else
@@ -9477,8 +9485,9 @@ begin
     if ((savefile) and (conv_index=2) and (result)) then {PPM interstage file, save to fits, Not required for the new unprocessed_raw-astap}
     begin
       if conv_index=2 {dcraw} then head.set_temperature:=extract_temperature_from_filename(filename4);{including update header}
-      update_text(mainwindow.memo1.lines,'OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
-      result:=save_fits(img,mainwindow.memo1.lines,filename4,16,true);{overwrite. Filename2 will be set to fits file}
+      update_text(mainform1.memo1.lines,'OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
+      head.nrbits:=16;
+      result:=save_fits(img,mainform1.memo1.lines,head,filename4,true);{overwrite. Filename2 will be set to fits file}
     end;
     if loadfile=false then  img:=nil;{clear memory}
   end
@@ -9486,7 +9495,7 @@ begin
   begin {fits file created by modified unprocessed_raw}
     if loadfile then
     begin
-      result:=load_fits(filename4,true {light},true {load data},true {update memo},0,mainwindow.memo1.lines,head,img); {load new fits file}
+      result:=load_fits(filename4,true {light},true {load data},true {update memo},0,mainform1.memo1.lines,head,img); {load new fits file}
       if ((result) and (savefile=false)) then
       begin
         deletefile(filename4);{delete temporary fits file}
@@ -9509,7 +9518,7 @@ begin
 
   if check_raw_file_extension(ext) then {raw format}
   begin
-    result:=convert_raw(false{load},true{save},filen,head,img_loaded);
+    result:=convert_raw(false{load},true{save},filen,headX,img_loaded);
   end
   else
   if (ext='.FZ') then {CFITSIO format}
@@ -9520,28 +9529,28 @@ begin
       result:=load_PPM_PGM_PFM(filen,headX,img_temp,memox)
     else
     if ext='.XISF' then {XISF}
-      result:=load_xisf(filen,head,img_loaded,mainwindow.memo1.lines)
+      result:=load_xisf(filen,head,img_loaded,mainform1.memo1.lines)
     else
     if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
       result:=load_tiffpngJPEG(filen,true,headX,img_temp,memox);
 
     if result then
     begin
-      if head.exposure=0 then {not an Astro-TIFF file with an header}
+      if headX.exposure=0 then {not an Astro-TIFF file with an header}
       begin
-        head.exposure:=extract_exposure_from_filename(filen); {try to extract head.exposure time from filename. Will be added to the header}
-        update_text(mainwindow.memo1.lines,'OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
-        head.set_temperature:=extract_temperature_from_filename(filen);
+        headX.exposure:=extract_exposure_from_filename(filen); {try to extract head.exposure time from filename. Will be added to the header}
+        update_text(mainform1.memo1.lines,'OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
+        headX.set_temperature:=extract_temperature_from_filename(filen);
       end;
 
       filen:=ChangeFileExt(filen,'.fits');
-      result:=save_fits(img_temp,memox,filen,nrbits,false);
+      result:=save_fits(img_temp,memox,headX,filen,false);
     end;
   end;
 end;
 
 
-procedure Tmainwindow.convert_to_fits1click(Sender: TObject);
+procedure Tmainform1.convert_to_fits1click(Sender: TObject);
 var
   I: integer;
   err         : boolean;
@@ -9569,18 +9578,18 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break;end;
         filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
+        mainform1.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
 
         if convert_to_fits(filename2)=false then
         begin
-          mainwindow.caption:='Error converting '+filename2;
+          mainform1.caption:='Error converting '+filename2;
           err:=true;
         end;
       end;
 
-      if err=false then mainwindow.caption:='Completed, all files converted.'
+      if err=false then mainform1.caption:='Completed, all files converted.'
       else
-      mainwindow.caption:='Finished, files converted but with errors or stopped!';
+      mainform1.caption:='Finished, files converted but with errors or stopped!';
 
     finally
       Screen.Cursor:=crDefault;  { Always restore to normal }
@@ -9596,11 +9605,11 @@ var
 begin
   if plot then
   begin
-    mainwindow.caption:=filename2;
+    mainform1.caption:=filename2;
     filename_org:=filename2;
-    mainwindow.shape_marker1.visible:=false;
-    mainwindow.shape_marker2.visible:=false;
-    mainwindow.updown1.position:=0;{reset muli-extension up down}
+    mainform1.shape_marker1.visible:=false;
+    mainform1.shape_marker2.visible:=false;
+    mainform1.updown1.position:=0;{reset muli-extension up down}
   end;
 
   ext1:=uppercase(ExtractFileExt(filename2));
@@ -9643,10 +9652,10 @@ begin
 
   if plot then
   begin
-    if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img);{demosaic and set levels}
+    if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then demosaic_advanced(img);{demosaic and set levels}
     use_histogram(img,true {update}); {plot histogram, set sliders}
     image_move_to_center:=re_center;
-    plot_fits(mainwindow.image1,re_center);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+    plot_fits(mainform1.image1,re_center);     {mainform1.image1.Visible:=true; is done in plot_fits}
 
     update_equalise_background_step(1);{update equalise background menu}
 
@@ -9661,13 +9670,13 @@ begin
 end;
 
 
-procedure Tmainwindow.receivemessage(Sender: TObject);{For OneInstance, called from timer (linux) or SimpleIPCServer1MessageQueued (Windows)}
+procedure Tmainform1.receivemessage(Sender: TObject);{For OneInstance, called from timer (linux) or SimpleIPCServer1MessageQueued (Windows)}
 begin
   if SimpleIPCServer1.PeekMessage(1,True) then
   begin
     BringToFront;
     filename2:=SimpleIPCServer1.StringMessage;
-    load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});{show image of parameter1}
+    load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});{show image of parameter1}
   end;
 end;
 
@@ -9692,7 +9701,7 @@ begin
 end;
 
 
-procedure Tmainwindow.convertmono1Click(Sender: TObject);
+procedure Tmainform1.convertmono1Click(Sender: TObject);
 begin
   if head.naxis3<3 then exit;{prevent run time error mono images}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -9701,16 +9710,16 @@ begin
   convert_mono(img_loaded,head);
 
   update_header_for_colour; {update header naxis and naxis3 keywords}
-  add_text(mainwindow.memo1.lines,'HISTORY   ','Converted to mono');
+  add_text(mainform1.memo1.lines,'HISTORY   ','Converted to mono');
 
   {colours are now mixed, redraw histogram}
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1,false);{plot}
+  plot_fits(mainform1.image1,false);{plot}
   Screen.cursor:=crDefault;
 end;
 
 
-procedure Tmainwindow.compress_fpack1Click(Sender: TObject);
+procedure Tmainform1.compress_fpack1Click(Sender: TObject);
 var
   i: integer;
   filename1: string;
@@ -9732,17 +9741,17 @@ begin
          filename1:=Strings[I];
          memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
          Application.ProcessMessages;
-         if ((esc_pressed) or (pack_cfitsio(filename1)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor:=crDefault; exit;end;
+         if ((esc_pressed) or (pack_cfitsio(filename1)=false)) then begin beep; mainform1.caption:='Exit with error!!'; Screen.Cursor:=crDefault; exit;end;
       end;
       finally
-      mainwindow.caption:='Finished, all files compressed with extension .fz.';
+      mainform1.caption:='Finished, all files compressed with extension .fz.';
       Screen.Cursor:=crDefault;  { Always restore to normal }
       progress_indicator(-100,'');{progresss done}
     end;
   end;
 end;
 
-procedure Tmainwindow.copy_to_clipboard1Click(Sender: TObject);
+procedure Tmainform1.copy_to_clipboard1Click(Sender: TObject);
 var
   tmpbmp            : TBitmap;
   x1,x2,y1,y2       : integer;
@@ -9766,7 +9775,7 @@ begin
         TmpBmp.Canvas.CopyMode := cmSrcCopy;
         SRect := Rect(x1,y1,x2,y2);
         DRect := Rect(0,0,TmpBmp.Width,TmpBmp.height);
-        TmpBmp.Canvas.copyrect(DRect, mainwindow.Image1.canvas,SRect);
+        TmpBmp.Canvas.copyrect(DRect, mainform1.Image1.canvas,SRect);
         Clipboard.Assign(TmpBmp);
       finally
          TmpBmp.Free;
@@ -9777,7 +9786,7 @@ begin
 end;
 
 
-procedure Tmainwindow.extractred1Click(Sender: TObject);
+procedure Tmainform1.extractred1Click(Sender: TObject);
 begin
 //  green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
 //  green_odd := ( (odd(x+offsetX)) and  (odd(y+offsetY)) );
@@ -9789,24 +9798,24 @@ begin
 end;
 
 
-procedure Tmainwindow.extractblue1Click(Sender: TObject);
+procedure Tmainform1.extractblue1Click(Sender: TObject);
 begin
   split_raw(1,1,'TB');{extract one of the Bayer matrix pixels}
 end;
 
 
-procedure Tmainwindow.extractgreen1Click(Sender: TObject);
+procedure Tmainform1.extractgreen1Click(Sender: TObject);
 begin
   split_raw(1,1,'TG');{extract one of the Bayer matrix pixels}
 end;
 
 
-procedure Tmainwindow.grid_ra_dec1Click(Sender: TObject);
+procedure Tmainform1.grid_ra_dec1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit;
   if grid_ra_dec1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
   end
   else
   plot_grid(true);
@@ -9816,13 +9825,13 @@ end;
 procedure remove_photometric_calibration;//from header
 begin
   head.mzero:=0;//clear photometric calibration
-  remove_key(mainwindow.memo1.lines,'MZERO   =',false{all});
-  remove_key(mainwindow.memo1.lines,'MZEROR  =',false{all});
-  remove_key(mainwindow.memo1.lines,'MZEROAPT=',false{all});
+  remove_key(mainform1.memo1.lines,'MZERO   =',false{all});
+  remove_key(mainform1.memo1.lines,'MZEROR  =',false{all});
+  remove_key(mainform1.memo1.lines,'MZEROAPT=',false{all});
 end;
 
 
-procedure Tmainwindow.bin_2x2menu1Click(Sender: TObject);
+procedure Tmainform1.bin_2x2menu1Click(Sender: TObject);
 begin
  if head.naxis<>0 then
   begin
@@ -9831,18 +9840,18 @@ begin
     backup_img; {move viewer data to img_backup}
     if sender=bin_2x2menu1 then
     begin
-      bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,2);
+      bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,2);
       filename2:=ChangeFileExt(Filename2,'_bin2x2.fit');
     end
     else
     begin
-      bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,3);
+      bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,3);
       filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
     end;
 
     remove_photometric_calibration;//from header
-    plot_fits(mainwindow.image1,true);{plot real}
-    mainwindow.caption:=Filename2;
+    plot_fits(mainform1.image1,true);{plot real}
+    mainform1.caption:=Filename2;
     Screen.Cursor:=crDefault;
   end;
 end;
@@ -10215,7 +10224,7 @@ end;
 
 
 
-procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
+procedure Tmainform1.variable_star_annotation1Click(Sender: TObject);
 begin
   if head.cd1_1=0 then begin memo2_message('No solution!'); exit; end;//no solution
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -10225,77 +10234,77 @@ end;
 
 
 
-procedure Tmainwindow.positionanddate1Click(Sender: TObject);
+procedure Tmainform1.positionanddate1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit;
   if positionanddate1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
   end
   else
   plot_text;
 end;
 
-procedure Tmainwindow.inspection1click(Sender: TObject);
+procedure Tmainform1.inspection1click(Sender: TObject);
 begin
   if extra_stars=false then
-    CCDinspector(img_loaded,head,mainwindow.memo1.lines,30,true {screenplot},three_corners,strtofloat(measuring_angle))
+    CCDinspector(img_loaded,head,mainform1.memo1.lines,30,true {screenplot},three_corners,strtofloat(measuring_angle))
   else
-    CCDinspector(img_loaded,head,mainwindow.memo1.lines,10,true {screenplot},three_corners,strtofloat(measuring_angle));
+    CCDinspector(img_loaded,head,mainform1.memo1.lines,10,true {screenplot},three_corners,strtofloat(measuring_angle));
 end;
 
 
-procedure Tmainwindow.removegreenpurple1Click(Sender: TObject);
+procedure Tmainform1.removegreenpurple1Click(Sender: TObject);
 begin
   green_purple_filter(img_loaded);
 end;
 
 
-procedure Tmainwindow.roundness1Click(Sender: TObject);
+procedure Tmainform1.roundness1Click(Sender: TObject);
 begin
   form_inspection1.roundness1Click(nil);
 end;
 
 
-procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);
+procedure Tmainform1.extract_pixel_11Click(Sender: TObject);
 begin
   split_raw(1,1,'P11');{extract one of the Bayer matrix pixels}
 end;
 
 
-procedure Tmainwindow.extract_pixel_12Click(Sender: TObject);
+procedure Tmainform1.extract_pixel_12Click(Sender: TObject);
 begin
   split_raw(1,2,'P12');{extract one of the Bayer matrix pixels}
 end;
 
 
-procedure Tmainwindow.extract_pixel_21Click(Sender: TObject);
+procedure Tmainform1.extract_pixel_21Click(Sender: TObject);
 begin
   split_raw(2,1,'P21');{extract one of the Bayer matrix pixels}
 end;
 
 
-procedure Tmainwindow.extract_pixel_22Click(Sender: TObject);
+procedure Tmainform1.extract_pixel_22Click(Sender: TObject);
 begin
   split_raw(2,2,'P22');{extract one of the Bayer matrix pixels}
 end;
 
-procedure Tmainwindow.FormDropFiles(Sender: TObject;
+procedure Tmainform1.FormDropFiles(Sender: TObject;
   const FileNames: array of String);
 begin
  {no check on file extension required}
   filename2:=FileNames[0];
-   if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot}){load and center}=false then beep;{image not found}
+   if load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot}){load and center}=false then beep;{image not found}
 end;
 
-procedure Tmainwindow.histogram_range1MouseUp(Sender: TObject;
+procedure Tmainform1.histogram_range1MouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   use_histogram(img_loaded,false {update});{get histogram}
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 end;
 
-procedure Tmainwindow.histogram_values_to_clipboard1Click(Sender: TObject); {copy histogram values to clipboard}
+procedure Tmainform1.histogram_values_to_clipboard1Click(Sender: TObject); {copy histogram values to clipboard}
 var
   c    : integer;
   info : string;
@@ -10313,13 +10322,13 @@ begin
 end;
 
 
-procedure Tmainwindow.Image1Paint(Sender: TObject);
+procedure Tmainform1.Image1Paint(Sender: TObject);
 begin
-   mainwindow.statusbar1.panels[8].text:=inttostr(round(100*mainwindow.image1.width/ (mainwindow.image1.picture.width)))+'%'; {zoom factor}
+   mainform1.statusbar1.panels[8].text:=inttostr(round(100*mainform1.image1.width/ (mainform1.image1.picture.width)))+'%'; {zoom factor}
 end;
 
 
-procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
+procedure Tmainform1.measuretotalmagnitude1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,tx,ty,saturation_counter : integer;
    flux,bg_median,value,center_x,center_y,a,b  : double;
@@ -10334,7 +10343,7 @@ begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       head.mzero_radius:=99;{calibrate for extended objects}
 
-      plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,true {calibration},false {plot stars},false{report lim magnitude});
+      plot_and_measure_stars(img_loaded,mainform1.Memo1.lines,head,true {calibration},false {plot stars},false{report lim magnitude});
     end;
     if head.mzero=0 then begin beep; exit;end;
 
@@ -10344,9 +10353,9 @@ begin
 
     tx:=stopX;
     ty:=stopY;
-    if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
+    if mainform1.Flip_horizontal1.Checked then {restore based on flipped conditions}
       tx:=head.width-1-tx;
-    if mainwindow.flip_vertical1.Checked=false then
+    if mainform1.flip_vertical1.Checked=false then
       ty:=head.height-1-ty;
 
 
@@ -10422,7 +10431,7 @@ begin
 end;
 
 
-procedure Tmainwindow.loadsettings1Click(Sender: TObject);
+procedure Tmainform1.loadsettings1Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Open settings';
   opendialog1.Filter := '(configuration file|*.cfg';
@@ -10444,12 +10453,12 @@ begin
 end;
 
 
-procedure Tmainwindow.menucopy1Click(Sender: TObject);{for fits header memo1 popup menu}
+procedure Tmainform1.menucopy1Click(Sender: TObject);{for fits header memo1 popup menu}
 begin
   Clipboard.AsText:=copy(Memo1.Text,Memo1.SelStart+1, Memo1.SelLength);
 end;
 
-procedure Tmainwindow.Menufind1Click(Sender: TObject); {for fits header memo1 popup menu}
+procedure Tmainform1.Menufind1Click(Sender: TObject); {for fits header memo1 popup menu}
 begin
   PatternToFind:=uppercase(inputbox('Find','Text to find in fits header:' ,PatternToFind));
   position_find := pos(PatternToFind, uppercase( Memo1.Text));
@@ -10461,7 +10470,7 @@ begin
   end;
 end;
 
-procedure Tmainwindow.menufindnext1Click(Sender: TObject);{for fits header memo1 popup menu}
+procedure Tmainform1.menufindnext1Click(Sender: TObject);{for fits header memo1 popup menu}
 begin
   position_find := posex(PatternToFind, uppercase(Memo1.Text),position_find+1);
   if position_find > 0 then
@@ -10472,7 +10481,7 @@ begin
   end;
 end;
 
-procedure Tmainwindow.copy_paste_tool1Click(Sender: TObject);
+procedure Tmainform1.copy_paste_tool1Click(Sender: TObject);
 var
   dum,stopX2,stopY2, startX2, startY2 : integer;
 begin
@@ -10506,8 +10515,8 @@ var
 begin
   if head.cdelt2<>0 then
   begin
-    pixel_to_celestial(head,fitsX1,fitsY1,mainwindow.Polynomial1.itemindex,ra1,dec1);{calculate the ra,dec position}
-    pixel_to_celestial(head,fitsX2,fitsY2,mainwindow.Polynomial1.itemindex,ra2,dec2);{calculate the ra,dec position}
+    pixel_to_celestial(head,fitsX1,fitsY1,mainform1.Polynomial1.itemindex,ra1,dec1);{calculate the ra,dec position}
+    pixel_to_celestial(head,fitsX2,fitsY2,mainform1.Polynomial1.itemindex,ra2,dec2);{calculate the ra,dec position}
     ang_sep(ra1,dec1,ra2,dec2, sep);
     sep:=sep*180/pi; //convert to degrees
     if sep<1/60 then seperation:=inttostr(round(sep*3600))+'"'
@@ -10525,7 +10534,7 @@ begin
 end;
 
 
-procedure Tmainwindow.angular_distance1Click(Sender: TObject);
+procedure Tmainform1.angular_distance1Click(Sender: TObject);
 var
    shapetype                                 : integer;
    hfd1,star_fwhm,snr,flux,xc,yc, hfd2,
@@ -10555,7 +10564,7 @@ begin
        shape_marker1_fitsY:=startY+1;
        shapetype:=0;{rectangle}
     end;
-    show_marker_shape(mainwindow.shape_marker1,shapetype,20,20,10{minimum}, shape_marker1_fitsX,shape_marker1_fitsY);
+    show_marker_shape(mainform1.shape_marker1,shapetype,20,20,10{minimum}, shape_marker1_fitsX,shape_marker1_fitsY);
 
     HFD(img_loaded,stopX,stopY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
     if ((hfd2<15) and (hfd2>=0.8) {two pixels minimum} and (snr2>10) and (flux2>1){rare but happens}) then {star detected in img_loaded}
@@ -10573,7 +10582,7 @@ begin
     end;
 
     boxshape1.visible:=true;//show box
-    show_marker_shape(mainwindow.shape_marker2,shapetype,20,20,10{minimum},shape_marker2_fitsX,shape_marker2_fitsY);
+    show_marker_shape(mainform1.shape_marker2,shapetype,20,20,10{minimum},shape_marker2_fitsX,shape_marker2_fitsY);
 
 
     ang_sep_two_positions(shape_marker1_fitsX,shape_marker1_fitsY, shape_marker2_fitsX,shape_marker2_fitsY,info_message2,info_message1);
@@ -10590,7 +10599,7 @@ begin
 end;
 
 
-procedure Tmainwindow.j2000_1Click(Sender: TObject);
+procedure Tmainform1.j2000_1Click(Sender: TObject);
 begin
    if j2000_1.checked then
    begin
@@ -10601,7 +10610,7 @@ begin
    end;
 end;
 
-procedure Tmainwindow.j2000d1Click(Sender: TObject);
+procedure Tmainform1.j2000d1Click(Sender: TObject);
 begin
   if j2000d1.checked then
   begin
@@ -10613,7 +10622,7 @@ begin
 end;
 
 
-procedure Tmainwindow.galactic1Click(Sender: TObject);
+procedure Tmainform1.galactic1Click(Sender: TObject);
 begin
   if galactic1.checked then
   begin
@@ -10624,7 +10633,7 @@ begin
    end;
 end;
 
-procedure Tmainwindow.az_alt1Click(Sender: TObject);
+procedure Tmainform1.az_alt1Click(Sender: TObject);
 begin
   if az_alt1.checked then
   begin
@@ -10637,7 +10646,7 @@ end;
 
 
 
-procedure Tmainwindow.northeast1Click(Sender: TObject);
+procedure Tmainform1.northeast1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit;
   if northeast1.checked then
@@ -10646,7 +10655,7 @@ begin
     image1.refresh;{important, show update}
   end
   else
-    plot_fits(mainwindow.image1,false); {clear indicator}
+    plot_fits(mainform1.image1,false); {clear indicator}
 end;
 
 
@@ -10655,7 +10664,7 @@ var
   i: integer;
   stretch,divider: single;
 begin
-    stretch:=strtofloat2(mainwindow.stretch1.Text);
+    stretch:=strtofloat2(mainform1.stretch1.Text);
     if stretch<=0.5 then {word "off" gives zero}
     stretch_on:=false
     else
@@ -10665,21 +10674,21 @@ begin
       for i:=0 to 32768 do stretch_c[i]:=arcsinh((i/32768.0)*stretch)/divider;{prepare table}
     end;
 
-  if mainwindow.stretch1.enabled then {file loaded}
+  if mainform1.stretch1.enabled then {file loaded}
   begin
     use_histogram(img_loaded,false {update});{get histogram}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
   end;
 end;
 
 
-procedure Tmainwindow.range1Change(Sender: TObject);
+procedure Tmainform1.range1Change(Sender: TObject);
 begin
   do_stretching;
 end;
 
 
-procedure Tmainwindow.remove_atmouse1Click(Sender: TObject);
+procedure Tmainform1.remove_atmouse1Click(Sender: TObject);
 var
   left_dist, right_dist, top_dist, bottom_dist : double;
 begin
@@ -10688,14 +10697,14 @@ begin
   top_dist:=down_y/image1.height;{range 0..1}
   bottom_dist:=1-top_dist;{range 0..1}
 
-  if ((left_dist<right_dist) and (left_dist<top_dist) and (left_dist<bottom_dist)) then mainwindow.remove_left1Click(nil) else
-  if ((right_dist<left_dist) and (right_dist<top_dist) and (right_dist<bottom_dist)) then mainwindow.remove_right1Click(nil) else
-  if ((top_dist<left_dist) and (top_dist<right_dist) and (top_dist<bottom_dist)) then mainwindow.remove_above1Click(nil) else
-  if ((bottom_dist<left_dist) and (bottom_dist<right_dist) and   (bottom_dist<top_dist)) then mainwindow.remove_below1Click(nil);
+  if ((left_dist<right_dist) and (left_dist<top_dist) and (left_dist<bottom_dist)) then mainform1.remove_left1Click(nil) else
+  if ((right_dist<left_dist) and (right_dist<top_dist) and (right_dist<bottom_dist)) then mainform1.remove_right1Click(nil) else
+  if ((top_dist<left_dist) and (top_dist<right_dist) and (top_dist<bottom_dist)) then mainform1.remove_above1Click(nil) else
+  if ((bottom_dist<left_dist) and (bottom_dist<right_dist) and   (bottom_dist<top_dist)) then mainform1.remove_below1Click(nil);
 end;
 
 
-procedure Tmainwindow.gradient_removal1Click(Sender: TObject);
+procedure Tmainform1.gradient_removal1Click(Sender: TObject);
 var
    colrr1,colgg1,colbb1,colrr2,colgg2,colbb2                      : single;
    a,b,c,p : double;
@@ -10732,7 +10741,7 @@ begin
       end;
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_fits(mainwindow.image1,false {re_center});
+    plot_fits(mainform1.image1,false {re_center});
 
     Screen.Cursor:=crDefault;
   end {fits file}
@@ -10743,7 +10752,7 @@ begin
 end;
 
 
-procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);
+procedure Tmainform1.remove_longitude_latitude1Click(Sender: TObject);
 var
   I: integer;
   err,success   : boolean;
@@ -10769,20 +10778,20 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin err:=true;break; end;
         filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-        if load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false {recenter},false {plot}) then
+        mainform1.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        if load_image(filename2,img_loaded,head,mainform1.memo1.lines,false {recenter},false {plot}) then
         begin
-          remove_key(mainwindow.memo1.lines,'SITELAT =',true{all});
-          remove_key(mainwindow.memo1.lines,'SITELONG=',true{all});
+          remove_key(mainform1.memo1.lines,'SITELAT =',true{all});
+          remove_key(mainform1.memo1.lines,'SITELONG=',true{all});
           if fits_file_name(filename2) then
-            success:=savefits_update_header(mainwindow.memo1.lines,filename2)
+            success:=savefits_update_header(mainform1.memo1.lines,filename2)
           else
-            success:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2);{guarantee no file is lost}
+            success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2);{guarantee no file is lost}
           if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
         end
         else err:=true;
       end;
-      if err=false then mainwindow.caption:='Completed, all files converted.'
+      if err=false then mainform1.caption:='Completed, all files converted.'
       else
       begin
         beep;
@@ -10796,7 +10805,7 @@ begin
 end;
 
 
-procedure Tmainwindow.selectfont1Click(Sender: TObject);
+procedure Tmainform1.selectfont1Click(Sender: TObject);
 begin
   FontDialog1.font.size:=font_size;
   FontDialog1.font.color:=font_color;
@@ -10820,14 +10829,14 @@ begin
 end;
 
 
-procedure Tmainwindow.select_all1Click(Sender: TObject);
+procedure Tmainform1.select_all1Click(Sender: TObject);
 begin
    memo1.setfocus;{required for selectall since hideselection is enabled when not having focus}
    Memo1.SelectAll;
 end;
 
 
-procedure Tmainwindow.menupasteClick(Sender: TObject);{for fits header memo1 popup menu}
+procedure Tmainform1.menupasteClick(Sender: TObject);{for fits header memo1 popup menu}
 var
   I : integer;
   S,T : string;
@@ -10844,20 +10853,20 @@ begin
 end;
 
 
-procedure Tmainwindow.annotate_minor_planets1Click(Sender: TObject);
+procedure Tmainform1.annotate_minor_planets1Click(Sender: TObject);
 begin
   form_asteroids1:=Tform_asteroids1.Create(self); {in project option not loaded automatic}
   form_asteroids1.ShowModal;
   form_asteroids1.release;
 
 ///  form_asteroids1.close;   {normal this form is not loaded}
-  mainwindow.setfocus;
+  mainform1.setfocus;
 
   save_settings2;
 end;
 
 
-procedure Tmainwindow.radec_copy1Click(Sender: TObject);
+procedure Tmainform1.radec_copy1Click(Sender: TObject);
 begin
   if ra1.focused then Clipboard.AsText:=ra1.text;
   if dec1.focused then Clipboard.AsText:=dec1.text;
@@ -10865,14 +10874,14 @@ begin
 end;
 
 
-procedure Tmainwindow.radec_paste1Click(Sender: TObject);
+procedure Tmainform1.radec_paste1Click(Sender: TObject);
 begin
   if ra1.focused then ra1.text:=Clipboard.AsText;
   if dec1.focused then dec1.text:=Clipboard.AsText;
 end;
 
 
-procedure Tmainwindow.radec_search1Click(Sender: TObject);
+procedure Tmainform1.radec_search1Click(Sender: TObject);
 begin
   keyboard_text:= extract_objectname_from_filename(filename2);
 
@@ -10888,7 +10897,7 @@ begin
 end;
 
 
-procedure Tmainwindow.save_settings1Click(Sender: TObject);
+procedure Tmainform1.save_settings1Click(Sender: TObject);
 begin
   save_settings2;
 end;
@@ -10915,9 +10924,9 @@ procedure textout_at_fitscoordinates(s : string; fitsX,fitsY : integer);//text a
 var
    x,y :integer;
 begin
-  if mainwindow.flip_horizontal1.Checked then x:=round((head.width-1)-(fitsX-1)) else x:=round(fitsX-1);
-  if mainwindow.flip_vertical1.Checked=false then y:=round((head.height-1)-(fitsY-1)) else y:=round(fitsY-1);
-  mainwindow.image1.Canvas.textout(x,y,s);
+  if mainform1.flip_horizontal1.Checked then x:=round((head.width-1)-(fitsX-1)) else x:=round(fitsX-1);
+  if mainform1.flip_vertical1.Checked=false then y:=round((head.height-1)-(fitsY-1)) else y:=round(fitsY-1);
+  mainform1.image1.Canvas.textout(x,y,s);
 end;
 
 
@@ -10966,8 +10975,8 @@ begin
           //if flipvertical=false  then  starY:=round(headx.height-yc) else starY:=round(yc);
           //if fliphorizontal=true then starX:=round(headx.width-xc)  else starX:=round(xc);
           //  size:=round(5*hfd1);
-          //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+          //  mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+          //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
           radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
           sqr_radius:=sqr(radius);
@@ -11069,7 +11078,7 @@ const
 
 // for testing
 // img_loaded:=img_temp3;
-// plot_fits(mainwindow.image1,true,true);
+// plot_fits(mainform1.image1,true,true);
 // exit;
 
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
@@ -11117,8 +11126,8 @@ const
               //      if flipvertical=false  then starY:=round(headx.height-yc) else starY:=round(yc);
               //      if fliphorizontal=true then starX:=round(headx.width-xc)  else starX:=round(xc);
               //      size:=round(5*hfd1);
-              //      mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-              //      mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,0));{add hfd as text}
+              //      mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+              //      mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,0));{add hfd as text}
 
           radius:=round(3.0*headx.hfd_median);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
           sqr_radius:=sqr(radius);
@@ -11208,13 +11217,13 @@ const
 end;
 
 
-procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
+procedure Tmainform1.annotate_unknown_stars1Click(Sender: TObject);
 var
   countN : integer;
 begin
-  mainwindow.Memo1.Lines.beginUpdate;
+  mainform1.Memo1.Lines.beginUpdate;
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});
+  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head, false{update});
   if head.mzero=0 then
   begin
      beep;
@@ -11222,16 +11231,16 @@ begin
      exit;
    end;
   Screen.Cursor:=crDefault;
-  annotate_unknown_stars(mainwindow.Memo1.lines,img_loaded, head,countN);// add unknow stars to header
+  annotate_unknown_stars(mainform1.Memo1.lines,img_loaded, head,countN);// add unknow stars to header
 
-  mainwindow.Memo1.Lines.endUpdate;
+  mainform1.Memo1.Lines.endUpdate;
 
-  mainwindow.image1.Canvas.textout(30,head.height-20,inttostr(countN)+' nova candidates.' );
+  mainform1.image1.Canvas.textout(30,head.height-20,inttostr(countN)+' nova candidates.' );
   memo2_message(inttostr(countN)+' nova candidates stored in the header as annotations.');
   plot_annotations(false {use solution vectors},false);
 end;
 
-procedure Tmainwindow.inspector1Click(Sender: TObject);
+procedure Tmainform1.inspector1Click(Sender: TObject);
 begin
   form_inspection1:=Tform_inspection1.Create(self); {in project option not loaded automatic}
 
@@ -11289,7 +11298,7 @@ begin
 end;
 
 
-procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
+procedure Tmainform1.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
   size, i, starX, starY,magn,fontsize,text_height,text_width,dum,formalism    : integer;
   Fliphorizontal, Flipvertical  : boolean;
@@ -11303,9 +11312,9 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   subframe:=(sender=export_star_info1); //report. full frame or sub section
-  formalism:=mainwindow.Polynomial1.itemindex;
+  formalism:=mainform1.Polynomial1.itemindex;
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head,true);
+  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head,true);
 
 //if head.mzero=0 then
 //  begin
@@ -11314,8 +11323,8 @@ begin
 //    exit;
 //  end;
 
-  Flipvertical:=mainwindow.flip_vertical1.Checked;
-  Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
+  Flipvertical:=mainform1.flip_vertical1.Checked;
+  Fliphorizontal:=mainform1.Flip_horizontal1.Checked;
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
@@ -11326,10 +11335,10 @@ begin
 
   fontsize:=8;
   image1.Canvas.font.size:=fontsize;
-  text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+  text_height:=mainform1.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
-  mainwindow.image1.Canvas.Pen.Color := clred;
-  mainwindow.image1.Canvas.Pen.mode := pmXor;
+  mainform1.image1.Canvas.Pen.Color := clred;
+  mainform1.image1.Canvas.Pen.mode := pmXor;
 
 
   if subframe then //report
@@ -11372,10 +11381,10 @@ begin
 
       size:=round(stars[2,i]);{5*hfd for marking stars}
 
-      mainwindow.image1.Canvas.moveto(starX+2*size,starY);
-      mainwindow.image1.Canvas.lineto(starX+size,starY);
-      mainwindow.image1.Canvas.moveto(starX-2*size,starY);
-      mainwindow.image1.Canvas.lineto(starX-size,starY);
+      mainform1.image1.Canvas.moveto(starX+2*size,starY);
+      mainform1.image1.Canvas.lineto(starX+size,starY);
+      mainform1.image1.Canvas.moveto(starX-2*size,starY);
+      mainform1.image1.Canvas.lineto(starX-size,starY);
 
       if  head.mzero<>0 then
       begin
@@ -11408,11 +11417,11 @@ begin
 
   if subframe=false then
   begin
-    text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
+    text_width:=8*mainform1.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
     fontsize:=trunc(fontsize*(head.width-2*fontsize)/text_width);{use full width for 80 characters}
     image1.Canvas.font.size:=fontsize;
     image1.Canvas.font.color:=clwhite;
-    text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+    text_height:=mainform1.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
     if head.magn_limit<>0 then
       image1.Canvas.textout(round(fontsize*2),head.height-text_height,'Limiting magnitude '+floattostrF(head.magn_limit,FFFixed,0,2)+ ' (SNR=7, aperture ⌀'+floattostrF(head.mzero_radius,FFFixed,0,2) + ')');  {magn_limit is calculated plot_and_measure_stars}
   end
@@ -11427,13 +11436,13 @@ begin
 end;
 
 
-procedure Tmainwindow.annotations_visible1Click(Sender: TObject);
+procedure Tmainform1.annotations_visible1Click(Sender: TObject);
 begin
 //  annotations_visible1.checked:= annotations_visible1.checked=false;
   stackmenu1.annotations_visible2.checked:=annotations_visible1.checked; {follow in stack menu}
   if head.naxis=0 then exit;
   if annotations_visible1.checked=false then  {clear screen}
-    plot_fits(mainwindow.image1,false)
+    plot_fits(mainform1.image1,false)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
 
@@ -11441,21 +11450,21 @@ begin
 //  stackmenu1.annotations_visible2.checked:=annotations_visible1.checked; {follow in stack menu}
 //  if head.naxis=0 then exit;
 //  if annotations_visible1.checked=false then  {clear screen}
-//    plot_fits(mainwindow.image1,false,true)
+//    plot_fits(mainform1.image1,false,true)
 //  else
 //    if annotated then plot_annotations(false {use solution vectors},false);
 
 end;
 
 
-procedure Tmainwindow.autocorrectcolours1Click(Sender: TObject);
+procedure Tmainform1.autocorrectcolours1Click(Sender: TObject);
 begin
   stackmenu1.auto_background_level1Click(nil);
   stackmenu1.apply_factor1Click(nil);
 end;
 
 
-procedure Tmainwindow.batch_annotate1Click(Sender: TObject);
+procedure Tmainform1.batch_annotate1Click(Sender: TObject);
 var
   I: integer;
   skipped, nrannotated :integer;
@@ -11485,7 +11494,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin break; end;
 
-          if load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) then {load image success}
+          if load_fits(filename2,true {light},true,true {update memo},0,mainform1.memo1.lines,head,img_loaded) then {load image success}
           begin
             if head.cd1_1=0 then
             begin
@@ -11496,9 +11505,9 @@ begin
             begin
               plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations},false);
               if fits_file_name(filename2) then
-                success:=savefits_update_header(mainwindow.memo1.lines,filename2)
+                success:=savefits_update_header(mainform1.memo1.lines,filename2)
               else
-                success:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2);{guarantee no file is lost}
+                success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2);{guarantee no file is lost}
               if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
               nrannotated :=nrannotated +1;
             end;
@@ -11513,7 +11522,7 @@ begin
 end;
 
 
-procedure Tmainwindow.batch_solve_astrometry_netClick(Sender: TObject);
+procedure Tmainform1.batch_solve_astrometry_netClick(Sender: TObject);
 begin
   form_astrometry_net1:=Tform_astrometry_net1.Create(self); {in project option not loaded automatic}
   form_astrometry_net1.ShowModal;
@@ -11576,7 +11585,7 @@ begin
   inc(compressedSize);
 end;      }
 
-//procedure Tmainwindow.Button1Click(Sender: TObject);
+//procedure Tmainform1.Button1Click(Sender: TObject);
 //var
 //   inp,outp : array of word;
 //   i,j,k,bestK,compressedSize:  integer;
@@ -11614,30 +11623,30 @@ end;      }
 //end;
 
 
-procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
+procedure Tmainform1.calibrate_photometry1Click(Sender: TObject);
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, true {update});
+  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head, true {update});
   Screen.Cursor:=crDefault;
 end;
 
-procedure Tmainwindow.Constellations1Click(Sender: TObject);
+procedure Tmainform1.Constellations1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit;
   if Constellations1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
   end
   else
   plot_constellations;
 end;
 
 
-procedure Tmainwindow.freetext1Click(Sender: TObject);
+procedure Tmainform1.freetext1Click(Sender: TObject);
 begin
   if freetext1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
   end
   else
   begin
@@ -11646,41 +11655,41 @@ begin
   end;
 end;
 
-procedure Tmainwindow.grid_az_alt1Click(Sender: TObject);
+procedure Tmainform1.grid_az_alt1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit;
   if grid_az_alt1.checked=false then  {clear screen}
   begin
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
   end
   else
   plot_grid(false);//az,alt grid
 end;
 
 
-procedure Tmainwindow.hfd_arcseconds1Click(Sender: TObject);
+procedure Tmainform1.hfd_arcseconds1Click(Sender: TObject);
 begin
   hfd_arcseconds:=hfd_arcseconds1.checked;
 end;
 
 
 
-procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
+procedure Tmainform1.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
   begin
     marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0   or  23.99 +89.99  or  359.99d 89.99  or  C for center',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
-    mainwindow.shape_marker3.visible:=true;
+    mainform1.shape_marker3.visible:=true;
     add_marker_position1.checked:=place_marker3(marker_position);{place a marker}
   end
   else
-    mainwindow.shape_marker3.visible:=false;
+    mainform1.shape_marker3.visible:=false;
 end;
 
 
-procedure Tmainwindow.SimpleIPCServer1MessageQueued(Sender: TObject);{For OneInstance, this event only occurs in Windows}
+procedure Tmainform1.SimpleIPCServer1MessageQueued(Sender: TObject);{For OneInstance, this event only occurs in Windows}
 begin
   {$ifdef mswindows}
    receivemessage(Sender);
@@ -11689,7 +11698,7 @@ begin
 end;
 
 
-procedure Tmainwindow.StatusBar1MouseEnter(Sender: TObject);
+procedure Tmainform1.StatusBar1MouseEnter(Sender: TObject);
 begin
   if head.naxis<>0 then
   begin
@@ -11704,13 +11713,13 @@ begin
 end;
 
 
-procedure Tmainwindow.stretch1Exit(Sender: TObject);
+procedure Tmainform1.stretch1Exit(Sender: TObject);
 begin
   do_stretching;
 end;
 
 
-procedure Tmainwindow.stretch_draw_fits1Click(Sender: TObject);
+procedure Tmainform1.stretch_draw_fits1Click(Sender: TObject);
 type
   PByteArray2 = ^TByteArray2;
   TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
@@ -11728,18 +11737,18 @@ begin
   try
     TmpBmp := TBitmap.Create;
     try
-      TmpBmp.Width  := mainwindow.image1.width;
-      TmpBmp.Height := mainwindow.image1.height;
-      ARect := Rect(0,0, mainwindow.image1.width, mainwindow.image1.height);
-      TmpBmp.Canvas.StretchDraw(ARect, mainwindow.Image1.Picture.bitmap);
+      TmpBmp.Width  := mainform1.image1.width;
+      TmpBmp.Height := mainform1.image1.height;
+      ARect := Rect(0,0, mainform1.image1.width, mainform1.image1.height);
+      TmpBmp.Canvas.StretchDraw(ARect, mainform1.Image1.Picture.bitmap);
 
       ratio:=TmpBmp.width/head.width;
 
       head.width:=TmpBmp.width;
       head.height:=TmpBmp.Height;
 
-      flipH:=mainwindow.flip_horizontal1.checked;
-      flipV:=mainwindow.flip_vertical1.checked;
+      flipH:=mainform1.flip_horizontal1.checked;
+      flipV:=mainform1.flip_vertical1.checked;
 
       setlength(img_loaded,head.naxis3,head.height,head.width);
 
@@ -11755,18 +11764,18 @@ begin
         end;
       end;
 
-      mainwindow.Memo1.Lines.BeginUpdate;
+      mainform1.Memo1.Lines.BeginUpdate;
 
-      update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
-      update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
-      update_integer(mainwindow.memo1.lines,'DATAMAX =',' / Maximum data value                             ' ,255);
+      update_integer(mainform1.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+      update_integer(mainform1.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+      update_integer(mainform1.memo1.lines,'DATAMAX =',' / Maximum data value                             ' ,255);
 
 
-      if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
-      if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
+      if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);end;
+      if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);end;
 
-      if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float(mainwindow.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
-      if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float(mainwindow.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
+      if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float(mainform1.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);end;
+      if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float(mainform1.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);end;
 
       if head.cd1_1<>0 then
       begin
@@ -11774,36 +11783,36 @@ begin
         head.cd1_2:=head.cd1_2/ratio;
         head.cd2_1:=head.cd2_1/ratio;
         head.cd2_2:=head.cd2_2/ratio;
-        update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-        update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-        update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-        update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+        update_float(mainform1.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+        update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+        update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+        update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
       end;
 
       head.XBINNING:=head.XBINNING/ratio;
       head.YBINNING:=head.YBINNING/ratio;
-      update_float(mainwindow.memo1.lines,'XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
-      update_float(mainwindow.memo1.lines,'YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
+      update_float(mainform1.memo1.lines,'XBINNING=',' / Binning factor in width                         ',false ,head.XBINNING);
+      update_float(mainform1.memo1.lines,'YBINNING=',' / Binning factor in height                        ',false ,head.YBINNING);
 
       if head.XPIXSZ<>0 then
       begin
         head.XPIXSZ:=head.XPIXSZ/ratio;
         head.YPIXSZ:=head.YPIXSZ/ratio;
-        update_float(mainwindow.memo1.lines,'XPIXSZ  =',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
-        update_float(mainwindow.memo1.lines,'YPIXSZ  =',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
-        update_float(mainwindow.memo1.lines,'PIXSIZE1=',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
-        update_float(mainwindow.memo1.lines,'PIXSIZE2=',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
+        update_float(mainform1.memo1.lines,'XPIXSZ  =',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
+        update_float(mainform1.memo1.lines,'YPIXSZ  =',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
+        update_float(mainform1.memo1.lines,'PIXSIZE1=',' / Pixel width in microns (after stretching)       ',false ,head.XPIXSZ);
+        update_float(mainform1.memo1.lines,'PIXSIZE2=',' / Pixel height in microns (after stretching)      ',false ,head.YPIXSZ);
       end;
 
-      add_text(mainwindow.memo1.lines,'HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
+      add_text(mainform1.memo1.lines,'HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
 
-      mainwindow.Memo1.Lines.EndUpdate;
+      mainform1.Memo1.Lines.EndUpdate;
 
       remove_photometric_calibration;//from header
 
       {plot result}
       use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-      plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
+      plot_fits(mainform1.image1,true {center_image});{center and stretch with current settings}
 
     finally
        TmpBmp.Free;
@@ -11815,31 +11824,31 @@ end;
 
 
 
-procedure Tmainwindow.UpDown1Click(Sender: TObject; Button: TUDBtnType);
+procedure Tmainform1.UpDown1Click(Sender: TObject; Button: TUDBtnType);
 begin
   if ((last_extension) and (button=btNext)) then
   begin
     UpDown1.position:=UpDown1.position-1; {no more extensions}
     exit;
   end;
-  if load_fits(filename2,true,true,true {update memo},updown1.position,mainwindow.memo1.lines,head,img_loaded){load fits file } then
+  if load_fits(filename2,true,true,true {update memo},updown1.position,mainform1.memo1.lines,head,img_loaded){load fits file } then
   begin
     if head.naxis<>0 then {not a bintable, compressed}
     begin
-      if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
+      if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then
          demosaic_advanced(img_loaded) {demosaic and set levels}
       else
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-      plot_fits(mainwindow.image1,false {re_center});
+      plot_fits(mainform1.image1,false {re_center});
     end;
   end;
 end;
 
 
-procedure Tmainwindow.zoomfactorone1Click(Sender: TObject);
+procedure Tmainform1.zoomfactorone1Click(Sender: TObject);
 begin
   {zoom to 100%}
-  zoom(mainwindow.image1.picture.width/mainwindow.image1.width , TPoint.Create(Panel1.Width div 2, Panel1.Height div 2){zoom center panel1} );
+  zoom(mainform1.image1.picture.width/mainform1.image1.width , TPoint.Create(Panel1.Width div 2, Panel1.Height div 2){zoom center panel1} );
 end;
 
 
@@ -11857,7 +11866,7 @@ begin
   with Client do
   begin
   try
-    ServerID:=mainwindow.SimpleIPCServer1.ServerID; {copy the id from the server to the client}
+    ServerID:=mainform1.SimpleIPCServer1.ServerID; {copy the id from the server to the client}
     if Client.ServerRunning then {An older instance is running.}
     begin
       other_instance:=true;
@@ -11875,19 +11884,19 @@ begin
   end
   else
   begin
-    mainwindow.SimpleIPCServer1.active:=true; {activate IPCserver}
+    mainform1.SimpleIPCServer1.active:=true; {activate IPCserver}
     {$ifdef mswindows}
     {$else} {unix}
     Timer := TTimer.Create(nil); {In Linux no event occurs in MessageQueued. Trigger receive message by timer}
     Timer.Interval := 300; {300 ms interval}
-    Timer.OnTimer := mainwindow.receivemessage; {on timer event do receivemessage}
+    Timer.OnTimer := mainform1.receivemessage; {on timer event do receivemessage}
     {$endif}
   end;
 end;
 
 procedure update_mainmenu_mac;// for Mac
 begin
-  with mainwindow do
+  with mainform1 do
   begin
     with LoadFITSPNGBMPJPEG1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with select_directory_thumb1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
@@ -11950,7 +11959,7 @@ begin
 
 
 
-procedure Tmainwindow.FormCreate(Sender: TObject);
+procedure Tmainform1.FormCreate(Sender: TObject);
 var
    param1: string;
 begin
@@ -12007,7 +12016,7 @@ end;
 
 
 
-procedure Tmainwindow.deepsky_annotation1Click(Sender: TObject);
+procedure Tmainform1.deepsky_annotation1Click(Sender: TObject);
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
@@ -12017,25 +12026,25 @@ begin
 end;
 
 
-procedure Tmainwindow.add_marker1Click(Sender: TObject);
+procedure Tmainform1.add_marker1Click(Sender: TObject);
 begin
   if add_marker1.checked=false then
-    mainwindow.shape_marker1.Visible:=false
+    mainform1.shape_marker1.Visible:=false
   else
   begin
     shape_marker1_fitsX:=startX+1;
     shape_marker1_fitsY:=startY+1;
-    mainwindow.shape_marker1.Visible:=true;
-    show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
+    mainform1.shape_marker1.Visible:=true;
+    show_marker_shape(mainform1.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
     shape_marker1.hint:='Marker x='+floattostrF(shape_marker1_fitsX,ffFixed,0,1)+' y='+ floattostrF(shape_marker1_fitsY,ffFixed,0,1);
   end;
 end;
 
 
-procedure Tmainwindow.center_lost_windowsClick(Sender: TObject);
+procedure Tmainform1.center_lost_windowsClick(Sender: TObject);
 begin
-  mainwindow.left:=0;
-  mainwindow.top:=0;
+  mainform1.left:=0;
+  mainform1.top:=0;
   stackmenu1.left:=0;
   stackmenu1.top:=0;
   insp_left:=0;
@@ -12043,11 +12052,11 @@ begin
 end;
 
 
-procedure Tmainwindow.DisplayHint(Sender: TObject);
+procedure Tmainform1.DisplayHint(Sender: TObject);
 begin
   if ((length(GetlongHint(Application.Hint))>0)) then
   begin
-     //  mainwindow.Caption:=GetlongHint(Application.Hint);
+     //  mainform1.Caption:=GetlongHint(Application.Hint);
     statusbar1.SimplePanel:=true;
     statusbar1.Simpletext:=GetlongHint(Application.Hint);
   end
@@ -12056,7 +12065,7 @@ begin
 end;
 
 
-procedure Tmainwindow.FormDestroy(Sender: TObject);
+procedure Tmainform1.FormDestroy(Sender: TObject);
 begin
   settingstring.free;
   deepstring.free;{free deepsky}
@@ -12074,7 +12083,7 @@ end;
 
 procedure plot_rectangle(x1,y1,x2,y2: integer); {accurate positioned rectangle on screen coordinates}
 begin
-   with mainwindow.image1.Canvas do
+   with mainform1.image1.Canvas do
    begin
      moveto(x1,y1);
      lineto(x1,y2);
@@ -12089,41 +12098,41 @@ procedure plot_the_circle(x1,y1,x2,y2:integer);{plot circle}
 var
   size,xcenter,ycenter : integer;
 begin
-  if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
+  if mainform1.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
     x1:=(head.width-1)-x1;
     x2:=(head.width-1)-x2;
   end;
-  if mainwindow.flip_vertical1.Checked=false then
+  if mainform1.flip_vertical1.Checked=false then
   begin
     y1:=(head.height-1)-y1;
     y2:=(head.height-1)-y2;
   end;
   size:=abs(x2-x1);
   if abs(x2-x1)>20 then {circle}
-    mainwindow.image1.canvas.ellipse(x1,y1,x2+1,y2+1) {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+    mainform1.image1.canvas.ellipse(x1,y1,x2+1,y2+1) {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
   else
   begin {two lines}
     xcenter:=(x2+x1) div 2;
     ycenter:=(y2+y1) div 2;
-    mainwindow.image1.canvas.moveto(xcenter-(size div 2),ycenter);
-    mainwindow.image1.canvas.lineto(xcenter-(size div 4),ycenter);
-    mainwindow.image1.canvas.moveto(xcenter+(size div 2),ycenter);
-    mainwindow.image1.canvas.lineto(xcenter+(size div 4),ycenter);
+    mainform1.image1.canvas.moveto(xcenter-(size div 2),ycenter);
+    mainform1.image1.canvas.lineto(xcenter-(size div 4),ycenter);
+    mainform1.image1.canvas.moveto(xcenter+(size div 2),ycenter);
+    mainform1.image1.canvas.lineto(xcenter+(size div 4),ycenter);
   end;
 
 end;
 
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array}
 begin
-  if mainwindow.Flip_horizontal1.Checked then
+  if mainform1.Flip_horizontal1.Checked then
   begin
     x2:=(head.width-1)-x1;{flip for screen coordinates, 0...head.width-1}
   end
   else
     x2:=x1;
 
-  if mainwindow.flip_vertical1.Checked=false then
+  if mainform1.flip_vertical1.Checked=false then
   begin
     y2:=(head.height-1)-y1;
   end
@@ -12141,25 +12150,25 @@ begin
   dec(x2);
   dec(y2);
 
-  if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
+  if mainform1.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
     x1:=(head.width-1)-x1;{flip for screen coordinates, 0...head.width-1}
     x2:=(head.width-1)-x2;
   end;
-  if mainwindow.flip_vertical1.Checked=false then
+  if mainform1.flip_vertical1.Checked=false then
   begin
     y1:=(head.height-1)-y1;
     y2:=(head.height-1)-y2;
   end;
 
   if head.height<512 then fontsize:=8 else fontsize:=12;
-  mainwindow.image1.Canvas.Pen.width:=max(1,round(1*abs(typ))); ;
-  mainwindow.image1.Canvas.font.size:=max(fontsize,round(fontsize*abs(typ)));
+  mainform1.image1.Canvas.Pen.width:=max(1,round(1*abs(typ))); ;
+  mainform1.image1.Canvas.font.size:=max(fontsize,round(fontsize*abs(typ)));
 
   if typ>0 then {single line}
   begin
-    mainwindow.image1.Canvas.moveto(x1,y1);
-    mainwindow.image1.Canvas.lineto(x2,y2);
+    mainform1.image1.Canvas.moveto(x1,y1);
+    mainform1.image1.Canvas.lineto(x2,y2);
   end
   else
   begin {rectangle or two indicating lines}
@@ -12170,15 +12179,15 @@ begin
      begin {two lines}
        xcenter:=(x2+x1) div 2;
        ycenter:=(y2+y1) div 2;
-       mainwindow.image1.canvas.moveto(xcenter-(size div 2),ycenter);
-       mainwindow.image1.canvas.lineto(xcenter-(size div 4),ycenter);
-       mainwindow.image1.canvas.moveto(xcenter+(size div 2),ycenter);
-       mainwindow.image1.canvas.lineto(xcenter+(size div 4),ycenter);
+       mainform1.image1.canvas.moveto(xcenter-(size div 2),ycenter);
+       mainform1.image1.canvas.lineto(xcenter-(size div 4),ycenter);
+       mainform1.image1.canvas.moveto(xcenter+(size div 2),ycenter);
+       mainform1.image1.canvas.lineto(xcenter+(size div 4),ycenter);
      end;
   end;
 
-  text_height:=round(mainwindow.image1.canvas.Textheight(name));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-  text_width:=round(mainwindow.image1.canvas.Textwidth(name)); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+  text_height:=round(mainform1.image1.canvas.Textheight(name));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+  text_width:=round(mainform1.image1.canvas.Textwidth(name)); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
 
   if x2>=x1 then left:=x2 else left:=x2-text_width;
   left:=min(left, head.width-text_width);{stay away from the right side}
@@ -12186,7 +12195,7 @@ begin
   if y2>=y1 then top:=y2 - (text_height div 3) else top:=y2- text_height;
   top:=min(top, head.height-text_height);{stay away from the bottom}
 
-  mainwindow.image1.Canvas.textout( left,top ,name{name});
+  mainform1.image1.Canvas.textout( left,top ,name{name});
 end;
 
 
@@ -12202,26 +12211,26 @@ begin
   List := TStringList.Create;
   list.StrictDelimiter:=true;
 
-  mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.font.color:=annotation_color;
-  // mainwindow.image1.Canvas.font.size:=round(min(20,max(10,head.height*20/4176)));
+  mainform1.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
+  mainform1.image1.Canvas.brush.Style:=bsClear;
+  mainform1.image1.Canvas.font.color:=annotation_color;
+  // mainform1.image1.Canvas.font.size:=round(min(20,max(10,head.height*20/4176)));
 
 
   {$ifdef mswindows}
-  SetTextAlign(mainwindow.image1.canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
-  setbkmode(mainwindow.image1.canvas.handle,TRANSPARENT); {transparent}
+  SetTextAlign(mainform1.image1.canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
+  setbkmode(mainform1.image1.canvas.handle,TRANSPARENT); {transparent}
   {$else} {Linux}
   {$endif}
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=mainform1.Memo1.Lines.Count-1;
   try
     while count1>=0 do {plot annotations}
     begin
-      if copy(mainwindow.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
+      if copy(mainform1.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
       begin
         List.Clear;
-        ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,posex(#39,mainwindow.Memo1.Lines[count1],20)-12)),List);
+        ExtractStrings([';'], [], PChar(copy(mainform1.Memo1.Lines[count1],12,posex(#39,mainform1.Memo1.Lines[count1],20)-12)),List);
 
 
         if list.count>=5  then {correct annotation}
@@ -12231,12 +12240,12 @@ begin
           x2:=round(strtofloat2(list[2]));
           y2:=round(strtofloat2(list[3]));
 
-          with mainwindow do
+          with mainform1 do
           for i:=0 to high(fshapes) do
           if ((Fshapes[i].shape<>nil) and ( abs(fshapes[i].fitsX-(x1+x2)/2) <30) and (abs(fshapes[i].fitsY-(y1+y2)/2)<30)) then
           begin
 //            var_lock:=list[5];
-            mainwindow.fshapes[i].shape.HINT:=list[5];
+            mainform1.fshapes[i].shape.HINT:=list[5];
             memo2_message('Locked on object: '+list[5]);
           end;
 
@@ -12301,16 +12310,16 @@ begin
 
   List := TStringList.Create;
   list.StrictDelimiter:=true;
-  formalism:=mainwindow.Polynomial1.itemindex;
+  formalism:=mainform1.Polynomial1.itemindex;
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=mainform1.Memo1.Lines.Count-1;
   try
     while count1>=0 do {plot annotations}
     begin
-      if copy(mainwindow.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
+      if copy(mainform1.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
       begin
         List.Clear;
-        ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,posex(#39,mainwindow.Memo1.Lines[count1],20)-12)),List);
+        ExtractStrings([';'], [], PChar(copy(mainform1.Memo1.Lines[count1],12,posex(#39,mainform1.Memo1.Lines[count1],20)-12)),List);
         if list.count>=6  then {correct annotation}
         begin
          // dummy:=list[5];
@@ -12356,8 +12365,8 @@ begin
      img_loaded[0,startY+round(i*deltaY/len) ,startX+round(i*deltaX/len)]:=round((cwhite+head.backgr)/2);
 
   {convert to screen coordinates. Screen coordinates are used to have the font with the correct orientation}
-  if mainwindow.flip_horizontal1.checked then begin startX:=head.width-startX; stopX:=head.width-stopX;  end;
-  if mainwindow.flip_vertical1.checked then begin startY:=head.height-startY;  stopY:=head.height-stopY; end;
+  if mainform1.flip_horizontal1.checked then begin startX:=head.width-startX; stopX:=head.width-stopX;  end;
+  if mainform1.flip_vertical1.checked then begin startY:=head.height-startY;  stopY:=head.height-stopY; end;
 
   deltaX:=stopX-startX;
   deltaY:=stopY-startY;
@@ -12369,11 +12378,11 @@ begin
 
   annotation_to_array(value, true{transparant},round((cwhite+head.backgr)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 end;
 
 
-procedure Tmainwindow.Enter_annotation1Click(Sender: TObject);
+procedure Tmainform1.Enter_annotation1Click(Sender: TObject);
 var
   value : string;
   text_x,text_y   : integer;
@@ -12389,8 +12398,8 @@ begin
     exit;
   end;
 
-  mainwindow.image1.Canvas.Pen.width:=max(1,round(1*head.width/image1.width)); ;
-  mainwindow.image1.Canvas.Pen.Color:= annotation_color; {clyellow default}
+  mainform1.image1.Canvas.Pen.width:=max(1,round(1*head.width/image1.width)); ;
+  mainform1.image1.Canvas.Pen.Color:= annotation_color; {clyellow default}
 
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=annotation_color;
@@ -12422,12 +12431,12 @@ begin
   if sender<>Enter_rectangle_with_label1 then boldness:=head.width/image1.width else boldness:=-head.width/image1.width;
 
   plot_the_annotation(startX,startY,text_X,text_Y,boldness,value);
-  add_text(mainwindow.memo1.lines,'ANNOTATE=',#39+copy(inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';',1,68)+#39);
+  add_text(mainform1.memo1.lines,'ANNOTATE=',#39+copy(inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';',1,68)+#39);
   annotated:=true; {header contains annotations}
 end;
 
 
-procedure Tmainwindow.Exit1Click(Sender: TObject);
+procedure Tmainform1.Exit1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop photometry loop}
   Application.MainForm.Close {this will call an on-close event for saving settings}
@@ -12437,16 +12446,16 @@ end;
 procedure FITS_BMP(filen:string);{save FITS to BMP file}
 var filename3:string;
 begin
-  if load_fits(filen,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded) {load now normal} then
+  if load_fits(filen,true {light},true,true {update memo},0,mainform1.memo1.lines,head,img_loaded) {load now normal} then
   begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     filename3:=ChangeFileExt(Filen,'.bmp');
-    mainwindow.image1.picture.SaveToFile(filename3);
+    mainform1.image1.picture.SaveToFile(filename3);
   end;
 end;
 
 
-procedure Tmainwindow.ShowFITSheader1Click(Sender: TObject);
+procedure Tmainform1.ShowFITSheader1Click(Sender: TObject);
 var bericht: array[0..512] of char;{make this one not too short !}
 begin
    strpcopy(bericht,
@@ -12457,7 +12466,7 @@ begin
   'Calibration-status: '+head.calstat+#13+#10+
   'Date-obs: '+head.date_obs+#13+#10+
   'Exposure-time: '+floattostr(head.exposure));
-  messagebox(mainwindow.handle,bericht,'Basic fits header',MB_OK);
+  messagebox(mainform1.handle,bericht,'Basic fits header',MB_OK);
 end;
 
 
@@ -12497,7 +12506,7 @@ begin
 end;
 
 
-procedure Tmainwindow.writeposition1Click(Sender: TObject);
+procedure Tmainform1.writeposition1Click(Sender: TObject);
 var  font_height:integer;
      x7,y7,x8,y8 : integer;
 begin
@@ -12517,8 +12526,8 @@ begin
   begin
     image1.Canvas.font.color:=$00AAFF;
 
-    if mainwindow.Flip_horizontal1.Checked=true then x7:=round(head.width-object_xc) else x7:=round(object_xc);
-    if mainwindow.flip_vertical1.Checked=false then y7:=round(head.height-object_yc) else y7:=round(object_yc);
+    if mainform1.Flip_horizontal1.Checked=true then x7:=round(head.width-object_xc) else x7:=round(object_xc);
+    if mainform1.flip_vertical1.Checked=false then y7:=round(head.height-object_yc) else y7:=round(object_yc);
 
     if sender<>writepositionshort1 then
     begin
@@ -12547,19 +12556,19 @@ begin
 end;
 
 
-procedure Tmainwindow.FormPaint(Sender: TObject);
+procedure Tmainform1.FormPaint(Sender: TObject);
 begin
   if image_move_to_center then
   begin
-    mainwindow.image1.top:=0;
-    mainwindow.image1.left:=(mainwindow.panel1.Width - mainwindow.image1.width) div 2;
+    mainform1.image1.top:=0;
+    mainform1.image1.left:=(mainform1.panel1.Width - mainform1.image1.width) div 2;
 
     image_move_to_center:=false;{mark as job done}
   end;
 end;
 
 
-procedure Tmainwindow.sqm1Click(Sender: TObject);
+procedure Tmainform1.sqm1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit; {file loaded?}
 
@@ -12571,7 +12580,7 @@ begin
  end;
 
 
-procedure Tmainwindow.FormResize(Sender: TObject);
+procedure Tmainform1.FormResize(Sender: TObject);
 var
     h,w,mw,i: integer;
 begin
@@ -12588,34 +12597,34 @@ begin
   h:=panel1.height;
   w:=round(h*head.width/head.height);
 
-  mainwindow.image1.height:=h;
-  mainwindow.image1.width:=w;
+  mainform1.image1.height:=h;
+  mainform1.image1.width:=w;
 
-  mainwindow.image1.top:=0;
+  mainform1.image1.top:=0;
 
-  mw:=mainwindow.width;
-  mainwindow.image1.left:=(mw-w) div 2;
+  mw:=mainform1.width;
+  mainform1.image1.left:=(mw-w) div 2;
 
   {update shape positions using the fitxY, fitsY position. Ra,dec position are not required}
-  show_marker_shape(mainwindow.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
-  show_marker_shape(mainwindow.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
-  show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},30,30,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-  show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+  show_marker_shape(mainform1.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
+  show_marker_shape(mainform1.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
+  show_marker_shape(mainform1.shape_marker3,9 {no change in shape and hint},30,30,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+  show_marker_shape(mainform1.shape_marker4,9 {no change in shape and hint},60,60,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
-//  if mainwindow.shape_var1.visible then {For manual alignment. Do this only when visible}
-//    show_marker_shape(mainwindow.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
-//  if mainwindow.shape_check1.visible then {For manual alignment. Do this only when visible}
-//    show_marker_shape(mainwindow.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
-//  if mainwindow.shape_comp1.visible then {For manual alignment. Do this only when visible}
-//    show_marker_shape(mainwindow.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
+//  if mainform1.shape_var1.visible then {For manual alignment. Do this only when visible}
+//    show_marker_shape(mainform1.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
+//  if mainform1.shape_check1.visible then {For manual alignment. Do this only when visible}
+//    show_marker_shape(mainform1.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
+//  if mainform1.shape_comp1.visible then {For manual alignment. Do this only when visible}
+//    show_marker_shape(mainform1.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
 
-//  if mainwindow.shape_var2.visible then //update the shape position based on ra,dec values
+//  if mainform1.shape_var2.visible then //update the shape position based on ra,dec values
 //  begin
-//    show_marker_shape(mainwindow.shape_var2,9 {no change in shape and hint},50,50,10,shape_var2_fitsX, shape_var2_fitsY);
-//    show_marker_shape(mainwindow.shape_check2,9 {no change in shape and hint},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
+//    show_marker_shape(mainform1.shape_var2,9 {no change in shape and hint},50,50,10,shape_var2_fitsX, shape_var2_fitsY);
+//    show_marker_shape(mainform1.shape_check2,9 {no change in shape and hint},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
 //  end;
 
-  with mainwindow do
+  with mainform1 do
   for i:=0 to high(fshapes) do
      if Fshapes[i].shape<>nil then
         show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
@@ -12633,15 +12642,15 @@ end;
 //      TmpBmp.Width  := w;
 //      TmpBmp.Height := h;
 //      ARect := Rect(0,0, w,h);
-//     TmpBmp.Canvas.StretchDraw(ARect, mainwindow.Image1.Picture.bitmap);
-//      mainwindow.Image1.Picture.bitmap.Assign(TmpBmp);
+//     TmpBmp.Canvas.StretchDraw(ARect, mainform1.Image1.Picture.bitmap);
+//      mainform1.Image1.Picture.bitmap.Assign(TmpBmp);
 //   finally
 //       TmpBmp.Free;
 //    end;
 //    except
 //  end;
-//  head.width:=mainwindow.Image1.Picture.width;
-//  head.height:=mainwindow.Image1.Picture.height;
+//  head.width:=mainform1.Image1.Picture.width;
+//  head.height:=mainform1.Image1.Picture.height;
 //end;
 
 
@@ -12682,7 +12691,7 @@ begin
   plot_deepsky(false,8);{annotate}
   JPG := TJPEGImage.Create;
   try
-    JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into jpg
+    JPG.Assign(mainform1.image1.Picture.Graphic);    //Convert data into jpg
     JPG.CompressionQuality :=90;
     JPG.SaveToFile(ChangeFileExt(filename,'_annotated.jpg'));
   finally
@@ -12748,7 +12757,7 @@ var
 begin
   settingstring := Tstringlist.Create;
  {load program parameters, overriding initial settings if any}
-  with mainwindow do
+  with mainform1 do
   if paramcount>0 then
   begin
    // Command line:
@@ -12776,7 +12785,7 @@ begin
 
         filename2:=list[5];
         source_fits:=fits_file_name(filename2);{fits file extension?}
-        file_loaded:=load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false,false {plot});{load file first to give commandline parameters later priority}
+        file_loaded:=load_image(filename2,img_loaded,head,mainform1.memo1.lines,false,false {plot});{load file first to give commandline parameters later priority}
 
         if file_loaded=false then errorlevel:=16;{error file loading}
 
@@ -12791,7 +12800,7 @@ begin
         search_field:= min(180,sqrt(regions)*0.5*field_size);{regions 1000 is equivalent to 32x32 regions. So distance form center is 0.5*32=16 region heights}
 
         stackmenu1.radius_search1.text:=floattostrF(search_field,ffFixed,0,1);{convert to radius of a square search field}
-        if ((file_loaded) and (solve_image(img_loaded,head,mainwindow.memo1.lines,true {get hist},false {check filter}) )) then {find plate solution, filename2 extension will change to .fit}
+        if ((file_loaded) and (solve_image(img_loaded,head,mainform1.memo1.lines,true {get hist},false {check filter}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           resultstr:='Valid plate solution';
           confidence:='999';
@@ -12887,15 +12896,15 @@ begin
   try
    TheFile4:=tfilestream.Create(filen, fmcreate );
 
-   update_integer(mainwindow.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+   update_integer(mainform1.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
    try
   {write memo1 header to file}
    for i:=0 to 79 do empthy_line[i]:=#32;{space}
    i:=0;
    repeat
-      if i<mainwindow.memo1.lines.count then
+      if i<mainform1.memo1.lines.count then
       begin
-        line0:=mainwindow.memo1.lines[i];
+        line0:=mainform1.memo1.lines[i];
         while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
         strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
         thefile4.writebuffer(aline,80);{write updated header from memo1}
@@ -12903,7 +12912,7 @@ begin
       else
       thefile4.writebuffer(empthy_line,80);{write empthy line}
       inc(i);
-   until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+   until ((i>=mainform1.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
 
    finally
@@ -12922,13 +12931,13 @@ end;
 //  data: longword;
 //begin
 
-//  remove_key(mainwindow.memo1.lines,'NAXIS1  =',true{one});     {this will damge the header}
-//  remove_key(mainwindow.memo1.lines,'NAXIS2  =',true{one});
-//  update_integer(mainwindow.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
-//  update_integer(mainwindow.memo1.lines,'BITPIX  =',' /                                                ' ,8    );
+//  remove_key(mainform1.memo1.lines,'NAXIS1  =',true{one});     {this will damge the header}
+//  remove_key(mainform1.memo1.lines,'NAXIS2  =',true{one});
+//  update_integer(mainform1.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+//  update_integer(mainform1.memo1.lines,'BITPIX  =',' /                                                ' ,8    );
 
-//  add_text(mainwindow.memo1.lines,'EXTEND  =','                   T / There may be FITS extension                    ');
-//  add_text(mainwindow.memo1.lines,'AN_FILE =',#39+'XYLS    '+#39+' / Astrometry.net file type                                 ');
+//  add_text(mainform1.memo1.lines,'EXTEND  =','                   T / There may be FITS extension                    ');
+//  add_text(mainform1.memo1.lines,'AN_FILE =',#39+'XYLS    '+#39+' / Astrometry.net file type                                 ');
 
 //  try
 //   TheFile4:=tfilestream.Create(ChangeFileExt(filename2,'.xyls'), fmcreate );
@@ -12937,9 +12946,9 @@ end;
 //   for i:=0 to 79 do empthy_line[i]:=#32;{space}
 //   i:=0;
 //   repeat
-//     if i<mainwindow.memo1.lines.count then
+//     if i<mainform1.memo1.lines.count then
 //      begin
-//        line0:=mainwindow.memo1.lines[i];
+//        line0:=mainform1.memo1.lines[i];
 //        while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
 //        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
 //        thefile4.writebuffer(aline,80);{write updated header from memo1}
@@ -12947,7 +12956,7 @@ end;
 //      else
 //      thefile4.writebuffer(empthy_line,80);{write empthy line}
 //     inc(i);
-//   until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+//   until ((i>=mainform1.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
 //   i:=0;
 //   strpcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ');{copy 80 and not more or less}
@@ -13066,7 +13075,7 @@ begin
 end;
 
 
-procedure Tmainwindow.FormShow(Sender: TObject);
+procedure Tmainform1.FormShow(Sender: TObject);
 var
   s      : string;
   histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,extractspecified2,focusrequest,checkfilter, wresult : boolean;
@@ -13089,7 +13098,7 @@ begin
   begin
     esc_pressed:=true;{kill any running activity. This for APT}
     {stop program, platesolve command already executed}
-    halt(errorlevel); {don't save only do form.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+    halt(errorlevel); {don't save only do form.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
   end
   else
   if paramcount>0 then   {file as first parameter}
@@ -13140,7 +13149,7 @@ begin
         'Star database expected at: '+database_path), pchar('ASTAP astrometric solver usage:'),MB_OK);
 
         esc_pressed:=true;{kill any running activity. This for APT}
-        halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+        halt(0); {don't save only do mainform1.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
       end;
 
       //log_to_file('c:\temp\text.txt',cmdline);
@@ -13160,9 +13169,9 @@ begin
         begin
           filename2:=GetOptionValue('f');
           if debug=false then
-            file_loaded:=load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false,false {plot}) {load file first to give commandline parameters later priority}
+            file_loaded:=load_image(filename2,img_loaded,head,mainform1.memo1.lines,false,false {plot}) {load file first to give commandline parameters later priority}
           else
-            file_loaded:=load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});{load and show image}
+            file_loaded:=load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});{load and show image}
           if file_loaded=false then errorlevel:=16;{error file loading}
         end
         else
@@ -13178,7 +13187,7 @@ begin
 
         if hasoption('ra') then
         begin
-           mainwindow.ra1.text:=GetOptionValue('ra');
+           mainform1.ra1.text:=GetOptionValue('ra');
         end;
         {else ra from fits header}
 
@@ -13186,7 +13195,7 @@ begin
         begin
           head.dec0:=strtofloat2(GetOptionValue('spd'))-90;{convert south pole distance to declination}
           str(head.dec0:0:6,s);
-          mainwindow.dec1.text:=s;
+          mainform1.dec1.text:=s;
         end;
         {else dec from fits header}
 
@@ -13273,12 +13282,12 @@ begin
             filename_output:=filename2; //use same filename for .ini and .wcs files
 
 
-          if ((file_loaded) and (solve_image(img_loaded,head,mainwindow.memo1.lines,true {get hist},checkfilter) )) then {find plate solution, filename2 extension will change to .fit}
+          if ((file_loaded) and (solve_image(img_loaded,head,mainform1.memo1.lines,true {get hist},checkfilter) )) then {find plate solution, filename2 extension will change to .fit}
           begin
             if hasoption('sqm') then {sky quality}
             begin
               pedestal_m:=round(strtofloat2(GetOptionValue('sqm')));
-              if calculate_sqm(img_loaded,head,mainwindow.memo1.lines,false {get backgr},false{get histogr},{var} pedestal_m) then {sqm found}
+              if calculate_sqm(img_loaded,head,mainform1.memo1.lines,false {get backgr},false{get histogr},{var} pedestal_m) then {sqm found}
               begin
                 //values are added to header in procedure calculate_sqm
               end;
@@ -13286,21 +13295,24 @@ begin
               if airmass=0 then
               begin
                 airmass:=AirMass_calc(altitudefloat);
-                update_generic(mainwindow.memo1.lines,'AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
+                update_generic(mainform1.memo1.lines,'AIRMASS ',floattostr4(airmass),'Relative optical path.                        ');{update header using text only}
               end;
             end;
 
             write_ini(filename_output,true);{write solution to ini file}
 
-            add_long_comment(mainwindow.memo1.lines,'cmdline:'+cmdline);{log command line in wcs file}
+            add_long_comment(mainform1.memo1.lines,'cmdline:'+cmdline);{log command line in wcs file}
 
             if hasoption('update') then
             begin
-              if fits_file_name(filename2) then wresult:=savefits_update_header(mainwindow.memo1.lines,filename2) {update the fits file header}
+              if fits_file_name(filename2) then wresult:=savefits_update_header(mainform1.memo1.lines,filename2) {update the fits file header}
               else
-              if tiff_file_name(filename2) then wresult:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2){guarantee no file is lost}
+              if tiff_file_name(filename2) then wresult:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2){guarantee no file is lost}
               else
-              wresult:=save_fits(img_loaded,mainwindow.memo1.lines,ChangeFileExt(filename2,'.fits'),16, true {override});{save original png,tiff jpg to 16 fits file}
+              begin
+                head.nrbits:=16;
+                wresult:=save_fits(img_loaded,mainform1.memo1.lines,head,ChangeFileExt(filename2,'.fits'), true {override});{save original png,tiff jpg to 16 fits file}
+              end;
 
               if wresult=false then //write error
               begin
@@ -13309,20 +13321,20 @@ begin
               end;
             end;
 
-            remove_key(mainwindow.memo1.lines,'NAXIS1  =',true{one});
-            remove_key(mainwindow.memo1.lines,'NAXIS2  =',true{one});
-            update_integer(mainwindow.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+            remove_key(mainform1.memo1.lines,'NAXIS1  =',true{one});
+            remove_key(mainform1.memo1.lines,'NAXIS2  =',true{one});
+            update_integer(mainform1.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
             if hasoption('wcs') then
               write_astronomy_wcs(ChangeFileExt(filename_output,'.wcs'))  {write WCS astronomy.net style}
             else
-              try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename_output,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+              try mainform1.Memo1.Lines.SavetoFile(ChangeFileExt(filename_output,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
             histogram_done:=false;
             if hasoption('annotate') then
             begin
               use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
               histogram_done:=true;
-              plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
+              plot_fits(mainform1.image1,true {center_image});{center and stretch with current settings}
               save_annotated_jpg(filename_output);{save viewer as annotated jpg}
             end;
             if hasoption('tofits') then {still to be tested}
@@ -13330,9 +13342,10 @@ begin
               if fits_file_name(filename2)=false {no fits file?} then
               begin
                 binning:=round(strtofloat2(GetOptionValue('tofits')));
-                if binning>1 then bin_X2X3X4(img_loaded,head,mainwindow.memo1.lines,binning);{bin img_loaded 2x or 3x or 4x}
+                if binning>1 then bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,binning);{bin img_loaded 2x or 3x or 4x}
                 if histogram_done=false then use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
-                save_fits(img_loaded,mainwindow.memo1.lines,changeFileExt(filename_output,'.fit'),8,true {overwrite});
+                head.nrbits:=8;
+                save_fits(img_loaded,mainform1.memo1.lines,head,changeFileExt(filename_output,'.fit'),true {overwrite});
               end;
             end;
 
@@ -13361,7 +13374,7 @@ begin
           esc_pressed:=true;{kill any running activity. This for APT}
           if commandline_log then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename_output,'.log'));{save Memo2 log to log file}
 
-          halt(errorlevel); {don't save only, do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+          halt(errorlevel); {don't save only, do mainform1.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
 
           //  Exit status:
           //  0 no errors.
@@ -13407,10 +13420,10 @@ begin
     begin
       stackmenu1.live_stacking_path1.caption:=application.GetOptionValue('stack');{live stacking path}
       stackmenu1.pagecontrol1.tabindex:=11; {live stack}
-      mainwindow.Stackimages1Click(nil);// make stack menu visible
+      mainform1.Stackimages1Click(nil);// make stack menu visible
     end
     else
-    load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});{show image of parameter1}
+    load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});{show image of parameter1}
   end {paramcount>0}
   else
   do_stretching; {create gamma curve for image if loaded later and set gamma_on}
@@ -13431,13 +13444,13 @@ begin
   pairsplitter1.position:=image_north_arrow1.top+image_north_arrow1.height+8;//set correct for 4k screens with hiDPI settings. Works only in show. Not in create
                      //The thing is that the LCL scales the form on the Show method, because that any scaling produced before showing the form is not applied.
 
-  FixHiddenFormProblem( Screen,mainwindow);//when users change from two to one monitor
+  FixHiddenFormProblem( Screen,mainform1);//when users change from two to one monitor
   FixHiddenFormProblem( Screen,stackmenu1);
 
 end;
 
 
-procedure Tmainwindow.batch_add_solution1Click(Sender: TObject);
+procedure Tmainform1.batch_add_solution1Click(Sender: TObject);
 var
   i,nrskipped, nrsolved,nrfailed,file_age,pedestal2,oldnrbits                         : integer;
   add_lim_magn,solution_overwrite,solved,maintain_date,success,image_changed : boolean;
@@ -13511,7 +13524,7 @@ begin
 
 
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
-            oldnrbits:=nrbits;
+ //           oldnrbits:=nrbits;
             solved:=solve_image(img_temp,headx,memox,true {get hist}, false {check filter});
             if solved then nrsolved:=nrsolved+1 {solve}
             else
@@ -13580,7 +13593,7 @@ begin
               if image_changed=false then
                 success:=savefits_update_header(memox,filename2)
               else
-                success:=save_fits(img_temp,memox,filename2,oldnrbits,true);//image was updated by calibration.
+                success:=save_fits(img_temp,memox,headX,filename2,true);//image was updated by calibration.
             end
             else
               success:=save_tiff16_secure(img_temp,memox,filename2);{guarantee no file is lost}
@@ -13610,7 +13623,7 @@ begin
 end;
 
 
-procedure Tmainwindow.stretch1CloseUp(Sender: TObject);
+procedure Tmainform1.stretch1CloseUp(Sender: TObject);
 begin
   do_stretching;
 end;
@@ -13632,14 +13645,14 @@ end;
 
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 begin
-  update_integer(mainwindow.memo1.lines,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{number of dimensions, 2 for mono, 3 for colour}
+  update_integer(mainform1.memo1.lines,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{number of dimensions, 2 for mono, 3 for colour}
   if head.naxis3<>1 then {color image}
-    update_integer(mainwindow.memo1.lines,'NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3)
+    update_integer(mainform1.memo1.lines,'NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3)
   else
-    remove_key(mainwindow.memo1.lines,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+    remove_key(mainform1.memo1.lines,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 end;
 
-procedure Tmainwindow.demosaic_bayermatrix1Click(Sender: TObject);
+procedure Tmainform1.demosaic_bayermatrix1Click(Sender: TObject);
 begin
   if head.naxis3>1 then {colour}
   begin
@@ -13649,19 +13662,19 @@ begin
   {$IFDEF fpc}
   progress_indicator(0,'');
   {$else} {delphi}
-  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.Normal;
-  mainwindow.taskbar1.progressvalue:=0; {show progress}
+  mainform1.taskbar1.progressstate:=TTaskBarProgressState.Normal;
+  mainform1.taskbar1.progressvalue:=0; {show progress}
   {$endif}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
   demosaic_advanced(img_loaded);
 
-  remove_key(mainwindow.memo1.lines,'BAYERPAT',false{all});{remove key word in header}
-  remove_key(mainwindow.memo1.lines,'XBAYROFF',false{all});{remove key word in header}
-  remove_key(mainwindow.memo1.lines,'YBAYROFF',false{all});{remove key word in header}
+  remove_key(mainform1.memo1.lines,'BAYERPAT',false{all});{remove key word in header}
+  remove_key(mainform1.memo1.lines,'XBAYROFF',false{all});{remove key word in header}
+  remove_key(mainform1.memo1.lines,'YBAYROFF',false{all});{remove key word in header}
 
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
   stackmenu1.test_pattern1.Enabled:=false;{do no longer allow debayer}
 
   update_header_for_colour; {update naxis and naxis3 keywords}
@@ -13670,22 +13683,22 @@ begin
  {$IFDEF fpc}
   progress_indicator(-100,'');{back to normal}
  {$else} {delphi}
-  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.None;
+  mainform1.taskbar1.progressstate:=TTaskBarProgressState.None;
   {$endif}
 end;
 
 
-procedure Tmainwindow.star_annotation1Click(Sender: TObject);
+procedure Tmainform1.star_annotation1Click(Sender: TObject);
 begin
 //  annotation_magn :=inputbox('Annotate stars','Annotate up to magnitude:' ,annotation_magn);
 //  annotation_magn:=StringReplace(annotation_magn,',','.',[]); {replaces komma by dot}
 
-  calibrate_photometry(img_loaded,mainwindow.Memo1.lines,head, false{update});
-  plot_and_measure_stars(img_loaded,mainwindow.Memo1.lines,head,false {calibration},true {plot stars},false {measure lim magn});{plot stars}
+  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head, false{update});
+  plot_and_measure_stars(img_loaded,mainform1.Memo1.lines,head,false {calibration},true {plot stars},false {measure lim magn});{plot stars}
 end;
 
 
-procedure Tmainwindow.Copyposition1Click(Sender: TObject);
+procedure Tmainform1.Copyposition1Click(Sender: TObject);
 var
    Centroid : string;
 begin
@@ -13694,7 +13707,7 @@ begin
 end;
 
 
-procedure Tmainwindow.Copypositionindeg1Click(Sender: TObject);
+procedure Tmainform1.Copypositionindeg1Click(Sender: TObject);
 var
    Centroid : string;
 begin
@@ -13703,7 +13716,7 @@ begin
 end;
 
 
-procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
+procedure Tmainform1.CropFITSimage1Click(Sender: TObject);
 var fitsX,fitsY,col,dum, formalism      : integer;
     fxc,fyc, ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
     img_temp : Timage_array;
@@ -13714,7 +13727,7 @@ begin
 
    backup_img;
 
-   formalism:=mainwindow.Polynomial1.itemindex;
+   formalism:=mainform1.Polynomial1.itemindex;
 
    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -13743,8 +13756,8 @@ begin
    img_loaded:=nil;{release memory}
    img_loaded:=img_temp;
 
-   update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
-   update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+   update_integer(mainform1.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+   update_integer(mainform1.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
    {new reference pixel}
 
@@ -13776,29 +13789,29 @@ begin
 
       new_to_old_WCS(head);
 
-      update_float(mainwindow.memo1.lines,'CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
-      update_float(mainwindow.memo1.lines,'CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
+      update_float(mainform1.memo1.lines,'CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
+      update_float(mainform1.memo1.lines,'CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
 
-      update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
-      update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+      update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
+      update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-      update_float(mainwindow.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
-      update_float(mainwindow.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
+      update_float(mainform1.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+      update_float(mainform1.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
 
-      update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-      update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-      update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-      update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+      update_float(mainform1.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+      update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+      update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+      update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
       //   Alternative method keeping the old center poistion. Images center outside the image causes problems for image selection in planetarium program
-      //   if head.crpix1<>0 then begin head.crpix1:=head.crpix1-startX; update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
-      //   if head.crpix2<>0 then begin head.crpix2:=head.crpix2-startY; update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
+      //   if head.crpix1<>0 then begin head.crpix1:=head.crpix1-startX; update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
+      //   if head.crpix2<>0 then begin head.crpix2:=head.crpix2-startY; update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
    end;
 
-   update_text(mainwindow.memo1.lines,'COMMENT C','  Cropped image');
+   update_text(mainform1.memo1.lines,'COMMENT C','  Cropped image');
 
 
-   plot_fits(mainwindow.image1,true);
+   plot_fits(mainform1.image1,true);
    image_move_to_center:=true;
 
    Screen.Cursor:=crDefault;
@@ -13864,7 +13877,7 @@ begin
 end;
 
 
-procedure Tmainwindow.ra1Change(Sender: TObject);
+procedure Tmainform1.ra1Change(Sender: TObject);
 var
    errorRA : boolean;
 begin
@@ -13872,7 +13885,7 @@ begin
 
   ra_label.Caption:=floattostrF(ra_radians*12/pi,FFfixed,0,4);
 
-  if errorRA then mainwindow.ra1.color:=clred else mainwindow.ra1.color:=clwindow;
+  if errorRA then mainform1.ra1.color:=clred else mainform1.ra1.color:=clwindow;
 end;
 
 
@@ -13927,13 +13940,13 @@ begin
 end;
 
 
-procedure Tmainwindow.dec1Change(Sender: TObject);
+procedure Tmainform1.dec1Change(Sender: TObject);
 var
    errorDEC : boolean;
 begin
   dec_text_to_radians(dec1.text,dec_radians,errorDEC); {convert dec in text to double in radians}
   dec_label.Caption:=floattostrF(dec_radians*180/pi,FFfixed,0,4);
-  if (errorDEC) then mainwindow.dec1.color:=clred else mainwindow.dec1.color:=clwindow;
+  if (errorDEC) then mainform1.dec1.color:=clred else mainform1.dec1.color:=clwindow;
 end;
 
 
@@ -14008,7 +14021,7 @@ begin
 end;
 
 
-procedure Tmainwindow.enterposition1Click(Sender: TObject);
+procedure Tmainform1.enterposition1Click(Sender: TObject);
 var
   ra2,dec2,pixeldistance,distance,angle,angle2,angle3,xc,yc   : double;
   kommapos         : integer;
@@ -14019,7 +14032,7 @@ begin
     find_star_center(img_loaded,10,startX,startY,xc,yc);//find center of gravity
     shape_marker1_fitsX:=xc+1;//array to fits coordinates
     shape_marker1_fitsY:=yc+1;
-    show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
+    show_marker_shape(mainform1.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
 
     mouse_positionRADEC1:=InputBox('Enter α, δ of mouse position separated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC1);
     if mouse_positionRADEC1=''  then exit; {cancel used}
@@ -14031,7 +14044,7 @@ begin
     find_star_center(img_loaded,10,startX,startY,xc,yc);//find center of gravity
     shape_marker2_fitsX:=xc+1;//array to fits coordinates
     shape_marker2_fitsY:=yc+1;
-    show_marker_shape(mainwindow.shape_marker2,0 {rectangle},20,20,0 {minimum size},shape_marker2_fitsX, shape_marker2_fitsY);
+    show_marker_shape(mainform1.shape_marker2,0 {rectangle},20,20,0 {minimum size},shape_marker2_fitsX, shape_marker2_fitsY);
 
     mouse_positionRADEC2:=InputBox('Enter α, δ of mouse position separated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC2);
     if mouse_positionRADEC2=''  then exit;  {cancel used}
@@ -14086,40 +14099,40 @@ begin
 
     old_to_new_WCS(head);{new WCS missing, convert old WCS to new}
 
-    mainwindow.Memo1.Lines.BeginUpdate;
+    mainform1.Memo1.Lines.BeginUpdate;
 
-    update_text(mainwindow.memo1.lines,'CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
-    update_text(mainwindow.memo1.lines,'CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
-    update_text(mainwindow.memo1.lines,'CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
+    update_text(mainform1.memo1.lines,'CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
+    update_text(mainform1.memo1.lines,'CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
+    update_text(mainform1.memo1.lines,'CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
 
-    update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
-    update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+    update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+    update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-    update_float(mainwindow.memo1.lines,'CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
-    update_float(mainwindow.memo1.lines,'CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
+    update_float(mainform1.memo1.lines,'CRVAL1  =',' / RA of reference pixel (deg)                    ',false ,head.ra0*180/pi);
+    update_float(mainform1.memo1.lines,'CRVAL2  =',' / DEC of reference pixel (deg)                   ',false ,head.dec0*180/pi);
 
 
-    update_float(mainwindow.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
-    update_float(mainwindow.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
+    update_float(mainform1.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
+    update_float(mainform1.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
 
-    update_float(mainwindow.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
-    update_float(mainwindow.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
+    update_float(mainform1.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+    update_float(mainform1.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
 
-    update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-    update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-    update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-    update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
-    update_text(mainwindow.memo1.lines,'PLTSOLVD=','                   T / ASTAP manual with two positions');
+    update_float(mainform1.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+    update_text(mainform1.memo1.lines,'PLTSOLVD=','                   T / ASTAP manual with two positions');
 
-    mainwindow.Memo1.Lines.EndUpdate;
+    mainform1.Memo1.Lines.EndUpdate;
 
     update_menu_related_to_solver(true); {update menu section related to solver succesfull}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
   end;
 end;
 
 
-procedure Tmainwindow.inversimage1Click(Sender: TObject);
+procedure Tmainform1.inversimage1Click(Sender: TObject);
 var
   max_range, col,fitsX,fitsY : integer;
 begin
@@ -14127,7 +14140,7 @@ begin
 
   backup_img;
 
-  if nrbits=8 then max_range:= 255 else max_range:=65535;
+  if head.nrbits=8 then max_range:= 255 else max_range:=65535;
 
   for col:=0 to head.naxis3-1 do {do all colours}
   begin
@@ -14140,13 +14153,13 @@ begin
 
   head.datamax_org:=max_range;
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
 
 
-procedure Tmainwindow.set_area1Click(Sender: TObject);
+procedure Tmainform1.set_area1Click(Sender: TObject);
 var
     dum : integer;
 begin
@@ -14177,8 +14190,8 @@ begin
   head.width:=length(img_loaded[0,0]);{update width}  ;
   head.height:=length(img_loaded[0]);{update length};
 
-  update_integer(mainwindow.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer(mainwindow.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+  update_integer(mainform1.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(mainform1.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
 
   if head.cd1_1<>0 then {update solution for rotation}
@@ -14193,24 +14206,24 @@ begin
     head.crpix2:=(head.height+1)/2;
     old_to_new_WCS(head);{convert old style FITS to newd style}
 
-    update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-    update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-    update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-    update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+    update_float(mainform1.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
 
-    update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
-    update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+    update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+    update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
 
-    update_float(mainwindow.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
-    update_float(mainwindow.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
+    update_float(mainform1.memo1.lines,'CROTA1  =',' / Image twist X axis (deg)                       ',false ,head.crota1);
+    update_float(mainform1.memo1.lines,'CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.',false ,head.crota2);
   end;
-  remove_key(mainwindow.memo1.lines,'ANNOTATE',true{all});{remove annotations. They would be otherwise invalid}
-  add_text(mainwindow.memo1.lines,'HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
+  remove_key(mainform1.memo1.lines,'ANNOTATE',true{all});{remove annotations. They would be otherwise invalid}
+  add_text(mainform1.memo1.lines,'HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
 
 end;
 
-procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
+procedure Tmainform1.rotate_arbitrary1Click(Sender: TObject);
 var
   angle,flipped_view,flipped_image  : double;
   valueI : string;
@@ -14239,8 +14252,8 @@ begin
   else
   begin
     angle:=strtofloat2(valueI);
-    if mainwindow.flip_horizontal1.checked then flipped_view:=-flipped_view;{change rotation if flipped}
-    if mainwindow.flip_vertical1.checked then   flipped_view:=-flipped_view;{change rotation if flipped}
+    if mainform1.flip_horizontal1.checked then flipped_view:=-flipped_view;{change rotation if flipped}
+    if mainform1.flip_vertical1.checked then   flipped_view:=-flipped_view;{change rotation if flipped}
   end;
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -14250,7 +14263,7 @@ begin
 
   rotate_arbitrary(angle,flipped_view,flipped_image);
 
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 
   progress_indicator(-100,'');{back to normal}
   Screen.Cursor:=crDefault;  { Always restore to normal }
@@ -14259,7 +14272,7 @@ begin
 end;
 
 
-procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
+procedure Tmainform1.batch_rotate_left1Click(Sender: TObject);
 var
   i                        : integer;
   dobackup,success         : boolean;
@@ -14284,7 +14297,7 @@ begin
       filename2:=Strings[i];
       {load fits}
       Application.ProcessMessages;
-      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,mainwindow.memo1.lines,head,img_loaded)=false)) then begin break;end;
+      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,mainform1.memo1.lines,head,img_loaded)=false)) then begin break;end;
 
       if head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1 >0 then // Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped
         flipped_image:=-1  // change rotation for flipped image
@@ -14292,17 +14305,17 @@ begin
         flipped_image:=+1; // not flipped
 
 
-      if sender=mainwindow.batch_rotate_left1 then
+      if sender=mainform1.batch_rotate_left1 then
          rotate_arbitrary(90,1,flipped_image) else
-      if sender=mainwindow.batch_rotate_right1 then
+      if sender=mainform1.batch_rotate_right1 then
          rotate_arbitrary(-90,1,flipped_image) else
-      if sender=mainwindow.batch_rotate_1801   then
+      if sender=mainform1.batch_rotate_1801   then
          rotate_arbitrary(180,1,flipped_image);
 
       if fits_file_name(filename2) then
-        success:=save_fits(img_loaded,mainwindow.memo1.lines,filename2,nrbits,true)
+        success:=save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)
       else
-        success:=save_tiff16_secure(img_loaded,mainwindow.memo1.lines,filename2);{guarantee no file is lost}
+        success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2);{guarantee no file is lost}
       if success=false then begin ShowMessage('Write error !!' + filename2);break; end;
     end;
     if dobackup then restore_img;{for the viewer}
@@ -14311,14 +14324,14 @@ begin
 end;
 
 
-procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
+procedure Tmainform1.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
 var
    value: string;
 begin
    value:=inttostr(round(hist_range*x/histogram1.Width));
-   mainwindow.CAPTION:='Histogram value: ' +value;
-   application.hint:=mainwindow.caption;
+   mainform1.CAPTION:='Histogram value: ' +value;
+   application.hint:=mainform1.caption;
    histogram1.hint:=value;
 end;
 
@@ -14550,13 +14563,13 @@ end;
 
 
 
-procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
+procedure Tmainform1.gaia_star_position1Click(Sender: TObject);
 var
    url,ra8,dec8,sgn,window_size,dec_degrees  : string;
    ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
    radius,x1,y1,formalism                : integer;
 begin
-  formalism:=mainwindow.Polynomial1.itemindex;
+  formalism:=mainform1.Polynomial1.itemindex;
   if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
   begin
     if object_xc>0 then {object sync}
@@ -14590,8 +14603,8 @@ begin
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
-  mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainform1.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
+  mainform1.image1.Canvas.brush.Style:=bsClear;
 
   str(abs(object_decM*180/pi) :3:10,dec8);
   if object_decM>=0 then sgn:='+'  else sgn:='-';
@@ -14649,7 +14662,7 @@ begin
   end
   else
 
-  if sender=mainwindow.gaia_star_position1 then //Browser Gaia stars
+  if sender=mainform1.gaia_star_position1 then //Browser Gaia stars
   begin
     plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'');{rectangle, +1 to fits coordinates}
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=300&Gmag=<23';
@@ -14658,7 +14671,7 @@ begin
   end
   else
 
-  if sender=mainwindow.simbad_query1 then
+  if sender=mainform1.simbad_query1 then
   begin {sender simbad_query1}
     radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert ellipse to circle}
     x1:=(stopX+startX) div 2;
@@ -14669,7 +14682,7 @@ begin
   end
   else
 
-  if sender=mainwindow.hyperleda_guery1 then
+  if sender=mainform1.hyperleda_guery1 then
   begin {sender hyperleda_guery1}
     plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'');{rectangle, +1 to fits coordinates}
     url:='http://atlas.obs-hp.fr/hyperleda/fG.cgi?n=a000&ob=ra&c=o&p=J'+ra8+'d%2C'+sgn+dec8+'d&f='+floattostr6(max(ang_w,ang_h)/(60));  //350.1000D%2C50.50000D    &f=50
@@ -14678,7 +14691,7 @@ begin
   end
 
   else
-  if sender=mainwindow.ned_query1 then
+  if sender=mainform1.ned_query1 then
   begin {sender ned_query1}
     radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert ellipse to circle}
     x1:=(stopX+startX) div 2;
@@ -14710,7 +14723,7 @@ begin
 end;
 
 
-procedure Tmainwindow.mountposition1Click(Sender: TObject);
+procedure Tmainform1.mountposition1Click(Sender: TObject);
 begin
   if head.naxis=0 then exit;
   if mountposition1.checked then
@@ -14719,7 +14732,7 @@ begin
     image1.refresh;{important, show update}
   end
   else
-    plot_fits(mainwindow.image1,false); {clear indicator}
+    plot_fits(mainform1.image1,false); {clear indicator}
 end;
 
 
@@ -14763,7 +14776,7 @@ begin
 end;
 
 
-procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
+procedure Tmainform1.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   width5,height5, xf,yf,k, fx,fy, shapetype,c,xint,yint        : integer;
@@ -14799,7 +14812,7 @@ begin
             {$endif}
             break;
           end;
-      show_marker_shape(mainwindow.shape_manual_alignment1,1 {shapetype},20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
+      show_marker_shape(mainform1.shape_manual_alignment1,1 {shapetype},20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
     end;
   end
   else
@@ -14830,7 +14843,7 @@ begin
 
           if saturation(img_loaded,xint,yint,calc_saturation_level(head)) then {saturated star}
           begin
-             mainwindow.image1.Canvas.font.color:=clred;
+             mainform1.image1.Canvas.font.color:=clred;
              textout_at_fitscoordinates('SATURATED',xint,yint+14);//text at fitsX, fitsY
           end;
         end
@@ -14845,7 +14858,7 @@ begin
       shape_nr:=0;
 
 
-      if ((annotated) and (mainwindow.annotations_visible1.checked)) then
+      if ((annotated) and (mainform1.annotations_visible1.checked)) then
          plot_annotations(false {use solution vectors},false);//check if an annotation is near
 
     end;
@@ -14890,7 +14903,7 @@ begin
             img_loaded[k ,max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2)))),max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))) ]:=img_backup[index_backup].img[k,fy,fx];{use backup for case overlap occurs}
         end;
       end;{k color}
-      plot_fits(mainwindow.image1,false);
+      plot_fits(mainform1.image1,false);
       if ((ssCtrl in shift) or (ssAlt in shift) or (ssShift in shift))=false then
       begin
         copy_paste:=false;
@@ -14968,7 +14981,7 @@ begin
       if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
       begin
         background[counter]:=img[0,y1+j,x1+i];
-        //for testing: mainwindow.image1.canvas.pixels[y1+j,x1+i]:=$AAAAAA;
+        //for testing: mainform1.image1.canvas.pixels[y1+j,x1+i]:=$AAAAAA;
         inc(counter);
       end;
     end;
@@ -15328,7 +15341,7 @@ var
   egain: double;
 
 begin
-  if ((egain_extra_factor<>0) and (mainwindow.noise_in_electron1.checked)) then
+  if ((egain_extra_factor<>0) and (mainform1.noise_in_electron1.checked)) then
   begin
     egain:=strtofloat1(head_egain);//point seperator
     if egain=0 then egain:=egain_default;
@@ -15362,7 +15375,7 @@ begin
 end;
 
 
-procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+procedure Tmainform1.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,sd,dummy,conv_factor, adu_e : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,pa_str             : string;
@@ -15376,46 +15389,46 @@ begin
      begin
        if abs(y-down_y)>2 then
        begin
-         mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
+         mainform1.image1.Top:= mainform1.image1.Top+(y-down_y);
 
        //   timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
 
-         mainwindow.shape_marker1.Top:= mainwindow.shape_marker1.Top+(y-down_y);{normal marker}
-         mainwindow.shape_marker2.Top:= mainwindow.shape_marker2.Top+(y-down_y);{normal marker}
-         mainwindow.shape_marker3.Top:= mainwindow.shape_marker3.Top+(y-down_y);{normal marker}
-         mainwindow.shape_marker4.Top:= mainwindow.shape_marker4.Top+(y-down_y);{normal marker}
+         mainform1.shape_marker1.Top:= mainform1.shape_marker1.Top+(y-down_y);{normal marker}
+         mainform1.shape_marker2.Top:= mainform1.shape_marker2.Top+(y-down_y);{normal marker}
+         mainform1.shape_marker3.Top:= mainform1.shape_marker3.Top+(y-down_y);{normal marker}
+         mainform1.shape_marker4.Top:= mainform1.shape_marker4.Top+(y-down_y);{normal marker}
        end;
        if abs(x-down_x)>2 then
        begin
-         mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
+         mainform1.image1.left:= mainform1.image1.left+(x-down_x);
         //  timage(sender).left:= timage(sender).left+(x-down_x);
 
-         mainwindow.shape_marker1.left:= mainwindow.shape_marker1.left+(x-down_x);{normal marker}
-         mainwindow.shape_marker2.left:= mainwindow.shape_marker2.left+(x-down_x);{normal marker}
-         mainwindow.shape_marker3.left:= mainwindow.shape_marker3.left+(x-down_x);{normal marker}
-         mainwindow.shape_marker4.left:= mainwindow.shape_marker4.left+(x-down_x);{normal marker}
+         mainform1.shape_marker1.left:= mainform1.shape_marker1.left+(x-down_x);{normal marker}
+         mainform1.shape_marker2.left:= mainform1.shape_marker2.left+(x-down_x);{normal marker}
+         mainform1.shape_marker3.left:= mainform1.shape_marker3.left+(x-down_x);{normal marker}
+         mainform1.shape_marker4.left:= mainform1.shape_marker4.left+(x-down_x);{normal marker}
        end;
        if ((abs(y-down_y)>2) or (abs(x-down_x)>2)) then
        begin
          //update shape positions using the known fitxY, fitsY position. Ra,dec position is not required
-         if mainwindow.shape_manual_alignment1.visible then {For manual alignment. Do this only when visible}
-           show_marker_shape(mainwindow.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
+         if mainform1.shape_manual_alignment1.visible then {For manual alignment. Do this only when visible}
+           show_marker_shape(mainform1.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
 
          {photometry measure all markers}
-//         if mainwindow.shape_var1.visible then {For manual alignment. Do this only when visible}
-//           show_marker_shape(mainwindow.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
-//         if mainwindow.shape_check1.visible then {For manual alignment. Do this only when visible}
-//           show_marker_shape(mainwindow.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
-//         if mainwindow.shape_comp1.visible then {For manual alignment. Do this only when visible}
-//           show_marker_shape(mainwindow.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
+//         if mainform1.shape_var1.visible then {For manual alignment. Do this only when visible}
+//           show_marker_shape(mainform1.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
+//         if mainform1.shape_check1.visible then {For manual alignment. Do this only when visible}
+//           show_marker_shape(mainform1.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
+//         if mainform1.shape_comp1.visible then {For manual alignment. Do this only when visible}
+//           show_marker_shape(mainform1.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
 
-//          if mainwindow.shape_var2.visible then //update the shape position based on ra,dec values
+//          if mainform1.shape_var2.visible then //update the shape position based on ra,dec values
 //          begin
-//            show_marker_shape(mainwindow.shape_var2,9 {no change in shape and hint},50,50,10,shape_var2_fitsX, shape_var2_fitsY);
-//            show_marker_shape(mainwindow.shape_check2,9 {no change in shape and hint},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
+//            show_marker_shape(mainform1.shape_var2,9 {no change in shape and hint},50,50,10,shape_var2_fitsX, shape_var2_fitsY);
+//            show_marker_shape(mainform1.shape_check2,9 {no change in shape and hint},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
 //          end;
 
-          with mainwindow do
+          with mainform1 do
           for i:=0 to high(fshapes) do
             if Fshapes[i].shape<>nil then
                show_marker_shape(FShapes[i].shape,9 {no change},30,30,10,FShapes[i].fitsX, FShapes[i].fitsY);
@@ -15463,11 +15476,11 @@ begin
 
 
      ang_sep_two_positions(startX+1,startY+1,mouse_fitsX,mouse_fitsY,dist_str,pa_str);
-     mainwindow.statusbar1.panels[7].text:=inttostr(box_LX)+' x '+inttostr(box_LY)+'    '+dist_str+'  ∠ '+pa_str;{indicate rectangle size}
+     mainform1.statusbar1.panels[7].text:=inttostr(box_LX)+' x '+inttostr(box_LY)+'    '+dist_str+'  ∠ '+pa_str;{indicate rectangle size}
    end
    else
    begin
-     mainwindow.statusbar1.panels[7].text:='';{remove crop size}
+     mainform1.statusbar1.panels[7].text:='';{remove crop size}
    end;
 
   {end rubber rectangle}
@@ -15486,9 +15499,9 @@ begin
 
    if copy_paste then
    begin
-      show_marker_shape(mainwindow.shape_paste1,copy_paste_shape {rectangle or ellipse},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
+      show_marker_shape(mainform1.shape_paste1,copy_paste_shape {rectangle or ellipse},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
    end;
-   try color1:=ColorToRGB(mainwindow.image1.canvas.pixels[trunc(x*width5/image1.width),trunc(y*height5/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
+   try color1:=ColorToRGB(mainform1.image1.canvas.pixels[trunc(x*width5/image1.width),trunc(y*height5/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
 
    if head.naxis3=3 then {for star temperature}
    begin
@@ -15505,28 +15518,28 @@ begin
      b:=0;
    end;
 
-   mainwindow.statusbar1.panels[4].text:=floattostrF(GetRValue(color1),ffgeneral,5,0)+'/'   {screen colors}
+   mainform1.statusbar1.panels[4].text:=floattostrF(GetRValue(color1),ffgeneral,5,0)+'/'   {screen colors}
                                        + floattostrF(GetGValue(color1),ffgeneral,5,0)+'/'
                                        + floattostrF(GetBValue(color1),ffgeneral,5,0)+
                                        '  '+rgb_kelvin(r,b) ;
    try
-     if head.naxis3=1 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+']' else
-     if head.naxis3=3 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+ {color}
+     if head.naxis3=1 then mainform1.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+']' else
+     if head.naxis3=3 then mainform1.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+ {color}
                                                                               floattostrF(img_loaded[1,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+
                                                                               floattostrF(img_loaded[2,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+' '+']'
-     else mainwindow.statusbar1.panels[3].text:='';
+     else mainform1.statusbar1.panels[3].text:='';
    except
 
    end;
 
-   pixel_to_celestial(head,mouse_fitsx,mouse_fitsy,mainwindow.Polynomial1.itemindex,raM,decM);
-   mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
+   pixel_to_celestial(head,mouse_fitsx,mouse_fitsy,mainform1.Polynomial1.itemindex,raM,decM);
+   mainform1.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
    adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 
    hfd2:=999;
    HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},head.mzero_radius,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
-   //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
+   //mainform1.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
    if ((hfd2<99) and (hfd2>0)) then //star detected
    begin
      object_hfd:=hfd2;
@@ -15547,18 +15560,18 @@ begin
      else mag_str:='';
 
      {centered coordinates}
-     pixel_to_celestial(head,object_xc+1,object_yc+1,mainwindow.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
+     pixel_to_celestial(head,object_xc+1,object_yc+1,mainform1.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
      if ((object_raM<>0) and (object_decM<>0)) then
-       mainwindow.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
+       mainform1.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
                                                //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
      else
-       mainwindow.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
-     mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str; {+', '+floattostrF(flux,ffFixed,0,0)};
+       mainform1.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
+     mainform1.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str; {+', '+floattostrF(flux,ffFixed,0,0)};
 
      if adu_e<>0 then
-       mainwindow.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' e-'
+       mainform1.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' e-'
      else
-       mainwindow.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' ADU';
+       mainform1.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' ADU';
 
      if star_profile1.checked then
      begin
@@ -15571,11 +15584,11 @@ begin
      object_xc:=-999999;{indicate object_raM is unlocked}
      object_raM:=raM; {use mouse position instead}
      object_decM:=decM; {use mouse position instead}
-     mainwindow.statusbar1.panels[1].text:='';
+     mainform1.statusbar1.panels[1].text:='';
 
      local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
-     mainwindow.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, sd); //reports noise in ADU's (adu_e=0) or electrons
+     mainform1.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, sd); //reports noise in ADU's (adu_e=0) or electrons
 
      if star_profile_plotted then plot_north;
      star_profile_plotted:=false;
@@ -15583,7 +15596,7 @@ begin
 end;
 
 
-procedure Tmainwindow.Image1MouseUp(Sender: TObject; Button: TMouseButton;
+procedure Tmainform1.Image1MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
    if button=mbright then
@@ -15598,7 +15611,7 @@ begin
 end;
 
 
-procedure Tmainwindow.stretch_draw1Click(Sender: TObject); {stretch draw}
+procedure Tmainform1.stretch_draw1Click(Sender: TObject); {stretch draw}
 var
   tmpbmp: TBitmap;
   ARect: TRect;
@@ -15609,11 +15622,11 @@ begin
   try
     TmpBmp := TBitmap.Create;
     try
-      TmpBmp.Width  := mainwindow.image1.width;
-      TmpBmp.Height := mainwindow.image1.height;
-      ARect := Rect(0,0, mainwindow.image1.width, mainwindow.image1.height);
-      TmpBmp.Canvas.StretchDraw(ARect, mainwindow.Image1.Picture.bitmap);
-      mainwindow.Image1.Picture.bitmap.Assign(TmpBmp);
+      TmpBmp.Width  := mainform1.image1.width;
+      TmpBmp.Height := mainform1.image1.height;
+      ARect := Rect(0,0, mainform1.image1.width, mainform1.image1.height);
+      TmpBmp.Canvas.StretchDraw(ARect, mainform1.Image1.Picture.bitmap);
+      mainform1.Image1.Picture.bitmap.Assign(TmpBmp);
     finally
        TmpBmp.Free;
     end;
@@ -15623,19 +15636,19 @@ begin
 end;
 
 
-procedure Tmainwindow.SaveFITSwithupdatedheader1Click(Sender: TObject);
+procedure Tmainform1.SaveFITSwithupdatedheader1Click(Sender: TObject);
 begin
-  savefits_update_header(mainwindow.memo1.lines,filename2);
+  savefits_update_header(mainform1.memo1.lines,filename2);
 end;
 
 
-procedure Tmainwindow.Memo1Change(Sender: TObject);
+procedure Tmainform1.Memo1Change(Sender: TObject);
 begin
   save1.Enabled:=true;
 end;
 
 
-procedure Tmainwindow.SaveasJPGPNGBMP1Click(Sender: TObject);
+procedure Tmainform1.SaveasJPGPNGBMP1Click(Sender: TObject);
 var filename3:ansistring;
    {$IFDEF fpc}
    PNG: TPortableNetworkGraphic;{FPC}
@@ -15661,7 +15674,7 @@ begin
       PNG := TPNGObject.Create;
       {$endif}
       try
-        PNG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into png
+        PNG.Assign(mainform1.image1.Picture.Graphic);    //Convert data into png
         savedialog1.filename:=ChangeFileExt(savedialog1.filename,'.png');
         PNG.SaveToFile(savedialog1.filename);
       finally
@@ -15677,7 +15690,7 @@ begin
       JPG := TJPEGImage.Create;
      {$endif}
       try
-        JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into JPG
+        JPG.Assign(mainform1.image1.Picture.Graphic);    //Convert data into JPG
         if savedialog1.filterindex=3 then JPG.CompressionQuality :=100;
         if savedialog1.filterindex=4 then JPG.CompressionQuality :=90;
         if savedialog1.filterindex=5 then JPG.CompressionQuality :=80;
@@ -15691,7 +15704,7 @@ begin
     else  {(savedialog1.filterindex=2)}
     begin {bitmap}
       savedialog1.filename:=ChangeFileExt(savedialog1.filename,'.bmp');
-      mainwindow.image1.picture.SaveToFile(savedialog1.filename);
+      mainform1.image1.picture.SaveToFile(savedialog1.filename);
     end;
     SaveasJPGPNGBMP1filterindex:=savedialog1.filterindex;{remember}
   end;
@@ -15709,7 +15722,7 @@ begin
 
 
   setlength(result,colours5,height5,width5);
-  sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
+  sat_factor:=1-mainform1.saturation_factor_plot1.position/10;
 
   for fitsY:=0 to height5-1 do
     for fitsX:=0 to width5-1 do
@@ -15997,7 +16010,7 @@ end;
 //end;
 
 
-function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
+function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean;nrbits:integer): boolean;{save to 8 or 16 bit TIFF file }
 var
   i, j, k,m,nrcolours,w,h      :integer;
   image: TFPCustomImage;
@@ -16074,7 +16087,7 @@ begin
 end;
 
 
-procedure Tmainwindow.save_to_tiff1Click(Sender: TObject);
+procedure Tmainform1.save_to_tiff1Click(Sender: TObject);
 var
   I: integer;
   fileDate    : Integer;
@@ -16111,9 +16124,9 @@ begin
         if load_image(filename2,img_temp,headx,memox,false {recenter},false {plot}) then
         begin
           filename2:=ChangeFileExt(filename2,'.tif');
-          if abs(nrbits)<=16 then
+          if abs(headX.nrbits)<=16 then
           begin
-            written:=save_tiff16(img_temp,memox,filename2,false {flip H},false {flip V});
+            written:=save_tiff16(img_temp,memox,filename2,false {flip H},false {flip V},headX.nrbits);
           end
           else
           begin {32 bit files}
@@ -16133,9 +16146,9 @@ begin
         end
         else err:=true;
       end;
-      if err=false then mainwindow.caption:='Completed, all files converted.'
+      if err=false then mainform1.caption:='Completed, all files converted.'
       else
-      mainwindow.caption:='Finished, files converted but with errors or stopped!';
+      mainform1.caption:='Finished, files converted but with errors or stopped!';
 
       finally
       Screen.Cursor:=crDefault;  { Always restore to normal }
@@ -16145,7 +16158,7 @@ begin
 end;
 
 
-procedure Tmainwindow.convert_to_ppm1Click(Sender: TObject);
+procedure Tmainform1.convert_to_ppm1Click(Sender: TObject);
 var
   I: integer;
   err   : boolean;
@@ -16177,12 +16190,12 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break;end;
         filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        mainform1.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
         if load_image(filename2,img_temp,headx,memox,false {recenter},false {plot}) then
         begin
           if head.naxis3=1 then {monochrome}
           begin
-            if abs(nrbits)<=16 then
+            if abs(head.nrbits)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.pgm');
               save_PPM_PGM_PFM(img_temp,16 {colour depth},filename2,false {flip H},false {flip V});
@@ -16195,7 +16208,7 @@ begin
           end
           else
           begin {colour}
-            if abs(nrbits)<=16 then
+            if abs(head.nrbits)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.ppm');
               save_PPM_PGM_PFM(img_temp,48 {colour depth},filename2,false,false);
@@ -16210,9 +16223,9 @@ begin
         end
         else err:=true;
       end;
-      if err=false then mainwindow.caption:='Completed, all files converted.'
+      if err=false then mainform1.caption:='Completed, all files converted.'
       else
-      mainwindow.caption:='Finished, files converted but with errors or stopped!';
+      mainform1.caption:='Finished, files converted but with errors or stopped!';
 
       finally
       Screen.Cursor:=crDefault;  { Always restore to normal }
@@ -16223,7 +16236,7 @@ begin
 end;
 
 
-procedure Tmainwindow.export_star_info1Click(Sender: TObject);
+procedure Tmainform1.export_star_info1Click(Sender: TObject);
 var
   dum : integer;
 begin
@@ -16241,13 +16254,13 @@ begin
   if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
   if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
-  mainwindow.annotate_with_measured_magnitudes1Click(Sender);
+  mainform1.annotate_with_measured_magnitudes1Click(Sender);
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
 
 
-procedure Tmainwindow.flip_H1Click(Sender: TObject);
+procedure Tmainform1.flip_H1Click(Sender: TObject);
 var
   col,fitsX,fitsY : integer;
   vertical        : boolean;
@@ -16288,37 +16301,37 @@ begin
     end;
     new_to_old_WCS(head);{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
 
-    mainwindow.Memo1.Lines.BeginUpdate;
+    mainform1.Memo1.Lines.BeginUpdate;
     remove_solution(true {keep wcs});
-    update_float(mainwindow.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
-    update_float(mainwindow.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
-    update_float(mainwindow.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
-    update_float(mainwindow.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+    update_float(mainform1.memo1.lines,'CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_1);
+    update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
+    update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
+    update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
-    update_float(mainwindow.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
-    update_float(mainwindow.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
+    update_float(mainform1.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
+    update_float(mainform1.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
 
-    update_float(mainwindow.memo1.lines,'CROTA1  =',' / Image twist of X axis        (deg)             ',false ,head.crota1);
-    update_float(mainwindow.memo1.lines,'CROTA2  =',' / Image twist of Y axis E of N (deg)             ',false ,head.crota2);
+    update_float(mainform1.memo1.lines,'CROTA1  =',' / Image twist of X axis        (deg)             ',false ,head.crota1);
+    update_float(mainform1.memo1.lines,'CROTA2  =',' / Image twist of Y axis E of N (deg)             ',false ,head.crota2);
 
-    remove_key(mainwindow.memo1.lines,'ROWORDER',false{all});{just remove to be sure no debayer confusion}
+    remove_key(mainform1.memo1.lines,'ROWORDER',false{all});{just remove to be sure no debayer confusion}
 
-    mainwindow.Memo1.Lines.EndUpdate;
+    mainform1.Memo1.Lines.EndUpdate;
 
-    add_text(mainwindow.memo1.lines,'HISTORY   ','Flipped.                                                           ');
+    add_text(mainform1.memo1.lines,'HISTORY   ','Flipped.                                                           ');
   end;
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainform1.image1,false);
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
 
 
-procedure Tmainwindow.MenuItem22Click(Sender: TObject);
+procedure Tmainform1.MenuItem22Click(Sender: TObject);
 begin
   form_inspection1.aberration_inspector1Click(nil);
 end;
 
-procedure Tmainwindow.electron_to_adu_factors1Click(Sender: TObject);
+procedure Tmainform1.electron_to_adu_factors1Click(Sender: TObject);
 begin
   if head.egain='' then head.egain:=floattostrF(egain_default,FFgeneral,3,0);
   head.egain:=InputBox('factor e-/ADU, unbinned?',
@@ -16411,7 +16424,7 @@ begin
 end;
 
 
-procedure Tmainwindow.localcoloursmooth2Click(Sender: TObject);
+procedure Tmainform1.localcoloursmooth2Click(Sender: TObject);
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
@@ -16421,21 +16434,21 @@ begin
     backup_img;
     local_color_smooth(startX,stopX,startY,stopY);
 
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
-procedure Tmainwindow.fittowindow1Click(Sender: TObject);
+procedure Tmainform1.fittowindow1Click(Sender: TObject);
 begin
-  mainwindow.FormResize(nil);
+  mainform1.FormResize(nil);
 end;
 
 
 
-procedure Tmainwindow.move_images1Click(Sender: TObject);
+procedure Tmainform1.move_images1Click(Sender: TObject);
 var
   I    : integer;
   succ,err : boolean;
@@ -16465,7 +16478,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
+        mainform1.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
         if load_fits(filename2,true{light},false {data},false {update memo},0,memox,headx,img_temp) then {load image success}
         begin
           date_to_jd(headx.date_obs,headx.date_avg,headx.exposure);{convert date-obs to jd_start, jd_mid}
@@ -16496,9 +16509,9 @@ begin
         end;
       end; //for loop
 
-      if err=false then mainwindow.caption:='Completed, all files moved.'
+      if err=false then mainform1.caption:='Completed, all files moved.'
       else
-      mainwindow.caption:='Finished, files date set but with errors or stopped!';
+      mainform1.caption:='Finished, files date set but with errors or stopped!';
     except
     end;
 
@@ -16509,14 +16522,14 @@ begin
 end;
 
 
-procedure Tmainwindow.Panel1MouseDown(Sender: TObject; Button: TMouseButton;
+procedure Tmainform1.Panel1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   Image1MouseDown(Sender,Button,Shift, X-image1.left, Y-image1.top);//transfer mouse down to image1
 end;
 
 
-procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
+procedure Tmainform1.set_modified_date1Click(Sender: TObject);
 var
   I    : integer;
   err : boolean;
@@ -16541,7 +16554,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
+        mainform1.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
         if load_fits(filename2,true{light},false {data},false {update memo},0,memox,headx,img_temp) then {load image success}
         begin
           date_to_jd(headx.date_obs,headx.date_avg,headx.exposure);{convert date-obs to jd_start, jd_mid}
@@ -16559,9 +16572,9 @@ begin
         end;
       end;
 
-      if err=false then mainwindow.caption:='Completed, all files dates set.'
+      if err=false then mainform1.caption:='Completed, all files dates set.'
       else
-      mainwindow.caption:='Finished, files date set but with errors or stopped!';
+      mainform1.caption:='Finished, files date set but with errors or stopped!';
     except
     end;
     Screen.Cursor:=crDefault;  { Always restore to normal }
@@ -16570,14 +16583,14 @@ begin
 end;
 
 
-procedure Tmainwindow.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+procedure Tmainform1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
   save_settings2;
 end;
 
 
-procedure Tmainwindow.Export_image1Click(Sender: TObject);
+procedure Tmainform1.Export_image1Click(Sender: TObject);
 var
   filename3:ansistring;
   img_temp : Timage_array;
@@ -16607,14 +16620,14 @@ begin
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded,head);
-        save_tiff16(img_temp,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,mainform1.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked,16);
       end
       else
       if savedialog1.filterindex=4 then
-        save_tiff16(img_loaded,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_tiff16(img_loaded,mainform1.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked,16)
       else
       if savedialog1.filterindex=5 then
-      save_tiff_96(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainwindow.memo1.text {store full header in TIFF description} ,flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
+      save_tiff_96(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainform1.memo1.text {store full header in TIFF description} ,flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
@@ -16642,14 +16655,14 @@ begin
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded,head);
-        save_tiff16(img_temp,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,mainform1.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked,16);
       end
       else
       if savedialog1.filterindex=4 then
-      save_tiff16(img_loaded,mainwindow.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
+      save_tiff16(img_loaded,mainform1.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked,16)
       else
       if savedialog1.filterindex=5 then
-        save_tiff_32(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainwindow.memo1.text {store full header in TIFF desciption} ,flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
+        save_tiff_32(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainform1.memo1.text {store full header in TIFF desciption} ,flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
@@ -16692,7 +16705,7 @@ begin
   result:='0';
   m:=-1;
   n2:=0;
-  tal:=mainwindow.memo3.Lines[y]+#9;
+  tal:=mainform1.memo3.Lines[y]+#9;
   repeat
     inc(m);{counter}
     n1:=n2+1;
@@ -16705,13 +16718,13 @@ begin
 end;
 
 
-procedure Tmainwindow.solve_button1Click(Sender: TObject);
+procedure Tmainform1.solve_button1Click(Sender: TObject);
 begin
   astrometric_solve_image1Click(Sender);
 end;
 
 
-procedure Tmainwindow.Stackimages1Click(Sender: TObject);
+procedure Tmainform1.Stackimages1Click(Sender: TObject);
 begin
   listviews_begin_update; {speed up making stackmenu visible having a many items}
 
@@ -16722,71 +16735,82 @@ begin
 end;
 
 
-procedure Tmainwindow.Undo1Click(Sender: TObject);
+procedure Tmainform1.Undo1Click(Sender: TObject);
 begin
   restore_img;
 end;
 
 
-procedure Tmainwindow.Saveasfits1Click(Sender: TObject);
+procedure Tmainform1.Saveasfits1Click(Sender: TObject);
 begin
   if extend_type>0 then {multi extension file}
-   savedialog1.filename:=ChangeFileExt(FileName2,'.fits')+'_extract'+inttostr(mainwindow.updown1.position)+'.fits' {give it a new name}
+   savedialog1.filename:=ChangeFileExt(FileName2,'.fits')+'_extract'+inttostr(mainform1.updown1.position)+'.fits' {give it a new name}
   else
   if pos('.fit',filename2)=0 then savedialog1.filename:=ChangeFileExt(FileName2,'.fits')
                              else savedialog1.filename:=FileName2;
 
   savedialog1.initialdir:=ExtractFilePath(filename2);
   savedialog1.Filter := 'IEEE Float (-32) FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|16 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (special, naxis1=3)(*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-  if nrbits=16  then SaveDialog1.FilterIndex:=2
+  if head.nrbits=16  then SaveDialog1.FilterIndex:=2
   else
-  if nrbits=-32 then SaveDialog1.FilterIndex:=1
+  if head.nrbits=-32 then SaveDialog1.FilterIndex:=1
   else
-  if nrbits=8 then SaveDialog1.FilterIndex:=3;
-
+  if head.nrbits=8 then SaveDialog1.FilterIndex:=3;
 
 
   if savedialog1.execute then
   begin
     if SaveDialog1.FilterIndex=1 then
-    save_fits(img_loaded,mainwindow.memo1.lines,savedialog1.filename,-32,false)
+      head.nrbits:=-32
     else
     if SaveDialog1.FilterIndex=2 then
-    save_fits(img_loaded,mainwindow.memo1.lines,savedialog1.filename,16,false)
+    begin
+      if head.nrbits=-32 then
+        if (IDYES= Application.MessageBox('16 bit will reduce image quality (was -32). Select yes to continue', 'Save as 16 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if nrbits is reduced}
+          exit;
+      head.nrbits:=16;
+    end
     else
     if SaveDialog1.FilterIndex=3 then
     begin
-      if ((nrbits=8) or (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )) then {ask queastion if nrbits is reduced}
-        save_fits(img_loaded,mainwindow.memo1.lines,savedialog1.filename,8,false);
+      if abs(head.nrbits)>8 then
+        if (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if nrbits is reduced}
+          exit;
+      head.nrbits:=8;
     end
     else
     if SaveDialog1.FilterIndex=4 then {special naxis1=3}
     begin
-      if ((nrbits=8) or (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )) then {ask queastion if nrbits is reduced}
-        save_fits(img_loaded,mainwindow.memo1.lines,savedialog1.filename,24,false);
+      if (IDYES= Application.MessageBox('Special 8 bit format. Select yes to continue', 'Save as special 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if nrbits is reduced}
+         exit;
+      head.nrbits:=24;
     end;
 
-    add_recent_file(savedialog1.filename);{add to recent file list}
+    save_fits(img_loaded,mainform1.memo1.lines,head,savedialog1.filename,false);
+
+   add_recent_file(savedialog1.filename);{add to recent file list}
   end;
-  mainwindow.SaveFITSwithupdatedheader1.Enabled:=true; {menu enable, header can be updated again}
+
+
+  mainform1.SaveFITSwithupdatedheader1.Enabled:=true; {menu enable, header can be updated again}
 end;
 
 
-procedure Tmainwindow.minimum1Change(Sender: TObject);
+procedure Tmainform1.minimum1Change(Sender: TObject);
 begin
   min2.text:=inttostr(minimum1.position);
   shape_histogram1.left:=round(histogram1.left+0.5+(histogram1.width-1) * minimum1.position/minimum1.max);
 end;
 
 
-procedure Tmainwindow.maximum1Change(Sender: TObject);
+procedure Tmainform1.maximum1Change(Sender: TObject);
 begin
   max2.text:=inttostr(maximum1.position);
   shape_histogram1.left:=round(histogram1.left+0.5+(histogram1.width-1) * maximum1.position/maximum1.max);
 end;
 
 
-procedure Tmainwindow.maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode;
+procedure Tmainform1.maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode;
   var ScrollPos: Integer);
 begin
   if head.naxis<>0 then
@@ -16797,14 +16821,14 @@ begin
       if scrollcode=scEndScroll then
      {$ENDIF}
     begin
-      plot_fits(mainwindow.image1,false);
+      plot_fits(mainform1.image1,false);
       shape_histogram1.visible:=false;
     end
     else
       shape_histogram1.visible:=true;
   end;
 
-  mainwindow.range1.itemindex:=7; {manual}
+  mainform1.range1.itemindex:=7; {manual}
 end;
 
 {#######################################}

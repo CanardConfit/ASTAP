@@ -288,7 +288,7 @@ begin
       begin
         memo2_message('Calibration status '+head.calstat+'. Used '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
 
-        update_text(mainwindow.memo1.lines,'CALSTAT =',#39+head.calstat+#39);
+        update_text(mainform1.memo1.lines,'CALSTAT =',#39+head.calstat+#39);
         pedestal2:=0;{pedestal no longer required}
         update_hist:=true; {dark is applied, update histogram for background measurement}
       end
@@ -297,7 +297,7 @@ begin
     end;
 
     {calc}
-    if calculate_sqm(img_loaded,head,mainwindow.memo1.lines,true {get backgr},update_hist{get histogr},{var} pedestal2)=false then {failure in calculating sqm value}
+    if calculate_sqm(img_loaded,head,mainform1.memo1.lines,true {get backgr},update_hist{get histogr},{var} pedestal2)=false then {failure in calculating sqm value}
     begin
       if altitudefloat<1 then error_message1.caption:=warning_str;
       warning_str:=''; //clear error message
@@ -353,9 +353,9 @@ procedure Tform_sqm1.ok1Click(Sender: TObject);
 begin
   form_sqm1.close;   {normally this form is not loaded}
 
-  mainwindow.setfocus;
+  mainform1.setfocus;
 
-  mainwindow.save_settings1Click(nil);{save pedestal value}
+  mainform1.save_settings1Click(nil);{save pedestal value}
 end;
 
 procedure Tform_sqm1.pedestal1EditingDone(Sender: TObject);

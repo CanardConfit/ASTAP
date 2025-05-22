@@ -75,7 +75,7 @@ procedure Tthumbnails1.MenuItem1Click(Sender: TObject);
 begin
   {filename2 is set in Tthumbnails1.ImageMouseDown}
   thumbnails1.close;
-  load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});
+  load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});
 end;
 
 procedure Tthumbnails1.ImageMouseDown(Sender: TObject; Button: TMouseButton;{generic for all Timages}
@@ -98,7 +98,7 @@ begin
    if button=mbleft then
    begin
      thumbnails1.close;
-     load_image(filename2,img_loaded,head,mainwindow.memo1.lines,true,true {plot});
+     load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});
    end;
 end;
 
@@ -306,7 +306,7 @@ begin
           newImage.stretch := true;
           myimages[imageIndex-1]:=newimage;{store the timage}
 
-          plot_fits(newimage,false);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+          plot_fits(newimage,false);     {mainform1.image1.Visible:=true; is done in plot_fits}
 
           thumbnails1.panel1.height:=y+max_height; {causes a repaint}
 

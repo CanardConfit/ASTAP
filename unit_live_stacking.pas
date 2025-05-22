@@ -68,24 +68,24 @@ end;
 procedure update_header;
 
 begin
-  mainwindow.Memo1.lines.beginupdate;
-  mainwindow.Memo1.Text:=memo1_text;{use saved fits header first FITS file}
+  mainform1.Memo1.lines.beginupdate;
+  mainform1.Memo1.Text:=memo1_text;{use saved fits header first FITS file}
 
-  update_text(mainwindow.memo1.lines,'COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
-  update_text(mainwindow.memo1.lines,'HISTORY 1','  Stacking method LIVE STACKING');
-  update_integer(mainwindow.memo1.lines,'EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
-  update_text(mainwindow.memo1.lines,'CALSTAT =',#39+head.calstat+#39); {calibration status}
-  update_text(mainwindow.memo1.lines,'DATE-OBS=',#39+JdToDate(jd_start_first)+#39);{give begin date exposures}
-  update_generic(mainwindow.memo1.lines,'JD-AVG  ',floattostr6(jd_sum/counterL),'Julian Day of the observation mid-point.       ');{update header using text only}
+  update_text(mainform1.memo1.lines,'COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
+  update_text(mainform1.memo1.lines,'HISTORY 1','  Stacking method LIVE STACKING');
+  update_integer(mainform1.memo1.lines,'EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
+  update_text(mainform1.memo1.lines,'CALSTAT =',#39+head.calstat+#39); {calibration status}
+  update_text(mainform1.memo1.lines,'DATE-OBS=',#39+JdToDate(jd_start_first)+#39);{give begin date exposures}
+  update_generic(mainform1.memo1.lines,'JD-AVG  ',floattostr6(jd_sum/counterL),'Julian Day of the observation mid-point.       ');{update header using text only}
 
   head.date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
-  update_text(mainwindow.memo1.lines,'DATE-AVG=',#39+head.date_avg+#39);{give midpoint of exposures}
-  update_integer(mainwindow.memo1.lines,'LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}
-  update_integer(mainwindow.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-  update_integer(mainwindow.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-  update_integer(mainwindow.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+  update_text(mainform1.memo1.lines,'DATE-AVG=',#39+head.date_avg+#39);{give midpoint of exposures}
+  update_integer(mainform1.memo1.lines,'LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}
+  update_integer(mainform1.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+  update_integer(mainform1.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+  update_integer(mainform1.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
 
-  mainwindow.memo1.lines.endupdate;{Show new header again}
+  mainform1.memo1.lines.endupdate;{Show new header again}
 
 end;
 
@@ -111,7 +111,7 @@ var
 begin
    JPG := TJPEGImage.Create;
   try
-    JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into JPG
+    JPG.Assign(mainform1.image1.Picture.Graphic);    //Convert data into JPG
     JPG.CompressionQuality :=90;
     JPG.SaveToFile(filename);
   finally
@@ -160,7 +160,7 @@ begin
     esc_pressed:=false;
     total_counter:=0;
 
-//    mainwindow.memo1.visible:=false;{Hide header}
+//    mainform1.memo1.visible:=false;{Hide header}
 
     colour_correction:=((process_as_osc>0) and (stackmenu1.osc_auto_level1.checked));
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
@@ -182,7 +182,7 @@ begin
           Application.ProcessMessages;
           {load image}
           filename_org:=filename2;//remember .cr2 file name
-          if ((esc_pressed) or (load_image(filename2,img_loaded,head,mainwindow.memo1.lines,false,false {plot})=false)) then //For .cr2 files filename2 will have extension .fits
+          if ((esc_pressed) or (load_image(filename2,img_loaded,head,mainform1.memo1.lines,false,false {plot})=false)) then //For .cr2 files filename2 will have extension .fits
 
 
           begin
@@ -229,7 +229,7 @@ begin
 
               if process_as_asc<>0 then memo2_message('Will demosaic OSC images to colour');
 
-              memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+              memo1_text:=mainform1.Memo1.Text;{save fits header first FITS file}
               if ((bayerpat='') and (process_as_osc=2 {forced})) then
                 if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
                 else
@@ -397,10 +397,10 @@ begin
               if counter=1 then {set range correct}
                    use_histogram(img_loaded,true);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
-              plot_fits(mainwindow.image1,false);{plot real}
+              plot_fits(mainform1.image1,false);{plot real}
 
               if stackmenu1.write_jpeg1.checked then save_as_jpg(ExtractFileDir(filename2)+ {$ifdef mswindows}'\'{$else}{unix} '/' {$endif}+'stack.jpeg');
-              if stackmenu1.interim_to_clipboard1.checked then Clipboard.Assign(mainwindow.Image1.Picture.Bitmap);
+              if stackmenu1.interim_to_clipboard1.checked then Clipboard.Assign(mainform1.Image1.Picture.Bitmap);
               if stackmenu1.write_log1.checked then Memo2.Lines.SaveToFile(ExtractFileDir(filename2)+ {$ifdef mswindows}'\'{$else}{unix} '/' {$endif}+'log.txt');
             end
             else

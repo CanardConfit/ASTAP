@@ -331,7 +331,7 @@ begin
             {load image}
             Application.ProcessMessages;
             if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-            if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+            if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
             if init=false then
             begin
@@ -396,7 +396,7 @@ begin
             if use_astrometry_internal then {internal solver, create new solutions for the R, G, B and L stacked images if required}
             begin
               memo2_message('Preparing astrometric solution for interim file: '+filename2);
-              if head.cd1_1=0 then solution:= update_solution_and_save(img_loaded,head,mainwindow.memo1.lines) else solution:=true;
+              if head.cd1_1=0 then solution:= update_solution_and_save(img_loaded,head,mainform1.memo1.lines) else solution:=true;
               if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
             end
             else
@@ -774,7 +774,7 @@ begin
           Application.ProcessMessages;
           {load image}
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           if init=false then
           begin {init is false, first image}
@@ -782,7 +782,7 @@ begin
             old_height:=head.height;
             old_naxis3:=head.naxis3;
 
-            //add_long_comment(mainwindow.memo1.lines,'Reference file was ' + filename2);
+            //add_long_comment(mainform1.memo1.lines,'Reference file was ' + filename2);
             head_ref:=head;{backup solution}
             sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
@@ -934,7 +934,7 @@ var
   ra,dec,x,y : double;
   formalism : integer;
 begin
-  formalism:=mainwindow.Polynomial1.itemindex;
+  formalism:=mainform1.Polynomial1.itemindex;
   pixel_to_celestial(head,1,1,formalism , ra, dec); //left bottom
   celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
@@ -992,7 +992,7 @@ begin
     x_max:=0;
     y_min:=0;
     y_max:=0;
-    formalism:=mainwindow.Polynomial1.itemindex;
+    formalism:=mainform1.Polynomial1.itemindex;
 
     count:=0;
     total_fov:=0;
@@ -1001,7 +1001,7 @@ begin
     for c:=0 to length(files_to_process)-1 do
       if length(files_to_process[c].name)>0 then
       begin
-        if load_fits(files_to_process[c].name,true {light},false{load data},false {update memo} ,0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        if load_fits(files_to_process[c].name,true {light},false{load data},false {update memo} ,0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
         if init=false then
         begin
@@ -1047,7 +1047,7 @@ begin
 
           {load image}
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           if init=true then
           begin
@@ -1284,7 +1284,7 @@ begin
   {arrays will be nilled later. This is done for early exits}
 
   //disable sip
-  mainwindow.Polynomial1.itemindex:=0;//switch to WCS
+  mainform1.Polynomial1.itemindex:=0;//switch to WCS
   a_order:=0;
 end;
 
@@ -1348,7 +1348,7 @@ begin
         {load image}
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
         if init=false then {first image}
         begin
@@ -1520,7 +1520,7 @@ begin
           {load image}
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           if init=false then
           begin
@@ -1605,7 +1605,7 @@ begin
           {load file}
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
@@ -1739,7 +1739,7 @@ begin
         {load image}
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
         if init=false then {first image}
         begin
           old_width:=head.width;
@@ -1904,7 +1904,7 @@ begin
           {load file}
           Application.ProcessMessages;
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
           apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
           date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
@@ -2062,7 +2062,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
 
-        if load_fits(filename2,true {light},true,true {init=false} {update memo for saving},0,mainwindow.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        if load_fits(filename2,true {light},true,true {init=false} {update memo for saving},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
         if init=false then {first image}
         begin
@@ -2117,7 +2117,7 @@ begin
             for fitsX:=0 to width_max-1 do
             begin
               for col:=0 to head.naxis3-1 do
-                img_average[col,fitsY,fitsX]:=0; {clear img_average}
+           //     img_average[col,fitsY,fitsX]:=0; {clear img_average}
               img_temp[0,fitsY,fitsX]:=0; {clear img_temp}
             end;
 
@@ -2188,6 +2188,12 @@ begin
           ee:=solution_vectorY[1];
           ff:=solution_vectorY[2];
 
+          for fitsY:=0 to height_max-1 do
+            for fitsX:=0 to width_max-1 do
+            begin
+              for col:=0 to head.naxis3-1 do
+                img_average[col,fitsY,fitsX]:=0; {clear img_average}
+            end;
 
           for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
           for fitsX:=0 to head.width-1 do
@@ -2198,10 +2204,8 @@ begin
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
               for col:=0 to head.naxis3-1 do
-              begin
                 img_average[col,y_new,x_new]:=img_average[col,y_new,x_new]+ (img_loaded[col,fitsY,fitsX]-background);{Sum flux only. Note fits count from 1, image from zero}
-                img_temp[col,y_new,x_new]:=img_temp[col,y_new,x_new]+1;{count the number of image pixels added=samples}
-              end;
+              img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+1;{count the number of image pixels added=samples}
             end;
           end;
         end;
@@ -2211,63 +2215,51 @@ begin
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
 
-        for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
-          For fitsY:=0 to head.height-1 do
-            for fitsX:=0 to head.width-1 do
-            begin
-            if img_temp[col,fitsY,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:=pedestal+img_average[col,fitsY,fitsX]/img_temp[col,fitsY,fitsX] {scale to one image by diving by the number of pixels added}
-            else
-            begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
-              if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
-              begin
-                if ((img_temp[col,fitsY,fitsX-1]<>0){and (img_temp[col,fitsY-1,fitsX]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
-                else
-                if img_temp[col,fitsY-1,fitsX]<>0 then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
-                else
-                img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-              end {fill black spots}
-              else
-              img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-            end; {black spot filter}
+        //for fitsY:=0 to height_max-1 do  //add a black line for testing
+        //begin
+        //  img_temp[0,fitsY,100]:=0;
+        //  img_average[0,fitsY,100]:=0;
+        //end;
+        black_spot_filter(img_loaded, img_average, img_temp, pedestal);// correct black spots due to alignment. The pixel count is in arrayA
 
-            end;
+       // for fitsY:=0 to height_max-1 do
+       // for fitsX:=0 to width_max-1 do
+       // begin
+       //   for col:=0 to head.naxis3-1 do
+       //     img_loaded[col,fitsY,fitsX]:= img_average[col,fitsY,fitsX]+pedestal;
+       // end;
+
+
 
         {save}
         filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename}
         head.pedestal:=pedestal;
 
-        mainwindow.Memo1.Lines.beginUpdate;
+        mainform1.Memo1.Lines.beginUpdate;
         if head.cd1_1<>0 then
         begin
           {quick and dirty method to roughly correct existing solutions}
           head.crpix1:=1+solution_vectorX[0] * (head.crpix1 - 1) + solution_vectorX[1] * (head.crpix2 - 1) + solution_vectorX[2];// correct for marker_position at ra_dec position
           head.crpix2:=1+solution_vectorY[0] * (head.crpix1 - 1) + solution_vectorY[1] * (head.crpix2 - 1) + solution_vectorY[2];
 
-          update_float(mainwindow.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
-          update_float(mainwindow.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
-          update_text(mainwindow.memo1.lines,'COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
+          update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
+          update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
+          update_text(mainform1.memo1.lines,'COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
         end;
-        update_text(mainwindow.memo1.lines,'COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
-        update_integer(mainwindow.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
-        update_text(mainwindow.memo1.lines,'CALSTAT =', #39 + head.calstat+#39); {calibration status.}
-        update_integer(mainwindow.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-        update_integer(mainwindow.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-        update_integer(mainwindow.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
-        mainwindow.Memo1.Lines.EndUpdate;
+        update_text(mainform1.memo1.lines,'COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
+        update_integer(mainform1.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
+        update_text(mainform1.memo1.lines,'CALSTAT =', #39 + head.calstat+#39); {calibration status.}
+        update_integer(mainform1.memo1.lines,'DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+        update_integer(mainform1.memo1.lines,'FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+        update_integer(mainform1.memo1.lines,'BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+        mainform1.Memo1.Lines.EndUpdate;
 
         { ASTAP keyword standard:}
         { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-        if nrbits=16 then
-        begin
-          if save_fits(img_loaded,mainwindow.memo1.lines,filename2,16,true)=false then exit;//exit if save error
-        end
-        else
-        begin
-          if save_fits(img_loaded,mainwindow.memo1.lines,filename2,-32,true)=false then exit;//exit if save error
-        end;
-         memo2_message('New aligned image created: '+filename2);
+        if save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)=false then exit;//exit if save error
+        memo2_message('New aligned image created: '+filename2);
         report_results(object_name,inttostr(round(head.exposure)),0,-1 {color icon}, 5 {stack icon});{report result in tab result using modified filename2}
         progress_indicator(10+round(90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),'Cal');{show progress}
         finally
@@ -2276,7 +2268,7 @@ begin
     end;{}
   end;  {with stackmenu1}
 
-  plot_fits(mainwindow.image1,true);{update to last image, activate memo1}
+  plot_fits(mainform1.image1,true);{update to last image, activate memo1}
 
   {arrays will be nilled later. This is done for early exits}
 end;   {calibration and alignment}

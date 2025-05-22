@@ -86,7 +86,7 @@ begin
     for k:=0 to steps {0 or 2} do {do Y,U, V frame, so scan image line 3 times}
     for yy := y to y+h-1 {height} do
     begin // scan each timage line
-      xLine:=mainwindow.image1.Picture.Bitmap.ScanLine[yy];
+      xLine:=mainform1.image1.Picture.Bitmap.ScanLine[yy];
       for xx := x to x+w-1 {width} do
       begin
        {$ifdef mswindows}
