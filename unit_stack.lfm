@@ -1,5 +1,5 @@
 object stackmenu1: Tstackmenu1
-  Left = 208
+  Left = 49
   Height = 707
   Top = 211
   Width = 1862
@@ -1889,7 +1889,7 @@ object stackmenu1: Tstackmenu1
               )
               ParentFont = False
               TabOrder = 33
-              Text = '500'
+              Text = '5000'
             end
           end
           object Label18: TLabel

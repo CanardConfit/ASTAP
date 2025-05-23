@@ -37,7 +37,7 @@ procedure CallLocalProc(AProc, Frame: Pointer; Param1: PtrInt;
 implementation
 
 {$IFDEF Linux}
-const _SC_NPROCESSORS_ONLN = 83;
+const _SC_NPROCESSORS_ONLN = 84; //2025.05.23 was wrongly 83. See https://gitlab.com/freepascal.org/fpc/source/-/issues/41265
 function sysconf(i: cint): clong; cdecl; external name 'sysconf';
 {$ENDIF}
 
@@ -86,12 +86,7 @@ end;
 {$ELSEIF defined(linux)}
   begin
     Result:=sysconf(_SC_NPROCESSORS_ONLN);
-    if result>=128 then //failure? 2025.05.20 temporary solution for Lubuntu 24   https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41659
-    begin
-      result:=4;
-    end;
   end;
-
 {$ELSE}
   begin
     Result:=1;

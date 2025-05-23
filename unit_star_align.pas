@@ -411,7 +411,7 @@ end;
 
 
 
-//Note a threaded version was not really faster. So this procedure stay single processor
+//Note a threaded version was not really faster. So this procedure stays single processor
 procedure find_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list); //build quads using closest stars, revised 2022-4-10
 var
    i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,startp: integer;
