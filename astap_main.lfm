@@ -6,8 +6,8 @@ object mainform1: Tmainform1
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 634
+  ClientWidth = 1333
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
