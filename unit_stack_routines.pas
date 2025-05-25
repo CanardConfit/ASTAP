@@ -258,11 +258,17 @@ begin
       bg_factor_2:=strtofloat2(bg2.text);
       bb_factor_2:=strtofloat2(bb2.text);
 
-
       background_r:=0;
       background_g:=0;
       background_b:=0;
       background_l:=0;
+
+      counterR:=0;
+      counterR2:=0;
+      counterG:=0;
+      counterG2:=0;
+      counterB:=0;
+      counterB2:=0;
 
 
       for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,r2,g2,b2,gb,l}
@@ -270,12 +276,9 @@ begin
         if c=7 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
         begin {fix RGB stack}
           memo2_message('Correcting the number of pixels added together.');
-
-
-
           for col:=0 to 5 do  //do 2 x 3colours
           begin
-            if length(files_to_process[col+1].name)>0 then //there is data
+            if ((img_temp[col,height_max div 2 ,width_max div 2]>0) and (img_temp[col,(height_max div 2) + 2 ,(width_max div 2) +2]>0) ) then //quick shortcut there is data
             begin
               for fitsY:=0 to height_max-1 do
               for fitsX:=0 to width_max-1 do
@@ -289,11 +292,11 @@ begin
             end;
           end;
           memo2_message('Applying black spot filter on the interim RRGGBB image.');
-          black_spot_filter_for_aligned(img_average); //Black spot filter and add bias. Note for 99,99% zero means black spot but it could also be coincidence
+          black_spot_filter_for_aligned(img_average); //Black spot filter for 6 colour, 2 rgb
 
           //combine the 2 x RGB
           for col:=0 to 2 do
-            if ((length(files_to_process[col+1].name)>0) and (length(files_to_process[col+1+3].name)>0)) then //there is twice RGB data
+            if ((img_temp[col,height_max div 2 ,width_max div 2]>0) and (img_temp[col+3,height_max div 2 ,width_max div 2]>0)) then //there is twice RGB data
             begin
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
@@ -306,16 +309,16 @@ begin
             end
             else
             begin
-            if ((length(files_to_process[col+1].name)=0) and (length(files_to_process[col+1+3].name)>0)) then //only second RGB data
-            for fitsY:=0 to height_max-1 do
-              for fitsX:=0 to width_max-1 do
-                img_average[col,fitsY,fitsX]:= img_average[col+3,fitsY,fitsX];
+              if ((img_temp[col,height_max div 2 ,width_max div 2]=0) and (img_temp[col+3,height_max div 2 ,width_max div 2]>0)) then //only second RGB data
+              for fitsY:=0 to height_max-1 do
+                for fitsX:=0 to width_max-1 do
+                  img_average[col,fitsY,fitsX]:= img_average[col+3,fitsY,fitsX];
             end;
             //else nothing to do  only first contains RGB data
             setlength(img_average,3,height_max,width_max);{throw away second RGB storage space}
         end;{c=7, all colour files added}
 
-        if length(files_to_process[c].name)>0 then //file available?
+        if length(files_to_process[c].name)>0 then // file available
         begin
           try { Do some lengthy operation }
             filename2:=files_to_process[c].name;
