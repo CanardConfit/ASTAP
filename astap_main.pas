@@ -67,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.05.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.05.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -11054,7 +11054,7 @@ end;
 function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx : theader; out countN : integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 var
   sizebox,radius, i,j, fitsX,fitsY,n,m,xci,yci,search_radius,ratio_counter     : integer;
-  saturated,galaxy                                                             : boolean;
+  galaxy                                                                       : boolean;
   hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit_database,  sqr_radius,flux2,ratio,ratio_sum,hfd2 : double;
   messg : string;
   img_temp3,img_sa :Timage_array;
@@ -14779,7 +14779,7 @@ end;
 procedure Tmainform1.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  width5,height5, xf,yf,k, fx,fy, shapetype,c,xint,yint        : integer;
+  width5,height5, xf,yf,k, fx,fy, c,xint,yint                  : integer;
   hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b : double;
 begin
   if head.naxis=0 then exit;
@@ -14823,7 +14823,7 @@ begin
 
     if hfd2<90 then {detected something}
     begin
-      if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
+      //if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
       xcf:=xc+1;{make fits coordinates}
       ycf:=yc+1;
         if head.cd1_1<>0 then

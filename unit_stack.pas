@@ -2738,11 +2738,11 @@ end;
 
 procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
-  hfd_min: double;
+  hfd_min, mean_hfd   : double;
   max_stars, binning,i: integer;
-  starlistquads: Tstar_list;
-  warning_downsample: string;
-  starlist1         : Tstar_list;
+  starlistquads       : Tstar_list;
+  warning_downsample  : string;
+  starlist1           : Tstar_list;
 
 begin
   if head.naxis = 0 then application.messagebox(
@@ -2770,7 +2770,7 @@ begin
         stackmenu1.min_star_size_stacking1.Caption){hfd});
     {to ignore hot pixels which are too small}
 
-    bin_and_find_stars(img_loaded, head,binning, 1 {cropping}, hfd_min, max_stars, False{update hist}, starlist1, warning_downsample);{bin, measure background}
+    bin_and_find_stars(img_loaded, head,binning, 1 {cropping}, hfd_min, max_stars, False{update hist}, starlist1,mean_hfd, warning_downsample);{bin, measure background}
 
 //    memo2_message('Start');
 //    for i:=1 to 12000 do
@@ -5690,7 +5690,7 @@ end;
 
 procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 var
-  hfd_min,aa,bb,cc,dd,ee,ff                                         : double;
+  hfd_min,aa,bb,cc,dd,ee,ff,mean_hfd                                : double;
   c, x_new, y_new, fitsX, fitsY, col, first_image, stepnr, nrrows,
   cycle, step, ps, bottom, top, left, w, h, max_stars               : integer;
   reference_done, init, store_annotated, res                        : boolean;
@@ -5774,7 +5774,7 @@ begin
               memo2_message(
                 'Working on star alignment solutions. Blink frequency will increase after completion.');
               get_background(0, img_loaded,head, False {no histogram already done},  True {unknown, calculate also datamax});
-              find_stars(img_loaded, head, hfd_min, max_stars, starlist1);
+              find_stars(img_loaded, head, hfd_min, max_stars, starlist1,mean_hfd);
               {find stars and put them in a list}
               find_quads(starlist1,quad_star_distances1);
               {find quads for reference image}
@@ -5794,7 +5794,7 @@ begin
             begin
               mainform1.Caption := filename2 + ' Working on star solutions........';
               get_background(0, img_loaded, head,False {no histogram already done}, True {unknown, calculate also noise_level} );
-              find_stars(img_loaded, head,hfd_min, max_stars, starlist2);
+              find_stars(img_loaded, head,hfd_min, max_stars, starlist2,mean_hfd);
               {find stars and put them in a list}
               find_quads(starlist2,quad_star_distances2);
               {find star quads for new image}
@@ -7939,9 +7939,9 @@ end;
 
 procedure create_all_star_list; //collect any star in the variable_list
 var
-   i,j, nrstars, formalism   :integer;
-   hfd_min,ra2,dec2,sep      : double;
-   starlist                  : Tstar_list;
+   i,j, nrstars, formalism            :integer;
+   hfd_min,ra2,dec2,sep,mean_hfd      : double;
+   starlist                           : Tstar_list;
    variable_listAAVSO: array of tvariable_list;
    found               : boolean;
 begin
@@ -7949,7 +7949,7 @@ begin
 
   if img_loaded=nil then exit;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-  find_stars(img_loaded, head,hfd_min, round(strtofloat2(stackmenu1.nr_stars_to_detect1.text)), starlist);
+  find_stars(img_loaded, head,hfd_min, round(strtofloat2(stackmenu1.nr_stars_to_detect1.text)), starlist,mean_hfd);
   nrstars:=length(starlist[0]);
   setlength(variable_list,nrstars);//make space
   formalism:=mainform1.Polynomial1.itemindex;
@@ -9511,7 +9511,7 @@ procedure apply_star_smooth(smooth_diameter, smooth_stars: string);
 var
   starlist         : Tstar_list;
   i,nrstars,binning,nr_stars   : integer;
-  hfd_min,hfd1,star_fwhm,snr,flux,xc,yc,rad,radius : double;
+  hfd_min,hfd1,star_fwhm,snr,flux,xc,yc,rad,radius,mean_hfd : double;
   warning : string;
 begin
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
@@ -9519,7 +9519,7 @@ begin
   nr_stars:=strtoint(smooth_stars);
   // find_stars(img_loaded, hfd_min, 500, starlist);
   binning:=report_binning(head.height);{select binning based on the height of the light}
-  bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,nr_stars{max_stars},false{update hist},starlist,warning);{bin, measure background, find stars}
+  bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,nr_stars{max_stars},false{update hist},starlist,mean_hfd,warning);{bin, measure background, find stars}
 
   nrstars:=Length(starlist[0]);
   for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}

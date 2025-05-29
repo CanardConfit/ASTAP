@@ -25,6 +25,7 @@ procedure plot_stars_used_for_solving(starlist1,starlist2: Tstar_list; hd: Thead
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: Timage_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
+procedure rotate(rot: double; x,y :double; out x2, y2 : double);{rotate a vector point, angle seen from y-axis, counter clockwise}
 
 
 var
@@ -1350,13 +1351,14 @@ begin
     //else dc.polyline(glx,nr+1);
 end;
 
-procedure rotate(rot,x,y :double;var  x2,y2:double);{rotate a vector point, angle seen from y-axis, counter clockwise}
+
+procedure rotate(rot,x,y :double; out x2, y2: double);{rotate a vector point}
 var
   sin_rot, cos_rot :double;
 begin
   sincos(rot, sin_rot, cos_rot);
-  x2:=x * + sin_rot + y*cos_rot;{ROTATION MOON AROUND CENTER OF PLANET}
-  y2:=x * - cos_rot + y*sin_rot;{SEE PRISMA WIS VADEMECUM BLZ 68}
+  x2:=x * + cos_rot + y*sin_rot;
+  y2:=x * - sin_rot + y*cos_rot;{SEE PRISMA WIS VADEMECUM BLZ 68}
 end;
 
 
@@ -1977,7 +1979,7 @@ procedure plot_and_measure_stars(img : Timage_array; memo: tstrings; var head : 
 var
   telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
   standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e,mag_saturation,correction,val  : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count,nrstars                                               : integer;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                                                       : integer;
   flip_horizontal, flip_vertical                        : boolean;
   flux_ratio_array,hfd_x_sd, flux_peak_ratio,snr_list   : array of double;
   selected_passband : string;
@@ -2131,7 +2133,7 @@ begin
       begin
         if select_star_database(stackmenu1.star_database1.text,fov_org {fov})=false then exit;
 
-         if read_stars(telescope_ra,telescope_dec,fov_org, database_type, max_nr_stars,{out} starlist1,{out} nrstars) then {read star from local star database to find the maximum magnitude required for this. Max magnitude is stored in mag2}
+       if read_stars(telescope_ra,telescope_dec,fov_org, database_type, max_nr_stars,{out} starlist1) then {read star from local star database to find the maximum magnitude required for this. Max magnitude is stored in mag2}
         begin //maximum magnitude mag2 is known for the amount of stars for calibration using online stars
           memo2_message('Requires stars down to magnitude '+floattostrF(mag2/10,FFFixed,0,2)+ ' for '+inttostr( max_nr_stars)+' stars')  ;
           if read_stars_online(telescope_ra,telescope_dec,fov_org, mag2/10 {max_magnitude})= false then
@@ -2764,7 +2766,7 @@ begin
   begin
     xx:=(starlist1[0,i]-correctionX)/(hd.cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
     yy:=(starlist1[1,i]-correctionY)/(hd.cdelt2*3600);
-    rotate((90-flipped*hd.crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
+    rotate((flipped*hd.crota2)*pi/180,xx,yy,x,y);{rotate to screen orientation}
 
     if flip_horizontal=false then begin starX:=round(hd.crpix1-x); end else begin starX:=round(hd.crpix1+x); end;
     if flip_vertical=false   then begin starY:=round(hd.crpix2-y); end else begin starY:=round(hd.crpix2+y); end;

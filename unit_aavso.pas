@@ -610,9 +610,10 @@ var
     stdev_valid : boolean;
     snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp : double;
     PNG: TPortableNetworkGraphic;{FPC}
-
+    vsep : char;
 begin
   get_info;//update abbrev_var and others
+  if delimiter1.text=',' then vsep:=';' else vsep:=',';//valid seperator
 
   abbrv_var_clean:=clean_abbreviation(abbrev_var);
   abbrv_check_clean:=clean_abbreviation(abbrev_check);
@@ -693,7 +694,7 @@ begin
   if stackmenu1.reference_database1.ItemIndex=0 then settings:=stackmenu1.reference_database1.text
   else
     settings:=stackmenu1.reference_database1.text;
-  settings:=settings+', aperture='+stackmenu1.flux_aperture1.text+' HFD, annulus='+stackmenu1.annulus_radius1.text+' HFD';
+  settings:=settings+vsep+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
 
   if ensemble_database1.checked then
      comments:='CMAG ensemble using transformed Gaia magnitudes.'
@@ -809,7 +810,7 @@ begin
           // dummy2:=ListView7.Items.item[c].SubitemImages[P_filter];
 
            if ListView7.Items.item[c].SubitemImages[P_calibration]<>ListView7.Items.item[c].SubitemImages[P_filter] then
-              comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV,(V,G,TG),B,R,SI,SR,SG.';
+              comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/B/R/SI/SR/SG.';
 
            aavso_report:= aavso_report+ invalidstr+ abbrv_var_clean + delim +
                           StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+

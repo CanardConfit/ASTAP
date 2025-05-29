@@ -123,7 +123,7 @@ end;
 procedure stack_live(path :string);{stack live average}
 var
     fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter,max_stars,process_as_asc :  integer;
-    distance,hfd_min,aa,bb,cc,dd,ee,ff                                                                                                           : double;
+    distance,hfd_min,aa,bb,cc,dd,ee,ff,mean_hfd                                                                                                  : double;
     init, solution, waiting,transition_image,colour_correction :boolean;
     file_ext,filen,filename_org                 :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
@@ -256,7 +256,7 @@ begin
             if init=false then {first image}
             begin
               binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
-              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
               find_quads(starlist1, quad_star_distances1);{find quads for reference image}
             end;
 
@@ -305,7 +305,7 @@ begin
             {align using star match}
             if init=true then {second image}
             begin{internal alignment only}
-              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
 
               find_quads(starlist2, quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
