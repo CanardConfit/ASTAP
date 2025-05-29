@@ -1119,8 +1119,7 @@ begin
     inc(i);
   until i>=nrquads1;//i loop
 
-  if solve_show_log then
-    memo2_message('Found '+inttostr( nr_references2)+ ' references');
+  if solve_show_log then memo2_message('Found '+inttostr( nr_references2)+ ' references');
 
   if nr_references2< minimum_count then begin nr_references:=0; exit; end;{no solution abort before run time errors}
 

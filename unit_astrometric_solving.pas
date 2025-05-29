@@ -797,7 +797,7 @@ end;
 
 function solve_image(img :Timage_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
+  nrstars,nrstars_required,nrstars_required2,count,max_distance,nr_quads, minimum_quads,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i, database_density,limit,err  : integer;
   search_field,step_size,ra_database,dec_database,ra_database_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,oversize2,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,
@@ -1143,7 +1143,6 @@ begin
                 errorlevel:=33;{read error star database}
                 exit; {no stars}
               end;
-              database_stars:=length(starlist1[0]);
               //mod 2025 ###################################################
               if match_nr=1 then //2025 first solution found, filter out stars for the second match. Avoid that stars outside the image boundaries are used to create database quads
               begin //keep only stars which are visible in the image according the first solution
@@ -1172,7 +1171,7 @@ begin
 
 
               if solve_show_log then {global variable set in find stars}
-                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(ra_database,': ')+#9+prepare_dec(dec_database,'° ')+#9+' Down to magn '+ floattostrF(mag2/10,ffFixed,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
+                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(ra_database,': ')+#9+prepare_dec(dec_database,'° ')+#9+' Down to magn '+ floattostrF(mag2/10,ffFixed,0,1) +#9+' '+inttostr(length(starlist1[0]))+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
 
               // for testing purposes
               // for testing create supplement hnsky planetarium program
@@ -1271,8 +1270,8 @@ begin
 //    hd.cdelt1:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]))/3600; // from unit arcsec to degrees
 //    hd.cdelt2:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]))/3600;
 
-    hd.cdelt2:=cdelt2/3600;
-    hd.cdelt1:=cdelt1/3600;
+    hd.cdelt2:=cdelt2/3600; //convert from arc seconds to degrees
+    hd.cdelt1:=cdelt1/3600; //convert from arc seconds to degrees
 
     // position +1 pixels in direction hd.crpix2
 //    standard_equatorial( ra_database,dec_database, (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
