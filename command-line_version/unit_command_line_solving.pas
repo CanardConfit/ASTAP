@@ -1683,8 +1683,6 @@ begin
   min_star_size_arcsec:=strtofloat2(min_star_size1); {arc sec};
   autoFOV:=(fov_org=0);{specified auto FOV}
 
-  if max_stars=0 then max_stars:=500;// temporary. Remove in 2024;
-
   val(copy(name_database,2,2),database_density,err);
   if ((err<>0) or
       (database_density=17) or (database_density=18)) then //old databases V17, G17, G18, H17, H18

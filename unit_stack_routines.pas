@@ -2198,6 +2198,7 @@ begin
           for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
             begin
+              img_temp[0,fitsY,fitsX]:=0; {clear img_temp for next image}
               for col:=0 to head.naxis3-1 do
                 img_average[col,fitsY,fitsX]:=0; {clear img_average}
             end;
@@ -2222,22 +2223,7 @@ begin
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
 
-        //for fitsY:=0 to height_max-1 do  //add a black line for testing
-        //begin
-        //  img_temp[0,fitsY,100]:=0;
-        //  img_average[0,fitsY,100]:=0;
-        //end;
-
-        black_spot_filter(img_loaded, img_average, img_temp, pedestal);// correct black spots due to alignment. The pixel count is in arrayA
-
-       // for fitsY:=0 to height_max-1 do
-       // for fitsX:=0 to width_max-1 do
-       // begin
-       //   for col:=0 to head.naxis3-1 do
-       //     img_loaded[col,fitsY,fitsX]:= img_average[col,fitsY,fitsX]+pedestal;
-       // end;
-
-
+        black_spot_filter(img_loaded, img_average, img_temp, pedestal); // correct black spots due to alignment. The pixel count is in arrayA
 
         {save}
         filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename}

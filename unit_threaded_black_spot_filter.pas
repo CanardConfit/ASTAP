@@ -63,9 +63,10 @@ begin
         if tempval<>0 then dest^[col,h,w]:=Fpedestal+source^[col,h,w]/tempval {scale to one image by diving by the number of pixels added}
         else
         begin { black spot filter or missing value filter due to image rotation}
-          if ((w>0) and (arrayA^[0,h,w-1]<>0)) then dest^[col,h,w]:=dest^[col,h,w-1]{take nearest pixel x-1 as replacement}
+
+          if ((w>0) and (arrayA^[0,h,w-1]<>0)) then dest^[col,h,w]:=Fpedestal+source^[col,h,w-1]/arrayA^[0,h,w-1] {take nearest pixel x-1 as replacement.}
           else
-          if ((h>0) and (arrayA^[0,h-1,w]<>0)) then dest^[col,h,w]:=dest^[col,h-1,w]{take nearest pixel y-1 as replacement}
+          if ((h>0) and (arrayA^[0,h-1,w]<>0)) then dest^[col,h,w]:=Fpedestal+source^[col,h-1,w]/arrayA^[0,h-1,w]{take nearest pixel y-1 as replacement}
           else
           dest^[col,h,w]:=0;{clear img_loaded since it is resized}
         end; {black spot}
@@ -82,9 +83,9 @@ begin
           if tempval<>0 then  dest^[col,h,w]:=Fpedestal+source^[col,h,w]/tempval {scale to one image by diving by the number of pixels added}
           else
           begin { black spot filter fix black spots which show up if one image is rotated. Note for this version img_temp is counting for each color since they could be different}
-            if ((w>0) and (arrayA^[0,h,w-1]<>0)) then dest^[col,h,w]:=dest^[col,h,w-1]{take nearest pixel x-1 as replacement}
+            if ((w>0) and (arrayA^[0,h,w-1]<>0)) then dest^[col,h,w]:=Fpedestal+source^[col,h,w-1]/arrayA^[0,h,w-1]{take nearest pixel x-1 as replacement}
             else
-            if ((h>0) and (arrayA^[0,h-1,w]<>0)) then dest^[col,h,w]:=dest^[col,h-1,w]{take nearest pixel y-1 as replacement}
+            if ((h>0) and (arrayA^[0,h-1,w]<>0)) then dest^[col,h,w]:=Fpedestal+source^[col,h-1,w]/arrayA^[0,h-1,w]{take nearest pixel y-1 as replacement}
             else
             dest^[col,h,w]:=0;{clear img_loaded since it is resized}
           end; {black spot filter}

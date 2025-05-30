@@ -3589,12 +3589,12 @@ end;
 
 procedure Tstackmenu1.transformation1Click(Sender: TObject);
 var
-  i, countxy,formalism     : integer;
-  magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
+  i, countxy,formalism,starX,starY,size, countBV                : integer;
+  magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp,sep,fov_rad,mean_bv : double;
 
   stars,xylist  : Tstar_list;
   slope, intercept, sd : double;
-
+  flip_vertical,flip_horizontal : boolean;
 
 begin
   if head.naxis=0 then
@@ -3623,27 +3623,68 @@ begin
   end;
 
   measure_magnitudes(img_loaded,head, 14,0,0,head.width-1,head.height-1,false{histogram update},true {deep},stars);
+
+  fov_rad:=head.height*abs(head.cdelt2)*pi/180; //radians. cdelt2 can be negative for other solvers
+
+  if gaia_magn_limit<head.magn_limit+1.0-0.1 then sep:=999 //update required based on magnitude
+  else
+  ang_sep(head.ra0,head.dec0,gaia_ra,gaia_dec,sep);//update required based on position
+
+  if ((sep>0.15*fov_rad) or (online_database=nil)) then  //other sky area, update Gaia database online
+  begin
+  if read_stars_online(head.ra0,head.dec0,(pi/180)*min(180,max(head.height,head.width)*abs(head.cdelt2)), head.magn_limit+1.0 {max_magnitude, one magnitude extra})= false then
+  begin
+     memo2_message('Error. failure accessing Vizier for Gaia star database!');
+     Clipboard.AsText:='Error. failure accessing Vizier for Gaia star database!';
+     Screen.Cursor:=crDefault;
+     exit;
+    end;
+  end;
   formalism:=mainform1.Polynomial1.itemindex;
+
+  if formalism=0 then
+    memo2_message('█ █ █ █ █ █ Warning. First solve image with option "Add SIP coefficients" in tab alignment activated to spot all stars');
 
   setlength(xylist,2, length(stars[0]));
   countxy:=0;
 
   if length(stars[0])>9 then
   begin
+    mainform1.image1.Canvas.Pen.Mode := pmCopy;
+    mainform1.image1.Canvas.Pen.width := 1; //round(1+head.height/mainform1.image1.height);{thickness lines}
+    mainform1.image1.Canvas.brush.Style:=bsClear;
+    mainform1.image1.Canvas.Pen.Color :=$009CFF ;//orange
+    mainform1.image1.Canvas.font.color:=$009CFF ;//orange
+    mainform1.image1.Canvas.font.size:=8;
+
+    flip_vertical:=mainform1.flip_vertical1.Checked;
+    flip_horizontal:=mainform1.flip_horizontal1.Checked;
+
+    mean_bv:=0;
+    countBV:=0;
     for i:=0 to  length(stars[0])-1 do
     begin
       if stars[4,i]{SNR}>40 then
       begin
         magnitude:=(head.mzero - ln(stars[3,i]{flux})*2.5/ln(10));//flux to magnitude
+        size:=15;
+        if flip_horizontal=true then starX:=round((head.width-stars[0,i]))  else starX:=round(stars[0,i]);
+        if flip_vertical=false  then starY:=round((head.height-stars[1,i])) else starY:=round(stars[1,i]);
+
+        mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+
         pixel_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
         report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
 
+        mainform1.image1.Canvas.textout(starX+size,starY+size,'Gaia V='+floattostrf(v, ffFixed, 0,2)+', B='+floattostrf(B, ffFixed, 0,2));{add hfd as text}
         if ((v>0) and (b>0)) then
         begin
           xylist[0,countxy]:=b-v; //gaiaB-gaiaV, star colour
           xylist[1,countxy]:=magnitude-v; //V- gaiaV, delta magnitude
           inc(countXY);
 
+          mean_bv:=mean_bv+(b-v);
+          inc(countBV);
          // memo2_message(#9+floattostr(b-v)+#9+floattostr(magnitude-v));
         end;
 
@@ -3664,14 +3705,18 @@ begin
 
       //  xylist[0,1]:=100; //outlier y=100 instead of 51.75}
 
-
-     memo2_message('Using '+inttostr(countXY)+' detected stars.');
-     trendline_without_outliers(xylist,countXY,slope, intercept,sd);
-     memo2_message('Slope is '+floattostrF(slope,FFfixed,5,3)+ '. Calculated required absolute transformation correction  ∆ V = '+floattostrF(intercept,FFfixed,5,3)+' + '+floattostrF(slope,FFfixed,5,3)+'*(B-V). Standard deviation of measured magnitude vs Gaia transformed for stars with SNR>40 and without B-V correction is '+floattostrF(sd,FFfixed,5,3)+ #10);
-
+     if countXY>0 then
+     begin
+       memo2_message('Using '+inttostr(countXY)+' detected stars.');
+       trendline_without_outliers(xylist,countXY,slope, intercept,sd);
+       memo2_message('Mean B-V of all bright stars is '+floattostrF(mean_bv/countBV,FFfixed,5,3));
+       memo2_message('Slope is '+floattostrF(slope,FFfixed,5,3)+ '. Calculated required absolute transformation correction  ∆ V = '+floattostrF(slope,FFfixed,5,3)+'*(B-V) + '+floattostrF(intercept,FFfixed,5,3)+'. Standard deviation of measured magnitude vs Gaia transformed for stars with SNR>40 and without B-V correction is '+floattostrF(sd,FFfixed,5,3)+ #10);
+     end
+     else
+     memo2_message('Something wrong. xylist is nil');
   end
   else
-  memo2_message('Not enough stars found!');
+  memo2_message('Abort. SNR stars too low!');
 
   stars:=nil;
   xylist:=nil;

@@ -2069,6 +2069,8 @@ begin
 
 //    sip:=((ap_order>=2) and (mainform1.Polynomial1.itemindex=1));{use sip corrections?}  Already set
 
+//  if ((usethesip) and (ap_order<>0)) then {apply SIP correction, sky to pixel}
+
     bp_rp:=999;{not defined in mono versions of the database}
 
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
