@@ -1,10 +1,52 @@
 unit unit_command_line_general;
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+
+
+
+{For Android compiling
+          Anyhow I have now added the patchelf --set-interpreter /system/bin/linker64 ./astap_cli command in my compile_all.sh file. So now they should be all good.
+
+          @so999
+          If you want to just test it from a terminal app, I recommend to root your device first.
+          Then put the astap_cli to
+          /data/local/tmp
+          location, finally run it from terminal app as root (su).
+
+          When root is not possible, you have to deploy the astap_cli renamed to "libastap_cli.so" (a stupid Android restriction) with your own app and call it from the app.
+
+          The databases theoretically you can put to
+          /sdcard/astap_db
+          for example, and call astap_cli with the switch -d,
+          see
+          astap_cli --help
+          for more information.
+
+          Ok, it is quite tricky. But you don't need to be root or do anything special. Note it is not solution for termux but for regular app.
+
+          1st you need to put in location it can be executed:
+
+              You need to rename astap_cli to libastap.so or something like that (libSOMETHING.so) and put it to native libraries directory (jniLibs/PLATFORM like this https://github.com/artyom-beilis/android_live_stacker/tree/web_ols/app/src/main/jniLibs/arm64-v8a )
+              You need to enable legacy packing to unpack all so: https://github.com/artyom-beilis/android_live_stacker/blob/web_ols/app/build.gradle#L26
+
+          This way you'll get libastap.so as executable inside native lib directory and deploy it with the app.
+
+          Than you need to find path to native library dir: https://github.com/artyom-beilis/android_live_stacker/blob/web_ols/app/src/main/java/org/openlivestacker/LiveStackerMain.java#L1006
+
+          Then you call exe as usual (in C++ I do via fork/exec)
+
+          https://github.com/artyom-beilis/OpenLiveStacker/blob/main/src/plate_solver.cpp#L213
+
+
+          file ./astap_cli
+          ./astap_cli: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, BuildID[sha1]=b2d9ae1e5745f6ba9dfb9b8b4e7913b638b325b9, stripped
+
+}
+
 
 {$mode objfpc}{$H+}
 
@@ -21,7 +63,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.04.30';
+  astap_version: string='2025.05.29a';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -394,7 +436,7 @@ begin
    repeat
       if i<memo1.count then
       begin
-        line0:=memo1[i];
+        line0:=memo1.strings[i];
         while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
         strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
         thefile4.writebuffer(aline,80);{write updated header from memo1}
@@ -513,7 +555,7 @@ begin
     repeat
        if i<memo1.count then
        begin
-         line0:=memo1[i];
+         line0:=memo1.strings[i];
          while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
          strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
          thefile_new.writebuffer(aline,80);{write updated header from memo1.}
@@ -596,7 +638,7 @@ begin
   repeat
      if i<memo1.count then
      begin
-       line0:=memo1[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126. However ASTAP can write UTF8 in the comments which is read correctly by DS9 and FV}
+       line0:=memo1.strings[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126. However ASTAP can write UTF8 in the comments which is read correctly by DS9 and FV}
        while length(line0)<80 do line0:=line0+' ';{extend to length 80 if required}
        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
        thefile4.writebuffer(aline,80);{write updated header from memo1}
@@ -1159,12 +1201,12 @@ procedure remove_key(inpt:string; all:boolean);{remove key word in header. If al
 var
    count1: integer;
 begin
-  count1:=Memo1.Count-1;
+  count1:=memo1.Count-1;
   while count1>=0 do {update keyword}
   begin
-    if pos(inpt,Memo1[count1])>0 then {found}
+    if pos(inpt,memo1.strings[count1])>0 then {found}
     begin
-      Memo1.delete(count1);
+      memo1.delete(count1);
       if all=false then exit;
     end;
     count1:=count1-1;
@@ -1174,7 +1216,7 @@ end;
 
 procedure add_text(inpt,comment1:string);{add text to header memo}
 begin
-  memo1.insert(Memo1.Count-1,inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
+  memo1.insert(memo1.Count-1,inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
 end;
 
 
@@ -1185,15 +1227,15 @@ procedure update_integer(inpt,comment1:string;x:integer);{update or insert varia
 begin
   str(x:20,s);
 
-  count1:=Memo1.Count-1;
+  count1:=memo1.Count-1;
   while count1>=0 do {update keyword}
   begin
-    if pos(inpt,Memo1[count1])>0 then {found}
+    if pos(inpt,memo1.strings[count1])>0 then {found}
     begin
-      aline:=Memo1[count1];
+      aline:=memo1[count1];
       delete(aline,11,20);
       insert(s,aline,11);
-      Memo1[count1]:=aline;
+      memo1.strings[count1]:=aline;
       exit;
     end;
     count1:=count1-1;
@@ -1202,7 +1244,7 @@ begin
   if inpt='NAXIS1  =' then memo1.insert(3,inpt+' '+s+comment1) else{PixInsight requires to have it on 3th place}
   if inpt='NAXIS2  =' then memo1.insert(4,inpt+' '+s+comment1) else{PixInsight requires to have it on 4th place}
   if inpt='NAXIS3  =' then memo1.insert(5,inpt+' '+s+comment1) else{PixInsight requires to have it on this place}
-  memo1.insert(Memo1.Count-1,inpt+' '+s+comment1);
+  memo1.insert(memo1.Count-1,inpt+' '+s+comment1);
 end;
 
 
@@ -1211,7 +1253,7 @@ procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to h
    s        : string;
 begin
   str(x:20,s);
-  memo1.insert(Memo1.Count-1,inpt+' '+s+comment1);
+  memo1.insert(memo1.Count-1,inpt+' '+s+comment1);
 end;
 
 
@@ -1224,21 +1266,21 @@ begin
     while length(message_value)<20 do message_value:=' '+message_value;{extend length, right aligned}
     while length(message_key)<8 do message_key:=message_key+' ';{make standard lenght of 8}
 
-   count1:=Memo1.Count-1;
+   count1:=memo1.Count-1;
     while count1>=0 do {update keyword}
     begin
-      if pos(message_key,Memo1[count1])>0 then {found}
+      if pos(message_key,memo1.strings[count1])>0 then {found}
       begin
-        Memo1[count1]:=message_key+'= '+message_value+' / '+message_comment;
+        memo1.strings[count1]:=message_key+'= '+message_value+' / '+message_comment;
         exit;
       end;
       count1:=count1-1;
     end;
     {not found, add to the end}
-    memo1.insert(Memo1.Count-1,message_key+'= '+message_value+' / '+message_comment);
+    memo1.insert(memo1.Count-1,message_key+'= '+message_value+' / '+message_comment);
   end {no history of comment keyword}
   else
-  memo1.insert(Memo1.Count-1,message_key+' '+message_value+message_comment);
+  memo1.insert(memo1.Count-1,message_key+' '+message_value+message_comment);
 end;
 
 
@@ -1248,14 +1290,14 @@ var
    ampersand : string;
 begin
 
-  count1:=Memo1.Count-1;
+  count1:=memo1.Count-1;
   while count1>=0 do {delete keyword}
   begin
-    if pos(inpt,Memo1[count1])>0 then {found, delete old keyword}
+    if pos(inpt,memo1.strings[count1])>0 then {found, delete old keyword}
     begin
-      Memo1.delete(count1);
-      while pos('CONTINUE=',Memo1[count1])>0 do
-        Memo1.delete(count1);
+      memo1.delete(count1);
+      while pos('CONTINUE=',memo1.strings[count1])>0 do
+        memo1.delete(count1);
     end;
     count1:=count1-1;
   end;
@@ -1265,16 +1307,16 @@ begin
 
   if m>68 then
   begin {write as multi record}
-    memo1.insert(Memo1.Count-1,inpt+' '+#39+copy(thestr,1,67)+'&'+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
+    memo1.insert(memo1.Count-1,inpt+' '+#39+copy(thestr,1,67)+'&'+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
     k:=68;
     repeat {write in blocks of 67 char}
       if (m-k)>67 then ampersand:='&' else ampersand:='';
-      memo1.insert(Memo1.Count-1,'CONTINUE= '+#39+copy(thestr,k,67)+ampersand+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
+      memo1.insert(memo1.Count-1,'CONTINUE= '+#39+copy(thestr,k,67)+ampersand+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
       inc(k,67);
     until k>=m;
   end
   else {write as single record}
-  memo1.insert(Memo1.Count-1,inpt+' '+#39+thestr+#39);
+  memo1.insert(memo1.Count-1,inpt+' '+#39+thestr+#39);
 
 end;
 
@@ -1284,18 +1326,18 @@ var
    count1: integer;
 begin
 
-  count1:=Memo1.Count-1;
+  count1:=memo1.Count-1;
   while count1>=0 do {update keyword}
   begin
-    if pos(inpt,Memo1[count1])>0 then {found}
+    if pos(inpt,memo1.strings[count1])>0 then {found}
     begin
-      Memo1[count1]:=inpt+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
+      memo1.strings[count1]:=inpt+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
       exit;
     end;
     count1:=count1-1;
   end;
   {not found, add to the end}
-  memo1.insert(Memo1.Count-1,inpt+' '+comment1);
+  memo1.insert(memo1.Count-1,inpt+' '+comment1);
 end;
 
 
@@ -1306,25 +1348,25 @@ procedure update_float(inpt,comment1:string;x:double);{update keyword of fits he
 begin
   str(x:20,s);
 
-  count1:=Memo1.Count-1;
+  count1:=memo1.Count-1;
   while count1>=0 do {update keyword}
   begin
-    if pos(inpt,Memo1[count1])>0 then {found}
+    if pos(inpt,memo1.strings[count1])>0 then {found}
     begin
-      aline:=Memo1[count1];
+      aline:=memo1.strings[count1];
       if copy(aline,32,1)='/' then
         delete(aline,11,20) {preserve comment}
       else
         delete(aline,11,80);  {delete all}
 
       insert(s,aline,11);
-      Memo1[count1]:=aline;
+      memo1.strings[count1]:=aline;
       exit;
     end;
     count1:=count1-1;
   end;
   {not found, add to the end}
-  memo1.insert(Memo1.Count-1,inpt+' '+s+comment1);
+  memo1.insert(memo1.Count-1,inpt+' '+s+comment1);
 end;
 
 procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
@@ -1335,7 +1377,7 @@ begin
   j:=length(descrip);
   while i<j do
   begin
-    memo1.insert(Memo1.Count-1,'COMMENT '+copy(descrip,I,72) );  {add to the end. Limit line length to 80}
+    memo1.insert(memo1.Count-1,'COMMENT '+copy(descrip,I,72) );  {add to the end. Limit line length to 80}
     inc(i,72);
   end;
 end;
@@ -1395,19 +1437,19 @@ var
   var
     err: integer;
   begin
-    val(copy(Memo1[index],11,20),result,err);
+    val(copy(memo1.strings[index],11,20),result,err);
   end;
   function read_integer: integer;
   var
     err: integer;
   begin
-    val(copy(Memo1[index],11,20),result,err);
+    val(copy(memo1.strings[index],11,20),result,err);
   end;
   function read_string: string;
   var
     p1,p2 :integer;
   begin
-    result:=copy(Memo1[index],11,80-11);
+    result:=copy(memo1.strings[index],11,80-11);
     p1:=pos(char(39),result);
     p2:=posex(char(39),result,p1+1);
     if p2=0 then p2:=20;
@@ -1416,19 +1458,19 @@ var
 
 begin
   {variables are already reset}
-  count1:=Memo1.Count-1-1;
+  count1:=memo1.Count-1-1;
 
   index:=1;
   while index<=count1 do {read keys}
   begin
-    key:=copy(Memo1[index],1,9);
+    key:=copy(memo1.strings[index],1,9);
 
     //should in this sequence available. If not fix.
-    if index=1 then if key<>'BITPIX  =' then begin Memo1.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
-    if index=2 then if key<>'NAXIS   =' then begin Memo1.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
-    if index=3 then if key<>'NAXIS1  =' then begin Memo1.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
-    if index=4 then if key<>'NAXIS2  =' then begin Memo1.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
-    if ((index=5) and (naxis3>1)) then if key<>'NAXIS3  =' then begin Memo1.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
+    if index=1 then if key<>'BITPIX  =' then begin memo1.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
+    if index=2 then if key<>'NAXIS   =' then begin memo1.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
+    if index=3 then if key<>'NAXIS1  =' then begin memo1.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
+    if index=4 then if key<>'NAXIS2  =' then begin memo1.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
+    if ((index=5) and (naxis3>1)) then if key<>'NAXIS3  =' then begin memo1.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
 
 
     if key='CD1_1   =' then cd1_1:=read_float else
@@ -1799,7 +1841,7 @@ var
   image                             : TFPCustomImage;
   reader                            : TFPCustomImageReader;
   tiff, png,jpeg,colour,saved_header  : boolean;
-  ext,descrip   : string;
+  ext,descrip                       : string;
 begin
   naxis:=0; {0 dimensions for case failure}
   result:=false; {assume failure}
@@ -1924,12 +1966,6 @@ begin
     descrip:=image.Extra['TiffImageDescription']; {restore full header in TIFF !!!}
   end;
 
-  for j:=0 to 10 do {create an header with fixed sequence}
-    if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
-      memo1.add(head1[j]); {add lines to empthy memo1}
-  memo1.add(head1[27]); {add end}
-  if descrip<>'' then add_long_comment(descrip);{add TIFF describtion}
-
   if copy(descrip,1,6)='SIMPLE' then {fits header included}
   begin
     memo1.text:=descrip;
@@ -1948,6 +1984,7 @@ begin
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));

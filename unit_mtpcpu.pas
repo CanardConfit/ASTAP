@@ -37,7 +37,7 @@ procedure CallLocalProc(AProc, Frame: Pointer; Param1: PtrInt;
 implementation
 
 {$IFDEF Linux}
-const _SC_NPROCESSORS_ONLN = 84; //2025.05.23 was wrongly 83. See https://gitlab.com/freepascal.org/fpc/source/-/issues/41265
+const _SC_NPROCESSORS_CONF = 83; //2025.05.30 Change name to CONF. See https://gitlab.com/freepascal.org/fpc/source/-/issues/41265
 function sysconf(i: cint): clong; cdecl; external name 'sysconf';
 {$ENDIF}
 
@@ -67,7 +67,7 @@ begin
 end;
 {$ELSEIF defined(UNTESTEDsolaris)}
   begin
-    t = sysconf(_SC_NPROC_ONLN);
+    t = sysconf(_SC_NPROC_CONF);
   end;
 {$ELSEIF defined(freebsd) or defined(darwin)}
 type
@@ -85,7 +85,10 @@ begin
 end;
 {$ELSEIF defined(linux)}
   begin
-    Result:=sysconf(_SC_NPROCESSORS_ONLN);
+    Result:=sysconf(_SC_NPROCESSORS_CONF);
+    if result=128 then
+       result:=sysconf(84 {_SC_NPROCESSORS_ONLN}); //fix for VMWare virtual machine
+
   end;
 {$ELSE}
   begin

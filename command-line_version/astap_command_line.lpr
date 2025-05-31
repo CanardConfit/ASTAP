@@ -71,7 +71,7 @@ begin
   begin
     writeln(
     'ASTAP astrometric solver version CLI-'+astap_version+#10+
-    '(C) 2018, 2024 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
+    '(C) 2018, 2025 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
     'Usage:'+#10+
     '-f  filename  {fits, tiff, png, jpg files}'+#10+
     '-r  radius_area_to_search[degrees]'+#10+      {changed}
@@ -225,7 +225,7 @@ begin
       if hasoption('wcs') then
         write_astronomy_wcs(filename_output)  {write WCS astronomy.net style}
       else
-        try Memo1.SavetoFile(ChangeFileExt(filename_output,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+        try memo1.SavetoFile(ChangeFileExt(filename_output,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
     end {solution}
     else
@@ -243,7 +243,7 @@ begin
 
     esc_pressed:=true;{kill any running activity. This for APT}
     if commandline_log then
-             Memo2.SavetoFile(ChangeFileExt(filename_output,'.log'));{save Memo2 log to log file}
+             memo2.SavetoFile(ChangeFileExt(filename_output,'.log'));{save memo2 log to log file}
 
     halt(errorlevel);
 

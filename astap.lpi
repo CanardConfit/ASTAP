@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <PathDelim Value="\"/>
     <General>
       <Flags>
         <MainUnitHasUsesSectionForAllUnits Value="False"/>
         <MainUnitHasCreateFormStatements Value="False"/>
         <MainUnitHasTitleStatement Value="False"/>
+        <CompatibilityMode Value="True"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <MainUnit Value="0"/>
       <Title Value="astap"/>
       <Scaled Value="True"/>
       <UseAppBundle Value="False"/>
@@ -154,7 +154,7 @@
       <Unit1>
         <Filename Value="astap_main.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="mainwindow"/>
+        <ComponentName Value="mainform1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
@@ -199,6 +199,7 @@
       <Unit10>
         <Filename Value="unit_inspector_plot.pas"/>
         <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
       </Unit10>
       <Unit11>
         <Filename Value="unit_hjd.pas"/>
@@ -267,7 +268,6 @@
     </Parsing>
     <Linking>
       <Debugging>
-        <GenerateDebugInfo Value="False"/>
         <DebugInfoType Value="dsDwarf2Set"/>
         <StripSymbols Value="True"/>
       </Debugging>
