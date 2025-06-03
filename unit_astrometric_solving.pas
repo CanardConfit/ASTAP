@@ -1261,24 +1261,9 @@ begin
     //    hd.cd2_1:= + solution_vectorY[0]/3600;
     //    hd.cd2_2:= + solution_vectorY[1]/3600;
 
-    //New 2023 method for correct rotation angle/annotation near to the celestial pole.
-//    if solution_vectorX[0]*solution_vectorY[1] - solution_vectorX[1]*solution_vectorY[0] >0 then // flipped?
-//    flipped_image:=-1 //change rotation for flipped image, {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-//    else
-//    flipped_image:=+1;//not flipped
-
-//    hd.cdelt1:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]))/3600; // from unit arcsec to degrees
-//    hd.cdelt2:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1]))/3600;
 
     hd.cdelt2:=cdelt2/3600; //convert from arc seconds to degrees
     hd.cdelt1:=cdelt1/3600; //convert from arc seconds to degrees
-
-    // position +1 pixels in direction hd.crpix2
-//    standard_equatorial( ra_database,dec_database, (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
-//                                                   (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
-//                                                    1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 1 pixel away
-
-//    crota2:=-position_angle(ra7,dec7,hd.ra0,hd.dec0);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
 
     // position 1*flipped_image  pixels in direction hd.crpix1
     standard_equatorial( ra_database,dec_database,(solution_vectorX[0]*(centerX+flipped_image) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
@@ -1296,7 +1281,6 @@ begin
 
     hd.crota2:=crota2*180/pi;//convert to degrees
     hd.crota1:=crota1*180/pi;
-    //end new 2023 method
 
 
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}

@@ -43,6 +43,7 @@ object stackmenu1: Tstackmenu1
     0000
   }
   KeyPreview = True
+  LCLVersion = '4.99.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnDropFiles = FormDropFiles
@@ -50,7 +51,6 @@ object stackmenu1: Tstackmenu1
   OnKeyPress = FormKeyPress
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '3.8.0.0'
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
@@ -76,7 +76,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_photometry1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -84,7 +84,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 8
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -95,8 +95,8 @@ object stackmenu1: Tstackmenu1
           ClientHeight = 468
           ClientWidth = 1912
           ImageIndex = 22
-          OnShow = lightsShow
           ParentFont = False
+          OnShow = lightsShow
           object nr_selected1: TLabel
             Left = 524
             Height = 19
@@ -455,8 +455,8 @@ object stackmenu1: Tstackmenu1
             Constraints.MinWidth = 92
             Images = ImageList2
             ImageIndex = 23
-            OnClick = browse1Click
             TabOrder = 9
+            OnClick = browse1Click
           end
           object analyse_lights_extra1: TButton
             Left = 424
@@ -677,8 +677,8 @@ object stackmenu1: Tstackmenu1
             Constraints.MinWidth = 92
             Images = ImageList2
             ImageIndex = 23
-            OnClick = browse_dark1Click
             TabOrder = 5
+            OnClick = browse_dark1Click
           end
           object most_right2: TStaticText
             Left = 1248
@@ -874,8 +874,8 @@ object stackmenu1: Tstackmenu1
             Constraints.MinWidth = 92
             Images = ImageList2
             ImageIndex = 23
-            OnClick = browse_flats1Click
             TabOrder = 4
+            OnClick = browse_flats1Click
           end
           object classify_flat_date1: TCheckBox
             Left = 816
@@ -1057,8 +1057,8 @@ object stackmenu1: Tstackmenu1
             Constraints.MinWidth = 92
             Images = ImageList2
             ImageIndex = 23
-            OnClick = browse_bias1Click
             TabOrder = 3
+            OnClick = browse_bias1Click
           end
           object most_right4: TStaticText
             Left = 1250
@@ -2134,9 +2134,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 4
+              OnClick = undo_button2Click
             end
             object help_osc_menu1: TLabel
               Cursor = crHandPoint
@@ -2274,8 +2274,8 @@ object stackmenu1: Tstackmenu1
           ClientHeight = 468
           ClientWidth = 1912
           ImageIndex = 7
-          OnShow = alignment1Show
           ParentFont = False
+          OnShow = alignment1Show
           object use_star_alignment1: TRadioButton
             Left = 8
             Height = 23
@@ -2858,11 +2858,11 @@ object stackmenu1: Tstackmenu1
               7DD7DD7DDD7DDDDDD7D7DD7DD7DDDDDDDD77D7DD7DDDDDDDDDD7D7D7DDDDDDD7
               777DD77DDDD7777DDDDD77D7777DDDDDDDDD777DDDDDDDDDDDDD
             }
-            OnClick = show_quads1Click
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
             TabOrder = 5
+            OnClick = show_quads1Click
           end
           object panel_manual1: TPanel
             Left = 208
@@ -3018,8 +3018,8 @@ object stackmenu1: Tstackmenu1
           ClientHeight = 468
           ClientWidth = 1912
           ImageIndex = 11
-          OnShow = tab_blink1Show
           ParentFont = False
+          OnShow = tab_blink1Show
           object listview6: TListView
             Left = 0
             Height = 403
@@ -3285,8 +3285,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Browse'
             Images = ImageList2
             ImageIndex = 23
-            OnClick = browse_blink1Click
             TabOrder = 12
+            OnClick = browse_blink1Click
           end
           object Annotations_visible2: TCheckBox
             Left = 656
@@ -3334,8 +3334,8 @@ object stackmenu1: Tstackmenu1
           ClientHeight = 468
           ClientWidth = 1912
           ImageIndex = 19
-          OnShow = tab_photometry1Show
           ParentFont = False
+          OnShow = tab_photometry1Show
           object analysephotometry1: TButton
             Left = 104
             Height = 26
@@ -3660,8 +3660,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Browse'
             Images = ImageList2
             ImageIndex = 23
-            OnClick = browse_photometry1Click
             TabOrder = 9
+            OnClick = browse_photometry1Click
           end
           object annotate_mode1: TComboBox
             Left = 816
@@ -4157,8 +4157,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Browse'
             Images = ImageList2
             ImageIndex = 23
-            OnClick = browse_inspector1Click
             TabOrder = 4
+            OnClick = browse_inspector1Click
           end
           object most_right10: TStaticText
             Left = 1250
@@ -4417,8 +4417,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Browse'
             Images = ImageList2
             ImageIndex = 23
-            OnClick = browse_mount1Click
             TabOrder = 6
+            OnClick = browse_mount1Click
           end
           object calc_polar_alignment_error1: TButton
             Left = 392
@@ -4603,8 +4603,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Folder'
             Images = ImageList2
             ImageIndex = 24
-            OnClick = browse_live_stacking1Click
             TabOrder = 4
+            OnClick = browse_live_stacking1Click
           end
           object most_right12: TStaticText
             Left = 1272
@@ -4661,8 +4661,8 @@ object stackmenu1: Tstackmenu1
             Caption = 'Folder'
             Images = ImageList2
             ImageIndex = 24
-            OnClick = browse_monitoring1Click
             TabOrder = 0
+            OnClick = browse_monitoring1Click
           end
           object live_monitoring1: TButton
             Left = 16
@@ -4952,8 +4952,8 @@ object stackmenu1: Tstackmenu1
           ClientWidth = 1912
           Enabled = False
           ImageIndex = 4
-          OnShow = tab_Pixelmath1Show
           ParentFont = False
+          OnShow = tab_Pixelmath1Show
           object GroupBox5: TGroupBox
             Left = 352
             Height = 112
@@ -5107,9 +5107,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 9
+              OnClick = undo_button2Click
             end
             object auto_background_level1: TButton
               Left = 374
@@ -5210,9 +5210,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 2
+              OnClick = undo_button2Click
             end
             object dark_areas_box_size1: TComboBox
               Left = 8
@@ -5364,9 +5364,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button_equalise_background1Click
               ParentFont = False
               TabOrder = 6
+              OnClick = undo_button_equalise_background1Click
             end
             object remove_deepsky_label1: TLabel
               Left = 24
@@ -5556,9 +5556,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = go_step_two1Click
               ParentFont = False
               TabOrder = 8
+              OnClick = go_step_two1Click
             end
             object most_common_mono1: TButton
               Left = 88
@@ -5709,9 +5709,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 2
+              OnClick = undo_button2Click
             end
             object Label36: TLabel
               Left = 48
@@ -5807,9 +5807,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 2
+              OnClick = undo_button2Click
             end
             object global_colour_smooth_sd1: TComboBox
               Left = 115
@@ -5927,9 +5927,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 3
+              OnClick = undo_button2Click
             end
             object apply_background_noise_filter1: TButton
               Left = 115
@@ -6029,9 +6029,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 3
+              OnClick = undo_button2Click
             end
             object apply_vertical_gradient1: TButton
               Left = 212
@@ -6136,10 +6136,10 @@ object stackmenu1: Tstackmenu1
               LineSize = 5
               Max = 180
               Min = 1
-              OnChange = hue_fuzziness1Change
               PageSize = 5
               Position = 50
               TickStyle = tsNone
+              OnChange = hue_fuzziness1Change
               TabOrder = 3
             end
             object undo_button16: TBitBtn
@@ -6184,9 +6184,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 4
+              OnClick = undo_button2Click
             end
             object sample_size1: TComboBox
               Left = 120
@@ -6229,10 +6229,10 @@ object stackmenu1: Tstackmenu1
               Width = 96
               LineSize = 5
               Max = 200
-              OnChange = new_saturation1Change
               PageSize = 5
               Position = 100
               TickStyle = tsNone
+              OnChange = new_saturation1Change
               TabOrder = 6
             end
             object colourShape3: TShape
@@ -6290,10 +6290,10 @@ object stackmenu1: Tstackmenu1
               LineSize = 5
               Max = 50
               Min = 1
-              OnChange = saturation_tolerance1Change
               PageSize = 5
               Position = 20
               TickStyle = tsNone
+              OnChange = saturation_tolerance1Change
               TabOrder = 9
             end
             object new_colour_luminance1: TTrackBar
@@ -6304,10 +6304,10 @@ object stackmenu1: Tstackmenu1
               Width = 96
               LineSize = 5
               Max = 200
-              OnChange = new_colour_luminance1Change
               PageSize = 5
               Position = 100
               TickStyle = tsNone
+              OnChange = new_colour_luminance1Change
               TabOrder = 10
             end
             object blend1: TCheckBox
@@ -6351,10 +6351,10 @@ object stackmenu1: Tstackmenu1
               Width = 216
               LineSize = 5
               Max = 990
-              OnChange = unsharp_amount1Change
               PageSize = 5
               Position = 500
               TickStyle = tsNone
+              OnChange = unsharp_amount1Change
               TabOrder = 0
             end
             object Label7: TLabel
@@ -6375,10 +6375,10 @@ object stackmenu1: Tstackmenu1
               LineSize = 5
               Max = 30
               Min = 1
-              OnChange = unsharp_radius1Change
               PageSize = 5
               Position = 8
               TickStyle = tsNone
+              OnChange = unsharp_radius1Change
               TabOrder = 1
             end
             object Label37: TLabel
@@ -6468,9 +6468,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 4
+              OnClick = undo_button2Click
             end
             object apply_unsharp_mask1: TButton
               Left = 272
@@ -6490,10 +6490,10 @@ object stackmenu1: Tstackmenu1
               Width = 216
               LineSize = 5
               Max = 40
-              OnChange = unsharp_threshold1Change
               PageSize = 5
               Position = 20
               TickStyle = tsNone
+              OnChange = unsharp_threshold1Change
               TabOrder = 6
             end
             object Label70: TLabel
@@ -6607,9 +6607,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 2
+              OnClick = undo_button2Click
             end
             object star_colour_smooth_nrstars1: TComboBox
               Left = 104
@@ -6803,10 +6803,10 @@ object stackmenu1: Tstackmenu1
               Associate = edit_background1
               Max = 32767
               Min = 0
-              OnClick = UpDown1Click
               Position = 0
               TabOrder = 6
               Thousands = False
+              OnClick = UpDown1Click
             end
             object undo_button1: TBitBtn
               Left = 200
@@ -6850,9 +6850,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 9
+              OnClick = undo_button2Click
             end
           end
           object GroupBox3: TGroupBox
@@ -7030,9 +7030,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 2
+              OnClick = undo_button2Click
             end
             object extract_background_box_size1: TComboBox
               Left = 7
@@ -7143,9 +7143,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 2
+              OnClick = undo_button2Click
             end
           end
           object GroupBox6: TGroupBox
@@ -7242,9 +7242,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 2
+              OnClick = undo_button2Click
             end
             object file_to_add1: TBitBtn
               Left = 32
@@ -7255,8 +7255,8 @@ object stackmenu1: Tstackmenu1
               AutoSize = True
               Images = ImageList2
               ImageIndex = 23
-              OnClick = file_to_add1Click
               TabOrder = 3
+              OnClick = file_to_add1Click
             end
           end
           object GroupBox9: TGroupBox
@@ -7370,9 +7370,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 4
+              OnClick = undo_button2Click
             end
             object resize_factor1: TComboBox
               Left = 8
@@ -7614,9 +7614,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 1
+              OnClick = undo_button2Click
             end
             object bin_image1: TButton
               Left = 81
@@ -7671,9 +7671,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 3
+              OnClick = undo_button2Click
             end
           end
           object GroupBox8: TGroupBox
@@ -7729,9 +7729,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 0
+              OnClick = undo_button2Click
             end
             object apply_box_filter2: TButton
               Left = 79
@@ -7788,8 +7788,8 @@ object stackmenu1: Tstackmenu1
               Caption = 'Apply'
               Images = ImageList2
               ImageIndex = 27
-              OnClick = remove_stars1Click
               TabOrder = 0
+              OnClick = remove_stars1Click
             end
             object undo_button17: TBitBtn
               Left = 217
@@ -7833,9 +7833,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 1
+              OnClick = undo_button2Click
             end
           end
           object GroupBox19: TGroupBox
@@ -7858,8 +7858,8 @@ object stackmenu1: Tstackmenu1
               Caption = 'Apply'
               Images = ImageList2
               ImageIndex = 27
-              OnClick = remove_stars1Click
               TabOrder = 0
+              OnClick = remove_stars1Click
             end
             object undo_button18: TBitBtn
               Left = 217
@@ -7903,9 +7903,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 1
+              OnClick = undo_button2Click
             end
             object UpDown_nebulosity1: TUpDown
               Left = 88
@@ -8051,9 +8051,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 3
+              OnClick = undo_button2Click
             end
           end
           object GroupBox20: TGroupBox
@@ -8108,9 +8108,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 0
+              OnClick = undo_button2Click
             end
             object bin_image2: TButton
               Left = 296
@@ -8177,9 +8177,9 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
-              OnClick = undo_button2Click
               ParentFont = False
               TabOrder = 3
+              OnClick = undo_button2Click
             end
           end
           object GroupBox21: TGroupBox
@@ -8273,8 +8273,8 @@ object stackmenu1: Tstackmenu1
               Caption = 'Detect'
               Images = ImageList2
               ImageIndex = 27
-              OnClick = detect_contour1Click
               TabOrder = 3
+              OnClick = detect_contour1Click
             end
             object detection_grid1: TComboBox
               Left = 32
@@ -8360,11 +8360,11 @@ object stackmenu1: Tstackmenu1
           Top = 8
           Width = 260
           Caption = 'Stack check marked images'
-          OnClick = stack_button1Click
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
           TabOrder = 0
+          OnClick = stack_button1Click
         end
         object press_esc_to_abort1: TLabel
           Left = 288

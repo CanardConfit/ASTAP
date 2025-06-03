@@ -27,11 +27,11 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(RowStart, RowEnd: Integer;  var ArrDest, ArrSource, ArrA,ArrB: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf : double; colors,height_dest, width_dest,width_source: integer);
+    constructor Create(RowStart, RowEnd: Integer;  var ArrDest, ArrSource, ArrA,ArrB: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf : double; colors, width_dest,height_source,width_source: integer);
   end;
 
 
-constructor TvarianceArrayThread.Create(RowStart, RowEnd: Integer; var ArrDest, ArrSource, ArrA,ArrB: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf: double;colors, height_dest,width_dest,width_source: integer);
+constructor TvarianceArrayThread.Create(RowStart, RowEnd: Integer; var ArrDest, ArrSource, ArrA,ArrB: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf: double;colors, width_dest,height_source,width_source: integer);
 begin
   inherited Create(True); // Create suspended
   FreeOnTerminate := False;
@@ -51,28 +51,42 @@ begin
   fbackground := background;
   Fweightf := weightf;
   Fcolors:=colors;
-  Fheight_dest:=height_dest;
   Fwidth_dest:=width_dest;
   Fwidth_source:=width_source;
+  Fheight_source:=height_source;
 end;
 
 
 procedure TvarianceArrayThread.Execute;
 var
-  h, w, col, x_new, y_new: Integer;
-  value : single;
+  h, w, col, x_trunc,y_trunc  : Integer;
+  x_frac,y_frac,x_new, y_new  : double;
+  val                         : single;
 begin
-  for h := FRowStart to FRowEnd do
-    for w := 0 to Fwidth_source - 1 do
-    begin
-      x_new := Round(Faa * w + Fbb * h + Fcc);//correction x:=aX+bY+c
-      y_new := Round(Fdd * w + Fee * h + Fff);//correction y:=aX+bY+c
+  //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
+  //calculate variance
+  for h := FRowStart to FRowEnd do //cycle in reference image dimensions and find source pixel
+    for w := 0 to Fwidth_source - 1 do // This procedure is using reverse mapping. So the transfer function from destination to source image is known. See e.g. https://www.cs.princeton.edu/courses/archive/spr11/cos426/notes/cos426_s11_lecture03_warping.pdf
+    begin //find source image position
+      x_new := Faa * w + Fbb * h + Fcc;//correction x:=aX+bY+c
+      y_new := Fdd * w + Fee * h + Fff;//correction y:=aX+bY+c
 
-      if ((x_new >= 0) and (x_new < Fwidth_dest) and (y_new >= 0) and (y_new < Fheight_dest)) then
+      x_trunc:=trunc(x_new);
+      y_trunc:=trunc(y_new);
+
+      if ((x_trunc > 0) and (x_trunc < Fwidth_source-1) and (y_trunc > 0) and (y_trunc < Fheight_source-1)) then
       begin
-        for col := 0 to Fcolors - 1 do
-//         img_variance[col,y_new,x_new]:=img_variance[col,y_new,x_new] +  sqr( (img_loaded[col,fitsY,fitsX]- background)*weightF - img_average[col,y_new,x_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
-         dest^[col,y_new,x_new]:=dest^[col,y_new,x_new] +  sqr(Fweightf*((source^[col,h,w]-Fbackground) - arrayA^[col,y_new,x_new]{average})); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
+        x_frac :=frac(x_new);
+        y_frac :=frac(y_new);
+
+        for col := 0 to Fcolors - 1 do //resample the source image
+        begin //Bilinearly interpolate four closest pixels of the source
+          val:=      (source^[col,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top,    1}
+          val:=val + (source^[col,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top,   2}
+          val:=val + (source^[col,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+          val:=val + (source^[col,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
+          dest^[col,h,w]:=dest^[col,h,w] +  Fweightf * sqr((val-Fbackground) - arrayA^[col,h,w]{average}); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
+        end;
       end;
   end;
 end;
@@ -109,7 +123,7 @@ begin
       RowEnd := height_source - 1;
 
 
-    Threads[i] := TvarianceArrayThread.Create(RowStart, RowEnd, dest, source, arrayA,arrayB, solution_vectorX,solution_vectorY, background, weightf{doubles},colors, height_dest,width_dest,width_source);
+    Threads[i] := TvarianceArrayThread.Create(RowStart, RowEnd, dest, source, arrayA,arrayB, solution_vectorX,solution_vectorY, background, weightf{doubles},colors, width_dest,height_source,width_source);
     Threads[i].Start;
   end;
 

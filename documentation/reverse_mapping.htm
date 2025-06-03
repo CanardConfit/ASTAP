@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html><head>
+<meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+<meta name="description" content="Algorithm used for stacking astronomical images">
+<meta name="keywords" content="ASTAP astronomical plate solving method">
+<meta name="author" content="Han Kleijn"><title>Reverse image mapping with bilinear interpolation</title></head>
+<body style="background-color: rgb(223, 223, 223);">
+<center> <img src="hnsky_b.gif" alt="hnsky_b.gif" height="38" width="360"> <font size="-2"><a href="http://www.hnsky.org/">www.hnsky.org</a><br>
+<br>
+</font><h1 style="font-weight: normal; text-align: left;"><big><big>Reverse Mapping in Image Stacking</big></big></h1><div style="text-align: left;"><img style="width: 857px; height: 328px;" alt="" src="inverse_mapping.png"></div><div style="text-align: left;"><big>
+</big><p><big>
+In reverse mapping, each pixel in the <strong>destination image</strong> is computed by sampling the appropriate location in the <strong>source image</strong>, based on a geometric transformation (e.g. translation, rotation, or affine warp).</big></p><h3><big>Practical benefits for astronomical images:</big></h3><ul><li><big>Lower background noise</big></li><li><big>Better star shape</big></li></ul><big>
+</big><h3><big>How It Works:</big></h3><big>
+</big><ol><li><big>Loop through each pixel <code>(dx, dy)</code> in the destination image grid.</big></li><li><big>Apply the inverse transformation to compute the corresponding location <code>(sx, sy)</code> in the source image:<br>
+<code>(sx, sy) = inverse_transform(dx, dy)</code>
+</big></li><li><big>The calculated <code>(sx, sy)</code> will typically fall <em>between</em> pixels in the source image.</big></li><li><big>Use <strong>bilinear interpolation</strong> to compute the final pixel value at <code>(dx, dy)</code>:</big></li><ul><li><big>Identify the four neighboring pixels surrounding <code>(sx, sy)</code>.</big></li><li><big>Compute a weighted average based on the subpixel position.</big></li></ul></ol><big>
+</big><h3><big>Bilinear Interpolation Formula:</big></h3><big>
+</big><pre style="margin-left: 40px;"><big><code>value = <br>(1 - fx) * (1 - fy) * I(x, y) +<br>fx * (1 - fy) * I(x+1, y) +<br>(1 - fx) * fy * I(x, y+1) +<br>fx * fy * I(x+1, y+1)</code></big></pre><big>
+</big><p><big>Where:</big></p><big>
+</big><ul><li><big><code>(x, y)</code> is the integer floor of <code>(sx, sy)</code></big></li><li><big><code>fx = frac(sx)</code>, <code>fy = frac(sy)</code></big></li><li><big><code>I(x, y)</code> is the pixel value at that coordinate in the source image</big></li></ul><big>
+</big><h3><big>Why Use Reverse Mapping?</big></h3><big>
+</big><ul><li><big>Ensures that every pixel in the destination image is filled.</big></li><li><big>Avoids gaps or overlapping pixels common with forward mapping.</big></li><li><big>Enables accurate stacking, averaging, or sigma-clipping at consistent locations.</big></li></ul><big></big></div><br></center>
+<p align="left"><img src="hanemail.gif"></p>
+<p align="left">Version: 2025-06-03</p>
+<p align="left"><span class="ILfuVd"><span class="hgKElc">© </span></span>Han Kleijn,
+www.hnsky.org, 2025.</p><p align="left">&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width: 0pt;" src="https://i.creativecommons.org/l/by/4.0/88x31.png"> </a>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
+Commons Attribution 4.0 International License</a>.&nbsp;<em>which
+permits unrestricted use, distribution, and reproduction
+in any medium, provided the original work is properly cited</em>.</p><p align="left"></p><p align="left">
+</p><ul>
+<li><a href="astap.htm#index">Back
+to the ASTAP index</a> </li>
+<li><a href="software.htm">Back to the HNSKY
+software page.</a></li>
+</ul>
+<br>
+</body></html>
