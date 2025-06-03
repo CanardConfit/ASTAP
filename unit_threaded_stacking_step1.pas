@@ -27,11 +27,11 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(RowStart, RowEnd: Integer; var ArrDest, ArrSource, ArrA: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf: double; colors,height_dest, width_dest,width_source: integer);
+    constructor Create(RowStart, RowEnd: Integer; var ArrDest, ArrSource, ArrA: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf: double; colors, width_dest,height_source,width_source: integer);
   end;
 
 
-constructor TcombineArrayThread.Create(RowStart, RowEnd: Integer; var ArrDest, ArrSource, ArrA: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf: double;colors, height_dest,width_dest,width_source: integer);
+constructor TcombineArrayThread.Create(RowStart, RowEnd: Integer; var ArrDest, ArrSource, ArrA: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf: double;colors, width_dest,height_source,width_source: integer);
 begin
   inherited Create(True); // Create suspended
   FreeOnTerminate := False;
@@ -50,29 +50,43 @@ begin
   fbackground := background;
   Fweightf := weightf;
   Fcolors:=colors;
-  Fheight_dest:=height_dest;
   Fwidth_dest:=width_dest;
   Fwidth_source:=width_source;
+  Fheight_source:=height_source;
+
 end;
 
 
 procedure TcombineArrayThread.Execute;
 var
-  h, w, col, x_new, y_new: Integer;
-  value : single;
+  h, w, col, x_trunc,y_trunc  : Integer;
+  x_frac,y_frac,x_new, y_new  : double;
+  val                         : single;
 begin
-  for h := FRowStart to FRowEnd do
-    for w := 0 to Fwidth_source - 1 do
-    begin
-      x_new := Round(Faa * w + Fbb * h + Fcc);//correction x:=aX+bY+c
-      y_new := Round(Fdd * w + Fee * h + Fff);//correction y:=aX+bY+c
+  //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
+  for h := FRowStart to FRowEnd do //cycle in reference image dimensions and find source pixel
+    for w := 0 to Fwidth_source - 1 do  // This procedure is using reverse mapping. So the transfer function from destination to source image is known. See e.g. https://www.cs.princeton.edu/courses/archive/spr11/cos426/notes/cos426_s11_lecture03_warping.pdf
+    begin //find source image position
+      x_new := Faa * w + Fbb * h + Fcc;//correction x:=aX+bY+c
+      y_new := Fdd * w + Fee * h + Fff;//correction y:=aX+bY+c
 
-      if ((x_new >= 0) and (x_new < Fwidth_dest) and (y_new >= 0) and (y_new < Fheight_dest)) then
+      x_trunc:=trunc(x_new);
+      y_trunc:=trunc(y_new);
+      if ((x_trunc > 0) and (x_trunc < Fwidth_source-1) and (y_trunc > 0) and (y_trunc < Fheight_source-1)) then
       begin
-        for col := 0 to Fcolors - 1 do
-          dest^[col,y_new,x_new]:=dest^[col,y_new,x_new]+ (source^[col,h,w]-Fbackground)*Fweightf;//Sum flux only. image loaded is already corrected with dark and flat}{NOTE: fits arrayA from 1, image from zero
+        x_frac :=frac(x_new);
+        y_frac :=frac(y_new);
 
-        arrayA^[0,y_new,x_new]:=arrayA^[0,y_new,x_new]+FweightF{typical 1}
+        for col := 0 to Fcolors - 1 do //resample the source image
+        begin //Bilinearly interpolate four closest pixels of the source
+          val:=      (source^[col,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top,    1}
+          val:=val + (source^[col,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top,   2}
+          val:=val + (source^[col,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+          val:=val + (source^[col,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
+          dest^[col,h,w]:=dest^[col,h,w]+(val-Fbackground)*FweightF;//Sum flux only. image loaded is already corrected with dark and flat}{NOTE: fits arrayA from 1, image from zero
+        end;
+        arrayA^[0,h,w]:=arrayA^[0,h,w]+FweightF{WeightF is typically 1. Calculate the sum of the weights}
+
       end;
     end;
 end;
@@ -106,10 +120,10 @@ begin
     RowStart := i * RowsPerThread;
     RowEnd := (i + 1) * RowsPerThread - 1;
     if i = THREAD_COUNT - 1 then
-      RowEnd := height_source - 1;
+      RowEnd := height_dest - 1;
 
 
-    Threads[i] := TcombineArrayThread.Create(RowStart, RowEnd, dest, source, arrayA, solution_vectorX,solution_vectorY, background, weightf{doubles},colors, height_dest,width_dest,width_source);
+    Threads[i] := TcombineArrayThread.Create(RowStart, RowEnd, dest, source, arrayA, solution_vectorX,solution_vectorY, background, weightf{doubles},colors, width_dest,height_source,width_source);
     Threads[i].Start;
   end;
 

@@ -120,11 +120,8 @@ begin
       if file_available(path,filename2 {file found}) then
       begin
         try { Do some lengthy operation }
-//          waiting:=false;
-
           Application.ProcessMessages;
           {load image}
-
 
           if ((esc_pressed) or (load_image(false,false {plot})=false)) then
           begin

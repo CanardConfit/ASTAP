@@ -8470,7 +8470,7 @@ begin
       {calculate vectors from astrometric solution to speed up}
       sincos(head.dec0, SIN_dec0, COS_dec0);
       {do this in advance since it is for each pixel the same}
-      astrometric_to_vector;{convert astrometric solution to vectors}
+      astrometric_to_vector2(head,head_ref);{convert astrometric solution to vectors}
 
       aa:=solution_vectorX[0];//move to local variable for minor faster processing
       bb:=solution_vectorX[1];

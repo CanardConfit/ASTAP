@@ -67,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.05.30a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.06.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -172,6 +172,7 @@ type
     SpeedButton1: TSpeedButton;
     star_profile1: TMenuItem;
     Separator2: TMenuItem;
+    StaticText_labelversion1: TStaticText;
     stretch1: TComboBox;
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
@@ -13447,6 +13448,8 @@ begin
   FixHiddenFormProblem( Screen,mainform1);//when users change from two to one monitor
   FixHiddenFormProblem( Screen,stackmenu1);
 
+  mainform1.StaticText_labelversion1.caption:=astap_version;
+
 end;
 
 
@@ -14929,7 +14932,7 @@ var
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
 
-    function value_subpixel(x1,y1:double):double; {calculate square image pixel value on subpixel level. This method is a little the method bilinear}
+    function value_subpixel(x1,y1:double):double; {calculate square image pixel value on subpixel level.}
     var
       x_trunc,y_trunc: integer;
       x_frac,y_frac  : double;
