@@ -33,118 +33,7 @@ var
 
 implementation
 
-uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3,unit_threaded_stacking_step4, unit_threaded_black_spot_filter;
-
-
-procedure  calc_newx_newyOLD(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
-var
-  u,u0,v,v0,dRa,dDec,delta,ra_new,dec_new,delta_ra,det,gamma,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,h: double;
-Begin
-
-  if vector_based then {vector based correction}
-  begin
-     x_new_float:=solution_vectorX[0]*(fitsxfloat-1)+solution_vectorX[1]*(fitsYfloat-1)+solution_vectorX[2]; {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
-     y_new_float:=solution_vectorY[0]*(fitsxfloat-1)+solution_vectorY[1]*(fitsYfloat-1)+solution_vectorY[2]; {correction y:=aX+bY+c}
-  end
-  else
-  begin {astrometric based correction}
-    {6. Conversion (x,y) -> (RA,DEC)  for image to be added}
-    u0:=fitsXfloat-head.crpix1;
-    v0:=fitsYfloat-head.crpix2;
-
-    if a_order>=2 then {apply SIP correction up third order}
-    begin
-      u:=u0 + a_0_0+ a_0_1*v0 + a_0_2*v0*v0 + a_0_3*v0*v0*v0 + a_1_0*u0 + a_1_1*u0*v0 + a_1_2*u0*v0*v0 + a_2_0*u0*u0 + a_2_1*u0*u0*v0 + a_3_0*u0*u0*u0 ; {SIP correction for second or third order}
-      v:=v0 + b_0_0+ b_0_1*v0 + b_0_2*v0*v0 + b_0_3*v0*v0*v0 + b_1_0*u0 + b_1_1*u0*v0 + b_1_2*u0*v0*v0 + b_2_0*u0*u0 + b_2_1*u0*u0*v0 + b_3_0*u0*u0*u0 ; {SIP correction for second or third order}
-    end
-    else
-    begin
-      u:=u0;
-      v:=v0;
-    end;
-
-    dRa :=(head.cd1_1 * u +head.cd1_2 * v)*pi/180;
-    dDec:=(head.cd2_1 * u +head.cd2_2 * v)*pi/180;
-    delta:=COS_dec0 - dDec*SIN_dec0;
-    gamma:=sqrt(dRa*dRa+delta*delta);
-    RA_new:=head.ra0+arctan(Dra/delta);
-    DEC_new:=arctan((SIN_dec0+dDec*COS_dec0)/gamma);
-
-
-   {5. Conversion (RA,DEC) -> (x,y) of reference image}
-    sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-
-
-    sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);// Already done during initialisaion
-
-
-    delta_ra:=RA_new-head_ref.ra0;
-    sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-
-    H := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
-    dRA := (COS_dec_new*SIN_delta_ra / H)*180/pi;
-    dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
-
-    det:=head_ref.CD2_2*head_ref.CD1_1 - head_ref.CD1_2*head_ref.CD2_1;
-
-    u0:= - (head_ref.CD1_2*dDEC - head_ref.CD2_2*dRA) / det;
-    v0:= + (head_ref.CD1_1*dDEC - head_ref.CD2_1*dRA) / det;
-
-    if ap_order>=2 then {apply SIP correction up to second order}
-    begin
-      x_new_float:=(head_ref.crpix1 + u0+ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1;{3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-      y_new_float:=(head_ref.crpix2 + v0+bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1;{3th order SIP correction}
-    end
-    else
-    begin
-      x_new_float:=(head_ref.crpix1 + u0)-1; {in image array range 0..width-1}
-      y_new_float:=(head_ref.crpix2 + v0)-1;
-    end;
-  end;{astrometric}
-end;{calc_newx_newy}
-
-
-
-
-procedure astrometric_to_vectorOLD;{convert astrometric solution to vector solution}
-var
-  flipped,flipped_reference  : boolean;
-  centerX,centerY            : double;
-
-begin
-  a_order:=0; {SIP correction should be zero by definition}
-
-  calc_newx_newyOLD(false,head.crpix1, head.crpix2) ;//this will only work well for 1th orde solutions
-  centerX:=x_new_float;
-  centerY:=y_new_float;
-
-  calc_newx_newyOLD(false,head.crpix1+1, head.crpix2); {move one pixel in X}
-
-  solution_vectorX[0]:=+(x_new_float- centerX);
-  solution_vectorX[1]:=-(y_new_float- centerY);
-
-  calc_newx_newyOLD(false,head.crpix1, head.crpix2+1);{move one pixel in Y}
-
-  solution_vectorY[0]:=-(x_new_float- centerX);
-  solution_vectorY[1]:=+(y_new_float- centerY);
-
-
-  flipped:=head.cd1_1*head.cd2_2 - head.cd1_2*head.cd2_1>0; {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-  flipped_reference:=head_ref.cd1_1*head_ref.cd2_2 - head_ref.cd1_2*head_ref.cd2_1>0; {flipped reference image}
-
-  if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
-  begin
-    solution_vectorX[1]:=-solution_vectorX[1];
-    solution_vectorY[0]:=-solution_vectorY[0];
-  end;
-
-  //  centerX:=solution_vectorX[0]*crpix1 + solution_vectorX[1]*crpix2 + solution_vectorX[2] therefore ==>
-  //  solution_vectorX[2]:=centerX - solution_vectorX[0]*(crpix1-1) - solution_vectorX[1]*(crpix2-1)
-  solution_vectorX[2]:=centerX - solution_vectorX[0]*(head.crpix1-1) - solution_vectorX[1]*(head.crpix2-1);//in range 0..width-1
-  solution_vectorY[2]:=centerY - solution_vectorY[0]*(head.crpix1-1) - solution_vectorY[1]*(head.crpix2-1);
-
-  if stackmenu1.solve_show_log1.checked then memo2_message('Astrometric vector solution '+solution_str)
-end;
+uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3, unit_threaded_black_spot_filter;
 
 
 procedure  calc_newx_newy2(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
@@ -804,6 +693,8 @@ var
   ra_movement,dec_movement,posX,posY : double;
 begin
   ra_movement:=(jd_mid-jd_mid_reference)*strtofloat2(stackmenu1.solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
+
+  sincos(head.dec0,SIN_dec_ref,COS_dec_ref);
   ra_movement:=ra_movement/COS_dec_ref;//convert angular distance to ra distance
   dec_movement:=(jd_mid-jd_mid_reference)*strtofloat2(stackmenu1.solar_drift_dec1.text {arcsec/hour})*(pi/180)*24/3600;//dec movement in radians
 
@@ -1184,7 +1075,7 @@ end;
 
 procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3,mm                  : integer;
+    fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3,mm,ccc                  : integer;
     background, weightF,hfd_min,aa,bb,cc,dd,ee,ff,pedestal,dummy,mean_hfd                                                      : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,solar_drift_compensation,
     use_star_alignment                                                                                                         : boolean;
@@ -1192,6 +1083,8 @@ var
     warning             : string;
     starlist1,starlist2 : Tstar_list;
     img_temp,img_average,img_early,dummy_img : Timage_array;
+
+    val:single;
 
 begin
   with stackmenu1 do
@@ -1377,7 +1270,18 @@ begin
         head.pedestal:=pedestal;
         head.height:=height_max;
         head.width:=width_max;
-        scale_array(img_loaded, img_average, img_temp, pedestal);// correct with weight factor and add pedestal
+
+        for fitsY:=0 to height_max-1 do //this runs in 0.15 sec. Threaded version takes 0.43 sec
+          for fitsX:=0 to width_max-1 do
+          begin
+            val:=img_temp[0,fitsY,fitsX];
+           if val>0 then
+              for col:=0 to head.naxis3-1 do
+                img_loaded[col,fitsY,fitsX]:=pedestal+img_average[col,fitsY,fitsX]/val;//scale to one image by diving by the number of pixels added
+          end;
+
+
+
       end; {counter<>0}
     end;{simple average}
   end;{with stackmenu1}
@@ -1395,7 +1299,7 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars,old_naxis3           : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars,old_naxis3,ccc        : integer;
     variance_factor, value,weightF,hfd_min,dummy,mean_hfd                                                              : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip, solar_drift_compensation,
     use_star_alignment                                                                                                 : boolean;
@@ -1588,14 +1492,14 @@ begin
         finally
         end;
       end;{try}
-      if counter<>0 then
+      if counter<>0 then //this is unthreaded faster then threaded
       for fitsY:=0 to height_max-1 do
         for fitsX:=0 to width_max-1 do
         begin
           val:=img_temp[0,fitsY,fitsX];
-          if val<>0 then
-          for col:=0 to head.naxis3-1 do
-             img_average[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX]/val;{scale to one image by diving by the number of pixels added}
+          if val>0 then
+            for col:=0 to head.naxis3-1 do
+               img_average[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX]/val;//scale to one image by diving by the number of pixels added
         end;
     end;  {light average}
 
@@ -1771,7 +1675,14 @@ begin
         head.pedestal:=pedestal;
         head.height:=height_max;
         head.width:=width_max;
-        scale_array(img_loaded, img_final, img_temp, pedestal);// correct with weight factor and add pedestal
+        for col:=0 to head.naxis3-1 do //this runs unthreaded 0.13 sec. with col as third loop 0.15 sec. Threaded takes 0.43 sec.
+          for fitsY:=0 to height_max-1 do
+              for fitsX:=0 to width_max-1 do
+              begin
+                val:=img_temp[col,fitsY,fitsX];
+                if val>0 then
+                    img_loaded[col,fitsY,fitsX]:=pedestal+img_final[col,fitsY,fitsX]/val;//scale to one image by diving by the number of pixels added
+              end;
       end;{counter<>0}
 
       //restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
@@ -2118,8 +2029,8 @@ end;   {comet and stars sharp}
 
 procedure calibration_and_alignment(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
-    fitsX,fitsY,c, old_width, old_height,col, binning, max_stars,old_naxis3,height_average,width_average  : integer;
-    background, hfd_min,pedestal,mean_hfd                                                    : double;
+    fitsX,fitsY,c, old_width, old_height,col, binning, max_stars,old_naxis3,height_average,width_average,ccc  : integer;
+    background, hfd_min,pedestal,mean_hfd,value                                                           : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,use_star_alignment: boolean;
     warning             : string;
     starlist1,starlist2 : Tstar_list;
@@ -2284,8 +2195,15 @@ begin
 
           //not the most efficient but it uses the standard procedures
           stack_arrays( img_average, img_loaded, img_temp, solution_vectorX,solution_vectorY, 0 {background},1{ weightf});//add B to A
-          scale_array(img_loaded, img_average, img_temp, pedestal);// correct with weight factor and add pedestal
 
+         for col:=0 to head.naxis3-1 do //this runs unthreaded 0.13 sec. with col as third loop 0.15 sec. Threaded takes 0.43 sec.  In colour about 3 time longer
+           for fitsY:=0 to height_average-1 do
+             for fitsX:=0 to width_average-1 do
+             begin
+               value:=img_temp[0,fitsY,fitsX];
+               if value>0 then
+                  img_loaded[col,fitsY,fitsX]:=pedestal+img_average[col,fitsY,fitsX]/value;//scale to one image by diving by the number of pixels added
+               end;
 
           {save}
           filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename}

@@ -260,7 +260,6 @@ type
     Edit_width1: TEdit;
     ephemeris_centering1: TComboBox;
     Equalise_background1: TCheckBox;
-    export_aligned_files1: TButton;
     extract_background_box_size1: TComboBox;
     files_live_stacked1: TLabel;
     file_to_add1: TBitBtn;
@@ -870,7 +869,6 @@ type
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
-    procedure export_aligned_files1Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of string);
     procedure help_blink1Click(Sender: TObject);
     procedure help_photometry1Click(Sender: TObject);
@@ -2280,7 +2278,7 @@ begin
       if ((ListView1.Items.item[c].Checked) and
       (
       ((analyse_level<=1) and  (length(ListView1.Items.item[c].subitems.Strings[L_hfd]) = 0){hfd empthy}) or
-//      ((analyse_level<=1) and  (analyse_quick1.checked=false)  and (strtofloat2(ListView1.Items.item[c].subitems.Strings[L_hfd]) =-1){previouse quick analyse result}) or
+      ((analyse_level<=1) and  (analyse_quick1.checked=false)  and (strtofloat2(ListView1.Items.item[c].subitems.Strings[L_hfd]) =-1){previouse quick analyse result}) or
       ((analyse_level=2) and  (length(ListView1.Items.item[c].subitems.Strings[L_streaks]) <= 0){streak/sharpness}) or
        (new_analyse_required))
       ) then
@@ -7570,111 +7568,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.export_aligned_files1Click(Sender: TObject);
-var
-  c, fitsX, fitsY, x_new, y_new, col, ps: integer;
-  st: string;
-  img_temp : Timage_array;
-
-begin
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-  esc_pressed := False;
-
-  align_blink1.Checked := True;
-  for c := 0 to listview6.items.Count - 1 do {check alignement and if not align}
-  begin
-    st := listview6.Items.item[c].subitems.Strings[B_solution];
-    if st = '' then
-    begin
-      memo2_message('Doing the alignment first');
-      stackmenu1.clear_blink_alignment1Click(nil);
-      stackmenu1.blink_button1Click(nil);
-      break;
-    end;
-  end;
-
-
-  for c := 0 to listview6.items.Count - 1 do {this is not required but nice}
-  begin
-    st := listview6.Items.item[c].subitems.Strings[B_solution];
-    if st <> '' then {Solution available}
-    begin
-      filename2 := listview6.items[c].Caption;
-      mainform1.Caption := filename2;
-
-      listview6.Selected := nil; {remove any selection}
-      listview6.ItemIndex := c;
-      {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-      listview6.Items[c].MakeVisible(False);{scroll to selected item}
-
-      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False then
-      begin
-        esc_pressed := True;
-        break;
-      end;  {load fits}
-
-      Application.ProcessMessages;
-      if esc_pressed then break;
-
-      {reuse solution}
-      ps := StrToInt(copy(st, 4, 10));
-      solution_vectorX := bsolutions[ps].solution_vectorX; {use stored solution}
-      solution_vectorY := bsolutions[ps].solution_vectorY;
-
-
-      setlength(img_temp, head.naxis3, head.Height, head.Width);{new size}
-
-      for fitsY := 0 to head.Height - 1 do
-        for fitsX := 0 to head.Width - 1 do
-        begin
-          for col := 0 to head.naxis3 - 1 do
-            {all colors} img_temp[col, fitsY, fitsX] := 0;{clear memory}
-        end;
-
-      {align}
-      for fitsY := 0 to head.Height - 1 do
-        for fitsX := 0 to head.Width - 1 do
-        begin
-          x_new := round(solution_vectorX[0] * (fitsx) + solution_vectorX[1] * (fitsY) + solution_vectorX[2]); {correction x:=aX+bY+c}
-          y_new := round(solution_vectorY[0] * (fitsx) + solution_vectorY[1] * (fitsY) + solution_vectorY[2]); {correction y:=aX+bY+c}
-
-          if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and (y_new <= head.Height - 1)) then
-            for col := 0 to head.naxis3 - 1 do
-              {all colors} img_temp[col, y_new, x_new] := img_loaded[col, fitsY, fitsX];
-        end;
-
-      {fix black holes}
-      img_loaded := img_temp;
-      black_spot_filter_for_aligned(img_loaded);
-
-      if pos('_aligned.fit', filename2) = 0 then
-        filename2 := ChangeFileExt(Filename2, '_aligned.fit');{rename only once}
-
-      if timestamp1.Checked then
-      begin
-        if head.date_avg = '' then annotation_to_array('date_obs: ' + head.date_obs, False, 65535, 1{size}, 1, 10, img_loaded) {head.date_obs to image array as annotation}
-        else
-          annotation_to_array('date_avg: ' + head.date_avg, False, 65535, 1{size}, 1, 10, img_loaded);  {head.date_obs to image array as annotation}
-      end;
-      add_text(mainform1.memo1.lines,'COMMENT ',
-        ' Image aligned with other images.                                    ');
-
-      save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True);
-      memo2_message('New aligned image created: ' + filename2);
-      listview6.items[c].Caption := filename2;
-    end;
-
-  end;
-  img_temp := nil;
-
-  if head.naxis <> 0 then
-    plot_fits(mainform1.image1, False {re_center});
-  {the last displayed image doesn't match with header. Just plot last image to fix}
-  Screen.Cursor := crDefault;{back to normal }
-end;
-
-
 
 function JdToDate(jd: double): string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
 var
@@ -10615,7 +10508,7 @@ begin
   esc_pressed := False;
   someresult := False;
   index := 0;
-  shape_var1_fitsX := -99;
+  shape_fitsX := -99;
   while index <= total do
   begin
     if listview1.Items[index].Selected then
@@ -10625,18 +10518,18 @@ begin
       psx := ListView1.Items.item[index].subitems.Strings[L_X];
       if psx <> '' then
       begin
-        shape_var1_fitsX := -1 + strtofloat2(psx);{keep updating each image}
+        shape_fitsX := -1 + strtofloat2(psx);{keep updating each image}
         psy := ListView1.Items.item[index].subitems.Strings[L_Y];
-        shape_var1_fitsY := -1 + round(strtofloat2(psy));{keep updating each image}
+        shape_fitsy := -1 + round(strtofloat2(psy));{keep updating each image}
       end
       else
-      if shape_var1_fitsX > 0 {at least one reference found} then
+      if shape_fitsX > 0 {at least one reference found} then
         if load_image(filename2,img_loaded,head,mainform1.memo1.lines,True, False {plot}) then {load}
         begin
           if find_reference_star(img_loaded) then
           begin
-            ListView1.Items.item[index].subitems.Strings[L_X] := floattostrF(shape_var1_fitsX, ffFixed, 0, 2);
-            ListView1.Items.item[index].subitems.Strings[L_Y] := floattostrF(shape_var1_fitsY, ffFixed, 0, 2);
+            ListView1.Items.item[index].subitems.Strings[L_X] := floattostrF(shape_fitsX, ffFixed, 0, 2);
+            ListView1.Items.item[index].subitems.Strings[L_Y] := floattostrF(shape_fitsy, ffFixed, 0, 2);
             {$ifdef darwin} {MacOS}
             {bugfix darwin green red colouring}
             stackmenu1.ListView1.Items.item[index].Subitems.strings[L_result]:='✓ star';
@@ -10644,8 +10537,8 @@ begin
             memo2_message(filename2 + ' lock');{for manual alignment}
             someresult := True;
 
-            startX := round(shape_var1_fitsX - 1);{follow star movement for next image}
-            startY := round(shape_var1_fitsY - 1);
+            startX := round(shape_fitsX - 1);{follow star movement for next image}
+            startY := round(shape_fitsy - 1);
           end;
           application.ProcessMessages;
           if esc_pressed then break;

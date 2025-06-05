@@ -1189,7 +1189,7 @@ begin
     try
     if columnV>0 then //valid
     begin
-      mainform1.GenerateShapes(indx,100,100,100,100,3 {penwidth},stEllipse, clLime,'Var');
+      mainform1.GenerateShapes(indx,100,100,3 {penwidth},stEllipse, clLime,'Var');
       inc(indx);
       retrieve_ra_dec(columnV,fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
       celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
@@ -1197,7 +1197,7 @@ begin
 
     if columnCheck>0 then //valid
     begin
-      mainform1.GenerateShapes(indx,100,100,100,100,3 {penwidth},stSquare, clLime,'Check');
+      mainform1.GenerateShapes(indx,100,100,3 {penwidth},stSquare, clLime,'Check');
       inc(indx);
       retrieve_ra_dec(columnCheck,fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
       celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
@@ -1208,7 +1208,7 @@ begin
       for i:=0 to length(column_Comps)-1 do
       begin
         //memo2_message(stackmenu1.listview7.Column[column_comps[i]+1].Caption);  //testing
-        mainform1.GenerateShapes(indx+i,100,100,100,100,3 {penwidth},stDiamond, clLime,'Comp'+inttostr(i));
+        mainform1.GenerateShapes(indx+i,100,100,3 {penwidth},stDiamond, clLime,'Comp'+inttostr(i));
         retrieve_ra_dec(column_Comps[i],fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec);
         celestial_to_pixel(head, fshapes[high(fshapes)].ra,fshapes[high(fshapes)].dec,true, fshapes[high(fshapes)].fitsX,fshapes[high(fshapes)].fitsY); {ra,dec to shape.fitsX,shape.fitsY}
       end;

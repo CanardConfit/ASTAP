@@ -122,8 +122,9 @@ end;
 
 procedure stack_live(path :string);{stack live average}
 var
-    fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter,max_stars,process_as_asc :  integer;
-    distance,hfd_min,aa,bb,cc,dd,ee,ff,mean_hfd                                                                                                  : double;
+    fitsX,fitsY,width_max,height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter,
+    max_stars,process_as_asc, width_maxS,height_maxS,nrcolors                                                                :  integer;
+    distance,hfd_min,aa,bb,cc,dd,ee,ff,mean_hfd                                                                              : double;
     init, solution, waiting,transition_image,colour_correction :boolean;
     file_ext,filen,filename_org                 :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
@@ -256,8 +257,11 @@ begin
             if init=false then {first image}
             begin
               binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
-              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
-              find_quads(starlist1, quad_star_distances1);{find quads for reference image}
+//              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
+//              find_quads(starlist1, quad_star_distances1);{find quads for reference image}
+             //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
+              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
+              find_quads(starlist2, quad_star_distances2);{find quads for reference image}
             end;
 
 
@@ -266,11 +270,12 @@ begin
               memo2_message('Reference image is: '+filename2);
               width_max:=head.width;
               height_max:=head.height;
+              nrcolors:=head.naxis3;
 
-              setlength(img_average,head.naxis3,height_max,width_max);
+              setlength(img_average,nrcolors,height_max,width_max);
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
-                  for col:=0 to head.naxis3-1 do
+                  for col:=0 to nrcolors-1 do
                   begin
                     img_average[col,fitsY,fitsX]:=0; {clear img_average}
                   end;
@@ -305,9 +310,12 @@ begin
             {align using star match}
             if init=true then {second image}
             begin{internal alignment only}
-              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
+//              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
+//              find_quads(starlist2, quad_star_distances2);{find star quads for new image}
+              //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
+              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
+              find_quads(starlist1, quad_star_distances1);{find star quads for new image}
 
-              find_quads(starlist2, quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
               memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                      +'  Solution x:='+floattostr6(solution_vectorX[0])+'x+ '+floattostr6(solution_vectorX[1])+'y+ '+floattostr6(solution_vectorX[2])
@@ -331,6 +339,10 @@ begin
               sum_exp:=sum_exp+head.exposure;
               sum_temp:=sum_temp+head.set_temperature;
 
+              width_maxS:=head.width;
+              height_maxS:=head.height;
+
+
               date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd}
               jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure.}
@@ -344,17 +356,17 @@ begin
 
               if colour_correction=false then {no colour correction}
               begin
-                for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
-                for fitsX:=0 to head.width-1  do
+                for fitsY:=0 to height_max-1 do //cycle in reference image dimensions and find source pixel
+                for fitsX:=0 to width_max-1  do
                 begin
-                  x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+                  x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c }
                   y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
-                  if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+                  if ((x_new>=0) and (x_new<=width_maxS-1) and (y_new>=0) and (y_new<=height_maxS-1)) then
                   begin
-                    for col:=0 to head.naxis3-1 do {all colors}
+                    for col:=0 to nrcolors-1 do {all colors}
                     begin
                       {serial stacking}
-                      img_average[col,y_new,x_new]:=(img_average[col,y_new,x_new]*(counter-1)+ img_loaded[col,fitsY,fitsX])/counter;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                      img_average[col,fitsY,fitsX]:=(img_average[col,fitsY,fitsX]*(counter-1)+ img_loaded[col,y_new,x_new])/counter;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                     end;
                   end;
                 end;
@@ -362,27 +374,40 @@ begin
 
               else {colour correction}
               begin
-                for fitsY:=0 to head.height-1 do {skip outside "bad" pixels if mosaic mode}
+                for fitsY:=0 to head.height-1 do //cycle in reference image dimensions and find source pixel
                 for fitsX:=0 to head.width-1  do
                 begin
-                  x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+                  x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c}
                   y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
-                  if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+                  if ((x_new>=0) and (x_new<=width_maxS-1) and (y_new>=0) and (y_new<=height_maxS-1)) then
                   begin
-                    dum:=img_loaded[0,fitsY,fitsX];
+
+                    dum:=img_loaded[0,y_new,x_new]; //source
                     if dum<>0 then {signal}
                     begin
                       dum:=(dum+add_valueR)*multiply_red/largest;
                       if dum<0 then dum:=0;
-                      img_average[0,y_new,x_new]:=(img_average[0,y_new,x_new]*(counter-1)+ dum)/counter;
+                      img_average[0,fitsY,fitsX]:=(img_average[0,fitsY,fitsX]*(counter-1)+ dum)/counter;
                     end;
-                    if head.naxis3>1 then {colour}
+                    if nrcolors>1 then {colour}
                     begin
-                      dum:=img_loaded[1,fitsY,fitsX];   if dum<>0 then {signal} begin dum:=(dum+add_valueG)*multiply_green/largest; if dum<0 then dum:=0; img_average[1,y_new,x_new]:=(img_average[1,y_new,x_new]*(counter-1)+ dum)/counter;end;
+                      dum:=img_loaded[1,y_new,x_new];
+                      if dum<>0 then {signal}
+                      begin
+                        dum:=(dum+add_valueG)*multiply_green/largest;
+                        if dum<0 then dum:=0;
+                        img_average[1,fitsY,fitsX]:=(img_average[1,fitsY,fitsX]*(counter-1)+ dum)/counter;
+                      end;
                     end;
-                    if head.naxis3>2 then {colour}
+                    if nrcolors>2 then {colour}
                     begin
-                      dum:=img_loaded[2,fitsY,fitsX]; if dum<>0 then {signal} begin dum:=(dum+add_valueB)*multiply_blue/largest; if dum<0 then dum:=0; img_average[2,y_new,x_new]:=(img_average[2,y_new,x_new]*(counter-1)+ dum)/counter;end;
+                      dum:=img_loaded[2,y_new,x_new];
+                      if dum<>0 then {signal}
+                      begin
+                        dum:=(dum+add_valueB)*multiply_blue/largest;
+                        if dum<0 then dum:=0;
+                        img_average[2,fitsY,fitsX]:=(img_average[2,fitsY,fitsX]*(counter-1)+ dum)/counter;
+                      end;
                     end;
                   end;
                 end;
