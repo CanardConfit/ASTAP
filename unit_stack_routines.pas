@@ -22,7 +22,7 @@ procedure calibration_and_alignment(process_as_osc:integer; var files_to_process
 {$inline off}  {!!! Set this off for debugging}
 //procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 //procedure astrometric_to_vector; {convert astrometric solution to vector solution}
-procedure astrometric_to_vector2(headA, headB : theader);{convert astrometric solution to vector solution}
+procedure astrometric_to_vector(headA, headB : theader);{convert astrometric solution to vector solution}
 function test_bayer_matrix(img: Timage_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 procedure stack_comet(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 
@@ -33,7 +33,7 @@ var
 
 implementation
 
-uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3, unit_threaded_black_spot_filter;
+uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3;
 
 
 procedure  calc_newx_newy2(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
@@ -106,7 +106,7 @@ Begin
 end;{calc_newx_newy}
 
 
-procedure astrometric_to_vector2(headA, headB : theader);{convert astrometric solution to vector solution}
+procedure astrometric_to_vector(headA, headB : theader);{convert astrometric solution to vector solution}
 var
   flipped,flipped_reference  : boolean;
   centerX,centerY            : double;
@@ -171,8 +171,8 @@ begin
   else
   begin
 //    sincos(head.dec0,SIN_dec0,COS_dec0);//intilialize SIN_dec0,COS_dec0
-//    astrometric_to_vector2(head,head_ref);{convert 1th order astrometric solution to a vector solution}
-    astrometric_to_vector2(head_ref,head);{convert 1th order astrometric solution to a vector solution}
+//    astrometric_to_vector(head,head_ref);{convert 1th order astrometric solution to a vector solution}
+    astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to a vector solution}
 
     dummy:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X];
     dummy:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y];
@@ -202,7 +202,6 @@ begin
     solution_vectorY[2]:=solution_vectorY[2]+shifty;
   end;
 end;
-
 
 
 procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer ); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,R2,G2,B2,L]}
@@ -489,7 +488,7 @@ begin
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
 
               if use_astrometry_internal then
-                astrometric_to_vector2(head_ref,head);{convert 1th order astrometric solution to vector solution}
+                astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
 
               aa:=solution_vectorX[0];//move to local variable for minor faster processing
@@ -927,7 +926,7 @@ begin
             vector_based:=false;
             if a_order=0 then {no SIP from astronomy.net}
             begin
-              astrometric_to_vector2(head,head_ref);{convert astrometric solution to vector solution}
+              astrometric_to_vector(head,head_ref);{convert astrometric solution to vector solution}
               vector_based:=true;
             end;
             ap_order:=0;// don't correct for RA to XY for mosaic !!!
@@ -1245,7 +1244,7 @@ begin
             airmass_sum:=airmass_sum+airmass;
 
             if use_astrometry_internal then
-                astrometric_to_vector2(head_ref,head);{convert 1th order astrometric solution to vector solution}
+                astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
             background:=head.backgr;//calculated in bin_find_stars/get_background()
 
@@ -1479,7 +1478,7 @@ begin
           background:=head.backgr;
 
           if use_astrometry_internal then
-            astrometric_to_vector2(head_ref,head);{convert 1th order astrometric solution to vector solution}
+            astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
           if solar_drift_compensation then
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
@@ -1566,7 +1565,7 @@ begin
           {2}
 
           if use_astrometry_internal then
-            astrometric_to_vector2(head_ref,head);{convert 1th order astrometric solution to vector solution}
+            astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
           if solar_drift_compensation then
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
@@ -1652,7 +1651,7 @@ begin
           {3}
 
           if use_astrometry_internal then
-             astrometric_to_vector2(head_ref,head);{convert 1th order astrometric solution to vector solution}
+             astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
           if solar_drift_compensation then
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
@@ -1705,8 +1704,9 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, old_naxis3     : integer;
-    value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,delta_JD_required,target_background, JD_reference   : double;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, old_naxis3,
+    height_maxS,width_maxS                                                                                   : integer;
+    value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,delta_JD_required,target_background, JD_reference, hfd_measured  : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip   : boolean;
     tempval,jd_fraction                                                                        : single;
     background_correction : array[0..2] of single;
@@ -1817,6 +1817,8 @@ begin
 
         if init=true then {second image}
           calculate_manual_vector(c)//includes memo2_message with solution vector
+
+
         else
         begin {first image}
           reset_solution_vectors(1);{no influence on the first image}
@@ -1853,9 +1855,18 @@ begin
           if counter=2 then
           begin
              //calculate drift compared to the reference image
-             delta_JD_required:= abs(jd_start-jd_reference)* 3*strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_hfd])/sqrt(sqr(solution_vectorX[2])+sqr(solution_vectorY[2]));
+             hfd_measured:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_hfd]);
+             if hfd_measured<=0 then //quick analyse was activated
+             begin
+               analyse_image(img_loaded, head, 10 {snr_min}, 0); {find background, number of stars, median HFD}
+               hfd_measured:=head.hfd_median;
+             end;
+             delta_JD_required:= abs(jd_start-jd_reference)* 3*hfd_measured/sqrt(sqr(solution_vectorX[2])+sqr(solution_vectorY[2]));
              memo2_message('For stars 3*HFD drift takes '+ floattostrF(delta_JD_required*24*3600,FFFixed,4,0)+'sec');
           end;
+
+          height_maxS:=head.height;
+          width_maxS:=head.width;
 
 
           aa:=solution_vectorX[0];//move to local variable for minor faster processing
@@ -1866,22 +1877,22 @@ begin
           ff:=solution_vectorY[2];
 
 
-          for fitsY:=0 to head.height-1 do {average}
-          for fitsX:=0 to head.width-1  do
+          for fitsY:=0 to height_max-1 do {cycle through destination image}
+          for fitsX:=0 to width_max-1  do
           begin
             x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
             y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
 
 
-            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+            if ((x_new>=0) and (x_new<=width_maxS-1) and (y_new>=0) and (y_new<=height_maxS-1)) then
             begin
               value:=0;
               for col:=0 to head.naxis3-1 do //do all colours
-                value:=value+(img_loaded[col,fitsY,fitsX]- background_correction[col]) *weightF; //sum red, green/blue
-              if value>img_variance[0,y_new,x_new] then
+                value:=value+(img_loaded[col,y_new,x_new]- background_correction[col]) *weightF; //sum red, green/blue
+              if value>img_variance[0,fitsY,fitsX] then
               begin
-                img_variance[0,y_new,x_new]:=value; // Find the highest value for this (final) pixel position
-                img_variance[1,y_new,x_new]:=jd_fraction; // The time this highest value occurs Take fraction because single float has not enough resolution for JD
+                img_variance[0,fitsY,fitsX]:=value; // Find the highest value for this (final) pixel position
+                img_variance[1,fitsY,fitsX]:=jd_fraction; // The time this highest value occurs Take fraction because single float has not enough resolution for JD
               end;
 
             end;
@@ -1980,21 +1991,21 @@ begin
           ff:=solution_vectorY[2];
 
           //phase 2
-          for fitsY:=0 to head.height-1 do
-          for fitsX:=0 to head.width-1  do
+          for fitsY:=0 to height_max-1 do {cycle through destination image}
+          for fitsX:=0 to width_max-1  do
           begin
-            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c}
             y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
 
-            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+            if ((x_new>=0) and (x_new<=width_maxS-1) and (y_new>=0) and (y_new<=height_maxS-1)) then
             begin
-              if ((init=false) or (abs(jd_fraction{when is star spot is passing by} - img_variance[1,y_new,x_new])>delta_JD_required )) then // Avoid streaks. Skip stacking when star is passing by
+              if ((init=false) or (abs(jd_fraction{when is star spot is passing by} - img_variance[1,fitsY,fitsX])>delta_JD_required)) then // Avoid streaks. Skip stacking when star is passing by
               begin
                 for col:=0 to head.naxis3-1 do {do all colors}
                 begin
-                  value:=(img_loaded[col,fitsY,fitsX]- background_correction[col])*weightF;
-                  img_final[col,y_new,x_new]:=img_final[col,y_new,x_new]+ value;{dark and flat, flat dark already applied}
-                  img_temp[0,y_new,x_new]:=img_temp[0,y_new,x_new]+weightF {norm 1};{count the number of image pixels added=samples}
+                  value:=(img_loaded[col,y_new,x_new]- background_correction[col])*weightF;
+                  img_final[col,fitsY,fitsX]:=img_final[col,fitsY,fitsX]+ value;{dark and flat, flat dark already applied}
+                  img_temp[0,fitsY,fitsX]:=img_temp[0,fitsY,fitsX]+weightF {norm 1};{count the number of image pixels added=samples}
                 end;
               end;
             end;
@@ -2016,8 +2027,18 @@ begin
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not oversized}
         head.height:=height_max;
         head.width:=width_max;
-        setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
-        black_spot_filter(img_loaded, img_final, img_temp, 0);// correct black spots due to alignment. The pixel count is in arrayA
+
+        for fitsY:=0 to height_max-1 do //this runs in 0.15 sec. Threaded version takes 0.43 sec
+          for fitsX:=0 to width_max-1 do
+          begin
+            value:=img_temp[0,fitsY,fitsX];
+           if value>0 then
+              for col:=0 to head.naxis3-1 do
+                img_loaded[col,fitsY,fitsX]:={pedestal+}img_final[col,fitsY,fitsX]/value;//scale to one image by diving by the number of pixels added
+          end;
+
+
+
       end;{counter<>0}
     end;// combine images but throw out the moments when a star is at the pixel. This moment is detected by the max value.
   end;{with stackmenu1}
@@ -2178,7 +2199,7 @@ begin
           if use_astrometry_internal then
             sincos(head.dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
           if use_astrometry_internal then
-            astrometric_to_vector2(head_ref,head);{convert 1th order astrometric solution to vector solution}
+            astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
           inc(counter);
           background:=head.backgr;//calculated in bin_find_stars
