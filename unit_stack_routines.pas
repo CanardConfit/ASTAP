@@ -19,9 +19,7 @@ procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of T
 procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
-{$inline off}  {!!! Set this off for debugging}
-//procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
-//procedure astrometric_to_vector; {convert astrometric solution to vector solution}
+{$inline on}  {!!! Set this off for debugging}
 procedure astrometric_to_vector(headA, headB : theader);{convert astrometric solution to vector solution}
 function test_bayer_matrix(img: Timage_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 procedure stack_comet(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
@@ -36,7 +34,7 @@ implementation
 uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3;
 
 
-procedure  calc_newx_newy2(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
+procedure  calc_newx_newy(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
 var
   u,u0,v,v0,dRa,dDec,delta,ra_new,dec_new,delta_ra,det,gamma,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,h,
   SIN_dec2,COS_dec2     : double;
@@ -114,16 +112,16 @@ var
 begin
   a_order:=0; {SIP correction should be zero by definition}
 
-  calc_newx_newy2(headA, headB,false,headA.crpix1, headA.crpix2) ;//this will only work well for 1th orde solutions
+  calc_newx_newy(headA, headB,false,headA.crpix1, headA.crpix2) ;//this will only work well for 1th orde solutions
   centerX:=x_new_float;
   centerY:=y_new_float;
 
-  calc_newx_newy2(headA, headB, false,headA.crpix1+1, headA.crpix2); {move one pixel in X}
+  calc_newx_newy(headA, headB, false,headA.crpix1+1, headA.crpix2); {move one pixel in X}
 
   solution_vectorX[0]:=+(x_new_float- centerX);
   solution_vectorX[1]:=-(y_new_float- centerY);
 
-  calc_newx_newy2(headA, headB, false,headA.crpix1, headA.crpix2+1);{move one pixel in Y}
+  calc_newx_newy(headA, headB, false,headA.crpix1, headA.crpix2+1);{move one pixel in Y}
 
   solution_vectorY[0]:=-(x_new_float- centerX);
   solution_vectorY[1]:=+(y_new_float- centerY);
@@ -949,7 +947,7 @@ begin
               for fitsY:=(1+cropH) to head.height-(1+1+cropH) do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
               for fitsX:=(1+cropW) to head.width-(1+1+cropW)  do
               begin
-                calc_newx_newy2(head,head_ref,vector_based,fitsX,fitsY);{apply correction}
+                calc_newx_newy(head,head_ref,vector_based,fitsX,fitsY);{apply correction}
                 x_new:=round(x_new_float); y_new:=round(y_new_float);
 
                 if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
@@ -983,7 +981,7 @@ begin
             for fitsY:=1+cropH to head.height-(1+1+cropH) do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
             for fitsX:=1+cropW to head.width-(1+1+cropW)  do
             begin
-              calc_newx_newy2(head,head_ref,vector_based,fitsX,fitsY);{apply correction}
+              calc_newx_newy(head,head_ref,vector_based,fitsX,fitsY);{apply correction}
               x_new:=round(x_new_float);y_new:=round(y_new_float);
 
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
@@ -1876,7 +1874,7 @@ begin
           ee:=solution_vectorY[1];
           ff:=solution_vectorY[2];
 
-
+          //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
           for fitsY:=0 to height_max-1 do {cycle through destination image}
           for fitsX:=0 to width_max-1  do
           begin
