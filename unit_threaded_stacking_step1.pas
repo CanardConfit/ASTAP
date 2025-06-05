@@ -64,7 +64,7 @@ var
   val                         : single;
 begin
   //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
-  for h := FRowStart to FRowEnd do //cycle in reference image dimensions and find source pixel
+  for h := FRowStart to FRowEnd do
     for w := 0 to Fwidth_source - 1 do  // This procedure is using reverse mapping. So the transfer function from destination to source image is known. See e.g. https://www.cs.princeton.edu/courses/archive/spr11/cos426/notes/cos426_s11_lecture03_warping.pdf
     begin //find source image position
       x_new := Faa * w + Fbb * h + Fcc;//correction x:=aX+bY+c
@@ -85,11 +85,11 @@ begin
           val:=val + (source^[col,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
           dest^[col,h,w]:=dest^[col,h,w]+(val-Fbackground)*FweightF;//Sum flux only. image loaded is already corrected with dark and flat}{NOTE: fits arrayA from 1, image from zero
         end;
-        arrayA^[0,h,w]:=arrayA^[0,h,w]+FweightF{WeightF is typically 1. Calculate the sum of the weights}
-
+        arrayA^[0,h,w]:=arrayA^[0,h,w]+FweightF;{WeightF is typically 1. Calculate the sum of the weights}
       end;
     end;
 end;
+
 
 procedure stack_arrays(var dest, source, arrayA: Timage_array; solution_vectorX,solution_vectorY : Tsolution_vector; background, weightf: double);// add source to dest
 var

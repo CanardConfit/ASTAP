@@ -535,7 +535,7 @@ type
     procedure histogram1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure maximum1Change(Sender: TObject);
     procedure minimum1Change(Sender: TObject);
-    procedure GenerateShapes(position,top,left,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
+    procedure GenerateShapes(position,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
     procedure clear_fshapes_array;
   private
     { Private declarations }
@@ -732,19 +732,8 @@ var {################# initialised variables #########################}
   copy_paste :boolean=false;
   copy_paste_shape :integer=0;//rectangle
 
-  shape_var1_fitsX: double=0;
-  shape_var1_fitsY: double=0;
-  shape_check1_fitsX: double=0;
-  shape_check1_fitsY: double=0;
-  shape_comp1_fitsX: double=0;
-  shape_comp1_fitsY: double=0;
-  shape_var1_ra : double=0;
-  shape_var1_dec : double=0;
-  shape_check1_ra : double=0;
-  shape_check1_dec : double=0;
-  shape_comp1_ra : double=0;
-  shape_comp1_dec : double=0;
-
+  shape_fitsX: double=0;
+  shape_fitsY: double=0;
 
   shape_nr: integer=0;
   annulus_plotted: boolean=false;//for photometry.
@@ -3656,19 +3645,20 @@ begin
 end;
 
 
-procedure Tmainform1.GenerateShapes(position,top,left,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
+procedure Tmainform1.GenerateShapes(position, width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
 var
-   f,g : integer;
+   f,g,i : integer;
 begin
+
    if length(Fshapes)<position+1 then
    begin
      SetLength(FShapes, position+1); // Simple but ugly!
      FShapes[position].shape := Tshape.Create(SELF);
    end;
+
    try
+     //Position not defined yet. Top and left will be defined later in procedure show_marker_shape
      FShapes[position].shape.Parent := panel1;
-     FShapes[position].shape.Top := top;
-     FShapes[position].shape.Left := left;
      FShapes[position].shape.Width := width;
      FShapes[position].shape.Height := height;
      FShapes[position].shape.Brush.Color := Clwhite;
@@ -5643,7 +5633,7 @@ begin
 
     {reference point manual alignment}
      if mainform1.shape_manual_alignment1.visible then {For manual alignment. Do this only when visible}
-       show_marker_shape(mainform1.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
+       show_marker_shape(mainform1.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
 
      //update shape positions using the known fitxY, fitsY position. Ra,dec position is not required
     show_marker_shape(mainform1.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
@@ -12612,19 +12602,6 @@ begin
   show_marker_shape(mainform1.shape_marker3,9 {no change in shape and hint},30,30,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
   show_marker_shape(mainform1.shape_marker4,9 {no change in shape and hint},60,60,10{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
-//  if mainform1.shape_var1.visible then {For manual alignment. Do this only when visible}
-//    show_marker_shape(mainform1.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
-//  if mainform1.shape_check1.visible then {For manual alignment. Do this only when visible}
-//    show_marker_shape(mainform1.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
-//  if mainform1.shape_comp1.visible then {For manual alignment. Do this only when visible}
-//    show_marker_shape(mainform1.shape_comp1,9 {no change in shape and hint},20,20,10,shape_comp1_fitsX, shape_comp1_fitsY);
-
-//  if mainform1.shape_var2.visible then //update the shape position based on ra,dec values
-//  begin
-//    show_marker_shape(mainform1.shape_var2,9 {no change in shape and hint},50,50,10,shape_var2_fitsX, shape_var2_fitsY);
-//    show_marker_shape(mainform1.shape_check2,9 {no change in shape and hint},50,50,10,shape_check2_fitsX, shape_check2_fitsY);
-//  end;
-
   with mainform1 do
   for i:=0 to high(fshapes) do
      if Fshapes[i].shape<>nil then
@@ -13448,7 +13425,7 @@ begin
   FixHiddenFormProblem( Screen,mainform1);//when users change from two to one monitor
   FixHiddenFormProblem( Screen,stackmenu1);
 
-  mainform1.StaticText_labelversion1.caption:=astap_version;
+  mainform1.StaticText_labelversion1.caption:='v'+astap_version;
 
 end;
 
@@ -14761,29 +14738,28 @@ begin
   end
 
   else
-  if pos('No',stackmenu1.manual_centering1.text)<>0 then {no centering}
-  begin
-    xc:=startX;{0..head.width-1}
-    yc:=startY;
-  end
+    if pos('No',stackmenu1.manual_centering1.text)<>0 then {no centering}
+    begin
+      xc:=startX;{0..head.width-1}
+      yc:=startY;
+    end
   else {star alignment}
-  HFD(img,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    HFD(img,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
 
 
   if hfd2<90 then {detected something}
   begin
-    shape_var1_fitsX:=xc+1;{calculate fits positions}
-    shape_var1_fitsY:=yc+1;
+    shape_fitsX:=xc+1;{calculate fits positions}
+    shape_fitsY:=yc+1;
     result:=true;
   end;
 end;
 
 
-procedure Tmainform1.Image1MouseDown(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+procedure Tmainform1.Image1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-  width5,height5, xf,yf,k, fx,fy, c,xint,yint                  : integer;
-  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b : double;
+  width5,height5, xf,yf,k, fx,fy, c,xint,yint                   : integer;
+  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf,center_x,center_y,a,b  : double;
 begin
   if head.naxis=0 then exit;
   if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
@@ -14799,7 +14775,7 @@ begin
   snr:=10;
   hfd2:=2;{just a good value}
 
-  {for manual alignment and photometry}
+  {for manual alignment}
   if  ((stackmenu1.pagecontrol1.tabindex=0) and (stackmenu1.use_manual_alignment1.checked) and (pos('S',head.calstat)=0 {ignore stacked images unless called from listview1. See doubleclick listview1} )) then
   begin
     if find_reference_star(img_loaded) then
@@ -14808,14 +14784,14 @@ begin
         for c := 0 to listview1.Items.Count - 1 do
           if listview1.Items[c].Selected then
           begin
-            listview_add_xy(c,shape_var1_fitsX,shape_var1_fitsY);{add to list of listview1}
+            listview_add_xy(c,shape_fitsX,shape_fitsY);{add to list of listview1}
             {$ifdef darwin} {MacOS}
             {bugfix darwin green red colouring}
             stackmenu1.ListView1.Items.item[c].Subitems.strings[L_result]:='✓ star';
             {$endif}
             break;
           end;
-      show_marker_shape(mainform1.shape_manual_alignment1,1 {shapetype},20,20,10{minimum},shape_var1_fitsX, shape_var1_fitsY);
+      show_marker_shape(mainform1.shape_manual_alignment1,1 {shapetype},20,20,10{minimum},shape_fitsX, shape_fitsY);
     end;
   end
   else
@@ -14831,19 +14807,23 @@ begin
       ycf:=yc+1;
         if head.cd1_1<>0 then
         begin
-          pixel_to_celestial(head,xcf,ycf,0,shape_var1_ra,shape_var1_dec);{store shape position in ra,dec for positioning accurate at an other image}
+       //   pixel_to_celestial(head,xcf,ycf,0,shape_var1_ra,shape_var1_dec);{store shape position in ra,dec for positioning accurate at an other image}
           error_label1.visible:=false;
 
-          xint:=round(xcf);
-          yint:=round(ycf);
 
-          GenerateShapes(shape_nr,xint,yint,60,60,3 {penwidth},stEllipse, clLime,'?');
+          if ((shape_nr=0) or (abs(FShapes[shape_nr-1].fitsX-xcf)>2) or (abs(FShapes[shape_nr-1].fitsY-ycf)>2)) then  //New star selected. Simple check for double click. Not fully foolproove
+            GenerateShapes(shape_nr,60,60,3 {penwidth},stEllipse, clLime,'?')
+          else
+            dec(shape_nr);//use old entry
+
           fshapes[shape_nr].fitsX:=xcf;
           fshapes[shape_nr].fitsY:=ycf;
           pixel_to_celestial(head,xcf,ycf,1 {try sip if available},fshapes[shape_nr].ra,fshapes[shape_nr].dec);{store shape position in ra,dec for accurate positioning on an other image   fshapes[i].ra}
           fshapes[shape_nr].Shape.hint:=prepare_IAU_designation(fshapes[shape_nr].ra,fshapes[shape_nr].dec);//IAU designation till overriden by match with database
           show_marker_shape(FShapes[shape_nr].shape,9 {no change},20,20,10,FShapes[shape_nr].fitsX, FShapes[shape_nr].fitsY);
 
+          xint:=round(xcf);
+          yint:=round(ycf);
           if saturation(img_loaded,xint,yint,calc_saturation_level(head)) then {saturated star}
           begin
              mainform1.image1.Canvas.font.color:=clred;
@@ -15415,11 +15395,11 @@ begin
        begin
          //update shape positions using the known fitxY, fitsY position. Ra,dec position is not required
          if mainform1.shape_manual_alignment1.visible then {For manual alignment. Do this only when visible}
-           show_marker_shape(mainform1.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
+           show_marker_shape(mainform1.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
 
          {photometry measure all markers}
 //         if mainform1.shape_var1.visible then {For manual alignment. Do this only when visible}
-//           show_marker_shape(mainform1.shape_var1,9 {no change in shape and hint},20,20,10,shape_var1_fitsX, shape_var1_fitsY);
+//           show_marker_shape(mainform1.shape_var1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
 //         if mainform1.shape_check1.visible then {For manual alignment. Do this only when visible}
 //           show_marker_shape(mainform1.shape_check1,9 {no change in shape and hint},20,20,10,shape_check1_fitsX, shape_check1_fitsY);
 //         if mainform1.shape_comp1.visible then {For manual alignment. Do this only when visible}

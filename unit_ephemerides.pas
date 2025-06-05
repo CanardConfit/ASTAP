@@ -1,28 +1,43 @@
 unit unit_ephemerides;
 
-{*
-*  These PASCAL routines where created by Han Kleijn. www.hnsky.org for the ASTAP program and are based on Fortran code from https://github.com/scottransom/pyslalib.
-*  Release date Pascal version 2021-09-03
+{This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+
+{
+*  These PASCAL routines where created by Han Kleijn. www.hnsky.org for the ASTAP program and are based on the Fortran code of
+*  SLALIB, a positional astronomy library version 2.5-4 from https://github.com/scottransom/pyslalib dated 2005 or earlier.
+*
+*  First release date Pascal version 2021-09-03
 *
 *  Copyright (C) See each routine
 *
 *  License:
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published by
-*    the Free Software Foundation; either version 2 of the License, or
-*    (at your option) any later version.
+*  On 2025.06.05 the license of this piece of software was changed to Mozilla Public License, v. 2.0
+*  by permission of Patrick Wallace "Honorary Scientist" of RAL Space, STFC Rutherford Appleton Laboratory
 *
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*    GNU General Public License for more details.
+* > So can the "Rutherford Appleton Laboratory" give me permission
+* > to change the license of my smaller Pascal version (based on
+* > the Fortran version) to either LGPL or MPL2?
 *
-*    You should have received a copy of the GNU General Public License
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-*    Boston, MA  02111-1307  USA
+* Yes.
 *
-*-}
+* I doubt anyone at present-day RAL is even aware of SLALIB, let
+* alone has any interest in licensing minutiae.  But as the author
+* of the software, and as I remain officially on RAL's staff in the
+* capacity of "Honorary Scientist", I believe I am entitled to grant
+* you permission for your proposed license changes, and hereby do so.
+*
+* Let me know if I can help in other ways.
+*
+*
+* Patrick Wallace
+* ____________________________________________________________________
+* RAL Space
+* STFC Rutherford Appleton Laboratory
+* Harwell Oxford
+* Didcot, Oxfordshire, OX11 0QX, UK
+}
 
 
 interface
@@ -132,25 +147,6 @@ end;
 *;
 *  P.T.Wallace   Starlink   22 October 2005;
 *;
-*  Copyright (C) 2005 Rutherford Appleton Laboratory;
-*;
-*  License:;
-*     This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published b;
-*    the Free Software Foundation; either version 2 of the License, or;
-*    (at your option) any later version.
-*;
-*     This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of;
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.0  See the;
-*    GNU General Public License for more details.
-*;
-*    You should have received a copy of the GNU General Public License;
-*     along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330, ;
-*    Boston, MA  02111-1307  USA;
-*;
-*-;
 }
 
 procedure sla_UE2PV (DATE : double; U : u_array; out PV :r6_array; out JSTAT :integer);
@@ -354,25 +350,8 @@ end;
 *;
 *  P.T.Wallace   Starlink   18 March 1999;
 *;
-*  Copyright (C) 1999 Rutherford Appleton Laboratory;
-*;
-*  License:;
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published b;
-*    the Free Software Foundation; either version 2 of the License, or;
-*    (at your option) any later version.
-*;
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of;
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.0  See the;
-*    GNU General Public License for more details.
-*;
-*    You should have received a copy of the GNU General Public License;
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330, ;
-*    Boston, MA  02111-1307  USA;
-*;
 *-;}
+
 
 procedure sla_PV2UE (PV : r6_array; DATE,PMASS : double; out U : u_array; out JSTAT : integer);
 const
@@ -568,23 +547,6 @@ end;
 *;
 *  Copyright P.T.Wallace.0  All rights reserved.
 *;
-*  License:;
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published b;
-*    the Free Software Foundation; either version 2 of the License, or;
-*    (at your option) any later version.
-*;
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of;
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.0  See the;
-*    GNU General Public License for more details.
-*;
-*    You should have received a copy of the GNU General Public License;
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330, ;
-*    Boston, MA  02111-1307  USA;
-*;
-*-;
 }
 
 procedure sla_EL2UE (DATE : double; JFORM : integer; EPOCH : double; ORBINC, ANODE,PERIH, AORQ, E, AORL, DM : double; out U :U_array; out JSTAT : integer) ;
@@ -879,24 +841,6 @@ end;
 *;
 *  P.T.Wallace   Starlink   31 December 2002;
 *;
-*  Copyright (C) 2002 Rutherford Appleton Laboratory;
-*;
-*  License:;
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published b;
-*    the Free Software Foundation; either version 2 of the License, or;
-*    (at your option) any later version.0;
-*;
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of;
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.0  See the;
-*    GNU General Public License for more details.0;
-*;
-*    You should have received a copy of the GNU General Public License;
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330, ;
-*    Boston, MA  02111-1307  USA;
-*;
 }
 
 
@@ -943,22 +887,6 @@ end;
 *  Last revision:   22 July 2004
 *
 *  Copyright P.T.Wallace.  All rights reserved.
-*
-*  License:
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published by
-*    the Free Software Foundation; either version 2 of the License, or
-*    (at your option) any later version.
-*
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*    GNU General Public License for more details.
-*
-*    You should have received a copy of the GNU General Public License
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-*    Boston, MA  02111-1307  USA
 *
 *-}
 
@@ -1016,22 +944,6 @@ end;//
 *
 *  Copyright P.T.Wallace.  All rights reserved.
 *
-*  License:
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published by
-*    the Free Software Foundation; either version 2 of the License, or
-*    (at your option) any later version.
-*
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*    GNU General Public License for more details.
-*
-*    You should have received a copy of the GNU General Public License
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-*    Boston, MA  02111-1307  USA
-*
 *-}
 
 procedure sla_DMXV (DM : r3x3_array; VA : r3_array; out VB : r3_array);
@@ -1081,22 +993,6 @@ end;//
 *  Last revision:   26 December 2004
 *
 *  Copyright P.T.Wallace.  All rights reserved.
-*
-*  License:
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published by
-*    the Free Software Foundation; either version 2 of the License, or
-*    (at your option) any later version.
-*
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*    GNU General Public License for more details.
-*
-*    You should have received a copy of the GNU General Public License
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-*    Boston, MA  02111-1307  USA
 *
 *-}
 
@@ -1153,23 +1049,6 @@ end;//
 *
 *  P.T.Wallace   Starlink   23 May 1997
 *
-*  Copyright (C) 1997 Rutherford Appleton Laboratory
-*
-*  License:
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published by
-*    the Free Software Foundation; either version 2 of the License, or
-*    (at your option) any later version.
-*
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*    GNU General Public License for more details.
-*
-*    You should have received a copy of the GNU General Public License
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-*    Boston, MA  02111-1307  USA
 *}
 
 
@@ -1347,24 +1226,6 @@ end;//
 *
 *  P.T.Wallace   Starlink   23 August 1996
 *
-*  Copyright (C) 1996 Rutherford Appleton Laboratory
-*
-*  License:
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published by
-*    the Free Software Foundation; either version 2 of the License, or
-*    (at your option) any later version.
-*
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*    GNU General Public License for more details.
-*
-*    You should have received a copy of the GNU General Public License
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-*    Boston, MA  02111-1307  USA
-*
 *-}
 
 procedure sla_PREC (EP0, EP1 : double;out RMATP :r3x3_array);
@@ -1537,23 +1398,8 @@ end;
 *
 *  Copyright (C) 2004 P.T.Wallace.  All rights reserved.
 *
-*  License:
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published by
-*    the Free Software Foundation; either version 2 of the License, or
-*    (at your option) any later version.
-*
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*    GNU General Public License for more details.
-*
-*    You should have received a copy of the GNU General Public License
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-*    Boston, MA  02111-1307  USA
-*
 *-}
+
 procedure sla_PLANET (DATE : double;  NP: integer; out PV: r6_array; out JSTAT: integer);
 var
   //  -----------------------;
@@ -1861,23 +1707,6 @@ end;
 *  Last revision:   7 April 2005;
 *;
 *  Copyright P.T.Wallace.0  All rights reserved.
-*;
-*;
-*  License:;
-*    This program is free software; you can redistribute it and/or modify
-*    it under the terms of the GNU General Public License as published b;
-*    the Free Software Foundation; either version 2 of the License, or;
-*    (at your option) any later version.
-*;
-*    This program is distributed in the hope that it will be useful,
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of;
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.0  See the;
-*    GNU General Public License for more details.
-*;
-*    You should have received a copy of the GNU General Public License;
-*    along with this program (see SLA_CONDITIONS); if not, write to the
-*    Free Software Foundation, Inc., 59 Temple Place, Suite 330, ;
-*    Boston, MA  02111-1307  USA;
 *;
 *-----------------------------------------------------------------------;}
 
