@@ -7268,7 +7268,7 @@ type
 var
    i,j,col,col_r,col_g,col_b,linenr,columnr :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
-   Bitmap,bmp2  : TBitmap;{for fast pixel routine}
+   Bitmap       : TBitmap;{for fast pixel routine}
    xLine :  PByteArray2;{for fast pixel routine}
    flipv, fliph : boolean;
    ratio     : double;
@@ -7282,9 +7282,9 @@ begin
     begin
       width := head.width;
       height := head.height;
-        // Unclear why this must follow width/height to work correctly.
-        // If PixelFormat precedes width/height, bitmap will always be black.
-        bitmap.PixelFormat := pf24bit;
+      // Unclear why this must follow width/height to work correctly.
+      // If PixelFormat precedes width/height, bitmap will always be black.
+      bitmap.PixelFormat := pf24bit;
     end;
     except;
   end;

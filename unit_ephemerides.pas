@@ -14,29 +14,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 *
 *  License:
 *  On 2025.06.05 the license of this piece of software was changed to Mozilla Public License, v. 2.0
-*  by permission of Patrick Wallace "Honorary Scientist" of RAL Space, STFC Rutherford Appleton Laboratory
-*
-* > So can the "Rutherford Appleton Laboratory" give me permission
-* > to change the license of my smaller Pascal version (based on
-* > the Fortran version) to either LGPL or MPL2?
-*
-* Yes.
-*
-* I doubt anyone at present-day RAL is even aware of SLALIB, let
-* alone has any interest in licensing minutiae.  But as the author
-* of the software, and as I remain officially on RAL's staff in the
-* capacity of "Honorary Scientist", I believe I am entitled to grant
-* you permission for your proposed license changes, and hereby do so.
-*
-* Let me know if I can help in other ways.
-*
-*
-* Patrick Wallace
-* ____________________________________________________________________
-* RAL Space
-* STFC Rutherford Appleton Laboratory
-* Harwell Oxford
-* Didcot, Oxfordshire, OX11 0QX, UK
+*  with the agreement of the author of SLALIB.
 }
 
 
