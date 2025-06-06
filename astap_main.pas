@@ -67,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.06.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1931,15 +1931,15 @@ begin
        if ((focallen<>0) and (head.xpixsz<>0)) then
           head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
       end;
-
-      if ap_order>0 then
-        mainform1.Polynomial1.itemindex:=1//switch to sip
-      else
-      if x_coeff[0]<>0 then
-         mainform1.Polynomial1.itemindex:=2//switch to DSS
-      else
-        mainform1.Polynomial1.itemindex:=0;//switch to DSS
-
+{
+if ap_order>0 then
+  mainform1.Polynomial1.itemindex:=1//switch to sip
+else
+if x_coeff[0]<>0 then
+   mainform1.Polynomial1.itemindex:=2//switch to DSS
+else
+  mainform1.Polynomial1.itemindex:=0;//switch to WCS
+      }
       if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
       begin
         if equinox<>2000 then //e.g. in SharpCap
@@ -7274,6 +7274,14 @@ var
    ratio     : double;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+  if ap_order>0 then
+    mainform1.Polynomial1.itemindex:=1//switch to sip
+  else
+  if x_coeff[0]<>0 then
+     mainform1.Polynomial1.itemindex:=2//switch to DSS
+  else
+    mainform1.Polynomial1.itemindex:=0;//switch to WCS
 
   {create bitmap}
   bitmap := TBitmap.Create;
