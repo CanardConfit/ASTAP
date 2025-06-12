@@ -282,7 +282,7 @@ begin
         if load_fits(filename2,false {light},true,false {update memo},0,memox,head,img_loaded) then
         begin
           if head.naxis<2 then exit; {WCS file}
-          use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+          plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
           newImage.Width := round((thumbnails1.panel1.width-2)/3);
           newImage.height := round(newImage.Width* head.height/head.width);

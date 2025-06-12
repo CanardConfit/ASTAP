@@ -76,6 +76,7 @@ type
     luminance_slope1: TComboBox;
     MenuItem35: TMenuItem;
     listview1_photometric_calibration1: TMenuItem;
+    export_to_tg1: TMenuItem;
     rb2: TEdit;
     report_sqm1: TMenuItem;
     MenuItem41: TMenuItem;
@@ -86,6 +87,7 @@ type
     Separator10: TMenuItem;
     Separator11: TMenuItem;
     Separator12: TMenuItem;
+    Separator13: TMenuItem;
     Separator9: TMenuItem;
     sn_rename_selected_files1: TMenuItem;
     MenuItem36: TMenuItem;
@@ -183,6 +185,7 @@ type
     solar_drift_dec1: TEdit;
     SpeedButton2: TSpeedButton;
     SpeedButton3: TSpeedButton;
+    transformation2: TButton;
     undo_button23: TBitBtn;
     font_size_photometry_UpDown1: TUpDown;
     unselect10: TMenuItem;
@@ -773,11 +776,11 @@ type
     procedure ClearButton1Click(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure Label19Click(Sender: TObject);
-    procedure listview1DrawItem(Sender: TCustomListView; AItem: TListItem;
-      ARect: TRect; AState: TOwnerDrawState);
+    procedure listview1DrawItem(Sender: TCustomListView; AItem: TListItem;  ARect: TRect; AState: TOwnerDrawState);
     procedure listview1_photometric_calibration1Click(Sender: TObject);
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
+    procedure export_to_tg1Click(Sender: TObject);
     procedure report_sqm1Click(Sender: TObject);
     procedure MenuItem41Click(Sender: TObject);
     procedure annotate_unknown1Click(Sender: TObject);
@@ -786,6 +789,7 @@ type
     procedure rename_selectedfiles1Click(Sender: TObject);
     procedure solar_drift_compensation1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
+    procedure transformation2Click(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
     procedure unsharp_edit_amount1Change(Sender: TObject);
     procedure unsharp_edit_radius1Change(Sender: TObject);
@@ -1300,7 +1304,7 @@ uses
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
   unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
-  unit_contour, unit_interpolate, unit_sqm, unit_threaded_calibration;
+  unit_contour, unit_interpolate, unit_sqm, unit_threaded_calibration,unit_transformation;
 
 type
   blink_solution = record
@@ -2726,7 +2730,7 @@ begin
 
     img_loaded := img_temp; {use result}
 
-    use_histogram(img_loaded, True);
+    plot_histogram(img_loaded, True);
     plot_fits(mainform1.image1, False);{plot real}
   end;
   update_equalise_background_step(5 {force 5 since equalise background is set to 1 by loading fits file});{update menu}
@@ -3365,7 +3369,7 @@ begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     apply_factors;
-    use_histogram(img_loaded, True);
+    plot_histogram(img_loaded, True);
     plot_fits(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
@@ -3451,7 +3455,7 @@ begin
       end;{file loaded}
     end;
     add_text(mainform1.memo1.lines,'HISTORY   ', add_substract1.text+' '+ExtractFileName(image_to_add1.Caption));
-    use_histogram(img_loaded, True);
+    plot_histogram(img_loaded, True);
     plot_fits(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
@@ -3519,7 +3523,7 @@ begin
           img_loaded[col, fitsY, fitsX] := colr;
         end;
     //apply_dpp_button1.Enabled := False;
-    use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+    plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
     plot_fits(mainform1.image1, True);{plot real}
 
     Screen.Cursor := crDefault;
@@ -3588,7 +3592,7 @@ end;
 procedure Tstackmenu1.transformation1Click(Sender: TObject);
 var
   i, countxy,formalism,starX,starY,size, countBV                : integer;
-  magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp,sep,fov_rad,mean_bv : double;
+  magnitude,raM,decM,v,b,rc,ic,sg,sr,si,g,bp,rp,sep,fov_rad,mean_bv : double;
 
   stars,xylist  : Tstar_list;
   slope, intercept, sd : double;
@@ -3672,7 +3676,7 @@ begin
         mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
 
         pixel_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
-        report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
+        report_one_star_magnitudes(raM,decM, {out} b,v,rc,ic,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
 
         mainform1.image1.Canvas.textout(starX+size,starY+size,'Gaia V='+floattostrf(v, ffFixed, 0,2)+', B='+floattostrf(B, ffFixed, 0,2));{add hfd as text}
         if ((v>0) and (b>0)) then
@@ -3706,7 +3710,7 @@ begin
      if countXY>0 then
      begin
        memo2_message('Using '+inttostr(countXY)+' detected stars.');
-       trendline_without_outliers(xylist,countXY,slope, intercept,sd);
+       trendline_without_outliers(xylist,countXY,1.5,slope, intercept,sd);
        memo2_message('Mean B-V of all bright stars is '+floattostrF(mean_bv/countBV,FFfixed,5,3));
        memo2_message('Slope is '+floattostrF(slope,FFfixed,5,3)+ '. Calculated required absolute transformation correction  ∆ V = '+floattostrF(slope,FFfixed,5,3)+'*(B-V) + '+floattostrF(intercept,FFfixed,5,3)+'. Standard deviation of measured magnitude vs Gaia transformed for stars with SNR>40 and without B-V correction is '+floattostrF(sd,FFfixed,5,3)+ #10);
      end
@@ -4076,7 +4080,7 @@ begin
       if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) then
         {succes load}
       begin
-        use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+        plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
         plot_fits(mainform1.image1, False);{plot real}
         update_equalise_background_step(0); {go to step 0}
       end;
@@ -4143,7 +4147,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
   gaussian_blur2(img_loaded, strtofloat2(blur_factor1.Text));
-  use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_fits(mainform1.image1, False);{plot}
   Screen.cursor := crDefault;
 end;
@@ -4511,6 +4515,8 @@ begin
               else
               if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red. Note Green also contains a R so first test Green
               else                                                                         //The official abbreviation for Cousins R is R. See https://www.aavso.org/filters
+              if pos('I',filterstrUP)>0 then lv.Items.item[c].SubitemImages[P_filter]:=28 // Bessel
+              else //U is not supported because can't be transformed from Gaia data
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 
               date_to_jd(headx.date_obs,headx.date_avg, headx.exposure); {convert headx.date_obs string and headx.exposure time to global variables jd_start (julian day start headx.exposure) and jd_mid (julian day middle of the headx.exposure)}
@@ -5349,7 +5355,7 @@ begin
   backup_img;
   resize_img_loaded(width_UpDown1.position / head.Width {ratio});
 
-  use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   remove_photometric_calibration;//from header
   plot_fits(mainform1.image1, True);{plot}
   Screen.cursor := crDefault;
@@ -5447,7 +5453,7 @@ begin
         Screen.Cursor:=crDefault;
         exit;
       end;
-     use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+     plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
      plot_fits(mainform1.image1, False {re_center});
 
      {show alignment marker}
@@ -5802,7 +5808,7 @@ begin
           break;
         end;
 
-        use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+        plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
         if first_image = c then Inc(cycle);
 
@@ -6109,7 +6115,7 @@ begin
     end;
 
   update_menu(True);{file loaded, update menu for fits. Set fits_file:=true}
-  use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
   mainform1.memo1.lines.endupdate;
 
@@ -7550,7 +7556,7 @@ begin
   update_header_for_colour; {update header naxis and naxis3 keywords}
   add_text(mainform1.memo1.lines,'HISTORY   ', 'Artificial colour applied.');
 
-  use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_fits(mainform1.image1, False);{plot real}
   Screen.Cursor := crDefault;
 end;
@@ -7942,7 +7948,7 @@ var
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined                               : boolean;
   starlistx                                     : Tstar_list;
-  astr, filename1,totalnrstr,dummy              : string;
+  astr, filename1,totalnrstr                    : string;
   oldra0 : double=0;
   olddec0: double=-pi/2;
   headx : theader;
@@ -7998,8 +8004,6 @@ var
 
 
             procedure nil_all;{reactivate listview updating, nil all arrays and restore cursor}
-            var
-               ww: integer;
             begin
               stop_updating(false);
               //remove following line at the end of 2025
@@ -8170,7 +8174,7 @@ begin
       end;
       reference_defined:=true;
 
-      use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+      plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
       if  ((pos('F', head.calstat) = 0) or (head.naxis3 > 1)) then
       begin
@@ -8216,6 +8220,8 @@ begin
       if head.passband_database='V' then database_col:=1 //green
       else
       if head.passband_database='B' then database_col:=2 //blue icon
+      else
+      if head.passband_database='I' then database_col:=28 //dark red icon
       else
       if head.passband_database='SI' then database_col:=21 //SDSS-i red/infrared
       else
@@ -8654,7 +8660,7 @@ var
   flux, red, green, blue, rgb, r, g, b, sqr_dist, strongest_colour_local,
   top, bg, r2, g2, b2, {noise_level1,} peak, bgR2, bgB2, bgG2, highest_colour, lumr: single;
   bgR, bgB, bgG, star_level, luminance_slope  : double;
-  copydata, red_nebula: boolean;
+  copydata            : boolean;
   headR,headG,headB : Theader;
 begin
   if length(img) < 3 then exit;{not a three colour image}
@@ -8950,8 +8956,8 @@ end;
 procedure Tstackmenu1.list_to_clipboard1Click(Sender: TObject);
 {copy seleced lines to clipboard}
 var
-  row, c,dum,dum2: integer;
-  info,dummy: string;
+  row, c         : integer;
+  info      : string;
   lv: tlistview;
 begin
   info := '';
@@ -9337,7 +9343,7 @@ begin
   blur_factor:=2+box_blur_factor1.ItemIndex;//box blur factor
   box_blur(1 {nr of colors}, blur_factor, img_loaded);
 
-  use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_fits(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
@@ -9400,7 +9406,7 @@ begin
 
   check_pattern_filter(img_loaded);
 
-  use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_fits(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
@@ -9527,7 +9533,7 @@ begin
         break;
       end;
 
-      use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+      plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
       if head.cd1_1 = 0 then {get astrometric solution}
       begin
@@ -9756,12 +9762,119 @@ begin
 end;
 
 procedure Tstackmenu1.measuring_method1Change(Sender: TObject);
-var
-  i: integer;
 begin
   clear_added_AAVSO_columns;
   hide_show_columns_listview7(true {tab8 photometry});
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=3;
+end;
+
+procedure Tstackmenu1.export_to_tg1Click(Sender: TObject);
+var
+   col,row,nr   :integer;
+   abrv,info,R,V,B,I,Rc,auid,julian_str,filt_line,data_line : string;
+   filt_done,b_filt,v_filt,r_filt,i_filt,rc_filt,skip,selected_rows  : boolean;
+begin
+  nr:=(p_nr-p_nr_norm) div 3;
+  if nr<2 then
+  begin
+    stackmenu1.photometry_button1Click(nil);
+    nr:=1+(p_nr-p_nr_norm) div 3;
+    if nr<2 then
+    begin
+      memo2_message('Abort. Not enough magnitude value found in the list. Press first the play button to measure!');
+      beep;
+      exit;
+    end;
+  end;
+
+  R:='';
+  V:='';
+  B:='';
+  I:='';
+
+  julian_str:='';
+  filt_done:=false;
+  b_filt:=false;
+  v_filt:=false;
+  r_filt:=false;
+  i_filt:=false;
+  rc_filt:=false;
+  selected_rows:=false;
+  filt_line:='Filt';
+  with stackmenu1.listview7 do
+  begin
+
+  for col:=p_nr_norm to p_nr-1 do
+    if frac((col-p_nr_norm)/3)=0 then //not snr col
+    begin
+      abrv:=Columns[col+1].Caption;
+      if pos('000-',abrv)>0 then  //check star or iau code
+      begin
+        auid:=copy(abrv,1,11);
+        data_line:='';
+        for row := 0 to listview7.items.Count - 1 do //go through rows
+
+        if Items[row].Selected then
+        begin
+           selected_rows:=true;
+           if julian_str='' then
+            julian_str:='Julian_Day;'+listview7.Items.item[row].subitems.Strings[p_jd_mid];
+           try
+             case Items.item[row].SubitemImages[P_filter] of
+                       0 : begin R:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';R';R_filt:=true; data_line:=data_line+';'+R; end;  //red
+                       1 : begin V:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';V';V_filt:=true; data_line:=data_line+';'+V;  end;   //V or G TG
+                       2 : begin B:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';B';B_filt:=true; data_line:=data_line+';'+B; end;   //B or TB
+                       28: begin I:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';I';I_filt:=true; data_line:=data_line+';'+I; end;   //I FILTER
+
+//                       21 : begin si:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';SI' end; //SDSS-i
+//                       22 : begin sr:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';SR' end;  //SDSS-r not
+//                       23 : begin sg:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';SG end;  //SDSS-g
+                       24 : begin Rc:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';R';Rc_filt:=true;data_line:=data_line+';'+Rc;  end;  //Cousins red
+
+
+             end;
+            except
+              info := info + ':' + 'Error';
+            end;
+        end;
+        if filt_done=false then
+        begin
+          info:=julian_str+#13+#10;
+          info:=info+Filt_line;
+          if ((b_filt) or (v_filt) or (r_filt) or (i_filt) or (Rc_filt))=false then
+            begin
+              memo2_message('Abort. No B,V,R or I magnitudes found. Press first the play button and the select rows to process!');
+              beep;
+              exit;
+            end;
+          info:=info+#13+#10;
+          filt_done:=true;
+        end;
+        skip:=false;
+        if ((B_filt) and (B='')) then skip:=true;//missing magnitude
+        if ((V_filt) and (V='')) then skip:=true;//missing magnitude
+        if ((R_filt) and (R='')) then skip:=true;//missing magnitude
+        if ((I_filt) and (I='')) then skip:=true;//missing magnitude
+        if ((Rc_filt) and (Rc='')) then skip:=true;//missing magnitude
+        if pos('Satur',data_line)>0 then skip:=true;
+
+        if skip=false then //add star line
+        begin
+          info:=info+AUID + StringReplace(data_line,',','.',[]);   ;
+          info:=info+#13+#10;
+        end;
+      end;
+    end;
+  end;//with stackmenu
+
+  if selected_rows=false then
+  begin
+    memo2_message('Abort. No magnitudes found. Press first the play button and the select rows to process!');
+    beep;
+  end
+  else
+  memo2_message('Copied to clipboard. Paste to text file and feed that file to Transformation Generator');
+  Clipboard.AsText := info;
 end;
 
 
@@ -9851,6 +9964,15 @@ begin
     memo2_message('Test completed. Results: '+#13+#10+results+#13+#10+#13+#10+'Best aperture setting for these images is '+beststr);
   end;
   Screen.Cursor := crDefault;{back to normal }
+end;
+
+
+
+procedure Tstackmenu1.transformation2Click(Sender: TObject);
+begin
+  if Form_transformation1 = nil then
+    Form_transformation1 := TForm_transformation1.Create(self); {in project option not loaded automatic}
+  Form_transformation1.Show{Modal};
 end;
 
 
@@ -10214,7 +10336,7 @@ end;
 
 procedure remove_stars;
 var
-  fitsX,fitsY,hfd_counter,position,x,y,x1,y1,counter_noflux  : integer;
+  fitsX,fitsY,position,x,y,x1,y1,counter_noflux                  : integer;
   magnd, backgrR,backgrG,backgrB,delta                           : double;
   img_temp3 :Timage_array;
   old_aperture : string;
@@ -11130,7 +11252,7 @@ begin
   background_noise_filter(img_loaded, strtofloat2(stackmenu1.noisefilter_sd1.Text),
     strtofloat2(stackmenu1.noisefilter_blur1.Text));
 
-  //  use_histogram(true);{get histogram}
+  //  plot_histogram(true);{get histogram}
   plot_fits(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
@@ -11188,7 +11310,7 @@ begin
     plot_fits(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
-  use_histogram(img_loaded, True {update}); {update for the noise, plot histogram, set sliders}
+  plot_histogram(img_loaded, True {update}); {update for the noise, plot histogram, set sliders}
 end;
 
 
@@ -11247,7 +11369,7 @@ begin
           break;
         end;
 
-        use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+        plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
         plot_fits(mainform1.image1, False {re_center});
 
@@ -11850,8 +11972,8 @@ end;
 
 function apply_dark_and_flat(var img: Timage_array; var hd : theader): boolean; {apply dark and flat if required, renew if different head.exposure or ccd temp}
 var
-  fitsX, fitsY, k: integer;
-  Value, flat_factor, flatNorm11, flatNorm12, flatNorm21, flatNorm22, flat_norm_value: double;
+  fitsX, fitsY   : integer;
+  Value, flatNorm11, flatNorm12, flatNorm21, flatNorm22, flat_norm_value: double;
 
 begin
   Result := False;
@@ -12942,7 +13064,7 @@ begin
             stackmenu1.reset_factors1Click(nil);{reset factors to default}
 
 
-            use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+            plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
             if stackmenu1.global_colour_smooth1.Checked then
             begin
@@ -12966,7 +13088,7 @@ begin
           else
           begin
             memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
-            use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+            plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
           end;
         end
         else
@@ -12979,7 +13101,7 @@ begin
               stackmenu1.auto_background_level1Click(nil);
               apply_factors;{histogram is after this action invalid}
               stackmenu1.reset_factors1Click(nil);{reset factors to default}
-              use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+              plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
               if stackmenu1.osc_colour_smooth1.Checked then
               begin
                 memo2_message( 'Applying colour-smoothing filter image as set in tab "stack method".');
@@ -12989,11 +13111,11 @@ begin
             else
             begin
               memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
-              use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+              plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
             end;
           end
           else {mono files}
-            use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+            plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
         end;
 
         plot_fits(mainform1.image1, True);{plot real}
@@ -13427,7 +13549,7 @@ begin
       end;
   end;{k color}
 
-  use_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_fits(mainform1.image1, False);
 
   memo2_message('Remove gradient done.');

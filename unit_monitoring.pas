@@ -235,7 +235,7 @@ begin
           if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then
              demosaic_advanced(img_loaded) {demosaic and set levels}
           else
-            use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+            plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
           plot_fits(mainform1.image1,false);{plot real}
 

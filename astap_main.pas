@@ -67,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.06.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -626,6 +626,10 @@ type
               Berr: string;
               Rmag: string;
               Rerr: string;
+              Umag: string;
+              Uerr: string;
+              Imag: string;
+              Ierr: string;
               SGmag: string;
               SGerr: string;
               SRmag: string;
@@ -773,7 +777,7 @@ var {################# initialised variables #########################}
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
 procedure plot_fits(img: timage;center_image:boolean);
-procedure use_histogram(img: Timage_array; update_hist: boolean);{get histogram}
+procedure plot_histogram(img: Timage_array; update_hist: boolean);{get histogram}
 procedure HFD(img: Timage_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr, flux,xc,yc:double);
 procedure backup_img;
 procedure restore_img;
@@ -962,7 +966,7 @@ implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
      unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia,unit_contour,
-     unit_threaded_bilinear_interpolation,unit_threaded_demosaic_astroC_bilinear_interpolation,unit_threaded_demosaic_astrosimple,unit_threaded_demosaic_astroM_bilinear_interpolation;
+     unit_threaded_bilinear_interpolation,unit_threaded_demosaic_astroC_bilinear_interpolation,unit_threaded_demosaic_astrosimple,unit_threaded_demosaic_astroM_bilinear_interpolation,unit_transformation;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -3171,7 +3175,7 @@ end;
 procedure update_float(memo : tstrings;inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
  var
    s,aline,buf           : string;
-   cnt,line_end,i,count,len   : integer;
+   cnt,line_end,i        : integer;
 begin
   //note this method is not used in astap_cli. There is no speed benefit there
   str(x:20,s);
@@ -3213,7 +3217,7 @@ end;
 procedure update_integer(memo:tstrings;inpt,comment1:string;x:integer);{update or insert variable in header}
 var
   s,aline,buf           : string;
-  cnt,line_end,i,count,len   : integer;
+  cnt,line_end,i        : integer;
 begin
   str(x:20,s);
   cnt:=pos(inpt,Memo.text);
@@ -3488,7 +3492,7 @@ end;
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
-var sin_dec1,cos_dec1,sin_dec2,cos_dec2,cos_sep,t:double;
+var sin_dec1,cos_dec1,sin_dec2,cos_dec2,cos_sep :double;
 begin
   sincos(dec1,sin_dec1,cos_dec1);{use sincos function for speed}
   sincos(dec2,sin_dec2,cos_dec2);
@@ -3602,7 +3606,6 @@ procedure restore_img;
 var
    resized :boolean;
    old_width2,old_height2 : integer;
-   fitsx,fitsy: integer;
 begin
    if mainform1.Undo1.Enabled=true then
   begin
@@ -3623,7 +3626,7 @@ begin
 
     img_loaded:=duplicate(img_backup[index_backup].img);//duplicate image fast
 
-    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+    plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainform1.image1,resized);{restore image1}
 
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
@@ -3646,10 +3649,7 @@ end;
 
 
 procedure Tmainform1.GenerateShapes(position, width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
-var
-   f,g,i : integer;
 begin
-
    if length(Fshapes)<position+1 then
    begin
      SetLength(FShapes, position+1); // Simple but ugly!
@@ -4369,7 +4369,7 @@ begin
     mainform1.range1.itemindex:=7; {manual}
 
     if histo_update then {redraw histogram with new range}
-       use_histogram(img_loaded,false {update}); {plot histogram, set sliders}
+       plot_histogram(img_loaded,false {update}); {plot histogram, set sliders}
 
     plot_fits(mainform1.image1,false);
   end;
@@ -6330,7 +6330,7 @@ begin
       if load_fits(opendialog1.filename,true {light},true,true {update memo},0,mainform1.memo1.lines,head,img_loaded) then
       begin
         if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
-        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+        plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(mainform1.image1,false {re_center});
       end;
     end;
@@ -7177,7 +7177,7 @@ begin
     stackmenu1.auto_background_level1Click(nil);
     apply_factors;{histogram is after this action invalid}
     stackmenu1.reset_factors1Click(nil);{reset factors to default}
-    use_histogram(img,true {update}); {plot histogram in colour, set sliders}
+    plot_histogram(img,true {update}); {plot histogram in colour, set sliders}
   if stackmenu1.osc_colour_smooth1.checked then
   begin
     memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab "pixel math 1"');
@@ -7187,7 +7187,7 @@ begin
   else
   begin
     memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
-    use_histogram(img,true {update}); {plot histogram in colour, set sliders}
+    plot_histogram(img,true {update}); {plot histogram in colour, set sliders}
   end;
 end;
 
@@ -7507,12 +7507,13 @@ begin
 
 end;
 
-procedure use_histogram(img: Timage_array; update_hist: boolean);{calculate histogram}
+procedure plot_histogram(img: Timage_array; update_hist: boolean);{calculate histogram}
 var
   i, minm,maxm,max_range, countR,countG,countB,stopXpos,Xpos,max_color,histo_peakR,number_colors, histo_peak_position,h,w,col : integer;
   above, above_R          : double;
   histogram2 : array of array of integer;
   histo_peak : array[0..2] of integer;
+  shift      : word;
 
 begin
 //  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -7622,6 +7623,34 @@ begin
     end;
   end;
 
+  if number_colors=1 then//plot histogram mono image
+  begin
+    if pos('CV',uppercase(head.filter_name))>0 then mainform1.histogram1.Canvas.Pen.Color:=clSilver
+    else
+    if pos('V',uppercase(head.filter_name))>0 then mainform1.histogram1.Canvas.Pen.Color:=clGreen
+    else
+    if pos('G',uppercase(head.filter_name))>0 then mainform1.histogram1.Canvas.Pen.Color:=clGreen
+    else
+    if pos('B',uppercase(head.filter_name))>0 then mainform1.histogram1.Canvas.Pen.Color:=clBlue
+    else
+    if pos('R',uppercase(head.filter_name))>0 then mainform1.histogram1.Canvas.Pen.Color:=clRed
+    else
+    mainform1.histogram1.Canvas.Pen.Color:=clSilver;
+
+    for i := 0 to w-1 do {create histogram graph}
+    begin
+      countR:= round(255*histogram2[0,i]/(histo_peakR+1));
+      if countR>0then {something to plot}
+      begin
+       // mainform1.histogram1.Canvas.Pen.Color := rgb(255*countR div countR,0,0);{set pen colour}
+       // mainform1.histogram1.Canvas.Pen.Color :=DWORD(WORD(255*countR div countR) shl shift);
+
+        moveToex(mainform1.histogram1.Canvas.handle,i,h,nil);
+        lineTo(mainform1.histogram1.Canvas.handle,i ,h-round(h*countR/256) ); {draw vertical line}
+      end;
+    end;
+  end
+  else
   for i := 0 to w-1 do {create histogram graph}
   begin
     countR:= round(255*histogram2[0,i]/(histo_peakR+1));
@@ -8224,12 +8253,12 @@ begin
       delim_pos:=Sett.ReadInteger('aavso','delim_pos',0);
       baa_style:=Sett.ReadBool('aavso','baa_style',false);{aavso report}
       sort_alphabetically:=Sett.ReadBool('aavso','sort_alphabetically',false);{aavso report}
+      apply_transformation:=Sett.ReadBool('aavso','apply_transformation',false);{aavso report}
 
       hjd_date:=Sett.ReadBool('aavso','hjd_date',false);{aavso report}
       ensemble_database:=Sett.ReadBool('aavso','ensemble',true);{aavso report}
 
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
-      magnitude_slope:=Sett.ReadFloat('aavso','slope',0);
       used_vsp_stars:=Sett.ReadString('aavso','vsp-stars','');
       obstype:=Sett.Readinteger('aavso','obstype',0); {photometry}
 
@@ -8257,6 +8286,16 @@ begin
 
       c:=Sett.ReadInteger('insp','insp_grid',987654321);if c<>987654321 then inspector_grid_size:=c;
       c:=Sett.ReadInteger('insp','insp_grad',987654321);if c<>987654321 then inspector_gradations:=c;
+
+
+      sigma_transformationSTR:=Sett.ReadString('transf','sigma_tr','2'); {transformation}
+      TbvSTR:=Sett.ReadString('transf','Tbv','1'); {transformation}
+      Tb_bvSTR:=Sett.ReadString('transf','Tb_bv','0'); {transformation}
+      Tv_bvSTR:=Sett.ReadString('transf','Tv_bv','0'); {transformation}
+      TvrSTR:=Sett.ReadString('transf','Tvr','1'); {transformation}
+      Tv_vrSTR:=Sett.ReadString('transf','Tv_vr','0'); {transformation}
+      Tr_vrSTR:=Sett.ReadString('transf','Tr_vr','0'); {transformation}
+
 
       listviews_begin_update; {stop updating listviews}
 
@@ -8624,13 +8663,14 @@ begin
       sett.writeInteger('aavso','delim_pos',delim_pos);
       sett.writeBool('aavso','baa_style',baa_style);{AAVSO report}
       sett.writeBool('aavso','sort_alphabetically',sort_alphabetically);{AAVSO report}
+      sett.writeBool('aavso','apply_transformation',apply_transformation);{AAVSO report}
+
 
 
       sett.writeBool('aavso','hjd_date',hjd_date);{AAVSO report}
       sett.writeBool('aavso','ensemble',ensemble_database);{AAVSO report}
 
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
-      sett.writeFloat('aavso','slope', magnitude_slope);
       sett.writestring('aavso','vsp-stars',used_vsp_stars);
       sett.writeinteger('aavso','obstype',obstype);//CCD, DSLR, PEP
 
@@ -8657,6 +8697,13 @@ begin
      sett.writeInteger('insp','insp_grid',inspector_grid_size);
      sett.writeInteger('insp','insp_grad',inspector_gradations);
 
+     sett.writestring('transf','sigma_tr',sigma_transformationSTR);
+     sett.writestring('transf','Tbv',TbvSTR);
+     sett.writestring('transf','Tb_bv',Tb_bvSTR);
+     sett.writestring('transf','Tv_bv',Tv_bvSTR);
+     sett.writestring('transf','Tvr',TvrSTR);
+     sett.writestring('transf','Tv_vr',Tv_vrSTR);
+     sett.writestring('transf','Tr_vr',Tr_vrSTR);
 
 
       {### save listview values ###}
@@ -9652,7 +9699,7 @@ begin
   if plot then
   begin
     if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then demosaic_advanced(img);{demosaic and set levels}
-    use_histogram(img,true {update}); {plot histogram, set sliders}
+    plot_histogram(img,true {update}); {plot histogram, set sliders}
     image_move_to_center:=re_center;
     plot_fits(mainform1.image1,re_center);     {mainform1.image1.Visible:=true; is done in plot_fits}
 
@@ -9712,7 +9759,7 @@ begin
   add_text(mainform1.memo1.lines,'HISTORY   ','Converted to mono');
 
   {colours are now mixed, redraw histogram}
-  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainform1.image1,false);{plot}
   Screen.cursor:=crDefault;
 end;
@@ -9911,6 +9958,10 @@ begin
     vsp[count].Verr:='';
     vsp[count].Rmag:='?';
     vsp[count].Rerr:='';
+    vsp[count].Umag:='?';
+    vsp[count].Uerr:='';
+    vsp[count].Imag:='?';
+    vsp[count].Ierr:='';
     vsp[count].SGmag:='?';
     vsp[count].SGerr:='';
     vsp[count].SRmag:='?';
@@ -9924,6 +9975,19 @@ begin
       inc(j);
       val2:=s[j];
 
+      if ((val='"') and (val2='U')) then //U mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+        k:=posex(',',s,i);
+        vsp[count].Umag:=copy(s,i,k-i);
+
+        i:=posex('error":',s,k);
+        i:=i+length('error":');
+        k:=posex('}',s,i);
+        vsp[count].Uerr:=copy(s,i,k-i);
+      end
+      else
       if ((val='"') and (val2='B')) then //B mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
@@ -9950,6 +10014,7 @@ begin
          vsp[count].Verr:=copy(s,i,k-i);
       end
       else
+//      if ((val='R') and (val2='C')) then //R mag found, could be missing
       if ((val='"') and (val2='R')) then //R mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
@@ -9961,7 +10026,21 @@ begin
         i:=i+length('error":');
         k:=posex('}',s,i);
         vsp[count].Rerr:=copy(s,i,k-i);
-      end;
+      end
+      else
+      if ((val='I') and (val2='C')) then //I cousins mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+        k:=posex(',',s,i);
+        vsp[count].Imag:=copy(s,i,k-i);
+
+        i:=posex('error":',s,k);
+        i:=i+length('error":');
+        k:=posex('}',s,i);
+        vsp[count].Ierr:=copy(s,i,k-i);
+      end
+      else
       if ((val='S') and (val2='G')) then //Sloan green
       begin
         i:=posex('"mag":',s,j);
@@ -9973,7 +10052,8 @@ begin
         i:=i+length('error":');
         k:=posex('}',s,i);
         vsp[count].SGerr:=copy(s,i,k-i);
-      end;
+      end
+      else
       if ((val='S') and (val2='R')) then //Sloan red
       begin
         i:=posex('"mag":',s,j);
@@ -9985,7 +10065,8 @@ begin
         i:=i+length('error":');
         k:=posex('}',s,i);
         vsp[count].SRerr:=copy(s,i,k-i);
-      end;
+      end
+      else
       if ((val='S') and (val2='I')) then //Sloan i
       begin
         i:=posex('"mag":',s,j);
@@ -10299,7 +10380,7 @@ end;
 procedure Tmainform1.histogram_range1MouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  use_histogram(img_loaded,false {update});{get histogram}
+  plot_histogram(img_loaded,false {update});{get histogram}
   plot_fits(mainform1.image1,false);
 end;
 
@@ -10675,7 +10756,7 @@ begin
 
   if mainform1.stretch1.enabled then {file loaded}
   begin
-    use_histogram(img_loaded,false {update});{get histogram}
+    plot_histogram(img_loaded,false {update});{get histogram}
     plot_fits(mainform1.image1,false);
   end;
 end;
@@ -10739,7 +10820,7 @@ begin
         if head.naxis3>2 then img_loaded[2,fitsY,fitsX]:=img_loaded[2,fitsY,fitsX]-(colbb2-colbb1)*(a-p)/a;
       end;
 
-    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+    plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainform1.image1,false {re_center});
 
     Screen.Cursor:=crDefault;
@@ -11301,7 +11382,7 @@ procedure Tmainform1.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
   size, i, starX, starY,magn,fontsize,text_height,text_width,dum,formalism    : integer;
   Fliphorizontal, Flipvertical  : boolean;
-  magnitude,raM,decM,v,b,r,sg,sr,si,g,bp,rp : double;
+  magnitude,raM,decM,v,b,rc,ic,sg,sr,si,g,bp,rp : double;
 
   stars : Tstar_list;
   subframe : boolean;
@@ -11398,10 +11479,10 @@ begin
         rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
         decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
 
-        report_one_star_magnitudes(raM,decM, {out} b,v,r,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple
+        report_one_star_magnitudes(raM,decM, {out} b,v,rc,ic,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple
 
         report:=report+floattostrF(1+stars[0,i],FFfixed,6,2)+#9+floattostrF(1+stars[1,i],FFfixed,6,2)+#9+floattostrF(stars[2,i],FFfixed,5,3)+#9+rastr+#9+decstr+#9+floattostrF(1+stars[3,i],FFfixed,8,0)+#9+floattostrF(stars[4,i]{SNR},FFfixed,5,0)+#9+floattostrF(magnitude,FFfixed,5,3)+#9+'|'
-                      +#9+floattostrF(v,FFfixed,5,3)+#9+floattostrF(b,FFfixed,5,3)+#9+floattostrF(r,FFfixed,5,3)+#9+floattostrF(sg,FFfixed,5,3)+#9+floattostrF(sr,FFfixed,5,3)+#9+floattostrF(si,FFfixed,5,3)
+                      +#9+floattostrF(v,FFfixed,5,3)+#9+floattostrF(b,FFfixed,5,3)+#9+floattostrF(rc,FFfixed,5,3)+#9+floattostrF(ic,FFfixed,5,3)+#9+floattostrF(sg,FFfixed,5,3)+#9+floattostrF(sr,FFfixed,5,3)+#9+floattostrF(si,FFfixed,5,3)
                       +#9+floattostrF(g,FFfixed,5,3)+#9+floattostrF(bp,FFfixed,5,3)+#9+floattostrF(rp,FFfixed,5,3)+ #10;
       end;
     end;
@@ -11810,7 +11891,7 @@ begin
       remove_photometric_calibration;//from header
 
       {plot result}
-      use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+      plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
       plot_fits(mainform1.image1,true {center_image});{center and stretch with current settings}
 
     finally
@@ -11837,7 +11918,7 @@ begin
       if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then
          demosaic_advanced(img_loaded) {demosaic and set levels}
       else
-        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+        plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
       plot_fits(mainform1.image1,false {re_center});
     end;
   end;
@@ -12447,7 +12528,7 @@ var filename3:string;
 begin
   if load_fits(filen,true {light},true,true {update memo},0,mainform1.memo1.lines,head,img_loaded) {load now normal} then
   begin
-    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+    plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     filename3:=ChangeFileExt(Filen,'.bmp');
     mainform1.image1.picture.SaveToFile(filename3);
   end;
@@ -12733,12 +12814,12 @@ end;
 
 function platesolve2_command: boolean;
 var
-  i,error1,regions,count : integer;
+  i,error1,regions,count        : integer;
   List: TStrings;
   command1 : string;
   f        : textfile;
   resultstr,rastr,decstr,cdelt,crota,flipped,confidence,resultV,line1,line2 : string;
-  dummy,field_size,search_field : double;
+  field_size,search_field,dummy {do not remove}                             : double;
   source_fits,solved,apt_request,file_loaded:boolean;
 begin
   settingstring := Tstringlist.Create;
@@ -13318,7 +13399,7 @@ begin
             histogram_done:=false;
             if hasoption('annotate') then
             begin
-              use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
+              plot_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
               histogram_done:=true;
               plot_fits(mainform1.image1,true {center_image});{center and stretch with current settings}
               save_annotated_jpg(filename_output);{save viewer as annotated jpg}
@@ -13329,7 +13410,7 @@ begin
               begin
                 binning:=round(strtofloat2(GetOptionValue('tofits')));
                 if binning>1 then bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,binning);{bin img_loaded 2x or 3x or 4x}
-                if histogram_done=false then use_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
+                if histogram_done=false then plot_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
                 head.nrbits:=8;
                 save_fits(img_loaded,mainform1.memo1.lines,head,changeFileExt(filename_output,'.fit'),true {overwrite});
               end;
@@ -13440,7 +13521,7 @@ end;
 
 procedure Tmainform1.batch_add_solution1Click(Sender: TObject);
 var
-  i,nrskipped, nrsolved,nrfailed,file_age,pedestal2,oldnrbits                         : integer;
+  i,nrskipped, nrsolved,nrfailed,file_age,pedestal2                          : integer;
   add_lim_magn,solution_overwrite,solved,maintain_date,success,image_changed : boolean;
   failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
@@ -14140,7 +14221,7 @@ begin
   end;
 
   head.datamax_org:=max_range;
-  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainform1.image1,false);
 
   Screen.Cursor:=crDefault;  { Always restore to normal }

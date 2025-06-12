@@ -420,7 +420,7 @@ begin
               img_loaded:=img_average;{copy the pointer. Both have now access to the data!!}
 
               if counter=1 then {set range correct}
-                   use_histogram(img_loaded,true);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+                   plot_histogram(img_loaded,true);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
               plot_fits(mainform1.image1,false);{plot real}
 

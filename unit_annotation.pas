@@ -1933,8 +1933,15 @@ var
   datab,filterstrUP :string;
 begin
   datab:=stackmenu1.reference_database1.text;
-  if ((pos('auto',datab)>0) or (pos('Local',datab)>0)) then //local or auto
-  begin  //auto
+  if pos('Local',datab)>0 then //local or auto
+  begin
+    if pos('V',filterstrUP)>0  then passband:='V'
+    else
+    passband:='BP';
+    memo2_message('Local databasa as set in tab Photometry. Filter='+filterstr+'. Local database = '+passband);
+  end
+  else
+  begin  //online auto transformation
     filterstrUP:=uppercase(filterstr);
     if ((length(filterstrUP)=0) or (pos('CV',filterstrUP)>0))  then passband:='BP'  //Johnson-V, online
     else
@@ -1953,34 +1960,15 @@ begin
     else
     if pos('V',filterstrUP)>0  then passband:='V'  //Johnson-V, online
     else
-    if pos('B',filterstrUP)>0  then passband:='B'  //Johnson-V, online Blue
+    if pos('B',filterstrUP)>0  then passband:='B'  //Johnson-B, online Blue
     else
-    if pos('R',filterstrUP)>0  then passband:='R'  //Johnson-V, online red
+    if pos('R',filterstrUP)>0  then passband:='R'  //Cousins-R, online red
+    else
+    if pos('I',filterstrUP)>0  then passband:='I'  //Cousins-R, online red
     else
     passband:='BP';  //online take clear view
 
-    memo2_message('Auto selected transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
-
-  end
-  else  //manual
-  begin
-    if pos('BP',datab)>0 then passband:='BP' //Gaia blue=CV=Gray, online
-    else
-    if pos('V',datab)>0 then passband:='V'  //Johnson-V, online
-    else
-    if pos('B',datab)>0 then  passband:='B'  //Johnson-B, online
-    else
-    if pos('R',datab)>0 then passband:='R'  //Cousins-R, online
-    else
-    if pos('SG',datab)>0 then passband:='SG' //Gaia blue=CV=Gray, online
-    else
-    if pos('SR',datab)>0 then passband:='SR'  //Johnson-V, online
-    else
-    if pos('SI',datab)>0 then  passband:='SI'  //Johnson-B, online
-    else
-      passband:='??';
-
-    memo2_message('Manual selected transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
+    memo2_message('Gaia online with database transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
   end;
 end;
 

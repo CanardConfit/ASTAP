@@ -1864,7 +1864,7 @@ begin
               if match_nr=1 then //2025 first solution found, filter out stars for the second match. Avoid that stars outside the image boundaries are used to create database quads
               begin //keep only stars which are visible in the image according the first solution
                 count:=0;
-                for i:=0 to Length(starlist1[0])  do
+                for i:=0 to Length(starlist1[0])-1  do
                 begin
                    rotate(crota2_rad,starlist1[0,i]/cdelt1_arcsec,starlist1[1,i]/cdelt2_arcsec,xi,yi);{rotate to screen orientation}
                    xi:=centerX-xi;
