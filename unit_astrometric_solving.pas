@@ -1041,7 +1041,7 @@ begin
       max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
 
       memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(round(nrstars_required*sqr(oversize)))+' database stars, '
-                              +inttostr(round(nr_quads*nrstars_required*sqr(oversize)/nrstars))+' database'+quads_str+' required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'° square search window. '
+                               +inttostr(round(nr_quads*nrstars_required*sqr(oversize)/nrstars))+' database'+quads_str+' required for the '+floattostrF(oversize*fov2,ffFixed,0,2)+'° square search window. '
                               +'Step size '+floattostrF(fov2,FFfixed,0,2) +'°. Oversize '+floattostrF(oversize,FFfixed,0,2) );
 
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
@@ -1147,12 +1147,11 @@ begin
               if match_nr=1 then //2025 first solution found, filter out stars for the second match. Avoid that stars outside the image boundaries are used to create database quads
               begin //keep only stars which are visible in the image according the first solution
                 count:=0;
-                for i:=0 to Length(starlist1[0])  do
+                for i:=0 to Length(starlist1[0])-1  do
                 begin
-                   rotate(crota2,starlist1[0,i]/cdelt1,starlist1[1,i]/cdelt2,xi,yi);{rotate to screen orientation}
-                   xi:=centerX-xi;
-                   yi:=centerY-yi;
-
+                  rotate(crota2,starlist1[0,i]/cdelt1,starlist1[1,i]/cdelt2,xi,yi);{rotate to screen orientation}
+                  xi:=centerX-xi;
+                  yi:=centerY-yi;
                   if ((xi>0) and (xi<hd.width) and (yi>0) and (yi<hd.height)) then //within image boundaries
                   begin
                     starlist1[0,count]:=starlist1[0,i];

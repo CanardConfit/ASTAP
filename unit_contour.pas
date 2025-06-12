@@ -16,7 +16,7 @@ uses
 
 procedure contour( plot : boolean;img : Timage_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
 function line_distance(fitsX,fitsY,slope,intercept: double) : double;
-procedure trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+procedure trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; filter_sigma : double; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 
 //procedure add_to_storage;//add streaks to storage
 //procedure clear_storage;//clear streak storage
@@ -111,6 +111,12 @@ end;
 
 procedure trendline(xylist: Tstar_list; len{length xylist} : integer; out  slope, intercept:double); //find linear trendline Y = magnitude_slope*X + intercept
 var                                                                   //idea from https://stackoverflow.com/questions/43224/how-do-i-calculate-a-trendline-for-a-graph
+
+   // Method "Ordinary Least Squares Linear Regression"  or simply: "OLS fit" or "Trendline by least-squares minimization"
+   // This is the standard closed-form solution for linear regression using OLS. It's equivalent to what's found in statistical software like Excel’s LINEST, Python's linregress, and R’s lm().
+   // Why "Ordinary"?  Because it's based on minimizing vertical errors (Y-axis), assuming:
+   // Errors are only in Y (not in X)     Residuals are normally distributed   Homoscedasticity (equal variance)
+
   sumX,sumX2,sumY, sumXY,median,mad  : double;
   count, i                           : integer;
 
@@ -138,7 +144,7 @@ begin
 end;
 
 
-procedure trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+procedure trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; filter_sigma : double; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 var
   e        : double;
   xylist2  : Tstar_list;
@@ -158,7 +164,7 @@ begin
   for i:=0 to len-1 do
   begin
     e:=abs(xylist[1,i]{y original} - (slope * xylist[0,i]+intercept{y mean}));  //calculate absolute error
-    if e<1.5 *sd then //not an outlier keep 86.64%
+    if e<filter_sigma *sd then //not an outlier keep 86.64%
     begin
       xylist2[0,counter]:=xylist[0,i];// xy list without outliers
       xylist2[1,counter]:=xylist[1,i];
@@ -357,7 +363,7 @@ var
             end;
 
 
-            trendline_without_outliers(contour_array2,counterC,slope, intercept,sd);
+            trendline_without_outliers(contour_array2,counterC,1.5,slope, intercept,sd);
             intercept:=intercept*binning;
             sd:=sd*binning;
 

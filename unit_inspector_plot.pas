@@ -793,7 +793,7 @@ begin
 
   img_hfd:=nil;{free memory}
 
-  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
   head.backgr:=min_value-5;
   cwhite:=max_value+5;
@@ -859,7 +859,7 @@ begin
 
   img_hfd:=nil;{free memory}
 
-  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
   head.backgr:=min_value-5;
   cwhite:=max_value+5;
@@ -1452,7 +1452,7 @@ begin
   gaussian_blur2(img_loaded, inspector_grid_size *2 {4 * strtofloat2(most_common_filter_radius1.Text)});
 
 
-  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
   //find low and high level
   high_level:=0;
@@ -1469,7 +1469,7 @@ begin
       img_loaded[0,fy,fx]:= low_level +  ((high_level-low_level)/inspector_gradations)*round( (img_loaded[0,fy,fx]-low_level)*inspector_gradations/(high_level-low_level));
 
   srange:=high_level-low_level;
-  mainform1.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  use_histogram doesn't work that well for blurred image.
+  mainform1.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  plot_histogram doesn't work that well for blurred image.
   mainform1.minimum1.position:=round(low_level-0.05*srange);
 
   plot_fits(mainform1.image1, False);{plot real}
