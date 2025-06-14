@@ -216,7 +216,7 @@ begin
 
     bg:=bg/counter; {background (for this part of the image, could cause problem using threads}
     sat_counter:=0;
-    for fitsY:=FStartY to FEndY-1 do
+    for fitsY:=FStartY to FEndY do
     for fitsX:= 1 to w - 2 do
     if img_temp2^[1,fitsY,fitsX]=$FFFFFF {marker saturated} then
     begin

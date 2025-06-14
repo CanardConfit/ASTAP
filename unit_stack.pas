@@ -1144,8 +1144,6 @@ function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): do
 function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*','"',':','|','<','>']}
 function calc_saturation_level(head :theader) : double;//calculate saturation level image
 
-
-
 const
   L_object = 0; {lights, position in listview1}
   L_filter = 1;
@@ -1354,6 +1352,7 @@ end;
 
 {$else} {unix}
 {$endif}
+
 
 
 function inverse_erf(x: double): double;  {Inverse of erf function. Inverse of approximation formula by Sergei Winitzki. Error in result is <0.005 for sigma [0..3] Source wikipedia https://en.wikipedia.org/wiki/Error_function}

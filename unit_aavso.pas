@@ -530,11 +530,8 @@ begin
 
     if calc_colour_index then
     begin
-      if B_Vcounter>0 then B_V:=B_V/B_Vcounter;//average value of all comp stars
-      if V_Rcounter>0 then V_R:=V_R/V_Rcounter;//average value of all comp stars
-
-      if  B_Vcounter<>count then warning:=warning+'B-V not accurate!';
-      if  V_Rcounter<>count then warning:=warning+'V-R not accurate!';
+      if B_Vcounter>0 then B_V:=B_V/B_Vcounter else B_V:=-99;//average value of all comp stars
+      if V_Rcounter>0 then V_R:=V_R/V_Rcounter else V_R:=-99;;//average value of all comp stars
     end;
 
     //now calculate the standard deviation. So the weighted difference between the COMP stars in one image
@@ -655,7 +652,7 @@ var
     err,snr_str,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
     var_flux_str,check_flux_str,warning,transformation, transform_all_factors,transf_str  : string;
-    stdev_valid : boolean;
+    stdev_valid,apply_transformation : boolean;
     snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp,B_V, V_R,var_Vcorrection,var_Bcorrection,var_Rcorrection : double;
     PNG: TPortableNetworkGraphic;{FPC}
     vsep : char;
@@ -665,6 +662,7 @@ begin
 
   abbrv_var_clean:=clean_abbreviation(abbrev_var);
   abbrv_check_clean:=clean_abbreviation(abbrev_check);
+  apply_transformation:=apply_transformation1.checked;
 
   abbrv_comp_clean:='';
   for i:=0 to abrv_comp1.items.count-1 do
@@ -747,7 +745,7 @@ begin
    else
      comments:='';
 
-  if apply_transformation1.checked then
+  if apply_transformation then
   begin
     transform_all_factors:=
     '#Tbv= ' + TbvSTR+#13+#10+
@@ -810,7 +808,7 @@ begin
            begin
              if length(column_comps)=0 then exit;
 
-             invalid_comp:=process_comp_stars(c,true,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
+             invalid_comp:=process_comp_stars(c,apply_transformation,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
 
              comp_magn_info:=comp_magn_info+warning;
              if invalid_comp=0 then //valid comp star(s)
@@ -825,7 +823,7 @@ begin
 
 
                    transformation:='';
-                   if apply_transformation1.checked then
+                   if apply_transformation then
                    begin
                      //transformation
                      // Tv_bv * Tbv* ((b-v)tgt – (B-V)comp)
@@ -833,29 +831,53 @@ begin
                      icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
                      if icon_nr=2 then //B correction
                      begin
-                       var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (strtofloat2(b_v_variable1.text){var} - (B_V){comp});
-                       var_magn:=var_magn+var_Bcorrection;
-                       transformation:='Transf corr. '+floattostrF(var_Bcorrection,ffFixed,0,3)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
-                       filter_used:='B';//change TB to B
+                       if B_V<>-99 then
+                       begin
+                         var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (strtofloat2(b_v_variable1.text){var} - (B_V){comp});
+                         var_magn:=var_magn+var_Bcorrection;
+                         transformation:='Transf corr. '+floattostrF(var_Bcorrection,ffFixed,0,3)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         filter_used:='B';//change TB to B
+                       end
+                       else
+                       begin
+                         transformation:='Transf failed. Could not retrieve B-V';
+                         transf_str:='NO';
+                       end;
                      end
                      else
                      if icon_nr=1 then//V correction
                      begin
-                       var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) * (strtofloat2(b_v_variable1.text){var} - (B_V){comp});
-                       var_magn:=var_magn+var_Vcorrection;
-                       transformation:='Transf corr. '+floattostrF(var_Vcorrection,ffFixed,0,3)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
-                       filter_used:='V';//change TG to V
+                       if B_V<>-99 then
+                       begin
+                         var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) * (strtofloat2(b_v_variable1.text){var} - (B_V){comp});
+                         var_magn:=var_magn+var_Vcorrection;
+                         transformation:='Transf corr. '+floattostrF(var_Vcorrection,ffFixed,0,3)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         filter_used:='V';//change TG to V
+                       end
+                       else
+                       begin
+                         transformation:='Transf failed. Could not retrieve B-V';
+                         transf_str:='NO';
+                       end;
+
                      end
                      else
                      if ((icon_nr=0) or (icon_nr=24)) then//R correction
                      begin
-                       var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (strtofloat2(v_r_variable1.text){var} - (V_R){comp});
-                       var_magn:=var_magn + var_Rcorrection;
-                       transformation:='Transf corr. '+floattostrF(var_Rcorrection,ffFixed,0,3)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+v_r_variable1.text+'-'+floattostrF(V_R,ffFixed,0,3)+'), Filter used '+filter_used+',';
-                       filter_used:='R';//change TR to R
-                     end
-                     else
-                       transf_str:='NO';//for other filters
+                       if V_R<>-99 then
+                       begin
+                         var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (strtofloat2(v_r_variable1.text){var} - (V_R){comp});
+                         var_magn:=var_magn + var_Rcorrection;
+                         transformation:='Transf corr. '+floattostrF(var_Rcorrection,ffFixed,0,3)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+v_r_variable1.text+'-'+floattostrF(V_R,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         filter_used:='R';//change TR to R
+                       end
+                       else
+                       begin
+                         transformation:='Transf failed. Could not retrieve V-R';
+                         transf_str:='NO';
+                       end;
+
+                     end;
                    end;
 
 
