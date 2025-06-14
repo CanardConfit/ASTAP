@@ -109,7 +109,7 @@ const
 begin
   if ((V_listB=nil) and (V_listB=nil)) then
   begin
-    form_transformation1.error_label1.caption:='No star data';
+    form_transformation1.error_label1.caption:='No comparison star data!. Select standard field.';
     exit;//no data
   end;
 
@@ -489,8 +489,10 @@ begin
 
   if selected_rows=false then
   begin
-    memo2_message('Abort. No magnitudes found. Press first the play button and the select rows to process!');
+    memo2_message('Abort. No comparison star magnitudes found. Press first the play button and the select rows to process! Select also the correct AAVSO annotation');
+    form_transformation1.error_label1.caption:='No comparison star data!';
     beep;
+    exit;
   end
   else
   begin

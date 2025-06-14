@@ -301,14 +301,15 @@ function retrieve_comp_magnitude(filter,columnr: integer; s: string): double;//r
 var
   v,e,err,b,theindex,source  : integer;
   s2 : string;
-  Bmagnitude : double;
+//  Bmagnitude : double;
 begin
   result:=-99;
   if columnr<0 then
     exit;
 
 
-  if ((stackmenu1.measuring_method1.itemindex=0) {manual star selection} or (variable_list=nil){should not happen})  then
+//  if ((stackmenu1.measuring_method1.itemindex=0) {manual star selection} or (variable_list=nil){should not happen})  then
+  if ((variable_list=nil){should not happen})  then
     source:=0 //mode manual star selection. Extract magnitude from from annotation text
   else
   begin
@@ -352,11 +353,14 @@ begin
          v:=v+2;
          e:= posex('(',s,v);
          if s[e-1]='_' then
-           s2:=copy(s,v,e-v-1) //local style
-         else
-           s2:=copy(s,v,e-v);//online style as:  000-BCP-198 V=9.794(0.071)_B=10.162(0.08)_R=9.601(0.071)
-
+         begin
+           s2:=copy(s,v,e-v-1); //local style  000-BCP-198 V=9.794(0.071)_B=10.162(0.08)_R=9.601(0.071)
+//         else
+//           s2:=copy(s,v,e-v);//online style as:  000-BCP-198 V=9.794(0.071)_B=10.162(0.08)_R=9.601(0.071)
          val(s2,result,err);
+         end
+         else
+           err:=99;
       end;
       if ((err<>0) or (v=0)) then
         memo2_message('Error reading comparison star magnitude. Could not find V= in ' +s)
@@ -371,12 +375,13 @@ begin
          e:= posex('_',s,b);
          if e<>0 then
          begin
-           s2:=copy(s,b,e-b-1); //local style
-           val(s2,Bmagnitude,err);
-           result:=Bmagnitude;
-         end;
+           s2:=copy(s,b,e-b); //local style  000-BCP-198 V=9.794(0.071)_B=10.162(0.08)_R=9.601(0.071)
+           val(s2,result,err);
+         end
+         else
+         err:=99;
       end;
-      if ((err<>0) or (v=0)) then
+      if ((err<>0) or (b=0)) then
            memo2_message('Error reading B magnitude in ' +s);
     end;//filter=2
   end;
@@ -830,21 +835,24 @@ begin
                      begin
                        var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (strtofloat2(b_v_variable1.text){var} - (B_V){comp});
                        var_magn:=var_magn+var_Bcorrection;
-                       transformation:='Transf corr. '+floattostrF(var_Bcorrection,ffFixed,0,3)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+') ';
+                       transformation:='Transf corr. '+floattostrF(var_Bcorrection,ffFixed,0,3)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                       filter_used:='B';//change TB to B
                      end
                      else
                      if icon_nr=1 then//V correction
                      begin
                        var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) * (strtofloat2(b_v_variable1.text){var} - (B_V){comp});
                        var_magn:=var_magn+var_Vcorrection;
-                       transformation:='Transf corr. '+floattostrF(var_Vcorrection,ffFixed,0,3)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+') ';
+                       transformation:='Transf corr. '+floattostrF(var_Vcorrection,ffFixed,0,3)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                       filter_used:='V';//change TG to V
                      end
                      else
                      if ((icon_nr=0) or (icon_nr=24)) then//R correction
                      begin
                        var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (strtofloat2(v_r_variable1.text){var} - (V_R){comp});
                        var_magn:=var_magn + var_Rcorrection;
-                       transformation:='Transf corr. '+floattostrF(var_Rcorrection,ffFixed,0,3)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+v_r_variable1.text+'-'+floattostrF(V_R,ffFixed,0,3)+') ';
+                       transformation:='Transf corr. '+floattostrF(var_Rcorrection,ffFixed,0,3)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+v_r_variable1.text+'-'+floattostrF(V_R,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                       filter_used:='R';//change TR to R
                      end
                      else
                        transf_str:='NO';//for other filters
@@ -909,7 +917,7 @@ begin
                           var_magn_str+delim+
                           err+
                           delim+filter_used+delim+
-                          Transf_str{'NO'}+delim+
+                          transf_str{'NO'}+delim+
                           'STD'+delim+
                           abbrv_comp_clean_report+delim+
                           comp_magn_str+delim+
@@ -1073,8 +1081,8 @@ end;
 procedure fill_comp_and_check;
 var
   i,count,error2,dummy        : integer;
-  abrv,filter,object_name2    : string;
-  starinfo                        : array of Tstarinfo;
+  abrv, object_name2          : string;
+  starinfo                    : array of Tstarinfo;
   measure_any,varfound,checkfound  : boolean;
 begin
   with form_aavso1 do
