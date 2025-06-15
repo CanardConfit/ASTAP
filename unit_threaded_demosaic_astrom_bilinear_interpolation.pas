@@ -1,4 +1,4 @@
-unit unit_threaded_demosaic_astroM_bilinear_interpolation;
+unit unit_threaded_demosaic_astrom_bilinear_interpolation;
 {Copyright (C) 2025 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
