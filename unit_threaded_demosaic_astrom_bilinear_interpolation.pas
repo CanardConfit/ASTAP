@@ -62,8 +62,6 @@ begin
   {calculate mean background value}
   count:=0;
   bg:=0;
-//  for y:= FStartY+10 to (FEndY-10) div FNumThreads  do
-//  for x:=10 to (head.width-10) div 100 do
 
   for yy:= 1 to 29 do
   for xx:=1 to 99 do
@@ -86,7 +84,7 @@ begin
           //the neighboring pixels. So FendY should only be limited at the top and bottom otherwise you get black lines
   begin
     for x := 1 to w - 2 do
-    begin  //http://cilab.knu.ac.kr/English/research/Color/Interpolation.htm ,  Bilinear interpolation
+    begin  //Bilinear interpolation
       try
       green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position. Place here otherwise stars get tail}
       green_odd := ( (odd(x+offsetX)) and  (odd(y+offsetY)) );

@@ -109,7 +109,7 @@ const
 begin
   if ((V_listB=nil) and (V_listB=nil)) then
   begin
-    form_transformation1.error_label1.caption:='No comparison star data!. Select standard field.';
+//    form_transformation1.error_label1.caption:='No comparison star data!. Select standard field.';
     exit;//no data
   end;
 
@@ -627,7 +627,6 @@ begin
   Tvr1.text:=TvrSTR;
   Tv_vr1.text:=Tv_vrSTR;
   Tr_vr1.text:=Tr_vrSTR;
-  transformation;
 end;
 
 procedure TForm_transformation1.sigma_transformation1EditingDone(Sender: TObject );
@@ -679,6 +678,8 @@ end;
 
 procedure TForm_transformation1.Button1Click(Sender: TObject);
 begin
+//  if ((pos('std', stackmenu1.annotate_mode1.text)<> 0) or
+//               (IDYES= Application.MessageBox('Warning. AAVSO annotation is not set at "std field". If no AAVSO comparison star are available then this routine will not work.'+#10+#10+'This routine will work with any comparison stars so you could continue.'+#10+#10+'Continue?', 'Find tranformation coeficients', MB_ICONQUESTION + MB_YESNO))) then
   transformation;
 end;
 
