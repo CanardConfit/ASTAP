@@ -354,13 +354,11 @@ begin
          e:= posex('(',s,v);
          if s[e-1]='_' then
          begin
-           s2:=copy(s,v,e-v-1); //local style  000-BCP-198 V=9.794(0.071)_B=10.162(0.08)_R=9.601(0.071)
-//         else
-//           s2:=copy(s,v,e-v);//online style as:  000-BCP-198 V=9.794(0.071)_B=10.162(0.08)_R=9.601(0.071)
-         val(s2,result,err);
+           s2:=copy(s,v,e-v-1); //local style  000-BJX-707 V=7.841_(0.021)_8.937_B-V=1.096(0.046)
+           val(s2,result,err);
          end
          else
-           err:=99;
+          err:=99;
       end;
       if ((err<>0) or (v=0)) then
         memo2_message('Error reading comparison star magnitude. Could not find V= in ' +s)
@@ -375,7 +373,7 @@ begin
          e:= posex('_',s,b);
          if e<>0 then
          begin
-           s2:=copy(s,b,e-b); //local style  000-BCP-198 V=9.794(0.071)_B=10.162(0.08)_R=9.601(0.071)
+           s2:=copy(s,b,e-b); //Local style  000-BJX-707 V=7.841_(0.021)_8.937_B-V=1.096(0.046)
            val(s2,result,err);
          end
          else
@@ -458,12 +456,13 @@ end;
 function  process_comp_stars(c : integer; calc_colour_index : boolean; out ratio_average: double; out standard_deviation, documented_comp_magn,B_V, V_R : double; out  warning : string): integer;// Get flux ratio for ensemble. Documented_comp_magn is only used for single comp star.
 var
    i,invalid_comp,invalid,count,icon_nr, B_Vcounter,V_Rcounter  : integer;
-   abbrv_c,comp_magn_str,flux_str                 : string;
-   comp_magn, flux_documented,flux,sum_all_fluxes,magR,magV, magB : double;
+   abbrv_c,comp_magn_str,flux_str,snr_str          : string;
+   comp_magn, flux_documented,flux,sum_all_fluxes,magR,magV, magB,snr,sum_all_snr : double;
    ratios,fluxes                                  : array of double;
 begin
   warning:='';
   sum_all_fluxes:=0;
+  sum_all_snr:=0;
   ratio_average:=0;
   count:=0;
   setlength(ratios,length(column_comps));
@@ -490,34 +489,45 @@ begin
       end
       else
       begin //COMP magnitude known
-        if calc_colour_index then
-        begin
-          magR:=retrieve_comp_magnitude(0,column_comps[i], abbrv_c);
-          magV:=retrieve_comp_magnitude(1,column_comps[i], abbrv_c);
-          magB:=retrieve_comp_magnitude(2,column_comps[i], abbrv_c);
-          if ((magB<>0) and (magV<>0)) then
-          begin
-            B_V:=B_V+(magB-magV);
-            inc(B_Vcounter);
-          end;
-          if ((magV<>0) and (magR<>0)) then
-          begin
-            V_R:=magV-magR;
-            inc(V_Rcounter);
-          end;
-        end;
-
-
         flux_documented:=power(10,(21-documented_comp_magn)/2.5);//21 is a bias
         flux_str:=(stackmenu1.listview7.Items.item[c].subitems.Strings[column_comps[i]+2]);
         flux:=strtofloat3(flux_str,invalid);
-        sum_all_fluxes:=sum_all_fluxes+flux_documented;
-        //Now calulate ratio*flux and sum it
-        ratio_average:=ratio_average + sqr(flux_documented)/flux;
+        if invalid=0 then
+        begin
 
-        ratios[count]:=flux_documented/flux;//for standard deviation calculation
-        fluxes[count]:=flux_documented;//for standard deviation calculation
-        inc(count);
+          snr_str:=(stackmenu1.listview7.Items.item[c].subitems.Strings[column_comps[i]+2]);
+          snr:=strtofloat3(snr_str,invalid);
+          if invalid=0 then
+          begin
+              //Now calulate ratio*flux and sum it
+            ratio_average:=ratio_average + snr*flux_documented/flux; //use snr as weight factor
+
+            ratios[count]:=flux_documented/flux;//for standard deviation calculation
+            fluxes[count]:=flux_documented;//for standard deviation calculation
+
+            sum_all_fluxes:=sum_all_fluxes+flux_documented;
+            sum_all_snr:=sum_all_snr + snr;
+            inc(count);
+
+            if calc_colour_index then
+            begin
+              magR:=retrieve_comp_magnitude(0,column_comps[i], abbrv_c);
+              magV:=retrieve_comp_magnitude(1,column_comps[i], abbrv_c);
+              magB:=retrieve_comp_magnitude(2,column_comps[i], abbrv_c);
+              if ((magB<>0) and (magV<>0)) then
+              begin
+                B_V:=B_V+snr*(magB-magV);
+                inc(B_Vcounter);
+              end;
+              if ((magV<>0) and (magR<>0)) then
+              begin
+                V_R:=V_R+snr*(magV-magR);
+                inc(V_Rcounter);
+              end;
+            end;
+          end;//valid snr
+
+        end;//valid fluxe
       end;
     end
     else
@@ -525,13 +535,13 @@ begin
   end;//for loop
   if sum_all_fluxes<>0 then
   begin
-    ratio_average:=ratio_average/sum_all_fluxes; // So the mean of all comp stars.  Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/ln(10)
+    ratio_average:=ratio_average/sum_all_snr; // So the mean of all comp stars.  Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/ln(10)
     result:=0;
 
     if calc_colour_index then
     begin
-      if B_Vcounter>0 then B_V:=B_V/B_Vcounter else B_V:=-99;//average value of all comp stars
-      if V_Rcounter>0 then V_R:=V_R/V_Rcounter else V_R:=-99;;//average value of all comp stars
+      if B_Vcounter>0 then B_V:=B_V/sum_all_snr else B_V:=-99;//average value of all comp stars
+      if V_Rcounter>0 then V_R:=V_R/sum_all_snr else V_R:=-99;;//average value of all comp stars
     end;
 
     //now calculate the standard deviation. So the weighted difference between the COMP stars in one image
