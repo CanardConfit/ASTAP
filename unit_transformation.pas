@@ -457,11 +457,10 @@ begin
                          0,24 : begin R:=R+value; inc(Rcount);iconR:=true; end;  //red or Cousins red
                          1 :    begin V:=V+value; inc(Vcount);iconV:=true; end;  //V or G TG
                          2 :    begin B:=B+value; inc(Bcount);iconB:=true; end;  //B or TB
-//                         28:    begin I:=I+value; inc(Icount);end;  //I FILTER
-
-//                         21 :   begin SI:=SI+value; inc(SIcount);end;//SDSS-i
-//                         22 :   begin SR:=SR+value; inc(SRcount);end;//SDSS-r
-//                         23 :   begin SG:=SG+value; inc(SGcount);end;//SDSS-g
+//                       28:    begin I:=I+value; inc(Icount);end;  //I FILTER
+//                       21 :   begin SI:=SI+value; inc(SIcount);end;//SDSS-i
+//                       22 :   begin SR:=SR+value; inc(SRcount);end;//SDSS-r
+//                       23 :   begin SG:=SG+value; inc(SGcount);end;//SDSS-g
                end;
               except
               end;
@@ -470,10 +469,10 @@ begin
         if Bcount<>0  then begin B:=B/Bcount; B_list[starnr]:=B;      end else B_list[starnr]:=0;//simple mean
         if Vcount<>0  then begin V:=V/Vcount; V_list[starnr]:=V;      end else V_list[starnr]:=0;//simple mean
         if Rcount<>0  then begin R:=R/Rcount; R_list[starnr]:=R;      end else R_list[starnr]:=0;;//simple mean
-//        if Icount<>0  then begin I:=I/Icount; I_list[starnr]:=I;      end else I_list[starnr]:=0;;//simple mean
-//        if SGcount<>0 then begin SG:=SG/SGcount; SG_list[starnr]:=SG; end else SG_list[starnr]:=0;;//simple mean
-//        if SRcount<>0 then begin SR:=SR/SRcount; SR_list[starnr]:=SR; end else SR_list[starnr]:=0;//simple mean
-//        if SIcount<>0 then begin SI:=SI/SIcount; SI_list[starnr]:=SI; end else SI_list[starnr]:=0;//simple mean
+//      if Icount<>0  then begin I:=I/Icount; I_list[starnr]:=I;      end else I_list[starnr]:=0;;//simple mean
+//      if SGcount<>0 then begin SG:=SG/SGcount; SG_list[starnr]:=SG; end else SG_list[starnr]:=0;;//simple mean
+//      if SRcount<>0 then begin SR:=SR/SRcount; SR_list[starnr]:=SR; end else SR_list[starnr]:=0;//simple mean
+//      if SIcount<>0 then begin SI:=SI/SIcount; SI_list[starnr]:=SI; end else SI_list[starnr]:=0;//simple mean
 
         B_list_documented[starnr]:=retrieve_comp_magnitude(2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
         V_list_documented[starnr]:=retrieve_comp_magnitude(1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
@@ -532,6 +531,12 @@ begin
             Tb_bv, Tb_bv_intercept, Tb_bv_sd,
             Tv_bv, Tv_bv_intercept, Tv_bv_sd);
 
+      with Form_transformation1 do
+      begin
+        Tbv1.enabled:=true;
+        Tb_bv1.enabled:=true;
+        Tv_bv1.enabled:=true;
+      end;
     end
     else
     begin
@@ -590,6 +595,14 @@ begin
         {out} Tvr, Tvr_intercept, Tvr_sd,
             Tv_vr, Tv_vr_intercept, Tv_vr_sd,
             Tr_vr, Tr_vr_intercept, Tr_vr_sd);
+
+      with Form_transformation1 do
+      begin
+        Tvr1.enabled:=true;
+        Tv_vr1.enabled:=true;
+        Tr_vr1.enabled:=true;
+      end;
+
     end
     else
     begin

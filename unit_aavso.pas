@@ -22,14 +22,10 @@ type
     abrv_check1: TComboBox;
     baa_style1: TCheckBox;
     abrv_comp1: TCheckListBox;
-    b_v_variable1: TEdit;
     apply_transformation1: TCheckBox;
     test_mode1: TCheckBox;
-    label13: TLabel;
     sigma_mzero1: TLabel;
-    v_r_variable1: TEdit;
     ensemble_database1: TCheckBox;
-    label14: TLabel;
     obstype1: TComboBox;
     Label7: TLabel;
     sigma_check2: TLabel;
@@ -655,6 +651,141 @@ begin
   end;
 end;
 
+procedure get_b_v_var(out b_v_var, v_r_var : double);//calculate the b-v of the variable
+var
+  thevar, dum: string;
+  c,Rcount,Vcount,Bcount,icon_nr,count   : integer;
+  magn, fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,ratio,sd_comp,comp_magn,B_V, V_R,
+  ratioV,ratioB,ratioR                                                              : double;
+  warning : string;
+  i, j, VIndexR, RIndex, VIndex, BIndex: Integer;
+  MinDiff, Diff: Double;
+begin
+  with form_aavso1 do
+  begin
+    thevar:=clean_abbreviation(abbrv_variable1.text);
+    //find B-V of var
+    column_var:=find_correct_var_column;
+    varmag_B:=0;
+    varmag_V:=0;
+    varmag_R:=0;
+
+    Rcount:=0;
+    Vcount:=0;
+    Bcount:=0;
+
+
+    //Find B and V image with closest Julian day
+    MinDiff := 1e10; // A very large number
+    VIndex := -1;
+    BIndex := -1;
+    // Brute-force search: compare every green with every blue
+    with stackmenu1.listview7.Items do
+    for i:=0 to count-1 do {retrieve data from listview}
+     begin
+       if item[i].SubitemImages[P_filter]=1 then //V filter
+       begin
+         for j:=0 to count-1 do {retrieve data from listview}
+         begin
+           if item[j].SubitemImages[P_filter]=2 then //blue
+           begin
+             if item[c].checked then
+             begin
+               Diff := Abs(strtofloat(item[i].subitems.Strings[P_jd_mid]) - strtofloat(item[j].subitems.Strings[P_jd_mid]));
+               if Diff < MinDiff then
+               begin
+                 MinDiff := Diff;
+                 VIndex := i;
+                 BIndex := j;
+               end;
+             end;//checked
+           end;
+         end;
+       end;
+     end;
+
+    //Find V and R image with closest Julian day
+    MinDiff := 1e10; // A very large number
+    VIndexR := -1;
+    RIndex := -1;
+
+    // Brute-force search: compare every green with every blue
+    with stackmenu1.listview7.Items do
+    for i:=0 to count-1 do {retrieve data from listview}
+     begin
+       if item[i].SubitemImages[P_filter]=1 then //V filter
+       begin
+         for j:=0 to count-1 do {retrieve data from listview}
+         begin
+           if item[j].SubitemImages[P_filter] in [0,24] then //red
+           begin
+             if item[c].checked then
+             begin
+               Diff := Abs(strtofloat(item[i].subitems.Strings[P_jd_mid]) - strtofloat(item[j].subitems.Strings[P_jd_mid]));
+               if Diff < MinDiff then
+               begin
+                 MinDiff := Diff;
+                 VIndexR := i;
+                 RIndex := j;
+               end;
+             end;//checked
+           end;
+         end;
+       end;
+     end;
+
+
+    with stackmenu1.listview7.Items do
+    if ((BIndex>=0) and  (VIndex>=0)) then
+    begin
+      dum:=item[Bindex].subitems.Strings[column_var+2];{var star flux}
+      fluxB:=strtofloat2(dum);
+      dum:=item[Vindex].subitems.Strings[column_var+2];{var star flux}
+      fluxV:=strtofloat2(dum);
+
+      if ((process_comp_stars(BIndex,false,ratioB,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
+          (process_comp_stars(VIndex,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
+        begin
+          varmag_B:=21- ln(ratioB*fluxB)*2.5/ln(10); //convert var flux to magnitude using
+          varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
+          b_v_var:=varmag_B-varmag_V;
+          memo2_message('b-v var is '+floattostrF(b_v_var,FFfixed,0,3) + '. Used files '+ item[Bindex].Caption+ ' & '+ item[Vindex].Caption);
+        end
+      else
+      begin
+        memo2_message(warning);
+        b_v_var:= 99;
+      end;
+    end;
+
+    with stackmenu1.listview7.Items do
+    if ((VIndexR>=0) and  (RIndex>=0)) then
+    begin
+      dum:=item[Rindex].subitems.Strings[column_var+2];{var star flux}
+      fluxR:=strtofloat2(dum);
+      dum:=item[VindexR].subitems.Strings[column_var+2];{var star flux}
+      fluxV:=strtofloat2(dum);
+
+      if ((process_comp_stars(VIndexR,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
+          (process_comp_stars(RIndex,false,ratioR,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
+        begin
+          varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
+          varmag_R:=21- ln(ratioR*fluxR)*2.5/ln(10); //convert var flux to magnitude using
+          v_r_var:=varmag_V-varmag_R;
+          memo2_message('v-r var is '+floattostrF(v_r_var,FFfixed,0,3) + '. Used files '+ item[VindexR].Caption+ ' & '+ item[Rindex].Caption);
+        end
+      else
+      begin
+        memo2_message(warning);
+        v_r_var:= 99;
+      end;
+    end;
+
+  end;//form_aavso1
+end;
+
+
+
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
@@ -663,7 +794,7 @@ var
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
     var_flux_str,check_flux_str,warning,transformation, transform_all_factors,transf_str  : string;
     stdev_valid,apply_transformation : boolean;
-    snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp,B_V, V_R,var_Vcorrection,var_Bcorrection,var_Rcorrection : double;
+    snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp,B_V, V_R,var_Vcorrection,var_Bcorrection,var_Rcorrection,v_r_var,b_v_var : double;
     PNG: TPortableNetworkGraphic;{FPC}
     vsep : char;
 begin
@@ -768,6 +899,8 @@ begin
   else
     transform_all_factors:='';
 
+  if stackmenu1.annotate_mode1.itemindex<4 then //local database
+    chartID:='na'; //else it comes from VSP download
 
   aavso_report:= '#TYPE='+detype+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
@@ -782,6 +915,7 @@ begin
                  '#NAME'+delim+'DATE'+delim+'MAG'+delim+'MERR'+delim+'FILT'+delim+'TRANS'+delim+'MTYPE'+delim+'CNAME'+delim+'CMAG'+delim+'KNAME'+delim+'KMAG'+delim+'AIRMASS'+delim+'GROUP'+delim+'CHART'+delim+'NOTES'+#13+#10;
 
 
+   get_b_v_var({out} b_v_var, v_r_var);//calculate the b-v of the variable
 
    with stackmenu1 do
    for c:=0 to listview7.items.count-1 do
@@ -841,11 +975,11 @@ begin
                      icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
                      if icon_nr=2 then //B correction
                      begin
-                       if B_V<>-99 then
+                       if ((B_V<>-99) and (b_v_var<>99)) then
                        begin
-                         var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (strtofloat2(b_v_variable1.text){var} - (B_V){comp});
+                         var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (b_v_var - B_V{comp});
                          var_magn:=var_magn+var_Bcorrection;
-                         transformation:='Transf corr. '+floattostrF(var_Bcorrection,ffFixed,0,3)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostrF(var_Bcorrection,ffFixed,0,3)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostrF(b_v_var,ffFixed,0,3)+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
                          filter_used:='B';//change TB to B
                        end
                        else
@@ -857,11 +991,11 @@ begin
                      else
                      if icon_nr=1 then//V correction
                      begin
-                       if B_V<>-99 then
+                       if ((B_V<>-99)  and (b_v_var<>99)) then
                        begin
-                         var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) * (strtofloat2(b_v_variable1.text){var} - (B_V){comp});
+                         var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) *( b_v_var{var} - B_V{comp});
                          var_magn:=var_magn+var_Vcorrection;
-                         transformation:='Transf corr. '+floattostrF(var_Vcorrection,ffFixed,0,3)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+b_v_variable1.text+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostrF(var_Vcorrection,ffFixed,0,3)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+floattostrF(b_v_var,ffFixed,0,3)+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
                          filter_used:='V';//change TG to V
                        end
                        else
@@ -874,11 +1008,11 @@ begin
                      else
                      if ((icon_nr=0) or (icon_nr=24)) then//R correction
                      begin
-                       if V_R<>-99 then
+                       if ((V_R<>-99) and  (v_r_var<>99)) then
                        begin
-                         var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (strtofloat2(v_r_variable1.text){var} - (V_R){comp});
+                         var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (v_r_var{var} - V_R{comp});
                          var_magn:=var_magn + var_Rcorrection;
-                         transformation:='Transf corr. '+floattostrF(var_Rcorrection,ffFixed,0,3)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+v_r_variable1.text+'-'+floattostrF(V_R,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostrF(var_Rcorrection,ffFixed,0,3)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostrF(v_r_var,ffFixed,0,3)+'-'+floattostrF(V_R,ffFixed,0,3)+'), Filter used '+filter_used+',';
                          filter_used:='R';//change TR to R
                        end
                        else
@@ -957,7 +1091,7 @@ begin
                           check_magn_str+delim+
                           airmass_str+delim+
                           'na'+delim+ {group}
-                          'na'+delim+
+                          chartID +delim+
                           transformation+comp_magn_info+' ('+settings+ ')'+#13+#10;
 
 
@@ -972,7 +1106,7 @@ begin
 
   memo2_message(aavso_report);
   if to_clipboard then
-    Clipboard.AsText:=aavso_report
+    Clipboard.AsText:=#13+#10+aavso_report
   else
   begin
     savedialog1.filename:=stringreplace(abbrv_variable1.text,'?','',[rfReplaceAll]) +'_'+date_observation+'_report.txt';
@@ -1205,63 +1339,9 @@ end;
 
 
 procedure Tform_aavso1.abbrv_variable1Change(Sender: TObject);
-type
-  TmagnAndTime  = record
-                   time: double;
-                 R,V,B : double
-              end;
-var
-  thevar, dum: string;
-  c,Rcount,Vcount,Bcount,icon_nr,count   : integer;
-  value, varmag_B,varmag_V, varmag_R : double;
-
 begin
-  thevar:=clean_abbreviation(abbrv_variable1.text);
-  retrieve_vsp_stars(thevar);
+  retrieve_vsp_stars(clean_abbreviation(abbrv_variable1.text));//from simple database
   plot_graph;
-
-  //find B-V of var
-  column_var:=find_correct_var_column;
-  varmag_B:=0;
-  varmag_V:=0;
-  varmag_R:=0;
-
-  Rcount:=0;
-  Vcount:=0;
-  Bcount:=0;
-
-  with stackmenu1 do
-  for c:=0 to listview7.items.count-1 do {retrieve data from listview}
-  begin
-    if listview7.Items.item[c].checked then
-    begin
-       if column_var>0 then
-       begin
-         dum:=listview7.Items.item[c].subitems.Strings[column_var];{var star flux}
-         value:=strtofloat2(dum);
-         icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
-         case icon_nr of
-           0,24 : begin varmag_R:=varmag_R+value; inc(Rcount);end;  //red or Cousins red
-           1 :    begin varmag_V:=varmag_V+value; inc(Vcount);end;  //V or G TG
-           2 :    begin varmag_B:=varmag_B+value; inc(Bcount);end;  //B or TB
-        end;
-      end;
-    end;
-
-  end;
-  if Rcount>0 then varmag_R:=varmag_R/Rcount;
-  if Vcount>0 then varmag_V:=varmag_V/Vcount;
-  if Bcount>0 then varmag_B:=varmag_B/Bcount;
-  if ((Bcount>0) and (Vcount>0)) then
-    b_v_variable1.text:=floattostrF(varmag_B-varmag_V,ffFixed, 0,3)
-  else
-    b_v_variable1.text:='?';
-
-  if ((Vcount>0) and (Rcount>0)) then
-    v_r_variable1.text:=floattostrF(varmag_V-varmag_R,ffFixed, 0,3)
-  else
-    v_r_variable1.text:='?';
-
 end;
 
 
@@ -1657,7 +1737,6 @@ begin
       if listview7.Items.item[c].checked then
       begin
         invalid_comp:=process_comp_stars(c,false,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
-     //   comp_magn_info:=comp_magn_info+warning;
         if invalid_comp=0 then //valid comp star(s)
         begin
           dum:=(listview7.Items.item[c].subitems.Strings[date_column]);
@@ -1729,7 +1808,11 @@ begin
             end;
           end;
 
-        end;//valid comp star(s)
+        end //valid comp star(s)
+        else
+        begin
+         end;
+
       end;
     end;
   end; //use comp stars, and convert flux to magnitudes
@@ -1787,14 +1870,16 @@ begin
 
     bmp.SetSize(w,h);
 
-    bmp.Canvas.brush.Style:=bsclear;
 
     bmp.canvas.brush.color:=clmenu;
     bmp.canvas.rectangle(-1,-1, w+1, h+1);{background}
 
     bmp.Canvas.Pen.Color := clmenutext;
     bmp.Canvas.brush.color :=clmenu;
+   // bmp.Canvas.brush.color :=clgreen;
     bmp.Canvas.Font.Color := clmenutext;
+    bmp.Canvas.brush.Style:=bsclear;
+
 
     bmp.canvas.moveto(w,h-bspace+5);
     bmp.canvas.lineto(wtext-5,h-bspace+5);{x line}
