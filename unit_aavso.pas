@@ -894,7 +894,8 @@ begin
     '#Tv_bv= ' + Tv_bvSTR+#13+#10+
     '#Tvr= ' + TvrSTR+#13+#10+
     '#Tv_vr= ' + Tv_vrSTR+#13+#10+
-    '#Tr_vr= ' + Tr_vrSTR+#13+#10
+    '#Tr_vr= ' + Tr_vrSTR+#13+#10+
+    '#Transf corr B = Tb_bv * Tbv *((b-v) - (B-V))'+#13+#10
   end
   else
     transform_all_factors:='';
