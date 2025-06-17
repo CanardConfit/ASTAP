@@ -67,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.06.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -696,7 +696,9 @@ var
   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
   warning_str,{for solver}
-  roworder                  :string;
+  roworder,
+  chartID : string;//AAVSO chartID
+
   copy_paste_x,
   copy_paste_y,
   copy_paste_w,
@@ -772,7 +774,6 @@ var {################# initialised variables #########################}
   passband_active: string=''; //Indicates current Gaia conversion active
   star_profile_plotted: boolean=false;
   minor_planet_at_cursor:string='';
-
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
@@ -9931,7 +9932,20 @@ begin
 
   setlength(vsp,2000);
   count:=0;
-  j:=150;//skip some header stuff
+
+  //get chart ID
+  i:=pos('"chartid":"',s); //AUID will be always available
+  if i<>0 then
+  begin
+    i:=i+length('"chartid":"');
+    j:=posex('"',s,i);
+    chartID:=copy(s,i,j-i);//aavso chart ID
+ end
+ else
+   chartID:='NA';
+
+  j:=pos('photometry',s,j);
+  j:=j+length('photometry');
   repeat
     if count>=length(vsp) then setlength(vsp,count+2000);// increase size
 

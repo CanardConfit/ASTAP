@@ -3694,7 +3694,7 @@ object stackmenu1: Tstackmenu1
             ItemIndex = 0
             Items.Strings = (
               'Local star database (V only)'
-              'Online Gaia transformed'
+              'Online Gaia'
             )
             ParentFont = False
             Style = csDropDownList
@@ -9213,6 +9213,15 @@ object stackmenu1: Tstackmenu1
       Caption = 'Copy selected rows to clipboard in TG format'
       Hint = 'Copy selected rows to clipboard in TG format for processing in Transformation generator.'
       OnClick = export_to_tg1Click
+    end
+    object Separator14: TMenuItem
+      Caption = '-'
+    end
+    object find_listview_text7: TMenuItem
+      Caption = 'Find text'
+      Hint = 'Find text in the listview'
+      ShortCut = 16454
+      OnClick = find_listview_text7Click
     end
     object Separator13: TMenuItem
       Caption = '-'

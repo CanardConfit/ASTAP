@@ -30,6 +30,7 @@ uses
   LCLIntf,{for for getkeystate, selectobject, openURL}
   clipbrd, PairSplitter, Types, strutils,
   fileutil,
+//  CommCtrl, // For ListView_GetSubItemRect and LVM_SCROLL
   unit_star_database,
   astap_main;
 
@@ -77,6 +78,7 @@ type
     MenuItem35: TMenuItem;
     listview1_photometric_calibration1: TMenuItem;
     export_to_tg1: TMenuItem;
+    find_listview_text7: TMenuItem;
     rb2: TEdit;
     report_sqm1: TMenuItem;
     MenuItem41: TMenuItem;
@@ -88,6 +90,7 @@ type
     Separator11: TMenuItem;
     Separator12: TMenuItem;
     Separator13: TMenuItem;
+    Separator14: TMenuItem;
     Separator9: TMenuItem;
     sn_rename_selected_files1: TMenuItem;
     MenuItem36: TMenuItem;
@@ -781,6 +784,7 @@ type
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
     procedure export_to_tg1Click(Sender: TObject);
+    procedure find_listview_text7Click(Sender: TObject);
     procedure report_sqm1Click(Sender: TObject);
     procedure MenuItem41Click(Sender: TObject);
     procedure annotate_unknown1Click(Sender: TObject);
@@ -7962,7 +7966,6 @@ var
                 begin
                   magn:=head.mzero - ln(flux)*2.5/ln(10);
 
-
                   Result := floattostrf(magn, ffFixed, 5, 3);
                   {write measured magnitude to list}
                   //        mainform1.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,0) );
@@ -8327,6 +8330,9 @@ begin
               celestial_to_pixel(head, variable_list[j].ra, variable_list[j].dec,true, xn, yn);
               if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
               begin
+                //if pos('AD_CMi',variable_list[j].abbr)>0 then
+                //i:=j;
+
                 astr := measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
                 if snr>=snr_min then
                 begin
@@ -8335,6 +8341,7 @@ begin
                   begin
                     if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=variable_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
                     begin //existing object column
+
                      listview7.Items.item[c].subitems.Strings[i]:= astr;
                      listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
                      listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
@@ -9874,6 +9881,146 @@ begin
   else
   memo2_message('Copied to clipboard. Paste to text file and feed that file to Transformation Generator');
   Clipboard.AsText := info;
+end;
+
+
+procedure ScrollToItem(ListView: TListView; Item: TListItem; ColumnIndex: Integer);
+var
+  TotalWidth, TargetPos, MaxScroll: Integer;
+  i: Integer;
+  {$IFNDEF WINDOWS}
+  ScrollSteps: Integer;
+  {$ENDIF}
+begin
+  // Make item visible vertically
+  Item.MakeVisible(False);
+  Item.Selected := True;
+  ListView.ItemFocused := Item;
+  ListView.SetFocus;
+
+  // Calculate horizontal position
+  TotalWidth := 0;
+  for i := 0 to ColumnIndex - 1 do
+    Inc(TotalWidth, ListView.Column[i].Width);
+
+  // Center the target column
+  TargetPos := TotalWidth - (ListView.ClientWidth div 2) +
+               (ListView.Column[ColumnIndex].Width div 2);
+
+  // Calculate maximum scroll (estimated)
+  MaxScroll := 0;
+  for i := 0 to ListView.Columns.Count - 1 do
+    Inc(MaxScroll, ListView.Column[i].Width);
+  MaxScroll := Max(0, MaxScroll - ListView.ClientWidth);
+
+  // Apply bounds checking
+  TargetPos := Max(0, Min(TargetPos, MaxScroll));
+
+  // Platform-specific scrolling
+  {$IFDEF WINDOWS}
+  SendMessage(ListView.Handle, LVM_SCROLL, TargetPos, 0);
+  {$ELSE}
+  // Linux/macOS workaround
+  // Reset to left first (scrolling left by maximum amount)
+  ListView.ScrollBy(-MaxScroll, 0);
+
+  // Scroll right to target position in reasonable steps
+  ScrollSteps := TargetPos div 50;
+  for i := 1 to ScrollSteps do
+    ListView.ScrollBy(50, 0);
+  ListView.ScrollBy(TargetPos mod 50, 0);
+  {$ENDIF}
+end;
+
+
+procedure FindAndScrollInListView(ListView: TListView; const SearchText: string);
+var
+  i, j: Integer;
+  Item: TListItem;
+  SearchStr, ItemText: string;
+  Found: Boolean;
+  TotalWidth, TargetPos, MaxScroll: Integer;
+  {$IFNDEF WINDOWS}
+  ScrollSteps: Integer;
+  {$ENDIF}
+begin
+  if not Assigned(ListView) or (SearchText = '') then Exit;
+
+  SearchStr := UpperCase(SearchText);
+
+  // First search in column titles
+  for i := 0 to ListView.Columns.Count - 1 do
+  begin
+    if Pos(SearchStr, UpperCase(ListView.Columns[i].Caption)) > 0 then
+    begin
+      // Calculate total width of preceding columns
+      TotalWidth := 0;
+      for j := 0 to i - 1 do
+        Inc(TotalWidth, ListView.Column[j].Width);
+
+      // Calculate target scroll position (center the column)
+      TargetPos := TotalWidth - (ListView.ClientWidth div 2) +
+                   (ListView.Column[i].Width div 2);
+
+      // Calculate maximum possible scroll (estimated)
+      MaxScroll := 0;
+      for j := 0 to ListView.Columns.Count - 1 do
+        Inc(MaxScroll, ListView.Column[j].Width);
+      MaxScroll := Max(0, MaxScroll - ListView.ClientWidth);
+
+      // Apply bounds checking
+      TargetPos := Max(0, Min(TargetPos, MaxScroll));
+
+      // Platform-specific scrolling
+      {$IFDEF WINDOWS}
+      SendMessage(ListView.Handle, LVM_SCROLL, TargetPos, 0);
+      {$ELSE}
+      // Linux/macOS workaround - reset to left first
+      ListView.ScrollBy(-MaxScroll, 0);
+
+      // Scroll to target position in reasonable steps
+      ScrollSteps := TargetPos div 50;
+      for j := 1 to ScrollSteps do
+        ListView.ScrollBy(50, 0);
+      ListView.ScrollBy(TargetPos mod 50, 0);
+      {$ENDIF}
+
+      Exit;
+    end;
+  end;
+
+  // Search through items and subitems
+  for i := 0 to ListView.Items.Count - 1 do
+  begin
+    Item := ListView.Items[i];
+
+    // Check main caption
+    if Pos(SearchStr, UpperCase(Item.Caption)) > 0 then
+    begin
+      ScrollToItem(ListView, Item, 0);
+      Exit;
+    end;
+
+    // Check subitems
+    for j := 0 to Item.SubItems.Count - 1 do
+    begin
+      if (j < ListView.Columns.Count) and
+         (Pos(SearchStr, UpperCase(Item.SubItems[j])) > 0) then
+      begin
+        ScrollToItem(ListView, Item, j + 1);
+        Exit;
+      end;
+    end;
+  end;
+
+  ShowMessage('Text "' + SearchText + '" not found');
+end;
+
+
+procedure Tstackmenu1.find_listview_text7Click(Sender: TObject);
+begin
+  PatternToFind:=uppercase(inputbox('Find','Text to find in listview:' ,PatternToFind));
+  FindAndScrollInListView(ListView7, PatternToFind);
 end;
 
 
