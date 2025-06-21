@@ -48,8 +48,8 @@ type
   end;
 
 var
-  variable_list: array of tvariable_list;{for photometry tab}
-  variable_list_length : integer=0;
+  vsp_vsx_list: array of tvariable_list;{for photometry tab}
+  vsp_vsx_list_length : integer=0;
 
 
 
@@ -1379,7 +1379,7 @@ begin
 end;
 
 
-procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the deep sky object on the image. If extract is true then extract visible to variable_list}
+procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the deep sky object on the image. If extract is true then extract visible to vsp_vsx_list}
 type
   textarea = record
      x1,y1,x2,y2 : integer;
@@ -1402,9 +1402,9 @@ begin
 
     if extract_visible then //for photometry
     begin
-      variable_list:=nil;
-      variable_list_length:=0;//declare empthy
-      setlength(variable_list,1000);//make space
+      vsp_vsx_list:=nil;
+      vsp_vsx_list_length:=0;//declare empthy
+      setlength(vsp_vsx_list,1000);//make space
     end;
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
@@ -1550,14 +1550,14 @@ begin
            end;
            mainform1.image1.Canvas.textout(x1,y1,name);
 
-           if ((extract_visible) and (text_counter<length(variable_list))) then //special option to add objects to list for photometry
+           if ((extract_visible) and (text_counter<length(vsp_vsx_list))) then //special option to add objects to list for photometry
            begin
-             variable_list[text_counter].ra:=ra2;
-             variable_list[text_counter].dec:=dec2;
-             variable_list[text_counter].abbr:=naam2;
-             variable_list[text_counter].source:=0; //local
+             vsp_vsx_list[text_counter].ra:=ra2;
+             vsp_vsx_list[text_counter].dec:=dec2;
+             vsp_vsx_list[text_counter].abbr:=naam2;
+             vsp_vsx_list[text_counter].source:=0; //local
 
-             variable_list_length:=text_counter;
+             vsp_vsx_list_length:=text_counter;
            end;
            inc(text_counter);
            if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
@@ -1649,9 +1649,9 @@ begin
 
    if extract_visible then //for photometry
    begin
-     variable_list:=nil;
-     variable_list_length:=0;//declare empthy
-     setlength(variable_list,1000);//make space
+     vsp_vsx_list:=nil;
+     vsp_vsx_list_length:=0;//declare empthy
+     setlength(vsp_vsx_list,1000);//make space
      nrcount:=0;
    end;
 
@@ -1707,7 +1707,10 @@ begin
             with mainform1 do
             for i:=0 to high(Fshapes) do
               if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
+              begin
                 Fshapes[i].shape.HINT:=vsx[count].name;
+                if extract_visible then Fshapes[i].vspvsx_list_index:=nrcount;//store the vsp_vsx_list position. This will later copied to the listview7 tag
+              end;
 
 
             var_epoch:=strtofloat1(vsx[count].epoch);
@@ -1722,14 +1725,14 @@ begin
                  //  memo2_message(filename2+',  '+floattostr(jd_mid)+ ',   '+floattostr(delta));
             end;
 
-            if ((extract_visible) and (nrcount<length(variable_list))) then //special option to add objects to list for photometry
+            if ((extract_visible) and (nrcount<length(vsp_vsx_list))) then //special option to add objects to list for photometry
             begin
-              variable_list[nrcount].ra:=vsx[count].ra;
-              variable_list[nrcount].dec:=vsx[count].dec;
-              variable_list[nrcount].abbr:=abbreviation;
-              variable_list[nrcount].source:=1;//vsx
-              variable_list[nrcount].index:=count;//to retrieve all mangitudes
-              variable_list_length:=nrcount;
+              vsp_vsx_list[nrcount].ra:=vsx[count].ra;
+              vsp_vsx_list[nrcount].dec:=vsx[count].dec;
+              vsp_vsx_list[nrcount].abbr:=abbreviation;
+              vsp_vsx_list[nrcount].source:=1;//vsx
+              vsp_vsx_list[nrcount].index:=count;//to retrieve all mangitudes
+              vsp_vsx_list_length:=nrcount;
               inc(nrcount);
             end;
 
@@ -1765,17 +1768,21 @@ begin
             with mainform1 do
             for i:=0 to high(Fshapes) do
             if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
-                     Fshapes[i].shape.HINT:=abbreviation;//copy(naam2,1,posex(' ',naam2,4)-1);
-
-
-            if ((extract_visible) and (nrcount<length(variable_list))) then //special option to add objects to list for photometry
             begin
-              variable_list[nrcount].ra:=vsp[count].ra;
-              variable_list[nrcount].dec:=vsp[count].dec;
-              variable_list[nrcount].abbr:=abbreviation;
-              variable_list[nrcount].source:=2;//vsp
-              variable_list[nrcount].index:=count;//to retrieve all mangitudes
-              variable_list_length:=nrcount;
+              Fshapes[i].shape.HINT:=abbreviation;
+              if extract_visible then
+                  Fshapes[i].vspvsx_list_index:=nrcount;//store the vsp_vsx_list position. This will later copied to the listview7 tag
+            end;
+
+
+            if ((extract_visible) and (nrcount<length(vsp_vsx_list))) then //special option to add objects to list for photometry
+            begin
+              vsp_vsx_list[nrcount].ra:=vsp[count].ra;
+              vsp_vsx_list[nrcount].dec:=vsp[count].dec;
+              vsp_vsx_list[nrcount].abbr:=abbreviation;
+              vsp_vsx_list[nrcount].source:=2;//vsp
+              vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
+              vsp_vsx_list_length:=nrcount;
               inc(nrcount);
             end;
           end;

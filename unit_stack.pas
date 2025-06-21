@@ -4165,7 +4165,7 @@ begin
 //  detag:=column.tag;
 //  if column.tag<>0 then
 //  begin
-  //  variable_list[detag].ra
+  //  vsp_vsx_list[detag].ra
   //  ffffff
 //    beep;
 //  end;
@@ -7884,7 +7884,7 @@ begin
 end;
 
 
-procedure create_all_star_list; //collect any star in the variable_list
+procedure create_all_star_list; //collect any star in the vsp_vsx_list
 var
    i,j, nrstars, formalism            :integer;
    hfd_min,ra2,dec2,sep,mean_hfd      : double;
@@ -7892,37 +7892,37 @@ var
    variable_listAAVSO: array of tvariable_list;
    found               : boolean;
 begin
-  variable_listAAVSO:=copy(variable_list,0,variable_list_length+1);//duplicate AAVSO list
+  variable_listAAVSO:=copy(vsp_vsx_list,0,vsp_vsx_list_length+1);//duplicate AAVSO list
 
   if img_loaded=nil then exit;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
   find_stars(img_loaded, head,hfd_min, round(strtofloat2(stackmenu1.nr_stars_to_detect1.text)), starlist,mean_hfd);
   nrstars:=length(starlist[0]);
-  setlength(variable_list,nrstars);//make space
+  setlength(vsp_vsx_list,nrstars);//make space
   formalism:=mainform1.Polynomial1.itemindex;
 
   for i:=0 to nrstars-1 do
   begin
     pixel_to_celestial(head,starlist[0,i]+1,starlist[1,i]+1, formalism, ra2,dec2);
-    variable_list[i].ra:=ra2;
-    variable_list[i].dec:=dec2;
+    vsp_vsx_list[i].ra:=ra2;
+    vsp_vsx_list[i].dec:=dec2;
     found:=false;
     for j:=0 to length(variable_listAAVSO)-1 do
     begin
       ang_sep(ra2, dec2, variable_listAAVSO[j].ra, variable_listAAVSO[j].dec, {out}sep);
       if sep < 10 * pi / (180*60*60) then //same star, position within 10 arcsec
       begin
-        variable_list[i]:=variable_listAAVSO[j]; //same star. Use all AAVSO data, a,dec and magnitudes
+        vsp_vsx_list[i]:=variable_listAAVSO[j]; //same star. Use all AAVSO data, a,dec and magnitudes
         found:=true;
       end;
     end;
     if found=false then
     begin
-       variable_list[i].abbr:=prepare_IAU_designation(ra2, dec2);
-       variable_list[i].source:=3;//not is AAVSO database
+       vsp_vsx_list[i].abbr:=prepare_IAU_designation(ra2, dec2);
+       vsp_vsx_list[i].source:=3;//not is AAVSO database
     end;
   end;
-  variable_list_length:=nrstars-1;
+  vsp_vsx_list_length:=nrstars-1;
 end;
 
 
@@ -8031,7 +8031,7 @@ begin
 
   save_settings2;{Too many lost selected files, so first save settings.}
 
-  variable_list:=nil;//clear every time. In case the images are changed then the columns are correct.
+  vsp_vsx_list:=nil;//clear every time. In case the images are changed then the columns are correct.
 
 
   {check is analyse is done}
@@ -8264,6 +8264,27 @@ begin
 
         saturation_level:=calc_saturation_level(head);
 
+
+        // fill vsx, vsp database database
+        if length(vsp_vsx_list)=0 then //fill with vsp, vsx stars for later
+        begin
+          variable_star_annotation(true {extract AAVSO database  to vsp_vsx_list});
+
+          if stackmenu1.measuring_method1.itemindex=3 then //add none AAVSO stars
+            create_all_star_list;//collect any star in the vsp_vsx_list
+
+          oldra0:=head.ra0;
+          olddec0:=head.dec0;
+        end
+        else
+        begin
+          ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
+            if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
+                mainform1.variable_star_annotation1Click(sender {new position, update variable list});
+        end;
+
+
+
         if stackmenu1.measuring_method1.itemindex=0 then // measure manual
         begin
           with mainform1 do
@@ -8292,45 +8313,27 @@ begin
                 listview7.Items.item[c].subitems.Strings[p_nr_norm+i*3] := astr;
                 listview7.Items.item[c].subitems.Strings[p_nr_norm+1+i*3] := IntToStr(round(snr));
                 listview7.Items.item[c].subitems.Strings[p_nr_norm+2+i*3] := IntToStr(round(Flux));
-
-                listview7.Column[p_nr_norm+1+i*3].Caption:=Fshapes[i].shape.hint; //abbrv hint is only available after plot. Is updated for second image Caption counting is one different
+                listview7.Column[p_nr_norm+1+i*3].Caption:=Fshapes[i].shape.hint; //abbrv hint is only available after plot. Is updated for second image Caption counting is one different. Caption positions are 19, 22, 25 ...
+                listview7.column[p_nr_norm+1+i*3].tag:=Fshapes[i].vspvsx_list_index;//copy the vsp_vsx_list index of this star
               end;
             end;//for
 
           end;//mainform1
         end
         else
-        begin //mode measure all AAVSO objects
+        begin // None manual
 
-          if length(variable_list)=0 then
-          begin
-            variable_star_annotation(true {extract AAVSO database  to variable_list});
-
-            if stackmenu1.measuring_method1.itemindex=3 then //add none AAVSO stars
-              create_all_star_list;//collect any star in the variable_list
-
-            oldra0:=head.ra0;
-            olddec0:=head.dec0;
-          end
-          else
-          begin
-            ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
-              if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
-                  mainform1.variable_star_annotation1Click(sender {new position, update variable list});
-
-          end;
-
-          if stackmenu1.measuring_method1.itemindex=1 then snr_min:=30 else snr_min:=10; //onlt bright enough stars
+          if stackmenu1.measuring_method1.itemindex=1 then snr_min:=30 else snr_min:=10; //only bright enough stars
 
           //measure all AAVSO stars using the position from the local database
-          if variable_list_length>0 then
+          if vsp_vsx_list_length>0 then
           begin
-            for j:=0 to variable_list_length do
+            for j:=0 to vsp_vsx_list_length do
             begin
-              celestial_to_pixel(head, variable_list[j].ra, variable_list[j].dec,true, xn, yn);
+              celestial_to_pixel(head, vsp_vsx_list[j].ra, vsp_vsx_list[j].dec,true, xn, yn);
               if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
               begin
-                //if pos('AD_CMi',variable_list[j].abbr)>0 then
+                //if pos('AD_CMi',vsp_vsx_list[j].abbr)>0 then
                 //i:=j;
 
                 astr := measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
@@ -8339,7 +8342,7 @@ begin
                   new_object:=true;
                   for i:=p_nr_norm to p_nr-3 do
                   begin
-                    if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=variable_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                    if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=vsp_vsx_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
                     begin //existing object column
 
                      listview7.Items.item[c].subitems.Strings[i]:= astr;
@@ -8353,10 +8356,10 @@ begin
                   begin
                     with listview7 do
                     begin //add column
-                      listview7_add_column(variable_list[j].abbr);
+                      listview7_add_column(vsp_vsx_list[j].abbr);
                       listview7_add_column('SNR');
                       listview7_add_column('Flux');
-                      memo2_message('Added columns for '+variable_list[j].abbr);
+                      memo2_message('Added columns for '+vsp_vsx_list[j].abbr);
                     end;
                     listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
                     listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
@@ -8472,7 +8475,7 @@ begin
 
         if annotate_mode1.ItemIndex > 0 then
         begin
-          variable_star_annotation(false  {plot, do not extract to variable_list}); //vsp & vsx
+          variable_star_annotation(false  {plot, do not extract to vsp_vsx_list}); //vsp & vsx
         end;
 
         stop_updating(false);//listview7.Items.endUpdate;
@@ -9882,6 +9885,7 @@ begin
   memo2_message('Copied to clipboard. Paste to text file and feed that file to Transformation Generator');
   Clipboard.AsText := info;
 end;
+
 
 
 procedure ScrollToItem(ListView: TListView; Item: TListItem; ColumnIndex: Integer);
