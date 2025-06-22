@@ -525,7 +525,10 @@ begin
   result:=strtoint2(stackmenu1.downsample_for_solving1.text,0);
   if result<=0 then  {zero gives -1, Auto is 0}
   begin //auto
-    if height>2500 then result:=2 else result:=1;
+    if height>2500 then
+      result:=2
+    else
+      result:=1;
     result:=max(result, round(1.5/arcsec_per_px));//pixelscale should be larger then 1"/px
   end;
   result:=min(16,result);//16 max. Too much anyhow

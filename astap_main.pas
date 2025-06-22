@@ -67,12 +67,13 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.06.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
               ra,dec,
               fitsX,fitsY : double;
+              vspvsx_list_index : integer; //index of vsp_vsx_list
             end;
 
 type
@@ -10266,7 +10267,7 @@ begin
 end;
 
 
-procedure variable_star_annotation(extract_visible: boolean {extract to variable_list});
+procedure variable_star_annotation(extract_visible: boolean {extract to vsp_vsx_list});
 var
   lim_magnitude            : double;
 begin
@@ -10312,7 +10313,7 @@ begin
   else
   begin //local version
     memo2_message('Using local variable database. Online version can be set in tab Photometry');
-    plot_deepsky(extract_visible{then extract visible to variable_list},stackmenu1.font_size_photometry_UpDown1.position); {Plot the variables on the image. }
+    plot_deepsky(extract_visible{then extract visible to vsp_vsx_list},stackmenu1.font_size_photometry_UpDown1.position); {Plot the variables on the image. }
   end;
 end;
 
@@ -10322,7 +10323,7 @@ procedure Tmainform1.variable_star_annotation1Click(Sender: TObject);
 begin
   if head.cd1_1=0 then begin memo2_message('No solution!'); exit; end;//no solution
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  variable_star_annotation(false  {plot, do not extract to variable_list});
+  variable_star_annotation(false  {plot, do not extract to vsp_vsx_list});
   Screen.Cursor:=crDefault;
 end;
 

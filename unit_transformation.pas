@@ -390,7 +390,7 @@ procedure transformation;
 var
    col,row,Rcount, Vcount, Bcount, Icount,SGcount,SRcount,SIcount,starnr,icon_nr,nr,j,counter    :integer;
    abrv,auid,julian_str : string;
-   selected_rows,iconB, iconV,iconR : boolean;
+   selected_rows,iconB, iconV,iconR,vr_success,bv_success : boolean;
    R,V,B, value            : double;
    V_list, V_list_documented: array of double;
 
@@ -517,48 +517,43 @@ begin
       setlength(B_list_documented,counter);//reduce size
       setlength(V_list_documentedB,counter);//reduce size
 
-      if counter<2 then
+      if counter<3 then
       begin
         beep;
-        Form_transformation1.error_label1.caption:='Error, not enough stars!';
-        exit;
-      end;
-
-      compute_transformation_coefficients(
-        B_list_documented, V_list_documentedB, B_list, V_listB,
-        counter,
-        {out} Tbv, Tbv_intercept, Tbv_sd,
-            Tb_bv, Tb_bv_intercept, Tb_bv_sd,
-            Tv_bv, Tv_bv_intercept, Tv_bv_sd);
-
-      with Form_transformation1 do
+        Form_transformation1.error_label1.caption:='Error, not enough B & V stars!';
+        bv_success:=false;
+      end
+      else
       begin
-        Tbv1.enabled:=true;
-        Tb_bv1.enabled:=true;
-        Tv_bv1.enabled:=true;
+        compute_transformation_coefficients(
+          B_list_documented, V_list_documentedB, B_list, V_listB,
+          counter,
+          {out} Tbv, Tbv_intercept, Tbv_sd,
+              Tb_bv, Tb_bv_intercept, Tb_bv_sd,
+              Tv_bv, Tv_bv_intercept, Tv_bv_sd);
+        bv_success:=true;
       end;
     end
     else
+       bv_success:=false;
+
+    if bv_success=false then
     begin
       Tbv:=1;
       Tb_bv:=0;
       Tv_bv:=0;
-      with Form_transformation1 do
-      begin
-        Tbv1.enabled:=false;
-        Tb_bv1.enabled:=false;
-        Tv_bv1.enabled:=false;
-      end;
-    end;
+   end;
 
+   with Form_transformation1 do
+   begin
+     Tbv1.enabled:=bv_success;
+     Tb_bv1.enabled:=bv_success;
+     Tv_bv1.enabled:=bv_success;
+     tbv1.Text:=floattostrF(tbv,FFfixed,0,3);
+     tb_bv1.Text:=floattostrF(tb_bv,FFfixed,0,3);
+     tv_bv1.Text:=floattostrF(tv_bv,FFfixed,0,3);
+   end;
 
-
-    with Form_transformation1 do
-    begin
-      tbv1.Text:=floattostrF(tbv,FFfixed,0,3);
-      tb_bv1.Text:=floattostrF(tb_bv,FFfixed,0,3);
-      tv_bv1.Text:=floattostrF(tv_bv,FFfixed,0,3);
-    end;
 
     //V & R
     if ((iconV) and  (iconR))then
@@ -582,43 +577,38 @@ begin
       setlength(V_list_documentedR,counter);
       setlength(R_list_documented,counter);
 
-      if counter<2 then
+      if counter<3 then
       begin
         beep;
-        Form_transformation1.error_label1.caption:='Error, not enough stars!';
-        exit;
-      end;
-
-      compute_transformation_coefficients(
-        V_list_documentedR, R_list_documented, V_listR, R_list,
-        counter,
-        {out} Tvr, Tvr_intercept, Tvr_sd,
-            Tv_vr, Tv_vr_intercept, Tv_vr_sd,
-            Tr_vr, Tr_vr_intercept, Tr_vr_sd);
-
-      with Form_transformation1 do
+        Form_transformation1.error_label1.caption:='Error, not enough V & R stars!';
+        vr_success:=false;
+      end
+      else
       begin
-        Tvr1.enabled:=true;
-        Tv_vr1.enabled:=true;
-        Tr_vr1.enabled:=true;
+        compute_transformation_coefficients(
+          V_list_documentedR, R_list_documented, V_listR, R_list,
+          counter,
+          {out} Tvr, Tvr_intercept, Tvr_sd,
+              Tv_vr, Tv_vr_intercept, Tv_vr_sd,
+              Tr_vr, Tr_vr_intercept, Tr_vr_sd);
+        vr_success:=true;
       end;
-
     end
     else
+      vr_success:=false;
+
+    if vr_success=false then
     begin
       Tvr:=1;
       Tv_vr:=0;
       Tr_vr:=0;
-      with Form_transformation1 do
-      begin
-        Tvr1.enabled:=false;
-        Tv_vr1.enabled:=false;
-        Tr_vr1.enabled:=false;
-      end;
     end;
 
     with Form_transformation1 do
     begin
+      Tvr1.enabled:=vr_success;
+      Tv_vr1.enabled:=vr_success;
+      Tr_vr1.enabled:=vr_success;
       tvr1.Text:=floattostrF(tvr,FFfixed,0,3);
       tv_vr1.Text:=floattostrF(tv_vr,FFfixed,0,3);
       tr_vr1.Text:=floattostrF(tr_vr,FFfixed,0,3);

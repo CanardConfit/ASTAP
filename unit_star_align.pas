@@ -544,7 +544,7 @@ begin
 
       identical_quad:=false;
       if nrstars>=150 then
-        startp:=max(0,nrquads-(nrstars div 4))//limit search for double quads. This is possible by sorting the starlist in X in the beginning. So first quads are to far away to be a double
+        startp:=max(0,nrquads-(nrstars div 4))//limit search for double quads. This is possible by sorting the starlist in X in the beginning. So first quads are too far away to be a double
       else
         startp:=0;
 
