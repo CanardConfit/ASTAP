@@ -67,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.06.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -641,6 +641,7 @@ type
 
   theVar = record
               name: string;
+              AUID: string;//variable have also an AUID. Only if they have a AUID they can be submitted
               ra  : double;
               dec : double;
               maxmag: string;
@@ -8261,7 +8262,7 @@ begin
       ensemble_database:=Sett.ReadBool('aavso','ensemble',true);{aavso report}
 
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
-      used_vsp_stars:=Sett.ReadString('aavso','vsp-stars','');
+      report_stars:=Sett.ReadString('aavso','report-stars','');
       obstype:=Sett.Readinteger('aavso','obstype',0); {photometry}
 
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('live','live_stack_dir','');
@@ -8673,7 +8674,7 @@ begin
       sett.writeBool('aavso','ensemble',ensemble_database);{AAVSO report}
 
       sett.writeInteger('aavso','pfilter',aavso_filter_index);
-      sett.writestring('aavso','vsp-stars',used_vsp_stars);
+      sett.writestring('aavso','report-stars',report_stars);
       sett.writeinteger('aavso','obstype',obstype);//CCD, DSLR, PEP
 
       sett.writestring('live','live_stack_dir',stackmenu1.live_stacking_path1.caption);{live stacking}
@@ -10107,9 +10108,9 @@ end;
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access variables
 var
   s,dummy,url                                : string;
-  count,i,j,k,errorRa,errorDec,err           : integer;
+  count,i,j,k,errorRa,errorDec,err,idx       : integer;
   radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period : double;
-  skip,period_filter  : boolean;
+  skip,auid_filter  : boolean;
 begin
   result:=false;
   radius:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //radius in degrees. Some solvers produce files with neagative cdelt2
@@ -10122,7 +10123,8 @@ begin
 
   if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); ////Required by AAVSO
 
-  period_filter:=stackmenu1.annotate_mode1.itemindex <8;
+  idx:=stackmenu1.annotate_mode1.itemindex;
+  auid_filter:=((idx>=4) and (idx<=7)); //variable has an AUID so it can be reported
 
 
   //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
@@ -10146,18 +10148,16 @@ begin
     j:=posex('"',s,i);
     vsx[count].name:=stringreplace(copy(s,i,j-i),' ','_',[]);//add underscore for consistancy with local database
 
-    //optional field
-//     if s[j+3]='A' then
-//     begin
-//       i:=posex('"AUID":"',s,j); //AUID will NOT always available !!!
-//       if i=0 then
-//               break;//no more data
-//       i:=i+length('"AUID":"');
-//       j:=posex('"',s,i);
-//       vsx[count].auid:=copy(s,i,j-i);
-//     end
-//     else
-//     vsx[count].auid:='';
+    //optional field direct after the name
+    if ((s[j+3]='A') and (s[j+4]='U') and (s[j+5]='I') and (s[j+6]='D')) then
+    begin
+      i:=posex('"AUID":"',s,j); //AUID will NOT always available !!!
+      i:=i+length('"AUID":"');
+      j:=posex('"',s,i);
+      vsx[count].auid:=copy(s,i,j-i);
+    end
+    else
+    vsx[count].auid:='';
 
     i:=posex('"RA2000":"',s,j);//RA will be always available
     i:=i+length('"RA2000":"');
@@ -10240,12 +10240,10 @@ begin
     until ((s[j]='}') or (j=length(s)-1));
 
     //filtering
-    skip:=false;
-    if period_filter then
-    begin
-      var_period:=strtofloat1(vsx[count].period);
-      if ((var_period=0) or (var_period>=3)) then  skip:=true;//only short period var's
-    end;
+    if auid_filter then
+      skip:=length(vsx[count].auid)<2 //no AUID available
+    else
+      skip:=false;
 
     if skip=false then
          inc(count);//number of entries/stars

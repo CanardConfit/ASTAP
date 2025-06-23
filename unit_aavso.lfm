@@ -1,8 +1,8 @@
 object form_aavso1: Tform_aavso1
-  Left = 364
+  Left = 692
   Height = 702
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 139
+  Top = 237
   Width = 1553
   Caption = 'AAVSO report'
   ClientHeight = 702
@@ -253,10 +253,10 @@ object form_aavso1: Tform_aavso1
     Text = 'CCD'
   end
   object apply_transformation1: TCheckBox
-    Left = 16
+    Left = 17
     Height = 23
     Hint = 'The transformation factors should be available. See transformation button in tab photmetry.'
-    Top = 592
+    Top = 576
     Width = 148
     Caption = 'Apply transformation'
     ParentShowHint = False
@@ -286,10 +286,10 @@ object form_aavso1: Tform_aavso1
     TabOrder = 12
     OnClickCheck = abbrv_variable1ClickCheck
   end
-  object Button1: TButton
+  object test_button1: TButton
     Left = 440
     Height = 29
-    Hint = 'This will place comparison star in variable position. For testing only.'
+    Hint = 'This will place comparison stars in variable position for testing.'
     Top = 42
     Width = 51
     AutoSize = True
@@ -297,7 +297,7 @@ object form_aavso1: Tform_aavso1
     ParentShowHint = False
     ShowHint = True
     TabOrder = 13
-    OnClick = Button1Click
+    OnClick = test_button1Click
   end
   object PopupMenu1: TPopupMenu
     Left = 680
