@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 183
+  Left = 206
   Height = 707
-  Top = 216
+  Top = 227
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -3517,10 +3517,10 @@ object stackmenu1: Tstackmenu1
           end
           object help_photometry1: TLabel
             Cursor = crHandPoint
-            Left = 1408
+            Left = 1456
             Height = 30
             Hint = 'Online help'
-            Top = 0
+            Top = -3
             Width = 9
             Caption = '?'
             Font.Color = clBlue
@@ -3629,10 +3629,10 @@ object stackmenu1: Tstackmenu1
             ParentColor = False
           end
           object speedButton_location1: TSpeedButton
-            Left = 1128
+            Left = 1120
             Height = 25
             Hint = 'Default observer location for the case it is not available in the file header. Use this for DSLR images.'
-            Top = 8
+            Top = 5
             Width = 25
             Images = ImageList2
             ImageIndex = 20
@@ -3653,7 +3653,7 @@ object stackmenu1: Tstackmenu1
           object annotate_mode1: TComboBox
             Left = 880
             Height = 27
-            Hint = 'Annotate variable and comparison stars'
+            Hint = 'Annotate variable and comparison stars. Only variable stars with an AUID can be submitted. Else you have to request an AUID first.'
             Top = 35
             Width = 221
             DropDownCount = 17
@@ -3664,10 +3664,10 @@ object stackmenu1: Tstackmenu1
               'Local DB mag 11'
               'Local DB mag 13'
               'Local DB mag 15'
-              'Online DB mag 11 (period<3)'
-              'Online DB mag 13 (period<3)'
-              'Online DB mag 15 (period<3)'
-              'Online DB mag 99 (period<3)'
+              'Online DB mag 11 (AUID 👌)'
+              'Online DB mag 13 (AUID 👌)'
+              'Online DB mag 15 (AUID 👌)'
+              'Online DB mag 99 (AUID 👌)'
               'Online DB mag 11'
               'Online DB mag 13'
               'Online DB mag 15'
@@ -3770,7 +3770,7 @@ object stackmenu1: Tstackmenu1
             OnClick = SpeedButton2Click
           end
           object font_size_photometry1: TEdit
-            Left = 1192
+            Left = 1184
             Height = 27
             Hint = 'Font size of image annotations. Use font size 3 or 4 to shorten abbreviations'
             Top = 35
@@ -3779,7 +3779,7 @@ object stackmenu1: Tstackmenu1
             Text = '8'
           end
           object font_size_photometry_UpDown1: TUpDown
-            Left = 1224
+            Left = 1216
             Height = 27
             Hint = 'Font size of image annotations. Using the online database for size 4 only abbreviation are plotted.'
             Top = 35
@@ -3793,7 +3793,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 14
           end
           object Label72: TLabel
-            Left = 1128
+            Left = 1120
             Height = 19
             Top = 38
             Width = 57

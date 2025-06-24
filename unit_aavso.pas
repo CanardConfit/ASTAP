@@ -10,8 +10,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
-  clipbrd, ExtCtrls, Menus, Buttons, CheckLst,strutils,
-  astap_main;
+  clipbrd, ExtCtrls, Menus, Buttons, CheckLst, ColorBox,strutils,
+  astap_main, Types, LCLType;
 
 type
 
@@ -23,7 +23,7 @@ type
     baa_style1: TCheckBox;
     abrv_comp1: TCheckListBox;
     apply_transformation1: TCheckBox;
-    Button1: TButton;
+    test_button1: TButton;
     sigma_mzero1: TLabel;
     ensemble_database1: TCheckBox;
     obstype1: TComboBox;
@@ -50,7 +50,7 @@ type
     procedure abrv_comp1Change(Sender: TObject);
     procedure abbrv_comp1ItemClick(Sender: TObject; Index: integer);
     procedure abrv_comp1ClickCheck(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure test_button1Click(Sender: TObject);
     procedure delta_bv2Change(Sender: TObject);
     procedure ensemble_database1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -89,11 +89,11 @@ var
   aavso_filter_index: integer=0;
   ensemble_database : boolean=true;
   obstype : integer=0;
-  variable_and_comp: string='';
+  variable_clean: string='';
 
 var
   aavso_report : string;
-  used_vsp_stars: string='';
+  report_stars: string='';
 
 procedure plot_graph; {plot curve}
 function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable
@@ -121,6 +121,7 @@ var
   jd_min,jd_max,magn_min,magn_max : double;
   w,h,bspace{,column_var},column_check,wtext  :integer;
   column_comps,column_vars : Tinteger_array;
+  test_mode : boolean;
 
 
 function floattostr3(x:double):string;
@@ -147,24 +148,24 @@ end;
 
 procedure retrieve_vsp_stars;//very simple database system
 var
-  i,j,k,L,m,q,count              : integer;
-  check_star,comp_star,all_comp,hash : string ;
+  i,k,L,m,count              : integer;
+  rstar,all_comp,hash : string ;
 begin
   //Format:   '1180/17|000-BBN-795|AD_CMi|AM_CMi|000-BBN-792|000-BBN-793;......  First one is the check star'
-  //           position|check|star1|star2|star3|star4;....
+  //           hashedposition|check|star1|star2|star3|star4;....
 
   if form_aavso1.abbrv_variable1.items.count=0 then exit;
 
-  hash:=inttostr(round(head.ra0*1800/pi))+'/'+inttostr(round(head.dec0*1800/pi)); //very simple key. Not perfect at boundaries
-  i:=pos(hash, used_vsp_stars);
+  hash:=inttostr(round(head.ra0*2*180/pi))+'/'+inttostr(round(head.dec0*2*180/pi)); //very simple hash key. Not perfect at boundaries
+  i:=pos(hash, report_stars);
   if i>0 then // restore
   begin
     with form_aavso1 do   //check mark variable
 
-    k:=posex('|',used_vsp_stars,i+1); //: and of hash
-    L:=posex(';',used_vsp_stars,k+1); //; is the end of the entry
+    k:=posex('|',report_stars,i+1); //: and of hash
+    L:=posex(';',report_stars,k+1); //; is the end of the entry
 
-    all_comp:=copy(used_vsp_stars,k+1,L-k-1);//all comp stars
+    all_comp:=copy(report_stars,k+1,L-k-1);//all comp stars
 
     //split all stars
     count:=0;
@@ -175,31 +176,30 @@ begin
         m:=posex('|',all_comp,k+1);
         if m<>0 then
         begin
-          comp_star:=copy(all_comp,k+1,m-k-1);
+          rstar:=copy(all_comp,k+1,m-k-1);
           k:=m;
           inc(count)
         end
         else  //last control char should be ";"
-          comp_star:=copy(all_comp,k+1,999);//last entry
+          rstar:=copy(all_comp,k+1,999);//last entry
 
-        if count=1 then abrv_check1.text:=comp_star
+        if count=1 then
+           abrv_check1.text:=rstar
         else
-        if copy(comp_star,1,1)='0' then //comp star
+        if copy(rstar,1,1)='0' then //comp star
         begin
           for i:=0 to abrv_comp1.items.count-1 do
           begin
-            if pos(copy(abrv_comp1.items[i],1,11),comp_star)>0 then
+            if pos(copy(abrv_comp1.items[i],1,11),rstar)>0 then
               abrv_comp1.checked[i]:=true;
           end;
         end
-        else //variable
+        else //variable star
         for i:=0 to abbrv_variable1.items.count-1 do
         begin
-          if pos(comp_star, abbrv_variable1.items[i])>0 then
+          if pos(rstar, abbrv_variable1.items[i])>0 then
             abbrv_variable1.checked[i]:=true;
         end;
-
-
       until m=0;
     end;
   end
@@ -210,23 +210,23 @@ begin
 end;
 
 
-procedure store_vsp_stars(other_stars  : string); //simple database in settings key used_vsp_stars
+procedure store_vsp_stars(other_stars  : string); //simple database in settings key report_stars
 var
    i,j: integer;
    hash : string;
 begin
   //Format:   '1180/17|000-BBN-795|AD_CMi|AM_CMi|000-BBN-792|000-BBN-793;......  First one is the check star'
-  //           position|check|star1|star2|star3|star4;....
+  //           hashedposition|check|star1|star2|star3|star4;....
   if length(other_stars)=0 then exit;
-  hash:=inttostr(round(head.ra0*1800/pi))+'/'+inttostr(round(head.dec0*1800/pi)); //very simple hash. Not perfect at boundaries
-  i:=pos(hash, used_vsp_stars);
+  hash:=inttostr(round(head.ra0*2*180/pi))+'/'+inttostr(round(head.dec0*2*180/pi)); //very simple hash key. Not perfect at boundaries
+  i:=pos(hash, report_stars);
   if i<>0 then //already available
   begin
-    j:=posex(';',used_vsp_stars,i); //find end of entry
-    delete(used_vsp_stars,i,j-i+1); //delete entry
+    j:=posex(';',report_stars,i); //find end of entry
+    delete(report_stars,i,j-i+1); //delete entry
   end;
-  used_vsp_stars:=used_vsp_stars+ hash+'|'+other_stars+';';
-  if length(used_vsp_stars)>10000 then used_vsp_stars:=copy(used_vsp_stars,200,10999);//limit size. Throw oldest part away.
+  report_stars:=report_stars+ hash+'|'+other_stars+';';
+  if length(report_stars)>10000 then report_stars:=copy(report_stars,200,10999);//limit size. Throw oldest part away.
 end;
 
 
@@ -454,14 +454,13 @@ begin
   B_Vcounter:=0;
   V_Rcounter:=0;
 
-
   with form_aavso1 do
   for i:=0 to high(column_comps) do //go through the list of comps stars
   begin
     abbrv_c:=stackmenu1.listview7.Column[column_comps[i]+1].Caption ;
     comp_magn_str:=stackmenu1.listview7.Items.item[c].subitems.Strings[column_comps[i]];//measured comp magnitude
     comp_magn:=strtofloat3(comp_magn_str,invalid_comp);//measured comp magnitude
-    if invalid_comp=0 then //valid conversion string to float
+    if invalid_comp=0 then //valid conversion string to float. Magnitude could be marked saturated only. SNR and flux are still measured if star is saturated.
     begin
       icon_nr:=stackmenu1.listview7.Items.item[c].SubitemImages[P_filter];{filter icon nr}
       documented_comp_magn:=retrieve_comp_magnitude(icon_nr,column_comps[i], abbrv_c);//  retrieve the documented magnitude at passband used from the abbrev_comp string
@@ -721,11 +720,11 @@ begin
           varmag_B:=21- ln(ratioB*fluxB)*2.5/ln(10); //convert var flux to magnitude using
           varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
           b_v_var:=varmag_B-varmag_V;
-          memo2_message('b-v var is '+floattostrF(b_v_var,FFfixed,0,3) + '. Used files '+ item[Bindex].Caption+ ' & '+ item[Vindex].Caption);
+         // memo2_message('b-v var is '+floattostrF(b_v_var,FFfixed,0,3) + '. Used files '+ item[Bindex].Caption+ ' & '+ item[Vindex].Caption);
         end
       else
       begin
-        memo2_message(warning);
+        if warning<>'' then memo2_message(warning);
         b_v_var:= 99;
       end;
     end;
@@ -733,9 +732,9 @@ begin
     with stackmenu1.listview7.Items do
     if ((VIndexR>=0) and  (RIndex>=0)) then
     begin
-      dum:=item[Rindex].subitems.Strings[column_vars[0]+2];{var star flux}
+      dum:=item[Rindex].subitems.Strings[column_vars[m]+2];{var star flux}
       fluxR:=strtofloat2(dum);
-      dum:=item[VindexR].subitems.Strings[column_vars[0]+2];{var star flux}
+      dum:=item[VindexR].subitems.Strings[column_vars[m]+2];{var star flux}
       fluxV:=strtofloat2(dum);
 
       if ((fluxV>0) and (fluxR>0) and
@@ -745,11 +744,11 @@ begin
           varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
           varmag_R:=21- ln(ratioR*fluxR)*2.5/ln(10); //convert var flux to magnitude using
           v_r_var:=varmag_V-varmag_R;
-          memo2_message('v-r var is '+floattostrF(v_r_var,FFfixed,0,3) + '. Used files '+ item[VindexR].Caption+ ' & '+ item[Rindex].Caption);
+          //memo2_message('v-r var is '+floattostrF(v_r_var,FFfixed,0,3) + '. Used files '+ item[VindexR].Caption+ ' & '+ item[Rindex].Caption);
         end
       else
       begin
-        memo2_message(warning);
+        if warning<>'' then memo2_message(warning);
         v_r_var:= 99;
       end;
     end;
@@ -873,9 +872,9 @@ end;
 procedure fill_comp_and_check;
 var
   i,count,countV,error2,dummy        : integer;
-  abrv, object_name2                 : string;
+  abrv                               : string;
   starinfo, starinfoV                : array of Tstarinfo;
-  measure_any,varfound,checkfound    : boolean;
+  measure_any                        : boolean;
 begin
   with form_aavso1 do
   begin
@@ -1003,14 +1002,16 @@ begin
   plot_graph;
 end;
 
-procedure Tform_aavso1.Button1Click(Sender: TObject);
+procedure Tform_aavso1.test_button1Click(Sender: TObject);
 var
    i : integer;
 begin
-  abbrv_variable1.clear;
-  for i:=0 to abrv_comp1.count-1 do
-    abbrv_variable1.items.Add(abrv_comp1.items[i]);
-
+  if test_mode=false then
+  begin
+    for i:=0 to abrv_comp1.count-1 do
+      abbrv_variable1.items.Add(abrv_comp1.items[i]);
+    test_mode:=true;  //allow this only once.
+  end;
 end;
 
 
@@ -1607,7 +1608,7 @@ begin
   sigma_check2.enabled:=ensemble_database=false;
   sigma_mzero1.enabled:=ensemble_database=false;
 
-  fill_comp_and_check;//fill with VSP stars
+  fill_comp_and_check;//fill with stars
 
   if abbrv_variable1.count>0 then
      retrieve_vsp_stars;
@@ -1630,6 +1631,8 @@ begin
      report_error1.visible:=true;
      exit;
   end;
+
+  test_mode:=false;
   plot_graph;
 end;
 
@@ -1675,13 +1678,14 @@ begin
 
   abbrv_check_clean:=clean_abbreviation(abbrev_check,false); //no underscores in COMP stars.
 
+  variable_clean:='';
   if length(column_vars)>0 then
   begin
     abbrv_variable1.color:=cldefault;
     // column_comps,column_vars
-    variable_and_comp:=abbrv_check_clean; //star with check star
+    ; //star with check star
     for i:=0 to length(column_vars)-1 do
-      variable_and_comp:= variable_and_comp+'|'+clean_abbreviation(stackmenu1.listview7.Column[column_vars[i]+1].Caption,false) //variable_and_comp with still underscore. Note the captions are one position shifted.
+      variable_clean:= variable_clean+clean_abbreviation(stackmenu1.listview7.Column[column_vars[i]+1].Caption,false)+'|' //variable_clean with still underscore. Note the captions are one position shifted.
   end
   else
   begin
@@ -1690,13 +1694,13 @@ begin
   end;
 
 
+  abbrv_comp_clean:='';
   if length(column_comps)>0 then  //add comp stars
   begin
     abrv_comp1.color:=cldefault;
     // column_comps,column_vars
     for i:=0 to length(column_comps)-1 do
-      variable_and_comp:= variable_and_comp+'|'+clean_abbreviation(stackmenu1.listview7.Column[column_comps[i]+1].Caption,false); //variable_and_comp with still underscore. Note the captions are one position shifted.
-    delete(abbrv_comp_clean,length(variable_and_comp),1);//remove last "|"
+      abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(stackmenu1.listview7.Column[column_comps[i]+1].Caption,false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
   end
   else
   begin
@@ -1704,7 +1708,8 @@ begin
     exit;
   end;
 
-  store_vsp_stars( variable_and_comp); //simple database in settings key used_vsp_stars
+  delete(abbrv_comp_clean,length(variable_clean),1);//remove last "|"
+  store_vsp_stars( abbrv_check_clean+'|'+variable_clean+abbrv_comp_clean); //simple database in settings key report_stars
 
 
 
@@ -1742,11 +1747,11 @@ begin
   transf_str:='NO'; //No is no transformation, YES is transformation.
 
 
-
-  if stackmenu1.reference_database1.ItemIndex=0 then settings:=stackmenu1.reference_database1.text
+  if ensemble_database1.checked then
+    settings:=stackmenu1.reference_database1.text+vsep
   else
-    settings:=stackmenu1.reference_database1.text;
-  settings:=settings+vsep+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
+    settings:=''; //not relevant
+  settings:=settings+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
 
   if ensemble_database1.checked then
      comments:='CMAG ensemble using transformed Gaia magnitudes.'
@@ -1912,7 +1917,7 @@ begin
                      end
                      else
                      begin
-                       abbrv_comp_clean_report:=abbrv_comp_clean;//single comp star
+                       abbrv_comp_clean_report:=clean_abbreviation(stackmenu1.listview7.Column[column_comps[i]+1].Caption,true);//single comp star
                        comp_magn_str:=floattostrF(comp_magn,ffFixed,0,3);//from process_comp_stars
                      end;
 
@@ -1944,8 +1949,9 @@ begin
             // dummy:=ListView7.Items.item[c].SubitemImages[P_calibration];
             // dummy2:=ListView7.Items.item[c].SubitemImages[P_filter];
 
-             if ListView7.Items.item[c].SubitemImages[P_calibration]<>ListView7.Items.item[c].SubitemImages[P_filter] then
-                comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/B/R/SI/SR/SG.';
+             if ensemble_database1.Checked then //else comparison stars are used.
+               if ListView7.Items.item[c].SubitemImages[P_calibration]<>ListView7.Items.item[c].SubitemImages[P_filter] then
+                  comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/B/R/SI/SR/SG.';
 
              aavso_report:= aavso_report+ invalidstr+ abbrv_var_clean + delim +
                             StringReplace(listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+

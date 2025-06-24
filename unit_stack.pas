@@ -7171,8 +7171,7 @@ begin
         ff := ListView7.items[c].Caption;
         if fits_tiff_file_name(ff) = False then
         begin
-          memo2_message('█ █ █ █ █ █ Can' + #39 +
-            't extract. First analyse file list to convert to FITS !! █ █ █ █ █ █');
+          memo2_message('█ █ █ █ █ █ Can' + #39 + 't extract. First analyse file list to convert to FITS !! █ █ █ █ █ █');
           beep;
           exit;
         end;
