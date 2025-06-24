@@ -1,7 +1,7 @@
 object Form_transformation1: TForm_transformation1
-  Left = 176
+  Left = 100
   Height = 551
-  Top = 157
+  Top = 174
   Width = 817
   Caption = 'ASTAP transformation'
   ClientHeight = 551

@@ -67,7 +67,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.06.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -4791,7 +4791,7 @@ end;
 
 function place_marker3(data0: string): boolean;{place ra,dec marker in image}
 var
-  ra_new,dec_new, fitsx,fitsy : double;
+  ra_new,dec_new : double;
   data1,sipwcs  : string;
 begin
   if ((head.naxis=0) or (head.cd1_1=0) or (mainform1.shape_marker3.visible=false)) then exit;{no solution to place marker}
@@ -6274,7 +6274,7 @@ begin
   end
   else
   begin
-    if head.naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw red, green or blue pixel extraction is only possible for raw images.')
+    if head.naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw red, green or blue sensitive pixels extraction is only possible for raw images. This image is debayered to colour and no longer raw!')
     else
     memo2_message('Skipped image '+ filename7+', FILTER indicates earlier extraction!');
   end;

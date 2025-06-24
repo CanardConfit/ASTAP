@@ -1119,7 +1119,7 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count,k,invalid_comp,icon_nr,i,j : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count,k,invalid_comp,icon_nr,i,j,vars_end : integer;
   scale,range, mean,ratio,sd_comp,comp_magn,dummy,flux,B_V, V_R      : double;
   text1,text2, date_format,firstfilter,magn_gaia,warning,abbrv_var   : string;
   bmp: TBitmap;
@@ -1215,24 +1215,20 @@ begin
 
   w:=max(form_aavso1.Image_photometry1.width,(len*2)*stackmenu1.listview7.items.count);{make graph large enough for all points}
   h:=max(100,form_aavso1.Image_photometry1.height);
-  bspace:=3*mainform1.image1.Canvas.textheight('T');{{border space graph. Also for 4k with "make everything bigger"}
+  bspace:=3*mainform1.image1.Canvas.textheight('T');{border space graph. Also for 4k with "make everything bigger"}
   wtext:=mainform1.image1.Canvas.textwidth('12.3456');
 
-//  column_var:=find_correct_var_column;
   column_vars:=get_checked(form_aavso1.abbrv_variable1); //file the column_comp array
   column_check:=find_correct_check_column;
   column_comps:=get_checked(form_aavso1.abrv_comp1); //fill the column_comp array
 
   report_sigma_and_mean_of_check;
 
-//  if ((column_var<0) and (column_check<0)) then exit;//no var or check star specified
-
-
   if stackmenu1.measuring_method1.itemindex>0  then //<> manual mode
     annotate_star_of_column(column_check,column_vars,column_comps);
 
   photometry_stdev:=0;
-  setlength(data,3+length(column_comps), stackmenu1.listview7.items.count);
+  setlength(data,2+length(column_vars)+length(column_comps), stackmenu1.listview7.items.count);
   for i:=0 to length(data)-1 do
     for j:=0 to length(data[0])-1 do
       data[i,j]:=0;//clear
@@ -1266,21 +1262,6 @@ begin
           end;
         end;
 
-        if  length(column_vars)>0 then
-        begin
-          dum:=listview7.Items.item[c].subitems.Strings[column_vars[0]];{var star}
-          if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then
-          begin
-            dummy:=strtofloat(dum);
-            if dummy<>0 then
-            begin
-              data[1,c]:=dummy;
-              magn_max:=max(magn_max,data[1,c]);
-              magn_min:=min(magn_min,data[1,c]);
-            end;
-          end;
-        end;
-
         if column_check>0 then
         begin
           dum:=(listview7.Items.item[c].subitems.Strings[column_check]);{chk star}
@@ -1289,20 +1270,45 @@ begin
             dummy:=strtofloat(dum);
             if dummy<>0 then
             begin
-              data[2,c]:=dummy;
-              magn_max:=max(magn_max,data[2,c]);
-              magn_min:=min(magn_min,data[2,c]);
+              data[1,c]:=dummy;
+              magn_max:=max(magn_max,data[1,c]);
+              magn_min:=min(magn_min,data[1,c]);
 
               if firstfilter='' then firstfilter:=listview7.Items.item[c].subitems.Strings[P_filter];
               if firstfilter=listview7.Items.item[c].subitems.Strings[P_filter] then //calculate standard deviation for one colour only. Otherwise big jump spoils the measurement
               begin
-                listcheck[count]:= data[2,c];
+                listcheck[count]:= data[1,c];
                 inc(count);
               end;
             end;
           end;
         end;
 
+        //data[0,?]  JD day of file ?
+        //data[1,?]  Check of file 2
+        //data[2,?]  Var1 of file ?
+        //data[3,?]  Var2 of file ?
+        // ....
+        //data[vars_end,?] Comp1 of file ?
+        //data[vars_end+1,?] Comp2 of of file ?
+        //....
+
+        for k:=0 to length(column_vars)-1 do //add var star(s)
+        begin
+          dum:=listview7.Items.item[c].subitems.Strings[column_vars[k]];{magnitude var star}
+          if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then
+          begin
+            dummy:=strtofloat(dum);
+            if dummy<>0 then
+            begin
+              data[2+k,c]:=dummy;
+              magn_max:=max(magn_max,data[2+k,c]);
+              magn_min:=min(magn_min,data[2+k,c]);
+            end;
+          end;
+        end;
+
+        vars_end:=2+length(column_vars);
         for k:=0 to length(column_comps)-1 do //add comp star(s)
         begin
           dum:=(listview7.Items.item[c].subitems.Strings[column_comps[k]]);{comparison star}
@@ -1311,13 +1317,14 @@ begin
             dummy:=strtofloat(dum);
             if dummy<>0 then
             begin
-              data[3+k,c]:=dummy;
-              magn_max:=max(magn_max,data[3+k,c]);
-              magn_min:=min(magn_min,data[3+k,c]);
+              data[vars_end+k,c]:=dummy;
+              magn_max:=max(magn_max,data[vars_end+k,c]);
+              magn_min:=min(magn_min,data[vars_end+k,c]);
             end;
           end;
         end;
-      end;
+
+      end; //listview checked
       icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
     end;
   end
@@ -1328,7 +1335,7 @@ begin
     begin
       if listview7.Items.item[c].checked then
       begin
-        invalid_comp:=process_comp_stars(c,false,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
+        invalid_comp:=process_comp_stars(c,false,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Get ratio. Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
         if invalid_comp=0 then //valid comp star(s)
         begin
           dum:=(listview7.Items.item[c].subitems.Strings[date_column]);
@@ -1343,23 +1350,6 @@ begin
             end;
           end;
 
-          if  length(column_vars)>0 then
-          begin
-            magn_gaia:=listview7.Items.item[c].subitems.Strings[column_vars[0]];{Gaia based magnitude}
-            dum:=listview7.Items.item[c].subitems.Strings[column_vars[0]+2];{var star flux}
-
-            if ((length(magn_gaia)>1 {not a ?}) and (magn_gaia[1]<>'S'{saturated})) then
-            begin
-              flux:=strtofloat(dum);
-              if flux<>0 then //valid conversion string to float
-              begin
-                data[1,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
-                magn_max:=max(magn_max,data[1,c]);
-                magn_min:=min(magn_min,data[1,c]);
-              end;
-            end;
-          end;
-
           if column_check>0 then
           begin
             magn_gaia:=listview7.Items.item[c].subitems.Strings[column_check];{Gaia based magnitude}
@@ -1369,21 +1359,45 @@ begin
                flux:=strtofloat(dum);
                if flux<>0 then
                begin
-                 data[2,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
-                 magn_max:=max(magn_max,data[2,c]);
-                 magn_min:=min(magn_min,data[2,c]);
+                 data[1,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
+                 magn_max:=max(magn_max,data[1,c]);
+                 magn_min:=min(magn_min,data[1,c]);
 
                  if firstfilter='' then firstfilter:=listview7.Items.item[c].subitems.Strings[P_filter];
                  if firstfilter=listview7.Items.item[c].subitems.Strings[P_filter] then //calculate standard deviation for one colour only. Otherwise big jump spoils the measurement
                  begin
-                   listcheck[count]:= data[2,c];
+                   listcheck[count]:= data[1,c];
                    inc(count);
                  end;
                end;
             end;
-
           end;
 
+          for k:=0 to length(column_vars)-1 do //add var star(s)
+          begin
+            magn_gaia:=listview7.Items.item[c].subitems.Strings[column_vars[k]];{Gaia based magnitude}
+            dum:=listview7.Items.item[c].subitems.Strings[column_vars[k]+2];{var star flux}
+
+            if ((length(magn_gaia)>1 {not a ?}) and (magn_gaia[1]<>'S'{saturated})) then
+            begin
+              flux:=strtofloat(dum);
+              if flux<>0 then //valid conversion string to float
+              begin
+                data[2+k,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
+                magn_max:=max(magn_max,data[2+k,c]);
+                magn_min:=min(magn_min,data[2+k,c]);
+              end;
+            end;
+          end;
+          //data[0,?]  JD day of file ?
+          //data[1,?]  Check of file 2
+          //data[2,?]  Var1 of file ?
+          //data[3,?]  Var2 of file ?
+          // ....
+          //data[vars_end,?] Comp1 of file ?
+          //data[vars_end+1,?] Comp2 of of file ?
+          //....
+          vars_end:=2+length(column_vars);
           for k:=0 to length(column_comps)-1 do //add comp star(s)
           begin
             magn_gaia:=listview7.Items.item[c].subitems.Strings[column_comps[k]];{Gaia based magnitude}
@@ -1393,9 +1407,9 @@ begin
               flux:=strtofloat(dum);
               if flux<>0 then
               begin
-                data[3+k,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
-                magn_max:=max(magn_max,data[3+k,c]);
-                magn_min:=min(magn_min,data[3+k,c]);
+                data[vars_end+k,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
+                magn_max:=max(magn_max,data[vars_end+k,c]);
+                magn_min:=min(magn_min,data[vars_end+k,c]);
              end;
             end;
           end;
@@ -1543,15 +1557,15 @@ begin
       bmp.Canvas.Pen.Color := filtercolor[c];
       bmp.Canvas.brush.color :=filtercolor[c];
       if ((data[0,c]<>0) and (data[2,c]<>0)) then //valid JD
-        plot_square(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[2,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
+        plot_square(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
     end;
 
-
+    //comps
     bmp.Canvas.Pen.width:=2;
     bmp.Canvas.Pen.Color := clgray;
     bmp.Canvas.brush.color :=clgray;
     plot_Xsign(textp3,len*3,0);
-    for k:=3 to length(data)-1 do // plot all comp stars
+    for k:=vars_end to length(data)-1 do // plot all comp stars
     for c:=0 to length(data[0])-1 do
     begin
       bmp.Canvas.Pen.Color := filtercolor[c];
@@ -1564,16 +1578,20 @@ begin
     end;
     bmp.Canvas.Pen.width:=1;
 
-
+    //vars
+//    bmp.Canvas.Pen.width:=2;
     bmp.Canvas.Pen.Color := clgray;
     bmp.Canvas.brush.color :=clgray;
     plot_point(textp1,len*3,0);
+    for k:=2 to vars_end-1 do // plot all var stars
     for c:=0 to length(data[0])-1 do
     begin
       bmp.Canvas.Pen.Color := filtercolor[c];
       bmp.Canvas.brush.color :=filtercolor[c];
-      if ((data[0,c]<>0) and (data[1,c]<>0)) then //valid JD
-        plot_point( wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {var}
+      if ((data[0,c]<>0) and (data[k,c]<>0)) then //valid JD
+      begin
+        plot_point( wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[k,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {var}
+      end;
     end;
 
 
@@ -1703,6 +1721,7 @@ begin
       abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(stackmenu1.listview7.Column[column_comps[i]+1].Caption,false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
   end
   else
+  if ensemble_database1.checked=false then
   begin
     abrv_comp1.color:=clred;
     exit;

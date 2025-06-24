@@ -557,8 +557,7 @@ type
     stack_groups1: TMenuItem;
     refresh_astrometric_solutions1: TMenuItem;
     photometric_calibration1: TMenuItem;
-    photom_blue1: TMenuItem;
-    photom_red1: TMenuItem;
+    photom_extractRGB1: TMenuItem;
     Separator2: TMenuItem;
     Separator3: TMenuItem;
     column_fov1: TMenuItem;
@@ -785,6 +784,7 @@ type
     procedure measuring_method1Change(Sender: TObject);
     procedure export_to_tg1Click(Sender: TObject);
     procedure find_listview_text7Click(Sender: TObject);
+    procedure Panel_stack_button1Click(Sender: TObject);
     procedure report_sqm1Click(Sender: TObject);
     procedure MenuItem41Click(Sender: TObject);
     procedure annotate_unknown1Click(Sender: TObject);
@@ -4040,7 +4040,7 @@ begin
       ImageList2.GetBitmap(12, bmp){colour stack}
     else
     if ((process_as_osc > 0) or (make_osc_color1.Checked)) then
-      ImageList2.GetBitmap(30, bmp){OSC colour stack}
+      ImageList2.GetBitmap(29, bmp){OSC colour stack}
     else
       ImageList2.GetBitmap(6, bmp);{gray stack}
 
@@ -7146,7 +7146,7 @@ end;
 procedure Tstackmenu1.photom_green1Click(Sender: TObject);
 var
   c: integer;
-  fn, ff: string;
+  fn, ff, fnBlue, fnRed : string;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed := False;
@@ -7177,17 +7177,23 @@ begin
         end;
 
 
-        if sender=photom_blue1 then
-          fn := extract_raw_colour_to_file(ff, 'TB', 1, 1) {extract green red or blue channel}
-        else
-        if sender=photom_red1 then
-          fn := extract_raw_colour_to_file(ff, 'TR', 1, 1) {extract green red or blue channel}
+        if sender=photom_extractRGB1 then
+        begin
+          fn := extract_raw_colour_to_file(ff, 'TG', 1, 1); {extract green red or blue channel}
+          fnBlue := extract_raw_colour_to_file(ff, 'TB', 1, 1); {extract green red or blue channel}
+          fnRed := extract_raw_colour_to_file(ff, 'TR', 1, 1); {extract green red or blue channel}
+
+          listview7.Items.beginupdate;
+          if fnBlue<>'' then listview_add(ListView7,fnBlue,true,P_nr);
+          if fnRed<>'' then listview_add(ListView7,fnRed,true,P_nr);;
+          listview7.Items.endupdate;
+        end
         else
           fn := extract_raw_colour_to_file(ff, 'TG', 1, 1); {extract green red or blue channel}
 
         if fn <> '' then
         begin
-          ListView7.items[c].Caption := fn;
+          ListView7.items[c].Caption := fn;//replace by green channel
         end;
 
       end;
@@ -9885,15 +9891,12 @@ begin
   Clipboard.AsText := info;
 end;
 
-
-
 procedure ScrollToItem(ListView: TListView; Item: TListItem; ColumnIndex: Integer);
 var
-  TotalWidth, TargetPos, MaxScroll: Integer;
+  TotalWidth, TargetPos: Integer;
   i: Integer;
-  {$IFNDEF WINDOWS}
-  ScrollSteps: Integer;
-  {$ENDIF}
+var
+  OldStyle: TViewStyle;
 begin
   // Make item visible vertically
   Item.MakeVisible(False);
@@ -9910,30 +9913,20 @@ begin
   TargetPos := TotalWidth - (ListView.ClientWidth div 2) +
                (ListView.Column[ColumnIndex].Width div 2);
 
-  // Calculate maximum scroll (estimated)
-  MaxScroll := 0;
-  for i := 0 to ListView.Columns.Count - 1 do
-    Inc(MaxScroll, ListView.Column[i].Width);
-  MaxScroll := Max(0, MaxScroll - ListView.ClientWidth);
-
-  // Apply bounds checking
-  TargetPos := Max(0, Min(TargetPos, MaxScroll));
-
   // Platform-specific scrolling
   {$IFDEF WINDOWS}
-  SendMessage(ListView.Handle, LVM_SCROLL, TargetPos, 0);
+  SendMessage(ListView.Handle, WM_HSCROLL, SB_TOP, 0);  // Reset to left
+  SendMessage(ListView.Handle, LVM_SCROLL, TargetPos, 0); // Scroll to position
   {$ELSE}
-  // Linux/macOS workaround
-  // Reset to left first (scrolling left by maximum amount)
-  ListView.ScrollBy(-MaxScroll, 0);
-
-  // Scroll right to target position in reasonable steps
-  ScrollSteps := TargetPos div 50;
-  for i := 1 to ScrollSteps do
-    ListView.ScrollBy(50, 0);
-  ListView.ScrollBy(TargetPos mod 50, 0);
+  // Linux solution that actually works
+  // 1. First set the scroll position
+  LCLIntf.SetScrollPos(ListView.Handle, SB_HORZ, TargetPos, True);
+  listview.columns[0].autosize:=false;//force a repaint. Repaint doesn't work
+  application.processmessages;
+  listview.columns[0].autosize:=true;
   {$ENDIF}
 end;
+
 
 
 procedure FindAndScrollInListView(ListView: TListView; const SearchText: string);
@@ -9942,20 +9935,19 @@ var
   Item: TListItem;
   SearchStr, ItemText: string;
   Found: Boolean;
-  TotalWidth, TargetPos, MaxScroll: Integer;
-  {$IFNDEF WINDOWS}
-  ScrollSteps: Integer;
-  {$ENDIF}
+  TotalWidth, TargetPos: Integer;
 begin
   if not Assigned(ListView) or (SearchText = '') then Exit;
 
   SearchStr := UpperCase(SearchText);
+  Found := False;
 
   // First search in column titles
   for i := 0 to ListView.Columns.Count - 1 do
   begin
     if Pos(SearchStr, UpperCase(ListView.Columns[i].Caption)) > 0 then
     begin
+      Found := True;
       // Calculate total width of preceding columns
       TotalWidth := 0;
       for j := 0 to i - 1 do
@@ -9965,65 +9957,67 @@ begin
       TargetPos := TotalWidth - (ListView.ClientWidth div 2) +
                    (ListView.Column[i].Width div 2);
 
-      // Calculate maximum possible scroll (estimated)
-      MaxScroll := 0;
-      for j := 0 to ListView.Columns.Count - 1 do
-        Inc(MaxScroll, ListView.Column[j].Width);
-      MaxScroll := Max(0, MaxScroll - ListView.ClientWidth);
-
-      // Apply bounds checking
-      TargetPos := Max(0, Min(TargetPos, MaxScroll));
-
       // Platform-specific scrolling
       {$IFDEF WINDOWS}
-      SendMessage(ListView.Handle, LVM_SCROLL, TargetPos, 0);
+      SendMessage(ListView.Handle, WM_HSCROLL, SB_TOP, 0);  // Reset to left
+      SendMessage(ListView.Handle, LVM_SCROLL, TargetPos, 0);// Scroll to position
       {$ELSE}
-      // Linux/macOS workaround - reset to left first
-      ListView.ScrollBy(-MaxScroll, 0);
-
-      // Scroll to target position in reasonable steps
-      ScrollSteps := TargetPos div 50;
-      for j := 1 to ScrollSteps do
-        ListView.ScrollBy(50, 0);
-      ListView.ScrollBy(TargetPos mod 50, 0);
+      // Linux solution - use direct scrollbar control with refresh
+      LCLIntf.SetScrollPos(ListView.Handle, SB_HORZ, TargetPos, True);
+      listview.columns[0].autosize:=false;//force a repaint. Repaint doesn't work
+      application.processmessages;
+      listview.columns[0].autosize:=true;
       {$ENDIF}
 
-      Exit;
+      Break;
     end;
   end;
 
-  // Search through items and subitems
-  for i := 0 to ListView.Items.Count - 1 do
+  // If not found in column titles, search through items and subitems
+  if not Found then
   begin
-    Item := ListView.Items[i];
-
-    // Check main caption
-    if Pos(SearchStr, UpperCase(Item.Caption)) > 0 then
+    for i := 0 to ListView.Items.Count - 1 do
     begin
-      ScrollToItem(ListView, Item, 0);
-      Exit;
-    end;
+      Item := ListView.Items[i];
 
-    // Check subitems
-    for j := 0 to Item.SubItems.Count - 1 do
-    begin
-      if (j < ListView.Columns.Count) and
-         (Pos(SearchStr, UpperCase(Item.SubItems[j])) > 0) then
+      // Check main caption
+      if Pos(SearchStr, UpperCase(Item.Caption)) > 0 then
       begin
-        ScrollToItem(ListView, Item, j + 1);
-        Exit;
+        Found := True;
+        ScrollToItem(ListView, Item, 0);
+        Break;
       end;
+
+      // Check subitems
+      for j := 0 to Item.SubItems.Count - 1 do
+      begin
+        if (j < ListView.Columns.Count) and
+           (Pos(SearchStr, UpperCase(Item.SubItems[j])) > 0) then
+        begin
+          Found := True;
+          ScrollToItem(ListView, Item, j + 1);
+          Break;
+        end;
+      end;
+      if Found then Break;
     end;
   end;
 
-  ShowMessage('Text "' + SearchText + '" not found');
+  if not Found then
+    ShowMessage('Text "' + SearchText + '" not found');
 end;
+
 
 
 procedure Tstackmenu1.find_listview_text7Click(Sender: TObject);
 begin
   PatternToFind:=uppercase(inputbox('Find','Text to find in listview:' ,PatternToFind));
   FindAndScrollInListView(ListView7, PatternToFind);
+end;
+
+procedure Tstackmenu1.Panel_stack_button1Click(Sender: TObject);
+begin
+
 end;
 
 
