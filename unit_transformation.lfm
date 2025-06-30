@@ -116,11 +116,11 @@ object Form_transformation1: TForm_transformation1
     OnClick = Tr_vr1Click
   end
   object Button1: TButton
-    Left = 72
+    Left = 16
     Height = 25
     Hint = 'Calculate the transformation factors'
-    Top = 464
-    Width = 96
+    Top = 472
+    Width = 163
     Caption = 'Calculate'
     TabOrder = 6
     OnClick = Button1Click
@@ -203,5 +203,27 @@ object Form_transformation1: TForm_transformation1
     Caption = '---'
     Font.Color = clRed
     ParentFont = False
+  end
+  object cancel1: TButton
+    Left = 16
+    Height = 25
+    Hint = 'Cancel above coeficients.'
+    Top = 512
+    Width = 75
+    Caption = 'Cancel'
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 8
+    OnClick = cancel1Click
+  end
+  object save1: TButton
+    Left = 104
+    Height = 25
+    Hint = 'Save these coefficients'
+    Top = 512
+    Width = 75
+    Caption = 'Save'
+    TabOrder = 9
+    OnClick = save1Click
   end
 end

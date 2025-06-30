@@ -1038,6 +1038,8 @@ type
   end;
 
 
+
+
 var
   bakfiles : array of bakfile;//for rename to bak
 
@@ -1104,7 +1106,6 @@ var  {################# initialised variables #########################}
   groupsizeStr : string='';
   images_selected: integer=0;
   dark_norm_value: double=0;
-
 
 
 const
@@ -5268,7 +5269,7 @@ end;
 procedure resize_img_loaded(ratio: double); {resize img_loaded in free ratio}
 var
   img_temp2: Timage_array;
-  FitsX, fitsY, k, w, h, w2, h2,colours,col : integer;
+  FitsX, fitsY, w, h, w2, h2,colours,col : integer;
   x, y: double;
   colour : pixel;
 begin
@@ -6279,6 +6280,7 @@ begin
     application.messagebox('First click on the two stars minimum (VAR, CHECK) of the first image. The press on play to measure.','Can not proceed!',0);
     exit;
   end;
+
 
   if form_aavso1 = nil then
     form_aavso1 := Tform_aavso1.Create(self); {in project option not loaded automatic}
@@ -9895,8 +9897,6 @@ procedure ScrollToItem(ListView: TListView; Item: TListItem; ColumnIndex: Intege
 var
   TotalWidth, TargetPos: Integer;
   i: Integer;
-var
-  OldStyle: TViewStyle;
 begin
   // Make item visible vertically
   Item.MakeVisible(False);
@@ -10033,6 +10033,49 @@ begin
 end;
 
 
+
+function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable
+var
+   count, c,count_checked, icon_nr  : integer;
+   magn, mean                       : double;
+   dum: string;
+   listMagnitudes : array of double;
+begin
+  count:=0;
+  count_checked:=0;
+  setlength(listMagnitudes,stackmenu1.listview7.items.count);//list with magnitudes check star
+
+
+  with stackmenu1 do
+  for c:=0 to length(RowChecked)-1 do {retrieve data from listview}
+  begin
+    icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
+    if ((icon_nr=1) or (icon_nr=4)) then //for filter V or TG or CV only
+    if listview7.Items.item[c].checked then
+    begin
+      dum:=(listview7.Items.item[c].subitems.Strings[column]);{var star}
+      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then magn:=strtofloat(dum) else magn:=0;
+      if magn>0 then
+      begin
+        listMagnitudes[count]:= magn;
+        inc(count);
+      end;
+      inc(count_checked);
+    end;
+
+  end;
+  if count>count_checked/2 then //at least 50% valid measurements Not 50% because it will not report if two filter are in the list
+  begin
+     //calc standard deviation using the classic method. This will show the effect of outliers
+    calc_sd_and_mean(listMagnitudes, count{counter},{out}result, mean);// calculate sd and mean of an array of doubles}
+  end
+  else
+    result:=-99;//unknown
+end;
+
+
+
+
 procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);
 var
   j,i,count : integer;
@@ -10113,6 +10156,7 @@ end;
 
 procedure Tstackmenu1.transformation2Click(Sender: TObject);
 begin
+
   if Form_transformation1 = nil then
     Form_transformation1 := TForm_transformation1.Create(self); {in project option not loaded automatic}
   Form_transformation1.Show{Modal};
@@ -11694,7 +11738,7 @@ begin
           if hd.height = StrToInt( stackmenu1.listview3.Items.item[c].subitems.Strings[D_height]) then
           begin
             calst:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_calibration];
-            if  ((pos('D',calst)=0) and (pos('F',calst)=0)) then //not a calibrated light or a dark?
+            if  (((pos('D',calst)=0) and (pos('F',calst)=0)) or (pos('F',imagetype)>0 )) then //not a calibrated light or a dark?
             begin
               d := strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
               if abs(d - jd_int) < day_offset then {find flat with closest date}

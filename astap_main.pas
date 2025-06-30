@@ -23,10 +23,8 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
 https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
-CPUcount
-https://gitlab.com/freepascal.org/fpc/source/-/issues/41265
 
-line colourss GTK3
+line colours GTK3
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41655
 pairspliter GTK3
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41654
@@ -38,6 +36,9 @@ https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF 
 MacOS
 ScrollCode=scEndScroll does not appears at the end of scroll
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/37454
+
+// https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41570
+//Adding -WM10.15 to Project Options > Custom Options enables projects to build without the Linker error. However each .o file generates a version mismatch warning
 }
 
 
@@ -67,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.06.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;

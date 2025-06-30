@@ -13,6 +13,8 @@ type
 
   TForm_transformation1 = class(TForm)
     Button1: TButton;
+    cancel1: TButton;
+    save1: TButton;
     Label10: TLabel;
     Label11: TLabel;
     error_label1: TLabel;
@@ -34,6 +36,8 @@ type
     Label3: TLabel;
 
     procedure Button1Click(Sender: TObject);
+    procedure save1Click(Sender: TObject);
+    procedure cancel1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -79,6 +83,7 @@ var
 const
   idx : integer=0; //which graph is shown
   transf_filter_sigma :double=2; //to filter out outliers
+  cancel : boolean=true;
 
 procedure plot_transformation_graph;
 var
@@ -474,9 +479,9 @@ begin
 //      if SRcount<>0 then begin SR:=SR/SRcount; SR_list[starnr]:=SR; end else SR_list[starnr]:=0;//simple mean
 //      if SIcount<>0 then begin SI:=SI/SIcount; SI_list[starnr]:=SI; end else SI_list[starnr]:=0;//simple mean
 
-        B_list_documented[starnr]:=retrieve_comp_magnitude(2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-        V_list_documented[starnr]:=retrieve_comp_magnitude(1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-        R_list_documented[starnr]:=retrieve_comp_magnitude(0,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        B_list_documented[starnr]:=retrieve_comp_magnitude(false,2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        V_list_documented[starnr]:=retrieve_comp_magnitude(false,1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        R_list_documented[starnr]:=retrieve_comp_magnitude(false,0,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
 
 
         inc(starnr);
@@ -630,6 +635,7 @@ begin
   Tvr1.text:=TvrSTR;
   Tv_vr1.text:=Tv_vrSTR;
   Tr_vr1.text:=Tr_vrSTR;
+  cancel:=true;
 end;
 
 procedure TForm_transformation1.sigma_transformation1EditingDone(Sender: TObject );
@@ -691,9 +697,23 @@ begin
   transformation;
 end;
 
+procedure TForm_transformation1.save1Click(Sender: TObject);
+begin
+  cancel:=false;
+  Form_transformation1.close;
+end;
+
+procedure TForm_transformation1.cancel1Click(Sender: TObject);
+begin
+  cancel:=true;
+  Form_transformation1.close;
+end;
+
 procedure TForm_transformation1.FormClose(Sender: TObject;
   var CloseAction: TCloseAction);
 begin
+  if cancel then
+    exit;
   sigma_transformationSTR:=sigma_transformation1.text;
   TbvSTR:=Tbv1.text;
   Tb_bvSTR:=Tb_bv1.text;
@@ -701,6 +721,7 @@ begin
   TvrSTR:=Tvr1.text;
   Tv_vrSTR:=Tv_vr1.text;
   Tr_vrSTR:=Tr_vr1.text;
+  save_settings2;//save coefficients
 end;
 
 end.

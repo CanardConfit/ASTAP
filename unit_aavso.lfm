@@ -1,8 +1,8 @@
 object form_aavso1: Tform_aavso1
-  Left = 692
+  Left = 296
   Height = 702
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 237
+  Top = 209
   Width = 1553
   Caption = 'AAVSO report'
   ClientHeight = 702
@@ -182,6 +182,7 @@ object form_aavso1: Tform_aavso1
     ItemHeight = 0
     MultiSelect = True
     ParentShowHint = False
+    PopupMenu = PopupMenu_comp1
     ShowHint = True
     TabOrder = 8
     OnClickCheck = abrv_comp1ClickCheck
@@ -282,6 +283,7 @@ object form_aavso1: Tform_aavso1
     ItemHeight = 0
     MultiSelect = True
     ParentShowHint = False
+    PopupMenu = PopupMenu_variables1
     ShowHint = True
     TabOrder = 12
     OnClickCheck = abbrv_variable1ClickCheck
@@ -312,5 +314,25 @@ object form_aavso1: Tform_aavso1
   object SaveDialog1: TSaveDialog
     Left = 552
     Top = 544
+  end
+  object PopupMenu_variables1: TPopupMenu
+    Left = 256
+    Top = 140
+    object selectall1: TMenuItem
+      Caption = 'Select all'
+      OnClick = selectall1Click
+    end
+    object deselectall1: TMenuItem
+      Caption = 'Deselect all'
+      OnClick = deselectall1Click
+    end
+  end
+  object PopupMenu_comp1: TPopupMenu
+    Left = 296
+    Top = 326
+    object MenuItem2: TMenuItem
+      Caption = 'Deselect all'
+      OnClick = MenuItem2Click
+    end
   end
 end
