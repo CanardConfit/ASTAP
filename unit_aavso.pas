@@ -1044,7 +1044,7 @@ begin
   with mainform1 do
   begin
     for i:=high(fshapes) downto 0 do //remove markers
-        freeandnil(fshapes[i]);//essential
+      fshapes[i].shape.free;//essential
     setlength(fshapes,0);
 
     try

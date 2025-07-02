@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.07.02';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1627,6 +1627,11 @@ begin
             begin
               dec_mount:=tempval;
               if head.dec0=0 then head.dec0:=tempval; {dec telescope, read double value only if crval is not available}
+            end
+            else
+            begin
+              mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+              dec_mount:=dec_radians;//preference for the other keywords
             end;
           end;
 
@@ -1775,6 +1780,11 @@ begin
               begin
                 ra_mount:=tempval;
                 if head.ra0=0 then head.ra0:=tempval; {ra telescope, read double value only if crval is not available}
+              end
+              else
+              begin
+                mainform1.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+                ra_mount:=ra_radians;{preference for other keywords}
               end;
             end;
             if ((header[i+1]='O')  and (header[i+2]='W') and (header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D') and (header[i+6]='E')) then
@@ -1939,15 +1949,7 @@ begin
        if ((focallen<>0) and (head.xpixsz<>0)) then
           head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
       end;
-{
-if ap_order>0 then
-  mainform1.Polynomial1.itemindex:=1//switch to sip
-else
-if x_coeff[0]<>0 then
-   mainform1.Polynomial1.itemindex:=2//switch to DSS
-else
-  mainform1.Polynomial1.itemindex:=0;//switch to WCS
-      }
+
       if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
       begin
         if equinox<>2000 then //e.g. in SharpCap
@@ -2408,22 +2410,26 @@ begin
     begin
       ra_mount:=read_float*pi/180;{degrees -> radians}
       if head.ra0=0 then head.ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
-    end else
+    end
+    else
     if key='DEC     =' then
     begin
       dec_mount:=read_float*pi/180;
       if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
-    end else
+    end
+    else
     if ((key='OBJCTRA =') and (ra_mount>=999)) {ra_mount value is unfilled, preference for keyword RA} then
     begin
       mainform1.ra1.text:=read_string;{triggers an onchange event which will convert the string to ra_radians}
       ra_mount:=ra_radians;{preference for keyword RA}
-    end  else
+    end
+    else
     if ((key='OBJCTDEC=') and (dec_mount>=999)) {dec_mount value is unfilled, preference for keyword DEC} then
     begin
       mainform1.dec1.text:=read_string;{triggers an onchange event which will convert the string to dec_radians}
-      dec_mount:=dec_radians;
-    end else
+      dec_mount:=dec_radians;//preference for outher keyword
+    end
+    else
     if key='OBJECT  =' then object_name:=read_string else
 
     if ((key='EXPOSURE=') or ( key='EXPTIME =')) then head.exposure:=read_float else
@@ -3687,7 +3693,7 @@ var
   i : integer;
 begin
   for i:=high(fshapes) downto 0 do
-      freeandnil(fshapes[i]);//essential
+    fshapes[i].shape.free;//essential
   setlength(fshapes,0);
 end;
 

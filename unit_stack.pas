@@ -12526,7 +12526,7 @@ end;
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
   i, c, nrfiles, image_counter, object_counter,
-  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY :   integer;
+  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon :   integer;
   filter_name1, filter_name2, defilter, filename3,
   extra1, extra2, object_to_process, stack_info, thefilters                       : string;
   lrgb, solution, monofile, ignore, cal_and_align,
@@ -13066,6 +13066,7 @@ begin
                 (AnsiCompareText(filter_name2, defilter) = 0)) then
               begin {correct filter}
                 filters_used[i] := defilter;
+                filter_icon:=ListView1.Items.item[c].SubitemImages[L_filter];
                 files_to_process[c].Name := ListView1.items[c].Caption;
                 Inc(image_counter);{one image more}
 
@@ -13155,7 +13156,11 @@ begin
             end;
 
             stack_info := 'Interim result ' + head.filter_name + ' x ' + IntToStr(counterL);
-            report_results(object_to_process, stack_info, object_counter, i {color icon},5 {stack icon}); {report result in tab result using modified filename2}
+
+
+            report_results(object_to_process, stack_info, object_counter, filter_icon {color icon},5 {stack icon}); {report result in tab result using modified filename2}
+
+
             filename2 := filename3;{restore last filename}
             extra1 := extra1 + head.filter_name;
           end{nrfiles>1}
@@ -13174,10 +13179,9 @@ begin
           end;
 
           case i of
-            0: begin extra2 := extra2 + 'R'; end;
-            1: begin extra2 := extra2 + 'G'; end;
-            2: begin extra2 := extra2 + 'B'; end;
-            3: begin extra2 := extra2 + '-'; end;
+            0,3: begin extra2 := extra2 + 'R'; end;
+            1,4: begin extra2 := extra2 + 'G'; end;
+            2,5: begin extra2 := extra2 + 'B'; end;
             else
             begin extra2 := extra2 + 'L'; end;
           end;{case}
@@ -13312,8 +13316,8 @@ begin
         //remove_solution(false {keep wcs});//fast and efficient
 
         remove_key(mainform1.memo1.lines,'DATE    ', False{all});{no purpose anymore for the original date written}
-        remove_key(mainform1.memo1.lines,'EXPTIME', False{all}); {remove, will be added later in the header}
-        remove_key(mainform1.memo1.lines,'EXPOSURE', False{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+//        remove_key(mainform1.memo1.lines,'EXPTIME', False{all}); {remove, will be added later in the header}
+        remove_key(mainform1.memo1.lines,'EXPOSURE', False{all});{remove, will be replaced by EXPTIME, LUM_EXP, RED_EXP.....}
         remove_key(mainform1.memo1.lines,'CCD-TEMP', False{all});{remove, will be replaced by SET-TEMP.....}
         remove_key(mainform1.memo1.lines,'SET-TEMP', False{all});{remove, will be added later in mono or for colour as LUM_TEMP, RED_TEMP.....}
         remove_key(mainform1.memo1.lines,'LIGH_CNT', False{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
@@ -13384,6 +13388,7 @@ begin
 
         if lrgb = False then {monochrome}
         begin {adapt astrometric solution. For colour this is already done during luminance stacking}
+          update_integer(mainform1.memo1.lines,'EXPTIME =', ' / Total exposure time in seconds.      ', round(counterL * exposureL));
           update_integer(mainform1.memo1.lines,'SET-TEMP=', ' / Average set temperature used for luminance.    ', temperatureL);
           add_integer(mainform1.memo1.lines,'LUM_EXP =', ' / Average luminance exposure time.               ', exposureL);
           add_integer(mainform1.memo1.lines,'LUM_CNT =', ' / Luminance images combined.                     ', counterL);
@@ -13403,6 +13408,7 @@ begin
           if length(extra2) > 1 then update_text(mainform1.memo1.lines,'FILTER  =', #39 + '        ' + #39); {wipe filter info}
           if counterL > 0 then  //counter number of luminance used in LRGB stacking
           begin
+            update_integer(mainform1.memo1.lines,'EXPTIME =', ' / Total exposure time in seconds.      ', round(counterL * exposureL));
             add_integer(mainform1.memo1.lines,'LUM_EXP =', ' / Luminance exposure time.                       ' , exposureL);
             add_integer(mainform1.memo1.lines,'LUM_CNT =', ' / Luminance images combined.                     ' , counterL);
             add_integer(mainform1.memo1.lines,'LUM_DARK=', ' / Darks used for luminance.                      ' , counterLdark);

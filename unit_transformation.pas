@@ -75,7 +75,7 @@ uses astap_main,unit_stack, unit_contour, unit_aavso;
 { TForm_transformation1 }
 
 var
-  B_list,V_listB,V_listR,R_list,I_list,SG_list,SR_list,SI_list, B_list_documented,V_list_documentedB,V_list_documentedR, R_list_documented  : array of double;
+  B_list,V_listB,V_listR,R_list, B_list_documented,V_list_documentedB,V_list_documentedR, R_list_documented  : array of double;
   Tbv, Tbv_intercept, Tbv_sd, Tv_bv, Tv_bv_intercept, Tv_bv_sd, Tb_bv, Tb_bv_intercept, Tb_bv_sd,
   Tvr, Tvr_intercept, Tvr_sd, Tr_vr, Tr_vr_intercept, Tr_vr_sd, Tv_vr, Tv_vr_intercept, Tv_vr_sd : double;
 
@@ -393,8 +393,8 @@ end;
 
 procedure transformation;
 var
-   col,row,Rcount, Vcount, Bcount, Icount,SGcount,SRcount,SIcount,starnr,icon_nr,nr,j,counter    :integer;
-   abrv,auid,julian_str : string;
+   col,row,Rcount, Vcount, Bcount, starnr,icon_nr,nr,j,counter    :integer;
+   abrv,auid,julian_str,mess : string;
    selected_rows,iconB, iconV,iconR,vr_success,bv_success : boolean;
    R,V,B, value            : double;
    V_list, V_list_documented: array of double;
@@ -471,7 +471,7 @@ begin
               end;
           end;
         end;
-        if Bcount<>0  then begin B:=B/Bcount; B_list[starnr]:=B;      end else B_list[starnr]:=0;//simple mean
+        if Bcount<>0  then begin B:=B/Bcount; B_list[starnr]:=B;      end else B_list[starnr]:=0;//simple mean of all the B measurements of this star
         if Vcount<>0  then begin V:=V/Vcount; V_list[starnr]:=V;      end else V_list[starnr]:=0;//simple mean
         if Rcount<>0  then begin R:=R/Rcount; R_list[starnr]:=R;      end else R_list[starnr]:=0;;//simple mean
 //      if Icount<>0  then begin I:=I/Icount; I_list[starnr]:=I;      end else I_list[starnr]:=0;;//simple mean
@@ -619,7 +619,21 @@ begin
       tr_vr1.Text:=floattostrF(tr_vr,FFfixed,0,3);
     end;
 
-    memo2_message('Transformation ready');
+    if ((bv_success=false) and (vr_success=false)) then
+    begin
+      mess:='Abort, no';
+      if iconB=false then mess:=mess+' B';
+      if iconV=false then mess:=mess+' V';
+      if iconR=false then mess:=mess+' R';
+      mess:=mess+' stars found!  Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR.'+#13+#10+'Correct header values with with popup menu if required.';
+      form_transformation1.error_label1.caption:=mess;
+      memo2_message('Transformation failure. '+mess);
+    end
+    else
+    begin
+      form_transformation1.error_label1.caption:='';
+      memo2_message('Transformation ready');
+    end;
 
     Form_transformation1.FormResize(nil); //plot  graph
   end;
