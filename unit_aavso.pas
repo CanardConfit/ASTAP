@@ -1275,7 +1275,7 @@ begin
         for k:=0 to length(column_comps)-1 do //add comp star(s)
         begin
           dummy:=SubItemDouble[c,column_comps[k]];{comparison star}
-          if dummy<>0 then
+          if dummy>0 then
           begin
             data[vars_end+k,c]:=dummy;
             magn_max:=max(magn_max,data[vars_end+k,c]);
