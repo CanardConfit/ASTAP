@@ -1,5 +1,5 @@
 unit unit_command_line_solving;
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
 email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public

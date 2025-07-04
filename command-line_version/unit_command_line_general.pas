@@ -63,7 +63,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.06.09';
+  astap_version: string='2025.07.03';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -946,7 +946,9 @@ begin
           begin
             dec_mount:=tempval;
             if dec0=0 then dec0:=tempval; {dec telescope, read double value only if crval is not available}
-          end;
+          end
+          else
+           dec1:=get_string;
         end;
 
         if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J')) then
@@ -972,7 +974,9 @@ begin
           begin
             ra_mount:=tempval;
             if ra0=0 then ra0:=tempval; {ra telescope, read double value only if crval1 is not available}
-          end;
+          end
+          else
+            ra1:=get_string;
         end;
 
 

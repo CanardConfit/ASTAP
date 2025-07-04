@@ -825,7 +825,7 @@ end;
 
 procedure fill_comp_and_check;
 var
-  i,count,countV,error2,dummy        : integer;
+  i,count,countV,error2              : integer;
   abrv                               : string;
   starinfo, starinfoV                : array of Tstarinfo;
   measure_any,compstar               : boolean;
@@ -1728,8 +1728,6 @@ begin
   store_vsp_stars( abbrv_check_clean+'|'+variable_clean+abbrv_comp_clean); //simple database in settings key report_stars
 
 
-
-
   apply_transformation:=apply_transformation1.checked;
   stdev_valid:=(photometry_stdev>0.0001);
   if delimiter1.text=',' then vsep:=';' else vsep:=',';//valid seperator
@@ -1783,7 +1781,7 @@ begin
     '#Tvr= ' + TvrSTR+#13+#10+
     '#Tv_vr= ' + Tv_vrSTR+#13+#10+
     '#Tr_vr= ' + Tr_vrSTR+#13+#10+
-    '#Transf corr B = Tb_bv * Tbv *((b-v) - (B-V))'+#13+#10
+    '#Transf corr B = Tb_bv * Tbv *((b-v) - (B-V)),   Transf corr V = Tv_bv * Tbv *((b-v) - (B-V)),   Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))'+#13+#10
   end
   else
     transform_all_factors:='';
@@ -1867,7 +1865,7 @@ begin
                        begin
                          var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (b_v_var - B_V{comp});
                          var_magn:=var_magn+var_Bcorrection;
-                         transformation:='Transf corr. '+floattostrF(var_Bcorrection,ffFixed,0,3)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostrF(b_v_var,ffFixed,0,3)+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostr3(var_Bcorrection)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'), Filter used '+filter_used+',';
                          filter_used:='B';//change TB to B
                        end
                        else
@@ -1883,7 +1881,7 @@ begin
                        begin
                          var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) *( b_v_var{var} - B_V{comp});
                          var_magn:=var_magn+var_Vcorrection;
-                         transformation:='Transf corr. '+floattostrF(var_Vcorrection,ffFixed,0,3)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+floattostrF(b_v_var,ffFixed,0,3)+'-'+floattostrF(B_V,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostr3(var_Vcorrection)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'), Filter used '+filter_used+',';
                          filter_used:='V';//change TG to V
                        end
                        else
@@ -1898,9 +1896,9 @@ begin
                      begin
                        if ((V_R<>-99) and  (v_r_var<>99)) then
                        begin
-                         var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (v_r_var{var} - V_R{comp});
+                         var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (v_r_var{var} - V_R{comp}); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
                          var_magn:=var_magn + var_Rcorrection;
-                         transformation:='Transf corr. '+floattostrF(var_Rcorrection,ffFixed,0,3)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostrF(v_r_var,ffFixed,0,3)+'-'+floattostrF(V_R,ffFixed,0,3)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostr3(var_Rcorrection)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(v_r_var)+'-'+floattostr3(V_R)+'), Filter used '+filter_used+',';
                          filter_used:='R';//change TR to R
                        end
                        else
@@ -1911,6 +1909,7 @@ begin
 
                      end;
                    end;
+                   str(var_magn:0:3,var_magn_str);
 
                    check_flux:=SubItemDouble[c,column_check+2];
 
@@ -1931,7 +1930,7 @@ begin
                    else
                    begin
                      abbrv_comp_clean_report:=clean_abbreviation(ColumnTitles[column_comps[i]+1],true);//single comp star
-                     comp_magn_str:=floattostrF(comp_magn,ffFixed,0,3);//from process_comp_stars
+                     comp_magn_str:=floattostr3(comp_magn);//from process_comp_stars
                    end;
 
              end ;//valid comp_str
@@ -1939,7 +1938,9 @@ begin
            else
            begin
              var_magn:=SubItemDouble[c,column_vars[m]];
+             str(var_magn:0:3,var_magn_str);
              check_magn:=SubItemDouble[c,column_check];
+             str(check_magn:0:3,check_magn_str);
 
              invalid_comp:=0; //ensemble mode, no conversion error because comp is not used
              abbrv_comp_clean_report:='ENSEMBLE';

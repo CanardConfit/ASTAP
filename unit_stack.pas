@@ -93,7 +93,6 @@ type
     Separator14: TMenuItem;
     Separator9: TMenuItem;
     sn_rename_selected_files1: TMenuItem;
-    MenuItem36: TMenuItem;
     MenuItem37: TMenuItem;
     MenuItem39: TMenuItem;
     MenuItem40: TMenuItem;
@@ -1018,6 +1017,8 @@ type
 
   public
     { Public declarations }
+    procedure DisplayHint(Sender: TObject);//for popup menu hints
+
   end;
 
 var
@@ -2922,12 +2923,22 @@ begin
 end;
 
 
+procedure Tstackmenu1.displayhint(Sender: TObject);
+var
+  hintstr: string;
+begin
+   hintStr := application.hint;    // Set the form's caption to the hint string
+   if ((length(hintstr)>0) and (copy(hintstr,1,1)='#')) then //# A marker indicating this is coming from a popupmenu. Enter this # at every hint
+      self.Caption := copy(hintstr,2,999)
+    else
+      self.Caption := 'Stack menu'; // Or empty string, or default
+end;
+
 procedure Tstackmenu1.FormCreate(Sender: TObject);
 var
   RealFontSize: integer;
 begin
-  RealFontSize := abs(Round((GetFontData(stackmenu1.Font.Handle).Height *
-    72 / stackmenu1.Font.PixelsPerInch)));
+  RealFontSize := abs(Round((GetFontData(stackmenu1.Font.Handle).Height * 72 / stackmenu1.Font.PixelsPerInch)));
   if realfontsize > 11 then stackmenu1.font.size := 11;{limit fontsize}
 
   {$ifdef mswindows}
@@ -2940,6 +2951,7 @@ begin
   if commandline_execution=false then update_stackmenu_mac;
   {$endif}
 
+  Application.OnHint := DisplayHint;
 end;
 
 procedure Tstackmenu1.FormKeyPress(Sender: TObject; var Key: char);
@@ -9750,6 +9762,7 @@ begin
         undo_rename_to_bak(tabind);//ctrl+z
   end;
 end;
+
 
 procedure Tstackmenu1.Label19Click(Sender: TObject);
 begin
