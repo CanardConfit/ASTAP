@@ -1623,20 +1623,18 @@ begin
   sigma_check2.enabled:=ensemble_database=false;
   sigma_mzero1.enabled:=ensemble_database=false;
 
+  sort_alphabetically1.checked:=sort_alphabetically;//For GTK2 do this before filling the combobox otherwise error !!! if true this will trigger a change and set the combobox.sorted
   fill_comp_and_check;//fill comboboxes with stars
 
   if abbrv_variable1.count>0 then
      retrieve_vsp_stars;
 
-
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
-  sort_alphabetically1.checked:=sort_alphabetically;//if true this will trigger a change and set the combobox.sorted
+  hjd1.checked:=hjd_date;
   apply_transformation1.checked:=apply_transformation;
 
-  hjd1.checked:=hjd_date;
   obstype1.ItemIndex:=obstype;
-
   aavso_report:='';
 
   form_aavso1.height:=report_to_clipboard1.top+report_to_clipboard1.height+5;//autosize in height. note form_aavso1.autosize:=true doesn't work welll for the timage
@@ -1650,6 +1648,7 @@ begin
   test_mode:=false;
   plot_graph;
 end;
+
 
 
 procedure Tform_aavso1.sort_alphabetically1Change(Sender: TObject);

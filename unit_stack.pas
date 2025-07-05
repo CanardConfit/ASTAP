@@ -106,7 +106,7 @@ type
     Separator8: TMenuItem;
     solar_drift_ra1: TEdit;
     solar_drift_compensation1: TCheckBox;
-    copyRowsandColumnsswapped1: TMenuItem;
+    list_to_clipboard7: TMenuItem;
     ignore_saturation1: TCheckBox;
     Label74: TLabel;
     MenuItem34: TMenuItem;
@@ -665,7 +665,6 @@ type
     MenuItem25: TMenuItem;
     rename_result1: TMenuItem;
     MenuItem24: TMenuItem;
-    list_to_clipboard7: TMenuItem;
     MenuItem20: TMenuItem;
     MenuItem21: TMenuItem;
     MenuItem22: TMenuItem;
@@ -772,7 +771,7 @@ type
     procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
-    procedure copyRowsandColumnsswapped1Click(Sender: TObject);
+    procedure list_to_clipboard7Click(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -8507,7 +8506,7 @@ begin
       form_aavso1.FormShow(nil);{aavso report}
 
   nil_all;{reactivate listview updating, nil all arrays and restore cursor}
-
+  memo2_message('Measurements completed.');
 
 end;
 
@@ -8995,8 +8994,8 @@ begin
   else
   if Sender = list_to_clipboard8 then lv := listview8
   else
-  if Sender = list_to_clipboard7 then lv := listview7
-  else
+//  if Sender = list_to_clipboard7 then lv := listview7
+//  else
   if Sender = list_to_clipboard6 then lv := listview6
   else
   if Sender = list_to_clipboard1 then lv := listview1
@@ -9691,20 +9690,27 @@ begin
 end;
 
 
-procedure Tstackmenu1.copyRowsandColumnsswapped1Click(Sender: TObject);
+procedure Tstackmenu1.list_to_clipboard7Click(Sender: TObject);
 var
-   column, row : integer;
-   info        : string;
+   column, row,icon_nr : integer;
+   info,doc_magn,abbrv : string;
    lv: tlistview;
+   documented_comp_magn : double;
+   add_doc : boolean;
 begin
   info:='';
   lv:=listview7;
   for column := 0 to lv.columns.count-1 do //go trough column titles
   begin
+    doc_magn:='Documented magnitude'+#9;
     for row := -1 to lv.items.Count - 1 do //go from title row then through next rows
     begin
+      add_doc:=false;
       if row=-1 then //column title row
-         info := info + lv.columns[column].Caption + #9   //column title. There  X titles, one caption column and X-1 subitems columns
+      begin
+        abbrv:=lv.columns[column].Caption;
+        info := info +abbrv + #9   //column title. There  X titles, one caption column and X-1 subitems columns
+      end
       else
       if lv.Items[row].Selected then
       begin
@@ -9712,11 +9718,22 @@ begin
         else
         begin
           if column<=lv.Items[row].SubItems.Count then //does the field exist ?
+          begin
             info := info + lv.Items.item[row].subitems.Strings[column-1]+ #9; //Report subitem rows. Subitem rows have a position equals title position -1
+
+            add_doc:=((column>p_nr_norm) and (frac((column-p_nr_norm-1)/3)=0));//add documented magnitudes?
+            if add_doc then
+            begin
+              icon_nr:=stackmenu1.listview7.Items.item[row].SubitemImages[P_filter];{filter icon nr}
+              documented_comp_magn:=retrieve_comp_magnitude(false,icon_nr,column-1, abbrv);//  retrieve the documented magnitude at passband used from the abbrev_comp string
+              doc_magn:=doc_magn+floattostrF(documented_comp_magn,FFfixed,0,3)+#9;
+            end;
+          end;
         end;
       end;//rows
     end;
     info := info + slinebreak;
+    if add_doc then info:=info+doc_magn + slinebreak;
   end;//columns
   Clipboard.AsText := info;
 end;
