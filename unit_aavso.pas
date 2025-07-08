@@ -46,14 +46,16 @@ type
     report_to_file1: TButton;
     delimiter1: TComboBox;
     Label4: TLabel;
-    Label5: TLabel;
-    Label8: TLabel;
+    comparisonstars_label1: TLabel;
+    variables1: TLabel;
     obscode1: TEdit;
     Label1: TLabel;
     SaveDialog1: TSaveDialog;
+    procedure abbrv_variable1Click(Sender: TObject);
     procedure abbrv_variable1ClickCheck(Sender: TObject);
     procedure abrv_comp1Change(Sender: TObject);
     procedure abbrv_comp1ItemClick(Sender: TObject; Index: integer);
+    procedure abrv_comp1Click(Sender: TObject);
     procedure abrv_comp1ClickCheck(Sender: TObject);
     procedure deselectall1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
@@ -166,7 +168,7 @@ begin
 end;
 
 
-procedure retrieve_vsp_stars;//very simple database system
+procedure retrieve_vsp_stars;//very simple database system  Restore VSP stars
 var
   i,k,L,m,count              : integer;
   rstar,all_comp,hash : string ;
@@ -230,7 +232,7 @@ begin
 end;
 
 
-procedure store_vsp_stars(other_stars  : string); //simple database in settings key report_stars
+procedure store_vsp_stars(other_stars  : string); //simple database in settings key report_stars   Save VSP stars
 var
    i,j: integer;
    hash : string;
@@ -309,8 +311,9 @@ end;
 
 function retrieve_comp_magnitude(use_array: boolean; filter,columnr: integer; s: string): double;//retrieve comp magnitude from the abbrv string or online VSP
 var
-  v,e,err,b,theindex,source  : integer;
+  v,e,err,theindex,source  : integer;
   s2 : string;
+  themagn     : double;
 begin
   result:=-99;
   if columnr<0 then
@@ -358,41 +361,62 @@ begin
   begin
     if ((filter=-1) or (filter=1)) then //local variable
     begin //V magnitude
-      v:= posex('V=',uppercase(s),4);
+      v:= posex('V=',s,4);
       if v>0 then
       begin
          v:=v+2;
          e:= posex('(',s,v);
-         if s[e-1]='_' then
+         if e>0 then
          begin
-           s2:=copy(s,v,e-v-1); //local style  000-BJX-707 V=7.841_(0.021)_8.937_B-V=1.096(0.046)
-           val(s2,result,err);
-         end
-         else
-          err:=99;
+           s2:=copy(s,v,e-v); //local style  000-BJX-707 V=7.841(0.021)_B=1.096(0.046)
+           val(s2,themagn,err);
+           if err=0 then
+             result:=themagn
+           else
+             memo2_message('Error reading V magnitude in ' +s);
+
+         end;
       end;
-      if ((err<>0) or (v=0)) then
-        memo2_message('Error reading comparison star magnitude. Could not find V= in ' +s)
     end
     else
-    if filter=2 then  //get B magnitude
+    if filter=2 then  //get v magnitude
     begin
-      b:= posex(')_',uppercase(s),4);
-      if b>0 then
+      v:= posex('B=',s,4);
+      if v>0 then
       begin
-         b:=b+2;
-         e:= posex('_',s,b);
-         if e<>0 then
+         v:=v+2;
+         e:= posex('(',s,v);
+         if e>0 then
          begin
-           s2:=copy(s,b,e-b); //Local style  000-BJX-707 V=7.841_(0.021)_8.937_B-V=1.096(0.046)
-           val(s2,result,err);
-         end
-         else
-         err:=99;
+           s2:=copy(s,v,e-v); //local style  000-BJX-707 V=7.841(0.021)_B=1.096(0.046)
+           val(s2,themagn,err);
+           if err=0 then
+             result:=themagn
+           else
+             memo2_message('Error reading B magnitude in ' +s);
+         end;
       end;
-      if ((err<>0) or (b=0)) then
-           memo2_message('Error reading B magnitude in ' +s);
+    end //filter=2
+    else
+    if filter=0 then  //get R magnitude
+    begin
+      v:= posex('R=',s,4);
+      if v>0 then
+      begin
+         v:=v+2;
+         e:= posex('(',s,v);
+         if e>0 then
+         begin
+           s2:=copy(s,v,e-v); //local style  000-BJX-707 V=7.841(0.021)_B=1.096(0.046)
+           val(s2,themagn,err);
+           if err=0 then
+             result:=themagn
+           else
+             memo2_message('Error reading R magnitude in ' +s);
+         end;
+      end;
     end;//filter=2
+
   end;
 end;
 
@@ -560,7 +584,7 @@ var
   c, invalid_comp,count, count2,icon_nr                           : integer;
   check_magnitudes                                                : array of double;
   comp_magn,ratio,check_flux, sd, mean,sd_comp, mean_sd_comp,B_V, V_R      : double;
-  warning,check_flux_str                                          : string;
+  warning                                                         : string;
   go_boolean                                                      : boolean;
 
 begin
@@ -642,7 +666,6 @@ end;
 
 procedure get_b_v_var(m : integer; out b_v_var, v_r_var : double);//calculate the b-v of the variable
 var
-  dum: string;
   fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,sd_comp,
   comp_magn,B_V, V_R, ratioV,ratioB,ratioR                          : double;
   warning : string;
@@ -852,7 +875,6 @@ begin
       if frac((i-p_nr_norm)/3)=0 then //not snr column
       begin
         abrv:=ColumnTitles[i+1];
-//        val(copy(abrv,1,1),dummy,error2);//starts with a zero?
         compstar:=(copy(abrv,1,2)='00');
 
         if compstar=false then //variables
@@ -862,7 +884,6 @@ begin
           inc(countV);
         end
         else
-//        if ((measure_any) or (error2=0)) then //check star or iau code
         begin
           starinfo[count].str:=abrv;//store in an array
           starinfo[count].x:=find_mean_measured_magnitude(i);
@@ -930,10 +951,12 @@ begin
   plot_graph;
 end;
 
+
 procedure Tform_aavso1.abrv_comp1Change(Sender: TObject);
 begin
   plot_graph;
 end;
+
 
 procedure Tform_aavso1.abbrv_variable1ClickCheck(Sender: TObject);
 var
@@ -946,10 +969,32 @@ begin
 end;
 
 
+procedure Tform_aavso1.abbrv_variable1Click(Sender: TObject);
+var
+  i,count : integer;
+begin
+  count:=0;
+  for i:=0 to abbrv_variable1.items.count-1 do
+    if abbrv_variable1.checked[i] then inc(count);
+  variables1.caption:='Variable(s) x '+inttostr(count);
+end;
+
+
 procedure Tform_aavso1.abbrv_comp1ItemClick(Sender: TObject; Index: integer);
 begin
   if copy(form_aavso1.abrv_comp1.items[index],1,11)=copy(form_aavso1.abrv_check1.text,1,11) then  // a star can not be both COMP and CHECK at the same time
     form_aavso1.abrv_check1.text:='';
+end;
+
+
+procedure Tform_aavso1.abrv_comp1Click(Sender: TObject);
+var
+  i,count : integer;
+begin
+  count:=0;
+  for i:=0 to abrv_comp1.items.count-1 do
+    if abrv_comp1.checked[i] then inc(count);
+  comparisonstars_label1.caption:='Comparison star(s) x '+inttostr(count);
 end;
 
 
@@ -1500,7 +1545,7 @@ begin
     begin
       bmp.Canvas.Pen.Color := filtercolor[c];
       bmp.Canvas.brush.color :=filtercolor[c];
-      if ((data[0,c]<>0) and (data[2,c]<>0)) then //valid JD
+      if ((data[0,c]<>0) and (data[1,c]<>0)) then //valid JD
         plot_square(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
     end;
 
@@ -1668,10 +1713,10 @@ end;
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
-    c,date_column,invalid_comp,i,icon_nr,m   : integer;
+    c,date_column,invalid_comp,i,icon_nr,m_index   : integer;
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
-    warning,transformation, transform_all_factors,transf_str  : string;
+    warning,transformation, transform_all_factors,transf_str,varab  : string;
     stdev_valid,apply_transformation : boolean;
     snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp,B_V, V_R,var_Vcorrection,var_Bcorrection,var_Rcorrection,v_r_var,b_v_var,airmass : double;
     PNG: TPortableNetworkGraphic;{FPC}
@@ -1695,10 +1740,12 @@ begin
   if length(column_vars)>0 then
   begin
     abbrv_variable1.color:=cldefault;
-    // column_comps,column_vars
-    //star with check star
     for i:=0 to length(column_vars)-1 do
-      variable_clean:= variable_clean+clean_abbreviation( ColumnTitles[column_vars[i]+1],false)+'|' //variable_clean with still underscore. Note the captions are one position shifted.
+    begin
+      varab:= ColumnTitles[column_vars[i]+1];//variable_clean with still underscore. Note the captions are one position shifted.
+      if copy(varab,1,1)<>'0' then //Do not store comp stars added bij test button. After restore they would end up in comp star combobox.
+        variable_clean:= variable_clean+clean_abbreviation(varab,false)+'|'
+    end;
   end
   else
   begin
@@ -1711,7 +1758,6 @@ begin
   if length(column_comps)>0 then  //add comp stars
   begin
     abrv_comp1.color:=cldefault;
-    // column_comps,column_vars
     for i:=0 to length(column_comps)-1 do
       abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(stackmenu1.listview7.Column[column_comps[i]+1].Caption,false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
       abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(ColumnTitles[column_comps[i]+1],false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
@@ -1785,7 +1831,7 @@ begin
   else
     transform_all_factors:='';
 
-  if stackmenu1.annotate_mode1.itemindex<4 then //local database
+  if stackmenu1.annotate_mode1.itemindex<5 then //local database
     chartID:='na'; //else it comes from VSP download
 
   aavso_report:= '#TYPE='+detype+#13+#10+
@@ -1801,14 +1847,13 @@ begin
                  '#NAME'+delim+'DATE'+delim+'MAG'+delim+'MERR'+delim+'FILT'+delim+'TRANS'+delim+'MTYPE'+delim+'CNAME'+delim+'CMAG'+delim+'KNAME'+delim+'KMAG'+delim+'AIRMASS'+delim+'GROUP'+delim+'CHART'+delim+'NOTES'+#13+#10;
 
 
-  // with stackmenu1 do
    for c:=0 to length(RowChecked)-1 do
    begin
      if RowChecked[c] then
      begin
-       for m:=0 to length(column_vars)-1 do //do all variables. This is not an efficient loop scnce the comp stars are read every time but was easy to code.
+       for m_index:=0 to length(column_vars)-1 do //do all variables. This is not an efficient loop since the comp stars are read every time but was easy to code.
        begin //var loop
-         snr_value:=SubItemDouble[c,column_vars[m]+1 {P_snr}];
+         snr_value:=SubItemDouble[c,column_vars[m_index]+1 {P_snr}];
          if snr_value>0 then
          begin
            err_by_snr:=2 {1.087}/snr_value;
@@ -1840,14 +1885,14 @@ begin
              comp_magn_info:=comp_magn_info+warning;
              if invalid_comp=0 then //valid comp star(s)
              begin
-                   var_flux:=SubItemDouble[c,column_vars[m]+2];
+                   var_flux:=SubItemDouble[c,column_vars[m_index]+2];
 
                    if var_flux>0 then //valid conversion string to float
                      var_magn:= 21- ln(ratio*var_flux)*2.5/ln(10)
                    else
                      var_magn:=99;
 
-                   get_b_v_var(m,{out} b_v_var, v_r_var);//calculate the b-v of the variable
+                   get_b_v_var(m_index,{out} b_v_var, v_r_var);//calculate the b-v of the variable
 
 
                    transformation:='';
@@ -1936,7 +1981,7 @@ begin
            end //no ensemble mode
            else
            begin
-             var_magn:=SubItemDouble[c,column_vars[m]];
+             var_magn:=SubItemDouble[c,column_vars[m_index]];
              str(var_magn:0:3,var_magn_str);
              check_magn:=SubItemDouble[c,column_check];
              str(check_magn:0:3,check_magn_str);
@@ -1950,7 +1995,7 @@ begin
 
            if ((var_magn<0) or (invalid_comp<>0) or (check_magn<0)) then invalidstr:='# ' else invalidstr:='';
 
-           abbrv_var_clean:=clean_abbreviation(stackmenu1.listview7.Column[column_vars[m]+1].Caption,true); //Note the captions are one position shifted.
+           abbrv_var_clean:=clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,true); //Note the captions are one position shifted.
 
            if ensemble_database1.Checked then //else comparison stars are used.
              if stackmenu1.ListView7.Items.item[c].SubitemImages[P_calibration]<>SubItemImages[c] then
@@ -1989,7 +2034,7 @@ begin
     Clipboard.AsText:=#13+#10+aavso_report
   else
   begin
-    savedialog1.filename:=stringreplace(clean_abbreviation(stackmenu1.listview7.Column[column_vars[m]+1].Caption,false),'?','',[rfReplaceAll]) +'_'+date_observation+'_report.txt';
+    savedialog1.filename:=stringreplace(clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,false),'?','',[rfReplaceAll]) +'_'+date_observation+'_report.txt';
     savedialog1.initialdir:=ExtractFilePath(filename2);
     savedialog1.Filter := '(*.txt)|*.txt';
     if savedialog1.execute then

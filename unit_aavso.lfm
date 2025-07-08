@@ -42,7 +42,7 @@ object form_aavso1: Tform_aavso1
     TabOrder = 4
     OnClick = report_to_clipboard1Click
   end
-  object Label8: TLabel
+  object variables1: TLabel
     Left = 16
     Height = 19
     Top = 48
@@ -79,7 +79,7 @@ object form_aavso1: Tform_aavso1
     Caption = 'Delimiter'
     ParentColor = False
   end
-  object Label5: TLabel
+  object comparisonstars_label1: TLabel
     Left = 15
     Height = 19
     Top = 240
@@ -162,7 +162,7 @@ object form_aavso1: Tform_aavso1
     OnChange = sort_alphabetically1Change
   end
   object ensemble_database1: TCheckBox
-    Left = 160
+    Left = 328
     Height = 23
     Hint = 'If enabled then Gaia  ensemble is used for calibration'
     Top = 240
@@ -185,6 +185,7 @@ object form_aavso1: Tform_aavso1
     PopupMenu = PopupMenu_comp1
     ShowHint = True
     TabOrder = 8
+    OnClick = abrv_comp1Click
     OnClickCheck = abrv_comp1ClickCheck
     OnItemClick = abbrv_comp1ItemClick
   end
@@ -286,6 +287,7 @@ object form_aavso1: Tform_aavso1
     PopupMenu = PopupMenu_variables1
     ShowHint = True
     TabOrder = 12
+    OnClick = abbrv_variable1Click
     OnClickCheck = abbrv_variable1ClickCheck
   end
   object test_button1: TButton

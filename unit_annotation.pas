@@ -15,7 +15,8 @@ procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the de
 procedure plot_vsx_vsp(extract_visible: boolean);{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
-procedure load_variable;{load variable stars. If loaded no action}
+procedure load_variable_8;{load variable stars. If loaded no action}
+procedure load_variable_11;{load variable stars. If loaded no action}
 procedure load_variable_13;{load variable stars. If loaded no action}
 procedure load_variable_15;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(img : Timage_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
@@ -36,7 +37,7 @@ var
 var  {################# initialised variables #########################}
   limiting_magnitude     : double=0;{magnitude where snr is 5}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
-  database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
 
 type
   tvariable_list = record {for photometry tab}
@@ -1052,7 +1053,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'deep_sky.csv');{load deep sky data from file }
-       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
        except;
          clear;
          beep;
@@ -1062,15 +1063,16 @@ begin
   end;
 end;
 
-procedure load_variable;{load the variable star database once. If loaded no action}
+
+procedure load_variable_8;{load the variable star database once. If loaded no action}
 begin
   if database_nr<>3 then {load variable database}
   begin
     with deepstring do
     begin
        try
-       LoadFromFile(database_path+'variable_stars.csv');{load deep sky data from file }
-       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+       LoadFromFile(database_path+'variable_stars_8.csv');{load deep sky data from file }
+       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
        except;
          clear;
          beep;
@@ -1082,15 +1084,37 @@ begin
   end;
 end;
 
-procedure load_variable_13;{load the variable star database once. If loaded no action}
+
+procedure load_variable_11;{load the variable star database once. If loaded no action}
 begin
   if database_nr<>4 then {load variable database}
   begin
     with deepstring do
     begin
        try
+       LoadFromFile(database_path+'variable_stars.csv');{load deep sky data from file }
+       database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
+       except;
+         clear;
+         beep;
+         application.messagebox(pchar('The variable star database not found!'),'',0);
+         esc_pressed:=true;
+
+       end;
+    end;
+  end;
+end;
+
+
+procedure load_variable_13;{load the variable star database once. If loaded no action}
+begin
+  if database_nr<>5 then {load variable database}
+  begin
+    with deepstring do
+    begin
+       try
        LoadFromFile(database_path+'variable_stars_13.csv');{load deep sky data from file }
-       database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+       database_nr:=5;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
        except;
          clear;
          beep;
@@ -1099,7 +1123,7 @@ begin
          exit;
        end;
     end;
-    if copy(deepstring.strings[0],1,4)<>'V003' then
+    if copy(deepstring.strings[0],1,4)<>'V004' then
       application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 end;
@@ -1107,13 +1131,13 @@ end;
 
 procedure load_variable_15;{load the variable star database once. If loaded no action}
 begin
-  if database_nr<>5 then {load variable database}
+  if database_nr<>6 then {load variable database}
   begin
     with deepstring do
     begin
        try
        LoadFromFile(database_path+'variable_stars_15.csv');{load deep sky data from file }
-       database_nr:=5;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+       database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
        except;
          clear;
          beep;
@@ -1122,7 +1146,7 @@ begin
          exit;
        end;
     end;
-    if copy(deepstring.strings[0],1,4)<>'V003' then
+    if copy(deepstring.strings[0],1,4)<>'V004' then
       application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 
@@ -1137,7 +1161,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'hyperleda.csv');{load deep sky data from file }
-       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
        except;
          clear;
          beep;
@@ -1250,6 +1274,10 @@ begin
       exit;
     end;
     regel:=deepstring.strings[linepos]; {using regel,is faster then deepstring.strings[linepos]}
+
+//     if pos('V1295_Aq',regel)>0 then
+//         memo2_message(regel);
+
     inc(linepos);
     x:=1; z:=0; y:=0;
 
@@ -1442,8 +1470,11 @@ begin
     while read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa) {deepsky database search} do
     begin
       celestial_to_pixel(head,ra2,dec2,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
-      y:=round(fitsY-1);
+      try
+        x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
+        y:=round(fitsY-1);
+      except //SIP can lead to overload of x,y
+      end;
 
 
       if ((x>-0.25*head.width) and (x<=1.25*head.width) and (y>-0.25*head.height) and (y<=1.25*head.height)) then {within image1 with some overlap}
@@ -1451,7 +1482,7 @@ begin
         len:=length1/(abs(head.cdelt2)*60*10*2); {Length in pixels}
         if ((head.cdelt2<0.25*1/60) or (len>=1) or (database_nr>=3)) then//avoid too many object on images with a large FOV
         begin
-          if ((database_nr>=3) and (database_nr<=5)) then //variables
+          if ((database_nr>=3) and (database_nr<=6)) then //variables
           begin
             with mainform1 do
             for i:=0 to high(Fshapes) do
@@ -1587,7 +1618,6 @@ begin
     end; {while loop};
 
     text_dimensions:=nil;{remove used memory}
-
     memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
 
     Screen.Cursor:=crDefault;

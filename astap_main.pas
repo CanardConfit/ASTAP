@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.07.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.07.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -9933,7 +9933,7 @@ begin
 
   url:='https://apps.aavso.org/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
 
-  if stackmenu1.annotate_mode1.itemindex>11 then
+  if stackmenu1.annotate_mode1.itemindex>12 then
            url:=url+'&special=std_field';//standard field for specific purpose of calibrating their equipment
   s:=get_http(url);{get webpage}
   if length(s)=0 then begin beep; exit end;;
@@ -10131,7 +10131,7 @@ begin
   if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); ////Required by AAVSO
 
   idx:=stackmenu1.annotate_mode1.itemindex;
-  auid_filter:=((idx>=4) and (idx<=7)); //variable has an AUID so it can be reported
+  auid_filter:=((idx>=5) and (idx<=8)); //variable has an AUID so it can be reported
 
 
   //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
@@ -10289,13 +10289,24 @@ begin
 //10,Annotation online DB mag 99 & measure all
 
   case stackmenu1.annotate_mode1.itemindex of
-       0,1: begin lim_magnitude:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
-       2:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
-       3:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-       4,8,12:  lim_magnitude:=11;
-       5,9,13:  lim_magnitude:=13;
-       6,19,14: lim_magnitude:=15;
-       7,11,15: lim_magnitude:=99;
+//     0,1: begin lim_magnitude:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+//     2:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+//     3:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+//     4,8,12:  lim_magnitude:=11;
+//     5,9,13:  lim_magnitude:=13;
+//     6,19,14: lim_magnitude:=15;
+//     7,11,15: lim_magnitude:=99;
+
+       1:   begin lim_magnitude:=-99; load_variable_8;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+       0,2: begin lim_magnitude:=-99; load_variable_11;{Load the local database once. If loaded no action} end;//use local database
+       3:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+       4:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+       5,9,13:  lim_magnitude:=11;
+       6,10,14:  lim_magnitude:=13;
+       7,11,15: lim_magnitude:=15;
+       8,12,16: lim_magnitude:=99;
+
+
        else
           lim_magnitude:=99;
      end; //case
@@ -14571,7 +14582,7 @@ begin
     slist.Free;
   end;
 
-  database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  database_nr:=7;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
   plot_deepsky(false,8);
 end;
 
@@ -14646,7 +14657,7 @@ begin
     slist.Free;
   end;
 
-  database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  database_nr:=7;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
   plot_deepsky(false,8);
 end;
 

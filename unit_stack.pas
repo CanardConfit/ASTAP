@@ -4276,8 +4276,6 @@ end;
 procedure Tstackmenu1.listview1DblClick(Sender: TObject);
 begin
   listview_view(TListView(Sender));
-//  if ((pagecontrol1.tabindex = 8) {photometry} and (annotate_mode1.ItemIndex > 0)) then
-//    mainform1.variable_star_annotation1Click(nil); //plot variable stars and comp star annotations
   Screen.Cursor := crDefault;;//just to be sure for Mac.
 end;
 
