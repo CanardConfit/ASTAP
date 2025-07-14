@@ -424,7 +424,7 @@ begin
               begin
                 binning:=report_binning(head.height);{select binning based on the height of the light}
                 bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
-                find_quads(starlist2,quad_star_distances2);{find quads for reference image/database}
+                find_quads(false,starlist2,quad_star_distances2);{find quads for reference image/database}
               end;
             end;
 
@@ -458,7 +458,7 @@ begin
                 else
                 begin{internal alignment}
                   bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
-                  find_quads(starlist1,quad_star_distances1);{find star quads for new image}
+                  find_quads(false,starlist1,quad_star_distances1);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then //Find the solution for inverse mapping. So from reference image to each new source image
                     memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  ' +solution_str)
                   else
@@ -1182,7 +1182,7 @@ begin
             if use_star_alignment then
             begin
               bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
-              find_quads(starlist2, quad_star_distances2);{find quads for reference image}
+              find_quads(false,starlist2, quad_star_distances2);{find quads for reference image}
             end
             else
             begin
@@ -1202,7 +1202,7 @@ begin
             if use_star_alignment then {internal alignment}
             begin
               bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
-              find_quads(starlist1, quad_star_distances1);{find star quads for new image}
+              find_quads(false,starlist1, quad_star_distances1);{find star quads for new image}
 
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then //Find the solution for inverse mapping. So from reference image to each new source image
                  memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str)
@@ -1404,7 +1404,7 @@ begin
           if use_star_alignment then
           begin
             bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
-            find_quads(starlist2, quad_star_distances2);{find quads for reference image}
+            find_quads(false,starlist2, quad_star_distances2);{find quads for reference image}
           end
           else
           begin
@@ -1426,7 +1426,7 @@ begin
           if use_star_alignment then {internal alignment}
           begin{internal alignment}
             bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
-            find_quads(starlist1, quad_star_distances1);{find star quads for new image}
+            find_quads(false,starlist1, quad_star_distances1);{find star quads for new image}
             if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then //Find the solution for inverse mapping. So from reference image to each new source image
             begin
               memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str);
@@ -2145,7 +2145,7 @@ begin
           begin
           //Find the equations for image destignation to image source!. Use this later to take four pixels fractions back to the reference image (inverse mapping).
           bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
-          find_quads(starlist2, quad_star_distances2);{find quads for reference image}
+          find_quads(false,starlist2, quad_star_distances2);{find quads for reference image}
           end
           else
           begin
@@ -2166,7 +2166,7 @@ begin
           begin
             //Find the equations for image destignation to image source!. Use this later to take four pixels fractions back to the reference image (inverse mapping).
             bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
-            find_quads(starlist1, quad_star_distances1);{find star quads for new image}
+            find_quads(false,starlist1, quad_star_distances1);{find star quads for new image}
 
             if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then //Find the solution for inverse mapping. So from reference image to each new source image
                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.  '+solution_str)

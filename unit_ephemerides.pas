@@ -213,8 +213,11 @@ begin
     R := R0*S0+SIGMA0*S1+CM*S2;
     //     If first iteration, create dummy "last F".
     if ( NIT = 1) then  FLAST := FF;
+
+
     //     Check for sign change.
-    if  FF*FLAST<0E0  then
+//    if  exended(FF*FLAST)<0E0  then
+    if  (FF < 0) xor (Flast< 0) then //2025 prevent overflow when FF=-6.35317029076246E161, FLAST=-6.35317029076246E161
     begin // Sign change:  get psi adjustment using secant method;
       W := FF*(PLAST-PSI)/(FLAST-FF);   {plast is set in a few lines further down}
     end

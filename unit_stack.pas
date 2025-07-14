@@ -2778,18 +2778,10 @@ begin
 
     bin_and_find_stars(img_loaded, head,binning, 1 {cropping}, hfd_min, max_stars, False{update hist}, starlist1,mean_hfd, warning_downsample);{bin, measure background}
 
-//    memo2_message('Start');
-//    for i:=1 to 12000 do
-      find_quads_xy(starlist1, starlistquads);{find quads}
-//    memo2_message('End new routine');
-//    for i:=1 to 12000 do
-//      find_quads_xyold(starlist1, starlistquads);{find quads}
-//    memo2_message('End old routine');
-
+    find_quads(true,starlist1, starlistquads);{find quads}
     display_quads(starlistquads);
-    quads_displayed := True;
-    starlistquads := nil;{release memory}
 
+    quads_displayed := True;
     Screen.Cursor := crDefault;
   end;
 end;
@@ -5838,7 +5830,7 @@ begin
               get_background(0, img_loaded,head, False {no histogram already done},  True {unknown, calculate also datamax});
               find_stars(img_loaded, head, hfd_min, max_stars, starlist1,mean_hfd);
               {find stars and put them in a list}
-              find_quads(starlist1,quad_star_distances1);
+              find_quads(false,starlist1,quad_star_distances1);
               {find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
@@ -5858,7 +5850,7 @@ begin
               get_background(0, img_loaded, head,False {no histogram already done}, True {unknown, calculate also noise_level} );
               find_stars(img_loaded, head,hfd_min, max_stars, starlist2,mean_hfd);
               {find stars and put them in a list}
-              find_quads(starlist2,quad_star_distances2);
+              find_quads(false,starlist2,quad_star_distances2);
               {find star quads for new image}
               if find_offset_and_rotation(3, strtofloat2(stackmenu1.quad_tolerance1.Text))
               then {find difference between ref image and new image}
@@ -10312,6 +10304,7 @@ begin
 
           if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
           begin{match between loaded image and star database}
+            remove_key(memox,'ANNOTATE',true{all});//remove key word in header. If solution requeres update then annotations are likely not correct.
             result:=save_fits_tiff(filename1);
             if result=false then break;
           end

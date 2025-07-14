@@ -1134,6 +1134,7 @@ object mainform1: Tmainform1
         object batch_overwrite1: TMenuItem
           AutoCheck = True
           Caption = '          ☑ option "overwrite existing solutions'
+          Checked = True
           Hint = 'Overwrite existing astrometric solutions'
         end
         object cal_batch1: TMenuItem

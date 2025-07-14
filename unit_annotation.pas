@@ -1413,8 +1413,8 @@ type
      x1,y1,x2,y2 : integer;
   end;
 var
-  dra,ddec, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,fitsX,fitsY,
-  gx_orientation, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0 : double;
+  telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,fitsX,fitsY,
+  gx_orientation, SIN_dec_ref,COS_dec_ref  : double;
   name: string;
   flip_horizontal, flip_vertical                   : boolean;
   text_dimensions  : array of textarea;
@@ -1631,11 +1631,10 @@ type
   textarea = record
      x1,y1,x2,y2 : integer;
   end;
-
 var
-  dra,ddec, telescope_ra,telescope_dec, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,
-  COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
-  abbreviation: string;
+  telescope_ra,telescope_dec, SIN_dec_ref,COS_dec_ref,
+  ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
+  abbreviation, abbreviation_display: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount, font_size  : integer;
@@ -1673,9 +1672,6 @@ begin
     mainform1.image1.Canvas.brush.Style:=bsClear;
 
     mainform1.image1.Canvas.font.size:=max(6,font_size);
-
-
-
 
    if extract_visible then //for photometry
    begin
@@ -1729,16 +1725,18 @@ begin
 
           if mode=1 then //plot variable
           begin
+            abbreviation:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
             if font_size<5 then
-              abbreviation:=vsx[count].name
+              abbreviation_display:=vsx[count].name
             else
-              abbreviation:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
+              abbreviation_display:=abbreviation;//full length
 
             with mainform1 do
             for i:=0 to high(Fshapes) do
               if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
               begin
-                Fshapes[i].shape.HINT:=vsx[count].name;
+                Fshapes[i].shape.HINT:=abbreviation; //will be used in manual mode to get the abbreviation
+                Fshapes[i].shape.showhint:=true;
                 if extract_visible then Fshapes[i].vspvsx_list_index:=nrcount;//store the vsp_vsx_list position. This will later copied to the listview7 tag
               end;
 
@@ -1770,36 +1768,40 @@ begin
           end
           else
           begin //plot check stars
-            abbreviation:=vsp[count].auid;
+            abbreviation:=vsp[count].auid+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
+
+            if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
+            begin //Sloan filters used
+              if vsp[count].SGmag<>'?' then abbreviation:=abbreviation+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
+              if vsp[count].SRmag<>'?' then abbreviation:=abbreviation+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+              if vsp[count].SImag<>'?' then abbreviation:=abbreviation+'_SI='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+            end
+            else
+            begin //UBVR
+              if vsp[count].Bmag<>'?' then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+              if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+            end;
 
             if font_size>=5 then
             begin
-              abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
-
-              if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
-              begin //Sloan filters used
-                if vsp[count].SGmag<>'?' then abbreviation:=abbreviation+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
-                if vsp[count].SRmag<>'?' then abbreviation:=abbreviation+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-                if vsp[count].SImag<>'?' then abbreviation:=abbreviation+'_SI='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
-              end
-              else
-              begin //UBVR
-                if vsp[count].Bmag<>'?' then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-                if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
-              end;
+              abbreviation_display:=abbreviation;
             end
+            else
+            if font_size=4 then
+              abbreviation_display:=vsp[count].auid //no magnitude information
             else
             if font_size=3 then
             begin
                if copy(abbreviation,1,2)='00' then
-               delete(abbreviation,1,4);//remove 000-
+                 abbreviation_display:=copy(vsp[count].auid,4,99);//remove 000-
             end;
 
             with mainform1 do
             for i:=0 to high(Fshapes) do
             if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
             begin
-              Fshapes[i].shape.HINT:=abbreviation;
+              Fshapes[i].shape.HINT:=abbreviation;  //will be used in manual mode to get the abbreviation
+              Fshapes[i].shape.showhint:=true;
               if extract_visible then
                   Fshapes[i].vspvsx_list_index:=nrcount;//store the vsp_vsx_list position. This will later copied to the listview7 tag
             end;
@@ -1817,15 +1819,15 @@ begin
             end;
           end;
 
-          if abbreviation<>'' then
+          if abbreviation_display<>'' then
           begin
             if flip_horizontal then begin x:=(head.width-1)-x;  end;
             if flip_vertical then  else y:=(head.height-1)-y;
 
 
             {get text dimensions}
-            th:=mainform1.image1.Canvas.textheight(abbreviation);
-            tw:=mainform1.image1.Canvas.textwidth(abbreviation);
+            th:=mainform1.image1.Canvas.textheight(abbreviation_display);
+            tw:=mainform1.image1.Canvas.textwidth(abbreviation_display);
             x1:=x;
             y1:=y;
             x2:=x+ tw;
@@ -1876,7 +1878,7 @@ begin
             end;
 
 
-              mainform1.image1.Canvas.textout(x1,y1,abbreviation);
+              mainform1.image1.Canvas.textout(x1,y1,abbreviation_display);
             inc(text_counter);
             if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
 
@@ -2379,7 +2381,7 @@ end;{plot stars}
 procedure measure_distortion(out stars_measured : integer);{measure or plot distortion}
 var
   telescope_ra,telescope_dec,fov,fov_org,ra2,dec2, mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,
-  frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,astrometric_error_innner, astrometric_error_outer,sep,
+  frac1,frac2,frac3,frac4,x,y,x2,y2,astrometric_error_innner, astrometric_error_outer,sep,
   ra3,dec3,astrometric_error_innnerPS,astrometric_error_outerPS                                 : double;
   star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,
   sub_counter2,sub_counter3,sub_counter4,scale,count, formalism                                 : integer;

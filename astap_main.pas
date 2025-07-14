@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.07.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.07.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -10037,7 +10037,6 @@ begin
          vsp[count].Verr:=copy(s,i,k-i);
       end
       else
-//      if ((val='R') and (val2='C')) then //R mag found, could be missing
       if ((val='"') and (val2='R')) then //R mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
@@ -11640,6 +11639,30 @@ begin
   form_astrometry_net1.release;
 end;
 
+{procedure Tmainform1.Button1Click(Sender: TObject);
+var
+   url,S : string;
+Var
+ T:TextFile;
+ strum: TFileStream;
+
+begin
+ url:='https://apps.aavso.org/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000';
+
+ s:=get_http(url);//get webpage
+ savedialog1.FILENAME:='aavso.txt';
+ if savedialog1.execute then
+ begin
+   strum := TFileStream.Create(savedialog1.FILENAME, fmCreate);
+     try
+       strum.Seek(0, soBeginning);
+       strum.Write(s[1], Length(s));
+     finally
+       strum.Free;
+     end;
+ end;
+end;
+}
 
 {type
    adata = array of word;

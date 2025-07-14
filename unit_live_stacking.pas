@@ -261,7 +261,7 @@ begin
 //              find_quads(starlist1, quad_star_distances1);{find quads for reference image}
              //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
               bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
-              find_quads(starlist2, quad_star_distances2);{find quads for reference image}
+              find_quads(false,starlist2, quad_star_distances2);{find quads for reference image}
             end;
 
 
@@ -314,7 +314,7 @@ begin
 //              find_quads(starlist2, quad_star_distances2);{find star quads for new image}
               //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
               bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
-              find_quads(starlist1, quad_star_distances1);{find star quads for new image}
+              find_quads(false,starlist1, quad_star_distances1);{find star quads for new image}
 
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
               memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'

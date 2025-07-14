@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 114
-  Height = 707
-  Top = 259
+  Left = 355
+  Height = 706
+  Top = 241
   Width = 1862
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 690
+  ClientHeight = 689
   ClientWidth = 1862
   Color = clForm
   Icon.Data = {
@@ -55,7 +55,7 @@ object stackmenu1: Tstackmenu1
     Tag = 1
     Cursor = crVSplit
     Left = 0
-    Height = 690
+    Height = 689
     Top = 0
     Width = 1920
     Align = alClient
@@ -2999,7 +2999,9 @@ object stackmenu1: Tstackmenu1
               Top = 6
               Width = 89
               Caption = 'Auto rotate'
+              Checked = True
               ParentFont = False
+              State = cbChecked
               TabOrder = 4
             end
           end
@@ -8300,14 +8302,14 @@ object stackmenu1: Tstackmenu1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 185
+      Height = 184
       Top = 505
       Width = 1920
       ClientWidth = 1920
-      ClientHeight = 185
+      ClientHeight = 184
       object memo2: TMemo
         Left = 0
-        Height = 91
+        Height = 90
         Top = 94
         Width = 1920
         Align = alBottom
