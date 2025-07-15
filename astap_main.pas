@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.07.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.07.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -3695,6 +3695,7 @@ begin
   for i:=high(fshapes) downto 0 do
     fshapes[i].shape.free;//essential
   setlength(fshapes,0);
+  shape_nr:=0;
 end;
 
 

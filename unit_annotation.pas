@@ -1793,7 +1793,7 @@ begin
             if font_size=3 then
             begin
                if copy(abbreviation,1,2)='00' then
-                 abbreviation_display:=copy(vsp[count].auid,4,99);//remove 000-
+                 abbreviation_display:=copy(vsp[count].auid,5,99);//remove 000-
             end;
 
             with mainform1 do

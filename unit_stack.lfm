@@ -2999,9 +2999,7 @@ object stackmenu1: Tstackmenu1
               Top = 6
               Width = 89
               Caption = 'Auto rotate'
-              Checked = True
               ParentFont = False
-              State = cbChecked
               TabOrder = 4
             end
           end
@@ -7475,7 +7473,6 @@ object stackmenu1: Tstackmenu1
               ParentFont = False
               TabOrder = 1
               Text = '5'
-              OnChange = pixelsize1Change
               OnExit = focallength1Exit
             end
             object calculated_scale1: TLabel

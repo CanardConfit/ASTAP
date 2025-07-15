@@ -798,7 +798,6 @@ type
     procedure unsharp_edit_threshold1Change(Sender: TObject);
     procedure refresh_solutions_selected1Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
-    procedure pixelsize1Change(Sender: TObject);
     procedure refresh_astrometric_solutions1Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -2285,11 +2284,10 @@ begin
     repeat {check all files, remove darks, bias}
       if ((ListView1.Items.item[c].Checked) and
       (
-      ((analyse_level<=1) and  (length(ListView1.Items.item[c].subitems.Strings[L_hfd]) = 0){hfd empthy}) or
-      ((analyse_level<=1) and  (analyse_quick1.checked=false)  and (strtofloat2(ListView1.Items.item[c].subitems.Strings[L_hfd]) =-1){previouse quick analyse result}) or
+      (analyse_level=1) or  (length(ListView1.Items.item[c].subitems.Strings[L_hfd]) = 0){hfd empthy}) or
       ((analyse_level=2) and  (length(ListView1.Items.item[c].subitems.Strings[L_streaks]) <= 0){streak/sharpness}) or
        (new_analyse_required))
-      ) then
+       then
       begin {checked}
 
         if counts <> 0 then progress_indicator(100 * c / counts, ' Analysing');
@@ -2347,7 +2345,6 @@ begin
           end
           else
           begin {light frame}
-
             if ((planetary = False) and (analyse_level>0)) then
             begin
               if analyse_quick1.Checked then
@@ -7840,10 +7837,13 @@ begin
 end;
 
 
-procedure Tstackmenu1.listview7CustomDraw(Sender: TCustomListView;
-  const ARect: TRect; var DefaultDraw: boolean);
+procedure Tstackmenu1.listview7CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: boolean);
+var
+  count : integer;
 begin
-  stackmenu1.nr_total_photometry1.Caption := IntToStr(Sender.items.Count);
+  count:=Sender.items.Count;
+  stackmenu1.nr_total_photometry1.Caption :=inttostr(count);
+  if count=0 then mainform1.clear_fshapes_array;//nil fshapes array because all images are removed by select and del key. This is alternative to button clear;
   {update counting info}
 end;
 
@@ -10474,7 +10474,8 @@ end;
 
 procedure Tstackmenu1.planetary_image1Exit(Sender: TObject);
 begin
-  if planetary_image1.checked then new_analyse_required:=true;
+  if planetary_image1.checked then
+     new_analyse_required:=true;
 end;
 
 
@@ -10528,11 +10529,6 @@ begin
   process_selected_files(listview7,p_astrometric,'P');
 end;
 
-
-procedure Tstackmenu1.pixelsize1Change(Sender: TObject);
-begin
-  new_analyse_required:=true;
-end;
 
 
 procedure Tstackmenu1.refresh_astrometric_solutions1Click(Sender: TObject);
@@ -12785,7 +12781,7 @@ begin
     end;
   end;
 
-  if stackmenu1.auto_rotate1.Checked then {fix rotationss}
+  if ((use_ephemeris_alignment1.checked) and (stackmenu1.auto_rotate1.Checked)) then {fix rotations}
   begin
     memo2_message('Checking orientations');
     for c := 0 to ListView1.items.Count - 1 do
