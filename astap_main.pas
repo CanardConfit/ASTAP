@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.07.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.07.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -8228,6 +8228,8 @@ begin
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
       c:=Sett.ReadInteger('stack','measure_all',0); stackmenu1.measuring_method1.itemindex:=c;
       stackmenu1.ignore_saturation1.checked:= Sett.ReadBool('stack','ign_saturation',true);//photometry tab
+      dum:=Sett.ReadString('stack','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
+
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
@@ -8640,6 +8642,8 @@ begin
       sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
       sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
+      sett.writestring('stack','max_period',stackmenu1.max_period1.text);
+
 
       sett.writeInteger('stack','measure_all',stackmenu1.measuring_method1.itemindex);
       sett.WriteBool('stack','ign_saturation', stackmenu1.ignore_saturation1.checked);//photometry tab
@@ -10116,7 +10120,7 @@ function download_vsx(limiting_mag: double): boolean;//AAVSO API access variable
 var
   s,dummy,url                                : string;
   count,i,j,k,errorRa,errorDec,err,idx       : integer;
-  radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period : double;
+  radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period,max_period : double;
   skip,auid_filter  : boolean;
 begin
   result:=false;
@@ -10132,7 +10136,7 @@ begin
 
   idx:=stackmenu1.annotate_mode1.itemindex;
   auid_filter:=((idx>=5) and (idx<=8)); //variable has an AUID so it can be reported
-
+  max_period:=strtofloat2(stackmenu1.max_period1.text);//infinity result in 0 meaning switched off.
 
   //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
   //new https://vsx.aavso.org/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
@@ -10247,10 +10251,15 @@ begin
     until ((s[j]='}') or (j=length(s)-1));
 
     //filtering
+    skip:=false;
     if auid_filter then
-      skip:=length(vsx[count].auid)<2 //no AUID available
-    else
-      skip:=false;
+      skip:=length(vsx[count].auid)<2; //no AUID available
+    //filtering
+    if max_period<>0 then //filter on variable's period
+    begin
+      var_period:=strtofloat1(vsx[count].period);
+      if ((var_period=0) or (var_period>=max_period)) then  skip:=true;//only short period var's
+    end;
 
     if skip=false then
          inc(count);//number of entries/stars

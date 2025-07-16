@@ -79,6 +79,7 @@ type
     listview1_photometric_calibration1: TMenuItem;
     export_to_tg1: TMenuItem;
     find_listview_text7: TMenuItem;
+    max_period1: TComboBox;
     rb2: TEdit;
     report_sqm1: TMenuItem;
     MenuItem41: TMenuItem;
@@ -778,6 +779,7 @@ type
     procedure Label19Click(Sender: TObject);
     procedure listview1DrawItem(Sender: TCustomListView; AItem: TListItem;  ARect: TRect; AState: TOwnerDrawState);
     procedure listview1_photometric_calibration1Click(Sender: TObject);
+    procedure max_period1Change(Sender: TObject);
     procedure measure_all1Change(Sender: TObject);
     procedure measuring_method1Change(Sender: TObject);
     procedure export_to_tg1Click(Sender: TObject);
@@ -9389,6 +9391,7 @@ begin
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=3;//enabled only if method is measure all
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
+  max_period1.enabled:=annotate_mode1.itemindex>=5;//only for online database photometry
 end;
 
 
@@ -9451,8 +9454,8 @@ var
 begin
   vsx := nil;//clear downloaded database
   vsp := nil;
-
   clear_added_AAVSO_columns;
+  max_period1.enabled:=annotate_mode1.itemindex>=5;//only for online database photometry
 end;
 
 
@@ -10448,6 +10451,11 @@ procedure Tstackmenu1.listview1_photometric_calibration1Click(Sender: TObject);
 begin
   save_settings2;{Too many lost selected files, so first save settings.}
   process_selected_files(listview1,L_solution {column},'P');
+end;
+
+procedure Tstackmenu1.max_period1Change(Sender: TObject);
+begin
+  vsx:=nil;//trigger a filtered reload
 end;
 
 
