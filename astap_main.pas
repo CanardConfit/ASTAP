@@ -13239,7 +13239,7 @@ begin
         #10+
         '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
         '-d  path {Specify a path to the star database}'+#10+
-        '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
+        '-D  abbreviation[d80,d50,...] {Specify a star database}'+#10+
         '-eqbg apply[y/n] {Equalise unequal background prior to solving to improve star detection}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-sip add[y/n] {Add SIP (Simple Image Polynomial) coefficients}'+#10+

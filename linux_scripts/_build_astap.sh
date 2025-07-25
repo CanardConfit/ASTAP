@@ -1,3 +1,4 @@
+#!/bin/bash
 
 rm ~/astap.fpc/astap
 /home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux.lpi
@@ -8,10 +9,19 @@ fi
 
 cp /home/h/astap.fpc/astap /home/h/astap_install/astap_amd64/opt/astap
 cd /home/h/astap_install
-sudo rm *.rpm
 sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_amd64
-sudo /home/h/alien/alien-8.95/alien.pl -r -c -k  /home/h/astap_install/astap_amd64.deb
-cp *.rpm astap_amd64.rpm
+
+
+#sudo rm *.rpm
+#sudo /home/h/alien/alien-8.95/alien.pl -r -c -k  /home/h/astap_install/astap_amd64.deb
+#cp *.rpm astap_amd64.rpm
+
+sudo rm *.rpm
+cp /home/h/astap.fpc/astap  home/h/astap_install/rpmbuild/SOURCES/astap_amd64_rpm/opt/astap
+rpmbuild -ba ~/astap_install/rpmbuild/SPECS/astap.spec
+cp /home/h/astap_install/rpmbuild/RPMS/x86_64/*.rpm ./astap_amd64.rpm
+sudo rm /home/h/astap_install/rpmbuild/RPMS/x86_64/*.rpm
+
 
 #unpack
 sudo dpkg -i ./astap_amd64.deb
@@ -53,6 +63,8 @@ sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64
 sudo cp /home/h/astap.fpc/astap /opt/astap
 sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt/astap
 tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+
+
 #build aarch64 qt5
 rm ~/astap.fpc/astap 
 /home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64_qt5.lpi
@@ -116,4 +128,6 @@ tar -czvf astap_armhf_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/as
 
 #restore amd64 installation
 sudo dpkg -i ./astap_amd64.deb
+
+read -p "Press any key to continue"
 
