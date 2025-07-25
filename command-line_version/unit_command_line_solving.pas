@@ -744,13 +744,11 @@ begin
 
   if solve_show_log then
   begin
-    memo2_message('Find Quads, max bucket size: '+inttostr(max_bucket_size));
-    memo2_message('Bucket overflows: '+inttostr(overflow_count));
+    memo2_message('Find Quads, max bucket size: '+inttostr(max_bucket_size)+', bucket overflows: '+inttostr(overflow_count) );
   end;
   if overflow_count>0 then
     memo2_message('Warning, bucket size increased!');
 end;
-
 
 
 function find_fit( minimum_count: integer; quad_tolerance: double) : boolean;
@@ -1050,8 +1048,8 @@ end;
 
 procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: Tstar_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2  : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level                     : double;
+   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,starpixels  : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,noise_lev                      : double;
    img_sa     : Timage_array;
    snr_list        : array of double;
    startTick2  : qword;{for timing/speed purposes}
@@ -1066,17 +1064,17 @@ begin
   setlength(snr_list,buffersize);{set array length}
 
   setlength(img_sa,1,height2,width2);{set length of image array}
-
+  noise_lev:=noise_level[0]; //get_background is called in bin_and_find_star. Background is stored in cblack
   retries:=3; {try up to four times to get enough stars from the image}
   repeat
     if retries=3 then
-      begin if star_level >30*noise_level[0] then detection_level:=star_level  else retries:=2;{skip} end;//stars are dominant
+      begin if star_level >30*noise_lev then detection_level:=star_level  else retries:=2;{skip} end;//stars are dominant
     if retries=2 then
-      begin if star_level2>30*noise_level[0] then detection_level:=star_level2 else retries:=1;{skip} end;//stars are dominant
+      begin if star_level2>30*noise_lev then detection_level:=star_level2 else retries:=1;{skip} end;//stars are dominant
     if retries=1 then
-      begin detection_level:=30*noise_level[0]; end;
+      begin detection_level:=30*noise_lev; end;
     if retries=0 then
-      begin detection_level:= 7*noise_level[0]; end;
+      begin detection_level:= 7*noise_lev; end;
 
     highest_snr:=0;
     nrstars:=0;{set counters at zero}
@@ -1085,46 +1083,54 @@ begin
       for fitsX:=0 to width2-1  do
         img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
-    for fitsY:=0 to height2-1-1 do
+    for fitsY:=1 to height2-1-1 do  //Search through the image. Stay one pixel away from the borders.
     begin
-      for fitsX:=0 to width2-1-1  do
+      for fitsX:=1 to width2-1-1  do
       begin
-        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
-        begin
-          HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes}) then
+        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-backgr>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
           begin
-            radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-            sqr_radius:=sqr(radius);
-            xci:=round(xc);{star center as integer}
-            yci:=round(yc);
-            for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-              for m:=-radius to +radius do
-              begin
-                j:=n+yci;
-                i:=m+xci;
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,j,i]:=1;
-              end;
-
-            {store values}
-            inc(nrstars);
-            if nrstars>=length(starlist1[0]) then
+          starpixels:=0;
+          if img[0,fitsY,fitsX-1]- backgr>4*noise_lev then inc(starpixels);//inspect in a cross around it.
+          if img[0,fitsY,fitsX+1]- backgr>4*noise_lev then inc(starpixels);
+          if img[0,fitsY-1,fitsX]- backgr>4*noise_lev then inc(starpixels);
+          if img[0,fitsY+1,fitsX]- backgr>4*noise_lev then inc(starpixels);
+          if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
+          begin
+            HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes}) then
             begin
-              SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
-              setlength(snr_list,nrstars+buffersize);{adapt array size if required}
-            end;
-            starlist1[0,nrstars-1]:=xc; {store star position}
-            starlist1[1,nrstars-1]:=yc;
-            snr_list[nrstars-1]:=snr;{store SNR}
+              radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_radius:=sqr(radius);
+              xci:=round(xc);{star center as integer}
+              yci:=round(yc);
+              for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                for m:=-radius to +radius do
+                begin
+                  j:=n+yci;
+                  i:=m+xci;
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                    img_sa[0,j,i]:=1;
+                end;
 
-            if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
+              {store values}
+              inc(nrstars);
+              if nrstars>=length(starlist1[0]) then
+              begin
+                SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
+                setlength(snr_list,nrstars+buffersize);{adapt array size if required}
+              end;
+              starlist1[0,nrstars-1]:=xc; {store star position}
+              starlist1[1,nrstars-1]:=yc;
+              snr_list[nrstars-1]:=snr;{store SNR}
+
+              if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
+            end;
           end;
         end;
       end;
     end;
 
-    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(cblack))+ '. Detection level used '+inttostr( round(detection_level))
+    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(backgr))+ '. Detection level used '+inttostr( round(detection_level))
                                                           +' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF(noise_level[0],ffFixed,0,0));
 
     dec(retries);{Try again with lower detection level}
@@ -1583,6 +1589,87 @@ begin
 end;
 
 
+procedure equalise_for_solving(var img :Timage_array); {equalise for solving}
+var
+  width2,height2,fitsX, fitsY, ys, xs, counter_median,x,y,stepsX,Ydiv,Xdiv  : integer;
+  median,mean,value,bg  : double;
+  target_value                                  : single;
+  data_array : array of double;
+  background : array of array of double;
+const
+  stepsY= 11; //use odd number for osc
+  substeps = 13;//use odd number for osc
+begin
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
+
+  stepsX := round(stepsY*width2/height2);//search in about squares
+
+  Ydiv:=trunc(1+Height2/stepsY); //tested in Spreadsheet file
+  Xdiv:=round(1+width2/stepsX);
+
+  setlength(background,stepsY, stepsX); //will contain median and standard deviation
+  setlength(data_array,sqr(2*(substeps+1)+1));//make enough space
+
+  for fitsY := 0 to stepsY-1 do
+  begin
+    for fitsX := 0 to stepsX-1 do
+    begin
+
+      counter_median:=0;
+      mean:=0;
+      for y:=0 to substeps do //cycle between ys and ys+stepsX
+      begin
+        for x:=0 to substeps do //cycle between xs and xs+stepsY
+        begin
+          ys := round(((fitsY+y/substeps)/stepsY)*height2);
+          xs := round(((fitsX+x/substeps)/stepsX)*width2);
+
+          if ((xs>5) and (xs<width2-6) and (ys>5) and (ys<height2-6)) then //skip borders which could contain black lines
+          begin
+            value:=img[0,ys,xs];
+            if value>0 then
+            begin
+              data_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+              inc(counter_median);
+              mean:=mean + value;
+            end;
+          end;
+        end;//for x loop
+      end;//for y loop
+
+      if counter_median>0 then
+      begin
+        median:=smedian(data_array,counter_median); //median background
+
+        {check alternative mean value}
+        mean:=mean/counter_median;
+        if mean>1.5*median then
+        begin
+          //memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[0]))+' as background rather then most common value '+inttostr(round(head.backgr)));
+          bg:=mean;{strange peak at low value, ignore histogram and use mean}
+        end
+        else
+        bg:=median;
+      end
+      else
+      begin //prevent nan (runtime) error
+        exit;
+      end;
+      background[fitsY,fitsX]:=bg;//to be accessed later by  background[0,fitsY div stepsY,fitsX div stepsX ]
+    end;
+  end;
+
+  //equalise
+  target_value:=background[height2 div (2*Ydiv), width2 div (xdiv*2)]; //center value
+  for fitsY := 0 to height2-1 do
+    for fitsX := 0 to width2-1 do
+    begin
+      img[0,fitsY,fitsX]:=img[0,fitsY,fitsX]+(target_value - background[fitsY div Ydiv, fitsX div xdiv]);
+    end;
+end;
+
+
 procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
 var
   width2,height2,nrstars,i : integer;
@@ -1600,9 +1687,10 @@ begin
 
     bin_mono_and_crop(binfactor, cropping,img,img_binned); // Make mono, bin and crop
 
-    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level,star_level2 );{get back ground}
+    if equaliseBG_for_solving1 then equalise_for_solving(img_binned); {equalise for solving}
+
+    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}backgr,star_level,star_level2 );{get back ground}
     find_stars(img_binned,hfd_min,starlist3); {find stars of the image and put them in a list}
-    img_binned:=nil;
     nrstars:=Length(starlist3[0]);
 
     if height2<960 then
@@ -1636,7 +1724,9 @@ begin
      memo2_message('█ █ █ █ █ █ Warning, small image dimensions!!');
     end;
 
-    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level,star_level2);{get back ground}
+    if equaliseBG_for_solving1 then equalise_for_solving(img); {equalise for solving}
+
+    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} backgr,star_level,star_level2);{get back ground}
     find_stars(img,hfd_min,starlist3); {find stars of the image and put them in a list}
   end;
 end;
@@ -1996,11 +2086,13 @@ begin
 
 
       if force_oversize1 then oversize:=2;
+      oversize:=min(oversize,max_fov/fov2);//limit request to database to 1 tile so 5.142857143 degrees for 1476 database or 9.53 degrees for type 290 database. Otherwise a tile beyond next tile could be selected}
+
 
       radius:=strtofloat2(radius_search1);{radius search field}
     //  memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '+inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF2(fov2,0,1)+'d. '+oversize_mess );
 
-      minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
+      minimum_quads:=3 + nrstars div 140 {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
     end
     else
     begin
@@ -2080,9 +2172,10 @@ begin
               if match_nr=0  then
                 oversize2:=oversize
               else
-                oversize2:=max(oversize, sqrt(sqr(width2/height2)+sqr(1))); //Use full image for solution for second solve but limit to one tile max to prevent tile selection problems.
+                oversize2:=min(max_fov/fov2, max(oversize, sqrt(sqr(width2/height2)+sqr(1)))); //Use full image for solution for second solve but limit to one tile max to prevent tile selection problems.
 
               nrstars_required2:=round(nrstars_required*oversize2*oversize2); //nr of stars requested request from database
+
               if read_stars(ra_database,dec_database,search_field*oversize2,nrstars_required2,{out} starlist1)= false then
               begin
                 memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');

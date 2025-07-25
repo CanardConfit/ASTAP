@@ -65,6 +65,7 @@ type
     bb2: TEdit;
     bg2: TEdit;
     br2: TEdit;
+    equaliseBG_for_solving1: TCheckBox;
     gb2: TEdit;
     gg2: TEdit;
     gr2: TEdit;
@@ -1676,8 +1677,9 @@ end;
 procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer; out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
 var
   width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, m,
-  xci, yci, sqr_radius, formalism, star_counter: integer;
-  hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background,ra,decl: double;
+  xci, yci, sqr_radius, formalism, star_counter, starpixels: integer;
+  hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background,
+  ra,decl, backgr, noise_level                : double;
   hfd_list:  array of double;
   img_sa  : Timage_array;
   startext: string;
@@ -1702,6 +1704,8 @@ begin
 
   if ap_order>0 then formalism:=1{sip} else formalism:=0{1th order};
 
+  backgr:=head.backgr;
+  noise_level:=head.noise_level;
   retries:=3; {try up to four times to get enough stars from the image}
 
   hfd_min := max(0.8 {two pixels}, strtofloat2(
@@ -1710,17 +1714,17 @@ begin
   if ((head.nrbits = 8) or (head.datamax_org <= 255)) then min_background := 0
   else
     min_background := 8;
-  if ((head.backgr < 60000) and (head.backgr > min_background)) then {not an abnormal file}
+  if ((backgr < 60000) and (backgr > min_background)) then {not an abnormal file}
   begin
     repeat {try three time to find enough stars}
       if retries=3 then
-        begin if head.star_level >30*head.noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
+        begin if head.star_level >30*noise_level then detection_level:=head.star_level  else retries:=2;{skip} end; //stars are dominant
       if retries=2 then
-        begin if head.star_level2>30*head.noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
+        begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end; //stars are dominant
       if retries=1 then
-        begin detection_level:=30*head.noise_level; end;
+        begin detection_level:=30*noise_level; end;
       if retries=0 then
-        begin detection_level:= 7*head.noise_level; end;
+        begin detection_level:= 7*noise_level; end;
 
       star_counter := 0;
 
@@ -1737,53 +1741,58 @@ begin
         for fitsX := 0 to width5 - 1 do
           img_sa[0, fitsY, fitsX] := -1;{mark as star free area}
 
-      for fitsY := 0 to height5 - 1 do
+      for fitsY:=1 to height5 - 1-1 do  //Search through the image. Stay one pixel away from the borders.
       begin
-        for fitsX := 0 to width5 - 1 do
+        for fitsX:=1 to width5 - 1-1 do
         begin
-          if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and
-            (img[0, fitsY, fitsX] - head.backgr > detection_level)) then
-            {new star. For analyse used sigma is 5, so not too low.}
+          if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and (img[0, fitsY, fitsX] - backgr > detection_level)) then     {new star}
           begin
-            HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
-            if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
+            starpixels:=0;
+            if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+            if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+            if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+            if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+            if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
             begin
-              hfd_list[star_counter] := hfd1;{store}
-              Inc(star_counter);
-              if star_counter >= len then
+              HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
+              if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
               begin
-                len := len + 1000;
-                SetLength(hfd_list, len);{increase size}
-              end;
-
-              radius := round(3.0 * hfd1); {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-              sqr_radius := sqr(radius);
-              xci := round(xc);{star center as integer}
-              yci := round(yc);
-              for n := -radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-                for m := -radius to +radius do
+                hfd_list[star_counter] := hfd1;{store}
+                Inc(star_counter);
+                if star_counter >= len then
                 begin
-                  j := n + yci;
-                  i := m + xci;
-                  if ((j >= 0) and (i >= 0) and (j < height5) and (i < width5) and
-                    (sqr(m) + sqr(n) <= sqr_radius)) then
-                    img_sa[0, j, i] := 1;
+                  len := len + 1000;
+                  SetLength(hfd_list, len);{increase size}
                 end;
 
-              if report_type>0 then
-              begin
-                if head.cd1_1=0 then
-                //  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
-                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+LineEnding {+1 to convert 0... to FITS 1... coordinates}
-                else
-                begin
-                  pixel_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
-                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
-                end;
-              end;
+                radius := round(3.0 * hfd1); {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+                sqr_radius := sqr(radius);
+                xci := round(xc);{star center as integer}
+                yci := round(yc);
+                for n := -radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                  for m := -radius to +radius do
+                  begin
+                    j := n + yci;
+                    i := m + xci;
+                    if ((j >= 0) and (i >= 0) and (j < height5) and (i < width5) and
+                      (sqr(m) + sqr(n) <= sqr_radius)) then
+                      img_sa[0, j, i] := 1;
+                  end;
 
-            end;
-          end;
+                if report_type>0 then
+                begin
+                  if head.cd1_1=0 then
+                  //  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
+                    startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+LineEnding {+1 to convert 0... to FITS 1... coordinates}
+                  else
+                  begin
+                    pixel_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
+                    startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
+                  end;
+                end;
+              end;//star detected
+            end;//3px illuminated
+          end;//star free area
         end;
       end;
 
@@ -1818,13 +1827,12 @@ var
   fitsX, fitsY, radius, i, j,
   retries, max_stars, n, m, xci, yci, sqr_radius, nhfd, nhfd_outer_ring,
   nhfd_11, nhfd_21, nhfd_31, nhfd_12, nhfd_22, nhfd_32,
-  nhfd_13, nhfd_23, nhfd_33: integer;
-  hfd1, star_fwhm, snr, flux, xc, yc, detection_level: double;
+  nhfd_13, nhfd_23, nhfd_33,star_pixels,  len, starX, starY,starpixels     : integer;
+  hfd1, star_fwhm, snr, flux, xc, yc, detection_level, backgr, noise_level : double;
   img_sa: Timage_array;
   hfdlist, hfdlist_11, hfdlist_21, hfdlist_31, hfdlist_12, hfdlist_22, hfdlist_32,
   hfdlist_13, hfdlist_23, hfdlist_33, hfdlist_outer_ring: array of double;
   starlistXY: array of array of integer;
-  len, starX, starY: integer;
 
 begin
   if head.naxis3 > 1 then {colour image}
@@ -1849,6 +1857,8 @@ begin
 
   get_background(0, img, head,True, True {calculate background and also star level end noise level});
 
+  backgr:=head.backgr;
+  noise_level:=head.noise_level;
   retries:=3; {try up to four times to get enough stars from the image}
   repeat
     if retries=3 then
@@ -1862,7 +1872,7 @@ begin
 
     nhfd := 0;{set counter at zero}
 
-    if head.backgr > 8 then
+    if backgr > 8 then
     begin
       for fitsY := 0 to head.Height - 1 do
         for fitsX := 0 to head.Width - 1 do
@@ -1873,52 +1883,59 @@ begin
       //12     22   32
       //11     21   31
 
-      for fitsY := 0 to head.Height - 1 do
+      for fitsY := 1 to head.Height -1-1 do  //Search through the image. Stay one pixel away from the borders.
       begin
-        for fitsX := 0 to head.Width - 1 do
+        for fitsX := 1 to head.Width -1-1 do
         begin
-          if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and
-            (img[0, fitsY, fitsX] - head.backgr > detection_level){star}) then   {new star. For analyse used sigma is 5, so not too low.}
+          if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and  (img[0, fitsY, fitsX] - backgr > detection_level)) then   {new star}
           begin
-            HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99  {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
-            {star HFD and FWHM}
-            if ((hfd1 <= 35) and (snr > 30) and (hfd1 > 0.8) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
-            begin    {store values}
-              radius := round(3.0 * hfd1);  {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-              sqr_radius := sqr(radius);
-              xci := round(xc);{star center as integer}
-              yci := round(yc);
-              for n := -radius to +radius do  {mark the whole circular star area as occupied to prevent double detection's}
-                for m := -radius to +radius do
-                begin
-                  j := n + yci;
-                  i := m + xci;
-                  if ((j >= 0) and (i >= 0) and (j < head.Height) and
-                    (i < head.Width) and (sqr(m) + sqr(n) <= sqr_radius)) then
-                    img_sa[0, j, i] := 1;
+            starpixels:=0;
+            if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+            if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+            if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+            if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+            if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
+            begin
+              HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99  {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
+              {star HFD and FWHM}
+              if ((hfd1 <= 35) and (snr > 30) and (hfd1 > 0.8) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
+              begin    {store values}
+                radius := round(3.0 * hfd1);  {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+                sqr_radius := sqr(radius);
+                xci := round(xc);{star center as integer}
+                yci := round(yc);
+                for n := -radius to +radius do  {mark the whole circular star area as occupied to prevent double detection's}
+                  for m := -radius to +radius do
+                  begin
+                    j := n + yci;
+                    i := m + xci;
+                    if ((j >= 0) and (i >= 0) and (j < head.Height) and
+                      (i < head.Width) and (sqr(m) + sqr(n) <= sqr_radius)) then
+                      img_sa[0, j, i] := 1;
+                  end;
+
+                if ((img[0, yci, xci] < head.datamax_org - 1) and
+                    (img[0, yci - 1, xci] < head.datamax_org - 1) and
+                    (img[0, yci + 1, xci] < head.datamax_org - 1) and
+                    (img[0, yci, xci - 1] < head.datamax_org - 1) and
+                    (img[0, yci, xci + 1] < head.datamax_org - 1) and
+                    (img[0, yci - 1, xci - 1] < head.datamax_org - 1) and
+                    (img[0, yci - 1, xci + 1] < head.datamax_org - 1) and
+                    (img[0, yci + 1, xci - 1] < head.datamax_org - 1) and
+                    (img[0, yci + 1, xci + 1] < head.datamax_org - 1)) then {not saturated}
+                begin  {store values}
+                  hfdlist[nhfd] := hfd1;
+
+                  starlistXY[0, nhfd] := xci;  {store star position in image coordinates, not FITS coordinates}
+                  starlistXY[1, nhfd] := yci;
+                  Inc(nhfd);
+                  if nhfd >= length(hfdlist) then
+                  begin
+                    SetLength(hfdlist, nhfd + max_stars); {adapt length if required and store hfd value}
+                    SetLength(starlistXY, 2, nhfd + max_stars);{adapt array size if required}
+                  end;
+
                 end;
-
-              if ((img[0, yci, xci] < head.datamax_org - 1) and
-                  (img[0, yci - 1, xci] < head.datamax_org - 1) and
-                  (img[0, yci + 1, xci] < head.datamax_org - 1) and
-                  (img[0, yci, xci - 1] < head.datamax_org - 1) and
-                  (img[0, yci, xci + 1] < head.datamax_org - 1) and
-                  (img[0, yci - 1, xci - 1] < head.datamax_org - 1) and
-                  (img[0, yci - 1, xci + 1] < head.datamax_org - 1) and
-                  (img[0, yci + 1, xci - 1] < head.datamax_org - 1) and
-                  (img[0, yci + 1, xci + 1] < head.datamax_org - 1)) then {not saturated}
-              begin  {store values}
-                hfdlist[nhfd] := hfd1;
-
-                starlistXY[0, nhfd] := xci;  {store star position in image coordinates, not FITS coordinates}
-                starlistXY[1, nhfd] := yci;
-                Inc(nhfd);
-                if nhfd >= length(hfdlist) then
-                begin
-                  SetLength(hfdlist, nhfd + max_stars); {adapt length if required and store hfd value}
-                  SetLength(starlistXY, 2, nhfd + max_stars);{adapt array size if required}
-                end;
-
               end;
             end;
           end;
@@ -2434,7 +2451,11 @@ begin
 
                 ListView1.Items.item[c].subitems.Strings[L_type]:= copy(imagetype, 1, 5) + IntToStr(headx.nrbits) + rawstr;{type}
 
-                ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(headx.date_obs, 'T', ' ', []), 1, 23);{date/time up to ms}
+                if headx.date_obs<>'' then
+                  ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(headx.date_obs, 'T', ' ', []), 1, 23) {date/time up to ms}
+                else
+                  ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(headx.date_avg, 'T', ' ', []), 1, 23);{date/time up to ms}
+
                 ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(headx.ra0, ': ') + ', ' + prepare_dec4(headx.dec0, '° ');
                 {give internal position}
 

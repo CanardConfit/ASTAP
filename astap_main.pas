@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.07.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.07.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -692,7 +692,7 @@ var
   star_bg,sd_bg  : double;
   object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
-  focus_temp,{cblack,}cwhite, altitudefloat, pressure,airmass   :double; {from FITS}
+  focus_temp,cwhite, altitudefloat, pressure,airmass   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
   telescop,instrum,origin,sqm_value   : string;
 
@@ -964,7 +964,6 @@ var
   fitsbuffer8: array[0..trunc(bufwide/8)] of qword absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
   fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
-
 
 implementation
 
@@ -1441,12 +1440,16 @@ begin
 
         if ((header[i]='D') and (header[i+1]='A')) then {DA}
         begin
-          if ((header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-')) then {DATE-}
+          if ((header[i+2]='T') and (header[i+3]='E') ) then {DATE}
           begin
-            if ((header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
+            if ((header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
             else
-            if ((header[i+5]='A') and (header[i+6]='V')) then
-                              head.date_avg:=get_string; //date-avg
+            if ((header[i+4]='-') and (header[i+5]='B') and (header[i+6]='E')) then head.date_obs:=get_string //date-beg
+            else
+               head.date_avg:=get_string  //date-avg  or
+                                          //date      Rare, this is not fully correct since DATE is date of file creation
+                                          //date-end  Rare, this 0.5*exposure wrong
+
           end
           else
           if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
@@ -3142,8 +3145,7 @@ begin
     begin
       dec(i);
       above:=above+histogram[colour,i];//sum of pixels above pixel level i
-      if above>=factor then
-        head.star_level:=i;//level found for stars with HFD=2.25.
+      if above>=factor then head.star_level:=i;//level found for stars with HFD=2.25.
     end;
     while ((head.star_level2=0) and (i>head.backgr+1)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
@@ -3810,6 +3812,7 @@ end;
 procedure Tmainform1.Image1MouseEnter(Sender: TObject);
 begin
   mainform1.caption:=filename2;{restore filename in caption}
+  mainform1.statusbar1.SimplePanel:=false;//could true if esc is pressed after analysing
 //  if mouse_enter=0 then mouse_enter:=1;
 end;
 
@@ -8140,6 +8143,8 @@ begin
       stackmenu1.timestamp1.Checked:=Sett.ReadBool('stack','time_stamp',true);{blink}
 
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
+      stackmenu1.equaliseBG_for_solving1.Checked:=Sett.ReadBool('stack','eqbg',false);
+
       stackmenu1.use_triples1.Checked:=Sett.ReadBool('stack','use_triples',false);
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
@@ -8552,6 +8557,9 @@ begin
       sett.writeBool('stack','time_stamp',stackmenu1.timestamp1.checked);{blink}
 
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
+      sett.writeBool('stack','eqbg',stackmenu1.equaliseBG_for_solving1.checked);
+
+
       sett.writeBool('stack','use_triples',stackmenu1.use_triples1.checked);
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
 
@@ -11649,30 +11657,7 @@ begin
   form_astrometry_net1.release;
 end;
 
-{procedure Tmainform1.Button1Click(Sender: TObject);
-var
-   url,S : string;
-Var
- T:TextFile;
- strum: TFileStream;
 
-begin
- url:='https://apps.aavso.org/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000';
-
- s:=get_http(url);//get webpage
- savedialog1.FILENAME:='aavso.txt';
- if savedialog1.execute then
- begin
-   strum := TFileStream.Create(savedialog1.FILENAME, fmCreate);
-     try
-       strum.Seek(0, soBeginning);
-       strum.Write(s[1], Length(s));
-     finally
-       strum.Free;
-     end;
- end;
-end;
-}
 
 {type
    adata = array of word;
@@ -13252,11 +13237,12 @@ begin
         '-m  minimum_star_size["]'+#10+
         '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. Specify 0 for auto selection}'+#10+
         #10+
-        '-check  {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
+        '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
         '-d  path {Specify a path to the star database}'+#10+
         '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
+        '-eqbg apply[y/n] {Equalise unequal background prior to solving to improve star detection}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
-        '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
+        '-sip add[y/n] {Add SIP (Simple Image Polynomial) coefficients}'+#10+
         '-speed mode[auto/slow] {Slow is forcing more area overlap while searching to improve detection}'+#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
         '-log   {Write the solver log to a .log text file.}'+#10+
@@ -13341,6 +13327,9 @@ begin
             stackmenu1.add_sip1.checked:='n'<>GetOptionValue('sip');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=('slow'=GetOptionValue('speed'));
         if hasoption('check') then checkfilter:=true else checkfilter:=false;
+        if hasoption('eqbg') then
+            stackmenu1.equaliseBG_for_solving1.checked:='n'<>GetOptionValue('eqbg');
+
 
         if focusrequest then {find best focus using curve fitting}
         begin

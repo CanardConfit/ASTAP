@@ -2735,7 +2735,6 @@ begin
 
 end;
 
-
 function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
 var
   typ : ansichar;
@@ -2745,8 +2744,7 @@ begin
   warning:=false; //warning for old database
   database_type:=1476;{type .1476 database}
   database:=lowercase(database);
-
-  typ:=database[1];
+  if length(database)>0 then typ:=database[1] else typ:='a';
 
   if typ<>'a' then {manual setting}
   begin
@@ -2755,11 +2753,11 @@ begin
       if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;exit; end
     end
     else
-    if typ in ['d','v','h'] then  //d80,v50, h18
+    if typ in ['d','v','h'] then //d80,v50, h18
     begin
       if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  exit; end;
-    end;// no else since there is a v50 and v17!!
-    if typ in ['v','g'] then //v17, g18
+    end; // no else since there is a v50 and v17!!
+    if typ in ['v','g'] then//v17, g18
     begin
       if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;exit; end
     end;
@@ -2769,26 +2767,28 @@ begin
   begin
     if fileexists( database_path+'w08_0101.001') then begin name_database:='w08';database_type:=001; exit; end
     else
-    memo2_message('Could not find the W08 star database for FOV>20 degrees. Will try with an other database.');
+    memo2_message('Could not find w08 star database. Will try with an other database.');
   end;
 
   if ((fov>6) and (fileexists( database_path+'g05_0101.290'))) then begin name_database:='g05'; database_type:=290; end //preference for G05 for large FOV
   else
+  if ((fov>6) and (fileexists( database_path+'v05_0101.290'))) then begin name_database:='v05'; database_type:=290; end
+  else
   if ((fov>6) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; warning:=true; end //preference for V17 for large FOV
   else
-  if ((fov<=0.5) and (fileexists( database_path+'d80_0101.1476'))) then begin name_database:='d80'; end //for tiny field of view
-  else
-  if fileexists( database_path+'v50_0101.1476') then begin name_database:='v50'; end //photometry database
+  if fileexists( database_path+'d80_0101.1476') then begin name_database:='d80'; end //for tiny field of view
   else
   if fileexists( database_path+'d50_0101.1476') then begin name_database:='d50'; end
+  else
+  if fileexists( database_path+'v50_0101.1476') then begin name_database:='v50'; end //photometry database
   else
   if fileexists( database_path+'d20_0101.1476') then begin name_database:='d20'; end
   else
   if fileexists( database_path+'d05_0101.1476') then begin name_database:='d05'; end
   else
-  if fileexists( database_path+'d80_0101.1476') then begin name_database:='d80'; end //for somebody wo installs the d80 for large FOV, >0.5 degrees
-  else
   if fileexists( database_path+'g05_0101.290') then begin name_database:='g05'; database_type:=290; end
+  else
+  if fileexists( database_path+'v05_0101.290') then begin name_database:='v05'; database_type:=290; end
   else
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18';warning:=true; end //old database sorted on magnitude
   else
@@ -2804,6 +2804,7 @@ begin
 
   if warning then warning_str:='Old database!'; //first potential warning. No add required
 end;
+
 
 
 procedure close_star_database;{Close the tfilestream}

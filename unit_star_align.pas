@@ -680,8 +680,7 @@ begin
 
   if solve_show_log then
   begin
-    memo2_message('Find Quads, max bucket size: '+inttostr(max_bucket_size));
-    memo2_message('Bucket overflows: '+inttostr(overflow_count));
+    memo2_message('Find Quads, max bucket size: '+inttostr(max_bucket_size)+', bucket overflows: '+inttostr(overflow_count) );
   end;
   if overflow_count>0 then
     memo2_message('Warning, bucket size increased!');
@@ -1187,8 +1186,8 @@ end;
 
 procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: Tstar_list; out mean_hfd: double);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2 : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level                    : double;
+   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,starpixels : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr, noise_level: double;
    img_sa     : Timage_array;
    snr_list   : array of double;
 
@@ -1219,18 +1218,20 @@ begin
 
   setlength(img_sa,1,height2,width2);{set length of image array}
 
+  backgr:=head.backgr;
+  noise_level:=head.noise_level;
 
   retries:=3; {try up to four times to get enough stars from the image}
   repeat
     mean_hfd:=0;
     if retries=3 then
-      begin if head.star_level >30*head.noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
+      begin if head.star_level >30*noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
     if retries=2 then
-      begin if head.star_level2>30*head.noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
+      begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
     if retries=1 then
-      begin detection_level:=30*head.noise_level; end;
+      begin detection_level:=30*noise_level; end;
     if retries=0 then
-      begin detection_level:= 7*head.noise_level; end;
+      begin detection_level:= 7*noise_level; end;
 
     highest_snr:=0;
     nrstars:=0;{set counters at zero}
@@ -1239,51 +1240,59 @@ begin
       for fitsX:=0 to width2-1  do
         img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
-    for fitsY:=0 to height2-1-1 do
+    for fitsY:=1 to height2-1-1 do  //Search through the image. Stay one pixel away from the borders.
     begin
-      for fitsX:=0 to width2-1-1  do
+      for fitsX:=1 to width2-1-1  do
       begin
-        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]- head.backgr{cblack}>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
+        if ((img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star above noise level}
         begin
-          HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-
-          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes} ) then
+          starpixels:=0;
+          if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+          if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+          if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+          if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+          if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
           begin
-            {for testing}
-          //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
-          //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
-          //  size:=round(5*hfd1);
-          //  mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-          //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-          //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
+            HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-            mean_hfd:=mean_hfd+hfd1;//sum up to calculate the average/mean hfd later
-
-            radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-            sqr_radius:=sqr(radius);
-            xci:=round(xc);{star center as integer}
-            yci:=round(yc);
-            for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-              for m:=-radius to +radius do
-              begin
-                j:=n+yci;
-                i:=m+xci;
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,j,i]:=1;
-              end;
-
-            {store values}
-            inc(nrstars);
-            if nrstars>=length(starlist1[0]) then
+            if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes} ) then
             begin
-              SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
-              setlength(snr_list,nrstars+buffersize);{adapt array size if required}
-             end;
-            starlist1[0,nrstars-1]:=xc; {store star position}
-            starlist1[1,nrstars-1]:=yc;
-            snr_list[nrstars-1]:=snr;{store SNR}
+              {for testing}
+            //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
+            //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
+            //  size:=round(5*hfd1);
+            //  mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+            //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+            //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
 
-            if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
+              mean_hfd:=mean_hfd+hfd1;//sum up to calculate the average/mean hfd later
+
+              radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_radius:=sqr(radius);
+              xci:=round(xc);{star center as integer}
+              yci:=round(yc);
+              for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                for m:=-radius to +radius do
+                begin
+                  j:=n+yci;
+                  i:=m+xci;
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                    img_sa[0,j,i]:=1;
+                end;
+
+              {store values}
+              inc(nrstars);
+              if nrstars>=length(starlist1[0]) then
+              begin
+                SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
+                setlength(snr_list,nrstars+buffersize);{adapt array size if required}
+               end;
+              starlist1[0,nrstars-1]:=xc; {store star position}
+              starlist1[1,nrstars-1]:=yc;
+              snr_list[nrstars-1]:=snr;{store SNR}
+
+              if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
+            end;
           end;
         end;
       end;

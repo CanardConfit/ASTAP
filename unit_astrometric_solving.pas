@@ -447,6 +447,87 @@ begin
   end;
 end;
 
+procedure equalise_for_solving(var img :Timage_array); {equalise for solving}
+var
+  width2,height2,fitsX, fitsY, ys, xs, counter_median,x,y,stepsX,Ydiv,Xdiv  : integer;
+  median,mean,value,bg  : double;
+  target_value                                  : single;
+  data_array : array of double;
+  background : array of array of double;
+const
+  stepsY= 11; //use odd number for osc
+  substeps = 13;//use odd number for osc
+begin
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
+
+  stepsX := round(stepsY*width2/height2);//search in about squares
+
+  Ydiv:=trunc(1+Height2/stepsY); //tested in Spreadsheet file
+  Xdiv:=round(1+width2/stepsX);
+
+  setlength(background,stepsY, stepsX); //will contain median and standard deviation
+  setlength(data_array,sqr(2*(substeps+1)+1));//make enough space
+
+  for fitsY := 0 to stepsY-1 do
+  begin
+    for fitsX := 0 to stepsX-1 do
+    begin
+
+      counter_median:=0;
+      mean:=0;
+      for y:=0 to substeps do //cycle between ys and ys+stepsX
+      begin
+        for x:=0 to substeps do //cycle between xs and xs+stepsY
+        begin
+          ys := round(((fitsY+y/substeps)/stepsY)*height2);
+          xs := round(((fitsX+x/substeps)/stepsX)*width2);
+
+          if ((xs>5) and (xs<width2-6) and (ys>5) and (ys<height2-6)) then //skip borders which could contain black lines
+          begin
+            value:=img[0,ys,xs];
+            if value>0 then
+            begin
+              data_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+              inc(counter_median);
+              mean:=mean + value;
+            end;
+          end;
+        end;//for x loop
+      end;//for y loop
+
+      if counter_median>0 then
+      begin
+        median:=smedian(data_array,counter_median); //median background
+
+        {check alternative mean value}
+        mean:=mean/counter_median;
+        if mean>1.5*median then
+        begin
+          //memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[0]))+' as background rather then most common value '+inttostr(round(head.backgr)));
+          bg:=mean;{strange peak at low value, ignore histogram and use mean}
+        end
+        else
+        bg:=median;
+      end
+      else
+      begin //prevent nan (runtime) error
+        exit;
+      end;
+      background[fitsY,fitsX]:=bg;//to be accessed later by  background[0,fitsY div stepsY,fitsX div stepsX ]
+    end;
+  end;
+
+  //equalise
+  target_value:=background[height2 div (2*Ydiv), width2 div (xdiv*2)]; //center value
+  for fitsY := 0 to height2-1 do
+    for fitsX := 0 to width2-1 do
+    begin
+      img[0,fitsY,fitsX]:=img[0,fitsY,fitsX]+(target_value - background[fitsY div Ydiv, fitsX div xdiv]);
+    end;
+end;
+
+
 
 procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:Tstar_list; out mean_hfd: double; out short_warning : string);{bin, measure background, find stars}
 var
@@ -473,6 +554,8 @@ begin
     //    plot_fits(mainform1.image1,true,true);//plot real
     //    exit;  }
 
+    if stackmenu1.equaliseBG_for_solving1.Checked then equalise_for_solving(img_binned); {equalise for solving}
+
     get_background(0,img_binned,head ,true {load hist},true {calculate also standard deviation background});{get back ground}
     find_stars(img_binned,head,hfd_min,max_stars,starlist3,mean_hfd); {find stars of the image and put them in a list}
 
@@ -481,7 +564,6 @@ begin
       short_warning:='Warning, remaining image dimensions too low! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
       memo2_message('█ █ █ █ █ █ Warning, remaining image dimensions too low! Try to REDUCE OR REMOVE DOWNSAMPLING. Set this option in stack menu, tab alignment.');
     end;
-    img_binned:=nil;
 
     nrstars:=Length(starlist3[0]);
     for i:=0 to nrstars-1 do {correct star positions for binning and cropping. Simplest method}
@@ -508,6 +590,8 @@ begin
       short_warning:='Warning, small image dimensions! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
       memo2_message('█ █ █ █ █ █ Warning, small image dimensions!');
     end;
+
+    if stackmenu1.equaliseBG_for_solving1.Checked then equalise_for_solving(img); {equalise for solving}
 
     get_background(0,img,head,get_hist {load hist},true {calculate also standard deviation background});{get back ground}
     find_stars(img,head,hfd_min,max_stars,starlist3, mean_hfd); {find stars of the image and put them in a list}

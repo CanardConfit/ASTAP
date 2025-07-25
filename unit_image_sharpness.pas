@@ -14,7 +14,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 interface
 
 uses
-  Classes, SysUtils,math, astap_main;
+  Classes, SysUtils, astap_main;
 
 
 function image_sharpness(img: Timage_array): double;// Measure the sharpeness of an image by gradient. The result is reversed and scaled to be roughly identical to a HFD curve So value decreases with sharpness

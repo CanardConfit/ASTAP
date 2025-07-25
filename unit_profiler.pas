@@ -3,9 +3,9 @@ unit unit_profiler;
 {Usage:
 profiler_start;
    do some processing1
-profile_log(do some processing1);
+profiler_log('do some processing1');
    do some processing2
-profile_log(do some processing2);
+profiler_log('do some processing2');
 memo2_message(plog);
 }
 
