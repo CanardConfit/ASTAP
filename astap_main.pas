@@ -10215,14 +10215,14 @@ begin
         vsx[count].minmag:=copy(s,i,k-i);
       end
       else
-      if ((s[j]='C') and (s[j+1]='a') and (s[j+2]='t') and (s[j+2]='e')) then
+      if ((s[j]='C') and (s[j+1]='a') and (s[j+2]='t') and (s[j+3]='e')) then
       begin
         i:=j+length('"Category:"');
         k:=posex('"',s,i);
         vsx[count].category:=copy(s,i,3);
       end
       else
-      if ((s[j]='P') and (s[j+1]='e') and (s[j+2]='r') and (s[j+2]='i')) then //avoid detecting constellation Per
+      if ((s[j]='P') and (s[j+1]='e') and (s[j+2]='r') and (s[j+3]='i')) then //avoid detecting constellation Per
       begin
         i:=j+length('"Period:"');
         k:=posex('"',s,i);
