@@ -23,10 +23,8 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
 https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
-CPUcount
-https://gitlab.com/freepascal.org/fpc/source/-/issues/41265
 
-line colourss GTK3
+line colours GTK3
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41655
 pairspliter GTK3
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41654
@@ -38,6 +36,9 @@ https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF 
 MacOS
 ScrollCode=scEndScroll does not appears at the end of scroll
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/37454
+
+// https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41570
+//Adding -WM10.15 to Project Options > Custom Options enables projects to build without the Linker error. However each .o file generates a version mismatch warning
 }
 
 
@@ -67,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.06.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.07.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -691,7 +692,7 @@ var
   star_bg,sd_bg  : double;
   object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
-  focus_temp,{cblack,}cwhite, altitudefloat, pressure,airmass   :double; {from FITS}
+  focus_temp,cwhite, altitudefloat, pressure,airmass   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
   telescop,instrum,origin,sqm_value   : string;
 
@@ -963,7 +964,6 @@ var
   fitsbuffer8: array[0..trunc(bufwide/8)] of qword absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
   fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
-
 
 implementation
 
@@ -1440,12 +1440,16 @@ begin
 
         if ((header[i]='D') and (header[i+1]='A')) then {DA}
         begin
-          if ((header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-')) then {DATE-}
+          if ((header[i+2]='T') and (header[i+3]='E') ) then {DATE}
           begin
-            if ((header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
+            if ((header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
             else
-            if ((header[i+5]='A') and (header[i+6]='V')) then
-                              head.date_avg:=get_string; //date-avg
+            if ((header[i+4]='-') and (header[i+5]='B') and (header[i+6]='E')) then head.date_obs:=get_string //date-beg
+            else
+               head.date_avg:=get_string  //date-avg  or
+                                          //date      Rare, this is not fully correct since DATE is date of file creation
+                                          //date-end  Rare, this 0.5*exposure wrong
+
           end
           else
           if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
@@ -1626,6 +1630,11 @@ begin
             begin
               dec_mount:=tempval;
               if head.dec0=0 then head.dec0:=tempval; {dec telescope, read double value only if crval is not available}
+            end
+            else
+            begin
+              mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+              dec_mount:=dec_radians;//preference for the other keywords
             end;
           end;
 
@@ -1774,6 +1783,11 @@ begin
               begin
                 ra_mount:=tempval;
                 if head.ra0=0 then head.ra0:=tempval; {ra telescope, read double value only if crval is not available}
+              end
+              else
+              begin
+                mainform1.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+                ra_mount:=ra_radians;{preference for other keywords}
               end;
             end;
             if ((header[i+1]='O')  and (header[i+2]='W') and (header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D') and (header[i+6]='E')) then
@@ -1938,15 +1952,7 @@ begin
        if ((focallen<>0) and (head.xpixsz<>0)) then
           head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
       end;
-{
-if ap_order>0 then
-  mainform1.Polynomial1.itemindex:=1//switch to sip
-else
-if x_coeff[0]<>0 then
-   mainform1.Polynomial1.itemindex:=2//switch to DSS
-else
-  mainform1.Polynomial1.itemindex:=0;//switch to WCS
-      }
+
       if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
       begin
         if equinox<>2000 then //e.g. in SharpCap
@@ -2407,22 +2413,26 @@ begin
     begin
       ra_mount:=read_float*pi/180;{degrees -> radians}
       if head.ra0=0 then head.ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
-    end else
+    end
+    else
     if key='DEC     =' then
     begin
       dec_mount:=read_float*pi/180;
       if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
-    end else
+    end
+    else
     if ((key='OBJCTRA =') and (ra_mount>=999)) {ra_mount value is unfilled, preference for keyword RA} then
     begin
       mainform1.ra1.text:=read_string;{triggers an onchange event which will convert the string to ra_radians}
       ra_mount:=ra_radians;{preference for keyword RA}
-    end  else
+    end
+    else
     if ((key='OBJCTDEC=') and (dec_mount>=999)) {dec_mount value is unfilled, preference for keyword DEC} then
     begin
       mainform1.dec1.text:=read_string;{triggers an onchange event which will convert the string to dec_radians}
-      dec_mount:=dec_radians;
-    end else
+      dec_mount:=dec_radians;//preference for outher keyword
+    end
+    else
     if key='OBJECT  =' then object_name:=read_string else
 
     if ((key='EXPOSURE=') or ( key='EXPTIME =')) then head.exposure:=read_float else
@@ -3135,8 +3145,7 @@ begin
     begin
       dec(i);
       above:=above+histogram[colour,i];//sum of pixels above pixel level i
-      if above>=factor then
-        head.star_level:=i;//level found for stars with HFD=2.25.
+      if above>=factor then head.star_level:=i;//level found for stars with HFD=2.25.
     end;
     while ((head.star_level2=0) and (i>head.backgr+1)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
@@ -3686,8 +3695,9 @@ var
   i : integer;
 begin
   for i:=high(fshapes) downto 0 do
-      freeandnil(fshapes[i]);//essential
+    fshapes[i].shape.free;//essential
   setlength(fshapes,0);
+  shape_nr:=0;
 end;
 
 
@@ -3802,6 +3812,7 @@ end;
 procedure Tmainform1.Image1MouseEnter(Sender: TObject);
 begin
   mainform1.caption:=filename2;{restore filename in caption}
+  mainform1.statusbar1.SimplePanel:=false;//could true if esc is pressed after analysing
 //  if mouse_enter=0 then mouse_enter:=1;
 end;
 
@@ -4791,7 +4802,7 @@ end;
 
 function place_marker3(data0: string): boolean;{place ra,dec marker in image}
 var
-  ra_new,dec_new, fitsx,fitsy : double;
+  ra_new,dec_new : double;
   data1,sipwcs  : string;
 begin
   if ((head.naxis=0) or (head.cd1_1=0) or (mainform1.shape_marker3.visible=false)) then exit;{no solution to place marker}
@@ -6274,7 +6285,7 @@ begin
   end
   else
   begin
-    if head.naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw red, green or blue pixel extraction is only possible for raw images.')
+    if head.naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw red, green or blue sensitive pixels extraction is only possible for raw images. This image is debayered to colour and no longer raw!')
     else
     memo2_message('Skipped image '+ filename7+', FILTER indicates earlier extraction!');
   end;
@@ -8132,6 +8143,8 @@ begin
       stackmenu1.timestamp1.Checked:=Sett.ReadBool('stack','time_stamp',true);{blink}
 
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
+      stackmenu1.equaliseBG_for_solving1.Checked:=Sett.ReadBool('stack','eqbg',false);
+
       stackmenu1.use_triples1.Checked:=Sett.ReadBool('stack','use_triples',false);
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
@@ -8220,6 +8233,8 @@ begin
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
       c:=Sett.ReadInteger('stack','measure_all',0); stackmenu1.measuring_method1.itemindex:=c;
       stackmenu1.ignore_saturation1.checked:= Sett.ReadBool('stack','ign_saturation',true);//photometry tab
+      dum:=Sett.ReadString('stack','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
+
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
@@ -8542,6 +8557,9 @@ begin
       sett.writeBool('stack','time_stamp',stackmenu1.timestamp1.checked);{blink}
 
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
+      sett.writeBool('stack','eqbg',stackmenu1.equaliseBG_for_solving1.checked);
+
+
       sett.writeBool('stack','use_triples',stackmenu1.use_triples1.checked);
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
 
@@ -8632,6 +8650,8 @@ begin
       sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
       sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
+      sett.writestring('stack','max_period',stackmenu1.max_period1.text);
+
 
       sett.writeInteger('stack','measure_all',stackmenu1.measuring_method1.itemindex);
       sett.WriteBool('stack','ign_saturation', stackmenu1.ignore_saturation1.checked);//photometry tab
@@ -9926,7 +9946,7 @@ begin
 
   url:='https://apps.aavso.org/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
 
-  if stackmenu1.annotate_mode1.itemindex>11 then
+  if stackmenu1.annotate_mode1.itemindex>12 then
            url:=url+'&special=std_field';//standard field for specific purpose of calibrating their equipment
   s:=get_http(url);{get webpage}
   if length(s)=0 then begin beep; exit end;;
@@ -10030,7 +10050,6 @@ begin
          vsp[count].Verr:=copy(s,i,k-i);
       end
       else
-//      if ((val='R') and (val2='C')) then //R mag found, could be missing
       if ((val='"') and (val2='R')) then //R mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
@@ -10109,7 +10128,7 @@ function download_vsx(limiting_mag: double): boolean;//AAVSO API access variable
 var
   s,dummy,url                                : string;
   count,i,j,k,errorRa,errorDec,err,idx       : integer;
-  radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period : double;
+  radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period,max_period : double;
   skip,auid_filter  : boolean;
 begin
   result:=false;
@@ -10124,8 +10143,8 @@ begin
   if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); ////Required by AAVSO
 
   idx:=stackmenu1.annotate_mode1.itemindex;
-  auid_filter:=((idx>=4) and (idx<=7)); //variable has an AUID so it can be reported
-
+  auid_filter:=((idx>=5) and (idx<=8)); //variable has an AUID so it can be reported
+  max_period:=strtofloat2(stackmenu1.max_period1.text);//infinity result in 0 meaning switched off.
 
   //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
   //new https://vsx.aavso.org/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
@@ -10240,10 +10259,15 @@ begin
     until ((s[j]='}') or (j=length(s)-1));
 
     //filtering
+    skip:=false;
     if auid_filter then
-      skip:=length(vsx[count].auid)<2 //no AUID available
-    else
-      skip:=false;
+      skip:=length(vsx[count].auid)<2; //no AUID available
+    //filtering
+    if max_period<>0 then //filter on variable's period
+    begin
+      var_period:=strtofloat1(vsx[count].period);
+      if ((var_period=0) or (var_period>=max_period)) then  skip:=true;//only short period var's
+    end;
 
     if skip=false then
          inc(count);//number of entries/stars
@@ -10282,13 +10306,24 @@ begin
 //10,Annotation online DB mag 99 & measure all
 
   case stackmenu1.annotate_mode1.itemindex of
-       0,1: begin lim_magnitude:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
-       2:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
-       3:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-       4,8,12:  lim_magnitude:=11;
-       5,9,13:  lim_magnitude:=13;
-       6,19,14: lim_magnitude:=15;
-       7,11,15: lim_magnitude:=99;
+//     0,1: begin lim_magnitude:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+//     2:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+//     3:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+//     4,8,12:  lim_magnitude:=11;
+//     5,9,13:  lim_magnitude:=13;
+//     6,19,14: lim_magnitude:=15;
+//     7,11,15: lim_magnitude:=99;
+
+       1:   begin lim_magnitude:=-99; load_variable_8;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+       0,2: begin lim_magnitude:=-99; load_variable_11;{Load the local database once. If loaded no action} end;//use local database
+       3:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+       4:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+       5,9,13:  lim_magnitude:=11;
+       6,10,14:  lim_magnitude:=13;
+       7,11,15: lim_magnitude:=15;
+       8,12,16: lim_magnitude:=99;
+
+
        else
           lim_magnitude:=99;
      end; //case
@@ -11621,6 +11656,7 @@ begin
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
+
 
 
 {type
@@ -13201,11 +13237,12 @@ begin
         '-m  minimum_star_size["]'+#10+
         '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. Specify 0 for auto selection}'+#10+
         #10+
-        '-check  {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
+        '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
         '-d  path {Specify a path to the star database}'+#10+
-        '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
+        '-D  abbreviation[d80,d50,...] {Specify a star database}'+#10+
+        '-eqbg apply[y/n] {Equalise unequal background prior to solving to improve star detection}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
-        '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
+        '-sip add[y/n] {Add SIP (Simple Image Polynomial) coefficients}'+#10+
         '-speed mode[auto/slow] {Slow is forcing more area overlap while searching to improve detection}'+#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
         '-log   {Write the solver log to a .log text file.}'+#10+
@@ -13290,6 +13327,9 @@ begin
             stackmenu1.add_sip1.checked:='n'<>GetOptionValue('sip');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=('slow'=GetOptionValue('speed'));
         if hasoption('check') then checkfilter:=true else checkfilter:=false;
+        if hasoption('eqbg') then
+            stackmenu1.equaliseBG_for_solving1.checked:='n'<>GetOptionValue('eqbg');
+
 
         if focusrequest then {find best focus using curve fitting}
         begin
@@ -14564,7 +14604,7 @@ begin
     slist.Free;
   end;
 
-  database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  database_nr:=7;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
   plot_deepsky(false,8);
 end;
 
@@ -14639,7 +14679,7 @@ begin
     slist.Free;
   end;
 
-  database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 11 loaded, 4 is variable magn 13 loaded, 5 is variable magn 15 loaded, 6=simbad}
+  database_nr:=7;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
   plot_deepsky(false,8);
 end;
 

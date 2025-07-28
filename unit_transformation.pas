@@ -13,6 +13,8 @@ type
 
   TForm_transformation1 = class(TForm)
     Button1: TButton;
+    cancel1: TButton;
+    save1: TButton;
     Label10: TLabel;
     Label11: TLabel;
     error_label1: TLabel;
@@ -34,6 +36,8 @@ type
     Label3: TLabel;
 
     procedure Button1Click(Sender: TObject);
+    procedure save1Click(Sender: TObject);
+    procedure cancel1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -71,7 +75,7 @@ uses astap_main,unit_stack, unit_contour, unit_aavso;
 { TForm_transformation1 }
 
 var
-  B_list,V_listB,V_listR,R_list,I_list,SG_list,SR_list,SI_list, B_list_documented,V_list_documentedB,V_list_documentedR, R_list_documented  : array of double;
+  B_list,V_listB,V_listR,R_list, B_list_documented,V_list_documentedB,V_list_documentedR, R_list_documented  : array of double;
   Tbv, Tbv_intercept, Tbv_sd, Tv_bv, Tv_bv_intercept, Tv_bv_sd, Tb_bv, Tb_bv_intercept, Tb_bv_sd,
   Tvr, Tvr_intercept, Tvr_sd, Tr_vr, Tr_vr_intercept, Tr_vr_sd, Tv_vr, Tv_vr_intercept, Tv_vr_sd : double;
 
@@ -79,6 +83,7 @@ var
 const
   idx : integer=0; //which graph is shown
   transf_filter_sigma :double=2; //to filter out outliers
+  cancel : boolean=true;
 
 procedure plot_transformation_graph;
 var
@@ -388,8 +393,8 @@ end;
 
 procedure transformation;
 var
-   col,row,Rcount, Vcount, Bcount, Icount,SGcount,SRcount,SIcount,starnr,icon_nr,nr,j,counter    :integer;
-   abrv,auid,julian_str : string;
+   col,row,Rcount, Vcount, Bcount, starnr,icon_nr,nr,j,counter    :integer;
+   abrv,auid,julian_str,mess : string;
    selected_rows,iconB, iconV,iconR,vr_success,bv_success : boolean;
    R,V,B, value            : double;
    V_list, V_list_documented: array of double;
@@ -466,7 +471,7 @@ begin
               end;
           end;
         end;
-        if Bcount<>0  then begin B:=B/Bcount; B_list[starnr]:=B;      end else B_list[starnr]:=0;//simple mean
+        if Bcount<>0  then begin B:=B/Bcount; B_list[starnr]:=B;      end else B_list[starnr]:=0;//simple mean of all the B measurements of this star
         if Vcount<>0  then begin V:=V/Vcount; V_list[starnr]:=V;      end else V_list[starnr]:=0;//simple mean
         if Rcount<>0  then begin R:=R/Rcount; R_list[starnr]:=R;      end else R_list[starnr]:=0;;//simple mean
 //      if Icount<>0  then begin I:=I/Icount; I_list[starnr]:=I;      end else I_list[starnr]:=0;;//simple mean
@@ -474,9 +479,9 @@ begin
 //      if SRcount<>0 then begin SR:=SR/SRcount; SR_list[starnr]:=SR; end else SR_list[starnr]:=0;//simple mean
 //      if SIcount<>0 then begin SI:=SI/SIcount; SI_list[starnr]:=SI; end else SI_list[starnr]:=0;//simple mean
 
-        B_list_documented[starnr]:=retrieve_comp_magnitude(2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-        V_list_documented[starnr]:=retrieve_comp_magnitude(1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-        R_list_documented[starnr]:=retrieve_comp_magnitude(0,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        B_list_documented[starnr]:=retrieve_comp_magnitude(false,2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        V_list_documented[starnr]:=retrieve_comp_magnitude(false,1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        R_list_documented[starnr]:=retrieve_comp_magnitude(false,0,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
 
 
         inc(starnr);
@@ -614,7 +619,21 @@ begin
       tr_vr1.Text:=floattostrF(tr_vr,FFfixed,0,3);
     end;
 
-    memo2_message('Transformation ready');
+    if ((bv_success=false) and (vr_success=false)) then
+    begin
+      mess:='Abort, no';
+      if iconB=false then mess:=mess+' B';
+      if iconV=false then mess:=mess+' V';
+      if iconR=false then mess:=mess+' R';
+      mess:=mess+' stars found!  Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR.'+#13+#10+'Correct header values with with popup menu if required.';
+      form_transformation1.error_label1.caption:=mess;
+      memo2_message('Transformation failure. '+mess);
+    end
+    else
+    begin
+      form_transformation1.error_label1.caption:='';
+      memo2_message('Transformation ready');
+    end;
 
     Form_transformation1.FormResize(nil); //plot  graph
   end;
@@ -630,6 +649,7 @@ begin
   Tvr1.text:=TvrSTR;
   Tv_vr1.text:=Tv_vrSTR;
   Tr_vr1.text:=Tr_vrSTR;
+  cancel:=true;
 end;
 
 procedure TForm_transformation1.sigma_transformation1EditingDone(Sender: TObject );
@@ -686,14 +706,28 @@ const
   MB_YESNO=4;
 
 begin
-  if ((pos('std', stackmenu1.annotate_mode1.text)<> 0) or
+  if ((pos('std', stackmenu1.annotate_mode1.text)<> 0) or (pos('Local', stackmenu1.annotate_mode1.text)<> 0) or
           (IDYES= Application.MessageBox('Warning. AAVSO annotation is not set at "std field". If no AAVSO comparison stars are available then this routine will not work.'+#10+#10+'This routine will work with any comparison stars so you could continue.'+#10+#10+'Continue?', 'Find tranformation coeficients', MB_ICONQUESTION + MB_YESNO))) then
   transformation;
+end;
+
+procedure TForm_transformation1.save1Click(Sender: TObject);
+begin
+  cancel:=false;
+  Form_transformation1.close;
+end;
+
+procedure TForm_transformation1.cancel1Click(Sender: TObject);
+begin
+  cancel:=true;
+  Form_transformation1.close;
 end;
 
 procedure TForm_transformation1.FormClose(Sender: TObject;
   var CloseAction: TCloseAction);
 begin
+  if cancel then
+    exit;
   sigma_transformationSTR:=sigma_transformation1.text;
   TbvSTR:=Tbv1.text;
   Tb_bvSTR:=Tb_bv1.text;
@@ -701,6 +735,7 @@ begin
   TvrSTR:=Tvr1.text;
   Tv_vrSTR:=Tv_vr1.text;
   Tr_vrSTR:=Tr_vr1.text;
+  save_settings2;//save coefficients
 end;
 
 end.

@@ -103,7 +103,6 @@ uses   Classes,SysUtils,controls,forms,math,stdctrls,
        unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field, unit_calc_trans_cubic;
 
 function solve_image(img :Timage_array;var hd: Theader;memo:tstrings; get_hist{update hist},check_patternfilter :boolean) : boolean;{find match between image and star database}
-//procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:Tstar_list; out mean_hfd: double; out short_warning : string);{bin, measure background, find stars}
 
 function report_binning(height :double) : integer;{select the binning}
@@ -448,6 +447,87 @@ begin
   end;
 end;
 
+procedure equalise_for_solving(var img :Timage_array); {equalise for solving}
+var
+  width2,height2,fitsX, fitsY, ys, xs, counter_median,x,y,stepsX,Ydiv,Xdiv  : integer;
+  median,mean,value,bg  : double;
+  target_value                                  : single;
+  data_array : array of double;
+  background : array of array of double;
+const
+  stepsY= 11; //use odd number for osc
+  substeps = 13;//use odd number for osc
+begin
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
+
+  stepsX := round(stepsY*width2/height2);//search in about squares
+
+  Ydiv:=trunc(1+Height2/stepsY); //tested in Spreadsheet file
+  Xdiv:=round(1+width2/stepsX);
+
+  setlength(background,stepsY, stepsX); //will contain median and standard deviation
+  setlength(data_array,sqr(2*(substeps+1)+1));//make enough space
+
+  for fitsY := 0 to stepsY-1 do
+  begin
+    for fitsX := 0 to stepsX-1 do
+    begin
+
+      counter_median:=0;
+      mean:=0;
+      for y:=0 to substeps do //cycle between ys and ys+stepsX
+      begin
+        for x:=0 to substeps do //cycle between xs and xs+stepsY
+        begin
+          ys := round(((fitsY+y/substeps)/stepsY)*height2);
+          xs := round(((fitsX+x/substeps)/stepsX)*width2);
+
+          if ((xs>5) and (xs<width2-6) and (ys>5) and (ys<height2-6)) then //skip borders which could contain black lines
+          begin
+            value:=img[0,ys,xs];
+            if value>0 then
+            begin
+              data_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+              inc(counter_median);
+              mean:=mean + value;
+            end;
+          end;
+        end;//for x loop
+      end;//for y loop
+
+      if counter_median>0 then
+      begin
+        median:=smedian(data_array,counter_median); //median background
+
+        {check alternative mean value}
+        mean:=mean/counter_median;
+        if mean>1.5*median then
+        begin
+          //memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[0]))+' as background rather then most common value '+inttostr(round(head.backgr)));
+          bg:=mean;{strange peak at low value, ignore histogram and use mean}
+        end
+        else
+        bg:=median;
+      end
+      else
+      begin //prevent nan (runtime) error
+        exit;
+      end;
+      background[fitsY,fitsX]:=bg;//to be accessed later by  background[0,fitsY div stepsY,fitsX div stepsX ]
+    end;
+  end;
+
+  //equalise
+  target_value:=background[height2 div (2*Ydiv), width2 div (xdiv*2)]; //center value
+  for fitsY := 0 to height2-1 do
+    for fitsX := 0 to width2-1 do
+    begin
+      img[0,fitsY,fitsX]:=img[0,fitsY,fitsX]+(target_value - background[fitsY div Ydiv, fitsX div xdiv]);
+    end;
+end;
+
+
 
 procedure bin_and_find_stars(img :Timage_array;var head:theader; binfactor:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:Tstar_list; out mean_hfd: double; out short_warning : string);{bin, measure background, find stars}
 var
@@ -474,6 +554,8 @@ begin
     //    plot_fits(mainform1.image1,true,true);//plot real
     //    exit;  }
 
+    if stackmenu1.equaliseBG_for_solving1.Checked then equalise_for_solving(img_binned); {equalise for solving}
+
     get_background(0,img_binned,head ,true {load hist},true {calculate also standard deviation background});{get back ground}
     find_stars(img_binned,head,hfd_min,max_stars,starlist3,mean_hfd); {find stars of the image and put them in a list}
 
@@ -482,7 +564,6 @@ begin
       short_warning:='Warning, remaining image dimensions too low! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
       memo2_message('█ █ █ █ █ █ Warning, remaining image dimensions too low! Try to REDUCE OR REMOVE DOWNSAMPLING. Set this option in stack menu, tab alignment.');
     end;
-    img_binned:=nil;
 
     nrstars:=Length(starlist3[0]);
     for i:=0 to nrstars-1 do {correct star positions for binning and cropping. Simplest method}
@@ -509,6 +590,8 @@ begin
       short_warning:='Warning, small image dimensions! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
       memo2_message('█ █ █ █ █ █ Warning, small image dimensions!');
     end;
+
+    if stackmenu1.equaliseBG_for_solving1.Checked then equalise_for_solving(img); {equalise for solving}
 
     get_background(0,img,head,get_hist {load hist},true {calculate also standard deviation background});{get back ground}
     find_stars(img,head,hfd_min,max_stars,starlist3, mean_hfd); {find stars of the image and put them in a list}
@@ -811,6 +894,8 @@ var
   distancestr,mess,info_message,popup_warningG05,popup_warningSample,suggest_str, solved_in,
   offset_found,ra_offset_str,dec_offset_str,mount_info_str,mount_offset_str,warning_downsample   : string;
   starlist1,starlist2                                                                            : Tstar_list;
+
+  yy: integer;
 var {with value}
   quads_str: string=' quads';
 const
@@ -930,10 +1015,6 @@ begin
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*arcsec_per_px) );{to ignore hot pixels which are too small}
 
     bin_and_find_stars(img,hd,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, mean_hfd,warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
-  //  if mean_hfd>5 then
-   //    bin_and_find_stars(img,hd,binning*2,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, mean_hfd,warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
-//    if mean_hfd>5 then
-//       bin_and_find_stars(img,hd,binning+1,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, mean_hfd,warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
 
     nrstars:=Length(starlist2[0]);
 
@@ -986,7 +1067,7 @@ begin
       end
       else
       begin
-        find_quads(starlist2,quad_star_distances2);{find star quads for new image. Quads are binning independent}
+        find_quads(false,starlist2,quad_star_distances2);{find star quads for new image. Quads are binning independent}
         quads_str:=' quads';
 
      //   for i:=0 to length(quad_star_distances2[0])-1 do
@@ -1002,9 +1083,6 @@ begin
       nr_quads:=Length(quad_star_distances2[0]);
       go_ahead:=nr_quads>=3; {enough quads?}
 
-     //  if solve_show_log then {global variable set in find stars}
-     //                 memo2_message('Quads found: '+inttostr(nr_quads));
-
       {The step size is fixed. If a low amount of stars are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
       if nrstars<35  then oversize:=2 {make dimensions of square search window twice then the image height}
       else
@@ -1016,7 +1094,7 @@ begin
 
       oversize:=min(oversize,max_fov/fov2);//limit request to database to 1 tile so 5.142857143 degrees for 1476 database or 9.53 degrees for type 290 database. Otherwise a tile beyond next tile could be selected}
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
-//      minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
+
       if yes_use_triples=false then
          minimum_quads:=3 + nrstars div 140 {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
       else
@@ -1134,6 +1212,8 @@ begin
                 oversize2:=min(max_fov/fov2, max(oversize, sqrt(sqr(hd.width/hd.height)+sqr(1)))); //Use full image for solution for second solve but limit to one tile max to prevent tile selection problems.
               nrstars_required2:=round(nrstars_required*oversize2*oversize2); //nr of stars requested request from database
 
+              //profiler_start;
+
               if read_stars(ra_database,dec_database,search_field*oversize2,database_type,nrstars_required2,{out} starlist1)= false then
               begin
                 {$IFDEF linux}
@@ -1146,6 +1226,10 @@ begin
                 errorlevel:=33;{read error star database}
                 exit; {no stars}
               end;
+
+              //profiler_log('Find_stars');
+
+
               //mod 2025 ###################################################
               if match_nr=1 then //2025 first solution found, filter out stars for the second match. Avoid that stars outside the image boundaries are used to create database quads
               begin //keep only stars which are visible in the image according the first solution
@@ -1166,21 +1250,28 @@ begin
               end; //keep only stars visible in image
               //mod 2025 ###################################################
 
+              //profiler_start(true);
+
               if yes_use_triples then
                 find_triples_using_quads(starlist1,quad_star_distances1){find quads for reference image/database. Filter out too small quads for Earth based telescopes}
               else
-                find_quads(starlist1, quad_star_distances1);{find quads for reference image/database.}
+                find_quads(false,starlist1, quad_star_distances1);{find quads for reference image/database.}
 
+              //profiler_log('Find_quads1');
 
               if solve_show_log then {global variable set in find stars}
                 memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(ra_database,': ')+#9+prepare_dec(dec_database,'° ')+#9+' Down to magn '+ floattostrF(mag2/10,ffFixed,0,1) +#9+' '+inttostr(length(starlist1[0]))+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
 
+              //profiler_start;
+
               // for testing purposes
               // for testing create supplement hnsky planetarium program
               //stackmenu1.memo2.lines.add(floattostr(ra_database*12/pi)+',,,'+floattostr(dec_database*180/pi)+',,,,'+inttostr(count)+',,-8,'+floattostr( step_size*600*180/pi)+',' +floattostr(step_size*600*180/pi));
-             // stackmenu1.memo2.lines.add(floattostr(ra_database*12/pi)+',,,'+floattostr(dec_database*180/pi)+',,,,'+inttostr(count)+',,-99');
+              // stackmenu1.memo2.lines.add(floattostr(ra_database*12/pi)+',,,'+floattostr(dec_database*180/pi)+',,,,'+inttostr(count)+',,-99');
 
+              //profiler_start(true);
               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
+              //profiler_log('Find_offset and rotation');
 
               // for testing purpose
               //equatorial_standard(ra_database,dec_database,hd.ra0,hd.dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
@@ -1244,6 +1335,9 @@ begin
     end; {enough quads in image}
 
   until ((autoFOV=false) or (solution) or (fov2<=fov_min)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
+
+  //memo2_message(plog);//write log of profiler
+
 
   if solution then
   begin

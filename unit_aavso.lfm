@@ -1,8 +1,8 @@
 object form_aavso1: Tform_aavso1
-  Left = 692
+  Left = 296
   Height = 702
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 237
+  Top = 209
   Width = 1553
   Caption = 'AAVSO report'
   ClientHeight = 702
@@ -42,7 +42,7 @@ object form_aavso1: Tform_aavso1
     TabOrder = 4
     OnClick = report_to_clipboard1Click
   end
-  object Label8: TLabel
+  object variables1: TLabel
     Left = 16
     Height = 19
     Top = 48
@@ -79,7 +79,7 @@ object form_aavso1: Tform_aavso1
     Caption = 'Delimiter'
     ParentColor = False
   end
-  object Label5: TLabel
+  object comparisonstars_label1: TLabel
     Left = 15
     Height = 19
     Top = 240
@@ -162,7 +162,7 @@ object form_aavso1: Tform_aavso1
     OnChange = sort_alphabetically1Change
   end
   object ensemble_database1: TCheckBox
-    Left = 160
+    Left = 328
     Height = 23
     Hint = 'If enabled then Gaia  ensemble is used for calibration'
     Top = 240
@@ -182,8 +182,10 @@ object form_aavso1: Tform_aavso1
     ItemHeight = 0
     MultiSelect = True
     ParentShowHint = False
+    PopupMenu = PopupMenu_comp1
     ShowHint = True
     TabOrder = 8
+    OnClick = abrv_comp1Click
     OnClickCheck = abrv_comp1ClickCheck
     OnItemClick = abbrv_comp1ItemClick
   end
@@ -282,8 +284,10 @@ object form_aavso1: Tform_aavso1
     ItemHeight = 0
     MultiSelect = True
     ParentShowHint = False
+    PopupMenu = PopupMenu_variables1
     ShowHint = True
     TabOrder = 12
+    OnClick = abbrv_variable1Click
     OnClickCheck = abbrv_variable1ClickCheck
   end
   object test_button1: TButton
@@ -312,5 +316,25 @@ object form_aavso1: Tform_aavso1
   object SaveDialog1: TSaveDialog
     Left = 552
     Top = 544
+  end
+  object PopupMenu_variables1: TPopupMenu
+    Left = 256
+    Top = 140
+    object selectall1: TMenuItem
+      Caption = 'Select all'
+      OnClick = selectall1Click
+    end
+    object deselectall1: TMenuItem
+      Caption = 'Deselect all'
+      OnClick = deselectall1Click
+    end
+  end
+  object PopupMenu_comp1: TPopupMenu
+    Left = 296
+    Top = 326
+    object MenuItem2: TMenuItem
+      Caption = 'Deselect all'
+      OnClick = MenuItem2Click
+    end
   end
 end

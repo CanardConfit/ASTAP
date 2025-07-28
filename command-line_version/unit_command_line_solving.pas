@@ -1,5 +1,5 @@
 unit unit_command_line_solving;
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
 email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -119,7 +119,7 @@ var
 
 
 procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: Tstar_list);{find stars and put them in a list}
-procedure find_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list);  {build quads using closest stars, revised 2020-9-28}
+procedure find_quads(starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2025
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 
@@ -324,10 +324,10 @@ begin
 end;
 
 
-procedure find_many_quads2( starlist: Tstar_list;  out quads: Tstar_list;  mode: integer {use either 5 or 6 closest stars } );
+procedure find_many_quads(starlist: Tstar_list;  out quads: Tstar_list;  mode: integer {use either 5 or 6 closest stars } );
 var
-  i, j, k, q, nrstars, nrquads, num_closest, num_quads_per_group: integer;
-  distance, dummy, xt, yt, dist1, dist2, dist3, dist4, dist5, dist6: double;
+  i, j, k, q, nrstars, nrquads, num_closest, num_quads_per_group           : integer;
+  distance, temp, xt, yt, dist1, dist2, dist3, dist4, dist5, dist6: double;
   identical_quad: boolean;
   closest_indices: array of integer; // Dynamic array to hold closest star indices
   quad_indices: array[0..3] of integer; // Indices for the current quad
@@ -356,6 +356,7 @@ begin
 
   nrquads:=0;
   SetLength(quads, 8, nrstars * num_quads_per_group); // Pre-allocate space
+
   SetLength(closest_indices, num_closest); // Store closest star indices
 
   for i:=0 to nrstars - 1 do
@@ -467,8 +468,8 @@ begin
         end;
 
         // Calculate quad center
-        xt:=(x1 + x2 + x3 + x4) / 4;
-        yt:=(y1 + y2 + y3 + y4) / 4;
+        xt:=(x1 + x2 + x3 + x4)*0.25;
+        yt:=(y1 + y2 + y3 + y4)*0.25;
 
         // Check for duplicates
         identical_quad:=false;
@@ -491,15 +492,27 @@ begin
           dist5:=sqrt(sqr(x2 - x4) + sqr(y2 - y4));
           dist6:=sqrt(sqr(x3 - x4) + sqr(y3 - y4));
 
-          // Sort distances (simple bubble sort)
-          for j:=1 to 5 do
-          begin
-            if dist6 > dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
-            if dist5 > dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
-            if dist4 > dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
-            if dist3 > dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
-            if dist2 > dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
-          end;
+          // Optimized bubble sort for 6 elements (5 passes max)
+          if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+          if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
+          if dist4 > dist3 then begin temp:=dist3; dist3:=dist4; dist4:=temp; end;
+          if dist5 > dist4 then begin temp:=dist4; dist4:=dist5; dist5:=temp; end;
+          if dist6 > dist5 then begin temp:=dist5; dist5:=dist6; dist6:=temp; end;
+
+          if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+          if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
+          if dist4 > dist3 then begin temp:=dist3; dist3:=dist4; dist4:=temp; end;
+          if dist5 > dist4 then begin temp:=dist4; dist4:=dist5; dist5:=temp; end;
+
+          if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+          if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
+          if dist4 > dist3 then begin temp:=dist3; dist3:=dist4; dist4:=temp; end;
+
+          if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+          if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
+
+          if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+          //end optimized bubble sort
 
           // Store the quad
           quads[0, nrquads]:=dist1;  //largest distance
@@ -520,33 +533,38 @@ begin
 end;
 
 
-procedure find_quads(starlist :Tstar_list; out quad_star_distances :Tstar_list);  {build quads using closest stars, revised 2022-4-10}
+procedure find_quads(starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2025
+const
+  grid_size = 5.0; // Coarser grid for [-6000, 6000], adjust if needed (e.g., 5.0 for denser clustering)
+  bucket_capacity = 10; // Max quads per bucket, increase to 20 if overflows occur
 var
-   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,startp  : integer;
+   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,startp,
+   hash_x, hash_y, idx                                                     : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
-   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                            : double;
+   dist1,dist2,dist3,dist4,dist5,dist6,temp,disty                          : double;
    identical_quad : boolean;
+   hash_table: array of array of integer; // Fixed-size buckets
+   bucket_counts: array of integer; // Number of quads in each bucket
+   max_bucket_size: integer; // Debug: track largest bucket
+   overflow_count: integer; // Debug: count bucket overflows
 begin
+  nrstars:=Length(starlist[0]);{number of quads will lower}
 
-  nrstars:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
-//  quad_smallest:=9999999;
-
-
-  if nrstars<30 then
-   begin
-     find_many_quads2(starlist, {out} quad_star_distances,6 {group size});//Find five times more quads by using closest groups of five stars.
-     exit;
-   end
-   else
-   if nrstars<60 then
-   begin
-     find_many_quads2(starlist, {out} quad_star_distances,5 {group size});//Find five times more quads by using closest groups of five stars.
-     exit;
-   end;
+ if nrstars<30 then
+  begin
+    find_many_quads(starlist, {out} quads,6 {group size});//Find five times more quads by using closest groups of five stars.
+    exit;
+  end
+  else
+  if nrstars<60 then
+  begin
+    find_many_quads(starlist, {out} quads,5 {group size});//Find five times more quads by using closest groups of five stars.
+    exit;
+  end;
 
   if nrstars<4 then
   begin {not enough stars for quads}
-    SetLength(quad_star_distances,8,0);
+    SetLength(quads,8,0);
     exit;
   end;
 
@@ -558,10 +576,19 @@ begin
   else
   bandw:=nrstars;{switch off pre-filtering in X}
 
-  nrquads:=0;
-  SetLength(quad_star_distances,8,nrstars);{will contain the six distances and the central position}
+  // Initialize hash table and debug counters
+  SetLength(hash_table, nrstars * 2,bucket_capacity); // 1000 buckets for ~500 stars. In hash table design, the number of buckets is often set to 1–2 times the expected number of entries to achieve a load factor (entries ÷ buckets) of 0.5–1.0, minimizing collisions. Here, with ~350–400 quads, nrstars * 2 = 1000 gives a load factor of ~0.4, which is ideal for performance.
+  SetLength(bucket_counts, Length(hash_table));
+  for i := 0 to Length(hash_table) - 1 do
+    bucket_counts[i] := 0; // Initialize counts
+  max_bucket_size := 0;
+  overflow_count := 0;
 
-  j_index1:=0;{give it a default value}
+  nrquads:=0;
+  SetLength(quads,8,nrstars); {will contain the six distances and the central position}
+
+
+  j_index1:=0;{set a default value}
   j_index2:=0;
   j_index3:=0;
 
@@ -572,16 +599,16 @@ begin
     distance3:=1E99;{distance third closest star}
 
     Sstart:=max(0,i-bandw);
-    Send:=min(nrstars-1,i+bandw); {search in a limited X band only. The stars list is sorted in X. Search speed increases with about 30%}
+    Send:=min(nrstars-1,i+bandw); {search in a limited X band only. The stars list are sorted in X. Search speed increases with about 30%}
 
-    x1:=starlist[0,i]; //first star position quad array
+    x1:=starlist[0,i]; // first star position quad array}
     y1:=starlist[1,i];
 
     for j:=Sstart to Send do {find closest stars}
     begin
       if j<>i{not the first star} then
       begin
-        disty:=sqr(starlist[1,j]-y1);
+        disty:=sqr(starlist[1,j]- y1);
         if disty<distance3 then {pre-check to increase processing speed with a small amount}
         begin
           distance:=sqr(starlist[0,j]-x1)+distY ;{square distances are used}
@@ -621,8 +648,7 @@ begin
 
     if  distance3<1E99 then //found 4 stars in the restricted area
     begin
-
-      x2:=starlist[0,j_index1];  //second star position quad array
+      x2:=starlist[0,j_index1]; // second star position quad array
       y2:=starlist[1,j_index1];
 
       x3:=starlist[0,j_index2];
@@ -631,61 +657,97 @@ begin
       x4:=starlist[0,j_index3];
       y4:=starlist[1,j_index3];
 
-      xt:=(x1+x2+x3+x4)/4; {mean x position quad}
-      yt:=(y1+y2+y3+y4)/4; {mean y position quad}
 
-      identical_quad:=false;
-      if nrstars>=150 then
-        startp:=max(0,nrquads-(nrstars div 4))//limit search for double quads. This is possible by sorting the starlist in X in the beginning. So first quads are to far away to be a double
-      else
-        startp:=0;
-      for k:=startp to nrquads-1 do // check for an identical quad
+      xt:=(x1+x2+x3+x4)*0.25; {mean x position quad. Multiply should be a little faster thne divide but no practical difference}
+      yt:=(y1+y2+y3+y4)*0.25; {mean y position quad}
+
+      // Check for duplicate quad using hash table
+      identical_quad := False;
+      hash_x := Trunc(xt / grid_size);
+      hash_y := Trunc(yt / grid_size);
+      idx := Abs(hash_x * 31 + hash_y) mod Length(hash_table);
+      for k := 0 to bucket_counts[idx] - 1 do //check only quad_distances which have the same idx
       begin
-        if ( (abs(xt-quad_star_distances[6,k])<1) and
-             (abs(yt-quad_star_distances[7,k])<1) ) then //same center position, found identical quad already in the list
+        if (abs(xt - quads[6, hash_table[idx,k]]) < 1) and
+           (abs(yt - quads[7, hash_table[idx,k]]) < 1) then
         begin
-          identical_quad:=true;
-          break;//stop searching
+          identical_quad := True;
+          break;
         end;
       end;
+      // end Check for duplicate quad using hash table
+
 
       if identical_quad=false then  {new quad found}
       begin
-        try {sort the six distances on length. Largest first and scale the others relative to largest distance}
-          begin
-            dist1:=sqrt(distance1);{distance star1-star2, use previous value already calculated}
-            dist2:=sqrt(distance2);{distance star1-star3}
-            dist3:=sqrt(distance3);{distance star1-star4}
-            dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
-            dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
-            dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
-            {sort six distances on size in five steps}
-            for j:=1 to 5 do {sort on distance}
-            begin
-              if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
-              if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
-              if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
-              if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
-              if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
-            end;
-            quad_star_distances[0,nrquads]:=dist1;{largest distance}
-            quad_star_distances[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
-            quad_star_distances[2,nrquads]:=dist3/dist1;
-            quad_star_distances[3,nrquads]:=dist4/dist1;
-            quad_star_distances[4,nrquads]:=dist5/dist1;
-            quad_star_distances[5,nrquads]:=dist6/dist1;
+        dist1:=sqrt(distance1);{distance star1-star2, use previous value already calculated}
+        dist2:=sqrt(distance2);{distance star1-star3}
+        dist3:=sqrt(distance3);{distance star1-star4}
+        dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
+        dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
+        dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
 
-          end;
-        except
+        // Optimized bubble sort for 6 elements (5 passes max)
+        if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+        if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
+        if dist4 > dist3 then begin temp:=dist3; dist3:=dist4; dist4:=temp; end;
+        if dist5 > dist4 then begin temp:=dist4; dist4:=dist5; dist5:=temp; end;
+        if dist6 > dist5 then begin temp:=dist5; dist5:=dist6; dist6:=temp; end;
+
+        if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+        if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
+        if dist4 > dist3 then begin temp:=dist3; dist3:=dist4; dist4:=temp; end;
+        if dist5 > dist4 then begin temp:=dist4; dist4:=dist5; dist5:=temp; end;
+
+        if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+        if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
+        if dist4 > dist3 then begin temp:=dist3; dist3:=dist4; dist4:=temp; end;
+
+        if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+        if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
+
+        if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
+        //end optimized bubble sort
+
+
+        quads[0,nrquads]:=dist1;{largest distance}
+        quads[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
+        quads[2,nrquads]:=dist3/dist1;
+        quads[3,nrquads]:=dist4/dist1;
+        quads[4,nrquads]:=dist5/dist1;
+        quads[5,nrquads]:=dist6/dist1;
+        quads[6,nrquads]:=xt;{store mean x position}
+        quads[7,nrquads]:=yt;{store mean y position}
+
+
+        //add_to_hash, Hash table makes the routine 25% faster
+        hash_x := Trunc(xt / grid_size);
+        hash_y := Trunc(yt / grid_size);
+        idx := Abs(hash_x * 31 + hash_y) mod Length(hash_table);
+
+        if bucket_counts[idx] >= bucket_capacity then //pre check to speed up
+        if bucket_counts[idx] >= Length(hash_table[idx]) then //will overflow
+        begin
+          SetLength(hash_table[idx], Length(hash_table[idx]) + bucket_capacity);//increase size with bucket capacity. Should not happen. Different dimensions are implemented as arrays, and can each have their own size! https://wiki.freepascal.org/Dynamic_array
+          Inc(overflow_count); // Track overflows for debugging
         end;
-        quad_star_distances[6,nrquads]:=xt;{store mean x position}
-        quad_star_distances[7,nrquads]:=yt;{store mean y position}
+        hash_table[idx,bucket_counts[idx]] := nrquads;
+        Inc(bucket_counts[idx]);
+        if bucket_counts[idx] > max_bucket_size then  max_bucket_size := bucket_counts[idx];// record maximum bicket size
+        //end of add to hash
+
         inc(nrquads); {new unique quad found}
       end;
     end;//found 4 stars
   end;{i}
+  SetLength(quads,8,nrquads);{adapt to the number found}
 
-  SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
+  if solve_show_log then
+  begin
+    memo2_message('Find Quads, max bucket size: '+inttostr(max_bucket_size)+', bucket overflows: '+inttostr(overflow_count) );
+  end;
+  if overflow_count>0 then
+    memo2_message('Warning, bucket size increased!');
 end;
 
 
@@ -705,30 +767,32 @@ begin
 
   {Find a tolerance resulting in 6 or more of the best matching quads}
   setlength(matchlist2,2,1000);
+
   nr_references2:=0;
   i:=0;
   repeat
     j:=0;
-    repeat
-      if abs(quad_star_distances1[1,i] - quad_star_distances2[1,j])<=quad_tolerance then {all length are scaled to the longest length so scale independent}
+    repeat //       ==database==                ==image==
+      if abs(quad_star_distances1[1,i] - quad_star_distances2[1,j])<=quad_tolerance then //all length are scaled to the longest length so scale independent
       if abs(quad_star_distances1[2,i] - quad_star_distances2[2,j])<=quad_tolerance then
       if abs(quad_star_distances1[3,i] - quad_star_distances2[3,j])<=quad_tolerance then
       if abs(quad_star_distances1[4,i] - quad_star_distances2[4,j])<=quad_tolerance then
       if abs(quad_star_distances1[5,i] - quad_star_distances2[5,j])<=quad_tolerance then
       begin
-        matchlist2[0,nr_references2]:=i;{store match position}
+        matchlist2[0,nr_references2]:=i;//store match position
         matchlist2[1,nr_references2]:=j;
         inc(nr_references2);
-        if nr_references2>=length(matchlist2[0]) then setlength(matchlist2,2,nr_references2+1000);{get more space}
+        if nr_references2>=length(matchlist2[0]) then setlength(matchlist2,2,nr_references2+1000);//get more space
       end;
       inc(j);
-    until j>=nrquads2;{j loop}
+    until j>=nrquads2;//j loop
     inc(i);
-  until i>=nrquads1;{i loop}
+  until i>=nrquads1;//i loop
 
-  if solve_show_log then  memo2_message('Found '+inttostr( nr_references2)+ ' references');
+  if solve_show_log then memo2_message('Found '+inttostr( nr_references2)+ ' references');
 
   if nr_references2< minimum_count then begin nr_references:=0; exit; end;{no solution abort before run time errors}
+
 
   setlength(ratios,nr_references2);
   {calculate median of the longest lenght ratio for matching quads}
@@ -743,20 +807,19 @@ begin
 //  memo2_message('mad :'+floattostr6(mad));
 
   nr_references:=0;
-  setlength(matchlist1,2,1000);
+  setlength(matchlist1,2,nr_references2);
   for k:=0 to nr_references2-1 do {throw outliers out}
   begin
     if  abs(median_ratio-ratios[k])<=quad_tolerance*median_ratio then
     begin
-      matchlist1[0,nr_references]:=matchlist2[0,k];{copy match position which are <3*SD}
+      matchlist1[0,nr_references]:=matchlist2[0,k];{copy match position within tolerance}
       matchlist1[1,nr_references]:=matchlist2[1,k];
       inc(nr_references);
-      if nr_references>=length(matchlist1[0]) then setlength(matchlist1,2,nr_references+1000);{get more space if running out of space}
     end
     else
     if solve_show_log then memo2_message('quad outlier removed due to abnormal size: '+floattostr6(100*ratios[k]/median_ratio)+'%');
   end;
-  ratios:=nil; {free mem}
+
   {outliers in largest length removed}
 
   if (nr_references>=3) then {use 3 quads center position}
@@ -772,7 +835,7 @@ begin
       A_XYpositions[1,k]:=quad_star_distances2[7,matchlist1[1,k]]; {average y position of quad}
       A_XYpositions[2,k]:=1;
 
-      b_Xrefpositions[k]:=quad_star_distances1[6,matchlist1[0,k]]; {x position of ref quad}
+      b_Xrefpositions[k]:=quad_star_distances1[6,matchlist1[0,k]]; {x position of ref quad/database}
       b_Yrefpositions[k]:=quad_star_distances1[7,matchlist1[0,k]]; {Y position of ref quad}
 
       {in matrix calculations, b_refpositionX[0..2,0..nr_equations-1]:=solution_vectorX[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
@@ -780,9 +843,160 @@ begin
     end;
     result:=true;{3 or more references}
   end;
-  // else It is possible to use one quad and the four star positions but it is not reliable.
-  matchlist2:=nil;
-  matchlist1:=nil;
+//  else
+//  if solve_show_log then {global variable set in find stars}
+//     memo2_message('Found matches: '+inttostr(nr_references));
+end;
+
+
+
+function find_fit_using_hash(minimum_count: integer; quad_tolerance: double): boolean;
+const
+  NEIGHBOR_BINS = 1; // Check ±1 bin to cover quad_tolerance
+  MAX_QUADS_PER_BIN = 15; // Preallocate bins for max_hash_count ≈ 13–15
+var
+  nrquads1, nrquads2, i, j, k, bin, delta_bin, adjusted_bin, hash_bins: integer;
+  median_ratio: double;
+  matchlist1, matchlist2: array of array of integer;
+  ratios: array of double;
+  hash_table1, hash_table2: array of array of integer; // Hash tables for quads
+  hash_counts1, hash_counts2: array of integer; // Counts per bin
+  max_hash_count: integer; // Debug: track largest bin size
+
+begin
+  result := false; {assume failure}
+  nrquads1 := Length(quad_star_distances1[0]);
+  nrquads2 := Length(quad_star_distances2[0]);
+
+  if (nrquads1 < minimum_count) or (nrquads2 < minimum_count) then
+  begin
+    nr_references := 0;
+    exit;
+  end;
+
+  {Set HASH_BINS to twice the maximum number of quads}
+  hash_bins := 2 * Max(nrquads1, nrquads2);
+
+  {Initialize hash tables with preallocated bins}
+  SetLength(hash_table1, hash_bins,MAX_QUADS_PER_BIN);//rectangle array for the moment but could be adapted for each has bin individually
+  SetLength(hash_table2, hash_bins,MAX_QUADS_PER_BIN);
+  SetLength(hash_counts1, hash_bins);
+  SetLength(hash_counts2, hash_bins);
+  for bin := 0 to hash_bins - 1 do
+  begin
+    hash_counts1[bin] := 0;
+    hash_counts2[bin] := 0;
+  end;
+  max_hash_count := 0;
+
+  {Populate hash tables}
+  for i := 0 to nrquads1 - 1 do
+  begin
+    bin := Trunc(quad_star_distances1[1, i] / quad_tolerance) mod hash_bins;
+    if hash_counts1[bin] >= MAX_QUADS_PER_BIN then //pre check to speedup.
+    if hash_counts1[bin] >= Length(hash_table1[bin]) then //Should normally not happen
+      SetLength(hash_table1[bin], Length(hash_table1[bin]) + MAX_QUADS_PER_BIN); {Fallback resize.  Different dimensions are implemented as arrays, and can each have their own size! https://wiki.freepascal.org/Dynamic_array}
+    hash_table1[bin,hash_counts1[bin]] := i;
+    Inc(hash_counts1[bin]);
+    if hash_counts1[bin] > max_hash_count then
+      max_hash_count := hash_counts1[bin];
+  end;
+
+  for j := 0 to nrquads2 - 1 do
+  begin
+    bin := Trunc(quad_star_distances2[1, j] / quad_tolerance) mod hash_bins;
+
+    if hash_counts2[bin] >= MAX_QUADS_PER_BIN then //pre check to speedup
+    if hash_counts2[bin] >= Length(hash_table2[bin]) then //Should normally not happen
+      SetLength(hash_table2[bin], Length(hash_table2[bin]) + MAX_QUADS_PER_BIN); {Fallback resize.  Different dimensions are implemented as arrays, and can each have their own size! https://wiki.freepascal.org/Dynamic_array}
+    hash_table2[bin,hash_counts2[bin]] := j;
+    Inc(hash_counts2[bin]);
+    if hash_counts2[bin] > max_hash_count then
+      max_hash_count := hash_counts2[bin];
+  end;
+
+  {Find matches using hash tables, checking neighboring bins}
+  SetLength(matchlist2, 2, nrquads1); {Preallocate for max possible matches}
+  nr_references2 := 0;
+
+  for bin := 0 to hash_bins - 1 do
+  begin
+    if (hash_counts1[bin] = 0) then continue; {Skip empty bins}
+    for delta_bin := -NEIGHBOR_BINS to NEIGHBOR_BINS do
+    begin
+      adjusted_bin := (bin + delta_bin) mod hash_bins;
+      if adjusted_bin < 0 then adjusted_bin := adjusted_bin + hash_bins;
+      if (hash_counts2[adjusted_bin] = 0) then continue; {Skip empty bins}
+      for i := 0 to hash_counts1[bin] - 1 do
+      begin
+        for j := 0 to hash_counts2[adjusted_bin] - 1 do
+        begin
+          if abs(quad_star_distances1[1, hash_table1[bin,i]] - quad_star_distances2[1, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          if abs(quad_star_distances1[2, hash_table1[bin,i]] - quad_star_distances2[2, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          if abs(quad_star_distances1[3, hash_table1[bin,i]] - quad_star_distances2[3, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          if abs(quad_star_distances1[4, hash_table1[bin,i]] - quad_star_distances2[4, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          if abs(quad_star_distances1[5, hash_table1[bin,i]] - quad_star_distances2[5, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          begin
+            matchlist2[0, nr_references2] := hash_table1[bin,i];
+            matchlist2[1, nr_references2] := hash_table2[adjusted_bin,j];
+            Inc(nr_references2);
+            if nr_references2 >= Length(matchlist2[0]) then
+              SetLength(matchlist2, 2, nr_references2 + 1000); {Fallback resizing}
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  if solve_show_log then
+    memo2_message('Found ' + IntToStr(nr_references2) + ' references, max hash bin size: ' + IntToStr(max_hash_count));
+
+  if nr_references2 < minimum_count then
+  begin
+    nr_references := 0;
+    exit;
+  end;
+
+  {Calculate median of the longest length ratio for matching quads}
+  SetLength(ratios, nr_references2);
+  for k := 0 to nr_references2 - 1 do
+    ratios[k] := quad_star_distances1[0, matchlist2[0, k]] / quad_star_distances2[0, matchlist2[1, k]];
+
+  median_ratio := smedian(ratios, nr_references2);
+
+  {Calculate median absolute deviation and filter matches}
+  nr_references := 0;
+  SetLength(matchlist1, 2, nr_references2);
+  for k := 0 to nr_references2 - 1 do
+  begin
+    if abs(median_ratio - ratios[k]) <= quad_tolerance * median_ratio then
+    begin
+      matchlist1[0, nr_references] := matchlist2[0, k];
+      matchlist1[1, nr_references] := matchlist2[1, k];
+      Inc(nr_references);
+    end
+    else if solve_show_log then
+      memo2_message('Quad outlier removed due to abnormal size: ' + FloatToStrF(100 * ratios[k] / median_ratio, ffFixed, 6, 2) + '%');
+  end;
+
+  {Outliers in largest length removed}
+  if nr_references >= 3 then
+  begin
+    SetLength(A_XYpositions, 3, nr_references);
+    SetLength(b_Xrefpositions, nr_references);
+    SetLength(b_Yrefpositions, nr_references);
+
+    for k := 0 to nr_references - 1 do
+    begin
+      A_XYpositions[0, k] := quad_star_distances2[6, matchlist1[1, k]];
+      A_XYpositions[1, k] := quad_star_distances2[7, matchlist1[1, k]];
+      A_XYpositions[2, k] := 1;
+
+      b_Xrefpositions[k] := quad_star_distances1[6, matchlist1[0, k]];
+      b_Yrefpositions[k] := quad_star_distances1[7, matchlist1[0, k]];
+    end;
+    result := true;
+  end;
 end;
 
 
@@ -834,8 +1048,8 @@ end;
 
 procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: Tstar_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2  : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level                     : double;
+   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,starpixels  : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,noise_lev                      : double;
    img_sa     : Timage_array;
    snr_list        : array of double;
    startTick2  : qword;{for timing/speed purposes}
@@ -850,17 +1064,17 @@ begin
   setlength(snr_list,buffersize);{set array length}
 
   setlength(img_sa,1,height2,width2);{set length of image array}
-
+  noise_lev:=noise_level[0]; //get_background is called in bin_and_find_star. Background is stored in cblack
   retries:=3; {try up to four times to get enough stars from the image}
   repeat
     if retries=3 then
-      begin if star_level >30*noise_level[0] then detection_level:=star_level  else retries:=2;{skip} end;//stars are dominant
+      begin if star_level >30*noise_lev then detection_level:=star_level  else retries:=2;{skip} end;//stars are dominant
     if retries=2 then
-      begin if star_level2>30*noise_level[0] then detection_level:=star_level2 else retries:=1;{skip} end;//stars are dominant
+      begin if star_level2>30*noise_lev then detection_level:=star_level2 else retries:=1;{skip} end;//stars are dominant
     if retries=1 then
-      begin detection_level:=30*noise_level[0]; end;
+      begin detection_level:=30*noise_lev; end;
     if retries=0 then
-      begin detection_level:= 7*noise_level[0]; end;
+      begin detection_level:= 7*noise_lev; end;
 
     highest_snr:=0;
     nrstars:=0;{set counters at zero}
@@ -869,46 +1083,54 @@ begin
       for fitsX:=0 to width2-1  do
         img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
-    for fitsY:=0 to height2-1-1 do
+    for fitsY:=1 to height2-1-1 do  //Search through the image. Stay one pixel away from the borders.
     begin
-      for fitsX:=0 to width2-1-1  do
+      for fitsX:=1 to width2-1-1  do
       begin
-        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
-        begin
-          HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes}) then
+        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-backgr>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
           begin
-            radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-            sqr_radius:=sqr(radius);
-            xci:=round(xc);{star center as integer}
-            yci:=round(yc);
-            for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-              for m:=-radius to +radius do
-              begin
-                j:=n+yci;
-                i:=m+xci;
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,j,i]:=1;
-              end;
-
-            {store values}
-            inc(nrstars);
-            if nrstars>=length(starlist1[0]) then
+          starpixels:=0;
+          if img[0,fitsY,fitsX-1]- backgr>4*noise_lev then inc(starpixels);//inspect in a cross around it.
+          if img[0,fitsY,fitsX+1]- backgr>4*noise_lev then inc(starpixels);
+          if img[0,fitsY-1,fitsX]- backgr>4*noise_lev then inc(starpixels);
+          if img[0,fitsY+1,fitsX]- backgr>4*noise_lev then inc(starpixels);
+          if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
+          begin
+            HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes}) then
             begin
-              SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
-              setlength(snr_list,nrstars+buffersize);{adapt array size if required}
-            end;
-            starlist1[0,nrstars-1]:=xc; {store star position}
-            starlist1[1,nrstars-1]:=yc;
-            snr_list[nrstars-1]:=snr;{store SNR}
+              radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_radius:=sqr(radius);
+              xci:=round(xc);{star center as integer}
+              yci:=round(yc);
+              for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                for m:=-radius to +radius do
+                begin
+                  j:=n+yci;
+                  i:=m+xci;
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                    img_sa[0,j,i]:=1;
+                end;
 
-            if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
+              {store values}
+              inc(nrstars);
+              if nrstars>=length(starlist1[0]) then
+              begin
+                SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
+                setlength(snr_list,nrstars+buffersize);{adapt array size if required}
+              end;
+              starlist1[0,nrstars-1]:=xc; {store star position}
+              starlist1[1,nrstars-1]:=yc;
+              snr_list[nrstars-1]:=snr;{store SNR}
+
+              if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
+            end;
           end;
         end;
       end;
     end;
 
-    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(cblack))+ '. Detection level used '+inttostr( round(detection_level))
+    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(backgr))+ '. Detection level used '+inttostr( round(detection_level))
                                                           +' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF(noise_level[0],ffFixed,0,0));
 
     dec(retries);{Try again with lower detection level}
@@ -942,14 +1164,28 @@ end;
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 var
   xy_sqr_ratio   : double;
+  nrquads      : integer;
 begin
-  if find_fit(minimum_quads, tolerance)=false then
-  begin
-    result:=false;
-    reset_solution_vectors(0.001);{nullify}
-    exit;
-  end;
+  result:=false; //assume failure
 
+  nrquads := Length(quad_star_distances1[0]);
+   {3 quads required giving 3 center quad references}
+   if nrquads<180 then//use brute forsh method
+   begin
+     if find_fit(minimum_quads, tolerance)=false then
+     begin
+       reset_solution_vectors(0.001);{nullify}
+       exit;
+     end;
+   end
+   else
+   begin //use hash based routine
+     if find_fit_using_hash(minimum_quads, tolerance)=false then
+     begin
+       reset_solution_vectors(0.001);{nullify}
+       exit;
+     end;
+   end;
 
   {in matrix calculations, b_refpositionX[0..2,0..nr_equations-1]:=solution_vectorX[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
   {                        b_refpositionY[0..2,0..nr_equations-1]:=solution_matrixY[0..2] * A_XYpositions[0..2,0..nr_equations-1]}
@@ -1353,6 +1589,87 @@ begin
 end;
 
 
+procedure equalise_for_solving(var img :Timage_array); {equalise for solving}
+var
+  width2,height2,fitsX, fitsY, ys, xs, counter_median,x,y,stepsX,Ydiv,Xdiv  : integer;
+  median,mean,value,bg  : double;
+  target_value                                  : single;
+  data_array : array of double;
+  background : array of array of double;
+const
+  stepsY= 11; //use odd number for osc
+  substeps = 13;//use odd number for osc
+begin
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
+
+  stepsX := round(stepsY*width2/height2);//search in about squares
+
+  Ydiv:=trunc(1+Height2/stepsY); //tested in Spreadsheet file
+  Xdiv:=round(1+width2/stepsX);
+
+  setlength(background,stepsY, stepsX); //will contain median and standard deviation
+  setlength(data_array,sqr(2*(substeps+1)+1));//make enough space
+
+  for fitsY := 0 to stepsY-1 do
+  begin
+    for fitsX := 0 to stepsX-1 do
+    begin
+
+      counter_median:=0;
+      mean:=0;
+      for y:=0 to substeps do //cycle between ys and ys+stepsX
+      begin
+        for x:=0 to substeps do //cycle between xs and xs+stepsY
+        begin
+          ys := round(((fitsY+y/substeps)/stepsY)*height2);
+          xs := round(((fitsX+x/substeps)/stepsX)*width2);
+
+          if ((xs>5) and (xs<width2-6) and (ys>5) and (ys<height2-6)) then //skip borders which could contain black lines
+          begin
+            value:=img[0,ys,xs];
+            if value>0 then
+            begin
+              data_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+              inc(counter_median);
+              mean:=mean + value;
+            end;
+          end;
+        end;//for x loop
+      end;//for y loop
+
+      if counter_median>0 then
+      begin
+        median:=smedian(data_array,counter_median); //median background
+
+        {check alternative mean value}
+        mean:=mean/counter_median;
+        if mean>1.5*median then
+        begin
+          //memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[0]))+' as background rather then most common value '+inttostr(round(head.backgr)));
+          bg:=mean;{strange peak at low value, ignore histogram and use mean}
+        end
+        else
+        bg:=median;
+      end
+      else
+      begin //prevent nan (runtime) error
+        exit;
+      end;
+      background[fitsY,fitsX]:=bg;//to be accessed later by  background[0,fitsY div stepsY,fitsX div stepsX ]
+    end;
+  end;
+
+  //equalise
+  target_value:=background[height2 div (2*Ydiv), width2 div (xdiv*2)]; //center value
+  for fitsY := 0 to height2-1 do
+    for fitsX := 0 to width2-1 do
+    begin
+      img[0,fitsY,fitsX]:=img[0,fitsY,fitsX]+(target_value - background[fitsY div Ydiv, fitsX div xdiv]);
+    end;
+end;
+
+
 procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
 var
   width2,height2,nrstars,i : integer;
@@ -1370,9 +1687,10 @@ begin
 
     bin_mono_and_crop(binfactor, cropping,img,img_binned); // Make mono, bin and crop
 
-    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level,star_level2 );{get back ground}
+    if equaliseBG_for_solving1 then equalise_for_solving(img_binned); {equalise for solving}
+
+    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}backgr,star_level,star_level2 );{get back ground}
     find_stars(img_binned,hfd_min,starlist3); {find stars of the image and put them in a list}
-    img_binned:=nil;
     nrstars:=Length(starlist3[0]);
 
     if height2<960 then
@@ -1406,7 +1724,9 @@ begin
      memo2_message('█ █ █ █ █ █ Warning, small image dimensions!!');
     end;
 
-    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level,star_level2);{get back ground}
+    if equaliseBG_for_solving1 then equalise_for_solving(img); {equalise for solving}
+
+    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} backgr,star_level,star_level2);{get back ground}
     find_stars(img,hfd_min,starlist3); {find stars of the image and put them in a list}
   end;
 end;
@@ -1766,11 +2086,13 @@ begin
 
 
       if force_oversize1 then oversize:=2;
+      oversize:=min(oversize,max_fov/fov2);//limit request to database to 1 tile so 5.142857143 degrees for 1476 database or 9.53 degrees for type 290 database. Otherwise a tile beyond next tile could be selected}
+
 
       radius:=strtofloat2(radius_search1);{radius search field}
     //  memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '+inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF2(fov2,0,1)+'d. '+oversize_mess );
 
-      minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
+      minimum_quads:=3 + nrstars div 140 {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
     end
     else
     begin
@@ -1850,9 +2172,10 @@ begin
               if match_nr=0  then
                 oversize2:=oversize
               else
-                oversize2:=max(oversize, sqrt(sqr(width2/height2)+sqr(1))); //Use full image for solution for second solve but limit to one tile max to prevent tile selection problems.
+                oversize2:=min(max_fov/fov2, max(oversize, sqrt(sqr(width2/height2)+sqr(1)))); //Use full image for solution for second solve but limit to one tile max to prevent tile selection problems.
 
               nrstars_required2:=round(nrstars_required*oversize2*oversize2); //nr of stars requested request from database
+
               if read_stars(ra_database,dec_database,search_field*oversize2,nrstars_required2,{out} starlist1)= false then
               begin
                 memo2_message('Error, no star database found at '+database_path+' ! Download and install a star database.');

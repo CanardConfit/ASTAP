@@ -137,15 +137,16 @@ var
   x_11,x_21,x_31,y_11,y_21,y_31,
   x_12,x_22,x_32,y_12,y_22,y_32,
   x_13,x_23,x_33,y_13,y_23,y_33,
-  oldNaxis3, dummy{,screenbottom},th,tw,th2,tw2,smx,smy   : integer;
+  oldNaxis3, dummy{,screenbottom},th,tw,th2,tw2,smx,smy,starpixels   : integer;
 
   hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
-  hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
+  hfd_min,tilt_value, theangle,theradius,screw1,screw2,screw3,sqrradius,raM,decM,
   fwhm_median,sm_x,sm_y,
   hfd_median, median_outer_ring,
   median_11, median_21, median_31,
   median_12, median_22, median_32,
-  median_13, median_23, median_33      : double;
+  median_13, median_23, median_33,
+  backgr, noise_level                : double;
   hfd_list, hfdlist_outer_ring,
   hfdlist_11,hfdlist_21,hfdlist_31,
   hfdlist_12,hfdlist_22,hfdlist_32,
@@ -156,8 +157,7 @@ var
   mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr,fwhm_value,fwhm_arcsec : string;
 
   Fliph, Flipv,restore_req  : boolean;
-  img_bk,img_sa                         : Timage_array;
-  style: TTextStyle;
+  img_bk,img_sa             : Timage_array;
   data_max: single;
     procedure textout_octogram(x,y: integer;value : double); //center the text to the middle of the octogram
     var
@@ -254,72 +254,82 @@ begin
     get_background(0,img,headx,{cblack=0} screenplot=false{histogram is available if in viewer},true {calculate noise level});{calculate background level from peek histogram}
 
     data_max:=headx.datamax_org-1;
+    backgr:=headx.backgr;
+    noise_level:=headx.noise_level;
 
     retries:=3; {try up to four times to get enough stars from the image}
     repeat
       if retries=3 then
-        begin if headx.star_level >30*headx.noise_level then detection_level:=headx.star_level  else retries:=2;{skip} end;//stars are dominant
+        begin if headx.star_level >30*noise_level then detection_level:=headx.star_level  else retries:=2;{skip} end;//stars are dominant
       if retries=2 then
-        begin if headx.star_level2>30*headx.noise_level then detection_level:=headx.star_level2 else retries:=1;{skip} end;//stars are dominant
+        begin if headx.star_level2>30*noise_level then detection_level:=headx.star_level2 else retries:=1;{skip} end;//stars are dominant
       if retries=1 then
-        begin detection_level:=30*headx.noise_level; end;
+        begin detection_level:=30*noise_level; end;
       if retries=0 then
-        begin detection_level:= 7*headx.noise_level; end;
+        begin detection_level:= 7*noise_level; end;
       nhfd:=0;{set counters at zero}
 
       for fitsY:=0 to headx.height-1 do
         for fitsX:=0 to headx.width-1  do
           img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
-      for fitsY:=0 to headx.height-1-1  do
+      for fitsY:=1 to headx.height-1-1  do //Search through the image. Stay one pixel away from the borders.
       begin
-        for fitsX:=0 to headx.width-1-1 do
+        for fitsX:=1 to headx.width-1-1 do
         begin
-          if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star}  and (img[0,fitsY,fitsX]- headx.backgr>detection_level){star}) then {new star}
+          if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star}  and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star}
           begin
-            HFD(img,fitsX,fitsY,14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-
-            if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
+            starpixels:=0;
+            if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+            if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+            if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+            if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+            if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
             begin
+              HFD(img,fitsX,fitsY,14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-              radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-              sqr_radius:=sqr(radius);
-              xci:=round(xc);{star center as integer}
-              yci:=round(yc);
-
-              for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-              for m:=-radius to +radius do
+              if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
               begin
-                j:=n+yci;
-                i:=m+xci;
-                if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,j,i]:=1;
-              end;
 
-              if ((img[0,yci,  xci  ]<data_max) and
-                  (img[0,yci,  xci-1]<data_max) and
-                  (img[0,yci,  xci+1]<data_max) and
-                  (img[0,yci-1,xci  ]<data_max) and
-                  (img[0,yci+1,xci  ]<data_max) and
+                radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+                sqr_radius:=sqr(radius);
+                xci:=round(xc);{star center as integer}
+                yci:=round(yc);
 
-                  (img[0,yci-1,xci-1]<data_max) and
-                  (img[0,yci+1,xci-1]<data_max) and
-                  (img[0,yci-1,xci+1]<data_max) and
-                  (img[0,yci+1,xci+1]<data_max)  ) then {not saturated}
-              begin
-                {store values}
-                hfd_list[nhfd]:=hfd1;
-                fwhm_list[nhfd]:=star_fwhm;
-                starlistXY[0,nhfd]:=xc; {store star position in image coordinates, not FITS coordinates}
-                starlistXY[1,nhfd]:=yc;
-                starlistXY[2,nhfd]:=flux;
-                inc(nhfd); if nhfd>=length(hfd_list) then
+                for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                for m:=-radius to +radius do
                 begin
-                  SetLength(hfd_list,nhfd+max_stars); {adapt length if required and store hfd value}
-                  SetLength(fwhm_list,nhfd+max_stars); {adapt length if required and store hfd value}
-                  SetLength(starlistXY,3,nhfd+max_stars);{adapt array size if required}
+                  j:=n+yci;
+                  i:=m+xci;
+                  if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                    img_sa[0,j,i]:=1;
                 end;
 
+                if ((img[0,yci,  xci  ]<data_max) and
+                    (img[0,yci,  xci-1]<data_max) and
+                    (img[0,yci,  xci+1]<data_max) and
+                    (img[0,yci-1,xci  ]<data_max) and
+                    (img[0,yci+1,xci  ]<data_max) and
+
+                    (img[0,yci-1,xci-1]<data_max) and
+                    (img[0,yci+1,xci-1]<data_max) and
+                    (img[0,yci-1,xci+1]<data_max) and
+                    (img[0,yci+1,xci+1]<data_max)  ) then //not saturated
+                begin
+                  {store values}
+                  hfd_list[nhfd]:=hfd1;
+                  fwhm_list[nhfd]:=star_fwhm;
+                  starlistXY[0,nhfd]:=xc; {store star position in image coordinates, not FITS coordinates}
+                  starlistXY[1,nhfd]:=yc;
+                  starlistXY[2,nhfd]:=flux;
+                  inc(nhfd); if nhfd>=length(hfd_list) then
+                  begin
+                    SetLength(hfd_list,nhfd+max_stars); {adapt length if required and store hfd value}
+                    SetLength(fwhm_list,nhfd+max_stars); {adapt length if required and store hfd value}
+                    SetLength(starlistXY,3,nhfd+max_stars);{adapt array size if required}
+                  end;
+
+                end;
               end;
             end;
           end;
@@ -993,8 +1003,8 @@ end;
 
 procedure CCDinspector_analyse(detype: char; aspect,values,vectors: boolean);
 var
- fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,n,m,xci,yci,sqr_radius,orientation,starX,starY,x2,y2,font_luminance : integer;
- hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med : double;
+ fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,n,m,xci,yci,sqr_radius,orientation,starX,starY,x2,y2,font_luminance,starpixels : integer;
+ hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med, backgr, noise_level         : double;
  mean, min_value,max_value,data_max : single;
  hfd_values  : Tstar_list; {array of aray of doubles}
  hfds        : array of double;
@@ -1013,74 +1023,85 @@ begin
   get_background(0,img_loaded,head,false{ calculate histogram},true {calculate noise level});{calculate background level from peek histogram}
 
   data_max:=head.datamax_org-1;
+  backgr:=head.backgr;
+  noise_level:=head.noise_level;
 
   retries:=3; {try up to four times to get enough stars from the image}
   repeat
     if retries=3 then
-      begin if head.star_level >30*head.noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
+      begin if head.star_level >30*noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
     if retries=2 then
-      begin if head.star_level2>30*head.noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
+      begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
     if retries=1 then
-      begin detection_level:=30*head.noise_level; end;
+      begin detection_level:=30*noise_level; end;
     if retries=0 then
-      begin detection_level:= 7*head.noise_level; end;
+      begin detection_level:= 7*noise_level; end;
 
     nhfd:=0;{set counters at zero}
     for fitsY:=0 to head.height-1 do
       for fitsX:=0 to head.width-1  do
         img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
-    for fitsY:=0 to head.height-1-1  do
+    for fitsY:=1 to head.height-1-1  do   //Search through the image. Stay one pixel away from the borders.
     begin
-      for fitsX:=0 to head.width-1-1 do
+      for fitsX:=1 to head.width-1-1 do
       begin
-        if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- head.backgr>detection_level){star}) then {new star}
+        if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star} and (img_loaded[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star}
         begin
-          HFD(img_loaded,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if (hfd1>=1.3) {not a hotpixel} and (snr>30) and (hfd1<99) then
+          starpixels:=0;
+          if img_loaded[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+          if img_loaded[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+          if img_loaded[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+          if img_loaded[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+          if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
           begin
-
-
-            radius:=round(5.0*hfd1);{for marking area. For inspector use factor 5 instead of 3}
-            sqr_radius:=sqr(radius);
-            xci:=round(xc);{star center as integer}
-            yci:=round(yc);
-            for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-              for m:=-radius to +radius do
-              begin
-                j:=n+yci;
-                i:=m+xci;
-                if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                  img_sa[0,j,i]:=1;
-              end;
-
-            if aspect then measure_star_aspect(img_loaded,xc,yc,round(hfd1*1.5),{out} hfd1 {aspect},orientation);{store the star aspect in hfd1}
-
-            {store values}
-            if hfd1<>999 then
-            if ( ((img_loaded[0,round(yc),round(xc)]<data_max) and
-                  (img_loaded[0,round(yc-1),round(xc)]<data_max) and
-                  (img_loaded[0,round(yc+1),round(xc)]<data_max) and
-                  (img_loaded[0,round(yc),round(xc-1)]<data_max) and
-                  (img_loaded[0,round(yc),round(xc+1)]<data_max) and
-
-                  (img_loaded[0,round(yc-1),round(xc-1)]<data_max) and
-                  (img_loaded[0,round(yc-1),round(xc+1)]<data_max) and
-                  (img_loaded[0,round(yc+1),round(xc-1)]<data_max) and
-                  (img_loaded[0,round(yc+1),round(xc+1)]<data_max)){not saturated}
-                  or ((aspect))  )
-                  then
+            HFD(img_loaded,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            if (hfd1>=1.3) {not a hotpixel} and (snr>30) and (hfd1<99) then
             begin
-              if nhfd>=length(hfd_values)-1 then
-                  SetLength(hfd_values,4,nhfd+2000);{adapt length if required}
-              hfd_values[0,nhfd]:=xc;
-              hfd_values[1,nhfd]:=yc;
-              hfd_values[2,nhfd]:=hfd1*1000;{hfd or star aspect * 1000}
-              hfd_values[3,nhfd]:=orientation;    {star orientation 0..179}
-              inc(nhfd);
 
+
+              radius:=round(5.0*hfd1);{for marking area. For inspector use factor 5 instead of 3}
+              sqr_radius:=sqr(radius);
+              xci:=round(xc);{star center as integer}
+              yci:=round(yc);
+              for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                for m:=-radius to +radius do
+                begin
+                  j:=n+yci;
+                  i:=m+xci;
+                  if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                    img_sa[0,j,i]:=1;
+                end;
+
+              if aspect then measure_star_aspect(img_loaded,xc,yc,round(hfd1*1.5),{out} hfd1 {aspect},orientation);{store the star aspect in hfd1}
+
+              {store values}
+              if hfd1<>999 then
+              if ( ((img_loaded[0,round(yc),round(xc)]<data_max) and
+                    (img_loaded[0,round(yc-1),round(xc)]<data_max) and
+                    (img_loaded[0,round(yc+1),round(xc)]<data_max) and
+                    (img_loaded[0,round(yc),round(xc-1)]<data_max) and
+                    (img_loaded[0,round(yc),round(xc+1)]<data_max) and
+
+                    (img_loaded[0,round(yc-1),round(xc-1)]<data_max) and
+                    (img_loaded[0,round(yc-1),round(xc+1)]<data_max) and
+                    (img_loaded[0,round(yc+1),round(xc-1)]<data_max) and
+                    (img_loaded[0,round(yc+1),round(xc+1)]<data_max)){not saturated}
+                    or ((aspect))  )
+                    then
+              begin
+                if nhfd>=length(hfd_values)-1 then
+                    SetLength(hfd_values,4,nhfd+2000);{adapt length if required}
+                hfd_values[0,nhfd]:=xc;
+                hfd_values[1,nhfd]:=yc;
+                hfd_values[2,nhfd]:=hfd1*1000;{hfd or star aspect * 1000}
+                hfd_values[3,nhfd]:=orientation;    {star orientation 0..179}
+                inc(nhfd);
+
+              end;
             end;
           end;
+
         end;
       end;
     end;

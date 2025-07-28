@@ -1,5 +1,5 @@
 program astap_command_line;
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -83,11 +83,12 @@ begin
     '-m  minimum_star_size["]  {default 1.5}'+#10+
     '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. Specify 0 for auto selection}'+#10+
 
-    '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
+    '-check {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
     '-d  path {specify a path to the star database}'+#10+
     '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
+    '-eqbg {Equalise unequal background prior to solving to improve star detection}'+#10+
     '-o  file {Name the output files with this base path & file name.}'+#10+
-    '-sip     {Add SIP (Simple Image Polynomial) coefficients}'+#10+
+    '-sip {Add SIP (Simple Image Polynomial) coefficients}'+#10+
     '-speed mode[auto/slow] {Slow is forcing more area overlap while searching to improve detection}'+#10+
     '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style}' +#10+
     '-log  {Write the solver log to a .log text file.}'+#10+
@@ -153,6 +154,8 @@ begin
     if hasoption('sip') then add_sip1:='n'<>GetOptionValue('sip');
     if hasoption('speed') then force_oversize1:=pos('slow',GetOptionValue('speed'))<>0;
     if hasoption('check') then check_pattern_filter1:=('y'=GetOptionValue('check'));
+    if hasoption('eqbg') then equaliseBG_for_solving1:='n'<>GetOptionValue('eqbg');
+
 
     extractspecified:=hasoption('extract');
     analysespecified:=hasoption('analyse');

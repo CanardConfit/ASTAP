@@ -477,7 +477,8 @@ const
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
 var
   txtf : textfile;
-  count,fontsize,counter,yy,mm                                                     : integer;
+  count,fontsize,counter,yy,mm,  letter_height,letter_width                        : integer;
+
   dd,h,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
   SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,a_e,a_i,a_ohm,a_w,a_M   : double;
   desn,name,s, thetext1,thetext2,fontsize_str                                      : string;
@@ -766,8 +767,10 @@ begin
     begin
       if add_date then
       begin
-        mainform1.image1.Canvas.textout(round(0.5*fontsize),head.height-round(4*fontsize),'Position[α,δ]:  '+mainform1.ra1.text+'    '+mainform1.dec1.text);{}
-        mainform1.image1.Canvas.textout(round(0.5*fontsize),head.height-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
+        letter_height:=mainform1.image1.Canvas.textheight('M');
+        letter_width:=mainform1.image1.Canvas.textwidth('M');
+        mainform1.image1.Canvas.textout(round(0.3*letter_width),head.height-2*letter_height,'Position[α,δ]:  '+mainform1.ra1.text+'    '+mainform1.dec1.text);{}
+        mainform1.image1.Canvas.textout(round(0.3*letter_width),head.height-letter_height,'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
       end;
     end;
   end;

@@ -11,7 +11,6 @@ rm astap_cli
 
 
 /home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_linux_armhf.lpi
-patchelf --set-interpreter /system/bin/linker ./astap_cli
 zip astap_command-line_version_Linux_armhf.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Linux_armhf file does not exist, aborting!!'
@@ -37,7 +36,7 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
 fi
 rm astap_cli
 
-/home/h/fpcupdeluxe_stable/lazarus/lazbuild astap_command_line_android_armhf.lpi
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_armhf.lpi
 patchelf --set-interpreter /system/bin/linker ./astap_cli
 zip astap_command-line_version_Android_armhf.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
@@ -47,7 +46,7 @@ fi
 rm astap_cli
 
 
-/home/h/fpcupdeluxe_stable/lazarus/lazbuild astap_command_line_android_aarch64.lpi
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_aarch64.lpi
 patchelf --set-interpreter /system/bin/linker64 ./astap_cli
 zip astap_command-line_version_Android_aarch64.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
@@ -56,7 +55,7 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
 fi
 rm astap_cli
 
-/home/h/fpcupdeluxe_stable/lazarus/lazbuild astap_command_line_android_x86.lpi
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86.lpi
 patchelf --set-interpreter /system/bin/linker ./astap_cli
 zip astap_command-line_version_Android_x86.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
@@ -65,7 +64,7 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
 fi
 rm astap_cli
 
-/home/h/fpcupdeluxe_stable/lazarus/lazbuild astap_command_line_android_x86_64.lpi
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86_64.lpi
 patchelf --set-interpreter /system/bin/linker64 ./astap_cli
 zip astap_command-line_version_Android_x86_64.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
