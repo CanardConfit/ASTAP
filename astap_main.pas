@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.07.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.07.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -9952,7 +9952,7 @@ begin
   if length(s)=0 then begin beep; exit end;;
   if length(s)<256 then exit; //no data for this field
 
-  setlength(vsp,2000);
+  setlength(vsp,100000);
   count:=0;
 
   //get chart ID
@@ -10126,8 +10126,8 @@ end;
 
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access variables
 var
-  s,dummy,url                                : string;
-  count,i,j,k,errorRa,errorDec,err,idx       : integer;
+  s,dummy,url                             : string;
+  count,i,j,k,errorRa,errorDec,err,idx    : integer;
   radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period,max_period : double;
   skip,auid_filter  : boolean;
 begin
@@ -10153,7 +10153,7 @@ begin
   if length(s)=0 then begin beep; exit end;//network error
   if length(s)<25 then begin exit end;//no stars in this field
 
-  setlength(vsx,2000);
+  setlength(vsx,100000);
   count:=0;
   j:=25;//skip some header stuff
 
@@ -10196,6 +10196,7 @@ begin
     vsx[count].minmag:='?';
     vsx[count].period:='?';
     vsx[count].category:='?';
+
     k:=0;// for case no optional fields
 
     repeat //read optional fields
@@ -10214,14 +10215,14 @@ begin
         vsx[count].minmag:=copy(s,i,k-i);
       end
       else
-      if ((s[j]='C') and (s[j+1]='a') and (s[j+2]='t')) then
+      if ((s[j]='C') and (s[j+1]='a') and (s[j+2]='t') and (s[j+3]='e')) then
       begin
         i:=j+length('"Category:"');
         k:=posex('"',s,i);
         vsx[count].category:=copy(s,i,3);
       end
       else
-      if ((s[j]='P') and (s[j+1]='e') and (s[j+2]='r')) then
+      if ((s[j]='P') and (s[j+1]='e') and (s[j+2]='r') and (s[j+3]='i')) then //avoid detecting constellation Per
       begin
         i:=j+length('"Period:"');
         k:=posex('"',s,i);
@@ -10242,7 +10243,6 @@ begin
         val(copy(s,i,k-i),propermotionDEC,err);//Proper motions mas/yr
         if err=0 then
            vsx[count].dec:=vsx[count].dec+propermotionDec*years_since_2000/((1000*3600)*180/pi);
-
       end
       else
       if ((s[j]='P') and (s[j+1]='r') and (s[j+2]='o') and (s[j+3]='p') and (s[j+12]='R') and (s[j+13]='A')  ) then
@@ -10254,8 +10254,8 @@ begin
            vsx[count].ra:=vsx[count].ra+propermotionRA*years_since_2000/(cos(vsx[count].dec)*(1000*3600)*180/pi);
       end;
 
-
-      if j<k then j:=k; //k could be in very rare cases 0 resulting in an endless loop
+      if j<k then
+          j:=k; //k could be in very rare cases 0 resulting in an endless loop
     until ((s[j]='}') or (j=length(s)-1));
 
     //filtering
