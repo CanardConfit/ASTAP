@@ -671,7 +671,6 @@ type
     MenuItem21: TMenuItem;
     MenuItem22: TMenuItem;
     ColorDialog1: TColorDialog;
-    MenuItem19: TMenuItem;
     list_to_clipboard6: TMenuItem;
     PopupMenu7: TPopupMenu;
     removeselected7: TMenuItem;
@@ -785,7 +784,6 @@ type
     procedure measuring_method1Change(Sender: TObject);
     procedure export_to_tg1Click(Sender: TObject);
     procedure find_listview_text7Click(Sender: TObject);
-    procedure Panel_stack_button1Click(Sender: TObject);
     procedure report_sqm1Click(Sender: TObject);
     procedure MenuItem41Click(Sender: TObject);
     procedure annotate_unknown1Click(Sender: TObject);
@@ -9412,7 +9410,7 @@ begin
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=3;//enabled only if method is measure all
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
-  max_period1.enabled:=annotate_mode1.itemindex>=5;//only for online database photometry
+//  max_period1.enabled:=annotate_mode1.itemindex>=5;//only for online database photometry
 end;
 
 
@@ -9476,7 +9474,7 @@ begin
   vsx := nil;//clear downloaded database
   vsp := nil;
   clear_added_AAVSO_columns;
-  max_period1.enabled:=annotate_mode1.itemindex>=5;//only for online database photometry
+//  max_period1.enabled:=annotate_mode1.itemindex>=5;//only for online database photometry
 end;
 
 
@@ -10059,11 +10057,6 @@ begin
   FindAndScrollInListView(ListView7, PatternToFind);
 end;
 
-procedure Tstackmenu1.Panel_stack_button1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tstackmenu1.solar_drift_compensation1Change(Sender: TObject);
 var
@@ -10075,7 +10068,6 @@ begin
   solar_drift_dec1.visible:=show;
   label_delta_dec1.visible:=show;
 end;
-
 
 
 function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable

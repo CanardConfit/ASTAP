@@ -1123,7 +1123,7 @@ begin
          exit;
        end;
     end;
-    if copy(deepstring.strings[0],1,4)<>'V004' then
+    if copy(deepstring.strings[0],1,4)<>'V005' then
       application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 end;
@@ -1146,7 +1146,7 @@ begin
          exit;
        end;
     end;
-    if copy(deepstring.strings[0],1,4)<>'V004' then
+    if copy(deepstring.strings[0],1,4)<>'V005' then
       application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
   end;
 
@@ -1414,11 +1414,11 @@ type
   end;
 var
   telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,fitsX,fitsY,
-  gx_orientation, SIN_dec_ref,COS_dec_ref  : double;
-  name: string;
-  flip_horizontal, flip_vertical                   : boolean;
+  gx_orientation, SIN_dec_ref,COS_dec_ref,max_period  : double;
+  abbrv, period_str: string;
+  flip_horizontal, flip_vertical,filter_auid_only,skip_aavso,valid_period,hash_symbol   : boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,x,y : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,x,y,fx,fy, idx,period_position,leng : integer;
   overlap          : boolean;
   annotation_color2 : tcolor;
 begin
@@ -1459,6 +1459,13 @@ begin
     {$endif}
 
 
+    idx:=stackmenu1.annotate_mode1.itemindex;
+    if idx<=9 then //local database
+    begin
+      filter_auid_only:=((idx<=5) and (database_nr in [3,4,5,6]));//only show variables which have an AUID
+      max_period:=strtofloat2(stackmenu1.max_period1.text);//infinity result in 0 meaning switched off.
+    end;
+
     mainform1.image1.canvas.pen.Mode:=pmXor;
     mainform1.image1.Canvas.brush.Style:=bsClear;
 
@@ -1471,30 +1478,21 @@ begin
     begin
       celestial_to_pixel(head,ra2,dec2,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       try
-        x:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
-        y:=round(fitsY-1);
+        fx:=round(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
+        fy:=round(fitsY-1);
       except //SIP can lead to overload of x,y
       end;
 
-
-      if ((x>-0.25*head.width) and (x<=1.25*head.width) and (y>-0.25*head.height) and (y<=1.25*head.height)) then {within image1 with some overlap}
+      skip_aavso:=false;
+      if ((fx>-0.25*head.width) and (fx<=1.25*head.width) and (fy>-0.25*head.height) and (fy<=1.25*head.height)) then {within image1 with some overlap}
       begin
         len:=length1/(abs(head.cdelt2)*60*10*2); {Length in pixels}
-        if ((head.cdelt2<0.25*1/60) or (len>=1) or (database_nr>=3)) then//avoid too many object on images with a large FOV
+        if ((head.cdelt2<0.25*1/60) or (len>=1) or (database_nr>=3)) then//avoid too many object on images with a large FOV   {1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
         begin
-          if ((database_nr>=3) and (database_nr<=6)) then //variables
-          begin
-            with mainform1 do
-            for i:=0 to high(Fshapes) do
-            if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
-                     Fshapes[i].shape.HINT:=naam2;//copy(naam2,1,posex(' ',naam2,4)-1);
-
-          end;
-
           gx_orientation:=(pa+head.crota2)*flipped;
 
-          if flip_horizontal then begin x:=(head.width-1)-x; gx_orientation:=-gx_orientation; end;
-          if flip_vertical then gx_orientation:=-gx_orientation else y:=(head.height-1)-y;
+          if flip_horizontal then begin x:=(head.width-1)-fx; gx_orientation:=-gx_orientation; end else x:=fx;
+          if flip_vertical then begin y:=fy; gx_orientation:=-gx_orientation; end else y:=(head.height-1)-fy;
 
           {Plot deepsky text labels on an empthy text space.}
           { 1) If the center of the deepsky object is outside the image then don't plot text}
@@ -1502,122 +1500,161 @@ begin
           { 3) If the text crosses the right side of the image then move the text to the left.}
           { 4) If the text is moved in y then connect the text to the deepsky object with a vertical line.}
 
-          if ( (x>=0) and (x<=head.width-1) and (y>=0) and (y<=head.height-1) and (naam2<>'') ) then {plot only text if center object is visible and has a name}
+          if ( (x>=0) and (x<=head.width-1) and (y>=0) and (y<=head.height-1) and (naam2<>'') ) then {TEXT RANGE. center of object visible. Plot only text if center object is visible and has a name}
           begin
-            if naam3='' then name:=naam2
+            if naam3='' then abbrv:=naam2
             else
-            if naam4='' then name:=naam2+'/'+naam3
+            if naam4='' then abbrv:=naam2+'/'+naam3
             else
-            name:=naam2+'/'+naam3+'/'+naam4;
+            abbrv:=naam2+'/'+naam3+'/'+naam4;
 
             mainform1.image1.Canvas.font.size:=round(min(20,max(max(6,font_size),len /2)));
 
-            if copy(naam2,1,1)='0' then
+
+            if ((database_nr>=3) and (database_nr<=6)) then //Local variable database. Variables are small so canbe processed within visible image=text range
             begin
-              annotation_color2:=cllime;
-               if font_size<=3 then
-                  name:=copy(name,5,7) //remove 000-
-               else
-               if font_size<=4 then
-                 name:=copy(name,1,11); //remove all after abbreviation
+              if copy(naam2,1,1)='0' then //vsp star=comparison star
+              begin
+                annotation_color2:=cllime;
+                 if font_size<=3 then
+                    abbrv:=copy(naam2,5,7) //remove 000-
+                 else
+                 if font_size<=4 then
+                   abbrv:=copy(naam2,1,11); //remove all after abbreviation
+              end
+              else
+              begin //variables
+                hash_symbol:=copy(naam2,length(naam2),1)='#';
+                if ((filter_auid_only) and (hash_symbol)) then skip_aavso:=true;
+                if max_period> 0 then//infinity is stored as zero
+                begin
+                  period_position:=pos('Period_',naam2);
+                  if period_position>0 then
+                  begin
+                    period_str:=copy(naam2,period_position+7,999);
+                    leng := length(period_str);
+                    if leng > 0 then
+                    begin
+                      if hash_symbol then  //period_str[] will work because # is no unicode
+                        setlength(period_str, leng - 1);// trim # away
+                     if strtofloat2(period_str)>max_period then
+                       skip_aavso:=true;
+                    end;
+                  end
+                  else
+                  skip_aavso:=true;//no period was specified
+                end;
+                annotation_color2:=annotation_color;
+              end;
+
+              with mainform1 do
+              for i:=0 to high(Fshapes) do
+              if ((Fshapes[i].shape<>nil) and (abs(fx-Fshapes[i].fitsX)<5) and  (abs(fy-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
+                       Fshapes[i].shape.HINT:=abbrv;//copy(naam2,1,posex(' ',naam2,4)-1);
+
+            end; //Local variable database
+
+            if skip_aavso=false then
+            begin
+              mainform1.image1.Canvas.font.color:=annotation_color2;
+              mainform1.image1.canvas.pen.color:=annotation_color2;
+
+
+              {get text dimensions}
+              th:=mainform1.image1.Canvas.textheight(abbrv);
+              tw:=mainform1.image1.Canvas.textwidth(abbrv);
+              x1:=x;
+              y1:=y;
+              x2:=x+ tw;
+              y2:=y+ th ;
+
+              if ((x1<=head.width) and (x2>head.width)) then begin x1:=x1-(x2-head.width);x2:=head.width;end; {if text is beyond right side, move left}
+
+              if text_counter>0 then {find free space in y for text}
+              begin
+                repeat {find free text area}
+                  overlap:=false;
+                  i:=0;
+                  repeat {test overlap}
+                    if ( ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {left top overlap} or
+                         ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {right top overlap} or
+                         ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {left bottom overlap} or
+                         ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {right bottom overlap} or
+
+                         ((text_dimensions[i].x1>=x1) and (text_dimensions[i].x1<=x2) and (text_dimensions[i].y1>=y1) and (text_dimensions[i].y1<=y2)) {two corners of text_dimensions[i] within text} or
+                         ((text_dimensions[i].x2>=x1) and (text_dimensions[i].x2<=x2) and (text_dimensions[i].y2>=y1) and (text_dimensions[i].y2<=y2)) {two corners of text_dimensions[i] within text}
+                       ) then
+                    begin
+                      overlap:=true; {text overlaps an existing text}
+                      y1:=y1+(th div 3);{try to shift text one third of the text height down}
+                      y2:=y2+(th div 3);
+                      if y2>=head.height then {no space left, use original position}
+                      begin
+                        y1:=y;
+                        y2:=y+th ;
+                        overlap:=false;{stop searching}
+                        i:=$FFFFFFF;{stop searching}
+                      end;
+                    end;
+                    inc(i);
+                  until ((i>=text_counter) or (overlap) );{until all tested or found overlap}
+                until overlap=false;{continue till no overlap}
+              end;
+
+              text_dimensions[text_counter].x1:=x1;{store text dimensions in array}
+              text_dimensions[text_counter].y1:=y1;
+              text_dimensions[text_counter].x2:=x2;
+              text_dimensions[text_counter].y2:=y2;
+
+              if y1<>y then {there was textual overlap}
+              begin
+                mainform1.image1.Canvas.moveto(x,round(y+th/4));
+                mainform1.image1.Canvas.lineto(x,y1);
+              end;
+              mainform1.image1.Canvas.textout(x1,y1,abbrv);
+
+              if ((extract_visible) and (length(naam2)>2){through filters}  and (text_counter<length(vsp_vsx_list)){<max}) then //special option to add objects to list for photometry
+              begin
+                vsp_vsx_list[text_counter].ra:=ra2;
+                vsp_vsx_list[text_counter].dec:=dec2;
+                vsp_vsx_list[text_counter].abbr:=naam2;
+                vsp_vsx_list[text_counter].source:=0; //local
+
+                vsp_vsx_list_length:=text_counter;
+              end;
+              inc(text_counter);
+              if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
+
+            end;
+          end;{centre object visible}
+
+          {plot deepsky object}
+          if skip_aavso=false then
+          begin
+            if width1=0 then begin width1:=length1;pa:=999;end;
+            mainform1.image1.Canvas.Pen.width :=min(4,max(1,round(len/70)));
+
+            {len is already calculated earlier for the font size}
+            if len<=2 then {too small to plot an elipse or circle, plot just four dots}
+            begin
+              mainform1.image1.canvas.pixels[x-2,y+2]:=annotation_color2;
+              mainform1.image1.canvas.pixels[x+2,y+2]:=annotation_color2;
+              mainform1.image1.canvas.pixels[x-2,y-2]:=annotation_color2;
+              mainform1.image1.canvas.pixels[x+2,y-2]:=annotation_color2;
             end
             else
-              annotation_color2:=annotation_color;
-
-            mainform1.image1.Canvas.font.color:=annotation_color2;
-            mainform1.image1.canvas.pen.color:=annotation_color2;
-
-
-            {get text dimensions}
-            th:=mainform1.image1.Canvas.textheight(name);
-            tw:=mainform1.image1.Canvas.textwidth(name);
-            x1:=x;
-            y1:=y;
-            x2:=x+ tw;
-            y2:=y+ th ;
-
-            if ((x1<=head.width) and (x2>head.width)) then begin x1:=x1-(x2-head.width);x2:=head.width;end; {if text is beyond right side, move left}
-
-            if text_counter>0 then {find free space in y for text}
             begin
-              repeat {find free text area}
-                overlap:=false;
-                i:=0;
-                repeat {test overlap}
-                  if ( ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {left top overlap} or
-                       ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {right top overlap} or
-                       ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {left bottom overlap} or
-                       ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {right bottom overlap} or
-
-                       ((text_dimensions[i].x1>=x1) and (text_dimensions[i].x1<=x2) and (text_dimensions[i].y1>=y1) and (text_dimensions[i].y1<=y2)) {two corners of text_dimensions[i] within text} or
-                       ((text_dimensions[i].x2>=x1) and (text_dimensions[i].x2<=x2) and (text_dimensions[i].y2>=y1) and (text_dimensions[i].y2<=y2)) {two corners of text_dimensions[i] within text}
-                     ) then
-                  begin
-                    overlap:=true; {text overlaps an existing text}
-                    y1:=y1+(th div 3);{try to shift text one third of the text height down}
-                    y2:=y2+(th div 3);
-                    if y2>=head.height then {no space left, use original position}
-                    begin
-                      y1:=y;
-                      y2:=y+th ;
-                      overlap:=false;{stop searching}
-                      i:=$FFFFFFF;{stop searching}
-                    end;
-                 end;
-                 inc(i);
-               until ((i>=text_counter) or (overlap) );{until all tested or found overlap}
-             until overlap=false;{continue till no overlap}
-           end;
-
-           text_dimensions[text_counter].x1:=x1;{store text dimensions in array}
-           text_dimensions[text_counter].y1:=y1;
-           text_dimensions[text_counter].x2:=x2;
-           text_dimensions[text_counter].y2:=y2;
-
-           if y1<>y then {there was textual overlap}
-           begin
-             mainform1.image1.Canvas.moveto(x,round(y+th/4));
-             mainform1.image1.Canvas.lineto(x,y1);
-           end;
-           mainform1.image1.Canvas.textout(x1,y1,name);
-
-           if ((extract_visible) and (text_counter<length(vsp_vsx_list))) then //special option to add objects to list for photometry
-           begin
-             vsp_vsx_list[text_counter].ra:=ra2;
-             vsp_vsx_list[text_counter].dec:=dec2;
-             vsp_vsx_list[text_counter].abbr:=naam2;
-             vsp_vsx_list[text_counter].source:=0; //local
-
-             vsp_vsx_list_length:=text_counter;
-           end;
-           inc(text_counter);
-           if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
-         end;{centre object visible}
-
-         {plot deepsky object}
-         if width1=0 then begin width1:=length1;pa:=999;end;
-         mainform1.image1.Canvas.Pen.width :=min(4,max(1,round(len/70)));
-
-         {len is already calculated earlier for the font size}
-         if len<=2 then {too small to plot an elipse or circle, plot just four dots}
-         begin
-           mainform1.image1.canvas.pixels[x-2,y+2]:=annotation_color2;
-           mainform1.image1.canvas.pixels[x+2,y+2]:=annotation_color2;
-           mainform1.image1.canvas.pixels[x-2,y-2]:=annotation_color2;
-           mainform1.image1.canvas.pixels[x+2,y-2]:=annotation_color2;
-         end
-         else
-         begin
-           if PA<>999 then
-             plot_glx(mainform1.image1.canvas,x,y,len,width1/length1,gx_orientation*pi/180) {draw oval or galaxy}
-           else
-           mainform1.image1.canvas.ellipse(round(x-len),round(y-len),round(x+1+len),round(y+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-         end;
-       end;//min size for large FOV
-     end;
+              if PA<>999 then
+                plot_glx(mainform1.image1.canvas,x,y,len,width1/length1,gx_orientation*pi/180) {draw oval or galaxy}
+              else
+              mainform1.image1.canvas.ellipse(round(x-len),round(y-len),round(x+1+len),round(y+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+            end;
+          end;
+        end;//min size for large FOV
+      end;
     end; {while loop};
 
-    text_dimensions:=nil;{remove used memory}
+   // text_dimensions:=nil;{remove used memory}
     memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
 
     Screen.Cursor:=crDefault;
@@ -1725,7 +1762,8 @@ begin
 
           if mode=1 then //plot variable
           begin
-            abbreviation:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
+            abbreviation:=vsx[count].name+' '+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category;
+            if vsx[count].period<>'?' then abbreviation:=abbreviation+'_Period_'+vsx[count].period;
             if font_size<5 then
               abbreviation_display:=vsx[count].name
             else
@@ -2105,8 +2143,6 @@ begin
     flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
 //    sip:=((ap_order>=2) and (mainform1.Polynomial1.itemindex=1));{use sip corrections?}  Already set
-
-//  if ((usethesip) and (ap_order<>0)) then {apply SIP correction, sky to pixel}
 
     bp_rp:=999;{not defined in mono versions of the database}
 

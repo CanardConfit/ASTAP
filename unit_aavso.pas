@@ -1672,7 +1672,7 @@ begin
   fill_comp_and_check;//fill comboboxes with stars
 
   if abbrv_variable1.count>0 then
-     retrieve_vsp_stars;
+     retrieve_vsp_stars;//very simple database system  Restore VSP stars
 
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
@@ -1831,7 +1831,7 @@ begin
   else
     transform_all_factors:='';
 
-  if stackmenu1.annotate_mode1.itemindex<5 then //local database
+  if stackmenu1.annotate_mode1.itemindex<5+4 then //local database
     chartID:='na'; //else it comes from VSP download
 
   aavso_report:= '#TYPE='+detype+#13+#10+

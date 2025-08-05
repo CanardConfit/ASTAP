@@ -68,7 +68,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.07.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.08.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1360,6 +1360,11 @@ begin
           if ((header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
              ccd_temperature:=validate_double;{read double value}
         end;{C}
+
+//        if (header[i]='D') then {D}
+//        if ((header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+//           ccd_temperature:=validate_double;{read double value}
+
 
         if (header[i]='E') then
         begin
@@ -3094,7 +3099,7 @@ begin
   if calc_noise_level then  {find star level and background noise level}
   begin
     {calculate noise level}
-    width5:=Length(img[0,0]);    {width}
+    width5:=Length(img[0,0]); {width}
     height5:=Length(img[0]); {height}
     stepsize:=round(height5/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
     if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
@@ -3303,15 +3308,12 @@ procedure update_text(memo: tstrings;inpt,comment1:string);{update or insert tex
 var
    count1: integer;
 begin
-
   count1:=memo.Count-1;
-
-  while count1>=0 do {update keyword}
+  while count1>5 do {update keyword but not for the first 5}
   begin
     if pos(inpt,memo[count1])>0 then {found}
     begin
       memo[count1]:=inpt+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
-      //ll:=length(inpt+' '+comment1);
       exit;
     end;
     count1:=count1-1;
@@ -7280,7 +7282,7 @@ type
   PByteArray2 = ^TByteArray2;
   TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
 var
-   i,j,col,col_r,col_g,col_b,linenr,columnr :integer;
+   i,j,col,col_r,col_g,col_b,linenr,columnr,height2,width2,colours2 :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
    Bitmap       : TBitmap;{for fast pixel routine}
    xLine :  PByteArray2;{for fast pixel routine}
@@ -7297,13 +7299,18 @@ begin
   else
     mainform1.Polynomial1.itemindex:=0;//switch to WCS
 
+  colours2:=length(img_loaded);//nr colours, equivalent to head.naxis3
+  height2:=length(img_loaded[0]);//height, equivalent to head.height
+  width2:=length(img_loaded[0,0]);//width, equivalent to head.width
+
+
   {create bitmap}
   bitmap := TBitmap.Create;
   try
     with bitmap do
     begin
-      width := head.width;
-      height := head.height;
+      width := width2;
+      height := height2;
       // Unclear why this must follow width/height to work correctly.
       // If PixelFormat precedes width/height, bitmap will always be black.
       bitmap.PixelFormat := pf24bit;
@@ -7320,17 +7327,17 @@ begin
   flipv:=mainform1.flip_vertical1.Checked;
   fliph:=mainform1.Flip_horizontal1.Checked;
 
-  for i:=0 to head.height-1 do
+  for i:=0 to height2-1 do
   begin
-    if flipv then linenr:=i else linenr:=(head.height-1)-i;{flip vertical?. Note FITS count from bottom, windows from top}
+    if flipv then linenr:=i else linenr:=(height2-1)-i;{flip vertical?. Note FITS count from bottom, windows from top}
     xLine := Bitmap.ScanLine[linenr];
-    for j:=0 to head.width-1 do
+    for j:=0 to width2-1 do
     begin
-      if fliph then columnr:=(head.width-1)-j else columnr:=j;{flip horizontal?}
+      if fliph then columnr:=(width2-1)-j else columnr:=j;{flip horizontal?}
       col:=round(img_loaded[0,i,columnr]);
       colrr:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
 
-      if head.naxis3>=2 then {at least two colours}
+      if colours2>=2 then {at least two colours}
       begin
         col:=round(img_loaded[1,i,columnr]);
         colgg:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
@@ -7424,9 +7431,9 @@ begin
   begin
     img.top:=0;
     img.height:=mainform1.panel1.height;
-    img.left:=(mainform1.width - round(mainform1.panel1.height*head.width/head.height)) div 2;
+    img.left:=(mainform1.width - round(mainform1.panel1.height*width2/height2)) div 2;
   end;
-  img.width:=round(img.height*head.width/head.height); {lock image aspect always for case a image with a different is clicked on in stack menu}
+  img.width:=round(img.height*width2/height2); {lock image aspect always for case a image with a different is clicked on in stack menu}
 
 
   if img=mainform1.image1 then {plotting to mainform1?}
@@ -7456,7 +7463,7 @@ begin
 
 
 
-    mainform1.statusbar1.panels[5].text:=inttostr(head.width)+' x '+inttostr(head.height)+' x '+inttostr(head.naxis3)+'   '+inttostr(head.nrbits)+' BPP';{give image dimensions and bit per pixel info}
+    mainform1.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(colours2)+'   '+inttostr(head.nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
     mainform1.statusbar1.panels[7].text:=''; {2020-2-15 moved from load_fits to plot_image. Clear any outstanding error}
 
@@ -9946,13 +9953,13 @@ begin
 
   url:='https://apps.aavso.org/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
 
-  if stackmenu1.annotate_mode1.itemindex>12 then
+  if stackmenu1.annotate_mode1.itemindex>12+4 then
            url:=url+'&special=std_field';//standard field for specific purpose of calibrating their equipment
   s:=get_http(url);{get webpage}
   if length(s)=0 then begin beep; exit end;;
   if length(s)<256 then exit; //no data for this field
 
-  setlength(vsp,100000);
+  setlength(vsp,5000);
   count:=0;
 
   //get chart ID
@@ -10119,7 +10126,10 @@ begin
     until ((val=']') or (j>=length(s)));
 
     inc(count);//number of entries/stars
-  until count>=10000;//pratical limit, normally will stop at above break
+    if count>=length(vsp) then
+       setlength(vsp,length(vsp)+5000); //increase size
+  until count>=100000;//Abnormal size, normally will stop at above break
+
   setlength(vsp,count);
   result:=true;
 end;
@@ -10140,10 +10150,11 @@ begin
   else
     years_since_2000:=26; //default, years since 2000
 
-  if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); ////Required by AAVSO
+
+  if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); //There is no limitation for VSX but follow the one of the VSP
 
   idx:=stackmenu1.annotate_mode1.itemindex;
-  auid_filter:=((idx>=5) and (idx<=8)); //variable has an AUID so it can be reported
+  auid_filter:=((idx>=5+4) and (idx<=8+4)); //variable has an AUID so it can be reported
   max_period:=strtofloat2(stackmenu1.max_period1.text);//infinity result in 0 meaning switched off.
 
   //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
@@ -10153,7 +10164,7 @@ begin
   if length(s)=0 then begin beep; exit end;//network error
   if length(s)<25 then begin exit end;//no stars in this field
 
-  setlength(vsx,100000);
+  setlength(vsx,5000);
   count:=0;
   j:=25;//skip some header stuff
 
@@ -10265,14 +10276,16 @@ begin
     //filtering
     if max_period<>0 then //filter on variable's period
     begin
-      var_period:=strtofloat1(vsx[count].period);
+      //var_period:=strtofloat1(vsx[count].period);
+      var_period:=strtofloat1(stringreplace(vsx[count].period, ':', '',[rfReplaceAll]));//replace : in period string, Occurs maybe 1 in 100
       if ((var_period=0) or (var_period>=max_period)) then  skip:=true;//only short period var's
     end;
 
     if skip=false then
          inc(count);//number of entries/stars
-
-  until count>=10000;//pratical limit, normally will stop at above break
+    if count>=length(vsx) then
+        setlength(vsx,length(vsx)+5000); //increase size
+  until count>=100000;//Abnormal size, normally will stop at above break
   setlength(vsx,count);
   result:=true;
 end;
@@ -10306,22 +10319,19 @@ begin
 //10,Annotation online DB mag 99 & measure all
 
   case stackmenu1.annotate_mode1.itemindex of
-//     0,1: begin lim_magnitude:=-99; load_variable;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
-//     2:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
-//     3:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-//     4,8,12:  lim_magnitude:=11;
-//     5,9,13:  lim_magnitude:=13;
-//     6,19,14: lim_magnitude:=15;
-//     7,11,15: lim_magnitude:=99;
+       1,5:   begin lim_magnitude:=-99; load_variable_8;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+       0,2,6: begin lim_magnitude:=-99; load_variable_11;{Load the local database once. If loaded no action} end;//use local database
+       3,7:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
+       4,8:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
+//       5+4,9+4,13+4:  lim_magnitude:=11; //online magn 11
+//       6+4,10+4,14+4:  lim_magnitude:=13;//online magn 13
+//       7+4,11+4,15+4: lim_magnitude:=15;//online magn 15
+//       8+4,12+4,16+4: lim_magnitude:=99;//online magn 99
 
-       1:   begin lim_magnitude:=-99; load_variable_8;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
-       0,2: begin lim_magnitude:=-99; load_variable_11;{Load the local database once. If loaded no action} end;//use local database
-       3:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
-       4:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-       5,9,13:  lim_magnitude:=11;
-       6,10,14:  lim_magnitude:=13;
-       7,11,15: lim_magnitude:=15;
-       8,12,16: lim_magnitude:=99;
+       9,13,17:  lim_magnitude:=11; //online magn 11
+       10,14,18:  lim_magnitude:=13;//online magn 13
+       11,15,19: lim_magnitude:=15;//online magn 15
+       12,16,20: lim_magnitude:=99;//online magn 99
 
 
        else
