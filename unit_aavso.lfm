@@ -1,8 +1,8 @@
 object form_aavso1: Tform_aavso1
-  Left = 296
+  Left = 775
   Height = 702
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 209
+  Top = 212
   Width = 1553
   Caption = 'AAVSO report'
   ClientHeight = 702
