@@ -77,7 +77,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_photometry1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -85,7 +85,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 8
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3670,11 +3670,15 @@ object stackmenu1: Tstackmenu1
             Hint = 'Annotate variable and comparison stars. Only variable stars with an AUID can be submitted. Else you have to request an AUID first. Local database contains B, V only. For large FOV use local database.'
             Top = 34
             Width = 221
-            DropDownCount = 17
+            DropDownCount = 40
             ItemHeight = 19
-            ItemIndex = 2
+            ItemIndex = 6
             Items.Strings = (
               'None'
+              'Local DB mag 8 (AUID 👌)'
+              'Local DB mag 11 (AUID 👌)'
+              'Local DB mag 13 (AUID 👌)'
+              'Local DB mag 15 (AUID 👌)'
               'Local DB mag 8'
               'Local DB mag 11'
               'Local DB mag 13'
@@ -3904,7 +3908,6 @@ object stackmenu1: Tstackmenu1
             Top = 34
             Width = 60
             DropDownCount = 17
-            Enabled = False
             ItemHeight = 19
             ItemIndex = 0
             Items.Strings = (
@@ -8374,7 +8377,6 @@ object stackmenu1: Tstackmenu1
         ClientWidth = 1920
         ParentBackground = False
         TabOrder = 1
-        OnClick = Panel_stack_button1Click
         object stack_button1: TBitBtn
           Left = 8
           Height = 41
@@ -9453,9 +9455,6 @@ object stackmenu1: Tstackmenu1
         Caption = 'Type keyword and new value'
         Hint = 'All select files will be updated with new keyword value. Type for value DELETE to remove keyword.'
         OnClick = changekeyword1Click
-      end
-      object MenuItem19: TMenuItem
-        Caption = '-'
       end
     end
     object MenuItem33: TMenuItem

@@ -7,11 +7,11 @@ object form_aavso1: Tform_aavso1
   Caption = 'AAVSO report'
   ClientHeight = 702
   ClientWidth = 1553
+  LCLVersion = '4.0.0.4'
   OnClose = FormClose
   OnCreate = FormCreate
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '3.8.0.0'
   object obscode1: TEdit
     Left = 16
     Height = 27
@@ -108,9 +108,9 @@ object form_aavso1: Tform_aavso1
     Align = alClient
     BorderSpacing.Left = 500
     BorderSpacing.Right = 5
-    OnMouseMove = Image_photometry1MouseMove
     PopupMenu = PopupMenu1
     Stretch = True
+    OnMouseMove = Image_photometry1MouseMove
   end
   object baa_style1: TCheckBox
     Left = 244
@@ -278,7 +278,7 @@ object form_aavso1: Tform_aavso1
   object abbrv_variable1: TCheckListBox
     Left = 15
     Height = 153
-    Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier.  Limit: 30 characters. The dropdown will be filtered if a part of the Var designation is typed.  Standard deviation is based on Gaia as a reference'
+    Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier (AUID).'#13#10'The standard deviation is based on Gaia database as a reference'#13#10'Variables in the list ending with # have no AUID and will not be accepted unless a new AUID is requested.'
     Top = 72
     Width = 480
     ItemHeight = 0
