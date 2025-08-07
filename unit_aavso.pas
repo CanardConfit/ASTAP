@@ -578,7 +578,6 @@ begin
 end;
 
 
-
 procedure report_sigma_and_mean_of_check ;
 var
   c, invalid_comp,count, count2,icon_nr                           : integer;
@@ -610,7 +609,6 @@ begin
   form_aavso1.sigma_mzero1.caption:='';
 
   if go_boolean=false then exit;
-
 
   with stackmenu1 do
   begin
@@ -664,408 +662,6 @@ begin
 end;
 
 
-procedure get_b_v_var(m : integer; out b_v_var, v_r_var : double);//calculate the b-v of the variable
-var
-  fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,sd_comp,
-  comp_magn,B_V, V_R, ratioV,ratioB,ratioR                          : double;
-  warning : string;
-  i, j, VIndexR, RIndex, VIndex, BIndex: Integer;
-  MinDiff, Diff: Double;
-begin
-  with form_aavso1 do
-  begin
-    //Find B and V image with closest Julian day
-    MinDiff := 1e10; // A very large number
-    VIndex := -1;
-    BIndex := -1;
-    // Brute-force search: compare every green with every blue
-    for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
-    if RowChecked[i] then
-    begin
-      if  SubItemImages[i]=1 then //V filter
-
-      begin
-        for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
-        if RowChecked[j] then
-        begin
-          if  SubItemImages[j]=2 then //blue
-           begin
-             Diff := Abs(SubItemDouble[i,P_jd_mid] - SubItemDouble[j,P_jd_mid]);
-             if Diff < MinDiff then
-             begin
-               MinDiff := Diff;
-               VIndex := i;
-               BIndex := j;
-             end;
-           end;//checked
-         end;
-       end;
-     end;
-
-    //Find V and R image with closest Julian day
-    MinDiff := 1e10; // A very large number
-    VIndexR := -1;
-    RIndex := -1;
-
-    // Brute-force search: compare every green with every blue
-    for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
-    if RowChecked[i] then
-    begin
-      if SubItemImages[i]=1 then //V filter
-      begin
-        for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
-        if RowChecked[j] then
-        begin
-          if SubItemImages[j] in [0,24] then //red
-          begin
-            Diff := Abs(SubItemDouble[i,P_jd_mid] - SubItemDouble[j,P_jd_mid]);
-            if Diff < MinDiff then
-            begin
-              MinDiff := Diff;
-              VIndexR := i;
-              RIndex := j;
-            end;
-          end;//checked
-        end;
-      end;
-    end;
-
-    if ((BIndex>=0) and  (VIndex>=0)) then
-    begin
-      fluxB:=SubItemDouble[Bindex,column_vars[m]+2];
-      fluxV:=SubItemDouble[Vindex,column_vars[m]+2];
-
-      if ((fluxB>0) and (fluxV>0) and
-          (process_comp_stars(BIndex,false,ratioB,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
-          (process_comp_stars(VIndex,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
-        begin
-          varmag_B:=21- ln(ratioB*fluxB)*2.5/ln(10); //convert var flux to magnitude using
-          varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
-          b_v_var:=varmag_B-varmag_V;
-         // memo2_message('b-v var is '+floattostrF(b_v_var,FFfixed,0,3) + '. Used files '+ item[Bindex].Caption+ ' & '+ item[VindexR].Caption);
-        end
-      else
-      begin
-        if warning<>'' then memo2_message(warning);
-        b_v_var:= 99;
-      end;
-    end;
-
-
-    if ((VIndexR>=0) and  (RIndex>=0)) then
-    begin
-      fluxR:=SubItemDouble[Rindex,column_vars[m]+2];
-      fluxV:=SubItemDouble[VindexR,column_vars[m]+2];
-
-
-      if ((fluxV>0) and (fluxR>0) and
-          (process_comp_stars(VIndexR,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
-          (process_comp_stars(RIndex,false,ratioR,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
-        begin
-          varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
-          varmag_R:=21- ln(ratioR*fluxR)*2.5/ln(10); //convert var flux to magnitude using
-          v_r_var:=varmag_V-varmag_R;
-          //memo2_message('v-r var is '+floattostrF(v_r_var,FFfixed,0,3) + '. Used files '+ item[VindexR].Caption+ ' & '+ item[Rindex].Caption);
-        end
-      else
-      begin
-        if warning<>'' then memo2_message(warning);
-        v_r_var:= 99;
-      end;
-    end;
-
-  end;//form_aavso1
-end;
-
-
-
-procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-var
-  w2,h2 :integer;
-  jd_mouse: double;
-
-begin
-  if jd_min=0 then exit;
-  w2:=image_photometry1.width;
-  h2:=image_photometry1.height;
- // x zero at x=wtext
- // x range is (w-bspace*2)
- jd_mouse:=jd_min+(jd_max-jd_min)*((x*w/w2)-wtext)/(w-bspace*2);
- form_aavso1.caption:= 'JDmid='+floattostrF(jd_mouse,ffFixed,12,5)+', TimeMid='+prepare_ra6((frac(jd_mouse)+0.5)*2*pi,':')+', Magnitude='+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
-end;
-
-procedure Tform_aavso1.MenuItem1Click(Sender: TObject);
-begin
-    Clipboard.Assign(Image_photometry1.Picture.Bitmap);
-end;
-
-procedure Tform_aavso1.abrv_check1Change(Sender: TObject);
-var
-   i         : integer;
-begin
-  for i:=0 to abrv_check1.items.count-1 do
-  begin
-    if form_aavso1.abrv_check1.text=form_aavso1.abrv_comp1.items[i] then
-    begin
-      form_aavso1.abrv_comp1.checked[i]:=false; // a star can not be both COMP and CHECK at the same time
-      break;
-    end;
-  end;
-  plot_graph;
-
-end;
-
-
-function find_mean_measured_magnitude(column: integer) : double;//calculate the mean measured magnitude
-var
-   count, c         : integer;
-   magn, mean_magn  : double;
-begin
-  count:=0;
-  mean_magn:=0;
-
-  for c:=0 to length(RowChecked)-1 do {retrieve data from listview}
-  begin
-    if RowChecked[c] then
-    begin
-      magn:=SubItemDouble[c,column];
-      if magn>0 then
-      begin
-        mean_magn:=mean_magn+magn;
-        inc(count);
-      end;
-    end;
-  end;
-  if count>0 then
-  begin
-    //calc standard deviation using the classic method. This will show the effect of outliers
-    result:=mean_magn/count;
-  end
-  else
-    result:=-99;//unknown
-end;
-
-
-procedure fill_comp_and_check;
-var
-  i,count,countV,error2              : integer;
-  abrv                               : string;
-  starinfo, starinfoV                : array of Tstarinfo;
-  measure_any,compstar               : boolean;
-begin
-  with form_aavso1 do
-  begin
-
-    abrv_comp1.clear;
-    abrv_check1.clear;
-    color:=cldefault;
-
-
-    ensemble_database1.caption:=('Ensemble '+stackmenu1.reference_database1.text);
-
-    setlength(starinfo,p_nr-p_nr_norm);
-    setlength(starinfoV,p_nr-p_nr_norm);
-    count:=0;
-    countV:=0;
-
-    measure_any:=stackmenu1.measuring_method1.itemindex=3;
-
-
-    for i:=p_nr_norm to p_nr-1 do
-      if frac((i-p_nr_norm)/3)=0 then //not snr column
-      begin
-        abrv:=ColumnTitles[i+1];
-        compstar:=(copy(abrv,1,2)='00');
-
-        if compstar=false then //variables
-        begin
-          starinfoV[countV].str:=abrv;//store in an array
-          starinfoV[countV].x:=find_mean_measured_magnitude(i);
-          inc(countV);
-        end
-        else
-        begin
-          starinfo[count].str:=abrv;//store in an array
-          starinfo[count].x:=find_mean_measured_magnitude(i);
-          inc(count);
-        end;
-      end;
-
-    if countV>0 then //sort variables
-    begin
-      if sort_alphabetically1.checked=false then
-      begin
-        QuickSort_records(starinfoV,0,countV-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
-      end;
-      for i:=0 to countV-1  do  //display in ascending order
-        if starinfoV[i].x>0 then
-        begin
-          abbrv_variable1.items.add(starinfoV[i].str);
-        end
-        else  //not all images analysed for SD
-           abbrv_variable1.items.add(starinfoV[i].str+ ' Bad!');
-
-    end;
-
-
-    if count>0 then //sort comparison stars
-    begin
-      if sort_alphabetically1.checked=false then
-      begin
-        QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
-        //memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
-      end;
-      for i:=0 to count-1  do  //display in ascending order
-        if starinfo[i].x>0 then //not saturated and sd found
-          abrv_comp1.items.add(starinfo[i].str) //+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3))//add including standard deviation
-        else  //not all images analysed for SD
-          abrv_comp1.items.add(starinfo[i].str+ ' Bad!');
-
-        abrv_check1.items:=abrv_comp1.items;//duplicate
-    end;
-  end;
-end;
-
-
-
-procedure Tform_aavso1.abbrv_variable1Change(Sender: TObject);
-begin
-  retrieve_vsp_stars;//Very simple database.
-  plot_graph;
-end;
-
-
-procedure Tform_aavso1.FormResize(Sender: TObject);
-begin
-  plot_graph;
-end;
-
-procedure Tform_aavso1.hjd1Change(Sender: TObject);
-begin
-  plot_graph;
-end;
-
-
-procedure Tform_aavso1.delta_bv2Change(Sender: TObject);
-begin
-  plot_graph;
-end;
-
-
-procedure Tform_aavso1.abrv_comp1Change(Sender: TObject);
-begin
-  plot_graph;
-end;
-
-
-procedure Tform_aavso1.abbrv_variable1ClickCheck(Sender: TObject);
-var
-  ClickedIndex: Integer;
-begin
-  ClickedIndex:=(Sender as TCheckListBox).ItemIndex;
-  if abbrv_variable1.checked[clickedIndex] then
-    retrieve_vsp_stars;//Very simple database.
-  plot_graph;
-end;
-
-
-procedure Tform_aavso1.abbrv_variable1Click(Sender: TObject);
-var
-  i,count : integer;
-begin
-  count:=0;
-  for i:=0 to abbrv_variable1.items.count-1 do
-    if abbrv_variable1.checked[i] then inc(count);
-  variables1.caption:='Variable(s) x '+inttostr(count);
-end;
-
-
-procedure Tform_aavso1.abbrv_comp1ItemClick(Sender: TObject; Index: integer);
-begin
-  if copy(form_aavso1.abrv_comp1.items[index],1,11)=copy(form_aavso1.abrv_check1.text,1,11) then  // a star can not be both COMP and CHECK at the same time
-    form_aavso1.abrv_check1.text:='';
-end;
-
-
-procedure Tform_aavso1.abrv_comp1Click(Sender: TObject);
-var
-  i,count : integer;
-begin
-  count:=0;
-  for i:=0 to abrv_comp1.items.count-1 do
-    if abrv_comp1.checked[i] then inc(count);
-  comparisonstars_label1.caption:='Comparison star(s) x '+inttostr(count);
-end;
-
-
-procedure Tform_aavso1.abrv_comp1ClickCheck(Sender: TObject);
-begin
-  plot_graph;
-end;
-
-procedure Tform_aavso1.deselectall1Click(Sender: TObject);
-var
-   i: integer;
-begin
-  for i:=0 to abbrv_variable1.items.count-1 do
-    abbrv_variable1.checked[i]:=false;
-end;
-
-procedure Tform_aavso1.MenuItem2Click(Sender: TObject);
-var
-   i: integer;
-begin
-  for i:=0 to abbrv_variable1.items.count-1 do
-    abbrv_variable1.checked[i]:=false;
-end;
-
-
-procedure Tform_aavso1.selectall1Click(Sender: TObject);
-var
-   i: integer;
-begin
-  for i:=0 to abbrv_variable1.items.count-1 do
-    abbrv_variable1.checked[i]:=true;
-end;
-
-
-procedure Tform_aavso1.test_button1Click(Sender: TObject);
-var
-   i : integer;
-begin
-  if test_mode=false then
-  begin
-    for i:=0 to abrv_comp1.count-1 do
-      abbrv_variable1.items.Add(abrv_comp1.items[i]);
-    test_mode:=true;  //allow this only once.
-  end;
-end;
-
-
-procedure Tform_aavso1.ensemble_database1Click(Sender: TObject);
-begin
-  ensemble_database:=ensemble_database1.checked;
-  abrv_comp1.enabled:=ensemble_database=false;
-  sigma_check1.enabled:=ensemble_database;
-  sigma_check2.enabled:=ensemble_database=false;
-  sigma_mzero1.enabled:=ensemble_database=false;
-  apply_transformation1.enabled:=ensemble_database=false;
-  plot_graph;
-end;
-
-
-
-procedure Tform_aavso1.FormCreate(Sender: TObject);
-begin
-  {$IFDEF linux}
-  abrv_check1.autoDropDown:=false;//then only autocomplete works with more then one character
-
-  {$ELSE}
-  abrv_check1.autoDropDown:=true;
-  {$ENDIF}
-end;
-
-
 procedure retrieve_ra_dec(columnr: integer; out ra,dec:double);//retrieve from database arrays using the .tag
 var
   theindex : integer;
@@ -1078,6 +674,7 @@ begin
   except;
   end;
 end;
+
 
 procedure annotate_star_of_column(columnCheck : integer; column_V,column_comps : Tinteger_array);
 var
@@ -1132,20 +729,20 @@ begin
     except
     end;
   end;
-
 end;
 
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count,k,invalid_comp,icon_nr,i,j,vars_end,firstfilter : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count,k,invalid_comp,icon_nr,i,j,vars_end,firstfilter,x,y,index,fc : integer;
   scale,range, mean,ratio,sd_comp,comp_magn,dummy,flux,B_V, V_R,magn_gaia  : double;
   text1,text2, date_format,{firstfilter,}warning,abbrv_var   : string;
   bmp: TBitmap;
   data : array of array of double;
   listcheck : array of double;
   filtercolor : array of tcolor;
-  gaia_based  : boolean;
+  gaia_based,new_colour, color_used : boolean;
+  color_list : array[0..7] of tcolor;
 const
   len=3;
 
@@ -1168,6 +765,34 @@ const
        end;
      end;
   end;
+
+  procedure plot_line_and_point(new_colour: boolean; x,y,tolerance:integer);
+  begin
+     if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
+     begin
+       if new_colour then
+         bmp.canvas.moveto(x,y)
+       else
+         bmp.canvas.lineto(x,y);
+
+       bmp.canvas.Ellipse(x-len,y-len,x+1+len,y+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+
+       if tolerance>0 then
+       begin
+         bmp.canvas.moveto(x,y-tolerance);
+         bmp.canvas.lineto(x,y+tolerance);
+
+         bmp.canvas.moveto(x-len+1,y-tolerance);
+         bmp.canvas.lineto(x+len,y-tolerance);
+
+         bmp.canvas.moveto(x-len+1,y+tolerance);
+         bmp.canvas.lineto(x+len,y+tolerance);
+
+         bmp.canvas.moveto(x,y);
+       end;
+     end;
+  end;
+
 
   procedure plot_square(x,y,tolerance:integer);
   begin
@@ -1438,6 +1063,10 @@ begin
   else
   form_aavso1.report_error1.visible:=false;
 
+
+  for i:=0 to high(color_list) do color_list[i]:=0;//clear icons which have been done
+  index:=0;
+
   with stackmenu1 do
   for c:=0 to length(RowChecked)-1 do {retrieve colour data from listview}
   begin
@@ -1452,6 +1081,21 @@ begin
               23 :filtercolor[c]:=clgreen;//SDSS-g
 
     end;
+
+    color_used:=false;
+    for i:=0 to index do //check if this filter is already in the list
+    begin
+      if filtercolor[c]=color_list[i] then
+      begin
+        color_used:=true;
+        break;
+      end;
+    end;
+    if color_used=false then
+    begin
+      color_list[index]:=filtercolor[c];
+      index:=index+1;
+    end;
   end;
 
 
@@ -1462,16 +1106,10 @@ begin
   begin
     bmp:=TBitmap.Create;
     bmp.PixelFormat:=pf24bit;
-
     bmp.SetSize(w,h);
-
-
     bmp.canvas.brush.color:=clmenu;
     bmp.canvas.rectangle(-1,-1, w+1, h+1);{background}
-
     bmp.Canvas.Pen.Color := clmenutext;
-    bmp.Canvas.brush.color :=clmenu;
-   // bmp.Canvas.brush.color :=clgreen;
     bmp.Canvas.Font.Color := clmenutext;
     bmp.Canvas.brush.Style:=bsclear;
 
@@ -1535,12 +1173,11 @@ begin
 
     scale:=(h-(bspace*2))/(magn_max-magn_min);{pixel per magnitudes}
 
+    //chk
     bmp.Canvas.Pen.Color := clgray;
     bmp.Canvas.brush.color :=clgray;
     plot_square(textp2,len*3,0);
-
     if jd_max=jd_min then jd_min:=jd_min-1; {prevent run time errors for one image where jd_max-jd_min}
-
     for c:=0 to length(data[0])-1 do
     begin
       bmp.Canvas.Pen.Color := filtercolor[c];
@@ -1557,10 +1194,10 @@ begin
     for k:=vars_end to length(data)-1 do // plot all comp stars
     for c:=0 to length(data[0])-1 do
     begin
-      bmp.Canvas.Pen.Color := filtercolor[c];
-      bmp.Canvas.brush.color :=filtercolor[c];
       if ((data[0,c]<>0) and (data[k,c]<>0)) then //valid JD
       begin
+        bmp.Canvas.Pen.Color := filtercolor[c];
+        bmp.Canvas.brush.color :=filtercolor[c];
         plot_Xsign(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[k,c]-magn_min)/(magn_max-magn_min)   ),0); {comp}
         //bmp.canvas.textout(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[k,c]-magn_min)/(magn_max-magn_min)   ),floattostr(data[k,c])  );
       end;
@@ -1572,15 +1209,40 @@ begin
     bmp.Canvas.brush.color :=clgray;
     plot_point(textp1,len*3,0);
     for k:=2 to vars_end-1 do // plot all var stars
-    for c:=0 to length(data[0])-1 do
     begin
-      bmp.Canvas.Pen.Color := filtercolor[c];
-      bmp.Canvas.brush.color :=filtercolor[c];
-      if ((data[0,c]<>0) and (data[k,c]<>0)) then //valid JD
+
+      abbrv_var:=clean_abbreviation(ColumnTitles[column_vars[k-2]+1],true); //Caption of this column. Captiona are shifted one
+
+      for fc:=0 to index-1 do //do colour by colour too allow linking the graph point and labeling the first
       begin
-        plot_point( wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[k,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {var}
-      end;
-    end;
+        new_colour:=true;
+        for c:=0 to length(data[0])-1 do //go trough the rows.
+        begin
+          if  color_list[fc]=filtercolor[c] then //match with the current colour processed
+          begin
+            if ((data[0,c]<>0) and (data[k,c]<>0)) then //valid JD
+            begin
+              x:=wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min));
+              y:=round(bspace+(h-bspace*2)*(data[k,c]-magn_min)/(magn_max-magn_min)   );
+
+              if  new_colour then//new colour for this column. Mark with abbreviation
+              begin
+                bmp.canvas.brush.style:=bsClear;
+                bmp.canvas.font.size:=8;
+                bmp.canvas.textout(x,y, abbrv_var);
+              end;
+
+              bmp.Canvas.Pen.Color := filtercolor[c];
+              bmp.Canvas.brush.color :=filtercolor[c];
+    //          plot_point(x,y,round(scale*photometry_stdev*2.5)); {var}
+              plot_line_and_point(new_colour,x,y,round(scale*photometry_stdev*2.5)); {var}
+              new_colour:=false;
+            end;
+
+          end;
+        end;//c loop
+      end;//fc loop
+    end;//k loop
 
 
     Picture.Bitmap.SetSize(w,h);
@@ -1589,6 +1251,406 @@ begin
   end;
   data:=nil;
 end;
+
+
+procedure get_b_v_var(m : integer; out b_v_var, v_r_var : double);//calculate the b-v of the variable
+var
+  fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,sd_comp,
+  comp_magn,B_V, V_R, ratioV,ratioB,ratioR                          : double;
+  warning : string;
+  i, j, VIndexR, RIndex, VIndex, BIndex: Integer;
+  MinDiff, Diff: Double;
+begin
+  with form_aavso1 do
+  begin
+    //Find B and V image with closest Julian day
+    MinDiff := 1e10; // A very large number
+    VIndex := -1;
+    BIndex := -1;
+    // Brute-force search: compare every green with every blue
+    for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
+    if RowChecked[i] then
+    begin
+      if  SubItemImages[i]=1 then //V filter
+
+      begin
+        for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
+        if RowChecked[j] then
+        begin
+          if  SubItemImages[j]=2 then //blue
+           begin
+             Diff := Abs(SubItemDouble[i,P_jd_mid] - SubItemDouble[j,P_jd_mid]);
+             if Diff < MinDiff then
+             begin
+               MinDiff := Diff;
+               VIndex := i;
+               BIndex := j;
+             end;
+           end;//checked
+         end;
+       end;
+     end;
+
+    //Find V and R image with closest Julian day
+    MinDiff := 1e10; // A very large number
+    VIndexR := -1;
+    RIndex := -1;
+
+    // Brute-force search: compare every green with every blue
+    for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
+    if RowChecked[i] then
+    begin
+      if SubItemImages[i]=1 then //V filter
+      begin
+        for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
+        if RowChecked[j] then
+        begin
+          if SubItemImages[j] in [0,24] then //red
+          begin
+            Diff := Abs(SubItemDouble[i,P_jd_mid] - SubItemDouble[j,P_jd_mid]);
+            if Diff < MinDiff then
+            begin
+              MinDiff := Diff;
+              VIndexR := i;
+              RIndex := j;
+            end;
+          end;//checked
+        end;
+      end;
+    end;
+
+    if ((BIndex>=0) and  (VIndex>=0)) then
+    begin
+      fluxB:=SubItemDouble[Bindex,column_vars[m]+2];
+      fluxV:=SubItemDouble[Vindex,column_vars[m]+2];
+
+      if ((fluxB>0) and (fluxV>0) and
+          (process_comp_stars(BIndex,false,ratioB,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
+          (process_comp_stars(VIndex,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
+        begin
+          varmag_B:=21- ln(ratioB*fluxB)*2.5/ln(10); //convert var flux to magnitude using
+          varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
+          b_v_var:=varmag_B-varmag_V;
+         // memo2_message('b-v var is '+floattostrF(b_v_var,FFfixed,0,3) + '. Used files '+ item[Bindex].Caption+ ' & '+ item[VindexR].Caption);
+        end
+      else
+      begin
+        if warning<>'' then memo2_message(warning);
+        b_v_var:= 99;
+      end;
+    end;
+
+
+    if ((VIndexR>=0) and  (RIndex>=0)) then
+    begin
+      fluxR:=SubItemDouble[Rindex,column_vars[m]+2];
+      fluxV:=SubItemDouble[VindexR,column_vars[m]+2];
+
+
+      if ((fluxV>0) and (fluxR>0) and
+          (process_comp_stars(VIndexR,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
+          (process_comp_stars(RIndex,false,ratioR,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
+        begin
+          varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
+          varmag_R:=21- ln(ratioR*fluxR)*2.5/ln(10); //convert var flux to magnitude using
+          v_r_var:=varmag_V-varmag_R;
+          //memo2_message('v-r var is '+floattostrF(v_r_var,FFfixed,0,3) + '. Used files '+ item[VindexR].Caption+ ' & '+ item[Rindex].Caption);
+        end
+      else
+      begin
+        if warning<>'' then memo2_message(warning);
+        v_r_var:= 99;
+      end;
+    end;
+
+  end;//form_aavso1
+end;
+
+
+
+procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+var
+  w2,h2 :integer;
+  jd_mouse: double;
+
+begin
+  if jd_min=0 then exit;
+  w2:=image_photometry1.width;
+  h2:=image_photometry1.height;
+ // x zero at x=wtext
+ // x range is (w-bspace*2)
+ jd_mouse:=jd_min+(jd_max-jd_min)*((x*w/w2)-wtext)/(w-bspace*2);
+ form_aavso1.caption:= 'JDmid='+floattostrF(jd_mouse,ffFixed,12,5)+', TimeMid='+prepare_ra6((frac(jd_mouse)+0.5)*2*pi,':')+', Magnitude='+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
+end;
+
+procedure Tform_aavso1.MenuItem1Click(Sender: TObject);
+begin
+    Clipboard.Assign(Image_photometry1.Picture.Bitmap);
+end;
+
+procedure Tform_aavso1.abrv_check1Change(Sender: TObject);
+var
+   i         : integer;
+begin
+  for i:=0 to abrv_check1.items.count-1 do
+  begin
+    if form_aavso1.abrv_check1.text=form_aavso1.abrv_comp1.items[i] then
+    begin
+      form_aavso1.abrv_comp1.checked[i]:=false; // a star can not be both COMP and CHECK at the same time
+      break;
+    end;
+  end;
+  plot_graph;
+
+end;
+
+
+function find_mean_measured_magnitude(column: integer) : double;//calculate the mean measured magnitude
+var
+   count, c         : integer;
+   magn, mean_magn  : double;
+begin
+  count:=0;
+  mean_magn:=0;
+
+  for c:=0 to length(RowChecked)-1 do {retrieve data from listview}
+  begin
+    if RowChecked[c] then
+    begin
+      magn:=SubItemDouble[c,column];
+      if magn>0 then
+      begin
+        mean_magn:=mean_magn+magn;
+        inc(count);
+      end;
+    end;
+  end;
+  if count>0 then
+  begin
+    //calc standard deviation using the classic method. This will show the effect of outliers
+    result:=mean_magn/count;
+  end
+  else
+    result:=-99;//unknown
+end;
+
+
+procedure fill_comp_and_check;
+var
+  i,count,countV,error2              : integer;
+  abrv                               : string;
+  starinfo, starinfoV                : array of Tstarinfo;
+  compstar                           : boolean;
+begin
+  with form_aavso1 do
+  begin
+
+    abrv_comp1.clear;
+    abrv_check1.clear;
+    color:=cldefault;
+
+
+    ensemble_database1.caption:=('Ensemble '+stackmenu1.reference_database1.text);
+
+    setlength(starinfo,p_nr-p_nr_norm);
+    setlength(starinfoV,p_nr-p_nr_norm);
+    count:=0;
+    countV:=0;
+
+    for i:=p_nr_norm to p_nr-1 do
+      if frac((i-p_nr_norm)/3)=0 then //not snr column
+      begin
+        abrv:=ColumnTitles[i+1];
+        compstar:=(copy(abrv,1,2)='00');
+
+        if compstar=false then //variables
+        begin
+          starinfoV[countV].str:=abrv;//store in an array
+          starinfoV[countV].x:=find_mean_measured_magnitude(i);
+          inc(countV);
+        end
+        else
+        begin
+          starinfo[count].str:=abrv;//store in an array
+          starinfo[count].x:=find_mean_measured_magnitude(i);
+          inc(count);
+        end;
+      end;
+
+    if countV>0 then //sort variables
+    begin
+      if sort_alphabetically1.checked=false then
+      begin
+        QuickSort_records(starinfoV,0,countV-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+      end;
+      for i:=0 to countV-1  do  //display in ascending order
+        if starinfoV[i].x>0 then
+        begin
+          abbrv_variable1.items.add(starinfoV[i].str);
+        end
+        else  //not all images analysed for SD
+           abbrv_variable1.items.add(starinfoV[i].str+ ' Bad!');
+
+    end;
+
+
+    if count>0 then //sort comparison stars
+    begin
+      if sort_alphabetically1.checked=false then
+      begin
+        QuickSort_records(starinfo,0,count-1) ;{ Fast quick sort. Sorts elements in the array A containing records with indices between lo and hi}
+        //memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
+      end;
+      for i:=0 to count-1  do  //display in ascending order
+        if starinfo[i].x>0 then //not saturated and sd found
+          abrv_comp1.items.add(starinfo[i].str) //+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3))//add including standard deviation
+        else  //not all images analysed for SD
+          abrv_comp1.items.add(starinfo[i].str+ ' Bad!');
+
+        abrv_check1.items:=abrv_comp1.items;//duplicate
+    end;
+  end;
+end;
+
+
+
+procedure Tform_aavso1.abbrv_variable1Change(Sender: TObject);
+begin
+  retrieve_vsp_stars;//Very simple database.
+  plot_graph;
+end;
+
+
+procedure Tform_aavso1.FormResize(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+procedure Tform_aavso1.hjd1Change(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+
+procedure Tform_aavso1.delta_bv2Change(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+
+procedure Tform_aavso1.abrv_comp1Change(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+
+procedure Tform_aavso1.abbrv_variable1ClickCheck(Sender: TObject);
+var
+  ClickedIndex: Integer;
+begin
+  ClickedIndex:=(Sender as TCheckListBox).ItemIndex;
+  if abbrv_variable1.checked[clickedIndex] then
+    retrieve_vsp_stars;//Very simple database.
+  plot_graph;
+end;
+
+
+procedure Tform_aavso1.abbrv_variable1Click(Sender: TObject);
+var
+  i,count : integer;
+begin
+  count:=0;
+  for i:=0 to abbrv_variable1.items.count-1 do
+    if abbrv_variable1.checked[i] then inc(count);
+  variables1.caption:='Variable(s) x '+inttostr(count);
+end;
+
+
+procedure Tform_aavso1.abbrv_comp1ItemClick(Sender: TObject; Index: integer);
+begin
+  if copy(form_aavso1.abrv_comp1.items[index],1,11)=copy(form_aavso1.abrv_check1.text,1,11) then  // a star can not be both COMP and CHECK at the same time
+    form_aavso1.abrv_check1.text:='';
+end;
+
+
+procedure Tform_aavso1.abrv_comp1Click(Sender: TObject);
+var
+  i,count : integer;
+begin
+  count:=0;
+  for i:=0 to abrv_comp1.items.count-1 do
+    if abrv_comp1.checked[i] then inc(count);
+  comparisonstars_label1.caption:='Comparison star(s) x '+inttostr(count);
+end;
+
+
+procedure Tform_aavso1.abrv_comp1ClickCheck(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+procedure Tform_aavso1.deselectall1Click(Sender: TObject);
+var
+   i: integer;
+begin
+  for i:=0 to abbrv_variable1.items.count-1 do
+    abbrv_variable1.checked[i]:=false;
+end;
+
+procedure Tform_aavso1.MenuItem2Click(Sender: TObject);
+var
+   i: integer;
+begin
+  for i:=0 to abrv_comp1.items.count-1 do
+    abrv_comp1.checked[i]:=false;
+end;
+
+
+procedure Tform_aavso1.selectall1Click(Sender: TObject);
+var
+   i: integer;
+begin
+  for i:=0 to abbrv_variable1.items.count-1 do
+    abbrv_variable1.checked[i]:=true;
+end;
+
+
+procedure Tform_aavso1.test_button1Click(Sender: TObject);
+var
+   i : integer;
+begin
+  if test_mode=false then
+  begin
+    for i:=0 to abrv_comp1.count-1 do
+      abbrv_variable1.items.Add(abrv_comp1.items[i]);
+    test_mode:=true;  //allow this only once.
+  end;
+end;
+
+
+procedure Tform_aavso1.ensemble_database1Click(Sender: TObject);
+begin
+  ensemble_database:=ensemble_database1.checked;
+  abrv_comp1.enabled:=ensemble_database=false;
+  sigma_check1.enabled:=ensemble_database;
+  sigma_check2.enabled:=ensemble_database=false;
+  sigma_mzero1.enabled:=ensemble_database=false;
+  apply_transformation1.enabled:=ensemble_database=false;
+  plot_graph;
+end;
+
+
+
+procedure Tform_aavso1.FormCreate(Sender: TObject);
+begin
+  {$IFDEF linux}
+  abrv_check1.autoDropDown:=false;//then only autocomplete works with more then one character
+
+  {$ELSE}
+  abrv_check1.autoDropDown:=true;
+  {$ENDIF}
+end;
+
 
 
 procedure Tform_aavso1.FormClose(Sender: TObject; var CloseAction: TCloseAction );
@@ -2049,7 +2111,9 @@ begin
          PNG.Free;
       end;
       memo2_message('AAVSO report written to: '+savedialog1.filename + '   and   '+fnG);
-    end;
+    end
+    else
+    exit;
   end;
   save_settings2; {for aavso settings}
 
