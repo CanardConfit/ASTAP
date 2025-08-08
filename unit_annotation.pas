@@ -1552,7 +1552,9 @@ begin
               if ((Fshapes[i].shape<>nil) and (abs(fx-Fshapes[i].fitsX)<5) and  (abs(fy-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
                        Fshapes[i].shape.HINT:=abbrv;//copy(naam2,1,posex(' ',naam2,4)-1);
 
-            end; //Local variable database
+            end  //Local variable database
+            else
+              annotation_color2:=annotation_color;//deep sky colour
 
             if skip_aavso=false then
             begin
@@ -1861,6 +1863,7 @@ begin
           begin
             if flip_horizontal then begin x:=(head.width-1)-x;  end;
             if flip_vertical then  else y:=(head.height-1)-y;
+
 
 
             {get text dimensions}

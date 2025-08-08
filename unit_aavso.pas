@@ -2068,7 +2068,7 @@ begin
                           var_magn_str+delim+
                           err+
                           delim+filter_used+delim+
-                          transf_str{'NO'}+delim+
+                          transf_str+delim+{'NO'or'YES'}
                           'STD'+delim+
                           abbrv_comp_clean_report+delim+
                           comp_magn_str+delim+
