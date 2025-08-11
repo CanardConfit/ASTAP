@@ -811,7 +811,6 @@ object mainform1: Tmainform1
         ParentFont = False
         ParentShowHint = False
         TabOrder = 0
-        OnClick = Panel1Click
         OnMouseDown = Panel1MouseDown
         OnMouseMove = Panel1MouseMove
         OnMouseWheelDown = Panel1MouseWheelDown

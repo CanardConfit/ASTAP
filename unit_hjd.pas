@@ -320,7 +320,8 @@ begin
 
         altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp,pressure,ra,dec,az,alt);{In formulas the longitude is positive to west!!!. }
       end
-      else memo2_message('Error decoding Julian day!');
+      else
+      memo2_message('Error decoding Julian day!, '+head.date_obs +' '+head.date_avg );
     end;
   end;
 end;
@@ -344,7 +345,7 @@ begin
     end
     else
     begin
-      memo2_message('Error decoding Julian day!');
+      memo2_message('Error decoding Julian day!, '+head.date_obs +' '+head.date_avg );
       exit;
     end;
   end;

@@ -457,6 +457,7 @@ begin
       fwhm_median:=SMedian(fwhm_List,nhfd {use length});
 
 
+
       if ((triangle=true) and (nhfd_11>0)  and (nhfd_21>0) and (nhfd_31>0)) then  {enough information for tilt calculation}
       begin
         median_11:=SMedian(hfdlist_11,nhfd_11);{screw 1}
@@ -466,7 +467,7 @@ begin
         median_best:=min(median_11,min(median_21,median_31));{find best corner}
         median_worst:=max(median_11,max(median_21,median_31));{find worst corner}
 
-        scale_factor:=headx.height*0.4/median_worst;
+        scale_factor:=min(headx.height,head.width)*0.4/median_worst;//works for landscape and portrait orientation
 
         x_11:=round(median_11*scale_factor*sin(screw1*pi/180)+sm_x); {screw 1}
         y_11:=round(median_11*scale_factor*cos(screw1*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
@@ -550,7 +551,7 @@ begin
         median_best:=min(min(median_13, median_33),min(median_11,median_31));{find best corner}
         median_worst:=max(max(median_13, median_33),max(median_11,median_31));{find worst corner}
 
-        scale_factor:=headx.height*0.4/median_worst;
+        scale_factor:=min(headx.height,head.width)*0.4/median_worst;//works for landscape and portrait orientation
 
         x_11:=round(-median_11*scale_factor+sm_x);  y_11:=round(-median_11*scale_factor+sm_y);{calculate coordinates counter clockwise}
         x_21:=round( sm_x);                         y_21:=round(-median_21*scale_factor+sm_y);

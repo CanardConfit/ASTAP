@@ -216,8 +216,7 @@ begin
 
 
     //     Check for sign change.
-//    if  exended(FF*FLAST)<0E0  then
-    if  (FF < 0) xor (Flast< 0) then //2025 prevent overflow when FF=-6.35317029076246E161, FLAST=-6.35317029076246E161
+    if  (FF < 0) xor (Flast< 0) then //2025 prevent overflow when FF=-6.35317029076246E161, FLAST=-6.35317029076246E161. Orginal code was: if (FF*FLAST)<0E0  then
     begin // Sign change:  get psi adjustment using secant method;
       W := FF*(PLAST-PSI)/(FLAST-FF);   {plast is set in a few lines further down}
     end
