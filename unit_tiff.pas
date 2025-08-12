@@ -17,7 +17,7 @@ uses
 type
   Timage_array = array of array of array of Single;
 
-const   bufwide=1024*120;{buffer size in bytes}
+const   bufwide=65535*4;{buffer size in bytes. Image dimensions 65535x65535}
 
 
 {16 bit procedures. not used in astap}

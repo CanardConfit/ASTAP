@@ -7712,7 +7712,7 @@ begin
   jd_mid:=0;
   if date_obs<>'' then
   begin
-    val(copy(date_obs, 18, 7), ss, error2);
+    val(copy(date_obs, 18, 7), ss, error2);// //ignore 7th decimal since some program write the
     if error2 <> 0 then exit; {read also milliseconds}
     val(copy(date_obs, 15, 2), min, error2);
     if error2 <> 0 then exit;

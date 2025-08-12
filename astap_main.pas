@@ -31,6 +31,7 @@ https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41654
 
 
 https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
+https://gitlab.com/freepascal.org/fpc/source/-/issues/41033#example-project  internalsize tiff
 
 
 MacOS
@@ -68,7 +69,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.08.07';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.08.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -421,7 +422,6 @@ type
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -908,7 +908,7 @@ function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx 
 function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
 
 
-const   bufwide=1024*120;{buffer size in bytes}
+const   bufwide=65535*4;{buffer size in bytes. Image dimensions 65535x65535}
 
   head1: array [0..28] of ansistring=
   (
@@ -1361,6 +1361,26 @@ begin
              ccd_temperature:=validate_double;{read double value}
         end;{C}
 
+        if ((header[i]='D') and (header[i+1]='A')) then {DA}
+        begin
+          if ((header[i+2]='T') and (header[i+3]='E') ) then {DATE}
+          begin
+            if ((header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
+            else
+            if ((header[i+4]='-') and (header[i+5]='B') and (header[i+6]='E')) then head.date_obs:=get_string //date-beg
+            else
+            if ((header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then head.date_avg:=get_string //date-avg
+            else
+            if length(head.date_obs)<10 then //Read only when necessary. iTelescope writes obsolete '06/08/25' behind date
+              head.date_obs:=get_string  //date      Rare, Could be very wrong since DATE is date of file creation. Eg. astrometry.net DATE    = '2025-03-04T17:58:23' / Date this file was created.
+                                         //date-end  Rare, this 0.5*exposure wrong
+
+          end
+          else
+          if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
+               head.dark_count:=round(validate_double);{read integer as double value}
+        end;
+
 //        if (header[i]='D') then {D}
 //        if ((header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
 //           ccd_temperature:=validate_double;{read double value}
@@ -1385,13 +1405,6 @@ begin
         if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
                try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
 
-        if header[i]='I' then
-        begin
-          if ((header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
-            imagetype:=get_string;{trim is already applied}
-          if ((header[i+1]='S')  and (header[i+2]='S') and (header[i+3]='U') and (header[i+4]='E')  and (header[i+5]='S')) then
-            head.issues:=get_string;{trim is already applied}
-        end;
 
         if (header[i]='F') then {F}
         begin
@@ -1402,25 +1415,22 @@ begin
                head.flat_count:=round(validate_double);{read integer as double value}
         end; {F}
 
-        if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 head.xbinning:=validate_double;{binning}
-        if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 head.ybinning:=validate_double;{binning}
-
         if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
              head.gain:=trim(get_as_string); {head.gain CCD}
-        if ((header[i]='I') and (header[i+1]='S')  and (header[i+2]='O') and (header[i+3]='S') and (header[i+4]='P')) then
-             if head.gain='' then head.gain:=trim(get_as_string);{isospeed, do not override head.gain}
 
 
-        {following variable are not set at zero Set at zero somewhere in the code}
-        if ((header[i]='L') and (header[i+1]='I')  and (header[i+2]='G') and (header[i+3]='H') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
-             head.light_count:=round(validate_double);{read integer as double value}
-
-        if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
+        if header[i]='I' then
         begin
-          if length(head.date_obs)=10 then head.date_obs:=head.date_obs+'T'+get_string;
-        end;
+          if ((header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then //IMAGETY
+            imagetype:=get_string {trim is already applied}
+          else
+          if ((header[i+1]='S')  and (header[i+2]='S') and (header[i+3]='U') and (header[i+4]='E')  and (header[i+5]='S')) then
+            head.issues:=get_string {trim is already applied}
+          else
+          if ((header[i+1]='S')  and (header[i+2]='O') and (header[i+3]='S') and (header[i+4]='P')) then //ISOSP
+               if head.gain='' then head.gain:=trim(get_as_string);{isospeed, do not override head.gain}
+
+        end;//I
 
         if ((header[i]='J') and (header[i+1]='D')) then
         begin
@@ -1435,7 +1445,7 @@ begin
           else
           if ((header[i+2]='-') and (header[i+3]='A') and (header[i+4]='G')) then //JD_AVG
           begin
-            if head.date_avg='' then {DATE-AVG overrules any JD value}
+         //   if head.date_avg='' then {DATE-AVG overrules any JD value}
             begin
               jd2:=validate_double;
               head.date_avg:=JdToDate(jd2);
@@ -1443,22 +1453,27 @@ begin
           end
         end;
 
-        if ((header[i]='D') and (header[i+1]='A')) then {DA}
-        begin
-          if ((header[i+2]='T') and (header[i+3]='E') ) then {DATE}
+        if ((header[i]='M') and (header[i+1]='J')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='O') and (header[i+5]='B')) then //MJD-OBS
+          if head.date_obs='' then {DATE-OBS overrules any JD value}
           begin
-            if ((header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
-            else
-            if ((header[i+4]='-') and (header[i+5]='B') and (header[i+6]='E')) then head.date_obs:=get_string //date-beg
-            else
-               head.date_avg:=get_string  //date-avg  or
-                                          //date      Rare, this is not fully correct since DATE is date of file creation
-                                          //date-end  Rare, this 0.5*exposure wrong
+            jd2:=2400000.5+validate_double;// MJD to JD
+            head.date_obs:=JdToDate(jd2);
+          end;
 
-          end
-          else
-          if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
-               head.dark_count:=round(validate_double);{read integer as double value}
+
+        if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+                 head.xbinning:=validate_double;{binning}
+        if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+                 head.ybinning:=validate_double;{binning}
+
+
+        {following variable are not set at zero Set at zero somewhere in the code}
+        if ((header[i]='L') and (header[i+1]='I')  and (header[i+2]='G') and (header[i+3]='H') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then //LIGH_CNT
+             head.light_count:=round(validate_double);{read integer as double value}
+
+        if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then //TIME-OBS
+        begin
+          if length(head.date_obs)=10 then head.date_obs:=head.date_obs+'T'+get_string;
         end;
 
 
@@ -2933,7 +2948,6 @@ begin
   end;
 
   memo.beginupdate;
-//  mainform1.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   memo.clear;{clear memo for new header}
 
   {set data}
@@ -7280,7 +7294,7 @@ end;
 procedure plot_fits(img:timage; center_image: boolean);
 type
   PByteArray2 = ^TByteArray2;
-  TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
+  TByteArray2 = Array[0..32767*4] of Byte;//Maximum width 32768 pixels
 var
    i,j,col,col_r,col_g,col_b,linenr,columnr,height2,width2,colours2 :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
@@ -8858,7 +8872,7 @@ end;
 procedure Tmainform1.flip_vertical1Click(Sender: TObject);
 type
   PByteArray2 = ^TByteArray2;
-  TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
+  TByteArray2 = Array[0..32767*4] of Byte;//Maximum width 32768 pixels
 var bmp: TBitmap;
     w, h, y  : integer;
     pixelrow1,pixelrow2 :  PByteArray2;
@@ -9182,11 +9196,6 @@ begin
   end;
 
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
-end;
-
-procedure Tmainform1.Panel1Click(Sender: TObject);
-begin
-
 end;
 
 
@@ -11861,7 +11870,7 @@ end;
 procedure Tmainform1.stretch_draw_fits1Click(Sender: TObject);
 type
   PByteArray2 = ^TByteArray2;
-  TByteArray2 = Array[0..100000] of Byte;//instead of {$ifdef CPU16}32766{$else}32767{$endif} Maximum width 33333 pixels
+  TByteArray2 = Array[0..32767*4] of Byte;//Maximum width 32768 pixels
 var
   tmpbmp: TBitmap;
   ARect: TRect;
@@ -16637,7 +16646,7 @@ begin
           end
           else
           begin
-            memo2_message('Error decoding Julian day!');
+            memo2_message(filename2+', Error decoding Julian day!, '+headx.date_obs +' '+headx.date_avg );
             succ:=false;
           end;
           if succ=false then err:=true;//set error flag
@@ -16701,7 +16710,7 @@ begin
           end
           else
           begin
-            memo2_message('Error decoding Julian day!');
+            memo2_message(filename2+'Error decoding Julian day,! '+headx.date_obs +' '+headx.date_avg );
             err:=true;
           end;
         end;
