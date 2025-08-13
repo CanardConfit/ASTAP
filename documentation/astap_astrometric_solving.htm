@@ -19,41 +19,41 @@ humans do it:</span><br>
 Humans look for the brightest stars in the sky, determine the shortest
 distances between the stars (constellation lines) and estimate the
 angles these lines form. They see imaginary constellation
-figures from close bright stars and compare them with constellations
-figures they have in their memory and will recognize a match.<br>
+figures from close bright stars and compare them with constellation
+figures they have in their memory and&nbsp;recognize a match.<br>
 &nbsp;<br>
 <br>
 <span style="text-decoration: underline;">1.2 How does the
 solver do it:</span>&nbsp;<br>
 <br>
-In ASTAP solver more or less the same process is followed. Select the
-brightest stars, connect them and measure the distances between them.
-ASTAP will search for four closest stars and measure the distances
+In the ASTAP solver more or less the same process is followed. It select the
+brightest stars, connects them and measures the distances between them.
+ASTAP will search for the four closest stars and measure the distances
 between them (the hash code or constellation). This process will be
 done for the image and repeated for the stars in the star database.
 These hash codes created from the star database will be compared with
-the image hash codes&nbsp;till some matches are found. Once some
+the image hash codes until some matches are found. Once some
 matches are found it is possible to calculate the precise position of
 the image with the matching database stars.<br>
 &nbsp;<br>
 <br>
-This matching process is identical as used for image aligning routine
+This matching process is identical to that&nbsp;used for the image alignment routine
 in a stack program. For aligning a match has to be found between the
 stars in the reference image and a second image prior to stacking. It
 is possible to compare the distances between two stars, three stars
 (triangles using the connecting lines) or four stars (quads or
-tetrahedrons using the connecting lines). Four stars works best with
-sufficient uniqueness but not being too complicated. It is not required
+tetrahedrons using the connecting lines). Four stars work best with
+sufficient uniqueness but without&nbsp;being too complicated. It is not required
 to measure the angles.<br>
 &nbsp;<br>Irregular&nbsp;tetrahedron figures formed by the star connection lines:</big><br><big><img style="width: 823px; height: 613px;" alt="" src="astap_quads.jpg"><br>
 <br>
 <span style="text-decoration: underline;">1.3 So how is
 this done in more detail:</span><br>
 &nbsp;<br>
-The image is analysed for stars and it maybe finds 2000 stars and their
+The image is analysed for stars and it may find 2000 stars and their
 x, y positions. It takes the 500 brightest stars and creates from them
-maybe 300 tetrahedron figures of four stars. Between each four
-stars&nbsp;six lines can be drawn forming the tetrahedron. Since
+perheps 300 tetrahedron figures of four stars. Between each set of four
+stars, six lines can be drawn forming the tetrahedron. Since
 the image scale is specified, the distances between the four stars
 could be (example):&nbsp;<br>
 </big><br>
@@ -62,7 +62,7 @@ could be (example):&nbsp;<br>
 </div>
 <big><br>
 To make it independent of image size, the distance ratios are calculated
-by dividing&nbsp;the distances through the largest distance. The
+by dividing&nbsp;the distances by the largest distance. The
 longest distance is kept for comparison later. So the hash code or
 constellation figure will consist of two parts:<br>
 </big><br>
@@ -73,13 +73,13 @@ Largest distance: 3' </big><br>
 </div>
 <big><br>
 The five ratios are sufficient for the search. Rotation, scaling,
-flipping&nbsp; of the image has no influence on the "five ratios". </big><big> The "largest&nbsp;distance" is
+and flipping&nbsp;of the image have no influence on the "five ratios". </big><big> The "largest&nbsp;distance" is
 later used to detect outliers. </big><br><big><br>From the star database numerous artificial images
 are created using the same star density per degree following a search pattern
 around the initial Ra, Dec position. The artificial images </big><big>hash codes&nbsp;</big><big>are
 compared with the hash codes of the image
-to solve. This is the actual search. Only at about the image location
-a part of the hash codes will match within a small tolerance. In
+to solve. This is the actual search. Only around the image location
+do a part of the hash codes will match within a small tolerance. In
 addition the&nbsp; "largest distances" should have a fixed ratio
 between the image and artificial database image. <br>
 <br>
@@ -92,9 +92,9 @@ does ASTAP, Astrometric STAcking Program solving works in even more detail:<br>
 is using a linear astrometric&nbsp;solution for both stacking and
 solving. &nbsp;The method is based on what&nbsp;traditionally
 is called
-"reducing the plate measurements". First step is to find star matches
+"reducing the plate measurements". The first step is to find star matches
 between a test image and a reference image. The reference image is
-either created from a star database or a reference image. The star
+either created from a star database or is a reference image. The star
 positions x, y are to be calculated in standard coordinates which is
 equivalent to the sensor x,y pixel position. The x,y positions are
 measured
@@ -102,11 +102,10 @@ relative to the&nbsp;image center.<br>
 <br>
 The
 test image center, size and orientation position will be different
-compared with&nbsp;the reference image. The required conversion
+compared to&nbsp;the reference image. The required conversion
 from
-the test image&nbsp;[x,y] star positions to&nbsp;the same stars
-on the test
-images can be written as:<br>
+the reference image&nbsp;[x,y] star positions to&nbsp;the same stars
+on the test image can be written as:<br>
 <br>
 <br>
 </big>
@@ -118,13 +117,12 @@ images can be written as:<br>
 <big><br>
 The
 factors, a,b,c,d,e,f are called the six plate constants and will be
-slightly
-different different for each star. They describe&nbsp;</big><big>the
+slightly&nbsp;different for each star. They describe&nbsp;</big><big>the
 conversion of &nbsp;the
 test image standard coordinates to the reference image standard
 coordinates.</big><big> Using a least square routine
-the best solution fit can be calculated if at least three matching star
-positions are found since there are three unknowns.&nbsp;&nbsp;<br>
+the best solution fit can be calculated if at least three matching [x,y] star
+positions are found.<br>
 </big><br>
 <big>With
 the solution and the equatorial center position of the reference im</big><big>age
@@ -144,14 +142,14 @@ specification of the&nbsp;&#945;, &#948; equatorial positions </big>o<big>f
 each pixel.<br>
 For <span style="font-weight: bold;">star alignment</span>
 this&nbsp;</big><big>"reducing
-the plate measurement" is done against a reference image. The result
+the plate measurement" is done against a reference image. The resulting
 six plate constants are a relative astrometric solution.
 The&nbsp;position of the reference image is not required. Pixels of
 the
-solved image can be stacked with reference image using the six plate
+solved image can be stacked with the reference image using the six plate
 constants only.</big><br>
 <big><br>
-To automate this process </big><big>rather then using
+To automate this process </big><big>rather than using
 reference stars </big><big>the
 matching reference objects are the center positions of tetrahedrons
 made of&nbsp;four close stars. &nbsp;Comparing the distance
@@ -196,7 +194,7 @@ of stars for the area of interest from the star database that matches
 the star density of the image.<br>
 Convert&nbsp;the &#945;, &#948; equatorial positions into standard
 coordinates (CCD pixel
-x,y coordinates for optical projection) using the rigid method.</td>
+x,y coordinates for optical projection) using the rigorous method.</td>
 </tr>
 <tr>
 <td>3</td>
@@ -241,7 +239,7 @@ a small tolerance.</td>
 <td>7</td>
 <td style="width: 302px;"></td>
 <td style="width: 311px;">For the matching&nbsp;quad hash codes, calculate the longest side ratios d1<sub>database</sub>/d1<sub>image</sub>
-in ["/pixels]. Calculate the median ratio. Compare the quads ratios
+in ["/pixels]. Calculate the median ratio. Compare the quad ratios
 with the median value and remove quads outside a small tolerance.&nbsp;</td>
 <td style="width: 331px;"></td>
 </tr>
@@ -325,7 +323,7 @@ describe the six parameter &nbsp;plate solution X<sub>ref</sub>:=a*x
 the solution and the equatorial center position of the reference image
 the test image center&nbsp;equatorial position, &#945; and &#948; can be
 calculated.<br>
-<br>Calculate from the solution the pixel size in x (cdelt1) an y
+<br>Calculate from the solution the pixel size in x (cdelt1) and y
 (cdelt2) and at the image center position the rotation of the x-axis
 (crota1) and y-axis (crota2) relative to the celestial north using
 goniometric formulas. Convert these to cd1_1,cd1_2,cd_2_1, cd2_2.<br><br>
@@ -340,16 +338,16 @@ cd1_1,cd1_2,cd_2_1, cd2_2.<br>
 </table><br>Note: For a low faint star count (&lt;30)&nbsp;the star patterns
 can be slightly different between image and database due to small
 magnitude differences between&nbsp;the database and measured&nbsp;flux. For these cases it can be beneficial to extract
-triples (three stars patterns) from the found quads (four star
+triples (three star patterns) from the found quads (four star
 patterns). For triples a&nbsp;stricter tolerance check is required to avoid false
 detections.<br><br>
 </div>
 <div style="text-align: left;"><br>
 </div><br></center>
 <p align="left"><img src="hanemail.gif"></p>
-<p align="left">Version: 2024-01-04</p>
+<p align="left">Version: 2025-08-13</p>
 <p align="left"><span class="ILfuVd"><span class="hgKElc">© </span></span>Han Kleijn,
-www.hnsky.org, 2018, 2024.</p><p align="left">&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width: 0pt;" src="https://i.creativecommons.org/l/by/4.0/88x31.png"> </a>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
+www.hnsky.org, 2018, 2025</p><p align="left">&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width: 0pt;" src="https://i.creativecommons.org/l/by/4.0/88x31.png"> </a>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
 Commons Attribution 4.0 International License</a>.&nbsp;<em>which
 permits unrestricted use, distribution, and reproduction
 in any medium, provided the original work is properly cited</em>.</p><p align="left"></p><p align="left">
