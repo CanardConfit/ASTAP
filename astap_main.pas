@@ -119,7 +119,7 @@ type
     image_cleanup1: TMenuItem;
     localgaussian1: TMenuItem;
     autocorrectcolours1: TMenuItem;
-    center_lost_windows: TMenuItem;
+    centre_lost_windows: TMenuItem;
     deepsky_annotation1: TMenuItem;
     hyperleda_annotation1: TMenuItem;
     MenuItem10: TMenuItem;
@@ -453,7 +453,7 @@ type
     procedure receivemessage(Sender: TObject); {For single instance, receive paramstr(1) from second instance prior to termination}
 
     procedure add_marker1Click(Sender: TObject);
-    procedure center_lost_windowsClick(Sender: TObject);
+    procedure centre_lost_windowsClick(Sender: TObject);
     procedure convertmono1Click(Sender: TObject);
     procedure deepsky_annotation1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -1373,7 +1373,7 @@ begin
             else
             if length(head.date_obs)<10 then //Read only when necessary. iTelescope writes obsolete '06/08/25' behind date
               head.date_obs:=get_string  //date      Rare, Could be very wrong since DATE is date of file creation. Eg. astrometry.net DATE    = '2025-03-04T17:58:23' / Date this file was created.
-                                         //date-end  Rare, this 0.5*exposure wrong
+                                         //date-end  Rare, this will result in a 0.5*exposure error
 
           end
           else
@@ -1473,7 +1473,7 @@ begin
 
         if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then //TIME-OBS
         begin
-          if length(head.date_obs)=10 then head.date_obs:=head.date_obs+'T'+get_string;
+          if length(head.date_obs)=10 then head.date_obs:=head.date_obs+'T'+get_string;//eg. for  by Muniwin
         end;
 
 
@@ -12089,7 +12089,7 @@ begin
 
     //view
     with image_cleanup1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-    with center_lost_windows do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with centre_lost_windows do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
 
     with flip_horizontal1 do shortcut:=menus.ShortCut(VK_H,[ssMeta,ssShift]);//note Macs universally use Cmd-H for "Hide App so add shift"
     with flip_vertical1 do shortcut:=menus.ShortCut(VK_V,[ssMeta,ssShift]);
@@ -12189,7 +12189,7 @@ begin
 end;
 
 
-procedure Tmainform1.center_lost_windowsClick(Sender: TObject);
+procedure Tmainform1.centre_lost_windowsClick(Sender: TObject);
 begin
   mainform1.left:=0;
   mainform1.top:=0;

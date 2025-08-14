@@ -1526,10 +1526,11 @@ object mainform1: Tmainform1
         ShortCut = 16416
         OnClick = image_cleanup1Click
       end
-      object center_lost_windows: TMenuItem
-        Caption = 'Center lost windows'
+      object centre_lost_windows: TMenuItem
+        Caption = 'Centre lost windows'
+        Hint = 'Centre lost windows'
         ShortCut = 16507
-        OnClick = center_lost_windowsClick
+        OnClick = centre_lost_windowsClick
       end
       object MenuItem11: TMenuItem
         Caption = '-'
@@ -1620,8 +1621,8 @@ object mainform1: Tmainform1
       end
       object positionanddate1: TMenuItem
         AutoCheck = True
-        Caption = 'Center position && date at bottom'
-        Hint = 'Add the center position and date and time at the left bottom of the image. Font colour and font size can be set in the asteroid annotation menu.'
+        Caption = 'Centre position && date at bottom'
+        Hint = 'Add the centre position and date and time at the left bottom of the image. Font colour and font size can be set in the asteroid annotation menu.'
         OnClick = positionanddate1Click
       end
       object freetext1: TMenuItem

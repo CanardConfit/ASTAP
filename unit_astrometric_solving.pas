@@ -7,32 +7,32 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 
-{ASTAP is using a linear astrometric solution for both stacking and solving.  The method is based on what traditionally is called "reducing the plate measurements.
-First step is to find star matches between a test image and a reference image. The reference image is either created from a star database or a reference image.
-The star positions x, y are to be calculated in standard coordinates which is equivalent to the x,y pixel position. The x,y position are measured relative to the image center.
+{ASTAP is using a linear astrometric solution for both stacking and solving.  The method is based on what is traditionally is called "reducing the plate measurements.
+The first step is to find star matches between a test image and a reference image. The reference image is either created from a star database or from another reference image.
+The star positions x, y are to be calculated in standard coordinates which are equivalent to the x,y pixel positions. The x,y positions are measured relative to the image center.
 
-The test image center, size and orientation position will be different compared with the reference image. The required conversion from test image [x,y] star positions to the
-same stars on the test images can be written as:
+The test image center, size and orientation position will be different compared with the reference image. The required conversion from reference image [x,y] star positions to the
+same stars on the test image can be written as:
 
 Xref : = a*xtest + b*ytest + c
 Yref:=   d*xtest + e*ytest + f
 
 The factors, a,b,c,d,e,f are called the six plate constants and will be slightly different different for each star. They describe the conversion of  the test image standard coordinates
-to the reference image standard coordinates. Using a least square routine the best solution fit can calculated if at least three matching star positions are found since there are three unknowns.
+to the reference image standard coordinates. Using a least squares routine the best solution fit can be calculated if at least three matching star positions are found.
 
 With the solution and the equatorial center position of the reference image the test image center equatorial position, α and δ can be calculated.
 
-Make from the test image center small one pixel steps in x, y and use the differences in α, δ to calculate the image scale and orientation.
+Making from the test image center small one pixel steps in x and y and using the differences in α, δ to calculate the image scale and orientation.
 
 For astrometric solving (plate solving), this "reducing the plate measurement" is done against star positions extracted from a database. The resulting absolute astrometric solution
-will allow specification of the α, δ equatorial positions of each pixel. For star alignment this "reducing the plate measurement" is done against a reference image. The resulting
+will allow specification of the α, δ equatorial positions of each pixel. For star alignment this "reducing the plate measurement" is done against the reference image. The resulting
 six plate constants are a relative astrometric solution. The position of the reference image is not required. Pixels of the solved image can be stacked with reference image using
 the six plate constants only.
 
-To automate this process rather then using reference stars the matching reference objects are the center positions of quads made of four close stars. Comparing the length ratios
+To automate this process rather than using reference stars the matching reference objects are the center positions of quads made of four close stars. Comparing the length ratios
 of the sides of the quads allows automated matching.
 
-Below a brief flowchart of the ASTAP astrometric solving process:
+Below is a brief flowchart of the ASTAP astrometric solving process:
 }
 
 //                                                  =>ASTAP  astronomical plate solving method by Han Kleijn <=
@@ -45,7 +45,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //                                                                               | (CCD pixel x,y coordinates for optical projection), rigid method
 //
 //3) 	Use the extracted stars to construct the smallest irregular tetrahedrons | Use the extracted stars to construct the smallest irregular tetrahedrons
-//      figures of four  star called quads. Calculate the six distance between   | figures of four  star called quads. Calculate the six distance between
+//      figures of four stars called quads. Calculate the six distance between   | figures of four stars called quads. Calculate the six distance between
 //      the four stars and the mean x,y position of the quad                     | the four stars and the mean x,y position of the quad
 //                                                                               |
 //4) 	For each quad sort the six quad distances.                      	 | For each quad sort the six quad distances.
@@ -58,10 +58,10 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //6)                         Find quad hash code matches where the five ratios d2/d1 to d6/d1 match within a small tolerance.
 //
 //7) 		             For matching quad hash codes, calculate the longest side ratios d1_found/d1_reference. Calculate the median ratio.
-//                           Compare the quads longest side ratios with the median value and remove quads outside a small tolerance.
+//                           Compare the quad's longest side ratios with the median value and remove quads outside a small tolerance.
 //
 //8)                         From the remaining matching quads, prepare the "A" matrix/array containing the x,y center positions of the test image quads in standard coordinates
-//                           and  the array X_ref, Y_ref containing the x, y center positions of the reference imagete trahedrons in standard coordinates.
+//                           and  the array X_ref, Y_ref containing the x, y center positions of the reference image tetrahedrons in standard coordinates.
 //
 //                           A:                  Sx:         X_ref:
 //                           [x1 y1  1]          [a1]         [X1]
@@ -87,7 +87,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //
 //                           With the solution calculate the test image center equatorial position α (crval1), δ (crval2).
 //
-//                           Calculate from the solution the pixel size in x (cdelt1) an y (cdelt2) and at the image center position the rotation of the x-axis (crota1)
+//                           Calculate from the solution the pixel size in x (cdelt1) and y (cdelt2) and at the image center position the rotation of the x-axis (crota1)
 //                           and y-axis (crota2) relative to the celestial north using goniometric formulas. Convert these to cd1_1,cd1_2,cd_2_1, cd2_2.
 //
 //                           This is the final solution. The solution vector (for position, scale, rotation) can be stored as the FITS keywords crval1, crval2, cd1_1,cd1_2,cd_2_1, cd2_2.
