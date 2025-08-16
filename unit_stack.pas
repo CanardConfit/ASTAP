@@ -1446,8 +1446,10 @@ begin
      {$IFDEF unix}
      if ((commandline_execution=false){save some time and run time error in command line} and (stackmenu1.Memo2.HandleAllocated){prevent run time errors}) then
      begin  // scroll down:
-       stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
-       stackmenu1.Memo2.VertScrollBar.Position:=65000;
+       //       stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
+       //       stackmenu1.Memo2.VertScrollBar.Position:=65000;
+       stackmenu1.Memo2.SelStart := Length(stackmenu1.Memo2.Text);//2025
+       stackmenu1.Memo2.SelLength := 0;
      end;
     {$ELSE }
     {$ENDIF}
