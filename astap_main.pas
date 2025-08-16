@@ -69,7 +69,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.08.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.08.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1371,7 +1371,7 @@ begin
             else
             if ((header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then head.date_avg:=get_string //date-avg
             else
-            if length(head.date_obs)<10 then //Read only when necessary. iTelescope writes obsolete '06/08/25' behind date
+            if length(head.date_obs)<10 then //Read only DATE when length(date-obs)<length('2000-01-01') assuming DATE-OBS comes first. Note that iTelescope writes obsolete DATE='06/08/25' after DATE-OBS
               head.date_obs:=get_string  //date      Rare, Could be very wrong since DATE is date of file creation. Eg. astrometry.net DATE    = '2025-03-04T17:58:23' / Date this file was created.
                                          //date-end  Rare, this will result in a 0.5*exposure error
 
@@ -9946,16 +9946,22 @@ function download_vsp(limiting_mag: double) : boolean;//AAVSO API access check &
 var
   s,url   : string;
   val,val2 : char;
-  count,i,j,k,fov    : integer;
+  count,i,j,k,fov,len: integer;
   errorRA,errorDEC   : boolean;
 begin
   result:=false;
   fov:=round(sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2*60)); //arcmin. cdelt2 can be negative for other solvers
-  if fov>180 {arcmin} then
+  if limiting_mag>12 then
   begin
-    if limiting_mag>12 then memo2_message('FOV is larger then 3 degrees. Downloading from AAVSO VSX, VSP is then limited to magnitude 12.');
-    limiting_mag:=min(limiting_mag,12); ////Required by AAVSO
+    if fov>180 then memo2_message('VSP field-of-view is cropped to 3 degrees due to limiting magnitude>12.');
+    fov:=min(180,fov);
   end;
+
+//  if fov>180 {arcmin} then
+//  begin
+//    if limiting_mag>12 then memo2_message('FOV is larger then 3 degrees. Downloading from AAVSO VSX, VSP is then limited to magnitude 12.');
+//    limiting_mag:=min(limiting_mag,12); ////Required by AAVSO
+//  end;
 
   //old  https://www.aavso.org/apps/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000
   //new  https://apps.aavso.org/vsp/api/chart/?format=json&ra=173.475392&dec=-0.032945&fov=42&maglimit=13.0000
@@ -9965,8 +9971,14 @@ begin
   if stackmenu1.annotate_mode1.itemindex>12+4 then
            url:=url+'&special=std_field';//standard field for specific purpose of calibrating their equipment
   s:=get_http(url);{get webpage}
-  if length(s)=0 then begin beep; exit end;;
-  if length(s)<256 then exit; //no data for this field
+  len:=length(s);
+  if len<150 then begin beep; exit end;;//nothing from server.
+  if len<256 then //no data for this field. Len is then 254.
+  begin
+    setlength(vsp,0);
+    result:=true;//response but no VSP data
+    exit;
+  end;
 
   setlength(vsp,5000);
   count:=0;
@@ -10145,13 +10157,13 @@ end;
 
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access variables
 var
-  s,dummy,url                             : string;
-  count,i,j,k,errorRa,errorDec,err,idx    : integer;
-  radius,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period,max_period : double;
+  s,dummy,url                               : string;
+  count,i,j,k,errorRa,errorDec,err,idx,len  : integer;
+  fov,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period,max_period : double;
   skip,auid_filter  : boolean;
 begin
   result:=false;
-  radius:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //radius in degrees. Some solvers produce files with neagative cdelt2
+  fov:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //fov in degrees. Some solvers produce files with neagative cdelt2
 
   date_to_jd(head.date_obs,'',0 {exposure});{convert date-obs to jd_start, jd_mid for proper motion}
   if jd_start>2400000 then
@@ -10160,18 +10172,31 @@ begin
     years_since_2000:=26; //default, years since 2000
 
 
-  if radius>3 {degrees} then limiting_mag:=min(12,limiting_mag); //There is no limitation for VSX but follow the one of the VSP
+  if limiting_mag>12 then
+  begin
+    if fov>5 then memo2_message('VSX field-of-view is cropped to 5 degrees due to limiting magnitude>12.');
+    fov:=min(5,fov);
+  end;
+
+
+//  if fov>3 {degrees} then limiting_mag:=min(12,limiting_mag); //There is no limitation for VSX but follow the one of the VSP
 
   idx:=stackmenu1.annotate_mode1.itemindex;
   auid_filter:=((idx>=5+4) and (idx<=8+4)); //variable has an AUID so it can be reported
   max_period:=strtofloat2(stackmenu1.max_period1.text);//infinity result in 0 meaning switched off.
 
-  //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
-  //new https://vsx.aavso.org/index.php?view=api.list&ra=173.478667&dec=-0.033698&radius=0.350582&tomag=13.0000&format=json
-  url:='https://vsx.aavso.org/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
+  //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&fov=0.350582&tomag=13.0000&format=json
+  //new https://vsx.aavso.org/index.php?view=api.list&ra=173.478667&dec=-0.033698&fov=0.350582&tomag=13.0000&format=json
+  url:='https://vsx.aavso.org/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(fov)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
   s:=get_http(url);
-  if length(s)=0 then begin beep; exit end;//network error
-  if length(s)<25 then begin exit end;//no stars in this field
+  len:=length(s);
+  if len=0 then begin beep; exit end;//network error
+  if len<25 then //minimal 17
+  begin
+    setlength(vsx,0);
+    result:=true;
+    exit;
+  end;//no stars in this field
 
   setlength(vsx,5000);
   count:=0;
@@ -10353,9 +10378,10 @@ begin
       if aavso_update_required then
       begin
         memo2_message('Downloading online data from AAVSO as set in tab Photometry.');
-        if download_vsx(lim_magnitude)=false then begin memo2_message('No VSX data! Increasing the max magnitude could help.');break; end;
-        if download_vsp(lim_magnitude)=false then begin memo2_message('No VSP data!');break; end;
-
+        if download_vsx(lim_magnitude)=false then begin memo2_message('No response VSX server!');break; end;
+        if download_vsp(lim_magnitude)=false then begin memo2_message('No response VSP server!');break; end;
+        if length(vsx)=0 then memo2_message('No VSX stars found in the database. Increasing the limiting magnitude could help.');
+        if length(vsp)=0 then memo2_message('No VSP stars found in the database. Increasing the limiting magnitude could help.');
       end;
 
       date_to_jd(head.date_obs,head.date_avg,head.exposure);{convert date-obs to jd_start, jd_mid}
@@ -10373,7 +10399,7 @@ end;
 
 procedure Tmainform1.variable_star_annotation1Click(Sender: TObject);
 begin
-  if head.cd1_1=0 then begin memo2_message('No solution!'); exit; end;//no solution
+  if head.cd1_1=0 then begin memo2_message('No astrometric solution!'); exit; end;//no solution
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   variable_star_annotation(false  {plot, do not extract to vsp_vsx_list});
   Screen.Cursor:=crDefault;
