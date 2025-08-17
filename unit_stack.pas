@@ -4009,7 +4009,7 @@ var
   newtop : integer;
 
 begin
-  pagecontrol1.Height := classify_groupbox1.top;{make it High-DPI robust}
+ // pagecontrol1.Height := classify_groupbox1.top;{make it High-DPI robust}  2025 removed for Darwin
 
   newtop := browse1.top + browse1.Height + 5;
 
@@ -9407,12 +9407,21 @@ end;
 
 
 procedure Tstackmenu1.tab_photometry1Show(Sender: TObject);
+var
+   dummy: integer;
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
   nr_stars_to_detect1.enabled:=measuring_method1.itemindex=3;//enabled only if method is measure all
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
-//  max_period1.enabled:=annotate_mode1.itemindex>=5;//only for online database photometry
+
+  {$ifdef darwin} {MacOS}
+   //temporary bug fix
+   dummy:=stackmenu1.reference_database1.itemindex;
+   stackmenu1.reference_database1.items.insert(0,'Local database '+ star_database1.text);
+   stackmenu1.reference_database1.items.delete(1);
+   stackmenu1.reference_database1.itemindex:=dummy;
+  {$endif}
 end;
 
 
