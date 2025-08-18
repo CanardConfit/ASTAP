@@ -38,6 +38,9 @@ MacOS
 ScrollCode=scEndScroll does not appears at the end of scroll
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/37454
 
+//MacOS the combobox tekst doesnt change
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41800
+
 // https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41570
 //Adding -WM10.15 to Project Options > Custom Options enables projects to build without the Linker error. However each .o file generates a version mismatch warning
 }
