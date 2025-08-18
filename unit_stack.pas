@@ -8010,7 +8010,7 @@ var
                 Result := '?';
             end;
 
-            procedure plot_annulus(head: theader; x, y: integer; apr,anr :double); {plot the aperture and annulus}
+            procedure plot_annulus(const head: theader; x, y: integer; apr,anr :double); {plot the aperture and annulus}
             begin
               if Flipvertical = False then  starY := (head.Height - y) else starY := (y);
               if Fliphorizontal then starX := (head.Width - x) else starX := (x);

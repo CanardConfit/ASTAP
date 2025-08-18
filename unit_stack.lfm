@@ -43,7 +43,7 @@ object stackmenu1: Tstackmenu1
     0000
   }
   KeyPreview = True
-  LCLVersion = '4.0.0.4'
+  LCLVersion = '4.2.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnDropFiles = FormDropFiles

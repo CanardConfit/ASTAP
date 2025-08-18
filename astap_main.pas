@@ -876,8 +876,8 @@ function fits_file_name(inp : string): boolean; {fits file name?}
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
-procedure pixel_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
-procedure celestial_to_pixel(head: theader;ra,dec: double;usethesip : boolean; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure pixel_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
+procedure celestial_to_pixel(const head: theader;ra,dec: double;usethesip : boolean; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
 function savefits_update_header(memo:tstrings;filen2:string) : boolean;{save fits file with updated header}
@@ -2870,10 +2870,10 @@ begin
   saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
   try
-    if filesize1(filen)<300*1024*1024 then //less then 300 mbytes. Should fit TFPMemoryImage for colour and grayscale
-      Image := TFPMemoryImage.Create(10, 10) //for colour and grayscale up to 2gbyte/3
-    else
-      Image := TFPCompactImgGray16Bit.Create(10, 10);//compact up to 2gbyte for grayscale images only   //See https://gitlab.com/freepascal.org/fpc/source/-/issues/41022
+    if filesize1(filen)<300*1024*1024 then //less then 300 mbytes but no guaranty if compressed.
+      Image := TFPMemoryImage.Create(10, 10) //for colour and grayscale
+    else //assume greyscale (uncompressed) save memory
+      Image := TFPCompactImgGray16Bit.Create(10, 10);//for grayscale images only
 
 
     if ((ext='.TIF') or (ext='.TIFF')) then
@@ -4573,7 +4573,7 @@ begin
 end;
 
 
-procedure celestial_to_pixel(head: theader;ra,dec: double;usethesip : boolean; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure celestial_to_pixel(const head: theader;ra,dec: double;usethesip : boolean; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 var
   SIN_dec,COS_dec,
   SIN_dec_ref,COS_dec_ref,det,SIN_delta_ra,COS_delta_ra, H, xi,eta,u0,v0 : double;
@@ -4667,7 +4667,7 @@ end;
 }
 
 
-procedure pixel_to_celestial(head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
+procedure pixel_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
 var
    fits_unsampledX, fits_unsampledY, sindec0,cosdec0 :double;
    u,v,u2,v2             : double;
@@ -7296,12 +7296,12 @@ type
   PByteArray2 = ^TByteArray2;
   TByteArray2 = Array[0..32767*4] of Byte;//Maximum width 32768 pixels
 var
-   i,j,col,col_r,col_g,col_b,linenr,columnr,height2,width2,colours2 :integer;
+   i,j,col,col_r,col_g,col_b,linenr,columnr,hh,ww,colours2 :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
    Bitmap       : TBitmap;{for fast pixel routine}
-   xLine :  PByteArray2;{for fast pixel routine}
+   xLine        : PByteArray2;{for fast pixel routine}
    flipv, fliph : boolean;
-   ratio     : double;
+   ratio        : double;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
@@ -7314,17 +7314,34 @@ begin
     mainform1.Polynomial1.itemindex:=0;//switch to WCS
 
   colours2:=length(img_loaded);//nr colours, equivalent to head.naxis3
-  height2:=length(img_loaded[0]);//height, equivalent to head.height
-  width2:=length(img_loaded[0,0]);//width, equivalent to head.width
+  hh:=length(img_loaded[0]);//height, equivalent to head.height
+  ww:=length(img_loaded[0,0]);//width, equivalent to head.width
 
+   //check 2gbyte limit of Timage, about 26500x27000 pixels
+  {$ifdef mswindows}
+  ratio:=3*hh*ww/$7FFFFFFF; //3 bytes per pixel
+  {$endif}
+  {$ifdef darwin} {MacOS}
+  ratio:=4*hh*ww/$7FFFFFFF; //4 bytes per pixel
+  {$endif}
+  {$ifdef linux}
+  ratio:=4*hh*ww/$7FFFFFFF; //4 bytes per pixel
+  {$endif}
+  if ratio>1 then
+  begin
+    ratio:=sqrt(ratio);//reduce surface by ratio
+    hh:=trunc(hh/ratio);//show up to 2 gbytes
+    ww:=trunc(ww/ratio);
+    memo2_message('Warning view has reached 2 gbyte limit! View width and height will be cropped at '+floattostrF(100/ratio,FFgeneral,0,0)+'%. This does not effect the image itself.');
+  end;
 
   {create bitmap}
   bitmap := TBitmap.Create;
   try
     with bitmap do
     begin
-      width := width2;
-      height := height2;
+      width := ww;
+      height := hh;
       // Unclear why this must follow width/height to work correctly.
       // If PixelFormat precedes width/height, bitmap will always be black.
       bitmap.PixelFormat := pf24bit;
@@ -7341,19 +7358,19 @@ begin
   flipv:=mainform1.flip_vertical1.Checked;
   fliph:=mainform1.Flip_horizontal1.Checked;
 
-  for i:=0 to height2-1 do
+  for i:=0 to hh-1 do
   begin
-    if flipv then linenr:=i else linenr:=(height2-1)-i;{flip vertical?. Note FITS count from bottom, windows from top}
+    if flipv then linenr:=i else linenr:=(hh-1)-i;{flip vertical?. Note FITS count from bottom, windows from top}
     xLine := Bitmap.ScanLine[linenr];
-    for j:=0 to width2-1 do
+    for j:=0 to ww-1 do
     begin
-      if fliph then columnr:=(width2-1)-j else columnr:=j;{flip horizontal?}
-      col:=round(img_loaded[0,i,columnr]);
+      if fliph then columnr:=(ww-1)-j else columnr:=j;{flip horizontal?}
+      col:=trunc(img_loaded[0,i,columnr]);
       colrr:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
 
       if colours2>=2 then {at least two colours}
       begin
-        col:=round(img_loaded[1,i,columnr]);
+        col:=trunc(img_loaded[1,i,columnr]);
         colgg:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
       end
       else
@@ -7361,7 +7378,7 @@ begin
 
       if head.naxis3>=3 then {at least three colours}
       begin
-        col:=round(img_loaded[2,i,columnr]);
+        col:=trunc(img_loaded[2,i,columnr]);
         colbb:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
 
         if sat_factor<>1 then {adjust saturation}
@@ -7396,15 +7413,15 @@ begin
         luminance_stretched:=stretch_c[trunc(32768*luminance)];
         factor:=luminance_stretched/luminance;
         if factor*largest>1 then factor:=1/largest; {clamp again, could be lengther then 1}
-        col_r:=round(colrr*factor*255);{stretch only luminance but keep rgb ratio!}
-        col_g:=round(colgg*factor*255);{stretch only luminance but keep rgb ratio!}
-        col_b:=round(colbb*factor*255);{stretch only luminance but keep rgb ratio!}
+        col_r:=trunc(colrr*factor*255);{stretch only luminance but keep rgb ratio!}
+        col_g:=trunc(colgg*factor*255);{stretch only luminance but keep rgb ratio!}
+        col_b:=trunc(colbb*factor*255);{stretch only luminance but keep rgb ratio!}
       end
       else
       begin
-        col_r:=round(255*colrr);
-        col_g:=round(255*colgg);
-        col_b:=round(255*colbb);
+        col_r:=trunc(255*colrr);
+        col_g:=trunc(255*colgg);
+        col_b:=trunc(255*colbb);
       end;
 
      {$ifdef mswindows}
@@ -7425,16 +7442,6 @@ begin
     end;{j}
   end; {i}
 
- //check 2gbyte limit of Timage, about 26500x27000 pixels
-  ratio:=3*(bitmap.height+1)*bitmap.width/$7FFFFFFF; //3 bytes per pixel
-  if ratio>=1 then
-  begin
-    ratio:=sqrt(ratio);//reduce surface by ratio
-    bitmap.height:=trunc(bitmap.height/ratio);//show up to 2 gbytes
-    bitmap.width:=trunc(bitmap.width/ratio);
-    memo2_message('Warning view has reached 2 gbyte limit! View width and height will be cropped at '+floattostrF(100/ratio,FFgeneral,0,0)+'%. This does not effect the image itself.');
-  end;
-
   img.picture.Graphic := Bitmap; {show image}
   Bitmap.Free;
 
@@ -7445,10 +7452,9 @@ begin
   begin
     img.top:=0;
     img.height:=mainform1.panel1.height;
-    img.left:=(mainform1.width - round(mainform1.panel1.height*width2/height2)) div 2;
+    img.left:=(mainform1.width - round(mainform1.panel1.height*ww/hh)) div 2;
   end;
-  img.width:=round(img.height*width2/height2); {lock image aspect always for case a image with a different is clicked on in stack menu}
-
+  img.width:=round(img.height*ww/hh); {lock image aspect always for case a image with a different is clicked on in stack menu}
 
   if img=mainform1.image1 then {plotting to mainform1?}
   begin
@@ -7475,16 +7481,12 @@ begin
       end;
     end;
 
-
-
-    mainform1.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(colours2)+'   '+inttostr(head.nrbits)+' BPP';{give image dimensions and bit per pixel info}
+    mainform1.statusbar1.panels[5].text:=inttostr(ww)+' x '+inttostr(hh)+' x '+inttostr(colours2)+'   '+inttostr(head.nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
     mainform1.statusbar1.panels[7].text:=''; {2020-2-15 moved from load_fits to plot_image. Clear any outstanding error}
 
     update_menu(true);{2020-2-15 moved from load_fits to plot_image.  file loaded, update menu for fits}
   end;
-
-
 
   {do refresh at the end for smooth display, especially for blinking }
 //  img.refresh;{important, show update}
@@ -7494,9 +7496,7 @@ begin
   else
     img.invalidate;{important, show update. NoTe refresh aligns image to the left!!}
 
-
   quads_displayed:=false; {displaying quads doesn't require a screen refresh}
-
   Screen.Cursor:=crDefault;
 end;
 
