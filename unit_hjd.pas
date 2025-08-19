@@ -28,7 +28,7 @@ function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJ
 procedure equ_gal(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
 function atmospheric_absorption(airmass: double):double;{magnitudes}
-procedure calculate_az_alt(calc_mode : integer;head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
+procedure calculate_az_alt(calc_mode : integer;const head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
 procedure altitude_and_refraction(lat,long,julian,temperature,pressure,ra3,dec3: double; out az,alt  : double);{altitude calculation and correction ra, dec for refraction}
 function calculate_az_alt_basic(ra,dec : double; out az,alt : double): boolean;{calculate azimuth, altitude and  initialize wtime2actual/sidereal time if site_lat_radians>999. For mouse pointer}
 
@@ -292,7 +292,7 @@ begin
   if errordecode then memo2_message('Error decoding site longitude or latitude!');
 end;
 
-procedure calculate_az_alt(calc_mode : integer;head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
+procedure calculate_az_alt(calc_mode : integer;const head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
 var
   site_lat_radians,site_long_radians,ra,dec : double;
   errordecode  : boolean;

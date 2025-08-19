@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 160
-  Height = 706
-  Top = 138
-  Width = 1862
+  Left = 162
+  Height = 847
+  Top = 121
+  Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 689
-  ClientWidth = 1862
+  ClientHeight = 830
+  ClientWidth = 1631
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -43,7 +43,7 @@ object stackmenu1: Tstackmenu1
     0000
   }
   KeyPreview = True
-  LCLVersion = '4.0.0.4'
+  LCLVersion = '4.2.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnDropFiles = FormDropFiles
@@ -52,14 +52,12 @@ object stackmenu1: Tstackmenu1
   OnResize = FormResize
   OnShow = FormShow
   object PairSplitter1: TPairSplitter
-    Tag = 1
     Cursor = crVSplit
     Left = 0
-    Height = 689
+    Height = 830
     Top = 0
     Width = 1920
     Align = alClient
-    Color = clForm
     Position = 500
     SplitterType = pstVertical
     object PairSplitterSide1: TPairSplitterSide
@@ -3517,7 +3515,6 @@ object stackmenu1: Tstackmenu1
             PopupMenu = PopupMenu7
             ReadOnly = True
             RowSelect = True
-            ScrollBars = ssAutoBoth
             SmallImages = ImageList_colors
             SortColumn = 9
             SortType = stText
@@ -8342,14 +8339,14 @@ object stackmenu1: Tstackmenu1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 184
+      Height = 325
       Top = 505
       Width = 1920
       ClientWidth = 1920
-      ClientHeight = 184
+      ClientHeight = 325
       object memo2: TMemo
         Left = 0
-        Height = 90
+        Height = 231
         Top = 94
         Width = 1920
         Align = alBottom

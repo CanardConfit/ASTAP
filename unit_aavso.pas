@@ -1549,7 +1549,7 @@ var
   ClickedIndex: Integer;
 begin
   ClickedIndex:=(Sender as TCheckListBox).ItemIndex;
-  if abbrv_variable1.checked[clickedIndex] then
+  if ((clickedindex>=0) and (abbrv_variable1.checked[clickedIndex])) then
     retrieve_vsp_stars;//Very simple database.
   plot_graph;
 end;
