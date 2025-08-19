@@ -11665,7 +11665,7 @@ begin
 end;
 
 
-procedure load_master_dark(jd_int: integer; hd: theader);
+procedure load_master_dark(jd_int: integer; const hd: theader);
 var
   c: integer;
   d, day_offset: double;
@@ -11769,7 +11769,7 @@ begin
 end;
 
 
-procedure load_master_flat(jd_int: integer;hd: theader);
+procedure load_master_flat(jd_int: integer;const hd: theader);
 var
   c: integer;
   d, day_offset: double;

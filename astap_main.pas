@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.08.18';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.08.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -857,7 +857,7 @@ function extract_temperature_from_filename(filename8: string): integer; {try to 
 function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
-procedure measure_magnitudes(img : Timage_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :Tstar_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
+procedure measure_magnitudes(img : Timage_array; var headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :Tstar_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
@@ -4610,7 +4610,7 @@ begin
 end;
 
 
-{procedure pixel_to_celestial_astap(head : theader; fitsx,fitsy : double; out ra,dec  : double);
+{procedure pixel_to_celestial_astap(const head : theader; fitsx,fitsy : double; out ra,dec  : double);
 var
    u2,v2,xi,eta,delta, gamma, sindec0,cosdec0  : double;
 begin
@@ -4629,7 +4629,7 @@ begin
 end; }
 
 
-{procedure pixel_to_celestial_siril(head : theader; fitsx,fitsy : double; out ra,dec  : double);
+{procedure pixel_to_celestial_siril(const head : theader; fitsx,fitsy : double; out ra,dec  : double);
 var
    u2,v2,xi,eta,delta,gamma,delta_ra,sindec0,cosdec0  : double;
 begin
@@ -11106,7 +11106,7 @@ begin
 end;
 
 
-procedure measure_magnitudes(img : Timage_array; headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :Tstar_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
+procedure measure_magnitudes(img : Timage_array; var headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :Tstar_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 var
   fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min,adu_e  : double;
