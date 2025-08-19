@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 162
+  Left = 722
   Height = 847
-  Top = 121
+  Top = 234
   Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -43,7 +43,7 @@ object stackmenu1: Tstackmenu1
     0000
   }
   KeyPreview = True
-  LCLVersion = '4.2.0.0'
+  LCLVersion = '4.99.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnDropFiles = FormDropFiles
