@@ -30,7 +30,6 @@ uses
   LCLIntf,{for for getkeystate, selectobject, openURL}
   clipbrd, PairSplitter, Types, strutils,
   fileutil,
-//  CommCtrl, // For ListView_GetSubItemRect and LVM_SCROLL
   unit_star_database,
   astap_main;
 
@@ -9415,13 +9414,16 @@ begin
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
 
+
+  //Already fixed in trunk Remove in 2026
   {$ifdef darwin} {MacOS}
    //temporary bug fix
-   dummy:=stackmenu1.reference_database1.itemindex;
-   stackmenu1.reference_database1.items.insert(0,'Local database '+ star_database1.text);
-   stackmenu1.reference_database1.items.delete(1);
-   stackmenu1.reference_database1.itemindex:=dummy;
+//   dummy:=stackmenu1.reference_database1.itemindex;
+//   stackmenu1.reference_database1.items.insert(0,'Local database '+ star_database1.text);
+//   stackmenu1.reference_database1.items.delete(1);
+//   stackmenu1.reference_database1.itemindex:=dummy;
   {$endif}
+
 end;
 
 

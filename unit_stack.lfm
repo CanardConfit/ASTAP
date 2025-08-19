@@ -2,14 +2,14 @@ object stackmenu1: Tstackmenu1
   Left = 162
   Height = 847
   Top = 121
-  Width = 1312
+  Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 830
-  ClientWidth = 1312
+  ClientWidth = 1631
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
