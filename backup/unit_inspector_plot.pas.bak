@@ -127,7 +127,7 @@ end;
 
 
 
-function CCDinspector(img:Timage_array;{duplicate}headx:theader;const memo : tstrings; snr_min: double; screenplot,triangle : boolean; measuring_angle: double) : double;
+function CCDinspector(img:Timage_array; headx:theader;const memo : tstrings; snr_min: double; screenplot,triangle : boolean; measuring_angle: double) : double;
 var
   fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,len,
   nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
@@ -186,9 +186,7 @@ begin
 
   if screenplot then memo2_message('Inspection of: '+filename2);//else in the batch routine
   restore_req:=false;
-
-   //not required
-//  oldNaxis3:=headx.naxis3;//for case it is converted to mono
+  oldNaxis3:=headx.naxis3;//for case it is converted to mono
 
 
   if headx.naxis3>1 then {colour image}
@@ -346,7 +344,7 @@ begin
       memo2_message('Restoring image');
       img:=duplicate(img_bk);//fastest way to duplicate an image
       img_bk:=nil;
-//      headx.naxis3:=oldNaxis3;    //not required
+ //     headx.naxis3:=oldNaxis3;
       get_hist(0,img);{get histogram of img and his_total}
     end;
 

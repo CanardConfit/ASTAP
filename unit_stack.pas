@@ -3193,7 +3193,7 @@ begin
 end;
 
 
-procedure artificial_flatV2(var img: Timage_array;head:theader; centrum_diameter: integer);
+procedure artificial_flatV2(var img: Timage_array;var head:theader; centrum_diameter: integer);
 var
   fitsx, fitsy, dist, col, centerX, centerY, colors, w, h, leng, angle,
   Count, largest_distX, largest_distY: integer;
@@ -9418,10 +9418,10 @@ begin
   //Already fixed in trunk Remove in 2026
   {$ifdef darwin} {MacOS}
    //temporary bug fix
-//   dummy:=stackmenu1.reference_database1.itemindex;
-//   stackmenu1.reference_database1.items.insert(0,'Local database '+ star_database1.text);
-//   stackmenu1.reference_database1.items.delete(1);
-//   stackmenu1.reference_database1.itemindex:=dummy;
+   dummy:=stackmenu1.reference_database1.itemindex;
+   stackmenu1.reference_database1.items.insert(0,'Local database '+ star_database1.text);
+   stackmenu1.reference_database1.items.delete(1);
+   stackmenu1.reference_database1.itemindex:=dummy;
   {$endif}
 
 end;
