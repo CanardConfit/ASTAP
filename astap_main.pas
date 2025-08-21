@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.08.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.08.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -90,6 +90,7 @@ type
     error_label1: TLabel;
     Image1: TImage;
     Panel1: TPanel;
+    selective_colour_saturation1: TTrackBar;
     shape_manual_alignment1: TShape;
     shape_marker1: TShape;
     shape_marker2: TShape;
@@ -691,6 +692,8 @@ var
   his_total_red,extend_type,r_aperture : integer; {histogram number of values}
   his_mean             : array[0..2] of integer;
   stretch_c : array[0..32768] of single;{stretch curve}
+  exp_table: array[0..1023] of Single;//for selective colour saturation
+
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
   star_bg,sd_bg  : double;
   object_name,
@@ -5531,20 +5534,6 @@ begin
 end;
 
 
-procedure Tmainform1.saturation_factor_plot1KeyUp(Sender: TObject;
-  var Key: Word; Shift: TShiftState);
-begin
-  plot_fits(mainform1.image1,false);{plot real}
-end;
-
-
-procedure Tmainform1.saturation_factor_plot1MouseUp(Sender: TObject;
-  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  plot_fits(mainform1.image1,false);{plot real}
-end;
-
-
 procedure Tmainform1.Polynomial1Change(Sender: TObject);
 begin
   if  (
@@ -7284,6 +7273,7 @@ begin
   v:=rgbmax;
 end;
 
+
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 var
   X,Y :double;
@@ -7294,13 +7284,111 @@ begin
 end;
 
 
+procedure build_exponential_table; //build exponential function table for selective colour saturation
+var i: Integer; x: Single;
+const
+  MIN_EXPONENT = -50.0;  // Most negative value. Minimum (most negative): -1² / (2×0.1²) = -50  where 0.1 is minimum value of SelectiveStrength
+  MAX_EXPONENT = 0.0;    // Least negative value
+begin
+  for i := 0 to length(exp_table)-1 do
+  begin
+    x := MIN_EXPONENT + (i * (MAX_EXPONENT - MIN_EXPONENT)) / (length(exp_table) - 1);
+    exp_table[i] := exp(x);  // x is already negative
+  end;
+end;
+
+
+procedure Tmainform1.saturation_factor_plot1KeyUp(Sender: TObject;
+  var Key: Word; Shift: TShiftState);
+begin
+  build_exponential_table;//build exponential table for selective colour saturation
+  plot_fits(mainform1.image1,false);{plot real}
+end;
+
+
+procedure Tmainform1.saturation_factor_plot1MouseUp(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  build_exponential_table;//build exponential table for selective colour saturation
+  plot_fits(mainform1.image1,false);{plot real}
+end;
+
+
+function exponential(argument: Single): Single;//fast exponential function
+const
+  MIN_EXPONENT = -50.0;  // Most negative value. Minimum (most negative): -1² / (2×0.1²) = -50  where 0.1 is minimum value of SelectiveStrength
+  MAX_EXPONENT = 0.0;    // Least negative value
+var
+  index: Single;
+  i: Integer;
+  frac: Single;
+begin
+  // Clamp argument to valid range
+  argument := Min(Max(argument, MIN_EXPONENT), MAX_EXPONENT);
+
+  index := (argument - MIN_EXPONENT) * (length(exp_table) - 1) / (MAX_EXPONENT - MIN_EXPONENT);
+  i := Min(Trunc(index), length(exp_table) - 2);  // Ensure i+1 is valid
+  frac := index - i;
+
+  // Linear interpolation
+  Result := exp_table[i] + frac * (exp_table[i+1] - exp_table[i]);
+end;
+
+
+procedure AdjustSaturationHSV(var R, G, B: Single; SaturationFactor, SelectiveStrength: Single); //adjust colour saturation in one procedure
+var
+  V, m, C, S, L, SelectiveFactor, Snew, Cnew, scale,weight: Single;
+begin
+  // alternative method not used
+  // RGB2HSV(colrr,colgg,colbb,h,s,v); then adjust s
+  // HSV2RGB(h,s*saturationFactor,v,colrr,colgg,colbb);{increase saturation}
+
+  // Calculate HSV components
+  V := Max(R, Max(G, B));
+  m := Min(R, Min(G, B));
+  C := V - m;
+
+  if V > 1e-6 then
+  begin
+    S := C / V;  // Original saturation
+
+    // Calculate luminance for selective enhancement
+    L:=0.2126*R+0.7152*G+0.0722*B  ;//These are Rec.709 weights, close to human perception. Human vision is most sensitive to green, less to red, and much less to blue.
+
+    if (SaturationFactor > 1e-6) and (L < 0.99) then
+    begin
+      // SelectiveFactor := 2*SaturationFactor * Power(1.0 - L, SelectiveStrength);
+      SelectiveFactor := 2*SaturationFactor *  exponential(-L*L / (2.0 * SelectiveStrength * SelectiveStrength));
+
+      Snew := SelectiveFactor * S;
+    end
+    else
+      Snew := 0.0;  // Handle edge cases
+
+    // Calculate new chroma
+    Cnew := Snew * V;
+
+    // Calculate scale factor for RGB adjustment
+    if C > 1e-6 then
+      scale := Cnew / C
+    else
+      scale := 1.0;
+
+    // Apply scale to RGB offsets relative to V
+    R := V - (V - R) * scale;
+    G := V - (V - G) * scale;
+    B := V - (V - B) * scale;
+  end;
+end;
+
+
 procedure plot_fits(img:timage; center_image: boolean);
 type
   PByteArray2 = ^TByteArray2;
   TByteArray2 = Array[0..32767*4] of Byte;//Maximum width 32768 pixels
 var
    i,j,col,col_r,col_g,col_b,linenr,columnr,hh,ww,colours2 :integer;
-   colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
+   colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, saturationFactor,selectiveStrength: single;
    Bitmap       : TBitmap;{for fast pixel routine}
    xLine        : PByteArray2;{for fast pixel routine}
    flipv, fliph : boolean;
@@ -7352,7 +7440,8 @@ begin
     except;
   end;
 
-  sat_factor:=1-mainform1.saturation_factor_plot1.position/10;
+  saturationFactor:=mainform1.saturation_factor_plot1.position/20;
+  selectiveStrength:=0.1+2*mainform1.selective_colour_saturation1.position/20;
 
   head.backgr:=mainform1.minimum1.position;
   cwhite:=mainform1.maximum1.position;
@@ -7383,12 +7472,6 @@ begin
       begin
         col:=trunc(img_loaded[2,i,columnr]);
         colbb:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
-
-        if sat_factor<>1 then {adjust saturation}
-        begin  {see same routine as stretch_img}
-          RGB2HSV(colrr,colgg,colbb,h,s,v);
-          HSV2RGB(h,s*sat_factor,v,colrr,colgg,colbb);{increase saturation}
-        end;
       end
       else
       colbb:=colrr;
@@ -7398,7 +7481,7 @@ begin
       if colbb<=0.00000000001 then colbb:=0.00000000001;
 
 
-      {find brightest colour and resize all if above 1}
+      {find brightest colour and resize all if above 1. Avoid whitening of stars and run time error in stretch_c table}
       largest:=colrr;
       if colgg>largest then largest:=colgg;
       if colbb>largest then largest:=colbb;
@@ -7412,20 +7495,35 @@ begin
 
       if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
       begin
-        luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
+        luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB; //human vision is most sensitive to green, less to red, and much less to blue.
         luminance_stretched:=stretch_c[trunc(32768*luminance)];
         factor:=luminance_stretched/luminance;
-        if factor*largest>1 then factor:=1/largest; {clamp again, could be lengther then 1}
-        col_r:=trunc(colrr*factor*255);{stretch only luminance but keep rgb ratio!}
-        col_g:=trunc(colgg*factor*255);{stretch only luminance but keep rgb ratio!}
-        col_b:=trunc(colbb*factor*255);{stretch only luminance but keep rgb ratio!}
-      end
-      else
-      begin
-        col_r:=trunc(255*colrr);
-        col_g:=trunc(255*colgg);
-        col_b:=trunc(255*colbb);
+//        if factor*largest>1 then factor:=1/largest; {clamp again, could be lengther then 1}
+        colrr:=(colrr*factor);{stretch only luminance but keep rgb ratio!}
+        colgg:=(colgg*factor);{stretch only luminance but keep rgb ratio!}
+        colbb:=(colbb*factor);{stretch only luminance but keep rgb ratio!}
       end;
+
+      if colours2>1 then //colour image, adjust saturation
+         AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);//adjust colour saturation in one procedure
+
+      {find brightest colour and resize all if above 1 to avoid whitening of star and }
+      largest:=colrr;
+      if colgg>largest then largest:=colgg;
+      if colbb>largest then largest:=colbb;
+      if largest>1 then {clamp to 1 but preserve colour, so ratio r,g,b}
+      begin
+        colrr:=colrr/largest;
+        colgg:=colgg/largest;
+        colbb:=colbb/largest;
+        largest:=1;
+      end;
+
+      //convert to range 0..255
+      col_r:=trunc(255*colrr);
+      col_g:=trunc(255*colgg);
+      col_b:=trunc(255*colbb);
+
 
      {$ifdef mswindows}
         xLine^[j*3]  :=col_b; {3*8=24 bit}
@@ -8001,7 +8099,8 @@ begin
       c:=Sett.ReadInteger('main','maximum_position',987654321);if c<>987654321 then maximum1.position:=c;
       c:=Sett.ReadInteger('main','range',987654321);if c<>987654321 then range1.itemindex:=c;
 
-      c:=Sett.ReadInteger('main','saturation_factor',987654321); if c<>987654321 then saturation_factor_plot1.position:=c;
+      c:=Sett.ReadInteger('main','sat_fact',987654321); if c<>987654321 then saturation_factor_plot1.position:=c;
+      c:=Sett.ReadInteger('main','sel_sat_fact',987654321); if c<>987654321 then selective_colour_saturation1.position:=c;
 
 
       c:=Sett.ReadInteger('main','polynomial',987654321); if c<>987654321 then Polynomial1.itemindex:=c;
@@ -8429,8 +8528,8 @@ begin
       sett.writeInteger('main','maximum_position',maximum1.position);
       sett.writeInteger('main','range',range1.itemindex);
 
-      sett.writeInteger('main','saturation_factor',saturation_factor_plot1.position);
-
+      sett.writeInteger('main','sat_fact',saturation_factor_plot1.position);
+      sett.writeInteger('main','sel_sat_fact',selective_colour_saturation1.position);
 
       sett.writeInteger('main','polynomial',polynomial1.itemindex);
 
@@ -10840,16 +10939,15 @@ var
   i: integer;
   stretch,divider: single;
 begin
-    stretch:=strtofloat2(mainform1.stretch1.Text);
-    if stretch<=0.5 then {word "off" gives zero}
-    stretch_on:=false
-    else
-    begin
-      stretch_on:=true;
-      divider:=arcsinh(stretch);
-      for i:=0 to 32768 do stretch_c[i]:=arcsinh((i/32768.0)*stretch)/divider;{prepare table}
-    end;
-
+  stretch:=strtofloat2(mainform1.stretch1.Text);
+  if stretch<=0.5 then {word "off" gives zero}
+  stretch_on:=false
+  else
+  begin
+    stretch_on:=true;
+    divider:=arcsinh(stretch);
+    for i:=0 to 32768 do stretch_c[i]:=arcsinh((i/32768.0)*stretch)/divider;{prepare table}
+  end;
   if mainform1.stretch1.enabled then {file loaded}
   begin
     plot_histogram(img_loaded,false {update});{get histogram}
@@ -13583,7 +13681,6 @@ begin
 
     {filename as parameter 1}
     do_stretching; ;{create gamma curve}
-
     if application.hasoption('stack') then //for Ekos
     begin
       stackmenu1.live_stacking_path1.caption:=application.GetOptionValue('stack');{live stacking path}
@@ -13594,8 +13691,10 @@ begin
     load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});{show image of parameter1}
   end {paramcount>0}
   else
-  do_stretching; {create gamma curve for image if loaded later and set gamma_on}
-
+  begin
+    do_stretching; {create gamma curve for image if loaded later and set gamma_on}
+    build_exponential_table;//for colour display
+  end;
 
   {$IfDef Darwin}// for OS X,
   {$IF FPC_FULLVERSION <= 30200} {FPC3.2.0}
