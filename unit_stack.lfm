@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 184
+  Left = 223
   Height = 847
-  Top = 194
+  Top = 429
   Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -1385,7 +1385,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Enter here a filter name for blue'
               Top = 120
               Width = 72
-              Color = 16757940
+              Color = 16764108
               ParentFont = False
               TabOrder = 6
               Text = 'Blue'
@@ -1421,7 +1421,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Enter here a second filter name for blue'
               Top = 144
               Width = 72
-              Color = 16757940
+              Color = 16764108
               ParentFont = False
               TabOrder = 7
               Text = 'OIII'
@@ -1496,6 +1496,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Enter here a filter name for Luminance'
               Top = 187
               Width = 72
+              Color = 14540253
               ParentFont = False
               TabOrder = 0
               Text = 'L'
@@ -1507,6 +1508,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Enter here a second filter name for Luminance'
               Top = 187
               Width = 72
+              Color = 14540253
               ParentFont = False
               TabOrder = 1
               Text = 'Ha'
@@ -1529,7 +1531,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Colour matrix'
               Top = 16
               Width = 40
-              Color = 16757940
+              Color = 16764108
               ParentFont = False
               TabOrder = 10
               Text = '0.0'
@@ -1551,7 +1553,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Colour matrix'
               Top = 66
               Width = 40
-              Color = 16757940
+              Color = 16764108
               ParentFont = False
               TabOrder = 13
               Text = '0.0'
@@ -1573,7 +1575,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Colour matrix'
               Top = 120
               Width = 40
-              Color = 16757940
+              Color = 16764108
               ParentFont = False
               TabOrder = 16
               Text = '1.0'
@@ -1675,11 +1677,9 @@ object stackmenu1: Tstackmenu1
               Top = 332
               Width = 164
               Caption = 'Remove green && purple'
-              Checked = True
               Color = clDefault
               ParentColor = False
               ParentFont = False
-              State = cbChecked
               TabOrder = 20
             end
             object star_colour_smooth1: TCheckBox
@@ -1769,7 +1769,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Colour matrix'
               Top = 40
               Width = 40
-              Color = 16757940
+              Color = 16764108
               ParentFont = False
               TabOrder = 26
               Text = '0.0'
@@ -1802,7 +1802,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Colour matrix'
               Top = 92
               Width = 40
-              Color = 16757940
+              Color = 16764108
               ParentFont = False
               TabOrder = 29
               Text = '0.0'
@@ -1835,7 +1835,7 @@ object stackmenu1: Tstackmenu1
               Hint = 'Colour matrix'
               Top = 144
               Width = 40
-              Color = 16757940
+              Color = 16764108
               ParentFont = False
               TabOrder = 32
               Text = '1.0'
@@ -6987,6 +6987,15 @@ object stackmenu1: Tstackmenu1
               Caption = 'Donut stars'
               TabOrder = 3
             end
+            object nebula1: TCheckBox
+              Left = 131
+              Height = 23
+              Hint = 'This will create a red and blue nebula'
+              Top = 64
+              Width = 61
+              Caption = 'Nebula'
+              TabOrder = 4
+            end
           end
           object GroupBox12: TGroupBox
             Left = 288
@@ -8916,6 +8925,10 @@ object stackmenu1: Tstackmenu1
       Hint = '#Copy file path to clipboard for use in your file explorer.'
       OnClick = copypath1Click
     end
+    object copy_to_images1: TMenuItem
+      Caption = 'Copy selected images to tab lights'
+      OnClick = copy_to_images1Click
+    end
     object copy_to_blink1: TMenuItem
       Caption = 'Copy selected images to tab Blink'
       ImageIndex = 14
@@ -8925,10 +8938,6 @@ object stackmenu1: Tstackmenu1
       Caption = 'Copy selected images to tab Photometry'
       ImageIndex = 19
       OnClick = copy_to_photometry1Click
-    end
-    object copy_to_images1: TMenuItem
-      Caption = 'Copy selected images to tab lights'
-      OnClick = copy_to_images1Click
     end
     object MenuItem24: TMenuItem
       Caption = '-'

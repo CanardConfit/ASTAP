@@ -1,8 +1,8 @@
 object mainform1: Tmainform1
-  Left = 675
+  Left = 344
   Height = 634
   Hint = ' '
-  Top = 141
+  Top = 154
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -592,6 +592,7 @@ object mainform1: Tmainform1
             Orientation = trVertical
             Position = 10
             Reversed = True
+            Color = clForm
             Enabled = False
             Font.CharSet = ANSI_CHARSET
             Font.Color = clBlack
@@ -599,6 +600,7 @@ object mainform1: Tmainform1
             Font.Name = 'Segoe UI'
             Font.Pitch = fpVariable
             Font.Quality = fqDraft
+            ParentColor = False
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
@@ -626,8 +628,9 @@ object mainform1: Tmainform1
             Frequency = 5
             Max = 20
             Orientation = trVertical
-            Position = 15
+            Position = 0
             Reversed = True
+            Enabled = False
             Font.CharSet = ANSI_CHARSET
             Font.Color = clBlack
             Font.Height = -11
@@ -2283,9 +2286,6 @@ object mainform1: Tmainform1
       Caption = 'Copy the histogram values to the clipboard'
       Hint = 'Copies the histogram to the clipboard. They can be pasted to a spreadsheet.'
       OnClick = histogram_values_to_clipboard1Click
-    end
-    object MenuItem33: TMenuItem
-      Caption = 'MenuItem33'
     end
   end
   object popupmenu_statusbar1: TPopupMenu

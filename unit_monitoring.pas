@@ -237,7 +237,7 @@ begin
           else
             plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-          plot_fits(mainform1.image1,false);{plot real}
+          plot_image(mainform1.image1,false);{plot real}
 
           monitor_date1.caption:= DateTimeToStr(FileDateToDateTime(latest_time));
 

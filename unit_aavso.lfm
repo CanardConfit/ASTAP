@@ -7,7 +7,7 @@ object form_aavso1: Tform_aavso1
   Caption = 'AAVSO report'
   ClientHeight = 702
   ClientWidth = 1553
-  LCLVersion = '4.0.0.4'
+  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnResize = FormResize

@@ -1437,10 +1437,11 @@ end;
 
 procedure fill_comp_and_check;
 var
-  i,count,countV,error2              : integer;
+  i,count,countV,error2,iau_labeled  : integer;
   abrv                               : string;
   starinfo, starinfoV                : array of Tstarinfo;
   compstar                           : boolean;
+  dummy                              : double;
 begin
   with form_aavso1 do
   begin
@@ -1462,14 +1463,14 @@ begin
       begin
         abrv:=ColumnTitles[i+1];
         compstar:=(copy(abrv,1,2)='00');
-
-        if compstar=false then //variables
+        val(copy(abrv,1,5),dummy,iau_labeled);//labeled hhmmss.s+ddmmss becuase no annotation was found
+        if ((compstar=false) or (iau_labeled=0)) then //variables
         begin
           starinfoV[countV].str:=abrv;//store in an array
           starinfoV[countV].x:=find_mean_measured_magnitude(i);
           inc(countV);
-        end
-        else
+        end;
+        if ((compstar=true) or (iau_labeled=0)) then //comp stars
         begin
           starinfo[count].str:=abrv;//store in an array
           starinfo[count].x:=find_mean_measured_magnitude(i);
@@ -2025,7 +2026,10 @@ begin
                      str(check_magn:0:3,check_magn_str);
                    end
                    else
+                   begin
+                     check_magn:=-99; //this will put a # in front if the report line.
                      check_magn_str:='invalid';
+                   end;
 
                    if length(column_comps)>1 then //ensemble, else single comp star
                    begin
