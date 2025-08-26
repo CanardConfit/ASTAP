@@ -422,7 +422,7 @@ begin
               if counter=1 then {set range correct}
                    plot_histogram(img_loaded,true);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
-              plot_fits(mainform1.image1,false);{plot real}
+              plot_image(mainform1.image1,false);{plot real}
 
               if stackmenu1.write_jpeg1.checked then save_as_jpg(ExtractFileDir(filename2)+ {$ifdef mswindows}'\'{$else}{unix} '/' {$endif}+'stack.jpeg');
               if stackmenu1.interim_to_clipboard1.checked then Clipboard.Assign(mainform1.Image1.Picture.Bitmap);

@@ -2293,7 +2293,7 @@ begin
   head.crpix2:=head_ref.crpix2;
 
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainform1.image1,true);{update to last image, activate memo1}
+  plot_image(mainform1.image1,true);{update to last image, activate memo1}
 
   {arrays will be nilled later. This is done for early exits}
 end;   {calibration and alignment}

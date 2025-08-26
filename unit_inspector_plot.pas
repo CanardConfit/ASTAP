@@ -1166,7 +1166,7 @@ begin
   memo2_message(mess);
   annotation_to_array(mess,true {transparent},65535,size*2 {size},5,10+size*2*9,img_loaded); {report median value}
 
-  plot_fits(mainform1.image1,false);{plot image included text in pixel data}
+  plot_image(mainform1.image1,false);{plot image included text in pixel data}
 
   if ((aspect) and (vectors)) then
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
@@ -1294,7 +1294,7 @@ end;
 
 procedure Tform_inspection1.undo_button1Click(Sender: TObject);
 begin
-  if executed=1 then plot_fits(mainform1.image1,false) {only refresh required}
+  if executed=1 then plot_image(mainform1.image1,false) {only refresh required}
   else
   if ((executed=2) and (mainform1.Undo1.enabled)) then
   begin
@@ -1496,7 +1496,7 @@ begin
   mainform1.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  plot_histogram doesn't work that well for blurred image.
   mainform1.minimum1.position:=round(low_level-0.05*srange);
 
-  plot_fits(mainform1.image1, False);{plot real}
+  plot_image(mainform1.image1, False);{plot real}
 
   img_bk:=nil;//free mem
 
@@ -1617,7 +1617,7 @@ begin
    update_text(mainform1.memo1.lines,'COMMENT A','  Aberration view '+filename2);
 
    filename2:=ChangeFileExt(filename2,'_aberration_view.fits');
-   plot_fits(mainform1.image1,true);
+   plot_image(mainform1.image1,true);
    image_move_to_center:=true;
 
    Screen.Cursor:=crDefault;

@@ -551,7 +551,7 @@ begin
     //    head.naxis3:=1;
     //    head.width:=length(img_binned[0,0]);
     //    head.height:=length(img_binned[0]);
-    //    plot_fits(mainform1.image1,true,true);//plot real
+    //    plot_image(mainform1.image1,true,true);//plot real
     //    exit;  }
 
     if stackmenu1.equaliseBG_for_solving1.Checked then equalise_for_solving(img_binned); {equalise for solving}

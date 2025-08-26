@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.08.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.08.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -221,7 +221,6 @@ type
     MenuItem31: TMenuItem;
     MenuItem32: TMenuItem;
     hfd_arcseconds1: TMenuItem;
-    MenuItem33: TMenuItem;
     MenuItem34: TMenuItem;
     Constellations1: TMenuItem;
     aavso_chart1: TMenuItem;
@@ -692,7 +691,6 @@ var
   his_total_red,extend_type,r_aperture : integer; {histogram number of values}
   his_mean             : array[0..2] of integer;
   stretch_c : array[0..32768] of single;{stretch curve}
-  exp_table: array[0..1023] of Single;//for selective colour saturation
 
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
   star_bg,sd_bg  : double;
@@ -786,7 +784,7 @@ var {################# initialised variables #########################}
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
-procedure plot_fits(img: timage;center_image:boolean);
+procedure plot_image(img: timage;center_image:boolean);
 procedure plot_histogram(img: Timage_array; update_hist: boolean);{get histogram}
 procedure HFD(img: Timage_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr, flux,xc,yc:double);
 procedure backup_img;
@@ -1150,10 +1148,6 @@ var
   tbcol,tform_nr    : array of integer;
   simple,image,bintable,asciitable    : boolean;
   abyte                               : byte;
-
-  dummy                               : dword;
-  dummystr,dummystr2: string;
-  dummyfloat       : double;
 
 var {################# initialised variables #########################}
   end_record : boolean=false;
@@ -3661,7 +3655,7 @@ begin
     img_loaded:=duplicate(img_backup[index_backup].img);//duplicate image fast
 
     plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_fits(mainform1.image1,resized);{restore image1}
+    plot_image(mainform1.image1,resized);{restore image1}
 
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
@@ -3841,7 +3835,7 @@ end;
 
 procedure Tmainform1.image_cleanup1Click(Sender: TObject);
 begin
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 end;
 
 
@@ -4407,7 +4401,7 @@ begin
     if histo_update then {redraw histogram with new range}
        plot_histogram(img_loaded,false {update}); {plot histogram, set sliders}
 
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end;
 end;
 
@@ -4458,7 +4452,7 @@ begin
     end;{k color}
 
     img_temp:=nil;{clean memory}
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
@@ -4521,7 +4515,7 @@ end;
 
 procedure Tmainform1.clean_up1Click(Sender: TObject);
 begin
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 end;
 
 
@@ -4558,7 +4552,7 @@ begin
         img_loaded[2,fitsY,fitsX]:=val;
       end;
     end;
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
@@ -4677,11 +4671,7 @@ procedure pixel_to_celestial(const head : theader; fitsx,fitsy : double; formali
 var
    fits_unsampledX, fits_unsampledY, sindec0,cosdec0 :double;
    u,v,u2,v2             : double;
-   xi,eta,delta,gamma  : double;
-
-//   ra1,dec1,ra2,dec2,ra3,dec3 : double;
-//   i : integer;
-
+   xi,eta,delta          : double;
 begin
   RA:=0;DEC:=0;{for case wrong index or head.cd1_1=0}
   {DSS polynom solution}
@@ -5085,7 +5075,7 @@ const resolution=6;
       qrs=rs div resolution;
 var
   i, j,distance,hh,diam1,diam2  : integer;
-  val,valmax,valmin,diff,    h  : double;
+  val,valmax,valmin             : double;
   profile: array[0..1,-rs..rs] of double;
 begin
   with mainform1.image_north_arrow1 do
@@ -5548,7 +5538,7 @@ end;
 
 procedure Tmainform1.remove_markers1Click(Sender: TObject);
 begin
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 end;
 
 
@@ -6009,7 +5999,8 @@ begin
   if fits then mainform1.error_label1.visible:=false;;
 
   mainform1.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
-  mainform1.saturation_factor_plot1.enabled:=head.naxis3=3;{colour};
+  mainform1.saturation_factor_plot1.enabled:=head.naxis3<>1;{colour};
+  mainform1.selective_colour_saturation1.enabled:=head.naxis3<>1;{colour};
   mainform1.Polynomial1Change(nil);{update color after an image LOAD}
 
   update_menu_related_to_solver((fits) and (head.cd1_1<>0));
@@ -6078,7 +6069,7 @@ begin
   begin
     minimum1.Position:=edit_value;
     mainform1.range1.itemindex:=7; {manual}
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end;
 end;
 
@@ -6353,7 +6344,7 @@ begin
       begin
         if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
         plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-        plot_fits(mainform1.image1,false {re_center});
+        plot_image(mainform1.image1,false {re_center});
       end;
     end;
   end;
@@ -6441,7 +6432,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end {fits file}
   else
@@ -7214,11 +7205,39 @@ begin
 end;
 
 
-procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+procedure AdjustSaturationHSV(var R,G,B: Single; SaturationFactor,selectiveStrength: Single);//adjust saturation in one procedure instead of RGB2HSV  and  the HSV2RGB
+var
+  V, m, C, S, Sadj, Snew, Cnew, scale: Single;
+begin
+  V := Max(R, Max(G,B));
+  m := Min(R, Min(G,B));
+  C := V - m;
+  if V > 1e-6 then
+  begin
+    S := C / V;  // original saturation
+    Snew := s*(saturationFactor + sqr(1-V)*selectiveStrength);//adjust saturation based on brightest colour
+    Snew:=max(0,min(1,Snew)); // clamp saturation to maximum
+
+    Cnew := Snew * V; //new chroma
+    if C > 1e-6 then
+      scale := Cnew / C
+    else
+      scale := 1.0;
+    // apply scale to RGB offsets relative to V
+    R := V - (V - R) * scale;
+    G := V - (V - G) * scale;
+    B := V - (V - B) * scale;
+  end;
+end;
+
+
+procedure HSV2RGB(h {0..360}, s {0..1 or 0.255}, v {0..1 or 0.255} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 var
     h2,h2mod2,m,c,x: single;
 begin
-  if s=0 then begin r:=v; g:=v;  b:=v; end
+  //HSV stands for hue, saturation, and value
+
+  if s<=0 then begin r:=v; g:=v;  b:=v; end //mono
   else
   begin
     c:=v*s;{chroma}
@@ -7245,7 +7264,8 @@ begin
   end;
 end; { HSV2RGB}
 
-procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+
+procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1 or 0..255}, v {0..1 or 0.255}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 var
    rgbmax,rgbmin :single;
 begin
@@ -7253,6 +7273,7 @@ begin
   rgbmax := Max(R, Max(G, B));
   rgbmin := Min(R, Min(G, B));
 
+  //do not clamp S, V because range could be either 0..1 or 0..255
   if rgbmax = rgbmin then
     H := 0
   else
@@ -7284,105 +7305,21 @@ begin
 end;
 
 
-procedure build_exponential_table; //build exponential function table for selective colour saturation
-var i: Integer; x: Single;
-const
-  MIN_EXPONENT = -50.0;  // Most negative value. Minimum (most negative): -1² / (2×0.1²) = -50  where 0.1 is minimum value of SelectiveStrength
-  MAX_EXPONENT = 0.0;    // Least negative value
-begin
-  for i := 0 to length(exp_table)-1 do
-  begin
-    x := MIN_EXPONENT + (i * (MAX_EXPONENT - MIN_EXPONENT)) / (length(exp_table) - 1);
-    exp_table[i] := exp(x);  // x is already negative
-  end;
-end;
-
-
 procedure Tmainform1.saturation_factor_plot1KeyUp(Sender: TObject;
   var Key: Word; Shift: TShiftState);
 begin
-  build_exponential_table;//build exponential table for selective colour saturation
-  plot_fits(mainform1.image1,false);{plot real}
+  plot_image(mainform1.image1,false);{plot real}
 end;
 
 
 procedure Tmainform1.saturation_factor_plot1MouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  build_exponential_table;//build exponential table for selective colour saturation
-  plot_fits(mainform1.image1,false);{plot real}
+  plot_image(mainform1.image1,false);{plot real}
 end;
 
 
-function exponential(argument: Single): Single;//fast exponential function
-const
-  MIN_EXPONENT = -50.0;  // Most negative value. Minimum (most negative): -1² / (2×0.1²) = -50  where 0.1 is minimum value of SelectiveStrength
-  MAX_EXPONENT = 0.0;    // Least negative value
-var
-  index: Single;
-  i: Integer;
-  frac: Single;
-begin
-  // Clamp argument to valid range
-  argument := Min(Max(argument, MIN_EXPONENT), MAX_EXPONENT);
-
-  index := (argument - MIN_EXPONENT) * (length(exp_table) - 1) / (MAX_EXPONENT - MIN_EXPONENT);
-  i := Min(Trunc(index), length(exp_table) - 2);  // Ensure i+1 is valid
-  frac := index - i;
-
-  // Linear interpolation
-  Result := exp_table[i] + frac * (exp_table[i+1] - exp_table[i]);
-end;
-
-
-procedure AdjustSaturationHSV(var R, G, B: Single; SaturationFactor, SelectiveStrength: Single); //adjust colour saturation in one procedure
-var
-  V, m, C, S, L, SelectiveFactor, Snew, Cnew, scale,weight: Single;
-begin
-  // alternative method not used
-  // RGB2HSV(colrr,colgg,colbb,h,s,v); then adjust s
-  // HSV2RGB(h,s*saturationFactor,v,colrr,colgg,colbb);{increase saturation}
-
-  // Calculate HSV components
-  V := Max(R, Max(G, B));
-  m := Min(R, Min(G, B));
-  C := V - m;
-
-  if V > 1e-6 then
-  begin
-    S := C / V;  // Original saturation
-
-    // Calculate luminance for selective enhancement
-    L:=0.2126*R+0.7152*G+0.0722*B  ;//These are Rec.709 weights, close to human perception. Human vision is most sensitive to green, less to red, and much less to blue.
-
-    if (SaturationFactor > 1e-6) and (L < 0.99) then
-    begin
-      // SelectiveFactor := 2*SaturationFactor * Power(1.0 - L, SelectiveStrength);
-      SelectiveFactor := 2*SaturationFactor *  exponential(-L*L / (2.0 * SelectiveStrength * SelectiveStrength));
-
-      Snew := SelectiveFactor * S;
-    end
-    else
-      Snew := 0.0;  // Handle edge cases
-
-    // Calculate new chroma
-    Cnew := Snew * V;
-
-    // Calculate scale factor for RGB adjustment
-    if C > 1e-6 then
-      scale := Cnew / C
-    else
-      scale := 1.0;
-
-    // Apply scale to RGB offsets relative to V
-    R := V - (V - R) * scale;
-    G := V - (V - G) * scale;
-    B := V - (V - B) * scale;
-  end;
-end;
-
-
-procedure plot_fits(img:timage; center_image: boolean);
+procedure plot_image(img:timage; center_image: boolean);
 type
   PByteArray2 = ^TByteArray2;
   TByteArray2 = Array[0..32767*4] of Byte;//Maximum width 32768 pixels
@@ -7441,8 +7378,7 @@ begin
   end;
 
   saturationFactor:=mainform1.saturation_factor_plot1.position/20;
-  selectiveStrength:=0.1+2*mainform1.selective_colour_saturation1.position/20;
-
+  selectiveStrength:=mainform1.selective_colour_saturation1.position/10;//high is stronger
   head.backgr:=mainform1.minimum1.position;
   cwhite:=mainform1.maximum1.position;
   if cwhite<=head.backgr then cwhite:=head.backgr+1;
@@ -7470,16 +7406,12 @@ begin
 
       if head.naxis3>=3 then {at least three colours}
       begin
-        col:=trunc(img_loaded[2,i,columnr]);
+        col:=round(img_loaded[2,i,columnr]);
         colbb:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
+
       end
       else
       colbb:=colrr;
-
-      if colrr<=0.00000000001 then colrr:=0.00000000001;{after rgb2hsv}
-      if colgg<=0.00000000001 then colgg:=0.00000000001;
-      if colbb<=0.00000000001 then colbb:=0.00000000001;
-
 
       {find brightest colour and resize all if above 1. Avoid whitening of stars and run time error in stretch_c table}
       largest:=colrr;
@@ -7493,34 +7425,27 @@ begin
         largest:=1;
       end;
 
+      colrr:=max(colrr,0.000000001);//keep just above zero for dividing by luminance and stretch_c
+      colgg:=max(colgg,0.000000001);
+      colbb:=max(colbb,0.000000001);
+
+      if head.naxis3>=3 then {at least three colours}
+      AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);
+
+      luminance:=0.333333*colrr+0.333333*colgg+0.333333*colbb;//keep equal ratio in image development and not luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB;
       if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
       begin
-        luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB; //human vision is most sensitive to green, less to red, and much less to blue.
+        luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
         luminance_stretched:=stretch_c[trunc(32768*luminance)];
         factor:=luminance_stretched/luminance;
-//        if factor*largest>1 then factor:=1/largest; {clamp again, could be lengther then 1}
-        colrr:=(colrr*factor);{stretch only luminance but keep rgb ratio!}
-        colgg:=(colgg*factor);{stretch only luminance but keep rgb ratio!}
-        colbb:=(colbb*factor);{stretch only luminance but keep rgb ratio!}
-      end;
-
-      if colours2>1 then //colour image, adjust saturation
-         AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);//adjust colour saturation in one procedure
-
-      {find brightest colour and resize all if above 1 to avoid whitening of star and }
-      largest:=colrr;
-      if colgg>largest then largest:=colgg;
-      if colbb>largest then largest:=colbb;
-      if largest>1 then {clamp to 1 but preserve colour, so ratio r,g,b}
-      begin
-        colrr:=colrr/largest;
-        colgg:=colgg/largest;
-        colbb:=colbb/largest;
-        largest:=1;
+        if factor*largest>1 then factor:=1/largest; {clamp again, could be lengther then 1}
+        colrr:=colrr*factor;{stretch only luminance but keep rgb ratio!}
+        colgg:=colgg*factor;{stretch only luminance but keep rgb ratio!}
+        colbb:=colbb*factor;{stretch only luminance but keep rgb ratio!}
       end;
 
       //convert to range 0..255
-      col_r:=trunc(255*colrr);
+      col_r:=trunc(255*colrr);//trunc is faster then round
       col_g:=trunc(255*colgg);
       col_b:=trunc(255*colbb);
 
@@ -8222,7 +8147,7 @@ begin
       dum:=Sett.ReadString('stack','centaz_key',''); if dum<>'' then centaz_key:=copy(dum,1,8);{remove * character used for protection spaces}
 
       stackmenu1.lrgb_auto_level1.checked:=Sett.ReadBool('stack','lrgb_al',true);
-      stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','green_fl',false);
+      stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','gr_pu_fl',false);
       stackmenu1.global_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
       dum:=Sett.ReadString('stack','lrgb_slope','');if dum<>'' then stackmenu1.luminance_slope1.text:=dum;
 
@@ -8637,7 +8562,7 @@ begin
       sett.writestring('stack','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
 
       sett.writeBool('stack','lrgb_al',stackmenu1.lrgb_auto_level1.checked);
-      sett.writeBool('stack','green_fl',stackmenu1.green_purple_filter1.checked);
+      sett.writeBool('stack','gr_pu_fl',stackmenu1.green_purple_filter1.checked);
 
       sett.writeBool('stack','lrgb_cs',stackmenu1.global_colour_smooth1.checked);
       sett.writestring('stack','lrgb_slope',stackmenu1.luminance_slope1.text);
@@ -9104,7 +9029,7 @@ begin
       end;{fits loop}
     end;
 
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end {usefull area}
   else
@@ -9176,6 +9101,7 @@ begin
     end;
   end;
 end;
+
 
 
 function Jd_To_MPCDate(jd: double): string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
@@ -9842,7 +9768,7 @@ begin
     if ((head.naxis3=1) and (mainform1.preview_demosaic1.checked)) then demosaic_advanced(img);{demosaic and set levels}
     plot_histogram(img,true {update}); {plot histogram, set sliders}
     image_move_to_center:=re_center;
-    plot_fits(mainform1.image1,re_center);     {mainform1.image1.Visible:=true; is done in plot_fits}
+    plot_image(mainform1.image1,re_center);     {mainform1.image1.Visible:=true; is done in plot_image}
 
     update_equalise_background_step(1);{update equalise background menu}
 
@@ -9901,7 +9827,7 @@ begin
 
   {colours are now mixed, redraw histogram}
   plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-  plot_fits(mainform1.image1,false);{plot}
+  plot_image(mainform1.image1,false);{plot}
   Screen.cursor:=crDefault;
 end;
 
@@ -10002,7 +9928,7 @@ begin
   if head.naxis=0 then exit;
   if grid_ra_dec1.checked=false then  {clear screen}
   begin
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end
   else
   plot_grid(true);
@@ -10037,7 +9963,7 @@ begin
     end;
 
     remove_photometric_calibration;//from header
-    plot_fits(mainform1.image1,true);{plot real}
+    plot_image(mainform1.image1,true);{plot real}
     mainform1.caption:=Filename2;
     Screen.Cursor:=crDefault;
   end;
@@ -10514,7 +10440,7 @@ begin
   if head.naxis=0 then exit;
   if positionanddate1.checked=false then  {clear screen}
   begin
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end
   else
   plot_text;
@@ -10576,7 +10502,7 @@ procedure Tmainform1.histogram_range1MouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   plot_histogram(img_loaded,false {update});{get histogram}
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 end;
 
 procedure Tmainform1.histogram_values_to_clipboard1Click(Sender: TObject); {copy histogram values to clipboard}
@@ -10930,7 +10856,7 @@ begin
     image1.refresh;{important, show update}
   end
   else
-    plot_fits(mainform1.image1,false); {clear indicator}
+    plot_image(mainform1.image1,false); {clear indicator}
 end;
 
 
@@ -10951,7 +10877,7 @@ begin
   if mainform1.stretch1.enabled then {file loaded}
   begin
     plot_histogram(img_loaded,false {update});{get histogram}
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end;
 end;
 
@@ -11015,7 +10941,7 @@ begin
       end;
 
     plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_fits(mainform1.image1,false {re_center});
+    plot_image(mainform1.image1,false {re_center});
 
     Screen.Cursor:=crDefault;
   end {fits file}
@@ -11352,7 +11278,7 @@ const
 
 // for testing
 // img_loaded:=img_temp3;
-// plot_fits(mainform1.image1,true,true);
+// plot_image(mainform1.image1,true,true);
 // exit;
 
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
@@ -11716,7 +11642,7 @@ begin
   stackmenu1.annotations_visible2.checked:=annotations_visible1.checked; {follow in stack menu}
   if head.naxis=0 then exit;
   if annotations_visible1.checked=false then  {clear screen}
-    plot_fits(mainform1.image1,false)
+    plot_image(mainform1.image1,false)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
 
@@ -11724,7 +11650,7 @@ begin
 //  stackmenu1.annotations_visible2.checked:=annotations_visible1.checked; {follow in stack menu}
 //  if head.naxis=0 then exit;
 //  if annotations_visible1.checked=false then  {clear screen}
-//    plot_fits(mainform1.image1,false,true)
+//    plot_image(mainform1.image1,false,true)
 //  else
 //    if annotated then plot_annotations(false {use solution vectors},false);
 
@@ -11910,7 +11836,7 @@ begin
   if head.naxis=0 then exit;
   if Constellations1.checked=false then  {clear screen}
   begin
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end
   else
   plot_constellations;
@@ -11921,7 +11847,7 @@ procedure Tmainform1.freetext1Click(Sender: TObject);
 begin
   if freetext1.checked=false then  {clear screen}
   begin
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end
   else
   begin
@@ -11935,7 +11861,7 @@ begin
   if head.naxis=0 then exit;
   if grid_az_alt1.checked=false then  {clear screen}
   begin
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end
   else
   plot_grid(false);//az,alt grid
@@ -12087,7 +12013,7 @@ begin
 
       {plot result}
       plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-      plot_fits(mainform1.image1,true {center_image});{center and stretch with current settings}
+      plot_image(mainform1.image1,true {center_image});{center and stretch with current settings}
 
     finally
        TmpBmp.Free;
@@ -12114,7 +12040,7 @@ begin
          demosaic_advanced(img_loaded) {demosaic and set levels}
       else
         plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-      plot_fits(mainform1.image1,false {re_center});
+      plot_image(mainform1.image1,false {re_center});
     end;
   end;
 end;
@@ -12653,7 +12579,7 @@ begin
 
   annotation_to_array(value, true{transparant},round((cwhite+head.backgr)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 end;
 
 
@@ -13600,7 +13526,7 @@ begin
             begin
               plot_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
               histogram_done:=true;
-              plot_fits(mainform1.image1,true {center_image});{center and stretch with current settings}
+              plot_image(mainform1.image1,true {center_image});{center and stretch with current settings}
               save_annotated_jpg(filename_output);{save viewer as annotated jpg}
             end;
             if hasoption('tofits') then {still to be tested}
@@ -13693,7 +13619,6 @@ begin
   else
   begin
     do_stretching; {create gamma curve for image if loaded later and set gamma_on}
-    build_exponential_table;//for colour display
   end;
 
   {$IfDef Darwin}// for OS X,
@@ -13943,7 +13868,7 @@ begin
   remove_key(mainform1.memo1.lines,'XBAYROFF',false{all});{remove key word in header}
   remove_key(mainform1.memo1.lines,'YBAYROFF',false{all});{remove key word in header}
 
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
   stackmenu1.test_pattern1.Enabled:=false;{do no longer allow debayer}
 
   update_header_for_colour; {update naxis and naxis3 keywords}
@@ -14080,7 +14005,7 @@ begin
    update_text(mainform1.memo1.lines,'COMMENT C','  Cropped image');
 
 
-   plot_fits(mainform1.image1,true);
+   plot_image(mainform1.image1,true);
    image_move_to_center:=true;
 
    Screen.Cursor:=crDefault;
@@ -14396,7 +14321,7 @@ begin
     mainform1.Memo1.Lines.EndUpdate;
 
     update_menu_related_to_solver(true); {update menu section related to solver succesfull}
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
   end;
 end;
 
@@ -14422,7 +14347,7 @@ begin
 
   head.datamax_org:=max_range;
   plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
@@ -14532,7 +14457,7 @@ begin
 
   rotate_arbitrary(angle,flipped_view,flipped_image);
 
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 
   progress_indicator(-100,'');{back to normal}
   Screen.Cursor:=crDefault;  { Always restore to normal }
@@ -15001,7 +14926,7 @@ begin
     image1.refresh;{important, show update}
   end
   else
-    plot_fits(mainform1.image1,false); {clear indicator}
+    plot_image(mainform1.image1,false); {clear indicator}
 end;
 
 
@@ -15175,7 +15100,7 @@ begin
             img_loaded[k ,max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2)))),max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))) ]:=img_backup[index_backup].img[k,fy,fx];{use backup for case overlap occurs}
         end;
       end;{k color}
-      plot_fits(mainform1.image1,false);
+      plot_image(mainform1.image1,false);
       if ((ssCtrl in shift) or (ssAlt in shift) or (ssShift in shift))=false then
       begin
         copy_paste:=false;
@@ -15985,7 +15910,7 @@ end;
 
 function stretch_img(img: Timage_array; head : theader):Timage_array;{stretch image, three colour or mono}
 var
- colrr,colgg,colbb,col_r,col_g,col_b, largest,luminance,luminance_stretched,factor,sat_factor,h,s,v : single;
+ colrr,colgg,colbb,col_r,col_g,col_b, largest,luminance,luminance_stretched,factor,saturationFactor,selectiveStrength :single;
  width5,height5,colours5,fitsX,fitsY :integer;
 begin
   colours5:=length(img);{nr colours}
@@ -15994,7 +15919,10 @@ begin
 
 
   setlength(result,colours5,height5,width5);
-  sat_factor:=1-mainform1.saturation_factor_plot1.position/10;
+
+  saturationFactor:=mainform1.saturation_factor_plot1.position/20;
+  selectiveStrength:=mainform1.selective_colour_saturation1.position/10;
+
 
   for fitsY:=0 to height5-1 do
     for fitsX:=0 to width5-1 do
@@ -16009,16 +15937,6 @@ begin
         colgg:=(col_g-head.backgr)/(cwhite-head.backgr);{scale to 0..1}
         colbb:=(col_b-head.backgr)/(cwhite-head.backgr);{scale to 0..1}
 
-        if sat_factor<>1 then {adjust saturation}
-        begin
-          RGB2HSV(colrr,colgg,colbb,h,s,v);
-          HSV2RGB(h,s*sat_factor,v,colrr,colgg,colbb);{increase/decrease colour saturation}
-        end;
-
-        if colrr<=0.00000000001 then colrr:=0.00000000001;
-        if colgg<=0.00000000001 then colgg:=0.00000000001;
-        if colbb<=0.00000000001 then colbb:=0.00000000001;
-
         {find brightest colour and resize all if above 1}
         largest:=colrr;
         if colgg>largest then largest:=colgg;
@@ -16031,42 +15949,36 @@ begin
           largest:=1;
         end;
 
+        colrr:=max(colrr,0.000000001);//keep just above zero for dividing by luminance and stretch_c
+        colgg:=max(colgg,0.000000001);
+        colbb:=max(colbb,0.000000001);
+
+        AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);
+        luminance:=0.333333*colrr+0.333333*colgg+0.333333*colbb;//keep equal ratio in image development and not luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB;
+
         if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
         begin
           luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
           luminance_stretched:=stretch_c[trunc(32768*luminance)];
           factor:=luminance_stretched/luminance;
-          if factor*largest>1 then factor:=1/largest; {clamp again, could be higher then 1}
-          col_r:=round(colrr*factor*65535);{stretch only luminance but keep rgb ratio!}
-          col_g:=round(colgg*factor*65535);{stretch only luminance but keep rgb ratio!}
-          col_b:=round(colbb*factor*65535);{stretch only luminance but keep rgb ratio!}
-        end
-        else
-        begin
-          col_r:=round(65535*colrr);
-          col_g:=round(65535*colgg);
-          col_b:=round(65535*colbb);
+          if factor*largest>1 then factor:=1/largest; {clamp again, could be lengther then 1}
+          colrr:=colrr*factor;{stretch only luminance but keep rgb ratio!}
+          colgg:=colgg*factor;{stretch only luminance but keep rgb ratio!}
+          colbb:=colbb*factor;{stretch only luminance but keep rgb ratio!}
         end;
 
-        result[0,fitsY,fitsX]:=col_r;
-        result[1,fitsY,fitsX]:=col_g;
-        result[2,fitsY,fitsX]:=col_b;
-      end {RGB fits with naxis3=3}
+        result[0,fitsY,fitsX]:=trunc(colrr*65535);//trunc is faster then round
+        result[1,fitsY,fitsX]:=trunc(colgg*65535);
+        result[2,fitsY,fitsX]:=trunc(colbb*65535);
+       end {RGB fits with naxis3=3}
       else
       begin {mono, naxis3=1}
         col_r:=img[0,fitsY,fitsX];
         colrr:=(col_r-head.backgr)/(cwhite-head.backgr);{scale to 1}
-        if colrr<=0.00000000001 then colrr:=0.00000000001;
-        if colrr>1 then colrr:=1;
+        colrr:=min(1,max(colrr,0));//keep in range 0..65535
         if stretch_on then
-        begin
-          col_r:=round(65535*stretch_c[trunc(32768*colrr)]);{sqrt is equivalent to gamma=0.5}
-        end
-        else
-        begin
-          col_r:=round(65535*colrr);{sqrt is equivalent to gamma=0.5}
-        end;
-        result[0,fitsY,fitsX] :=col_r;
+          colrr:=stretch_c[trunc(32768*colrr)];
+        result[0,fitsY,fitsX] :=trunc(colrr*65535);
       end;
     end;
 end;
@@ -16592,7 +16504,7 @@ begin
 
     add_text(mainform1.memo1.lines,'HISTORY   ','Flipped.                                                           ');
   end;
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 
   Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
@@ -16706,7 +16618,7 @@ begin
     backup_img;
     local_color_smooth(startX,stopX,startY,stopY);
 
-    plot_fits(mainform1.image1,false);
+    plot_image(mainform1.image1,false);
     Screen.Cursor:=crDefault;
   end{fits file}
   else
@@ -17093,7 +17005,7 @@ begin
       if scrollcode=scEndScroll then
      {$ENDIF}
     begin
-      plot_fits(mainform1.image1,false);
+      plot_image(mainform1.image1,false);
       shape_histogram1.visible:=false;
     end
     else

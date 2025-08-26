@@ -306,7 +306,7 @@ begin
           newImage.stretch := true;
           myimages[imageIndex-1]:=newimage;{store the timage}
 
-          plot_fits(newimage,false);     {mainform1.image1.Visible:=true; is done in plot_fits}
+          plot_image(newimage,false);     {mainform1.image1.Visible:=true; is done in plot_image}
 
           thumbnails1.panel1.height:=y+max_height; {causes a repaint}
 

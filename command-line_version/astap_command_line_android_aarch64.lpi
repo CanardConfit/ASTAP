@@ -59,6 +59,12 @@
         <GenerateDebugInfo Value="False"/>
       </Debugging>
     </Linking>
+    <Other>
+      <CustomOptions Value="-k-z
+-kcommon-page-size=16384
+-k-z
+-kmax-page-size=16384"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

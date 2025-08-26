@@ -64,6 +64,7 @@ type
     bb2: TEdit;
     bg2: TEdit;
     br2: TEdit;
+    nebula1: TCheckBox;
     equaliseBG_for_solving1: TCheckBox;
     gb2: TEdit;
     gg2: TEdit;
@@ -2754,7 +2755,7 @@ begin
     img_loaded := img_temp; {use result}
 
     plot_histogram(img_loaded, True);
-    plot_fits(mainform1.image1, False);{plot real}
+    plot_image(mainform1.image1, False);{plot real}
   end;
   update_equalise_background_step(5 {force 5 since equalise background is set to 1 by loading fits file});{update menu}
   Screen.Cursor := crDefault;
@@ -2779,7 +2780,7 @@ begin
     max_stars := strtoint2(stackmenu1.max_stars1.Text,500);  {maximum star to process, if so filter out brightest stars later}
 
     if quads_displayed then
-      plot_fits(mainform1.image1, False); {remove quads}
+      plot_image(mainform1.image1, False); {remove quads}
 
     binning := report_binning(head.Height{*cropping});
     {select binning on dimensions of cropped image}
@@ -2982,7 +2983,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
   gaussian_blur2(img_loaded, 2 * strtofloat2(most_common_filter_radius1.Text));
-  plot_fits(mainform1.image1, False);{plot}
+  plot_image(mainform1.image1, False);{plot}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
 end;
@@ -3313,7 +3314,7 @@ begin
     else
       artificial_flatV2(img_loaded, head,    StrToInt(StringReplace(ring_equalise_factor1.Text, '%', '', [])));
 
-    plot_fits(mainform1.image1, False);{plot real}
+    plot_image(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3396,7 +3397,7 @@ begin
 
     apply_factors;
     plot_histogram(img_loaded, True);
-    plot_fits(mainform1.image1, False);{plot real}
+    plot_image(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3482,7 +3483,7 @@ begin
     end;
     add_text(mainform1.memo1.lines,'HISTORY   ', add_substract1.text+' '+ExtractFileName(image_to_add1.Caption));
     plot_histogram(img_loaded, True);
-    plot_fits(mainform1.image1, False);{plot real}
+    plot_image(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -3550,7 +3551,7 @@ begin
         end;
     //apply_dpp_button1.Enabled := False;
     plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-    plot_fits(mainform1.image1, True);{plot real}
+    plot_image(mainform1.image1, True);{plot real}
 
     Screen.Cursor := crDefault;
   end;
@@ -3609,7 +3610,7 @@ begin
   apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
-  plot_fits(mainform1.image1, False);{plot real}
+  plot_image(mainform1.image1, False);{plot real}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
 end;
@@ -4107,7 +4108,7 @@ begin
         {succes load}
       begin
         plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-        plot_fits(mainform1.image1, False);{plot real}
+        plot_image(mainform1.image1, False);{plot real}
         update_equalise_background_step(0); {go to step 0}
       end;
     end
@@ -4174,7 +4175,7 @@ begin
   backup_img;
   gaussian_blur2(img_loaded, strtofloat2(blur_factor1.Text));
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainform1.image1, False);{plot}
+  plot_image(mainform1.image1, False);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -5278,7 +5279,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainform1.image1, False);{plot real}
+    plot_image(mainform1.image1, False);{plot real}
     progress_indicator(-100, '');{back to normal}
     Screen.Cursor := crDefault;
   end;
@@ -5381,7 +5382,7 @@ begin
 
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   remove_photometric_calibration;//from header
-  plot_fits(mainform1.image1, True);{plot}
+  plot_image(mainform1.image1, True);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -5478,7 +5479,7 @@ begin
         exit;
       end;
      plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-     plot_fits(mainform1.image1, False {re_center});
+     plot_image(mainform1.image1, False {re_center});
 
      {show alignment marker}
       if (stackmenu1.use_manual_alignment1.Checked) then
@@ -5959,8 +5960,8 @@ begin
 
 
         store_annotated := annotated;{store temporary annotated}
-        annotated := False;{prevent annotations are plotted in plot_fits}
-        plot_fits(mainform1.image1, False {re_center});
+        annotated := False;{prevent annotations are plotted in plot_image}
+        plot_image(mainform1.image1, False {re_center});
         annotated := store_annotated;{restore anotated value}
         if ((annotated) and (mainform1.annotations_visible1.Checked)) then
           plot_annotations(True {use solution vectors!!!!}, False);  {corrected annotations in case a part of the lights are flipped in the alignment routien}
@@ -6039,17 +6040,19 @@ begin
   starcounter := 0;
 
   {star test image}
-  head.naxis3 := 1; {head.naxis3 number of colors}
+  if nebula1.Checked then
+    head.naxis3 := 3
+  else
+    head.naxis3 := 1; {head.naxis3 number of colors}
   filename2 := 'star_test_image.fit';
   for j := 0 to 10 do {create an header with fixed sequence}
-    if (j <> 5) then {skip head.naxis3 for mono images}
+    if ((j <> 5) or (head.naxis3 <> 1)) then {skip head.naxis3 for mono images}
       mainform1.memo1.Lines.add(head1[j]); {add lines to empthy Memo3}
   mainform1.memo1.Lines.add(head1[27]); {add end}
 
   update_integer(mainform1.memo1.lines,'BITPIX  =', ' / Bits per entry                                 ' , head.nrbits);
   update_integer(mainform1.memo1.lines,'NAXIS1  =', ' / length of x axis                               ' , head.Width);
   update_integer(mainform1.memo1.lines,'NAXIS2  =', ' / length of y axis                               ' , head.Height);
-  if head.naxis3 = 1 then  remove_key(mainform1.memo1.lines,'NAXIS3  ', False{all});  {remove key word in header. Some program don't like naxis3=1}
   update_integer(mainform1.memo1.lines,'DATAMIN =', ' / Minimum data value                             ', 0);
   update_integer(mainform1.memo1.lines,'DATAMAX =', ' / Maximum data value                             ',  round(head.datamax_org));
   add_text(mainform1.memo1.lines,'COMMENT 1', '  Written by Astrometric Stacking Program. www.hnsky.org');
@@ -6070,8 +6073,7 @@ begin
     begin
       if gradient = False then img_loaded[0, i, j] := randg(1000, 100 {noise}){default background is 1000}
       else
-        img_loaded[0, i, j] := -500 * sqrt(sqr((i - head.Height / 2) / head.Height) + sqr((j - head.Width / 2) / head.Height)){circular gradient} +
-          randg(1000, 100 {noise});{default background is 100}
+        img_loaded[0, i, j] := -500 * sqrt(sqr((i - head.Height / 2) / head.Height) + sqr((j - head.Width / 2) / head.Height)){circular gradient} +  randg(1000, 100 {noise});{default background is 100}
     end;
 
   stepsize := round(sigma * 3);
@@ -6138,12 +6140,36 @@ begin
 
     end;
 
+  if head.naxis3<>1 then
+    for i := 0 to head.Height - 1 do
+      for j := 0 to head.Width - 1 do
+      begin
+        img_loaded[1, i, j] :=img_loaded[0, i, j];
+        img_loaded[2, i, j] :=img_loaded[0, i, j];
+        if ((j>=1000) and (j<=1800) and  (i>400) and (i<1400)) then
+        begin
+          if j<1350 then
+          img_loaded[0, i, j] :=img_loaded[0, i, j] + (i-400) div 2;//red
+          img_loaded[1, i, j] :=img_loaded[1, i, j] + (i-400) div 3;//red
+          img_loaded[2, i, j] :=img_loaded[2, i, j] + (i-400) div 3;//red
+          if ((j>=1350) and (j<1700)) then
+          begin
+            img_loaded[0, i, j] :=img_loaded[0, i, j] + (i-400) div 3; //bluesh
+            img_loaded[1, i, j] :=img_loaded[1, i, j] + (i-400) div 3; //bluesh
+            img_loaded[2, i, j] :=img_loaded[2, i, j] + (i-400) div 2; //bluesh
+          end;
+          if j>=1700 then
+            img_loaded[1, i, j] :=img_loaded[1, i, j] + (i-400) div 3;//green
+        end;
+      end;
+
+
   update_menu(True);{file loaded, update menu for fits. Set fits_file:=true}
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
   mainform1.memo1.lines.endupdate;
 
-  plot_fits(mainform1.image1, True);{plot test image}
+  plot_image(mainform1.image1, True);{plot test image}
 end;
 
 
@@ -7372,6 +7398,7 @@ var
 begin
   with stackmenu1.rainbow_panel1 do
   begin
+
     w2 := Width div 2;
     h2 := Height div 2;
 
@@ -7382,7 +7409,8 @@ begin
         begin
           h := 180 + Arctan2(i, j) * 180 / pi;
           radius := (i * i + j * j) / (w2 * h2);
-          HSV2RGB(h, radius {s 0..1}, 255 {v 0..1}, r, g, b);
+          HSV2RGB(h, radius {s 0..1 or 0..255}, 255 {v 0..1 or 0.255}, r, g, b);
+
           canvas.pixels[i + w2, j + h2] := rgb(trunc(r), trunc(g), trunc(b));
         end;
       end;
@@ -7587,7 +7615,7 @@ begin
   add_text(mainform1.memo1.lines,'HISTORY   ', 'Artificial colour applied.');
 
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainform1.image1, False);{plot real}
+  plot_image(mainform1.image1, False);{plot real}
   Screen.Cursor := crDefault;
 end;
 
@@ -8438,9 +8466,9 @@ begin
       head:=head_ref;//use reference header for plotting since the image should be aligned to the reference image
 
       store_annotated := annotated;{store temporary annotated}
-      annotated := False;{prevent annotations are plotted in plot_fits}
+      annotated := False;{prevent annotations are plotted in plot_image}
 
-      plot_fits(mainform1.image1, False {re_center});
+      plot_image(mainform1.image1, False {re_center});
 
       annotated := store_annotated;{restore anotated value}
       if ((annotated) and (mainform1.annotations_visible1.Checked)) then  //header annotations
@@ -8918,7 +8946,7 @@ begin
 
   global_colour_smooth(img_loaded, strtofloat2(global_colour_smooth_width1.Text), strtofloat2(luminance_slope1.text), False);
 
-  plot_fits(mainform1.image1, False);{plot real}
+  plot_image(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
   memo2_message('Ready colour smooth.');
@@ -8944,7 +8972,7 @@ begin
     except
     end;
     apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);  {apply most common filter on first array and place result in second array}
-    plot_fits(mainform1.image1, True);{plot real}
+    plot_image(mainform1.image1, True);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -9140,7 +9168,7 @@ begin
       img_loaded[1, fitsY, fitsX] := green;
       img_loaded[2, fitsY, fitsX] := blue;
     end;
-  plot_fits(mainform1.image1, False);{plot}
+  plot_image(mainform1.image1, False);{plot}
   Screen.cursor := crDefault;
 end;
 
@@ -9353,7 +9381,7 @@ begin
   box_blur(1 {nr of colors}, blur_factor, img_loaded);
 
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainform1.image1, False);{plot real}
+  plot_image(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -9429,7 +9457,7 @@ begin
   check_pattern_filter(img_loaded);
 
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainform1.image1, False);{plot real}
+  plot_image(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -9467,7 +9495,7 @@ begin
   mainform1.annotations_visible1.checked:=annotations_visible2.checked; {follow in main menu viewer}
   if head.naxis=0 then exit;
   if annotations_visible2.checked=false then  {clear screen}
-    plot_fits(mainform1.image1,false)
+    plot_image(mainform1.image1,false)
   else
     if annotated then plot_annotations(false {use solution vectors},false);
 end;
@@ -9513,7 +9541,7 @@ begin
 
   apply_star_smooth(star_colour_smooth_diameter1.Text, star_colour_smooth_nrstars1.Text);
 
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 
   Screen.Cursor:=crDefault;
 end;
@@ -9644,7 +9672,7 @@ begin
 
   end;
 
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
   Screen.Cursor:=crDefault;
 
   {
@@ -9739,7 +9767,7 @@ begin
   if head.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  plot_fits(mainform1.image1,false);//clear
+  plot_image(mainform1.image1,false);//clear
 
   memo2_message('Satellite streak detection started.');
   contour(true {plot}, img_loaded,head,strtofloat2(contour_gaussian1.text),strtofloat2(contour_sigma1.text));
@@ -9753,7 +9781,7 @@ end;
 procedure Tstackmenu1.ClearButton1Click(Sender: TObject);
 begin
   memo2_message('Removing streak annotations from header');
-  plot_fits(mainform1.image1,false);
+  plot_image(mainform1.image1,false);
 end;
 
 procedure Tstackmenu1.FormKeyDown(Sender: TObject; var Key: Word;
@@ -10731,7 +10759,7 @@ begin
   letter_height:=mainform1.image1.Canvas.textheight('M');
   mainform1.image1.Canvas.textout(20,head.height-letter_height,stackmenu1.reference_database1.text);//show which database was used
 
-  plot_fits(mainform1.image1,false);//refresh screen
+  plot_image(mainform1.image1,false);//refresh screen
 
   Screen.Cursor:=crDefault;
 end;
@@ -11295,7 +11323,7 @@ begin
         end;
       end;
     end;
-  plot_fits(mainform1.image1, False);{plot real}
+  plot_image(mainform1.image1, False);{plot real}
 
   HueRadioButton1.Checked := False;
   HueRadioButton2.Checked := False;
@@ -11461,7 +11489,7 @@ begin
     strtofloat2(stackmenu1.noisefilter_blur1.Text));
 
   //  plot_histogram(true);{get histogram}
-  plot_fits(mainform1.image1, False);{plot real}
+  plot_image(mainform1.image1, False);{plot real}
 
   Screen.Cursor := crDefault;
 end;
@@ -11488,7 +11516,7 @@ begin
     end;
 
     remove_photometric_calibration;//from header
-    plot_fits(mainform1.image1, True);{plot real}
+    plot_image(mainform1.image1, True);{plot real}
     Screen.Cursor := crDefault;
   end;
 end;
@@ -11515,7 +11543,7 @@ begin
           img_loaded[col, fitsY, fitsX] :=
             max(0, img_loaded[col, fitsY, fitsX] + randg(mean, noise){gaussian noise});
 
-    plot_fits(mainform1.image1, False);{plot real}
+    plot_image(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
   end;
   plot_histogram(img_loaded, True {update}); {update for the noise, plot histogram, set sliders}
@@ -11579,7 +11607,7 @@ begin
 
         plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
-        plot_fits(mainform1.image1, False {re_center});
+        plot_image(mainform1.image1, False {re_center});
 
         {show alignment marker}
         if (stackmenu1.use_manual_alignment1.Checked) then
@@ -12420,7 +12448,7 @@ begin
       end;
   end;{with stackmenu1 do}
 
-  plot_fits(mainform1.image1, True);{update to last image, activate Memo3}
+  plot_image(mainform1.image1, True);{update to last image, activate Memo3}
 
   Screen.Cursor := crDefault;
   memo2_message('Calibration of the individual files is complete. New files are posted in the results tab');
@@ -13274,8 +13302,6 @@ begin
             stackmenu1.auto_background_level1Click(nil);
             apply_factors;{histogram is after this action invalid}
             stackmenu1.reset_factors1Click(nil);{reset factors to default}
-
-
             plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
             if stackmenu1.global_colour_smooth1.Checked then
@@ -13330,7 +13356,7 @@ begin
             plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
         end;
 
-        plot_fits(mainform1.image1, True);{plot real}
+        plot_image(mainform1.image1, True);{plot real}
 
         mainform1.Memo1.Lines.BeginUpdate;
 
@@ -13764,7 +13790,7 @@ begin
   end;{k color}
 
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-  plot_fits(mainform1.image1, False);
+  plot_image(mainform1.image1, False);
 
   memo2_message('Remove gradient done.');
 
