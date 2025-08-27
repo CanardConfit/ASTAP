@@ -1,0 +1,48 @@
+A possible path of some testing:
+
+If you don’t have a real phone:
+
+Run an emulator from Android Studio. Note the x86_64 emulator running Android 11 or higher will run both X86_64 and arm64/aarch64 programs!
+Open Android Studio → Device Manager.
+Create a Virtual Device (AVD) (e.g., Pixel 9, Android 16).
+Select "Pre-release 16kb page Size Google Play intel x86_64 Atom system image"
+Wait till installed.
+Start the installed emulator.
+
+Open a terminal in Android studio, note the path.
+Open a CMD in Windows and go to the same path
+
+Test adb with a temporary PATH (only for this CMD window)
+   set PATH=%PATH%;E:\Android_sdk\platform-tools
+
+Make sure adb itself is working
+  adb version
+
+
+In a CMD window, run:
+   adb devices
+You should see something like:
+   emulator-5554   device
+
+
+
+Deploy to Android X86_64 emulator:
+
+   adb push astap_cli /data/local/tmp/
+   adb shell chmod +x /data/local/tmp/astap_cli
+   adb shell /data/local/tmp/astap_cli
+
+Test solving, by copy the database and an image to the phone emulator:
+   for %f in (E:\MyApplication2\d50*.*) do adb push "%f" /data/local/tmp/
+   adb push m16.fits /data/local/tmp/
+
+Test the solving:
+   adb shell  /data/local/tmp/astap_cli -f  /data/local/tmp/m16.fits
+
+
+
+extra:
+Check runtime page size via ADB:
+   adb shell getconf PAGE_SIZE
+
+It should return 16384 on a 16 KB setup or 4096 otherwise.

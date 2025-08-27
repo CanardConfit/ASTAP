@@ -58,6 +58,10 @@
       <Debugging>
         <GenerateDebugInfo Value="False"/>
       </Debugging>
+      <Options>
+        <PassLinkerOptions Value="True"/>
+        <LinkerOptions Value="-pie"/>
+      </Options>
     </Linking>
     <Other>
       <CustomOptions Value="-k-z
