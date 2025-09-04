@@ -73,7 +73,7 @@ begin
     'ASTAP astrometric solver version CLI-'+astap_version+#10+
     '(C) 2018, 2025 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
     'Usage:'+#10+
-    '-f  filename  {fits, tiff, png, jpg files}'+#10+
+    '-f  filename {fits, tiff, png, pbm, jpg files}'+#10+
     '-r  radius_area_to_search[degrees]'+#10+      {changed}
     '-fov diameter_field[degrees] {enter zero for auto}'+#10+   {changed}
     '-ra  right_ascension[hours]'+#10+
@@ -85,7 +85,7 @@ begin
 
     '-check {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
     '-d  path {specify a path to the star database}'+#10+
-    '-D  abbreviation {Specify a star database [d80,d50,..]}'+#10+
+    '-D  abbreviation[d80,d50,...] {Specify a star database}'+#10+
     '-eqbg {Equalise unequal background prior to solving to improve star detection}'+#10+
     '-o  file {Name the output files with this base path & file name.}'+#10+
     '-sip {Add SIP (Simple Image Polynomial) coefficients}'+#10+

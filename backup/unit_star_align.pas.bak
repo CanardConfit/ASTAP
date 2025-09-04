@@ -899,21 +899,6 @@ begin
         matchlist2[1,nr_references2]:=j;
         inc(nr_references2);
         if nr_references2>=length(matchlist2[0]) then setlength(matchlist2,2,nr_references2+1000);//get more space
-
-        {memo2_message(','+
-                      floattostr(quad_star_distances1[0,i])+','+
-                      floattostr(quad_star_distances1[1,i])+','+
-                      floattostr(quad_star_distances1[2,i])+','+
-                      floattostr(quad_star_distances1[3,i])+','+
-                      floattostr(quad_star_distances1[4,i])+','+
-                      floattostr(quad_star_distances1[5,i])
-                      +',tolerances,'+
-                      floattostr(quad_star_distances1[1,i] - quad_star_distances2[1,j])+','+
-                      floattostr(quad_star_distances1[2,i] - quad_star_distances2[2,j])+','+
-                      floattostr(quad_star_distances1[3,i] - quad_star_distances2[3,j])+','+
-                      floattostr(quad_star_distances1[4,i] - quad_star_distances2[4,j])+','+
-                      floattostr(quad_star_distances1[5,i] - quad_star_distances2[5,j]));
-          }
       end;
       inc(j);
     until j>=nrquads2;//j loop
@@ -948,8 +933,7 @@ begin
       inc(nr_references);
     end
     else
-    if solve_show_log then
-       memo2_message('quad outlier removed due to abnormal size: '+floattostr6(100*ratios[k]/median_ratio)+'%');
+    if solve_show_log then memo2_message('quad outlier removed due to abnormal size: '+floattostr6(100*ratios[k]/median_ratio)+'%');
   end;
 
   {outliers in largest length removed}
@@ -1074,21 +1058,6 @@ begin
             Inc(nr_references2);
             if nr_references2 >= Length(matchlist2[0]) then
               SetLength(matchlist2, 2, nr_references2 + 1000); {Fallback resizing}
-
-            {memo2_message(','+
-                          floattostr(quad_star_distances1[0,hash_table1[bin,i]])+','+
-                          floattostr(quad_star_distances1[1,hash_table1[bin,i]])+','+
-                          floattostr(quad_star_distances1[2,hash_table1[bin,i]])+','+
-                          floattostr(quad_star_distances1[3,hash_table1[bin,i]])+','+
-                          floattostr(quad_star_distances1[4,hash_table1[bin,i]])+','+
-                          floattostr(quad_star_distances1[5,hash_table1[bin,i]])
-                          +',tolerances,'+
-                          floattostr(quad_star_distances1[1,hash_table1[bin,i]] - quad_star_distances2[1,hash_table2[adjusted_bin,j]])+','+
-                          floattostr(quad_star_distances1[2,hash_table1[bin,i]] - quad_star_distances2[2,hash_table2[adjusted_bin,j]])+','+
-                          floattostr(quad_star_distances1[3,hash_table1[bin,i]] - quad_star_distances2[3,hash_table2[adjusted_bin,j]])+','+
-                          floattostr(quad_star_distances1[4,hash_table1[bin,i]] - quad_star_distances2[4,hash_table2[adjusted_bin,j]])+','+
-                          floattostr(quad_star_distances1[5,hash_table1[bin,i]] - quad_star_distances2[5,hash_table2[adjusted_bin,j]]));
-             }
           end;
         end;
       end;
@@ -1371,7 +1340,7 @@ var
 begin
   result:=false; //assume failure
 
- // tolerance:=min(tolerance,0.008);//prevent too high tolerances
+  tolerance:=min(tolerance,0.008);//prevent too high tolerances
 
   //profiler_start(true);
 
