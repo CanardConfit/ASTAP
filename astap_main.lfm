@@ -606,6 +606,7 @@ object mainform1: Tmainform1
             ShowHint = True
             TabOrder = 6
             OnMouseUp = saturation_factor_plot1MouseUp
+            OnMouseWheel = saturation_factor_plot1MouseWheel
             OnKeyUp = saturation_factor_plot1KeyUp
           end
           object shape_histogram1: TShape
@@ -642,6 +643,7 @@ object mainform1: Tmainform1
             ShowHint = True
             TabOrder = 7
             OnMouseUp = saturation_factor_plot1MouseUp
+            OnMouseWheel = selective_colour_saturation1MouseWheel
             OnKeyUp = saturation_factor_plot1KeyUp
           end
         end

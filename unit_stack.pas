@@ -64,6 +64,7 @@ type
     bb2: TEdit;
     bg2: TEdit;
     br2: TEdit;
+    gradient_filter_factor1: TComboBox;
     nebula1: TCheckBox;
     equaliseBG_for_solving1: TCheckBox;
     gb2: TEdit;
@@ -280,7 +281,6 @@ type
     gg1: TEdit;
     go_step_two1: TBitBtn;
     gr1: TEdit;
-    gradient_filter_factor1: TEdit;
     green_filter1: TEdit;
     green_filter2: TEdit;
     green_purple_filter1: TCheckBox;
@@ -784,6 +784,7 @@ type
     procedure measuring_method1Change(Sender: TObject);
     procedure export_to_tg1Click(Sender: TObject);
     procedure find_listview_text7Click(Sender: TObject);
+    procedure quad_tolerance1Change(Sender: TObject);
     procedure report_sqm1Click(Sender: TObject);
     procedure MenuItem41Click(Sender: TObject);
     procedure annotate_unknown1Click(Sender: TObject);
@@ -1121,7 +1122,7 @@ procedure listview_add_xy(c:integer;fitsX, fitsY: double);{add x,y position to l
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 procedure update_tab_alignment;{update stackmenu1 menus}
-procedure box_blur(colors, range : integer; var img: Timage_array);{blur by combining values of pixels, ignore zeros}
+procedure box_blur(range : integer; var img: Timage_array);{blur by combining values of pixels, ignore zeros}
 procedure check_pattern_filter(var img: Timage_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter_for_aligned(var img: Timage_array); {remove black spots with value zero}{execution time about 0.4 sec}
 
@@ -3123,6 +3124,83 @@ end;
 
 procedure artificial_flatV1(var img: Timage_array; box_size: integer);
 var
+  fitsX,fitsY,i, j, col, colors, w, h,greylevels,xcount,ycount: integer;
+  offset: single;
+  bg,xstep,ystep,x,y,half_box : double;
+  img_temp2: Timage_array;
+
+begin
+  esc_pressed:=false;
+  colors := Length(img); {colors}
+  w := Length(img[0,0]); {width}
+  h := Length(img[0]);   {height}
+
+  {prepare img_temp2}
+  setlength(img_temp2, colors, h, w);
+
+// Calculate the number of steps for x and y
+  xCount:=round(w/box_size);
+  YCount:=round(h/box_size);
+
+  // Calculate the adapted step sizes
+  xStep := w / xCount;
+  yStep := h / yCount;
+
+  half_box:=box_size/2;
+
+  {create artificial flat}
+//  bg := mode(img_loaded,true{ellipse shape}, 0, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels) - bg;
+
+  for col := 0 to colors - 1 do {do all colours}
+  begin
+    {mode finds most common value for the 60% center }
+    bg:= mode(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
+
+    y := yStep / 2;
+    while y < h do
+    begin
+      application.processmessages;
+      if esc_pressed then
+      begin
+        memo2_message('ESC pressed');
+        exit;
+      end;
+
+      x := xStep/2;
+      while x < w do
+        begin
+          offset := mode(img_loaded,false{ellipse shape}, col, round(x-half_box),round(x+half_box), round(y-half_box),round(y+half_box), 32000,greylevels) - bg; {mode finds most common value}
+          if ((offset < 0) {and (offset>-200)}) then
+          begin
+            for j := round(y - half_box) to round(y + half_box) do
+              for i := round(x - half_box) to round(x + half_box) do
+                if ((i >= 0) and (i < w) and (j >= 0) and (j < h)) then {within the boundaries of the image array}
+                  img_temp2[col, j, i] := -offset;
+          end;
+          x := x + xStep;
+        end;//x loop
+        y := y + yStep;
+    end;//y loop
+  end;{all colors}
+
+  //img_loaded:=duplicate(img_temp2);
+  // exit;
+
+  {smooth flat}
+  gaussian_blur2(img_temp2, box_size * 2);
+
+  {apply artificial flat}
+  for col := 0 to colors - 1 do {do all colours}
+    for fitsY := 0 to h - 1 do
+      for fitsX := 0 to w - 1 do
+        img[col, fitsY, fitsX] := img[col, fitsY, fitsX] + img_temp2[col, fitsY, fitsX];
+
+  img_temp2 := nil;
+end;
+
+
+procedure artificial_flatV1old(var img: Timage_array; box_size: integer);
+var
   fitsx, fitsy, i, j, col, step, colors, w, h,greylevels: integer;
   offset: single;
   bg: double;
@@ -3144,6 +3222,8 @@ begin
   step := box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
 
   {create artificial flat}
+//  bg := mode(img_loaded,true{ellipse shape}, 0, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels) - bg;
+
   for col := 0 to colors - 1 do {do all colours}
   begin
     bg := mode(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels) - bg;
@@ -3189,7 +3269,6 @@ begin
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
         img[col, fitsY, fitsX] := img[col, fitsY, fitsX] + img_temp2[col, fitsY, fitsX];
-
   img_temp2 := nil;
 end;
 
@@ -3286,8 +3365,6 @@ begin
 
       end;
   end;{all colors}
-  test := nil;
-  median := nil;
 end;
 
 
@@ -3313,6 +3390,8 @@ begin
       artificial_flatV1(img_loaded, box_size)
     else
       artificial_flatV2(img_loaded, head,    StrToInt(StringReplace(ring_equalise_factor1.Text, '%', '', [])));
+
+    plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
     plot_image(mainform1.image1, False);{plot real}
     Screen.Cursor := crDefault;
@@ -4092,7 +4171,7 @@ procedure Tstackmenu1.FormShow(Sender: TObject);
 begin
  // set_icon_stackbutton;//update glyph stack button
   stackmenu1.stack_method1Change(nil);
-
+  stackmenu1.quad_tolerance1Change(nil);//make abnormal quad tolerances red
   stackmenu1.pagecontrol1Change(Sender);//update stackbutton1.enabled
   delta_dark_temperature_visibility;//update visibility
 end;
@@ -4907,7 +4986,7 @@ end;
 
 
 
-procedure box_blur(colors, range : integer; var img: Timage_array);{blur by combining values of pixels, ignore value above max_value and zeros}
+procedure box_blur(range : integer; var img: Timage_array);{blur by combining values of pixels, ignore value above max_value and zeros}
 var
   fitsX, fitsY, k, x1, y1, col, w, h, i, j, counter, minimum, maximum: integer;
   img_temp2: Timage_array;
@@ -4969,18 +5048,9 @@ begin
       end;
   end;{k}
 
-  if ((colors = 1){request} and (col = 3){actual}) then
-    {rare, need to make mono, copy back to img}
-  begin
-    for fitsY := 0 to h - 1 do
-      for fitsX := 0 to w - 1 do
-        for k := 0 to col - 1 do
-          img[0, fitsY, fitsX] := (img_temp2[0, fitsY, fitsX] + img_temp2[1, fitsY, fitsX] +  img_temp2[2, fitsY, fitsX]) / 3;
-  end
-  else
-    img := img_temp2;{move pointer array}
 
-  head.naxis3 := colors;{the final result}
+  img := img_temp2;{move pointer array}
+
   img_temp2 := nil;
 end;
 
@@ -9378,7 +9448,7 @@ begin
   backup_img;
 
   blur_factor:=2+box_blur_factor1.ItemIndex;//box blur factor
-  box_blur(1 {nr of colors}, blur_factor, img_loaded);
+  box_blur(blur_factor, img_loaded);
 
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_image(mainform1.image1, False);{plot real}
@@ -10068,6 +10138,14 @@ begin
   FindAndScrollInListView(ListView7, PatternToFind);
 end;
 
+procedure Tstackmenu1.quad_tolerance1Change(Sender: TObject);
+begin
+  if strtofloat2(quad_tolerance1.text)>0.008 then
+    quad_tolerance1.color:=clRed
+  else
+    quad_tolerance1.color:=clDefault;
+end;
+
 
 procedure Tstackmenu1.solar_drift_compensation1Change(Sender: TObject);
 var
@@ -10091,7 +10169,6 @@ begin
   count:=0;
   count_checked:=0;
   setlength(listMagnitudes,stackmenu1.listview7.items.count);//list with magnitudes check star
-
 
   with stackmenu1 do
   for c:=0 to length(RowChecked)-1 do {retrieve data from listview}
@@ -13723,7 +13800,7 @@ end;
 procedure Tstackmenu1.apply_vertical_gradient1Click(Sender: TObject);
 var
   fitsX, fitsY, i, k, most_common, y1, y2, x1, x2, counter, step,greylevels: integer;
-  mean: double;
+  mean,bg,offset: double;
 begin
   if head.naxis = 0 then exit;
 
@@ -13737,47 +13814,57 @@ begin
   mean := 0;
   counter := 0;
 
+  for k := 0 to head.naxis3 - 1 do {do all colors}
+  begin
+  {mode finds most common value for the 60% center }
+  bg:= mode(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
+
+
   {vertical}
   if Sender = apply_vertical_gradient1 then
-    for k := 0 to head.naxis3 - 1 do {do all colors}
     begin
       for fitsY := 0 to (head.Height - 1) div step do
       begin
         y1 := (step + 1) * fitsY - (step div 2);
         y2 := (step + 1) * fitsY + (step div 2);
-        most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, 0, head.Width - 1, y1, y2, 32000,greylevels);
-        mean := mean + most_common;
+        offset := mode(img_backup[index_backup].img,false{ellipse shape}, k, 0, head.Width - 1, y1, y2, 32000,greylevels) -bg;
+//        mean := mean + most_common;
         Inc(counter);
         for i := y1 to y2 do
           for fitsX := 0 to head.Width - 1 do
           begin
             if ((i >= 0) and (i <= head.Height - 1)) then
-              img_loaded[k, i, fitsX] := most_common;{store common vertical values}
+              img_loaded[k, i, fitsX] := offset;{store offset vertical values}
           end;
       end;
     end;{K}
 
   {horizontal}
   if Sender = apply_horizontal_gradient1 then
-    for k := 0 to head.naxis3 - 1 do {do all colors}
     begin
       for fitsX := 0 to (head.Width - 1) div step do
       begin
         x1 := (step + 1) * fitsX - (step div 2);
         x2 := (step + 1) * fitsX + (step div 2);
-        most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, x1, x2, 0, head.Height - 1, 32000,greylevels);
-        mean := mean + most_common;
+        offset := mode(img_backup[index_backup].img,false{ellipse shape}, k, x1, x2, 0, head.Height - 1, 32000,greylevels) -bg;
+       // mean := mean + most_common;
         Inc(counter);
         for i := x1 to x2 do
           for fitsY := 0 to head.Height - 1 do
           begin
             if ((i >= 0) and (i <= head.Width - 1)) then
-              img_loaded[k, fitsY, i] := most_common;{store common vertical values}
+              img_loaded[k, fitsY, i] := offset;{store offset horizontal values}
           end;
       end;
     end;{K}
 
-  mean := mean / counter;
+  end; //do all colours
+
+//  beep;
+//  exit;
+
+
+//  mean := mean / counter;
   gaussian_blur2(img_loaded, step * 2);
 
   for k := 0 to head.naxis3 - 1 do {do all colors}
@@ -13785,7 +13872,8 @@ begin
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
       begin
-        img_loaded[k, fitsY, fitsX] := mean + img_backup[index_backup].img[k, fitsY, fitsX] - img_loaded[k, fitsY, fitsX];
+//        img_loaded[k, fitsY, fitsX] := mean + img_backup[index_backup].img[k, fitsY, fitsX] - img_loaded[k, fitsY, fitsX];
+        img_loaded[k, fitsY, fitsX] := img_backup[index_backup].img[k, fitsY, fitsX] - img_loaded[k, fitsY, fitsX];
       end;
   end;{k color}
 

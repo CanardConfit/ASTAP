@@ -63,7 +63,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.07.25';
+  astap_version: string='2025.09.04';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -1560,8 +1560,8 @@ end;
 
 function load_PPM_PGM_PFM(filen:string; var img_loaded2: Timage_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
-   i,j, reader_position,naxis  : integer;
-   aline,w1,h1,bits,comm  : ansistring;
+   i,j, reader_position,naxis,s        : integer;
+   aline,w1,h1,bits,comm,comment_line  : ansistring;
    ch                : ansichar;
    rgb32dummy        : byteXXXX3;
    rgb16dummy        : byteXX3;
@@ -1569,7 +1569,7 @@ var
    width2,height2, err,err2,err3,package,naxis3      : integer;
    comment,color7,pfm,expdet,timedet,isodet,instdet  : boolean;
    range, jd2        : double;
-
+   thecomments       : TStringList;
 var
    x_longword  : longword;
    x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
@@ -1622,6 +1622,8 @@ begin
     else
     if aline='Pf'+#10 then begin color7:=false; pfm:=true; end;  {PFM colour scale image, photoshop export float 32 bit grayscale}
 
+    comment_line:='';
+    thecomments := TStringList.Create; // This is needed when using this class(or most classes)
     i:=0;
     repeat {read header}
       comment:=false;
@@ -1644,6 +1646,7 @@ begin
               date_obs:=JdToDate(jd2);
               timedet:=false;
             end;{get date from comments}
+            comment_line:=comment_line+comm+' ';//for full comment line
             comm:='';{clear for next keyword}
           end;
           if comm='EXPTIME=' then begin expdet:=true; comm:=''; end else
@@ -1654,9 +1657,14 @@ begin
         else
         if ord(ch)>32 then aline:=aline+ch;; {DCRAW write space #20 between width&length, Photoshop $0a}
 
-        if ord(ch)=$0a then comment:=false;{complete comment read}
+        if ord(ch)=$0a then
+        begin
+           comment:=false;{complete comment read}
+           thecomments.add(comment_line);//store the comments
+           comment_line:='';
+        end;
         inc(reader_position,1)
-      until ( ((comment=false) and (ord(ch)<=32)) or (reader_position>200)) ;{ignore comments, with till text is read and escape if too long}
+      until ( ((comment=false) and (ord(ch)<=32)) );
       if (length(aline)>1){no comments} then {read header info}
       begin
         inc(i);{useful header line}
@@ -1666,7 +1674,7 @@ begin
         else
         bits:=aline;
       end;
-    until ((i>=3) or (reader_position>200)) ;
+    until i>=3;
 
     val(w1,width2,err);
     val(h1,height2,err2);
@@ -1689,6 +1697,7 @@ begin
       writeln('Error, accessing the file!');
       close_fits_file;
       fits_file:=false;
+      thecomments.free; //tstringlist
       exit;
     end; {should contain 255 or 65535}
 
@@ -1711,6 +1720,7 @@ begin
       beep;
       writeln('Too large FITS file !!!!!');
       close_fits_file;
+      thecomments.free; //tstringlist
       exit;
     end
     else
@@ -1786,6 +1796,7 @@ begin
     end;
   except;
     close_fits_file;
+    thecomments.free; //tstringlist
     exit;
   end;
 
@@ -1815,6 +1826,11 @@ begin
   update_text   ('BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
 
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+
+  for s:=0 to thecomments.count-1 do
+      add_text('COMMENT',thecomments[s]);{add PGM comments to header memo}
+
+  thecomments.free; //tstringlist
 end;
 
 

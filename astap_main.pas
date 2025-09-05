@@ -425,6 +425,12 @@ type
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
+    procedure saturation_factor_plot1MouseWheel(Sender: TObject;
+      Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
+      var Handled: Boolean);
+    procedure selective_colour_saturation1MouseWheel(Sender: TObject;
+      Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
+      var Handled: Boolean);
     procedure simbad_annotation_deepsky_filtered1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure Panel1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -2568,8 +2574,8 @@ end;
 function load_PPM_PGM_PFM(filen:string; out head :theader; out img_loaded2: Timage_array; memo :Tstrings) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
   TheFile  : tfilestream;
-  i,j, reader_position  : integer;
-  aline,w1,h1,bits,comm  : ansistring;
+  i,j, reader_position,s              : integer;
+  aline,w1,h1,bits,comm,comment_line  : ansistring;
   ch                : ansichar;
   rgb32dummy        : byteXXXX3;
   rgb16dummy        : byteXX3;
@@ -2577,6 +2583,7 @@ var
   err,err2,err3,package  : integer;
   comment,color7,pfm,expdet,timedet,isodet,instdet,ccdtempdet  : boolean;
   range, jd2        : double;
+  thecomments       : TStringList;
 var
    x_longword  : longword;
    x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
@@ -2632,6 +2639,8 @@ begin
     else
     if aline='Pf'+#10 then begin color7:=false; pfm:=true; end;  {PFM colour scale image, photoshop export float 32 bit grayscale}
 
+    comment_line:='';
+    thecomments := TStringList.Create; // This is needed when using this class(or most classes)
     i:=0;
     repeat {read header}
       comment:=false;
@@ -2658,6 +2667,7 @@ begin
               head.date_obs:=JdToDate(jd2);
               timedet:=false;
             end;{get date from comments}
+            comment_line:=comment_line+comm+' ';//for full comment line
             comm:='';{clear for next keyword}
           end;
           if comm='EXPTIME=' then begin expdet:=true; comm:=''; end else
@@ -2669,9 +2679,14 @@ begin
         else
         if ord(ch)>32 then aline:=aline+ch;; {DCRAW write space #20 between width&length, Photoshop $0a}
 
-        if ord(ch)=$0a then comment:=false;{complete comment read}
+        if ord(ch)=$0a then
+        begin
+           comment:=false;{complete comment read}
+           thecomments.add(comment_line);//store the comments
+           comment_line:='';
+        end;
         inc(reader_position,1)
-      until ( ((comment=false) and (ord(ch)<=32)) or (reader_position>200)) ;{ignore comments, with till text is read and escape if too long}
+      until ( ((comment=false) and (ord(ch)<=32)));
       if (length(aline)>1){no comments} then {read header info}
       begin
         inc(i);{useful header line}
@@ -2681,7 +2696,7 @@ begin
         else
         bits:=aline;
       end;
-    until ((i>=3) or (reader_position>200)) ;
+    until i>=3;
 
     val(w1,head.width,err);
     val(h1,head.height,err2);
@@ -2705,6 +2720,7 @@ begin
       mainform1.error_label1.visible:=true;
       close_fits_file;
       head.naxis:=0;
+      thecomments.free; //tstringlist
       exit;
     end; {should contain 255 or 65535}
 
@@ -2731,6 +2747,7 @@ begin
       beep;
       textout(mainform1.image1.canvas.handle,30,30,'Too large FITS file !!!!!',25);
       close_fits_file;
+      thecomments.free; //tstringlist
       exit;
     end
     else
@@ -2806,6 +2823,7 @@ begin
     end;
   except;
     close_fits_file;
+    thecomments.free; //tstringlist
     exit;
   end;
 
@@ -2830,16 +2848,21 @@ begin
   update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer(memo,'DATAMAX =',' / Maximum data value                           ' ,round(head.datamax_org));
 
-  if head.exposure<>0 then   update_float(memo,'EXPTIME =',' / duration of exposure in seconds                ',false ,head.exposure);
+  if head.exposure<>0 then update_float(memo,'EXPTIME =',' / duration of exposure in seconds                ',false ,head.exposure);
   if head.gain<>'' then    update_integer(memo,'GAIN    =',' / iso speed                                      ',strtoint(head.gain));
 
-  if head.date_obs<>'' then update_text(memo,'DATE-OBS=',#39+head.date_obs+#39);
-  if instrum<>''  then update_text(memo,'INSTRUME=',#39+INSTRUM+#39);
+  if head.date_obs<>'' then add_text(memo,'DATE-OBS=',#39+head.date_obs+#39);
+  if instrum<>''  then add_text(memo,'INSTRUME=',#39+INSTRUM+#39);
 
-  update_text(memo,'BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
+  if head.naxis3<>1 then
+     add_text(memo,'BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
+  add_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
 
-  update_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  for s:=0 to thecomments.count-1 do
+      add_text(memo,'COMMENT',thecomments[s]);{add PGM comments to header memo}
+
   memo.endupdate;
+  thecomments.free; //tstringlist
 end;
 
 
@@ -3012,7 +3035,7 @@ begin
   begin
     JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
     head.date_obs:=JdToDate(jd2);
-    update_text(memo,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
+    add_text(memo,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
   end;
 
   update_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
@@ -4593,6 +4616,8 @@ begin
   u0:= - (head.cd1_2*eta - head.cd2_2*xi) / det;
   v0:= + (head.cd1_1*eta - head.cd2_1*xi) / det;
 
+//  log_to_file('c:\temp\test.csv','linear x and y, '+floattostr(u0)+', '+floattostr(v0) + ', correction x and y, '+floattostr(+ ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)
+//                                                                                                      +',  '+floattostr(bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0) );
 
   if ((usethesip) and (ap_order<>0)) then {apply SIP correction, sky to pixel}
   begin
@@ -4604,6 +4629,7 @@ begin
     fitsX:=head.crpix1 + u0; {in fits range 1..width}
     fitsY:=head.crpix2 + v0;
   end;
+
 end;
 
 
@@ -9226,6 +9252,20 @@ begin
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
 
+procedure Tmainform1.saturation_factor_plot1MouseWheel(Sender: TObject;
+  Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
+  var Handled: Boolean);
+begin
+  plot_image(mainform1.image1,false);{plot real}
+end;
+
+procedure Tmainform1.selective_colour_saturation1MouseWheel(Sender: TObject;
+  Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
+  var Handled: Boolean);
+begin
+  plot_image(mainform1.image1,false);{plot real}
+end;
+
 
 procedure Tmainform1.simbad_annotation_deepsky_filtered1Click(Sender: TObject);
 begin
@@ -9344,6 +9384,11 @@ begin
     exit;
   end;
   execute_unix2(application_path+'/funpack '+commando+' "'+filename3+'"');
+
+  {To compile cfitsio in MacOS:
+  autoreconf --install
+  ./configure --enable-shared=no
+  make}
   {$endif}
   {$ifdef linux}
   if fileexists('/usr/bin/funpack')=false then
@@ -13299,7 +13344,7 @@ begin
       begin
         application.messagebox( pchar(
         'Solver command-line usage:'+#10+
-        '-f  filename'+#10+
+        '-f  filename {fits, tiff, png, pgm, jpg files}'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
         '-fov height_field[degrees]'+#10+
         '-ra  right_ascension[hours]'+#10+

@@ -118,7 +118,7 @@ var
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
 
-procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: Tstar_list);{find stars and put them in a list}
+procedure find_stars(img :Timage_array;hfd_min:double; max_stars: integer; out starlist1: Tstar_list);{find stars and put them in a list}
 procedure find_quads(starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2025
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
@@ -126,7 +126,7 @@ procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 
 function solve_image(img :Timage_array ) : boolean;{find match between image and star database}
-procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double; max_stars: integer; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning_astrometric(height,arcsec_per_px:double) : integer;{select the binning}
 var
   star1   : array[0..2] of array of single;
@@ -1046,7 +1046,7 @@ begin
 end;
 
 
-procedure find_stars(img :Timage_array;hfd_min:double;out starlist1: Tstar_list);{find stars and put them in a list}
+procedure find_stars(img :Timage_array;hfd_min:double; max_stars : integer; out starlist1: Tstar_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,starpixels  : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,noise_lev                      : double;
@@ -1589,6 +1589,25 @@ begin
 end;
 
 
+procedure convert_mono(var img: Timage_array);
+var
+   fitsX,fitsY,width2,height2: integer;
+   img_temp : Timage_array;
+begin
+  memo2_message('Converting to mono.');
+  height2:=Length(img[0]); {height}
+  width2:=Length(img[0,0]); {width}
+
+  setlength(img_temp,1,height2,width2);{set length of image array mono}
+
+  for fitsY:=0 to height2-1 do
+    for fitsX:=0 to width2-1 do
+      img_temp[0,fitsY,fitsX]:=(img[0,fitsY,fitsX]+img[1,fitsY,fitsX]+img[2,fitsY,fitsX])/3;
+
+  img:=nil;
+  img:=img_temp;
+end;
+
 procedure equalise_for_solving(var img :Timage_array); {equalise for solving}
 var
   width2,height2,fitsX, fitsY, ys, xs, counter_median,x,y,stepsX,Ydiv,Xdiv  : integer;
@@ -1670,7 +1689,7 @@ begin
 end;
 
 
-procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :Timage_array;binfactor:integer;cropping,hfd_min:double;max_stars: integer;out starlist3:Tstar_list; out short_warning : string);{bin, measure background, find stars}
 var
   width2,height2,nrstars,i : integer;
   img_binned : Timage_array;
@@ -1687,10 +1706,11 @@ begin
 
     bin_mono_and_crop(binfactor, cropping,img,img_binned); // Make mono, bin and crop
 
-    if equaliseBG_for_solving1 then equalise_for_solving(img_binned); {equalise for solving}
+    if equaliseBG_for_solving1 then
+       equalise_for_solving(img_binned); {equalise for solving}
 
     get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}backgr,star_level,star_level2 );{get back ground}
-    find_stars(img_binned,hfd_min,starlist3); {find stars of the image and put them in a list}
+    find_stars(img_binned,hfd_min,max_stars, starlist3); {find stars of the image and put them in a list}
     nrstars:=Length(starlist3[0]);
 
     if height2<960 then
@@ -1724,10 +1744,14 @@ begin
      memo2_message('█ █ █ █ █ █ Warning, small image dimensions!!');
     end;
 
-    if equaliseBG_for_solving1 then equalise_for_solving(img); {equalise for solving}
+    if length(img)>=3 then //colour image
+      convert_mono(img);
 
-    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} backgr,star_level,star_level2);{get back ground}
-    find_stars(img,hfd_min,starlist3); {find stars of the image and put them in a list}
+    if equaliseBG_for_solving1 then
+        equalise_for_solving(img); {equalise for solving}
+
+    get_background(0,img,true {calc hist},true {calculate also standard deviation background}, {var} backgr,star_level,star_level2);{get back ground}
+    find_stars(img,hfd_min, max_stars,starlist3); {find stars of the image and put them in a list}
   end;
 end;
 
@@ -1954,7 +1978,7 @@ begin
   warning_str:='';{for header}
   startTick := GetTickCount64;
   quad_tolerance:=strtofloat2(quad_tolerance1);
-  quad_tolerance:=min(quad_tolerance,0.008);//prevent too high tolerances set by command line
+  //quad_tolerance:=min(quad_tolerance,0.008);//prevent too high tolerances set by command line
 
   width2:=length(img[0,0]); {width}
   height2:=length(img[0]);  {height}
@@ -2051,7 +2075,7 @@ begin
     binning:=report_binning_astrometric(height2*cropping,arcsec_per_px); {select binning on dimensions of cropped image only}
 
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/height2) );{to ignore hot pixels which are too small}
-    bin_and_find_stars(img,binning,cropping,hfd_min,true{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+    bin_and_find_stars(img,binning,cropping,hfd_min, max_stars,starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
     nrstars:=Length(starlist2[0]);
 
     {prepare popupnotifier1 text}

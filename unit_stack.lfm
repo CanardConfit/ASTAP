@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 223
+  Left = 178
   Height = 847
-  Top = 429
+  Top = 67
   Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_Pixelmath1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 13
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2586,7 +2586,7 @@ object stackmenu1: Tstackmenu1
                   end
                   object quad_tolerance1: TComboBox
                     Left = 262
-                    Height = 27
+                    Height = 25
                     Hint = 'If detections fails increase tolerance. Typical value 0.003 up to 0.008'
                     Top = 64
                     Width = 88
@@ -2603,9 +2603,10 @@ object stackmenu1: Tstackmenu1
                       '0.008'
                     )
                     ParentFont = False
-                    Style = csDropDownList
+                    Style = csOwnerDrawEditableVariable
                     TabOrder = 2
                     Text = '0.007'
+                    OnChange = quad_tolerance1Change
                   end
                   object solve_show_log1: TCheckBox
                     Left = 122
@@ -5274,7 +5275,7 @@ object stackmenu1: Tstackmenu1
               Top = 12
               Width = 72
               ItemHeight = 19
-              ItemIndex = 1
+              ItemIndex = 3
               Items.Strings = (
                 '0%'
                 '10%'
@@ -5286,7 +5287,7 @@ object stackmenu1: Tstackmenu1
               )
               ParentFont = False
               TabOrder = 4
-              Text = '10%'
+              Text = '30%'
               OnChange = resize_factor1Change
             end
             object center_position1: TLabel
@@ -6052,44 +6053,54 @@ object stackmenu1: Tstackmenu1
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
               }
               ParentFont = False
-              TabOrder = 3
+              TabOrder = 2
               OnClick = undo_button2Click
             end
             object apply_vertical_gradient1: TButton
-              Left = 212
+              Left = 216
               Height = 30
-              Hint = 'This will remove any vertical gradient. For any other angle apply both.'
-              Top = -6
+              Hint = 'This will remove any vertical gradient. For any other angle apply both or use the viewer popup menu "gradient removal tool".'
+              Top = 0
               Width = 71
               AutoSize = True
               Caption = 'Apply ↕'
               Constraints.MinHeight = 30
               ParentFont = False
-              TabOrder = 1
-              OnClick = apply_vertical_gradient1Click
-            end
-            object gradient_filter_factor1: TEdit
-              Left = 68
-              Height = 27
-              Hint = 'Filter factor (box size). Typical value is 30'
-              Top = 1
-              Width = 32
-              ParentFont = False
               TabOrder = 0
-              Text = '30'
+              OnClick = apply_vertical_gradient1Click
             end
             object apply_horizontal_gradient1: TButton
               Left = 299
               Height = 30
-              Hint = 'This will remove any horizontal gradient. For any other angle apply both.'
+              Hint = 'This will remove any horizontal gradient. For any other angle apply both or use the viewer popup menu "gradient removal tool".'
               Top = 0
               Width = 77
               AutoSize = True
               Caption = 'Apply ↔'
               Constraints.MinHeight = 30
               ParentFont = False
-              TabOrder = 2
+              TabOrder = 1
               OnClick = apply_vertical_gradient1Click
+            end
+            object gradient_filter_factor1: TComboBox
+              Left = 64
+              Height = 27
+              Hint = 'Slice width in pixels to detect local median value. Typical value is 30. '
+              Top = 0
+              Width = 48
+              ItemHeight = 19
+              ItemIndex = 2
+              Items.Strings = (
+                '10'
+                '20'
+                '30'
+                '40'
+                '50'
+              )
+              ParentFont = False
+              TabOrder = 3
+              Text = '30'
+              OnChange = resize_factor1Change
             end
           end
           object GroupBox11: TGroupBox
