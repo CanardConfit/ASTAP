@@ -1011,7 +1011,7 @@ begin
                       else
                       begin {method 1}
                         value:=img_loaded[col,fitsY,fitsX]+background_correction_center[col];
-                        local_sd(fitsX-15 ,fitsY-15, fitsX+15,fitsY+15,col,img_loaded, {var} noise,mean, iterations);{local noise recheck every 10 th pixel}
+                        local_sigma_clip_mean_and_sd(fitsX-15 ,fitsY-15, fitsX+15,fitsY+15,col,img_loaded, {var} noise,mean, iterations);{local noise recheck every 10 th pixel}
                         maxlevel:=median+noise*5;
                         if ((value<maxlevel) and
                           (img_loaded[col,fitsY,fitsX-1]<maxlevel) and (img_loaded[col,fitsY,fitsX+1]<maxlevel) and (img_loaded[col,fitsY-1,fitsX]<maxlevel) and (img_loaded[col,fitsY+1,fitsX]<maxlevel) {check nearest pixels}

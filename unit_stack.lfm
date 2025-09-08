@@ -6083,7 +6083,7 @@ object stackmenu1: Tstackmenu1
               OnClick = apply_vertical_gradient1Click
             end
             object gradient_filter_factor1: TComboBox
-              Left = 64
+              Left = 8
               Height = 27
               Hint = 'Slice width in pixels to detect local median value. Typical value is 30. '
               Top = 0
@@ -6101,6 +6101,25 @@ object stackmenu1: Tstackmenu1
               TabOrder = 3
               Text = '30'
               OnChange = resize_factor1Change
+            end
+            object find_background_method1: TComboBox
+              Left = 64
+              Height = 27
+              Hint = 'Method to find the background'
+              Top = 0
+              Width = 148
+              BorderSpacing.Around = 5
+              DropDownCount = 20
+              ItemHeight = 19
+              ItemIndex = 0
+              Items.Strings = (
+                'Sigma Clip Mean'
+                'Mode'
+                'Lower Percentiles'
+              )
+              ParentFont = False
+              TabOrder = 4
+              Text = 'Sigma Clip Mean'
             end
           end
           object GroupBox11: TGroupBox
