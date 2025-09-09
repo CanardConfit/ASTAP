@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.08.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.09.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -834,6 +834,7 @@ procedure execute_unix(const execut:string; param: TStringList; show_output: boo
 procedure execute_unix2(s:string);
 {$endif}
 function mode(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function FindBackgroundPercentile(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer;percentile: double):integer;//Use with percentile := 0.5 for median, or 0.25 for 25th percentile (often good for astronomical backgrounds).
 function get_negative_noise_level(img :Timage_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
 function prepare_ra6(rax:double; sep:string):string; {radialen to text  format 24h 00 00}
@@ -880,7 +881,7 @@ procedure log_to_file(logf,mess : string);{for testing}
 procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 procedure demosaic_advanced(var img : Timage_array);{demosaic img_loaded}
 procedure bin_X2X3X4(var img :Timage_array; var head : theader;memo:tstrings; binfactor:integer);{bin img 2x,3x or 4x}
-procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : Timage_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sigma_clip_mean_and_sd(x1,y1, x2,y2{regio of interest},col : integer; img : Timage_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 function fits_file_name(inp : string): boolean; {fits file name?}
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
@@ -3552,11 +3553,35 @@ begin
 end;
 
 
+{procedure SmoothHistogram(var hist: array of integer; kernelSize: integer);
+var
+  i, j, sum, halfKernel: integer;
+  smoothed: array of integer;
+begin
+  SetLength(smoothed, Length(hist));
+  halfKernel := kernelSize div 2;
+
+  for i := 0 to High(hist) do
+  begin
+    sum := 0;
+    for j := Max(0, i - halfKernel) to Min(High(hist), i + halfKernel) do
+      sum := sum + hist[j];
+    smoothed[i] := sum div kernelSize;
+  end;
+
+  // Copy back
+  for i := 0 to High(hist) do
+    hist[i] := smoothed[i];
+end;  }
+
+
 function mode(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 var
    i,j,val,value_count,width3,height3  :integer;
    histogram : array of integer;
-   centerX,centerY,a,b : double;
+   centerX,centerY,a,b        : double;
+
+   currentCount,  targetCount,sum : double;
 begin
   height3:=length(img[0]);{height}
   width3:=length(img[0,0]);{width}
@@ -3575,6 +3600,7 @@ begin
   a:=(xmax-xmin-1)/2;
   b:=(ymax-ymin-1)/2;
 
+  sum:=0;
 
   for i:=ymin to  ymax do
     begin
@@ -3584,27 +3610,118 @@ begin
         begin
           val:=round(img[colorM,i,j]);{get one color value}
           if ((val>=1) and (val<max1)) then {ignore black areas and bright stars}
-          inc(histogram[val],1);{calculate histogram}
+          begin
+            inc(histogram[val],1);{calculate histogram}
+            sum:=sum+1;
+          end;
         end;
       end;{j}
     end; {i}
   result:=0; {for case histogram is empthy due to black area}
 
 
+  //SmoothHistogram(histogram,10);
+
   greylevels:=0;
   value_count:=0;
+
+  //for i:=0 to max1 do
+  //  log_to_file('c:\temp\'+inttostr(xmin)+'_'+inttostr(colorM)+'.txt',inttostr(histogram[i]));{for testing}
+
+{  currentCount:=0;
+  targetCount:=sum*0.2;
+  for i := 0 to High(histogram) do
+   begin
+     currentCount := currentCount + histogram[i];
+     if currentCount >= targetCount then
+     begin
+       Result := i;
+       Exit;
+     end;
+   end;
+   Result := High(histogram);
+   exit;  }
+
+
   for i := 1 to max1 do {get most common but ignore 0}
   begin
     val:=histogram[i];
-    if val<>0 then inc(greylevels);
-    if  val>value_count then
+    if val<>0 then
     begin
-      value_count:=val; {find most common in histogram}
-      result:=i;
-    end
+      inc(greylevels);
+   //   sum:=sum+val*i;
+   //   if  sum>=mid then
+    //    begin
+     //     result:=i; //median
+     //     exit;
+     //   end;
+
+      if  val>value_count then
+      begin
+        value_count:=val; {find most common in histogram}
+        result:=i;
+      end;
+    end;
   end;
-  histogram:=nil;{free mem}
 end;
+
+
+function FindBackgroundPercentile(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer;percentile: double):integer;//Use with percentile := 0.5 for median, or 0.25 for 25th percentile (often good for astronomical backgrounds).
+//The percentile-based approach (FindBackgroundPercentile with 0.15-0.25) often works better than mode for noisy astronomical data because it's less sensitive to the exact shape of the noise distribution while still capturing the dominant background level.
+var
+   i,j,val,value_count,width3,height3  :integer;
+   histogram : array of integer;
+   centerX,centerY,a,b        : double;
+   currentCount,  targetCount,sum : double;
+begin
+  height3:=length(img[0]);{height}
+  width3:=length(img[0,0]);{width}
+
+  max1:=max1-10; //do not measure saturated pixels
+  if xmin<0 then xmin:=0;
+  if xmax>width3-1 then xmax:=width3-1;
+  if ymin<0 then ymin:=0;
+  if ymax>height3-1 then ymax:=height3-1;
+  setlength(histogram,max1+1);
+  for i := 0 to max1 do  histogram[i] := 0;{clear histogram}
+
+  centerX:=(xmax+xmin)/2;
+  centerY:=(ymax+ymin)/2;
+  a:=(xmax-xmin-1)/2;
+  b:=(ymax-ymin-1)/2;
+
+  sum:=0;
+
+  for i:=ymin to  ymax do
+    begin
+      for j:=xmin to xmax do
+      begin
+        if ((ellipse=false {use no ellipse}) or (sqr(j-centerX)/sqr(a) +sqr(i-centerY)/sqr(b)<1)) then // standard equation of the ellipse
+        begin
+          val:=round(img[colorM,i,j]);{get one color value}
+          if ((val>=1) and (val<max1)) then {ignore black areas and bright stars}
+          begin
+            inc(histogram[val],1);{calculate histogram}
+            sum:=sum+1;
+          end;
+        end;
+      end;{j}
+    end; {i}
+  result:=0; {for case histogram is empthy due to black area}
+
+  currentCount:=0;
+  targetCount:=sum*percentile;
+  for i := 0 to High(histogram) do
+  begin
+    currentCount := currentCount + histogram[i];
+    if currentCount >= targetCount then
+    begin
+      Result := i;
+      Exit;
+    end;
+  end;
+end;
+
 
 
 function get_negative_noise_level(img :Timage_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
@@ -5773,7 +5890,7 @@ begin
   {measure the median of the suroundings}
   for col:=0 to head.naxis3-1 do  {do all colours}
   begin
-    local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+    local_sigma_clip_mean_and_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
     measure_hotpixels(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,sd,mean,img_loaded,{out}hotpixel_perc,hotpixel_adu);{calculate the hotpixel_adu ratio and average value}
 
     most_common:=mode(img_loaded,CtrlButton {ellipse},col,startx,stopX,starty,stopY,65535,greylevels);
@@ -10250,7 +10367,6 @@ begin
     if fov>5 then memo2_message('VSX field-of-view is cropped to 5 degrees due to limiting magnitude>12.');
     fov:=min(5,fov);
   end;
-
 
 //  if fov>3 {degrees} then limiting_mag:=min(12,limiting_mag); //There is no limitation for VSX but follow the one of the VSP
 
@@ -15491,7 +15607,7 @@ begin
 end;
 
 
-procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : Timage_array; out sd,mean : double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sigma_clip_mean_and_sd(x1,y1, x2,y2,col : integer; img : Timage_array; out sd,mean : double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 var i,j,counter,w,h                 : integer;
     value, sd_old,meanx             : double;
 
@@ -15828,7 +15944,7 @@ begin
      object_decM:=decM; {use mouse position instead}
      mainform1.statusbar1.panels[1].text:='';
 
-     local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+     local_sigma_clip_mean_and_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
      mainform1.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, sd); //reports noise in ADU's (adu_e=0) or electrons
 

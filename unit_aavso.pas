@@ -1267,7 +1267,7 @@ begin
     MinDiff := 1e10; // A very large number
     VIndex := -1;
     BIndex := -1;
-    // Brute-force search: compare every green with every blue
+    // Brute-force search: compare every green with every blue julian day
     for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
     if RowChecked[i] then
     begin
@@ -1338,7 +1338,9 @@ begin
         if warning<>'' then memo2_message(warning);
         b_v_var:= 99;
       end;
-    end;
+    end
+    else
+      b_v_var:= 99;
 
 
     if ((VIndexR>=0) and  (RIndex>=0)) then
@@ -1348,8 +1350,8 @@ begin
 
 
       if ((fluxV>0) and (fluxR>0) and
-          (process_comp_stars(VIndexR,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
-          (process_comp_stars(RIndex,false,ratioR,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
+          (process_comp_stars(VIndexR,false,ratioV,sd_comp,comp_magn,B_V, V_R, warning)=0) and //get ratio from comp stars
+          (process_comp_stars(RIndex,false,ratioR,sd_comp,comp_magn,B_V, V_R, warning)=0)) then //get ratio from comp stars
         begin
           varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
           varmag_R:=21- ln(ratioR*fluxR)*2.5/ln(10); //convert var flux to magnitude using
@@ -1361,7 +1363,10 @@ begin
         if warning<>'' then memo2_message(warning);
         v_r_var:= 99;
       end;
-    end;
+    end
+    else
+      v_r_var:= 99;
+
 
   end;//form_aavso1
 end;
@@ -1968,49 +1973,72 @@ begin
                      icon_nr:=SubItemImages[c];
                      if icon_nr=2 then //B correction
                      begin
-                       if ((B_V<>-99) and (b_v_var<>99)) then
+                       if B_V<>-99 then
                        begin
+                         if b_v_var<>99 then
+                         begin
                          var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (b_v_var - B_V{comp});
                          var_magn:=var_magn+var_Bcorrection;
                          transformation:='Transf corr. '+floattostr3(var_Bcorrection)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'), Filter used '+filter_used+',';
                          filter_used:='B';//change TB to B
+                         end
+                         else
+                         begin
+                           transformation:='Transformation failed. Could not retrieve b-v';
+                           transf_str:='NO';
+                         end;
                        end
                        else
                        begin
-                         transformation:='Transf failed. Could not retrieve B-V';
+                         transformation:='Transformation failed. Could not retrieve B-V';
                          transf_str:='NO';
                        end;
                      end
                      else
                      if icon_nr=1 then//V correction
                      begin
-                       if ((B_V<>-99)  and (b_v_var<>99)) then
+                       if  B_V<>-99 then
                        begin
+                         if b_v_var<>99 then
+                         begin
                          var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) *( b_v_var{var} - B_V{comp});
                          var_magn:=var_magn+var_Vcorrection;
                          transformation:='Transf corr. '+floattostr3(var_Vcorrection)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'), Filter used '+filter_used+',';
                          filter_used:='V';//change TG to V
+                         end
+                         else
+                         begin
+                           transformation:='Transformation failed. Could not retrieve b-v';
+                           transf_str:='NO';
+                         end;
                        end
                        else
                        begin
-                         transformation:='Transf failed. Could not retrieve B-V';
+                         transformation:='Transformation failed. Could not retrieve B-V';
                          transf_str:='NO';
                        end;
-
                      end
                      else
                      if ((icon_nr=0) or (icon_nr=24)) then//R correction
                      begin
-                       if ((V_R<>-99) and  (v_r_var<>99)) then
+                       if V_R<>-99 then
                        begin
+                         if v_r_var<>99 then
+                         begin
                          var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (v_r_var{var} - V_R{comp}); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
                          var_magn:=var_magn + var_Rcorrection;
                          transformation:='Transf corr. '+floattostr3(var_Rcorrection)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(v_r_var)+'-'+floattostr3(V_R)+'), Filter used '+filter_used+',';
                          filter_used:='R';//change TR to R
+                         end
+                         else
+                         begin
+                           transformation:='Transformation failed. Could not retrieve v-r';
+                           transf_str:='NO';
+                         end;
                        end
                        else
                        begin
-                         transformation:='Transf failed. Could not retrieve V-R';
+                         transformation:='Transformation failed. Could not retrieve V-R';
                          transf_str:='NO';
                        end;
 

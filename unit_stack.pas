@@ -190,6 +190,7 @@ type
     solar_drift_dec1: TEdit;
     SpeedButton2: TSpeedButton;
     SpeedButton3: TSpeedButton;
+    find_background_method1: TComboBox;
     transformation2: TButton;
     undo_button23: TBitBtn;
     font_size_photometry_UpDown1: TUpDown;
@@ -3125,8 +3126,8 @@ end;
 procedure artificial_flatV1(var img: Timage_array; box_size: integer);
 var
   fitsX,fitsY,i, j, col, colors, w, h,greylevels,xcount,ycount: integer;
-  offset: single;
-  bg,xstep,ystep,x,y,half_box : double;
+  correction_factor: single;
+  bg,xstep,ystep,x,y,half_box,val : double;
   img_temp2: Timage_array;
 
 begin
@@ -3169,15 +3170,16 @@ begin
       x := xStep/2;
       while x < w do
         begin
-          offset := mode(img_loaded,false{ellipse shape}, col, round(x-half_box),round(x+half_box), round(y-half_box),round(y+half_box), 32000,greylevels) - bg; {mode finds most common value}
-          if ((offset < 0) {and (offset>-200)}) then
-          begin
+          val:= mode(img_loaded,false{ellipse shape}, col, round(x-half_box),round(x+half_box), round(y-half_box),round(y+half_box), 32000,greylevels); {mode finds most common value}
+          if val>0 then correction_factor:=bg/val else correction_factor:=1;
+
+          correction_factor:=max(correction_factor,1);//only increase
             for j := round(y - half_box) to round(y + half_box) do
               for i := round(x - half_box) to round(x + half_box) do
                 if ((i >= 0) and (i < w) and (j >= 0) and (j < h)) then {within the boundaries of the image array}
-                  img_temp2[col, j, i] := -offset;
-          end;
-          x := x + xStep;
+                  img_temp2[col, j, i] := correction_factor;
+
+           x := x + xStep;
         end;//x loop
         y := y + yStep;
     end;//y loop
@@ -3193,82 +3195,8 @@ begin
   for col := 0 to colors - 1 do {do all colours}
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
-        img[col, fitsY, fitsX] := img[col, fitsY, fitsX] + img_temp2[col, fitsY, fitsX];
+        img[col, fitsY, fitsX] := img[col, fitsY, fitsX] * img_temp2[col, fitsY, fitsX];
 
-  img_temp2 := nil;
-end;
-
-
-procedure artificial_flatV1old(var img: Timage_array; box_size: integer);
-var
-  fitsx, fitsy, i, j, col, step, colors, w, h,greylevels: integer;
-  offset: single;
-  bg: double;
-  img_temp2: Timage_array;
-begin
-  esc_pressed:=false;
-  colors := Length(img); {colors}
-  w := Length(img[0,0]); {width}
-  h := Length(img[0]);   {height}
-
-  {prepare img_temp2}
-  setlength(img_temp2, colors, h, w);
-  for col := 0 to colors - 1 do {do all colours}
-    for fitsY := 0 to h - 1 do
-      for fitsX := 0 to w - 1 do
-        img_temp2[col, fitsY, fitsX] := 0;
-
-  if (box_size div 2) * 2 = box_size then box_size := box_size + 1;{requires odd 3,5,7....}
-  step := box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
-
-  {create artificial flat}
-//  bg := mode(img_loaded,true{ellipse shape}, 0, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels) - bg;
-
-  for col := 0 to colors - 1 do {do all colours}
-  begin
-    bg := mode(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels) - bg;
-    {mode finds most common value for the 60% center }
-    for fitsY := 0 to h - 1 do
-    begin
-      if frac(fitsy/10)=0 then
-      begin
-        application.processmessages;
-        if esc_pressed then
-        begin
-          memo2_message('ESC pressed');
-          exit;
-        end;
-      end;
-      for fitsX := 0 to w - 1 do
-      begin
-        img_temp2[col, fitsY, fitsX] := 0;
-
-        if ((frac(fitsX / box_size) = 0) and (frac(fitsy / box_size) = 0)) then
-        begin
-          offset := mode(img_loaded,false{ellipse shape}, col, fitsX - step, fitsX + step, fitsY - step, fitsY + step, 32000,greylevels) - bg; {mode finds most common value}
-          if ((offset < 0) {and (offset>-200)}) then
-          begin
-            for j := fitsy - step to fitsy + step do
-              for i := fitsx - step to fitsx + step do
-                if ((i >= 0) and (i < w) and (j >= 0) and (j < h)) then {within the boundaries of the image array}
-                  img_temp2[col, j, i] := -offset;
-          end;
-        end;
-      end;
-    end;
-  end;{all colors}
-
-  {smooth flat}
-  gaussian_blur2(img_temp2, box_size * 2);
-
-  //   img_loaded:=img_temp2;
-  //   exit;
-
-  {apply artificial flat}
-  for col := 0 to colors - 1 do {do all colours}
-    for fitsY := 0 to h - 1 do
-      for fitsX := 0 to w - 1 do
-        img[col, fitsY, fitsX] := img[col, fitsY, fitsX] + img_temp2[col, fitsY, fitsX];
   img_temp2 := nil;
 end;
 
@@ -4528,7 +4456,7 @@ begin
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
-                  local_sd((headx.Width div 2) - 50, (headx.Height div 2) - 50, (headx.Width div 2) + 50, (headx.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean},iterations); {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+                  local_sigma_clip_mean_and_sd((headx.Width div 2) - 50, (headx.Height div 2) - 50, (headx.Width div 2) + 50, (headx.Height div 2) + 50{regio of interest}, 0, img, sd, dummy {mean},iterations); {calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
                   adu_e := retrieve_ADU_to_e_unbinned(headx.egain);  //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
                   lv.Items.item[c].subitems.Strings[D_sigma] := noise_to_electrons(adu_e, sd); //reports noise in ADU's (adu_e=0) or electrons
@@ -13799,8 +13727,8 @@ end;
 
 procedure Tstackmenu1.apply_vertical_gradient1Click(Sender: TObject);
 var
-  fitsX, fitsY, i, k, most_common, y1, y2, x1, x2, counter, step,greylevels: integer;
-  mean,bg,offset: double;
+  fitsX, fitsY, i, k,y1, y2, x1, x2,w,h, counter, step,greylevels,themethod,iterations: integer;
+  xCount,xStep,yCount,yStep,half_box,bg,correction_factor,val,sd,x,y: double;
 begin
   if head.naxis = 0 then exit;
 
@@ -13810,72 +13738,104 @@ begin
   backup_img;
 
   step := round(strtofloat2(gradient_filter_factor1.Text));
-
-  mean := 0;
   counter := 0;
+
+  if pos('Sig',find_background_method1.text)>0 then themethod:=0
+  else
+  if pos('Mod',find_background_method1.text)>0 then themethod:=1
+  else
+  if pos('Low',find_background_method1.text)>0 then themethod:=2
+  else
+  exit;
+
+  half_box:=step/2;
+  w:=head.width;
+  h:=head.height;
 
   for k := 0 to head.naxis3 - 1 do {do all colors}
   begin
-  {mode finds most common value for the 60% center }
-  bg:= mode(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
+    {mode finds most common value for the 60% center }
 
+    case themethod of
+      0: local_sigma_clip_mean_and_sd(round(0.2 * head.Width),round(0.2 * head.Height), round(0.8 * head.Width),round(0.8 * head.Height),k, img_loaded,{out} sd,bg,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+      1: bg:= mode(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
+      2: bg:=FindBackgroundPercentile(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height),32000,0.25 {percentile})//Use with percentile := 0.5 for median, or 0.25 for 25th percentile (often good for astronomical backgrounds).
+    end;
 
-  {vertical}
-  if Sender = apply_vertical_gradient1 then
-    begin
-      for fitsY := 0 to (head.Height - 1) div step do
+    {vertical}
+    if Sender = apply_vertical_gradient1 then
       begin
-        y1 := (step + 1) * fitsY - (step div 2);
-        y2 := (step + 1) * fitsY + (step div 2);
-        offset := mode(img_backup[index_backup].img,false{ellipse shape}, k, 0, head.Width - 1, y1, y2, 32000,greylevels) -bg;
-//        mean := mean + most_common;
-        Inc(counter);
-        for i := y1 to y2 do
-          for fitsX := 0 to head.Width - 1 do
-          begin
-            if ((i >= 0) and (i <= head.Height - 1)) then
-              img_loaded[k, i, fitsX] := offset;{store offset vertical values}
-          end;
-      end;
-    end;{K}
+        yCount:=round(h/step);
+        yStep := h/ yCount;
+        y := yStep/2;
+        while y < h do
+        begin
+          y1:=round(y-half_box);
+          y2:=round(y+half_box);
+          x1:=0;
+          x2:=w - 1;
 
-  {horizontal}
-  if Sender = apply_horizontal_gradient1 then
-    begin
-      for fitsX := 0 to (head.Width - 1) div step do
+          case themethod of
+             0: local_sigma_clip_mean_and_sd(x1,y1,x2,y2,k, img_loaded,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+             1: val:=mode(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2, 32000,greylevels);
+             2: val:=FindBackgroundPercentile(img_loaded,true{ellipse shape}, k, x1,x2, y1, y2, 32000,0.25 {percentile})//Use with percentile := 0.5 for median, or 0.25 for 25th percentile (often good for astronomical backgrounds).
+           end;
+
+          if val>0 then correction_factor:=bg/val else correction_factor:=1;
+          Inc(counter);
+          for i := y1 to y2 do
+            for fitsX := 0 to head.Width - 1 do
+            begin
+              if ((i >= 0) and (i <= head.Height - 1)) then
+                img_loaded[k, i, fitsX] := correction_factor;{store correction_factor vertical values}
+            end;
+          y := y + yStep;
+        end;
+      end;{sender}
+
+    {horizontal}
+    if Sender = apply_horizontal_gradient1 then
       begin
-        x1 := (step + 1) * fitsX - (step div 2);
-        x2 := (step + 1) * fitsX + (step div 2);
-        offset := mode(img_backup[index_backup].img,false{ellipse shape}, k, x1, x2, 0, head.Height - 1, 32000,greylevels) -bg;
-       // mean := mean + most_common;
-        Inc(counter);
-        for i := x1 to x2 do
-          for fitsY := 0 to head.Height - 1 do
-          begin
-            if ((i >= 0) and (i <= head.Width - 1)) then
-              img_loaded[k, fitsY, i] := offset;{store offset horizontal values}
-          end;
-      end;
-    end;{K}
+        xCount:=round(w/step);
+        xStep := w/ xCount;
+        x := xStep/2;
+        while x < w do
+        begin
+          x1:=round(x-half_box);
+          x2:=round(x+half_box);
+          y1:=0;
+          y2:=h - 1;
 
-  end; //do all colours
+          case themethod of
+             0: local_sigma_clip_mean_and_sd(x1,y1,x2,y2,k, img_loaded,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+             1: val:=mode(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2, 32000,greylevels);
+             2: val:=FindBackgroundPercentile(img_loaded,true{ellipse shape}, k, x1,x2, y1, y2, 32000,0.25 {percentile})//Use with percentile := 0.5 for median, or 0.25 for 25th percentile (often good for astronomical backgrounds).
+           end;
 
-//  beep;
-//  exit;
+          if val>0 then correction_factor:=bg/val else correction_factor:=1;
+          Inc(counter);
+          for i := x1 to x2 do
+            for fitsY := 0 to head.Height - 1 do
+            begin
+              if ((i >= 0) and (i <= head.Width - 1)) then
+                img_loaded[k, fitsY, i] := correction_factor;{store correction_factor horizontal values}
+            end;
 
+          x := x + xStep;
+        end;
+      end;{sender}
 
-//  mean := mean / counter;
+    end; //do all colours
+
+//    beep;
+//    exit;
+
   gaussian_blur2(img_loaded, step * 2);
 
   for k := 0 to head.naxis3 - 1 do {do all colors}
-  begin
     for fitsY := 0 to head.Height - 1 do
       for fitsX := 0 to head.Width - 1 do
-      begin
-//        img_loaded[k, fitsY, fitsX] := mean + img_backup[index_backup].img[k, fitsY, fitsX] - img_loaded[k, fitsY, fitsX];
-        img_loaded[k, fitsY, fitsX] := img_backup[index_backup].img[k, fitsY, fitsX] - img_loaded[k, fitsY, fitsX];
-      end;
-  end;{k color}
+       img_loaded[k, fitsY, fitsX] := img_backup[index_backup].img[k, fitsY, fitsX] * img_loaded[k, fitsY, fitsX];
 
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_image(mainform1.image1, False);
