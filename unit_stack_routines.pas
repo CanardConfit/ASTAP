@@ -893,10 +893,10 @@ begin
           begin
             if equalise_background then
             begin //measure background in all four corners
-              bck[0]:=mode(img_loaded,false{ellipse shape},col,0,round(0.2*head.width),  0,round(0.2*head.height),32000,greylevels);
-              bck[1]:=mode(img_loaded,false{ellipse shape},col,0,round(0.2*head.width),  round(0.8*head.height),head.height-1,32000,greylevels) ;
-              bck[2]:=mode(img_loaded,false{ellipse shape},col,round(0.8*head.width),head.width-1,  0,round(0.2*head.height),32000,greylevels) ;
-              bck[3]:=mode(img_loaded,false{ellipse shape},col,round(0.8*head.width),head.width-1,  round(0.8*head.height),head.height-1,32000,greylevels) ;
+              bck[0]:=trimmed_median_background(img_loaded,false{ellipse shape},col,0,round(0.2*head.width),  0,round(0.2*head.height),32000,greylevels);
+              bck[1]:=trimmed_median_background(img_loaded,false{ellipse shape},col,0,round(0.2*head.width),  round(0.8*head.height),head.height-1,32000,greylevels) ;
+              bck[2]:=trimmed_median_background(img_loaded,false{ellipse shape},col,round(0.8*head.width),head.width-1,  0,round(0.2*head.height),32000,greylevels) ;
+              bck[3]:=trimmed_median_background(img_loaded,false{ellipse shape},col,round(0.8*head.width),head.width-1,  round(0.8*head.height),head.height-1,32000,greylevels) ;
 
               background[col]:=smedian(bck,4);
               background_correction_center[col]:=1000 - background[col] ;
