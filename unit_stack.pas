@@ -1140,7 +1140,7 @@ procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; r
 
 
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
-procedure apply_most_common(sourc, dest: Timage_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
+procedure apply_trimmed_median_background(sourc, dest: Timage_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
 
 procedure report_results(object_to_process, stack_info: string; object_counter, color_icon,stack_icon: integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
@@ -1231,10 +1231,6 @@ const
   P_date = 8;
   P_jd_mid = 9;
   P_jd_helio = 10;
-//  P_magn1 = 11;
-//  P_snr = 12;
-//  P_magn2 = 13;
-//  P_magn3 = 14;
   P_hfd = 11;
   P_stars = 12;
   P_astrometric = 13;
@@ -1296,8 +1292,8 @@ const
 
 
   icon_thumb_down = 8; {image index for outlier}
-  icon_king = 9 {16};{image index for best image}
-
+  icon_king = 9;{image index for best image}
+  icon_exclamation=29;
 
   video_index: integer = 1;
   frame_rate: string = '1';
@@ -1713,100 +1709,92 @@ begin
   hfd_min := max(0.8 {two pixels}, strtofloat2(
   stackmenu1.min_star_size_stacking1.Caption){hfd});  {to ignore hot pixels which are too small}
 
-  if ((head.nrbits = 8) or (head.datamax_org <= 255)) then min_background := 0
-  else
-    min_background := 8;
-  if ((backgr < 60000) and (backgr > min_background)) then {not an abnormal file}
-  begin
-    repeat {try three time to find enough stars}
-      if retries=3 then
-        begin if head.star_level >30*noise_level then detection_level:=head.star_level  else retries:=2;{skip} end; //stars are dominant
-      if retries=2 then
-        begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end; //stars are dominant
-      if retries=1 then
-        begin detection_level:=30*noise_level; end;
-      if retries=0 then
-        begin detection_level:= 7*noise_level; end;
+  repeat {try three time to find enough stars}
+    if retries=3 then
+      begin if head.star_level >30*noise_level then detection_level:=head.star_level  else retries:=2;{skip} end; //stars are dominant
+    if retries=2 then
+      begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end; //stars are dominant
+    if retries=1 then
+      begin detection_level:=30*noise_level; end;
+    if retries=0 then
+      begin detection_level:= 7*noise_level; end;
 
-      star_counter := 0;
+    star_counter := 0;
 
-      if report_type>0 then {write values to file}
+    if report_type>0 then {write values to file}
+    begin
+    //  assignfile(f, ChangeFileExt(filename2, '.csv'));
+     // rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
+     // writeln(f, 'x,y,hfd,snr,flux,ra[0..360],dec[0..360]');
+      startext:='x,y,hfd,snr,flux,ra[0..360],dec[0..360]'+LineEnding;
+    end;
+
+    setlength(img_sa, 1, height5, width5);{set length of image array}
+    for fitsY := 0 to height5 - 1 do
+      for fitsX := 0 to width5 - 1 do
+        img_sa[0, fitsY, fitsX] := -1;{mark as star free area}
+
+    for fitsY:=1 to height5 - 1-1 do  //Search through the image. Stay one pixel away from the borders.
+    begin
+      for fitsX:=1 to width5 - 1-1 do
       begin
-      //  assignfile(f, ChangeFileExt(filename2, '.csv'));
-       // rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
-       // writeln(f, 'x,y,hfd,snr,flux,ra[0..360],dec[0..360]');
-        startext:='x,y,hfd,snr,flux,ra[0..360],dec[0..360]'+LineEnding;
-      end;
-
-      setlength(img_sa, 1, height5, width5);{set length of image array}
-      for fitsY := 0 to height5 - 1 do
-        for fitsX := 0 to width5 - 1 do
-          img_sa[0, fitsY, fitsX] := -1;{mark as star free area}
-
-      for fitsY:=1 to height5 - 1-1 do  //Search through the image. Stay one pixel away from the borders.
-      begin
-        for fitsX:=1 to width5 - 1-1 do
+        if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and (img[0, fitsY, fitsX] - backgr > detection_level)) then     {new star}
         begin
-          if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and (img[0, fitsY, fitsX] - backgr > detection_level)) then     {new star}
+          starpixels:=0;
+          if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+          if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+          if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+          if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+          if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
           begin
-            starpixels:=0;
-            if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
-            if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
-            if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
-            if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
-            if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
+            HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
+            if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
             begin
-              HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
-              if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
+              hfd_list[star_counter] := hfd1;{store}
+              Inc(star_counter);
+              if star_counter >= len then
               begin
-                hfd_list[star_counter] := hfd1;{store}
-                Inc(star_counter);
-                if star_counter >= len then
+                len := len + 1000;
+                SetLength(hfd_list, len);{increase size}
+              end;
+
+              radius := round(3.0 * hfd1); {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_radius := sqr(radius);
+              xci := round(xc);{star center as integer}
+              yci := round(yc);
+              for n := -radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                for m := -radius to +radius do
                 begin
-                  len := len + 1000;
-                  SetLength(hfd_list, len);{increase size}
+                  j := n + yci;
+                  i := m + xci;
+                  if ((j >= 0) and (i >= 0) and (j < height5) and (i < width5) and
+                    (sqr(m) + sqr(n) <= sqr_radius)) then
+                    img_sa[0, j, i] := 1;
                 end;
 
-                radius := round(3.0 * hfd1); {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-                sqr_radius := sqr(radius);
-                xci := round(xc);{star center as integer}
-                yci := round(yc);
-                for n := -radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-                  for m := -radius to +radius do
-                  begin
-                    j := n + yci;
-                    i := m + xci;
-                    if ((j >= 0) and (i >= 0) and (j < height5) and (i < width5) and
-                      (sqr(m) + sqr(n) <= sqr_radius)) then
-                      img_sa[0, j, i] := 1;
-                  end;
-
-                if report_type>0 then
+              if report_type>0 then
+              begin
+                if head.cd1_1=0 then
+                //  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
+                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+LineEnding {+1 to convert 0... to FITS 1... coordinates}
+                else
                 begin
-                  if head.cd1_1=0 then
-                  //  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
-                    startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+LineEnding {+1 to convert 0... to FITS 1... coordinates}
-                  else
-                  begin
-                    pixel_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
-                    startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
-                  end;
+                  pixel_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
+                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
                 end;
-              end;//star detected
-            end;//3px illuminated
-          end;//star free area
-        end;
+              end;
+            end;//star detected
+          end;//3px illuminated
+        end;//star free area
       end;
+    end;
 
-      Dec(retries);{Try again with lower detection level}
-      //if report_type>0 then closefile(f);
+    Dec(retries);{Try again with lower detection level}
+    //if report_type>0 then closefile(f);
 
-    until ((star_counter >= max_stars) or (retries < 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+  until ((star_counter >= max_stars) or (retries < 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-    if ((star_counter > 0) and (report_type<=1)) then head.hfd_median := SMedian(hfd_List, star_counter) else  head.hfd_median := 99;
-  end {backgr is normal}
-  else
-    head.hfd_median := 99; {Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
+  if ((star_counter > 0) and (report_type<=1)) then head.hfd_median := SMedian(hfd_List, star_counter) else  head.hfd_median := 99;
 
   head.hfd_counter:=star_counter;
 
@@ -2415,6 +2403,8 @@ begin
                 begin {image can be futher analysed}
                   ListView1.Items.item[c].subitems.Strings[L_nrstars]:= inttostr5(round(headx.hfd_counter));//nr of stars
                   ListView1.Items.item[c].subitems.Strings[L_background]:=inttostr5(round(headx.backgr));
+                  if headx.backgr<0 then ListView1.Items.item[c].SubitemImages[L_background] := icon_exclamation else ListView1.Items.item[c].SubitemImages[L_background]:=-1;
+
                   if planetary then ListView1.Items.item[c].subitems.Strings[L_streaks] :=floattostrF(image_sharpness(img), ffFixed, 0, 3)  {sharpness test}
                   else
                   if analyse_level>1 then
@@ -3149,13 +3139,10 @@ begin
 
   half_box:=box_size/2;
 
-  {create artificial flat}
-//  bg := mode(img_loaded,true{ellipse shape}, 0, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels) - bg;
-
   for col := 0 to colors - 1 do {do all colours}
   begin
-    {mode finds most common value for the 60% center }
-    bg:= mode(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
+    {find background value for the 60% center }
+    bg:= trimmed_median_background(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
 
     y := yStep / 2;
     while y < h do
@@ -3170,7 +3157,7 @@ begin
       x := xStep/2;
       while x < w do
         begin
-          val:= mode(img_loaded,false{ellipse shape}, col, round(x-half_box),round(x+half_box), round(y-half_box),round(y+half_box), 32000,greylevels); {mode finds most common value}
+          val:= trimmed_median_background(img_loaded,false{ellipse shape}, col, round(x-half_box),round(x+half_box), round(y-half_box),round(y+half_box), 32000,greylevels); {mode finds most common value}
           if val>0 then correction_factor:=bg/val else correction_factor:=1;
 
           correction_factor:=max(correction_factor,1);//only increase
@@ -3207,7 +3194,7 @@ var
   Count, largest_distX, largest_distY: integer;
   offset, oldoffset: single;
   sn, cs: double;
-  median, test: array of double;
+  median, test_array: array of double;
 begin
   colors := Length(img); {colors}
   w := Length(img[0,0]); {width}
@@ -3246,7 +3233,7 @@ begin
     begin
       if dist > centrum_diameter then
       begin{outside centrum}
-        setlength(test, 360 * 3);
+        setlength(test_array, 360 * 3);
         Count := 0;
         for angle := 0 to (356 * 3) - 1 do
         begin
@@ -3262,13 +3249,13 @@ begin
             if oldoffset <> 0 then offset := 0.1 * offset + 0.9 * oldoffset;{smoothing}
             oldoffset := offset;
 
-            test[Count] := img[col, fitsY, fitsX] - head.backgr;
+            test_array[Count] := img[col, fitsY, fitsX] - head.backgr;
             Inc(Count, 1);
           end;
         end;
         if Count > 5 then {at least five points}
         begin
-          median[dist] := smedian(test, Count);
+          median[dist] := smedian(test_array, Count);
         end
         else
           median[dist] := 0;
@@ -3565,10 +3552,9 @@ begin
 end;
 
 
-procedure apply_most_common(sourc, dest: Timage_array; datamax: double; radius: integer);
-{apply most common filter on first array and place result in second array}
+procedure apply_trimmed_median_background(sourc, dest: Timage_array; datamax: double; radius: integer); {apply trimmed_median_background on first array and place result in second array}
 var
-  fitsX, fitsY, i, j, k, x, y, x2, y2, diameter, most_common, colors3, height3, width3,greylevels: integer;
+  fitsX, fitsY, i, j, k, x, y, x2, y2, diameter, backgr, colors3, height3, width3,greylevels: integer;
 begin
   diameter := radius * 2;
   colors3 := length(sourc);{nr colours}
@@ -3583,13 +3569,13 @@ begin
       begin
         x := fitsX * diameter;
         y := fitsY * diameter;
-        most_common := mode(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, trunc(datamax),greylevels);
+        backgr := trimmed_median_background(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, trunc(datamax),greylevels);
         for i := -radius to +radius - 1 do
           for j := -radius to +radius - 1 do
           begin
             x2 := x + i;
             y2 := y + j;
-            if ((x2 >= 0) and (x2 < width3) and (y2 >= 0) and (y2 < height3)) then  dest[k, y2, x2] := most_common;
+            if ((x2 >= 0) and (x2 < width3) and (y2 >= 0) and (y2 < height3)) then  dest[k, y2, x2] := backgr;
           end;
       end;
   end;{K}
@@ -3614,7 +3600,7 @@ begin
   except
   end;
 
-  apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);
+  apply_trimmed_median_background(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
   plot_image(mainform1.image1, False);{plot real}
@@ -4453,6 +4439,8 @@ begin
               begin {analyse background and noise}
                 get_background(0, img,headx, True {update_hist}, False {calculate noise level});
                 lv.Items.item[c].subitems.Strings[D_background] := inttostr5(round(headx.backgr));
+                if headx.backgr<0 then lv.Items.item[c].SubitemImages[D_background] := icon_exclamation else lv.Items.item[c].SubitemImages[D_background]:=-1;
+
                 if tabnr <= 4 then
                 begin //noise
                   {analyse centre only. Suitable for flats and dark with amp glow}
@@ -4590,6 +4578,8 @@ begin
                 analyse_image(img, headx, 10 {snr_min}, 0 {report nr stars and hfd only});
                 {find background, number of stars, median HFD}
                 lv.Items.item[c].subitems.Strings[P_background]:= inttostr5(round(headx.backgr));
+                if headx.backgr<0 then lv.Items.item[c].SubitemImages[P_background] := icon_exclamation else lv.Items.item[c].SubitemImages[P_background]:=-1;
+
                 lv.Items.item[c].subitems.Strings[P_hfd] := floattostrF(headx.hfd_median, ffFixed, 0, 1);
                 lv.Items.item[c].subitems.Strings[P_stars] := inttostr5(headx.hfd_counter);
                 {number of stars}
@@ -5258,7 +5248,7 @@ begin
         begin
           if ((frac(fitsx / 10) = 0) and (frac(fitsY / 10) = 0)) then
           begin
-            most_common := mode(img_backup[index_backup].img,false{ellipse shape}, k, fitsX - radius, fitsX + radius - 1, fitsY - radius, fitsY + radius - 1, 32000,greylevels);
+            most_common := trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k, fitsX - radius, fitsX + radius - 1, fitsY - radius, fitsY + radius - 1, 32000,greylevels);
             neg_noise_level := get_negative_noise_level(img_backup[index_backup].img, k, fitsX - radius, fitsX + radius, fitsY - radius, fitsY + radius, most_common);
             {find the most common value of a local area and calculate negative noise level}
             for i := -radius to +radius - 1 do
@@ -7566,7 +7556,7 @@ begin
     stackmenu1.filter_artificial_colouring1.Text);
 
   setlength(img_temp,3, head.Height, head.Width);{new size}
-  apply_most_common(img_backup[index_backup].img, img_temp,head.datamax_org, radius);
+  apply_trimmed_median_background(img_backup[index_backup].img, img_temp,head.datamax_org, radius);
   {apply most common filter on first array and place result in second array}
 
   memo2_message('Applying Gaussian blur of ' + floattostrF(radius * 2, ffFixed, 0, 1));
@@ -8969,7 +8959,7 @@ begin
       radius := StrToInt(extract_background_box_size1.Text);
     except
     end;
-    apply_most_common(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);  {apply most common filter on first array and place result in second array}
+    apply_trimmed_median_background(img_backup[index_backup].img, img_loaded,head.datamax_org, radius);  {apply most common filter on first array and place result in second array}
     plot_image(mainform1.image1, True);{plot real}
     Screen.Cursor := crDefault;
   end;
@@ -13758,8 +13748,7 @@ begin
 
     case themethod of
       0: local_sigma_clip_mean_and_sd(round(0.2 * head.Width),round(0.2 * head.Height), round(0.8 * head.Width),round(0.8 * head.Height),k, img_loaded,{out} sd,bg,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-      1: bg:= mode(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
-      2: bg:=FindBackgroundPercentile(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height),32000,0.25 {percentile})//Use with percentile := 0.5 for median, or 0.25 for 25th percentile (often good for astronomical backgrounds).
+      1: bg:=trimmed_median_background(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
     end;
 
     {vertical}
@@ -13776,9 +13765,8 @@ begin
           x2:=w - 1;
 
           case themethod of
-             0: local_sigma_clip_mean_and_sd(x1,y1,x2,y2,k, img_loaded,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-             1: val:=mode(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2, 32000,greylevels);
-             2: val:=FindBackgroundPercentile(img_loaded,true{ellipse shape}, k, x1,x2, y1, y2, 32000,0.25 {percentile})//Use with percentile := 0.5 for median, or 0.25 for 25th percentile (often good for astronomical backgrounds).
+             0: local_sigma_clip_mean_and_sd(x1,y1,x2,y2,k, img_backup[index_backup].img,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+             1: val:=trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2, 32000,greylevels);
            end;
 
           if val>0 then correction_factor:=bg/val else correction_factor:=1;
@@ -13807,9 +13795,8 @@ begin
           y2:=h - 1;
 
           case themethod of
-             0: local_sigma_clip_mean_and_sd(x1,y1,x2,y2,k, img_loaded,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-             1: val:=mode(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2, 32000,greylevels);
-             2: val:=FindBackgroundPercentile(img_loaded,true{ellipse shape}, k, x1,x2, y1, y2, 32000,0.25 {percentile})//Use with percentile := 0.5 for median, or 0.25 for 25th percentile (often good for astronomical backgrounds).
+             0: local_sigma_clip_mean_and_sd(x1,y1,x2,y2,k, img_backup[index_backup].img,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+             1: val:=trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2, 32000,greylevels);
            end;
 
           if val>0 then correction_factor:=bg/val else correction_factor:=1;

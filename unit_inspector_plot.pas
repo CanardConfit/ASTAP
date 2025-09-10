@@ -1471,7 +1471,7 @@ begin
 
   img_bk:=duplicate(img_loaded);
 
-  apply_most_common(img_bk, img_loaded,head.datamax_org,inspector_grid_size);  {apply most common filter on first array and place result in second array}
+  apply_trimmed_median_background(img_bk, img_loaded,head.datamax_org,inspector_grid_size);  {apply most common filter on first array and place result in second array}
 
   gaussian_blur2(img_loaded, inspector_grid_size *2 {4 * strtofloat2(most_common_filter_radius1.Text)});
 
