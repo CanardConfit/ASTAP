@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 474
+  Left = 232
   Height = 847
-  Top = 139
+  Top = 237
   Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -3525,6 +3525,7 @@ object stackmenu1: Tstackmenu1
             OnCompare = listview1Compare
             OnCustomDraw = listview7CustomDraw
             OnDblClick = listview1DblClick
+            OnItemChecked = listview7ItemChecked
             OnKeyDown = listview1KeyDown
           end
           object help_photometry1: TLabel
@@ -9063,12 +9064,12 @@ object stackmenu1: Tstackmenu1
       Caption = 'Remove selected'
       OnClick = removeselected1Click
     end
-    object list_to_clipboard8: TMenuItem
-      Caption = 'Copy selected list to clipboard'
+    object rows_to_clipboard8: TMenuItem
+      Caption = 'Copy selected rows to clipboard'
       Hint = '#Data will be in clipboard and can be pasted in a spreadsheet'
       ImageIndex = 13
       ShortCut = 16451
-      OnClick = list_to_clipboard1Click
+      OnClick = rows_to_clipboard1Click
     end
     object keyword8: TMenuItem
       Caption = 'Change header keyword in selected files'
@@ -9125,12 +9126,12 @@ object stackmenu1: Tstackmenu1
       Caption = 'Remove selected'
       OnClick = removeselected1Click
     end
-    object list_to_clipboard9: TMenuItem
-      Caption = 'Copy selected list to clipboard'
+    object rows_to_clipboard9: TMenuItem
+      Caption = 'Copy selected rows to clipboard'
       Hint = '#Data will be in clipboard and can be pasted in a spreadsheet'
       ImageIndex = 13
       ShortCut = 16451
-      OnClick = list_to_clipboard1Click
+      OnClick = rows_to_clipboard1Click
     end
     object keyword9: TMenuItem
       Caption = 'Change header keyword in selected files'
@@ -9197,12 +9198,12 @@ object stackmenu1: Tstackmenu1
       Caption = 'Remove selected'
       OnClick = removeselected1Click
     end
-    object list_to_clipboard6: TMenuItem
-      Caption = 'Copy selected list to clipboard'
+    object rows_to_clipboard6: TMenuItem
+      Caption = 'Copy selected rows to clipboard'
       Hint = '#Data will be in clipboard and can be pasted in a spreadsheet'
       ImageIndex = 13
       ShortCut = 16451
-      OnClick = list_to_clipboard1Click
+      OnClick = rows_to_clipboard1Click
     end
     object keyword6: TMenuItem
       Caption = 'Change header keyword in selected files'
@@ -9285,12 +9286,18 @@ object stackmenu1: Tstackmenu1
       Caption = 'Remove selected'
       OnClick = removeselected1Click
     end
-    object list_to_clipboard7: TMenuItem
-      Caption = 'Copy selected rows to clipboard (extended)'
+    object rows_to_clipboard7: TMenuItem
+      Caption = 'Copy selected rows to clipboard'
+      Hint = '#Data will be in clipboard and can be pasted in a spreadsheet'
+      ShortCut = 16451
+      OnClick = rows_to_clipboard1Click
+    end
+    object list_to_clipboard_swapped_7: TMenuItem
+      Caption = 'Copy selected rows swapped to clipboard'
       Hint = '#Selected data will be copied to the clipboard but the rows and columns will be swapped. Data of COMP stars will be added.'
       ImageIndex = 13
-      ShortCut = 16451
-      OnClick = list_to_clipboard7Click
+      ShortCut = 24643
+      OnClick = list_to_clipboard_swapped_7Click
     end
     object export_to_tg1: TMenuItem
       Caption = 'Copy selected rows to clipboard in TG format'
@@ -9478,12 +9485,12 @@ object stackmenu1: Tstackmenu1
       Caption = 'Remove selected'
       OnClick = removeselected1Click
     end
-    object list_to_clipboard1: TMenuItem
-      Caption = 'Copy selected list to clipboard'
+    object rows_to_clipboard1: TMenuItem
+      Caption = 'Copy selected rows to clipboard'
       Hint = '#Data will be in clipboard and can be pasted in a spreadsheet'
       ImageIndex = 13
       ShortCut = 16451
-      OnClick = list_to_clipboard1Click
+      OnClick = rows_to_clipboard1Click
     end
     object keyword1: TMenuItem
       Caption = 'Change header keyword in selected files'
@@ -9588,12 +9595,12 @@ object stackmenu1: Tstackmenu1
       Caption = 'Remove selected'
       OnClick = removeselected1Click
     end
-    object list_to_clipboard10: TMenuItem
-      Caption = 'Copy selected list to clipboard'
+    object rows_to_clipboard10: TMenuItem
+      Caption = 'Copy selected rows to clipboard'
       Hint = 'Data will be in clipboard and can be pasted in a spreadsheet'
       ImageIndex = 13
       ShortCut = 16451
-      OnClick = list_to_clipboard1Click
+      OnClick = rows_to_clipboard1Click
     end
     object MenuItem39: TMenuItem
       Caption = '-'
