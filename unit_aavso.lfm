@@ -103,6 +103,7 @@ object form_aavso1: Tform_aavso1
     Cursor = crCross
     Left = 500
     Height = 702
+    Hint = 'See popup  menu to save. Any check/uncheck in the list view wil result in an update of the graph'
     Top = 0
     Width = 1048
     Align = alClient
@@ -311,6 +312,13 @@ object form_aavso1: Tform_aavso1
       Hint = 'Copy graph to clipboard'
       ShortCut = 16451
       OnClick = MenuItem1Click
+    end
+    object Separator1: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem3: TMenuItem
+      Caption = 'Select in the listview the image for this measuring point'
+      OnClick = MenuItem3Click
     end
   end
   object SaveDialog1: TSaveDialog

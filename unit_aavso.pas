@@ -11,7 +11,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
   clipbrd, ExtCtrls, Menus, Buttons, CheckLst, strutils,comctrls,
-  astap_main{, Types, LCLType};
+  astap_main;
 
 type
 
@@ -24,10 +24,12 @@ type
     abrv_comp1: TCheckListBox;
     apply_transformation1: TCheckBox;
     MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
     PopupMenu_comp1: TPopupMenu;
     selectall1: TMenuItem;
     deselectall1: TMenuItem;
     PopupMenu_variables1: TPopupMenu;
+    Separator1: TMenuItem;
     test_button1: TButton;
     sigma_mzero1: TLabel;
     ensemble_database1: TCheckBox;
@@ -59,6 +61,7 @@ type
     procedure abrv_comp1ClickCheck(Sender: TObject);
     procedure deselectall1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
+    procedure MenuItem3Click(Sender: TObject);
     procedure selectall1Click(Sender: TObject);
     procedure test_button1Click(Sender: TObject);
     procedure delta_bv2Change(Sender: TObject);
@@ -121,6 +124,7 @@ var
 procedure plot_graph; {plot curve}
 function retrieve_comp_magnitude(use_array:boolean; filter,columnr: integer; s: string): double;//retrieve comp magnitude from the abbrv string or online VSP
 procedure calc_sd_and_mean(list: array of double; leng : integer; out sd,mean: double);// calculate sd and mean of an array of doubles}
+procedure ExtractListViewDataToArrays(ListView: TListView; P_filter: Integer);
 
 implementation
 
@@ -144,6 +148,8 @@ var
   w,h,bspace{,column_var},column_check,wtext  :integer;
   column_comps,column_vars : Tinteger_array;
   test_mode : boolean;
+  jd_mouse  : double;//jd_mid of mouse position
+
 
 
 function floattostr3(x:double):string;
@@ -1253,12 +1259,12 @@ begin
 end;
 
 
-procedure get_b_v_var(m : integer; out b_v_var, v_r_var : double);//calculate the b-v of the variable
+procedure get_b_v_var(m : integer; out b_v_var, v_r_var : double; out bv_pairs,vr_pairs : integer);//calculate the b-v of the variable
 var
   fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,sd_comp,
-  comp_magn,B_V, V_R, ratioV,ratioB,ratioR                          : double;
+  comp_magn,B_V, V_R, ratioV,ratioB,ratioR,exposuretime,exposuretime2,end_date,begin_date    : double;
   warning : string;
-  i, j, VIndexR, RIndex, VIndex, BIndex: Integer;
+  i, j, VIndex, BIndex: Integer;
   MinDiff, Diff: Double;
 begin
   with form_aavso1 do
@@ -1267,24 +1273,45 @@ begin
     MinDiff := 1e10; // A very large number
     VIndex := -1;
     BIndex := -1;
+
+    b_v_var:=0;
+    bv_pairs:=0;
+    v_r_var:=0;
+    vr_pairs:=0;
+
     // Brute-force search: compare every green with every blue julian day
     for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
     if RowChecked[i] then
     begin
       if  SubItemImages[i]=1 then //V filter
-
       begin
+        exposuretime:=SubItemDouble[i,P_exposure];
+        end_date:=SubItemDouble[i,P_jd_mid] +  exposuretime/(2 *24 * 3600); //in julian days
         for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
         if RowChecked[j] then
         begin
           if  SubItemImages[j]=2 then //blue
            begin
-             Diff := Abs(SubItemDouble[i,P_jd_mid] - SubItemDouble[j,P_jd_mid]);
-             if Diff < MinDiff then
+             exposuretime2:=SubItemDouble[j,P_exposure];
+             begin_date:=SubItemDouble[j,P_jd_mid] - exposuretime2/(2*24*3600); //begin date in julian days
+
+             Diff := (begin_date-end_date)*24*3600; //difference in seconds
+             if abs(Diff)< 0.9*max(exposuretime,exposuretime2) then
              begin
-               MinDiff := Diff;
-               VIndex := i;
-               BIndex := j;
+               fluxB:=SubItemDouble[j,column_vars[m]+2];
+               fluxV:=SubItemDouble[i,column_vars[m]+2];
+
+               if ((fluxB>0) and (fluxV>0) and
+                   (process_comp_stars(j,false,ratioB,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
+                   (process_comp_stars(i,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
+               begin
+                 varmag_B:=21- ln(ratioB*fluxB)*2.5/ln(10); //convert var flux to magnitude using
+                 varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
+                 b_v_var:=b_v_var + varmag_B-varmag_V;
+                 inc(bv_pairs,1);
+                 //memo2_message('Used b-v pair '+inttostr(i)+','+inttostr(j));
+                 break;//go to next i
+               end;
              end;
            end;//checked
          end;
@@ -1293,80 +1320,61 @@ begin
 
     //Find V and R image with closest Julian day
     MinDiff := 1e10; // A very large number
-    VIndexR := -1;
-    RIndex := -1;
+    i := -1;
+    j := -1;
 
-    // Brute-force search: compare every green with every blue
+    // Brute-force search: compare every green with every red
     for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
     if RowChecked[i] then
     begin
       if SubItemImages[i]=1 then //V filter
       begin
+        exposuretime:=SubItemDouble[i,P_exposure];
+        end_date:=SubItemDouble[i,P_jd_mid] +  exposuretime/(2 *24 * 3600); //in julian days
+
         for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
         if RowChecked[j] then
         begin
           if SubItemImages[j] in [0,24] then //red
           begin
-            Diff := Abs(SubItemDouble[i,P_jd_mid] - SubItemDouble[j,P_jd_mid]);
-            if Diff < MinDiff then
+            exposuretime2:=SubItemDouble[j,P_exposure];
+            begin_date:=SubItemDouble[j,P_jd_mid] - exposuretime2/(2*24*3600); //begin date in julian days
+
+            Diff := (begin_date-end_date)*24*3600; //difference in seconds
+            if abs(Diff)< 0.9*max(exposuretime,exposuretime2) then
             begin
-              MinDiff := Diff;
-              VIndexR := i;
-              RIndex := j;
+              fluxR:=SubItemDouble[j,column_vars[m]+2];
+              fluxV:=SubItemDouble[i,column_vars[m]+2];
+
+              if ((fluxV>0) and (fluxR>0) and
+                  (process_comp_stars(i,false,ratioV,sd_comp,comp_magn,B_V, V_R, warning)=0) and //get ratio from comp stars
+                  (process_comp_stars(j,false,ratioR,sd_comp,comp_magn,B_V, V_R, warning)=0)) then //get ratio from comp stars
+              begin
+                varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
+                varmag_R:=21- ln(ratioR*fluxR)*2.5/ln(10); //convert var flux to magnitude using
+                v_r_var:=v_r_var+varmag_V-varmag_R;
+                inc(vr_pairs,1);
+                break //go to next i
+              end;
             end;
           end;//checked
         end;
       end;
     end;
 
-    if ((BIndex>=0) and  (VIndex>=0)) then
+    //calculate average
+    if bv_pairs>0 then
     begin
-      fluxB:=SubItemDouble[Bindex,column_vars[m]+2];
-      fluxV:=SubItemDouble[Vindex,column_vars[m]+2];
-
-      if ((fluxB>0) and (fluxV>0) and
-          (process_comp_stars(BIndex,false,ratioB,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
-          (process_comp_stars(VIndex,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
-        begin
-          varmag_B:=21- ln(ratioB*fluxB)*2.5/ln(10); //convert var flux to magnitude using
-          varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
-          b_v_var:=varmag_B-varmag_V;
-         // memo2_message('b-v var is '+floattostrF(b_v_var,FFfixed,0,3) + '. Used files '+ item[Bindex].Caption+ ' & '+ item[VindexR].Caption);
-        end
-      else
-      begin
-        if warning<>'' then memo2_message(warning);
-        b_v_var:= 99;
-      end;
+      b_v_var:=b_v_var/bv_pairs;
     end
     else
-      b_v_var:= 99;
-
-
-    if ((VIndexR>=0) and  (RIndex>=0)) then
+      b_v_var:=99;
+    if vr_pairs>0 then
     begin
-      fluxR:=SubItemDouble[Rindex,column_vars[m]+2];
-      fluxV:=SubItemDouble[VindexR,column_vars[m]+2];
-
-
-      if ((fluxV>0) and (fluxR>0) and
-          (process_comp_stars(VIndexR,false,ratioV,sd_comp,comp_magn,B_V, V_R, warning)=0) and //get ratio from comp stars
-          (process_comp_stars(RIndex,false,ratioR,sd_comp,comp_magn,B_V, V_R, warning)=0)) then //get ratio from comp stars
-        begin
-          varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
-          varmag_R:=21- ln(ratioR*fluxR)*2.5/ln(10); //convert var flux to magnitude using
-          v_r_var:=varmag_V-varmag_R;
-          //memo2_message('v-r var is '+floattostrF(v_r_var,FFfixed,0,3) + '. Used files '+ item[VindexR].Caption+ ' & '+ item[Rindex].Caption);
-        end
-      else
-      begin
-        if warning<>'' then memo2_message(warning);
-        v_r_var:= 99;
-      end;
+      v_r_var:=v_r_var/vr_pairs;
     end
     else
-      v_r_var:= 99;
-
+      v_r_var:=99;
 
   end;//form_aavso1
 end;
@@ -1376,15 +1384,13 @@ end;
 procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   w2,h2 :integer;
-  jd_mouse: double;
-
 begin
   if jd_min=0 then exit;
   w2:=image_photometry1.width;
   h2:=image_photometry1.height;
  // x zero at x=wtext
  // x range is (w-bspace*2)
- jd_mouse:=jd_min+(jd_max-jd_min)*((x*w/w2)-wtext)/(w-bspace*2);
+ jd_mouse:=jd_min+(jd_max-jd_min)*((x*w/w2)-wtext)/(w-bspace*2);//global variable
  form_aavso1.caption:= 'JDmid='+floattostrF(jd_mouse,ffFixed,12,5)+', TimeMid='+prepare_ra6((frac(jd_mouse)+0.5)*2*pi,':')+', Magnitude='+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
 end;
 
@@ -1611,6 +1617,34 @@ begin
     abrv_comp1.checked[i]:=false;
 end;
 
+procedure Tform_aavso1.MenuItem3Click(Sender: TObject);
+var
+   delta,bestdelta : double;
+   row,therow : integer;
+begin
+  bestdelta:=1E90;
+  therow:=0;//safe default
+  with stackmenu1.listview7 do
+  for row := 0 to items.Count - 1 do //go through rows
+    if Items[row].checked then
+    begin
+      delta:=abs(jd_mouse - strtofloat2(Items.item[row].subitems.Strings[p_jd_mid]));
+      if delta<bestdelta then
+      begin
+        therow:=row;
+        bestdelta:=delta;
+      end;
+    end;
+
+  with stackmenu1 do
+  begin
+    listview7.Selected := nil; {remove any selection}
+    listview7.ItemIndex := therow;
+    {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+    listview7.Items[therow].MakeVisible(False);{scroll to selected item}
+  end;
+end;
+
 
 procedure Tform_aavso1.selectall1Click(Sender: TObject);
 var
@@ -1781,7 +1815,7 @@ end;
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
-    c,date_column,invalid_comp,i,icon_nr,m_index   : integer;
+    c,date_column,invalid_comp,i,icon_nr,m_index,bv_pairs,vr_pairs   : integer;
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
     warning,transformation, transform_all_factors,transf_str,varab  : string;
@@ -1960,7 +1994,7 @@ begin
                    else
                      var_magn:=99;
 
-                   get_b_v_var(m_index,{out} b_v_var, v_r_var);//calculate the b-v of the variable
+                   get_b_v_var(m_index,{out} b_v_var, v_r_var, bv_pairs,vr_pairs);//calculate the b-v of the variable
 
 
                    transformation:='';
@@ -1979,7 +2013,7 @@ begin
                          begin
                          var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (b_v_var - B_V{comp});
                          var_magn:=var_magn+var_Bcorrection;
-                         transformation:='Transf corr. '+floattostr3(var_Bcorrection)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostr3(var_Bcorrection)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'). Averaged '+inttostr(bv_pairs)+ ' b-v pairs. Filter used '+filter_used+'.';
                          filter_used:='B';//change TB to B
                          end
                          else
@@ -2003,7 +2037,7 @@ begin
                          begin
                          var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) *( b_v_var{var} - B_V{comp});
                          var_magn:=var_magn+var_Vcorrection;
-                         transformation:='Transf corr. '+floattostr3(var_Vcorrection)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostr3(var_Vcorrection)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'). Averaged '+inttostr(bv_pairs)+ ' b-v pairs. Filter used '+filter_used+'.';
                          filter_used:='V';//change TG to V
                          end
                          else
@@ -2027,7 +2061,7 @@ begin
                          begin
                          var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (v_r_var{var} - V_R{comp}); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
                          var_magn:=var_magn + var_Rcorrection;
-                         transformation:='Transf corr. '+floattostr3(var_Rcorrection)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(v_r_var)+'-'+floattostr3(V_R)+'), Filter used '+filter_used+',';
+                         transformation:='Transf corr. '+floattostr3(var_Rcorrection)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(v_r_var)+'-'+floattostr3(V_R)+'). Averaged '+inttostr(vr_pairs)+ ' v-r pairs. Filter used '+filter_used+'.';
                          filter_used:='R';//change TR to R
                          end
                          else

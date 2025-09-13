@@ -65,6 +65,7 @@ type
     bg2: TEdit;
     br2: TEdit;
     gradient_filter_factor1: TComboBox;
+    rows_to_clipboard7: TMenuItem;
     nebula1: TCheckBox;
     equaliseBG_for_solving1: TCheckBox;
     gb2: TEdit;
@@ -75,7 +76,7 @@ type
     Label78: TLabel;
     label_delta_ra1: TLabel;
     label_delta_dec1: TLabel;
-    list_to_clipboard10: TMenuItem;
+    rows_to_clipboard10: TMenuItem;
     luminance_slope1: TComboBox;
     MenuItem35: TMenuItem;
     listview1_photometric_calibration1: TMenuItem;
@@ -109,7 +110,7 @@ type
     Separator8: TMenuItem;
     solar_drift_ra1: TEdit;
     solar_drift_compensation1: TCheckBox;
-    list_to_clipboard7: TMenuItem;
+    list_to_clipboard_swapped_7: TMenuItem;
     ignore_saturation1: TCheckBox;
     Label74: TLabel;
     MenuItem34: TMenuItem;
@@ -577,7 +578,7 @@ type
     keywordchangelast1: TMenuItem;
     changekeyword9: TMenuItem;
     keyword9: TMenuItem;
-    list_to_clipboard9: TMenuItem;
+    rows_to_clipboard9: TMenuItem;
     MenuItem29: TMenuItem;
     MenuItem30: TMenuItem;
     MenuItem31: TMenuItem;
@@ -657,7 +658,7 @@ type
     add_sip1: TCheckBox;
     Viewimage9: TMenuItem;
     copy_files_to_clipboard1: TMenuItem;
-    list_to_clipboard8: TMenuItem;
+    rows_to_clipboard8: TMenuItem;
     MenuItem23: TMenuItem;
     MenuItem26: TMenuItem;
     MenuItem27: TMenuItem;
@@ -672,7 +673,7 @@ type
     MenuItem21: TMenuItem;
     MenuItem22: TMenuItem;
     ColorDialog1: TColorDialog;
-    list_to_clipboard6: TMenuItem;
+    rows_to_clipboard6: TMenuItem;
     PopupMenu7: TPopupMenu;
     removeselected7: TMenuItem;
     renametobak7: TMenuItem;
@@ -684,7 +685,7 @@ type
     selectall2: TMenuItem;
     selectall1: TMenuItem;
     selectall7: TMenuItem;
-    list_to_clipboard1: TMenuItem;
+    rows_to_clipboard1: TMenuItem;
     selectall8: TMenuItem;
     MenuItem16: TMenuItem;
     MenuItem17: TMenuItem;
@@ -773,7 +774,8 @@ type
     procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
-    procedure list_to_clipboard7Click(Sender: TObject);
+    procedure listview7ItemChecked(Sender: TObject; Item: TListItem);
+    procedure list_to_clipboard_swapped_7Click(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
     procedure ClearButton1Click(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -894,7 +896,7 @@ type
     procedure help_osc_menu1Click(Sender: TObject);
     procedure help_uncheck_outliers1Click(Sender: TObject);
     procedure listview6CustomDrawItem(Sender: TCustomListView; Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
-    procedure list_to_clipboard1Click(Sender: TObject);
+    procedure rows_to_clipboard1Click(Sender: TObject);
     procedure selectall1Click(Sender: TObject);
     procedure apply_remove_background_colour1Click(Sender: TObject);
     procedure reset_factors1Click(Sender: TObject);
@@ -2885,11 +2887,11 @@ begin
      with view_next6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
      with view_next7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
 
-     with list_to_clipboard1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-     with list_to_clipboard6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-     with list_to_clipboard7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-     with list_to_clipboard8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-     with list_to_clipboard9 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with rows_to_clipboard1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with rows_to_clipboard6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with list_to_clipboard_swapped_7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with rows_to_clipboard8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+     with rows_to_clipboard9 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
 
      with selectall1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
      with selectall2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
@@ -6315,6 +6317,10 @@ begin
     exit;
   end;
 
+  listview7.items.beginupdate;
+  listview7.alphasort;{sort on time for correctly connection variable points}
+  listview7.items.endupdate;
+
 
   if form_aavso1 = nil then
     form_aavso1 := Tform_aavso1.Create(self); {in project option not loaded automatic}
@@ -8978,7 +8984,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.list_to_clipboard1Click(Sender: TObject);
+procedure Tstackmenu1.rows_to_clipboard1Click(Sender: TObject);
 {copy seleced lines to clipboard}
 var
   row, c         : integer;
@@ -8988,15 +8994,15 @@ begin
   info := '';
 
 
-  if Sender = list_to_clipboard9 then lv := listview9
+  if Sender = rows_to_clipboard9 then lv := listview9
   else
-  if Sender = list_to_clipboard8 then lv := listview8
+  if Sender = rows_to_clipboard8 then lv := listview8
   else
-//  if Sender = list_to_clipboard7 then lv := listview7
-//  else
-  if Sender = list_to_clipboard6 then lv := listview6
+  if Sender = rows_to_clipboard7 then lv := listview7
   else
-  if Sender = list_to_clipboard1 then lv := listview1
+  if Sender = rows_to_clipboard6 then lv := listview6
+  else
+  if Sender = rows_to_clipboard1 then lv := listview1
   else
   begin
     beep;
@@ -9700,8 +9706,17 @@ begin
   new_analyse_required:=true;
 end;
 
+procedure Tstackmenu1.listview7ItemChecked(Sender: TObject; Item: TListItem);
+begin
+  if form_aavso1<>nil then //visible
+  begin
+    ExtractListViewDataToArrays(stackmenu1.ListView7, P_filter);//copy listview7 data to arrays
+    plot_graph;
+  end;
+end;
 
-procedure Tstackmenu1.list_to_clipboard7Click(Sender: TObject);
+
+procedure Tstackmenu1.list_to_clipboard_swapped_7Click(Sender: TObject);
 var
    column, row,icon_nr : integer;
    info,doc_magn,abbrv : string;
