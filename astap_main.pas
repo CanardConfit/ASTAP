@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.09.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.09.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -3323,6 +3323,15 @@ begin
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
     head.noise_level:= sd;   {this noise level could be too high if no flat is applied. So for images where center is brighter then the corners.}
+
+
+//     kkkkkk
+ //    head.noise_level:= sd2; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
 
     {calculate star level}
     if ((head.nrbits=8) or (head.nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
