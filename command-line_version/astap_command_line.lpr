@@ -86,7 +86,6 @@ begin
     '-check {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
     '-d  path {specify a path to the star database}'+#10+
     '-D  abbreviation[d80,d50,...] {Specify a star database}'+#10+
-    '-eqbg {Equalise unequal background prior to solving to improve star detection}'+#10+
     '-o  file {Name the output files with this base path & file name.}'+#10+
     '-sip {Add SIP (Simple Image Polynomial) coefficients}'+#10+
     '-speed mode[auto/slow] {Slow is forcing more area overlap while searching to improve detection}'+#10+
@@ -154,7 +153,7 @@ begin
     if hasoption('sip') then add_sip1:='n'<>GetOptionValue('sip');
     if hasoption('speed') then force_oversize1:=pos('slow',GetOptionValue('speed'))<>0;
     if hasoption('check') then check_pattern_filter1:=('y'=GetOptionValue('check'));
-    if hasoption('eqbg') then equaliseBG_for_solving1:='n'<>GetOptionValue('eqbg');
+ //   if hasoption('eqbg') then equaliseBG_for_solving1:='n'<>GetOptionValue('eqbg');
 
 
     extractspecified:=hasoption('extract');

@@ -2840,19 +2840,6 @@ object stackmenu1: Tstackmenu1
                 ParentColor = False
                 Visible = False
               end
-              object equaliseBG_for_solving1: TCheckBox
-                Left = 696
-                Height = 23
-                Hint = 'Equalise background for solving. Apply this when the background has a strong gradient.'
-                Top = 104
-                Width = 144
-                BorderSpacing.Around = 5
-                Caption = 'Equalise background'
-                Color = clBtnFace
-                ParentColor = False
-                ParentFont = False
-                TabOrder = 13
-              end
             end
           end
           object show_quads1: TBitBtn

@@ -693,7 +693,7 @@ var
    distance,distance1,distance2,distance3,x1a,x2a,x3a,x4a,xt,y1a,y2a,y3a,y4a,yt,
 
    {dist4,dist5,dist6,}dummy,disty,
-   dist12,dist13,dist14,dist23,dist24,dist34, quad_tolerance                                : double;
+   dist12,dist13,dist14,dist23,dist24,dist34      : double;
 
    identical_quad : boolean;
    quad_centers :   Tstar_list;
@@ -1215,18 +1215,321 @@ end;
 //end;
 
 
+procedure get_hist2(img :Timage_array; startx,stopx,starty,stopy,upperlimit : integer; out histogram : Tarray_integer);
+var
+  i,j,col        : integer;
+  total_value    : double;
+begin
+  setlength(histogram,upperlimit);
+  for i:=0 to upperlimit do
+    histogram[i] := 0;{clear histogram of specified colour}
+
+  For i:=startY to stopY do
+  begin
+    for j:=startX to stopX do
+    begin
+      col:=round(img[0,i,j]);{pixel value for this colour}
+      if ((col>=1) and (col<upperlimit)) then {ignore black overlap areas and bright stars}
+         inc(histogram[col],1);{calculate histogram}
+    end;{j}
+  end; {i}
+end;
+
+
+procedure SigmaClippedMeanFromHistogram(img :Timage_array; startx,stopx,starty,stopy, upperlimit, maxIterations: integer; convergenceThreshold : double; out meanv,stdev : double);
+var
+  i, totalCount, iteration, binvalue, val: Integer;
+  sum, sumSquares, variance: Double;
+  previousMean, previousStdDev: Double;
+  converged: Boolean;
+  currentLowerLimit, currentUpperLimit: Integer;  // Added for clipping range
+  sigmaLow, sigmaHigh: Double;  // Sigma clipping parameters
+  histogram         : Tarray_integer;
+begin
+  sigmaLow := 3.0;   // Standard values for astronomy
+  sigmaHigh := 2.0;
+  iteration := 0;
+  converged := False;
+  meanv := 0;
+  stdev := 0;
+
+  // Initial range is full histogram
+  currentLowerLimit := 0;
+  currentUpperLimit := upperlimit;
+
+
+  get_hist2(img,startx,stopx,starty,stopy,upperlimit,{out} histogram);
+
+  while (not converged) and (iteration < maxIterations) do
+  begin
+    previousMean := meanv;
+    previousStdDev := stdev;
+
+    // Reset accumulation variables each iteration
+    sum := 0.0;
+    sumSquares := 0.0;
+    totalCount := 0;
+
+    // Calculate statistics for current clipping range
+    for i := currentLowerLimit to currentUpperLimit do
+    begin
+      if (i >= 0) and (i < Length(histogram)) then  // Bounds check
+      begin
+        val := histogram[i];
+        if val > 0 then
+        begin
+          binValue := i;  // Bin index represents pixel value
+          sum := sum + (binValue * val);
+          sumSquares := sumSquares + (binValue * binValue * val);
+          totalCount := totalCount + val;
+        end;
+      end;
+    end;
+
+    // Calculate mean and standard deviation
+    if totalCount > 0 then
+    begin
+      meanv := sum / totalCount;
+      if totalCount > 1 then
+      begin
+        variance := (sumSquares - (sum * sum) / totalCount) / (totalCount - 1);
+        if variance > 0 then
+          stdev := Sqrt(variance)
+        else
+          stdev := 0.0;
+      end
+      else
+        stdev := 0.0;
+    end
+    else
+    begin
+      meanv := 0.0;
+      stdev := 0.0;
+      Break; // No data left
+    end;
+
+    //memo2_message('Iteration '+ inttostr(iteration)+'  Mean:'+floattostr(meanv)+'  Stdev:'+floattostr(stdev));
+
+    Inc(iteration);
+
+    //Update clipping range for next iteration
+    if stdev > 0 then
+    begin
+      currentLowerLimit := Max(0, Round(meanv - sigmaLow * stdev));
+      currentLowerLimit := 0;
+      currentUpperLimit := Min(upperlimit, Round(meanv + sigmaHigh * stdev));
+    end;
+
+    // Check for convergence
+    if (iteration > 1) and  // Don't check convergence on first iteration
+       (Abs(meanv - previousMean) < convergenceThreshold) and
+       (Abs(stdev - previousStdDev) < convergenceThreshold) then
+      converged := True;
+
+  end; // while
+end;
+
+
 procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: Tstar_list; out mean_hfd: double);{find stars and put them in a list}
+var
+   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr, noise_level: double;
+   img_sa     : Timage_array;
+   snr_list   :  array of double;//array of double;
+   startTick2  : qword;{for timing/speed purposes}
+// flip_vertical,flip_horizontal  : boolean;
+// starX,starY :integer;
+const
+    buffersize=5000;{5000}
+    rastersteps=12;
+
+          procedure find_stars_routine(startx,endx,starty,endy : integer);
+          var
+             fitsX, fitsY,m,n : integer;
+          begin
+            for fitsY:=startY to endY do  //Search through the image. Stay one pixel away from the borders.
+            begin
+              for fitsX:=startX to endX  do
+              begin
+                if ((img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star above noise level}
+                begin
+                  starpixels:=0;
+                  if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+                  if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+                  if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+                  if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+                  if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
+                  begin
+                    HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+
+                    if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes} ) then
+                    begin
+                      {for testing}
+                    //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
+                    //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
+                    //  size:=round(5*hfd1);
+                    //  mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+                    //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+                    //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
+
+                      mean_hfd:=mean_hfd+hfd1;//sum up to calculate the average/mean hfd later
+
+                      radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+                      sqr_radius:=sqr(radius);
+                      xci:=round(xc);{star center as integer}
+                      yci:=round(yc);
+                      for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                        for m:=-radius to +radius do
+                        begin
+                          j:=n+yci;
+                          i:=m+xci;
+                          if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                            img_sa[0,j,i]:=1;
+                        end;
+
+                      {store values}
+                      inc(nrstars);
+                      if nrstars>=length(starlist1[0]) then
+                      begin
+                        SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
+                        setlength(snr_list,nrstars+buffersize);{adapt array size if required}
+                       end;
+                      starlist1[0,nrstars-1]:=xc; {store star position}
+                      starlist1[1,nrstars-1]:=yc;
+                      snr_list[nrstars-1]:=snr;{store SNR}
+
+                      if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
+                    end;
+                  end;
+                end;
+              end;
+            end;
+          end;
+
+
+begin
+  {for testing}
+//   mainform1.image1.Canvas.Pen.Mode := pmMerge;
+//   mainform1.image1.Canvas.Pen.width := round(1+hd.height/mainform1.image1.height);{thickness lines}
+//   mainform1.image1.Canvas.brush.Style:=bsClear;
+//   mainform1.image1.Canvas.font.color:=$FF;
+//   mainform1.image1.Canvas.font.size:=10;
+//   mainform1.image1.Canvas.Pen.Color := $FF;
+//   flip_vertical:=mainform1.flip_vertical1.Checked;
+//   flip_horizontal:=mainform1.Flip_horizontal1.Checked;
+
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
+
+  solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details, global variable}
+  if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
+
+  SetLength(starlist1,2,buffersize);{set array length}
+  setlength(snr_list,buffersize);{set array length}
+
+  setlength(img_sa,1,height2,width2);{set length of image array}
+
+  backgr:=head.backgr;
+  noise_level:=head.noise_level;
+
+  retries:=3; {try up to four times to get enough stars from the image}
+  repeat
+    mean_hfd:=0;
+    highest_snr:=0;
+    nrstars:=0;{set counters at zero}
+
+    for fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1  do
+        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
+
+    if retries=3 then
+    begin
+      if head.star_level >30*noise_level then
+      begin
+        detection_level:=head.star_level;
+        find_stars_routine(1,width2-1-1,1,height2-1-1);
+      end
+      else
+        retries:=2;{skip}
+    end;//stars are dominant
+    if retries=2 then
+    begin
+      if head.star_level2>30*noise_level then
+      begin
+        detection_level:=head.star_level2;
+        find_stars_routine(1,width2-1-1,1,height2-1-1);
+      end
+      else
+        retries:=1;{skip}
+    end;//stars are dominant
+    if retries=1 then
+    begin
+      detection_level:=30*noise_level;
+      find_stars_routine(1,width2-1-1,1,height2-1-1);
+    end;
+    if retries=0 then  //last try to find faint stars, divide image in sections and for each section find background and noise level
+    begin
+       if height2<width2 then //calculate steps in x, y
+       begin
+         stepsx:=rastersteps;
+         stepsY:=round(rastersteps*height2/width2);
+       end
+       else
+       begin
+         stepsY:=rastersteps;
+         stepsX:=round(rastersteps*width2/height2);
+       end;
+
+       for yy:=0 to stepsY do //find stars in stepsX x stepsY sections
+       for xx:=0 to stepsX do
+       begin
+         startX:=1+round(width2*xx/(stepsX+1));
+         endX:=min(width2-1-1,round(width2*(xx+1)/(stepsX+1)));
+         startY:=1+round(height2*yy/(stepsY+1));
+         endY:=min(height2-1-1,round(height2*(yy+1)/(stepsY+1)));
+
+         SigmaClippedMeanFromHistogram(img,startX,endX,startY,endY,max(65500,trunc(head.backgr*2)), 6,0.1,backgr,noise_level);//mean and noise of this sub section
+         detection_level:= 7*noise_level;
+         find_stars_routine(startX,endX,startY,endY);
+       end;
+    end;
+
+    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(head.backgr))+ '. Detection level used '+inttostr( round(detection_level))
+                                                          +' above background. Star level is '+inttostr(round(head.star_level))+' above background. Noise level is '+floattostrF(head.noise_level,ffFixed,0,0));
+    dec(retries);{Try again with lower detection level}
+  until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
+
+  img_sa:=nil;{free mem}
+
+
+  SetLength(starlist1,2,nrstars);{set length correct}
+  setlength(snr_list,nrstars);{set length correct}
+
+  if nrstars>max_stars then {reduce number of stars if too high}
+  begin
+    if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
+    get_brightest_stars(max_stars, highest_snr, snr_list, starlist1);
+  end;
+
+  if nrstars>0 then mean_hfd:=mean_hfd/nrstars;
+  if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms. Mean HFD: '+ floattostrF(mean_hfd,ffFixed,0,1) );
+end;
+
+
+
+procedure find_starsOLD(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: Tstar_list; out mean_hfd: double);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,starpixels : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr, noise_level: double;
    img_sa     : Timage_array;
-   snr_list   : array of double;
-
+   snr_list   :  array of double;//array of double;
 // flip_vertical,flip_horizontal  : boolean;
 // starX,starY :integer;
    startTick2  : qword;{for timing/speed purposes}
 const
     buffersize=5000;{5000}
+
+
 begin
   {for testing}
 //   mainform1.image1.Canvas.Pen.Mode := pmMerge;

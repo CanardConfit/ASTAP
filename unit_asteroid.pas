@@ -520,7 +520,7 @@ var
           {annotate}
            if showfullnames then thetext1:=trim(name) else thetext1:=desn;
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
-           if outdated then thetext2:=thetext2+'⚠ ' +'obsolete';
+           if outdated then thetext2:=thetext2+'⚠ ' +'unreliable';
 
            if add_annot then
            begin

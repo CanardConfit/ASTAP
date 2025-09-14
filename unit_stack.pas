@@ -67,7 +67,6 @@ type
     gradient_filter_factor1: TComboBox;
     rows_to_clipboard7: TMenuItem;
     nebula1: TCheckBox;
-    equaliseBG_for_solving1: TCheckBox;
     gb2: TEdit;
     gg2: TEdit;
     gr2: TEdit;

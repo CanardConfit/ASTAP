@@ -63,7 +63,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.09.04';
+  astap_version: string='2025.09.14';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -80,11 +80,11 @@ var {################# initialised variables #########################}
   downsample_for_solving1: integer=0;
   star_database1  : string='auto';
   add_sip1        : boolean=false;
-  equaliseBG_for_solving1: boolean=false;
 
 type
   Timage_array = array of array of array of Single;
   Tstar_list   = array of array of double;
+  Tarray_integer = array of integer;
   solution_vector   = array[0..2] of double;
 
 
@@ -1558,18 +1558,19 @@ begin
 end;
 
 
-function load_PPM_PGM_PFM(filen:string; var img_loaded2: Timage_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
+function load_PPM_PGM_PFM(filen:string; out img_loaded2: Timage_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
-   i,j, reader_position,naxis,s        : integer;
-   aline,w1,h1,bits,comm,comment_line  : ansistring;
-   ch                : ansichar;
-   rgb32dummy        : byteXXXX3;
-   rgb16dummy        : byteXX3;
-   rgbdummy          : byteX3;
-   width2,height2, err,err2,err3,package,naxis3      : integer;
-   comment,color7,pfm,expdet,timedet,isodet,instdet  : boolean;
-   range, jd2        : double;
-   thecomments       : TStringList;
+  TheFile  : tfilestream;
+  i,j, reader_position,naxis,s        : integer;
+  aline,w1,h1,bits,comm,comment_line  : ansistring;
+  ch                : ansichar;
+  rgb32dummy        : byteXXXX3;
+  rgb16dummy        : byteXX3;
+  rgbdummy          : byteX3;
+  width2,height2, err,err2,err3,package,naxis3      : integer;
+  comment,color7,pfm,expdet,timedet,isodet,instdet,ccdtempdet  : boolean;
+  range, jd2        : double;
+  thecomments       : TStringList;
 var
    x_longword  : longword;
    x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
@@ -1577,7 +1578,7 @@ var
      procedure close_fits_file; inline;
      begin
         Reader.free;
-        TheFile3.free;
+        TheFile.free;
      end;
 
 begin
@@ -1593,14 +1594,21 @@ begin
   end;
   memo1.clear;{clear memo for new header}
 
+  memo1.beginupdate;
+ // mainform1.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
+  memo1.clear;{clear memo for new header}
+
   Reader := TReader.Create (theFile3,$60000);// 393216 byte buffer
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables}
   reset_fits_global_variables; {reset the global variable}
 
+
+
   I:=0;
   reader_position:=0;
+
   aline:='';
   try
     for i:=0 to 2 do begin reader.read(ch,1); aline:=aline+ch; inc(reader_position,1);end;
@@ -1627,6 +1635,9 @@ begin
     i:=0;
     repeat {read header}
       comment:=false;
+      expdet:=false;
+      timedet:=false;
+      ccdtempdet:=false;
       aline:='';
       comm:='';
       repeat
@@ -1653,6 +1664,7 @@ begin
           if comm='TIMESTAMP=' then begin timedet:=true; comm:=''; end else
           if comm='ISOSPEED=' then begin isodet:=true; comm:=''; end else
           if comm='MODEL=' then begin instdet:=true; comm:=''; end; {camera make}
+          if comm='CCD-TEMP=' then begin ccdtempdet:=true; comm:=''; end; {camera make}
         end
         else
         if ord(ch)>32 then aline:=aline+ch;; {DCRAW write space #20 between width&length, Photoshop $0a}
@@ -1664,7 +1676,7 @@ begin
            comment_line:='';
         end;
         inc(reader_position,1)
-      until ( ((comment=false) and (ord(ch)<=32)) );
+      until ( ((comment=false) and (ord(ch)<=32)));
       if (length(aline)>1){no comments} then {read header info}
       begin
         inc(i);{useful header line}
@@ -1701,17 +1713,21 @@ begin
       exit;
     end; {should contain 255 or 65535}
 
-    fits_file:=true;
+    datamin_org:=0;
+
+  //  backgr:=datamin_org;{for case histogram is not called}
+  //  cwhite:=datamax_org;
+
     if color7 then
     begin
        package:=round((abs(nrbits)*3/8));{package size, 3 or 6 bytes}
-       naxis3:=3; {NAXIS3 number of colors}
+       naxis3:=3; {naxis3 number of colors}
        naxis:=3; {number of dimensions}
     end
     else
     begin {gray image without bayer matrix applied}
       package:=round((abs(nrbits)/8));{package size, 1 or 2 bytes}
-      naxis3:=1; {NAXIS3 number of colors}
+      naxis3:=1; {naxis3 number of colors}
       naxis:=2;{number of dimensions}
     end;
     i:=round(bufwide/package);
@@ -1820,16 +1836,18 @@ begin
   if exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,exposure);
   if gain<>999 then     update_float('GAIN    =',' / iso speed                                      ' ,gain);
 
-  if date_obs<>'' then update_text   ('DATE-OBS=',#39+date_obs+#39);
-  if instrum<>''  then update_text   ('INSTRUME=',#39+INSTRUM+#39);
+  if date_obs<>'' then add_text('DATE-OBS=',#39+date_obs+#39);
+  if instrum<>''  then add_text('INSTRUME=',#39+INSTRUM+#39);
 
-  update_text   ('BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
+  if naxis3<>1 then
+    add_text('BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
 
-  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  add_text('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
 
   for s:=0 to thecomments.count-1 do
       add_text('COMMENT',thecomments[s]);{add PGM comments to header memo}
 
+  memo1.endupdate;
   thecomments.free; //tstringlist
 end;
 
@@ -1999,7 +2017,7 @@ begin
   begin
     JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
     date_obs:=JdToDate(jd2);
-    update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+    add_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
   end;
 
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
