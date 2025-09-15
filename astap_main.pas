@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.09.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.09.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -563,6 +563,7 @@ var
 type
   Timage_array = array of array of array of Single;// note fastest processing is achieved if both access loop and memory storage are organised in rows. So as array[nrcolours,height,width]
   Tstar_list   = array of array of double;
+  Tarray_integer = array of integer;
 
   Theader =record    {contains the most important header info}
     nrbits : integer;{almost always equivalent to bitpix}
@@ -3101,6 +3102,7 @@ begin
   result:=leadingzero(hh)+leadingzero(mm)+leadingzero(ss)+'.'+char(ds+48)+sign+leadingzero(g)+leadingzero(m)+leadingzero(s);
 end;
 
+
 //not used
 function trimmed_median_background2(colour, upperlimit: integer): double;
 var
@@ -3156,94 +3158,6 @@ begin
   end;
 end;
 
-//no used
-procedure SigmaClippedMeanFromHistogram(colour, upperlimit, maxIterations: integer; convergenceThreshold : double; out meanv,stdev : double);
-var
-  i, totalCount, iteration, binvalue, val: Integer;
-  sum, sumSquares, variance: Double;
-  previousMean, previousStdDev: Double;
-  converged: Boolean;
-  currentLowerLimit, currentUpperLimit: Integer;  // Added for clipping range
-  sigmaLow, sigmaHigh: Double;  // Sigma clipping parameters
-begin
-  sigmaLow := 3.0;   // Standard values for astronomy
-  sigmaHigh := 2.0;
-  iteration := 0;
-  converged := False;
-  meanv := 0;
-  stdev := 0;
-
-  // Initial range is full histogram
-  currentLowerLimit := 0;
-  currentUpperLimit := upperlimit;
-
-  while (not converged) and (iteration < maxIterations) do
-  begin
-    previousMean := meanv;
-    previousStdDev := stdev;
-
-    // Reset accumulation variables each iteration
-    sum := 0.0;
-    sumSquares := 0.0;
-    totalCount := 0;
-
-    // Calculate statistics for current clipping range
-    for i := currentLowerLimit to currentUpperLimit do
-    begin
-      if (i >= 0) and (i < Length(histogram[colour])) then  // Bounds check
-      begin
-        val := histogram[colour, i];
-        if val > 0 then
-        begin
-          binValue := i;  // Bin index represents pixel value
-          sum := sum + (binValue * val);
-          sumSquares := sumSquares + (binValue * binValue * val);
-          totalCount := totalCount + val;
-        end;
-      end;
-    end;
-
-    // Calculate mean and standard deviation
-    if totalCount > 0 then
-    begin
-      meanv := sum / totalCount;
-      if totalCount > 1 then
-      begin
-        variance := (sumSquares - (sum * sum) / totalCount) / (totalCount - 1);
-        if variance > 0 then
-          stdev := Sqrt(variance)
-        else
-          stdev := 0.0;
-      end
-      else
-        stdev := 0.0;
-    end
-    else
-    begin
-      meanv := 0.0;
-      stdev := 0.0;
-      Break; // No data left
-    end;
-
-    Inc(iteration);
-
-    //Update clipping range for next iteration (this was missing!)
-    if stdev > 0 then
-    begin
-      currentLowerLimit := Max(0, Round(meanv - sigmaLow * stdev));
-      currentLowerLimit := 0;
-      currentUpperLimit := Min(upperlimit, Round(meanv + sigmaHigh * stdev));
-    end;
-
-    // Check for convergence
-    if (iteration > 1) and  // Don't check convergence on first iteration
-       (Abs(meanv - previousMean) < convergenceThreshold) and
-       (Abs(stdev - previousStdDev) < convergenceThreshold) then
-      converged := True;
-
-  end; // while
-end;
-
 
 procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 var
@@ -3263,17 +3177,12 @@ begin
   end
   else
   begin
-
     for i := 1 to max_range do //find peak, ignore value 0 from oversize
       if histogram[colour,i]>pixels then //find colour peak
       begin
         pixels:= histogram[colour,i];
         head.backgr:=i;
       end;
-
-//    head.backgr:=trimmed_median_background2(colour, min(65535,2*max_range));
-//    SigmaClippedMeanFromHistogram(colour, min(65535,2*max_range), 10,0.03,head.backgr,sd2);
-
   end;
 
   {check alternative mean value}
@@ -3323,15 +3232,6 @@ begin
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
     head.noise_level:= sd;   {this noise level could be too high if no flat is applied. So for images where center is brighter then the corners.}
-
-
-//     kkkkkk
- //    head.noise_level:= sd2; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
-
-
 
     {calculate star level}
     if ((head.nrbits=8) or (head.nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
@@ -8410,7 +8310,6 @@ begin
       stackmenu1.timestamp1.Checked:=Sett.ReadBool('stack','time_stamp',true);{blink}
 
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
-      stackmenu1.equaliseBG_for_solving1.Checked:=Sett.ReadBool('stack','eqbg',false);
 
       stackmenu1.use_triples1.Checked:=Sett.ReadBool('stack','use_triples',false);
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
@@ -8824,8 +8723,6 @@ begin
       sett.writeBool('stack','time_stamp',stackmenu1.timestamp1.checked);{blink}
 
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
-      sett.writeBool('stack','eqbg',stackmenu1.equaliseBG_for_solving1.checked);
-
 
       sett.writeBool('stack','use_triples',stackmenu1.use_triples1.checked);
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
@@ -13550,7 +13447,6 @@ begin
         '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
         '-d  path {Specify a path to the star database}'+#10+
         '-D  abbreviation[d80,d50,...] {Specify a star database}'+#10+
-        '-eqbg apply[y/n] {Equalise unequal background prior to solving to improve star detection}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-sip add[y/n] {Add SIP (Simple Image Polynomial) coefficients}'+#10+
         '-speed mode[auto/slow] {Slow is forcing more area overlap while searching to improve detection}'+#10+
@@ -13637,9 +13533,6 @@ begin
             stackmenu1.add_sip1.checked:='n'<>GetOptionValue('sip');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=('slow'=GetOptionValue('speed'));
         if hasoption('check') then checkfilter:=true else checkfilter:=false;
-        if hasoption('eqbg') then
-            stackmenu1.equaliseBG_for_solving1.checked:='n'<>GetOptionValue('eqbg');
-
 
         if focusrequest then {find best focus using curve fitting}
         begin
