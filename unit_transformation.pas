@@ -14,6 +14,7 @@ type
   TForm_transformation1 = class(TForm)
     Button1: TButton;
     cancel1: TButton;
+    checkBox_auid1: TCheckBox;
     save1: TButton;
     Label10: TLabel;
     Label11: TLabel;
@@ -36,6 +37,7 @@ type
     Label3: TLabel;
 
     procedure Button1Click(Sender: TObject);
+    procedure checkBox_auid1Change(Sender: TObject);
     procedure save1Click(Sender: TObject);
     procedure cancel1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -78,7 +80,7 @@ var
   B_list,V_listB,V_listR,R_list, B_list_documented,V_list_documentedB,V_list_documentedR, R_list_documented  : array of double;
   Tbv, Tbv_intercept, Tbv_sd, Tv_bv, Tv_bv_intercept, Tv_bv_sd, Tb_bv, Tb_bv_intercept, Tb_bv_sd,
   Tvr, Tvr_intercept, Tvr_sd, Tr_vr, Tr_vr_intercept, Tr_vr_sd, Tv_vr, Tv_vr_intercept, Tv_vr_sd : double;
-
+  abbreviation,abbreviationB,abbreviationR : array of string;
 
 const
   idx : integer=0; //which graph is shown
@@ -89,10 +91,12 @@ procedure plot_transformation_graph;
 var
   i,N,w,h: Integer;
   x_vals, y_vals: array of double;
+  auid : array of string;
   xmin, xmax, ymin, ymax, tick_step, tick_val,slope, intercept, sd  : double;
   x_pixel, y_pixel,nticks, x1, y1,wtext,bspace  : Integer;
   x_label, y_label: string ;
   bmp: TBitmap;
+  show_auid : boolean;
 const
   len=3;
 
@@ -118,8 +122,11 @@ begin
     exit;//no data
   end;
 
+  show_auid:=form_transformation1.checkBox_auid1.checked;
   wtext:=mainform1.image1.Canvas.textwidth('12.3456');
   bspace:=3*mainform1.image1.Canvas.textheight('T');{border space graph. Also for 4k with "make everything bigger"}
+
+
 
   if idx<= 2 then
      N := Length(B_list_documented) //B-V
@@ -134,14 +141,21 @@ begin
 
   SetLength(x_vals, N);
   SetLength(y_vals, N);
+  SetLength(auid, N);
 
   // Choose which transform we're plotting by setting y = b−v or V−v or B−b
   for i := 0 to N - 1 do
   begin
     if idx<= 2 then
-       x_vals[i] := B_list_documented[i] - V_list_documentedB[i]     // (B−V)
+    begin
+       x_vals[i] := B_list_documented[i] - V_list_documentedB[i];     // (B−V)
+       auid[i]:=abbreviationB[i];
+    end
     else
+    begin
        x_vals[i] := V_list_documentedR[i] - R_list_documented[i];     // (V-R)
+       auid[i]:=abbreviationR[i];
+    end;
 
 
 
@@ -298,6 +312,11 @@ begin
       end;
 
       plot_point(x_pixel, y_pixel);
+      if show_auid then
+      begin
+        bmp.Canvas.Brush.style := bsclear;
+        bmp.Canvas.TextOut(x_pixel,y_pixel,auid[i]);//labels
+      end;
     end;
 
     // Plot best-fit line
@@ -424,6 +443,7 @@ begin
   setlength(B_list_documented,nr);
   setlength(V_list_documented,nr);
   setlength(R_list_documented,nr);
+  setlength(abbreviation,nr);
   iconB:=false;
   iconV:=false;
   iconR:=false;
@@ -482,7 +502,7 @@ begin
         B_list_documented[starnr]:=retrieve_comp_magnitude(false,2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
         V_list_documented[starnr]:=retrieve_comp_magnitude(false,1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
         R_list_documented[starnr]:=retrieve_comp_magnitude(false,0,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-
+        abbreviation[starnr]:=auid;
 
         inc(starnr);
 
@@ -506,6 +526,10 @@ begin
       counter:=0;
       setlength(V_listB,length(V_list));
       setlength(V_list_documentedB,length(V_list_documented));
+      setlength(abbreviationB,length(abbreviation));
+
+
+
       for j:=0 to starnr-1 do //sanitize. Remove stars without measured or documented magnitudes
       begin
         if ((B_list[j]>0) and (V_list[j]>0) and(B_list_documented[j]>0) and (V_list_documented[j]>0)) then  //valid data only
@@ -514,6 +538,7 @@ begin
           V_listB[counter]:=V_list[j]; //use V_listB to prevent it is modified and used in VR transformation calculation
           B_list_documented[counter]:=B_list_documented[j];
           V_list_documentedB[counter]:=V_list_documented[j];
+          abbreviationB[counter]:= abbreviation[j];
           inc(counter);
         end;
       end;
@@ -521,6 +546,7 @@ begin
       setlength(V_listB,counter);//reduce size
       setlength(B_list_documented,counter);//reduce size
       setlength(V_list_documentedB,counter);//reduce size
+      setlength(abbreviationB,counter);//reduce size
 
       if counter<3 then
       begin
@@ -565,6 +591,7 @@ begin
     begin
       setlength(V_listR,length(V_list));
       setlength(V_list_documentedR,length(V_list_documented));
+      setlength(abbreviationR,length(abbreviation));
       counter:=0;
       for j:=0 to starnr-1 do //sanitize. Removed stars without measured or documented magnitudes
       begin
@@ -574,6 +601,7 @@ begin
           R_list[counter]:=R_list[j];
           V_list_documentedR[counter]:=V_list_documented[j];
           R_list_documented[counter]:=R_list_documented[j];
+          abbreviationR[counter]:= abbreviation[j];
           inc(counter);
         end;
       end;
@@ -709,6 +737,11 @@ begin
   if ((pos('std', stackmenu1.annotate_mode1.text)<> 0) or (pos('Local', stackmenu1.annotate_mode1.text)<> 0) or
           (IDYES= Application.MessageBox('Warning. AAVSO annotation is not set at "std field". If no AAVSO comparison stars are available then this routine will not work.'+#10+#10+'This routine will work with any comparison stars so you could continue.'+#10+#10+'Continue?', 'Find tranformation coeficients', MB_ICONQUESTION + MB_YESNO))) then
   transformation;
+end;
+
+procedure TForm_transformation1.checkBox_auid1Change(Sender: TObject);
+begin
+  plot_transformation_graph;
 end;
 
 procedure TForm_transformation1.save1Click(Sender: TObject);

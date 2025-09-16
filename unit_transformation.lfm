@@ -1,20 +1,20 @@
 object Form_transformation1: TForm_transformation1
   Left = 100
-  Height = 551
+  Height = 590
   Top = 174
   Width = 817
   Caption = 'ASTAP transformation'
-  ClientHeight = 551
+  ClientHeight = 590
   ClientWidth = 817
+  Position = poDesktopCenter
+  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnResize = FormResize
   OnShow = FormShow
-  Position = poDesktopCenter
-  LCLVersion = '3.8.0.0'
   object Image_transformation1: TImage
     Cursor = crCross
     Left = 200
-    Height = 551
+    Height = 590
     Top = 0
     Width = 612
     Align = alClient
@@ -119,7 +119,7 @@ object Form_transformation1: TForm_transformation1
     Left = 16
     Height = 25
     Hint = 'Calculate the transformation coefficients.'
-    Top = 472
+    Top = 512
     Width = 163
     Caption = 'Calculate'
     TabOrder = 6
@@ -208,7 +208,7 @@ object Form_transformation1: TForm_transformation1
     Left = 16
     Height = 25
     Hint = 'Cancel above coeficients.'
-    Top = 512
+    Top = 552
     Width = 75
     Caption = 'Cancel'
     ParentShowHint = False
@@ -220,10 +220,20 @@ object Form_transformation1: TForm_transformation1
     Left = 104
     Height = 25
     Hint = 'Save these coefficients'
-    Top = 512
+    Top = 552
     Width = 75
     Caption = 'Save'
     TabOrder = 9
     OnClick = save1Click
+  end
+  object checkBox_auid1: TCheckBox
+    Left = 16
+    Height = 23
+    Hint = 'Show AUID'
+    Top = 456
+    Width = 90
+    Caption = 'Show auid''s'
+    TabOrder = 10
+    OnChange = checkBox_auid1Change
   end
 end
