@@ -2592,7 +2592,7 @@ var
      procedure close_fits_file; inline;
      begin
         Reader.free;
-        TheFile.free;
+        theFile.free;
      end;
 
 begin
@@ -2600,7 +2600,7 @@ begin
   result:=false; {assume failure}
 
   try
-    TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
+    theFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
      mainform1.error_label1.caption:=('Error, accessing the file!');
@@ -2611,8 +2611,8 @@ begin
  // mainform1.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   memo.clear;{clear memo for new header}
 
-  Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
-  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+  Reader := TReader.Create (theFile,$60000);// 393216 byte buffer
+  {theFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   reset_fits_global_variables(true{light},head); {reset the global variable}
 
@@ -2726,8 +2726,8 @@ begin
     end; {should contain 255 or 65535}
 
     head.datamin_org:=0;
+    head.backgr:=0;{for case histogram is not called}
 
-    head.backgr:=head.datamin_org;{for case histogram is not called}
     cwhite:=head.datamax_org;
 
     if color7 then

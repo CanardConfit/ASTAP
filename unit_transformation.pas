@@ -412,16 +412,16 @@ end;
 
 procedure transformation;
 var
-   col,row,Rcount, Vcount, Bcount, starnr,icon_nr,nr,j,counter    :integer;
+   col,row,Rcount, Vcount, Bcount, starnr,icon_nr,nr,j,counter,selected_rows    :integer;
    abrv,auid,julian_str,mess : string;
-   selected_rows,iconB, iconV,iconR,vr_success,bv_success : boolean;
+   iconB, iconV,iconR,vr_success,bv_success : boolean;
    R,V,B, value            : double;
    V_list, V_list_documented: array of double;
 
 begin
   Form_transformation1.error_label1.caption:='';
   julian_str:='';
-  selected_rows:=false;
+  selected_rows:=0;
   nr:=(p_nr-p_nr_norm) div 3;
   if nr<2 then
   begin
@@ -471,7 +471,7 @@ begin
 
           if Items[row].checked then
           begin
-             selected_rows:=true;
+             inc(selected_rows);
              if julian_str='' then
               julian_str:='Julian_Day;'+ Items.item[row].subitems.Strings[p_jd_mid];
              value:=strtofloat2(Items.item[row].subitems.Strings[col]);
@@ -511,7 +511,7 @@ begin
     end;//AUID column found
   end;//with stackmenu
 
-  if selected_rows=false then
+  if selected_rows=0 then
   begin
     memo2_message('Abort. No comparison star magnitudes found. Press first the play button and the select rows to process! Select also the correct AAVSO annotation');
     form_transformation1.error_label1.caption:='No comparison star data!';
@@ -661,9 +661,9 @@ begin
     begin
       form_transformation1.error_label1.caption:='';
       memo2_message('Transformation ready');
+      Form_transformation1.FormResize(nil); //plot  graph
     end;
 
-    Form_transformation1.FormResize(nil); //plot  graph
   end;
 end;
 

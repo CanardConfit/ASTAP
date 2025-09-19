@@ -63,7 +63,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.09.14';
+  astap_version: string='2025.09.18';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -171,7 +171,6 @@ type
         byteXXXX3 = array[0..2] of single;
 
   var
-    TheFile3  : tfilestream;
     Reader    : TReader;
     fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
     fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
@@ -727,6 +726,7 @@ end;
 
 function load_fits(filen:string;out img_loaded2: Timage_array): boolean;{load fits file}
 var
+  TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
   i,j,k,error3,naxis1,width2,height2, reader_position,validate_double_error,naxis,naxis3   : integer;
   tempval                                                                                  : double;
@@ -753,7 +753,7 @@ const
      procedure close_fits_file; inline;
      begin
         Reader.free;
-        TheFile3.free;
+        TheFile.free;
      end;
 
      function validate_double:double;{read floating point or integer values}
@@ -789,7 +789,7 @@ begin
   {house keeping done}
 
   try
-    TheFile3:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
+    TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
     beep;
     writeln('Error, accessing the file!');
@@ -799,7 +799,7 @@ begin
 
   memo1.clear;{clear memo for new header}
 
-  Reader := TReader.Create (theFile3,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
+  Reader := TReader.Create (TheFile,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
 
   {Reset variables for case they are not specified in the file}
   reset_fits_global_variables; {reset the global variable}
@@ -817,7 +817,7 @@ begin
     I:=0;
     try
       reader.read(header[I],2880);{read file header, 2880 bytes}
-      inc(reader_position,2880);   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+      inc(reader_position,2880);   {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
       if ((reader_position=2880) and (header[0]='S') and (header[1]='I')  and (header[2]='M') and (header[3]='P') and (header[4]='L') and (header[5]='E') and (header[6]=' ')) then
       begin
         simple:=true;
@@ -1572,13 +1572,13 @@ var
   range, jd2        : double;
   thecomments       : TStringList;
 var
-   x_longword  : longword;
-   x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
+  x_longword  : longword;
+  x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
 
      procedure close_fits_file; inline;
      begin
-        Reader.free;
-        TheFile.free;
+       Reader.free;
+       TheFile.free;
      end;
 
 begin
@@ -1586,7 +1586,7 @@ begin
   result:=false; {assume failure}
 
   try
-    TheFile3:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
+    TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
      writeln('Error, accessing the file!');
@@ -1595,16 +1595,13 @@ begin
   memo1.clear;{clear memo for new header}
 
   memo1.beginupdate;
- // mainform1.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   memo1.clear;{clear memo for new header}
 
-  Reader := TReader.Create (theFile3,$60000);// 393216 byte buffer
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+  Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
+  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables}
   reset_fits_global_variables; {reset the global variable}
-
-
 
   I:=0;
   reader_position:=0;
@@ -1714,9 +1711,7 @@ begin
     end; {should contain 255 or 65535}
 
     datamin_org:=0;
-
-  //  backgr:=datamin_org;{for case histogram is not called}
-  //  cwhite:=datamax_org;
+    backgr:=0;{for case histogram is not called}
 
     if color7 then
     begin
