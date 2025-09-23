@@ -727,19 +727,16 @@ begin
 
   end;
 
-  succ := Calc_Trans_Cubic(stars_reference,
-    // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
-    stars_measured,
-    // Second array of s_star structure we match
-    trans_sky_to_pixel,
-    // Transfer coefficients for stars_measured positions to stars_reference positions. Fits range 1..max
-    err_mess             // any error message
-    );
-  if succ = False then
-  begin
-    memo2_message(err_mess);
-    exit(False);
-  end;
+  succ:=Calc_Trans_Cubic(stars_reference,     // First array of s_star structure we match the output trans_sky_to_pixel takes their coords into those of array B
+                          stars_measured,      // Second array of s_star structure we match
+                          trans_sky_to_pixel,  // Transfer coefficients for stars_measured positions to stars_reference positions. Fits range 1..max
+                          err_mess             // any error message
+                             );
+   if succ=false then
+   begin
+     memo2_message(err_mess);
+     exit(false);
+   end;
 
 
   {sky to pixel coefficients}
@@ -768,19 +765,19 @@ begin
 
 
   //inverse transformation calculation
-  //swap the arrays for inverse factors. This works as long the offset is small like in this situation
-  succ := Calc_Trans_Cubic(stars_measured,      // reference
-    stars_reference,      // distorted
-    trans_pixel_to_sky,
-    // Transfer coefficients for stars_measured positions to stars_reference positions
-    err_mess             // any error message
-    );
+   //swap the arrays for inverse factors. This works as long the offset is small like in this situation
+   succ:=Calc_Trans_Cubic(stars_measured,      // reference
+                          stars_reference,      // distorted
+                          trans_pixel_to_sky,  // Transfer coefficients for stars_measured positions to stars_reference positions
+                          err_mess             // any error message
+                          );
 
-  if succ = False then
-  begin
-    memo2_message(err_mess);
-    exit(False);
-  end;
+   if succ=false then
+   begin
+     memo2_message(err_mess);
+     exit(false);
+   end;
+
 
   // SIP definitions https://irsa.ipac.caltech.edu/data/SPITZER/docs/files/spitzer/shupeADASS.pdf
 
@@ -808,99 +805,7 @@ begin
   B_2_1 := trans_pixel_to_sky.y21;
   B_3_0 := trans_pixel_to_sky.y30;
 
-
-  update_integer(memo, 'A_ORDER =',
-    ' / Polynomial order, axis 1. Pixel to Sky         ', 3);
-  update_float(memo, 'A_0_0   =', ' / SIP coefficient                                ',
-    False, A_0_0);
-  update_float(memo, 'A_1_0   =', ' / SIP coefficient                                ',
-    False, A_1_0);
-  update_float(memo, 'A_0_1   =', ' / SIP coefficient                                ',
-    False, A_0_1);
-  update_float(memo, 'A_2_0   =', ' / SIP coefficient                                ',
-    False, A_2_0);
-  update_float(memo, 'A_1_1   =', ' / SIP coefficient                                ',
-    False, A_1_1);
-  update_float(memo, 'A_0_2   =', ' / SIP coefficient                                ',
-    False, A_0_2);
-  update_float(memo, 'A_3_0   =', ' / SIP coefficient                                ',
-    False, A_3_0);
-  update_float(memo, 'A_2_1   =', ' / SIP coefficient                                ',
-    False, A_2_1);
-  update_float(memo, 'A_1_2   =', ' / SIP coefficient                                ',
-    False, A_1_2);
-  update_float(memo, 'A_0_3   =', ' / SIP coefficient                                ',
-    False, A_0_3);
-
-
-  update_integer(memo, 'B_ORDER =',
-    ' / Polynomial order, axis 2. Pixel to sky.        ', 3);
-  update_float(memo, 'B_0_0   =', ' / SIP coefficient                                ',
-    False, B_0_0);
-  update_float(memo, 'B_0_1   =', ' / SIP coefficient                                ',
-    False, B_0_1);
-  update_float(memo, 'B_1_0   =', ' / SIP coefficient                                ',
-    False, B_1_0);
-  update_float(memo, 'B_2_0   =', ' / SIP coefficient                                ',
-    False, B_2_0);
-  update_float(memo, 'B_1_1   =', ' / SIP coefficient                                ',
-    False, B_1_1);
-  update_float(memo, 'B_0_2   =', ' / SIP coefficient                                ',
-    False, B_0_2);
-  update_float(memo, 'B_3_0   =', ' / SIP coefficient                                ',
-    False, B_3_0);
-  update_float(memo, 'B_2_1   =', ' / SIP coefficient                                ',
-    False, B_2_1);
-  update_float(memo, 'B_1_2   =', ' / SIP coefficient                                ',
-    False, B_1_2);
-  update_float(memo, 'B_0_3   =', ' / SIP coefficient                                ',
-    False, B_0_3);
-
-  update_integer(memo, 'AP_ORDER=',
-    ' / Inv polynomial order, axis 1. Sky to pixel.      ', 3);
-  update_float(memo, 'AP_0_0  =', ' / SIP coefficient                                ',
-    False, AP_0_0);
-  update_float(memo, 'AP_1_0  =', ' / SIP coefficient                                ',
-    False, AP_1_0);
-  update_float(memo, 'AP_0_1  =', ' / SIP coefficient                                ',
-    False, AP_0_1);
-  update_float(memo, 'AP_2_0  =', ' / SIP coefficient                                ',
-    False, AP_2_0);
-  update_float(memo, 'AP_1_1  =', ' / SIP coefficient                                ',
-    False, AP_1_1);
-  update_float(memo, 'AP_0_2  =', ' / SIP coefficient                                ',
-    False, AP_0_2);
-  update_float(memo, 'AP_3_0  =', ' / SIP coefficient                                ',
-    False, AP_3_0);
-  update_float(memo, 'AP_2_1  =', ' / SIP coefficient                                ',
-    False, AP_2_1);
-  update_float(memo, 'AP_1_2  =', ' / SIP coefficient                                ',
-    False, AP_1_2);
-  update_float(memo, 'AP_0_3  =', ' / SIP coefficient                                ',
-    False, AP_0_3);
-
-  update_integer(memo, 'BP_ORDER=',
-    ' / Inv polynomial order, axis 2. Sky to pixel.    ', 3);
-  update_float(memo, 'BP_0_0  =', ' / SIP coefficient                                ',
-    False, BP_0_0);
-  update_float(memo, 'BP_1_0  =', ' / SIP coefficient                                ',
-    False, BP_1_0);
-  update_float(memo, 'BP_0_1  =', ' / SIP coefficient                                ',
-    False, BP_0_1);
-  update_float(memo, 'BP_2_0  =', ' / SIP coefficient                                ',
-    False, BP_2_0);
-  update_float(memo, 'BP_1_1  =', ' / SIP coefficient                                ',
-    False, BP_1_1);
-  update_float(memo, 'BP_0_2  =', ' / SIP coefficient                                ',
-    False, BP_0_2);
-  update_float(memo, 'BP_3_0  =', ' / SIP coefficient                                ',
-    False, BP_3_0);
-  update_float(memo, 'BP_2_1  =', ' / SIP coefficient                                ',
-    False, BP_2_1);
-  update_float(memo, 'BP_1_2  =', ' / SIP coefficient                                ',
-    False, BP_1_2);
-  update_float(memo, 'BP_0_3  =', ' / SIP coefficient                                ',
-    False, BP_0_3);
+  update_sip_coefficients(memo);//update all sip coefficients in memo
 end;
 
 procedure keep_only_in_image(hd: theader; ra_database, dec_database: double;

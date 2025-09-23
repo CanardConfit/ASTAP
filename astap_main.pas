@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.09.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.09.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -425,6 +425,7 @@ type
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
       Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
       var Handled: Boolean);
@@ -917,6 +918,7 @@ procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color s
 procedure variable_star_annotation(extract_visible: boolean {extract to variable_list});
 function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx : theader; out countN: integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
+procedure update_sip_coefficients(memo : tstrings);//update all sip coefficients in memo
 
 
 const   bufwide=65535*4;{buffer size in bytes. Image dimensions 65535x65535}
@@ -3475,6 +3477,86 @@ begin
 end;
 
 
+procedure ConvertSIPForBinning(N {binning_factor}: integer);//Convert SIP (Simple Imaging Polynomial) coefficients after image binning.
+{
+  Convert SIP (Simple Imaging Polynomial) coefficients after image binning.
+
+  Parameters:
+    binning_factor: The binning factor (e.g., 2.0 for 2x2 binning)
+
+  Scaling rules:
+    - A and B coefficients: A_p_q -> A_p_q * N^(p+q-1)
+    - AP and BP coefficients: AP_p_q -> AP_p_q * N^(p+q-1)
+
+  Where p and q are the polynomial orders from the coefficient name A_p_q
+
+
+  Formula 1, pixel correction in X for celestal to pixel position:
+  correction_unbinned:=ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0
+
+
+  When the pixels are binned 2x2 then u0 and V0 have to be doubled to calculate the same correction. After calculating the result have to be divided by the binning.
+
+  Formula 2:
+  correction_binned:=0.5* (binned_ap_0_0 + binned_ap_0_1*v0*2+ binned_ap_0_2*v0*2*v0*2+ ap_0_3*v0*2*v0*2*v0*2 +ap_1_0*u0*2 + ap_1_1*u0*2*v0*2+  ap_1_2*u0*2*v0*2*v0*2+ ap_2_0*u0*2*u0*2 + ap_2_1*u0*2*u0*2*v0*2+  ap_3_0*u0*2*u0*2*u0*2)
+
+  Formula 3:
+  correction_unbinned=correction_binned
+
+  So binned_ap_0_2:= 0.5*(binned_ap_0_2 * 2 * 2) equals binned_ap_0_2 * 2, , so multiply with binning^1
+  So binned_ap_1_2:= 0.5*(binned_ap_0_2 * 2 * 2 * 2) equals binned_ap_1_2 * 2 * 2, so multiply with binning^2
+}
+
+var
+  N_pow_minus1, N_pow_1, N_pow_2 : double;  // Powers of N
+begin
+
+  N_pow_minus1:=1/N;
+  N_pow_1 := N;
+  N_pow_2 := N * N;
+
+  a_0_0 := a_0_0 *  N_pow_minus1;  // *N^-1
+  // a_0_1, a_1_0 remain unchanged  // *N^0
+  a_0_2 := a_0_2 * N_pow_1;  // *N^1
+  a_1_1 := a_1_1 * N_pow_1;  // *N^1
+  a_2_0 := a_2_0 * N_pow_1;  // *N^1
+  a_0_3 := a_0_3 * N_pow_2;  // *N^2
+  a_1_2 := a_1_2 * N_pow_2;  // *N^2
+  a_2_1 := a_2_1 * N_pow_2;  // *N^2
+  a_3_0 := a_3_0 * N_pow_2;  // *N^2
+
+  b_0_0 := b_0_0 * N_pow_minus1;  // *N^-1
+  // b_0_1, b_1_0 remain unchanged  // *N^0
+  b_0_2 := b_0_2 * N_pow_1;  // *N^1
+  b_1_1 := b_1_1 * N_pow_1;  // *N^1
+  b_2_0 := b_2_0 * N_pow_1;  // *N^1
+  b_0_3 := b_0_3 * N_pow_2;  // *N^2
+  b_1_2 := b_1_2 * N_pow_2;  // *N^2
+  b_2_1 := b_2_1 * N_pow_2;  // *N^2
+  b_3_0 := b_3_0 * N_pow_2;  // *N^2
+
+  ap_0_0 := ap_0_0 * N_pow_minus1;  // *N^-1
+  // ap_0_1, ap_1_0 remain unchanged  // *N^0
+  ap_0_2 := ap_0_2 * N_pow_1;  // *N^1
+  ap_1_1 := ap_1_1 * N_pow_1;  // *N^1
+  ap_2_0 := ap_2_0 * N_pow_1;  // *N^1
+  ap_0_3 := ap_0_3 * N_pow_2;  // *N^2
+  ap_1_2 := ap_1_2 * N_pow_2;  // *N^2
+  ap_2_1 := ap_2_1 * N_pow_2;  // *N^2
+  ap_3_0 := ap_3_0 * N_pow_2;  // *N^2
+
+  bp_0_0 := bp_0_0 * N_pow_minus1;  // *N^-1
+  // bp_0_1, bp_1_0 remain unchanged  // *N^0
+  bp_0_2 := bp_0_2 * N_pow_1;  // *N^1
+  bp_1_1 := bp_1_1 * N_pow_1;  // *N^1
+  bp_2_0 := bp_2_0 * N_pow_1;  // *N^1
+  bp_0_3 := bp_0_3 * N_pow_2;  // *N^2
+  bp_1_2 := bp_1_2 * N_pow_2;  // *N^2
+  bp_2_1 := bp_2_1 * N_pow_2;  // *N^2
+  bp_3_0 := bp_3_0 * N_pow_2;  // *N^2
+end;
+
+
 procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
 var
   cnt,line_end : integer;
@@ -3556,6 +3638,60 @@ begin
 
   mainform1.Memo1.text:=buf;
 end;
+
+
+procedure update_sip_coefficients(memo : tstrings);//update all sip coefficients in memo
+begin
+  update_integer(memo,'A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ',3);
+  update_float(memo,'A_0_0   =',' / SIP coefficient                                ',false,A_0_0);
+  update_float(memo,'A_1_0   =',' / SIP coefficient                                ',false,A_1_0);
+  update_float(memo,'A_0_1   =',' / SIP coefficient                                ',false,A_0_1);
+  update_float(memo,'A_2_0   =',' / SIP coefficient                                ',false,A_2_0);
+  update_float(memo,'A_1_1   =',' / SIP coefficient                                ',false,A_1_1);
+  update_float(memo,'A_0_2   =',' / SIP coefficient                                ',false,A_0_2);
+  update_float(memo,'A_3_0   =',' / SIP coefficient                                ',false,A_3_0);
+  update_float(memo,'A_2_1   =',' / SIP coefficient                                ',false,A_2_1);
+  update_float(memo,'A_1_2   =',' / SIP coefficient                                ',false,A_1_2);
+  update_float(memo,'A_0_3   =',' / SIP coefficient                                ',false,A_0_3);
+
+
+  update_integer(memo,'B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ',3);
+  update_float(memo,'B_0_0   =',' / SIP coefficient                                ',false ,B_0_0);
+  update_float(memo,'B_0_1   =',' / SIP coefficient                                ',false ,B_0_1);
+  update_float(memo,'B_1_0   =',' / SIP coefficient                                ',false ,B_1_0);
+  update_float(memo,'B_2_0   =',' / SIP coefficient                                ',false ,B_2_0);
+  update_float(memo,'B_1_1   =',' / SIP coefficient                                ',false ,B_1_1);
+  update_float(memo,'B_0_2   =',' / SIP coefficient                                ',false ,B_0_2);
+  update_float(memo,'B_3_0   =',' / SIP coefficient                                ',false ,B_3_0);
+  update_float(memo,'B_2_1   =',' / SIP coefficient                                ',false ,B_2_1);
+  update_float(memo,'B_1_2   =',' / SIP coefficient                                ',false ,B_1_2);
+  update_float(memo,'B_0_3   =',' / SIP coefficient                                ',false ,B_0_3);
+
+  update_integer(memo,'AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ',3);
+  update_float(memo,'AP_0_0  =',' / SIP coefficient                                ',false,AP_0_0);
+  update_float(memo,'AP_1_0  =',' / SIP coefficient                                ',false,AP_1_0);
+  update_float(memo,'AP_0_1  =',' / SIP coefficient                                ',false,AP_0_1);
+  update_float(memo,'AP_2_0  =',' / SIP coefficient                                ',false,AP_2_0);
+  update_float(memo,'AP_1_1  =',' / SIP coefficient                                ',false,AP_1_1);
+  update_float(memo,'AP_0_2  =',' / SIP coefficient                                ',false,AP_0_2);
+  update_float(memo,'AP_3_0  =',' / SIP coefficient                                ',false,AP_3_0);
+  update_float(memo,'AP_2_1  =',' / SIP coefficient                                ',false,AP_2_1);
+  update_float(memo,'AP_1_2  =',' / SIP coefficient                                ',false,AP_1_2);
+  update_float(memo,'AP_0_3  =',' / SIP coefficient                                ',false,AP_0_3);
+
+  update_integer(memo,'BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ',3);
+  update_float(memo,'BP_0_0  =',' / SIP coefficient                                ',false,BP_0_0);
+  update_float(memo,'BP_1_0  =',' / SIP coefficient                                ',false,BP_1_0);
+  update_float(memo,'BP_0_1  =',' / SIP coefficient                                ',false,BP_0_1);
+  update_float(memo,'BP_2_0  =',' / SIP coefficient                                ',false,BP_2_0);
+  update_float(memo,'BP_1_1  =',' / SIP coefficient                                ',false,BP_1_1);
+  update_float(memo,'BP_0_2  =',' / SIP coefficient                                ',false,BP_0_2);
+  update_float(memo,'BP_3_0  =',' / SIP coefficient                                ',false,BP_3_0);
+  update_float(memo,'BP_2_1  =',' / SIP coefficient                                ',false,BP_2_1);
+  update_float(memo,'BP_1_2  =',' / SIP coefficient                                ',false,BP_1_2);
+  update_float(memo,'BP_0_3  =',' / SIP coefficient                                ',false,BP_0_3);
+end;
+
 
 procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 var
@@ -4053,6 +4189,13 @@ begin
     update_float(memo,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
     update_float(memo,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
     update_float(memo,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+
+    if ap_order<>0 then //sip factors
+    begin
+      ConvertSIPForBinning(binfactor); //Convert SIP (Simple Imaging Polynomial) coefficients after image binning.
+      update_sip_coefficients(memo);
+    end;
+
   end;
   head.XBINNING:=head.XBINNING*binfactor;
   head.YBINNING:=head.YBINNING*binfactor;
@@ -4067,6 +4210,9 @@ begin
     update_float(memo,'PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,false,head.XPIXSZ);
     update_float(memo,'PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,false,head.YPIXSZ);
   end;
+
+
+
   fact:=inttostr(binfactor);
   fact:=fact+'x'+fact;
   add_text(memo,'HISTORY   ','BIN'+fact+' version of '+filename2);
@@ -6369,6 +6515,7 @@ begin
       update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
       update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
       update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+      if a_order>0 then remove_solution(true {keep wcs});//remove SIP
     end;
 
     head.XBINNING:=head.XBINNING/ratio;
@@ -9343,6 +9490,11 @@ begin
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
 
+procedure Tmainform1.Panel1Click(Sender: TObject);
+begin
+
+end;
+
 procedure Tmainform1.saturation_factor_plot1MouseWheel(Sender: TObject;
   Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
   var Handled: Boolean);
@@ -12123,6 +12275,7 @@ begin
         update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
         update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
         update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+        if a_order>0 then remove_solution(true {keep wcs});//remove SIP
       end;
 
       head.XBINNING:=head.XBINNING/ratio;
@@ -14128,6 +14281,8 @@ begin
       update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
       update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
+      if a_order>0 then remove_solution(true {keep wcs});//remove SIP
+
       //   Alternative method keeping the old center poistion. Images center outside the image causes problems for image selection in planetarium program
       //   if head.crpix1<>0 then begin head.crpix1:=head.crpix1-startX; update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
       //   if head.crpix2<>0 then begin head.crpix2:=head.crpix2-startY; update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
@@ -14536,6 +14691,7 @@ begin
     update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
     update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
 
+    if a_order>0 then remove_solution(true {keep wcs});//remove SIP
 
     update_float(mainform1.memo1.lines,'CRPIX1  =',' / X of reference pixel                           ',false ,head.crpix1);
     update_float(mainform1.memo1.lines,'CRPIX2  =',' / Y of reference pixel                           ',false ,head.crpix2);
@@ -16624,6 +16780,8 @@ begin
     update_float(mainform1.memo1.lines,'CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd1_2);
     update_float(mainform1.memo1.lines,'CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_1);
     update_float(mainform1.memo1.lines,'CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ',false ,head.cd2_2);
+
+    if a_order>0 then remove_solution(true {keep wcs});//remove SIP
 
     update_float(mainform1.memo1.lines,'CDELT1  =',' / X pixel size (deg)                             ',false ,head.cdelt1);
     update_float(mainform1.memo1.lines,'CDELT2  =',' / Y pixel size (deg)                             ',false ,head.cdelt2);
