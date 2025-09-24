@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 262
+  Left = 60
   Height = 847
-  Top = 94
+  Top = 199
   Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_photometry1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 8
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -5156,138 +5156,6 @@ object stackmenu1: Tstackmenu1
               TabOrder = 10
             end
           end
-          object GroupBox_equalise_tool1: TGroupBox
-            Left = 352
-            Height = 80
-            Top = 330
-            Width = 430
-            Caption = 'Artificial flat-field correction'
-            ClientHeight = 56
-            ClientWidth = 426
-            ParentBackground = False
-            ParentFont = False
-            TabOrder = 1
-            object apply_artificial_flat_correction1: TButton
-              Left = 64
-              Height = 29
-              Hint = 'Equalise corners of the image below the average background. '
-              Top = 12
-              Width = 124
-              AutoSize = True
-              Caption = 'Raise dark areas'
-              ParentFont = False
-              TabOrder = 1
-              OnClick = apply_artificial_flat_correction1Click
-            end
-            object undo_button3: TBitBtn
-              Left = 387
-              Height = 30
-              Hint = 'Undo last action'
-              Top = 12
-              Width = 30
-              Glyph.Data = {
-                36040000424D3604000000000000360000002800000010000000100000000100
-                2000000000000004000000000000000000000000000000000000FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-                FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-                FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-                FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
-                FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
-                C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              }
-              ParentFont = False
-              TabOrder = 2
-              OnClick = undo_button2Click
-            end
-            object dark_areas_box_size1: TComboBox
-              Left = 8
-              Height = 27
-              Hint = 'Raise dark areas: Filter box size used to detect the local median value.'
-              Top = 12
-              Width = 48
-              ItemHeight = 19
-              ItemIndex = 1
-              Items.Strings = (
-                '10'
-                '20'
-                '30'
-                '40'
-              )
-              ParentFont = False
-              TabOrder = 0
-              Text = '20'
-              OnChange = resize_factor1Change
-            end
-            object apply_artificial_flat_correctionV2: TButton
-              Left = 272
-              Height = 29
-              Hint = 'Equalise all. There should be no object in the center of the image and deepsky objects should be small.. '
-              Top = 12
-              Width = 106
-              AutoSize = True
-              Caption = 'Ring equalise'
-              ParentFont = False
-              TabOrder = 3
-              OnClick = apply_artificial_flat_correction1Click
-            end
-            object ring_equalise_factor1: TComboBox
-              Left = 192
-              Height = 27
-              Hint = 'Ring equalise: specify object size in the center of the image in percentage of the image height. This area will then be protected against the correction. '
-              Top = 12
-              Width = 72
-              ItemHeight = 19
-              ItemIndex = 3
-              Items.Strings = (
-                '0%'
-                '10%'
-                '20%'
-                '30%'
-                '30%'
-                '40%'
-                '50%'
-              )
-              ParentFont = False
-              TabOrder = 4
-              Text = '30%'
-              OnChange = resize_factor1Change
-            end
-            object center_position1: TLabel
-              Left = 272
-              Height = 19
-              Hint = 'Set the brightest or darkest center position of the image with the popup menu "Set area"'
-              Top = -5
-              Width = 90
-              Caption = 'Center: default'
-              ParentColor = False
-            end
-          end
           object GroupBox7: TGroupBox
             Left = 0
             Height = 400
@@ -5298,7 +5166,7 @@ object stackmenu1: Tstackmenu1
             ClientWidth = 340
             ParentBackground = False
             ParentFont = False
-            TabOrder = 2
+            TabOrder = 1
             object most_common_filter_tool1: TButton
               Left = 24
               Height = 26
@@ -5643,7 +5511,7 @@ object stackmenu1: Tstackmenu1
             ClientWidth = 372
             ParentBackground = False
             ParentFont = False
-            TabOrder = 3
+            TabOrder = 2
             object apply_remove_background_colour1: TButton
               Left = 249
               Height = 30
@@ -5744,7 +5612,7 @@ object stackmenu1: Tstackmenu1
             ClientWidth = 426
             ParentBackground = False
             ParentFont = False
-            TabOrder = 4
+            TabOrder = 3
             object smart_colour_smooth_button1: TButton
               Left = 216
               Height = 30
@@ -5864,7 +5732,7 @@ object stackmenu1: Tstackmenu1
             ClientWidth = 372
             ParentBackground = False
             ParentFont = False
-            TabOrder = 5
+            TabOrder = 4
             object Label55: TLabel
               Left = 8
               Height = 20
@@ -5989,20 +5857,20 @@ object stackmenu1: Tstackmenu1
           end
           object GroupBox_equalise_tool2: TGroupBox
             Left = 352
-            Height = 60
-            Top = 267
+            Height = 93
+            Top = 258
             Width = 430
-            Caption = 'Remove gradient'
-            ClientHeight = 36
+            Caption = 'Remove gradient or dark areas'
+            ClientHeight = 69
             ClientWidth = 426
             ParentBackground = False
             ParentFont = False
-            TabOrder = 6
+            TabOrder = 5
             object undo_button15: TBitBtn
               Left = 387
               Height = 30
               Hint = 'Undo last action'
-              Top = 0
+              Top = -2
               Width = 30
               Glyph.Data = {
                 36040000424D3604000000000000360000002800000010000000100000000100
@@ -6045,7 +5913,7 @@ object stackmenu1: Tstackmenu1
               OnClick = undo_button2Click
             end
             object apply_vertical_gradient1: TButton
-              Left = 216
+              Left = 224
               Height = 30
               Hint = 'This will remove any vertical gradient. For any other angle apply both or use the viewer popup menu "gradient removal tool".'
               Top = 0
@@ -6073,8 +5941,8 @@ object stackmenu1: Tstackmenu1
             object gradient_filter_factor1: TComboBox
               Left = 8
               Height = 27
-              Hint = 'Slice width in pixels to detect local median value. Typical value is 30. '
-              Top = 0
+              Hint = 'Slice width or box size in pixels to detect local median value. Typical value is 30. '
+              Top = 1
               Width = 48
               ItemHeight = 19
               ItemIndex = 2
@@ -6091,23 +5959,35 @@ object stackmenu1: Tstackmenu1
               OnChange = resize_factor1Change
             end
             object find_background_method1: TComboBox
-              Left = 64
+              Left = 8
               Height = 27
               Hint = 'Method to find the background'
-              Top = 0
-              Width = 148
+              Top = 37
+              Width = 316
               BorderSpacing.Around = 5
               DropDownCount = 20
               ItemHeight = 19
               ItemIndex = 0
               Items.Strings = (
-                'Sigma Clip Mean'
-                'Trimmed Median'
+                'Sigma Clip Mean background detection'
+                'Trimmed Median background detection'
               )
               ParentFont = False
               Style = csDropDownList
               TabOrder = 4
-              Text = 'Sigma Clip Mean'
+              Text = 'Sigma Clip Mean background detection'
+            end
+            object apply_artificial_flat_correction1: TButton
+              Left = 96
+              Height = 29
+              Hint = 'Equalise corners of the image below the average background. '
+              Top = 1
+              Width = 124
+              AutoSize = True
+              Caption = 'Raise dark areas'
+              ParentFont = False
+              TabOrder = 5
+              OnClick = apply_artificial_flat_correction1Click
             end
           end
           object GroupBox11: TGroupBox
@@ -6119,7 +5999,7 @@ object stackmenu1: Tstackmenu1
             ClientHeight = 312
             ClientWidth = 373
             ParentBackground = False
-            TabOrder = 7
+            TabOrder = 6
             object HueRadioButton1: TRadioButton
               Left = 8
               Height = 23
@@ -6370,7 +6250,7 @@ object stackmenu1: Tstackmenu1
             Width = 3
             AutoSize = True
             Caption = '|'
-            TabOrder = 8
+            TabOrder = 7
             Visible = False
           end
           object GroupBox22: TGroupBox
@@ -6382,7 +6262,7 @@ object stackmenu1: Tstackmenu1
             ClientHeight = 256
             ClientWidth = 371
             ParentBackground = False
-            TabOrder = 9
+            TabOrder = 8
             object unsharp_amount1: TTrackBar
               Left = 0
               Height = 39
@@ -6567,13 +6447,13 @@ object stackmenu1: Tstackmenu1
           object GroupBox23: TGroupBox
             Left = 352
             Height = 55
-            Top = 208
+            Top = 204
             Width = 430
             Caption = 'Star colour smooth'
             ClientHeight = 31
             ClientWidth = 426
             ParentBackground = False
-            TabOrder = 10
+            TabOrder = 9
             object star_colour_smooth_diameter1: TComboBox
               Left = 23
               Height = 27
@@ -6675,6 +6555,106 @@ object stackmenu1: Tstackmenu1
               ParentFont = False
               TabOrder = 3
               Text = '500'
+            end
+          end
+          object GroupBox24: TGroupBox
+            Left = 352
+            Height = 57
+            Top = 350
+            Width = 431
+            Caption = 'Artificial flat-field correction'
+            ClientHeight = 33
+            ClientWidth = 427
+            ParentBackground = False
+            TabOrder = 10
+            object center_position1: TLabel
+              Left = 56
+              Height = 19
+              Hint = 'Set the brightest or darkest center position of the image with the popup menu "Set area"'
+              Top = 8
+              Width = 90
+              Caption = 'Center: default'
+              ParentColor = False
+            end
+            object ring_equalise_factor1: TComboBox
+              Left = 168
+              Height = 27
+              Hint = 'Ring equalise: specify object size in the center of the image in percentage of the image height. This area will then be protected against the correction. '
+              Top = 2
+              Width = 72
+              ItemHeight = 19
+              ItemIndex = 3
+              Items.Strings = (
+                '0%'
+                '10%'
+                '20%'
+                '30%'
+                '30%'
+                '40%'
+                '50%'
+              )
+              ParentFont = False
+              TabOrder = 0
+              Text = '30%'
+              OnChange = resize_factor1Change
+            end
+            object apply_artificial_flat_correctionV2: TButton
+              Left = 264
+              Height = 29
+              Hint = 'Equalise all. There should be no object in the center of the image and deepsky objects should be small.. '
+              Top = 0
+              Width = 106
+              AutoSize = True
+              Caption = 'Ring equalise'
+              ParentFont = False
+              TabOrder = 1
+              OnClick = apply_artificial_flat_correction1Click
+            end
+            object undo_button24: TBitBtn
+              Left = 387
+              Height = 30
+              Hint = 'Undo last action'
+              Top = 0
+              Width = 30
+              Glyph.Data = {
+                36040000424D3604000000000000360000002800000010000000100000000100
+                2000000000000004000000000000000000000000000000000000FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+                FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+                FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+                FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+                FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+                C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+              }
+              ParentFont = False
+              TabOrder = 2
+              OnClick = undo_button2Click
             end
           end
         end
