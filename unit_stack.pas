@@ -4237,12 +4237,12 @@ procedure Tstackmenu1.listview1Compare(Sender: TObject; Item1, Item2: TListItem;
 var
   tem: boolean;
 begin
-  if SortedColumn = 0 then Compare := CompareText(Item1.Caption, Item2.Caption)
+  if SortedColumn = 0 then
+     Compare := CompareText(Item1.Caption, Item2.Caption)
   else
-  if SortedColumn <> 0 then Compare :=
-      CompareAnything(Item1.SubItems[SortedColumn - 1], Item2.SubItems[SortedColumn - 1]);
-  if TListView(Sender).SortDirection = sdDescending then
-    Compare := -Compare;
+    Compare := CompareAnything(Item1.SubItems[SortedColumn - 1], Item2.SubItems[SortedColumn - 1]);
+
+  if TListView(Sender).SortDirection = sdDescending then  Compare := -Compare;
 end;
 
 
@@ -6322,6 +6322,12 @@ begin
 end;
 
 
+function CompareWrapper(Item1, Item2: TListItem; ParamSort: PtrInt): Integer; stdcall;
+begin
+  // Call the event handler to keep logic in one place
+  stackmenu1.ListView1Compare(stackmenu1.ListView1, Item1, Item2, ParamSort, Result);
+end;
+
 procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
 begin
   if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<2)) then
@@ -6330,10 +6336,11 @@ begin
     exit;
   end;
 
-  listview7.items.beginupdate;
-  listview7.alphasort;{sort on time for correctly connection variable points}
-  listview7.items.endupdate;
+  SortedColumn := P_date+1;
+  ListView7.SortDirection:=sdAscending;
+  listview7.sort;//Sort on date
 
+  application.processmessages;
 
   if form_aavso1 = nil then
     form_aavso1 := Tform_aavso1.Create(self); {in project option not loaded automatic}
@@ -12832,6 +12839,7 @@ begin
     if stitching_mode then
     begin
       SortedColumn := L_position + 1;
+      ListView1.SortDirection:=sdAscending;
       listview1.sort;
       memo2_message('Sorted list on RA, DEC position to place tiles in the correct sequence.');
     end;
