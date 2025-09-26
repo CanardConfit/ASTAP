@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.09.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.09.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1121,7 +1121,7 @@ begin
   bayerpat:='';{reset bayer pattern}
   head.issues:='';;
 
-  head.frameX:=0;
+  head.frameX:=0;// frame offset
   head.frameY:=0;
 
 end;{reset global variables}
@@ -14234,7 +14234,7 @@ var fitsX,fitsY,col,dum, formalism      : integer;
 begin
   formalism:=mainform1.Polynomial1.itemindex;
 
-  x1:=max(x1,0);  // prevent runtime errors. Box can be outside image
+  x1:=max(x1,0);  // Prevent runtime errors. Box can be outside image
   y1:=max(y1,0);
   x2:=min(x2,head.width-1);
   y2:=min(y2,head.height-1);
@@ -14260,15 +14260,15 @@ begin
   //FRAMEHGT=                  600 / Frame height
   //FRAMEWDH=                  500 / Frame width
 
-    head.frameX:=head.frameX+x1+1;//in fits coordinates[1..]
-    head.frameY:=head.frameY+y1+1;
-    head.frameH:=y2-y1+1;
+    head.frameX:=head.frameX+x1;//frame offset in pixels
+    head.frameY:=head.frameY+y1;//frame offset in pixels
+    head.frameH:=y2-y1+1; //+1 because from position 0,0 to 2,2 is 3x3 pixels
     head.frameW:=x2-x1+1;
 
-    update_integer(memo,'FRAMEX  =',' / Frame start X                                  ' ,head.frameX);
-    update_integer(memo,'FRAMEY  =',' / Frame start Y                                  ' ,head.frameY);
-    update_integer(memo,'FRAMEHGT=',' / Frame start height                             ' ,head.frameH);
-    update_integer(memo,'FRAMEWDH=',' / Frame start width                              ' ,head.frameW);
+    update_integer(memo,'FRAMEX  =',' / Frame offset in pixels                         ' ,head.frameX);
+    update_integer(memo,'FRAMEY  =',' / Frame offset in pixels                         ' ,head.frameY);
+    update_integer(memo,'FRAMEHGT=',' / Frame height in pixels                         ' ,head.frameH);
+    update_integer(memo,'FRAMEWDH=',' / Frame width in pixe;s                          ' ,head.frameW);
 
   {new reference pixel}
   if head.cd1_1<>0 then
@@ -14336,7 +14336,7 @@ var
 begin
    if ((head.frameX=0) and (head.frameY=0)) then  //head, so from image in the viewer
    begin
-     application.messagebox(pchar('Abort. Image in the viewer does not contain FRAME keywords. Crop an sample image first with the popup menu and mouse.'),'',MB_OK);
+     application.messagebox(pchar('Abort. No image in the viewer or the image in the viewer does not contain keywords FRAMEX, FRAMEY, FRAMEHGT, FRAMEWDH. Crop an sample image first with the popup menu and mouse.'),'',MB_OK);
      exit;
    end;
 
@@ -14351,8 +14351,8 @@ begin
 
   memo4:=tstringlist.create;
 
-  frameX_sample:=head.frameX-1;//Convert to array cvoordinates, preserve sample crop values from image in the viewer
-  frameY_sample:=head.frameY-1;
+  frameX_sample:=head.frameX;//number of skipped pixels
+  frameY_sample:=head.frameY;
   frameW_sample:=head.frameW;
   frameH_sample:=head.frameH;
   sample_binning:=round(head.xbinning);
@@ -14368,12 +14368,11 @@ begin
         progress_indicator(100*i/(count),' Binning');{show progress}
         filename2:=Strings[I];
         {load fits}
-
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo4},0,memo4{mainform1.memo1.lines},head4,img4)=false)) then begin break;end;
 
         if sample_binning<>round(head4.xbinning) then
         begin
-          application.messagebox(pchar('Abort. Sample and target frames should have equal binning!'),'',MB_OK);
+          application.messagebox(pchar('Abort. Sample and target frames should have equal binning!'),'Abort',MB_OK);
           break;
        end;
 
@@ -14419,10 +14418,7 @@ begin
      application.messagebox(pchar('No area selected in current image. Hold the right mouse button and pull a rectangle around area of interest, release button and select in popup menu "Set area".'),'',MB_OK);
      exit;
    end;
-{  areax1;
-  areay1;
-  areax2;
-  areay2;}
+
 
   OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter:=dialog_filter_fits_tif;
@@ -14443,7 +14439,7 @@ begin
         {load fits}
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,memo{mainform1.memo1.lines},head,img)=false)) then begin break;end;
 
-        crop_image(startX,startY,stopX,stopY, img,head,memo);
+        crop_image(startX+1,startY+1,stopX-1,stopY-1, img,head,memo);//crop to area inside the frame
 
 
         if fits_file_name(filename2) then
@@ -14486,7 +14482,7 @@ begin
    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
 
-   inc(startX);// In array coordinates. So [0...]   take only inside of rectangle
+   inc(startX);// In array coordinates. So [0...]   take only inside of selection rectangle
    inc(startY);
    dec(stopX);
    dec(stopY);
