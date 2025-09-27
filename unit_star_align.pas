@@ -1220,7 +1220,7 @@ var
   i,j,col        : integer;
   total_value    : double;
 begin
-  setlength(histogram,upperlimit);
+  setlength(histogram,upperlimit+1);
   for i:=0 to upperlimit do
     histogram[i] := 0;{clear histogram of specified colour}
 

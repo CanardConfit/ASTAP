@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.09.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.09.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -14352,7 +14352,7 @@ begin
   memo4:=tstringlist.create;
 
   frameX_sample:=head.frameX;//number of skipped pixels
-  frameY_sample:=head.frameY;
+  frameY_sample:=head.frameY;//ascom/alpaca inverse stored
   frameW_sample:=head.frameW;
   frameH_sample:=head.frameH;
   sample_binning:=round(head.xbinning);
