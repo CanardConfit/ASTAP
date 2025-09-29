@@ -1787,6 +1787,7 @@ object mainform1: Tmainform1
     end
     object angular_distance1: TMenuItem
       Caption = 'Angular distance (▭)'
+      Hint = 'Angular distance rigorous method.'
       ImageIndex = 35
       OnClick = angular_distance1Click
     end

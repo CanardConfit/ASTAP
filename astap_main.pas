@@ -931,6 +931,7 @@ procedure variable_star_annotation(extract_visible: boolean {extract to variable
 function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx : theader; out countN: integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
 procedure update_sip_coefficients(memo : tstrings);//update all sip coefficients in memo
+function apply_arctan(fov : double): double; //assume the optical system can be modeled by a simple arctan function like a standard rectilinear (pinhole) lens
 
 
 const   bufwide=65535*4;{buffer size in bytes. Image dimensions 65535x65535}
@@ -6208,11 +6209,17 @@ begin
 end;
 
 
+function apply_arctan(fov : double): double; //assume the optical system can be modeled by a simple arctan function like a standard rectilinear (pinhole) lens
+begin
+  result:=2*arctan((fov/2)*pi/180)*180/pi;
+end;
+
+
 procedure update_statusbar_section5;{update section 5 with image dimensions in degrees}
 begin
   if head.cdelt2<>0 then
   begin
-    mainform1.statusbar1.panels[6].text:=floattostrF(head.width*abs(head.cdelt2),ffFixed,0,2)+' x '+floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2)+' °';{give image dimensions and bit per pixel info}
+    mainform1.statusbar1.panels[6].text:=floattostrF(apply_arctan(head.width*abs(head.cdelt2)),ffFixed,0,2)+' x '+floattostrF(apply_arctan(head.height*abs(head.cdelt2)),ffFixed,0,2)+' °';{give image dimensions and bit per pixel info}
     stackmenu1.search_fov1.text:=floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2); {negative head.cdelt2 are produced by PI}
   end
   else mainform1.statusbar1.panels[6].text:='';
@@ -12485,6 +12492,7 @@ procedure Tmainform1.FormCreate(Sender: TObject);
 var
    param1: string;
 begin
+
   {OneInstance of ASTAP if only one parameter is specified. So if user clicks on an associated image in explorer}
   if paramcount=1 then
   begin
@@ -12523,7 +12531,6 @@ begin
   {$endif}
   image1.cursor:=crMyCursor;
 
-  Application.OnHint := DisplayHint;
 
   deepstring := Tstringlist.Create;{for deepsky overlay}
   recent_files:= Tstringlist.Create;
@@ -13860,7 +13867,7 @@ begin
 
             if ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
             begin
-              stackmenu1.search_fov1.text:=floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2);
+              stackmenu1.search_fov1.text:=floattostrF(apply_arctan(head.height*abs(head.cdelt2)),ffFixed,0,2);
               save_settings2;{save settings with correct fov}
             end;
           end {solution}
@@ -13957,6 +13964,8 @@ begin
   FixHiddenFormProblem( Screen,stackmenu1);
 
   mainform1.StaticText_labelversion1.caption:='v'+astap_version;
+
+  Application.OnHint := DisplayHint;//this line doesn't work reliable in FormCreate.
 
 end;
 
