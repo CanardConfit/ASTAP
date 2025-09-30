@@ -1976,6 +1976,11 @@ begin
 end;
 
 
+function apply_arctan(fov : double): double; //assume the optical system can be modeled by a simple arctan function like a standard rectilinear (pinhole) lens
+begin
+  result:=2*arctan((fov/2)*pi/180)*180/pi;
+end;
+
 
 function add_sip(ra_database,dec_database:double) : boolean;
 var
@@ -2174,7 +2179,7 @@ var
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,database_density,limit,err, width2, height2,i                    : integer;
   search_field,step_size,ra_database,dec_database,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
   oversize,oversize2,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,
-  quad_tolerance,flip,extra,distance,flipped_image,xi,yi,arcsec_per_px,crota1_rad,crota2_rad,cdelt1_arcsec,cdelt2_arcsec   : double;
+  quad_tolerance,flip,extra,distance,flipped_image,xi,yi,arcsec_per_px,crota1_rad,crota2_rad,cdelt1_arcsec,cdelt2_arcsec,vfov  : double;
   solution, go_ahead ,autoFOV                                                                                              : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
@@ -2192,7 +2197,7 @@ begin
   height2:=length(img[0]);  {height}
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no FOV in native command line and cdelt2 in header}
-    fov_org:=min(180,height2*abs(cdelt2)) {calculate FOV. PI can give negative CDELT2}
+    fov_org:=apply_arctan(height2*abs(cdelt2)){calculate FOV. PI can give negative CDELT2}
   else
    fov_org:=min(180,strtofloat2(search_fov1));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
 
@@ -2582,8 +2587,8 @@ begin
     update_text   ('COMMENT 7', solved_in+' Offset was '+offset_found+mount_offset);
 
 
-
-    if ( (fov_org>1.05*(height2*cdelt2) ) or (fov_org<0.95*(height2*cdelt2)) ) then
+    vfov:=apply_arctan(height2*cdelt2);
+    if ((fov_org > 1.05 * (vfov)) or (fov_org < 0.95 * (vfov)))  then    //in astap hd.cdelt2 is always positive. No need for absolute function
     begin
       if xpixsz<>0 then suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'", FL='+inttostr(round((180/(pi*1000)*xpixsz/cdelt2)) )+'mm'
                    else suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'"';
