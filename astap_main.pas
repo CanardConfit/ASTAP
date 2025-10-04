@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.09.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.10.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -617,10 +617,8 @@ type
     light_count     : integer;
     flat_count      : integer;
     flatdark_count  : integer;
-    frameX          : integer;
-    frameY          : integer;
-    frameW          : integer;
-    frameH          : integer;
+    xorgsubf          : integer;
+    yorgsubf          : integer;
 
     egain      : string; {gain in e-/adu}
      gain      : string; {gain in 0.1dB or else}
@@ -628,6 +626,7 @@ type
     date_avg   : string;
     calstat    : string;
     filter_name: string;
+    roworder   : string;
     passband_database: string;
     airmass          : string;
     issues           : string;
@@ -723,7 +722,6 @@ var
   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
   warning_str,{for solver}
-  roworder,
   chartID : string;//AAVSO chartID
 
   copy_paste_x,
@@ -1067,7 +1065,7 @@ begin
     head.cd2_2:=0;{just for the case it is not available}
     xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
     ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-    roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
+    head.roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
 
     a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
     ap_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
@@ -1122,8 +1120,8 @@ begin
   bayerpat:='';{reset bayer pattern}
   head.issues:='';;
 
-  head.frameX:=0;// frame offset
-  head.frameY:=0;
+  head.xorgsubf:=0;// frame offset
+  head.yorgsubf:=0;
 
 end;{reset global variables}
 
@@ -1443,13 +1441,9 @@ begin
             //FRAMEY  =                  500 / Frame start y
             //FRAMEHGT=                  600 / Frame height
             //FRAMEWDH=                  500 / Frame width
-            if header[i+5]='X' then head.FRAMEX:=round(validate_double)
+            if header[i+5]='X' then head.xorgsubf:=round(validate_double)
             else
-            if header[i+5]='Y' then head.FRAMEY:=round(validate_double)
-            else
-            if header[i+5]='H' then head.FRAMEH:=round(validate_double)
-            else
-            if header[i+5]='W' then head.FRAMEW:=round(validate_double);
+            if header[i+5]='Y' then head.yorgsubf:=round(validate_double);
           end;
 
 
@@ -1506,10 +1500,20 @@ begin
 
 
 
-        if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+        if header[i]='X' then
+        begin
+          if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  head.xbinning:=validate_double;{binning}
-        if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+          if ((header[i+1]='O')  and (header[i+2]='R') and (header[i+3]='G') and (header[i+4]='S') and (header[i+5]='U')) then //XORGSUBF
+                 head.xorgsubf:=round(validate_double);{sub frame origin}
+        end;
+        if header[i]='Y' then
+        begin
+          if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  head.ybinning:=validate_double;{binning}
+          if ((header[i+1]='O')  and (header[i+2]='R') and (header[i+3]='G') and (header[i+4]='S') and (header[i+5]='U')) then //YORGSUBF
+                 head.yorgsubf:=round(validate_double);{sub frame origin}
+        end;
 
 
         {following variable are not set at zero Set at zero somewhere in the code}
@@ -1856,7 +1860,7 @@ begin
               end;
             end;
             if ((header[i+1]='O')  and (header[i+2]='W') and (header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D') and (header[i+6]='E')) then
-              roworder:=get_string;
+              head.roworder:=get_string;
           end;//R
 
           if (header[i]='S') then
@@ -2534,7 +2538,7 @@ begin
     if key='DATE-OBS=' then head.date_obs:=read_string else
 
     if key='BAYERPAT=' then bayerpat:=read_string;
-    if key='ROWORDER=' then roworder:=read_string;
+    if key='ROWORDER=' then head.roworder:=read_string;
     if key='XBAYROFF=' then Xbayroff:=round(read_float) else
     if key='YBAYROFF=' then Ybayroff:=round(read_float) else
 
@@ -6499,7 +6503,7 @@ begin
     end;
 
     {info message}
-    if pos('BOT',roworder)>0 then {'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
+    if pos('BOT',head.roworder)>0 then {'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
     begin {top-down keyword,  flip in the message the patterns upside down. So GRBG becomes BGGR}
       if pattern=0 then pattern2:=1 else
       if pattern=1 then pattern2:=0 else
@@ -7425,7 +7429,7 @@ begin
 
  {corrections for xbayroff,ybayroff, TOP-DOWN}
   ybayroff2:=ybayroff;
-  if pos('BOT',roworder)>0 then
+  if pos('BOT',head.roworder)>0 then
                     ybayroff2:=ybayroff2+1;{'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
 
   if odd(round(xbayroff)) then
@@ -7501,7 +7505,7 @@ begin
   if stackmenu1.osc_colour_smooth1.checked then
   begin
     memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab "pixel math 1"');
-    global_colour_smooth(img,strtofloat2(stackmenu1.osc_smart_smooth_width1.text), strtofloat2(stackmenu1.luminance_slope1.text),false {get  hist});{histogram doesn't needs an update}
+    global_colour_smooth(img,strtofloat2(stackmenu1.osc_global_colour_smooth_width1.text), strtofloat2(stackmenu1.osc_global_colour_smooth_sd1.text),false {get  hist});{histogram doesn't needs an update}
   end;
   end
   else
@@ -8445,8 +8449,8 @@ begin
       stackmenu1.make_osc_color1.checked:=Sett.ReadBool('stack','osc_color_convert',false);
       stackmenu1.osc_auto_level1.checked:=Sett.ReadBool('stack','osc_al',true);
       stackmenu1.osc_colour_smooth1.checked:=Sett.ReadBool('stack','osc_cs',true);
-      dum:=Sett.ReadString('stack','osc_cw','');if dum<>'' then   stackmenu1.osc_smart_smooth_width1.text:=dum;
-      dum:=Sett.ReadString('stack','osc_sd','');  if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:=dum;
+      dum:=Sett.ReadString('stack','osc_sw','');if dum<>'' then   stackmenu1.osc_global_colour_smooth_width1.text:=dum;
+      dum:=Sett.ReadString('stack','osc_sl','');  if dum<>'' then stackmenu1.osc_global_colour_smooth_sd1.text:=dum;
 
       dum:=Sett.ReadString('stack','smooth_dia','');if dum<>'' then   stackmenu1.star_colour_smooth_diameter1.text:=dum;
       dum:=Sett.ReadString('stack','smooth_stars','');  if dum<>'' then stackmenu1.star_colour_smooth_nrstars1.text:=dum;
@@ -8456,13 +8460,13 @@ begin
 
       stackmenu1.lrgb_auto_level1.checked:=Sett.ReadBool('stack','lrgb_al',true);
       stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','gr_pu_fl',false);
-      stackmenu1.global_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
-      dum:=Sett.ReadString('stack','lrgb_slope','');if dum<>'' then stackmenu1.luminance_slope1.text:=dum;
+      stackmenu1.lrgb_global_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
+      dum:=Sett.ReadString('stack','lrgb_sl','');if dum<>'' then stackmenu1.lrgb_global_colour_smooth_sd1.text:=dum;
+      dum:=Sett.ReadString('stack','lrgb_sw','');if dum<>'' then stackmenu1.lrgb_global_colour_smooth_width1.text:=dum;
 
       stackmenu1.star_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_sm',true);
       dum:=Sett.ReadString('stack','lrgb_smd','');if dum<>'' then   stackmenu1.lrgb_star_colour_smooth_diameter1.text:=dum;
       dum:=Sett.ReadString('stack','lrgb_sms','');  if dum<>'' then stackmenu1.lrgb_star_colour_smooth_nrstars1.text:=dum;
-      dum:=Sett.ReadString('stack','lrgb_sw','');if dum<>'' then stackmenu1.lrgb_global_colour_smooth_width1.text:=dum;
 
       stackmenu1.ignore_header_solution1.Checked:= Sett.ReadBool('stack','ignore_header_solution',true);
       stackmenu1.Equalise_background1.checked:= Sett.ReadBool('stack','equalise_background',true);{for mosaic trimmed_median_background}
@@ -8572,8 +8576,8 @@ begin
       dum:=Sett.ReadString('stack','multiply_G',''); if dum<>'' then stackmenu1.multiply_green1.text:=dum;
       dum:=Sett.ReadString('stack','multiply_B',''); if dum<>'' then stackmenu1.multiply_blue1.text:=dum;
 
-      dum:=Sett.ReadString('stack','cs_width',''); if dum<>'' then stackmenu1.global_colour_smooth_width1.text:=dum;
-      dum:=Sett.ReadString('stack','cs_sd',''); if dum<>'' then stackmenu1.global_colour_smooth_sd1.text:=dum;
+      dum:=Sett.ReadString('stack','clsm_width',''); if dum<>'' then stackmenu1.global_colour_smooth_width1.text:=dum;
+      dum:=Sett.ReadString('stack','clsm_sd',''); if dum<>'' then stackmenu1.global_colour_smooth_sd1.text:=dum;
 
       dum:=Sett.ReadString('stack','star_level_colouring',''); if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','filter_artificial_colouring',''); if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
@@ -8859,8 +8863,8 @@ begin
       sett.writeBool('stack','osc_color_convert',stackmenu1.make_osc_color1.checked);
       sett.writeBool('stack','osc_al',stackmenu1.osc_auto_level1.checked);
       sett.writeBool('stack','osc_cs',stackmenu1.osc_colour_smooth1.checked);
-      sett.writeString('stack','osc_sw',stackmenu1.osc_smart_smooth_width1.text);
-      sett.writestring('stack','osc_sd',stackmenu1.osc_smart_colour_sd1.text);
+      sett.writeString('stack','osc_sw',stackmenu1.osc_global_colour_smooth_width1.text);
+      sett.writestring('stack','osc_sd',stackmenu1.osc_global_colour_smooth_sd1.text);
 
       sett.writeString('stack','smooth_dia',stackmenu1.star_colour_smooth_diameter1.text);
       sett.writestring('stack','smooth_stars',stackmenu1.star_colour_smooth_nrstars1.text);
@@ -8870,8 +8874,8 @@ begin
       sett.writeBool('stack','lrgb_al',stackmenu1.lrgb_auto_level1.checked);
       sett.writeBool('stack','gr_pu_fl',stackmenu1.green_purple_filter1.checked);
 
-      sett.writeBool('stack','lrgb_cs',stackmenu1.global_colour_smooth1.checked);
-      sett.writestring('stack','lrgb_slope',stackmenu1.luminance_slope1.text);
+      sett.writeBool('stack','lrgb_cs',stackmenu1.lrgb_global_colour_smooth1.checked);
+      sett.writestring('stack','lrgb_sd',stackmenu1.lrgb_global_colour_smooth_sd1.text);
 
       sett.writeBool('stack','lrgb_sm',stackmenu1.star_colour_smooth1.checked);
       sett.writeString('stack','lrgb_smd',stackmenu1.lrgb_star_colour_smooth_diameter1.text);
@@ -8988,8 +8992,8 @@ begin
       sett.writestring('stack','multiply_G',stackmenu1.multiply_green1.text);
       sett.writestring('stack','multiply_B',stackmenu1.multiply_blue1.text);
 
-      sett.writestring('stack','cs_width',stackmenu1.global_colour_smooth_width1.text);
-      sett.writestring('stack','cs_sd',stackmenu1.global_colour_smooth_sd1.text);
+      sett.writestring('stack','clsm_width',stackmenu1.global_colour_smooth_width1.text);
+      sett.writestring('stack','clsm_sl',stackmenu1.global_colour_smooth_sd1.text);
 
       sett.writestring('stack','star_level_colouring',stackmenu1.star_level_colouring1.text);
       sett.writestring('stack','filter_artificial_colouring',stackmenu1.filter_artificial_colouring1.text);
@@ -11186,7 +11190,7 @@ begin
 end;
 
 
-procedure do_stretching;{prepare strecht table and replot image}
+procedure do_stretching;{prepare stretch table and replot image}
 var
   i: integer;
   stretch,divider: single;
@@ -14264,20 +14268,11 @@ begin
   update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-  //FRAMEX  =                  100 / Frame start x
-  //FRAMEY  =                  500 / Frame start y
-  //FRAMEHGT=                  600 / Frame height
-  //FRAMEWDH=                  500 / Frame width
+  head.xorgsubf:=head.xorgsubf+x1;//frame offset in pixels
+  head.yorgsubf:=head.yorgsubf+y1;//frame offset in pixels
 
-    head.frameX:=head.frameX+x1;//frame offset in pixels
-    head.frameY:=head.frameY+y1;//frame offset in pixels
-    head.frameH:=y2-y1+1; //+1 because from position 0,0 to 2,2 is 3x3 pixels
-    head.frameW:=x2-x1+1;
-
-    update_integer(memo,'FRAMEX  =',' / Frame offset in pixels                         ' ,head.frameX);
-    update_integer(memo,'FRAMEY  =',' / Frame offset in pixels                         ' ,head.frameY);
-    update_integer(memo,'FRAMEHGT=',' / Frame height in pixels                         ' ,head.frameH);
-    update_integer(memo,'FRAMEWDH=',' / Frame width in pixe;s                          ' ,head.frameW);
+  update_integer(memo,'XORGSUBF=',' / Subframe origin X axis in binned pixels        ' ,head.xorgsubf);
+  update_integer(memo,'YORGSUBF=',' / Subframe origin Y axis in binned pixels        ' ,head.yorgsubf);
 
   {new reference pixel}
   if head.cd1_1<>0 then
@@ -14343,9 +14338,9 @@ var
   filename3 : string;
   success   : boolean;
 begin
-   if ((head.frameX=0) and (head.frameY=0)) then  //head, so from image in the viewer
+   if ((head.xorgsubf=0) and (head.yorgsubf=0)) then  //head, so from image in the viewer
    begin
-     application.messagebox(pchar('Abort. No image in the viewer or the image in the viewer does not contain keywords FRAMEX, FRAMEY, FRAMEHGT, FRAMEWDH. Crop an sample image first with the popup menu and mouse.'),'',MB_OK);
+     application.messagebox(pchar('Abort. No image in the viewer or the image in the viewer does not contain keywords XORGSUBF, YORGSUBF or FRAMEX, FRAMEY. Crop an sample image first with the popup menu and mouse.'),'',MB_OK);
      exit;
    end;
 
@@ -14360,10 +14355,17 @@ begin
 
   memo4:=tstringlist.create;
 
-  frameX_sample:=head.frameX;//number of skipped pixels
-  frameY_sample:=head.frameY;//ascom/alpaca inverse stored
-  frameW_sample:=head.frameW;
-  frameH_sample:=head.frameH;
+  frameX_sample:=head.xorgsubf;//number of skipped pixels
+  frameY_sample:=head.yorgsubf;//ascom/alpaca inverse stored
+  frameW_sample:=head.width;
+  frameH_sample:=head.height;
+
+  if pos('BOT',head.roworder)>0 then {'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
+  begin
+     frameY_sample:=head.height-frameY_sample- frameH_sample;//image was upside down stored.
+  end;
+
+
   sample_binning:=round(head.xbinning);
 
   if OpenDialog1.Execute then
@@ -14383,7 +14385,14 @@ begin
         begin
           application.messagebox(pchar('Abort. Sample and target frames should have equal binning!'),'Abort',MB_OK);
           break;
-       end;
+        end;
+        if head.roworder<>head4.roworder then
+        begin
+          application.messagebox(pchar('Abort. Sample and target frames should have ROWORDER keyword value!'),'Abort',MB_OK);
+          break;
+        end;
+
+
 
         crop_image(frameX_sample,frameY_sample,frameX_sample+frameW_sample-1,frameY_sample+frameH_sample-1, img4,head4,memo4);
 

@@ -19,4 +19,4 @@ begin
   Application.CreateForm(Tmainform1, mainform1);
   Application.CreateForm(Tstackmenu1, stackmenu1);
   Application.Run;
-end.
+ end.
