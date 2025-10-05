@@ -81,7 +81,7 @@ type
     label_delta_ra1: TLabel;
     label_delta_dec1: TLabel;
     rows_to_clipboard10: TMenuItem;
-    luminance_slope1: TComboBox;
+    lrgb_global_colour_smooth_sd1: TComboBox;
     MenuItem35: TMenuItem;
     listview1_photometric_calibration1: TMenuItem;
     export_to_tg1: TMenuItem;
@@ -429,7 +429,7 @@ type
     live_stacking_pause1: TButton;
     live_stacking_restart1: TButton;
     lrgb_auto_level1: TCheckBox;
-    global_colour_smooth1: TCheckBox;
+    lrgb_global_colour_smooth1: TCheckBox;
     lrgb_global_colour_smooth_width1: TComboBox;
     luminance_filter1: TEdit;
     luminance_filter2: TEdit;
@@ -494,8 +494,8 @@ type
     nr_total_photometry1: TLabel;
     osc_auto_level1: TCheckBox;
     osc_colour_smooth1: TCheckBox;
-    osc_smart_colour_sd1: TComboBox;
-    osc_smart_smooth_width1: TComboBox;
+    osc_global_colour_smooth_sd1: TComboBox;
+    osc_global_colour_smooth_width1: TComboBox;
     pagecontrol1: TPageControl;
     PairSplitter1: TPairSplitter;
     PairSplitterSide1: TPairSplitterSide;
@@ -1130,7 +1130,8 @@ procedure black_spot_filter_for_aligned(var img: Timage_array); {remove black sp
 function update_solution_and_save(img: Timage_array;var hd: theader; memo:tstrings): boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function apply_dark_and_flat(var img: Timage_array; var hd : theader): boolean;{apply dark and flat if required, renew if different head.exposure or ccd temp}
 
-procedure global_colour_smooth(var img: Timage_array; wide, luminance_slope_min: double; measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure global_colour_smooth(var img: Timage_array; wide, sd: double; measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+
 procedure green_purple_filter(var img: Timage_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
 procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
@@ -8733,15 +8734,14 @@ begin
 end;
 
 
-procedure global_colour_smooth(var img: Timage_array; wide, luminance_slope_min : double;  measurehist: boolean);
-{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure global_colour_smooth(var img: Timage_array; wide, sd: double;  measurehist: boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 var
   fitsX, fitsY, x, y, step, x2, y2, Count, width5, height5: integer;
   img_temp2: Timage_array;
   flux, red, green, blue, rgb, r, g, b, sqr_dist, strongest_colour_local,
-  top, bg, r2, g2, b2, {noise_level1,} peak, bgR2, bgB2, bgG2, highest_colour, lumr: single;
-  bgR, bgB, bgG, star_level, luminance_slope  : double;
-  copydata            : boolean;
+  top, bg, r2, g2, b2, {noise_level1,} peak, bgR2, bgB2, bgG2, lumr: single;
+  bgR, bgB, bgG, star_level: double;
+  copydata, red_nebula: boolean;
   headR,headG,headB : Theader;
 begin
   if length(img) < 3 then exit;{not a three colour image}
@@ -8762,6 +8762,11 @@ begin
   get_background(2, img, headB, measurehist {hist}, True {noise level});{calculate blue background, noise_level and star_level}
   bgB:=headB.backgr;
 
+
+
+//  star_level:=max(bckR.star_level,max(bckG.star_level,bckB.star_level));
+//  star_level:=max(bckR.star_level2,max(bckG.star_level2,bckB.star_level2));
+
   star_level:=30*max(headR.noise_level,max(headG.noise_level,headB.noise_level));
 
   bg := (bgR + bgG + bgB) / 3; {average background}
@@ -8777,28 +8782,26 @@ begin
       bgR2 := 65535;
       bgG2 := 65535;
       bgB2 := 65535;
-      luminance_slope:=0;
 
       r2 := img[0, fitsY, fitsX] - bgR;
       g2 := img[1, fitsY, fitsX] - bgG;
       b2 := img[2, fitsY, fitsX] - bgB;
 
 
-      if ((r2 > 3 * headR.noise_level) or (g2 > 3 * headG.noise_level) or (b2 > 3 * headB.noise_level)) then  {some relative flux}
+      if ((r2 > sd * headR.noise_level) or (g2 > sd * headG.noise_level) or (b2 > sd * headB.noise_level)) then  {some relative flux}
       begin
-
         for y := -step to step do
           for x := -step to step do
           begin
             x2 := fitsX + x;
             y2 := fitsY + y;
 
-            if ((x2 >= 0) and (x2 < width5-1) and (y2 >= 0) and (y2 < height5-1)) then {within image}
+            if ((x2 >= 0) and (x2 < width5) and (y2 >= 0) and (y2 < height5)) then {within image}
             begin
               sqr_dist := x * x + y * y;
               if sqr_dist <= step * step then {circle only}
               begin
-                R := img[0, y2, x2];
+                r := img[0, y2, x2];
                 G := img[1, y2, x2];
                 B := img[2, y2, x2];
 
@@ -8811,18 +8814,12 @@ begin
                 if g < bgG2 then bgG2 := g;
                 if b < bgB2 then bgB2 := b;
 
-                luminance_slope:=luminance_slope +
-                sqr(r-img[0, y2, x2+1])+
-                sqr(r-img[0, y2+1, x2])+
-                sqr(g-img[1, y2, x2+1])+
-                sqr(g-img[1, y2+1, x2])+
-                sqr(b-img[2, y2, x2+1])+
-                sqr(b-img[2, y2+1, x2]);
-
                 if ((r < 60000) and (g < 60000) and (b < 60000)) then  {no saturation, ignore saturated pixels}
                 begin
                   begin
-                    if (r - bgR) > 0 then red := red + (r - bgR);   {level >0 otherwise centre of M31 get yellow circle}
+                    if (r - bgR) > 0 then
+                      red := red + (r - bgR);
+                    {level >0 otherwise centre of M31 get yellow circle}
                     if (g - bgG) > 0 then green := green + (g - bgG);
                     if (b - bgB) > 0 then blue := blue + (b - bgB);
                     Inc(Count);
@@ -8842,15 +8839,10 @@ begin
         green := green / Count;
         blue := blue / Count;
 
-        luminance_slope:=sqrt(luminance_slope/(6*count));
-
-        if luminance_slope>luminance_slope_min then
-
         if peak > star_level then {star level very close}
         begin
           if red < blue * 1.06 then{>6000k}
-            green := max(green, 0.6604 * red + 0.3215 * blue);
-          {prevent purple stars, purple stars are physical not possible. Emperical formula calculated from colour table http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
+            green := max(green, 0.6604 * red + 0.3215 * blue);   {prevent purple stars, purple stars are physical not possible. Emperical formula calculated from colour table http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
 
           flux := r2 + g2 + b2;//pixel flux
           rgb := red + green + blue + 0.00001;
@@ -8868,11 +8860,13 @@ begin
           img_temp2[2, fitsY, fitsX] := bg + blue * lumr;
 
           copydata := False;{data is already copied}
+
         end;
       end;
       if copydata then {keep original data but adjust zero level}
       begin
-        img_temp2[0, fitsY, fitsX] := max(0, bg + r2); {copy data, but equalise background levels by using the same background value}
+        img_temp2[0, fitsY, fitsX] := max(0, bg + r2);
+        {copy data, but equalise background levels by using the same background value}
         img_temp2[1, fitsY, fitsX] := max(0, bg + g2);
         img_temp2[2, fitsY, fitsX] := max(0, bg + b2);
       end;
@@ -8881,6 +8875,7 @@ begin
   img := img_temp2;{copy the array}
   img_temp2 := nil;
 end;
+
 
 
 procedure green_purple_filter(var img: Timage_array);
@@ -8958,7 +8953,7 @@ begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
 
-  global_colour_smooth(img_loaded, strtofloat2(global_colour_smooth_width1.Text), strtofloat2(luminance_slope1.text), False);
+  global_colour_smooth(img_loaded, strtofloat2(global_colour_smooth_width1.Text), strtofloat2(global_colour_smooth_sd1.text), False);
 
   plot_image(mainform1.image1, False);{plot real}
 
@@ -10092,6 +10087,7 @@ begin
   FindAndScrollInListView(ListView7, PatternToFind);
 end;
 
+
 procedure Tstackmenu1.quad_tolerance1Change(Sender: TObject);
 begin
   if strtofloat2(quad_tolerance1.text)>0.008 then
@@ -10962,8 +10958,8 @@ var
   au: boolean;
 begin
   au := lrgb_auto_level1.Checked;
-  global_colour_smooth1.Enabled := au;
-  luminance_slope1.Enabled := au;
+  lrgb_global_colour_smooth1.Enabled := au;
+  lrgb_global_colour_smooth_sd1.Enabled := au;
   lrgb_global_colour_smooth_width1.Enabled := au;
 end;
 
@@ -13336,10 +13332,10 @@ begin
             stackmenu1.reset_factors1Click(nil);{reset factors to default}
             plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
 
-            if stackmenu1.global_colour_smooth1.Checked then
+            if stackmenu1.lrgb_global_colour_smooth1.Checked then
             begin
               memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
-              global_colour_smooth(img_loaded, strtofloat2(lrgb_global_colour_smooth_width1.Text), strtofloat2(luminance_slope1.text), False {get  hist});{histogram doesn't needs an update}
+              global_colour_smooth(img_loaded, strtofloat2(lrgb_global_colour_smooth_width1.Text), strtofloat2(lrgb_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
             end;
             if stackmenu1.star_colour_smooth1.Checked then
             begin
@@ -13375,7 +13371,7 @@ begin
               if stackmenu1.osc_colour_smooth1.Checked then
               begin
                 memo2_message( 'Applying colour-smoothing filter image as set in tab "stack method".');
-                global_colour_smooth(img_loaded, strtofloat2(osc_smart_smooth_width1.Text), strtofloat2(luminance_slope1.text), False {get  hist});{histogram doesn't needs an update}
+                global_colour_smooth(img_loaded, strtofloat2(osc_global_colour_smooth_width1.Text), strtofloat2(osc_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
               end;
             end
             else

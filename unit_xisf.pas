@@ -233,7 +233,7 @@ begin
 
   extract_double_keyword('XBAYROFF',Xbayroff);;{offset to used to correct BAYERPAT due to flipping}
   extract_double_keyword('YBAYROFF',Ybayroff);;{offset to used to correct BAYERPAT due to flipping}
-  roworder:=extract_string_keyword('ROWORDER');
+  head.roworder:=extract_string_keyword('ROWORDER');
 
   {update memo keywords and variables for floats}
   extract_double_keyword('CD1_1',head.cd1_1);{extract float value from XML header and add keyword to FITS memo header, ignoring comments.}

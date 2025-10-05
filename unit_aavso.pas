@@ -1264,15 +1264,13 @@ var
   fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,sd_comp,
   comp_magn,B_V, V_R, ratioV,ratioB,ratioR,exposuretime,exposuretime2,end_date,begin_date    : double;
   warning : string;
-  i, j, VIndex, BIndex: Integer;
-  MinDiff, Diff: Double;
+  i, j    : Integer;
+  Diff   : Double;
 begin
   with form_aavso1 do
   begin
     //Find B and V image with closest Julian day
-    MinDiff := 1e10; // A very large number
-    VIndex := -1;
-    BIndex := -1;
+
 
     b_v_var:=0;
     bv_pairs:=0;
@@ -1319,7 +1317,6 @@ begin
      end;
 
     //Find V and R image with closest Julian day
-    MinDiff := 1e10; // A very large number
     i := -1;
     j := -1;
 
@@ -2042,7 +2039,7 @@ begin
                          end
                          else
                          begin
-                           transformation:='Transformation failed. Could not retrieve b-v';
+                           transformation:='Transformation failed. Could not retrieve b-v. Did you image in two colours?';
                            transf_str:='NO';
                          end;
                        end
@@ -2066,7 +2063,7 @@ begin
                          end
                          else
                          begin
-                           transformation:='Transformation failed. Could not retrieve v-r';
+                           transformation:='Transformation failed. Could not retrieve v-r. Did you image in two colours?';
                            transf_str:='NO';
                          end;
                        end
