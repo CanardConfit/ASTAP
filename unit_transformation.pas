@@ -15,6 +15,7 @@ type
     Button1: TButton;
     cancel1: TButton;
     checkBox_auid1: TCheckBox;
+    error_label2: TLabel;
     save1: TButton;
     Label10: TLabel;
     Label11: TLabel;
@@ -371,6 +372,8 @@ var
   i   : integer;
   xy_bv, xy_vbv, xy_bbv: Tstar_list;
   slope, intercept, sd: double;
+  success : boolean;
+  mess : string;
 begin
   setlength(xy_bv, 2, len);
   setlength(xy_vbv, 2, len);
@@ -392,20 +395,26 @@ begin
 
   transf_filter_sigma:=strtofloat2(form_transformation1.sigma_transformation1.text);
 
-  trendline_without_outliers(xy_bv, len,transf_filter_sigma, slope, intercept, sd);
+  mess:='';
+  success:=trendline_without_outliers(xy_bv, len,transf_filter_sigma, slope, intercept, sd);
   Tbv := 1/slope; // Tbv = reciprocal of slope of (b-v) plotted versus (B-V)     So inverse slope!!
   Tbv_intercept := intercept;
   Tbv_sd := sd;
+  if success=false then mess:='σ setting too low for Tbv or Tvr and ignored.';
 
-  trendline_without_outliers(xy_vbv, len, transf_filter_sigma,slope, intercept, sd);
+  success:=trendline_without_outliers(xy_vbv, len, transf_filter_sigma,slope, intercept, sd);
   Tv_bv := slope;
   Tv_bv_intercept := intercept;
   Tv_bv_sd := sd;
+  if success=false then mess:=mess+#10+'σ setting too low for Tv_bv or Tr_vr and ignored.';
 
-  trendline_without_outliers(xy_bbv, len,transf_filter_sigma, slope, intercept, sd);
+  success:=trendline_without_outliers(xy_bbv, len,transf_filter_sigma, slope, intercept, sd);
   Tb_bv := slope;
   Tb_bv_intercept := intercept;
   Tb_bv_sd := sd;
+  if success=false then mess:=mess+#10+'σ setting too low for Tb_bv or Tv_vr and ignored.';
+
+  Form_transformation1.error_label2.caption:=mess;//display any error message
 end;
 
 
@@ -520,6 +529,7 @@ begin
   end
   else
   begin
+    mess:='';
     //B & V
     if ((iconB) and  (iconV)) then
     begin
@@ -551,7 +561,7 @@ begin
       if counter<3 then
       begin
         beep;
-        Form_transformation1.error_label1.caption:='Error, not enough B & V stars!';
+        mess:=mess+'Abort, not enough B and V stars found!';
         bv_success:=false;
       end
       else
@@ -613,7 +623,7 @@ begin
       if counter<3 then
       begin
         beep;
-        Form_transformation1.error_label1.caption:='Error, not enough V & R stars!';
+        mess:=mess+'Abort, not enough V and R stars found!';
         vr_success:=false;
       end
       else
@@ -649,11 +659,10 @@ begin
 
     if ((bv_success=false) and (vr_success=false)) then
     begin
-      mess:='Abort, no';
-      if iconB=false then mess:=mess+' B';
-      if iconV=false then mess:=mess+' V';
-      if iconR=false then mess:=mess+' R';
-      mess:=mess+' stars found!  Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR.'+#13+#10+'Correct header values with with popup menu if required.';
+      if iconB=false then mess:=mess+' B not found.';
+      if iconV=false then mess:=mess+' V not found.';
+      if iconR=false then mess:=mess+' R not found.';
+      mess:=mess+' Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR.'+#13+#10+'Correct header values with with popup menu if required.';
       form_transformation1.error_label1.caption:=mess;
       memo2_message('Transformation failure. '+mess);
     end

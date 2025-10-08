@@ -1,8 +1,8 @@
 object mainform1: Tmainform1
-  Left = 1218
+  Left = 665
   Height = 634
   Hint = ' '
-  Top = 356
+  Top = 256
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -44,7 +44,7 @@ object mainform1: Tmainform1
   Menu = MainMenu1
   ParentFont = True
   Position = poDesktopCenter
-  LCLVersion = '4.99.0.0'
+  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy

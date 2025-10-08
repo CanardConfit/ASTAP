@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.10.04';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.10.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -10327,7 +10327,7 @@ begin
 
   url:='https://apps.aavso.org/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
 
-  if stackmenu1.annotate_mode1.itemindex>12+4 then
+  if stackmenu1.annotate_mode1.itemindex>16 then
            url:=url+'&special=std_field';//standard field for specific purpose of calibrating their equipment
   s:=get_http(url);{get webpage}
   len:=length(s);
@@ -10736,7 +10736,12 @@ begin
       if aavso_update_required then
       begin
         memo2_message('Downloading online data from AAVSO as set in tab Photometry.');
-        if download_vsx(lim_magnitude)=false then begin memo2_message('No response VSX server!');break; end;
+        if stackmenu1.annotate_mode1.itemindex<=16 then //do not download variables for standard field
+        begin
+          if download_vsx(lim_magnitude)=false then begin memo2_message('No response VSX server!');break; end;
+        end
+        else
+          vsx:=nil;//clear variables
         if download_vsp(lim_magnitude)=false then begin memo2_message('No response VSP server!');break; end;
         if length(vsx)=0 then memo2_message('No VSX stars found in the database. Increasing the limiting magnitude could help.');
         if length(vsp)=0 then memo2_message('No VSP stars found in the database. Increasing the limiting magnitude could help.');
@@ -13637,7 +13642,7 @@ begin
         '-ra  right_ascension[hours]'+#10+
         '-spd south_pole_distance[degrees]'+#10+
         '-s  max_number_of_stars {typical 500}'+#10+
-        '-t  tolerance'+#10+
+        '-t  quad_tolerance'+#10+
         '-m  minimum_star_size["]'+#10+
         '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. Specify 0 for auto selection}'+#10+
         #10+
