@@ -16,7 +16,7 @@ uses
 
 procedure contour( plot : boolean;img : Timage_array; var head: theader; blur, sigmafactor : double);//find contour and satellite lines in an image
 function line_distance(fitsX,fitsY,slope,intercept: double) : double;
-procedure trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; filter_sigma : double; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+function trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; filter_sigma : double; out  slope, intercept,sd: double): boolean;//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 
 //procedure add_to_storage;//add streaks to storage
 //procedure clear_storage;//clear streak storage
@@ -144,7 +144,7 @@ begin
 end;
 
 
-procedure trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; filter_sigma : double; out  slope, intercept,sd: double);//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+function trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; filter_sigma : double; out  slope, intercept,sd: double): boolean;//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
 var
   e        : double;
   xylist2  : Tstar_list;
@@ -171,9 +171,13 @@ begin
       inc(counter)
     end;
   end;
-
-  trendline(xylist2, counter{length xylist2}, {out}  slope, intercept);
-  xylist2:=nil;
+  if counter>=3 then
+  begin
+    trendline(xylist2, counter{length xylist2}, {out}  slope, intercept);
+    result:=true;
+  end
+  else
+    result:=false;
 end;
 
 
