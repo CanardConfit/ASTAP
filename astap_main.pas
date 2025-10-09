@@ -7521,7 +7521,12 @@ var
   V, m, C, S, Sadj, Snew, Cnew, scale: Single;
 begin
   V := Max(R, Max(G,B));
+
+
   m := Min(R, Min(G,B));
+
+
+
   C := V - m;
   if V > 1e-6 then
   begin
@@ -7635,7 +7640,7 @@ type
   PByteArray2 = ^TByteArray2;
   TByteArray2 = Array[0..32767*4] of Byte;//Maximum width 32768 pixels
 var
-   i,j,col,col_r,col_g,col_b,linenr,columnr,hh,ww,colours2 :integer;
+   i,j,col_r,col_g,col_b,linenr,columnr,hh,ww,colours2 :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, saturationFactor,selectiveStrength: single;
    Bitmap       : TBitmap;{for fast pixel routine}
    xLine        : PByteArray2;{for fast pixel routine}
@@ -7704,25 +7709,18 @@ begin
     for j:=0 to ww-1 do
     begin
       if fliph then columnr:=(ww-1)-j else columnr:=j;{flip horizontal?}
-      col:=trunc(img_loaded[0,i,columnr]);
-      colrr:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
+
+      colrr:=(img_loaded[0,i,columnr]-head.backgr)/(cwhite-head.backgr);{scale to 1}
 
       if colours2>=2 then {at least two colours}
-      begin
-        col:=trunc(img_loaded[1,i,columnr]);
-        colgg:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
-      end
+        colgg:=(img_loaded[1,i,columnr]-head.backgr)/(cwhite-head.backgr){scale to 1}
       else
-      colgg:=colrr;
+        colgg:=colrr;
 
       if head.naxis3>=3 then {at least three colours}
-      begin
-        col:=round(img_loaded[2,i,columnr]);
-        colbb:=(col-head.backgr)/(cwhite-head.backgr);{scale to 1}
-
-      end
+        colbb:=(img_loaded[2,i,columnr]-head.backgr)/(cwhite-head.backgr){scale to 1}
       else
-      colbb:=colrr;
+        colbb:=colrr;
 
       {find brightest colour and resize all if above 1. Avoid whitening of stars and run time error in stretch_c table}
       largest:=colrr;
@@ -7741,7 +7739,7 @@ begin
       colbb:=max(colbb,0.000000001);
 
       if head.naxis3>=3 then {at least three colours}
-      AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);
+        AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);
 
       luminance:=0.333333*colrr+0.333333*colgg+0.333333*colbb;//keep equal ratio in image development and not luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB;
       if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
@@ -14335,8 +14333,7 @@ end;
 
 procedure Tmainform1.image_based_crop1Click(Sender: TObject);
 var
-  I, binfactor,frameX_sample,frameY_sample,frameW_sample,frameH_sample, sample_binning   : integer;
-  dobackup : boolean;
+  I, frameX_sample,frameY_sample,frameW_sample,frameH_sample, sample_binning   : integer;
   img4 : timage_array;
   memo4 : Tstrings;
   head4 : theader;
@@ -14428,8 +14425,7 @@ end;
 
 procedure Tmainform1.area_crop1Click(Sender: TObject);
 var
-  I, binfactor   : integer;
-  dobackup : boolean;
+  I              : integer;
   img : timage_array;
   memo : Tstrings;
   head : theader;

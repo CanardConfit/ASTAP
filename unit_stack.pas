@@ -6765,6 +6765,7 @@ begin
 
    for c:=0 to ListView3.items.Count - 1 do
         ListView3.Items.item[c].SubitemImages[F_filter] :=get_filter_icon(ListView3.Items.item[c].subitems.Strings[F_filter],{out} red,green, blue);
+
 end;
 
 
