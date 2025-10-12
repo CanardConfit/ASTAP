@@ -79,7 +79,7 @@ begin
     '-ra  right_ascension[hours]'+#10+
     '-spd south_pole_distance[degrees]'+#10+
     '-s  max_number_of_stars  {default 500}'+#10+
-    '-t  tolerance  {default 0.007}'+#10+
+    '-t  quad_tolerance  {default 0.007}'+#10+
     '-m  minimum_star_size["]  {default 1.5}'+#10+
     '-z  downsample_factor[0,1,2,3,4,..] {Downsample prior to solving. Specify 0 for auto selection}'+#10+
 
