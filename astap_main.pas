@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.10.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.10.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -8062,9 +8062,8 @@ end;
 
 function savefits_update_header(memo: tstrings; filen2:string) : boolean;{save fits file with updated header}
 var
-  TheFile  : tfilestream;
+  TheFile,TheFile_new  : tfilestream;
   reader_position,I,readsize,bufsize : integer;
-  TheFile_new : tfilestream;
   fract       : double;
   line0       : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
@@ -16340,8 +16339,16 @@ end;
 
 
 procedure Tmainform1.SaveFITSwithupdatedheader1Click(Sender: TObject);
+var
+   result : boolean;
 begin
-  savefits_update_header(mainform1.memo1.lines,filename2);
+//  savefits_update_header(mainform1.memo1.lines,filename2);  //file could be binned or cropped so there is no file with same name
+  if fits_file_name(filename2) then
+    result:=save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)
+  else
+    result:=save_tiff16(img_loaded,mainform1.memo1.lines,filename2,false {flip H},false {flip V},16);
+
+  if result=false then ShowMessage('Write error !!' + filename2);
 end;
 
 

@@ -9470,6 +9470,11 @@ object stackmenu1: Tstackmenu1
     object MenuItem33: TMenuItem
       Caption = '-'
     end
+    object MenuItem19: TMenuItem
+      Caption = 'Set as reference image'
+      Hint = '#Define this image as reference image.'
+      OnClick = MenuItem19Click
+    end
     object auto_select1: TMenuItem
       Caption = 'Auto selection reference object in selected images'
       Hint = '#For manual alignment, This will automatically select the same object in all images based on the selection in the first image '

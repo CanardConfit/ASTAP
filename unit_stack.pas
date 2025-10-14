@@ -69,6 +69,7 @@ type
     center_position1: TLabel;
     gradient_filter_factor1: TComboBox;
     GroupBox24: TGroupBox;
+    MenuItem19: TMenuItem;
     ring_equalise_factor1: TComboBox;
     rows_to_clipboard7: TMenuItem;
     nebula1: TCheckBox;
@@ -785,6 +786,7 @@ type
     procedure measuring_method1Change(Sender: TObject);
     procedure export_to_tg1Click(Sender: TObject);
     procedure find_listview_text7Click(Sender: TObject);
+    procedure MenuItem19Click(Sender: TObject);
     procedure quad_tolerance1Change(Sender: TObject);
     procedure report_sqm1Click(Sender: TObject);
     procedure MenuItem41Click(Sender: TObject);
@@ -3316,7 +3318,7 @@ begin
     {equalize background}
 
     if Sender <> apply_artificial_flat_correctionV2 then
-      artificial_flatV1(img_loaded, box_size)
+       artificial_flatV1(img_loaded, box_size)
     else
       artificial_flatV2(img_loaded, head,    StrToInt(StringReplace(ring_equalise_factor1.Text, '%', '', [])));
 
@@ -10086,6 +10088,20 @@ procedure Tstackmenu1.find_listview_text7Click(Sender: TObject);
 begin
   PatternToFind:=uppercase(inputbox('Find','Text to find in listview:' ,PatternToFind));
   FindAndScrollInListView(ListView7, PatternToFind);
+end;
+
+
+procedure Tstackmenu1.MenuItem19Click(Sender: TObject);
+var
+   index : integer;
+begin
+  for index := 0 to listview1.Items.Count - 1 do
+   begin
+     if listview1.Items[index].Selected then
+       ListView1.Items.item[index].subitems.Strings[L_quality]:='999'
+      else
+        ListView1.Items.item[index].subitems.Strings[L_quality]:='0';
+   end;
 end;
 
 
