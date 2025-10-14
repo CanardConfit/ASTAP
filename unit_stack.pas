@@ -3316,7 +3316,7 @@ begin
     {equalize background}
 
     if Sender <> apply_artificial_flat_correctionV2 then
-      artificial_flatV1(img_loaded, box_size)
+       artificial_flatV1(img_loaded, box_size)
     else
       artificial_flatV2(img_loaded, head,    StrToInt(StringReplace(ring_equalise_factor1.Text, '%', '', [])));
 

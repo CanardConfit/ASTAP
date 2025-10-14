@@ -424,6 +424,7 @@ begin
               begin
                 binning:=report_binning(head.height);{select binning based on the height of the light}
                 bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
+                max_stars:=length(starlist2[0]); //adapt max_stars to reference image
                 find_quads(false,starlist2,quad_star_distances2);{find quads for reference image/database}
               end;
             end;
@@ -467,7 +468,7 @@ begin
                     files_to_process[c].name:=''; {remove file from list}
                    solution:=false;
                     ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
-                    ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='no solution';{no stack result}
+                    ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='No match';{no stack result}
                   end;
                 end;{internal alignment}
               end
@@ -1182,6 +1183,7 @@ begin
             if use_star_alignment then
             begin
               bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
+              max_stars:=length(starlist2[0]); //adapt max_stars to reference image
               find_quads(false,starlist2, quad_star_distances2);{find quads for reference image}
             end
             else
@@ -1212,7 +1214,7 @@ begin
                 files_to_process[c].name:=''; {remove file from list}
                 solution:=false;
                 ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
-                ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
+                ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='No match';{no stack result}
               end;
             end
             else
@@ -1404,6 +1406,7 @@ begin
           if use_star_alignment then
           begin
             bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
+            max_stars:=length(starlist2[0]); //adapt max_stars to reference image
             find_quads(false,starlist2, quad_star_distances2);{find quads for reference image}
           end
           else
@@ -1439,7 +1442,7 @@ begin
               files_to_process[c].name:=''; {remove file from list}
               solution:=false;
               ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclamation}
-              ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='no solution';{no stack result}
+              ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='No match';{no stack result}
             end
           end{internal alignment}
           else
@@ -1706,7 +1709,7 @@ var
     height_maxS,width_maxS                                                                                   : integer;
     value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,delta_JD_required,target_background, JD_reference, hfd_measured  : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip   : boolean;
-    tempval,jd_fraction                                                                        : single;
+    jd_fraction                                                                        : single;
     background_correction : array[0..2] of single;
     img_temp,img_final,img_variance : Timage_array;
 begin
@@ -2145,6 +2148,7 @@ begin
           begin
           //Find the equations for image destignation to image source!. Use this later to take four pixels fractions back to the reference image (inverse mapping).
           bin_and_find_stars(img_loaded, head,binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
+          max_stars:=length(starlist2[0]); //adapt max_stars to reference image
           find_quads(false,starlist2, quad_star_distances2);{find quads for reference image}
           end
           else
@@ -2176,7 +2180,7 @@ begin
               files_to_process[c].name:=''; {remove file from list}
               solution:=false;
               ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
-              ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
+              ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='No match';{no stack result}
             end;
           end
           else
