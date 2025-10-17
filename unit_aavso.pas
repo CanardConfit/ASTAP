@@ -30,12 +30,13 @@ type
     deselectall1: TMenuItem;
     PopupMenu_variables1: TPopupMenu;
     Separator1: TMenuItem;
+    sigma_check2: TLabel;
+    sigma_check3: TLabel;
     test_button1: TButton;
     sigma_mzero1: TLabel;
     ensemble_database1: TCheckBox;
     obstype1: TComboBox;
     Label7: TLabel;
-    sigma_check2: TLabel;
     sigma_check1: TLabel;
     sort_alphabetically1: TCheckBox;
     hjd1: TCheckBox;
@@ -122,7 +123,7 @@ var
 
 
 procedure plot_graph; {plot curve}
-function retrieve_comp_magnitude(use_array:boolean; filter,columnr: integer; s: string): double;//retrieve comp magnitude from the abbrv string or online VSP
+function retrieve_documented_magnitude(use_array:boolean; filter,columnr: integer; s: string): double;//retrieve comp magnitude from the abbrv string or online VSP
 procedure calc_sd_and_mean(list: array of double; leng : integer; out sd,mean: double);// calculate sd and mean of an array of doubles}
 procedure ExtractListViewDataToArrays(ListView: TListView; P_filter: Integer);
 
@@ -143,13 +144,25 @@ type
                    str : string;
                  end;
 
+    Tcomps_info = record
+           valid : boolean;
+           ratio,  //average ratio
+           sd_comp, //ensemble
+           documented_comp_magn,
+           B_V,
+           V_R   : double;
+           warning : string;
+         end;
+
+
 var
   jd_min,jd_max,magn_min,magn_max : double;
   w,h,bspace{,column_var},column_check,wtext  :integer;
   column_comps,column_vars : Tinteger_array;
   test_mode : boolean;
   jd_mouse  : double;//jd_mid of mouse position
-
+  photometry_stdev : array[0..4] of double;
+  comps_info : array of Tcomps_info;
 
 
 function floattostr3(x:double):string;
@@ -315,7 +328,7 @@ begin
 end;
 
 
-function retrieve_comp_magnitude(use_array: boolean; filter,columnr: integer; s: string): double;//retrieve comp magnitude from the abbrv string or online VSP
+function retrieve_documented_magnitude(use_array: boolean; filter,columnr: integer; s: string): double;//retrieve documented magnitude from the abbrv string or online VSP
 var
   v,e,err,theindex,source  : integer;
   s2 : string;
@@ -497,14 +510,14 @@ begin
   with form_aavso1 do
   for i:=0 to high(column_comps) do //go through the list of comps stars
   begin
-    abbrv_c:=ColumnTitles[column_comps[i]+1] ;
+    abbrv_c:=ColumnTitles[column_comps[i]+1];
 
     comp_magn:=SubItemDouble[c,column_comps[i]];
     if comp_magn>0 then //valid conversion string to float. Magnitude could be marked saturated only. SNR and flux are still measured if star is saturated.
     begin
     //  icon_nr:=stackmenu1.listview7.Items.item[c].SubitemImages[P_filter];{filter icon nr}
       icon_nr:=SubItemImages[c];
-      documented_comp_magn:=retrieve_comp_magnitude(true,icon_nr,column_comps[i], abbrv_c);//  retrieve the documented magnitude at passband used from the abbrev_comp string
+      documented_comp_magn:=retrieve_documented_magnitude(true,icon_nr,column_comps[i], abbrv_c);//  retrieve the documented magnitude at passband used from the abbrev_comp string
       if documented_comp_magn<=0 then
       begin //COMP magnitude unknown. Most likely '?'
         warning:=warning+'Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloan filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
@@ -529,9 +542,9 @@ begin
 
             if calc_colour_index then
             begin
-              magR:=retrieve_comp_magnitude(true,0,column_comps[i], abbrv_c);
-              magV:=retrieve_comp_magnitude(true,1,column_comps[i], abbrv_c);
-              magB:=retrieve_comp_magnitude(true,2,column_comps[i], abbrv_c);
+              magR:=retrieve_documented_magnitude(true,0,column_comps[i], abbrv_c);
+              magV:=retrieve_documented_magnitude(true,1,column_comps[i], abbrv_c);
+              magB:=retrieve_documented_magnitude(true,2,column_comps[i], abbrv_c);
               if ((magB<>0) and (magV<>0)) then
               begin
                 B_V:=B_V+snr*(magB-magV);
@@ -584,82 +597,186 @@ begin
 end;
 
 
-procedure report_sigma_and_mean_of_check ;
+procedure  process_comp_stars2; //(c : integer; calc_colour_index : boolean; documented_comp_magn : double; out  warning : string): integer;// Get flux ratio for ensemble. Documented_comp_magn is only used for single comp star.
 var
-  c, invalid_comp,count, count2,icon_nr                           : integer;
-  check_magnitudes                                                : array of double;
-  comp_magn,ratio,check_flux, sd, mean,sd_comp, mean_sd_comp,B_V, V_R      : double;
-  warning                                                         : string;
-  go_boolean                                                      : boolean;
+   i,count,icon_nr, B_Vcounter,V_Rcounter,c  : integer;
+   abbrv_c                                   : string;
+   comp_magn, flux_documented,flux,sum_all_fluxes,magR,magV, magB,snr,sum_all_snr, standard_deviation, documented_comp_magn,B_V, V_R,ratio_average : double;
+   ratios,fluxes                                  : array of double;
+   warning  : string;
+
+begin
+
+  setlength(comps_info,length(RowChecked));
+
+
+  for c:=0 to length(RowChecked)-1 do
+  begin
+    warning:='';
+    sum_all_fluxes:=0;
+    sum_all_snr:=0;
+    ratio_average:=0;
+    count:=0;
+    setlength(ratios,length(column_comps));
+    setlength(fluxes,length(column_comps));
+    B_V:=0;
+    V_R:=0;
+    B_Vcounter:=0;
+    V_Rcounter:=0;
+
+    if stackmenu1.listview7.Items.item[c].checked then
+    begin
+      for i:=0 to high(column_comps) do //go through the list of comps stars
+      begin
+        abbrv_c:=ColumnTitles[column_comps[i]+1];
+
+        comp_magn:=SubItemDouble[c,column_comps[i]];
+        if comp_magn>0 then //valid conversion string to float. Magnitude could be marked saturated only. SNR and flux are still measured if star is saturated.
+        begin
+        //  icon_nr:=stackmenu1.listview7.Items.item[c].SubitemImages[P_filter];{filter icon nr}
+          icon_nr:=SubItemImages[c];
+          documented_comp_magn:=retrieve_documented_magnitude(true,icon_nr,column_comps[i], abbrv_c);//  retrieve the documented magnitude at passband used from the abbrev_comp string
+          if documented_comp_magn<=0 then
+          begin //COMP magnitude unknown. Most likely '?'
+            warning:=warning+'Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloan filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
+          end
+          else
+          begin //COMP magnitude known
+            flux_documented:=power(10,(21-documented_comp_magn)/2.5);//21 is a bias
+            flux:=SubItemDouble[c,column_comps[i]+2];
+            if flux>0 then
+            begin
+              snr:=SubItemDouble[c,column_comps[i]+1];
+              if snr>0 then
+              begin
+                  //Now calulate ratio*flux and sum it
+                ratio_average:=ratio_average + snr*flux_documented/flux; //use snr as weight factor
+                ratios[count]:=flux_documented/flux;//for standard deviation calculation
+                fluxes[count]:=flux_documented;//for standard deviation calculation
+
+                sum_all_fluxes:=sum_all_fluxes+flux_documented;
+                sum_all_snr:=sum_all_snr + snr;
+                inc(count);
+
+                magR:=retrieve_documented_magnitude(true,0,column_comps[i], abbrv_c);
+                magV:=retrieve_documented_magnitude(true,1,column_comps[i], abbrv_c);
+                magB:=retrieve_documented_magnitude(true,2,column_comps[i], abbrv_c);
+                if ((magB>-99) and (magV>-99)) then
+                begin
+                  B_V:=B_V+snr*(magB-magV);
+                  inc(B_Vcounter);
+                end;
+                if ((magV>-99) and (magR>-99)) then
+                begin
+                  V_R:=V_R+snr*(magV-magR);
+                  inc(V_Rcounter);
+                end;
+              end;//valid snr
+
+            end;//valid flux
+          end;
+        end
+        else
+        warning:=warning+'Ignored invalid '+copy(abbrv_c,1,11)+'. ';
+      end;//for loop
+      if sum_all_fluxes<>0 then
+      begin
+        ratio_average:=ratio_average/sum_all_snr; // So the mean of all comp stars.  Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/ln(10)
+        comps_info[c].valid:=true;
+
+        if B_Vcounter>0 then B_V:=B_V/sum_all_snr else B_V:=-99;//average value of all comp stars
+        if V_Rcounter>0 then V_R:=V_R/sum_all_snr else V_R:=-99;;//average value of all comp stars
+
+        //now calculate the standard deviation. So the weighted difference between the COMP stars in one image
+        //Standard deviation so noise has to combine the uncertainties quadratically. The reason that a star ensemble has a lower standard deviation then a single comparison star is that
+        //the signal is averaged. So the total noise of an ensemble of four equal star would be
+        //σ_total= ( (0.25σ)^2 + (0.25σ)^2+ (0.25σ)^2+ (0.25^σ)^2 )^0.5  equals  σ/2.
+        //This doesn't happen when you use the ensemble mzero value for measuring the check star.
+        //For a standard deviation so noise calculation either subtraction or addition you have to combine the uncertainties quadratically.
+        //The standard deviation of the check measurement result is higher and equal to σ_total= (σ_check^2 + σ_ensemble^2)^0.5
+
+        standard_deviation:=0;
+        for i:=0 to count-1 do
+           standard_deviation:=standard_deviation+ sqr((fluxes[i]/sum_all_fluxes)*(ratio_average-ratios[i]));//fluxes[i] is the weight factor base on flux
+
+        standard_deviation:=2.5/ln(10)*sqrt(standard_deviation);
+      end
+      else
+      begin
+        ratio_average:=999;
+        comps_info[c].valid:=false;
+      end;
+    end;
+
+    comps_info[c].ratio:=ratio_average;
+    comps_info[c].sd_comp:=standard_deviation;
+    comps_info[c].documented_comp_magn:=documented_comp_magn;
+    comps_info[c].B_V:=B_V;
+    comps_info[c].V_R:=V_R;
+    comps_info[c].warning:=warning;
+  end;
+end;
+
+
+
+
+procedure work_on_comp_stars;
+var
+  c, invalid_comp, count,icon_nr                     : integer;
+  comp_magn,ratio,sd_comp, mean_sd_comp,B_V, V_R      : double;
+  mess                                                : string;
 
 begin
   count:=0;
-  count2:=0;
   mean_sd_comp:=0;
 
-  go_boolean:=true;
-  //column_check is found in plot_graph
-  if column_check<0 then
-  begin
-    form_aavso1.sigma_check2.caption:='No check star selected.';
-     go_boolean:=false;
-  end
-  else
-  form_aavso1.sigma_check2.caption:='';
   if length(column_comps)=0 then
   begin
     form_aavso1.sigma_mzero1.caption:='No comparison star selected.';
-    go_boolean:=false;
+    exit;
   end
   else
   form_aavso1.sigma_mzero1.caption:='';
 
-  if go_boolean=false then exit;
+  B_V:=-99;
+  V_R:=-99;
+  process_comp_stars2;//process the multiple comp stars and put in comps_info array
 
   with stackmenu1 do
   begin
-    setlength(check_magnitudes,length(RowChecked));
     for c:=0 to length(RowChecked)-1 do
     begin
       icon_nr:=SubItemImages[c];
       if ((icon_nr=1) or (icon_nr=4)) then //for filter V or TG or CV only
       if listview7.Items.item[c].checked then
       begin
-        invalid_comp:=process_comp_stars(c,false,ratio,sd_comp,comp_magn,B_V, V_R ,warning);//Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/ln(10)
-        if invalid_comp=0 then //valid
+        if comps_info[c].valid then
         begin
-          check_flux:=SubItemDouble[c,column_check+2];
-          if check_flux>0 then //valid conversion string to float
-          begin
-            check_magnitudes[count]:=21-ln(ratio* check_flux)*2.5/ln(10);//21 is just a bias
-            inc(count);
-          end;
+          mean_sd_comp:=mean_sd_comp+comps_info[c].sd_comp;//sum the sd_comp (weighted standard deviation of the comp stars between them) of each image to calculate an average
+          inc(count);
 
-          mean_sd_comp:=mean_sd_comp+sd_comp;//sum the sd_comp (weighted standard deviation of the comp stars between them) of each image to calculate an average
-          inc(count2);
+          if comps_info[c].B_V>-99 then
+                B_V:=comps_info[c].B_V;  //should be all the same if above noise
+
+          if comps_info[c].V_R>-99 then
+                V_R:=comps_info[c].V_R;  //should be all the same if above noise
+
         end;
       end;
     end;
   end;
-  if count>0 then
-  begin
-    calc_sd_and_mean(check_magnitudes, count,{out} sd, mean);// calculate sd and mean of an array of doubles}
-    if length(column_comps)=1 then
-      form_aavso1.sigma_check2.caption:='Check σ='+floattostrF(sd,ffFixed,0,3)+', mean='+floattostrF(mean,ffFixed,0,3)+' using a single comparison star' //report sigma check
-    else
-      form_aavso1.sigma_check2.caption:='Check σ='+floattostrF(sd,ffFixed,0,3)+', mean='+floattostrF(mean,ffFixed,0,3)+' using '+inttostr(length(column_comps))+' ensemble stars';//report sigma check
-  end
-  else
-  begin
-      form_aavso1.sigma_check2.caption:='Saturated/No documented magnitude for used filter';
-  end;
 
-  if count2>0 then
+  mess:='Comp';
+  if B_V>-99 then mess:=mess+' B_V:='+floattostr3(B_V);
+  if V_R>-99 then mess:=mess+' V_R:='+floattostr3(V_R);
+
+
+  if count>0 then
   begin
     if length(column_comps)=1 then
       form_aavso1.sigma_mzero1.caption:='Single comparison star.'
     else
-      form_aavso1.sigma_mzero1.caption:='σ='+floattostrF(mean_sd_comp/count2,FFfixed,0,4)+', weighted standard deviation between '+inttostr(length(column_comps))+' ensemble stars.'  //  Weighted noise between the comp star(s)
+      form_aavso1.sigma_mzero1.caption:=mess+' σ='+floattostrF(mean_sd_comp/count,FFfixed,0,4)+', weighted between '+inttostr(length(column_comps))+' ensemble stars.'  //  Weighted noise between the comp star(s)
   end
   else
   begin
@@ -738,14 +855,34 @@ begin
 end;
 
 
+function get_filternr(c : integer): integer;//retrieve a filter number from the list
+var
+   icon_nr : integer;
+begin
+  icon_nr:=SubItemImages[c];
+  case icon_nr of
+            0,24: result:=0;//R
+            1: result:=1;//V or TG
+            2: result:=2;// B;
+            28:result:=4;//I FILTER
+            21:result:=4;//SDSS-i
+            22:result:=4;//SDSS-r
+            23:result:=4;//SDSS-g
+        else
+          result:=4;
+  end;//case
+end;
+
+
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count,k,invalid_comp,icon_nr,i,j,vars_end,firstfilter,x,y,index,fc : integer;
-  scale,range, mean,ratio,sd_comp,comp_magn,dummy,flux,B_V, V_R,magn_gaia  : double;
-  text1,text2, date_format,{firstfilter,}warning,abbrv_var   : string;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,countV,countB, countR,k,invalid_comp,icon_nr,i,j,vars_end,x,y,index,fc,countdelta : integer;
+  scale,range, mean,dummy,flux,magn_gaia,check_doc_magb,check_doc_magR, check_doc_magV,Bcorrection,Vcorrection,Rcorrection,
+  compmeanB,compmeanV,compmeanR,B_V_sum,V_R_sum,B_V,V_R                                                                                               : double;
+  text1,text2, date_format, abbrv_var,Bcorrectionstr,Vcorrectionstr,Rcorrectionstr : string;
   bmp: TBitmap;
   data : array of array of double;
-  listcheck : array of double;
+  listcheckV, listcheckB, listcheckR : array of double;
   filtercolor : array of tcolor;
   gaia_based,new_colour, color_used : boolean;
   color_list : array[0..7] of tcolor;
@@ -872,20 +1009,30 @@ begin
   column_check:=find_correct_check_column;
   column_comps:=get_checked(form_aavso1.abrv_comp1); //fill the column_comp array
 
-  report_sigma_and_mean_of_check;
+  work_on_comp_stars;
 
   if stackmenu1.measuring_method1.itemindex>0  then //<> manual mode
     annotate_star_of_column(column_check,column_vars,column_comps);
 
-  photometry_stdev:=0;
+  photometry_stdev[0] := 0;//red
+  photometry_stdev[1] := 0;//V
+  photometry_stdev[2] := 0;//B
+  photometry_stdev[3]:=0;//others
   setlength(data,2+length(column_vars)+length(column_comps), length(RowChecked));
   for i:=0 to length(data)-1 do
     for j:=0 to length(data[0])-1 do
       data[i,j]:=0;//clear
-  setlength(listcheck,length(data[0]));//list with magnitudes check star
+  setlength(listcheckV,length(data[0]));//list with magnitudes check star
+  setlength(listcheckB,length(data[0]));//list with magnitudes check star
+  setlength(listcheckR,length(data[0]));//list with magnitudes check star
+
   setlength(filtercolor,length(data[0]));//list filter colors
-  count:=0;
-  firstFilter:=-98;
+  countR:=0;
+  countV:=0;
+  countB:=0;
+  countdelta:=0;
+  B_V_sum:=0;
+  V_R_sum:=0;
 
   if length(column_vars)>0 then
     abbrv_var:=clean_abbreviation(ColumnTitles[column_vars[0]+1],true) //caption are shifted one
@@ -911,20 +1058,17 @@ begin
         if column_check>0 then
         begin
           dummy:=SubItemDouble[c,column_check];
-            if dummy>0 then
-            begin
-              data[1,c]:=dummy;
-              magn_max:=max(magn_max,data[1,c]);
-              magn_min:=min(magn_min,data[1,c]);
+          if dummy>0 then
+          begin
+            data[1,c]:=dummy;
+            magn_max:=max(magn_max,data[1,c]);
+            magn_min:=min(magn_min,data[1,c]);
+            case SubItemImages[c] of 0,24: begin listcheckR[countR]:= data[1,c]; inc(countR);  end;//Red
+                                        1: begin listcheckV[countV]:= data[1,c]; inc(countV);  end;//TG or V
+                                        2: begin listcheckB[countB]:= data[1,c]; inc(countB);  end;//Blue
 
-              if firstfilter<0 then firstfilter:=SubItemImages[c];
-              if firstfilter=SubItemImages[c] then //calculate standard deviation for one colour only. Otherwise big jump spoils the measurement
-              begin
-                listcheck[count]:= data[1,c];
-                inc(count);
-              end;
-            end;
-         // end;
+            end;//case
+          end;
         end;
 
         //data[0,?]  JD day of file ?
@@ -970,8 +1114,8 @@ begin
     begin
       if RowChecked[c] then
       begin
-        invalid_comp:=process_comp_stars(c,false,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Get ratio. Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
-        if invalid_comp=0 then //valid comp star(s)
+//        invalid_comp:=process_comp_stars(c,true,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Get ratio. Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
+        if comps_info[c].valid then//valid comp star(s)
         begin
           dummy:=SubItemDouble[c,date_column];{date column}
           if dummy>0 then
@@ -988,15 +1132,14 @@ begin
 
             if ((magn_gaia>0) and (flux>0)) then  //flux is still measured if magn is saturated
             begin
-               data[1,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
-               magn_max:=max(magn_max,data[1,c]);
-               magn_min:=min(magn_min,data[1,c]);
-               if firstfilter<0 then firstfilter:=SubItemImages[c];
-               if firstfilter=SubItemImages[c] then //calculate standard deviation for one colour only. Otherwise big jump spoils the measurement
-               begin
-                 listcheck[count]:= data[1,c];
-                 inc(count);
-               end;
+              data[1,c]:= 21- ln(comps_info[c].ratio*flux)*2.5/ln(10); //convert flux to magnitude
+              magn_max:=max(magn_max,data[1,c]);
+              magn_min:=min(magn_min,data[1,c]);
+              case SubItemImages[c] of 0,24: begin listcheckR[countR]:= data[1,c]; inc(countR);  end;//Red
+                                          1: begin listcheckV[countV]:= data[1,c]; inc(countV);  end;//TG or V
+                                          2: begin listcheckB[countB]:= data[1,c]; inc(countB);  end;//Blue
+
+              end;//case
             end;
           end;
 
@@ -1007,7 +1150,7 @@ begin
 
             if ((magn_gaia>0) and (flux>0)) then  //flux is still measured if magn is saturated
             begin
-              data[2+k,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
+              data[2+k,c]:= 21- ln(comps_info[c].ratio*flux)*2.5/ln(10); //convert flux to magnitude
               magn_max:=max(magn_max,data[2+k,c]);
               magn_min:=min(magn_min,data[2+k,c]);
             end;
@@ -1028,12 +1171,15 @@ begin
 
             if ((magn_gaia>0) and (flux>0)) then  //flux is still measured if magn is saturated
             begin
-              data[vars_end+k,c]:= 21- ln(ratio*flux)*2.5/ln(10); //convert flux to magnitude
+              data[vars_end+k,c]:= 21- ln(comps_info[c].ratio*flux)*2.5/ln(10); //convert flux to magnitude
               magn_max:=max(magn_max,data[vars_end+k,c]);
               magn_min:=min(magn_min,data[vars_end+k,c]);
             end;
           end;
 
+          B_V_sum:=B_V_sum+comps_info[c].B_V; //for average B_V comp
+          V_R_sum:=V_R_sum+comps_info[c].V_R;
+          inc(countdelta);
         end //valid comp star(s)
         else
         begin
@@ -1043,13 +1189,61 @@ begin
     end;
   end; //use comp stars, and convert flux to magnitudes
 
-  if count>0 then
+  if countdelta>0 then
   begin
-    calc_sd_and_mean(listcheck, count{counter},{var}photometry_stdev, mean);// calculate sd and mean of an array of doubles}
-    form_aavso1.sigma_check1.caption:='Check σ='+floattostrF(photometry_stdev,ffFixed,0,3)+', mean='+floattostrF(mean,ffFixed,0,3)+' using database ensemble.';//report sigma check
+    B_V:=B_V_sum/countdelta;//average colour comp
+    V_R:=V_R_sum/countdelta;//average colour comp
+  end;
+
+  //'#Transf corr B = Tb_bv * Tbv *((b-v) - (B-V)),   Transf corr V = Tv_bv * Tbv *((b-v) - (B-V)),   Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))'+#13+#10
+
+  if countB>0 then
+  begin
+    calc_sd_and_mean(listcheckB, countB{counter},{var}photometry_stdev[2], compmeanB);// calculate sd and mean of an array of doubles}
+    check_doc_magb:=retrieve_documented_magnitude(true,2,column_check, ColumnTitles[column_check+1]);
+  end;
+  if countV>0 then
+  begin
+    calc_sd_and_mean(listcheckV, countV{counter},{var}photometry_stdev[1], compmeanV);// calculate sd and mean of an array of doubles}
+    check_doc_magV:=retrieve_documented_magnitude(true,1,column_check, ColumnTitles[column_check+1]);
+  end;
+  if countR>0 then
+  begin
+    calc_sd_and_mean(listcheckR, countR{counter},{var}photometry_stdev[0], compmeanR);// calculate sd and mean of an array of doubles}
+    check_doc_magR:=retrieve_documented_magnitude(true,0,column_check, ColumnTitles[column_check+1]);
+  end;
+
+  if ((countB>0) and (countV>0) and (countdelta>0)) then
+  begin
+    Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * ((compmeanB-compmeanV) - B_V{comp});
+    Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) * ((compmeanB-compmeanV) - B_V{comp});
+    Bcorrectionstr:=', transformed b-B='+floattostrF(compmeanB-check_doc_magb+Bcorrection,ffFixed,0,3);
+    Vcorrectionstr:=', transformed v-V='+floattostrF(compmeanV-check_doc_magV+Vcorrection,ffFixed,0,3);
   end
   else
-    form_aavso1.sigma_check1.caption:='No check star selected.';
+  begin
+    Bcorrectionstr:='';
+    Vcorrectionstr:='';
+  end;
+
+  if countB>0 then
+    form_aavso1.sigma_check1.caption:='Check b-B='+floattostrF(compmeanB-check_doc_magB,ffFixed,0,3)+Bcorrectionstr+', σ='+floattostrF(photometry_stdev[2],ffFixed,0,3)//report offsets
+  else
+    form_aavso1.sigma_check1.caption:='';
+
+
+  if countV>0 then
+    form_aavso1.sigma_check2.caption:='Check v-V='+floattostrF(compmeanV-check_doc_magV,ffFixed,0,3)+Vcorrectionstr+', σ='+floattostrF(photometry_stdev[1],ffFixed,0,3) //report offsets
+  else
+    form_aavso1.sigma_check2.caption:='';
+
+  if countR>0 then
+    form_aavso1.sigma_check3.caption:='Check r-R='+floattostrF(compmeanR-check_doc_magR,ffFixed,0,3)+Rcorrectionstr+', σ='+floattostrF(photometry_stdev[0],ffFixed,0,3)//report offsets
+  else
+    form_aavso1.sigma_check3.caption:='';
+
+
+
 
   if magn_min>magn_max then
          exit; //no info
@@ -1189,7 +1383,7 @@ begin
       bmp.Canvas.Pen.Color := filtercolor[c];
       bmp.Canvas.brush.color :=filtercolor[c];
       if ((data[0,c]<>0) and (data[1,c]<>0)) then //valid JD
-        plot_square(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
+        plot_square(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev[get_filternr(c)]*2.5)); {chk}
     end;
 
     //comps
@@ -1240,8 +1434,7 @@ begin
 
               bmp.Canvas.Pen.Color := filtercolor[c];
               bmp.Canvas.brush.color :=filtercolor[c];
-    //          plot_point(x,y,round(scale*photometry_stdev*2.5)); {var}
-              plot_line_and_point(new_colour,x,y,round(scale*photometry_stdev*2.5)); {var}
+              plot_line_and_point(new_colour,x,y,round(scale*photometry_stdev[get_filternr(c)]*2.5)); {var}
               new_colour:=false;
             end;
 
@@ -1669,8 +1862,6 @@ procedure Tform_aavso1.ensemble_database1Click(Sender: TObject);
 begin
   ensemble_database:=ensemble_database1.checked;
   abrv_comp1.enabled:=ensemble_database=false;
-  sigma_check1.enabled:=ensemble_database;
-  sigma_check2.enabled:=ensemble_database=false;
   sigma_mzero1.enabled:=ensemble_database=false;
   apply_transformation1.enabled:=ensemble_database=false;
   plot_graph;
@@ -1763,8 +1954,6 @@ begin
   ensemble_database1.checked:=ensemble_database;
   abrv_comp1.enabled:=ensemble_database=false;
 
-  sigma_check1.enabled:=ensemble_database;
-  sigma_check2.enabled:=ensemble_database=false;
   sigma_mzero1.enabled:=ensemble_database=false;
 
   sort_alphabetically1.checked:=sort_alphabetically;//For GTK2 do this before filling the combobox otherwise error !!! if true this will trigger a change and set the combobox.sorted
@@ -1873,7 +2062,7 @@ begin
 
 
   apply_transformation:=apply_transformation1.checked;
-  stdev_valid:=(photometry_stdev>0.0001);
+  stdev_valid:=(photometry_stdev[1]>0.0001);
   if delimiter1.text=',' then vsep:=';' else vsep:=',';//valid seperator
 
 
@@ -1919,6 +2108,7 @@ begin
   if apply_transformation then
   begin
     transform_all_factors:=
+    '#Only the variable is transformed'+#13+#10+
     '#Tbv= ' + TbvSTR+#13+#10+
     '#Tb_bv= ' + Tb_bvSTR+#13+#10+
     '#Tv_bv= ' + Tv_bvSTR+#13+#10+
@@ -1960,7 +2150,7 @@ begin
            if  stdev_valid=false then
              str(err_by_snr:1:4,err){SNR method.Note SNR is in ADU but for snr above 20 error is small. For e-/adu<1 error becomes larger. Factor 2 is a practical factor}
            else
-             str(math.max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of Check  star. Use math.min in case the different passbands are used and magnitude chekc stars swings heavilly}
+             str(math.max(err_by_snr, photometry_stdev[get_filternr(c)]):1:4,err);{standard deviation of Check  star. Use math.min in case the different passbands are used and magnitude chekc stars swings heavilly}
 
            airmass:=SubItemDouble[c,P_airmass];
            if airmass>0 then  str(airmass:0:3,airmass_str) else airmass_str:='na' ;
@@ -1979,7 +2169,7 @@ begin
            begin
              if length(column_comps)=0 then exit;
 
-             invalid_comp:=process_comp_stars(c,apply_transformation,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
+             invalid_comp:=process_comp_stars(c,apply_transformation,ratio,sd_comp,comp_magn,B_V, V_R, warning);//Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
 
              comp_magn_info:=comp_magn_info+warning;
              if invalid_comp=0 then //valid comp star(s)
