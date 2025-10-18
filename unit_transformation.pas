@@ -508,9 +508,9 @@ begin
 //      if SRcount<>0 then begin SR:=SR/SRcount; SR_list[starnr]:=SR; end else SR_list[starnr]:=0;//simple mean
 //      if SIcount<>0 then begin SI:=SI/SIcount; SI_list[starnr]:=SI; end else SI_list[starnr]:=0;//simple mean
 
-        B_list_documented[starnr]:=retrieve_comp_magnitude(false,2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-        V_list_documented[starnr]:=retrieve_comp_magnitude(false,1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-        R_list_documented[starnr]:=retrieve_comp_magnitude(false,0,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        B_list_documented[starnr]:=retrieve_documented_magnitude(false,2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        V_list_documented[starnr]:=retrieve_documented_magnitude(false,1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        R_list_documented[starnr]:=retrieve_documented_magnitude(false,0,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
         abbreviation[starnr]:=auid;
 
         inc(starnr);

@@ -1069,7 +1069,7 @@ var
   exposureR, exposureG, exposureB,
   exposureR2, exposureG2, exposureB2,
   exposureRGB, exposureL: integer;
-  sum_exp, sum_temp, photometry_stdev : double;
+  sum_exp, sum_temp : double;
   referenceX, referenceY: double;{reference position used stacking}
   jd_mid: double;{julian day of mid head.exposure}
   jd_mid_reference :double; { julian day of mid head.exposure for reference image}
@@ -9770,7 +9770,7 @@ begin
             if add_doc then
             begin
               icon_nr:=stackmenu1.listview7.Items.item[row].SubitemImages[P_filter];{filter icon nr}
-              documented_comp_magn:=retrieve_comp_magnitude(false,icon_nr,column-1, abbrv);//  retrieve the documented magnitude at passband used from the abbrev_comp string
+              documented_comp_magn:=retrieve_documented_magnitude(false,icon_nr,column-1, abbrv);//  retrieve the documented magnitude at passband used from the abbrev_comp string
               doc_magn:=doc_magn+floattostrF(documented_comp_magn,FFfixed,0,3)+#9;
             end;
           end;
