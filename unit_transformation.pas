@@ -16,6 +16,8 @@ type
     cancel1: TButton;
     checkBox_auid1: TCheckBox;
     error_label2: TLabel;
+    error_label3: TLabel;
+    Label4: TLabel;
     save1: TButton;
     Label10: TLabel;
     Label11: TLabel;
@@ -26,6 +28,7 @@ type
     Label9: TLabel;
     Label5: TLabel;
     sigma_transformation1: TComboBox;
+    transformation_snr1: TComboBox;
     Tbv1: TEdit;
     Tb_bv1: TEdit;
     Tvr1: TEdit;
@@ -61,6 +64,7 @@ var
   Form_transformation1: TForm_transformation1;
 
   sigma_transformationSTR,
+  transformation_snrSTR,
   TbvSTR,
   Tb_bvSTR,
   TvrSTR,
@@ -83,8 +87,9 @@ var
   Tvr, Tvr_intercept, Tvr_sd, Tr_vr, Tr_vr_intercept, Tr_vr_sd, Tv_vr, Tv_vr_intercept, Tv_vr_sd : double;
   abbreviation,abbreviationB,abbreviationR : array of string;
 
+var
+  idx : integer; //which graph is shown
 const
-  idx : integer=0; //which graph is shown
   transf_filter_sigma :double=2; //to filter out outliers
   cancel : boolean=true;
 
@@ -117,7 +122,7 @@ const
         Result := Round(bspace + (h - bspace * 2) * (ymax - y) / (ymax - ymin));
       end;
 begin
-  if ((V_listB=nil) and (V_listB=nil)) then
+  if ((V_listB=nil) and (V_listR=nil)) then
   begin
 //    form_transformation1.error_label1.caption:='No comparison star data!. Select standard field.';
     exit;//no data
@@ -424,7 +429,7 @@ var
    col,row,Rcount, Vcount, Bcount, starnr,icon_nr,nr,j,counter,selected_rows    :integer;
    abrv,auid,julian_str,mess : string;
    iconB, iconV,iconR,vr_success,bv_success : boolean;
-   R,V,B, value            : double;
+   R,V,B, value,snr,snrmin            : double;
    V_list, V_list_documented: array of double;
 
 begin
@@ -457,10 +462,11 @@ begin
   iconV:=false;
   iconR:=false;
 
+  snrmin:=strtofloat2(form_transformation1.transformation_snr1.text);
+
   with stackmenu1.listview7 do
   begin
-
-  for col:=p_nr_norm to p_nr-1 do
+    for col:=p_nr_norm to p_nr-1 do
     if frac((col-p_nr_norm)/3)=0 then //not snr col
     begin
       abrv:=Columns[col+1].Caption;
@@ -484,7 +490,9 @@ begin
              if julian_str='' then
               julian_str:='Julian_Day;'+ Items.item[row].subitems.Strings[p_jd_mid];
              value:=strtofloat2(Items.item[row].subitems.Strings[col]);
-             if value<>0 then //measurement found
+             snr:=strtofloat2(Items.item[row].subitems.Strings[col+1]);
+
+             if ((snr>=snrmin) and (value<>0)) then //measurement found
              try
                icon_nr:=Items.item[row].SubitemImages[P_filter];
                case icon_nr of
@@ -597,6 +605,13 @@ begin
 
 
     //V & R
+    if ((iconR) and (pos('Local', stackmenu1.annotate_mode1.text)<> 0)) then
+    begin
+      form_transformation1.error_label3.caption:='Can not do R with local database! Switch to online STD field database.';
+    end
+    else
+      form_transformation1.error_label2.caption:='';
+
     if ((iconV) and  (iconR))then
     begin
       setlength(V_listR,length(V_list));
@@ -624,6 +639,7 @@ begin
       begin
         beep;
         mess:=mess+'Abort, not enough V and R stars found!';
+
         vr_success:=false;
       end
       else
@@ -665,12 +681,18 @@ begin
       mess:=mess+' Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR.'+#13+#10+'Correct header values with with popup menu if required.';
       form_transformation1.error_label1.caption:=mess;
       memo2_message('Transformation failure. '+mess);
-    end
+    end;
+
+    if bv_success then
+      idx:=0 //show bv graph
     else
+      idx:=3;//show vr graph if available
+
+    if ((bv_success) or (vr_success)) then
     begin
       form_transformation1.error_label1.caption:='';
       memo2_message('Transformation ready');
-      Form_transformation1.FormResize(nil); //plot  graph
+      plot_transformation_graph;
     end;
 
   end;
@@ -680,6 +702,7 @@ end;
 procedure TForm_transformation1.FormShow(Sender: TObject);
 begin
   sigma_transformation1.text:=sigma_transformationSTR;
+  transformation_snr1.text:=transformation_snrSTR;
   Tbv1.text:=TbvSTR;
   Tb_bv1.text:=Tb_bvSTR;
   Tv_bv1.text:=Tv_bvSTR;
@@ -771,6 +794,7 @@ begin
   if cancel then
     exit;
   sigma_transformationSTR:=sigma_transformation1.text;
+  transformation_snrSTR:=transformation_snr1.text;
   TbvSTR:=Tbv1.text;
   Tb_bvSTR:=Tb_bv1.text;
   Tv_bvSTR:=Tv_bv1.text;

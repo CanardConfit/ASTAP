@@ -10,7 +10,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
-  clipbrd, ExtCtrls, Menus, Buttons, CheckLst, strutils,comctrls,
+  clipbrd, ExtCtrls, Menus, Buttons, CheckLst, strutils,comctrls, PairSplitter,
   astap_main;
 
 type
@@ -18,42 +18,47 @@ type
   { Tform_aavso1 }
 
   Tform_aavso1 = class(TForm)
-    abrv_check1: TComboBox;
     abbrv_variable1: TCheckListBox;
-    baa_style1: TCheckBox;
+    abrv_check1: TComboBox;
     abrv_comp1: TCheckListBox;
     apply_transformation1: TCheckBox;
+    baa_style1: TCheckBox;
+    comparisonstars_label1: TLabel;
+    delimiter1: TComboBox;
+    ensemble_database1: TCheckBox;
+    hjd1: TCheckBox;
+    Image_photometry1: TImage;
+    Label1: TLabel;
+    Label4: TLabel;
+    Label7: TLabel;
+    Memo1: TMemo;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
+    obscode1: TEdit;
+    obstype1: TComboBox;
+    PairSplitter1: TPairSplitter;
+    PairSplitterSide1: TPairSplitterSide;
+    PairSplitterSide2: TPairSplitterSide;
+    Panel_top_menu1: TPanel;
     PopupMenu_comp1: TPopupMenu;
+    report_error1: TLabel;
+    report_to_clipboard1: TButton;
+    report_to_file1: TButton;
     selectall1: TMenuItem;
     deselectall1: TMenuItem;
     PopupMenu_variables1: TPopupMenu;
     Separator1: TMenuItem;
-    sigma_check2: TLabel;
-    sigma_check3: TLabel;
-    test_button1: TButton;
-    sigma_mzero1: TLabel;
-    ensemble_database1: TCheckBox;
-    obstype1: TComboBox;
-    Label7: TLabel;
-    sigma_check1: TLabel;
-    sort_alphabetically1: TCheckBox;
-    hjd1: TCheckBox;
-    Image_photometry1: TImage;
     name_variable2: TEdit;
-    report_error1: TLabel;
     MenuItem1: TMenuItem;
     PopupMenu1: TPopupMenu;
-    report_to_clipboard1: TButton;
-    report_to_file1: TButton;
-    delimiter1: TComboBox;
-    Label4: TLabel;
-    comparisonstars_label1: TLabel;
-    variables1: TLabel;
-    obscode1: TEdit;
-    Label1: TLabel;
     SaveDialog1: TSaveDialog;
+    sigma_check1: TLabel;
+    sigma_check2: TLabel;
+    sigma_check3: TLabel;
+    sigma_mzero1: TLabel;
+    sort_alphabetically1: TCheckBox;
+    test_button1: TButton;
+    variables1: TLabel;
     procedure abbrv_variable1Click(Sender: TObject);
     procedure abbrv_variable1ClickCheck(Sender: TObject);
     procedure abrv_comp1Change(Sender: TObject);
@@ -487,117 +492,7 @@ begin
 end;
 
 
-
-function  process_comp_stars(c : integer; calc_colour_index : boolean; out ratio_average: double; out standard_deviation, documented_comp_magn,B_V, V_R : double; out  warning : string): integer;// Get flux ratio for ensemble. Documented_comp_magn is only used for single comp star.
-var
-   i,count,icon_nr, B_Vcounter,V_Rcounter  : integer;
-   abbrv_c                                 : string;
-   comp_magn, flux_documented,flux,sum_all_fluxes,magR,magV, magB,snr,sum_all_snr : double;
-   ratios,fluxes                                  : array of double;
-begin
-  warning:='';
-  sum_all_fluxes:=0;
-  sum_all_snr:=0;
-  ratio_average:=0;
-  count:=0;
-  setlength(ratios,length(column_comps));
-  setlength(fluxes,length(column_comps));
-  B_V:=0;
-  V_R:=0;
-  B_Vcounter:=0;
-  V_Rcounter:=0;
-
-  with form_aavso1 do
-  for i:=0 to high(column_comps) do //go through the list of comps stars
-  begin
-    abbrv_c:=ColumnTitles[column_comps[i]+1];
-
-    comp_magn:=SubItemDouble[c,column_comps[i]];
-    if comp_magn>0 then //valid conversion string to float. Magnitude could be marked saturated only. SNR and flux are still measured if star is saturated.
-    begin
-    //  icon_nr:=stackmenu1.listview7.Items.item[c].SubitemImages[P_filter];{filter icon nr}
-      icon_nr:=SubItemImages[c];
-      documented_comp_magn:=retrieve_documented_magnitude(true,icon_nr,column_comps[i], abbrv_c);//  retrieve the documented magnitude at passband used from the abbrev_comp string
-      if documented_comp_magn<=0 then
-      begin //COMP magnitude unknown. Most likely '?'
-        warning:=warning+'Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloan filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
-      end
-      else
-      begin //COMP magnitude known
-        flux_documented:=power(10,(21-documented_comp_magn)/2.5);//21 is a bias
-        flux:=SubItemDouble[c,column_comps[i]+2];
-        if flux>0 then
-        begin
-          snr:=SubItemDouble[c,column_comps[i]+1];
-          if snr>0 then
-          begin
-              //Now calulate ratio*flux and sum it
-            ratio_average:=ratio_average + snr*flux_documented/flux; //use snr as weight factor
-            ratios[count]:=flux_documented/flux;//for standard deviation calculation
-            fluxes[count]:=flux_documented;//for standard deviation calculation
-
-            sum_all_fluxes:=sum_all_fluxes+flux_documented;
-            sum_all_snr:=sum_all_snr + snr;
-            inc(count);
-
-            if calc_colour_index then
-            begin
-              magR:=retrieve_documented_magnitude(true,0,column_comps[i], abbrv_c);
-              magV:=retrieve_documented_magnitude(true,1,column_comps[i], abbrv_c);
-              magB:=retrieve_documented_magnitude(true,2,column_comps[i], abbrv_c);
-              if ((magB<>0) and (magV<>0)) then
-              begin
-                B_V:=B_V+snr*(magB-magV);
-                inc(B_Vcounter);
-              end;
-              if ((magV<>0) and (magR<>0)) then
-              begin
-                V_R:=V_R+snr*(magV-magR);
-                inc(V_Rcounter);
-              end;
-            end;
-          end;//valid snr
-
-        end;//valid flux
-      end;
-    end
-    else
-    warning:=warning+'Ignored invalid '+copy(abbrv_c,1,11)+'. ';
-  end;//for loop
-  if sum_all_fluxes<>0 then
-  begin
-    ratio_average:=ratio_average/sum_all_snr; // So the mean of all comp stars.  Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/ln(10)
-    result:=0;
-
-    if calc_colour_index then
-    begin
-      if B_Vcounter>0 then B_V:=B_V/sum_all_snr else B_V:=-99;//average value of all comp stars
-      if V_Rcounter>0 then V_R:=V_R/sum_all_snr else V_R:=-99;;//average value of all comp stars
-    end;
-
-    //now calculate the standard deviation. So the weighted difference between the COMP stars in one image
-    //Standard deviation so noise has to combine the uncertainties quadratically. The reason that a star ensemble has a lower standard deviation then a single comparison star is that
-    //the signal is averaged. So the total noise of an ensemble of four equal star would be
-    //σ_total= ( (0.25σ)^2 + (0.25σ)^2+ (0.25σ)^2+ (0.25^σ)^2 )^0.5  equals  σ/2.
-    //This doesn't happen when you use the ensemble mzero value for measuring the check star.
-    //For a standard deviation so noise calculation either subtraction or addition you have to combine the uncertainties quadratically.
-    //The standard deviation of the check measurement result is higher and equal to σ_total= (σ_check^2 + σ_ensemble^2)^0.5
-
-    standard_deviation:=0;
-    for i:=0 to count-1 do
-       standard_deviation:=standard_deviation+ sqr((fluxes[i]/sum_all_fluxes)*(ratio_average-ratios[i]));//fluxes[i] is the weight factor base on flux
-
-    standard_deviation:=2.5/ln(10)*sqrt(standard_deviation);
-  end
-  else
-  begin
-    ratio_average:=999;
-    result:=-99;
-  end;
-end;
-
-
-procedure  process_comp_stars2; //(c : integer; calc_colour_index : boolean; documented_comp_magn : double; out  warning : string): integer;// Get flux ratio for ensemble. Documented_comp_magn is only used for single comp star.
+procedure  process_comp_stars2; // Get colour and flux ratio for comp ensemble.
 var
    i,count,icon_nr, B_Vcounter,V_Rcounter,c  : integer;
    abbrv_c                                   : string;
@@ -774,7 +669,7 @@ begin
   if count>0 then
   begin
     if length(column_comps)=1 then
-      form_aavso1.sigma_mzero1.caption:='Single comparison star.'
+      form_aavso1.sigma_mzero1.caption:=mess + ', single comparison star.'
     else
       form_aavso1.sigma_mzero1.caption:=mess+' σ='+floattostrF(mean_sd_comp/count,FFfixed,0,4)+', weighted between '+inttostr(length(column_comps))+' ensemble stars.'  //  Weighted noise between the comp star(s)
   end
@@ -874,11 +769,141 @@ begin
 end;
 
 
+procedure get_b_v_var(columnr : integer; out b_v_var, v_r_var : double; out bv_pairs,vr_pairs : integer);//calculate the b-v of the variable
+var
+  fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,sd_comp,
+  exposuretime,exposuretime2,end_dateB,begin_dateB,end_dateV,begin_dateV,end_dateR,begin_dateR,diff,diffA,diffB    : double;
+  warning : string;
+  i, j    : Integer;
+begin
+  with form_aavso1 do
+  begin
+    //Find B and V image with closest Julian day
+
+
+    b_v_var:=0;
+    bv_pairs:=0;
+    v_r_var:=0;
+    vr_pairs:=0;
+
+    // Brute-force search: compare every green with every blue julian day
+    for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
+    if RowChecked[i] then
+    begin
+      if  SubItemImages[i]=1 then //V filter
+      begin
+        exposuretime:=SubItemDouble[i,P_exposure];
+        begin_dateV:=SubItemDouble[i,P_jd_mid] -  exposuretime/(2 *24 * 3600); //in julian days
+        end_dateV:=SubItemDouble[i,P_jd_mid] +  exposuretime/(2 *24 * 3600); //in julian days
+        for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
+        if RowChecked[j] then
+        begin
+          if  SubItemImages[j]=2 then //blue
+           begin
+             exposuretime2:=SubItemDouble[j,P_exposure];
+             begin_dateB:=SubItemDouble[j,P_jd_mid] - exposuretime2/(2*24*3600); //begin date in julian days
+             end_dateB:=SubItemDouble[j,P_jd_mid] + exposuretime2/(2*24*3600); //begin date in julian days
+
+             DiffA := abs(begin_dateV-end_dateB)*24*3600; //difference in seconds, B before V
+             DiffB := abs(begin_dateB-end_dateV)*24*3600; //difference in seconds, V before B
+             diff:=min(diffA,diffB);
+
+             if abs(Diff)< max(15{filter change time}, 0.99*min(exposuretime,exposuretime2)) then
+             begin
+               fluxB:=SubItemDouble[j,columnr+2];
+               fluxV:=SubItemDouble[i,columnr+2];
+
+               if ((fluxB>0) and (fluxV>0) and
+                   (comps_info[j].valid) and //get ratioB from comp stars
+                   (comps_info[i].valid)) then //get ratioV from comp stars
+
+               begin
+                 varmag_B:=21- ln(comps_info[j].ratio*fluxB)*2.5/ln(10); //convert var flux to magnitude using
+                 varmag_V:=21- ln(comps_info[i].ratio*fluxV)*2.5/ln(10); //convert var flux to magnitude using
+                 b_v_var:=b_v_var + varmag_B-varmag_V;
+                 inc(bv_pairs,1);
+                 //memo2_message('Used b-v pair '+inttostr(i)+','+inttostr(j));
+                 break;//go to next i
+               end;
+             end;
+           end;//checked
+         end;
+       end;
+     end;
+
+    //Find V and R image with closest Julian day
+    i := -1;
+    j := -1;
+
+    // Brute-force search: compare every V/green with every red
+    for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
+    if RowChecked[i] then
+    begin
+      if SubItemImages[i]=1 then //V filter
+      begin
+        exposuretime:=SubItemDouble[i,P_exposure];
+        begin_dateV:=SubItemDouble[i,P_jd_mid] -  exposuretime/(2 *24 * 3600); //in julian days
+        end_dateV:=SubItemDouble[i,P_jd_mid] +  exposuretime/(2 *24 * 3600); //in julian days
+
+        for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
+        if RowChecked[j] then
+        begin
+          if SubItemImages[j] in [0,24] then //red
+          begin
+            exposuretime2:=SubItemDouble[j,P_exposure];
+            begin_dateR:=SubItemDouble[j,P_jd_mid] - exposuretime2/(2*24*3600); //begin date in julian days
+            end_dateR:=SubItemDouble[j,P_jd_mid] + exposuretime2/(2*24*3600); //end date in julian days
+
+            diffA:=abs(begin_dateV-end_dateR)*24*3600; //difference in seconds, R before V
+            diffB:=abs(begin_dateR-end_dateV)*24*3600; //difference in seconds, V before R
+            diff:=min(diffA,diffB);
+            //memo2_message('v '+ inttostr(i)+'  r'+inttostr(j)+' '+ floattostr(diff));
+            if abs(Diff)< 0.99*min(exposuretime,exposuretime2) then
+            if abs(Diff)< max(15{filter change time}, 0.99*min(exposuretime,exposuretime2)) then
+            begin
+              fluxR:=SubItemDouble[j,columnr+2];
+              fluxV:=SubItemDouble[i,columnr+2];
+
+              if ((fluxV>0) and (fluxR>0) and
+                  (comps_info[i].valid) and //get ratioV from comp stars
+                  (comps_info[j].valid)) then //get ratioR from comp stars
+              begin
+                varmag_V:=21- ln(comps_info[i].ratio*fluxV)*2.5/ln(10); //convert var flux to magnitude using
+                varmag_R:=21- ln(comps_info[j].ratio*fluxR)*2.5/ln(10); //convert var flux to magnitude using
+                v_r_var:=v_r_var+varmag_V-varmag_R;
+                inc(vr_pairs,1);
+                break //go to next i
+              end;
+            end;
+          end;//checked
+        end;
+      end;
+    end;
+
+    //calculate average
+    if bv_pairs>0 then
+    begin
+      b_v_var:=b_v_var/bv_pairs;
+    end
+    else
+      b_v_var:=99;
+    if vr_pairs>0 then
+    begin
+      v_r_var:=v_r_var/vr_pairs;
+    end
+    else
+      v_r_var:=99;
+
+  end;//form_aavso1
+end;
+
+
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,countV,countB, countR,k,invalid_comp,icon_nr,i,j,vars_end,x,y,index,fc,countdelta : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,countV,countB, countR,k,invalid_comp,icon_nr,i,j,vars_end,x,y,index,fc,countdelta,
+  bv_pairs,vr_pairs                                                                                                                                   : integer;
   scale,range, mean,dummy,flux,magn_gaia,check_doc_magb,check_doc_magR, check_doc_magV,Bcorrection,Vcorrection,Rcorrection,
-  compmeanB,compmeanV,compmeanR,B_V_sum,V_R_sum,B_V,V_R                                                                                               : double;
+  checkmeanB,checkmeanV,checkmeanR,B_V_sum,V_R_sum,B_V,V_R,b_v_check, v_r_check                                                                       : double;
   text1,text2, date_format, abbrv_var,Bcorrectionstr,Vcorrectionstr,Rcorrectionstr : string;
   bmp: TBitmap;
   data : array of array of double;
@@ -1114,7 +1139,6 @@ begin
     begin
       if RowChecked[c] then
       begin
-//        invalid_comp:=process_comp_stars(c,true,ratio,sd_comp,comp_magn,B_V, V_R,warning);//Get ratio. Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
         if comps_info[c].valid then//valid comp star(s)
         begin
           dummy:=SubItemDouble[c,date_column];{date column}
@@ -1199,48 +1223,78 @@ begin
 
   if countB>0 then
   begin
-    calc_sd_and_mean(listcheckB, countB{counter},{var}photometry_stdev[2], compmeanB);// calculate sd and mean of an array of doubles}
+    calc_sd_and_mean(listcheckB, countB{counter},{var}photometry_stdev[2], checkmeanB);// calculate sd and mean of an array of doubles}
     check_doc_magb:=retrieve_documented_magnitude(true,2,column_check, ColumnTitles[column_check+1]);
   end;
   if countV>0 then
   begin
-    calc_sd_and_mean(listcheckV, countV{counter},{var}photometry_stdev[1], compmeanV);// calculate sd and mean of an array of doubles}
+    calc_sd_and_mean(listcheckV, countV{counter},{var}photometry_stdev[1], checkmeanV);// calculate sd and mean of an array of doubles}
     check_doc_magV:=retrieve_documented_magnitude(true,1,column_check, ColumnTitles[column_check+1]);
   end;
   if countR>0 then
   begin
-    calc_sd_and_mean(listcheckR, countR{counter},{var}photometry_stdev[0], compmeanR);// calculate sd and mean of an array of doubles}
+    calc_sd_and_mean(listcheckR, countR{counter},{var}photometry_stdev[0], checkmeanR);// calculate sd and mean of an array of doubles}
     check_doc_magR:=retrieve_documented_magnitude(true,0,column_check, ColumnTitles[column_check+1]);
   end;
 
-  if ((countB>0) and (countV>0) and (countdelta>0)) then
+
+  Bcorrectionstr:='';
+  Vcorrectionstr:='';
+  Rcorrectionstr:='';
+
+  if countdelta>0 then //Comp stars. B_V and V_R are known
   begin
-    Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * ((compmeanB-compmeanV) - B_V{comp});
-    Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) * ((compmeanB-compmeanV) - B_V{comp});
-    Bcorrectionstr:=', transformed b-B='+floattostrF(compmeanB-check_doc_magb+Bcorrection,ffFixed,0,3);
-    Vcorrectionstr:=', transformed v-V='+floattostrF(compmeanV-check_doc_magV+Vcorrection,ffFixed,0,3);
+    if column_check>0 then
+    begin
+       get_b_v_var(column_check,{out} b_v_check, v_r_check, bv_pairs,vr_pairs);//calculate the b-v of the check star
+
+       if b_v_check<99 then
+       begin
+         Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (b_v_check - B_V{comp});
+         Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) * (b_v_check - B_V{comp});
+         Bcorrectionstr:=', transformed b-B='+floattostrF(checkmeanB-check_doc_magb+Bcorrection,ffFixed,0,3);
+         Vcorrectionstr:=', transformed v-V='+floattostrF(checkmeanV-check_doc_magV+Vcorrection,ffFixed,0,3);
+       end
+       else
+       if bv_pairs=0 then Bcorrectionstr:=', no bv pairs';
+
+
+
+       if v_r_check<99 then
+       begin
+         Vcorrection:= strtofloat2(Tv_vrSTR) * strtofloat2(TvrSTR) * (v_r_check - V_R{comp});
+         Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (v_r_check - V_R{comp});
+         Vcorrectionstr:=', transformed v-V='+floattostrF(checkmeanV-check_doc_magV+Vcorrection,ffFixed,0,3);
+         Rcorrectionstr:=', transformed r-R='+floattostrF(checkmeanR-check_doc_magR+Rcorrection,ffFixed,0,3);
+       end
+       else
+       if vr_pairs=0 then Rcorrectionstr:=', no vr pairs';
+    end;
+
   end
   else
   begin
     Bcorrectionstr:='';
     Vcorrectionstr:='';
+    Rcorrectionstr:='';
   end;
 
+
   if countB>0 then
-    form_aavso1.sigma_check1.caption:='Check b-B='+floattostrF(compmeanB-check_doc_magB,ffFixed,0,3)+Bcorrectionstr+', σ='+floattostrF(photometry_stdev[2],ffFixed,0,3)//report offsets
+    form_aavso1.sigma_check1.caption:='Check b-B='+floattostrF(checkmeanB-check_doc_magB,ffFixed,0,3)+Bcorrectionstr+', σ='+floattostrF(photometry_stdev[2],ffFixed,0,3)//report offsets
   else
-    form_aavso1.sigma_check1.caption:='';
+    form_aavso1.sigma_check1.caption:='No valid b';
 
 
   if countV>0 then
-    form_aavso1.sigma_check2.caption:='Check v-V='+floattostrF(compmeanV-check_doc_magV,ffFixed,0,3)+Vcorrectionstr+', σ='+floattostrF(photometry_stdev[1],ffFixed,0,3) //report offsets
+    form_aavso1.sigma_check2.caption:='Check v-V='+floattostrF(checkmeanV-check_doc_magV,ffFixed,0,3)+Vcorrectionstr+', σ='+floattostrF(photometry_stdev[1],ffFixed,0,3) //report offsets
   else
-    form_aavso1.sigma_check2.caption:='';
+    form_aavso1.sigma_check2.caption:='No valid v';
 
   if countR>0 then
-    form_aavso1.sigma_check3.caption:='Check r-R='+floattostrF(compmeanR-check_doc_magR,ffFixed,0,3)+Rcorrectionstr+', σ='+floattostrF(photometry_stdev[0],ffFixed,0,3)//report offsets
+    form_aavso1.sigma_check3.caption:='Check r-R='+floattostrF(checkmeanR-check_doc_magR,ffFixed,0,3)+Rcorrectionstr+', σ='+floattostrF(photometry_stdev[0],ffFixed,0,3)//report offsets
   else
-    form_aavso1.sigma_check3.caption:='';
+    form_aavso1.sigma_check3.caption:='No valid r';
 
 
 
@@ -1450,125 +1504,6 @@ begin
   end;
   data:=nil;
 end;
-
-
-procedure get_b_v_var(m : integer; out b_v_var, v_r_var : double; out bv_pairs,vr_pairs : integer);//calculate the b-v of the variable
-var
-  fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,sd_comp,
-  comp_magn,B_V, V_R, ratioV,ratioB,ratioR,exposuretime,exposuretime2,end_date,begin_date    : double;
-  warning : string;
-  i, j    : Integer;
-  Diff   : Double;
-begin
-  with form_aavso1 do
-  begin
-    //Find B and V image with closest Julian day
-
-
-    b_v_var:=0;
-    bv_pairs:=0;
-    v_r_var:=0;
-    vr_pairs:=0;
-
-    // Brute-force search: compare every green with every blue julian day
-    for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
-    if RowChecked[i] then
-    begin
-      if  SubItemImages[i]=1 then //V filter
-      begin
-        exposuretime:=SubItemDouble[i,P_exposure];
-        end_date:=SubItemDouble[i,P_jd_mid] +  exposuretime/(2 *24 * 3600); //in julian days
-        for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
-        if RowChecked[j] then
-        begin
-          if  SubItemImages[j]=2 then //blue
-           begin
-             exposuretime2:=SubItemDouble[j,P_exposure];
-             begin_date:=SubItemDouble[j,P_jd_mid] - exposuretime2/(2*24*3600); //begin date in julian days
-
-             Diff := (begin_date-end_date)*24*3600; //difference in seconds
-             if abs(Diff)< 0.9*max(exposuretime,exposuretime2) then
-             begin
-               fluxB:=SubItemDouble[j,column_vars[m]+2];
-               fluxV:=SubItemDouble[i,column_vars[m]+2];
-
-               if ((fluxB>0) and (fluxV>0) and
-                   (process_comp_stars(j,false,ratioB,sd_comp,comp_magn,B_V, V_R,warning)=0) and //get ratio from comp stars
-                   (process_comp_stars(i,false,ratioV,sd_comp,comp_magn,B_V, V_R,warning)=0)) then //get ratio from comp stars
-               begin
-                 varmag_B:=21- ln(ratioB*fluxB)*2.5/ln(10); //convert var flux to magnitude using
-                 varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
-                 b_v_var:=b_v_var + varmag_B-varmag_V;
-                 inc(bv_pairs,1);
-                 //memo2_message('Used b-v pair '+inttostr(i)+','+inttostr(j));
-                 break;//go to next i
-               end;
-             end;
-           end;//checked
-         end;
-       end;
-     end;
-
-    //Find V and R image with closest Julian day
-    i := -1;
-    j := -1;
-
-    // Brute-force search: compare every green with every red
-    for i:=0 to length(RowChecked)-1 do {retrieve data from listview}
-    if RowChecked[i] then
-    begin
-      if SubItemImages[i]=1 then //V filter
-      begin
-        exposuretime:=SubItemDouble[i,P_exposure];
-        end_date:=SubItemDouble[i,P_jd_mid] +  exposuretime/(2 *24 * 3600); //in julian days
-
-        for j:=0 to length(RowChecked)-1 do {retrieve data from listview}
-        if RowChecked[j] then
-        begin
-          if SubItemImages[j] in [0,24] then //red
-          begin
-            exposuretime2:=SubItemDouble[j,P_exposure];
-            begin_date:=SubItemDouble[j,P_jd_mid] - exposuretime2/(2*24*3600); //begin date in julian days
-
-            Diff := (begin_date-end_date)*24*3600; //difference in seconds
-            if abs(Diff)< 0.9*max(exposuretime,exposuretime2) then
-            begin
-              fluxR:=SubItemDouble[j,column_vars[m]+2];
-              fluxV:=SubItemDouble[i,column_vars[m]+2];
-
-              if ((fluxV>0) and (fluxR>0) and
-                  (process_comp_stars(i,false,ratioV,sd_comp,comp_magn,B_V, V_R, warning)=0) and //get ratio from comp stars
-                  (process_comp_stars(j,false,ratioR,sd_comp,comp_magn,B_V, V_R, warning)=0)) then //get ratio from comp stars
-              begin
-                varmag_V:=21- ln(ratioV*fluxV)*2.5/ln(10); //convert var flux to magnitude using
-                varmag_R:=21- ln(ratioR*fluxR)*2.5/ln(10); //convert var flux to magnitude using
-                v_r_var:=v_r_var+varmag_V-varmag_R;
-                inc(vr_pairs,1);
-                break //go to next i
-              end;
-            end;
-          end;//checked
-        end;
-      end;
-    end;
-
-    //calculate average
-    if bv_pairs>0 then
-    begin
-      b_v_var:=b_v_var/bv_pairs;
-    end
-    else
-      b_v_var:=99;
-    if vr_pairs>0 then
-    begin
-      v_r_var:=v_r_var/vr_pairs;
-    end
-    else
-      v_r_var:=99;
-
-  end;//form_aavso1
-end;
-
 
 
 procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -1901,6 +1836,7 @@ begin
   // Subitem information (2D arrays: [row][column])
   SubItemDouble:=nil;  // Converted double values
   SubItemImages:=nil;// Only for the filtered column (1D array per row)
+
 end;
 
 
@@ -1970,7 +1906,7 @@ begin
   obstype1.ItemIndex:=obstype;
   aavso_report:='';
 
-  form_aavso1.height:=report_to_clipboard1.top+report_to_clipboard1.height+5;//autosize in height. note form_aavso1.autosize:=true doesn't work welll for the timage
+ // form_aavso1.height:=report_to_clipboard1.top+report_to_clipboard1.height+5;//autosize in height. note form_aavso1.autosize:=true doesn't work welll for the timage
 
   if p_nr=p_nr_norm then
   begin
@@ -2169,19 +2105,17 @@ begin
            begin
              if length(column_comps)=0 then exit;
 
-             invalid_comp:=process_comp_stars(c,apply_transformation,ratio,sd_comp,comp_magn,B_V, V_R, warning);//Magnitude_measured:= 21- ln(ratio*flux_measured)*2.5/log(10)
-
-             comp_magn_info:=comp_magn_info+warning;
-             if invalid_comp=0 then //valid comp star(s)
+             comp_magn_info:=comp_magn_info+comps_info[c].warning;
+             if comps_info[c].valid then //valid comp star(s)
              begin
                    var_flux:=SubItemDouble[c,column_vars[m_index]+2];
 
                    if var_flux>0 then //valid conversion string to float
-                     var_magn:= 21- ln(ratio*var_flux)*2.5/ln(10)
+                     var_magn:= 21- ln(comps_info[c].ratio*var_flux)*2.5/ln(10)
                    else
                      var_magn:=99;
 
-                   get_b_v_var(m_index,{out} b_v_var, v_r_var, bv_pairs,vr_pairs);//calculate the b-v of the variable
+                   get_b_v_var(column_vars[m_index],{out} b_v_var, v_r_var, bv_pairs,vr_pairs);//calculate the b-v of the variable
 
 
                    transformation:='';
@@ -2194,13 +2128,13 @@ begin
                      icon_nr:=SubItemImages[c];
                      if icon_nr=2 then //B correction
                      begin
-                       if B_V<>-99 then
+                       if comps_info[c].B_V<>-99 then
                        begin
                          if b_v_var<>99 then
                          begin
-                         var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (b_v_var - B_V{comp});
+                         var_Bcorrection:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (b_v_var - comps_info[c].B_V{comp});
                          var_magn:=var_magn+var_Bcorrection;
-                         transformation:='Transf corr. '+floattostr3(var_Bcorrection)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'). Averaged '+inttostr(bv_pairs)+ ' b-v pairs. Filter used '+filter_used+'.';
+                         transformation:='Transf corr. '+floattostr3(var_Bcorrection)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(comps_info[c].B_V)+'). Averaged '+inttostr(bv_pairs)+ ' b-v pairs. Filter used '+filter_used+'.';
                          filter_used:='B';//change TB to B
                          end
                          else
@@ -2218,13 +2152,13 @@ begin
                      else
                      if icon_nr=1 then//V correction
                      begin
-                       if  B_V<>-99 then
+                       if comps_info[c].B_V<>-99 then
                        begin
                          if b_v_var<>99 then
                          begin
-                         var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) *( b_v_var{var} - B_V{comp});
+                         var_Vcorrection:= strtofloat2(Tv_bvSTR) * strtofloat2(TbvSTR) *( b_v_var{var} - comps_info[c].B_V{comp});
                          var_magn:=var_magn+var_Vcorrection;
-                         transformation:='Transf corr. '+floattostr3(var_Vcorrection)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(B_V)+'). Averaged '+inttostr(bv_pairs)+ ' b-v pairs. Filter used '+filter_used+'.';
+                         transformation:='Transf corr. '+floattostr3(var_Vcorrection)+'='+Tv_bvSTR+'*'+TbvSTR+'*('+floattostr3(b_v_var)+'-'+floattostr3(comps_info[c].B_V)+'). Averaged '+inttostr(bv_pairs)+ ' b-v pairs. Filter used '+filter_used+'.';
                          filter_used:='V';//change TG to V
                          end
                          else
@@ -2242,7 +2176,7 @@ begin
                      else
                      if ((icon_nr=0) or (icon_nr=24)) then//R correction
                      begin
-                       if V_R<>-99 then
+                       if comps_info[c].V_R<>-99 then
                        begin
                          if v_r_var<>99 then
                          begin
@@ -2271,7 +2205,7 @@ begin
 
                    if check_flux>0 then //valid conversion string to float
                    begin
-                     check_magn:=21- ln(ratio*check_flux)*2.5/ln(10);
+                     check_magn:=21- ln(comps_info[c].ratio*check_flux)*2.5/ln(10);
                      str(check_magn:0:3,check_magn_str);
                    end
                    else
@@ -2289,7 +2223,7 @@ begin
                    else
                    begin
                      abbrv_comp_clean_report:=clean_abbreviation(ColumnTitles[column_comps[i]+1],true);//single comp star
-                     comp_magn_str:=floattostr3(comp_magn);//from process_comp_stars
+                     comp_magn_str:=floattostr3(comps_info[c].documented_comp_magn);//from process_comp_stars
                    end;
 
              end ;//valid comp_str
@@ -2344,7 +2278,7 @@ begin
   to_clipboard:=(sender=report_to_clipboard1); {report to clipboard of file}
 
 
-  memo2_message(aavso_report);
+  memo1.text:=aavso_report;
   if to_clipboard then
     Clipboard.AsText:=#13+#10+aavso_report
   else
@@ -2370,8 +2304,8 @@ begin
   end;
   save_settings2; {for aavso settings}
 
-  form_aavso1.close;   {transfer variables. Normally this form is not loaded}
-  mainform1.setfocus;
+//  form_aavso1.close;   {transfer variables. Normally this form is not loaded}
+//  mainform1.setfocus;
 end;
 
 

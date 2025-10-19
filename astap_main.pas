@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.10.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.10.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -8662,6 +8662,7 @@ begin
 
 
       sigma_transformationSTR:=Sett.ReadString('transf','sigma_tr','2'); {transformation}
+      transformation_snrSTR:=Sett.ReadString('transf','snr_tr','70'); {transformation}
       TbvSTR:=Sett.ReadString('transf','Tbv','1'); {transformation}
       Tb_bvSTR:=Sett.ReadString('transf','Tb_bv','0'); {transformation}
       Tv_bvSTR:=Sett.ReadString('transf','Tv_bv','0'); {transformation}
@@ -9074,6 +9075,8 @@ begin
      sett.writeInteger('insp','insp_grad',inspector_gradations);
 
      sett.writestring('transf','sigma_tr',sigma_transformationSTR);
+     sett.writestring('transf','snr_tr',transformation_snrSTR);
+
      sett.writestring('transf','Tbv',TbvSTR);
      sett.writestring('transf','Tb_bv',Tb_bvSTR);
      sett.writestring('transf','Tv_bv',Tv_bvSTR);
