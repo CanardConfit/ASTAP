@@ -1584,6 +1584,7 @@ begin
 
     abrv_comp1.clear;
     abrv_check1.clear;
+    abbrv_variable1.clear;
     color:=cldefault;
 
 
@@ -1627,9 +1628,7 @@ begin
         end
         else  //not all images analysed for SD
            abbrv_variable1.items.add(starinfoV[i].str+ ' Bad!');
-
     end;
-
 
     if count>0 then //sort comparison stars
     begin
@@ -2277,8 +2276,11 @@ begin
 
   to_clipboard:=(sender=report_to_clipboard1); {report to clipboard of file}
 
+  memo1.lines.text:=aavso_report;
+  memo1.SelStart:=Length(aavso_report);
+  memo1.SelLength:=0;
+  application.processmessages;
 
-  memo1.text:=aavso_report;
   if to_clipboard then
     Clipboard.AsText:=#13+#10+aavso_report
   else

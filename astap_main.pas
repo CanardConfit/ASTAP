@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.10.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.10.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -8579,14 +8579,20 @@ begin
       dum:=Sett.ReadString('stack','star_level_colouring',''); if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','filter_artificial_colouring',''); if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','resize_factor',''); if dum<>'' then stackmenu1.resize_factor1.text:=dum;
-      dum:=Sett.ReadString('stack','nr_stars_p',''); if dum<>'' then stackmenu1.nr_stars_to_detect1.text:=dum;
+      dum:=Sett.ReadString('stack','snr_min_',''); if dum<>'' then stackmenu1.snr_min_photo1.text:=dum;
       dum:=Sett.ReadString('stack','flux_aperture',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
       dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
 
       c:=Sett.ReadInteger('stack','annotate_m',0); stackmenu1.annotate_mode1.itemindex:=c;
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
-      c:=Sett.ReadInteger('stack','measure_all',0); stackmenu1.measuring_method1.itemindex:=c;
+
+          c:=Sett.ReadInteger('stack','measure_all',-1);                //delete 2025-12
+          if c>=0 then stackmenu1.measuring_method1.itemindex:=min(c,1) //old value    delete 2025-12
+          else                                                          //delete 2025-12
+      begin
+      c:=Sett.ReadInteger('stack','measure_mode',0); stackmenu1.measuring_method1.itemindex:=c;
+      end;
       stackmenu1.ignore_saturation1.checked:= Sett.ReadBool('stack','ign_saturation',true);//photometry tab
       dum:=Sett.ReadString('stack','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
 
@@ -8998,7 +9004,7 @@ begin
 
       sett.writestring('stack','resize_factor',stackmenu1.resize_factor1.text);
 
-      sett.writestring('stack','nr_stars_p',stackmenu1.nr_stars_to_detect1.text);
+      sett.writestring('stack','snr_min_p',stackmenu1.snr_min_photo1.text);
       sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
       sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
       sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
@@ -9007,7 +9013,7 @@ begin
       sett.writestring('stack','max_period',stackmenu1.max_period1.text);
 
 
-      sett.writeInteger('stack','measure_all',stackmenu1.measuring_method1.itemindex);
+      sett.writeInteger('stack','measure_mode',stackmenu1.measuring_method1.itemindex);
       sett.WriteBool('stack','ign_saturation', stackmenu1.ignore_saturation1.checked);//photometry tab
 
 

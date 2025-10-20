@@ -119,7 +119,7 @@ type
     ignore_saturation1: TCheckBox;
     Label74: TLabel;
     MenuItem34: TMenuItem;
-    nr_stars_to_detect1: TComboBox;
+    snr_min_photo1: TComboBox;
     apply_background_noise_filter1: TButton;
     apply_box_filter2: TButton;
     apply_dpp_button1: TButton;
@@ -1427,20 +1427,17 @@ begin
 end;
 
 
-procedure memo2_message(s: string);
-{message to memo2. Is also used for log to file in commandline mode}
+procedure memo2_message(s: string); {message to memo2. Is also used for log to file in commandline mode}
 begin
   {$IFDEF unix}  {linux and mac}
   if commandline_execution then
     writeln(s); {linux command line can write unicode}
   {$ELSE }
-  if ((commandline_execution) and (isConsole)) then
-    {isconsole, is console available, prevent run time error if compiler option -WH is checked}
+  if ((commandline_execution) and (isConsole)) then  {isconsole, is console available, prevent run time error if compiler option -WH is checked}
     writeln(ansi_only(s)); {log to console for Windows when compiler WIN32 gui is off}
   {$ENDIF}
 
-  if ((commandline_execution = False) or (commandline_log = True)) then
-    {no commandline or option -log is used}
+  if ((commandline_execution = False) or (commandline_log = True)) then  {no commandline or option -log is used}
   begin
     stackmenu1.memo2.Lines.add(TimeToStr(time) + '  ' + s); {fill memo2 with log}
 
@@ -1808,7 +1805,6 @@ begin
     writeln(f,startext);
     closefile(f);
   end;
-
 
   img_sa := nil;{free m}
 end;
@@ -7972,7 +7968,7 @@ begin
 
   if img_loaded=nil then exit;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-  find_stars(img_loaded, head,hfd_min, round(strtofloat2(stackmenu1.nr_stars_to_detect1.text)), starlist,mean_hfd);
+  find_stars(img_loaded, head,hfd_min, 150 {nr stars}, starlist,mean_hfd);//collect 150 stars. They will be filtered later by SNR. No efficient but avoids changing the find_Star procedure
   nrstars:=length(starlist[0]);
   setlength(vsp_vsx_list,nrstars);//make space
   formalism:=mainform1.Polynomial1.itemindex;
@@ -8101,14 +8097,9 @@ begin
   end;
 
   listview_updating:=false;//store to have only one endupdate;
-
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-
   save_settings2;{Too many lost selected files, so first save settings.}
-
   vsp_vsx_list:=nil;//clear every time. In case the images are changed then the columns are correct.
-
 
   {check is analyse is done}
   analysedP := True;
@@ -8287,7 +8278,7 @@ begin
 
 
 
-        {calibrate using POINT SOURCE calibration using hfd_median found earlier!!!}
+      {calibrate using POINT SOURCE calibration using hfd_median found earlier!!!}
       plot_and_measure_stars(img_loaded,mainform1.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
 
       //icon for used database passband. Database selection could be in auto mode so do this after calibration
@@ -8330,23 +8321,14 @@ begin
       if head.mzero <> 0 then {valid flux calibration}
       begin // do var star
         adu_e := retrieve_ADU_to_e_unbinned(head.egain);
-
-//        if head.calstat = '' then saturation_level := 64000
-//        else
-//          saturation_level := 60000; {could be dark subtracted changing the saturation level}
-//        saturation_level:=min(head.datamax_org-1,saturation_level);
-
-//        if ignore_saturation1.checked then saturation_level:=64000;
-
         saturation_level:=calc_saturation_level(head);
-
 
         // fill vsx, vsp database database
         if length(vsp_vsx_list)=0 then //fill with vsp, vsx stars for later
         begin
           variable_star_annotation(true {extract AAVSO database  to vsp_vsx_list});
 
-          if stackmenu1.measuring_method1.itemindex=3 then //add none AAVSO stars
+          if stackmenu1.measuring_method1.itemindex=2 then //add none AAVSO stars
             create_all_star_list;//collect any star in the vsp_vsx_list
 
           oldra0:=head.ra0;
@@ -8355,10 +8337,9 @@ begin
         else
         begin
           ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
-            if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
-                mainform1.variable_star_annotation1Click(sender {new position, update variable list});
+          if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
+             mainform1.variable_star_annotation1Click(sender {new position, update variable list});
         end;
-
 
 
         if stackmenu1.measuring_method1.itemindex=0 then // measure manual
@@ -8399,7 +8380,8 @@ begin
         else
         begin // None manual
 
-          if stackmenu1.measuring_method1.itemindex=1 then snr_min:=30 else snr_min:=10; //only bright enough stars
+          //if stackmenu1.measuring_method1.itemindex>=1 then
+          snr_min:=strtofloat2(snr_min_photo1.text); //only bright enough stars
 
           //measure all AAVSO stars using the position from the local database
           if vsp_vsx_list_length>0 then
@@ -9420,7 +9402,7 @@ var
    dummy: integer;
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
-  nr_stars_to_detect1.enabled:=measuring_method1.itemindex=3;//enabled only if method is measure all
+  snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
 
@@ -9856,7 +9838,7 @@ procedure Tstackmenu1.measuring_method1Change(Sender: TObject);
 begin
   clear_added_AAVSO_columns;
   hide_show_columns_listview7(true {tab8 photometry});
-  nr_stars_to_detect1.enabled:=measuring_method1.itemindex=3;
+  snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual
 end;
 
 procedure Tstackmenu1.export_to_tg1Click(Sender: TObject);
