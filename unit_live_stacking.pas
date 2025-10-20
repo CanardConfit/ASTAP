@@ -257,8 +257,6 @@ begin
             if init=false then {first image}
             begin
               binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
-//              bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,mean_hfd,warning);{bin, measure background, find stars}
-//              find_quads(starlist1, quad_star_distances1);{find quads for reference image}
              //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
               bin_and_find_stars(img_loaded, head, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,mean_hfd,warning);{bin, measure background, find stars}
               find_quads(false,starlist2, quad_star_distances2);{find quads for reference image}

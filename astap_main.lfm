@@ -44,7 +44,7 @@ object mainform1: Tmainform1
   Menu = MainMenu1
   ParentFont = True
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
+  LCLVersion = '4.99.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy

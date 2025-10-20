@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 777
+  Left = 263
   Height = 847
-  Top = 114
+  Top = 105
   Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -43,7 +43,7 @@ object stackmenu1: Tstackmenu1
     0000
   }
   KeyPreview = True
-  LCLVersion = '4.2.0.0'
+  LCLVersion = '4.99.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnDropFiles = FormDropFiles
@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_photometry1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 8
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -3834,9 +3834,8 @@ object stackmenu1: Tstackmenu1
             ItemIndex = 0
             Items.Strings = (
               'Manual star selection'
-              'Measure all annotated, SNR>30'
-              'Measure all annotated, SNR>10'
-              'Measure all stars. Total nr:'
+              'Measure all annotated.   SNR>'
+              'Measure all stars.    SNR>'
             )
             ParentFont = False
             Style = csDropDownList
@@ -3844,24 +3843,26 @@ object stackmenu1: Tstackmenu1
             Text = 'Manual star selection'
             OnChange = measuring_method1Change
           end
-          object nr_stars_to_detect1: TComboBox
+          object snr_min_photo1: TComboBox
             Left = 459
             Height = 27
-            Hint = 'Number of stars to detect'
+            Hint = 'Minimum SNR of the stars to measure'
             Top = 5
             Width = 64
             DropDownCount = 17
             Enabled = False
             ItemHeight = 19
-            ItemIndex = 0
+            ItemIndex = 1
             Items.Strings = (
+              '10'
+              '30'
+              '50'
+              '70'
               '100'
-              '200'
-              '300'
             )
             ParentFont = False
             TabOrder = 16
-            Text = '100'
+            Text = '30'
           end
           object ignore_saturation1: TCheckBox
             Left = 1480
