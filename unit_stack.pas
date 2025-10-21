@@ -1501,23 +1501,18 @@ end;
 
 procedure listview7_add_column( s0: string);
 var
-  Li: TListItem;
   i,fwidth: integer;
 begin
   with stackmenu1.listview7 do
   begin
     columns.add;
     Column[ColumnCount - 1].Caption :=s0;//title
-//    Column[ColumnCount - 1].autosize:=true;
     fwidth:= Round((abs(GetFontData(stackmenu1.listview7.Font.Handle).height) * 72*0.66 / stackmenu1.listview7.Font.PixelsPerInch));//approximate font width of column caption. Autosize works on the data not on caption
     Column[ColumnCount - 1].width:=20+length(s0)*fwidth;
 
     inc(p_nr);
     for i:=0 to Items.Count - 1 do
-    begin
-      li:=Items.Item[i];
-      li.SubItems.Add('');// add cells
-    end;
+      Items.Item[i].SubItems.Add('');// add cells
   end;
 end;
 
@@ -1715,9 +1710,9 @@ begin
     if retries=2 then
       begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end; //stars are dominant
     if retries=1 then
-      begin detection_level:=30*noise_level; end;
+      begin detection_level:=30*noise_level; if snr_min>=30 then retries:=0; end;
     if retries=0 then
-      begin detection_level:= 7*noise_level; end;
+      begin detection_level:= max(snr_min,7)*noise_level; end;
 
     star_counter := 0;
 
@@ -7455,16 +7450,26 @@ end;
 
 procedure clear_added_AAVSO_columns;
 var
-  i: integer;
-begin
-  //clear added AAVSO columns
+  i,j: integer;
+begin  //clear added AAVSO columns
   with stackmenu1.listview7 do
   begin
     Items.beginUpdate;{photometry}
+    try
     for i:=p_nr-1 downto p_nr_norm do
-      columns.Delete(ColumnCount-1);//delete last column;
+    begin
+      for j:=Items.Count - 1 downto 0 do // Delete the last SubItem from each row
+      begin
+        if Items.Item[j].SubItems.Count > 0 then
+          Items.Item[j].SubItems.Delete(Items.Item[j].SubItems.Count - 1);
+      end;
+      columns.Delete(ColumnCount-1);//delete last column header;
+    end;
     p_nr:=ColumnCount-1;//is equal to p_nr_norm;
-    Items.EndUpdate;
+
+    finally
+      Items.EndUpdate;
+    end;
   end;
 end;
 

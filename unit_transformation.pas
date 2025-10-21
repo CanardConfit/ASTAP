@@ -123,10 +123,7 @@ const
       end;
 begin
   if ((V_listB=nil) and (V_listR=nil)) then
-  begin
-//    form_transformation1.error_label1.caption:='No comparison star data!. Select standard field.';
     exit;//no data
-  end;
 
   show_auid:=form_transformation1.checkBox_auid1.checked;
   wtext:=mainform1.image1.Canvas.textwidth('12.3456');
@@ -492,6 +489,7 @@ begin
              value:=strtofloat2(Items.item[row].subitems.Strings[col]);
              snr:=strtofloat2(Items.item[row].subitems.Strings[col+1]);
 
+
              if ((snr>=snrmin) and (value<>0)) then //measurement found
              try
                icon_nr:=Items.item[row].SubitemImages[P_filter];
@@ -523,7 +521,6 @@ begin
 
         inc(starnr);
 
-
       end; // one AUID done
     end;//AUID column found
   end;//with stackmenu
@@ -542,9 +539,9 @@ begin
     if ((iconB) and  (iconV)) then
     begin
       counter:=0;
-      setlength(V_listB,length(V_list));
-      setlength(V_list_documentedB,length(V_list_documented));
-      setlength(abbreviationB,length(abbreviation));
+      setlength(V_listB,starnr);
+      setlength(V_list_documentedB,starnr);
+      setlength(abbreviationB,starnr);
 
 
 
@@ -614,9 +611,9 @@ begin
 
     if ((iconV) and  (iconR))then
     begin
-      setlength(V_listR,length(V_list));
-      setlength(V_list_documentedR,length(V_list_documented));
-      setlength(abbreviationR,length(abbreviation));
+      setlength(V_listR,starnr);
+      setlength(V_list_documentedR,starnr);
+      setlength(abbreviationR,starnr);
       counter:=0;
       for j:=0 to starnr-1 do //sanitize. Removed stars without measured or documented magnitudes
       begin
@@ -634,6 +631,7 @@ begin
       setlength(R_list,counter);
       setlength(V_list_documentedR,counter);
       setlength(R_list_documented,counter);
+      setlength(abbreviationR,counter);
 
       if counter<3 then
       begin
