@@ -8,7 +8,7 @@ object form_aavso1: Tform_aavso1
   ClientHeight = 876
   ClientWidth = 1334
   Constraints.MinHeight = 750
-  LCLVersion = '4.99.0.0'
+  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnResize = FormResize
@@ -189,7 +189,7 @@ object form_aavso1: Tform_aavso1
         object sigma_check1: TLabel
           Left = 14
           Height = 19
-          Hint = 'Measured magnitude error of the check star in b, raw and transformed. '
+          Hint = 'Measured raw and transformed b magnitude error of the check star.'
           Top = 517
           Width = 84
           BorderSpacing.Left = 12
@@ -200,7 +200,7 @@ object form_aavso1: Tform_aavso1
         object sigma_check2: TLabel
           Left = 14
           Height = 19
-          Hint = 'Measured magnitude error of the check star in v, raw and transformed. '
+          Hint = 'Measured raw and transformed v magnitude error of the check star.'
           Top = 536
           Width = 84
           BorderSpacing.Left = 12
@@ -211,7 +211,7 @@ object form_aavso1: Tform_aavso1
         object sigma_check3: TLabel
           Left = 14
           Height = 19
-          Hint = 'Measured magnitude error of the check star in b, raw and transformed. '
+          Hint = 'Measured raw and transformed r magnitude error of the check star.'
           Top = 555
           Width = 84
           BorderSpacing.Left = 12
