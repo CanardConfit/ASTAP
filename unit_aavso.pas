@@ -914,6 +914,7 @@ var
 const
   len=3;
 
+
   procedure plot_point(x,y,tolerance:integer);
   begin
      if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
@@ -1297,27 +1298,6 @@ begin
     form_aavso1.sigma_check3.caption:='No valid r';
 
 
-
-
-  if magn_min>magn_max then
-         exit; //no info
-
-  magn_min:=trunc(magn_min*100)/100; {add some rounding}
-  magn_max:=trunc(magn_max*100)/100;
-  if magn_max-magn_min<0.3 then begin magn_max:=0.15+(magn_max+magn_min)/2; magn_min:=-0.15+(magn_max+magn_min)/2;;end;//minimum range
-
-
-
-  range:=magn_max-magn_min;
-  if range<-98 then
-  begin
-    form_aavso1.report_error1.visible:=true;
-    exit;
-  end
-  else
-  form_aavso1.report_error1.visible:=false;
-
-
   for i:=0 to high(color_list) do color_list[i]:=0;//clear icons which have been done
   index:=0;
 
@@ -1353,11 +1333,10 @@ begin
   end;
 
 
-  magn_max:=magn_max + range*0.05;  {faint star, bottom}
-  magn_min:=magn_min - range*0.05; {bright star, top}
 
   with form_aavso1.Image_photometry1 do
   begin
+    try
     bmp:=TBitmap.Create;
     bmp.PixelFormat:=pf24bit;
     bmp.SetSize(w,h);
@@ -1410,6 +1389,30 @@ begin
       bmp.canvas.lineto(x1,y1+5);
       bmp.canvas.textout(x1,y1+5,floattostrf(jd_min+(jd_max-jd_min)*c/nrmarkX,ffFixed,12,5));
     end;
+
+    if magn_min>magn_max then //no data
+    begin
+      Picture.Bitmap.SetSize(w,h);
+      Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to image picture
+      exit; //jump to finally and free bmp
+    end;
+
+    magn_min:=trunc(magn_min*100)/100; {add some rounding}
+    magn_max:=trunc(magn_max*100)/100;
+    if magn_max-magn_min<0.3 then begin magn_max:=0.15+(magn_max+magn_min)/2; magn_min:=-0.15+(magn_max+magn_min)/2;;end;//minimum range
+
+    range:=magn_max-magn_min;
+    if range<-98 then
+    begin
+      form_aavso1.report_error1.visible:=true;
+      exit;
+    end
+    else
+    form_aavso1.report_error1.visible:=false;
+
+
+    magn_max:=magn_max + range*0.05;  {faint star, bottom}
+    magn_min:=magn_min - range*0.05; {bright star, top}
 
     nrmarkY:=trunc(h*5/400);
     if nrmarkY>0 then
@@ -1500,9 +1503,11 @@ begin
 
     Picture.Bitmap.SetSize(w,h);
     Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to image picture
-    bmp.Free;
+    finally
+       bmp.Free;//free it because it is on the heap. Finally is also called if there is an exception or an early exit
+    end;
   end;
-  data:=nil;
+  //data:=nil;
 end;
 
 
@@ -1627,7 +1632,7 @@ begin
           abbrv_variable1.items.add(starinfoV[i].str);
         end
         else  //not all images analysed for SD
-           abbrv_variable1.items.add(starinfoV[i].str+ ' Bad!');
+           abbrv_variable1.items.add(starinfoV[i].str+ ' �Bad!');
     end;
 
     if count>0 then //sort comparison stars
@@ -1641,7 +1646,7 @@ begin
         if starinfo[i].x>0 then //not saturated and sd found
           abrv_comp1.items.add(starinfo[i].str) //+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3))//add including standard deviation
         else  //not all images analysed for SD
-          abrv_comp1.items.add(starinfo[i].str+ ' Bad!');
+          abrv_comp1.items.add(starinfo[i].str+ ' �Bad!');
 
         abrv_check1.items:=abrv_comp1.items;//duplicate
     end;
@@ -1731,6 +1736,7 @@ var
 begin
   for i:=0 to abbrv_variable1.items.count-1 do
     abbrv_variable1.checked[i]:=false;
+  plot_graph;
 end;
 
 procedure Tform_aavso1.MenuItem2Click(Sender: TObject);
@@ -1776,6 +1782,7 @@ var
 begin
   for i:=0 to abbrv_variable1.items.count-1 do
     abbrv_variable1.checked[i]:=true;
+  plot_graph;
 end;
 
 
