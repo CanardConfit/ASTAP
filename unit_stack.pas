@@ -1304,7 +1304,7 @@ const
 implementation
 
 uses
-  unit_image_sharpness, unit_gaussian_blur, unit_star_align,
+  unit_image_sharpness, unit_threaded_gaussian_blur, unit_star_align,
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
   unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
@@ -2968,7 +2968,7 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
-  gaussian_blur2(img_loaded, 2 * strtofloat2(most_common_filter_radius1.Text));
+  gaussian_blur_threaded(img_loaded, 2 * strtofloat2(most_common_filter_radius1.Text));
   plot_image(mainform1.image1, False);{plot}
   Screen.Cursor := crDefault;
   update_equalise_background_step(equalise_background_step + 1);{update menu}
@@ -3182,7 +3182,7 @@ begin
   // exit;
 
   {smooth flat}
-  gaussian_blur2(img_temp2, box_size * 2);
+  gaussian_blur_threaded(img_temp2, box_size * 2);
 
   {apply artificial flat}
   for col := 0 to colors - 1 do {do all colours}
@@ -3533,7 +3533,7 @@ begin
       min := strtofloat2(edit_background1.Text);
 
     if ddp_filter2.Checked then
-      gaussian_blur2(img_loaded, strtofloat2(Edit_gaussian_blur1.Text));
+      gaussian_blur_threaded(img_loaded, strtofloat2(Edit_gaussian_blur1.Text));
 
     for col := 0 to head.naxis3 - 1 do {all colors}
       for fitsY := 0 to head.Height - 1 do
@@ -4173,7 +4173,7 @@ begin
   if head.naxis = 0 then exit;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   backup_img;
-  gaussian_blur2(img_loaded, strtofloat2(blur_factor1.Text));
+  gaussian_blur_threaded(img_loaded, strtofloat2(blur_factor1.Text));
   plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
   plot_image(mainform1.image1, False);{plot}
   Screen.cursor := crDefault;
@@ -7202,15 +7202,19 @@ end;
 
 procedure Tstackmenu1.photom_green1Click(Sender: TObject);
 var
-  c: integer;
+  c,nr,selcnt,progress : integer;
   fn, ff, fnBlue, fnRed : string;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed := False;
 
+  nr:=listview7.items.Count - 1;//count will change due to adding split files so store in nr.
+  selcnt:=ListView7.SelCount;
+  progress:=0;
+
   if listview7.items.Count > 0 then
   begin
-    for c := 0 to listview7.items.Count - 1 do
+    for c := 0 to nr do
       if listview7.Items[c].Selected then
       begin
         {scroll}
@@ -7218,12 +7222,9 @@ begin
         listview7.ItemIndex := c;   {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
 
+        progress_indicator(100*progress/selcnt,'');
         application.ProcessMessages;
-        if esc_pressed then
-        begin
-          Screen.Cursor := crDefault;
-          exit;
-        end;
+        if esc_pressed then break;
 
         ff := ListView7.items[c].Caption;
         if fits_tiff_file_name(ff) = False then
@@ -7253,10 +7254,13 @@ begin
           ListView7.items[c].Caption := fn;//replace by green channel
         end;
 
+        inc(progress);
       end;
   end;
   analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
   {refresh list}
+
+  progress_indicator(-100,'');{back to normal}
   Screen.Cursor := crDefault;  { Always restore to normal }
 
 end;
@@ -7591,7 +7595,7 @@ begin
   {apply most common filter on first array and place result in second array}
 
   memo2_message('Applying Gaussian blur of ' + floattostrF(radius * 2, ffFixed, 0, 1));
-  gaussian_blur2(img_temp, radius * 2);
+  gaussian_blur_threaded(img_temp, radius * 2);
 
 
   setlength(img_loaded, 3, head.Height, head.Width);{new size}
@@ -9638,7 +9642,7 @@ begin
 
 
   tmp:=duplicate(img_loaded);//fastest way to duplicate an image
-  gaussian_blur2(tmp,unsharp_radius1.position/10);
+  gaussian_blur_threaded(tmp,unsharp_radius1.position/10);
 
   threshold:=unsharp_threshold1.position; //expressed in sigma
   factor1:=1/(1-(unsharp_amount1.position/1000));
@@ -10274,7 +10278,7 @@ end;
 
 function process_selected_files(lv: tlistview; column: integer; mode : string) : boolean;// S= Solve selected/ U annotate unknow stars / 'P' photometric calibration, add mzero / '2' bin 2x2
 var
-  c,nrcolumns,i,countN        : integer;
+  c,nrcolumns,i,countN,selcnt,progress        : integer;
   filename1                   : string;
   img_temp                    : Timage_array;
   headx                       : theader;
@@ -10317,14 +10321,21 @@ begin
     new_analyse_required:=true;
   end;
 
+  selcnt:=0;
+
   for c := 0 to lv.items.Count - 1 do {check for astrometric solutions}
   begin
     if lv.Items[c].Selected then   //solve all selected
-      lv.Items.item[c].SubitemImages[column]:=icon_marker //mark selected row {file} to be processed with an icon. Note -2 or 99 is not possible. Should be existing in Linux.
+    begin
+      lv.Items.item[c].SubitemImages[column]:=icon_marker; //mark selected row {file} to be processed with an icon. Note -2 or 99 is not possible. Should be existing in Linux.
+      inc(selcnt);
+    end
     else
       lv.Items.item[c].SubitemImages[column]:=-1; //mark as no icon
   end;
   lv.Selected := nil; {remove any selection}
+
+  progress:=0;
 
   esc_pressed := False;
   with stackmenu1 do
@@ -10346,6 +10357,7 @@ begin
         lv.ItemIndex := c; {mark where we are. Important set in object inspector    lv.HideSelection := false; lv.Rowselect := true}
         lv.Items[c].MakeVisible(False);{scroll to selected item}
 
+        progress_indicator(100*progress/selcnt,'');
         Application.ProcessMessages;
 
         {load image}
@@ -10488,10 +10500,11 @@ begin
           else
              break;
         end;
-
+        inc(progress);
       end;
     end;
 
+  progress_indicator(-100,'');{back to normal}
   Screen.Cursor := crDefault;{back to normal }
 end;
 
@@ -11494,7 +11507,7 @@ begin
       end;
   end;{all colours}
 
-  gaussian_blur2(img, blur);{apply gaussian blur }
+  gaussian_blur_threaded(img, blur);{apply gaussian blur }
 
   {restore signal}
   for col := 0 to head.naxis3 - 1 do {do all colours}
@@ -13854,7 +13867,7 @@ begin
 //    beep;
 //    exit;
 
-  gaussian_blur2(img_loaded, step * 2);
+  gaussian_blur_threaded(img_loaded, step * 2);
 
   for k := 0 to head.naxis3 - 1 do {do all colors}
     for fitsY := 0 to head.Height - 1 do

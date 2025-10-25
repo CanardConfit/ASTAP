@@ -34,7 +34,7 @@ var
 
 implementation
 
-uses unit_stack,unit_gaussian_blur,unit_astrometric_solving;
+uses unit_stack,unit_threaded_gaussian_blur,unit_astrometric_solving;
 
 
 
@@ -446,7 +446,7 @@ begin
 
     setlength(img_sa,1,hh,ww);{set length of image array}
 
-    gaussian_blur2(img_bk, blur);{apply gaussian blur }
+    gaussian_blur_threaded(img_bk, blur);{apply gaussian blur }
     get_background(0,img_bk,head,{cblack=0} false{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
 
     detection_level:=sigmafactor*head.noise_level+ head.backgr;

@@ -15,7 +15,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLintf, StdCtrls,
   Buttons, math, astap_main, unit_stack, unit_annotation,
   clipbrd, ExtCtrls,{for copy to clipboard}
-  unit_gaussian_blur ;
+  unit_threaded_gaussian_blur ;
 
 type
 
@@ -1473,7 +1473,7 @@ begin
 
   apply_trimmed_median_background(img_bk, img_loaded,head.datamax_org,inspector_grid_size);  {apply most common filter on first array and place result in second array}
 
-  gaussian_blur2(img_loaded, inspector_grid_size *2 {4 * strtofloat2(most_common_filter_radius1.Text)});
+  gaussian_blur_threaded(img_loaded, inspector_grid_size *2 {4 * strtofloat2(most_common_filter_radius1.Text)});
 
 
   plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
