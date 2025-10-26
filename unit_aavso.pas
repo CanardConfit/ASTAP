@@ -1745,6 +1745,7 @@ var
 begin
   for i:=0 to abrv_comp1.items.count-1 do
     abrv_comp1.checked[i]:=false;
+  plot_graph;
 end;
 
 procedure Tform_aavso1.MenuItem3Click(Sender: TObject);

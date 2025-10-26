@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.10.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.10.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -991,7 +991,7 @@ var
 
 implementation
 
-uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
+uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_threaded_gaussian_blur,unit_inspector_plot,unit_asteroid,
      unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia,unit_contour,
      unit_threaded_bilinear_interpolation,unit_threaded_demosaic_astroC_bilinear_interpolation,unit_threaded_demosaic_astrosimple,unit_threaded_demosaic_astroM_bilinear_interpolation,unit_transformation;
 
@@ -3755,12 +3755,8 @@ procedure progress_indicator(i:double; info:string);{0..100 is 0 to 100% indicat
 begin
   if i<=-1 then
   begin
-    if i=-101 then application.title:='🗙'
-    else
     application.title:='ASTAP';
-
     mainform1.statusbar1.SimplePanel:=false;
-
     mainform1.caption:=ExtractFileName(filename2);
     stackmenu1.caption:='stack menu';
   end
@@ -4287,7 +4283,7 @@ end;
 function save_fits(img: Timage_array;memo:tstrings; headX : theader;filen2:ansistring;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
-  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
+  I,j,k,bzero2,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
   dd : single;
   line0                : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
@@ -4324,21 +4320,10 @@ begin
     end;
   end;
   filename2:=filen2;
-  {$IFDEF fpc}
-  progress_indicator(0,'');
-  {$else} {delphi}
-  mainform1.taskbar1.progressstate:=TTaskBarProgressState.Normal;
-  mainform1.taskbar1.progressvalue:=0; {show progress}
-
-  {$endif}
-
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}{application.processmessages;}{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
   try
     TheFile4:=tfilestream.Create(filen2, fmcreate );
     try
-      progressC:=0;
-
      {update FITs header}
       if headX.nrbits<>24 then {standard FITS}
       begin
@@ -4406,14 +4391,6 @@ begin
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
         begin
-          inc(progressC);
-          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-          {$IFDEF fpc}
-          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-          {$else} {delphi}
-          if frac(progress_value/5)=0 mainform1.taskbar1.progressvalue:=progress_value;
-          {$endif}
-
           for j:=0 to width5-1 do
           begin
             dd:=img[k,i,j];{save all colors}
@@ -4433,14 +4410,6 @@ begin
 
         for i:=0 to height5-1 do
         begin
-          inc(progressC);
-          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-          {$IFDEF fpc}
-          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-          {$else} {delphi}
-          if frac(progress_value/5)=0 mainform1.taskbar1.progressvalue:=progress_value;
-          {$endif}
-
           for j:=0 to width5-1 do
           begin
             for k:=0 to 2 do {do all colors}
@@ -4463,14 +4432,6 @@ begin
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
         begin
-          inc(progressC);
-          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-          {$IFDEF fpc}
-          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-          {$else} {delphi}
-          if frac(progress_value/5)=0 mainform1.taskbar1.progressvalue:=progress_value;
-          {$endif}
-
           for j:=0 to width5-1 do
           begin
             dum:=max(0,min(65535,round(img[k,i,j]))) - bzero2;{limit data between 0 and 65535 and shift it to -32768.. 32767}
@@ -4496,13 +4457,6 @@ begin
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
         begin
-          inc(progressC);
-          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-          {$IFDEF fpc}
-          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
-          {$else} {delphi}
-          if frac(progress_value/5)=0 mainform1.taskbar1.progressvalue:=progress_value;
-          {$endif}
           for j:=0 to width5-1 do
             fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,i,j]);{in FITS file hi en low bytes are swapped}
           thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
@@ -4606,11 +4560,6 @@ begin
   end;
   mainform1.image1.stretch:=true;
   Screen.Cursor:=crDefault;
-  {$IFDEF fpc}
-  progress_indicator(-100,'');{back to normal}
-  {$else} {delphi}
-  mainform1.taskbar1.progressstate:=TTaskBarProgressState.None;
-  {$endif}
 end;
 
 
@@ -4727,11 +4676,17 @@ begin
     backup_img;
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
-    setlength(img_temp,head.naxis3,stopY-startY,stopX-startX);
+
+    inc(startX);//inside of frame
+    dec(stopX);
+    inc(startY);
+    dec(stopY);
+
+    setlength(img_temp,head.naxis3,stopY-startY+1,stopX-startX+1);
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      for fitsY:=startY to stopY-1 do
-      for fitsX:=startX to stopX-1 do
+      for fitsY:=startY to stopY do
+      for fitsX:=startX to stopX do
       begin
         begin
           img_temp[k,fitsY-startY,fitsX-startX]:=img_loaded[k,fitsY,fitsX];{copy the area of interest to img_temp}
@@ -4739,12 +4694,12 @@ begin
       end;
     end;{k color}
 
-    gaussian_blur2(img_temp,strtofloat2(stackmenu1.blur_factor1.text));
+    gaussian_blur_threaded(img_temp,strtofloat2(stackmenu1.blur_factor1.text));
 
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      for fitsY:=startY to stopY-1 do
-      for fitsX:=startX to stopX-1 do
+      for fitsY:=startY to stopY do
+      for fitsX:=startX to stopX do
       begin
         begin
           img_loaded[k,fitsY,fitsX]:=img_temp[k,fitsY-startY,fitsX-startX];{copy the area of interest back}
@@ -9331,7 +9286,7 @@ begin
         end;
       end;{fits loop}
 
-      gaussian_blur2(img_delta,5);
+      gaussian_blur_threaded(img_delta,5);
 
       for fitsY:=startY to stopY-1 do
       begin
