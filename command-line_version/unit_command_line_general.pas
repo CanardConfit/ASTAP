@@ -63,7 +63,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.10.11';
+  astap_version: string='2025.10.31';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -1050,12 +1050,18 @@ begin
     if width2>i then
     begin
       beep;
-      writeln('Too wide FITS file !!!!!');
+      memo2_message('Too wide FITS file !!!!!');
       close_fits_file;
       exit;
     end;
 
-    setlength(img_loaded2,naxis3,height2,width2);
+    try
+      setlength(img_loaded2,naxis3,height2,width2);
+    except
+      memo2_message('Abort, not enough memory!');
+      warning_str:='Not enough memory!'; //for command line usage
+      exit;
+    end;
 
     if nrbits=16 then
     for k:=0 to naxis3-1 do {do all colors}

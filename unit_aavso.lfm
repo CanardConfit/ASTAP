@@ -418,9 +418,9 @@ object form_aavso1: Tform_aavso1
   object PopupMenu_comp1: TPopupMenu
     Left = 296
     Top = 326
-    object MenuItem2: TMenuItem
+    object deselectcomp1: TMenuItem
       Caption = 'Deselect all'
-      OnClick = MenuItem2Click
+      OnClick = deselectcomp1Click
     end
   end
 end

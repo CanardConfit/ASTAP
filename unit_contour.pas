@@ -405,18 +405,18 @@ begin
   if head.naxis3>1 then {colour image}
   begin
     memo2_message('Converting image to mono');
-    bin_mono_and_crop(1 {binning}, 1{cropping}, img, img_bk);// Make mono, bin and crop
+    bin_mono_and_crop(binning, 1{cropping}, img, img_bk);// Make mono, bin and crop
     get_hist(0,img_bk);{get histogram of img and his_total. Required to get correct background value}
     restore_his:=true;
   end
   else
   if (bayerpat<>'') then {raw Bayer image}
   begin
+    binning:=2;
     memo2_message('Binning raw image for streak detection');
-    bin_mono_and_crop(2 {binning}, 1{cropping}, img {out}, img_bk);// Make mono, bin and crop
+    bin_mono_and_crop(binning, 1{cropping}, img {out}, img_bk);// Make mono, bin and crop
     get_hist(0,img_bk);{get histogram of img and his_total. Required to get correct background value}
     restore_his:=true;
-    binning:=2;
   end
   else
     img_bk:=img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}

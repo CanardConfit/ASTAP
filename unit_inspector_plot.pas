@@ -156,8 +156,8 @@ var
   starlistXY    :array of array of double;
   mess1,mess2,hfd_value,hfd_arcsec,report,rastr,decstr,magstr,fwhm_value,fwhm_arcsec : string;
 
-  Fliph, Flipv,restore_req  : boolean;
-  img_bk,img_sa             : Timage_array;
+  Fliph, Flipv,restore_req          : boolean;
+  img_bk,img_sa                     : Timage_array;
   data_max: single;
     procedure textout_octogram(x,y: integer;value : double); //center the text to the middle of the octogram
     var
@@ -184,517 +184,519 @@ begin
   if headx.naxis=0 then exit; {file loaded?}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  if screenplot then memo2_message('Inspection of: '+filename2);//else in the batch routine
-  restore_req:=false;
+  try
 
-   //not required
-//  oldNaxis3:=headx.naxis3;//for case it is converted to mono
+    if screenplot then memo2_message('Inspection of: '+filename2);//else in the batch routine
+    restore_req:=false;
 
-
-  if headx.naxis3>1 then {colour image}
-  begin
-    img_bk:=duplicate(img);//fastest way to duplicate an image
-    convert_mono(img,headx);
-    get_hist(0,img);{get histogram of img and his_total. Required to get correct background value}
-
-    restore_req:=true;
-  end
-  else
-  if (bayerpat<>'') then {raw Bayer image}
-  begin
-    img_bk:=duplicate(img);//fastest way to duplicate an image
-    check_pattern_filter(img);
-    get_hist(0,img);{get histogram of img and his_total. Required to get correct background value}
-    restore_req:=true;
-  end;
-
-  max_stars:=500;
-  len:=4*max_stars; {should be enough, if not size is adapted}
-
-  with mainform1 do
-  begin
-    smx:=headx.width div 2;
-    smy:=headx.height div 2;
-
-    sm_x:=headx.width/2;
-    sm_y:=headx.height/2;
-
-    Flipv:=mainform1.flip_vertical1.Checked;
-    Fliph:=mainform1.Flip_horizontal1.Checked;
+     //not required
+  //  oldNaxis3:=headx.naxis3;//for case it is converted to mono
 
 
-    image1.Canvas.Pen.Mode := pmMerge;
-    image1.Canvas.brush.Style:=bsClear;
-    image1.Canvas.font.color:=clyellow;
-    image1.Canvas.Pen.Color := clred;
-    image1.Canvas.Pen.width := round(1+headx.height/image1.height);{thickness lines}
-    fontsize:=round(max(10,8*headx.height/image1.height));{adapt font to image dimensions}
-    image1.Canvas.font.size:=fontsize;
+    if headx.naxis3>1 then {colour image}
+    begin
+      if duplicate(img,img_bk)=false then exit;//fastest way to duplicate an image
+      convert_mono(img,headx);
+      get_hist(0,img);{get histogram of img and his_total. Required to get correct background value}
 
-    hfd_median:=0;
-    median_outer_ring:=0;
+      restore_req:=true;
+    end
+    else
+    if (bayerpat<>'') then {raw Bayer image}
+    begin
+      if duplicate(img,img_bk)=false then exit;//fastest way to duplicate an image
+      check_pattern_filter(img);
+      get_hist(0,img);{get histogram of img and his_total. Required to get correct background value}
+      restore_req:=true;
+    end;
 
-    median_11:=0;
-    median_21:=0;
-    median_31:=0;
+    max_stars:=500;
+    len:=4*max_stars; {should be enough, if not size is adapted}
 
-    median_12:=0;
-    median_22:=0;
-    median_32:=0;
+    with mainform1 do
+    begin
+      smx:=headx.width div 2;
+      smy:=headx.height div 2;
 
-    median_13:=0;
-    median_23:=0;
-    median_33:=0;
+      sm_x:=headx.width/2;
+      sm_y:=headx.height/2;
 
-    SetLength(hfd_list,len);{set array length on a starting value}
-    SetLength(fwhm_list,len);{set array length on a starting value}
-    SetLength(starlistXY,3,len);{x,y positions}
+      Flipv:=mainform1.flip_vertical1.Checked;
+      Fliph:=mainform1.Flip_horizontal1.Checked;
 
-    setlength(img_sa,1,headx.height,headx.width);{set length of image array}
 
-    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-    get_background(0,img,headx,{cblack=0} screenplot=false{histogram is available if in viewer},true {calculate noise level});{calculate background level from peek histogram}
+      image1.Canvas.Pen.Mode := pmMerge;
+      image1.Canvas.brush.Style:=bsClear;
+      image1.Canvas.font.color:=clyellow;
+      image1.Canvas.Pen.Color := clred;
+      image1.Canvas.Pen.width := round(1+headx.height/image1.height);{thickness lines}
+      fontsize:=round(max(10,8*headx.height/image1.height));{adapt font to image dimensions}
+      image1.Canvas.font.size:=fontsize;
 
-    data_max:=headx.datamax_org-1;
-    backgr:=headx.backgr;
-    noise_level:=headx.noise_level;
+      hfd_median:=0;
+      median_outer_ring:=0;
 
-    retries:=3; {try up to four times to get enough stars from the image}
-    repeat
-      if retries=3 then
-        begin if headx.star_level >30*noise_level then detection_level:=headx.star_level  else retries:=2;{skip} end;//stars are dominant
-      if retries=2 then
-        begin if headx.star_level2>30*noise_level then detection_level:=headx.star_level2 else retries:=1;{skip} end;//stars are dominant
-      if retries=1 then
-        begin detection_level:=30*noise_level; end;
-      if retries=0 then
-        begin detection_level:= 7*noise_level; end;
-      nhfd:=0;{set counters at zero}
+      median_11:=0;
+      median_21:=0;
+      median_31:=0;
 
-      for fitsY:=0 to headx.height-1 do
-        for fitsX:=0 to headx.width-1  do
-          img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
+      median_12:=0;
+      median_22:=0;
+      median_32:=0;
 
-      for fitsY:=1 to headx.height-1-1  do //Search through the image. Stay one pixel away from the borders.
-      begin
-        for fitsX:=1 to headx.width-1-1 do
+      median_13:=0;
+      median_23:=0;
+      median_33:=0;
+
+      SetLength(hfd_list,len);{set array length on a starting value}
+      SetLength(fwhm_list,len);{set array length on a starting value}
+      SetLength(starlistXY,3,len);{x,y positions}
+
+      setlength(img_sa,1,headx.height,headx.width);{set length of image array}
+
+      hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+      get_background(0,img,headx,{cblack=0} screenplot=false{histogram is available if in viewer},true {calculate noise level});{calculate background level from peek histogram}
+
+      data_max:=headx.datamax_org-1;
+      backgr:=headx.backgr;
+      noise_level:=headx.noise_level;
+
+      retries:=3; {try up to four times to get enough stars from the image}
+      repeat
+        if retries=3 then
+          begin if headx.star_level >30*noise_level then detection_level:=headx.star_level  else retries:=2;{skip} end;//stars are dominant
+        if retries=2 then
+          begin if headx.star_level2>30*noise_level then detection_level:=headx.star_level2 else retries:=1;{skip} end;//stars are dominant
+        if retries=1 then
+          begin detection_level:=30*noise_level; end;
+        if retries=0 then
+          begin detection_level:= 7*noise_level; end;
+        nhfd:=0;{set counters at zero}
+
+        for fitsY:=0 to headx.height-1 do
+          for fitsX:=0 to headx.width-1  do
+            img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
+
+        for fitsY:=1 to headx.height-1-1  do //Search through the image. Stay one pixel away from the borders.
         begin
-          if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star}  and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star}
+          for fitsX:=1 to headx.width-1-1 do
           begin
-            starpixels:=0;
-            if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
-            if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
-            if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
-            if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
-            if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
+            if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star}  and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star}
             begin
-              HFD(img,fitsX,fitsY,14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-
-              if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
+              starpixels:=0;
+              if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+              if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+              if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+              if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+              if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
               begin
+                HFD(img,fitsX,fitsY,14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-                radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-                sqr_radius:=sqr(radius);
-                xci:=round(xc);{star center as integer}
-                yci:=round(yc);
-
-                for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-                for m:=-radius to +radius do
+                if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
                 begin
-                  j:=n+yci;
-                  i:=m+xci;
-                  if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                    img_sa[0,j,i]:=1;
-                end;
 
-                if ((img[0,yci,  xci  ]<data_max) and
-                    (img[0,yci,  xci-1]<data_max) and
-                    (img[0,yci,  xci+1]<data_max) and
-                    (img[0,yci-1,xci  ]<data_max) and
-                    (img[0,yci+1,xci  ]<data_max) and
+                  radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+                  sqr_radius:=sqr(radius);
+                  xci:=round(xc);{star center as integer}
+                  yci:=round(yc);
 
-                    (img[0,yci-1,xci-1]<data_max) and
-                    (img[0,yci+1,xci-1]<data_max) and
-                    (img[0,yci-1,xci+1]<data_max) and
-                    (img[0,yci+1,xci+1]<data_max)  ) then //not saturated
-                begin
-                  {store values}
-                  hfd_list[nhfd]:=hfd1;
-                  fwhm_list[nhfd]:=star_fwhm;
-                  starlistXY[0,nhfd]:=xc; {store star position in image coordinates, not FITS coordinates}
-                  starlistXY[1,nhfd]:=yc;
-                  starlistXY[2,nhfd]:=flux;
-                  inc(nhfd); if nhfd>=length(hfd_list) then
+                  for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                  for m:=-radius to +radius do
                   begin
-                    SetLength(hfd_list,nhfd+max_stars); {adapt length if required and store hfd value}
-                    SetLength(fwhm_list,nhfd+max_stars); {adapt length if required and store hfd value}
-                    SetLength(starlistXY,3,nhfd+max_stars);{adapt array size if required}
+                    j:=n+yci;
+                    i:=m+xci;
+                    if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                      img_sa[0,j,i]:=1;
                   end;
 
+                  if ((img[0,yci,  xci  ]<data_max) and
+                      (img[0,yci,  xci-1]<data_max) and
+                      (img[0,yci,  xci+1]<data_max) and
+                      (img[0,yci-1,xci  ]<data_max) and
+                      (img[0,yci+1,xci  ]<data_max) and
+
+                      (img[0,yci-1,xci-1]<data_max) and
+                      (img[0,yci+1,xci-1]<data_max) and
+                      (img[0,yci-1,xci+1]<data_max) and
+                      (img[0,yci+1,xci+1]<data_max)  ) then //not saturated
+                  begin
+                    {store values}
+                    hfd_list[nhfd]:=hfd1;
+                    fwhm_list[nhfd]:=star_fwhm;
+                    starlistXY[0,nhfd]:=xc; {store star position in image coordinates, not FITS coordinates}
+                    starlistXY[1,nhfd]:=yc;
+                    starlistXY[2,nhfd]:=flux;
+                    inc(nhfd); if nhfd>=length(hfd_list) then
+                    begin
+                      SetLength(hfd_list,nhfd+max_stars); {adapt length if required and store hfd value}
+                      SetLength(fwhm_list,nhfd+max_stars); {adapt length if required and store hfd value}
+                      SetLength(starlistXY,3,nhfd+max_stars);{adapt array size if required}
+                    end;
+
+                  end;
                 end;
               end;
             end;
           end;
         end;
+
+        dec(retries);{prepare for trying with lower detection level}
+      until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+
+      if restore_req then {raw Bayer image or colour image}
+      begin
+        memo2_message('Restoring image');
+        if duplicate(img_bk,img)=false then exit;//fastest way to duplicate an image
+        // headx.naxis3:=oldNaxis3;    //not required
+        get_hist(0,img);{get histogram of img and his_total}
       end;
 
-      dec(retries);{prepare for trying with lower detection level}
-    until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
-
-    if restore_req then {raw Bayer image or colour image}
-    begin
-      memo2_message('Restoring image');
-      img:=duplicate(img_bk);//fastest way to duplicate an image
-      img_bk:=nil;
-//      headx.naxis3:=oldNaxis3;    //not required
-      get_hist(0,img);{get histogram of img and his_total}
-    end;
 
 
-
-    if nhfd>0 then  {count the stars for each area}
-    begin
-      SetLength(hfdlist_outer_ring,nhfd);{space for all stars}
-      SetLength(hfdlist_11,nhfd);{space for all stars}
-      SetLength(hfdlist_21,nhfd);{space for all stars}
-      SetLength(hfdlist_31,nhfd);
-
-      SetLength(hfdlist_12,nhfd);
-      SetLength(hfdlist_22,nhfd);
-      SetLength(hfdlist_32,nhfd);
-
-      SetLength(hfdlist_13,nhfd);
-      SetLength(hfdlist_23,nhfd);
-      SetLength(hfdlist_33,nhfd);
-
-      nhfd_11:=0;
-      nhfd_21:=0;
-      nhfd_31:=0;
-
-      nhfd_12:=0;
-      nhfd_22:=0;{center}
-      nhfd_32:=0;
-
-      nhfd_13:=0;
-      nhfd_23:=0;
-      nhfd_33:=0;
-
-      nhfd_outer_ring:=0;
-
-      if triangle then
+      if nhfd>0 then  {count the stars for each area}
       begin
-        screw1:=fnmodulo2(measuring_angle,360); {make -180 to 180 range}
-        screw2:=fnmodulo2(measuring_angle+120,360);
-        screw3:=fnmodulo2(measuring_angle-120,360);
-      end;
+        SetLength(hfdlist_outer_ring,nhfd);{space for all stars}
+        SetLength(hfdlist_11,nhfd);{space for all stars}
+        SetLength(hfdlist_21,nhfd);{space for all stars}
+        SetLength(hfdlist_31,nhfd);
 
-      for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
-      begin
-        hfd1:=hfd_list[i];
-        starX:=round(starlistXY[0,i]);
-        starY:=round(starlistXY[1,i]);
+        SetLength(hfdlist_12,nhfd);
+        SetLength(hfdlist_22,nhfd);
+        SetLength(hfdlist_32,nhfd);
+
+        SetLength(hfdlist_13,nhfd);
+        SetLength(hfdlist_23,nhfd);
+        SetLength(hfdlist_33,nhfd);
+
+        nhfd_11:=0;
+        nhfd_21:=0;
+        nhfd_31:=0;
+
+        nhfd_12:=0;
+        nhfd_22:=0;{center}
+        nhfd_32:=0;
+
+        nhfd_13:=0;
+        nhfd_23:=0;
+        nhfd_33:=0;
+
+        nhfd_outer_ring:=0;
+
+        if triangle then
+        begin
+          screw1:=fnmodulo2(measuring_angle,360); {make -180 to 180 range}
+          screw2:=fnmodulo2(measuring_angle+120,360);
+          screw3:=fnmodulo2(measuring_angle-120,360);
+        end;
+
+        for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
+        begin
+          hfd1:=hfd_list[i];
+          starX:=round(starlistXY[0,i]);
+          starY:=round(starlistXY[1,i]);
+
+          if screenplot then
+          begin
+            size:=round(5*hfd1);
+            starX2:=starX;
+            starY2:=starY;
+            flip_xy(fliph,flipv,starX2,starY2); {from array to image coordinates}
+            mainform1.image1.Canvas.Rectangle(starX2-size,starY2-size, starX2+size, starY2+size);{indicate hfd with rectangle}
+            mainform1.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffFixed, 0,2));{add hfd as text}
+          end;
+
+          //the nine areas. FITS 1,1 is left bottom:
+          //13   23   33
+          //12   22   32
+          //11   21   31
+
+          if  sqr(starX - (smx) )+sqr(starY - (smy))>sqr(0.75)*(sqr(smx)+sqr(smy)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); end;{store out ring (>75% diameter) HFD values}
+          if triangle=false then
+          begin
+            if ( (starX<(headx.width*1/3)) and (starY<(headx.height*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); end;{store corner HFD values}
+            if ( (starX>(headx.width*2/3)) and (starY<(headx.height*1/3)) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31); if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+500);end;
+            if ( (starX>(headx.width*2/3)) and (starY>(headx.height*2/3)) ) then begin  hfdlist_33[nhfd_33]:=hfd1;  inc(nhfd_33); if nhfd_33>=length(hfdlist_33) then SetLength(hfdlist_33,nhfd_33+500);end;
+            if ( (starX<(headx.width*1/3)) and (starY>(headx.height*2/3)) ) then begin  hfdlist_13[nhfd_13]:=hfd1;  inc(nhfd_13); if nhfd_13>=length(hfdlist_13) then SetLength(hfdlist_13,nhfd_13+500);end;
+
+            if ( (starX>(headx.width*1/3)) and (starX<(headx.width*2/3)) and (starY>(headx.height*2/3))                              ) then begin  hfdlist_23[nhfd_23]:=hfd1;  inc(nhfd_23); end;{store corner HFD values}
+            if (                              (starX<(headx.width*1/3)) and (starY>(headx.height*1/3)) and (starY<(headx.height*2/3))) then begin  hfdlist_12[nhfd_12]:=hfd1;  inc(nhfd_12); end;{store corner HFD values}
+            if ( (starX>(headx.width*1/3)) and (starX<(headx.width*2/3)) and (starY>(headx.height*1/3)) and (starY<(headx.height*2/3))) then begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22); end;{square center}
+            if ( (starX>(headx.width*2/3))                              and (starY>(headx.height*1/3)) and (starY<(headx.height*2/3))) then begin  hfdlist_32[nhfd_32]:=hfd1;  inc(nhfd_32); end;{store corner HFD values}
+            if ( (starX>(headx.width*1/3)) and (starX<(headx.width*2/3)) and                               (starY<(headx.height*1/3))) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21); end;{store corner HFD values}
+
+          end
+          else
+          begin  {triangle. Measured in a circle divided by three sectors of 120 degrees except for the circular center}
+            x_centered:=starX- (smx); {array coordinates}
+            y_centered:=starY- (smy);
+            theangle:=arctan2(x_centered,y_centered)*180/pi;{angle in array from Y axis. So swap x, y}
+            sqrradius:=sqr(x_centered)+sqr(x_centered);
+            theradius:=sqrt(sqrradius);
+
+            if  sqrradius<=sqr(0.75)*(sqr(smx)+sqr(smy)) then {within circle}
+            begin
+              if  sqrradius>=sqr(0.25)*(sqr(smx)+sqr(smy))  then {outside center}
+              begin
+                if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<smy) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+1000);end;{sector 1}
+                if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<smy) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+1000);end;{sector 2}
+                if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<smy) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+1000);end;{sector 3}
+              end
+              else
+              begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22);end;{round center}
+            end;
+          end
+        end;
+
+        if ((nhfd_22>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
+        begin
+          median_22:=SMedian(hfdlist_22,nhfd_22);
+          median_outer_ring:=SMedian(hfdlist_outer_ring,nhfd_outer_ring);
+          mess1:='  Off-axis aberration[HFD]='+floattostrF(median_outer_ring-(median_22),ffFixed,0,2);{}
+        end
+        else
+        mess1:='';
+
+        hfd_median:=SMedian(hfd_List,nhfd {use length});
+        fwhm_median:=SMedian(fwhm_List,nhfd {use length});
+
+
+
+        if ((triangle=true) and (nhfd_11>0)  and (nhfd_21>0) and (nhfd_31>0)) then  {enough information for tilt calculation}
+        begin
+          median_11:=SMedian(hfdlist_11,nhfd_11);{screw 1}
+          median_21:=SMedian(hfdlist_21,nhfd_21);{screw 2}
+          median_31:=SMedian(hfdlist_31,nhfd_31);{screw 3}
+
+          median_best:=min(median_11,min(median_21,median_31));{find best corner}
+          median_worst:=max(median_11,max(median_21,median_31));{find worst corner}
+
+          scale_factor:=min(headx.height,head.width)*0.4/median_worst;//works for landscape and portrait orientation
+
+          x_11:=round(median_11*scale_factor*sin(screw1*pi/180)+sm_x); {screw 1}
+          y_11:=round(median_11*scale_factor*cos(screw1*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
+
+
+          x_21:=round(median_21*scale_factor*sin(screw2*pi/180)+sm_x); {screw 2}
+          y_21:=round(median_21*scale_factor*cos(screw2*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
+
+          x_31:=round(median_31*scale_factor*sin(screw3*pi/180)+sm_x);{screw 3}
+          y_31:=round(median_31*scale_factor*cos(screw3*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
+
+          flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}
+          flip_xy(fliph,flipv,x_21,y_21);
+          flip_xy(fliph,flipv,x_31,y_31);
+
+
+          result:=median_worst-median_best; //for export
+
+          tilt_value:=100*(median_worst-median_best)/hfd_median;
+          mess2:='  Tilt[HFD]='+floattostrF(result,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}
+          if tilt_value<5 then mess2:=mess2+' none)'
+          else
+          if tilt_value<10 then mess2:=mess2+' almost none)'
+          else
+          if tilt_value<15 then mess2:=mess2+' mild)'
+          else
+          if tilt_value<20 then mess2:=mess2+' moderate)'
+          else
+          if tilt_value<30 then mess2:=mess2+' severe)'
+          else
+          mess2:=mess2+' extreme)';
+
+          if screenplot then//plot octagon
+          begin
+            image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
+
+            image1.Canvas.pen.color:=clyellow;
+
+
+            image1.Canvas.moveto(x_11,y_11);{draw triangle}
+            image1.Canvas.lineto(x_21,y_21);{draw triangle}
+            image1.Canvas.lineto(x_31,y_31);{draw triangle}
+            image1.Canvas.lineto(x_11,y_11);{draw triangle}
+
+            image1.Canvas.lineto(smx,smy);{draw diagonal}
+            image1.Canvas.lineto(x_21,y_21);{draw diagonal}
+            image1.Canvas.lineto(smx,smy);{draw diagonal}
+            image1.Canvas.lineto(x_31,y_31);{draw diagonal}
+
+            fontsize:=fontsize*4;
+            image1.Canvas.font.size:=fontsize;
+            image1.Canvas.font.style:=[fsbold];
+
+            th:= image1.Canvas.textheight('5');
+            tw:= image1.Canvas.textwidth('2.35');
+            tw2:=tw div 2;
+            th2:=th div 2;
+
+            image1.Canvas.textout(x_11-tw2, y_11-th2,floattostrF(median_11,ffFixed,0,2));
+            image1.Canvas.textout(x_21-tw2, y_21-th2,floattostrF(median_21,ffFixed,0,2));
+            image1.Canvas.textout(x_31-tw2, y_31-th2,floattostrF(median_31,ffFixed,0,2));
+            image1.Canvas.textout(-tw2+smx,-th2+smy,floattostrF(median_22,ffFixed,0,2));
+          end;
+
+        end
+        else
+        if ((triangle=false) and (nhfd_11>0) and (nhfd_21>0) and (nhfd_31>0) and (nhfd_12>0) and (nhfd_32>0) and (nhfd_13>0) and (nhfd_23>0) and (nhfd_33>0)) then  {enough information for tilt calculation}
+        begin
+          median_11:=SMedian(hfdlist_11,nhfd_11);
+          median_21:=SMedian(hfdlist_21,nhfd_21);
+          median_31:=SMedian(hfdlist_31,nhfd_31);
+
+          median_12:=SMedian(hfdlist_12,nhfd_12);
+          {22 is already done}
+          median_32:=SMedian(hfdlist_32,nhfd_32);
+
+          median_13:=SMedian(hfdlist_13,nhfd_13);
+          median_23:=SMedian(hfdlist_23,nhfd_23);
+          median_33:=SMedian(hfdlist_33,nhfd_33);
+
+          median_best:=min(min(median_13, median_33),min(median_11,median_31));{find best corner}
+          median_worst:=max(max(median_13, median_33),max(median_11,median_31));{find worst corner}
+
+          scale_factor:=min(headx.height,head.width)*0.4/median_worst;//works for landscape and portrait orientation
+
+          x_11:=round(-median_11*scale_factor+sm_x);  y_11:=round(-median_11*scale_factor+sm_y);{calculate coordinates counter clockwise}
+          x_21:=round( sm_x);                         y_21:=round(-median_21*scale_factor+sm_y);
+          x_31:=round(+median_31*scale_factor+sm_x);  y_31:=round(-median_31*scale_factor+sm_y);
+
+          x_12:=round(-median_12*scale_factor+sm_x);  y_12:=round(+sm_y);
+          x_22:=smx;                                  y_22:=smy;
+          x_32:=round(+median_32*scale_factor+sm_x);  y_32:=round(+sm_y);
+
+          x_13:=round(-median_13*scale_factor+sm_x);  y_13:=round(+median_13*scale_factor+sm_y);
+          x_23:=round(sm_x);                          y_23:=round(+median_23*scale_factor+sm_y);
+          x_33:=round(+median_33*scale_factor+sm_x);  y_33:=round(+median_33*scale_factor+sm_y);
+
+
+          flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}
+          flip_xy(fliph,flipv,x_21,y_21);
+          flip_xy(fliph,flipv,x_31,y_31);
+
+          flip_xy(fliph,flipv,x_12,y_12); {from array to image coordinates}
+          // flip x_22, y_22 is not required since they are in the middle.
+          flip_xy(fliph,flipv,x_32,y_32); {from array to image coordinates}
+
+          flip_xy(fliph,flipv,x_13,y_13); {from array to image coordinates}
+          flip_xy(fliph,flipv,x_23,y_23); {from array to image coordinates}
+          flip_xy(fliph,flipv,x_33,y_33); {from array to image coordinates}
+
+
+
+          result:=median_worst-median_best; //for export
+          update_text(memo,'TILT    = ',floattostr2(result)+'                / Delta HFD between worst and best corner. SNR>'+floattostrF(snr_min,FFgeneral,0,0));;//two decimals only for nice reporting
+
+
+          tilt_value:=100*(median_worst-median_best)/hfd_median;
+          mess2:='  Tilt[HFD]='+floattostrF(median_worst-median_best,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}
+          if tilt_value<5 then mess2:=mess2+' none)'
+          else
+          if tilt_value<10 then mess2:=mess2+' almost none)'
+          else
+          if tilt_value<15 then mess2:=mess2+' mild)'
+          else
+          if tilt_value<20 then mess2:=mess2+' moderate)'
+          else
+          if tilt_value<30 then mess2:=mess2+' severe)'
+          else
+          mess2:=mess2+' extreme)';
+
+
+          if screenplot then//plot octagon
+          begin
+            image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
+            image1.Canvas.pen.color:=clyellow;
+
+            image1.Canvas.moveto(x_11,y_11);{draw trapezium}
+            image1.Canvas.lineto(x_21,y_21);{draw trapezium}
+            image1.Canvas.lineto(x_31,y_31);{draw trapezium}
+            image1.Canvas.lineto(x_32,y_32);{draw trapezium}
+            image1.Canvas.lineto(x_33,y_33);{draw trapezium}
+            image1.Canvas.lineto(x_23,y_23);{draw trapezium}
+            image1.Canvas.lineto(x_13,y_13);{draw trapezium}
+            image1.Canvas.lineto(x_12,y_12);{draw trapezium}
+            image1.Canvas.lineto(x_11,y_11);{draw trapezium}
+
+            image1.Canvas.lineto(smx,smy);{draw diagonal}
+            image1.Canvas.lineto(x_31,y_31);{draw diagonal}
+            image1.Canvas.lineto(smx,smy);{draw diagonal}
+            image1.Canvas.lineto(x_33,y_33);{draw diagonal}
+            image1.Canvas.lineto(smx,smy);{draw diagonal}
+            image1.Canvas.lineto(x_13,y_13);{draw diagonal}
+
+            fontsize:=fontsize*4;
+            image1.Canvas.font.size:=fontsize;
+
+            with image1.Canvas.TextStyle do Alignment := taRightJustify;
+
+            th:= (image1.Canvas.textheight('5'));
+            th2:=th div 2;
+
+            tw:= image1.Canvas.textwidth('2.35');
+
+            textout_octogram(x_11,y_11    ,median_11);
+            textout_octogram(x_21 ,y_21    ,median_21);
+            textout_octogram(x_31 ,y_31    ,median_31);
+
+            textout_octogram(x_12 ,y_12,median_12);
+            textout_octogram(x_22 ,y_22,median_22);
+            textout_octogram(x_32 ,y_32,median_32);
+
+            textout_octogram(x_13 ,y_13,median_13);
+            textout_octogram(x_23 ,y_23,median_23);
+            textout_octogram(x_33 ,y_33,median_33);
+
+
+
+          end;
+        end
+        else
+        begin
+          mess2:='';
+        end;
+
+        image1.Canvas.font.style:=[];
 
         if screenplot then
         begin
-          size:=round(5*hfd1);
-          starX2:=starX;
-          starY2:=starY;
-          flip_xy(fliph,flipv,starX2,starY2); {from array to image coordinates}
-          mainform1.image1.Canvas.Rectangle(starX2-size,starY2-size, starX2+size, starY2+size);{indicate hfd with rectangle}
-          mainform1.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffFixed, 0,2));{add hfd as text}
-        end;
-
-        //the nine areas. FITS 1,1 is left bottom:
-        //13   23   33
-        //12   22   32
-        //11   21   31
-
-        if  sqr(starX - (smx) )+sqr(starY - (smy))>sqr(0.75)*(sqr(smx)+sqr(smy)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); end;{store out ring (>75% diameter) HFD values}
-        if triangle=false then
-        begin
-          if ( (starX<(headx.width*1/3)) and (starY<(headx.height*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); end;{store corner HFD values}
-          if ( (starX>(headx.width*2/3)) and (starY<(headx.height*1/3)) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31); if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+500);end;
-          if ( (starX>(headx.width*2/3)) and (starY>(headx.height*2/3)) ) then begin  hfdlist_33[nhfd_33]:=hfd1;  inc(nhfd_33); if nhfd_33>=length(hfdlist_33) then SetLength(hfdlist_33,nhfd_33+500);end;
-          if ( (starX<(headx.width*1/3)) and (starY>(headx.height*2/3)) ) then begin  hfdlist_13[nhfd_13]:=hfd1;  inc(nhfd_13); if nhfd_13>=length(hfdlist_13) then SetLength(hfdlist_13,nhfd_13+500);end;
-
-          if ( (starX>(headx.width*1/3)) and (starX<(headx.width*2/3)) and (starY>(headx.height*2/3))                              ) then begin  hfdlist_23[nhfd_23]:=hfd1;  inc(nhfd_23); end;{store corner HFD values}
-          if (                              (starX<(headx.width*1/3)) and (starY>(headx.height*1/3)) and (starY<(headx.height*2/3))) then begin  hfdlist_12[nhfd_12]:=hfd1;  inc(nhfd_12); end;{store corner HFD values}
-          if ( (starX>(headx.width*1/3)) and (starX<(headx.width*2/3)) and (starY>(headx.height*1/3)) and (starY<(headx.height*2/3))) then begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22); end;{square center}
-          if ( (starX>(headx.width*2/3))                              and (starY>(headx.height*1/3)) and (starY<(headx.height*2/3))) then begin  hfdlist_32[nhfd_32]:=hfd1;  inc(nhfd_32); end;{store corner HFD values}
-          if ( (starX>(headx.width*1/3)) and (starX<(headx.width*2/3)) and                               (starY<(headx.height*1/3))) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21); end;{store corner HFD values}
-
-        end
-        else
-        begin  {triangle. Measured in a circle divided by three sectors of 120 degrees except for the circular center}
-          x_centered:=starX- (smx); {array coordinates}
-          y_centered:=starY- (smy);
-          theangle:=arctan2(x_centered,y_centered)*180/pi;{angle in array from Y axis. So swap x, y}
-          sqrradius:=sqr(x_centered)+sqr(x_centered);
-          theradius:=sqrt(sqrradius);
-
-          if  sqrradius<=sqr(0.75)*(sqr(smx)+sqr(smy)) then {within circle}
+          str(hfd_median:0:1,hfd_value);
+          str(fwhm_median:0:1,fwhm_value);
+          if headx.cdelt2<>0 then
           begin
-            if  sqrradius>=sqr(0.25)*(sqr(smx)+sqr(smy))  then {outside center}
-            begin
-              if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<smy) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+1000);end;{sector 1}
-              if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<smy) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+1000);end;{sector 2}
-              if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<smy) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+1000);end;{sector 3}
-            end
-            else
-            begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22);end;{round center}
+             str(hfd_median*abs(headx.cdelt2)*3600:0:1,hfd_arcsec);
+             hfd_arcsec:=' ('+hfd_arcsec+'")';
+             str(fwhm_median*abs(headx.cdelt2)*3600:0:1,fwhm_arcsec);
+             fwhm_arcsec:=' ('+fwhm_arcsec+'")';
+          end
+          else
+          begin
+            hfd_arcsec:='';
+            fwhm_arcsec:='';
           end;
-        end
-      end;
+          mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
-      if ((nhfd_22>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
-      begin
-        median_22:=SMedian(hfdlist_22,nhfd_22);
-        median_outer_ring:=SMedian(hfdlist_outer_ring,nhfd_outer_ring);
-        mess1:='  Off-axis aberration[HFD]='+floattostrF(median_outer_ring-(median_22),ffFixed,0,2);{}
-      end
-      else
-      mess1:='';
-
-      hfd_median:=SMedian(hfd_List,nhfd {use length});
-      fwhm_median:=SMedian(fwhm_List,nhfd {use length});
-
-
-
-      if ((triangle=true) and (nhfd_11>0)  and (nhfd_21>0) and (nhfd_31>0)) then  {enough information for tilt calculation}
-      begin
-        median_11:=SMedian(hfdlist_11,nhfd_11);{screw 1}
-        median_21:=SMedian(hfdlist_21,nhfd_21);{screw 2}
-        median_31:=SMedian(hfdlist_31,nhfd_31);{screw 3}
-
-        median_best:=min(median_11,min(median_21,median_31));{find best corner}
-        median_worst:=max(median_11,max(median_21,median_31));{find worst corner}
-
-        scale_factor:=min(headx.height,head.width)*0.4/median_worst;//works for landscape and portrait orientation
-
-        x_11:=round(median_11*scale_factor*sin(screw1*pi/180)+sm_x); {screw 1}
-        y_11:=round(median_11*scale_factor*cos(screw1*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
-
-
-        x_21:=round(median_21*scale_factor*sin(screw2*pi/180)+sm_x); {screw 2}
-        y_21:=round(median_21*scale_factor*cos(screw2*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
-
-        x_31:=round(median_31*scale_factor*sin(screw3*pi/180)+sm_x);{screw 3}
-        y_31:=round(median_31*scale_factor*cos(screw3*pi/180)+sm_y);{calculate coordinates, based on rotation distance from Y axis}
-
-        flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}
-        flip_xy(fliph,flipv,x_21,y_21);
-        flip_xy(fliph,flipv,x_31,y_31);
-
-
-        result:=median_worst-median_best; //for export
-
-        tilt_value:=100*(median_worst-median_best)/hfd_median;
-        mess2:='  Tilt[HFD]='+floattostrF(result,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}
-        if tilt_value<5 then mess2:=mess2+' none)'
-        else
-        if tilt_value<10 then mess2:=mess2+' almost none)'
-        else
-        if tilt_value<15 then mess2:=mess2+' mild)'
-        else
-        if tilt_value<20 then mess2:=mess2+' moderate)'
-        else
-        if tilt_value<30 then mess2:=mess2+' severe)'
-        else
-        mess2:=mess2+' extreme)';
-
-        if screenplot then//plot octagon
-        begin
-          image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
-
-          image1.Canvas.pen.color:=clyellow;
-
-
-          image1.Canvas.moveto(x_11,y_11);{draw triangle}
-          image1.Canvas.lineto(x_21,y_21);{draw triangle}
-          image1.Canvas.lineto(x_31,y_31);{draw triangle}
-          image1.Canvas.lineto(x_11,y_11);{draw triangle}
-
-          image1.Canvas.lineto(smx,smy);{draw diagonal}
-          image1.Canvas.lineto(x_21,y_21);{draw diagonal}
-          image1.Canvas.lineto(smx,smy);{draw diagonal}
-          image1.Canvas.lineto(x_31,y_31);{draw diagonal}
-
-          fontsize:=fontsize*4;
+          text_width:=mainform1.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
+          fontsize:=min(60,trunc(fontsize*(headx.width*0.9)/text_width));{use 90% of width}
           image1.Canvas.font.size:=fontsize;
-          image1.Canvas.font.style:=[fsbold];
+          image1.Canvas.font.color:=clwhite;
+          text_height:=mainform1.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
-          th:= image1.Canvas.textheight('5');
-          tw:= image1.Canvas.textwidth('2.35');
-          tw2:=tw div 2;
-          th2:=th div 2;
+          left_margin:=min(headx.width div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
 
-          image1.Canvas.textout(x_11-tw2, y_11-th2,floattostrF(median_11,ffFixed,0,2));
-          image1.Canvas.textout(x_21-tw2, y_21-th2,floattostrF(median_21,ffFixed,0,2));
-          image1.Canvas.textout(x_31-tw2, y_31-th2,floattostrF(median_31,ffFixed,0,2));
-          image1.Canvas.textout(-tw2+smx,-th2+smy,floattostrF(median_22,ffFixed,0,2));
-        end;
+          image1.Canvas.Brush.Style:=bssolid; //Bsclear;
+          image1.Canvas.Brush.Color:=clBlack;
+          image1.Canvas.textout(left_margin,headx.height-text_height,mess2);{median HFD and tilt indication}
 
-      end
-      else
-      if ((triangle=false) and (nhfd_11>0) and (nhfd_21>0) and (nhfd_31>0) and (nhfd_12>0) and (nhfd_32>0) and (nhfd_13>0) and (nhfd_23>0) and (nhfd_33>0)) then  {enough information for tilt calculation}
-      begin
-        median_11:=SMedian(hfdlist_11,nhfd_11);
-        median_21:=SMedian(hfdlist_21,nhfd_21);
-        median_31:=SMedian(hfdlist_31,nhfd_31);
-
-        median_12:=SMedian(hfdlist_12,nhfd_12);
-        {22 is already done}
-        median_32:=SMedian(hfdlist_32,nhfd_32);
-
-        median_13:=SMedian(hfdlist_13,nhfd_13);
-        median_23:=SMedian(hfdlist_23,nhfd_23);
-        median_33:=SMedian(hfdlist_33,nhfd_33);
-
-        median_best:=min(min(median_13, median_33),min(median_11,median_31));{find best corner}
-        median_worst:=max(max(median_13, median_33),max(median_11,median_31));{find worst corner}
-
-        scale_factor:=min(headx.height,head.width)*0.4/median_worst;//works for landscape and portrait orientation
-
-        x_11:=round(-median_11*scale_factor+sm_x);  y_11:=round(-median_11*scale_factor+sm_y);{calculate coordinates counter clockwise}
-        x_21:=round( sm_x);                         y_21:=round(-median_21*scale_factor+sm_y);
-        x_31:=round(+median_31*scale_factor+sm_x);  y_31:=round(-median_31*scale_factor+sm_y);
-
-        x_12:=round(-median_12*scale_factor+sm_x);  y_12:=round(+sm_y);
-        x_22:=smx;                                  y_22:=smy;
-        x_32:=round(+median_32*scale_factor+sm_x);  y_32:=round(+sm_y);
-
-        x_13:=round(-median_13*scale_factor+sm_x);  y_13:=round(+median_13*scale_factor+sm_y);
-        x_23:=round(sm_x);                          y_23:=round(+median_23*scale_factor+sm_y);
-        x_33:=round(+median_33*scale_factor+sm_x);  y_33:=round(+median_33*scale_factor+sm_y);
-
-
-        flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}
-        flip_xy(fliph,flipv,x_21,y_21);
-        flip_xy(fliph,flipv,x_31,y_31);
-
-        flip_xy(fliph,flipv,x_12,y_12); {from array to image coordinates}
-        // flip x_22, y_22 is not required since they are in the middle.
-        flip_xy(fliph,flipv,x_32,y_32); {from array to image coordinates}
-
-        flip_xy(fliph,flipv,x_13,y_13); {from array to image coordinates}
-        flip_xy(fliph,flipv,x_23,y_23); {from array to image coordinates}
-        flip_xy(fliph,flipv,x_33,y_33); {from array to image coordinates}
-
-
-
-        result:=median_worst-median_best; //for export
-        update_text(memo,'TILT    = ',floattostr2(result)+'                / Delta HFD between worst and best corner. SNR>'+floattostrF(snr_min,FFgeneral,0,0));;//two decimals only for nice reporting
-
-
-        tilt_value:=100*(median_worst-median_best)/hfd_median;
-        mess2:='  Tilt[HFD]='+floattostrF(median_worst-median_best,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}
-        if tilt_value<5 then mess2:=mess2+' none)'
-        else
-        if tilt_value<10 then mess2:=mess2+' almost none)'
-        else
-        if tilt_value<15 then mess2:=mess2+' mild)'
-        else
-        if tilt_value<20 then mess2:=mess2+' moderate)'
-        else
-        if tilt_value<30 then mess2:=mess2+' severe)'
-        else
-        mess2:=mess2+' extreme)';
-
-
-        if screenplot then//plot octagon
-        begin
-          image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
-          image1.Canvas.pen.color:=clyellow;
-
-          image1.Canvas.moveto(x_11,y_11);{draw trapezium}
-          image1.Canvas.lineto(x_21,y_21);{draw trapezium}
-          image1.Canvas.lineto(x_31,y_31);{draw trapezium}
-          image1.Canvas.lineto(x_32,y_32);{draw trapezium}
-          image1.Canvas.lineto(x_33,y_33);{draw trapezium}
-          image1.Canvas.lineto(x_23,y_23);{draw trapezium}
-          image1.Canvas.lineto(x_13,y_13);{draw trapezium}
-          image1.Canvas.lineto(x_12,y_12);{draw trapezium}
-          image1.Canvas.lineto(x_11,y_11);{draw trapezium}
-
-          image1.Canvas.lineto(smx,smy);{draw diagonal}
-          image1.Canvas.lineto(x_31,y_31);{draw diagonal}
-          image1.Canvas.lineto(smx,smy);{draw diagonal}
-          image1.Canvas.lineto(x_33,y_33);{draw diagonal}
-          image1.Canvas.lineto(smx,smy);{draw diagonal}
-          image1.Canvas.lineto(x_13,y_13);{draw diagonal}
-
-          fontsize:=fontsize*4;
-          image1.Canvas.font.size:=fontsize;
-
-          with image1.Canvas.TextStyle do Alignment := taRightJustify;
-
-          th:= (image1.Canvas.textheight('5'));
-          th2:=th div 2;
-
-          tw:= image1.Canvas.textwidth('2.35');
-
-          textout_octogram(x_11,y_11    ,median_11);
-          textout_octogram(x_21 ,y_21    ,median_21);
-          textout_octogram(x_31 ,y_31    ,median_31);
-
-          textout_octogram(x_12 ,y_12,median_12);
-          textout_octogram(x_22 ,y_22,median_22);
-          textout_octogram(x_32 ,y_32,median_32);
-
-          textout_octogram(x_13 ,y_13,median_13);
-          textout_octogram(x_23 ,y_23,median_23);
-          textout_octogram(x_33 ,y_33,median_33);
-
-
-
+          mess2:=mess2+'. Median FWHM='+fwhm_value+fwhm_arcsec;
+          memo2_message(mess2);{for stacking live}
         end;
       end
       else
-      begin
-        mess2:='';
-      end;
-
-      image1.Canvas.font.style:=[];
-
-      if screenplot then
-      begin
-        str(hfd_median:0:1,hfd_value);
-        str(fwhm_median:0:1,fwhm_value);
-        if headx.cdelt2<>0 then
-        begin
-           str(hfd_median*abs(headx.cdelt2)*3600:0:1,hfd_arcsec);
-           hfd_arcsec:=' ('+hfd_arcsec+'")';
-           str(fwhm_median*abs(headx.cdelt2)*3600:0:1,fwhm_arcsec);
-           fwhm_arcsec:=' ('+fwhm_arcsec+'")';
-        end
-        else
-        begin
-          hfd_arcsec:='';
-          fwhm_arcsec:='';
-        end;
-        mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
-
-        text_width:=mainform1.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
-        fontsize:=min(60,trunc(fontsize*(headx.width*0.9)/text_width));{use 90% of width}
-        image1.Canvas.font.size:=fontsize;
-        image1.Canvas.font.color:=clwhite;
-        text_height:=mainform1.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-
-        left_margin:=min(headx.width div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
-
-        image1.Canvas.Brush.Style:=bssolid; //Bsclear;
-        image1.Canvas.Brush.Color:=clBlack;
-        image1.Canvas.textout(left_margin,headx.height-text_height,mess2);{median HFD and tilt indication}
-
-        mess2:=mess2+'. Median FWHM='+fwhm_value+fwhm_arcsec;
-        memo2_message(mess2);{for stacking live}
-      end;
-    end
-    else
-      image1.Canvas.textout(round(fontsize*2),headx.height- round(fontsize*4),'No stars detected');
-  end;{with mainform1}
-
-  Screen.Cursor:=crDefault;
+        image1.Canvas.textout(round(fontsize*2),headx.height- round(fontsize*4),'No stars detected');
+    end;{with mainform1}
+  finally
+    Screen.Cursor:=crDefault;
+  end;
 end;
 
 
@@ -1355,7 +1357,7 @@ var
   tx,ty,fontsize,halfstepX,halfstepY,stepX,stepY,fx,fy: integer;
   X,Y,stepsizeX,stepsizeY,median,median_center,factor : double;
   img_bk                                     : Timage_array;
-  Flipvertical, Fliphorizontal, restore_req  : boolean;
+  Flipvertical, Fliphorizontal, restore_req,success  : boolean;
   detext  : string;
 begin
   if head.naxis=0 then exit; {file loaded?}
@@ -1365,87 +1367,90 @@ begin
   executed:=1;{only refresh required to undo}
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  restore_req:=false;
+  try
+    restore_req:=false;
 
 
-  if head.naxis3>1 then {colour image}
-  begin
-    img_bk:=duplicate(img_loaded);
-    convert_mono(img_loaded,head);
-    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
-    restore_req:=true;{restore original image later}
-  end
-  else
-  if bayerpat<>'' then {raw Bayer image}
-  begin
-    img_bk:=duplicate(img_loaded);
-    check_pattern_filter(img_loaded);
-    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
-    restore_req:=true; {restore original image later}
-  end;
-
-
-  with mainform1 do
-  begin
-    Flipvertical:=mainform1.flip_vertical1.Checked;
-    Fliphorizontal:=mainform1.Flip_horizontal1.Checked;
-
-
-    image1.Canvas.Pen.Mode := pmMerge;
-    image1.Canvas.brush.Style:=bsClear;
-    image1.Canvas.font.color:=clyellow;
-    fontsize:=round(max(7,head.width/115));{adapt font to image dimensions}
-    image1.Canvas.font.size:=fontsize;
-
-    stepX:=trunc(head.width/(fontsize*6));{115/6 => 19  steps maximum, reduce if image is too small for font to fit}
-    stepY:=trunc(stepX*head.height/head.width);       {stepY in ratio,typical 13 steps}
-
-    if odd(stepX)=false then stepX:=stepX+1; {make odd}
-    if odd(stepY)=false then stepY:=stepY+1; {make odd}
-
-    stepsizeX:=head.width/stepX;{stepsizeX is a double value}
-    stepsizeY:=head.height/stepY;{stepsizeY is a double value}
-
-    halfstepX:=round(stepsizeX/2);
-    halfstepY:=round(stepsizeY/2);
-
-    median_center:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),head.width div 2,head.height div 2);{find median value of an area at position x,y with sizeX,sizeY}
-    Y:=halfstepY;
-    repeat
-
-      X:=halfstepX;
-      repeat
-        median:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),round(X),round(Y));{find median value of an area at position x,y with sizeX,sizeY}
-
-        factor:=median/median_center;
-        if abs(1-factor)>0.03 then image1.Canvas.font.color:=$00A5FF {dark orange} else image1.Canvas.font.color:=clYellow;
-        detext:=floattostrf(factor, ffgeneral, 3,0);
-
-        tx:=round(X);
-        ty:=round(Y);
-
-        if Flipvertical=false then  tY:=head.height-tY;
-        if Fliphorizontal then tX:=head.width-tX;
-
-        tx:=round(X)-( mainform1.image1.canvas.Textwidth(detext) div 2);{make text centered at x, y}
-        ty:=round(Y)-( mainform1.image1.canvas.Textheight(detext) div 2);
-        mainform1.image1.Canvas.textout(tX,tY,detext);{add as text}
-
-        X:=X+stepsizeX;
-      until X>=head.width-1;
-
-      Y:=Y+stepsizeY;
-    until Y>=head.height-1;
-
-    if restore_req then {restore backup image for raw Bayer image or colour image}
+    if head.naxis3>1 then {colour image}
     begin
-      memo2_message('Restoring image');
-      img_loaded:=duplicate(img_bk);//fastest way to duplicate an image
-      get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
-      img_bk:=nil;//free mem
+      if duplicate(img_loaded,img_bk)=false then exit;//fastest way to duplicate an image
+      convert_mono(img_loaded,head);
+      get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+      restore_req:=true;{restore original image later}
+    end
+    else
+    if bayerpat<>'' then {raw Bayer image}
+    begin
+      if duplicate(img_loaded,img_bk)=false then exit;//fastest way to duplicate an image
+      check_pattern_filter(img_loaded);
+      get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+      restore_req:=true; {restore original image later}
     end;
+
+
+    with mainform1 do
+    begin
+      Flipvertical:=mainform1.flip_vertical1.Checked;
+      Fliphorizontal:=mainform1.Flip_horizontal1.Checked;
+
+
+      image1.Canvas.Pen.Mode := pmMerge;
+      image1.Canvas.brush.Style:=bsClear;
+      image1.Canvas.font.color:=clyellow;
+      fontsize:=round(max(7,head.width/115));{adapt font to image dimensions}
+      image1.Canvas.font.size:=fontsize;
+
+      stepX:=trunc(head.width/(fontsize*6));{115/6 => 19  steps maximum, reduce if image is too small for font to fit}
+      stepY:=trunc(stepX*head.height/head.width);       {stepY in ratio,typical 13 steps}
+
+      if odd(stepX)=false then stepX:=stepX+1; {make odd}
+      if odd(stepY)=false then stepY:=stepY+1; {make odd}
+
+      stepsizeX:=head.width/stepX;{stepsizeX is a double value}
+      stepsizeY:=head.height/stepY;{stepsizeY is a double value}
+
+      halfstepX:=round(stepsizeX/2);
+      halfstepY:=round(stepsizeY/2);
+
+      median_center:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),head.width div 2,head.height div 2);{find median value of an area at position x,y with sizeX,sizeY}
+      Y:=halfstepY;
+      repeat
+
+        X:=halfstepX;
+        repeat
+          median:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),round(X),round(Y));{find median value of an area at position x,y with sizeX,sizeY}
+
+          factor:=median/median_center;
+          if abs(1-factor)>0.03 then image1.Canvas.font.color:=$00A5FF {dark orange} else image1.Canvas.font.color:=clYellow;
+          detext:=floattostrf(factor, ffgeneral, 3,0);
+
+          tx:=round(X);
+          ty:=round(Y);
+
+          if Flipvertical=false then  tY:=head.height-tY;
+          if Fliphorizontal then tX:=head.width-tX;
+
+          tx:=round(X)-( mainform1.image1.canvas.Textwidth(detext) div 2);{make text centered at x, y}
+          ty:=round(Y)-( mainform1.image1.canvas.Textheight(detext) div 2);
+          mainform1.image1.Canvas.textout(tX,tY,detext);{add as text}
+
+          X:=X+stepsizeX;
+        until X>=head.width-1;
+
+        Y:=Y+stepsizeY;
+      until Y>=head.height-1;
+
+      if restore_req then {restore backup image for raw Bayer image or colour image}
+      begin
+        memo2_message('Restoring image');
+        duplicate(img_bk,img_loaded);//fastest way to duplicate an image
+        get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
+      end;
+    end;
+
+  finally
+    Screen.Cursor:=crDefault;
   end;
-  Screen.Cursor:=crDefault;
 end;
 
 procedure Tform_inspection1.background_contour1Click(Sender: TObject);
@@ -1453,6 +1458,7 @@ var
   fx,fy                       : integer;
   high_level,low_level,srange : double;
   img_bk                      : Timage_array;
+  success                     : boolean;
 begin
   if head.naxis=0 then exit; {file loaded?}
 
@@ -1460,47 +1466,46 @@ begin
 
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
-  backup_img;
+  try
+    backup_img;
+
+    case inspector_binning of
+      1: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,2);
+      2: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,3);
+      3: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,4);
+    end;
+
+    if duplicate(img_loaded,img_bk)=false then exit;//if failure to duplicate jump to finally
+
+    apply_trimmed_median_background(img_bk, img_loaded,head.datamax_org,inspector_grid_size);  {apply most common filter on first array and place result in second array}
+
+    gaussian_blur_threaded(img_loaded, inspector_grid_size *2 {4 * strtofloat2(most_common_filter_radius1.Text)});
 
 
-  case inspector_binning of
-    1: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,2);
-    2: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,3);
-    3: bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,4);
+    plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+
+    //find low and high level
+    high_level:=0;
+    low_level:=9999999;
+    for fy:=0 to (head.height-1) div 50 do
+      for fx:=0 to (head.width-1) div 50 do
+     begin
+       high_level:=max(high_level,img_loaded[0,fy*50,fx*50]);
+       low_level:=min(low_level,img_loaded[0,fy*50,fx*50]);
+     end;
+
+    for fy:=0 to head.height-1 do
+      for fx:=0 to head.width-1 do
+        img_loaded[0,fy,fx]:= low_level +  ((high_level-low_level)/inspector_gradations)*round( (img_loaded[0,fy,fx]-low_level)*inspector_gradations/(high_level-low_level));
+
+    srange:=high_level-low_level;
+    mainform1.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  plot_histogram doesn't work that well for blurred image.
+    mainform1.minimum1.position:=round(low_level-0.05*srange);
+
+    plot_image(mainform1.image1, False);{plot real}
+  finally
+    Screen.Cursor:=crDefault;
   end;
-
-  img_bk:=duplicate(img_loaded);
-
-  apply_trimmed_median_background(img_bk, img_loaded,head.datamax_org,inspector_grid_size);  {apply most common filter on first array and place result in second array}
-
-  gaussian_blur_threaded(img_loaded, inspector_grid_size *2 {4 * strtofloat2(most_common_filter_radius1.Text)});
-
-
-  plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-
-  //find low and high level
-  high_level:=0;
-  low_level:=9999999;
-  for fy:=0 to (head.height-1) div 50 do
-    for fx:=0 to (head.width-1) div 50 do
-   begin
-     high_level:=max(high_level,img_loaded[0,fy*50,fx*50]);
-     low_level:=min(low_level,img_loaded[0,fy*50,fx*50]);
-   end;
-
-  for fy:=0 to head.height-1 do
-    for fx:=0 to head.width-1 do
-      img_loaded[0,fy,fx]:= low_level +  ((high_level-low_level)/inspector_gradations)*round( (img_loaded[0,fy,fx]-low_level)*inspector_gradations/(high_level-low_level));
-
-  srange:=high_level-low_level;
-  mainform1.maximum1.position:=round(high_level+0.1*srange); //set sliders again since  plot_histogram doesn't work that well for blurred image.
-  mainform1.minimum1.position:=round(low_level-0.05*srange);
-
-  plot_image(mainform1.image1, False);{plot real}
-
-  img_bk:=nil;//free mem
-
-  Screen.Cursor:=crDefault;
 end;
 
 procedure Tform_inspection1.bin_factor1Change(Sender: TObject);

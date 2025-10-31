@@ -2352,7 +2352,8 @@ begin
             begin
               if analyse_quick1.Checked then
               begin
-                bin_mono_and_crop(2, 1,img,img_binned); //{Make mono, bin and crop}
+                binning:=2;
+                bin_mono_and_crop(binning, 1,img,img_binned); //{Make mono, bin and crop}
                 analyse_image(img_binned, headx, 10 {snr_min}, 0); {find background, number of stars, median HFD}
                 headx.hfd_median:=headx.hfd_median*2;
               end
@@ -3178,9 +3179,6 @@ begin
     end;//y loop
   end;{all colors}
 
-  //img_loaded:=duplicate(img_temp2);
-  // exit;
-
   {smooth flat}
   gaussian_blur_threaded(img_temp2, box_size * 2);
 
@@ -3189,8 +3187,6 @@ begin
     for fitsY := 0 to h - 1 do
       for fitsX := 0 to w - 1 do
         img[col, fitsY, fitsX] := img[col, fitsY, fitsX] * img_temp2[col, fitsY, fitsX];
-
-  img_temp2 := nil;
 end;
 
 
@@ -8084,18 +8080,6 @@ var
                  application.processmessages;
               end;
             end;
-
-
-            procedure nil_all;{reactivate listview updating, nil all arrays and restore cursor}
-            begin
-              stop_updating(false);
-              //remove following line at the end of 2025
-              if ((pos('V5', uppercase(star_database1.Text)) <> 0) and (length(database2)>107) and (database2[107]<>'.')) then memo2_message(' █ █ █ █ █ █  Upgrade adviced! There is a newer V50 database available with a tiny correction of typically 0.0005 magnitude. Download and install. █ █ █ █ █ █');
-
-              annulus_plotted:=false;//allow shapes again
-
-              Screen.Cursor := crDefault;{back to normal }
-            end;
 begin
   if listview7.items.Count <= 0 then exit; {no files}
 
@@ -8112,449 +8096,447 @@ begin
 
   {check is analyse is done}
   analysedP := True;
-  for c := 0 to listview7.items.Count - 1 do
-  begin
-    if ((listview7.Items.item[c].Checked) and
-      (listview7.Items.item[c].subitems.Strings[B_width] = '' {width})) then analysedP := False;
-  end;
-  if analysedP = False then
-       stackmenu1.analysephotometry1Click(nil);
-  application.ProcessMessages;{show result}
 
-  flipvertical := mainform1.flip_vertical1.Checked;
-  fliphorizontal := mainform1.flip_horizontal1.Checked;
-  apert := strtofloat2(flux_aperture1.Text);
-  aperture_ratio := apert;{remember apert setting}
-  annul := strtofloat2(annulus_radius1.Text);
-
-  esc_pressed := False;
-  warned := False;
-
-  memo2_message( 'Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
-
-  refresh_solutions := (Sender = stackmenu1.refresh_astrometric_solutions1);
-  {refresh astrometric solutions}
-
-  totalnrstr:=inttostr(listview7.items.Count);
-  {solve lights first to allow flux to magnitude calibration}
-  for c := 0 to listview7.items.Count - 1 do {check for astrometric solutions}
-  begin
-    if ((esc_pressed = False) and (listview7.Items.item[c].Checked) and
-      (listview7.Items.item[c].subitems.Strings[P_astrometric] = '')) then
+  try
+    for c := 0 to listview7.items.Count - 1 do
     begin
-      filename1 := listview7.items[c].Caption;
-      mainform1.Caption := filename1;
+      if ((listview7.Items.item[c].Checked) and
+        (listview7.Items.item[c].subitems.Strings[B_width] = '' {width})) then analysedP := False;
+    end;
+    if analysedP = False then
+         stackmenu1.analysephotometry1Click(nil);
+    application.ProcessMessages;{show result}
 
-      Application.ProcessMessages;
-      stop_updating(true);//listview7.Items.BeginUpdate;
+    flipvertical := mainform1.flip_vertical1.Checked;
+    fliphorizontal := mainform1.flip_horizontal1.Checked;
+    apert := strtofloat2(flux_aperture1.Text);
+    aperture_ratio := apert;{remember apert setting}
+    annul := strtofloat2(annulus_radius1.Text);
 
-      {load image}
-      if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,memox, headx, img_temp) = False)) then
+    esc_pressed := False;
+    warned := False;
+
+    memo2_message( 'Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
+
+    refresh_solutions := (Sender = stackmenu1.refresh_astrometric_solutions1);
+    {refresh astrometric solutions}
+
+    totalnrstr:=inttostr(listview7.items.Count);
+    {solve lights first to allow flux to magnitude calibration}
+    for c := 0 to listview7.items.Count - 1 do {check for astrometric solutions}
+    begin
+      if ((esc_pressed = False) and (listview7.Items.item[c].Checked) and
+        (listview7.Items.item[c].subitems.Strings[P_astrometric] = '')) then
       begin
-        nil_all;{reactivate listview updating, nil all arrays and restore cursor.}
-        exit;
-      end;
+        filename1 := listview7.items[c].Caption;
+        mainform1.Caption := filename1;
 
-      if ((headx.cd1_1 = 0) or (refresh_solutions)) then
-      begin
-
-        listview7.Selected := nil; {remove any selection}
-        listview7.ItemIndex := c;  {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-        listview7.Items[c].MakeVisible(False);{scroll to selected item}
-        memo2_message(inttostr(c+1)+'-'+totalnrstr+' '+filename1 + ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
-        stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename1;
         Application.ProcessMessages;
+        stop_updating(true);//listview7.Items.BeginUpdate;
 
-        if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
-        begin{match between loaded image and star database}
-          if fits_file_name(filename1) then
-            success := savefits_update_header(memox,filename1)
+        {load image}
+        if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,memox, headx, img_temp) = False)) then exit;
+
+        if ((headx.cd1_1 = 0) or (refresh_solutions)) then
+        begin
+
+          listview7.Selected := nil; {remove any selection}
+          listview7.ItemIndex := c;  {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+          listview7.Items[c].MakeVisible(False);{scroll to selected item}
+          memo2_message(inttostr(c+1)+'-'+totalnrstr+' '+filename1 + ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
+          stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename1;
+          Application.ProcessMessages;
+
+          if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
+          begin{match between loaded image and star database}
+            if fits_file_name(filename1) then
+              success := savefits_update_header(memox,filename1)
+            else
+              success := save_tiff16_secure(img_temp,memox, filename1);{guarantee no file is lost}
+            if success = False then
+            begin
+              ShowMessage('Write error !!' + filename2);
+              exit;//go to finally at the end
+            end;
+            listview7.Items.item[c].subitems.Strings[P_astrometric] := '✓';
+            calculate_az_alt(1 {calculate}, headx,{out}az, alt);  {try to get  a value for alt}
+            if alt > 0 then
+            begin
+              listview7.Items.item[c].subitems.Strings[P_centalt] := floattostrf(alt, ffGeneral, 3, 0); {altitude}
+              listview7.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
+            end;
+          end
           else
-            success := save_tiff16_secure(img_temp,memox, filename1);{guarantee no file is lost}
-          if success = False then
           begin
-            ShowMessage('Write error !!' + filename2);
-            nil_all;{reactivate listview updating, nil all arrays and restore cursor.}
-            exit;
+            if errorlevel=32  then exit;// no database
+            listview7.Items[c].Checked := False;
+            listview7.Items.item[c].subitems.Strings[P_astrometric] := '';
+            memo2_message(filename1 + ' Unchecked, no astrometric solution found for this file. Can' + #39 + 't measure magnitude!');
           end;
+        end
+        else
+        begin
           listview7.Items.item[c].subitems.Strings[P_astrometric] := '✓';
-          calculate_az_alt(1 {calculate}, headx,{out}az, alt);  {try to get  a value for alt}
-          if alt > 0 then
-          begin
-            listview7.Items.item[c].subitems.Strings[P_centalt] := floattostrf(alt, ffGeneral, 3, 0); {altitude}
-            listview7.Items.item[c].subitems.Strings[P_airmass] := floattostrf(AirMass_calc(alt), ffFixed, 0, 3); {airmass}
-          end;
-        end
-        else
-        begin
-          if errorlevel=32  then // no database
-          begin
-            nil_all;
-            exit;
-          end;
-          listview7.Items[c].Checked := False;
-          listview7.Items.item[c].subitems.Strings[P_astrometric] := '';
-          memo2_message(filename1 + ' Unchecked, no astrometric solution found for this file. Can' + #39 + 't measure magnitude!');
         end;
-      end
-      else
-      begin
-        listview7.Items.item[c].subitems.Strings[P_astrometric] := '✓';
-      end;
-      stop_updating(false);//listview7.Items.EndUpdate;
-    end;{check for astrometric solutions}
-  end;{for loop for astrometric solving }
-  {astrometric calibration}
+        stop_updating(false);//listview7.Items.EndUpdate;
+      end;{check for astrometric solutions}
+    end;{for loop for astrometric solving }
+    {astrometric calibration}
 
-  if ((refresh_solutions) or (esc_pressed{stop})) then
-  begin
-    Screen.Cursor := crDefault;{back to normal }
-    if refresh_solutions then memo2_message('Ready')
-    else
-      memo2_message('Stopped, ESC pressed.');
-    exit;
-  end;
-
-  reference_defined:=false;
-  clear_added_AAVSO_columns;
-
-  with mainform1 do
-  for ww:=0 to high(fshapes) do
-     if fshapes[ww].shape<>nil then fshapes[ww].shape.visible:=false;//hide all since aperture & annulus is plotted
-  annulus_plotted:=true; // keep shapes hidden
-
-  for c := 0 to listview7.items.Count - 1 do
-  begin
-    if ((esc_pressed = False) and (listview7.Items.item[c].Checked)) then
+    if ((refresh_solutions) or (esc_pressed{stop})) then
     begin
-      Application.ProcessMessages;
-      stop_updating(true);//listview7.Items.BeginUpdate;
+      Screen.Cursor := crDefault;{back to normal }
+      if refresh_solutions then memo2_message('Ready')
+      else
+        memo2_message('Stopped, ESC pressed.');
+      exit;
+    end;
 
-      listview7.Selected := nil; //remove any selection
-      listview7.ItemIndex := c;  //mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true
-      listview7.Items[c].MakeVisible(False);{scroll to selected item}
+    reference_defined:=false;
+    clear_added_AAVSO_columns;
 
-      filename2 := listview7.items[c].Caption;
-      stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename2;
+    with mainform1 do
+    for ww:=0 to high(fshapes) do
+       if fshapes[ww].shape<>nil then fshapes[ww].shape.visible:=false;//hide all since aperture & annulus is plotted
+    annulus_plotted:=true; // keep shapes hidden
 
-      {load image}
-      if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False)) then
+    for c := 0 to listview7.items.Count - 1 do
+    begin
+      if ((esc_pressed = False) and (listview7.Items.item[c].Checked)) then
       begin
-        esc_pressed := True;
-        nil_all;{reactivate listview updating, nil all arrays and restore cursor}
-        exit;
-      end;
+        Application.ProcessMessages;
+        stop_updating(true);//listview7.Items.BeginUpdate;
 
-      if reference_defined=false then //define first image as reference image
-      begin
-        sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
-        head_ref := head;{backup solution for deepsky annotation}
-      end;
-      reference_defined:=true;
+        listview7.Selected := nil; //remove any selection
+        listview7.ItemIndex := c;  //mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true
+        listview7.Items[c].MakeVisible(False);{scroll to selected item}
 
-      plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+        filename2 := listview7.items[c].Caption;
+        stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename2;
 
-      if  ((pos('F', head.calstat) = 0) or (head.naxis3 > 1)) then
-      begin
-        if warned = False then
+        {load image}
+        if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False)) then
         begin
-          if pos('F', head.calstat) = 0 then
-            memo2_message('█ █ █ █ █ █ Warning: Image not calibrated with a flat field (keyword CALSTAT). Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu. █ █ █ █ █ █');
-          if head.naxis3 > 1 then
-            memo2_message('█ █ █ █ █ █ Warning: Colour image!! Absolute photometric accuracy will be lower. Process only raw images. Set bayer pattern correctly in tab "Stack method" and extract the green pixels in tab photometry. █ █ █ █ █ █');
-        end;
-        warned := True;{only one message}
-      end;
-
-      if apert <> 0 then {aperture<>auto}
-      begin
-        analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only});
-        {find background, number of stars, median HFD}
-        if head.hfd_median <> 0 then
-        begin
-          head.mzero_radius := head.hfd_median * apert / 2;{radius}
-          annulus_radius := min(50, round(head.hfd_median * annul / 2) - 1);
-          {radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
-        end
-        else
-          head.mzero_radius := 99;{radius for measuring aperture}
-      end
-      else{auto}
-      begin
-        head.mzero_radius := 99;{radius for measuring using a small aperture}
-        annulus_radius := 14;{annulus radius}
-      end;
-
-
-
-      {calibrate using POINT SOURCE calibration using hfd_median found earlier!!!}
-      plot_and_measure_stars(img_loaded,mainform1.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
-
-      //icon for used database passband. Database selection could be in auto mode so do this after calibration
-      if head.passband_database='BP' then database_col:=4 //gray
-      else
-      if head.passband_database='R' then database_col:=24 //Cousins-R
-      else
-      if head.passband_database='V' then database_col:=1 //green
-      else
-      if head.passband_database='B' then database_col:=2 //blue icon
-      else
-      if head.passband_database='I' then database_col:=28 //dark red icon
-      else
-      if head.passband_database='SI' then database_col:=21 //SDSS-i red/infrared
-      else
-      if head.passband_database='SR' then database_col:=22 //SDSS-r red/orange
-      else
-      if head.passband_database='SG' then database_col:=23 //SDSS-g blue/green
-      else
-      database_col:=-1; // unknown. Should not happen
-
-      ListView7.Items.item[c].SubitemImages[P_calibration]:= database_col ; //show selected database passband
-
-      listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(head.magn_limit, FFgeneral, 4, 0);
-
-      if head.mzero <> 0 then
-        measure_magnitudes(img_loaded,head,annulus_radius,0,0,head.width-1,head.height-1,false{histogram update}, False {deep}, starlistx); {analyse}
-
-      setlength(img_temp,head.naxis3, head.Height, head.Width);{new size}
-
-      mainform1.image1.Canvas.Pen.Mode := pmMerge;
-      mainform1.image1.Canvas.Pen.Width := 1;{thickness lines}
-      mainform1.image1.Canvas.Pen.Color := clRed;
-      mainform1.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
-
-      mainform1.image1.Canvas.brush.Style := bsClear;
-      mainform1.image1.Canvas.font.color := clyellow;
-      mainform1.image1.Canvas.font.size := 10;
-
-      if head.mzero <> 0 then {valid flux calibration}
-      begin // do var star
-        adu_e := retrieve_ADU_to_e_unbinned(head.egain);
-        saturation_level:=calc_saturation_level(head);
-
-        // fill vsx, vsp database database
-        if length(vsp_vsx_list)=0 then //fill with vsp, vsx stars for later
-        begin
-          variable_star_annotation(true {extract AAVSO database  to vsp_vsx_list});
-
-          if stackmenu1.measuring_method1.itemindex=2 then //add none AAVSO stars
-            create_all_star_list;//collect any star in the vsp_vsx_list
-
-          oldra0:=head.ra0;
-          olddec0:=head.dec0;
-        end
-        else
-        begin
-          ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
-          if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
-             mainform1.variable_star_annotation1Click(sender {new position, update variable list});
+          esc_pressed := True;
+          exit;//go to finally
         end;
 
-
-        if stackmenu1.measuring_method1.itemindex=0 then // measure manual
+        if reference_defined=false then //define first image as reference image
         begin
-          with mainform1 do
-          if Fshapes<>nil then
+          sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+          head_ref := head;{backup solution for deepsky annotation}
+        end;
+        reference_defined:=true;
+
+        plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+
+        if  ((pos('F', head.calstat) = 0) or (head.naxis3 > 1)) then
+        begin
+          if warned = False then
           begin
-            if p_nr<(p_nr_norm+2*length(Fshapes)) then //new columns required
-            begin
-              for i:=0 to high(Fshapes) do
-              with listview7 do
-              begin //add columns
-                listview7_add_column('????????????????????????????');//hint has not the abbbvr. Only after the first plot
-                listview7_add_column('SNR');
-                listview7_add_column('Flux');
-               // memo2_message('Added columns for '+Fshapes[i].shape.hint);
-              end;
-            end;
-
-            for i:=0 to high(Fshapes) do
-            begin
-              if Fshapes[i].shape<>nil then
-              begin
-                mainform1.image1.Canvas.Pen.Color := clRed;
-
-                celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true, xn, yn); //ra,dec to xn,yn. Do not update Fshapes[i].fitsX,Fshapes[i].fitsY since the refer to the reference image and are required later for drawing aperture
-                astr := measure_star(xn, yn);
-                listview7.Items.item[c].subitems.Strings[p_nr_norm+i*3] := astr;
-                listview7.Items.item[c].subitems.Strings[p_nr_norm+1+i*3] := IntToStr(round(snr));
-                listview7.Items.item[c].subitems.Strings[p_nr_norm+2+i*3] := IntToStr(round(Flux));
-                listview7.Column[p_nr_norm+1+i*3].Caption:=Fshapes[i].shape.hint; //abbrv hint is only available after plot. Is updated for second image Caption counting is one different. Caption positions are 19, 22, 25 ...
-                listview7.column[p_nr_norm+1+i*3].tag:=Fshapes[i].vspvsx_list_index;//copy the vsp_vsx_list index of this star
-              end;
-            end;//for
-
-          end;//mainform1
-        end
-        else
-        begin // None manual
-
-          //if stackmenu1.measuring_method1.itemindex>=1 then
-          snr_min:=strtofloat2(snr_min_photo1.text); //only bright enough stars
-
-          //measure all AAVSO stars using the position from the local database
-          if vsp_vsx_list_length>0 then
-          begin
-            for j:=0 to vsp_vsx_list_length do
-            begin
-              celestial_to_pixel(head, vsp_vsx_list[j].ra, vsp_vsx_list[j].dec,true, xn, yn);
-              if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
-              begin
-                //if pos('AD_CMi',vsp_vsx_list[j].abbr)>0 then
-                //i:=j;
-
-                astr := measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
-                if snr>=snr_min then
-                begin
-                  new_object:=true;
-                  for i:=p_nr_norm to p_nr-3 do
-                  begin
-                    if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=vsp_vsx_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
-                    begin //existing object column
-
-                     listview7.Items.item[c].subitems.Strings[i]:= astr;
-                     listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
-                     listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
-                     new_object:=false;
-                     break;
-                    end;
-                  end;
-                  if new_object then
-                  begin
-                    with listview7 do
-                    begin //add column
-                      listview7_add_column(vsp_vsx_list[j].abbr);
-                      listview7_add_column('SNR');
-                      listview7_add_column('Flux');
-                      memo2_message('Added columns for '+vsp_vsx_list[j].abbr);
-                    end;
-                    listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
-                    listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
-                    listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
-                    stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
-                  end;//new object
-                end;//enough snr
-              end;
-            end;
+            if pos('F', head.calstat) = 0 then
+              memo2_message('█ █ █ █ █ █ Warning: Image not calibrated with a flat field (keyword CALSTAT). Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu. █ █ █ █ █ █');
+            if head.naxis3 > 1 then
+              memo2_message('█ █ █ █ █ █ Warning: Colour image!! Absolute photometric accuracy will be lower. Process only raw images. Set bayer pattern correctly in tab "Stack method" and extract the green pixels in tab photometry. █ █ █ █ █ █');
           end;
-          memo2_message('Detected a total '+inttostr((p_nr-p_nr_norm) div 3)+' stars');
-        end; //measure all
-      end;
-
-
-      {calculate vectors from astrometric solution to speed up}
-      sincos(head.dec0, SIN_dec0, COS_dec0);
-      {do this in advance since it is for each pixel the same}
-      astrometric_to_vector(head,head_ref);{convert astrometric solution to vectors}
-
-      aa:=solution_vectorX[0];//move to local variable for minor faster processing
-      bb:=solution_vectorX[1];
-      cc:=solution_vectorX[2];
-      dd:=solution_vectorY[0];
-      ee:=solution_vectorY[1];
-      ff:=solution_vectorY[2];
-
-      {shift, rotate to match lights}
-      for fitsY := 0 to head.Height-1 do
-        for fitsX := 0 to head.Width-1 do
-        begin
-          x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
-          y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
-
-          if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and  (y_new <= head.Height - 1)) then
-            for col := 0 to head.naxis3 - 1 do {all colors}
-               img_temp[col, y_new, x_new] := img_loaded[col, fitsY, fitsX];
+          warned := True;{only one message}
         end;
 
-      img_loaded := nil;
-      img_loaded := img_temp;
-
-
-      head_ref.mzero:=head.mzero;//preserve mzero for next line
-      head_ref.mzero_radius:=head.mzero_radius;//preserve mzero_radius for plot_annulus()
-      head:=head_ref;//use reference header for plotting since the image should be aligned to the reference image
-
-      store_annotated := annotated;{store temporary annotated}
-      annotated := False;{prevent annotations are plotted in plot_image}
-
-      plot_image(mainform1.image1, False {re_center});
-
-      annotated := store_annotated;{restore anotated value}
-      if ((annotated) and (mainform1.annotations_visible1.Checked)) then  //header annotations
-         plot_annotations(True {use solution vectors!!!!}, False); {corrected annotations in case a part of the lights are flipped in the alignment routine}
-
-      mainform1.image1.Canvas.Pen.Width := 1;{thickness lines}
-      mainform1.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
-      mainform1.image1.Canvas.Pen.style := psSolid;
-
-      mainform1.image1.Canvas.brush.Style := bsClear;
-      mainform1.image1.Canvas.font.color := clyellow;
-      mainform1.image1.Canvas.font.size := 10;
-
-      {plot the aperture and annulus}
-      if head.mzero<>0 then {valid flux calibration}
-      begin
-        mainform1.image1.Canvas.Pen.mode := pmCopy;
-
-        with mainform1 do
-        if ((measuring_method1.itemindex=0) and (Fshapes<>nil)) then
+        if apert <> 0 then {aperture<>auto}
         begin
-          for i:=0 to high(Fshapes) do
-           if Fshapes[i].shape<>nil then
-           begin  //do all manual marked stars
-             case i of 0: image1.Canvas.Pen.Color := clRed;
-               1: image1.Canvas.Pen.Color := clLime;//light green
-               2: image1.Canvas.Pen.Color := clYellow;
-               3: image1.Canvas.Pen.Color := clFuchsia ;
-               4: image1.Canvas.Pen.Color := clAqua;
-               5: image1.Canvas.Pen.Color := clPurple;
-               6: image1.Canvas.Pen.Color := clSkyBlue;
-             else image1.Canvas.Pen.Color := clLtGray;
-             end;
-             celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true,  Fshapes[i].FitsX, Fshapes[i].FitsY);//calculate the position for the alligned image. Update FitsX,Y for updating hint with abbreviation in  variable_star_annotation
-             plot_annulus(head,round(Fshapes[i].FitsX), round(Fshapes[i].FitsY), head.mzero_radius,annulus_radius);
-           end;//for
+          analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only});
+          {find background, number of stars, median HFD}
+          if head.hfd_median <> 0 then
+          begin
+            head.mzero_radius := head.hfd_median * apert / 2;{radius}
+            annulus_radius := min(50, round(head.hfd_median * annul / 2) - 1);
+            {radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
+          end
+          else
+            head.mzero_radius := 99;{radius for measuring aperture}
+        end
+        else{auto}
+        begin
+          head.mzero_radius := 99;{radius for measuring using a small aperture}
+          annulus_radius := 14;{annulus radius}
         end;
+
+
+
+        {calibrate using POINT SOURCE calibration using hfd_median found earlier!!!}
+        plot_and_measure_stars(img_loaded,mainform1.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
+
+        //icon for used database passband. Database selection could be in auto mode so do this after calibration
+        if head.passband_database='BP' then database_col:=4 //gray
+        else
+        if head.passband_database='R' then database_col:=24 //Cousins-R
+        else
+        if head.passband_database='V' then database_col:=1 //green
+        else
+        if head.passband_database='B' then database_col:=2 //blue icon
+        else
+        if head.passband_database='I' then database_col:=28 //dark red icon
+        else
+        if head.passband_database='SI' then database_col:=21 //SDSS-i red/infrared
+        else
+        if head.passband_database='SR' then database_col:=22 //SDSS-r red/orange
+        else
+        if head.passband_database='SG' then database_col:=23 //SDSS-g blue/green
+        else
+        database_col:=-1; // unknown. Should not happen
+
+        ListView7.Items.item[c].SubitemImages[P_calibration]:= database_col ; //show selected database passband
+
+        listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(head.magn_limit, FFgeneral, 4, 0);
+
+        if head.mzero <> 0 then
+          measure_magnitudes(img_loaded,head,annulus_radius,0,0,head.width-1,head.height-1,false{histogram update}, False {deep}, starlistx); {analyse}
+
+        setlength(img_temp,head.naxis3, head.Height, head.Width);{new size}
 
         mainform1.image1.Canvas.Pen.Mode := pmMerge;
-        mainform1.image1.Canvas.Pen.Width :=round(1 + head.Height / mainform1.image1.Height);{thickness lines}
-        mainform1.image1.Canvas.Pen.style := psSolid;
-        mainform1.image1.Canvas.Pen.Color := $000050; {dark red}
+        mainform1.image1.Canvas.Pen.Width := 1;{thickness lines}
+        mainform1.image1.Canvas.Pen.Color := clRed;
+        mainform1.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
 
-        for i := 0 to length(starlistx[0]) - 2 do
-        begin
-          size := round(5 * starlistX[2, i]);{5*hfd}
-          x_new:= round(aa * (starlistX[0, i]) +  bb * (starlistX[1, i]) + cc); {correction x:=aX+bY+c}
-          y_new:= round(dd * (starlistX[0, i]) +  ee * (starlistX[1, i]) + ff); {correction y:=aX+bY+c}
+        mainform1.image1.Canvas.brush.Style := bsClear;
+        mainform1.image1.Canvas.font.color := clyellow;
+        mainform1.image1.Canvas.font.size := 10;
+
+        if head.mzero <> 0 then {valid flux calibration}
+        begin // do var star
+          adu_e := retrieve_ADU_to_e_unbinned(head.egain);
+          saturation_level:=calc_saturation_level(head);
+
+          // fill vsx, vsp database database
+          if length(vsp_vsx_list)=0 then //fill with vsp, vsx stars for later
+          begin
+            variable_star_annotation(true {extract AAVSO database  to vsp_vsx_list});
+
+            if stackmenu1.measuring_method1.itemindex=2 then //add none AAVSO stars
+              create_all_star_list;//collect any star in the vsp_vsx_list
+
+            oldra0:=head.ra0;
+            olddec0:=head.dec0;
+          end
+          else
+          begin
+            ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
+            if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
+               mainform1.variable_star_annotation1Click(sender {new position, update variable list});
+          end;
 
 
-          if flipvertical = False then  starY := (head.Height - y_new) else starY := (y_new);
-          if Fliphorizontal then starX := (head.Width - x_new) else starX := (x_new);
+          if stackmenu1.measuring_method1.itemindex=0 then // measure manual
+          begin
+            with mainform1 do
+            if Fshapes<>nil then
+            begin
+              if p_nr<(p_nr_norm+2*length(Fshapes)) then //new columns required
+              begin
+                for i:=0 to high(Fshapes) do
+                with listview7 do
+                begin //add columns
+                  listview7_add_column('????????????????????????????');//hint has not the abbbvr. Only after the first plot
+                  listview7_add_column('SNR');
+                  listview7_add_column('Flux');
+                 // memo2_message('Added columns for '+Fshapes[i].shape.hint);
+                end;
+              end;
 
-          mainform1.image1.Canvas.Rectangle(starX - size, starY - size,
-          starX + size, starY + size);{indicate hfd with rectangle}
-          magn:=head.mzero - ln(starlistX[3, i]{flux})*2.5/ln(10);
+              for i:=0 to high(Fshapes) do
+              begin
+                if Fshapes[i].shape<>nil then
+                begin
+                  mainform1.image1.Canvas.Pen.Color := clRed;
 
-          mainform1.image1.Canvas.textout(starX + size, starY - size,inttostr(round(magn * 10)) );{add magnitude as text}
-        end;{measure marked stars}
+                  celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true, xn, yn); //ra,dec to xn,yn. Do not update Fshapes[i].fitsX,Fshapes[i].fitsY since the refer to the reference image and are required later for drawing aperture
+                  astr := measure_star(xn, yn);
+                  listview7.Items.item[c].subitems.Strings[p_nr_norm+i*3] := astr;
+                  listview7.Items.item[c].subitems.Strings[p_nr_norm+1+i*3] := IntToStr(round(snr));
+                  listview7.Items.item[c].subitems.Strings[p_nr_norm+2+i*3] := IntToStr(round(Flux));
+                  listview7.Column[p_nr_norm+1+i*3].Caption:=Fshapes[i].shape.hint; //abbrv hint is only available after plot. Is updated for second image Caption counting is one different. Caption positions are 19, 22, 25 ...
+                  listview7.column[p_nr_norm+1+i*3].tag:=Fshapes[i].vspvsx_list_index;//copy the vsp_vsx_list index of this star
+                end;
+              end;//for
 
+            end;//mainform1
+          end
+          else
+          begin // None manual
 
+            //if stackmenu1.measuring_method1.itemindex>=1 then
+            snr_min:=strtofloat2(snr_min_photo1.text); //only bright enough stars
 
-        if annotate_mode1.ItemIndex > 0 then
-        begin
-          variable_star_annotation(false  {plot, do not extract to vsp_vsx_list}); //vsp & vsx
+            //measure all AAVSO stars using the position from the local database
+            if vsp_vsx_list_length>0 then
+            begin
+              for j:=0 to vsp_vsx_list_length do
+              begin
+                celestial_to_pixel(head, vsp_vsx_list[j].ra, vsp_vsx_list[j].dec,true, xn, yn);
+                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+                begin
+               //   if pos('-944',vsp_vsx_list[j].abbr)>0 then
+               //   beep;
+
+                  astr := measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
+                  if snr>=snr_min then
+                  begin
+                    new_object:=true;
+                    for i:=p_nr_norm to p_nr-3 do
+                    begin
+                      if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=vsp_vsx_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                      begin //existing object column
+
+                       listview7.Items.item[c].subitems.Strings[i]:= astr;
+                       listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
+                       listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
+                       new_object:=false;
+                       break;
+                      end;
+                    end;
+                    if new_object then
+                    begin
+                      with listview7 do
+                      begin //add column
+                        listview7_add_column(vsp_vsx_list[j].abbr);
+                        listview7_add_column('SNR');
+                        listview7_add_column('Flux');
+                        memo2_message('Added columns for '+vsp_vsx_list[j].abbr);
+                      end;
+                      listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
+                      listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
+                      listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
+                      stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
+                    end;//new object
+                  end;//enough snr
+                end;
+              end;
+            end;
+            memo2_message('Detected a total '+inttostr((p_nr-p_nr_norm) div 3)+' stars');
+          end; //measure all
         end;
 
-        stop_updating(false);//listview7.Items.endUpdate;
 
-      end;{find star magnitudes}
+        {calculate vectors from astrometric solution to speed up}
+        sincos(head.dec0, SIN_dec0, COS_dec0);
+        {do this in advance since it is for each pixel the same}
+        astrometric_to_vector(head,head_ref);{convert astrometric solution to vectors}
+
+        aa:=solution_vectorX[0];//move to local variable for minor faster processing
+        bb:=solution_vectorX[1];
+        cc:=solution_vectorX[2];
+        dd:=solution_vectorY[0];
+        ee:=solution_vectorY[1];
+        ff:=solution_vectorY[2];
+
+        {shift, rotate to match lights}
+        for fitsY := 0 to head.Height-1 do
+          for fitsX := 0 to head.Width-1 do
+          begin
+            x_new:=round(aa*(fitsx)+bb*(fitsY)+cc); {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
+            y_new:=round(dd*(fitsx)+ee*(fitsY)+ff); {correction y:=aX+bY+c}
+
+            if ((x_new >= 0) and (x_new <= head.Width - 1) and (y_new >= 0) and  (y_new <= head.Height - 1)) then
+              for col := 0 to head.naxis3 - 1 do {all colors}
+                 img_temp[col, y_new, x_new] := img_loaded[col, fitsY, fitsX];
+          end;
+
+        img_loaded := nil;
+        img_loaded := img_temp;
+
+
+        head_ref.mzero:=head.mzero;//preserve mzero for next line
+        head_ref.mzero_radius:=head.mzero_radius;//preserve mzero_radius for plot_annulus()
+        head:=head_ref;//use reference header for plotting since the image should be aligned to the reference image
+
+        store_annotated := annotated;{store temporary annotated}
+        annotated := False;{prevent annotations are plotted in plot_image}
+
+        plot_image(mainform1.image1, False {re_center});
+
+        annotated := store_annotated;{restore anotated value}
+        if ((annotated) and (mainform1.annotations_visible1.Checked)) then  //header annotations
+           plot_annotations(True {use solution vectors!!!!}, False); {corrected annotations in case a part of the lights are flipped in the alignment routine}
+
+        mainform1.image1.Canvas.Pen.Width := 1;{thickness lines}
+        mainform1.image1.Canvas.Pen.Cosmetic := False; {gives better dotted lines}
+        mainform1.image1.Canvas.Pen.style := psSolid;
+
+        mainform1.image1.Canvas.brush.Style := bsClear;
+        mainform1.image1.Canvas.font.color := clyellow;
+        mainform1.image1.Canvas.font.size := 10;
+
+        {plot the aperture and annulus}
+        if head.mzero<>0 then {valid flux calibration}
+        begin
+          mainform1.image1.Canvas.Pen.mode := pmCopy;
+
+          with mainform1 do
+          if ((measuring_method1.itemindex=0) and (Fshapes<>nil)) then
+          begin
+            for i:=0 to high(Fshapes) do
+             if Fshapes[i].shape<>nil then
+             begin  //do all manual marked stars
+               case i of 0: image1.Canvas.Pen.Color := clRed;
+                 1: image1.Canvas.Pen.Color := clLime;//light green
+                 2: image1.Canvas.Pen.Color := clYellow;
+                 3: image1.Canvas.Pen.Color := clFuchsia ;
+                 4: image1.Canvas.Pen.Color := clAqua;
+                 5: image1.Canvas.Pen.Color := clPurple;
+                 6: image1.Canvas.Pen.Color := clSkyBlue;
+               else image1.Canvas.Pen.Color := clLtGray;
+               end;
+               celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true,  Fshapes[i].FitsX, Fshapes[i].FitsY);//calculate the position for the alligned image. Update FitsX,Y for updating hint with abbreviation in  variable_star_annotation
+               plot_annulus(head,round(Fshapes[i].FitsX), round(Fshapes[i].FitsY), head.mzero_radius,annulus_radius);
+             end;//for
+          end;
+
+          mainform1.image1.Canvas.Pen.Mode := pmMerge;
+          mainform1.image1.Canvas.Pen.Width :=round(1 + head.Height / mainform1.image1.Height);{thickness lines}
+          mainform1.image1.Canvas.Pen.style := psSolid;
+          mainform1.image1.Canvas.Pen.Color := $000050; {dark red}
+
+          for i := 0 to length(starlistx[0]) - 2 do
+          begin
+            size := round(5 * starlistX[2, i]);{5*hfd}
+            x_new:= round(aa * (starlistX[0, i]) +  bb * (starlistX[1, i]) + cc); {correction x:=aX+bY+c}
+            y_new:= round(dd * (starlistX[0, i]) +  ee * (starlistX[1, i]) + ff); {correction y:=aX+bY+c}
+
+
+            if flipvertical = False then  starY := (head.Height - y_new) else starY := (y_new);
+            if Fliphorizontal then starX := (head.Width - x_new) else starX := (x_new);
+
+            mainform1.image1.Canvas.Rectangle(starX - size, starY - size,
+            starX + size, starY + size);{indicate hfd with rectangle}
+            magn:=head.mzero - ln(starlistX[3, i]{flux})*2.5/ln(10);
+
+            mainform1.image1.Canvas.textout(starX + size, starY - size,inttostr(round(magn * 10)) );{add magnitude as text}
+          end;{measure marked stars}
+
+
+
+          if annotate_mode1.ItemIndex > 0 then
+          begin
+            variable_star_annotation(false  {plot, do not extract to vsp_vsx_list}); //vsp & vsx
+          end;
+
+          stop_updating(false);//listview7.Items.endUpdate;
+
+        end;{find star magnitudes}
+      end;
     end;
+
+    if form_aavso1 <> nil then
+        form_aavso1.FormShow(nil);{aavso report}
+
+
+  finally
+    stop_updating(false);//reactivate listview updating
+    annulus_plotted:=false;//allow shapes again
+    Screen.Cursor := crDefault;{back to normal }
   end;
 
-  if form_aavso1 <> nil then
-      form_aavso1.FormShow(nil);{aavso report}
-
-  nil_all;{reactivate listview updating, nil all arrays and restore cursor}
   memo2_message('Measurements completed.');
 
 end;
@@ -9627,56 +9609,61 @@ begin
   memo2_message('Annotating ready');
 end;
 
+
 procedure Tstackmenu1.apply_unsharp_mask1Click(Sender: TObject);
 var
   tmp : Timage_array;
   fitsX,fitsY,k,threshold: integer;
   factor1,factor2   : double;
   value,threshold_value   : single;
-
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  backup_img;
 
-  get_background(0,img_loaded,head, false{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
+  try
+    backup_img;
 
+    get_background(0,img_loaded,head, false{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
 
-  tmp:=duplicate(img_loaded);//fastest way to duplicate an image
-  gaussian_blur_threaded(tmp,unsharp_radius1.position/10);
+    if duplicate(img_loaded,tmp)=false then exit;//fastest way to duplicate an image. If fails jump to finally
 
-  threshold:=unsharp_threshold1.position; //expressed in sigma
-  factor1:=1/(1-(unsharp_amount1.position/1000));
-  factor2:=factor1-1;
-  memo2_message('Applying unsharp mask. Amount='+unsharp_edit_amount1.text+' %, Gaussian blur radius='+unsharp_edit_radius1.text+' px, threshold='+unsharp_edit_threshold1.text+' σ');
-  if threshold=0 then
-  begin
-    for k:=0 to head.naxis3-1 do {do all colors}
+    gaussian_blur_threaded(tmp,unsharp_radius1.position/10);
+
+    threshold:=unsharp_threshold1.position; //expressed in sigma
+    factor1:=1/(1-(unsharp_amount1.position/1000));
+    factor2:=factor1-1;
+    memo2_message('Applying unsharp mask. Amount='+unsharp_edit_amount1.text+' %, Gaussian blur radius='+unsharp_edit_radius1.text+' px, threshold='+unsharp_edit_threshold1.text+' σ');
+    if threshold=0 then
     begin
-      for fitsY:=0 to head.height-1 do
-      for fitsX:=0 to head.width-1 do
+      for k:=0 to head.naxis3-1 do {do all colors}
       begin
-        img_loaded[k,fitsY,fitsX]:=factor1*img_loaded[k,fitsY,fitsX] - factor2* tmp[k,fitsY,fitsX];
-      end;
-    end;{k color}
-  end
-  else
-  begin //use threshold
-    threshold_value:=threshold*head.noise_level;//express in ADU
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      for fitsY:=0 to head.height-1 do
-      for fitsX:=0 to head.width-1 do
+        for fitsY:=0 to head.height-1 do
+        for fitsX:=0 to head.width-1 do
+        begin
+          img_loaded[k,fitsY,fitsX]:=factor1*img_loaded[k,fitsY,fitsX] - factor2* tmp[k,fitsY,fitsX];
+        end;
+      end;{k color}
+    end
+    else
+    begin //use threshold
+      threshold_value:=threshold*head.noise_level;//express in ADU
+      for k:=0 to head.naxis3-1 do {do all colors}
       begin
-        value:=factor1*img_loaded[k,fitsY,fitsX] - factor2* tmp[k,fitsY,fitsX];
-        if abs(value- img_loaded[k,fitsY,fitsX])>threshold_value then
-           img_loaded[k,fitsY,fitsX]:=value;
-      end;
-    end;{k color}
+        for fitsY:=0 to head.height-1 do
+        for fitsX:=0 to head.width-1 do
+        begin
+          value:=factor1*img_loaded[k,fitsY,fitsX] - factor2* tmp[k,fitsY,fitsX];
+          if abs(value- img_loaded[k,fitsY,fitsX])>threshold_value then
+             img_loaded[k,fitsY,fitsX]:=value;
+        end;
+      end;{k color}
 
+    end;
+
+    plot_image(mainform1.image1,false);
+
+  finally
+    Screen.Cursor:=crDefault;
   end;
-
-  plot_image(mainform1.image1,false);
-  Screen.Cursor:=crDefault;
 
   {
   Sharpening with Unsharp Mask (USM) is a popular method for enhancing the apparent sharpness and detail in images, including astronomical images where clarity and detail are crucial for observation and analysis.
