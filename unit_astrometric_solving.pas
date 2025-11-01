@@ -108,7 +108,7 @@ function report_binning(Height: double): integer;{select the binning}
 function position_angle(ra1, dec1, ra0, dec0: double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
 procedure equatorial_standard(ra0, dec0, ra, Dec, cdelt: double; out xx, yy: double);
 function read_stars(telescope_ra, telescope_dec, search_field: double; database_type, nrstars_required: integer; out starlist: Tstar_list): boolean;{read star from star database}
-procedure bin_mono_and_crop(binning: integer; crop {0..1}: double; img: Timage_array; out img2: Timage_array); // Make mono, bin and crop
+procedure bin_mono_and_crop(var binning: integer; crop {0..1}: double; img: Timage_array; out img2: Timage_array); // Make mono, bin and crop
 
 
 var
@@ -336,7 +336,7 @@ begin
 end;
 
 
-procedure bin_mono_and_crop(binning: integer; crop {0..1}: double; img: Timage_array; out img2: Timage_array);// Make mono, bin and crop
+procedure bin_mono_and_crop(var binning: integer; crop {0..1}: double; img: Timage_array; out img2: Timage_array);// Make mono, bin and crop
 var
   fitsX, fitsY, k, w, h, shiftX, shiftY, nrcolors, width5, height5, i, j, x, y: integer;
   val: single;
@@ -348,7 +348,15 @@ begin
   w := trunc(crop * width5 / binning);  {dimensions after binning and crop}
   h := trunc(crop * height5 / binning);
 
-  setlength(img2, 1, h, w); {set length of image array}
+  try
+    setlength(img2, 1, h, w); {set length of image array}
+  except
+    img2:=img;//panic, not enough memory, try without binning
+    binning:=1;
+    memo2_message('Not enough memory for binning!');
+    warning_str:='Not enough memory for binning!'; //for command line usage
+    exit;
+  end;
 
   shiftX := round(width5 * (1 - crop) / 2); {crop is 0.9, shift is 0.05*head.width}
   shiftY := round(height5 * (1 - crop) / 2); {crop is 0.9, start at 0.05*head.height}
@@ -483,6 +491,9 @@ begin
 
     bin_mono_and_crop(binfactor, cropping, img, img_binned); //{Make mono, bin and crop}
 
+ //   setlength(starlist3,1);
+ //   exit;
+
     {test routine, to show bin result}
     //    img_loaded:=img_binned;
     //    head.naxis3:=1;
@@ -529,7 +540,7 @@ begin
 
     if length(img)>=3 then //colour to mono, equalise background
     begin
-      img_binned:=duplicate(img);//work with img_binned to protect the orginal image
+      if duplicate(img,img_binned)=false then exit;//work with img_binned to protect the orginal image
       if length(img)>=3 then convert_mono2(img,img_binned);
       get_background(0, img_binned, head, true {calc hist}, True {calculate also standard deviation background});{get back ground}
       find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd);

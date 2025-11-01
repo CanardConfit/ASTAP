@@ -1470,7 +1470,7 @@ begin
     mainform1.image1.Canvas.brush.Style:=bsClear;
 
     text_counter:=0;
-    setlength(text_dimensions,200);
+    setlength(text_dimensions,1000);
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
@@ -1615,17 +1615,20 @@ begin
               end;
               mainform1.image1.Canvas.textout(x1,y1,abbrv);
 
-              if ((extract_visible) and (length(naam2)>2){through filters}  and (text_counter<length(vsp_vsx_list)){<max}) then //special option to add objects to list for photometry
+              if ((extract_visible) and (length(naam2)>2){through filters}) then //special option to add objects to list for photometry
               begin
                 vsp_vsx_list[text_counter].ra:=ra2;
                 vsp_vsx_list[text_counter].dec:=dec2;
                 vsp_vsx_list[text_counter].abbr:=naam2;
                 vsp_vsx_list[text_counter].source:=0; //local
+                if text_counter+1>=length(vsp_vsx_list) then
+                   setlength(vsp_vsx_list,length(vsp_vsx_list)+1000);{increase size dynamic array. Probably too much already 1000 but makes is robust}
 
                 vsp_vsx_list_length:=text_counter;
               end;
               inc(text_counter);
-              if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
+
+              if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+1000);{increase size dynamic array}
 
             end;
           end;{centre object visible}
@@ -1721,7 +1724,7 @@ begin
    end;
 
     text_counter:=0;
-    setlength(text_dimensions,200);
+    setlength(text_dimensions,1000);
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
@@ -1793,7 +1796,7 @@ begin
                  //  memo2_message(filename2+',  '+floattostr(jd_mid)+ ',   '+floattostr(delta));
             end;
 
-            if ((extract_visible) and (nrcount<length(vsp_vsx_list))) then //special option to add objects to list for photometry
+            if extract_visible then //special option to add objects to list for photometry
             begin
               vsp_vsx_list[nrcount].ra:=vsx[count].ra;
               vsp_vsx_list[nrcount].dec:=vsx[count].dec;
@@ -1802,6 +1805,7 @@ begin
               vsp_vsx_list[nrcount].index:=count;//to retrieve all mangitudes
               vsp_vsx_list_length:=nrcount;
               inc(nrcount);
+              if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
             end;
 
 
@@ -1847,7 +1851,7 @@ begin
             end;
 
 
-            if ((extract_visible) and (nrcount<length(vsp_vsx_list))) then //special option to add objects to list for photometry
+            if extract_visible then //special option to add objects to list for photometry
             begin
               vsp_vsx_list[nrcount].ra:=vsp[count].ra;
               vsp_vsx_list[nrcount].dec:=vsp[count].dec;
@@ -1856,6 +1860,7 @@ begin
               vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
               vsp_vsx_list_length:=nrcount;
               inc(nrcount);
+              if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
             end;
           end;
 
@@ -1919,9 +1924,9 @@ begin
             end;
 
 
-              mainform1.image1.Canvas.textout(x1,y1,abbreviation_display);
+            mainform1.image1.Canvas.textout(x1,y1,abbreviation_display);
             inc(text_counter);
-            if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
+            if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+1000);{increase size dynamic array}
 
             {plot deepsky object}
             mainform1.image1.Canvas.Pen.width :=1;//min(4,max(1,round(len/70)));
@@ -1941,7 +1946,6 @@ begin
       end;//while loop
     end;//plot vsx and vsp
 
-    text_dimensions:=nil;{remove used memory}
 
     //memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
   end;

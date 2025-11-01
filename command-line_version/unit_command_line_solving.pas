@@ -1772,7 +1772,7 @@ begin
 end;
 
 
-procedure bin_mono_and_crop(binning: integer; crop {0..1}:double;img : Timage_array; out img2: Timage_array);// Make mono, bin and crop
+procedure bin_mono_and_crop(var binning: integer; crop {0..1}:double;img : Timage_array; out img2: Timage_array);// Make mono, bin and crop
 var
   fitsX,fitsY,k, w,h, shiftX,shiftY,nrcolors,width5,height5,i,j,x,y: integer;
   val       : single;
@@ -1784,7 +1784,15 @@ begin
   w:=trunc(crop*width5/binning);  {dimensions after binning and crop}
   h:=trunc(crop*height5/binning);
 
-  setlength(img2,1,h,w); {set length of image array}
+  try
+    setlength(img2,1,h,w); {set length of image array}
+  except
+    img2:=img;//panic, not enough memory, try without binning
+    binning:=1;
+    memo2_message('Not enough memory for binning!');
+    warning_str:='Not enough memory for binning!'; //for command line usage
+    exit;
+  end;
 
   shiftX:=round(width5*(1-crop)/2); {crop is 0.9, shift is 0.05*head.width}
   shiftY:=round(height5*(1-crop)/2); {crop is 0.9, start at 0.05*head.height}

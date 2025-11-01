@@ -1,4 +1,4 @@
-unit unit_aavso;
+unit unit_aavso; //aavso report unit
 {Copyright (C) 2021, 2025 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
@@ -32,7 +32,7 @@ type
     Label4: TLabel;
     Label7: TLabel;
     Memo1: TMemo;
-    MenuItem2: TMenuItem;
+    deselectcomp1: TMenuItem;
     MenuItem3: TMenuItem;
     obscode1: TEdit;
     obstype1: TComboBox;
@@ -66,7 +66,7 @@ type
     procedure abrv_comp1Click(Sender: TObject);
     procedure abrv_comp1ClickCheck(Sender: TObject);
     procedure deselectall1Click(Sender: TObject);
-    procedure MenuItem2Click(Sender: TObject);
+    procedure deselectcomp1Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
     procedure selectall1Click(Sender: TObject);
     procedure test_button1Click(Sender: TObject);
@@ -501,9 +501,7 @@ var
    warning  : string;
 
 begin
-
   setlength(comps_info,length(RowChecked));
-
 
   for c:=0 to length(RowChecked)-1 do
   begin
@@ -613,11 +611,9 @@ begin
 end;
 
 
-
-
 procedure work_on_comp_stars;
 var
-  c, invalid_comp, count,icon_nr                     : integer;
+  c, count,icon_nr                                    : integer;
   comp_magn,ratio,sd_comp, mean_sd_comp,B_V, V_R      : double;
   mess                                                : string;
 
@@ -655,7 +651,6 @@ begin
 
           if comps_info[c].V_R>-99 then
                 V_R:=comps_info[c].V_R;  //should be all the same if above noise
-
         end;
       end;
     end;
@@ -779,8 +774,6 @@ begin
   with form_aavso1 do
   begin
     //Find B and V image with closest Julian day
-
-
     b_v_var:=0;
     bv_pairs:=0;
     v_r_var:=0;
@@ -900,7 +893,7 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,countV,countB, countR,k,invalid_comp,icon_nr,i,j,vars_end,x,y,index,fc,countdelta,
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,countV,countB,countR,k,icon_nr,i,j,vars_end,x,y,index,fc,countdelta,
   bv_pairs,vr_pairs                                                                                                                                   : integer;
   scale,range, mean,dummy,flux,magn_gaia,check_doc_magb,check_doc_magR, check_doc_magV,Bcorrection,Vcorrection,Rcorrection,
   checkmeanB,checkmeanV,checkmeanR,B_V_sum,V_R_sum,B_V,V_R,b_v_check, v_r_check                                                                       : double;
@@ -913,99 +906,95 @@ var
   color_list : array[0..7] of tcolor;
 const
   len=3;
+      procedure plot_point(x,y,tolerance:integer);
+      begin
+         if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
+         begin
+           bmp.canvas.Ellipse(x-len,y-len,x+1+len,y+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+
+           if tolerance>0 then
+           begin
+             bmp.canvas.moveto(x,y-tolerance);
+             bmp.canvas.lineto(x,y+tolerance);
+
+             bmp.canvas.moveto(x-len+1,y-tolerance);
+             bmp.canvas.lineto(x+len,y-tolerance);
+
+             bmp.canvas.moveto(x-len+1,y+tolerance);
+             bmp.canvas.lineto(x+len,y+tolerance);
+           end;
+         end;
+      end;
+
+      procedure plot_line_and_point(new_colour: boolean; x,y,tolerance:integer);
+      begin
+         if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
+         begin
+           if new_colour then
+             bmp.canvas.moveto(x,y)
+           else
+             bmp.canvas.lineto(x,y);
+
+           bmp.canvas.Ellipse(x-len,y-len,x+1+len,y+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+
+           if tolerance>0 then
+           begin
+             bmp.canvas.moveto(x,y-tolerance);
+             bmp.canvas.lineto(x,y+tolerance);
+
+             bmp.canvas.moveto(x-len+1,y-tolerance);
+             bmp.canvas.lineto(x+len,y-tolerance);
+
+             bmp.canvas.moveto(x-len+1,y+tolerance);
+             bmp.canvas.lineto(x+len,y+tolerance);
+
+             bmp.canvas.moveto(x,y);
+           end;
+         end;
+      end;
 
 
-  procedure plot_point(x,y,tolerance:integer);
-  begin
-     if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
-     begin
-       bmp.canvas.Ellipse(x-len,y-len,x+1+len,y+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+      procedure plot_square(x,y,tolerance:integer);
+      begin
+         if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
+         begin
+           bmp.canvas.Rectangle(x-len,y-len,x+1+len,y+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
 
-       if tolerance>0 then
-       begin
-         bmp.canvas.moveto(x,y-tolerance);
-         bmp.canvas.lineto(x,y+tolerance);
+           if tolerance>0 then
+           begin
+             bmp.canvas.moveto(x,y-tolerance);
+             bmp.canvas.lineto(x,y+tolerance);
 
-         bmp.canvas.moveto(x-len+1,y-tolerance);
-         bmp.canvas.lineto(x+len,y-tolerance);
+             bmp.canvas.moveto(x-len+1,y-tolerance);
+             bmp.canvas.lineto(x+len,y-tolerance);
 
-         bmp.canvas.moveto(x-len+1,y+tolerance);
-         bmp.canvas.lineto(x+len,y+tolerance);
-       end;
-     end;
-  end;
+             bmp.canvas.moveto(x-len+1,y+tolerance);
+             bmp.canvas.lineto(x+len,y+tolerance);
+           end;
+         end;
+      end;
+      procedure plot_Xsign(x,y,tolerance:integer);
+      begin
+         if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
+         begin
+           bmp.canvas.moveto(x-len,y-len);
+           bmp.canvas.lineto(x+len,y+len);
+           bmp.canvas.moveto(x-len,y+len);
+           bmp.canvas.lineto(x+len,y-len);
 
-  procedure plot_line_and_point(new_colour: boolean; x,y,tolerance:integer);
-  begin
-     if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
-     begin
-       if new_colour then
-         bmp.canvas.moveto(x,y)
-       else
-         bmp.canvas.lineto(x,y);
+           if tolerance>0 then
+           begin
+             bmp.canvas.moveto(x,y-tolerance);
+             bmp.canvas.lineto(x,y+tolerance);
 
-       bmp.canvas.Ellipse(x-len,y-len,x+1+len,y+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+             bmp.canvas.moveto(x-len+1,y-tolerance);
+             bmp.canvas.lineto(x+len,y-tolerance);
 
-       if tolerance>0 then
-       begin
-         bmp.canvas.moveto(x,y-tolerance);
-         bmp.canvas.lineto(x,y+tolerance);
-
-         bmp.canvas.moveto(x-len+1,y-tolerance);
-         bmp.canvas.lineto(x+len,y-tolerance);
-
-         bmp.canvas.moveto(x-len+1,y+tolerance);
-         bmp.canvas.lineto(x+len,y+tolerance);
-
-         bmp.canvas.moveto(x,y);
-       end;
-     end;
-  end;
-
-
-  procedure plot_square(x,y,tolerance:integer);
-  begin
-     if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
-     begin
-       bmp.canvas.Rectangle(x-len,y-len,x+1+len,y+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-
-       if tolerance>0 then
-       begin
-         bmp.canvas.moveto(x,y-tolerance);
-         bmp.canvas.lineto(x,y+tolerance);
-
-         bmp.canvas.moveto(x-len+1,y-tolerance);
-         bmp.canvas.lineto(x+len,y-tolerance);
-
-         bmp.canvas.moveto(x-len+1,y+tolerance);
-         bmp.canvas.lineto(x+len,y+tolerance);
-       end;
-     end;
-  end;
-  procedure plot_Xsign(x,y,tolerance:integer);
-  begin
-     if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
-     begin
-       bmp.canvas.moveto(x-len,y-len);
-       bmp.canvas.lineto(x+len,y+len);
-       bmp.canvas.moveto(x-len,y+len);
-       bmp.canvas.lineto(x+len,y-len);
-
-       if tolerance>0 then
-       begin
-         bmp.canvas.moveto(x,y-tolerance);
-         bmp.canvas.lineto(x,y+tolerance);
-
-         bmp.canvas.moveto(x-len+1,y-tolerance);
-         bmp.canvas.lineto(x+len,y-tolerance);
-
-         bmp.canvas.moveto(x-len+1,y+tolerance);
-         bmp.canvas.lineto(x+len,y+tolerance);
-       end;
-     end;
-  end;
-
-
+             bmp.canvas.moveto(x-len+1,y+tolerance);
+             bmp.canvas.lineto(x+len,y+tolerance);
+           end;
+         end;
+      end;
 begin
   if ((head.naxis=0) or (form_aavso1=nil))  then exit;
 
@@ -1163,7 +1152,6 @@ begin
               case SubItemImages[c] of 0,24: begin listcheckR[countR]:= data[1,c]; inc(countR);  end;//Red
                                           1: begin listcheckV[countV]:= data[1,c]; inc(countV);  end;//TG or V
                                           2: begin listcheckB[countB]:= data[1,c]; inc(countB);  end;//Blue
-
               end;//case
             end;
           end;
@@ -1221,7 +1209,6 @@ begin
   end;
 
   //'#Transf corr B = Tb_bv * Tbv *((b-v) - (B-V)),   Transf corr V = Tv_bv * Tbv *((b-v) - (B-V)),   Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))'+#13+#10
-
   if countB>0 then
   begin
     calc_sd_and_mean(listcheckB, countB{counter},{var}photometry_stdev[2], checkmeanB);// calculate sd and mean of an array of doubles}
@@ -1237,7 +1224,6 @@ begin
     calc_sd_and_mean(listcheckR, countR{counter},{var}photometry_stdev[0], checkmeanR);// calculate sd and mean of an array of doubles}
     check_doc_magR:=retrieve_documented_magnitude(true,0,column_check, ColumnTitles[column_check+1]);
   end;
-
 
   Bcorrectionstr:='';
   Vcorrectionstr:='';
@@ -1280,7 +1266,6 @@ begin
     Rcorrectionstr:='';
   end;
 
-
   if countB>0 then
     form_aavso1.sigma_check1.caption:='Check b-B='+floattostrF(checkmeanB-check_doc_magB,ffFixed,0,3)+Bcorrectionstr+', σ='+floattostrF(photometry_stdev[2],ffFixed,0,3)//report offsets
   else
@@ -1313,7 +1298,6 @@ begin
               21 :filtercolor[c]:=clMaroon;//SDSS-i
               22 :filtercolor[c]:=$008CFF {orange};//SDSS-r
               23 :filtercolor[c]:=clgreen;//SDSS-g
-
     end;
 
     color_used:=false;
@@ -1332,8 +1316,6 @@ begin
     end;
   end;
 
-
-
   with form_aavso1.Image_photometry1 do
   begin
     try
@@ -1345,7 +1327,6 @@ begin
     bmp.Canvas.Pen.Color := clmenutext;
     bmp.Canvas.Font.Color := clmenutext;
     bmp.Canvas.brush.Style:=bsclear;
-
 
     bmp.canvas.moveto(w,h-bspace+5);
     bmp.canvas.lineto(wtext-5,h-bspace+5);{x line}
@@ -1542,7 +1523,6 @@ begin
     end;
   end;
   plot_graph;
-
 end;
 
 
@@ -1654,7 +1634,6 @@ begin
 end;
 
 
-
 procedure Tform_aavso1.abbrv_variable1Change(Sender: TObject);
 begin
   retrieve_vsp_stars;//Very simple database.
@@ -1730,6 +1709,7 @@ begin
   plot_graph;
 end;
 
+
 procedure Tform_aavso1.deselectall1Click(Sender: TObject);
 var
    i: integer;
@@ -1739,7 +1719,8 @@ begin
   plot_graph;
 end;
 
-procedure Tform_aavso1.MenuItem2Click(Sender: TObject);
+
+procedure Tform_aavso1.deselectcomp1Click(Sender: TObject);
 var
    i: integer;
 begin
@@ -1747,6 +1728,7 @@ begin
     abrv_comp1.checked[i]:=false;
   plot_graph;
 end;
+
 
 procedure Tform_aavso1.MenuItem3Click(Sender: TObject);
 var
@@ -1786,7 +1768,6 @@ begin
   plot_graph;
 end;
 
-
 procedure Tform_aavso1.test_button1Click(Sender: TObject);
 var
    i : integer;
@@ -1810,7 +1791,6 @@ begin
 end;
 
 
-
 procedure Tform_aavso1.FormCreate(Sender: TObject);
 begin
   {$IFDEF linux}
@@ -1820,7 +1800,6 @@ begin
   abrv_check1.autoDropDown:=true;
   {$ENDIF}
 end;
-
 
 
 procedure Tform_aavso1.FormClose(Sender: TObject; var CloseAction: TCloseAction );
@@ -1944,11 +1923,11 @@ end;
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
-    c,date_column,invalid_comp,i,icon_nr,m_index,bv_pairs,vr_pairs   : integer;
+    c,date_column,i,icon_nr,m_index,bv_pairs,vr_pairs   : integer;
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
     warning,transformation, transform_all_factors,transf_str,varab  : string;
-    stdev_valid,apply_transformation : boolean;
+    stdev_valid,apply_transformation,valid_comp : boolean;
     snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp,B_V, V_R,var_Vcorrection,var_Bcorrection,var_Rcorrection,v_r_var,b_v_var,airmass : double;
     PNG: TPortableNetworkGraphic;{FPC}
     vsep : char;
@@ -2110,10 +2089,11 @@ begin
 
            if ensemble_database1.checked=false then //Mode magnitude relative to comp star
            begin
-             if length(column_comps)=0 then exit;
+             if length(column_comps)=0 then exit;//no comp info
 
              comp_magn_info:=comp_magn_info+comps_info[c].warning;
-             if comps_info[c].valid then //valid comp star(s)
+             valid_comp:=comps_info[c].valid;
+             if valid_comp then //valid comp star(s)
              begin
                    var_flux:=SubItemDouble[c,column_vars[m_index]+2];
 
@@ -2131,7 +2111,6 @@ begin
                      //transformation
                      // Tv_bv * Tbv* ((b-v)tgt – (B-V)comp)
                      transf_str:='YES';
-                     //icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
                      icon_nr:=SubItemImages[c];
                      if icon_nr=2 then //B correction
                      begin
@@ -2242,14 +2221,14 @@ begin
              check_magn:=SubItemDouble[c,column_check];
              str(check_magn:0:3,check_magn_str);
 
-             invalid_comp:=0; //ensemble mode, no conversion error because comp is not used
+             valid_comp:=true; //ensemble mode, no conversion error because comp is not used
              abbrv_comp_clean_report:='ENSEMBLE';
              comp_magn_str:='na';
              comp_magn_info:='Ensemble of Gaia DR3 stars ('+ magn_type+')';
            end;
 
 
-           if ((var_magn<0) or (invalid_comp<>0) or (check_magn<0)) then invalidstr:='# ' else invalidstr:='';
+           if ((var_magn<0) or (valid_comp=false) or (check_magn<0)) then invalidstr:='# ' else invalidstr:='';
 
            abbrv_var_clean:=clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,true); //Note the captions are one position shifted.
 
@@ -2313,11 +2292,7 @@ begin
     exit;
   end;
   save_settings2; {for aavso settings}
-
-//  form_aavso1.close;   {transfer variables. Normally this form is not loaded}
-//  mainform1.setfocus;
 end;
-
 
 
 end.

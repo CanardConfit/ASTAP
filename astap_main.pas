@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.10.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.10.31';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -801,6 +801,7 @@ var {################# initialised variables #########################}
   minor_planet_at_cursor:string='';
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
+procedure ang_sep_hav(ra1,dec1,ra2,dec2: double; out sep: double);  //High-precision angular distance from 180 to very tiny angles using haversine
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo : tstrings; out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
 procedure plot_image(img: timage;center_image:boolean);
 procedure plot_histogram(img: Timage_array; update_hist: boolean);{get histogram}
@@ -920,7 +921,7 @@ function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for un
 function noise_to_electrons(adu_e, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
 procedure calibrate_photometry(img : Timage_array; memo : tstrings; var head : Theader; update:boolean);
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : Timage_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels ratio and average value}
-function duplicate(img:Timage_array) :Timage_array;//fastest way to duplicate an image
+function duplicate(img:Timage_array ; out img2 : Timage_array): boolean;//fastest way to duplicate an image
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 procedure remove_photometric_calibration;//from header
 procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
@@ -1381,7 +1382,7 @@ begin
           if ((header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {head.calstat is also for flats}
               head.calstat:=get_string {indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
           else
-          if ((header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+          if ((header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then   //ccd-temp
              ccd_temperature:=validate_double;{read double value}
         end;{C}
 
@@ -2047,7 +2048,6 @@ begin
        head.set_temperature:=round(ccd_temperature); {temperature}
 
 
-
     unsaved_import:=false;{file is available for astrometry.net}
 
 
@@ -2069,7 +2069,13 @@ begin
       exit;
     end;
 
-    setlength(img_loaded2,head.naxis3,head.height,head.width);
+    try
+      setlength(img_loaded2,head.naxis3,head.height,head.width);
+    except
+      memo2_message('Abort, not enough memory!');
+      warning_str:='Not enough memory!'; //for command line usage
+      exit;
+    end;
 
     if head.nrbits=16 then
     for k:=0 to head.naxis3-1 do {do all colors}
@@ -2366,21 +2372,27 @@ begin
     end;
 end;
 
-
-function duplicate(img:Timage_array) :Timage_array;//fastest way to duplicate an image
+function duplicate(img:Timage_array ; out img2 : Timage_array): boolean;//fastest way to duplicate an image
 var
   c,w,h,k,i: integer;
 begin
+  result:=true;
   c:=length(img);
   h:=length(img[0]);
   w:=length(img[0,0]);
 
-  setlength(result,c,h,w);
+  try
+  setlength(img2,c,h,w);
   for k:=0 to c-1 do
     for i:=0 to h-1 do
-      result[k,i]:=copy(img[k,i],0,w);
+      img2[k,i]:=copy(img[k,i],0,w);
 
-//  alternative solution slower. Takes about 75% more time.
+  except
+    result:=false;
+    memo2_message('No memory available');
+  end;
+
+//  alternative solution below takes about 75% more time.
 //  result:=img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 //  setlength(result,c,h,w);{force a duplication}
 end;
@@ -3737,7 +3749,6 @@ procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in
 var
    count1: integer;
 begin
-
   count1:=memo.Count-1;
   while count1>=0 do {update keyword}
   begin
@@ -3763,12 +3774,20 @@ begin
   else
   begin
     application.title:=inttostr(round(i))+'%'+info;{show progress in taksbar}
-
     mainform1.statusbar1.SimplePanel:=true;
     mainform1.statusbar1.Simpletext:=inttostr(round(i))+'%'+info;{show progress in statusbar}
-
     stackmenu1.caption:=inttostr(round(i))+'%'+info;{show progress in stack menu}
   end;
+end;
+
+
+procedure ang_sep_hav(ra1,dec1,ra2,dec2: double; out sep: double); //Not used. High-precision angular distance from 180 degrees to very tiny angles using haversine. For tiny angle better then Cosine formula
+var dDec, dRA, a: double;
+begin
+  dDec := (dec2 - dec1) / 2;
+  dRA  := (ra2 - ra1) / 2;
+  a := sqr(sin(dDec)) + cos(dec1) * cos(dec2) * sqr(sin(dRA));
+  sep := 2 * arcsin(sqrt(a));
 end;
 
 
@@ -3900,26 +3919,34 @@ end;
 
 
 procedure backup_img;
+var
+  oldindex : integer;
 begin
   if head.naxis<>0 then
   begin
-    if img_backup=nil then setlength(img_backup,size_backup+1);{create memory for size_backup backup images}
+    if img_backup=nil then
+       setlength(img_backup,size_backup+1);{create memory for size_backup backup images}
+
+    oldindex:=index_backup;
     inc(index_backup,1);
     if index_backup>size_backup then index_backup:=0;
-    img_backup[index_backup].head_val:=head;
-    img_backup[index_backup].header:=mainform1.Memo1.Text;{backup fits header}
-    img_backup[index_backup].filen:=filename2;{backup filename}
 
-    img_backup[index_backup].img:=duplicate(img_loaded);//duplicate image fast
-
-    mainform1.Undo1.Enabled:=true;
+    if duplicate(img_loaded,img_backup[index_backup].img) then //duplicate image fast
+    begin
+      img_backup[index_backup].head_val:=head;
+      img_backup[index_backup].header:=mainform1.Memo1.Text;{backup fits header}
+      img_backup[index_backup].filen:=filename2;{backup filename}
+      mainform1.Undo1.Enabled:=true;
+    end
+    else //failure to get duplicate/memory
+     index_backup:=oldindex;
   end;
 end;
 
 
 procedure restore_img;
 var
-   resized :boolean;
+   resized,success :boolean;
    old_width2,old_height2 : integer;
 begin
    if mainform1.Undo1.Enabled=true then
@@ -3928,37 +3955,40 @@ begin
 
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
-    old_width2:=head.width;
-    old_height2:=head.height;
+    try
+      old_width2:=head.width;
+      old_height2:=head.height;
 
-    head:=img_backup[index_backup].head_val;{restore main header values}
-    resized:=((head.width<>old_width2) or ( head.height<>old_height2));
-    mainform1.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
-    filename2:=img_backup[index_backup].filen;{backup filename}
-    mainform1.caption:=filename2; //show old filename is case image was binned
+      head:=img_backup[index_backup].head_val;{restore main header values}
+      resized:=((head.width<>old_width2) or ( head.height<>old_height2));
+      mainform1.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
+      filename2:=img_backup[index_backup].filen;{backup filename}
+      mainform1.caption:=filename2; //show old filename is case image was binned
 
-    stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{allow debayer if mono again}
+      stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{allow debayer if mono again}
 
-    img_loaded:=duplicate(img_backup[index_backup].img);//duplicate image fast
+      if duplicate(img_backup[index_backup].img,img_loaded)=false then exit;//duplicate image fast. if fails jump to finally
 
-    plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_image(mainform1.image1,resized);{restore image1}
+      plot_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+      plot_image(mainform1.image1,resized);{restore image1}
 
-    update_equalise_background_step(equalise_background_step-1);{update equalize menu}
+      update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
-    if head.naxis=0 {due to stretch draw} then update_menu(true); {update menu and set fits_file:=true;}
+      if head.naxis=0 {due to stretch draw} then update_menu(true); {update menu and set fits_file:=true;}
 
-    dec(index_backup,1);{update index}
-    if index_backup<0 then index_backup:=size_backup;
+      dec(index_backup,1);{update index}
+      if index_backup<0 then index_backup:=size_backup;
 
-    if img_backup[index_backup].img=nil then
-    begin
-      mainform1.Undo1.Enabled:=false;  //No more backups
-    end
-    else
-    memo2_message('Restored backup index '+inttostr(index_backup));
+      if img_backup[index_backup].img=nil then
+      begin
+        mainform1.Undo1.Enabled:=false;  //No more backups
+      end
+      else
+      memo2_message('Restored backup index '+inttostr(index_backup));
 
-    Screen.Cursor:=crDefault;
+    finally
+       Screen.Cursor:=crDefault;
+    end;
   end;
 end;
 
@@ -10676,11 +10706,6 @@ begin
        0,2,6: begin lim_magnitude:=-99; load_variable_11;{Load the local database once. If loaded no action} end;//use local database
        3,7:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
        4,8:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-//       5+4,9+4,13+4:  lim_magnitude:=11; //online magn 11
-//       6+4,10+4,14+4:  lim_magnitude:=13;//online magn 13
-//       7+4,11+4,15+4: lim_magnitude:=15;//online magn 15
-//       8+4,12+4,16+4: lim_magnitude:=99;//online magn 99
-
        9,13,17:  lim_magnitude:=11; //online magn 11
        10,14,18:  lim_magnitude:=13;//online magn 13
        11,15,19: lim_magnitude:=15;//online magn 15
@@ -12025,7 +12050,6 @@ begin
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
-
 
 
 {type
