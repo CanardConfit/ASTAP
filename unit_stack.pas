@@ -2826,7 +2826,7 @@ begin
      listview_removeselect(listview1);{from popup menu}
          //temporary till MACOS customdraw is fixed
        {$ifdef darwin} {MacOS}
-        count_selected;
+        images_checked:=count_checked(stackmenu1.Listview1);
        {$endif}
   end;
   if Sender = removeselected2 then listview_removeselect(listview2);{from popup menu}
@@ -2854,7 +2854,7 @@ begin
 
   //temporary till MACOS customdraw is fixed
   {$ifdef darwin} {MacOS}
-  count_selected;
+  images_checked:=count_checked(stackmenu1.Listview1);
   {$endif}
 
   bakfiles:=nil; //unrename function
