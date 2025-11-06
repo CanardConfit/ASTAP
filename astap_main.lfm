@@ -682,7 +682,7 @@ object mainform1: Tmainform1
           TabOrder = 7
         end
         object image_north_arrow1: TImage
-          Left = 496
+          Left = 490
           Height = 69
           Hint = 'Long axis is north, small axis is east,  F indicates flipped image.'
           Top = 104
@@ -764,7 +764,7 @@ object mainform1: Tmainform1
           OnClick = UpDown1Click
         end
         object rotation1: TLabel
-          Left = 570
+          Left = 555
           Height = 15
           Hint = 'Orientation of the image north axis, independent of  flip settings.'
           Top = 132
@@ -782,7 +782,7 @@ object mainform1: Tmainform1
           ShowHint = True
         end
         object flip_indication1: TLabel
-          Left = 570
+          Left = 555
           Height = 15
           Hint = 'The image is flipped. Either the east is swapped with west or north is swapped with south.'
           Top = 152

@@ -270,7 +270,7 @@ begin
         begin
           filename2:=Strings[I];
           fileprocessed1.caption:='Solving '+inttostr(i)+'-'+inttostr(Count-1)+': '+filename2;
-          progress_indicator(100*i/(count),' Solving');{show progress}
+          progress_indicator(i/count,' Solving');{show progress}
 
           Application.ProcessMessages;
           if esc_pressed then

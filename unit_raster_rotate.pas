@@ -1104,7 +1104,7 @@ end;
 procedure raster_rotate(angle, CX, CY: double; var img: Timage_array);
 var
   ug, R, red, green, blue, dx, dy                        : double;
-  i, j, k, rw, rh, xd, yd, U90,progressC,progress_value  : integer;
+  i, j, k, rw, rh, xd, yd, U90,progressC                 : integer;
   ep1, ep2, ep3, ep4: expoint;
   X: flux;
   temp_img: Timage_array;
@@ -1246,8 +1246,7 @@ begin
   begin
     if frac((progressC)/400)=0 then  {report every 400th line}
       begin
-        progress_value:=round(progressC*100/(rh));{progress in %}
-        progress_indicator(progress_value,'');{report progress}
+        progress_indicator(progressC/rh,'');{report progress}
         Application.ProcessMessages;{this could change startX, startY}
         if esc_pressed then  exit;
       end;
