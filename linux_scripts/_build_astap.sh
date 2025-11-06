@@ -1,7 +1,7 @@
 #!/bin/bash
 
 rm ~/astap.fpc/astap
-/home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux.lpi
+/home/h/fpcupdeluxe_stable/lazarus/lazbuild /home/h/astap.fpc/astap_linux.lpi
 if [[ ! -f ~/astap.fpc/astap ]] ; then
     echo 'AMD64 file does not exist, aborting!!'
     exit
@@ -25,7 +25,7 @@ sudo rm /home/h/astap_install/rpmbuild/RPMS/x86_64/*.rpm
 
 #unpack
 sudo dpkg -i ./astap_amd64.deb
-tar -czvf astap_amd64.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/astap/astap.ico /opt/astap/copyright.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop /usr/local/bin/astap /opt/astap/dcraw-astap /opt/astap/unprocessed_raw-astap
+tar -czvf astap_amd64.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/astap/astap.ico /opt/astap/copyright.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop /usr/local/bin/astap /opt/astap/dcraw-astap /opt/astap/unprocessed_raw-astap
 
 
 rm ~/astap.fpc/astap
@@ -35,7 +35,7 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
     exit
 fi
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_amd64_qt5.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/astap/astap.ico /opt/astap/copyright.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop /opt/astap/dcraw-astap /opt/astap/unprocessed_raw-astap
+tar -czvf astap_amd64_qt5.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/astap/astap.ico /opt/astap/copyright.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop /opt/astap/dcraw-astap /opt/astap/unprocessed_raw-astap
 
 #Build i386    
 rm ~/astap.fpc/astap                                
@@ -62,7 +62,7 @@ cd /home/h/astap_install
 sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64
 sudo cp /home/h/astap.fpc/astap /opt/astap
 sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt/astap
-tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
 
 
 #build aarch64 qt5
@@ -73,7 +73,7 @@ rm ~/astap.fpc/astap
     exit
 fi
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_aarch64_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+tar -czvf astap_aarch64_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
 
 
 
@@ -109,7 +109,7 @@ sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_armhf
 sudo cp /home/h/astap.fpc/astap /opt/astap
 sudo cp /home/h/astap_install/astap_armhf/opt/astap/unprocessed_raw-astap /opt/astap
 # not dcraw-astap
-tar -czvf astap_armhf.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+tar -czvf astap_armhf.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
 
 
 # read -p "Press any key to resume ..."
@@ -122,7 +122,7 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
     exit
 fi 
 sudo cp /home/h/astap.fpc/astap /opt/astap
-tar -czvf astap_armhf_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+tar -czvf astap_armhf_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
 
 
 
