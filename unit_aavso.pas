@@ -20,20 +20,23 @@ type
   Tform_aavso1 = class(TForm)
     abbrv_variable1: TCheckListBox;
     abrv_check1: TComboBox;
+    abrv_check2: TComboBox;
     abrv_comp1: TCheckListBox;
     apply_transformation1: TCheckBox;
     baa_style1: TCheckBox;
-    comparisonstars_label1: TLabel;
     delimiter1: TComboBox;
     ensemble_database1: TCheckBox;
+    GroupBox_variables1: TGroupBox;
+    GroupBox_check1: TGroupBox;
+    GroupBox_comp_stars1: TGroupBox;
+    GroupBox_checkstar1: TGroupBox;
     hjd1: TCheckBox;
     Image_photometry1: TImage;
     Label1: TLabel;
     Label4: TLabel;
-    Label7: TLabel;
     Memo1: TMemo;
     deselectcomp1: TMenuItem;
-    MenuItem3: TMenuItem;
+    select_in_listview7: TMenuItem;
     obscode1: TEdit;
     obstype1: TComboBox;
     PairSplitter1: TPairSplitter;
@@ -58,7 +61,6 @@ type
     sigma_mzero1: TLabel;
     sort_alphabetically1: TCheckBox;
     test_button1: TButton;
-    variables1: TLabel;
     procedure abbrv_variable1Click(Sender: TObject);
     procedure abbrv_variable1ClickCheck(Sender: TObject);
     procedure abrv_comp1Change(Sender: TObject);
@@ -67,7 +69,7 @@ type
     procedure abrv_comp1ClickCheck(Sender: TObject);
     procedure deselectall1Click(Sender: TObject);
     procedure deselectcomp1Click(Sender: TObject);
-    procedure MenuItem3Click(Sender: TObject);
+    procedure select_in_listview7Click(Sender: TObject);
     procedure selectall1Click(Sender: TObject);
     procedure test_button1Click(Sender: TObject);
     procedure delta_bv2Change(Sender: TObject);
@@ -657,8 +659,8 @@ begin
   end;
 
   mess:='Comp';
-  if B_V>-99 then mess:=mess+' B_V:='+floattostr3(B_V);
-  if V_R>-99 then mess:=mess+' V_R:='+floattostr3(V_R);
+  if B_V>-99 then mess:=mess+' B-V:='+floattostr3(B_V);
+  if V_R>-99 then mess:=mess+' V-R:='+floattostr3(V_R);
 
 
   if count>0 then
@@ -1682,7 +1684,7 @@ begin
   count:=0;
   for i:=0 to abbrv_variable1.items.count-1 do
     if abbrv_variable1.checked[i] then inc(count);
-  variables1.caption:='Variable(s) x '+inttostr(count);
+  groupbox_variables1.caption:='Variable(s) x '+inttostr(count);
 end;
 
 
@@ -1700,7 +1702,7 @@ begin
   count:=0;
   for i:=0 to abrv_comp1.items.count-1 do
     if abrv_comp1.checked[i] then inc(count);
-  comparisonstars_label1.caption:='Comparison star(s) x '+inttostr(count);
+  GroupBox_comp_stars1.caption:='Comparison star(s) x '+inttostr(count);
 end;
 
 
@@ -1730,7 +1732,7 @@ begin
 end;
 
 
-procedure Tform_aavso1.MenuItem3Click(Sender: TObject);
+procedure Tform_aavso1.select_in_listview7Click(Sender: TObject);
 var
    delta,bestdelta : double;
    row,therow : integer;
@@ -1738,23 +1740,22 @@ begin
   bestdelta:=1E90;
   therow:=0;//safe default
   with stackmenu1.listview7 do
-  for row := 0 to items.Count - 1 do //go through rows
-    if Items[row].checked then
-    begin
-      delta:=abs(jd_mouse - strtofloat2(Items.item[row].subitems.Strings[p_jd_mid]));
-      if delta<bestdelta then
-      begin
-        therow:=row;
-        bestdelta:=delta;
-      end;
-    end;
-
-  with stackmenu1 do
   begin
-    listview7.Selected := nil; {remove any selection}
-    listview7.ItemIndex := therow;
+    for row := 0 to items.Count - 1 do //go through rows
+      if Items[row].checked then
+      begin
+        delta:=abs(jd_mouse - strtofloat2(Items.item[row].subitems.Strings[p_jd_mid]));
+        if delta<bestdelta then
+        begin
+          therow:=row;
+          bestdelta:=delta;
+        end;
+      end;
+
+    Selected := nil; {remove any selection}
+    ItemIndex := therow;
     {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-    listview7.Items[therow].MakeVisible(False);{scroll to selected item}
+    Items[therow].MakeVisible(False);{scroll to selected item}
   end;
 end;
 

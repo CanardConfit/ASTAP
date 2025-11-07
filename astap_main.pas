@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.10.31';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.11.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -3762,7 +3762,9 @@ begin
 end;
 
 
-procedure progress_indicator(i:double; info:string);{0..100 is 0 to 100% indication of progress}
+procedure progress_indicator(i:double; info:string);{0..1 is 0 to 100% indication of progress}
+var
+  v : string;
 begin
   if i<=-1 then
   begin
@@ -3773,10 +3775,11 @@ begin
   end
   else
   begin
-    application.title:=inttostr(round(i))+'%'+info;{show progress in taksbar}
+    v:=inttostr(round(i*100));
+    application.title:=v+'%'+info;{show progress in taksbar}
     mainform1.statusbar1.SimplePanel:=true;
-    mainform1.statusbar1.Simpletext:=inttostr(round(i))+'%'+info;{show progress in statusbar}
-    stackmenu1.caption:=inttostr(round(i))+'%'+info;{show progress in stack menu}
+    mainform1.statusbar1.Simpletext:=v+'%'+info;{show progress in statusbar}
+    stackmenu1.caption:=v+'%'+info;{show progress in stack menu}
   end;
 end;
 
@@ -4647,7 +4650,7 @@ begin
        with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
-        progress_indicator(100*i/(count),' Binning');{show progress}
+        progress_indicator(i/count,' Binning');{show progress}
         filename2:=Strings[I];
         {load fits}
         Application.ProcessMessages;
@@ -8572,15 +8575,9 @@ begin
       c:=Sett.ReadInteger('stack','annotate_m',0); stackmenu1.annotate_mode1.itemindex:=c;
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
 
-          c:=Sett.ReadInteger('stack','measure_all',-1);                //delete 2025-12
-          if c>=0 then stackmenu1.measuring_method1.itemindex:=min(c,1) //old value    delete 2025-12
-          else                                                          //delete 2025-12
-      begin
       c:=Sett.ReadInteger('stack','measure_mode',0); stackmenu1.measuring_method1.itemindex:=c;
-      end;
       stackmenu1.ignore_saturation1.checked:= Sett.ReadBool('stack','ign_saturation',true);//photometry tab
       dum:=Sett.ReadString('stack','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
-
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
@@ -10009,7 +10006,7 @@ begin
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
-        progress_indicator(100*i/(count),' Solving');{show progress}
+        progress_indicator(i/count,' Solving');{show progress}
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break;end;
         filename2:=Strings[I];
@@ -10172,7 +10169,7 @@ begin
        with OpenDialog1.Files do
        for I := 0 to Count - 1 do
        begin
-         progress_indicator(100*i/(count),' Converting');{show progress}
+         progress_indicator(i/count,' Converting');{show progress}
          filename1:=Strings[I];
          memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
          Application.ProcessMessages;
@@ -13998,7 +13995,7 @@ begin
       for I := 0 to Count - 1 do
       begin
         filename2:=Strings[I];
-        progress_indicator(100*i/(count),' Solving');{show progress}
+        progress_indicator(i/count,' Solving');{show progress}
         solved:=false;
 
         if fits_tiff_file_name(filename2)=false then
@@ -14365,7 +14362,7 @@ begin
       for I := 0 to Count - 1 do
       begin
 
-        progress_indicator(100*i/(count),' Binning');{show progress}
+        progress_indicator(i/count,' Binning');{show progress}
         filename2:=Strings[I];
         {load fits}
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo4},0,memo4{mainform1.memo1.lines},head4,img4)=false)) then begin break;end;
@@ -14440,7 +14437,7 @@ begin
       for I := 0 to Count - 1 do
       begin
 
-        progress_indicator(100*i/(count),' Binning');{show progress}
+        progress_indicator(i/count,' Binning');{show progress}
         filename2:=Strings[I];
         {load fits}
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,memo{mainform1.memo1.lines},head,img)=false)) then begin break;end;
@@ -16799,7 +16796,7 @@ begin
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
-        progress_indicator(100*i/(count),' Converting');{show progress}
+        progress_indicator(i/count,' Converting');{show progress}
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
@@ -16871,7 +16868,7 @@ begin
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
-        progress_indicator(100*i/(count),' Converting');{show progress}
+        progress_indicator(i/count,' Converting');{show progress}
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break;end;
         filename2:=Strings[I];
@@ -17161,7 +17158,7 @@ begin
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
-        progress_indicator(100*i/(count),' Moving');{show progress}
+        progress_indicator(i/count,' Moving');{show progress}
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
@@ -17237,7 +17234,7 @@ begin
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
-        progress_indicator(100*i/(count),' Solving');{show progress}
+        progress_indicator(i/count,' Solving');{show progress}
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];

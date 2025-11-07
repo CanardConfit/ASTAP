@@ -1108,7 +1108,7 @@ var  {################# initialised variables #########################}
   dec_target: double = 999;
   jd_start: double = 0;{julian day of date-obs}
   groupsizeStr : string='';
-  images_selected: integer=0;
+  images_checked: integer=0;
   dark_norm_value: double=0;
 
 
@@ -1549,22 +1549,21 @@ begin
   end;
 end;
 
-procedure count_selected;
+
+function count_checked(lv : tlistview) : integer;
 {report the number of lights selected in images_selected and update menu indication}
 var
   c: integer;
 begin
-  images_selected := 0;
-  for c := 0 to stackmenu1.ListView1.items.Count - 1 do
-    if stackmenu1.ListView1.Items[c].Checked then Inc(images_selected, 1);
-  stackmenu1.nr_selected1.Caption := IntToStr(images_selected);{update menu info}
+  result := 0;
+  for c := 0 to lv.items.Count - 1 do
+    if lv.Items[c].Checked then Inc(result, 1);
+  stackmenu1.nr_selected1.Caption := IntToStr(result);{update menu info}
 
   {temporary fix for CustomDraw not called}
   {$ifdef darwin} {MacOS}
-  stackmenu1.nr_total1.caption:=inttostr(stackmenu1.listview1.items.count);{update counting info}
+  stackmenu1.nr_total1.caption:=inttostr(lv.items.count);{update counting info}
   {$endif}
-
-
 end;
 
 
@@ -2293,7 +2292,7 @@ begin
        then
       begin {checked}
 
-        if counts <> 0 then progress_indicator(100 * c / counts, ' Analysing');
+        if counts <> 0 then progress_indicator(0.1 * c / counts, ' Analysing');
         Listview1.Selected := nil; {remove any selection}
         ListView1.ItemIndex := c;  // mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true
         Listview1.Items[c].MakeVisible(False);{scroll to selected item}
@@ -2546,7 +2545,7 @@ begin
       until key = '';{until all keys are used}
     end;
 
-    count_selected;
+    images_checked:=count_checked(stackmenu1.listview1);
     {report the number of lights selected in images_selected and update menu indication}
     new_analyse_required := False; {back to normal, headx.filter_name is not changed, so no re-analyse required}
     screen.Cursor := crDefault;    { back to normal }
@@ -2599,7 +2598,7 @@ begin
     end;
     listview1.Items.EndUpdate;
   end;
-  count_selected;
+  images_checked:=count_checked(stackmenu1.Listview1);
   {report the number of lights selected in images_selected and update menu indication}
 end;
 
@@ -2827,7 +2826,7 @@ begin
      listview_removeselect(listview1);{from popup menu}
          //temporary till MACOS customdraw is fixed
        {$ifdef darwin} {MacOS}
-        count_selected;
+        images_checked:=count_checked(stackmenu1.Listview1);
        {$endif}
   end;
   if Sender = removeselected2 then listview_removeselect(listview2);{from popup menu}
@@ -2855,7 +2854,7 @@ begin
 
   //temporary till MACOS customdraw is fixed
   {$ifdef darwin} {MacOS}
-  count_selected;
+  images_checked:=count_checked(stackmenu1.Listview1);
   {$endif}
 
   bakfiles:=nil; //unrename function
@@ -4400,7 +4399,7 @@ begin
       (length(lv.Items.item[c].subitems.Strings[D_background]) <= 1))) then
       {column empthy, only update blank rows}
     begin
-      progress_indicator(100 * c / lv.items.Count - 1, ' Analysing');
+      progress_indicator(c / lv.items.Count, ' Analysing');
       lv.Selected := nil; {remove any selection}
       lv.ItemIndex := c; {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
       lv.Items[c].MakeVisible(False);{scroll to selected item}
@@ -5220,7 +5219,7 @@ end;
 
 procedure Tstackmenu1.dark_spot_filter1Click(Sender: TObject);
 var
-  fitsx, fitsy, i, j, k, x2, y2, radius, most_common, progress_value,greylevels: integer;
+  fitsx, fitsy, i, j, k, x2, y2, radius, most_common,greylevels: integer;
   neg_noise_level: double;
 begin
   if head.naxis <> 0 then
@@ -5246,8 +5245,7 @@ begin
             Screen.Cursor := crDefault;
             { back to normal }  exit;
           end;
-          progress_value := round(100 * (fitsY) / (((k + 1) / head.naxis3) * (head.Height)));
-          progress_indicator(progress_value, '');{report progress}
+          progress_indicator( (fitsY/head.Height) / ((k + 1) / head.naxis3) , '');{report progress}
         end;
         for fitsX := 0 to (head.Width - 1) {div 5} do
         begin
@@ -6322,7 +6320,7 @@ procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
 begin
   if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<2)) then
   begin
-    application.messagebox('First click on the two stars minimum (VAR, CHECK) of the first image. The press on play to measure.','Can not proceed!',0);
+    application.messagebox('First click on the three stars minimum (VAR, CHECK,COMP) of the first image. Or select mode measure all. Then press on play to measure.','Can not proceed!',0);
     exit;
   end;
 
@@ -7218,7 +7216,7 @@ begin
         listview7.ItemIndex := c;   {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
 
-        progress_indicator(100*progress/selcnt,'');
+        progress_indicator(progress/selcnt,'');
         application.ProcessMessages;
         if esc_pressed then break;
 
@@ -7887,8 +7885,7 @@ begin
     else
     begin {lights}
       listview1.Items.EndUpdate;
-      count_selected;
-      {report the number of lights selected in images_selected and update menu indication}
+      images_checked:=count_checked(stackmenu1.Listview1);  {report the number of lights selected in images_selected and update menu indication}
     end;
   end;
 end;
@@ -8022,13 +8019,14 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   magn, hfd1, star_fwhm, snr, flux, xc, yc,
-  apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt, snr_min                             : double;
+  apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt, snr_min               : double;
   saturation_level:  single;
-  c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY,  database_col,j,ww    : integer;
+  c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY,
+  database_col,j,ww,nrchecked                                                     : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
-  warned, success,new_object,listview_updating, reference_defined                               : boolean;
+  warned, success,new_object,listview_updating, reference_defined                 : boolean;
   starlistx                                     : Tstar_list;
-  astr, filename1,totalnrstr                    : string;
+  astr, filename1,totalnrstr,mess               : string;
   oldra0 : double=0;
   olddec0: double=-pi/2;
   headx : theader;
@@ -8085,7 +8083,7 @@ begin
 
   if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<2)) then
   begin
-    application.messagebox('First click on the two stars minimum (VAR, CHECK) of the first image','Can not proceed!',MB_OK);
+    application.messagebox('First click on the three stars minimum (VAR, CHECK, COMP) of the first image'+#10+#13+#10+#13+'Or select mode measure all and select later.','Can not proceed!',MB_OK);
     exit;
   end;
 
@@ -8143,8 +8141,9 @@ begin
           listview7.Selected := nil; {remove any selection}
           listview7.ItemIndex := c;  {mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
           listview7.Items[c].MakeVisible(False);{scroll to selected item}
-          memo2_message(inttostr(c+1)+'-'+totalnrstr+' '+filename1 + ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
-          stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename1;
+          mess:=inttostr(c+1)+'-'+totalnrstr+' '+filename1;
+          memo2_message(mess + ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
+          progress_indicator(c/listview7.items.Count,' Solved');
           Application.ProcessMessages;
 
           if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
@@ -8204,6 +8203,7 @@ begin
     begin
       if ((esc_pressed = False) and (listview7.Items.item[c].Checked)) then
       begin
+        progress_indicator(c/listview7.items.Count,' Measured');
         Application.ProcessMessages;
         stop_updating(true);//listview7.Items.BeginUpdate;
 
@@ -8213,6 +8213,7 @@ begin
 
         filename2 := listview7.items[c].Caption;
         stackmenu1.Caption :=inttostr(c+1)+'-'+totalnrstr+'        '+ filename2;
+
 
         {load image}
         if ((esc_pressed) or (load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded) = False)) then
@@ -8525,7 +8526,7 @@ begin
 
         end;{find star magnitudes}
       end;
-    end;
+    end;//for loop
 
     if form_aavso1 <> nil then
         form_aavso1.FormShow(nil);{aavso report}
@@ -10106,13 +10107,13 @@ end;
 
 function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable
 var
-   count, c,count_checked, icon_nr  : integer;
+   count, c,count_check, icon_nr  : integer;
    magn, mean                       : double;
    dum: string;
    listMagnitudes : array of double;
 begin
   count:=0;
-  count_checked:=0;
+  count_check:=0;
   setlength(listMagnitudes,stackmenu1.listview7.items.count);//list with magnitudes check star
 
   with stackmenu1 do
@@ -10129,11 +10130,11 @@ begin
         listMagnitudes[count]:= magn;
         inc(count);
       end;
-      inc(count_checked);
+      inc(count_check);
     end;
 
   end;
-  if count>count_checked/2 then //at least 50% valid measurements Not 50% because it will not report if two filter are in the list
+  if count>count_check/2 then //at least 50% valid measurements Not 50% because it will not report if two filter are in the list
   begin
      //calc standard deviation using the classic method. This will show the effect of outliers
     calc_sd_and_mean(listMagnitudes, count{counter},{out}result, mean);// calculate sd and mean of an array of doubles}
@@ -10344,7 +10345,7 @@ begin
         lv.ItemIndex := c; {mark where we are. Important set in object inspector    lv.HideSelection := false; lv.Rowselect := true}
         lv.Items[c].MakeVisible(False);{scroll to selected item}
 
-        progress_indicator(100*progress/selcnt,'');
+        progress_indicator(progress/selcnt,'');
         Application.ProcessMessages;
 
         {load image}
@@ -12403,7 +12404,7 @@ begin
           ListView1.ItemIndex := c;{show wich file is processed}
           Listview1.Items[c].MakeVisible(False);{scroll to selected item}
 
-          progress_indicator(100 * c / ListView1.items.Count - 1, ''); {indicate 0 to 100% for calibration}
+          progress_indicator(c / ListView1.items.Count, ''); {indicate 0 to 100% for calibration}
 
           filename2 := ListView1.items[c].Caption;
 
@@ -12794,7 +12795,7 @@ begin
           ListView1.ItemIndex := c;{show wich file is processed}
           Listview1.Items[c].MakeVisible(False);{scroll to selected item}
 
-          progress_indicator(10 * c / ListView1.items.Count - 1, ' solving');  {indicate 0 to 10% for plate solving}
+          progress_indicator(0.1 * c / ListView1.items.Count, ' solving');  {indicate 0 to 10% for plate solving}
 
           filename2 := ListView1.items[c].Caption;
           Application.ProcessMessages;
@@ -12856,7 +12857,7 @@ begin
           ListView1.ItemIndex := c;{show wich file is processed}
           Listview1.Items[c].MakeVisible(False);{scroll to selected item}
 
-          progress_indicator(10 * c / ListView1.items.Count - 1, ' rotating'); {indicate 0 to 10% for plate solving}
+          progress_indicator(0.1 * c / ListView1.items.Count, ' rotating'); {indicate 0 to 10% for plate solving}
 
           filename2 := ListView1.items[c].Caption;
 
@@ -12902,7 +12903,7 @@ begin
           ListView1.ItemIndex := c;{show wich file is processed}
           Listview1.Items[c].MakeVisible(False);{scroll to selected item}
 
-          progress_indicator(10 * c / ListView1.items.Count - 1, ' annotations'); {indicate 0 to 10% for plate solving}
+          progress_indicator(0.1 * c / ListView1.items.Count, ' annotations');
 
           filename2 := ListView1.items[c].Caption;
           memo2_message('Adding annotations to FITS header and X,Y positions of selected object to list for ' + filename2);
@@ -12942,7 +12943,7 @@ begin
     memo2_message('Annotations complete.');
   end;
 
-  progress_indicator(10, '');
+  progress_indicator(0.1, '');
   Application.ProcessMessages;
   if esc_pressed then
   begin

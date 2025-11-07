@@ -598,7 +598,7 @@ begin
               end;//for fits:=0 ....
             end;
 
-            progress_indicator(94+c,' LRGB');{show progress, 95..99}
+            progress_indicator(0.94+c/100,' LRGB');{show progress, 95..99%}
             except
               beep;
           end;{try}
@@ -714,7 +714,8 @@ var
   ra,dec,x,y : double;
   formalism : integer;
 begin
-  formalism:=mainform1.Polynomial1.itemindex;
+//  formalism:=mainform1.Polynomial1.itemindex;
+  formalism:=0;
   pixel_to_celestial(head,1,1,formalism , ra, dec); //left bottom
   celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
@@ -773,6 +774,8 @@ begin
     y_min:=0;
     y_max:=0;
     formalism:=mainform1.Polynomial1.itemindex;
+    if formalism<>1 then
+      memo2_message('█ █ █ █ █ █  Warning set viewer formalism to WCS to SIP!!');
 
     count:=0;
     total_fov:=0;
@@ -849,6 +852,7 @@ begin
             pixel_to_celestial(head,(x_min+x_max)/2,(y_min+y_max)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
             sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
             head_ref.ra0:=raMiddle;// set middle of the mosaic
+            head_ref.dec0:=decMiddle;// set middle of the mosaic
             head_ref.crpix1:=abs(x_max-x_min)/2;
             head_ref.crpix2:=abs(y_max-y_min)/2;
           end;
@@ -857,7 +861,7 @@ begin
                     a_order:=0; //stop using SIP from the header in astrometric mode
 
           memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
-          if a_order=0 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion correction not working. Either the option SIP not checkmarked or SIP terms not in the image header. Activate SIP and refresh astrometrical solutions with SIP checkmarked!! █ █ █ █ █ █');
+          if a_order=0 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion correction is not working. SIP terms are not in the image header. Refresh astrometrical solutions with SIP option check marked!! █ █ █ █ █ █');
 
           Application.ProcessMessages;
           if esc_pressed then exit;
@@ -1028,7 +1032,7 @@ begin
             end;
 
           end;
-          progress_indicator(10+89*counter/images_selected{length(files_to_process)}{(ListView1.items.count)},' Stacking');{show progress}
+          progress_indicator(0.1+0.89*counter/images_checked,' Stacking');{show progress}
         finally
         end;
       end;
@@ -1255,7 +1259,7 @@ begin
 
           end; //end solution
 
-          progress_indicator(10+89*counter/images_selected,' Stacking');{show progress}
+          progress_indicator(0.1+0.89*counter/images_checked,' Stacking');{show progress}
           finally
         end;
       end;
@@ -1488,7 +1492,7 @@ begin
 
         end;//solution
 
-        progress_indicator(10+round(0.3333*90*(counter)/images_selected),' ■□□');{show progress}
+        progress_indicator(0.1+0.3333*0.9*counter/images_checked,' ■□□');{show progress}
         finally
         end;
       end;{try}
@@ -1573,7 +1577,7 @@ begin
 
           variance_array(img_variance, img_loaded, img_average,img_temp, solution_vectorX,solution_vectorY, background, weightf);//add B to A
 
-          progress_indicator(10+30+round(0.33333*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■□');{show progress}
+          progress_indicator(0.10+0.3+0.33333*0.9*counter/images_checked,' ■■□');{show progress}
         finally
         end;
       end;{try}
@@ -1660,7 +1664,7 @@ begin
           //phase 3
           finalise_array(img_final, img_loaded, img_average,img_variance,img_temp, solution_vectorX,solution_vectorY, background, weightf,variance_factor);//add B to A
 
-          progress_indicator(10+60+round(0.33333*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■■');{show progress}
+          progress_indicator(0.1+0.6+0.33333*0.9*counter/images_checked,' ■■■');{show progress}
           finally
         end;
       end;
@@ -1900,7 +1904,7 @@ begin
           end;
 
         end;//solution
-        progress_indicator(10+round(0.5*90*(counter)/images_selected),' ■□');{show progress}
+        progress_indicator(0.1+0.5*0.9*counter/images_checked,' ■□');{show progress}
         finally
         end;
       end;{try}
@@ -2014,7 +2018,7 @@ begin
 
           init:=true;{initialize for first image done}
 
-          progress_indicator(10+45+round(0.5*90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),' ■■');{show progress}
+          progress_indicator(0.1+0.45+0.5*0.9*counter/images_checked,' ■■');{show progress}
           finally
         end;
       end;
@@ -2274,7 +2278,7 @@ begin
           if save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)=false then exit;//exit if save error
           memo2_message('New aligned image created: '+filename2);
           report_results(object_name,inttostr(round(head.exposure)),0,-1 {color icon}, 5 {stack icon});{report result in tab result using modified filename2}
-          progress_indicator(10+round(90*(counter)/images_selected{length(files_to_process)}{(ListView1.items.count)}),'Cal');{show progress}
+          progress_indicator(0.1+0.9*counter/images_checked,'Cal');{show progress}
         end;
         finally
         end;
