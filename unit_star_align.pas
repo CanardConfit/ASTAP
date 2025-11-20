@@ -31,7 +31,7 @@ var
    //starlistquadsDisplay : Tstar_list;
 
 procedure find_stars(img :Timage_array;head: theader; hfd_min:double; max_stars :integer;out starlist1: Tstar_list; out mean_hfd: double);{find stars and put them in a list}
-procedure find_quads(display: boolean; starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2025
+procedure find_quads(display: boolean; nrstars_image:integer; starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2025
 procedure find_triples_using_quads(starlist :Tstar_list;  out quad_star_distances :Tstar_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
@@ -452,7 +452,7 @@ begin
 end;
 
 
-procedure find_quads(display: boolean; starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2025
+procedure find_quads(display: boolean;nrstars_image:integer; starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2025
 const
   grid_size = 5.0; // Coarser grid for [-6000, 6000], adjust if needed (e.g., 5.0 for denser clustering)
   bucket_capacity = 10; // Max quads per bucket, increase to 20 if overflows occur
@@ -469,13 +469,13 @@ var
 begin
   nrstars:=Length(starlist[0]);{number of quads will lower}
 
- if nrstars<30 then
+ if nrstars_image<30 then //base the quad groups size selection on the number of stars in the image and not on the number of database stars since the database field could be larger
   begin
     find_many_quads(display,starlist, {out} quads,6 {group size});//Find five times more quads by using closest groups of five stars.
     exit;
   end
   else
-  if nrstars<60 then
+  if nrstars_image<60 then
   begin
     find_many_quads(display,starlist, {out} quads,5 {group size});//Find five times more quads by using closest groups of five stars.
     exit;

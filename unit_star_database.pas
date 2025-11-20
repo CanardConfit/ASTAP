@@ -2778,7 +2778,7 @@ begin
       if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;exit; end
     end
     else
-    if typ in ['d','v','h'] then //d80,v50, h18
+    if typ in ['d','v','i','h'] then //d80,v50, h18
     begin
       if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  exit; end;
     end; // no else since there is a v50 and v17!!
@@ -2814,6 +2814,8 @@ begin
   if fileexists( database_path+'g05_0101.290') then begin name_database:='g05'; database_type:=290; end
   else
   if fileexists( database_path+'v05_0101.290') then begin name_database:='v05'; database_type:=290; end
+  else
+  if fileexists( database_path+'x80_0101.1476') then begin name_database:='x80'; end
   else
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18';warning:=true; end //old database sorted on magnitude
   else
