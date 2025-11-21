@@ -2064,7 +2064,7 @@ var
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                                                       : integer;
   flip_horizontal, flip_vertical                        : boolean;
   flux_ratio_array,hfd_x_sd, flux_peak_ratio,snr_list   : array of double;
-  selected_passband : string;
+  selected_passband,firstletter : string;
   data_max          : single;
   starlist1         : Tstar_list;
 
@@ -2201,7 +2201,12 @@ begin
       begin
         if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
         memo2_message('Using star database '+uppercase(name_database));
-        if uppercase(copy(name_database,1,1))='V' then passband_active:='V' else passband_active:='BP';// for reporting
+        firstletter:=uppercase(copy(name_database,1,1));
+        if firstletter='V' then passband_active:='V'
+        else
+        if firstletter='I' then passband_active:='I'
+        else
+        passband_active:='BP';// for reporting
     end
     else
     begin  //Reading online database. Update if required

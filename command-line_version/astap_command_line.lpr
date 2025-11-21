@@ -156,8 +156,6 @@ begin
     if hasoption('sip') then add_sip1:='n'<>GetOptionValue('sip');
     if hasoption('speed') then force_oversize1:=pos('slow',GetOptionValue('speed'))<>0;
     if hasoption('check') then check_pattern_filter1:=('y'=GetOptionValue('check'));
- //   if hasoption('eqbg') then equaliseBG_for_solving1:='n'<>GetOptionValue('eqbg');
-
 
     extractspecified:=hasoption('extract');
     analysespecified:=hasoption('analyse');
