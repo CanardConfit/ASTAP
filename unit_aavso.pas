@@ -56,8 +56,6 @@ type
     PopupMenu1: TPopupMenu;
     SaveDialog1: TSaveDialog;
     sigma_check1: TLabel;
-    sigma_check2: TLabel;
-    sigma_check3: TLabel;
     sigma_mzero1: TLabel;
     sort_alphabetically1: TCheckBox;
     test_button1: TButton;
@@ -168,7 +166,7 @@ var
   column_comps,column_vars : Tinteger_array;
   test_mode : boolean;
   jd_mouse  : double;//jd_mid of mouse position
-  photometry_stdev : array[0..4] of double;
+  photometry_stdev : array[0..29] of double;//stdev for each filter
   comps_info : array of Tcomps_info;
 
 
@@ -183,11 +181,13 @@ var
   i : integer;
 begin
   mean:=0;
+  sd:=0;
+  if leng=0 then exit;
+
   for i:=0 to leng-1 do
     mean:=mean+list[i];
   mean:=mean/leng;
 
-  sd:=0;
   for i:=0 to leng-1 do
     sd:=sd+sqr(list[i]-mean);
   sd:=sqrt(sd/leng);
@@ -635,15 +635,19 @@ begin
   V_R:=-99;
   process_comp_stars2;//process the multiple comp stars and put in comps_info array
 
+  icon_nr:=0;
+
   with stackmenu1 do
   begin
     for c:=0 to length(RowChecked)-1 do
     begin
-      icon_nr:=SubItemImages[c];
-      if ((icon_nr=1) or (icon_nr=4)) then //for filter V or TG or CV only
+
+    //  if ((icon_nr=1) or (icon_nr=23) or (icon_nr=4)) then //for filter V, TG, SG  or CV only
       if listview7.Items.item[c].checked then
       begin
-        if comps_info[c].valid then
+        //if icon_nr=0 then icon_nr:=SubItemImages[c];
+
+        if ((comps_info[c].valid){ and (icon_nr=SubItemImages[c])})  then //do standard deviation on only one colour
         begin
           mean_sd_comp:=mean_sd_comp+comps_info[c].sd_comp;//sum the sd_comp (weighted standard deviation of the comp stars between them) of each image to calculate an average
           inc(count);
@@ -672,7 +676,7 @@ begin
   end
   else
   begin
-    form_aavso1.sigma_mzero1.caption:='Saturated//No documented magnitude for used filter';
+    form_aavso1.sigma_mzero1.caption:='Saturated/No comparison magnitude(s) available.';
   end;
 end;
 
@@ -895,17 +899,19 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,countV,countB,countR,k,icon_nr,i,j,vars_end,x,y,index,fc,countdelta,
-  bv_pairs,vr_pairs                                                                                                                                   : integer;
-  scale,range, mean,dummy,flux,magn_gaia,check_doc_magb,check_doc_magR, check_doc_magV,Bcorrection,Vcorrection,Rcorrection,
-  checkmeanB,checkmeanV,checkmeanR,B_V_sum,V_R_sum,B_V,V_R,b_v_check, v_r_check                                                                       : double;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,countV,countB,countR,countI, countSG,countSI, countSR,k,icon_nr,i,j,vars_end,x,y,index,fc,countdelta,
+  bv_pairs,vr_pairs,m                                                                                                                                 : integer;
+  scale,range, dummy,flux,magn_gaia,check_doc_magB,check_doc_magR, check_doc_magV, check_doc_magI, check_doc_magSG, check_doc_magSR, check_doc_magSI,Bcorrection,Vcorrection,Rcorrection,
+  checkmeanB,checkmeanV,checkmeanR,checkmeanI,checkmeanSG,checkmeanSR,checkmeanSI,B_V_sum,V_R_sum,B_V,V_R,b_v_check, v_r_check                     : double;
   text1,text2, date_format, abbrv_var,Bcorrectionstr,Vcorrectionstr,Rcorrectionstr : string;
   bmp: TBitmap;
   data : array of array of double;
-  listcheckV, listcheckB, listcheckR : array of double;
+
+  listcheckV, listcheckB, listcheckR, listcheckI, listcheckSG, listcheckSR, listcheckSI : array of double;
   filtercolor : array of tcolor;
   gaia_based,new_colour, color_used : boolean;
   color_list : array[0..7] of tcolor;
+  message: string;
 const
   len=3;
       procedure plot_point(x,y,tolerance:integer);
@@ -1031,10 +1037,9 @@ begin
   if stackmenu1.measuring_method1.itemindex>0  then //<> manual mode
     annotate_star_of_column(column_check,column_vars,column_comps);
 
-  photometry_stdev[0] := 0;//red
-  photometry_stdev[1] := 0;//V
-  photometry_stdev[2] := 0;//B
-  photometry_stdev[3]:=0;//others
+  for m:=0 to length(photometry_stdev)-1 do photometry_stdev[m]:=0;// clear
+
+
   setlength(data,2+length(column_vars)+length(column_comps), length(RowChecked));
   for i:=0 to length(data)-1 do
     for j:=0 to length(data[0])-1 do
@@ -1042,11 +1047,20 @@ begin
   setlength(listcheckV,length(data[0]));//list with magnitudes check star
   setlength(listcheckB,length(data[0]));//list with magnitudes check star
   setlength(listcheckR,length(data[0]));//list with magnitudes check star
+  setlength(listcheckI,length(data[0]));//list with magnitudes check star
+  setlength(listcheckSG,length(data[0]));//list with magnitudes check star
+  setlength(listcheckSR,length(data[0]));//list with magnitudes check star
+  setlength(listcheckSI,length(data[0]));//list with magnitudes check star
+
 
   setlength(filtercolor,length(data[0]));//list filter colors
-  countR:=0;
+  countR:=0;//Johnson & Cousins counts
   countV:=0;
   countB:=0;
+  countI:=0;
+  countSG:=0;//sloan counts
+  countSR:=0;
+  countSI:=0;
   countdelta:=0;
   B_V_sum:=0;
   V_R_sum:=0;
@@ -1081,8 +1095,13 @@ begin
             magn_max:=max(magn_max,data[1,c]);
             magn_min:=min(magn_min,data[1,c]);
             case SubItemImages[c] of 0,24: begin listcheckR[countR]:= data[1,c]; inc(countR);  end;//Red
-                                        1: begin listcheckV[countV]:= data[1,c]; inc(countV);  end;//TG or V
+                                        1:
+                                           begin listcheckV[countV]:= data[1,c]; inc(countV);  end;//TG or V
                                         2: begin listcheckB[countB]:= data[1,c]; inc(countB);  end;//Blue
+                                        28:begin listcheckI[countI]:= data[1,c]; inc(countI);  end;//I FILTER
+                                        21:begin listcheckSI[countSI]:= data[1,c]; inc(countSI);  end;//SDSS-i
+                                        22:begin listcheckSR[countSR]:= data[1,c]; inc(countSR);  end;//SDSS-r
+                                        23:begin listcheckSG[countSG]:= data[1,c]; inc(countSG);  end;//SDSS-g
 
             end;//case
           end;
@@ -1152,8 +1171,18 @@ begin
               magn_max:=max(magn_max,data[1,c]);
               magn_min:=min(magn_min,data[1,c]);
               case SubItemImages[c] of 0,24: begin listcheckR[countR]:= data[1,c]; inc(countR);  end;//Red
-                                          1: begin listcheckV[countV]:= data[1,c]; inc(countV);  end;//TG or V
+                                          1:
+                                             begin listcheckV[countV]:= data[1,c]; inc(countV);  end;//TG or V
                                           2: begin listcheckB[countB]:= data[1,c]; inc(countB);  end;//Blue
+                                          28:
+                                             begin listcheckI[countI]:= data[1,c]; inc(countI);  end;//I FILTER
+                                          21:
+                                             begin listcheckSI[countSI]:= data[1,c]; inc(countSI);  end;//SDSS-i
+                                          22:
+                                             begin listcheckSR[countSR]:= data[1,c]; inc(countSR);  end;//SDSS-r
+                                          23:
+                                             begin listcheckSG[countSG]:= data[1,c]; inc(countSG);  end;//SDSS-g
+
               end;//case
             end;
           end;
@@ -1227,6 +1256,29 @@ begin
     check_doc_magR:=retrieve_documented_magnitude(true,0,column_check, ColumnTitles[column_check+1]);
   end;
 
+  if countI>0 then
+  begin
+    calc_sd_and_mean(listcheckI, countI{counter},{var}photometry_stdev[28], checkmeanI);// calculate sd and mean of an array of doubles}
+    check_doc_magI:=retrieve_documented_magnitude(true,28,column_check, ColumnTitles[column_check+1]);
+  end;
+  if countSG>0 then
+  begin
+    calc_sd_and_mean(listcheckSG, countSG{counter},{var}photometry_stdev[23], checkmeanSG);// calculate sd and mean of an array of doubles}
+    check_doc_magSG:=retrieve_documented_magnitude(true,23,column_check, ColumnTitles[column_check+1]);
+  end;
+  if countSR>0 then
+  begin
+    calc_sd_and_mean(listcheckSR, countSR{counter},{var}photometry_stdev[22], checkmeanSR);// calculate sd and mean of an array of doubles}
+    check_doc_magSR:=retrieve_documented_magnitude(true,22,column_check, ColumnTitles[column_check+1]);
+  end;
+  if countSI>0 then
+  begin
+    calc_sd_and_mean(listcheckSI, countSI{counter},{var}photometry_stdev[21], checkmeanSI);// calculate sd and mean of an array of doubles}
+    check_doc_magSI:=retrieve_documented_magnitude(true,21,column_check, ColumnTitles[column_check+1]);
+  end;
+
+
+
   Bcorrectionstr:='';
   Vcorrectionstr:='';
   Rcorrectionstr:='';
@@ -1268,22 +1320,26 @@ begin
     Rcorrectionstr:='';
   end;
 
+  message:='';
   if countB>0 then
-    form_aavso1.sigma_check1.caption:='Check b-B='+floattostrF(checkmeanB-check_doc_magB,ffFixed,0,3)+Bcorrectionstr+', σ='+floattostrF(photometry_stdev[2],ffFixed,0,3)//report offsets
-  else
-    form_aavso1.sigma_check1.caption:='No valid b';
-
-
+    message:='Check b-B='+floattostrF(checkmeanB-check_doc_magB,ffFixed,0,3)+Bcorrectionstr+', σ='+floattostrF(photometry_stdev[2],ffFixed,0,3)+#10+#13;//report offsets
   if countV>0 then
-    form_aavso1.sigma_check2.caption:='Check v-V='+floattostrF(checkmeanV-check_doc_magV,ffFixed,0,3)+Vcorrectionstr+', σ='+floattostrF(photometry_stdev[1],ffFixed,0,3) //report offsets
-  else
-    form_aavso1.sigma_check2.caption:='No valid v';
-
+    message:=message+'Check v-V='+floattostrF(checkmeanV-check_doc_magV,ffFixed,0,3)+Vcorrectionstr+', σ='+floattostrF(photometry_stdev[1],ffFixed,0,3)+#10+#13; //report offsets
   if countR>0 then
-    form_aavso1.sigma_check3.caption:='Check r-R='+floattostrF(checkmeanR-check_doc_magR,ffFixed,0,3)+Rcorrectionstr+', σ='+floattostrF(photometry_stdev[0],ffFixed,0,3)//report offsets
-  else
-    form_aavso1.sigma_check3.caption:='No valid r';
+    message:=message+'Check r-R='+floattostrF(checkmeanR-check_doc_magR,ffFixed,0,3)+Rcorrectionstr+', σ='+floattostrF(photometry_stdev[0],ffFixed,0,3)+#10+#13;//report offsets
+  if countI>0 then
+    message:=message+'Check i-I='+floattostrF(checkmeanI-check_doc_magI,ffFixed,0,3)+', σ='+floattostrF(photometry_stdev[28],ffFixed,0,3)+#10+#13;//report offsets
+  if countSG>0 then
+    message:=message+'Check sg-SG='+floattostrF(checkmeanSG-check_doc_magSG,ffFixed,0,3)+', σ='+floattostrF(photometry_stdev[23],ffFixed,0,3)+#10+#13;//report offsets
+  if countSR>0 then
+    message:=message+'Check sr-SR='+floattostrF(checkmeanSR-check_doc_magSR,ffFixed,0,3)+', σ='+floattostrF(photometry_stdev[22],ffFixed,0,3)+#10+#13;//report offsets
+  if countSI>0 then
+    message:=message+'Check si-SI='+floattostrF(checkmeanSI-check_doc_magSI,ffFixed,0,3)+', σ='+floattostrF(photometry_stdev[21],ffFixed,0,3)+#10+#13;//report offsets
 
+  if message='' then message:='No valid star(s)/ No comparison magnitude(s) available.';
+
+
+  form_aavso1.sigma_check1.caption:=message;
 
   for i:=0 to high(color_list) do color_list[i]:=0;//clear icons which have been done
   index:=0;
@@ -1928,7 +1984,7 @@ var
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
     warning,transformation, transform_all_factors,transf_str,varab  : string;
-    stdev_valid,apply_transformation,valid_comp : boolean;
+    apply_transformation,valid_comp : boolean;
     snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp,B_V, V_R,var_Vcorrection,var_Bcorrection,var_Rcorrection,v_r_var,b_v_var,airmass : double;
     PNG: TPortableNetworkGraphic;{FPC}
     vsep : char;
@@ -1985,7 +2041,7 @@ begin
 
 
   apply_transformation:=apply_transformation1.checked;
-  stdev_valid:=(photometry_stdev[1]>0.0001);
+//  stdev_valid:=(photometry_stdev[SubItemImages[c]]>0.0001);
   if delimiter1.text=',' then vsep:=';' else vsep:=',';//valid seperator
 
 
@@ -2014,7 +2070,6 @@ begin
     date_format:='JD';
     date_column:=P_jd_mid;
   end;
-  transf_str:='NO'; //No is no transformation, YES is transformation.
 
 
   if ensemble_database1.checked then
@@ -2070,7 +2125,7 @@ begin
          begin
            err_by_snr:=2 {1.087}/snr_value;
 
-           if  stdev_valid=false then
+           if  (photometry_stdev[SubItemImages[c]]>0.0001)=false then
              str(err_by_snr:1:4,err){SNR method.Note SNR is in ADU but for snr above 20 error is small. For e-/adu<1 error becomes larger. Factor 2 is a practical factor}
            else
              str(math.max(err_by_snr, photometry_stdev[get_filternr(c)]):1:4,err);{standard deviation of Check  star. Use math.min in case the different passbands are used and magnitude chekc stars swings heavilly}
@@ -2081,6 +2136,7 @@ begin
 
 
            filter_used:=stackmenu1.listview7.Items.item[c].subitems.Strings[P_filter]; //take from header
+
            comp_magn_info:='';//clear summation of messages;
 
            if stackmenu1.reference_database1.itemindex=0 then //local database
@@ -2107,12 +2163,13 @@ begin
 
 
                    transformation:='';
-                   if apply_transformation then
+                   icon_nr:=SubItemImages[c];
+
+                   if ((apply_transformation) and  (icon_nr in [0,1,2,24] )) then //currently transformation only possible with B, V, R filter
                    begin
                      //transformation
                      // Tv_bv * Tbv* ((b-v)tgt – (B-V)comp)
                      transf_str:='YES';
-                     icon_nr:=SubItemImages[c];
                      if icon_nr=2 then //B correction
                      begin
                        if comps_info[c].B_V<>-99 then
@@ -2185,7 +2242,10 @@ begin
                        end;
 
                      end;
-                   end;
+                   end
+                   else
+                     transf_str:='NO'; //No is no transformation, YES is transformation.
+
                    str(var_magn:0:3,var_magn_str);
 
                    check_flux:=SubItemDouble[c,column_check+2];

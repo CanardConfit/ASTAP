@@ -8,11 +8,11 @@ object form_aavso1: Tform_aavso1
   ClientHeight = 876
   ClientWidth = 1334
   Constraints.MinHeight = 750
-  LCLVersion = '4.99.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnResize = FormResize
   OnShow = FormShow
+  LCLVersion = '2.2.6.0'
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
@@ -68,19 +68,19 @@ object form_aavso1: Tform_aavso1
           Height = 23
           Hint = 'Sort the drop-down list alphabetically. Else the drop-down list is sorted on standard deviation.'
           Top = 13
-          Width = 129
+          Width = 135
           Caption = 'Sort alphabetically'
+          OnChange = sort_alphabetically1Change
           ParentShowHint = False
           ShowHint = True
           TabOrder = 1
-          OnChange = sort_alphabetically1Change
         end
         object apply_transformation1: TCheckBox
           Left = 16
           Height = 23
-          Hint = 'The transformation factors should be available. See transformation button in tab photmetry.'
+          Hint = 'The transformation factors should be available. See transformation button in tab photometry. Only for B,V,R filters'
           Top = 588
-          Width = 148
+          Width = 154
           BorderSpacing.Left = 12
           Caption = 'Apply transformation'
           ParentShowHint = False
@@ -111,19 +111,19 @@ object form_aavso1: Tform_aavso1
           Height = 23
           Hint = 'Report the date as Heliocentric Julian Day'
           Top = 629
-          Width = 43
+          Width = 49
           Caption = 'HJD'
+          OnChange = hjd1Change
           ParentShowHint = False
           ShowHint = True
           TabOrder = 4
-          OnChange = hjd1Change
         end
         object baa_style1: TCheckBox
           Left = 243
           Height = 23
           Hint = 'Extras report lines will added conform BAA. Info is taken from FITS header.'
           Top = 629
-          Width = 76
+          Width = 82
           Caption = 'BAA style'
           ParentShowHint = False
           ShowHint = True
@@ -167,10 +167,10 @@ object form_aavso1: Tform_aavso1
           Width = 232
           BorderSpacing.Left = 12
           Caption = 'Report to clipboard'
+          OnClick = report_to_clipboard1Click
           ParentShowHint = False
           ShowHint = True
           TabOrder = 7
-          OnClick = report_to_clipboard1Click
         end
         object report_to_file1: TButton
           Left = 256
@@ -179,10 +179,10 @@ object form_aavso1: Tform_aavso1
           Top = 669
           Width = 224
           Caption = 'Report to file'
+          OnClick = report_to_clipboard1Click
           ParentShowHint = False
           ShowHint = True
           TabOrder = 8
-          OnClick = report_to_clipboard1Click
         end
         object Image_photometry1: TImage
           Cursor = crCross
@@ -194,9 +194,9 @@ object form_aavso1: Tform_aavso1
           Align = alClient
           BorderSpacing.Left = 503
           BorderSpacing.Right = 5
+          OnMouseMove = Image_photometry1MouseMove
           PopupMenu = PopupMenu1
           Stretch = True
-          OnMouseMove = Image_photometry1MouseMove
         end
         object report_error1: TLabel
           Left = 526
@@ -214,12 +214,12 @@ object form_aavso1: Tform_aavso1
         end
         object GroupBox_check1: TGroupBox
           Left = 3
-          Height = 123
+          Height = 75
           Top = 456
           Width = 496
           AutoSize = True
           Caption = 'Check star'
-          ClientHeight = 99
+          ClientHeight = 51
           ClientWidth = 492
           TabOrder = 9
           object abrv_check1: TComboBox
@@ -235,11 +235,11 @@ object form_aavso1: Tform_aavso1
             BorderSpacing.Left = 12
             DropDownCount = 30
             ItemHeight = 19
+            OnChange = abrv_check1Change
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
             TabOrder = 0
-            OnChange = abrv_check1Change
           end
           object sigma_check1: TLabel
             Left = 12
@@ -249,30 +249,6 @@ object form_aavso1: Tform_aavso1
             Width = 84
             BorderSpacing.Left = 12
             Caption = 'sigma_check1'
-            ParentColor = False
-            ParentShowHint = False
-            ShowHint = True
-          end
-          object sigma_check2: TLabel
-            Left = 12
-            Height = 19
-            Hint = 'Measured raw and transformed v magnitude error of the check star.'
-            Top = 56
-            Width = 84
-            BorderSpacing.Left = 12
-            Caption = 'sigma_check2'
-            ParentColor = False
-            ParentShowHint = False
-            ShowHint = True
-          end
-          object sigma_check3: TLabel
-            Left = 12
-            Height = 19
-            Hint = 'Measured raw and transformed r magnitude error of the check star.'
-            Top = 80
-            Width = 84
-            BorderSpacing.Left = 12
-            Caption = 'sigma_check3'
             ParentColor = False
             ParentShowHint = False
             ShowHint = True
@@ -297,13 +273,13 @@ object form_aavso1: Tform_aavso1
             BorderSpacing.Left = 12
             ItemHeight = 0
             MultiSelect = True
+            OnClick = abrv_comp1Click
+            OnClickCheck = abrv_comp1ClickCheck
+            OnItemClick = abbrv_comp1ItemClick
             ParentShowHint = False
             PopupMenu = PopupMenu_comp1
             ShowHint = True
             TabOrder = 0
-            OnClick = abrv_comp1Click
-            OnClickCheck = abrv_comp1ClickCheck
-            OnItemClick = abbrv_comp1ItemClick
           end
           object sigma_mzero1: TLabel
             Left = 12
@@ -322,12 +298,12 @@ object form_aavso1: Tform_aavso1
           Height = 23
           Hint = 'If enabled then Gaia  ensemble is used for calibration'
           Top = 237
-          Width = 107
+          Width = 113
           Caption = 'Gaia ensemble'
+          OnClick = ensemble_database1Click
           ParentShowHint = False
           ShowHint = True
           TabOrder = 11
-          OnClick = ensemble_database1Click
         end
         object GroupBox_variables1: TGroupBox
           Left = 3
@@ -348,12 +324,12 @@ object form_aavso1: Tform_aavso1
             BorderSpacing.Left = 12
             ItemHeight = 0
             MultiSelect = True
+            OnClick = abbrv_variable1Click
+            OnClickCheck = abbrv_variable1ClickCheck
             ParentShowHint = False
             PopupMenu = PopupMenu_variables1
             ShowHint = True
             TabOrder = 0
-            OnClick = abbrv_variable1Click
-            OnClickCheck = abbrv_variable1ClickCheck
           end
         end
         object test_button1: TButton
@@ -364,10 +340,10 @@ object form_aavso1: Tform_aavso1
           Width = 51
           AutoSize = True
           Caption = 'Test'
+          OnClick = test_button1Click
           ParentShowHint = False
           ShowHint = True
           TabOrder = 13
-          OnClick = test_button1Click
         end
       end
     end

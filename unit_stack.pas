@@ -4518,7 +4518,7 @@ begin
                 lv.Items.item[c].SubitemImages[P_filter]:=4 //assume CV
               end
               else
-              if pos('S',filterstrUP)>0 then //sloan
+              if ((pos('S',filterstrUP)>0) or (pos('P',filterstrUP)>0)) then //Sloan SB, SG, SI or Sloan Las Cumbres GP, RP, IP
               begin
                 if pos('I',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=21 //SDSS-i
                 else
@@ -8275,11 +8275,11 @@ begin
         else
         if head.passband_database='I' then database_col:=28 //dark red icon
         else
-        if head.passband_database='SI' then database_col:=21 //SDSS-i red/infrared
+        if ((head.passband_database='SI') or (head.passband_database='IP')) then database_col:=21 //SDSS-i red/infrared
         else
-        if head.passband_database='SR' then database_col:=22 //SDSS-r red/orange
+        if ((head.passband_database='SR') or (head.passband_database='RP')) then database_col:=22 //SDSS-r red/orange
         else
-        if head.passband_database='SG' then database_col:=23 //SDSS-g blue/green
+        if ((head.passband_database='SG') or (head.passband_database='GP')) then database_col:=23 //SDSS-g blue/green
         else
         database_col:=-1; // unknown. Should not happen
 
@@ -8446,6 +8446,8 @@ begin
 
         head_ref.mzero:=head.mzero;//preserve mzero for next line
         head_ref.mzero_radius:=head.mzero_radius;//preserve mzero_radius for plot_annulus()
+        head_ref.passband_database:=head.passband_database;//preserve passband database
+        head_ref.filter_name:=head.filter_name;//preserve filter name
         head:=head_ref;//use reference header for plotting since the image should be aligned to the reference image
 
         store_annotated := annotated;{store temporary annotated}
