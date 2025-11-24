@@ -1668,6 +1668,53 @@ begin
 end;{plot deep_sky}
 
 
+
+procedure get_database_passband(filterstr: string; out passband :string);//report local or online database and the database passband
+var
+  datab,filterstrUP :string;
+begin
+  datab:=stackmenu1.reference_database1.text;
+  if pos('Local',datab)>0 then //local or auto
+  begin
+    if pos('V',filterstrUP)>0  then passband:='V'
+    else
+    passband:='BP';
+    memo2_message('Local databasa as set in tab Photometry. Filter='+filterstr+'. Local database = '+passband);
+  end
+  else
+  begin  //online auto transformation
+    filterstrUP:=uppercase(filterstr);
+    if ((length(filterstrUP)=0) or (pos('CV',filterstrUP)>0))  then passband:='BP'  //Johnson-V, online
+    else
+    if ((pos('S',filterstrUP)>0) OR (pos('P',filterstrUP)>0)) then //Sloan SG,SR, SI   or Sloan Las Cumbres observatory (GP, RP, IP}
+    begin
+      if pos('G',filterstrUP)>0  then passband:='SG'  //SDSS-g
+      else
+      if pos('R',filterstrUP)>0  then passband:='SR'  //SDSS-r
+      else
+      if pos('I',filterstrUP)>0  then passband:='SI'  //SDSS-i
+      else
+      passband:='BP'  //online ; //unknown
+    end
+    else //Johnson-Cousins
+    if pos('G',filterstrUP)>0  then
+     passband:='V'  //TG, Johnson-V, online
+    else
+    if pos('V',filterstrUP)>0  then passband:='V'  //Johnson-V, online
+    else
+    if pos('B',filterstrUP)>0  then passband:='B'  //Johnson-B, online Blue
+    else
+    if pos('R',filterstrUP)>0  then passband:='R'  //Cousins-R, online red
+    else
+    if pos('I',filterstrUP)>0  then passband:='I'  //Cousins-R, online red
+    else
+    passband:='BP';  //online take clear view
+
+    memo2_message('Gaia online with database transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
+  end;
+end;
+
+
 procedure plot_vsx_vsp(extract_visible: boolean);{plot downloaded variable and comp stars}
 type
   textarea = record
@@ -1722,6 +1769,8 @@ begin
      setlength(vsp_vsx_list,1000);//make space
      nrcount:=0;
    end;
+
+    get_database_passband(head.filter_name,{out} head.passband_database);//select applicable passband for annotation in case photmetry is not calibrated
 
     text_counter:=0;
     setlength(text_dimensions,1000);
@@ -1816,14 +1865,23 @@ begin
 
             if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
             begin //Sloan filters used
-              if vsp[count].SGmag<>'?' then abbreviation:=abbreviation+'_SG='+vsp[count].Vmag+'('+vsp[count].Verr+')';
-              if vsp[count].SRmag<>'?' then abbreviation:=abbreviation+'_SR='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-              if vsp[count].SImag<>'?' then abbreviation:=abbreviation+'_SI='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+              if vsp[count].SGmag<>'?' then abbreviation:=abbreviation+'_SG='+vsp[count].SGmag+'('+vsp[count].SGerr+')';
+              if vsp[count].SRmag<>'?' then abbreviation:=abbreviation+'_SR='+vsp[count].SRmag+'('+vsp[count].SRerr+')';
+              if vsp[count].SImag<>'?' then abbreviation:=abbreviation+'_SI='+vsp[count].SImag+'('+vsp[count].SIerr+')';
             end
             else
             begin //UBVR
-              if vsp[count].Bmag<>'?' then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-              if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+              if head.passband_database<>'I' then
+              begin
+                if vsp[count].Bmag<>'?' then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+                if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+              end
+              else
+              begin
+                if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
+                if vsp[count].Imag<>'?' then abbreviation:=abbreviation+'_I='+vsp[count].Imag+'('+vsp[count].Ierr+')';
+              end;
+
             end;
 
             if font_size>=5 then
@@ -2009,51 +2067,6 @@ begin
     standard_error_mean:=sqrt(standard_error_mean/sqr(count));
   end;
 
-end;
-
-
-procedure get_database_passband(filterstr: string; out passband :string);//report local or online database and the database passband
-var
-  datab,filterstrUP :string;
-begin
-  datab:=stackmenu1.reference_database1.text;
-  if pos('Local',datab)>0 then //local or auto
-  begin
-    if pos('V',filterstrUP)>0  then passband:='V'
-    else
-    passband:='BP';
-    memo2_message('Local databasa as set in tab Photometry. Filter='+filterstr+'. Local database = '+passband);
-  end
-  else
-  begin  //online auto transformation
-    filterstrUP:=uppercase(filterstr);
-    if ((length(filterstrUP)=0) or (pos('CV',filterstrUP)>0))  then passband:='BP'  //Johnson-V, online
-    else
-    if pos('S',filterstrUP)>0 then //sloan
-    begin
-      if pos('G',filterstrUP)>0  then passband:='SG'  //SDSS-g
-      else
-      if pos('R',filterstrUP)>0  then passband:='SR'  //SDSS-r
-      else
-      if pos('I',filterstrUP)>0  then passband:='SI'  //SDSS-i
-      else
-      passband:='BP'  //online ; //unknown
-    end
-    else //Johnson-Cousins
-    if pos('G',filterstrUP)>0  then passband:='V'  //TG, Johnson-V, online
-    else
-    if pos('V',filterstrUP)>0  then passband:='V'  //Johnson-V, online
-    else
-    if pos('B',filterstrUP)>0  then passband:='B'  //Johnson-B, online Blue
-    else
-    if pos('R',filterstrUP)>0  then passband:='R'  //Cousins-R, online red
-    else
-    if pos('I',filterstrUP)>0  then passband:='I'  //Cousins-R, online red
-    else
-    passband:='BP';  //online take clear view
-
-    memo2_message('Gaia online with database transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
-  end;
 end;
 
 

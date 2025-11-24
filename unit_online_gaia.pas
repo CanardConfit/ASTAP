@@ -74,7 +74,7 @@ begin
         if filter='I' then //Johnson-Cousins I
         begin
           if ((BminR>-0.5) and (BminR<4.5)) then
-            result:=magG - 0.01753 - 0.76*(BminR) + 0.0991*sqr(BminR);  {dr3}
+            result:=magG - 0.01753 - 0.76*(BminR) + 0.0991*sqr(BminR);  {dr3, https://gea.esac.esa.int/archive/documentation/GDR3/Data_processing/chap_cu5pho/cu5pho_sec_photSystem/cu5pho_ssec_photRelations.html}
         end
         else
         if filter='B' then //Johnson-B
@@ -89,19 +89,19 @@ begin
           end;
         end
         else
-        if filter='SR' then //SDSS-r
+        if ((filter='SR') or (filter='RP'){Las Cumbres files}) then //SDSS-r
         begin
           if ((BminR>0.0) and (BminR<3.0)) then
             result:=magG + 0.09837 - 0.08592*(BminR) - 0.1907*sqr(BminR) + 0.1701*sqr(BminR)*(BminR) - 0.02263*sqr(sqr(BminR)) ;  {dr3}
         end
         else
-        if filter='SI' then //SDSS-i
+        if ((filter='SI') or (filter='IP')) then //SDSS-i
         begin
           if ((BminR>0.5) and (BminR<2.0)) then
             result:=magG + 0.293 - 0.6404*(BminR) + 0.09609*sqr(BminR) + 0.002104*sqr(BminR)*(BminR);  {dr3}
         end
         else
-        if filter='SG' then //SDSS-g
+        if ((filter='SG') or (filter='GP')) then //SDSS-g
         begin
           if ((BminR>0.3) and (BminR<3.0)) then
             result:=magG - 0.2199 + 0.6365*(BminR) + 0.1548*sqr(BminR) - 0.0064*sqr(BminR)*(BminR);  {dr3}

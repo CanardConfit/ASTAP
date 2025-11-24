@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.11.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.11.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -10425,7 +10425,7 @@ begin
          vsp[count].Verr:=copy(s,i,k-i);
       end
       else
-      if ((val='"') and (val2='R')) then //R mag found, could be missing
+      if ((val='R') and (val2='c')) then //R mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
@@ -10438,7 +10438,7 @@ begin
         vsp[count].Rerr:=copy(s,i,k-i);
       end
       else
-      if ((val='I') and (val2='C')) then //I cousins mag found, could be missing
+      if ((val='I') and (val2='c')) then //I cousins mag found, could be missing
       begin
         i:=posex('"mag":',s,j);
         i:=i+length('"mag":');
