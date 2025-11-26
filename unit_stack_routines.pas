@@ -14,32 +14,32 @@ uses
 procedure stack_LRGB( var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 procedure stack_average(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 
-procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
+procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out frame_counter : integer);{mosaic/tile mode}
 
 procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
-{$inline on}  {!!! Set this off for debugging}
 procedure astrometric_to_vector(headA, headB : theader);{convert astrometric solution to vector solution}
 function test_bayer_matrix(img: Timage_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 procedure stack_comet(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
-
+procedure calc_newx_newy(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double; out  x_new_float,  y_new_float : double); {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
 
 var
-  SIN_dec0,COS_dec0,x_new_float,y_new_float,SIN_dec_ref,COS_dec_ref : double;
+  SIN_dec0,    // image to add
+  COS_dec0,    // image to add
+  SIN_dec2,    // reference image
+  COS_dec2     : double;// reference image
 
 
 implementation
 
-uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3;
+uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3,unit_threaded_mosaic;
 
 
-procedure  calc_newx_newy(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
+procedure calc_newx_newy(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double; out  x_new_float,  y_new_float : double); {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
 var
-  u,u0,v,v0,dRa,dDec,delta,ra_new,dec_new,delta_ra,det,gamma,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,h,
-  SIN_dec2,COS_dec2     : double;
-Begin
-
+  u,u0,v,v0,dRa,dDec,delta,ra_new,dec_new,delta_ra,det,gamma,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,h  : double;
+begin
   if vector_based then {vector based correction}
   begin
      x_new_float:=solution_vectorX[0]*(fitsxfloat-1)+solution_vectorX[1]*(fitsYfloat-1)+solution_vectorX[2]; {correction x:=aX+bY+c  x_new_float in image array range 0..headA.width-1}
@@ -62,7 +62,7 @@ Begin
       v:=v0;
     end;
 
-    sincos(headA.dec0,SIN_dec0,COS_dec0);
+    if sin_dec0>999 then sincos(headA.dec0,SIN_dec0,COS_dec0);//Do this only once since it is for each pixel the same. Set sin_dec0=1000 in advance of a loop.
 
     dRa :=(headA.cd1_1 * u +headA.cd1_2 * v)*pi/180;
     dDec:=(headA.cd2_1 * u +headA.cd2_2 * v)*pi/180;
@@ -73,10 +73,8 @@ Begin
 
 
    {5. Conversion (RA,DEC) -> (x,y) of reference image}
-    sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-
-    sincos(headB.dec0,SIN_dec2,COS_dec2); //Already done during initialisaion
-
+    sincos(dec_new,SIN_dec_new,COS_dec_new);
+    if sin_dec2>999 then sincos(headB.dec0,SIN_dec2,COS_dec2); //Do this only once since it is for each pixel the same. Set sin_dec0=1000 in advance of a loop.
 
     delta_ra:=RA_new-headB.ra0;
     sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
@@ -90,7 +88,7 @@ Begin
     u0:= - (headB.CD1_2*dDEC - headB.CD2_2*dRA) / det;
     v0:= + (headB.CD1_1*dDEC - headB.CD2_1*dRA) / det;
 
-    if ap_order>=2 then {apply SIP correction up to second order}
+    if ap_order>=2 then {apply SIP correction up to third order}
     begin
       x_new_float:=(headB.crpix1 + u0+ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1;{3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
       y_new_float:=(headB.crpix2 + v0+bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1;{3th order SIP correction}
@@ -108,20 +106,22 @@ procedure astrometric_to_vector(headA, headB : theader);{convert astrometric sol
 var
   flipped,flipped_reference  : boolean;
   centerX,centerY            : double;
-
+  x_new_float, y_new_float   : double;
 begin
   a_order:=0; {SIP correction should be zero by definition}
 
-  calc_newx_newy(headA, headB,false,headA.crpix1, headA.crpix2) ;//this will only work well for 1th orde solutions
+  sin_dec0:=1000;sin_dec2:=1000;//force a recalculation of sin_dec and cos_dec values for the new image to process. Used in procedure calc_newx_newy
+
+  calc_newx_newy(headA, headB,false,headA.crpix1, headA.crpix2,x_new_float, y_new_float) ;//this will only work well for 1th orde solutions
   centerX:=x_new_float;
   centerY:=y_new_float;
 
-  calc_newx_newy(headA, headB, false,headA.crpix1+1, headA.crpix2); {move one pixel in X}
+  calc_newx_newy(headA, headB, false,headA.crpix1+1, headA.crpix2,x_new_float, y_new_float); {move one pixel in X}
 
   solution_vectorX[0]:=+(x_new_float- centerX);
   solution_vectorX[1]:=-(y_new_float- centerY);
 
-  calc_newx_newy(headA, headB, false,headA.crpix1, headA.crpix2+1);{move one pixel in Y}
+  calc_newx_newy(headA, headB, false,headA.crpix1, headA.crpix2+1,x_new_float, y_new_float);{move one pixel in Y}
 
   solution_vectorY[0]:=-(x_new_float- centerX);
   solution_vectorY[1]:=+(y_new_float- centerY);
@@ -143,13 +143,6 @@ begin
 
   if stackmenu1.solve_show_log1.checked then memo2_message('Astrometric vector solution '+solution_str)
 end;
-
-
-
-//procedure initialise_calc_sincos_dec0;{set variables correct}
-//begin
-//  sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
-//end;
 
 
 procedure calculate_manual_vector(c: integer); //calculate the vector drift for the image scale one and 0..h, 0..w range.
@@ -194,8 +187,6 @@ begin
     shiftX:=x1 {-1} - referenceX{-1}; //The asteroid correction. The two subtractions are neutralizing each other
     shiftY:=y1 {-1} - referenceY{-1}; //The asteroid correction. The two subtractions are neutralizing each other
 
-//    solution_vectorX[2]:=solution_vectorX[2]-shiftx;
-//    solution_vectorY[2]:=solution_vectorY[2]-shifty;
     solution_vectorX[2]:=solution_vectorX[2]+shiftx;
     solution_vectorY[2]:=solution_vectorY[2]+shifty;
   end;
@@ -314,9 +305,6 @@ begin
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
                 begin
-               //    if ((fitsX=1262) and (fitsY=3699)) then
-                //         beep;
-
                   img_average[col,fitsY,fitsX]:= img_average[col,fitsY,fitsX]+ img_average[col+3,fitsY,fitsX]-500;
                 end;
             end
@@ -688,7 +676,7 @@ end;
 
 procedure compensate_solar_drift(head : theader; var solution_vectorX,solution_vectorY : Tsolution_vector);//compendate movement solar objects
 var
-  ra_movement,dec_movement,posX,posY : double;
+  ra_movement,dec_movement,posX,posY,SIN_dec_ref,COS_dec_ref : double;
 begin
   ra_movement:=(jd_mid-jd_mid_reference)*strtofloat2(stackmenu1.solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
 
@@ -751,14 +739,14 @@ begin
 end;
 
 
-procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
+procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out frame_counter : integer);{mosaic/tile mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels,count,formalism   : integer;
+    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations,greylevels,nrframes,formalism   : integer;
     value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise,hotpixels,coverage,
     raMiddle,decMiddle,  x_min,x_max,y_min,y_max,total_fov,fw,fh     : double; //for mosaic
-
+    x_new_float, y_new_float : double;
     tempval                                                          : single;
-    init, vector_based,merge_overlap,equalise_background,use_sip     : boolean;
+    init, vector_based,merge_overlap,equalise_background             : boolean;
     background_correction,background_correction_center,background    : array[0..2] of double;
     counter_overlap                                                  : array[0..2] of integer;
     bck                                                              : array[0..3] of double;
@@ -773,11 +761,9 @@ begin
     x_max:=0;
     y_min:=0;
     y_max:=0;
-    formalism:=mainform1.Polynomial1.itemindex;
-    if formalism<>1 then
-      memo2_message('█ █ █ █ █ █  Warning set viewer formalism to WCS to SIP!!');
+    formalism:=1;//Force use of SIP    mainform1.Polynomial1.itemindex;
 
-    count:=0;
+    nrframes:=0;
     total_fov:=0;
     init:=false;
 
@@ -794,7 +780,7 @@ begin
 
         calculate_required_dimensions(head_ref,head, x_min,x_max,y_min,y_max);
         total_fov:=total_fov+head.cdelt1*head.cdelt2*head.width*head.height;
-        inc(count);
+        inc(nrframes);
       end;
 
     if abs(x_max-x_min)<1 then begin memo2_message('Abort. Failed to calculate mosaic dimensions!');exit;end;
@@ -802,14 +788,10 @@ begin
     {move often used setting to booleans. Great speed improved if use in a loop and read many times}
     merge_overlap:=merge_overlap1.checked;
     Equalise_background:=Equalise_background1.checked;
-    counter:=0;
+    frame_counter:=0;
     sum_exp:=0;
     sum_temp:=0;
-    jd_sum:=0;{sum of Julian midpoints}
-    jd_start_first:=1E99;{begin observations in Julian day}
-    jd_end_last:=0;{end observations in Julian day}
     init:=false;
-    use_sip:=stackmenu1.add_sip1.checked;
     dummy:=0;
 
     if stackmenu1.classify_object1.Checked then memo2_message('█ █ █ █ █ █  Will make more then one mosaic based "Light object". Uncheck classify on "Light object" if required !!█ █ █ █ █ █  ');
@@ -850,33 +832,14 @@ begin
                                                 '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. Is there in outlier in the image list? Check image α, δ positions. For multiple mosaics is classify on "Light object" set?'); exit;end;
 
             pixel_to_celestial(head,(x_min+x_max)/2,(y_min+y_max)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
-            sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
+            //sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
+
             head_ref.ra0:=raMiddle;// set middle of the mosaic
             head_ref.dec0:=decMiddle;// set middle of the mosaic
             head_ref.crpix1:=abs(x_max-x_min)/2;
             head_ref.crpix2:=abs(y_max-y_min)/2;
-          end;
-
-          if use_sip=false then
-                    a_order:=0; //stop using SIP from the header in astrometric mode
-
-          memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
-          if a_order=0 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion correction is not working. SIP terms are not in the image header. Refresh astrometrical solutions with SIP option check marked!! █ █ █ █ █ █');
-
-          Application.ProcessMessages;
-          if esc_pressed then exit;
 
 
-          if process_as_osc>0 then {do demosaic bayer}
-          begin
-            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
-            else
-               demosaic_bayer(img_loaded); {convert OSC image to colour}
-              {head.naxis3 is now 3}
-          end;
-
-          if init=false then {init}
-          begin
             width_max:=abs(round(x_max-x_min));
             height_max:=abs(round(y_max-y_min));
 
@@ -892,152 +855,54 @@ begin
                 end;
                 img_temp[0,fitsY,fitsX]:=0; {clear img_temp}
               end;
-          end;{init, c=0}
+          end;
 
-          for col:=0 to head.naxis3-1 do {calculate background and noise if required}
+          memo2_message('Adding file: '+inttostr(frame_counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+          if a_order=0 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion correction is not working. SIP terms are not in the image header. Refresh astrometrical solutions with SIP option check marked!! █ █ █ █ █ █');
+
+          Application.ProcessMessages;
+          if esc_pressed then exit;
+
+
+          if process_as_osc>0 then {do demosaic bayer}
           begin
-            if equalise_background then
-            begin //measure background in all four corners
-              bck[0]:=trimmed_median_background(img_loaded,false{ellipse shape},col,0,round(0.2*head.width),  0,round(0.2*head.height),32000,greylevels);
-              bck[1]:=trimmed_median_background(img_loaded,false{ellipse shape},col,0,round(0.2*head.width),  round(0.8*head.height),head.height-1,32000,greylevels) ;
-              bck[2]:=trimmed_median_background(img_loaded,false{ellipse shape},col,round(0.8*head.width),head.width-1,  0,round(0.2*head.height),32000,greylevels) ;
-              bck[3]:=trimmed_median_background(img_loaded,false{ellipse shape},col,round(0.8*head.width),head.width-1,  round(0.8*head.height),head.height-1,32000,greylevels) ;
-
-              background[col]:=smedian(bck,4);
-              background_correction_center[col]:=1000 - background[col] ;
-            end
+            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
-            begin
-              background[col]:=0;
-              background_correction_center[col]:=0;
-            end;
+               demosaic_bayer(img_loaded); {convert OSC image to colour}
+              {head.naxis3 is now 3}
           end;
 
-          sincos(head.dec0,SIN_dec0,COS_dec0); {Alway astrometric. Do this in advance since it is for each pixel the same}
+          vector_based:=false;
+          sin_dec0:=1000;sin_dec2:=1000;//force a recalculation of sin_dec and cos_dec values for the new image to process. Used in procedure calc_newx_newy.
 
-          {solutions are already added in unit_stack}
+          if a_order=0 then //no SIP from astronomy.net
           begin
-            inc(counter);
-            sum_exp:=sum_exp+head.exposure;
-            sum_temp:=sum_temp+head.set_temperature;
+            astrometric_to_vector(head,head_ref);//convert astrometric solution to vector solution
+            vector_based:=true;
+          end
+          else
+            sin_dec0:=1000;sin_dec2:=1000;//force a recalculation of sin_dec and cos_dec values for the new image to process. Used in procedure calc_newx_newy
+          ap_order:=0;// don't correct for RA to XY for mosaic !!!
 
-            //Julian days are already calculated in apply_dark_and_flat
-            jd_start_first:=min(jd_start,jd_start_first);{find the begin date}
-            jd_end_last:=max(jd_end,jd_end_last);{find latest end time}
-            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+          //In prcedure mosaic_loops_threaded the img_loaded is placed on the large canvas img_average using the astrometric solution.
+          //So img_loaded x,y -> ra,dec and then ra,dec -> x,y of img_average using calc_newx_newy. Img_average is distortion free so SIP ap_order is set to zero.
+          //This procedure mosaic_loops_threaded is called for each img_loaded till all images are stitched on img_average.
+          mosaic_loops_threaded(head,head_ref,img_loaded,img_average,img_temp, stackmenu1.mosaic_crop1.Position,frame_counter,nrframes{for progress calc}, max_dev_backgr, init,vector_based, equalise_background,merge_overlap);
 
-            vector_based:=false;
-            if a_order=0 then {no SIP from astronomy.net}
-            begin
-              astrometric_to_vector(head,head_ref);{convert astrometric solution to vector solution}
-              vector_based:=true;
-            end;
-            ap_order:=0;// don't correct for RA to XY for mosaic !!!
+          application.processmessages;
+          if esc_pressed then exit;
 
-            cropW:=trunc(stackmenu1.mosaic_crop1.Position*head.width/200);
-            cropH:=trunc(stackmenu1.mosaic_crop1.Position*head.height/200);
+          init:=true;
+          inc(frame_counter);
+          sum_exp:=sum_exp+head.exposure;
+          sum_temp:=sum_temp+head.set_temperature;
 
 
-            background_correction[0]:=0;
-            background_correction[1]:=0;
-            background_correction[2]:=0;
-
-            if init=true then {check image overlap intensisty differance}
-            begin
-            counter_overlap[0]:=0;
-            counter_overlap[1]:=0;
-            counter_overlap[2]:=0;
-
-              //Forward Mapping
-              for fitsY:=(1+cropH) to head.height-(1+1+cropH) do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
-              for fitsX:=(1+cropW) to head.width-(1+1+cropW)  do
-              begin
-                calc_newx_newy(head,head_ref,vector_based,fitsX,fitsY);{apply correction}
-                x_new:=round(x_new_float); y_new:=round(y_new_float);
-
-                if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-                begin
-                  if img_loaded[0,fitsY,fitsX]>0.0001 then {not a black area around image}
-                  begin
-                    if img_average[0,y_new,x_new]<>0 then {filled pixel}
-                    begin
-                      for col:=0 to head.naxis3-1 do {all colors}
-                      begin
-                        correction:=round(img_average[col,y_new,x_new]-(img_loaded[col,fitsY,fitsX]+background_correction_center[col]) );
-                        if abs(correction)<max_dev_backgr*1.5 then {acceptable offset based on the lowest and highest background measured earlier}
-                        begin
-                           background_correction[col]:=background_correction[col]+correction;
-                           counter_overlap[col]:=counter_overlap[col]+1;
-                        end;
-                      end;
-                    end;
-                  end;
-                end;
-              end;
-
-              if counter_overlap[0]>0 then background_correction[0]:=background_correction[0]/counter_overlap[0];
-              if counter_overlap[1]>0 then background_correction[1]:=background_correction[1]/counter_overlap[1];
-              if counter_overlap[2]>0 then background_correction[2]:=background_correction[2]/counter_overlap[2];
-            end;
-
-            init:=true;{initialize for first image done}
-
-            //Forward Mapping
-            for fitsY:=1+cropH to head.height-(1+1+cropH) do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
-            for fitsX:=1+cropW to head.width-(1+1+cropW)  do
-            begin
-              calc_newx_newy(head,head_ref,vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float);y_new:=round(y_new_float);
-
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-              begin
-                if img_loaded[0,fitsY,fitsX]>0.0001 then {not a black area around image}
-                begin
-                  dummy:=1+minimum_distance_borders(fitsX,fitsY,head.width,head.height);{minimum distance borders}
-                  if img_temp[0,y_new,x_new]=0 then {blank pixel}
-                  begin
-                     for col:=0 to head.naxis3-1 do {all colors}
-                     img_average[col,y_new,x_new]:=img_loaded[col,fitsY,fitsX]+background_correction_center[col] +background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                     img_temp[0,y_new,x_new]:=dummy;
-
-                  end
-                  else
-                  begin {already pixel filled, try to make an average}
-                    for col:=0 to head.naxis3-1 do {all colors}
-                    begin
-                      median:=background_correction_center[col] +background_correction[col]+median_background(img_loaded,col,15,15,fitsX,fitsY);{find median value in sizeXsize matrix of img_loaded}
-
-                      if merge_overlap=false then {method 2}
-                      begin
-                        median2:=median_background(img_average,col,15,15,x_new,y_new);{find median value of the destignation img_average}
-                        delta_median:=median-median2;
-                        img_average[col,y_new,x_new]:= img_average[col,y_new,x_new]+ delta_median*(1-img_temp[0,y_new,x_new]{distance border}/(dummy+img_temp[0,y_new,x_new]));{adapt overlap}
-                      end
-                      else
-                      begin {method 1}
-                        value:=img_loaded[col,fitsY,fitsX]+background_correction_center[col];
-                        local_sigma_clip_mean_and_sd(fitsX-15 ,fitsY-15, fitsX+15,fitsY+15,col,img_loaded, {var} noise,mean, iterations);{local noise recheck every 10 th pixel}
-                        maxlevel:=median+noise*5;
-                        if ((value<maxlevel) and
-                          (img_loaded[col,fitsY,fitsX-1]<maxlevel) and (img_loaded[col,fitsY,fitsX+1]<maxlevel) and (img_loaded[col,fitsY-1,fitsX]<maxlevel) and (img_loaded[col,fitsY+1,fitsX]<maxlevel) {check nearest pixels}
-                           ) then {not a star, prevent double stars at overlap area}
-                           img_average[col,y_new,x_new]:=+img_average[col,y_new,x_new]*img_temp[0,y_new,x_new]{distance border}/(dummy+img_temp[0,y_new,x_new])
-                                                        +(value+background_correction[col])*dummy/(dummy+img_temp[0,y_new,x_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
-                       end;
-                    end;
-                    img_temp[0,y_new,x_new]:=dummy;
-                  end;
-                end;
-              end;
-            end;
-
-          end;
-          progress_indicator(0.1+0.89*counter/images_checked,' Stacking');{show progress}
         finally
         end;
-      end;
+      end;//loop through the files
 
-      if counter<>0 then
+      if frame_counter<>0 then
       begin
         head_ref.naxis3:= head.naxis3; {store colour info in reference header. could be modified by OSC conversion}
         head_ref.naxis:=  head.naxis;  {store colour info in reference header}
@@ -1063,14 +928,12 @@ begin
             end; {black spot}
           end;{colour loop}
         end;{pixel loop}
-      end; {counter<>0}
+      end; {frame_counter<>0}
 
     end;{mosaic mode}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
 
-  //disable sip
-  mainform1.Polynomial1.itemindex:=0;//switch to WCS
   a_order:=0;
 end;
 
@@ -1248,7 +1111,7 @@ begin
             airmass_sum:=airmass_sum+airmass;
 
             if use_astrometry_internal then
-                astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
+              astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
             background:=head.backgr;//calculated in bin_find_stars/get_background()
 
@@ -1656,7 +1519,7 @@ begin
           {3}
 
           if use_astrometry_internal then
-             astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
+            astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
           if solar_drift_compensation then
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
@@ -1759,7 +1622,7 @@ begin
           old_naxis3:=head.naxis3;
 
           head_ref:=head;{backup solution}
-          sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+          //sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -2105,7 +1968,7 @@ begin
           old_naxis3:=head.naxis3;
 
           head_ref:=head;{backup solution}
-          sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
+          //sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance to reduce calculations since  it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 
           if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -2202,8 +2065,8 @@ begin
 
         if solution then
         begin
-          if use_astrometry_internal then
-            sincos(head.dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
+//          if use_astrometry_internal then
+//            sincos(head.dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
           if use_astrometry_internal then
             astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 

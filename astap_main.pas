@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.11.23';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.11.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -8459,7 +8459,7 @@ begin
       stackmenu1.limit_background_correction1.checked:= Sett.ReadBool('stack','limit_back_corr',true);{for mosaic trimmed_median_background}
 
       stackmenu1.classify_object1.checked:= Sett.ReadBool('stack','classify_object',false);
-      stackmenu1.classify_filter1.checked:= Sett.ReadBool('stack','classify_filter',false);
+      stackmenu1.classify_filter_light1.checked:= Sett.ReadBool('stack','classify_filter',false);
 
       stackmenu1.classify_dark_temperature1.checked:= Sett.ReadBool('stack','classify_dark_temp',false);
       stackmenu1.delta_temp1.caption:=Sett.ReadString('stack','delta_temp','1');
@@ -8877,7 +8877,7 @@ begin
 
 
       sett.writeBool('stack','classify_object',stackmenu1.classify_object1.Checked);
-      sett.writeBool('stack','classify_filter',stackmenu1.classify_filter1.Checked);
+      sett.writeBool('stack','classify_filter',stackmenu1.classify_filter_light1.Checked);
 
       sett.writeBool('stack','classify_dark_temp',stackmenu1.classify_dark_temperature1.Checked);
       sett.writeString('stack','delta_temp',stackmenu1.delta_temp1.caption);

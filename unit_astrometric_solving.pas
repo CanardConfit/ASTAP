@@ -173,8 +173,6 @@ end;
 {x,y     : CCD coordinates                                           }
 {cdelt:  : scale of CCD pixel in arc seconds                         }
 {ra,dec  : right ascension and declination                           }
-//{$INLINE off}
-{$INLINE ON}
 {procedure standard_equatorialold(ra0,dec0,x,y,cdelt: double; out ra,dec : double); inline; //transformation from CCD coordinates into equatorial coordinates
 var sin_dec0 ,cos_dec0,delta : double;
 begin
@@ -190,13 +188,12 @@ begin
 end;
 }
 
+{$INLINE ON}
 {transformation from CCD coordinates into equatorial coordinates}
 {ra0,dec0: right ascension and declination of the optical axis       }
 {x,y     : CCD coordinates                                           }
 {cdelt:  : scale of CCD pixel in arc seconds                         }
 {ra,dec  : right ascension and declination                           }
-{$INLINE ON}
-
 procedure standard_equatorial(ra0, dec0, x, y, cdelt: double; out ra, Dec: double); inline;{transformation from CCD coordinates into equatorial coordinates}
 var
   sin_dec0, cos_dec0, delta: double;

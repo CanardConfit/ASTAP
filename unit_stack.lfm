@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 317
+  Left = 311
   Height = 847
-  Top = 92
+  Top = 138
   Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -1282,8 +1282,8 @@ object stackmenu1: Tstackmenu1
             Left = 1248
             Height = 19
             Top = 96
-            Width = 289
-            Caption = 'master flat :=  (1/n ∑ [flats] - 1/n ∑ [flat darks] )'
+            Width = 290
+            Caption = 'Master flat :=  (1/n ∑ [flats] - 1/n ∑ [flat darks] )'
             Color = clBtnFace
             ParentColor = False
             ParentFont = False
@@ -1304,8 +1304,8 @@ object stackmenu1: Tstackmenu1
             Left = 1248
             Height = 19
             Top = 72
-            Width = 220
-            Caption = ' (image- 1/n ∑ [darks] ) / master flat'
+            Width = 371
+            Caption = 'Stacked image:=  1/n ∑ ((image- 1/n ∑ [darks] ) / master flat)'
             Color = clBtnFace
             ParentColor = False
             ParentFont = False
@@ -8419,14 +8419,14 @@ object stackmenu1: Tstackmenu1
           ParentBackground = False
           ParentFont = False
           TabOrder = 1
-          object classify_filter1: TCheckBox
+          object classify_filter_light1: TCheckBox
             Left = 72
             Height = 23
             Hint = 'Activate this option if you want to stack LRGB or RGB  images using filter name.  Set filter names in stack method'
             Top = -2
             Width = 86
             Caption = 'Light filter'
-            OnClick = classify_filter1Click
+            OnClick = classify_filter_light1Click
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
