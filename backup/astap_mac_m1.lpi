@@ -250,12 +250,12 @@
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
-      <TargetCPU Value="x86_64"/>
+      <TargetCPU Value="aarch64"/>
+      <TargetOS Value="darwin"/>
     </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
-        <RunWithoutDebug Value="True"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
       <Options>
@@ -267,7 +267,8 @@
     <Other>
       <CustomOptions Value="-XX
 -Si
--vh"/>
+-vh
+-WM10.15"/>
     </Other>
   </CompilerOptions>
   <Debugging>
