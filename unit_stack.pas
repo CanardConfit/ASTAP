@@ -13690,13 +13690,12 @@ begin
 
   sd_factor1.Enabled:=sigm;
 
-  if ((use_astrometric_alignment1.Checked = False) and (mosa)) then
-  begin
-    use_astrometric_alignment1.Checked:=True;
-    classify_object1.Checked:=false;
-    memo2_message('Switched to ASTROMETRIC alignment and uncheckedclassify by light object.');
-  end;
-  if mosa then memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
+  if mosa then
+    memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
+  use_star_alignment1.enabled:=(mosa=false);//inore these setting in image stitching mode
+  use_astrometric_alignment1.enabled:=(mosa=false);
+  use_manual_alignment1.enabled:=(mosa=false);
+  use_ephemeris_alignment1.enabled:=(mosa=false);
 
 
   classify_filter_light1.Enabled:=((cal_and_align = False) and (cal_only = False) and (mosa = False));
