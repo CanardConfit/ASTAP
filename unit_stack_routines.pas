@@ -794,143 +794,139 @@ begin
     init:=false;
     dummy:=0;
 
-    if stackmenu1.classify_object1.Checked then memo2_message('█ █ █ █ █ █  Will make more then one mosaic based "Light object". Uncheck classify on "Light object" if required !!█ █ █ █ █ █  ');
-    {mosaic mode}
+    for c:=0 to length(files_to_process)-1 do
+    if length(files_to_process[c].name)>0 then
     begin
-      for c:=0 to length(files_to_process)-1 do
-      if length(files_to_process[c].name)>0 then
-      begin
 
-        try { Do some lengthy operation }
-          ListView1.Selected :=nil; {remove any selection}
-          ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
-          Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
+      try { Do some lengthy operation }
+        ListView1.Selected :=nil; {remove any selection}
+        ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
+        Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
 
-          filename2:=files_to_process[c].name;
+        filename2:=files_to_process[c].name;
 
-          Application.ProcessMessages;
+        Application.ProcessMessages;
 
-          {load image}
-          if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        {load image}
+        if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
-          if init=true then
-          begin
-             // not for mosaic||| if init=true then   if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-             if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
-          end;
-
-          if init=false then
-          begin
-            head_ref:=head;{backup solution}
-
-            fw:=head.cdelt1*abs(x_max-x_min);
-            fh:=head.cdelt2*abs(y_max-y_min);
-            coverage:=total_fov/(fw*fh);
-            if coverage<0.5 then
-             begin memo2_message('█ █ █ █ █ █  Abort!! Too many missing tiles. Field is '+floattostrF(fw,FFFixed,0,1)+'x'+floattostrF(fh,FFfixed,0,1)+
-                                                '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. Is there in outlier in the image list? Check image α, δ positions. For multiple mosaics is classify on "Light object" set?'); exit;end;
-
-            pixel_to_celestial(head,(x_min+x_max)/2,(y_min+y_max)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
-            //sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
-
-            head_ref.ra0:=raMiddle;// set middle of the mosaic
-            head_ref.dec0:=decMiddle;// set middle of the mosaic
-            head_ref.crpix1:=abs(x_max-x_min)/2;
-            head_ref.crpix2:=abs(y_max-y_min)/2;
-
-
-            width_max:=abs(round(x_max-x_min));
-            height_max:=abs(round(y_max-y_min));
-
-            setlength(img_average,head.naxis3,height_max,width_max);
-            setlength(img_temp,1,height_max,width_max);{gray}
-
-            for fitsY:=0 to height_max-1 do
-              for fitsX:=0 to width_max-1 do
-              begin
-                for col:=0 to head.naxis3-1 do
-                begin
-                  img_average[col,fitsY,fitsX]:=0; {clear img_average}
-                end;
-                img_temp[0,fitsY,fitsX]:=0; {clear img_temp}
-              end;
-          end;
-
-          memo2_message('Adding file: '+inttostr(frame_counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
-          if a_order=0 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion correction is not working. SIP terms are not in the image header. Refresh astrometrical solutions with SIP option check marked!! █ █ █ █ █ █');
-
-          Application.ProcessMessages;
-          if esc_pressed then exit;
-
-
-          if process_as_osc>0 then {do demosaic bayer}
-          begin
-            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
-            else
-               demosaic_bayer(img_loaded); {convert OSC image to colour}
-              {head.naxis3 is now 3}
-          end;
-
-          vector_based:=false;
-          sin_dec0:=1000;sin_dec2:=1000;//force a recalculation of sin_dec and cos_dec values for the new image to process. Used in procedure calc_newx_newy.
-
-          if a_order=0 then //no SIP from astronomy.net
-          begin
-            astrometric_to_vector(head,head_ref);//convert astrometric solution to vector solution
-            vector_based:=true;
-          end
-          else
-            sin_dec0:=1000;sin_dec2:=1000;//force a recalculation of sin_dec and cos_dec values for the new image to process. Used in procedure calc_newx_newy
-          ap_order:=0;// don't correct for RA to XY for mosaic !!!
-
-          //In prcedure mosaic_loops_threaded the img_loaded is placed on the large canvas img_average using the astrometric solution.
-          //So img_loaded x,y -> ra,dec and then ra,dec -> x,y of img_average using calc_newx_newy. Img_average is distortion free so SIP ap_order is set to zero.
-          //This procedure mosaic_loops_threaded is called for each img_loaded till all images are stitched on img_average.
-          mosaic_loops_threaded(head,head_ref,img_loaded,img_average,img_temp, stackmenu1.mosaic_crop1.Position,frame_counter,nrframes{for progress calc}, max_dev_backgr, init,vector_based, equalise_background,merge_overlap);
-
-          application.processmessages;
-          if esc_pressed then exit;
-
-          init:=true;
-          inc(frame_counter);
-          sum_exp:=sum_exp+head.exposure;
-          sum_temp:=sum_temp+head.set_temperature;
-
-
-        finally
+        if init=true then
+        begin
+           // not for mosaic||| if init=true then   if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+           if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
-      end;//loop through the files
 
-      if frame_counter<>0 then
-      begin
-        head_ref.naxis3:= head.naxis3; {store colour info in reference header. could be modified by OSC conversion}
-        head_ref.naxis:=  head.naxis;  {store colour info in reference header}
-        head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
-        head.height:=height_max;
-        head.width:=width_max;
-        setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
+        if init=false then
+        begin
+          head_ref:=head;{backup solution}
 
-        For fitsY:=0 to head.height-1 do
-        for fitsX:=0 to head.width-1 do
-        begin {pixel loop}
-          tempval:=img_temp[0,fitsY,fitsX]; {if <>0 then something was written}
-          for col:=0 to head.naxis3-1 do
-          begin {colour loop}
-            if tempval<>0 then img_loaded[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX] {no divide}
+          fw:=head.cdelt1*abs(x_max-x_min);
+          fh:=head.cdelt2*abs(y_max-y_min);
+          coverage:=total_fov/(fw*fh);
+          if coverage<0.5 then
+           begin memo2_message('█ █ █ █ █ █  Abort!! Too many missing tiles. Field is '+floattostrF(fw,FFFixed,0,1)+'x'+floattostrF(fh,FFfixed,0,1)+
+                                              '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. Is there in outlier in the image list? Check image α, δ positions. For multiple mosaics is classify on "Light object" set?'); exit;end;
+
+          pixel_to_celestial(head,(x_min+x_max)/2,(y_min+y_max)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
+          //sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
+
+          head_ref.ra0:=raMiddle;// set middle of the mosaic
+          head_ref.dec0:=decMiddle;// set middle of the mosaic
+          head_ref.crpix1:=abs(x_max-x_min)/2;
+          head_ref.crpix2:=abs(y_max-y_min)/2;
+
+
+          width_max:=abs(round(x_max-x_min));
+          height_max:=abs(round(y_max-y_min));
+
+          setlength(img_average,head.naxis3,height_max,width_max);
+          setlength(img_temp,1,height_max,width_max);{gray}
+
+          for fitsY:=0 to height_max-1 do
+            for fitsX:=0 to width_max-1 do
+            begin
+              for col:=0 to head.naxis3-1 do
+              begin
+                img_average[col,fitsY,fitsX]:=0; {clear img_average}
+              end;
+              img_temp[0,fitsY,fitsX]:=0; {clear img_temp}
+            end;
+        end;
+
+        memo2_message('Adding file: '+inttostr(frame_counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+        if a_order=0 then Memo2_message('█ █ █ █ █ █  Warning. Image distortion correction is not working. SIP terms are not in the image header. Refresh astrometrical solutions with SIP option check marked!! █ █ █ █ █ █');
+
+        Application.ProcessMessages;
+        if esc_pressed then exit;
+
+
+        if process_as_osc>0 then {do demosaic bayer}
+        begin
+          if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+          else
+             demosaic_bayer(img_loaded); {convert OSC image to colour}
+            {head.naxis3 is now 3}
+        end;
+
+        vector_based:=false;
+        sin_dec0:=1000;sin_dec2:=1000;//force a recalculation of sin_dec and cos_dec values for the new image to process. Used in procedure calc_newx_newy.
+
+        if a_order=0 then //no SIP from astronomy.net
+        begin
+          astrometric_to_vector(head,head_ref);//convert astrometric solution to vector solution
+          vector_based:=true;
+        end
+        else
+          sin_dec0:=1000;sin_dec2:=1000;//force a recalculation of sin_dec and cos_dec values for the new image to process. Used in procedure calc_newx_newy
+        ap_order:=0;// don't correct for RA to XY for mosaic !!!
+
+        //In prcedure mosaic_loops_threaded the img_loaded is placed on the large canvas img_average using the astrometric solution.
+        //So img_loaded x,y -> ra,dec and then ra,dec -> x,y of img_average using calc_newx_newy. Img_average is distortion free so SIP ap_order is set to zero.
+        //This procedure mosaic_loops_threaded is called for each img_loaded till all images are stitched on img_average.
+        mosaic_loops_threaded(head,head_ref,img_loaded,img_average,img_temp, stackmenu1.mosaic_crop1.Position,frame_counter,nrframes{for progress calc}, max_dev_backgr, init,vector_based, equalise_background,merge_overlap);
+
+        application.processmessages;
+        if esc_pressed then exit;
+
+        init:=true;
+        inc(frame_counter);
+        sum_exp:=sum_exp+head.exposure;
+        sum_temp:=sum_temp+head.set_temperature;
+
+
+      finally
+      end;
+    end;//loop through the files
+
+    if frame_counter<>0 then
+    begin
+      head_ref.naxis3:= head.naxis3; {store colour info in reference header. could be modified by OSC conversion}
+      head_ref.naxis:=  head.naxis;  {store colour info in reference header}
+      head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
+      head.height:=height_max;
+      head.width:=width_max;
+      setlength(img_loaded,head.naxis3,head.height,head.width);{new size}
+
+      For fitsY:=0 to head.height-1 do
+      for fitsX:=0 to head.width-1 do
+      begin {pixel loop}
+        tempval:=img_temp[0,fitsY,fitsX]; {if <>0 then something was written}
+        for col:=0 to head.naxis3-1 do
+        begin {colour loop}
+          if tempval<>0 then img_loaded[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX] {no divide}
+          else
+          begin { black spot filter or missing value filter due to image rotation}
+            if ((fitsX>0) and (img_temp[0,fitsY,fitsX-1]<>0)) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
             else
-            begin { black spot filter or missing value filter due to image rotation}
-              if ((fitsX>0) and (img_temp[0,fitsY,fitsX-1]<>0)) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY,fitsX-1]{take nearest pixel x-1 as replacement}
-              else
-              if ((fitsY>0) and (img_temp[0,fitsY-1,fitsX]<>0)) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
-              else
-              img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
-            end; {black spot}
-          end;{colour loop}
-        end;{pixel loop}
-      end; {frame_counter<>0}
+            if ((fitsY>0) and (img_temp[0,fitsY-1,fitsX]<>0)) then img_loaded[col,fitsY,fitsX]:=img_loaded[col,fitsY-1,fitsX]{take nearest pixel y-1 as replacement}
+            else
+            img_loaded[col,fitsY,fitsX]:=0;{clear img_loaded since it is resized}
+          end; {black spot}
+        end;{colour loop}
+      end;{pixel loop}
+    end; {frame_counter<>0}
 
-    end;{mosaic mode}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
 
