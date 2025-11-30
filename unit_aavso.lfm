@@ -1,9 +1,10 @@
 object form_aavso1: Tform_aavso1
-  Left = 540
+  Left = 804
   Height = 876
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 121
+  Top = 12
   Width = 1334
+  ActiveControl = PairSplitter1
   Caption = 'AAVSO report'
   ClientHeight = 876
   ClientWidth = 1334
@@ -21,25 +22,25 @@ object form_aavso1: Tform_aavso1
     Width = 1334
     Align = alClient
     Color = clForm
-    Position = 700
+    Position = 710
     SplitterType = pstVertical
     object PairSplitterSide1: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 700
+      Height = 710
       Top = 0
       Width = 1334
       ClientWidth = 1334
-      ClientHeight = 700
+      ClientHeight = 710
       Constraints.MinHeight = 700
       object Panel_top_menu1: TPanel
         Left = 0
-        Height = 700
+        Height = 710
         Top = 0
         Width = 1334
         Align = alClient
         AutoSize = True
-        ClientHeight = 700
+        ClientHeight = 710
         ClientWidth = 1334
         ParentBackground = False
         ParentColor = False
@@ -79,7 +80,7 @@ object form_aavso1: Tform_aavso1
           Left = 16
           Height = 23
           Hint = 'The transformation factors should be available. See transformation button in tab photometry. Only for B,V,R filters'
-          Top = 588
+          Top = 608
           Width = 154
           BorderSpacing.Left = 12
           Caption = 'Apply transformation'
@@ -91,7 +92,7 @@ object form_aavso1: Tform_aavso1
           Left = 384
           Height = 27
           Hint = 'OBSTYPE, So the camera type used for the observation,  It can be CCD, DSLR, PEP (for Photoelectric Photometry). If absent, it is assumed to be CCD.  If you use a CMOS camera please report it as CCD'
-          Top = 588
+          Top = 608
           Width = 107
           ItemHeight = 19
           ItemIndex = 0
@@ -107,10 +108,10 @@ object form_aavso1: Tform_aavso1
           Text = 'CCD'
         end
         object hjd1: TCheckBox
-          Left = 392
+          Left = 384
           Height = 23
           Hint = 'Report the date as Heliocentric Julian Day'
-          Top = 629
+          Top = 640
           Width = 49
           Caption = 'HJD'
           OnChange = hjd1Change
@@ -122,7 +123,7 @@ object form_aavso1: Tform_aavso1
           Left = 243
           Height = 23
           Hint = 'Extras report lines will added conform BAA. Info is taken from FITS header.'
-          Top = 629
+          Top = 640
           Width = 82
           Caption = 'BAA style'
           ParentShowHint = False
@@ -132,7 +133,7 @@ object form_aavso1: Tform_aavso1
         object Label4: TLabel
           Left = 111
           Height = 19
-          Top = 629
+          Top = 640
           Width = 55
           Caption = 'Delimiter'
           ParentColor = False
@@ -141,7 +142,7 @@ object form_aavso1: Tform_aavso1
           Left = 16
           Height = 27
           Hint = 'The delimiter used to separate fields in the report. Any will do. '
-          Top = 629
+          Top = 640
           Width = 88
           BorderSpacing.Left = 12
           ItemHeight = 19
@@ -163,7 +164,7 @@ object form_aavso1: Tform_aavso1
           Left = 16
           Height = 25
           Hint = 'Copies the report to the clipboard. Paste it into a text editor, save it and upload it to the AAVSO WebObs.'
-          Top = 669
+          Top = 677
           Width = 232
           BorderSpacing.Left = 12
           Caption = 'Report to clipboard'
@@ -176,7 +177,7 @@ object form_aavso1: Tform_aavso1
           Left = 256
           Height = 25
           Hint = 'Writes report to file in the same directory as the input files.'
-          Top = 669
+          Top = 677
           Width = 224
           Caption = 'Report to file'
           OnClick = report_to_clipboard1Click
@@ -187,7 +188,7 @@ object form_aavso1: Tform_aavso1
         object Image_photometry1: TImage
           Cursor = crCross
           Left = 504
-          Height = 698
+          Height = 708
           Hint = 'See popup  menu to save. Any check/uncheck in the list view wil result in an update of the graph'
           Top = 1
           Width = 824
@@ -215,7 +216,7 @@ object form_aavso1: Tform_aavso1
         object GroupBox_check1: TGroupBox
           Left = 3
           Height = 75
-          Top = 456
+          Top = 496
           Width = 496
           AutoSize = True
           Caption = 'Check star'
@@ -256,19 +257,19 @@ object form_aavso1: Tform_aavso1
         end
         object GroupBox_comp_stars1: TGroupBox
           Left = 3
-          Height = 203
-          Top = 240
+          Height = 231
+          Top = 248
           Width = 496
           AutoSize = True
           Caption = 'Comparison star(s)'
-          ClientHeight = 179
+          ClientHeight = 207
           ClientWidth = 492
           TabOrder = 10
           object abrv_comp1: TCheckListBox
             Left = 12
-            Height = 153
+            Height = 163
             Hint = 'Comparison star(s)  Standard deviation is based on Gaia as a reference'
-            Top = 0
+            Top = 24
             Width = 480
             BorderSpacing.Left = 12
             ItemHeight = 0
@@ -285,39 +286,39 @@ object form_aavso1: Tform_aavso1
             Left = 12
             Height = 19
             Hint = 'Colour of the comparison ensemble and standard deviation between comparison stars'
-            Top = 160
+            Top = 188
             Width = 88
             Caption = 'sigma_mzero1'
             ParentColor = False
             ParentShowHint = False
             ShowHint = True
           end
-        end
-        object ensemble_database1: TCheckBox
-          Left = 280
-          Height = 23
-          Hint = 'If enabled then Gaia  ensemble is used for calibration'
-          Top = 237
-          Width = 113
-          Caption = 'Gaia ensemble'
-          OnClick = ensemble_database1Click
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 11
+          object ensemble_database1: TCheckBox
+            Left = 224
+            Height = 23
+            Hint = 'If enabled then Gaia  ensemble is used for calibration'
+            Top = 0
+            Width = 113
+            Caption = 'Gaia ensemble'
+            OnClick = ensemble_database1Click
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 1
+          end
         end
         object GroupBox_variables1: TGroupBox
           Left = 3
-          Height = 177
+          Height = 187
           Top = 56
           Width = 496
           AutoSize = True
           Caption = 'Variable(s)'
-          ClientHeight = 153
+          ClientHeight = 163
           ClientWidth = 492
-          TabOrder = 12
+          TabOrder = 11
           object abbrv_variable1: TCheckListBox
             Left = 12
-            Height = 153
+            Height = 163
             Hint = 'The star''s identifier. It can be the AAVSO Designation, the AAVSO Name or the AAVSO Unique Identifier (AUID).'#13#10'The standard deviation is based on Gaia database as a reference'#13#10'Variables in the list ending with # have no AUID and will not be accepted unless a new AUID is requested.'
             Top = 0
             Width = 480
@@ -343,22 +344,22 @@ object form_aavso1: Tform_aavso1
           OnClick = test_button1Click
           ParentShowHint = False
           ShowHint = True
-          TabOrder = 13
+          TabOrder = 12
         end
       end
     end
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 171
-      Top = 705
+      Height = 161
+      Top = 715
       Width = 1334
       ClientWidth = 1334
-      ClientHeight = 171
+      ClientHeight = 161
       Constraints.MinHeight = 100
       object Memo1: TMemo
         Left = 0
-        Height = 171
+        Height = 161
         Top = 0
         Width = 1334
         Align = alClient

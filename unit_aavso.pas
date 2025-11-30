@@ -1339,7 +1339,7 @@ begin
   if message='' then message:='No valid star(s)/ No comparison magnitude(s) available.';
 
 
-  form_aavso1.sigma_check1.caption:=message;
+  form_aavso1.sigma_check1.caption:=copy(message,1,length(message)-2);//remove last #13+#10
 
   for i:=0 to high(color_list) do color_list[i]:=0;//clear icons which have been done
   index:=0;
@@ -2133,11 +2133,12 @@ begin
            airmass:=SubItemDouble[c,P_airmass];
            if airmass>0 then  str(airmass:0:3,airmass_str) else airmass_str:='na' ;
 
-
-
            filter_used:=stackmenu1.listview7.Items.item[c].subitems.Strings[P_filter]; //take from header
 
            comp_magn_info:='';//clear summation of messages;
+           var_magn_str:='?';//clear for case failure
+           comp_magn_str:='?';//clear for case failure
+           check_magn_str:='?';//clear for case failure
 
            if stackmenu1.reference_database1.itemindex=0 then //local database
            if pos('v',name_database)>0 then magn_type:=' transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '

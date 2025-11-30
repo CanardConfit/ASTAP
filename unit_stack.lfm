@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 311
-  Height = 847
-  Top = 138
+  Left = 285
+  Height = 807
+  Top = 87
   Width = 1631
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 830
+  ClientHeight = 790
   ClientWidth = 1631
   Color = clForm
   Icon.Data = {
@@ -54,7 +54,7 @@ object stackmenu1: Tstackmenu1
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 830
+    Height = 790
     Top = 0
     Width = 1920
     Align = alClient
@@ -312,7 +312,7 @@ object stackmenu1: Tstackmenu1
               item
                 Caption = 'SQM'
                 MinWidth = 60
-                Width = 60
+                Width = 98
               end>
             GridLines = True
             HideSelection = False
@@ -1012,6 +1012,7 @@ object stackmenu1: Tstackmenu1
               item
                 Caption = 'Gain'
                 MinWidth = 50
+                Width = 1118
               end>
             GridLines = True
             HideSelection = False
@@ -3096,7 +3097,7 @@ object stackmenu1: Tstackmenu1
               item
                 Caption = 'Annotated'
                 MinWidth = 90
-                Width = 770
+                Width = 1068
               end>
             GridLines = True
             HideSelection = False
@@ -3493,7 +3494,7 @@ object stackmenu1: Tstackmenu1
               item
                 Caption = 'Lim-magn'
                 MinWidth = 70
-                Width = 71
+                Width = 468
               end>
             GridLines = True
             HideSelection = False
@@ -3547,7 +3548,7 @@ object stackmenu1: Tstackmenu1
             Height = 27
             Hint = 'Flux measuring aperture [x HFD ].  Typical range 1 to max. With max all star flux is measured. Can be adjusted to find the lowest standard deviation in the results (check star). Typical values 1.5 or 2.0'
             Top = 5
-            Width = 72
+            Width = 78
             DropDownCount = 10
             ItemHeight = 19
             ItemIndex = 13
@@ -3575,7 +3576,7 @@ object stackmenu1: Tstackmenu1
             Text = '3.0'
           end
           object Label26: TLabel
-            Left = 560
+            Left = 552
             Height = 19
             Top = 12
             Width = 57
@@ -3600,7 +3601,7 @@ object stackmenu1: Tstackmenu1
             Height = 27
             Hint = 'Annulus inner diameter [ x HFD]. The annulus diameter has to be larger then  the aperture diameter.'
             Top = 35
-            Width = 72
+            Width = 78
             DropDownCount = 17
             ItemHeight = 19
             ItemIndex = 2
@@ -3619,7 +3620,7 @@ object stackmenu1: Tstackmenu1
             Text = '6'
           end
           object Label27: TLabel
-            Left = 562
+            Left = 561
             Height = 19
             Top = 37
             Width = 53
@@ -3730,7 +3731,7 @@ object stackmenu1: Tstackmenu1
             Visible = False
           end
           object SpeedButton2: TSpeedButton
-            Left = 698
+            Left = 704
             Height = 25
             Hint = 'Find best aperture by trial and error. This only works for V, TG filter or clear.'
             Top = 5
@@ -3806,7 +3807,7 @@ object stackmenu1: Tstackmenu1
             ParentColor = False
           end
           object Label73: TLabel
-            Left = 744
+            Left = 758
             Height = 19
             Top = 8
             Width = 104
@@ -4076,7 +4077,7 @@ object stackmenu1: Tstackmenu1
                 Caption = 'hfd 33'
                 ImageIndex = 20
                 MinWidth = 80
-                Width = 80
+                Width = 238
               end>
             GridLines = True
             HideSelection = False
@@ -8346,14 +8347,14 @@ object stackmenu1: Tstackmenu1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 325
+      Height = 285
       Top = 505
       Width = 1920
       ClientWidth = 1920
-      ClientHeight = 325
+      ClientHeight = 285
       object memo2: TMemo
         Left = 0
-        Height = 231
+        Height = 191
         Top = 94
         Width = 1920
         Align = alBottom
@@ -8412,10 +8413,10 @@ object stackmenu1: Tstackmenu1
           Left = 427
           Height = 60
           Top = 0
-          Width = 632
+          Width = 677
           Caption = 'Classify by'
           ClientHeight = 36
-          ClientWidth = 628
+          ClientWidth = 673
           ParentBackground = False
           ParentFont = False
           TabOrder = 1
@@ -8445,7 +8446,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 1
           end
           object classify_flat_filter1: TCheckBox
-            Left = 384
+            Left = 400
             Height = 23
             Hint = 'Activate this option if you want link the flats based on filter name. Works both for stacking and master creation.'
             Top = 16
@@ -8469,7 +8470,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 2
           end
           object classify_dark_temperature1: TCheckBox
-            Left = 384
+            Left = 400
             Height = 23
             Hint = 'Activate this option if you want link the darks based on sensor temperature. Works both for stacking and master creation.'
             Top = -2
@@ -8493,21 +8494,21 @@ object stackmenu1: Tstackmenu1
             TabOrder = 5
           end
           object delta_temp1: TEdit
-            Left = 536
+            Left = 566
             Height = 27
             Hint = 'Temperature tolorance'
             Top = -2
-            Width = 30
+            Width = 22
             ParentShowHint = False
             ShowHint = True
             TabOrder = 6
             Text = '3'
           end
           object delta_temp_updown1: TUpDown
-            Left = 566
+            Left = 588
             Height = 27
             Top = -2
-            Width = 17
+            Width = 12
             Associate = delta_temp1
             Max = 5
             Min = 1
@@ -8515,7 +8516,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 7
           end
           object Label60: TLabel
-            Left = 584
+            Left = 601
             Height = 19
             Top = 0
             Width = 14
@@ -8523,7 +8524,7 @@ object stackmenu1: Tstackmenu1
             ParentColor = False
           end
           object Label63: TLabel
-            Left = 520
+            Left = 555
             Height = 19
             Top = 0
             Width = 10
@@ -8533,7 +8534,7 @@ object stackmenu1: Tstackmenu1
         end
         object help_stack_menu2: TLabel
           Cursor = crHandPoint
-          Left = 1088
+          Left = 1120
           Height = 30
           Hint = 'Help'
           Top = 14
@@ -8548,7 +8549,7 @@ object stackmenu1: Tstackmenu1
           OnClick = help_stack_menu1Click
         end
         object powerdown_enabled1: TCheckBox
-          Left = 1131
+          Left = 1176
           Height = 23
           Hint = 'If selected, shutdown computer after completion.'
           Top = 8
@@ -8560,7 +8561,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 2
         end
         object write_log1: TCheckBox
-          Left = 1131
+          Left = 1176
           Height = 23
           Hint = 'Write the stack log to a file with .txt extension at the light directory.'
           Top = 32
