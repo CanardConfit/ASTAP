@@ -615,9 +615,9 @@ end;
 
 procedure work_on_comp_stars;
 var
-  c, count,icon_nr                                    : integer;
-  comp_magn,ratio,sd_comp, mean_sd_comp,B_V, V_R      : double;
-  mess                                                : string;
+  c, count                   : integer;
+  mean_sd_comp,B_V, V_R      : double;
+  mess                       : string;
 
 begin
   count:=0;
@@ -635,7 +635,6 @@ begin
   V_R:=-99;
   process_comp_stars2;//process the multiple comp stars and put in comps_info array
 
-  icon_nr:=0;
 
   with stackmenu1 do
   begin
@@ -772,9 +771,8 @@ end;
 
 procedure get_b_v_var(columnr : integer; out b_v_var, v_r_var : double; out bv_pairs,vr_pairs : integer);//calculate the b-v of the variable
 var
-  fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,sd_comp,
+  fluxB,fluxV, fluxR,varmag_B,varmag_V, varmag_R,
   exposuretime,exposuretime2,end_dateB,begin_dateB,end_dateV,begin_dateV,end_dateR,begin_dateR,diff,diffA,diffB    : double;
-  warning : string;
   i, j    : Integer;
 begin
   with form_aavso1 do
@@ -1643,7 +1641,7 @@ begin
       begin
         abrv:=ColumnTitles[i+1];
         compstar:=(copy(abrv,1,2)='00');
-        val(copy(abrv,1,5),dummy,iau_labeled);//labeled hhmmss.s+ddmmss becuase no annotation was found
+        val(copy(abrv,1,5),dummy,iau_labeled);//labeled hhmmss.s+ddmmss because no annotation was found
         if ((compstar=false) or (iau_labeled=0)) then //variables
         begin
           starinfoV[countV].str:=abrv;//store in an array
@@ -1983,13 +1981,14 @@ var
     c,date_column,i,icon_nr,m_index,bv_pairs,vr_pairs   : integer;
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
-    warning,transformation, transform_all_factors,transf_str,varab  : string;
-    apply_transformation,valid_comp : boolean;
-    snr_value,err_by_snr,comp_magn, var_magn,check_magn,var_flux,ratio,check_flux,sd_comp,B_V, V_R,var_Vcorrection,var_Bcorrection,var_Rcorrection,v_r_var,b_v_var,airmass : double;
+    transformation, transform_all_factors,transf_str,varab  : string;
+    apply_transformation,valid_comp,ensemble_database : boolean;
+    snr_value,err_by_snr,var_magn,check_magn,var_flux,ratio,check_flux,var_Vcorrection,var_Bcorrection,var_Rcorrection,v_r_var,b_v_var,airmass : double;
     PNG: TPortableNetworkGraphic;{FPC}
     vsep : char;
 begin
   get_info;//update abbrev_var and others
+  ensemble_database:=ensemble_database1.checked;
 
 
   abbrev_check:=abrv_check1.text;
@@ -2030,7 +2029,7 @@ begin
       abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(ColumnTitles[column_comps[i]+1],false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
   end
   else
-  if ensemble_database1.checked=false then
+  if ensemble_database=false then
   begin
     abrv_comp1.color:=clred;
     exit;
@@ -2072,13 +2071,13 @@ begin
   end;
 
 
-  if ensemble_database1.checked then
+  if ensemble_database then
     settings:=stackmenu1.reference_database1.text+vsep
   else
     settings:=''; //not relevant
   settings:=settings+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
 
-  if ensemble_database1.checked then
+  if ensemble_database then
      comments:='CMAG ensemble using transformed Gaia magnitudes.'
    else
      comments:='';
@@ -2145,7 +2144,7 @@ begin
            else  //online database
              magn_type:=' transformed '+stackmenu1.reference_database1.text;
 
-           if ensemble_database1.checked=false then //Mode magnitude relative to comp star
+           if ensemble_database=false then //Mode magnitude relative to comp star
            begin
              if length(column_comps)=0 then exit;//no comp info
 
@@ -2166,7 +2165,7 @@ begin
                    transformation:='';
                    icon_nr:=SubItemImages[c];
 
-                   if ((apply_transformation) and  (icon_nr in [0,1,2,24] )) then //currently transformation only possible with B, V, R filter
+                   if ((apply_transformation) and (ensemble_database=false) and (icon_nr in [0,1,2,24] )) then //currently transformation only possible with B, V, R filter
                    begin
                      //transformation
                      // Tv_bv * Tbv* ((b-v)tgt – (B-V)comp)
@@ -2225,9 +2224,9 @@ begin
                        begin
                          if v_r_var<>99 then
                          begin
-                         var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (v_r_var{var} - V_R{comp}); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
+                         var_Rcorrection:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (v_r_var{var} - comps_info[c].V_R{comp}); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
                          var_magn:=var_magn + var_Rcorrection;
-                         transformation:='Transf corr. '+floattostr3(var_Rcorrection)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(v_r_var)+'-'+floattostr3(V_R)+'). Averaged '+inttostr(vr_pairs)+ ' v-r pairs. Filter used '+filter_used+'.';
+                         transformation:='Transf corr. '+floattostr3(var_Rcorrection)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(v_r_var)+'-'+floattostr3(comps_info[c].V_R)+'). Averaged '+inttostr(vr_pairs)+ ' v-r pairs. Filter used '+filter_used+'.';
                          filter_used:='R';//change TR to R
                          end
                          else
@@ -2294,7 +2293,7 @@ begin
 
            abbrv_var_clean:=clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,true); //Note the captions are one position shifted.
 
-           if ensemble_database1.Checked then //else comparison stars are used.
+           if ensemble_database then //else comparison stars are used.
              if stackmenu1.ListView7.Items.item[c].SubitemImages[P_calibration]<>SubItemImages[c] then
                 comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/B/R/SI/SR/SG.';
 

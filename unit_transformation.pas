@@ -430,7 +430,8 @@ var
    V_list, V_list_documented: array of double;
 
 begin
-  Form_transformation1.error_label1.caption:='';
+  form_transformation1.error_label1.caption:='';
+  form_transformation1.error_label3.caption:='';
   julian_str:='';
   selected_rows:=0;
   nr:=(p_nr-p_nr_norm) div 3;
