@@ -6,11 +6,11 @@ object Form_transformation1: TForm_transformation1
   Caption = 'ASTAP transformation'
   ClientHeight = 590
   ClientWidth = 817
+  Position = poDesktopCenter
+  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnResize = FormResize
   OnShow = FormShow
-  Position = poDesktopCenter
-  LCLVersion = '2.2.6.0'
   object Image_transformation1: TImage
     Cursor = crCross
     Left = 200
@@ -52,11 +52,11 @@ object Form_transformation1: TForm_transformation1
     Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
     Top = 168
     Width = 100
-    OnClick = Tbv1Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 0
     Text = 'Tbv1'
+    OnClick = Tbv1Click
   end
   object Tvr1: TEdit
     Left = 72
@@ -64,11 +64,11 @@ object Form_transformation1: TForm_transformation1
     Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
     Top = 288
     Width = 100
-    OnClick = Tvr1Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 1
     Text = 'Tvr1'
+    OnClick = Tvr1Click
   end
   object Tb_bv1: TEdit
     Left = 72
@@ -76,11 +76,11 @@ object Form_transformation1: TForm_transformation1
     Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
     Top = 200
     Width = 100
-    OnClick = Tb_bv1Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 2
     Text = 'Tb_bv1'
+    OnClick = Tb_bv1Click
   end
   object Tv_bv1: TEdit
     Left = 72
@@ -88,11 +88,11 @@ object Form_transformation1: TForm_transformation1
     Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
     Top = 232
     Width = 100
-    OnClick = Tv_bv1Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 3
     Text = 'Tv_bv1'
+    OnClick = Tv_bv1Click
   end
   object Tv_vr1: TEdit
     Left = 72
@@ -100,11 +100,11 @@ object Form_transformation1: TForm_transformation1
     Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
     Top = 320
     Width = 100
-    OnClick = Tv_vr1Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 4
     Text = 'Tv_vr1'
+    OnClick = Tv_vr1Click
   end
   object Tr_vr1: TEdit
     Left = 72
@@ -112,11 +112,11 @@ object Form_transformation1: TForm_transformation1
     Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
     Top = 352
     Width = 100
-    OnClick = Tr_vr1Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 5
     Text = 'Tr_vr1'
+    OnClick = Tr_vr1Click
   end
   object Button1: TButton
     Left = 16
@@ -125,8 +125,8 @@ object Form_transformation1: TForm_transformation1
     Top = 512
     Width = 163
     Caption = 'Calculate'
-    OnClick = Button1Click
     TabOrder = 6
+    OnClick = Button1Click
   end
   object Label5: TLabel
     Left = 16
@@ -151,11 +151,11 @@ object Form_transformation1: TForm_transformation1
       '2.2'
       '2.5'
     )
-    OnEditingDone = sigma_transformation1EditingDone
     ParentShowHint = False
     ShowHint = True
     TabOrder = 7
     Text = '2'
+    OnEditingDone = sigma_transformation1EditingDone
   end
   object Label6: TLabel
     Left = 16
@@ -222,10 +222,10 @@ object Form_transformation1: TForm_transformation1
     Top = 552
     Width = 75
     Caption = 'Cancel'
-    OnClick = cancel1Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 8
+    OnClick = cancel1Click
   end
   object save1: TButton
     Left = 104
@@ -234,18 +234,18 @@ object Form_transformation1: TForm_transformation1
     Top = 552
     Width = 75
     Caption = 'Save'
-    OnClick = save1Click
     TabOrder = 9
+    OnClick = save1Click
   end
   object checkBox_auid1: TCheckBox
     Left = 16
     Height = 23
     Hint = 'Show AUID'
     Top = 472
-    Width = 96
+    Width = 90
     Caption = 'Show auid''s'
-    OnChange = checkBox_auid1Change
     TabOrder = 10
+    OnChange = checkBox_auid1Change
   end
   object error_label2: TLabel
     Left = 136
@@ -283,11 +283,11 @@ object Form_transformation1: TForm_transformation1
       '100'
       '130'
     )
-    OnEditingDone = sigma_transformation1EditingDone
     ParentShowHint = False
     ShowHint = True
     TabOrder = 11
     Text = '70'
+    OnEditingDone = sigma_transformation1EditingDone
   end
   object Label4: TLabel
     Left = 16
