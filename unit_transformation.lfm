@@ -1,20 +1,20 @@
 object Form_transformation1: TForm_transformation1
   Left = 100
-  Height = 590
+  Height = 609
   Top = 174
   Width = 817
   Caption = 'ASTAP transformation'
-  ClientHeight = 590
+  ClientHeight = 609
   ClientWidth = 817
-  Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnResize = FormResize
   OnShow = FormShow
+  Position = poDesktopCenter
+  LCLVersion = '2.2.6.0'
   object Image_transformation1: TImage
     Cursor = crCross
     Left = 200
-    Height = 590
+    Height = 609
     Top = 0
     Width = 612
     Align = alClient
@@ -46,92 +46,20 @@ object Form_transformation1: TForm_transformation1
     Caption = '---'
     ParentColor = False
   end
-  object Tbv1: TEdit
-    Left = 72
-    Height = 27
-    Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
-    Top = 168
-    Width = 100
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 0
-    Text = 'Tbv1'
-    OnClick = Tbv1Click
-  end
-  object Tvr1: TEdit
-    Left = 72
-    Height = 27
-    Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
-    Top = 288
-    Width = 100
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 1
-    Text = 'Tvr1'
-    OnClick = Tvr1Click
-  end
-  object Tb_bv1: TEdit
-    Left = 72
-    Height = 27
-    Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
-    Top = 200
-    Width = 100
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 2
-    Text = 'Tb_bv1'
-    OnClick = Tb_bv1Click
-  end
-  object Tv_bv1: TEdit
-    Left = 72
-    Height = 27
-    Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
-    Top = 232
-    Width = 100
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 3
-    Text = 'Tv_bv1'
-    OnClick = Tv_bv1Click
-  end
-  object Tv_vr1: TEdit
-    Left = 72
-    Height = 27
-    Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
-    Top = 320
-    Width = 100
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 4
-    Text = 'Tv_vr1'
-    OnClick = Tv_vr1Click
-  end
-  object Tr_vr1: TEdit
-    Left = 72
-    Height = 27
-    Hint = 'Transformation coefficient. Click on this value to see the graph. V could Green'
-    Top = 352
-    Width = 100
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 5
-    Text = 'Tr_vr1'
-    OnClick = Tr_vr1Click
-  end
   object Button1: TButton
     Left = 16
     Height = 25
     Hint = 'Calculate the transformation coefficients.'
-    Top = 512
+    Top = 528
     Width = 163
     Caption = 'Calculate'
-    TabOrder = 6
     OnClick = Button1Click
+    TabOrder = 0
   end
   object Label5: TLabel
     Left = 16
     Height = 19
-    Top = 408
+    Top = 424
     Width = 11
     Caption = 'σ:'
     ParentColor = False
@@ -140,7 +68,7 @@ object Form_transformation1: TForm_transformation1
     Left = 72
     Height = 27
     Hint = 'Maximum allowed σ value to filter out outliers.'
-    Top = 408
+    Top = 424
     Width = 100
     ItemHeight = 19
     ItemIndex = 2
@@ -151,64 +79,16 @@ object Form_transformation1: TForm_transformation1
       '2.2'
       '2.5'
     )
+    OnEditingDone = sigma_transformation1EditingDone
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 7
+    TabOrder = 1
     Text = '2'
-    OnEditingDone = sigma_transformation1EditingDone
-  end
-  object Label6: TLabel
-    Left = 16
-    Height = 19
-    Top = 168
-    Width = 25
-    Caption = 'Tbv:'
-    ParentColor = False
-  end
-  object Label7: TLabel
-    Left = 16
-    Height = 19
-    Top = 200
-    Width = 39
-    Caption = 'Tb_bv:'
-    ParentColor = False
-  end
-  object Label8: TLabel
-    Left = 16
-    Height = 19
-    Top = 232
-    Width = 37
-    Caption = 'Tv_bv:'
-    ParentColor = False
-  end
-  object Label9: TLabel
-    Left = 16
-    Height = 19
-    Top = 288
-    Width = 21
-    Caption = 'Tvr:'
-    ParentColor = False
-  end
-  object Label10: TLabel
-    Left = 16
-    Height = 19
-    Top = 320
-    Width = 34
-    Caption = 'Tv_vr:'
-    ParentColor = False
-  end
-  object Label11: TLabel
-    Left = 16
-    Height = 19
-    Top = 352
-    Width = 32
-    Caption = 'Tr_vr:'
-    ParentColor = False
   end
   object error_label1: TLabel
     Left = 16
     Height = 19
-    Top = 120
+    Top = 112
     Width = 18
     Caption = '---'
     Font.Color = clRed
@@ -219,38 +99,38 @@ object Form_transformation1: TForm_transformation1
     Left = 16
     Height = 25
     Hint = 'Cancel above coeficients.'
-    Top = 552
+    Top = 568
     Width = 75
     Caption = 'Cancel'
+    OnClick = cancel1Click
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 8
-    OnClick = cancel1Click
+    TabOrder = 2
   end
   object save1: TButton
     Left = 104
     Height = 25
     Hint = 'Save these coefficients'
-    Top = 552
+    Top = 568
     Width = 75
     Caption = 'Save'
-    TabOrder = 9
     OnClick = save1Click
+    TabOrder = 3
   end
   object checkBox_auid1: TCheckBox
     Left = 16
     Height = 23
     Hint = 'Show AUID'
-    Top = 472
-    Width = 90
+    Top = 488
+    Width = 96
     Caption = 'Show auid''s'
-    TabOrder = 10
     OnChange = checkBox_auid1Change
+    TabOrder = 4
   end
   object error_label2: TLabel
     Left = 136
     Height = 19
-    Top = 472
+    Top = 488
     Width = 18
     Caption = '---'
     Font.Color = clRed
@@ -260,7 +140,7 @@ object Form_transformation1: TForm_transformation1
   object error_label3: TLabel
     Left = 16
     Height = 19
-    Top = 264
+    Top = 296
     Width = 18
     Caption = '---'
     Font.Color = clRed
@@ -271,7 +151,7 @@ object Form_transformation1: TForm_transformation1
     Left = 72
     Height = 27
     Hint = 'Minimum SNR. A higher minimum will improve the accuracy of the transformation factors. Default 70'
-    Top = 440
+    Top = 456
     Width = 100
     ItemHeight = 19
     ItemIndex = 3
@@ -283,18 +163,96 @@ object Form_transformation1: TForm_transformation1
       '100'
       '130'
     )
+    OnEditingDone = sigma_transformation1EditingDone
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 11
+    TabOrder = 5
     Text = '70'
-    OnEditingDone = sigma_transformation1EditingDone
   end
   object Label4: TLabel
     Left = 16
     Height = 19
-    Top = 440
+    Top = 456
     Width = 39
     Caption = 'SNR >'
     ParentColor = False
+  end
+  object sloan_checkBox1: TCheckBox
+    Left = 16
+    Height = 23
+    Hint = 'Check mark this to find Sloan coefficients for g'', r'', i'''
+    Top = 136
+    Width = 57
+    Caption = 'Sloan'
+    OnChange = sloan_checkBox1Change
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 6
+  end
+  object GroupBox1: TGroupBox
+    Left = 8
+    Height = 245
+    Top = 168
+    Width = 184
+    Caption = 'Coefficients'
+    ClientHeight = 221
+    ClientWidth = 180
+    TabOrder = 7
+    object RadioButtonTbv1: TRadioButton
+      Left = 8
+      Height = 23
+      Top = 8
+      Width = 62
+      Caption = 'Tbv=?'
+      Checked = True
+      OnClick = RadioButtonTbv1Click
+      TabOrder = 0
+      TabStop = True
+    end
+    object RadioButtonTb_bv1: TRadioButton
+      Left = 8
+      Height = 23
+      Top = 40
+      Width = 76
+      Caption = 'Tb_bv=?'
+      OnClick = RadioButtonTbv1Click
+      TabOrder = 1
+    end
+    object RadioButtonTv_bv1: TRadioButton
+      Left = 8
+      Height = 23
+      Top = 72
+      Width = 75
+      Caption = 'Tv_bv=?'
+      OnClick = RadioButtonTbv1Click
+      TabOrder = 2
+    end
+    object RadioButtonTvr1: TRadioButton
+      Left = 8
+      Height = 23
+      Top = 128
+      Width = 59
+      Caption = 'Tvr=?'
+      OnClick = RadioButtonTbv1Click
+      TabOrder = 3
+    end
+    object RadioButtonTv_vr1: TRadioButton
+      Left = 8
+      Height = 23
+      Top = 160
+      Width = 72
+      Caption = 'Tv_vr=?'
+      OnClick = RadioButtonTbv1Click
+      TabOrder = 4
+    end
+    object RadioButtonTr_vr1: TRadioButton
+      Left = 8
+      Height = 23
+      Top = 192
+      Width = 73
+      Caption = 'TR_vr=?'
+      OnClick = RadioButtonTbv1Click
+      TabOrder = 5
+    end
   end
 end

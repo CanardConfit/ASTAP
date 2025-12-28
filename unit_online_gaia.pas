@@ -117,7 +117,7 @@ var
   i : integer;
 begin
   if passband=passband_active then exit;//no action. Already the correct type
-  for i:=0 to length(online_database[0])-1 do
+  for i:=0 to high(online_database[0]) do
     online_database[5,i]:=transform_gaia(passband,online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
   passband_active:=passband;//remember last transformation
 end;
@@ -142,7 +142,7 @@ begin
   begin
     exit;
   end;
-  for j:=0 to length(online_database[0])-1 do
+  for j:=0 to high(online_database[0]) do
   begin
     ang_sep(ra,dec,online_database[0,j],online_database[1,j],sep);
     if sep<5*pi/(180*60*60) then //within 5 arcsec

@@ -502,7 +502,7 @@ begin
   sumy2x1sqy1 := 0.0;
   sumy2x1y1sq := 0.0;
   sumy2y1cu := 0.0;
-  for i := 0 to min(length(stars_reference)-1,length(stars_distorted)-1) do //take the minimum of the two array for the case one list is longer. Should not happen normally.
+  for i := 0 to min(high(stars_reference),length(stars_distorted)-1) do //take the minimum of the two array for the case one list is longer. Should not happen normally.
   begin
     sumx2        := sumx2       + stars_distorted[i].x;
     sumx2x1      := sumx2x1     + (stars_distorted[i].x * stars_reference[i].x);

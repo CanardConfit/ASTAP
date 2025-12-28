@@ -14,27 +14,23 @@ type
   TForm_transformation1 = class(TForm)
     Button1: TButton;
     cancel1: TButton;
+    GroupBox1: TGroupBox;
+    RadioButtonTbv1: TRadioButton;
+    RadioButtonTb_bv1: TRadioButton;
+    RadioButtonTr_vr1: TRadioButton;
+    RadioButtonTvr1: TRadioButton;
+    RadioButtonTv_bv1: TRadioButton;
+    RadioButtonTv_vr1: TRadioButton;
+    sloan_checkBox1: TCheckBox;
     checkBox_auid1: TCheckBox;
     error_label2: TLabel;
     error_label3: TLabel;
     Label4: TLabel;
     save1: TButton;
-    Label10: TLabel;
-    Label11: TLabel;
     error_label1: TLabel;
-    Label6: TLabel;
-    Label7: TLabel;
-    Label8: TLabel;
-    Label9: TLabel;
     Label5: TLabel;
     sigma_transformation1: TComboBox;
     transformation_snr1: TComboBox;
-    Tbv1: TEdit;
-    Tb_bv1: TEdit;
-    Tvr1: TEdit;
-    Tv_vr1: TEdit;
-    Tv_bv1: TEdit;
-    Tr_vr1: TEdit;
     Image_transformation1: TImage;
     Label1: TLabel;
     Label2: TLabel;
@@ -42,12 +38,14 @@ type
 
     procedure Button1Click(Sender: TObject);
     procedure checkBox_auid1Change(Sender: TObject);
+    procedure RadioButtonTbv1Click(Sender: TObject);
     procedure save1Click(Sender: TObject);
     procedure cancel1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure sigma_transformation1EditingDone(Sender: TObject);
+    procedure sloan_checkBox1Change(Sender: TObject);
     procedure Tbv1Click(Sender: TObject);
     procedure Tb_bv1Click(Sender: TObject);
     procedure Tr_vr1Click(Sender: TObject);
@@ -67,10 +65,20 @@ var
   transformation_snrSTR,
   TbvSTR,
   Tb_bvSTR,
+  Tv_bvSTR,
   TvrSTR,
   Tv_vrSTR,
-  Tv_bvSTR,
-  Tr_vrSTR : string;
+  Tr_vrSTR,
+
+  TgrSTR, //sloan
+  Tg_grSTR,//sloan
+  Tr_grSTR,//sloan
+  TriSTR, //sloan
+  Tr_riSTR,//sloan
+  Ti_riSTR//sloan
+  : string;
+
+  sloan : boolean=false;
 
 
 implementation
@@ -82,16 +90,48 @@ uses astap_main,unit_stack, unit_contour, unit_aavso;
 { TForm_transformation1 }
 
 var
-  B_list,V_listB,V_listR,R_list, B_list_documented,V_list_documentedB,V_list_documentedR, R_list_documented  : array of double;
+  B_list,
+  V_listB,
+  V_listR,
+  R_list,
+  B_list_documented,
+  V_list_documentedB,
+  V_list_documentedR,
+  R_list_documented  : array of double;
   Tbv, Tbv_intercept, Tbv_sd, Tv_bv, Tv_bv_intercept, Tv_bv_sd, Tb_bv, Tb_bv_intercept, Tb_bv_sd,
   Tvr, Tvr_intercept, Tvr_sd, Tr_vr, Tr_vr_intercept, Tr_vr_sd, Tv_vr, Tv_vr_intercept, Tv_vr_sd : double;
   abbreviation,abbreviationB,abbreviationR : array of string;
+  Tbv_labelstr,
+  Tb_bv_labelstr,
+  Tv_bv_labelstr,
+  Tvr_labelstr,
+  Tv_vr_labelstr,
+  Tr_vr_labelstr,
+
+
+  Tbv_tempSTR,
+  Tb_bv_tempSTR,
+  Tv_bv_tempSTR,
+  Tvr_tempSTR,
+  Tv_vr_tempSTR,
+  Tr_vr_tempSTR    : string;
+
+
+
 
 var
   idx : integer; //which graph is shown
+
+  B_str:string='B';
+  V_str:string='V';
+  R_str:string='R';
+
 const
   transf_filter_sigma :double=2; //to filter out outliers
   cancel : boolean=true;
+
+
+
 
 procedure plot_transformation_graph;
 var
@@ -169,8 +209,8 @@ begin
                      form_transformation1.label1.caption:='1/Slope: '+ FormatFloat('0.000',Tbv);// Tbv = reciprocal of slope of (b-v) plotted versus (B-V)     So inverse slope!!
                      intercept:=Tbv_intercept;
                      sd:=Tbv_sd;
-                     x_label:='B-V (documented - documented)';
-                     y_label:='b-v (instrumental - instrumental)';
+                     x_label:=B_str+'-'+V_str+' (documented - documented)';
+                     y_label:=lowercase(b_str)+'-'+lowercase(v_str)+' (instrumental - instrumental)';
                    end;
                 3: begin
                       y_vals[i] := V_listR[i] - R_list[i];     // Tbv (v-r)
@@ -178,8 +218,8 @@ begin
                       form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                       intercept:=Tvr_intercept;
                       sd:=Tvr_sd;
-                      x_label:='V-R (documented - documented)';
-                      y_label:='V-r (documented - instrumental)';
+                      x_label:=V_str+'-'+R_str+' (documented - documented)';
+                      y_label:=V_str+'-'+lowercase(R_str)+' (documented - instrumental)';
 
                    end;
 
@@ -190,8 +230,8 @@ begin
                       form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                       intercept:=Tb_bv_intercept;
                       sd:=Tb_bv_sd;
-                      x_label:='B-V (documented - documented)';
-                      y_label:='B-b (documented - instrumental)';
+                      x_label:=B_str+'-'+V_str+' (documented - documented)';
+                      y_label:=B_str+'-'+lowercase(B_str)+' (documented - instrumental)';
                    end;
                 4: begin
                       y_vals[i] := V_list_documentedR[i] - V_listR[i];       // Tv_vr
@@ -199,8 +239,8 @@ begin
                       form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                       intercept:=Tv_vr_intercept;
                       sd:=Tv_vr_sd;
-                      x_label:='V-R (documented - documented)';
-                      y_label:='V-v (documented - instrumental)';
+                      x_label:=V_str+'-'+R_str+' (documented - documented)';
+                      y_label:=V_str+'-'+lowercase(V_str)+' (documented - instrumental)';
                    end;
 
 
@@ -210,8 +250,8 @@ begin
                      form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                      intercept:=Tv_bv_intercept;
                      sd:=Tv_bv_sd;
-                     x_label:='B-V (documented - documented)';
-                     y_label:='V-v (documented - instrumental)';
+                     x_label:=B_str+'-'+V_str+' (documented - documented)';
+                     y_label:=V_str+'-'+lowercase(V_str)+' (documented - instrumental)';
                    end;
                 5: begin
                      y_vals[i] := R_list_documented[i] - R_list[i];       // Tr_vr
@@ -219,8 +259,8 @@ begin
                      form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                      intercept:=Tr_vr_intercept;
                      sd:=Tr_vr_sd;
-                     x_label:='V-R (documented - documented)';
-                     y_label:='R-r (documented - instrumental)';
+                     x_label:=V_str+'-'+(R_str)+' (documented - documented)';
+                     y_label:=R_str+'-'+lowercase(R_str)+' (documented - instrumental)';
                    end;
 
 
@@ -419,15 +459,53 @@ begin
   Form_transformation1.error_label2.caption:=mess;//display any error message
 end;
 
+procedure update_from_database;
+begin
+  if sloan=false then
+  begin
+    Tbv_tempSTR:=TbvSTR;
+    Tb_bv_tempSTR:=Tb_bvSTR;
+    Tv_bv_tempSTR:=Tv_bvSTR;
+    Tvr_tempSTR:=TvrSTR;
+    Tv_vr_tempSTR:=Tv_vrSTR;
+    Tr_vr_tempSTR:=Tr_vrSTR;
+  end
+  else
+  begin
+    Tbv_tempSTR:=TgrSTR;
+    Tb_bv_tempSTR:=Tg_grSTR;
+    Tv_bv_tempSTR:=Tr_grSTR;
+    Tvr_tempSTR:=TriSTR;
+    Tv_vr_tempSTR:=Tr_riSTR;
+    Tr_vr_tempSTR:=Ti_riSTR;
+  end;
 
+end;
 
-procedure transformation;
+procedure update_radiobuttons;
+begin
+  with Form_transformation1 do
+  begin
+    RadioButtontbv1.caption:=Tbv_labelstr+Tbv_tempSTR;
+    RadioButtontb_bv1.caption:=Tb_bv_labelstr+Tb_bv_tempSTR;
+    RadioButtontv_bv1.caption:=Tv_bv_labelstr+Tv_bv_tempSTR;
+    RadioButtontvr1.caption:=Tvr_labelstr+Tvr_tempSTR;
+    RadioButtontv_vr1.caption:=Tv_vr_labelstr+Tv_vr_tempSTR;
+    RadioButtontr_vr1.caption:=Tr_vr_labelstr+Tr_vr_tempSTR;
+  end;
+end;
+
+procedure transformation(const ic_B,ic_V,ic_R,ic_R2 : integer);
 var
-   col,row,Rcount, Vcount, Bcount, starnr,icon_nr,nr,j,counter,selected_rows    :integer;
+   col,row,
+   Rcount, Vcount, Bcount,
+   starnr,icon_nr,nr,j,counter,selected_rows    :integer;
    abrv,auid,julian_str,mess : string;
    iconB, iconV,iconR,vr_success,bv_success : boolean;
-   R,V,B, value,snr,snrmin            : double;
-   V_list, V_list_documented: array of double;
+   R,V,B,
+   value,snr,snrmin            : double;
+   V_list,
+   V_list_documented   : array of double;
 
 begin
   form_transformation1.error_label1.caption:='';
@@ -455,6 +533,7 @@ begin
   setlength(B_list_documented,nr);
   setlength(V_list_documented,nr);
   setlength(R_list_documented,nr);
+
   setlength(abbreviation,nr);
   iconB:=false;
   iconV:=false;
@@ -494,15 +573,11 @@ begin
              if ((snr>=snrmin) and (value<>0)) then //measurement found
              try
                icon_nr:=Items.item[row].SubitemImages[P_filter];
-               case icon_nr of
-                         0,24 : begin R:=R+value; inc(Rcount);iconR:=true; end;  //red or Cousins red
-                         1 :    begin V:=V+value; inc(Vcount);iconV:=true; end;  //V or G TG
-                         2 :    begin B:=B+value; inc(Bcount);iconB:=true; end;  //B or TB
-//                       28:    begin I:=I+value; inc(Icount);end;  //I FILTER
-//                       21 :   begin SI:=SI+value; inc(SIcount);end;//SDSS-i
-//                       22 :   begin SR:=SR+value; inc(SRcount);end;//SDSS-r
-//                       23 :   begin SG:=SG+value; inc(SGcount);end;//SDSS-g
-               end;
+               if ((icon_nr=ic_R) or (icon_nr=ic_R2)) then begin R:=R+value; inc(Rcount);iconR:=true; end  //red or Cousins red
+               else
+               if icon_nr=ic_V then begin V:=V+value; inc(Vcount);iconV:=true; end  //V or G TG
+               else
+               if icon_nr=ic_B then begin B:=B+value; inc(Bcount);iconB:=true; end;  //B or TB
               except
               end;
           end;
@@ -510,14 +585,10 @@ begin
         if Bcount<>0  then begin B:=B/Bcount; B_list[starnr]:=B;      end else B_list[starnr]:=0;//simple mean of all the B measurements of this star
         if Vcount<>0  then begin V:=V/Vcount; V_list[starnr]:=V;      end else V_list[starnr]:=0;//simple mean
         if Rcount<>0  then begin R:=R/Rcount; R_list[starnr]:=R;      end else R_list[starnr]:=0;;//simple mean
-//      if Icount<>0  then begin I:=I/Icount; I_list[starnr]:=I;      end else I_list[starnr]:=0;;//simple mean
-//      if SGcount<>0 then begin SG:=SG/SGcount; SG_list[starnr]:=SG; end else SG_list[starnr]:=0;;//simple mean
-//      if SRcount<>0 then begin SR:=SR/SRcount; SR_list[starnr]:=SR; end else SR_list[starnr]:=0;//simple mean
-//      if SIcount<>0 then begin SI:=SI/SIcount; SI_list[starnr]:=SI; end else SI_list[starnr]:=0;//simple mean
 
-        B_list_documented[starnr]:=retrieve_documented_magnitude(false,2,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-        V_list_documented[starnr]:=retrieve_documented_magnitude(false,1,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
-        R_list_documented[starnr]:=retrieve_documented_magnitude(false,0,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        B_list_documented[starnr]:=retrieve_documented_magnitude(false,ic_B,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        V_list_documented[starnr]:=retrieve_documented_magnitude(false,ic_V,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        R_list_documented[starnr]:=retrieve_documented_magnitude(false,ic_R,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
         abbreviation[starnr]:=auid;
 
         inc(starnr);
@@ -593,22 +664,18 @@ begin
 
    with Form_transformation1 do
    begin
-     Tbv1.enabled:=bv_success;
-     Tb_bv1.enabled:=bv_success;
-     Tv_bv1.enabled:=bv_success;
-     tbv1.Text:=floattostrF(tbv,FFfixed,0,3);
-     tb_bv1.Text:=floattostrF(tb_bv,FFfixed,0,3);
-     tv_bv1.Text:=floattostrF(tv_bv,FFfixed,0,3);
+     RadioButtonTbv1.enabled:=bv_success;
+     RadioButtonTb_bv1.enabled:=bv_success;
+     RadioButtonTv_bv1.enabled:=bv_success;
+
+     Tbv_tempSTR:=floattostrF(tbv,FFfixed,0,3);
+     Tb_bv_tempSTR:=floattostrF(tb_bv,FFfixed,0,3);
+     Tv_bv_tempSTR:=floattostrF(tv_bv,FFfixed,0,3);
    end;
 
 
     //V & R
-    if ((iconR) and (pos('Local', stackmenu1.annotate_mode1.text)<> 0)) then
-    begin
-      form_transformation1.error_label3.caption:='Can not do R with local database! Switch to online STD field database.';
-    end
-    else
-      form_transformation1.error_label2.caption:='';
+    form_transformation1.error_label2.caption:='';
 
     if ((iconV) and  (iconR))then
     begin
@@ -664,20 +731,21 @@ begin
 
     with Form_transformation1 do
     begin
-      Tvr1.enabled:=vr_success;
-      Tv_vr1.enabled:=vr_success;
-      Tr_vr1.enabled:=vr_success;
-      tvr1.Text:=floattostrF(tvr,FFfixed,0,3);
-      tv_vr1.Text:=floattostrF(tv_vr,FFfixed,0,3);
-      tr_vr1.Text:=floattostrF(tr_vr,FFfixed,0,3);
+      RadioButtonTvr1.enabled:=vr_success;
+      RadioButtonTv_vr1.enabled:=vr_success;
+      RadioButtonTr_vr1.enabled:=vr_success;
+
+      Tvr_tempSTR:=floattostrF(tvr,FFfixed,0,3);
+      Tv_vr_tempSTR:=floattostrF(tv_vr,FFfixed,0,3);
+      Tr_vr_tempSTR:=floattostrF(tr_vr,FFfixed,0,3);
     end;
 
     if ((bv_success=false) and (vr_success=false)) then
     begin
-      if iconB=false then mess:=mess+' B not found.';
-      if iconV=false then mess:=mess+' V not found.';
-      if iconR=false then mess:=mess+' R not found.';
-      mess:=mess+' Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR.'+#13+#10+'Correct header values with with popup menu if required.';
+      if iconB=false then mess:=mess+' '+B_str+' not found.';
+      if iconV=false then mess:=mess+' '+V_str+' not found.';
+      if iconR=false then mess:=mess+' '+R_str+' not found.';
+      mess:=mess+' Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR, SG, SR, SI'+#13+#10+'Correct header values with with popup menu if required.';
       form_transformation1.error_label1.caption:=mess;
       memo2_message('Transformation failure. '+mess);
     end;
@@ -693,8 +761,9 @@ begin
       memo2_message('Transformation ready');
       plot_transformation_graph;
     end;
-
   end;
+
+  update_radiobuttons;
 end;
 
 
@@ -702,12 +771,16 @@ procedure TForm_transformation1.FormShow(Sender: TObject);
 begin
   sigma_transformation1.text:=sigma_transformationSTR;
   transformation_snr1.text:=transformation_snrSTR;
-  Tbv1.text:=TbvSTR;
-  Tb_bv1.text:=Tb_bvSTR;
-  Tv_bv1.text:=Tv_bvSTR;
-  Tvr1.text:=TvrSTR;
-  Tv_vr1.text:=Tv_vrSTR;
-  Tr_vr1.text:=Tr_vrSTR;
+
+  sloan_checkBox1.checked:=sloan;
+
+  if pos('Local',stackmenu1.annotate_mode1.text)<>0 then //not online
+    memo2_message('Warning, not many Sloan magnitudes in online VSP !');
+
+  update_from_database;
+
+  update_radiobuttons;
+
   cancel:=true;
 end;
 
@@ -716,47 +789,98 @@ begin
   plot_transformation_graph;
 end;
 
+procedure TForm_transformation1.sloan_checkBox1Change(Sender: TObject);
+begin
+   update_from_database;//prevent override by wrong factors
+   update_radiobuttons;
+
+   V_listB:=nil;//nil existing data to avoud confusion
+   V_listR:=nil;
+
+  if sloan_checkBox1.checked=false then
+  begin
+    Tbv_labelstr:='Tbv=';
+    Tb_bv_labelstr:='Tb_bv=';
+    Tv_bv_labelstr:='Tv_bv=';
+    Tvr_labelstr:='Tvr=';
+    Tv_vr_labelstr:='Tv_vr=';
+    Tr_vr_labelstr:='Tr_vr=';
+
+    B_str:='B';
+    V_str:='V';
+    R_str:='R';
+    sloan:=false;//here so it wil work directly in unit_aavso
+  end
+  else
+  begin
+    Tbv_labelstr:='Tgr=';
+    Tb_bv_labelstr:='Tg_gr=';
+    Tv_bv_labelstr:='Tr_gr=';
+    Tvr_labelstr:='Tri=';
+    Tv_vr_labelstr:='Tr_ri=';
+    Tr_vr_labelstr:='Ti_ri=';
+
+    B_str:='SG';
+    V_str:='SR';
+    R_str:='SI';
+    sloan:=true;
+  end;
+end;
+
+
 procedure TForm_transformation1.Tbv1Click(Sender: TObject);
 begin
   idx:=0;
-  plot_transformation_graph;
+  RadioButtonTbv1.checked:=true;
+ // plot_transformation_graph;
 end;
 
 
 procedure TForm_transformation1.Tb_bv1Click(Sender: TObject);
 begin
   idx:=1;
-  plot_transformation_graph;
+  RadioButtonTb_bv1.checked:=true;
+ // plot_transformation_graph;
 end;
 
-procedure TForm_transformation1.Tr_vr1Click(Sender: TObject);
-begin
-  idx:=5;
-  plot_transformation_graph;
-end;
-
-procedure TForm_transformation1.Tvr1Click(Sender: TObject);
-begin
-  idx:=3;
-  plot_transformation_graph;
-end;
 
 procedure TForm_transformation1.Tv_bv1Click(Sender: TObject);
 begin
   idx:=2;
-  plot_transformation_graph;
+  RadioButtonTv_bv1.checked:=true;
+ // plot_transformation_graph;
 end;
+
+
+procedure TForm_transformation1.Tvr1Click(Sender: TObject);
+begin
+  idx:=3;
+  RadioButtonTvr1.checked:=true;
+ // plot_transformation_graph;
+end;
+
 
 procedure TForm_transformation1.Tv_vr1Click(Sender: TObject);
 begin
   idx:=4;
-  plot_transformation_graph;
+  RadioButtonTv_vr1.checked:=true;
+ // plot_transformation_graph;
 end;
+
+
+procedure TForm_transformation1.Tr_vr1Click(Sender: TObject);
+begin
+  idx:=5;
+  RadioButtonTr_vr1.checked:=true;
+ // plot_transformation_graph;
+end;
+
 
 procedure TForm_transformation1.FormResize(Sender: TObject);
 begin
   plot_transformation_graph;
 end;
+
 
 procedure TForm_transformation1.Button1Click(Sender: TObject);
 const
@@ -767,13 +891,43 @@ const
 begin
   if ((pos('std', stackmenu1.annotate_mode1.text)<> 0) or (pos('Local', stackmenu1.annotate_mode1.text)<> 0) or
           (IDYES= Application.MessageBox('Warning. AAVSO annotation is not set at "std field". If no AAVSO comparison stars are available then this routine will not work.'+#10+#10+'This routine will work with any comparison stars so you could continue.'+#10+#10+'Continue?', 'Find tranformation coeficients', MB_ICONQUESTION + MB_YESNO))) then
-  transformation;
+
+  if sloan=false then
+  begin
+    transformation(2,1,0,24);  //B, V, R, Rc
+  end
+  else
+  begin
+    if stackmenu1.annotate_mode1.itemindex>4 then
+       memo2_message('Warning, online not many Sloan magnitudes available online.');
+    transformation(23 {SG},22 {SR},21 {SI},21 {SI});//Sloan
+  end;
 end;
 
 procedure TForm_transformation1.checkBox_auid1Change(Sender: TObject);
 begin
   plot_transformation_graph;
 end;
+
+
+
+procedure TForm_transformation1.RadioButtonTbv1Click(Sender: TObject);
+begin
+  if RadioButtonTbv1.checked then idx:=0
+  else
+  if RadioButtonTb_bv1.checked then idx:=1
+  else
+  if RadioButtonTv_bv1.checked then idx:=2
+  else
+  if RadioButtonTvr1.checked then idx:=3
+  else
+  if RadioButtonTv_vr1.checked then idx:=4
+  else
+  if RadioButtonTr_vr1.checked then idx:=5;
+
+  plot_transformation_graph;
+end;
+
 
 procedure TForm_transformation1.save1Click(Sender: TObject);
 begin
@@ -794,12 +948,28 @@ begin
     exit;
   sigma_transformationSTR:=sigma_transformation1.text;
   transformation_snrSTR:=transformation_snr1.text;
-  TbvSTR:=Tbv1.text;
-  Tb_bvSTR:=Tb_bv1.text;
-  Tv_bvSTR:=Tv_bv1.text;
-  TvrSTR:=Tvr1.text;
-  Tv_vrSTR:=Tv_vr1.text;
-  Tr_vrSTR:=Tr_vr1.text;
+
+  if sloan_checkBox1.checked=false then
+  begin
+    TbvSTR:=Tbv_tempSTR;//store at correct string
+    Tb_bvSTR:=Tb_bv_tempSTR;
+    Tv_bvSTR:=Tv_bv_tempSTR;
+    TvrSTR:=Tvr_tempSTR;
+    Tv_vrSTR:=Tv_vr_tempSTR;
+    Tr_vrSTR:=Tr_vr_tempSTR;
+    sloan:=false;
+  end
+  else
+  begin
+    TgrSTR:=Tbv_tempSTR; //store at correct string
+    Tg_grSTR:=Tb_bv_tempSTR;
+    Tr_grSTR:=Tv_bv_tempSTR;
+    TriSTR:=Tvr_tempSTR;
+    Tr_riSTR:=Tv_vr_tempSTR;
+    Ti_riSTR:=Tr_vr_tempSTR;
+    sloan:=true;
+  end;
+
   save_settings2;//save coefficients
 end;
 

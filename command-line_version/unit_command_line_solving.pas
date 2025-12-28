@@ -1009,8 +1009,8 @@ var
   snr_required : double;
 
 begin
-  for i:=0 to length(snr_histogram)-1 do snr_histogram[i]:=0; {clear snr histogram}
-  for i:=0 to length(snr_list)-1 do
+  for i:=0 to high(snr_histogram) do snr_histogram[i]:=0; {clear snr histogram}
+  for i:=0 to high(snr_list) do
   begin
   //  memo2_message(#9+inttostr(i)+#9+floattostr6(snr_list[i])) ;
     snr_scaled:=trunc(snr_list[i]*range/highest_snr);
@@ -2433,7 +2433,7 @@ begin
               if match_nr=1 then //2025 first solution found, filter out stars for the second match. Avoid that stars outside the image boundaries are used to create database quads
               begin //keep only stars which are visible in the image according the first solution
                 count:=0;
-                for i:=0 to Length(starlist1[0])-1  do
+                for i:=0 to high(starlist1[0])  do
                 begin
                    rotate(crota2_rad,starlist1[0,i]/cdelt1_arcsec,starlist1[1,i]/cdelt2_arcsec,xi,yi);{rotate to screen orientation}
                    xi:=centerX-xi;

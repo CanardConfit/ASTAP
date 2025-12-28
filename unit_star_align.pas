@@ -168,7 +168,7 @@ begin
     y:=0;
   end;
 
-  nrquads:=Length(starlistquads[0])-1;
+  nrquads:=high(starlistquads[0]);
 
   mainform1.image1.Canvas.Pen.mode:=pmXor;
 
@@ -1156,8 +1156,8 @@ var
   snr_required : double;
 
 begin
-  for i:=0 to length(snr_histogram)-1 do snr_histogram[i]:=0; {clear snr histogram}
-  for i:=0 to length(snr_list)-1 do
+  for i:=0 to high(snr_histogram) do snr_histogram[i]:=0; {clear snr histogram}
+  for i:=0 to high(snr_list) do
   begin
   //  memo2_message(#9+inttostr(i)+#9+floattostr6(snr_list[i])) ;
     snr_scaled:=trunc(snr_list[i]*range/highest_snr);
