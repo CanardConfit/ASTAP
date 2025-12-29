@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.12.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2025.12.28';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -662,6 +662,7 @@ type
               SIerr: string;
             end;
 
+
   theVar = record
               name: string;
               AUID: string;//variable have also an AUID. Only if they have a AUID they can be submitted
@@ -730,6 +731,7 @@ var
   copy_paste_h : integer;
 
   position_find: Integer; {for fits header memo1 popup menu}
+
 
 var {################# initialised variables #########################}
   PatternToFind : string=''; {for fits header memo1 popup menu }
@@ -926,7 +928,7 @@ procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,
 procedure remove_photometric_calibration;//from header
 procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
 procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
-procedure variable_star_annotation(extract_visible: boolean {extract to variable_list});
+procedure variable_star_annotation(head : theader; extract_visible: boolean {extract to variable_list});
 function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx : theader; out countN: integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
 procedure update_sip_coefficients(memo : tstrings);//update all sip coefficients in memo
@@ -4064,7 +4066,8 @@ begin
   about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+'.'+
   #13+#10+
   #13+#10+
-  'Application path '+application_path;
+  'Application path: '+application_path+#13+#10+
+  'Database path: '+database_path;
   {$ELSE} {delphi}
   about_message5:='';
   {$ENDIF}
@@ -4995,8 +4998,8 @@ begin
     end; {mainform1.Polynomial1.itemindex=0}
 
     //for formalism 0 and 1
-    xi :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
-    eta:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
+    xi :=(head.cd1_1*u2 + head.cd1_2*v2)*pi/180;
+    eta:=(head.cd2_1*u2 + head.cd2_2*v2)*pi/180;
 
     sincos(head.dec0,sindec0,cosdec0);
     delta:=cosdec0-eta*sindec0;
@@ -5517,7 +5520,7 @@ begin
   mainform1.image1.Canvas.font.size:=max(8,head.height div 120);
 
 
-  for dia:=0 to length(constpos)-1 do  {constellations abreviations}
+  for dia:=0 to high(constpos) do  {constellations abreviations}
   begin
     ra2:=constpos[dia,0]*pi/12000;
     dec2:=constpos[dia,1]*pi/18000;
@@ -5536,7 +5539,7 @@ begin
 
   overshoot:=head.height;
   outside:=true;
-  for dia:=0 to length(constellation)-1 {602} do  {constellations}
+  for dia:=0 to high(constellation) {602} do  {constellations}
   begin
     ra2:=constellation[dia].ra*pi/12000;
     dec2:=constellation[dia].dec*pi/18000;
@@ -8572,11 +8575,16 @@ begin
       dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
       dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
 
-      c:=Sett.ReadInteger('stack','annotate_m',0); stackmenu1.annotate_mode1.itemindex:=c;
+      c:=Sett.ReadInteger('stack','annotate_i',2); stackmenu1.annotate_mode1.itemindex:=c;
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
 
       c:=Sett.ReadInteger('stack','measure_mode',0); stackmenu1.measuring_method1.itemindex:=c;
-      stackmenu1.ignore_saturation1.checked:= Sett.ReadBool('stack','ign_saturation',true);//photometry tab
+
+      stackmenu1.set_saturation1.checked:= Sett.ReadBool('stack','set_saturation',false);//photometry tab
+      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('stack','photom_cal',true);//photometry tab calibration
+
+
+      dum:=Sett.ReadString('stack','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
       dum:=Sett.ReadString('stack','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
@@ -8657,6 +8665,16 @@ begin
       TvrSTR:=Sett.ReadString('transf','Tvr','1'); {transformation}
       Tv_vrSTR:=Sett.ReadString('transf','Tv_vr','0'); {transformation}
       Tr_vrSTR:=Sett.ReadString('transf','Tr_vr','0'); {transformation}
+
+      TgrSTR:=Sett.ReadString('transf','Tgr','1'); {transformation}
+      Tg_grSTR:=Sett.ReadString('transf','Tg_gr','0'); {transformation}
+      Tr_grSTR:=Sett.ReadString('transf','Tr_gr','0'); {transformation}
+      TriSTR:=Sett.ReadString('transf','Tri','1'); {transformation}
+      Tr_riSTR:=Sett.ReadString('transf','Tr_ri','0'); {transformation}
+      Ti_riSTR:=Sett.ReadString('transf','Ti_ri','0'); {transformation}
+
+
+      sloan:=Sett.ReadBool('transf','sloan',false);
 
 
       listviews_begin_update; {stop updating listviews}
@@ -8990,14 +9008,17 @@ begin
       sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
       sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
       sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
-      sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
+      sett.writeInteger('stack','annotate_i',stackmenu1.annotate_mode1.itemindex);
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
       sett.writestring('stack','max_period',stackmenu1.max_period1.text);
 
 
       sett.writeInteger('stack','measure_mode',stackmenu1.measuring_method1.itemindex);
-      sett.WriteBool('stack','ign_saturation', stackmenu1.ignore_saturation1.checked);//photometry tab
+      sett.WriteBool('stack','set_saturation', stackmenu1.set_saturation1.checked);//photometry tab
+      sett.WriteBool('stack','photom_cal', stackmenu1.photometry_calibrate1.checked);//photometry tab
 
+
+      sett.writestring('stack','saturation',stackmenu1.saturation_level1.text);
 
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
@@ -9072,6 +9093,14 @@ begin
      sett.writestring('transf','Tv_vr',Tv_vrSTR);
      sett.writestring('transf','Tr_vr',Tr_vrSTR);
 
+     sett.writestring('transf','Tgr',TgrSTR);
+     sett.writestring('transf','Tg_gr',Tg_grSTR);
+     sett.writestring('transf','Tr_gr',Tr_grSTR);
+     sett.writestring('transf','Tri',TriSTR);
+     sett.writestring('transf','Tr_ri',Tr_riSTR);
+     sett.writestring('transf','Ti_ri',Ti_riSTR);
+
+     sett.writebool('transf','sloan',sloan);
 
       {### save listview values ###}
       for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
@@ -9950,7 +9979,7 @@ begin
 
   if check_raw_file_extension(ext) then {raw format}
   begin
-    result:=convert_raw(false{load},true{save},filen,headX,img_loaded);
+    result:=convert_raw(false{load},true{save},filen,headX,img_temp);
   end
   else
   if (ext='.FZ') then {CFITSIO format}
@@ -9961,17 +9990,17 @@ begin
       result:=load_PPM_PGM_PFM(filen,headX,img_temp,memox)
     else
     if ext='.XISF' then {XISF}
-      result:=load_xisf(filen,head,img_loaded,mainform1.memo1.lines)
+      result:=load_xisf(filen,headX,img_temp,memoX)
     else
     if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
       result:=load_tiffpngJPEG(filen,true,headX,img_temp,memox);
 
     if result then
     begin
-      if headX.exposure=0 then {not an Astro-TIFF file with an header}
+      if headX.exposure=0 then {not an Astro-TIFF or XISF file with an header}
       begin
         headX.exposure:=extract_exposure_from_filename(filen); {try to extract head.exposure time from filename. Will be added to the header}
-        update_text(mainform1.memo1.lines,'OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
+        update_text(memoX,'OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
         headX.set_temperature:=extract_temperature_from_filename(filen);
       end;
 
@@ -10315,7 +10344,7 @@ begin
 
   url:='https://apps.aavso.org/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag);{+'&special=std_field'}
 
-  if stackmenu1.annotate_mode1.itemindex>16 then
+  if stackmenu1.annotate_mode1.itemindex>8 then
            url:=url+'&special=std_field';//standard field for specific purpose of calibrating their equipment
   s:=get_http(url);{get webpage}
   len:=length(s);
@@ -10528,7 +10557,7 @@ begin
 //  if fov>3 {degrees} then limiting_mag:=min(12,limiting_mag); //There is no limitation for VSX but follow the one of the VSP
 
   idx:=stackmenu1.annotate_mode1.itemindex;
-  auid_filter:=((idx>=5+4) and (idx<=8+4)); //variable has an AUID so it can be reported
+  auid_filter:=stackmenu1.with_auid_only1.checked; //((idx>=5+4) and (idx<=8+4)); //variable has an AUID so it can be reported
   max_period:=strtofloat2(stackmenu1.max_period1.text);//infinity result in 0 meaning switched off.
 
   //old https://www.aavso.org/vsx/index.php?view=api.list&ra=173.478667&dec=-0.033698&fov=0.350582&tomag=13.0000&format=json
@@ -10682,7 +10711,7 @@ begin
 end;
 
 
-procedure variable_star_annotation(extract_visible: boolean {extract to vsp_vsx_list});
+procedure variable_star_annotation(head : theader; extract_visible: boolean {extract to vsp_vsx_list});
 var
   lim_magnitude            : double;
 begin
@@ -10698,19 +10727,18 @@ begin
 //9, Annotation online DB mag 15 & measure all
 //10,Annotation online DB mag 99 & measure all
 
+
   case stackmenu1.annotate_mode1.itemindex of
-       1,5:   begin lim_magnitude:=-99; load_variable_8;{Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
-       0,2,6: begin lim_magnitude:=-99; load_variable_11;{Load the local database once. If loaded no action} end;//use local database
-       3,7:   begin lim_magnitude:=-99; load_variable_13;{Load the local database once. If loaded no action} end;//use local database
-       4,8:   begin lim_magnitude:=-99; load_variable_15;{Load the local database once. If loaded no action} end;//use local database
-       9,13,17:  lim_magnitude:=11; //online magn 11
-       10,14,18:  lim_magnitude:=13;//online magn 13
-       11,15,19: lim_magnitude:=15;//online magn 15
-       12,16,20: lim_magnitude:=99;//online magn 99
-
-
-       else
-          lim_magnitude:=99;
+      1:   begin lim_magnitude:=-99; load_variable(8);{Down to 8. Load the local database once. If loaded no action} end;//use local database. Selection zero the viewer plot deepsky should still work
+      0,2: begin lim_magnitude:=-99; load_variable(11);{Down to 11. Load the local database once. If loaded no action} end;//use local database
+      3:   begin lim_magnitude:=-99; load_variable(13);{Down to 13. Load the local database once. If loaded no action} end;//use local database
+      4:   begin lim_magnitude:=-99; load_variable(15);{Down to 15. Load the local database once. If loaded no action} end;//use local database
+      5,9:  lim_magnitude:=11; //online magn 11
+      6,10: lim_magnitude:=13;//online magn 13
+      7,11: lim_magnitude:=15;//online magn 15
+      8,12: lim_magnitude:=99;//online magn 99
+     else
+       lim_magnitude:=99;
      end; //case
 
   if lim_magnitude>0 then //online version
@@ -10719,7 +10747,7 @@ begin
       if aavso_update_required then
       begin
         memo2_message('Downloading online data from AAVSO as set in tab Photometry.');
-        if stackmenu1.annotate_mode1.itemindex<=16 then //do not download variables for standard field
+        if stackmenu1.annotate_mode1.itemindex<=8 then //Only download variables for none-standard field
         begin
           if download_vsx(lim_magnitude)=false then begin memo2_message('No response VSX server!');break; end;
         end
@@ -10747,7 +10775,7 @@ procedure Tmainform1.variable_star_annotation1Click(Sender: TObject);
 begin
   if head.cd1_1=0 then begin memo2_message('No astrometric solution!'); exit; end;//no solution
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  variable_star_annotation(false  {plot, do not extract to vsp_vsx_list});
+  variable_star_annotation(head, false  {plot, do not extract to vsp_vsx_list});
   Screen.Cursor:=crDefault;
 end;
 
@@ -11893,7 +11921,7 @@ begin
 
   if length(stars[0])>0 then
   begin
-    for i:=0 to  length(stars[0])-1 do
+    for i:=0 to  high(stars[0]) do
     begin
       if Flipvertical=false then  starY:=round(head.height-1-stars[1,i]) else starY:=round(stars[1,i]);
       if Fliphorizontal     then starX:=round(head.width-1-stars[0,i])  else starX:=round(stars[0,i]);
@@ -12505,10 +12533,14 @@ begin
 
     {$ifdef mswindows}
     {$else} {unix}
-    if copy(database_path,1,4)='/usr' then {for Linux distributions}
-      if DirectoryExists('/opt/astap')=false then
-        database_path:='/usr/share/astap/data/';
-
+    if copy(database_path,1,4)='/usr' then
+    begin
+      if DirectoryExists('/usr/share/astap/data/') then {for Linux distributions}
+        database_path:='/usr/share/astap/data/'
+      else
+      if DirectoryExists('/opt/astap') then  //second try in /opt/astap for people installing a database with a Debian package.
+        database_path:='/opt/astap';
+     end;
     {$endif}
   {$endif}
 
@@ -17045,8 +17077,8 @@ begin
   if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
   startX:=max(0,startX);
   startY:=max(0,startY);
-  stopX:=min(stopX,length(img_loaded[0,0])-1);
-  stopY:=min(stopY,length(img_loaded[0])-1);
+  stopX:=min(stopX,high(img_loaded[0,0]));
+  stopY:=min(stopY,high(img_loaded[0]));
 
   center_x:=(startx+stopX)/2;
   center_y:=(startY+stopY)/2;

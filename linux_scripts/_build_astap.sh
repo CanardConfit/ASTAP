@@ -1,7 +1,7 @@
 #!/bin/bash
 
 rm ~/astap.fpc/astap
-/home/h/fpcupdeluxe_stable/lazarus/lazbuild /home/h/astap.fpc/astap_linux.lpi
+/home/h/fpcupdeluxe_stable/lazarus/lazbuild /home/h/astap.fpc/astap_linux_amd64.lpi
 if [[ ! -f ~/astap.fpc/astap ]] ; then
     echo 'AMD64 file does not exist, aborting!!'
     exit

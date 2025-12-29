@@ -1095,7 +1095,7 @@ begin
                     or ((aspect))  )
                     then
               begin
-                if nhfd>=length(hfd_values)-1 then
+                if nhfd>=high(hfd_values) then
                     SetLength(hfd_values,4,nhfd+2000);{adapt length if required}
                 hfd_values[0,nhfd]:=xc;
                 hfd_values[1,nhfd]:=yc;
@@ -1268,7 +1268,7 @@ begin
   if toClipboard1 then
   begin
     report:='x database'+#9+'y database'+#9+'x measured'+#9+'y measured'+#10;
-    for i:=0 to length(distortion_data[0])-1 do
+    for i:=0 to high(distortion_data[0]) do
     report:=report+floattostr(distortion_data[0,i])+#9+floattostr(distortion_data[1,i])+#9+floattostr(distortion_data[2,i])+#9+floattostr(distortion_data[3,i])+#10;
     Clipboard.AsText:=report;
   end;

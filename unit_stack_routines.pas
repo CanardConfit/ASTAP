@@ -271,7 +271,7 @@ begin
       counterB2:=0;
 
 
-      for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,r2,g2,b2,gb,l}
+      for c:=0 to high(files_to_process) do  {should contain reference,r,g,b,r2,g2,b2,gb,l}
       begin
         if c=7 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
         begin {fix RGB stack}
@@ -767,7 +767,7 @@ begin
     total_fov:=0;
     init:=false;
 
-    for c:=0 to length(files_to_process)-1 do
+    for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
         if load_fits(files_to_process[c].name,true {light},false{load data},false {update memo} ,0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
@@ -794,7 +794,7 @@ begin
     init:=false;
     dummy:=0;
 
-    for c:=0 to length(files_to_process)-1 do
+    for c:=0 to high(files_to_process) do
     if length(files_to_process[c].name)>0 then
     begin
 
@@ -971,7 +971,7 @@ begin
 
     {simple average}
     begin
-      for c:=0 to length(files_to_process)-1 do
+      for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
 
@@ -1198,7 +1198,7 @@ begin
     begin
       setlength(solutions,length(files_to_process));
       init:=false;
-      for c:=0 to length(files_to_process)-1 do
+      for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
       try { Do some lengthy operation }
@@ -1371,7 +1371,7 @@ begin
       counter:=0;
 
       init:=false;
-      for c:=0 to length(files_to_process)-1 do
+      for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
         try { Do some lengthy operation }
@@ -1456,7 +1456,7 @@ begin
     begin
       counter:=0;
       init:=false;
-      for c:=0 to length(files_to_process)-1 do
+      for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
         try { Do some lengthy operation }
@@ -1597,7 +1597,7 @@ begin
     begin
       setlength(solutions,length(files_to_process));
       init:=false;
-      for c:=0 to length(files_to_process)-1 do
+      for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
       try { Do some lengthy operation }
@@ -1773,7 +1773,7 @@ begin
     begin
       counter:=0;
       init:=false;
-      for c:=0 to length(files_to_process)-1 do
+      for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
         try { Do some lengthy operation }
@@ -1941,7 +1941,7 @@ begin
       sum_exp:=0;
 
       init:=false;
-      for c:=0 to length(files_to_process)-1 do
+      for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
       try { Do some lengthy operation }

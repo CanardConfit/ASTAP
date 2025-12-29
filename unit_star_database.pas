@@ -2828,7 +2828,7 @@ begin
   if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290;warning:=true; end //old database sorted on magnitude
   else
   begin
-    application.messagebox(pchar('No star database found!'+#13+'Download and install one star database.'), pchar('ASTAP error:'),0);
+    application.messagebox(PChar('No star database found at ' + database_path + ' !' + #13 + 'Download and install one star database.'), pchar('ASTAP error:'),0);
     result:=false;
   end;
 

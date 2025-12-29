@@ -15,10 +15,7 @@ procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the de
 procedure plot_vsx_vsp(extract_visible: boolean);{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
-procedure load_variable_8;{load variable stars. If loaded no action}
-procedure load_variable_11;{load variable stars. If loaded no action}
-procedure load_variable_13;{load variable stars. If loaded no action}
-procedure load_variable_15;{load variable stars. If loaded no action}
+procedure load_variable(nr : integer);{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(img : Timage_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(out stars_measured: integer);{measure or plot distortion}
 function plot_artificial_stars(img: Timage_array;head:theader) : boolean;{plot stars as single pixel with a value as the mangitude. For super nova search}
@@ -1053,7 +1050,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'deep_sky.csv');{load deep sky data from file }
-       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
+       database_nr:=1;{1 is deepsky, 2 is hyperleda, 7=simbad,  8 is variable magn 8 loaded, 11 is variable magn 11 loaded, 13 is variable magn 13 loaded, , 15 is variable magn 15 loaded, 80,110,130,150 for Sloan databases}
        except;
          clear;
          beep;
@@ -1064,15 +1061,27 @@ begin
 end;
 
 
-procedure load_variable_8;{load the variable star database once. If loaded no action}
+procedure load_variable(nr :integer);{load the variable star database once. If loaded no action}
+var
+  filen: string;
 begin
-  if database_nr<>3 then {load variable database}
+  if database_nr<>nr then {load variable database}
   begin
     with deepstring do
     begin
+       case nr of
+                 8 : filen:='variable_stars_8.csv';
+                 11: filen:='variable_stars.csv';
+                 13: filen:='variable_stars_13.csv';
+                 15: filen:='variable_stars_15.csv';
+       end; {case}
+
        try
-       LoadFromFile(database_path+'variable_stars_8.csv');{load deep sky data from file }
-       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
+       LoadFromFile(database_path+filen);{load deep sky data from file }
+       database_nr:=nr;{1 is deepsky, 2 is hyperleda, 7=simbad,  8 is variable magn 8 loaded, 11 is variable magn 11 loaded, 13 is variable magn 13 loaded, , 15 is variable magn 15 loaded, 80,110,130,150 for Sloan databases}
+
+       if ((copy(strings[0],1,4)<>'V006') and (all_filters.SG=true)) then //Sloan missing
+           application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
        except;
          clear;
          beep;
@@ -1080,77 +1089,11 @@ begin
          esc_pressed:=true;
 
        end;
+
     end;
   end;
 end;
 
-
-procedure load_variable_11;{load the variable star database once. If loaded no action}
-begin
-  if database_nr<>4 then {load variable database}
-  begin
-    with deepstring do
-    begin
-       try
-       LoadFromFile(database_path+'variable_stars.csv');{load deep sky data from file }
-       database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
-       except;
-         clear;
-         beep;
-         application.messagebox(pchar('The variable star database not found!'),'',0);
-         esc_pressed:=true;
-
-       end;
-    end;
-  end;
-end;
-
-
-procedure load_variable_13;{load the variable star database once. If loaded no action}
-begin
-  if database_nr<>5 then {load variable database}
-  begin
-    with deepstring do
-    begin
-       try
-       LoadFromFile(database_path+'variable_stars_13.csv');{load deep sky data from file }
-       database_nr:=5;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
-       except;
-         clear;
-         beep;
-         application.messagebox(pchar('The additional variable star database was not found!  Download from the ASTAP webpage and install.'),'',0);
-         esc_pressed:=true;
-         exit;
-       end;
-    end;
-    if copy(deepstring.strings[0],1,4)<>'V005' then
-      application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
-  end;
-end;
-
-
-procedure load_variable_15;{load the variable star database once. If loaded no action}
-begin
-  if database_nr<>6 then {load variable database}
-  begin
-    with deepstring do
-    begin
-       try
-       LoadFromFile(database_path+'variable_stars_15.csv');{load deep sky data from file }
-       database_nr:=6;{1 is deepsky, 2 is hyperleda, 3 is variable magn 8 loaded, 4 is variable magn 11 loaded, 5 is variable magn 13 loaded, , 6 is variable magn 15 loaded, 7=simbad}
-       except;
-         clear;
-         beep;
-         application.messagebox(pchar('The additional variable star database was not found!  Download from the ASTAP webpage and install.'),'',0);
-         esc_pressed:=true;
-         exit;
-       end;
-    end;
-    if copy(deepstring.strings[0],1,4)<>'V005' then
-      application.messagebox(pchar('Please download and install a new version of the "Variable_stars" database!'),'',0{MB_OK});
-  end;
-
-end;
 
 
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
@@ -1407,6 +1350,56 @@ begin
 end;
 
 
+function strip_unnecessary_magnitudes(naam2, filter_name, end_str: string): string;
+var
+   p : integer;
+
+   function get_magn(sx:string): string;
+   var
+     v,e,err : integer;
+   begin
+     v:= posex(sx {V=},naam2,4);
+     if v>0 then
+     begin
+       e:= posex(end_str{'('},naam2,v);
+       if e>0 then
+         result:=copy(naam2,v,e-v) //local style  000-BJX-707 V=7.841(0.021)_B=1.096(0.046)
+       else
+         result:='';
+     end
+     else
+       result:='';
+   end;
+
+begin
+  result:=get_magn(filter_name+'=');
+  if result='' then
+  begin
+    if filter_name='TB' then
+      result:=get_magn('B=')
+    else
+    if filter_name='TR' then
+        result:=get_magn('R=');
+  end;
+  if result='' then
+    result:=get_magn('V=')
+end;
+
+
+function strip_magnitudes(naam2,end_str: string) :string;//combine only filters used in the list of files. all_filters is set in analyse_listview
+begin
+  result:=copy(naam2,1,12);
+  if all_filters.V=true then result:=result+strip_unnecessary_magnitudes(naam2,'V',end_str)+')_';
+  if all_filters.B=true then result:=result+strip_unnecessary_magnitudes(naam2,'B',end_str)+')_';
+  if all_filters.R=true then result:=result+strip_unnecessary_magnitudes(naam2,'R',end_str)+')_';
+  if all_filters.I=true then result:=result+strip_unnecessary_magnitudes(naam2,'I',end_str)+')_';
+  if all_filters.SG=true then result:=result+strip_unnecessary_magnitudes(naam2,'SG',end_str)+')_';
+  if all_filters.SR=true then result:=result+strip_unnecessary_magnitudes(naam2,'SR',end_str)+')_';
+  if all_filters.SI=true then result:=result+strip_unnecessary_magnitudes(naam2,'SI',end_str)+')_';
+  delete(result,length(result),1); //remove last '_'
+end;
+
+
 procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the deep sky object on the image. If extract is true then extract visible to vsp_vsx_list}
 type
   textarea = record
@@ -1418,7 +1411,7 @@ var
   abbrv, period_str: string;
   flip_horizontal, flip_vertical,filter_auid_only,skip_aavso,valid_period,hash_symbol   : boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,x,y,fx,fy, idx,period_position,leng : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,x,y,fx,fy, period_position,leng,count_comp : integer;
   overlap          : boolean;
   annotation_color2 : tcolor;
 begin
@@ -1433,6 +1426,9 @@ begin
       vsp_vsx_list:=nil;
       vsp_vsx_list_length:=0;//declare empthy
       setlength(vsp_vsx_list,1000);//make space
+      vsp:=nil;
+      setlength(vsp,1000);
+      count_comp:=0;
     end;
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
@@ -1458,11 +1454,9 @@ begin
     mainform1.image1.Canvas.Font.Name:='Helvetica';
     {$endif}
 
-
-    idx:=stackmenu1.annotate_mode1.itemindex;
-    if idx<=9 then //local database
+    if database_nr>7 then //variable annotation
     begin
-      filter_auid_only:=((idx<=5) and (database_nr in [3,4,5,6]));//only show variables which have an AUID
+      filter_auid_only:=stackmenu1.with_auid_only1.checked;//only show variables which have an AUID
       max_period:=strtofloat2(stackmenu1.max_period1.text);//infinity result in 0 meaning switched off.
     end;
 
@@ -1510,8 +1504,8 @@ begin
 
             mainform1.image1.Canvas.font.size:=round(min(20,max(max(6,font_size),len /2)));
 
-
-            if ((database_nr>=3) and (database_nr<=6)) then //Local variable database. Variables are small so canbe processed within visible image=text range
+            {1 is deepsky, 2 is hyperleda, 7=simbad,  8 is variable magn 8 loaded, 11 is variable magn 11 loaded, 13 is variable magn 13 loaded, , 15 is variable magn 15 loaded, 80,110,130,150 for Sloan databases}
+            if database_nr>7 then //Local variable database. Variable star celestial sizes are tiny so can be processed within visible image=text range
             begin
               if copy(naam2,1,1)='0' then //vsp star=comparison star
               begin
@@ -1520,7 +1514,9 @@ begin
                     abbrv:=copy(naam2,5,7) //remove 000-
                  else
                  if font_size<=4 then
-                   abbrv:=copy(naam2,1,11); //remove all after abbreviation
+                   abbrv:=copy(naam2,1,11) //remove all after abbreviation
+                 else
+                   abbrv:=copy(naam2,1,12)+strip_unnecessary_magnitudes(naam2,head.filter_name,'(');
               end
               else
               begin //variables
@@ -1619,8 +1615,13 @@ begin
               begin
                 vsp_vsx_list[text_counter].ra:=ra2;
                 vsp_vsx_list[text_counter].dec:=dec2;
-                vsp_vsx_list[text_counter].abbr:=naam2;
                 vsp_vsx_list[text_counter].source:=0; //local
+                if copy(naam2,1,1)='0' then //vsp star=comparison star
+                  vsp_vsx_list[text_counter].abbr:=strip_magnitudes(naam2,')')//combine only filters used in the list of files. all_filters is set in analyse_listview
+                else
+                  vsp_vsx_list[text_counter].abbr:=naam2; //variable
+
+
                 if text_counter+1>=length(vsp_vsx_list) then
                    setlength(vsp_vsx_list,length(vsp_vsx_list)+1000);{increase size dynamic array. Probably too much already 1000 but makes is robust}
 
@@ -1679,7 +1680,7 @@ begin
     if pos('V',filterstrUP)>0  then passband:='V'
     else
     passband:='BP';
-    memo2_message('Local databasa as set in tab Photometry. Filter='+filterstr+'. Local database = '+passband);
+    memo2_message('Local database as set in tab Photometry. Filter='+filterstr+'. Local database = '+passband);
   end
   else
   begin  //online auto transformation
@@ -1851,7 +1852,7 @@ begin
               vsp_vsx_list[nrcount].dec:=vsx[count].dec;
               vsp_vsx_list[nrcount].abbr:=abbreviation;
               vsp_vsx_list[nrcount].source:=1;//vsx
-              vsp_vsx_list[nrcount].index:=count;//to retrieve all mangitudes
+              vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
               vsp_vsx_list_length:=nrcount;
               inc(nrcount);
               if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
@@ -1861,28 +1862,15 @@ begin
           end
           else
           begin //plot check stars
-            abbreviation:=vsp[count].auid+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//display V always
-
-            if ((pos('S',head.passband_database)>0) or (stackmenu1.reference_database1.itemindex>5)) then   //check passband_active in case auto selection is used.
-            begin //Sloan filters used
-              if vsp[count].SGmag<>'?' then abbreviation:=abbreviation+'_SG='+vsp[count].SGmag+'('+vsp[count].SGerr+')';
-              if vsp[count].SRmag<>'?' then abbreviation:=abbreviation+'_SR='+vsp[count].SRmag+'('+vsp[count].SRerr+')';
-              if vsp[count].SImag<>'?' then abbreviation:=abbreviation+'_SI='+vsp[count].SImag+'('+vsp[count].SIerr+')';
-            end
-            else
-            begin //UBVR
-              if head.passband_database<>'I' then
-              begin
-                if vsp[count].Bmag<>'?' then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
-                if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
-              end
-              else
-              begin
-                if vsp[count].Rmag<>'?' then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')';
-                if vsp[count].Imag<>'?' then abbreviation:=abbreviation+'_I='+vsp[count].Imag+'('+vsp[count].Ierr+')';
-              end;
-
-            end;
+            abbreviation:=vsp[count].auid;
+            //display only the reference magnitude for the current image filter
+            if pos('SG',head.passband_database)>0 then abbreviation:=abbreviation+'_SG='+vsp[count].SGmag+'('+vsp[count].SGerr+')' else
+            if pos('SR',head.passband_database)>0 then abbreviation:=abbreviation+'_SR='+vsp[count].SRmag+'('+vsp[count].SRerr+')' else
+            if pos('SI',head.passband_database)>0 then abbreviation:=abbreviation+'_SI='+vsp[count].SImag+'('+vsp[count].SIerr+')' else
+            if pos('B',head.passband_database)>0 then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')' else
+            if pos('R',head.passband_database)>0 then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')' else
+            if pos('I',head.passband_database)>0 then abbreviation:=abbreviation+'_I='+vsp[count].Imag+'('+vsp[count].Ierr+')' else
+              abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';
 
             if font_size>=5 then
             begin
@@ -1913,7 +1901,15 @@ begin
             begin
               vsp_vsx_list[nrcount].ra:=vsp[count].ra;
               vsp_vsx_list[nrcount].dec:=vsp[count].dec;
-              vsp_vsx_list[nrcount].abbr:=abbreviation;
+
+              if all_filters.V=true  then abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//collect all used magnitudes references
+              if all_filters.B=true  then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')' ;
+              if all_filters.R=true  then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')' ;
+              if all_filters.I=true  then abbreviation:=abbreviation+'_I='+vsp[count].Imag+'('+vsp[count].Ierr+')';
+              if all_filters.SG=true then abbreviation:=abbreviation+'_SG='+vsp[count].SGmag+'('+vsp[count].SGerr+')';
+              if all_filters.SR=true then abbreviation:=abbreviation+'_SR='+vsp[count].SRmag+'('+vsp[count].SRerr+')';
+              if all_filters.SI=true then abbreviation:=abbreviation+'_SI='+vsp[count].SImag+'('+vsp[count].SIerr+')';
+
               vsp_vsx_list[nrcount].source:=2;//vsp
               vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
               vsp_vsx_list_length:=nrcount;
@@ -2356,7 +2352,7 @@ begin
 
         update_float(memo,'MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux_e)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
         update_float(memo,'MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
-        update_text(memo,'MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used.');
+        update_text(memo,'MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used for MZERO measurement.');
 
 
          // The magnitude measured is

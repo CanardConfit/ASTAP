@@ -67,6 +67,9 @@ type
     bg2: TEdit;
     br2: TEdit;
     center_position1: TLabel;
+    photometry_calibrate1: TCheckBox;
+    saturation_level1: TEdit;
+    with_auid_only1: TCheckBox;
     gradient_filter_factor1: TComboBox;
     GroupBox24: TGroupBox;
     MenuItem19: TMenuItem;
@@ -116,7 +119,7 @@ type
     solar_drift_ra1: TEdit;
     solar_drift_compensation1: TCheckBox;
     list_to_clipboard_swapped_7: TMenuItem;
-    ignore_saturation1: TCheckBox;
+    set_saturation1: TCheckBox;
     Label74: TLabel;
     MenuItem34: TMenuItem;
     snr_min_photo1: TComboBox;
@@ -773,6 +776,7 @@ type
     procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
+    procedure set_saturation1Change(Sender: TObject);
     procedure listview7ItemChecked(Sender: TObject; Item: TListItem);
     procedure list_to_clipboard_swapped_7Click(Sender: TObject);
     procedure detect_contour1Click(Sender: TObject);
@@ -1033,7 +1037,6 @@ type
     listviewindex: integer;
   end;
 
-type
   bakfile = record
     tab : integer;  //from which listview
     thetime: Tdatetime;
@@ -1041,6 +1044,15 @@ type
     name   : string;
   end;
 
+  Tfilters=record
+              V : boolean;
+              B : boolean;
+              R : boolean;
+              I : boolean;
+              SG : boolean;
+              SR : boolean;
+              SI : boolean
+  end;
 
 
 
@@ -1087,6 +1099,9 @@ var
   solve_show_log: boolean;
   process_as_osc: integer;//1=auto 2=forced process as OSC image
   column_info: array of theauid;//will contain the star info of the photometry columna
+
+  all_filters: Tfilters; //which filters where used in photometry list
+
 
 
 var  {################# initialised variables #########################}
@@ -2306,7 +2321,7 @@ begin
         end;
 
 
-        if load_fits(filename2, True { update headx.ra0..}, True, use_ephemeris_alignment1.Checked  {update memo}, 0,memox, headx, img) = False then {load in memory. Use headx to protect head against overwriting head}
+        if load_fits(filename2, True { update headx.ra0..}, analyse_level<>0, use_ephemeris_alignment1.Checked  {update memo}, 0,memox, headx, img) = False then {load in memory. Use headx to protect head against overwriting head}
         begin {failed to load}
           ListView1.Items.item[c].Checked:=False;
           ListView1.Items.item[c].subitems.Strings[L_result]:='No FITS!';
@@ -3686,7 +3701,7 @@ begin
 
     mean_bv:=0;
     countBV:=0;
-    for i:=0 to  length(stars[0])-1 do
+    for i:=0 to  high(stars[0]) do
     begin
       if stars[4,i]{SNR}>40 then
       begin
@@ -4253,8 +4268,7 @@ begin
           end
         else
           mainform1.shape_manual_alignment1.Visible:=False;
-        if ((tl = stackmenu1.listview7) and (stackmenu1.annotate_mode1.ItemIndex > 0)) then
-          {show variable stars}
+        if ((tl = stackmenu1.listview7) and (stackmenu1.annotate_mode1.ItemIndex > 0)) then {show variable stars}
         begin
           application.ProcessMessages;
           mainform1.variable_star_annotation1Click(nil); //show variable star annotations
@@ -4306,6 +4320,8 @@ begin
   red:=False;
   green:=False;
   blue:=False;
+
+  FillChar(all_filters, SizeOf(all_filters), 0);//set all boolean in all_filters to false
 
   loaded:=False;
   Lv.Selected:=nil; {remove any selection}
@@ -4509,26 +4525,63 @@ begin
               else
               if ((pos('S',filterstrUP)>0) or (pos('P',filterstrUP)>0)) then //Sloan SB, SG, SI or Sloan Las Cumbres GP, RP, IP
               begin
-                if pos('I',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=21 //SDSS-i
+                if pos('I',filterstrUP)>0  then
+                begin
+                   lv.Items.item[c].SubitemImages[P_filter]:=21; //SDSS-i
+                   all_filters.SI:=true;
+                end
                 else
-                if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=22 //SDSS-r
+                if pos('R',filterstrUP)>0  then
+                begin
+                  lv.Items.item[c].SubitemImages[P_filter]:=22; //SDSS-r
+                  all_filters.SR:=true;
+                end
                 else
-                if pos('G',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=23 //SDSS-g
+                if pos('G',filterstrUP)>0  then
+                begin
+                  lv.Items.item[c].SubitemImages[P_filter]:=23; //SDSS-g
+                  all_filters.SG:=true;
+                end
                 else
                 lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
               end
               else //Johnson-Cousins
-              if pos('V',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=1 //Green or G or TG
+              if pos('V',filterstrUP)>0  then
+              begin
+                lv.Items.item[c].SubitemImages[P_filter]:=1; //Green or G or TG
+                all_filters.V:=true;
+              end
               else
-              if pos('G',filterstrUP)>0 then lv.Items.item[c].SubitemImages[P_filter]:=1 //GREEN, G, TG
+              if pos('G',filterstrUP)>0 then
+              begin
+                lv.Items.item[c].SubitemImages[P_filter]:=1; //GREEN, G, TG
+                all_filters.V:=true;
+              end
               else
-              if pos('B',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=2 //BLUE, B, TB
+              if pos('B',filterstrUP)>0  then
+              begin
+                lv.Items.item[c].SubitemImages[P_filter]:=2; //BLUE, B, TB
+                all_filters.B:=true;
+              end
               else
-              if pos('RED',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=0 //rgb RED, INVALID
+              if pos('RED',filterstrUP)>0  then
+              begin
+                lv.Items.item[c].SubitemImages[P_filter]:=0; //rgb RED, INVALID
+                all_filters.R:=true;
+              end
               else
-              if pos('R',filterstrUP)>0  then lv.Items.item[c].SubitemImages[P_filter]:=24 //Cousins-red. Note Green also contains a R so first test Green
+              if pos('R',filterstrUP)>0  then
+              begin
+                lv.Items.item[c].SubitemImages[P_filter]:=24; //Cousins-red. Note Green also contains a R so first test Green
+                all_filters.R:=true;
+
+              end
               else                                                                         //The official abbreviation for Cousins R is R. See https://www.aavso.org/filters
-              if pos('I',filterstrUP)>0 then lv.Items.item[c].SubitemImages[P_filter]:=28 // Bessel
+              if pos('I',filterstrUP)>0 then
+              begin
+                lv.Items.item[c].SubitemImages[P_filter]:=28; // Bessel
+                all_filters.I:=true;
+              end
               else //U is not supported because can't be transformed from Gaia data
               lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
 
@@ -7141,7 +7194,7 @@ begin
     if listview7.Items[index].Selected then
     begin
       if position < 0 then position:=index;//store first position
-      listview_add(listview1, listview7.items[index].Caption, True, L_nr);
+      listview_add(listview1, listview7.items[index].Caption, True, L_nr); //move to the light tabs
     end;
     Inc(index); {go to next file}
   end;
@@ -7210,12 +7263,13 @@ begin
         if fits_tiff_file_name(ff) = False then
         begin
           memo2_message('█ █ █ █ █ █ Can' + #39 + 't extract. First analyse file list to convert to FITS !! █ █ █ █ █ █');
+          esc_pressed:=true;
           beep;
           exit;
         end;
 
 
-        if sender=photom_extractRGB1 then
+        if ((sender=photom_extractRGB1) or (sender=nil)) then
         begin
           fn:=extract_raw_colour_to_file(ff, 'TG', 1, 1); {extract green red or blue channel}
           fnBlue:=extract_raw_colour_to_file(ff, 'TB', 1, 1); {extract green red or blue channel}
@@ -7967,7 +8021,7 @@ begin
     vsp_vsx_list[i].ra:=ra2;
     vsp_vsx_list[i].dec:=dec2;
     found:=false;
-    for j:=0 to length(variable_listAAVSO)-1 do
+    for j:=0 to high(variable_listAAVSO) do
     begin
       ang_sep(ra2, dec2, variable_listAAVSO[j].ra, variable_listAAVSO[j].dec, {out}sep);
       if sep < 10 * pi / (180*60*60) then //same star, position within 10 arcsec
@@ -7989,8 +8043,10 @@ end;
 
 function calc_saturation_level(head :theader) : double;//calculate saturation level image
 begin
-  if stackmenu1.ignore_saturation1.checked then
-    result:=64000
+  if stackmenu1.set_saturation1.checked then
+  begin
+    result:=strtofloat2(stackmenu1.saturation_level1.text);
+  end
   else
   begin
     if head.calstat = '' then result:= 64000
@@ -8010,7 +8066,8 @@ var
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY,
   database_col,j,ww                                                               : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
-  warned, success,new_object,listview_updating, reference_defined                 : boolean;
+  warned, success,new_object,listview_updating, reference_defined,calibratedP,
+  oscP                                                                            : boolean;
   starlistx                                     : Tstar_list;
   astr, filename1,totalnrstr,mess               : string;
   oldra0 : double=0;
@@ -8085,11 +8142,46 @@ begin
     for c:=0 to listview7.items.Count - 1 do
     begin
       if ((listview7.Items.item[c].Checked) and
-        (listview7.Items.item[c].subitems.Strings[B_width] = '' {width})) then analysedP:=False;
+        (listview7.Items.item[c].subitems.Strings[B_width] = '' {width})) then
+      begin
+        analysedP:=False;
+        break;
+      end;
     end;
     if analysedP = False then
          stackmenu1.analysephotometry1Click(nil);
     application.ProcessMessages;{show result}
+
+
+    if photometry_calibrate1.checked then
+    begin
+      calibratedP:=False;
+      oscP:=false;
+      for c:=0 to listview7.items.Count - 1 do
+      begin
+        if listview7.Items.item[c].Checked then
+        begin
+          calibratedP:=(listview7.Items.item[c].subitems.Strings[P_calibration] <> 'None' {calstat}); //calibrated ?
+          oscP:=(listview7.Items.item[c].SubitemImages[P_filter]=25);  //raw OSC file
+          break;
+        end;
+      end;
+
+      if calibratedP=false then
+      begin
+        listview7.selectall;
+        stackmenu1.photom_calibrate1Click(nil);//calibrate first
+      end;
+      if esc_pressed then exit;
+      if oscP then
+      begin
+        listview7.selectall;
+        stackmenu1.photom_green1Click(nil);//split OSC in TB, TG, TR
+      end;
+      if esc_pressed then exit;
+    end;
+
+
 
     flipvertical:=mainform1.flip_vertical1.Checked;
     fliphorizontal:=mainform1.flip_horizontal1.Checked;
@@ -8298,7 +8390,7 @@ begin
           // fill vsx, vsp database database
           if length(vsp_vsx_list)=0 then //fill with vsp, vsx stars for later
           begin
-            variable_star_annotation(true {extract AAVSO database  to vsp_vsx_list});
+            variable_star_annotation(head, true {extract AAVSO database  to vsp_vsx_list});
 
             if stackmenu1.measuring_method1.itemindex=2 then //add none AAVSO stars
               create_all_star_list;//collect any star in the vsp_vsx_list
@@ -8309,7 +8401,7 @@ begin
           else
           begin
             ang_sep(oldra0,olddec0,head.ra0,head.dec0,sep);
-            if sep>head.width*head.cdelt2*0.1*pi/180 then //10% of size shift. Update fill_variable_list
+            if sep>abs(head.width*head.cdelt2*0.1*pi/180) then //10% of size shift. Update fill_variable_list
                mainform1.variable_star_annotation1Click(sender {new position, update variable list});
           end;
 
@@ -8506,9 +8598,7 @@ begin
 
 
           if annotate_mode1.ItemIndex > 0 then
-          begin
-            variable_star_annotation(false  {plot, do not extract to vsp_vsx_list}); //vsp & vsx
-          end;
+            variable_star_annotation(head,false  {plot, do not extract to vsp_vsx_list}); //vsp & vsx
 
           stop_updating(false);//listview7.Items.endUpdate;
 
@@ -8526,6 +8616,7 @@ begin
     Screen.Cursor:=crDefault;{back to normal }
   end;
 
+  progress_indicator(-100,'');{back to normal}
   memo2_message('Measurements completed.');
 
 end;
@@ -9385,7 +9476,7 @@ begin
   snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
-
+  saturation_level1.enabled:=set_saturation1.checked;
 
   //Already fixed in trunk Remove in 2026
   {$ifdef darwin} {MacOS}
@@ -9459,7 +9550,6 @@ begin
   vsx:=nil;//clear downloaded database
   vsp:=nil;
   clear_added_AAVSO_columns;
-//  max_period1.enabled:=annotate_mode1.itemindex>=5;//only for online database photometry
 end;
 
 
@@ -9689,6 +9779,11 @@ end;
 procedure Tstackmenu1.contour_gaussian1Change(Sender: TObject);
 begin
   new_analyse_required:=true;
+end;
+
+procedure Tstackmenu1.set_saturation1Change(Sender: TObject);
+begin
+  saturation_level1.enabled:=set_saturation1.checked;
 end;
 
 
@@ -10105,7 +10200,7 @@ begin
   setlength(listMagnitudes,stackmenu1.listview7.items.count);//list with magnitudes check star
 
   with stackmenu1 do
-  for c:=0 to length(RowChecked)-1 do {retrieve data from listview}
+  for c:=0 to high(RowChecked) do {retrieve data from listview}
   begin
     icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
     if ((icon_nr=1) or (icon_nr=4)) then //for filter V or TG or CV only
@@ -10679,24 +10774,15 @@ begin
   backgrG:=head.backgr;
   backgrB:=head.backgr;
 
-
-
-   for fitsY:=0 to head.height-1 do
+  for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
     begin
       magnd:=img_temp3[0,fitsY,fitsX];
       if magnd<default then {a star from the database}
       begin
-     //     if ((abs(fitsX-2602)<5) and (abs(fitsY-1224)<5)) then
-    //      beep;
-
           star_background(round(4*head.hfd_median) {radius},fitsX,fitsY);//calculate background(s)
-//          flux:=power(10,0.4*(head.mzero-magnd/10));
-
-//          flux:=flux*1.1;//compensate for flux errors
- //         max_radius:=99999;
           counter_noflux:=0;
-          for position:=0 to length(disk)-1 do //remove star flux
+          for position:=0 to high(disk) do //remove star flux
           begin
             begin
               x1:=disk[position,0]; // disk, disk positions starting from center moving outwards
@@ -10714,18 +10800,10 @@ begin
                 if sqrt(sqr(x1)+sqr(y1))>=head.hfd_median*4 then
                   break;
 
-//                delta:=min(flux,(img_loaded[0,y,x]-backgrR));//all photometry is only done in the red channel
-
                 if counter_noflux>0.5*2*pi*sqrt(sqr(x1)+sqr(y1)) then //2*pi*r is circumference
                   break;
 
                 delta:=img_loaded[0,y,x]-backgrR;//all photometry is only done in the red channel
-
-
-    //            flux:=flux-delta;
-
-         //       if flux<-1000 then break;
-
 
                 if delta>0 then //follow the red channel
                 begin
@@ -12655,9 +12733,9 @@ begin
     memo2_message('Analysing lights.');
 
 
-//    if calibration_mode then analyse_level:=0 // almost none
-//    else
-//    analyse_level:=1; //medium
+    if calibration_mode then analyse_level:=0 // almost none
+    else
+    analyse_level:=1; //medium
 
     if uncheck_outliers1.checked then
       analyse_level:=1 //medium

@@ -622,7 +622,7 @@ var
         cc : integer;
       begin
         try
-        for cc:=0 to length(asteroid_buffer)-1 do
+        for cc:=0 to high(asteroid_buffer) do
         begin
           {comet is indicated by a_M:=1E99, Mean anomoly, an abnormal value}
           minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},
