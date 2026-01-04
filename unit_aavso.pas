@@ -31,18 +31,18 @@ Vvar=Δv + Tv_bv * Tbv *((b-v)var - (b-v)comp) +Vcomp 4)
 
 For an ensemble of comparison stars I want to apply the following:
 
-    Pairing: For a V image, find a B image with the nearest timestamp.
+    Pairing: For a V image, find a B image with the nearest time stamp.
     Instrumental Δv := -2.5 * log10(Flux_v_var/∑Flux_v_comp)
     Instrumental (b−v)var​ := -2.5 * log10(Flux_b_var / Flux_v_var)
     Instrumental (b-v)comp := -2.5 * log10(∑Flux_b_comp / ∑Flux_v_comp)
     Catalog Vcomp:= -2.5 * log10(∑(10^-0.4Vcatalog_comp))
 
 
-Final transformation equation:
+You can combine Δv+ Vcomp and write it as:
   Vvar​=Δv+(Tv_bv​⋅Tbv​⋅[(b−v)var​−(b−v)comp​])+Vcomp​     4)
 
+  equals
 
-You can combine Δv+ Vcomp and write it as:
   Vvar​= -2.5 * log10( Flux_v_var*∑(10^-0.4Vcatalog_comp)/∑Flux_v_comp)  +(Tv_bv​⋅Tbv​⋅[(b−v)var​−(b−v)comp​])     5)
 
 Where
@@ -685,31 +685,23 @@ begin
   begin
     for c:=0 to high(RowChecked) do
     begin
-
-    //  if ((icon_nr=1) or (icon_nr=23) or (icon_nr=4)) then //for filter V, TG, SG  or CV only
-//      if listview7.Items.item[c].checked then
+      if comps_info[c].valid then //get the measured magnitude, one for each filter
       begin
-        //if icon_nr=0 then icon_nr:=SubItemImages[c];
+        mean_sd_comp:=mean_sd_comp+comps_info[c].sd_comp;//sum the sd_comp (weighted standard deviation of the comp stars between them) of each image to calculate an average
+        inc(count);
 
-        if ((comps_info[c].valid){ and (icon_nr=SubItemImages[c])})  then //get the measured magnitude, one for each filter
-        begin
-          mean_sd_comp:=mean_sd_comp+comps_info[c].sd_comp;//sum the sd_comp (weighted standard deviation of the comp stars between them) of each image to calculate an average
-          inc(count);
+        icon_nr:=SubItemImages[c];
 
-          icon_nr:=SubItemImages[c];
-
-          case icon_nr of
-                    2:
-                       if b_mag<0 then  b_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
-                    1:   if v_mag<0 then  v_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
-                    0,24:if r_mag<0 then  r_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
-                    23  :if sg_mag<0 then  sg_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
-                    22  :if sr_mag<0 then  sr_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
-                    21  :if si_mag<0 then  si_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
-          end;
-
-        end;
-      end;
+        case icon_nr of
+                  2:
+                     if b_mag<0 then  b_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
+                  1:   if v_mag<0 then  v_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
+                  0,24:if r_mag<0 then  r_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
+                  23  :if sg_mag<0 then  sg_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
+                  22  :if sr_mag<0 then  sr_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
+                  21  :if si_mag<0 then  si_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
+        end;//case
+      end;//valid data
     end;
   end;
 
@@ -2247,7 +2239,8 @@ begin
 
    for m_index:=0 to high(column_vars) do //do all variables. This is not an efficient loop since the comp stars are read every time but was easy to code.
    begin
-     calc_b_v_var_and_comp(column_vars[m_index]{, b_v_var, v_r_var, g_r_var, r_i_var, b_v_comp, v_r_comp, g_r_comp, r_i_comp, bv_pair,vr_pair,gr_pair,ri_pair});//calculate the b-v of the variable
+     if ensemble_database=false then
+       calc_b_v_var_and_comp(column_vars[m_index]);//calculate the b-v of the variable
      for c:=0 to high(RowChecked) do
      begin
        if RowChecked[c] then
@@ -2311,7 +2304,7 @@ begin
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve b-v';
+                     transformation:='Transformation failed. Could not retrieve b-v. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end
@@ -2327,7 +2320,7 @@ begin
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve b-v. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve b-v. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end
@@ -2336,14 +2329,14 @@ begin
                  begin
                    if color_info[c].v_r_var<>-99 then
                    begin
-                   var_r_correction:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (color_info[c].v_r_var{var} - color_info[c].v_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
-                   var_magn:=var_magn + var_r_correction;
-                   transformation:='Transf corr. '+floattostr3(var_r_correction)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(color_info[c].v_r_var)+'-'+floattostr3(color_info[c].v_r_comp)+'). Filter used '+filter_used+'.';
-                   filter_used:='R';//change TR to R
+                     var_r_correction:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (color_info[c].v_r_var{var} - color_info[c].v_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
+                     var_magn:=var_magn + var_r_correction;
+                     transformation:='Transf corr. '+floattostr3(var_r_correction)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(color_info[c].v_r_var)+'-'+floattostr3(color_info[c].v_r_comp)+'). Filter used '+filter_used+'.';
+                     filter_used:='R';//change TR to R
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve v-r. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve v-r. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                   end;
                  end
@@ -2352,13 +2345,13 @@ begin
                  begin
                    if color_info[c].g_r_var<>-99 then
                    begin
-                   var_sg_correction:= strtofloat2(Tg_grSTR) * strtofloat2(TgrSTR) * (color_info[c].g_r_var{var} - color_info[c].g_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
-                   var_magn:=var_magn + var_sg_correction;
-                   transformation:='Transf corr. '+floattostr3(var_sg_correction)+'='+Tg_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
+                     var_sg_correction:= strtofloat2(Tg_grSTR) * strtofloat2(TgrSTR) * (color_info[c].g_r_var{var} - color_info[c].g_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
+                     var_magn:=var_magn + var_sg_correction;
+                     transformation:='Transf corr. '+floattostr3(var_sg_correction)+'='+Tg_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve g-r. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve g-r. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end
@@ -2368,14 +2361,14 @@ begin
                  begin
                    if color_info[c].g_r_var<>-99 then
                    begin
-                   var_sr_correction:= strtofloat2(Tr_grSTR) * strtofloat2(TgrSTR) *( color_info[c].g_r_var{var} - color_info[c].g_r_comp);
-                   var_magn:=var_magn+var_sr_correction;
-                   transformation:='Transf corr. '+floattostr3(var_sr_correction)+'='+Tr_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
-                   //filter_used:='V';//change TG to V
+                     var_sr_correction:= strtofloat2(Tr_grSTR) * strtofloat2(TgrSTR) *( color_info[c].g_r_var{var} - color_info[c].g_r_comp);
+                     var_magn:=var_magn+var_sr_correction;
+                     transformation:='Transf corr. '+floattostr3(var_sr_correction)+'='+Tr_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
+                     //filter_used:='V';//change TG to V
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve g-r. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve g-r. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end
@@ -2384,15 +2377,15 @@ begin
                  if icon_nr=21 then//SI correction
                  begin
                    if color_info[c].r_i_var<>-99 then
-                   begin
-                   var_si_correction:= strtofloat2(Ti_riSTR) * strtofloat2(TriSTR) * (color_info[c].r_i_var{var} - color_info[c].r_i_comp);
-                   var_magn:=var_magn + var_si_correction;
-                   transformation:='Transf corr. '+floattostr3(var_si_correction)+'='+Ti_riSTR+'*'+TriSTR+'*('+floattostr3(color_info[c].r_i_var)+'-'+floattostr3(color_info[c].r_i_comp)+'). Filter used '+filter_used+'.';
-                   //filter_used:='R';//change TR to R
+                     begin
+                     var_si_correction:= strtofloat2(Ti_riSTR) * strtofloat2(TriSTR) * (color_info[c].r_i_var{var} - color_info[c].r_i_comp);
+                     var_magn:=var_magn + var_si_correction;
+                     transformation:='Transf corr. '+floattostr3(var_si_correction)+'='+Ti_riSTR+'*'+TriSTR+'*('+floattostr3(color_info[c].r_i_var)+'-'+floattostr3(color_info[c].r_i_comp)+'). Filter used '+filter_used+'.';
+                     //filter_used:='R';//change TR to R
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve r-i. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve r-i. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end;
@@ -2427,7 +2420,13 @@ begin
                  comp_magn_str:=floattostr3(comps_info[c].documented_comp_magn);//from process_comp_stars
                end;
 
-             end ;//valid comp_str
+             end //valid comp_str
+             else
+             begin
+               var_magn:=-99;
+               check_magn:=-99;
+             end;
+
            end //no ensemble mode
            else
            begin
@@ -2443,7 +2442,7 @@ begin
            end;
 
 
-           if ((var_magn<0) or (valid_comp=false) or (check_magn<0)) then invalidstr:='# ' else invalidstr:='';
+           if ((valid_comp=false) or(var_magn<0) or (check_magn<0)) then invalidstr:='# ' else invalidstr:='';
 
            abbrv_var_clean:=clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,true); //Note the captions are one position shifted.
 

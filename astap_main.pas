@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2025.12.28';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.01.04a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -432,7 +432,6 @@ type
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure area_crop1Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
       Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
       var Handled: Boolean);
@@ -9550,10 +9549,6 @@ begin
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
 
-procedure Tmainform1.Panel1Click(Sender: TObject);
-begin
-
-end;
 
 procedure Tmainform1.saturation_factor_plot1MouseWheel(Sender: TObject;
   Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
@@ -14474,7 +14469,7 @@ begin
         {load fits}
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,memo{mainform1.memo1.lines},head,img)=false)) then begin break;end;
 
-        crop_image(startX+1,startY+1,stopX-1,stopY-1, img,head,memo);//crop to area inside the frame
+        crop_image(areaX1+1,areaY1+1,areaX2-1,areaY2-1 {array coordinates,[0..]}, img,head,memo);//crop to area inside the frame
 
 
         if fits_file_name(filename2) then

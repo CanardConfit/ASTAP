@@ -8122,6 +8122,7 @@ var
               end;
             end;
 begin
+  esc_pressed:=false;
   if listview7.items.Count <= 0 then exit; {no files}
 
   if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<2)) then

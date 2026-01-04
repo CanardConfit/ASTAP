@@ -1013,7 +1013,7 @@ begin
 
           apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
-          memo2_message('Adding file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
+          memo2_message('Averaging, frame '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
@@ -1137,13 +1137,13 @@ begin
           for fitsX:=0 to width_max-1 do
           begin
             val:=img_temp[0,fitsY,fitsX];
-           if val>0 then
+            if val>0 then
               for col:=0 to head.naxis3-1 do
-                img_loaded[col,fitsY,fitsX]:=pedestal+img_average[col,fitsY,fitsX]/val;//scale to one image by diving by the number of pixels added
+                img_average[col,fitsY,fitsX]:=pedestal+img_average[col,fitsY,fitsX]/val;//scale to one image by diving by the number of pixels added
           end;
 
-
-
+        img_loaded:=nil;
+        img_loaded:=img_average;//Link result as img_loaded. For unequal image sizes img_loaded could have a different size then img_final so use img_average as intermediate storage
       end; {counter<>0}
     end;{simple average}
   end;{with stackmenu1}
@@ -1236,7 +1236,7 @@ begin
 
         apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
-        memo2_message('Adding light file: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
+        memo2_message('Averaging, frame: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
         if esc_pressed then exit;
 
@@ -1263,7 +1263,6 @@ begin
                 img_average[col,fitsY,fitsX]:=0; {clear img_average}
                 img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
               end;
-
           binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
 
           if use_star_alignment then
@@ -1393,7 +1392,7 @@ begin
 
           apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
-          memo2_message('Calculating pixels σ of light file '+inttostr(counter+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
+          memo2_message('Measuring deviations, frame '+inttostr(counter+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
@@ -1473,7 +1472,7 @@ begin
 
           apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
-          memo2_message('Combining '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
+          memo2_message('Combining, frame '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
@@ -1544,8 +1543,12 @@ begin
               begin
                 val:=img_temp[col,fitsY,fitsX];
                 if val>0 then
-                    img_loaded[col,fitsY,fitsX]:=pedestal+img_final[col,fitsY,fitsX]/val;//scale to one image by diving by the number of pixels added
+                    img_final[col,fitsY,fitsX]:=pedestal+img_final[col,fitsY,fitsX]/val;//scale to one image by diving by the number of pixels added
               end;
+
+        img_loaded:=nil;
+        img_loaded:=img_final;//Link result as img_loaded. For unequal image sizes img_loaded could have a different size then img_final so use img_final as intermediate storage
+
       end;{counter<>0}
 
       //restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
