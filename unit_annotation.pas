@@ -1724,7 +1724,7 @@ type
 var
   telescope_ra,telescope_dec, SIN_dec_ref,COS_dec_ref,
   ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
-  abbreviation, abbreviation_display: string;
+  abbreviation, abbreviation_display, filterstrUP: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount, font_size  : integer;
@@ -1771,7 +1771,7 @@ begin
      nrcount:=0;
    end;
 
-    get_database_passband(head.filter_name,{out} head.passband_database);//select applicable passband for annotation in case photmetry is not calibrated
+    get_database_passband(head.filter_name,{out} head.passband_database);//select applicable passband for annotation in case photometry is not calibrated
 
     text_counter:=0;
     setlength(text_dimensions,1000);
@@ -1864,13 +1864,21 @@ begin
           begin //plot check stars
             abbreviation:=vsp[count].auid;
             //display only the reference magnitude for the current image filter
-            if pos('SG',head.passband_database)>0 then abbreviation:=abbreviation+'_SG='+vsp[count].SGmag+'('+vsp[count].SGerr+')' else
-            if pos('SR',head.passband_database)>0 then abbreviation:=abbreviation+'_SR='+vsp[count].SRmag+'('+vsp[count].SRerr+')' else
-            if pos('SI',head.passband_database)>0 then abbreviation:=abbreviation+'_SI='+vsp[count].SImag+'('+vsp[count].SIerr+')' else
-            if pos('B',head.passband_database)>0 then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')' else
-            if pos('R',head.passband_database)>0 then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')' else
-            if pos('I',head.passband_database)>0 then abbreviation:=abbreviation+'_I='+vsp[count].Imag+'('+vsp[count].Ierr+')' else
-              abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';
+
+            filterstrUP:=uppercase(head.filter_name);
+            if ((pos('S',filterstrUP)>0) or (pos('P',filterstrUP)>0)) then //Sloan SG,SR, SI   or Sloan Las Cumbres observatory (GP, RP, IP}
+            begin
+              if pos('G',filterstrUP)>0  then abbreviation:=abbreviation+'_SG='+vsp[count].SGmag+'('+vsp[count].SGerr+')' else
+              if pos('R',filterstrUP)>0  then abbreviation:=abbreviation+'_SR='+vsp[count].SRmag+'('+vsp[count].SRerr+')' else
+              if pos('I',filterstrUP)>0  then abbreviation:=abbreviation+'_SI='+vsp[count].SImag+'('+vsp[count].SIerr+')' else
+            end
+            else
+            begin
+              if pos('B',filterstrUP)>0   then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')' {includes TB} else
+              if pos('R',filterstrUP)>0   then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')' {includes TR} else
+              if pos('I',filterstrUP)>0   then abbreviation:=abbreviation+'_I='+vsp[count].Imag+'('+vsp[count].Ierr+')' else
+                abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';
+            end;
 
             if font_size>=5 then
             begin

@@ -1,5 +1,5 @@
 unit unit_aavso; //aavso report unit
-{Copyright (C) 2021, 2025 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2021, 2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
  This Source Code Form is subject to the terms of the Mozilla Public
@@ -31,18 +31,18 @@ Vvar=Δv + Tv_bv * Tbv *((b-v)var - (b-v)comp) +Vcomp 4)
 
 For an ensemble of comparison stars I want to apply the following:
 
-    Pairing: For a V image, find a B image with the nearest timestamp.
+    Pairing: For a V image, find a B image with the nearest time stamp.
     Instrumental Δv := -2.5 * log10(Flux_v_var/∑Flux_v_comp)
     Instrumental (b−v)var​ := -2.5 * log10(Flux_b_var / Flux_v_var)
     Instrumental (b-v)comp := -2.5 * log10(∑Flux_b_comp / ∑Flux_v_comp)
     Catalog Vcomp:= -2.5 * log10(∑(10^-0.4Vcatalog_comp))
 
 
-Final transformation equation:
+You can combine Δv+ Vcomp and write it as:
   Vvar​=Δv+(Tv_bv​⋅Tbv​⋅[(b−v)var​−(b−v)comp​])+Vcomp​     4)
 
+  equals
 
-You can combine Δv+ Vcomp and write it as:
   Vvar​= -2.5 * log10( Flux_v_var*∑(10^-0.4Vcatalog_comp)/∑Flux_v_comp)  +(Tv_bv​⋅Tbv​⋅[(b−v)var​−(b−v)comp​])     5)
 
 Where
@@ -69,7 +69,7 @@ type
     apply_transformation1: TCheckBox;
     baa_style1: TCheckBox;
     delimiter1: TComboBox;
-    ensemble_database1: TCheckBox;
+    gaia_ensemble1: TCheckBox;
     GroupBox_variables1: TGroupBox;
     GroupBox_check1: TGroupBox;
     GroupBox_comp_stars1: TGroupBox;
@@ -115,7 +115,7 @@ type
     procedure selectall1Click(Sender: TObject);
     procedure test_button1Click(Sender: TObject);
     procedure delta_bv2Change(Sender: TObject);
-    procedure ensemble_database1Click(Sender: TObject);
+    procedure gaia_ensemble1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure hjd1Change(Sender: TObject);
@@ -386,7 +386,7 @@ begin
     apply_transformation:=apply_transformation1.checked;
 
     hjd_date:=hjd1.checked;
-    ensemble_database:=ensemble_database1.checked;
+    ensemble_database:=gaia_ensemble1.checked;
     obstype:=obstype1.ItemIndex;
   end;
 end;
@@ -685,31 +685,23 @@ begin
   begin
     for c:=0 to high(RowChecked) do
     begin
-
-    //  if ((icon_nr=1) or (icon_nr=23) or (icon_nr=4)) then //for filter V, TG, SG  or CV only
-//      if listview7.Items.item[c].checked then
+      if comps_info[c].valid then //get the measured magnitude, one for each filter
       begin
-        //if icon_nr=0 then icon_nr:=SubItemImages[c];
+        mean_sd_comp:=mean_sd_comp+comps_info[c].sd_comp;//sum the sd_comp (weighted standard deviation of the comp stars between them) of each image to calculate an average
+        inc(count);
 
-        if ((comps_info[c].valid){ and (icon_nr=SubItemImages[c])})  then //get the measured magnitude, one for each filter
-        begin
-          mean_sd_comp:=mean_sd_comp+comps_info[c].sd_comp;//sum the sd_comp (weighted standard deviation of the comp stars between them) of each image to calculate an average
-          inc(count);
+        icon_nr:=SubItemImages[c];
 
-          icon_nr:=SubItemImages[c];
-
-          case icon_nr of
-                    2:
-                       if b_mag<0 then  b_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
-                    1:   if v_mag<0 then  v_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
-                    0,24:if r_mag<0 then  r_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
-                    23  :if sg_mag<0 then  sg_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
-                    22  :if sr_mag<0 then  sr_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
-                    21  :if si_mag<0 then  si_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
-          end;
-
-        end;
-      end;
+        case icon_nr of
+                  2:
+                     if b_mag<0 then  b_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
+                  1:   if v_mag<0 then  v_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
+                  0,24:if r_mag<0 then  r_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
+                  23  :if sg_mag<0 then  sg_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude  for one image only
+                  22  :if sr_mag<0 then  sr_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
+                  21  :if si_mag<0 then  si_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
+        end;//case
+      end;//valid data
     end;
   end;
 
@@ -1120,7 +1112,7 @@ begin
      abbrv_var:='';
 
   with stackmenu1 do
-  if ((form_aavso1.ensemble_database1.Checked) or (length(column_comps)=0))  then
+  if ((form_aavso1.gaia_ensemble1.Checked) or (length(column_comps)=0))  then
   begin
     gaia_based:=true;
     for c:=0 to high(RowChecked) do {retrieve data from listview}
@@ -1745,7 +1737,7 @@ begin
     color:=cldefault;
 
 
-    ensemble_database1.caption:=('Ensemble '+stackmenu1.reference_database1.text);
+    gaia_ensemble1.caption:=('Ensemble '+stackmenu1.reference_database1.text);
 
     setlength(starinfo,p_nr-p_nr_norm);
     setlength(starinfoV,p_nr-p_nr_norm);
@@ -1952,9 +1944,9 @@ begin
 end;
 
 
-procedure Tform_aavso1.ensemble_database1Click(Sender: TObject);
+procedure Tform_aavso1.gaia_ensemble1Click(Sender: TObject);
 begin
-  ensemble_database:=ensemble_database1.checked;
+  ensemble_database:=gaia_ensemble1.checked;
   abrv_comp1.enabled:=ensemble_database=false;
   sigma_mzero1.enabled:=ensemble_database=false;
   apply_transformation1.enabled:=ensemble_database=false;
@@ -2044,7 +2036,7 @@ begin
   ExtractListViewDataToArrays(stackmenu1.ListView7, P_filter);//copy listview7 data to arrays
 
   obscode1.text:=obscode;
-  ensemble_database1.checked:=ensemble_database;
+  gaia_ensemble1.checked:=ensemble_database;
   abrv_comp1.enabled:=ensemble_database=false;
 
   sigma_mzero1.enabled:=ensemble_database=false;
@@ -2098,7 +2090,7 @@ var
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
     transformation, transform_all_factors,transf_str,varab  : string;
-    apply_transformation,valid_comp,ensemble_database : boolean;
+    apply_transformation,valid_comp,gaia_ensemble : boolean;
     snr_value,err_by_snr,var_magn,check_magn,var_flux, check_flux,
     var_v_correction,var_b_correction,var_r_correction,
     var_sg_correction,var_sr_correction,var_si_correction,
@@ -2107,7 +2099,7 @@ var
     vsep : char;
 begin
   get_info;//update abbrev_var and others
-  ensemble_database:=ensemble_database1.checked;
+  gaia_ensemble:=gaia_ensemble1.checked;
 
 
   abbrev_check:=abrv_check1.text;
@@ -2148,7 +2140,7 @@ begin
       abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(ColumnTitles[column_comps[i]+1],false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
   end
   else
-  if ensemble_database=false then
+  if gaia_ensemble=false then
   begin
     abrv_comp1.color:=clred;
     exit;
@@ -2190,16 +2182,19 @@ begin
   end;
 
 
-  if ensemble_database then
-    settings:=stackmenu1.reference_database1.text+vsep
+  if gaia_ensemble then
+  begin
+    settings:=stackmenu1.reference_database1.text+vsep;
+    comments:='CMAG ensemble using transformed Gaia magnitudes.'
+  end
   else
+  begin
     settings:=''; //not relevant
+    comments:='';
+  end;
+
   settings:=settings+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
 
-  if ensemble_database then
-     comments:='CMAG ensemble using transformed Gaia magnitudes.'
-   else
-     comments:='';
 
   if apply_transformation then
   begin
@@ -2247,7 +2242,8 @@ begin
 
    for m_index:=0 to high(column_vars) do //do all variables. This is not an efficient loop since the comp stars are read every time but was easy to code.
    begin
-     calc_b_v_var_and_comp(column_vars[m_index]{, b_v_var, v_r_var, g_r_var, r_i_var, b_v_comp, v_r_comp, g_r_comp, r_i_comp, bv_pair,vr_pair,gr_pair,ri_pair});//calculate the b-v of the variable
+     if gaia_ensemble=false then
+       calc_b_v_var_and_comp(column_vars[m_index]);//calculate the b-v of the variable
      for c:=0 to high(RowChecked) do
      begin
        if RowChecked[c] then
@@ -2277,7 +2273,7 @@ begin
            else  //online database
              magn_type:=' transformed '+stackmenu1.reference_database1.text;
 
-           if ensemble_database=false then //Mode magnitude relative to comp star
+           if gaia_ensemble=false then //Mode magnitude relative to comp star
            begin
              if length(column_comps)=0 then exit;//no comp info
 
@@ -2295,7 +2291,7 @@ begin
                transformation:='';
                icon_nr:=SubItemImages[c];
 
-               if ((apply_transformation) and (ensemble_database=false) and (icon_nr in [0,1,2,24,21,22,23] )) then //currently transformation only possible with B, V, R, SG,SR,SI filter
+               if ((apply_transformation) and (gaia_ensemble=false) and (icon_nr in [0,1,2,24,21,22,23] )) then //currently transformation only possible with B, V, R, SG,SR,SI filter
                begin
                  //transformation
                  // Tv_bv * Tbv* ((b-v)tgt – (B-V)comp)
@@ -2311,7 +2307,7 @@ begin
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve b-v';
+                     transformation:='Transformation failed. Could not retrieve b-v. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end
@@ -2327,7 +2323,7 @@ begin
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve b-v. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve b-v. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end
@@ -2336,14 +2332,14 @@ begin
                  begin
                    if color_info[c].v_r_var<>-99 then
                    begin
-                   var_r_correction:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (color_info[c].v_r_var{var} - color_info[c].v_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
-                   var_magn:=var_magn + var_r_correction;
-                   transformation:='Transf corr. '+floattostr3(var_r_correction)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(color_info[c].v_r_var)+'-'+floattostr3(color_info[c].v_r_comp)+'). Filter used '+filter_used+'.';
-                   filter_used:='R';//change TR to R
+                     var_r_correction:= strtofloat2(Tr_vrSTR) * strtofloat2(TvrSTR) * (color_info[c].v_r_var{var} - color_info[c].v_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
+                     var_magn:=var_magn + var_r_correction;
+                     transformation:='Transf corr. '+floattostr3(var_r_correction)+'='+Tr_vrSTR+'*'+TvrSTR+'*('+floattostr3(color_info[c].v_r_var)+'-'+floattostr3(color_info[c].v_r_comp)+'). Filter used '+filter_used+'.';
+                     filter_used:='R';//change TR to R
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve v-r. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve v-r. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                   end;
                  end
@@ -2352,13 +2348,13 @@ begin
                  begin
                    if color_info[c].g_r_var<>-99 then
                    begin
-                   var_sg_correction:= strtofloat2(Tg_grSTR) * strtofloat2(TgrSTR) * (color_info[c].g_r_var{var} - color_info[c].g_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
-                   var_magn:=var_magn + var_sg_correction;
-                   transformation:='Transf corr. '+floattostr3(var_sg_correction)+'='+Tg_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
+                     var_sg_correction:= strtofloat2(Tg_grSTR) * strtofloat2(TgrSTR) * (color_info[c].g_r_var{var} - color_info[c].g_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
+                     var_magn:=var_magn + var_sg_correction;
+                     transformation:='Transf corr. '+floattostr3(var_sg_correction)+'='+Tg_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve g-r. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve g-r. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end
@@ -2368,14 +2364,14 @@ begin
                  begin
                    if color_info[c].g_r_var<>-99 then
                    begin
-                   var_sr_correction:= strtofloat2(Tr_grSTR) * strtofloat2(TgrSTR) *( color_info[c].g_r_var{var} - color_info[c].g_r_comp);
-                   var_magn:=var_magn+var_sr_correction;
-                   transformation:='Transf corr. '+floattostr3(var_sr_correction)+'='+Tr_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
-                   //filter_used:='V';//change TG to V
+                     var_sr_correction:= strtofloat2(Tr_grSTR) * strtofloat2(TgrSTR) *( color_info[c].g_r_var{var} - color_info[c].g_r_comp);
+                     var_magn:=var_magn+var_sr_correction;
+                     transformation:='Transf corr. '+floattostr3(var_sr_correction)+'='+Tr_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
+                     //filter_used:='V';//change TG to V
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve g-r. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve g-r. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end
@@ -2384,15 +2380,15 @@ begin
                  if icon_nr=21 then//SI correction
                  begin
                    if color_info[c].r_i_var<>-99 then
-                   begin
-                   var_si_correction:= strtofloat2(Ti_riSTR) * strtofloat2(TriSTR) * (color_info[c].r_i_var{var} - color_info[c].r_i_comp);
-                   var_magn:=var_magn + var_si_correction;
-                   transformation:='Transf corr. '+floattostr3(var_si_correction)+'='+Ti_riSTR+'*'+TriSTR+'*('+floattostr3(color_info[c].r_i_var)+'-'+floattostr3(color_info[c].r_i_comp)+'). Filter used '+filter_used+'.';
-                   //filter_used:='R';//change TR to R
+                     begin
+                     var_si_correction:= strtofloat2(Ti_riSTR) * strtofloat2(TriSTR) * (color_info[c].r_i_var{var} - color_info[c].r_i_comp);
+                     var_magn:=var_magn + var_si_correction;
+                     transformation:='Transf corr. '+floattostr3(var_si_correction)+'='+Ti_riSTR+'*'+TriSTR+'*('+floattostr3(color_info[c].r_i_var)+'-'+floattostr3(color_info[c].r_i_comp)+'). Filter used '+filter_used+'.';
+                     //filter_used:='R';//change TR to R
                    end
                    else
                    begin
-                     transformation:='Transformation failed. Could not retrieve r-i. Did you image in two colours?';
+                     transformation:='Transformation failed. Could not retrieve r-i. Comp too faint or not imaged in two colours ?';
                      transf_str:='NO';
                    end;
                  end;
@@ -2427,7 +2423,13 @@ begin
                  comp_magn_str:=floattostr3(comps_info[c].documented_comp_magn);//from process_comp_stars
                end;
 
-             end ;//valid comp_str
+             end //valid comp_str
+             else
+             begin
+               var_magn:=-99;
+               check_magn:=-99;
+             end;
+
            end //no ensemble mode
            else
            begin
@@ -2443,11 +2445,11 @@ begin
            end;
 
 
-           if ((var_magn<0) or (valid_comp=false) or (check_magn<0)) then invalidstr:='# ' else invalidstr:='';
+           if ((valid_comp=false) or(var_magn<0) or (check_magn<0)) then invalidstr:='# ' else invalidstr:='';
 
            abbrv_var_clean:=clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,true); //Note the captions are one position shifted.
 
-           if ensemble_database then //else comparison stars are used.
+           if gaia_ensemble then //else comparison stars are used.
              if stackmenu1.ListView7.Items.item[c].SubitemImages[P_calibration]<>SubItemImages[c] then
                 comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/B/R/SI/SR/SG.';
 

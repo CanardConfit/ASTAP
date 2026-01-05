@@ -293,14 +293,14 @@ object form_aavso1: Tform_aavso1
             ParentShowHint = False
             ShowHint = True
           end
-          object ensemble_database1: TCheckBox
+          object gaia_ensemble1: TCheckBox
             Left = 224
             Height = 23
             Hint = 'If enabled then Gaia  ensemble is used for calibration'
             Top = 0
             Width = 113
             Caption = 'Gaia ensemble'
-            OnClick = ensemble_database1Click
+            OnClick = gaia_ensemble1Click
             ParentShowHint = False
             ShowHint = True
             TabOrder = 1

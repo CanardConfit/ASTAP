@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 137
+  Left = 190
   Height = 807
-  Top = 147
+  Top = 92
   Width = 1756
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -1894,10 +1894,10 @@ object stackmenu1: Tstackmenu1
           end
           object Label18: TLabel
             Left = 888
-            Height = 152
-            Top = 240
-            Width = 560
-            Caption = '- LRGB stacking is activated by check-mark Classify by "Light filter". Else it will stack in grayscale or colour depending on BAYERPAT in header.'#13#10#13#10'- If a luminance filter is found, the RGB colour will be used to colour the luminance signal. If one of the colour values of the matrix, R_our, G_out, B_out is zero, enter a bias value to compensate e.g. 200.'#13#10#13#10'- For different image sizes use astrometric align.'
+            Height = 38
+            Top = 370
+            Width = 526
+            Caption = '- LRGB stacking is activated by check-mark Classify by "Light filter". Else it will stack in grayscale or colour depending on BAYERPAT in header.'
             Color = clBtnFace
             Constraints.MaxWidth = 568
             ParentColor = False
