@@ -1,5 +1,5 @@
 unit unit_aavso; //aavso report unit
-{Copyright (C) 2021, 2025 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2021, 2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
  This Source Code Form is subject to the terms of the Mozilla Public
@@ -69,7 +69,7 @@ type
     apply_transformation1: TCheckBox;
     baa_style1: TCheckBox;
     delimiter1: TComboBox;
-    ensemble_database1: TCheckBox;
+    gaia_ensemble1: TCheckBox;
     GroupBox_variables1: TGroupBox;
     GroupBox_check1: TGroupBox;
     GroupBox_comp_stars1: TGroupBox;
@@ -115,7 +115,7 @@ type
     procedure selectall1Click(Sender: TObject);
     procedure test_button1Click(Sender: TObject);
     procedure delta_bv2Change(Sender: TObject);
-    procedure ensemble_database1Click(Sender: TObject);
+    procedure gaia_ensemble1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure hjd1Change(Sender: TObject);
@@ -386,7 +386,7 @@ begin
     apply_transformation:=apply_transformation1.checked;
 
     hjd_date:=hjd1.checked;
-    ensemble_database:=ensemble_database1.checked;
+    ensemble_database:=gaia_ensemble1.checked;
     obstype:=obstype1.ItemIndex;
   end;
 end;
@@ -1112,7 +1112,7 @@ begin
      abbrv_var:='';
 
   with stackmenu1 do
-  if ((form_aavso1.ensemble_database1.Checked) or (length(column_comps)=0))  then
+  if ((form_aavso1.gaia_ensemble1.Checked) or (length(column_comps)=0))  then
   begin
     gaia_based:=true;
     for c:=0 to high(RowChecked) do {retrieve data from listview}
@@ -1737,7 +1737,7 @@ begin
     color:=cldefault;
 
 
-    ensemble_database1.caption:=('Ensemble '+stackmenu1.reference_database1.text);
+    gaia_ensemble1.caption:=('Ensemble '+stackmenu1.reference_database1.text);
 
     setlength(starinfo,p_nr-p_nr_norm);
     setlength(starinfoV,p_nr-p_nr_norm);
@@ -1944,9 +1944,9 @@ begin
 end;
 
 
-procedure Tform_aavso1.ensemble_database1Click(Sender: TObject);
+procedure Tform_aavso1.gaia_ensemble1Click(Sender: TObject);
 begin
-  ensemble_database:=ensemble_database1.checked;
+  ensemble_database:=gaia_ensemble1.checked;
   abrv_comp1.enabled:=ensemble_database=false;
   sigma_mzero1.enabled:=ensemble_database=false;
   apply_transformation1.enabled:=ensemble_database=false;
@@ -2036,7 +2036,7 @@ begin
   ExtractListViewDataToArrays(stackmenu1.ListView7, P_filter);//copy listview7 data to arrays
 
   obscode1.text:=obscode;
-  ensemble_database1.checked:=ensemble_database;
+  gaia_ensemble1.checked:=ensemble_database;
   abrv_comp1.enabled:=ensemble_database=false;
 
   sigma_mzero1.enabled:=ensemble_database=false;
@@ -2090,7 +2090,7 @@ var
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
     transformation, transform_all_factors,transf_str,varab  : string;
-    apply_transformation,valid_comp,ensemble_database : boolean;
+    apply_transformation,valid_comp,gaia_ensemble : boolean;
     snr_value,err_by_snr,var_magn,check_magn,var_flux, check_flux,
     var_v_correction,var_b_correction,var_r_correction,
     var_sg_correction,var_sr_correction,var_si_correction,
@@ -2099,7 +2099,7 @@ var
     vsep : char;
 begin
   get_info;//update abbrev_var and others
-  ensemble_database:=ensemble_database1.checked;
+  gaia_ensemble:=gaia_ensemble1.checked;
 
 
   abbrev_check:=abrv_check1.text;
@@ -2140,7 +2140,7 @@ begin
       abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(ColumnTitles[column_comps[i]+1],false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
   end
   else
-  if ensemble_database=false then
+  if gaia_ensemble=false then
   begin
     abrv_comp1.color:=clred;
     exit;
@@ -2182,16 +2182,19 @@ begin
   end;
 
 
-  if ensemble_database then
-    settings:=stackmenu1.reference_database1.text+vsep
+  if gaia_ensemble then
+  begin
+    settings:=stackmenu1.reference_database1.text+vsep;
+    comments:='CMAG ensemble using transformed Gaia magnitudes.'
+  end
   else
+  begin
     settings:=''; //not relevant
+    comments:='';
+  end;
+
   settings:=settings+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
 
-  if ensemble_database then
-     comments:='CMAG ensemble using transformed Gaia magnitudes.'
-   else
-     comments:='';
 
   if apply_transformation then
   begin
@@ -2239,7 +2242,7 @@ begin
 
    for m_index:=0 to high(column_vars) do //do all variables. This is not an efficient loop since the comp stars are read every time but was easy to code.
    begin
-     if ensemble_database=false then
+     if gaia_ensemble=false then
        calc_b_v_var_and_comp(column_vars[m_index]);//calculate the b-v of the variable
      for c:=0 to high(RowChecked) do
      begin
@@ -2270,7 +2273,7 @@ begin
            else  //online database
              magn_type:=' transformed '+stackmenu1.reference_database1.text;
 
-           if ensemble_database=false then //Mode magnitude relative to comp star
+           if gaia_ensemble=false then //Mode magnitude relative to comp star
            begin
              if length(column_comps)=0 then exit;//no comp info
 
@@ -2288,7 +2291,7 @@ begin
                transformation:='';
                icon_nr:=SubItemImages[c];
 
-               if ((apply_transformation) and (ensemble_database=false) and (icon_nr in [0,1,2,24,21,22,23] )) then //currently transformation only possible with B, V, R, SG,SR,SI filter
+               if ((apply_transformation) and (gaia_ensemble=false) and (icon_nr in [0,1,2,24,21,22,23] )) then //currently transformation only possible with B, V, R, SG,SR,SI filter
                begin
                  //transformation
                  // Tv_bv * Tbv* ((b-v)tgt – (B-V)comp)
@@ -2446,7 +2449,7 @@ begin
 
            abbrv_var_clean:=clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,true); //Note the captions are one position shifted.
 
-           if ensemble_database then //else comparison stars are used.
+           if gaia_ensemble then //else comparison stars are used.
              if stackmenu1.ListView7.Items.item[c].SubitemImages[P_calibration]<>SubItemImages[c] then
                 comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/B/R/SI/SR/SG.';
 

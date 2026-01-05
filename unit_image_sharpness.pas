@@ -4,7 +4,7 @@ unit unit_image_sharpness;
 {The routine applies the Root mean Square on the differences between the minimum and maximum value of each 2x2 pixel combination of the image.}
 {The result is reversed and scaled such that the final result is roughly identical to the star HFD measurement.}
 
-{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public

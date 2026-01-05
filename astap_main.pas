@@ -1,5 +1,5 @@
 unit astap_main;
-{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.01.04a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.01.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -4090,7 +4090,7 @@ begin
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2025 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
+  #13+#10+'© 2018, 2026 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
   application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
 

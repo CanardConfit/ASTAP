@@ -6,7 +6,7 @@ object mainform1: Tmainform1
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 614
+  ClientHeight = 612
   ClientWidth = 1333
   Color = clForm
   Icon.Data = {
@@ -71,7 +71,7 @@ object mainform1: Tmainform1
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 591
+    Top = 589
     Width = 1333
     Panels = <    
       item
@@ -110,7 +110,7 @@ object mainform1: Tmainform1
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 591
+    Height = 589
     Top = 0
     Width = 1333
     Align = alClient
@@ -227,7 +227,7 @@ object mainform1: Tmainform1
         end
         object ra1: TEdit
           Left = 67
-          Height = 23
+          Height = 27
           Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
           Top = 2
           Width = 95
@@ -649,7 +649,7 @@ object mainform1: Tmainform1
         end
         object dec1: TEdit
           Left = 67
-          Height = 23
+          Height = 27
           Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database.'
           Top = 28
           Width = 95
@@ -663,10 +663,10 @@ object mainform1: Tmainform1
         end
         object inversemousewheel1: TCheckBox
           Left = 456
-          Height = 19
+          Height = 23
           Hint = 'Inverse zoom action of the mouse wheel.'
           Top = 40
-          Width = 103
+          Width = 107
           Caption = 'Inverse 🖱️ wheel'
           Color = clBtnText
           Font.CharSet = ANSI_CHARSET
@@ -703,11 +703,11 @@ object mainform1: Tmainform1
           TabOrder = 8
           object TabSheet1: TTabSheet
             Caption = 'Header'
-            ClientHeight = 146
+            ClientHeight = 142
             ClientWidth = 728
             object Memo1: TMemo
               Left = 0
-              Height = 146
+              Height = 142
               Top = 0
               Width = 728
               Align = alClient
@@ -727,11 +727,11 @@ object mainform1: Tmainform1
           end
           object TabSheet2: TTabSheet
             Caption = 'Table'
-            ClientHeight = 146
+            ClientHeight = 142
             ClientWidth = 728
             object Memo3: TMemo
               Left = 0
-              Height = 146
+              Height = 142
               Top = 0
               Width = 728
               Align = alClient
@@ -818,19 +818,19 @@ object mainform1: Tmainform1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 410
+      Height = 408
       Top = 181
       Width = 1333
       ClientWidth = 1333
-      ClientHeight = 410
+      ClientHeight = 408
       object Panel1: TPanel
         Left = 0
-        Height = 410
+        Height = 408
         Hint = 'hint'
         Top = 0
         Width = 1333
         Align = alClient
-        ClientHeight = 410
+        ClientHeight = 408
         ClientWidth = 1333
         Color = 2105376
         Font.CharSet = ANSI_CHARSET
@@ -850,7 +850,7 @@ object mainform1: Tmainform1
         object Image1: TImage
           Left = 137
           Height = 264
-          Top = 1
+          Top = 0
           Width = 608
           Anchors = []
           OnMouseDown = Image1MouseDown
