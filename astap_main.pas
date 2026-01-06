@@ -72,13 +72,12 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.01.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.01.06a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
               ra,dec,
               fitsX,fitsY : double;
-              vspvsx_list_index : integer; //index of vsp_vsx_list
             end;
 
 type

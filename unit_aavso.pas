@@ -407,25 +407,23 @@ var
                   if v>0 then
                   begin
                      v:=v+length(sx);
-                     e:= posex('(',s,v);
-                     if e>0 then
-                     begin
-                       s2:=copy(s,v,e-v); //local style  000-BJX-707 V=7.841(0.021)_B=1.096(0.046)
-                       val(s2,themagn,err);
-                       if err=0 then
-                         result:=themagn
-                       else
-                       begin
-                         result:=-99;
-                         memo2_message('Error reading '+s+' magnitude in ' +s);
-                       end;
+                     e:= posex('(',s,v); //style  000-BJX-707 V=7.84(0.05)
+                     if e=0 then e:=199; //style  000-BJX-707 V=7.84 for manual selection
 
+                     s2:=copy(s,v,e-v);
+                     val(s2,themagn,err);
+                     if err=0 then
+                       result:=themagn
+                     else
+                     begin
+                       result:=-99;
+                       memo2_message('Error reading '+s+' magnitude in ' +s);
                      end;
+
                    end
                    else
                      result:=-99;
                  end;
-
 
 
 begin
@@ -1420,32 +1418,24 @@ begin
     SIcorrectionstr:='';
   end;
 
-  if gaia_based then //no comparison stars
-  begin
-    form_aavso1.sigma_check1.caption:='';
-  end
-  else
-  begin //comparison stars available
-    message:='';
-    if count_b>0 then
-      message:='Check b-B='+floattostrF(checkmeanB-check_doc_magB,ffFixed,0,3)+Bcorrectionstr+', σ='+floattostrF(photometry_stdev[2],ffFixed,0,3)+#10+#13;//report offsets
-    if count_v>0 then
-      message:=message+'Check v-V='+floattostrF(checkmeanV-check_doc_magV,ffFixed,0,3)+Vcorrectionstr+', σ='+floattostrF(photometry_stdev[1],ffFixed,0,3)+#10+#13; //report offsets
-    if count_r>0 then
-      message:=message+'Check r-R='+floattostrF(checkmeanR-check_doc_magR,ffFixed,0,3)+Rcorrectionstr+', σ='+floattostrF(photometry_stdev[0],ffFixed,0,3)+#10+#13;//report offsets
-    if count_i>0 then
-      message:=message+'Check i-I='+floattostrF(checkmeanI-check_doc_magI,ffFixed,0,3)+', σ='+floattostrF(photometry_stdev[28],ffFixed,0,3)+#10+#13;//report offsets
-    if count_sg>0 then
-      message:=message+'Check sg-SG='+floattostrF(checkmeanSG-check_doc_magSG,ffFixed,0,3)+SGcorrectionstr+', σ='+floattostrF(photometry_stdev[23],ffFixed,0,3)+#10+#13;//report offsets
-    if count_sr>0 then
-      message:=message+'Check sr-SR='+floattostrF(checkmeanSR-check_doc_magSR,ffFixed,0,3)+SRcorrectionstr+', σ='+floattostrF(photometry_stdev[22],ffFixed,0,3)+#10+#13;//report offsets
-    if count_si>0 then
-      message:=message+'Check si-SI='+floattostrF(checkmeanSI-check_doc_magSI,ffFixed,0,3)+SIcorrectionstr+', σ='+floattostrF(photometry_stdev[21],ffFixed,0,3)+#10+#13;//report offsets
+  message:='';
+  if ((count_b>0) and (check_doc_magB>-99)) then
+    message:='Check b-B='+floattostrF(checkmeanB-check_doc_magB,ffFixed,0,3)+Bcorrectionstr+', σ='+floattostrF(photometry_stdev[2],ffFixed,0,3)+#10+#13;//report offsets
+  if ((count_v>0) and (check_doc_magV>-99)) then
+    message:=message+'Check v-V='+floattostrF(checkmeanV-check_doc_magV,ffFixed,0,3)+Vcorrectionstr+', σ='+floattostrF(photometry_stdev[1],ffFixed,0,3)+#10+#13; //report offsets
+  if ((count_r>0) and (check_doc_magR>-99)) then
+    message:=message+'Check r-R='+floattostrF(checkmeanR-check_doc_magR,ffFixed,0,3)+Rcorrectionstr+', σ='+floattostrF(photometry_stdev[0],ffFixed,0,3)+#10+#13;//report offsets
+  if ((count_i>0) and (check_doc_magI>-99)) then
+    message:=message+'Check i-I='+floattostrF(checkmeanI-check_doc_magI,ffFixed,0,3)+', σ='+floattostrF(photometry_stdev[28],ffFixed,0,3)+#10+#13;//report offsets
+  if ((count_sg>0) and (check_doc_magSG>-99)) then
+  message:=message+'Check sg-SG='+floattostrF(checkmeanSG-check_doc_magSG,ffFixed,0,3)+SGcorrectionstr+', σ='+floattostrF(photometry_stdev[23],ffFixed,0,3)+#10+#13;//report offsets
+  if ((count_sr>0) and (check_doc_magSR>-99)) then
+    message:=message+'Check sr-SR='+floattostrF(checkmeanSR-check_doc_magSR,ffFixed,0,3)+SRcorrectionstr+', σ='+floattostrF(photometry_stdev[22],ffFixed,0,3)+#10+#13;//report offsets
+  if ((count_si>0) and (check_doc_magSI>-99)) then
+    message:=message+'Check si-SI='+floattostrF(checkmeanSI-check_doc_magSI,ffFixed,0,3)+SIcorrectionstr+', σ='+floattostrF(photometry_stdev[21],ffFixed,0,3)+#10+#13;//report offsets
 
-    if message='' then message:='No valid star(s)/ No comparison magnitude(s) available.'
-    else
-    form_aavso1.sigma_check1.caption:=copy(message,1,length(message)-2);//remove last #13+#10
-  end;
+  if message='' then message:='No valid star(s)/ No comparison magnitude(s) available.  ';
+  form_aavso1.sigma_check1.caption:=copy(message,1,length(message)-2);//remove last #13+#10
 
   for i:=0 to high(color_list) do color_list[i]:=0;//clear icons which have been done
   index:=0;
@@ -1678,7 +1668,7 @@ procedure Tform_aavso1.abrv_check1Change(Sender: TObject);
 var
    i         : integer;
 begin
-  for i:=0 to abrv_check1.items.count-1 do
+  for i:=0 to abrv_comp1.items.count-1 do
   begin
     if form_aavso1.abrv_check1.text=form_aavso1.abrv_comp1.items[i] then
     begin
@@ -1722,7 +1712,7 @@ end;
 
 procedure fill_comp_and_check;
 var
-  i,count,countV,error2,iau_labeled  : integer;
+  i,count,countV,error2,iau_labeled,theindex  : integer;
   abrv                               : string;
   starinfo, starinfoV                : array of Tstarinfo;
   compstar                           : boolean;
@@ -1748,6 +1738,7 @@ begin
       if frac((i-p_nr_norm)/3)=0 then //not snr column
       begin
         abrv:=ColumnTitles[i+1];
+        theindex:=ColumnTags[i+1];
         compstar:=(copy(abrv,1,2)='00');
         val(copy(abrv,1,5),dummy,iau_labeled);//labeled hhmmss.s+ddmmss because no annotation was found
         if ((compstar=false) or (iau_labeled=0)) then //variables
@@ -1787,12 +1778,14 @@ begin
         //memo2_message('Variables are sorted on standard deviation in descending order. The standard deviation is added to the variable abbreviation');
       end;
       for i:=0 to count-1  do  //display in ascending order
-        if starinfo[i].x>0 then //not saturated and sd found
-          abrv_comp1.items.add(starinfo[i].str) //+ ', σ='+floattostrF(starinfo[i].x,ffFixed,5,3))//add including standard deviation
-        else  //not all images analysed for SD
-          abrv_comp1.items.add(starinfo[i].str+ ' �Bad!');
+      begin
+        abrv:=starinfo[i].str;
+        if starinfo[i].x<=0 then abrv:=abrv+ ' �Bad!';//not saturated and sd found
+        if copy(abrv,1,2)='00' then
+            abrv_comp1.items.add(abrv);//comp star with known magnitude
+        abrv_check1.items.add(abrv);
+      end;
 
-        abrv_check1.items:=abrv_comp1.items;//duplicate
     end;
   end;
 end;
@@ -2269,9 +2262,9 @@ begin
            check_magn_str:='?';//clear for case failure
 
            if stackmenu1.reference_database1.itemindex=0 then //local database
-           if pos('v',name_database)>0 then magn_type:=' transformed to Johnson-V. ' else magn_type:=' using BM magnitude. '
+           if pos('v',name_database)>0 then magn_type:='transformed to Johnson-V.' else magn_type:='using BM magnitude.'
            else  //online database
-             magn_type:=' transformed '+stackmenu1.reference_database1.text;
+             magn_type:='transformed';
 
            if gaia_ensemble=false then //Mode magnitude relative to comp star
            begin
@@ -2442,6 +2435,7 @@ begin
              abbrv_comp_clean_report:='ENSEMBLE';
              comp_magn_str:='na';
              comp_magn_info:='Ensemble of Gaia DR3 stars ('+ magn_type+')';
+             transf_str:='NO'; //No is no transformation, YES is transformation.
            end;
 
 
@@ -2451,7 +2445,7 @@ begin
 
            if gaia_ensemble then //else comparison stars are used.
              if stackmenu1.ListView7.Items.item[c].SubitemImages[P_calibration]<>SubItemImages[c] then
-                comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/B/R/SI/SR/SG.';
+                comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/TB/TR/G/B/R/SI/SR/SG.';
 
            aavso_report:= aavso_report+ invalidstr+ abbrv_var_clean + delim +
                           StringReplace(stackmenu1.listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+

@@ -43,6 +43,7 @@ type
     abbr : string;
     Source : integer; //0 local, 1=VSX, 2=VSP, 3=not in AAVSO
     index  : integer; //source index
+    manual_match : boolean;
   end;
 
 var
@@ -1381,7 +1382,7 @@ begin
     if filter_name='TR' then
         result:=get_magn('R=');
   end;
-  if result='' then
+  if result='' then //TG
     result:=get_magn('V=')
 end;
 
@@ -1409,7 +1410,7 @@ var
   telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,fitsX,fitsY,
   gx_orientation, SIN_dec_ref,COS_dec_ref,max_period  : double;
   abbrv, period_str: string;
-  flip_horizontal, flip_vertical,filter_auid_only,skip_aavso,valid_period,hash_symbol   : boolean;
+  flip_horizontal, flip_vertical,filter_auid_only,skip_aavso,valid_period,hash_symbol,fshape_match   : boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,fx,fy, period_position,leng,count_comp : integer;
   overlap          : boolean;
@@ -1543,11 +1544,15 @@ begin
                 annotation_color2:=annotation_color;
               end;
 
+              fshape_match:=false;
               with mainform1 do
               for i:=0 to high(Fshapes) do
               if ((Fshapes[i].shape<>nil) and (abs(fx-Fshapes[i].fitsX)<5) and  (abs(fy-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
-                       Fshapes[i].shape.HINT:=abbrv;//copy(naam2,1,posex(' ',naam2,4)-1);
-
+              begin
+                Fshapes[i].shape.HINT:=strip_magnitudes(naam2,')');
+                Fshapes[i].shape.showhint:=true;
+                fshape_match:=true;//This star was manually selected
+              end;
             end  //Local variable database
             else
               annotation_color2:=annotation_color;//deep sky colour
@@ -1616,6 +1621,7 @@ begin
                 vsp_vsx_list[text_counter].ra:=ra2;
                 vsp_vsx_list[text_counter].dec:=dec2;
                 vsp_vsx_list[text_counter].source:=0; //local
+                vsp_vsx_list[text_counter].manual_match:=fshape_match;//is this one manual selected with the mouse
                 if copy(naam2,1,1)='0' then //vsp star=comparison star
                   vsp_vsx_list[text_counter].abbr:=strip_magnitudes(naam2,')')//combine only filters used in the list of files. all_filters is set in analyse_listview
                 else
@@ -1675,6 +1681,8 @@ var
   datab,filterstrUP :string;
 begin
   datab:=stackmenu1.reference_database1.text;
+  filterstrUP:=uppercase(filterstr);
+
   if pos('Local',datab)>0 then //local or auto
   begin
     if pos('V',filterstrUP)>0  then passband:='V'
@@ -1684,7 +1692,6 @@ begin
   end
   else
   begin  //online auto transformation
-    filterstrUP:=uppercase(filterstr);
     if ((length(filterstrUP)=0) or (pos('CV',filterstrUP)>0))  then passband:='BP'  //Johnson-V, online
     else
     if ((pos('S',filterstrUP)>0) OR (pos('P',filterstrUP)>0)) then //Sloan SG,SR, SI   or Sloan Las Cumbres observatory (GP, RP, IP}
@@ -1725,7 +1732,7 @@ var
   telescope_ra,telescope_dec, SIN_dec_ref,COS_dec_ref,
   ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
   abbreviation, abbreviation_display, filterstrUP: string;
-  flip_horizontal, flip_vertical: boolean;
+  flip_horizontal, flip_vertical,fshape_match: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount, font_size  : integer;
   overlap      : boolean;
@@ -1824,13 +1831,15 @@ begin
             else
               abbreviation_display:=abbreviation;//full length
 
+
+            fshape_match:=false;
             with mainform1 do
             for i:=0 to high(Fshapes) do
               if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
               begin
                 Fshapes[i].shape.HINT:=abbreviation; //will be used in manual mode to get the abbreviation
                 Fshapes[i].shape.showhint:=true;
-                if extract_visible then Fshapes[i].vspvsx_list_index:=nrcount;//store the vsp_vsx_list position. This will later copied to the listview7 tag
+                fshape_match:=true;//This star was manually selected
               end;
 
 
@@ -1853,6 +1862,7 @@ begin
               vsp_vsx_list[nrcount].abbr:=abbreviation;
               vsp_vsx_list[nrcount].source:=1;//vsx
               vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
+              vsp_vsx_list[nrcount].manual_match:=fshape_match;//is this one manual selected with the mouse
               vsp_vsx_list_length:=nrcount;
               inc(nrcount);
               if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
@@ -1868,23 +1878,33 @@ begin
             filterstrUP:=uppercase(head.filter_name);
             if ((pos('S',filterstrUP)>0) or (pos('P',filterstrUP)>0)) then //Sloan SG,SR, SI   or Sloan Las Cumbres observatory (GP, RP, IP}
             begin
-              if pos('G',filterstrUP)>0  then abbreviation:=abbreviation+'_SG='+vsp[count].SGmag+'('+vsp[count].SGerr+')' else
-              if pos('R',filterstrUP)>0  then abbreviation:=abbreviation+'_SR='+vsp[count].SRmag+'('+vsp[count].SRerr+')' else
-              if pos('I',filterstrUP)>0  then abbreviation:=abbreviation+'_SI='+vsp[count].SImag+'('+vsp[count].SIerr+')' else
+              if pos('G',filterstrUP)>0  then  abbreviation_display:=abbreviation+'_SG='+vsp[count].SGmag
+              else
+              if pos('R',filterstrUP)>0  then  abbreviation_display:=abbreviation+'_SR='+vsp[count].SRmag
+              else
+              if pos('I',filterstrUP)>0  then  abbreviation_display:=abbreviation+'_SI='+vsp[count].SImag;
             end
             else
             begin
-              if pos('B',filterstrUP)>0   then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')' {includes TB} else
-              if pos('R',filterstrUP)>0   then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')' {includes TR} else
-              if pos('I',filterstrUP)>0   then abbreviation:=abbreviation+'_I='+vsp[count].Imag+'('+vsp[count].Ierr+')' else
-                abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';
+                if pos('B',filterstrUP)>0   then  abbreviation_display:=abbreviation+'_B='+vsp[count].Bmag {includes TB}
+              else
+                if pos('R',filterstrUP)>0   then  abbreviation_display:=abbreviation+'_R='+vsp[count].Rmag {includes TR}
+              else
+                if pos('I',filterstrUP)>0   then  abbreviation_display:=abbreviation+'_I='+vsp[count].Imag
+              else
+                abbreviation_display:=abbreviation+' V='+vsp[count].Vmag;
             end;
 
-            if font_size>=5 then
+            fshape_match:=false;
+            with mainform1 do
+            for i:=0 to high(Fshapes) do
+            if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
             begin
-              abbreviation_display:=abbreviation;
-            end
-            else
+              Fshapes[i].shape.HINT:=abbreviation;  //will be used in manual mode to get the abbreviation
+              Fshapes[i].shape.showhint:=true;
+              fshape_match:=true;//This star was manually selected
+            end;
+
             if font_size=4 then
               abbreviation_display:=vsp[count].auid //no magnitude information
             else
@@ -1894,22 +1914,11 @@ begin
                  abbreviation_display:=copy(vsp[count].auid,5,99);//remove 000-
             end;
 
-            with mainform1 do
-            for i:=0 to high(Fshapes) do
-            if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
-            begin
-              Fshapes[i].shape.HINT:=abbreviation;  //will be used in manual mode to get the abbreviation
-              Fshapes[i].shape.showhint:=true;
-              if extract_visible then
-                  Fshapes[i].vspvsx_list_index:=nrcount;//store the vsp_vsx_list position. This will later copied to the listview7 tag
-            end;
-
-
             if extract_visible then //special option to add objects to list for photometry
             begin
               vsp_vsx_list[nrcount].ra:=vsp[count].ra;
               vsp_vsx_list[nrcount].dec:=vsp[count].dec;
-
+              abbreviation:=vsp[count].auid;
               if all_filters.V=true  then abbreviation:=abbreviation+' V='+vsp[count].Vmag+'('+vsp[count].Verr+')';//collect all used magnitudes references
               if all_filters.B=true  then abbreviation:=abbreviation+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')' ;
               if all_filters.R=true  then abbreviation:=abbreviation+'_R='+vsp[count].Rmag+'('+vsp[count].Rerr+')' ;
@@ -1918,9 +1927,11 @@ begin
               if all_filters.SR=true then abbreviation:=abbreviation+'_SR='+vsp[count].SRmag+'('+vsp[count].SRerr+')';
               if all_filters.SI=true then abbreviation:=abbreviation+'_SI='+vsp[count].SImag+'('+vsp[count].SIerr+')';
 
+              vsp_vsx_list[nrcount].abbr:=abbreviation;
               vsp_vsx_list[nrcount].source:=2;//vsp
               vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
               vsp_vsx_list_length:=nrcount;
+              vsp_vsx_list[nrcount].manual_match:=fshape_match;//is this one manual selected with the mouse
               inc(nrcount);
               if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
             end;
