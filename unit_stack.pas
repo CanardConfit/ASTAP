@@ -8406,95 +8406,55 @@ begin
                mainform1.variable_star_annotation1Click(sender {new position, update variable list});
           end;
 
+          snr_min:=strtofloat2(snr_min_photo1.text); //only bright enough stars
 
-          if stackmenu1.measuring_method1.itemindex=0 then // measure manual
+
+          if vsp_vsx_list_length>0 then //measure the stars
           begin
-            with mainform1 do
-            if Fshapes<>nil then
+            for j:=0 to vsp_vsx_list_length do //measure the vsp_vsx list
             begin
-              if p_nr<(p_nr_norm+2*length(Fshapes)) then //new columns required
+              celestial_to_pixel(head, vsp_vsx_list[j].ra, vsp_vsx_list[j].dec,true, xn, yn);
+              if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
               begin
-                for i:=0 to high(Fshapes) do
-                with listview7 do
-                begin //add columns
-                  listview7_add_column('????????????????????????????');//hint has not the abbbvr. Only after the first plot
-                  listview7_add_column('SNR');
-                  listview7_add_column('Flux');
-                 // memo2_message('Added columns for '+Fshapes[i].shape.hint);
-                end;
-              end;
+             //   if pos('-944',vsp_vsx_list[j].abbr)>0 then
+             //   beep;
 
-              for i:=0 to high(Fshapes) do
-              begin
-                if Fshapes[i].shape<>nil then
+                astr:=measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
+                if snr>=snr_min then
                 begin
-                  mainform1.image1.Canvas.Pen.Color:=clRed;
-
-                  celestial_to_pixel(head, Fshapes[i].ra, Fshapes[i].dec,true, xn, yn); //ra,dec to xn,yn. Do not update Fshapes[i].fitsX,Fshapes[i].fitsY since the refer to the reference image and are required later for drawing aperture
-                  astr:=measure_star(xn, yn);
-                  listview7.Items.item[c].subitems.Strings[p_nr_norm+i*3]:=astr;
-                  listview7.Items.item[c].subitems.Strings[p_nr_norm+1+i*3]:=IntToStr(round(snr));
-                  listview7.Items.item[c].subitems.Strings[p_nr_norm+2+i*3]:=IntToStr(round(Flux));
-                  listview7.Column[p_nr_norm+1+i*3].Caption:=Fshapes[i].shape.hint; //abbrv hint is only available after plot. Is updated for second image Caption counting is one different. Caption positions are 19, 22, 25 ...
-                  listview7.column[p_nr_norm+1+i*3].tag:=Fshapes[i].vspvsx_list_index;//copy the vsp_vsx_list index of this star
-                end;
-              end;//for
-
-            end;//mainform1
-          end
-          else
-          begin // None manual
-
-            //if stackmenu1.measuring_method1.itemindex>=1 then
-            snr_min:=strtofloat2(snr_min_photo1.text); //only bright enough stars
-
-            //measure all AAVSO stars using the position from the local database
-            if vsp_vsx_list_length>0 then
-            begin
-              for j:=0 to vsp_vsx_list_length do
-              begin
-                celestial_to_pixel(head, vsp_vsx_list[j].ra, vsp_vsx_list[j].dec,true, xn, yn);
-                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
-                begin
-               //   if pos('-944',vsp_vsx_list[j].abbr)>0 then
-               //   beep;
-
-                  astr:=measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
-                  if snr>=snr_min then
+                  new_object:=true;
+                  for i:=p_nr_norm to p_nr-3 do
                   begin
-                    new_object:=true;
-                    for i:=p_nr_norm to p_nr-3 do
-                    begin
-                      if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=vsp_vsx_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
-                      begin //existing object column
+                    if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=vsp_vsx_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                    begin //existing object column
 
-                       listview7.Items.item[c].subitems.Strings[i]:= astr;
-                       listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
-                       listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
-                       new_object:=false;
-                       break;
-                      end;
+                     listview7.Items.item[c].subitems.Strings[i]:= astr;
+                     listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
+                     listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
+                     new_object:=false;
+                     break;
                     end;
-                    if new_object then
-                    begin
-                      with listview7 do
-                      begin //add column
-                        listview7_add_column(vsp_vsx_list[j].abbr);
-                        listview7_add_column('SNR');
-                        listview7_add_column('Flux');
-                        memo2_message('Added columns for '+vsp_vsx_list[j].abbr);
-                      end;
-                      listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
-                      listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
-                      listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
-                      stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
-                    end;//new object
-                  end;//enough snr
-                end;
+                  end;
+                  if new_object then
+                  begin
+                    with listview7 do
+                    begin //add column
+                      listview7_add_column(vsp_vsx_list[j].abbr);
+                      listview7_add_column('SNR');
+                      listview7_add_column('Flux');
+                      memo2_message('Added columns for '+vsp_vsx_list[j].abbr);
+                    end;
+                    listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
+                    listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
+                    listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
+                    stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
+                  end;//new object
+                end;//enough snr
               end;
-            end;
-            memo2_message('Detected a total '+inttostr((p_nr-p_nr_norm) div 3)+' stars');
-          end; //measure all
+
+            end; //for j:=0 to vsp_vsx_list_length do
+          end;
+          memo2_message('Detected a total '+inttostr((p_nr-p_nr_norm) div 3)+' stars');
         end;
 
 
