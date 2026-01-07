@@ -1,6 +1,6 @@
 unit unit_annotation; {deep sky and star annotation & photometry calibation of the image}
 {$mode delphi}
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
  This Source Code Form is subject to the terms of the Mozilla Public
@@ -43,7 +43,6 @@ type
     abbr : string;
     Source : integer; //0 local, 1=VSX, 2=VSP, 3=not in AAVSO
     index  : integer; //source index
-    manual_match : boolean;
   end;
 
 var
@@ -1410,7 +1409,7 @@ var
   telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,fitsX,fitsY,
   gx_orientation, SIN_dec_ref,COS_dec_ref,max_period  : double;
   abbrv, period_str: string;
-  flip_horizontal, flip_vertical,filter_auid_only,skip_aavso,valid_period,hash_symbol,fshape_match   : boolean;
+  flip_horizontal, flip_vertical,filter_auid_only,skip_aavso,valid_period,hash_symbol,fshape_match,none_manual  : boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,fx,fy, period_position,leng,count_comp : integer;
   overlap          : boolean;
@@ -1430,6 +1429,7 @@ begin
       vsp:=nil;
       setlength(vsp,1000);
       count_comp:=0;
+      none_manual:=stackmenu1.measuring_method1.itemindex>0;//if true extract all else only the manually clicked stars.
     end;
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
@@ -1616,12 +1616,11 @@ begin
               end;
               mainform1.image1.Canvas.textout(x1,y1,abbrv);
 
-              if ((extract_visible) and (length(naam2)>2){through filters}) then //special option to add objects to list for photometry
+              if ((extract_visible) and (length(naam2)>2){through filters} and ((none_manual) or (fshape_match)) ) then //special option to add objects to list for photometry
               begin
                 vsp_vsx_list[text_counter].ra:=ra2;
                 vsp_vsx_list[text_counter].dec:=dec2;
                 vsp_vsx_list[text_counter].source:=0; //local
-                vsp_vsx_list[text_counter].manual_match:=fshape_match;//is this one manual selected with the mouse
                 if copy(naam2,1,1)='0' then //vsp star=comparison star
                   vsp_vsx_list[text_counter].abbr:=strip_magnitudes(naam2,')')//combine only filters used in the list of files. all_filters is set in analyse_listview
                 else
@@ -1732,7 +1731,7 @@ var
   telescope_ra,telescope_dec, SIN_dec_ref,COS_dec_ref,
   ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
   abbreviation, abbreviation_display, filterstrUP: string;
-  flip_horizontal, flip_vertical,fshape_match: boolean;
+  flip_horizontal, flip_vertical,fshape_match,none_manual: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount, font_size  : integer;
   overlap      : boolean;
@@ -1776,6 +1775,7 @@ begin
      vsp_vsx_list_length:=0;//declare empthy
      setlength(vsp_vsx_list,1000);//make space
      nrcount:=0;
+     none_manual:=stackmenu1.measuring_method1.itemindex>0;//if true extract all else only the manually clicked stars.
    end;
 
     get_database_passband(head.filter_name,{out} head.passband_database);//select applicable passband for annotation in case photometry is not calibrated
@@ -1855,14 +1855,13 @@ begin
                  //  memo2_message(filename2+',  '+floattostr(jd_mid)+ ',   '+floattostr(delta));
             end;
 
-            if extract_visible then //special option to add objects to list for photometry
+            if ((extract_visible) and ((none_manual {all}) or (fshape_match){marked only}) ) then //special option to add objects to list for photometry.
             begin
               vsp_vsx_list[nrcount].ra:=vsx[count].ra;
               vsp_vsx_list[nrcount].dec:=vsx[count].dec;
               vsp_vsx_list[nrcount].abbr:=abbreviation;
               vsp_vsx_list[nrcount].source:=1;//vsx
               vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
-              vsp_vsx_list[nrcount].manual_match:=fshape_match;//is this one manual selected with the mouse
               vsp_vsx_list_length:=nrcount;
               inc(nrcount);
               if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
@@ -1914,6 +1913,7 @@ begin
                  abbreviation_display:=copy(vsp[count].auid,5,99);//remove 000-
             end;
 
+            if ((extract_visible) and ((none_manual {all}) or (fshape_match){marked only}) ) then //special option to add objects to list for photometry.
             if extract_visible then //special option to add objects to list for photometry
             begin
               vsp_vsx_list[nrcount].ra:=vsp[count].ra;
@@ -1931,7 +1931,6 @@ begin
               vsp_vsx_list[nrcount].source:=2;//vsp
               vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
               vsp_vsx_list_length:=nrcount;
-              vsp_vsx_list[nrcount].manual_match:=fshape_match;//is this one manual selected with the mouse
               inc(nrcount);
               if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
             end;

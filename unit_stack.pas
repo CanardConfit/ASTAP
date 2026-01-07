@@ -8067,7 +8067,7 @@ var
   database_col,j,ww                                                               : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined,calibratedP,
-  oscP ,none_manual                                                               : boolean;
+  oscP                                                                            : boolean;
   starlistx                                     : Tstar_list;
   astr, filename1,totalnrstr,mess               : string;
   oldra0 : double=0;
@@ -8408,54 +8408,50 @@ begin
 
           snr_min:=strtofloat2(snr_min_photo1.text); //only bright enough stars
 
-          none_manual:=stackmenu1.measuring_method1.itemindex>0;
 
           if vsp_vsx_list_length>0 then //measure the stars
           begin
-            for j:=0 to vsp_vsx_list_length do
+            for j:=0 to vsp_vsx_list_length do //measure the vsp_vsx list
             begin
-              if ((none_manual) or (vsp_vsx_list[j].manual_match)) then //none_manual is all else only the matches with the manual marked stars
+              celestial_to_pixel(head, vsp_vsx_list[j].ra, vsp_vsx_list[j].dec,true, xn, yn);
+              if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
               begin
-                celestial_to_pixel(head, vsp_vsx_list[j].ra, vsp_vsx_list[j].dec,true, xn, yn);
-                if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
+             //   if pos('-944',vsp_vsx_list[j].abbr)>0 then
+             //   beep;
+
+                astr:=measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
+                if snr>=snr_min then
                 begin
-               //   if pos('-944',vsp_vsx_list[j].abbr)>0 then
-               //   beep;
-
-                  astr:=measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
-                  if snr>=snr_min then
+                  new_object:=true;
+                  for i:=p_nr_norm to p_nr-3 do
                   begin
-                    new_object:=true;
-                    for i:=p_nr_norm to p_nr-3 do
-                    begin
-                      if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=vsp_vsx_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
-                      begin //existing object column
+                    if ((  frac((i-p_nr_norm)/3)=0 ){tagnr column} and (stackmenu1.listview7.Column[i+1].Caption=vsp_vsx_list[j].abbr)) then //find the  correct column. If image share not 100% aligned there could be more or less objects
+                    begin //existing object column
 
-                       listview7.Items.item[c].subitems.Strings[i]:= astr;
-                       listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
-                       listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
-                       new_object:=false;
-                       break;
-                      end;
+                     listview7.Items.item[c].subitems.Strings[i]:= astr;
+                     listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
+                     listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
+                     new_object:=false;
+                     break;
                     end;
-                    if new_object then
-                    begin
-                      with listview7 do
-                      begin //add column
-                        listview7_add_column(vsp_vsx_list[j].abbr);
-                        listview7_add_column('SNR');
-                        listview7_add_column('Flux');
-                        memo2_message('Added columns for '+vsp_vsx_list[j].abbr);
-                      end;
-                      listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
-                      listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
-                      listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
-                      stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
-                    end;//new object
-                  end;//enough snr
-                end;
-
+                  end;
+                  if new_object then
+                  begin
+                    with listview7 do
+                    begin //add column
+                      listview7_add_column(vsp_vsx_list[j].abbr);
+                      listview7_add_column('SNR');
+                      listview7_add_column('Flux');
+                      memo2_message('Added columns for '+vsp_vsx_list[j].abbr);
+                    end;
+                    listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
+                    listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
+                    listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
+                    stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
+                  end;//new object
+                end;//enough snr
               end;
+
             end; //for j:=0 to vsp_vsx_list_length do
           end;
           memo2_message('Detected a total '+inttostr((p_nr-p_nr_norm) div 3)+' stars');
