@@ -2813,7 +2813,7 @@ object stackmenu1: Tstackmenu1
                 Visible = False
               end
               object label_delta_ra1: TLabel
-                Left = 576
+                Left = 572
                 Height = 19
                 Top = 127
                 Width = 49
@@ -2832,7 +2832,7 @@ object stackmenu1: Tstackmenu1
                 Visible = False
               end
               object label_delta_dec1: TLabel
-                Left = 736
+                Left = 732
                 Height = 19
                 Top = 127
                 Width = 48
@@ -2972,34 +2972,24 @@ object stackmenu1: Tstackmenu1
               TabOrder = 1
             end
             object update_solution1: TCheckBox
-              Left = 782
+              Left = 864
               Height = 23
               Hint = 'Apply this if the FITS header contains already a solution which is not accurate. '
               Top = 6
-              Width = 242
-              Caption = 'Ignore existing FITS header solution'
+              Width = 201
+              Caption = 'Refresh astrometric solutions'
               ParentFont = False
               TabOrder = 2
             end
             object update_annotations1: TCheckBox
-              Left = 550
+              Left = 536
               Height = 23
-              Hint = 'Apply this if you change the annotation setting.'
+              Hint = 'Apply this if you change the annotation setting. Note that the annotation x,y positions are used for alignment.'
               Top = 6
               Width = 249
               Caption = 'Refresh existing asteroid annotations'
               ParentFont = False
               TabOrder = 3
-            end
-            object auto_rotate1: TCheckBox
-              Left = 1030
-              Height = 23
-              Hint = 'Use this option if part of the images are rotated due to meridian flip'
-              Top = 6
-              Width = 95
-              Caption = 'Auto rotate'
-              ParentFont = False
-              TabOrder = 4
             end
           end
           object most_right7: TStaticText

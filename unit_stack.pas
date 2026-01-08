@@ -141,7 +141,6 @@ type
     artificial_image_gradient1: TCheckBox;
     auto_background1: TCheckBox;
     auto_background_level1: TButton;
-    auto_rotate1: TCheckBox;
     bayer_pattern1: TComboBox;
     bb1: TEdit;
     bg1: TEdit;
@@ -8064,7 +8063,7 @@ var
   apert, annul,aa,bb,cc,dd,ee,ff, xn, yn, adu_e,sep,az,alt, snr_min               : double;
   saturation_level:  single;
   c, i, x_new, y_new, fitsX, fitsY, col,{first_image,}size, starX, starY,
-  database_col,j,ww                                                               : integer;
+  database_col,j,ww,measuring_method                                               : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined,calibratedP,
   oscP                                                                            : boolean;
@@ -8125,7 +8124,9 @@ begin
   esc_pressed:=false;
   if listview7.items.Count <= 0 then exit; {no files}
 
-  if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<2)) then
+  measuring_method:=measuring_method1.itemindex;
+
+  if ((measuring_method=0) and (length(mainform1.fshapes)<2)) then
   begin
     application.messagebox('First click on the three stars minimum (VAR, CHECK, COMP) of the first image'+#10+#13+#10+#13+'Or select mode measure all and select later.','Can not proceed!',MB_OK);
     exit;
@@ -8393,7 +8394,7 @@ begin
           begin
             variable_star_annotation(head, true {extract AAVSO database  to vsp_vsx_list});
 
-            if stackmenu1.measuring_method1.itemindex=2 then //add none AAVSO stars
+            if measuring_method=2 then //add none AAVSO stars
               create_all_star_list;//collect any star in the vsp_vsx_list
 
             oldra0:=head.ra0;
@@ -8420,7 +8421,7 @@ begin
              //   beep;
 
                 astr:=measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
-                if snr>=snr_min then
+                if ((snr>=snr_min) or (measuring_method=0)) then //no SNR filter for manual
                 begin
                   new_object:=true;
                   for i:=p_nr_norm to p_nr-3 do
@@ -8515,7 +8516,7 @@ begin
           mainform1.image1.Canvas.Pen.mode:=pmCopy;
 
           with mainform1 do
-          if ((measuring_method1.itemindex=0) and (Fshapes<>nil)) then
+          if ((measuring_method=0) and (Fshapes<>nil)) then
           begin
             for i:=0 to high(Fshapes) do
              if Fshapes[i].shape<>nil then
@@ -12873,57 +12874,12 @@ begin
     end;
   end;
 
-  if ((use_ephemeris_alignment1.checked) and (stackmenu1.auto_rotate1.Checked)) then {fix rotations}
-  begin
-    memo2_message('Checking orientations');
-    for c:=0 to ListView1.items.Count - 1 do
-      if ((ListView1.items[c].Checked = True) and (pos('✓',ListView1.Items.item[c].subitems.Strings[L_solution])>0 {solution})) then
-      begin
-        try { Do some lengthy operation }
-          ListView1.Selected:=nil; {remove any selection}
-          ListView1.ItemIndex:=c;{show wich file is processed}
-          Listview1.Items[c].MakeVisible(False);{scroll to selected item}
-
-          progress_indicator(0.1 * c / ListView1.items.Count, ' rotating'); {indicate 0 to 10% for plate solving}
-
-          filename2:=ListView1.items[c].Caption;
-
-          Application.ProcessMessages;
-          if esc_pressed then
-          begin
-            restore_img;
-            Screen.Cursor:=crDefault;
-            exit;
-          end;
-
-          {load file}
-          if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded){important required to check head.cd1_1} = False then
-          begin
-            memo2_message('Error loading file ' + filename2);{failed to load}
-            Screen.Cursor:=crDefault;
-            exit;
-          end;
-
-          head.crota2:=fnmodulo(head.crota2, 360);
-          if ((head.crota2 >= 90) and (head.crota2 < 270)) then
-          begin
-            memo2_message('Rotating ' + filename2 + ' 180°');
-            raster_rotate(180, head.Width / 2, head.Height / 2, img_loaded); {fast rotation 180 degrees}
-            save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True);
-          end;
-
-        finally
-        end;
-      end;
-    memo2_message('Orientation task complete.');
-  end;
-
   if use_ephemeris_alignment1.Checked then {add annotations}
   begin
     memo2_message('Checking annotations');
     for c:=0 to ListView1.items.Count - 1 do
       if ((ListView1.items[c].Checked = True) and (pos('✓',stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution])>0 {solution}) and
-         ((stackmenu1.update_annotations1.Checked) or (stackmenu1.auto_rotate1.Checked) or (length(stackmenu1.ListView1.Items.item[c].subitems.Strings[L_X]) <= 1)){no annotation yet}) then
+         ((stackmenu1.update_annotations1.Checked) or (length(stackmenu1.ListView1.Items.item[c].subitems.Strings[L_X]) <= 1)){no annotation yet}) then
       begin
         try { Do some lengthy operation }
           ListView1.Selected:=nil; {remove any selection}

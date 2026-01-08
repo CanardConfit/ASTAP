@@ -161,8 +161,6 @@ begin
   end
   else
   begin
-//    sincos(head.dec0,SIN_dec0,COS_dec0);//intilialize SIN_dec0,COS_dec0
-//    astrometric_to_vector(head,head_ref);{convert 1th order astrometric solution to a vector solution}
     astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to a vector solution}
 
     dummy:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X];
@@ -176,16 +174,14 @@ begin
     celestial_to_pixel(head_ref, ra1,dec1,true,x1,y1);//ra,dec  ref image to fitsX,fitsY second image
 
 
-    //convert the center based solution to solution with origin at 0,0
-    if solution_vectorX[0]<0  then
-       solution_vectorX[2]:=solution_vectorX[2]+head.width-1;
-
-    if solution_vectorY[1]<0  then
-       solution_vectorY[2]:=solution_vectorY[2]+head.height-1;
-
-
     shiftX:=x1 {-1} - referenceX{-1}; //The asteroid correction. The two subtractions are neutralizing each other
     shiftY:=y1 {-1} - referenceY{-1}; //The asteroid correction. The two subtractions are neutralizing each other
+
+   if solution_vectorX[0]<0  then //image is flipped in X, flip shift
+         shiftX:=-shiftX;
+   if solution_vectorY[0]<0  then //image is flipped in Y, flip shift
+         shiftY:=-shiftY;
+
 
     solution_vectorX[2]:=solution_vectorX[2]+shiftx;
     solution_vectorY[2]:=solution_vectorY[2]+shifty;
@@ -677,6 +673,7 @@ end;
 procedure compensate_solar_drift(head : theader; var solution_vectorX,solution_vectorY : Tsolution_vector);//compendate movement solar objects
 var
   ra_movement,dec_movement,posX,posY,SIN_dec_ref,COS_dec_ref : double;
+  i : integer;
 begin
   ra_movement:=(jd_mid-jd_mid_reference)*strtofloat2(stackmenu1.solar_drift_ra1.text {arcsec/hour})*(pi/180)*24/3600;//ra movement in radians
 
@@ -1056,6 +1053,7 @@ begin
               begin
                 referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
                 referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
+
               end;
             end;
             reset_solution_vectors(1);{no influence on the first image}
