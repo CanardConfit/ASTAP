@@ -179,7 +179,7 @@ begin
 
    if solution_vectorX[0]<0  then //image is flipped in X, flip shift
          shiftX:=-shiftX;
-   if solution_vectorY[0]<0  then //image is flipped in Y, flip shift
+   if solution_vectorY[1]<0  then //image is flipped in Y, flip shift
          shiftY:=-shiftY;
 
 
