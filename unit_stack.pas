@@ -1081,7 +1081,6 @@ var
   exposureR2, exposureG2, exposureB2,
   exposureRGB, exposureL: integer;
   sum_exp, sum_temp : double;
-  referenceX, referenceY: double;{reference position used stacking}
   jd_mid: double;{julian day of mid head.exposure}
   jd_mid_reference :double; { julian day of mid head.exposure for reference image}
   jd_sum,airmass_sum: double;{sum of julian days}
@@ -1167,6 +1166,8 @@ procedure analyse_listview(lv: tlistview; light, full, refresh: boolean);{analys
 function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): double;{##### calculate julian day, revised 2017}
 function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*','"',':','|','<','>']}
 function calc_saturation_level(head :theader) : double;//calculate saturation level image
+function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
+
 
 const
   L_object = 0; {lights, position in listview1}
@@ -2073,14 +2074,14 @@ end;
 
 
 
-procedure get_annotation_position(c:integer; const memo : tstrings);
-{find the position of the specified asteroid annotation}
+function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
 var
   count1: integer;
   x1, y1, x2, y2: double;
   Name,dummy: string;
   List: TStrings;
 begin
+  result:=false;
   List:=TStringList.Create;
   list.StrictDelimiter:=True;
   Name:=stackmenu1.ephemeris_centering1.Text;{asteroid to center on}
@@ -2105,7 +2106,11 @@ begin
             y1:=strtofloat2(list[1]);
             x2:=strtofloat2(list[2]);
             y2:=strtofloat2(list[3]);
-            listview_add_xy(c,(x1 + x2) / 2, (y1 + y2) / 2); {add center annotation to x,y for stacking}
+
+            x:=(x1 + x2) / 2;
+            y:=(y1 + y2) / 2;
+            result:=true;
+            break;//found and leave
           end;
         end;
       end;
@@ -2195,7 +2200,7 @@ end;
 procedure analyse_tab_lights(analyse_level : integer);
 var
   c,  i, counts,binning                     : integer;
-  alt, az                                   : double;
+  alt, az,x,y                               : double;
   red, green, blue, planetary               : boolean;
   key, filename1, rawstr      : string;
   img,img_binned              : Timage_array;
@@ -2507,7 +2512,10 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_sqm]:=sqm_value;
 
                 if use_ephemeris_alignment1.Checked then {ephemeride based stacking}
-                  get_annotation_position(c,memox);{fill the x,y with annotation position}
+                begin
+                  if  get_annotation_position(memox,{out}x,y) then {get the x,y of the annotation position}
+                     listview_add_xy(c,x,y); {add center annotation to x,y for stacking}
+                end;
               end;
             finally
               ListView1.Items.EndUpdate;
@@ -12642,7 +12650,7 @@ var
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
   success, classify_filter, classify_object, sender_photometry, sender_stack_groups,comet  : boolean;
   startTick: qword;{for timing/speed purposes}
-  min_background, max_background,back_gr    : double;
+  min_background, max_background,back_gr,x,y    : double;
   filters_used: array [0..6] of string;//r,g,b,r2,g2,b2,L
 begin
   save_settings2;{too many lost selected files, so first save settings}
@@ -12919,7 +12927,8 @@ begin
             exit;
           end;
 
-          get_annotation_position(c,mainform1.Memo1.lines);{fill the x,y with annotation position}
+          if get_annotation_position(mainform1.Memo1.lines,{out} x,y ) then // get the x,y of the annotation position
+            listview_add_xy(c,x,y); {add center annotation to x,y for stacking}
         finally
         end;
       end;
@@ -13264,6 +13273,7 @@ begin
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0]:=files_to_process_LRGB[1]; {use red channel as reference if no luminance is available}
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0]:=files_to_process_LRGB[2]; {use green channel as reference if no luminance is available}
           counterL:=0; //reset counter for case no Luminance files are available, so RGB stacking.
+          files_to_process_LRGB[0].listviewindex:=-1;//indicate there is no correponding listview position. This is used by ephemeris stacking
           stack_LRGB(files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
           if esc_pressed then
           begin

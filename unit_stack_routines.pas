@@ -145,31 +145,30 @@ begin
 end;
 
 
-procedure calculate_manual_vector(c: integer); //calculate the vector drift for the image scale one and 0..h, 0..w range.
+procedure calculate_manual_vector(referenceX,referenceY,lx,ly : double); //calculate the vector drift for the image scale one and 0..h, 0..w range.
 var
   ra1,dec1,x1,y1,shiftX,shiftY : double;
-  dummy : string;
+  dummyX,dummyY : string;
 begin
   if head.cd1_1=0 then //pure manual stacking
   begin
     solution_vectorX[0]:=1;
     solution_vectorX[1]:=0;
-    solution_vectorX[2]:=referenceX{-1}-(strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]){-1}); {calculate correction. The two subtractions are neutralizing each other}
+    solution_vectorX[2]:=referenceX{-1}- (lx {-1}); {calculate correction. The two subtractions are neutralizing each other}
     solution_vectorY[0]:=0;
     solution_vectorY[1]:=1;
-    solution_vectorY[2]:=referenceY{-1} - (strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]){-1});//the two subtractions are neutralizing each other
+    solution_vectorY[2]:=referenceY{-1} - (ly {-1});//the two subtractions are neutralizing each other
   end
   else
   begin
     astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to a vector solution}
 
-    dummy:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X];
-    dummy:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y];
+//    dummyX:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X];
+ //   dummyY:=stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y];
 
 
     //convert the astroid position to ra, dec
-    pixel_to_celestial(head,strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
-                            strtofloat2(stackmenu1.ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]),1 {formalism},  ra1,dec1 );
+    pixel_to_celestial(head,lx,ly,1 {formalism},  ra1,dec1 );
     //calculate the astroid position to x,y coordinated of the reference image
     celestial_to_pixel(head_ref, ra1,dec1,true,x1,y1);//ra,dec  ref image to fitsX,fitsY second image
 
@@ -189,6 +188,7 @@ begin
 end;
 
 
+
 procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer ); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,R2,G2,B2,L]}
 var
   fitsX,fitsY,c,width_max, height_max, binning,max_stars,col,x_trunc,y_trunc  : integer;
@@ -203,7 +203,7 @@ var
   br_factor_2, bg_factor_2, bb_factor_2,
   saturated_level,hfd_min,tempval,tempval2,
   aa,bb,cc,dd,ee,ff,
-  col1,col2,x_new,y_new,x_frac,y_frac                                                      : double;
+  col1,col2,x_new,y_new,x_frac,y_frac,lx,ly,referenceX, referenceY                         : double;
   init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip : boolean;
   warning               : string;
   starlist1,starlist2   : Tstar_list;
@@ -331,7 +331,9 @@ begin
             {load image}
             Application.ProcessMessages;
             if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-            if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+//            if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+            if load_fits(filename2,true {light},true,true {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+
 
             if init=false then
               head_ref:=head;{backup solution}
@@ -401,8 +403,13 @@ begin
             begin
               if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin
-                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
-                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
+                if files_to_process[0].listviewindex>=0 then // the file are in the listview1
+                begin
+                  referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+                  referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
+                end
+                else //listviewindex=-1
+                  get_annotation_position(mainform1.memo1.Lines,{out}referenceX,referenceY);//get the x,y of the annotation position. This is called in the final phase of the stack routine
               end
               else
               begin
@@ -438,7 +445,15 @@ begin
               begin
                 if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
-                  calculate_manual_vector(c);//includes memo2_message with solution vector
+                  if files_to_process[0].listviewindex>=0 then // the files are in the listview1
+                  begin
+                    lx:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+                    ly:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
+                  end
+                  else //listviewindex=-1
+                    get_annotation_position(mainform1.memo1.Lines,{out}lx,ly);//get the x,y of the annotation position. This is called in the final phase of the stack routine
+
+                  calculate_manual_vector(referenceX,referenceY,lx,ly)
                 end
                 else
                 begin{internal alignment}
@@ -934,7 +949,7 @@ end;
 procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
     fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3,mm,ccc                  : integer;
-    background, weightF,hfd_min,aa,bb,cc,dd,ee,ff,pedestal,dummy,mean_hfd                                                      : double;
+    background, weightF,hfd_min,aa,bb,cc,dd,ee,ff,pedestal,dummy,mean_hfd,referenceX, referenceY                                   : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,solar_drift_compensation,
     use_star_alignment                                                                                                         : boolean;
     tempval                                                                                                                    : single;
@@ -1053,7 +1068,6 @@ begin
               begin
                 referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
                 referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
-
               end;
             end;
             reset_solution_vectors(1);{no influence on the first image}
@@ -1083,7 +1097,9 @@ begin
               get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
               if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin {manual alignment}
-                calculate_manual_vector(c);//includes memo2_message with solution vector
+                calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
+                                                               strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]));
+
               end;
             end
           end;
@@ -1160,7 +1176,7 @@ type
 var
     solutions      : array of tsolution;
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,max_stars,old_naxis3,ccc        : integer;
-    variance_factor, value,weightF,hfd_min,dummy,mean_hfd                                                              : double;
+    variance_factor, value,weightF,hfd_min,dummy,mean_hfd,referenceX, referenceY                                        : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip, solar_drift_compensation,
     use_star_alignment                                                                                                 : boolean;
     tempval, sumpix, newpix, background, pedestal,val                                                                  : single;
@@ -1310,7 +1326,10 @@ begin
             get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
             if ((use_manual_align) or (use_ephemeris_alignment)) then //<> use_astrometry_internal
             begin {manual alignment}
-              calculate_manual_vector(c);//includes memo2_message with solution vector
+//              calculate_manual_vector(c);//includes memo2_message with solution vector
+              calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
+                                                             strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]));
+
               solutions[c].solution_vectorX:= solution_vectorX;{store solutions}
               solutions[c].solution_vectorY:= solution_vectorY;
             end;
@@ -1569,9 +1588,8 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, old_naxis3,
-    height_maxS,width_maxS                                                                                   : integer;
-    value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,delta_JD_required,target_background, JD_reference, hfd_measured  : double;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, old_naxis3,  height_maxS,width_maxS                   : integer;
+    value,weightF,hfd_min,aa,bb,cc,dd,ee,ff,delta_JD_required,target_background, JD_reference, hfd_measured,referenceX, referenceY    : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip   : boolean;
     jd_fraction                                                                        : single;
     background_correction : array[0..2] of single;
@@ -1681,7 +1699,9 @@ begin
         solution:=true;
 
         if init=true then {second image}
-          calculate_manual_vector(c)//includes memo2_message with solution vector
+          calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
+                                                         strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]))
+
 
 
         else
@@ -1832,7 +1852,9 @@ begin
               end
               else
               begin
-                calculate_manual_vector(c);
+//                calculate_manual_vector(c);
+                calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
+                                                               strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]));
               end;
             end
             else
@@ -1916,7 +1938,7 @@ end;   {comet and stars sharp}
 procedure calibration_and_alignment(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
     fitsX,fitsY,c, old_width, old_height,col, binning, max_stars,old_naxis3,height_average,width_average,ccc  : integer;
-    background, hfd_min,pedestal,mean_hfd,value                                                           : double;
+    background, hfd_min,pedestal,mean_hfd,value, referenceX, referenceY                                       : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,use_star_alignment: boolean;
     warning             : string;
     starlist1,starlist2 : Tstar_list;
@@ -2052,7 +2074,10 @@ begin
             get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin {manual alignment}
-              calculate_manual_vector(c);//includes memo2_message with solution vector
+//              calculate_manual_vector(c);//includes memo2_message with solution vector
+              calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
+                                                             strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]));
+
             end;
           end
         end;
