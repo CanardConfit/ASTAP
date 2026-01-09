@@ -203,8 +203,8 @@ var
   br_factor_2, bg_factor_2, bb_factor_2,
   saturated_level,hfd_min,tempval,tempval2,
   aa,bb,cc,dd,ee,ff,
-  col1,col2,x_new,y_new,x_frac,y_frac,lx,ly,referenceX, referenceY                         : double;
-  init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip : boolean;
+  x_new,y_new,x_frac,y_frac,lx,ly,referenceX, referenceY                         : double;
+  init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip,update_memo : boolean;
   warning               : string;
   starlist1,starlist2   : Tstar_list;
   img_temp,img_average  : Timage_array;
@@ -331,8 +331,8 @@ begin
             {load image}
             Application.ProcessMessages;
             if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-//            if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-            if load_fits(filename2,true {light},true,true {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+            update_memo:=((init=false {update memo only for first ref img}) or (use_ephemeris_alignment){to read annotation positions});
+            if load_fits(filename2,true {light},true,update_memo,0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
 
             if init=false then
@@ -345,42 +345,36 @@ begin
             begin
                get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
                background_r:=head.backgr;
-               //cblack:=round( background_r);
                counterR:=head.light_count ;counterRdark:=head.dark_count; counterRflat:=head.flat_count; counterRbias:=head.flatdark_count; exposureR:=round(head.exposure);temperatureR:=head.set_temperature;{for historical reasons}
             end;
             if c=2 then
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
               background_g:=head.backgr;
-              //cblack:=round( background_g);
               counterG:=head.light_count;counterGdark:=head.dark_count; counterGflat:=head.flat_count; counterGbias:=head.flatdark_count; exposureG:=round(head.exposure);temperatureG:=head.set_temperature;
             end;
             if c=3 then
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
               background_b:=head.backgr;
-              //cblack:=round( background_b);
               counterB:=head.light_count; counterBdark:=head.dark_count; counterBflat:=head.flat_count; counterBbias:=head.flatdark_count; exposureB:=round(head.exposure);temperatureB:=head.set_temperature;
             end;
             if c=4 then
             begin
                get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
                background_r2:=head.backgr;
-               //cblack:=round( background_r);
                counterR2:=head.light_count ;counterR2dark:=head.dark_count; counterR2flat:=head.flat_count; counterR2bias:=head.flatdark_count; exposureR2:=round(head.exposure);temperatureR2:=head.set_temperature;{for historical reasons}
             end;
             if c=5 then
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
               background_g2:=head.backgr;
-              //cblack:=round( background_g);
               counterG2:=head.light_count;counterG2dark:=head.dark_count; counterG2flat:=head.flat_count; counterG2bias:=head.flatdark_count; exposureG2:=round(head.exposure);temperatureG2:=head.set_temperature;
             end;
             if c=6 then
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
               background_b2:=head.backgr;
-              //cblack:=round( background_b);
               counterB2:=head.light_count; counterB2dark:=head.dark_count; counterB2flat:=head.flat_count; counterB2bias:=head.flatdark_count; exposureB2:=round(head.exposure);temperatureB2:=head.set_temperature;
             end;
 
@@ -388,7 +382,6 @@ begin
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
               background_L:=head.backgr;
-              //cblack:=round( background_L);
               counterL:=head.light_count; counterLdark:=head.dark_count; counterLflat:=head.flat_count; counterLbias:=head.flatdark_count; exposureL:=round(head.exposure);temperatureL:=head.set_temperature;
             end;
 
