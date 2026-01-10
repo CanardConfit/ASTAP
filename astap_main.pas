@@ -12750,7 +12750,7 @@ var
   count1,x1,y1,x2,y2,pos1,charnr,i : integer;
   typ     : double;
   List: TStrings;
-  annotation,magn,dummy : string;
+  annotation,magn : string;
 begin
   if head.naxis=0 then exit; {file loaded?}
 
@@ -12790,7 +12790,6 @@ begin
           for i:=0 to high(fshapes) do
           if ((Fshapes[i].shape<>nil) and ( abs(fshapes[i].fitsX-(x1+x2)/2) <30) and (abs(fshapes[i].fitsY-(y1+y2)/2)<30)) then
           begin
-//            var_lock:=list[5];
             mainform1.fshapes[i].shape.HINT:=list[5];
             memo2_message('Locked on object: '+list[5]);
           end;
@@ -12814,7 +12813,7 @@ begin
               pos1:=posex('\u',annotation,pos1);
               if pos1>0 then
               begin
-                  dummy:=copy(annotation,pos1+2,4);
+                  //dummy:=copy(annotation,pos1+2,4);
                   charnr:=hex2dec(copy(annotation,pos1+2,4));
                   delete(annotation,pos1,6);
                   insert(widechar(charnr),annotation,pos1);
@@ -14254,7 +14253,7 @@ end;
 
 
 procedure crop_image(x1,y1,x2,y2 {array coordinates,[0..]} : integer; var img : timage_array;var head : theader; const memo : tstrings);
-var fitsX,fitsY,col,dum, formalism      : integer;
+var fitsX,fitsY,col, formalism      : integer;
     fxc,fyc, ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
     img_temp : Timage_array;
 begin
