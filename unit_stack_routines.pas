@@ -188,6 +188,20 @@ begin
 end;
 
 
+procedure pause2;
+var
+  st :  string;
+begin
+  st:=stackmenu1.stack_button1.caption;
+  stackmenu1.stack_button1.caption:='PAUSED';
+  wait(500);
+  stackmenu1.stack_button1.caption:=st;
+  if stacking_paused then
+    wait(500)
+  else
+    application.processmessages;
+end;
+
 
 procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer ); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,R2,G2,B2,L]}
 var
@@ -269,6 +283,7 @@ begin
 
       for c:=0 to high(files_to_process) do  {should contain reference,r,g,b,r2,g2,b2,gb,l}
       begin
+        while stacking_paused do pause2;
         if c=7 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
         begin {fix RGB stack}
           memo2_message('Correcting the number of pixels added together.');
@@ -775,6 +790,7 @@ begin
     for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
+        while stacking_paused do pause2;
         if load_fits(files_to_process[c].name,true {light},false{load data},false {update memo} ,0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
         if init=false then
@@ -802,8 +818,8 @@ begin
     for c:=0 to high(files_to_process) do
     if length(files_to_process[c].name)>0 then
     begin
-
       try { Do some lengthy operation }
+        while stacking_paused do pause2;
         ListView1.Selected :=nil; {remove any selection}
         ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
         Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
@@ -979,6 +995,7 @@ begin
       for c:=0 to high(files_to_process) do
       if length(files_to_process[c].name)>0 then
       begin
+        while stacking_paused do pause2;
 
         try { Do some lengthy operation }
           ListView1.Selected :=nil; {remove any selection}
@@ -1209,6 +1226,7 @@ begin
       if length(files_to_process[c].name)>0 then
       begin
       try { Do some lengthy operation }
+        while stacking_paused do pause2;
         ListView1.Selected :=nil; {remove any selection}
         ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
         Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
@@ -1319,7 +1337,6 @@ begin
             get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
             if ((use_manual_align) or (use_ephemeris_alignment)) then //<> use_astrometry_internal
             begin {manual alignment}
-//              calculate_manual_vector(c);//includes memo2_message with solution vector
               calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
                                                              strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]));
 
@@ -1384,6 +1401,7 @@ begin
       if length(files_to_process[c].name)>0 then
       begin
         try { Do some lengthy operation }
+          while stacking_paused do pause2;
           ListView1.Selected :=nil; {remove any selection}
           ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
           Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False); {scroll to selected item}
@@ -1469,6 +1487,7 @@ begin
       if length(files_to_process[c].name)>0 then
       begin
         try { Do some lengthy operation }
+          while stacking_paused do pause2;
           ListView1.Selected :=nil; {remove any selection}
           ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
           Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
@@ -1613,6 +1632,7 @@ begin
       if length(files_to_process[c].name)>0 then
       begin
       try { Do some lengthy operation }
+        while stacking_paused do pause2;
         ListView1.Selected :=nil; {remove any selection}
         ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
         Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
@@ -1791,6 +1811,7 @@ begin
       if length(files_to_process[c].name)>0 then
       begin
         try { Do some lengthy operation }
+          while stacking_paused do pause2;
           ListView1.Selected :=nil; {remove any selection}
           ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
           Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
@@ -1845,7 +1866,6 @@ begin
               end
               else
               begin
-//                calculate_manual_vector(c);
                 calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
                                                                strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]));
               end;
@@ -1961,6 +1981,7 @@ begin
       if length(files_to_process[c].name)>0 then
       begin
       try { Do some lengthy operation }
+        while stacking_paused do pause2;
         ListView1.Selected :=nil; {remove any selection}
         ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
         Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
@@ -2067,10 +2088,8 @@ begin
             get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin {manual alignment}
-//              calculate_manual_vector(c);//includes memo2_message with solution vector
               calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
                                                              strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]));
-
             end;
           end
         end;
@@ -2080,15 +2099,11 @@ begin
 
         if solution then
         begin
-//          if use_astrometry_internal then
-//            sincos(head.dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
           if use_astrometry_internal then
             astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
 
           inc(counter);
           background:=head.backgr;//calculated in bin_find_stars
-
-
 
           for fitsY:=0 to height_average-1 do
             for fitsX:=0 to width_average-1 do

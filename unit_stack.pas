@@ -775,6 +775,8 @@ type
     procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
+    procedure lightsContextPopup(Sender: TObject; MousePos: TPoint;
+      var Handled: Boolean);
     procedure set_saturation1Change(Sender: TObject);
     procedure listview7ItemChecked(Sender: TObject; Item: TListItem);
     procedure list_to_clipboard_swapped_7Click(Sender: TObject);
@@ -1123,6 +1125,9 @@ var  {################# initialised variables #########################}
   groupsizeStr : string='';
   images_checked: integer=0;
   dark_norm_value: double=0;
+  stacking_running : boolean=false;
+  stacking_paused : boolean=false;
+
 
 
 const
@@ -2296,9 +2301,6 @@ begin
       end;
       Inc(c);
     until c > counts;
-
-//    if use_ephemeris_alignment1.Checked then
-//      header_2:=tstringlist.create;
 
     counts:=ListView1.items.Count - 1;
     c:=0;
@@ -5484,55 +5486,6 @@ begin
 end;
 
 
-procedure scroll_up_down(lv:tlistview; up: boolean);
-var
-  c, step,watchdog: integer;
-  checkf : boolean;
-begin
-  watchdog:=0;
-  if lv.items.Count <= 1 then exit; {no files}
-
-  if up=False then step:=-1  else   step:=1;{forward/ backwards}
-
-  c:=listview_find_selection(lv); {find the row selected}
-
-  repeat // find checked file
-    Inc(c, step);
-    if c >= lv.items.Count then c:=0;
-    if c < 0 then c:=lv.items.Count - 1;
-
-    checkf:=lv.Items.item[c].Checked;
-    if checkf then
-    begin
-      lv.Selected:=nil;//remove any selection
-      lv.ItemIndex:=c; {mark where we are. Important set in object inspector    lv.HideSelection:=false; lv.Rowselect:=true}
-      lv.Items[c].MakeVisible(False);{scroll to selected item}
-      filename2:=lv.items[c].Caption;
-      mainform1.Caption:=filename2;
-
-      {load image}
-      if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head,img_loaded) = False then
-      begin
-        memo2_message('repeat exit');
-
-        Screen.Cursor:=crDefault;
-        exit;
-      end;
-     plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-     plot_image(mainform1.image1, False {re_center});
-
-     {show alignment marker}
-      if (stackmenu1.use_manual_alignment1.Checked) then
-        show_shape_manual_alignment(c) {show the marker on the reference star}
-      else
-        mainform1.shape_manual_alignment1.Visible:=False;
-
-    end; //checkf=true
-    inc(watchdog);
-  until ((checkf) or (esc_pressed) or (watchdog>300));
-end;
-
-
 procedure listview_insert(var lv: tlistview; index:integer;filen : string; nrfields : integer);//insert a row
 var
   ListItem     : TListItem;
@@ -5591,8 +5544,8 @@ procedure Tstackmenu1.listview1KeyDown(Sender: TObject; var Key: word;
   Shift: TShiftState);  // for all listviexX. does not intefere with other typing
 begin
   if ((shift=[]) and (key = vk_delete) ) then listview_removeselect(TListView(Sender));
-  if key = vk_left then scroll_up_down(tlistview(sender), false);
-  if key = vk_right then scroll_up_down(tlistview(sender), true );
+//  if key = vk_left then scroll_up_down(tlistview(sender), false);
+//  if key = vk_right then scroll_up_down(tlistview(sender), true );
 end;
 
 
@@ -9751,6 +9704,13 @@ begin
   new_analyse_required:=true;
 end;
 
+procedure Tstackmenu1.lightsContextPopup(Sender: TObject; MousePos: TPoint;
+  var Handled: Boolean);
+begin
+
+end;
+
+
 procedure Tstackmenu1.set_saturation1Change(Sender: TObject);
 begin
   saturation_level1.enabled:=set_saturation1.checked;
@@ -9838,8 +9798,7 @@ begin
   plot_image(mainform1.image1,false);
 end;
 
-procedure Tstackmenu1.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure Tstackmenu1.FormKeyDown(Sender: TObject; var Key: Word;   Shift: TShiftState);
 var
   tabind: integer;
 begin
@@ -12654,6 +12613,18 @@ var
   filters_used: array [0..6] of string;//r,g,b,r2,g2,b2,L
 begin
   save_settings2;{too many lost selected files, so first save settings}
+
+  if esc_pressed then stacking_running:=false;
+  if stacking_running then
+  begin
+    stacking_paused:=not stacking_paused;
+    if stacking_paused then
+       memo2_message('Stacking is paused. Hit the stack button to continue.');
+    exit;
+  end;
+
+  stacking_running:=true;
+  stacking_paused:=false;
   esc_pressed:=False;
 
   memo2_message('Stack method ' + stack_method1.Text);
@@ -13623,6 +13594,8 @@ begin
   update_menu(True);
 
   if write_log1.Checked then memo2.Lines.SaveToFile(ChangeFileExt(Filename2, '.txt'));
+
+  stacking_running:=false;
 
   if powerdown_enabled1.Checked then {power down system}
   begin

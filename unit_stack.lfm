@@ -94,6 +94,7 @@ object stackmenu1: Tstackmenu1
           ClientHeight = 468
           ClientWidth = 1912
           ImageIndex = 22
+          OnContextPopup = lightsContextPopup
           OnShow = lightsShow
           ParentFont = False
           object nr_selected1: TLabel
@@ -393,7 +394,7 @@ object stackmenu1: Tstackmenu1
           object blink_unaligned_multi_step1: TButton
             Left = 1148
             Height = 29
-            Hint = 'Un-aligned blink. Note: For single step blink use the keyboard left and right arrows.'
+            Hint = 'Un-aligned blink. Note: For single step blink use CTRL+UP/DOWN arrows.'
             Top = 5
             Width = 50
             AutoSize = True
@@ -490,6 +491,12 @@ object stackmenu1: Tstackmenu1
             Checked = True
             State = cbChecked
             TabOrder = 12
+          end
+          object SpeedButton3: TSpeedButton
+            Left = 1174
+            Height = 22
+            Top = 24
+            Width = 23
           end
         end
         object Darks: TTabSheet
@@ -3135,7 +3142,7 @@ object stackmenu1: Tstackmenu1
           object blink_button1: TButton
             Left = 296
             Height = 26
-            Hint = 'Blink check-marked images once'
+            Hint = 'Blink check-marked images once. For single step blink use CTRL+UP/DOWN arrows.'
             Top = 34
             Width = 75
             Caption = '▶|'
@@ -3157,7 +3164,7 @@ object stackmenu1: Tstackmenu1
           object blink_button_contF1: TButton
             Left = 384
             Height = 26
-            Hint = 'Continous blink check-marked images'
+            Hint = 'Continous blink check-marked images. For single step blink use CTRL+UP/DOWN arrows.'
             Top = 34
             Width = 43
             Caption = ' ▶'
@@ -3244,7 +3251,7 @@ object stackmenu1: Tstackmenu1
           object blink_button_contB1: TButton
             Left = 440
             Height = 26
-            Hint = 'Continous blink check-marked images'
+            Hint = 'Continous blink check-marked images. For single step blink use CTRL+UP/DOWN arrows.'
             Top = 34
             Width = 43
             Caption = '◀'
