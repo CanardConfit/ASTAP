@@ -2,7 +2,7 @@ unit unit_xisf;
 {Basic XISF read routine for uncompressed files. Reads included image for 8,16 32, -32 and -64 bit format}
 {The XISF format is described by standard reference: http://pixinsight.com/doc/docs/XISF-1.0-spec/XISF-1.0-spec.html}
 
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017-2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public

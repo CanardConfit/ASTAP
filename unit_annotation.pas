@@ -1,6 +1,6 @@
 unit unit_annotation; {deep sky and star annotation & photometry calibation of the image}
 {$mode delphi}
-{Copyright (C) 2017, 2026 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017-2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
  This Source Code Form is subject to the terms of the Mozilla Public
@@ -1411,7 +1411,7 @@ var
   abbrv, period_str: string;
   flip_horizontal, flip_vertical,filter_auid_only,skip_aavso,valid_period,hash_symbol,fshape_match,none_manual  : boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,x,y,fx,fy, period_position,leng,count_comp : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,x,y,fx,fy, period_position,leng,nrcount : integer;
   overlap          : boolean;
   annotation_color2 : tcolor;
 begin
@@ -1428,7 +1428,7 @@ begin
       setlength(vsp_vsx_list,1000);//make space
       vsp:=nil;
       setlength(vsp,1000);
-      count_comp:=0;
+      nrcount:=0;
       none_manual:=stackmenu1.measuring_method1.itemindex>0;//if true extract all else only the manually clicked stars.
     end;
 
@@ -1550,7 +1550,6 @@ begin
               if ((Fshapes[i].shape<>nil) and (abs(fx-Fshapes[i].fitsX)<5) and  (abs(fy-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
               begin
                 Fshapes[i].shape.HINT:=strip_magnitudes(naam2,')');
-                Fshapes[i].shape.showhint:=true;
                 fshape_match:=true;//This star was manually selected
               end;
             end  //Local variable database
@@ -1618,22 +1617,23 @@ begin
 
               if ((extract_visible) and (length(naam2)>2){through filters} and ((none_manual) or (fshape_match)) ) then //special option to add objects to list for photometry
               begin
-                vsp_vsx_list[text_counter].ra:=ra2;
-                vsp_vsx_list[text_counter].dec:=dec2;
-                vsp_vsx_list[text_counter].source:=0; //local
+                vsp_vsx_list[nrcount].ra:=ra2;
+                vsp_vsx_list[nrcount].dec:=dec2;
+                vsp_vsx_list[nrcount].source:=0; //local
                 if copy(naam2,1,1)='0' then //vsp star=comparison star
-                  vsp_vsx_list[text_counter].abbr:=strip_magnitudes(naam2,')')//combine only filters used in the list of files. all_filters is set in analyse_listview
+                  vsp_vsx_list[nrcount].abbr:=strip_magnitudes(naam2,')')//combine only filters used in the list of files. all_filters is set in analyse_listview
                 else
-                  vsp_vsx_list[text_counter].abbr:=naam2; //variable
+                  vsp_vsx_list[nrcount].abbr:=naam2; //variable
 
 
-                if text_counter+1>=length(vsp_vsx_list) then
+                if nrcount+1>=length(vsp_vsx_list) then
                    setlength(vsp_vsx_list,length(vsp_vsx_list)+1000);{increase size dynamic array. Probably too much already 1000 but makes is robust}
 
-                vsp_vsx_list_length:=text_counter;
+                inc(nrcount);
+                vsp_vsx_list_length:=nrcount;
               end;
-              inc(text_counter);
 
+              inc(text_counter);
               if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+1000);{increase size dynamic array}
 
             end;
@@ -1666,7 +1666,21 @@ begin
     end; {while loop};
 
    // text_dimensions:=nil;{remove used memory}
-    memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
+   // memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
+
+   with mainform1 do
+       if ((extract_visible) and (none_manual=false)) then //add none found manual selected stars
+       for i:=0 to high(Fshapes) do
+       if ((Fshapes[i].shape<>nil) and (copy(Fshapes[i].shape.hint,7,1)='.')) then  // Not found in vsp, vsx database, still IAU abbreviation
+       begin
+
+         vsp_vsx_list[nrcount].ra:=Fshapes[i].ra;
+         vsp_vsx_list[nrcount].dec:=Fshapes[i].dec;
+         vsp_vsx_list[nrcount].abbr:=Fshapes[i].shape.hint;
+         vsp_vsx_list[nrcount].source:=3;//none vsp, vsx
+         inc(nrcount);//value will always be small due to manual mode. So never reach more then 1000 entries
+         vsp_vsx_list_length:=nrcount;
+       end;
 
     Screen.Cursor:=crDefault;
   end;
@@ -1730,7 +1744,7 @@ type
 var
   telescope_ra,telescope_dec, SIN_dec_ref,COS_dec_ref,
   ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
-  abbreviation, abbreviation_display, filterstrUP: string;
+  abbreviation, abbreviation_display, filterstrUP,st: string;
   flip_horizontal, flip_vertical,fshape_match,none_manual: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount, font_size  : integer;
@@ -1838,7 +1852,6 @@ begin
               if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
               begin
                 Fshapes[i].shape.HINT:=abbreviation; //will be used in manual mode to get the abbreviation
-                Fshapes[i].shape.showhint:=true;
                 fshape_match:=true;//This star was manually selected
               end;
 
@@ -1862,8 +1875,8 @@ begin
               vsp_vsx_list[nrcount].abbr:=abbreviation;
               vsp_vsx_list[nrcount].source:=1;//vsx
               vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
-              vsp_vsx_list_length:=nrcount;
               inc(nrcount);
+              vsp_vsx_list_length:=nrcount;
               if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
             end;
 
@@ -1900,7 +1913,6 @@ begin
             if ((Fshapes[i].shape<>nil) and (abs(x-Fshapes[i].fitsX)<5) and  (abs(y-Fshapes[i].fitsY)<5)) then  // note shape_fitsX/Y are in sensor coordinates
             begin
               Fshapes[i].shape.HINT:=abbreviation;  //will be used in manual mode to get the abbreviation
-              Fshapes[i].shape.showhint:=true;
               fshape_match:=true;//This star was manually selected
             end;
 
@@ -1930,8 +1942,8 @@ begin
               vsp_vsx_list[nrcount].abbr:=abbreviation;
               vsp_vsx_list[nrcount].source:=2;//vsp
               vsp_vsx_list[nrcount].index:=count;//to retrieve all magnitudes
-              vsp_vsx_list_length:=nrcount;
               inc(nrcount);
+              vsp_vsx_list_length:=nrcount;
               if nrcount>=length(vsp_vsx_list) then setlength(vsp_vsx_list,nrcount+1000)
             end;
           end;
@@ -2018,8 +2030,19 @@ begin
       end;//while loop
     end;//plot vsx and vsp
 
+    with mainform1 do
+    if ((none_manual=false) and (extract_visible)) then
+    for i:=0 to high(Fshapes) do //add none found manual selected stars
+    if ((Fshapes[i].shape<>nil) and (copy(Fshapes[i].shape.hint,7,1)='.')) then  // Not found in vsp, vsx database, still IAU abbreviation
+    begin
 
-    //memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
+      vsp_vsx_list[nrcount].ra:=Fshapes[i].ra;
+      vsp_vsx_list[nrcount].dec:=Fshapes[i].dec;
+      vsp_vsx_list[nrcount].abbr:=Fshapes[i].shape.hint;
+      vsp_vsx_list[nrcount].source:=3;//none vsp, vsx
+      inc(nrcount);//value will always be small due to manual mode. So never reach more then 1000 entries
+      vsp_vsx_list_length:=nrcount;
+    end;
   end;
 
 end;{plot vsp stars}
