@@ -17,7 +17,7 @@ unit unit_listbox;
                       abcdef    leave form with abcdef designation. Object_found=false
 }
 
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017-2024 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public

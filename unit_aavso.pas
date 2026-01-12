@@ -2137,7 +2137,10 @@ begin
   begin
     abrv_comp1.color:=clred;
     exit;
-  end;
+  end
+  else
+    abrv_comp1.color:=cldefault;
+
 
   delete(abbrv_comp_clean,length(variable_clean),1);//remove last "|"
   store_vsp_stars( abbrv_check_clean+'|'+variable_clean+abbrv_comp_clean); //simple database in settings key report_stars

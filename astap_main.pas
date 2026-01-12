@@ -1,5 +1,5 @@
 unit astap_main;
-{Copyright (C) 2017, 2026 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017-2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -9,7 +9,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 {Notes on MacOS pkg making:
    1) Modify app in applications via "show contents", add updated files.
-   2) Add the app in program packages
+   2) Add the app in program Packages
    3) Build package. Will produce PKG file containing the app.
 
    Compiler settings for macOS:
@@ -48,16 +48,16 @@ https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41800
 
 interface
 uses
- {$ifdef mswindows}
+  {$ifdef mswindows}
   Windows,
   Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,
   windirs,{for directories from Windows}
- {$else} {unix}
+  {$else} {unix}
   LCLType, {for vk_...}
   Unix,  {for console}
   Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,process,
   BaseUnix, {for fpchmod}
- {$endif}
+  {$endif}
   LCLIntf,{for selectobject, openURL}
   LCLProc,
   FPImage,
@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.01.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.01.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;

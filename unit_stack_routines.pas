@@ -1,5 +1,5 @@
 unit unit_stack_routines;
-{Copyright (C) 2017, 2024 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017-2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -23,6 +23,8 @@ procedure astrometric_to_vector(headA, headB : theader);{convert astrometric sol
 function test_bayer_matrix(img: Timage_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 procedure stack_comet(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calc_newx_newy(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double; out  x_new_float,  y_new_float : double); {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
+procedure pause2;//put stacking process in pause
+
 
 var
   SIN_dec0,    // image to add
@@ -148,7 +150,7 @@ end;
 procedure calculate_manual_vector(referenceX,referenceY,lx,ly : double); //calculate the vector drift for the image scale one and 0..h, 0..w range.
 var
   ra1,dec1,x1,y1,shiftX,shiftY : double;
-  dummyX,dummyY : string;
+//  dummyX,dummyY : string;
 begin
   if head.cd1_1=0 then //pure manual stacking
   begin
@@ -188,7 +190,7 @@ begin
 end;
 
 
-procedure pause2;
+procedure pause2;//put stacking process in pause
 var
   st :  string;
 begin
@@ -200,6 +202,7 @@ begin
     wait(500)
   else
     application.processmessages;
+  if esc_pressed then stacking_paused:=false;//stop pause and exit
 end;
 
 
