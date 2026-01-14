@@ -9145,9 +9145,17 @@ end;
 
 procedure Tstackmenu1.stack_groups1Click(Sender: TObject);
 var
-  index, counter, oldindex, position, i,groupsize,count: integer;
+  index, counter, oldindex, position, i,groupsize,count,ColumnIndex: integer;
+  jdf,oldjdf : double;
   ListItem: TListItem;
 begin
+  stacking_paused:=false;
+  if listview7.Items.item[listview7.Items.Count-1].subitems.Strings[p_date]='' then //check if thelast image has a date
+  begin
+    ShowMessage('First analyse the images to add the dates to the listview!');
+    exit;
+  end;
+
   groupsizeStr:=InputBox('Stack selected file in groups, mode average',
   'The selected files should be sorted on date.'+#10+#10+
   'How many images per stack?:',groupsizeStr);
@@ -9156,6 +9164,18 @@ begin
   if groupsize=0 then exit;
 
   esc_pressed:=false;
+
+//  if listview7.Items.item[listview7.Items.Count-1].subitems.Strings[p_date]='' //check if thelast image has a date
+//  then
+//  begin
+//    analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
+//    memo2_message('Analysing for date');
+//  end;
+  memo2_message('Sorting on date');
+  SortedColumn:=P_date+1;
+  ListView7.SortDirection:=sdAscending;
+  listview7.sort;//Sort on date
+  application.processmessages;
 
   position:=-1;
   index:=0;
