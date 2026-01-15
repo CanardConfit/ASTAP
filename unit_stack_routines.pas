@@ -202,7 +202,10 @@ begin
     wait(500)
   else
     application.processmessages;
-  if esc_pressed then stacking_paused:=false;//stop pause and exit
+  if esc_pressed then
+  begin
+    stacking_paused:=false;//stop pause and exit
+  end;
 end;
 
 
@@ -1011,6 +1014,11 @@ begin
           {load image}
           if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
           if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+
+          //add_text(mainform1.memo1.lines,'COMMENT  ',copy(filename2,40,999));
+          //add_text(mainform1.memo1.lines,'COMMENT  ',inttostr(c));
+          //add_text(mainform1.memo1.lines,'COMMENT  ',head.date_obs);
+          //add_text(mainform1.memo1.lines,'COMMENT  ',floattostr2(jd_sum/(c+1)));
 
           if init=false then
           begin {init is false, first image}
