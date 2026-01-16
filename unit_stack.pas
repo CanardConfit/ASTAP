@@ -2935,6 +2935,8 @@ begin
   if key = #27 then
   begin
     esc_pressed:=True;
+    stacking_paused:=false;
+    stacking_running:=false;
     memo2_message('ESC pressed. Execution stopped.');
   end;
 
@@ -4199,6 +4201,16 @@ begin
      Compare:=CompareText(Item1.Caption, Item2.Caption)
   else
     Compare:=CompareAnything(Item1.SubItems[SortedColumn - 1], Item2.SubItems[SortedColumn - 1]);
+
+
+  if compare=0 then // Secondary sort on date
+  begin
+    if tlistview(sender)=listview7 then
+       compare := CompareText(Item1.SubItems[P_jd_mid], Item2.SubItems[P_jd_mid]) //sort listview7 secondary always on date. Use jd_mid for stacks and not star date. Especially for sort on filter
+    else
+    if tlistview(sender)=listview1 then
+       compare := CompareText(Item1.SubItems[L_datetime], Item2.SubItems[L_datetime]);//sort listview1 secondary always on date
+  end;
 
   if TListView(Sender).SortDirection = sdDescending then  Compare:=-Compare;
 end;
@@ -6269,6 +6281,7 @@ begin
   stackmenu1.ListView1Compare(stackmenu1.ListView1, Item1, Item2, ParamSort, Result);
 end;
 
+
 procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
 begin
   if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<1)) then
@@ -7097,6 +7110,9 @@ var
   index, counter, oldindex, position, i: integer;
   ListItem: TListItem;
 begin
+  memo2_message('Moving images to light tab for calibration! This could take some time. If this is not desired, uncheck option "Calibrate".');
+  application.processmessages;
+
   position:=-1;
   index:=0;
   listview1.Items.beginUpdate;
@@ -9145,62 +9161,74 @@ end;
 
 procedure Tstackmenu1.stack_groups1Click(Sender: TObject);
 var
-  index, counter, oldindex, position, i,groupsize,count,ColumnIndex: integer;
+  index, counter, oldindex, position, i,j,groupsize,count,ColumnIndex, new_counter: integer;
   jdf,oldjdf : double;
   ListItem: TListItem;
+  same_filter : boolean;
+  new_files   : array of string;
+  st:string;
 begin
   stacking_paused:=false;
-  if listview7.Items.item[listview7.Items.Count-1].subitems.Strings[p_date]='' then //check if thelast image has a date
-  begin
-    ShowMessage('First analyse the images to add the dates to the listview!');
-    exit;
-  end;
+//  if listview7.Items.item[listview7.Items.Count-1].subitems.Strings[p_date]='' then //check if thelast image has a date
+//  begin
+//    ShowMessage('First analyse the images to add the dates to the listview!');
+//    exit;
+//  end;
 
-  groupsizeStr:=InputBox('Stack selected file in groups, mode average',
-  'The selected files should be sorted on date.'+#10+#10+
+  groupsizeStr:=InputBox('Stack all file in groups, mode average',
+//  'The selected files should be sorted on date.'+#10+#10+
   'How many images per stack?:',groupsizeStr);
   if groupsizeStr=''  then exit; {cancel used}
   groupsize:=strtoint2(groupsizeStr,0);
   if groupsize=0 then exit;
 
+
   esc_pressed:=false;
 
-//  if listview7.Items.item[listview7.Items.Count-1].subitems.Strings[p_date]='' //check if thelast image has a date
-//  then
-//  begin
-//    analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
-//    memo2_message('Analysing for date');
-//  end;
-  memo2_message('Sorting on date');
-  SortedColumn:=P_date+1;
+  if listview7.Items.item[listview7.Items.Count-1].subitems.Strings[p_date]='' //check if thelast image has a date
+  then
+  begin
+    analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
+    memo2_message('Analysing for filter and date');
+  end;
+  memo2_message('Sorting on filter and secondary on date');//see procedure listview1Compare
+  SortedColumn:=P_filter+1;
   ListView7.SortDirection:=sdAscending;
-  listview7.sort;//Sort on date
+  listview7.sort;//Sort on filter & date
   application.processmessages;
 
   position:=-1;
   index:=0;
   listview1.Clear;
   counter:=listview7.Items.Count;
+  setlength(new_files,10+counter div groupsize); //enough space plus some extra due to filters
+  new_counter:=0;
+
 
   repeat
     listview1.Items.beginUpdate;
     count:=0;
     while index < counter do
     begin
-      if listview7.Items[index].Selected then
+//      if listview7.Items[index].Selected then
       begin
         if position < 0 then position:=index;//store first position
-        listview_add(listview1, listview7.items[index].Caption, True, L_nr); // add to tab light
 
-        inc(count);
-        if count>=groupsize then
+        if count>0 then
+           same_filter:=ListView7.Items.item[index].subitems.Strings[P_filter]=ListView7.Items.item[max(0,index-1)].subitems.Strings[P_filter] ////allow stacking groups but it should be equal filter
+        else
+           same_filter:=true;//start with new filter
+
+        if ((same_filter=true) and (count<groupsize)) then
         begin
-          Inc(index);
+          st:=listview7.items[index].Caption;
+          listview_add(listview1, listview7.items[index].Caption, True, L_nr); // add to tab light
+          inc(count);
+          Inc(index);{go to next file}
+        end
+        else
           break;//group is ready
-        end;
       end;
-      Inc(index); {go to next file}
-
     end;
     listview1.Items.endUpdate;
 
@@ -9215,28 +9243,28 @@ begin
 
     oldindex:=stack_method1.ItemIndex;
     stack_method1.ItemIndex:=0; //average
-
     stack_button1Click(Sender);// stack the files in tab lights
     if esc_pressed then break;
 
     // add calibrated files
-    listview7.Items.BeginUpdate;
-    with listview7 do
-    begin
-      ListItem:=Items.add;
-      ListItem.Caption:=filename2; // contains the stack file name
-      ListItem.Checked:=True;
-      for i:=1 to P_nr do
-        ListItem.SubItems.Add(''); // add the other columns
-    end;
-    listview7.Items.EndUpdate;
+    new_files[new_counter]:=filename2;
+    inc(new_counter);
 
     listview1.Clear;
     application.processmessages;
 
   until index >=counter; //ready ??
 
-  listview_removeselect(listview7);
+  // add stacked files to listview7
+  listview7.Items.BeginUpdate;
+  listview7.Clear;
+  with listview7 do
+  begin
+    for j:=0 to new_counter-1 do
+      listview_add(listview7,new_files[j], True, P_nr);{move to darks}
+  end;
+  listview7.Items.EndUpdate;
+
 
   stack_method1.ItemIndex:=oldindex;//return old setting
   save_settings2;
@@ -12577,7 +12605,7 @@ end;
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
   i, c, nrfiles, image_counter, object_counter,
-  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon :   integer;
+  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon,k :   integer;
   filter_name1, filter_name2, defilter, filename3,
   extra1, extra2, object_to_process, stack_info, thefilters                       : string;
   lrgb, solution, monofile, ignore, cal_and_align,
@@ -12589,7 +12617,12 @@ var
 begin
   save_settings2;{too many lost selected files, so first save settings}
 
-  if esc_pressed then stacking_running:=false;
+  if esc_pressed then
+  begin
+     stacking_running:=false;//for case esc is forced
+     stacking_paused:=false;
+  end
+  else
   if stacking_running then
   begin
     stacking_paused:=not stacking_paused;
@@ -12599,7 +12632,7 @@ begin
   end;
 
   stacking_running:=true;
-  stacking_paused:=false;
+//  stacking_paused:=false;
   esc_pressed:=False;
 
   memo2_message('Stack method ' + stack_method1.Text);
@@ -12658,7 +12691,7 @@ begin
     else
       analyse_level:=0; //almost none
 
-
+  //  exit;
     analyse_tab_lights(analyse_level); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
 

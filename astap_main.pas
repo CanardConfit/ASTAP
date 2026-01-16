@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.01.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.01.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -4099,6 +4099,9 @@ begin {set form keypreview:=on}
    if key=#27 then
    begin
      esc_pressed:=true;
+     stacking_paused:=false;
+     stacking_running:=false;
+
      memo2_message('ESC pressed. Stopped processing.');
 
      if copy_paste then

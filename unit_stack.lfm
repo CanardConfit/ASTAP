@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 44
+  Left = 70
   Height = 807
-  Top = 207
+  Top = 47
   Width = 1756
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -9344,7 +9344,8 @@ object stackmenu1: Tstackmenu1
       OnClick = photom_stack1Click
     end
     object stack_groups1: TMenuItem
-      Caption = 'Stack selected files in groups, mode average'
+      Caption = 'Stack ALL filtes in groups, mode average'
+      Hint = '#To improve SNR values'
       ImageIndex = 6
       OnClick = stack_groups1Click
     end
