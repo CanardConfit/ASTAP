@@ -1,5 +1,5 @@
 program astap_command_line;
-{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017-2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,8 +7,12 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 
+//For cross compiling Linux to Android
 //
-//Set for Android under project custom options the following:
+//Under compiling and linking, option Linking check-mark Pass options to linker with "-k" delimiter is space, add option:
+//  -pie
+//
+//Set under project custom options the following:
 //  -k-z
 //  -kcommon-page-size=16384
 //  -k-z
@@ -94,7 +98,7 @@ begin
     '-speed mode[auto/slow] {Slow is forcing more area overlap while searching to improve detection}'+#10+
     '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style}' +#10+
     '-log  {Write the solver log to a .log text file.}'+#10+
-    '-update  {Add the solution to the input fits/tiff file header. Jpeg, png, tiff will be written as fits}' +#10+
+    '-update  {Add the solution to the input fits file header. Jpeg, png, tiff will be written as fits}' +#10+
     '-progress   {Log all progress steps and messages}'+#10+
     #10+
     'Analyse options:' +#10+
