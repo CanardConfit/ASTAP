@@ -1,5 +1,5 @@
 unit unit_command_line_general;
-{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017-2026 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,45 +7,20 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 
-
-{For Android compiling
-          Anyhow I have now added the patchelf --set-interpreter /system/bin/linker64 ./astap_cli command in my compile_all.sh file. So now they should be all good.
-
-          @so999
-          If you want to just test it from a terminal app, I recommend to root your device first.
-          Then put the astap_cli to
-          /data/local/tmp
-          location, finally run it from terminal app as root (su).
-
-          When root is not possible, you have to deploy the astap_cli renamed to "libastap_cli.so" (a stupid Android restriction) with your own app and call it from the app.
-
-          The databases theoretically you can put to
-          /sdcard/astap_db
-          for example, and call astap_cli with the switch -d,
-          see
-          astap_cli --help
-          for more information.
-
-          Ok, it is quite tricky. But you don't need to be root or do anything special. Note it is not solution for termux but for regular app.
-
-          1st you need to put in location it can be executed:
-
-              You need to rename astap_cli to libastap.so or something like that (libSOMETHING.so) and put it to native libraries directory (jniLibs/PLATFORM like this https://github.com/artyom-beilis/android_live_stacker/tree/web_ols/app/src/main/jniLibs/arm64-v8a )
-              You need to enable legacy packing to unpack all so: https://github.com/artyom-beilis/android_live_stacker/blob/web_ols/app/build.gradle#L26
-
-          This way you'll get libastap.so as executable inside native lib directory and deploy it with the app.
-
-          Than you need to find path to native library dir: https://github.com/artyom-beilis/android_live_stacker/blob/web_ols/app/src/main/java/org/openlivestacker/LiveStackerMain.java#L1006
-
-          Then you call exe as usual (in C++ I do via fork/exec)
-
-          https://github.com/artyom-beilis/OpenLiveStacker/blob/main/src/plate_solver.cpp#L213
-
-
-          file ./astap_cli
-          ./astap_cli: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, BuildID[sha1]=b2d9ae1e5745f6ba9dfb9b8b4e7913b638b325b9, stripped
-
-}
+//For cross compiling Linux to Android
+//
+//Under compiling and linking, option Linking check-mark Pass options to linker with "-k" delimiter is space, add option:
+//  -pie
+//
+//Set under project custom options the following:
+//  -k-z
+//  -kcommon-page-size=16384
+//  -k-z
+//  -kmax-page-size=16384
+//
+// See https://forum.lazarus.freepascal.org/index.php/topic,71336.0.html
+// older problems see:
+// See: https://forum.lazarus.freepascal.org/index.php/topic,67692.0.html
 
 
 {$mode objfpc}{$H+}
@@ -63,7 +38,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2025.11.19a';
+  astap_version: string='2026.01.17';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -1320,13 +1295,12 @@ begin
   end
   else {write as single record}
   memo1.insert(memo1.Count-1,inpt+' '+#39+thestr+#39);
-
 end;
 
 
 procedure update_text(inpt,comment1:string);{update or insert text in header}
 var
-   count1: integer;
+   count1 : integer;
 begin
 
   count1:=memo1.Count-1;

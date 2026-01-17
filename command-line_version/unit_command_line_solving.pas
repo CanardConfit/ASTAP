@@ -1,5 +1,5 @@
 unit unit_command_line_solving;
-{Copyright (C) 2017, 2025 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017-2026 by Han Kleijn, www.hnsky.org
 email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -2575,6 +2575,7 @@ begin
       update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
     end;
     update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
+    update_text ('EQUINOX =','              2000.0 / Equinox of coordinates                         ');  {the equinox is 2000 since the database is in 2000}
 
     update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
     update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
