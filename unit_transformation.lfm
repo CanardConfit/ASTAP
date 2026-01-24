@@ -201,57 +201,75 @@ object Form_transformation1: TForm_transformation1
     object RadioButtonTbv1: TRadioButton
       Left = 8
       Height = 23
+      Hint = 'Tbv'
       Top = 8
       Width = 62
       Caption = 'Tbv=?'
       Checked = True
       OnClick = RadioButtonTbv1Click
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 0
       TabStop = True
     end
     object RadioButtonTb_bv1: TRadioButton
       Left = 8
       Height = 23
+      Hint = 'Tb_bv'
       Top = 40
       Width = 76
       Caption = 'Tb_bv=?'
       OnClick = RadioButtonTbv1Click
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 1
     end
     object RadioButtonTv_bv1: TRadioButton
       Left = 8
       Height = 23
+      Hint = 'Tv_bv'
       Top = 72
       Width = 75
       Caption = 'Tv_bv=?'
       OnClick = RadioButtonTbv1Click
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 2
     end
     object RadioButtonTvr1: TRadioButton
       Left = 8
       Height = 23
+      Hint = 'Tvr'
       Top = 128
       Width = 59
       Caption = 'Tvr=?'
       OnClick = RadioButtonTbv1Click
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 3
     end
     object RadioButtonTv_vr1: TRadioButton
       Left = 8
       Height = 23
+      Hint = 'Tv_vr'
       Top = 160
       Width = 72
       Caption = 'Tv_vr=?'
       OnClick = RadioButtonTbv1Click
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 4
     end
     object RadioButtonTr_vr1: TRadioButton
       Left = 8
       Height = 23
+      Hint = 'Tr_vr'
       Top = 192
-      Width = 73
-      Caption = 'TR_vr=?'
+      Width = 70
+      Caption = 'Tr_vr=?'
       OnClick = RadioButtonTbv1Click
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 5
     end
   end

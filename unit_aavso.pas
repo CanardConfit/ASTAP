@@ -77,6 +77,7 @@ type
     hjd1: TCheckBox;
     Image_photometry1: TImage;
     Label1: TLabel;
+    colour_var1: TLabel;
     Label4: TLabel;
     Memo1: TMemo;
     deselectcomp1: TMenuItem;
@@ -205,11 +206,11 @@ type
          end;
 
     Tcolor_info = record
-           b_v_var,  //b-v colour of the var
+           b_v_var,  //b-v colour_var1 of the var
            v_r_var,
            g_r_var,
            r_i_var,
-           b_v_comp, //b-v colour of the comparison star
+           b_v_comp, //b-v colour_var1 of the comparison star
            v_r_comp,
            g_r_comp,//Sloan  g'-r'
            r_i_comp //Sloan  r'-i'
@@ -540,7 +541,7 @@ begin
 end;
 
 
-procedure  process_comp_stars2; // Get colour and flux ratio for comp ensemble.
+procedure  process_comp_stars2; // Get colour_var1 and flux ratio for comp ensemble.
 var
    i,count,icon_nr, c  : integer;
    abbrv_c             : string;
@@ -803,22 +804,22 @@ begin
             0,24: result:=0;//R
             1: result:=1;//V or TG
             2: result:=2;// B;
-            28:result:=4;//I FILTER
-            21:result:=4;//SDSS-i
-            22:result:=4;//SDSS-r
-            23:result:=4;//SDSS-g
+            28:result:=28;//I FILTER
+            21:result:=21;//SDSS-i
+            22:result:=22;//SDSS-r
+            23:result:=23;//SDSS-g
         else
           result:=4;
   end;//case
 end;
 
 
-procedure calc_b_v_var_and_comp(columnr : integer{; out b_v_var, v_r_var, g_r_var, r_i_var, b_v_comp, v_r_comp, g_r_comp, r_i_comp : double; out bv_pair,vr_pair,gr_pair,ri_pair : boolean});//calculate the b-v of the variable
+procedure calc_star_colour(columnr : integer);//calculate the b-v, v-r, sg-sr,sr-si. Output is array color_info
 var
   fluxB,fluxV,exposuretimeB,exposuretimeV, exposure_correction,dateB,dateV,diff,b_v_var,b_v_comp,best_diff   : double;
-  k, closest_image          : Integer;
+  k, closest_image                : Integer;
 
-       procedure find_b_v(iconB,iconV,iconV2: integer{; out  b_v_var,b_v_comp: double; out match: boolean});// Brute-force search: compare every green with every blue julian day
+       procedure find_colour(iconB,iconV,iconV2: integer);// Brute-force search: compare every green with every blue julian day
        var
          i,j: integer;
          match : boolean;
@@ -924,29 +925,29 @@ begin
 
   with form_aavso1 do
   begin
-    find_b_v(2,1,999{, color_info[k].b_v_var, b_v_comp, bv_pair});    //Find B and V image with closest Julian day. Brute-force search: compare every green with every blue julian day
-    find_b_v(1,0,24{,  v_r_var, v_r_comp, vr_pair});    //Find V and R image with closest Julian day. Brute-force search: compare every green with every blue julian day
-    find_b_v(23,22,999{,  g_r_var, g_r_comp, gr_pair}); //Find SI and SR image with closest Julian day. Brute-force search: compare every green with every blue julian day
-    find_b_v(22,21,999{,  r_i_var, r_i_comp, ri_pair}); //Find SR and SI image with closest Julian day. Brute-force search: compare every green with every blue julian day
+    find_colour(2,1,999{, color_info[k].b_v_var, b_v_comp, bv_pair});    //Find B and V image with closest Julian day. Brute-force search: compare every green with every blue julian day
+    find_colour(1,0,24{,  v_r_var, v_r_comp, vr_pair});    //Find V and R image with closest Julian day. Brute-force search: compare every green with every blue julian day
+    find_colour(23,22,999{,  g_r_var, g_r_comp, gr_pair}); //Find SI and SR image with closest Julian day. Brute-force search: compare every green with every blue julian day
+    find_colour(22,21,999{,  r_i_var, r_i_comp, ri_pair}); //Find SR and SI image with closest Julian day. Brute-force search: compare every green with every blue julian day
   end;//form_aavso1
 end;
 
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count_v,count_b,count_r,count_i, count_sg,count_si, count_sr,k,icon_nr,i,j,vars_end,x,y,index,fc,countdelta, m : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count_v,count_b,count_r,count_i, count_sg,count_si, count_sr,k,icon_nr,i,j,vars_end,x,y,index,fc,countdelta, m,counter : integer;
   scale,range, dummy,flux,magn_gaia,
   check_doc_magB,check_doc_magR, check_doc_magV, check_doc_magI,
   check_doc_magSG, check_doc_magSR, check_doc_magSI,
   Bcorrection,Vcorrection,Rcorrection,
   SGcorrection,SRcorrection,SIcorrection,
   checkmeanB,checkmeanV,checkmeanR,checkmeanI,checkmeanSG,checkmeanSR,checkmeanSI,
-  b_v_check, v_r_check,g_r_check, r_i_check, b_v_comp, v_r_comp, g_r_comp, r_i_comp  : double;
+  b_v_check, v_r_check,g_r_check, r_i_check, b_v_comp, v_r_comp, g_r_comp, r_i_comp,average_var_magn,jb,jv,jr,sg,sr,si  : double;
   text1,text2, date_format, abbrv_var,
   Bcorrectionstr,Vcorrectionstr,Rcorrectionstr,
-  SGcorrectionstr,SRcorrectionstr,SIcorrectionstr : string;
+  SGcorrectionstr,SRcorrectionstr,SIcorrectionstr,var_colours : string;
   bmp: TBitmap;
-  data : array of array of double;
+  data  : array of array of double;
 
   listcheck_v, listcheck_b, listcheck_r, listcheck_i, listcheck_sg, listcheck_sr, listcheck_si : array of double;
   filtercolor : array of tcolor;
@@ -1069,7 +1070,7 @@ begin
   bspace:=3*mainform1.image1.Canvas.textheight('T');{border space graph. Also for 4k with "make everything bigger"}
   wtext:=mainform1.image1.Canvas.textwidth('12.3456');
 
-  column_vars:=get_checked(form_aavso1.abbrv_variable1); //file the column_comp array
+  column_vars:=get_checked(form_aavso1.abbrv_variable1); //fill the column_comp array
   column_check:=find_correct_check_column;
   column_comps:=get_checked(form_aavso1.abrv_comp1); //fill the column_comp array
 
@@ -1212,7 +1213,9 @@ begin
               case SubItemImages[c] of 0,24: begin listcheck_r[count_r]:= data[1,c]; inc(count_r);  end;//Red
                                           1:
                                              begin listcheck_v[count_v]:= data[1,c]; inc(count_v);  end;//TG or V
-                                          2: begin listcheck_b[count_b]:= data[1,c]; inc(count_b);  end;//Blue
+                                          2: begin
+                                               listcheck_b[count_b]:= data[1,c]; inc(count_b);
+                                          end;//Blue
                                           28:
                                              begin listcheck_i[count_i]:= data[1,c]; inc(count_i);  end;//I FILTER
                                           21:
@@ -1238,6 +1241,7 @@ begin
               magn_min:=min(magn_min,data[2+k,c]);
             end;
           end;
+
           //data[0,?]  JD day of file ?
           //data[1,?]  Check of file 2
           //data[2,?]  Var1 of file ?
@@ -1260,10 +1264,6 @@ begin
             end;
           end;
 
-//          b_v_sum:=b_v_sum+comps_info[c].B_V; //for average b_v comp
-//          v_r_sum:=v_r_sum+comps_info[c].V_R;
-//          g_r_sum:=g_r_sum+comps_info[c].G_R; //Sloan
-//          r_i_sum:=r_i_sum+comps_info[c].R_I; //sloan
           inc(countdelta);
         end //valid comp star(s)
         else
@@ -1274,13 +1274,6 @@ begin
     end;
   end; //use comp stars, and convert flux to magnitudes
 
-  if countdelta>0 then
-  begin
-//    b_v:=b_v_sum/countdelta;//average colour comp
-//    v_r:=v_r_sum/countdelta;//average colour comp
-//    g_r:=g_r_sum/countdelta;//average colour comp
-//    r_i:=r_i_sum/countdelta;//average colour comp
-  end;
 
   //'#Transf corr B = Tb_bv * Tbv *((b-v) - (B-V)),   Transf corr V = Tv_bv * Tbv *((b-v) - (B-V)),   Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))'+#13+#10
   if count_b>0 then
@@ -1333,7 +1326,7 @@ begin
   begin
     if column_check>0 then
     begin
-       calc_b_v_var_and_comp(column_check);//calculate the b-v of the check star
+       calc_star_colour(column_check);//calculate the b-v of the check star
 
        b_v_check:=-99; //-99 can be store exactly in a double and used in comparison.
        v_r_check:=-99;
@@ -1441,7 +1434,7 @@ begin
   index:=0;
 
   with stackmenu1 do
-  for c:=0 to high(RowChecked) do {retrieve colour data from listview}
+  for c:=0 to high(RowChecked) do {retrieve colour_var1 data from listview}
   begin
     icon_nr:=SubItemImages[c];
     case icon_nr of
@@ -1451,7 +1444,7 @@ begin
               28:filtercolor[c]:=clMaroon; //I FILTER
               21 :filtercolor[c]:=clMaroon;//SDSS-i
               22 :filtercolor[c]:=$008CFF {orange};//SDSS-r
-              23 :filtercolor[c]:=clgreen;//SDSS-g
+              23 :filtercolor[c]:=clgreen+1;//SDSS-g
     end;
 
     color_used:=false;
@@ -1600,24 +1593,36 @@ begin
     bmp.Canvas.Pen.Color := clgray;
     bmp.Canvas.brush.color :=clgray;
     plot_point(textp1,len*3,0);
-    for k:=2 to vars_end-1 do // plot all var stars
+    var_colours:='';
+
+
+     for k:=2 to vars_end-1 do // plot all var stars
     begin
+      jb:=0;
+      jv:=0;
+      jr:=0;
+      sg:=0;
+      sr:=0;
+      si:=0;
+
 
       abbrv_var:=clean_abbreviation(ColumnTitles[column_vars[k-2]+1],true); //Caption of this column. Captiona are shifted one
 
-      for fc:=0 to index-1 do //do colour by colour too allow linking the graph point and labeling the first
+      for fc:=0 to index-1 do //do colour_var1 by colour_var1 too allow linking the graph point and labeling the first
       begin
+        counter:=0;
         new_colour:=true;
+        average_var_magn:=0;//clear average
         for c:=0 to high(data[0]) do //go trough the rows.
         begin
-          if  color_list[fc]=filtercolor[c] then //match with the current colour processed
+          if  color_list[fc]=filtercolor[c] then //match with the current colour_var1 processed
           begin
             if ((data[0,c]<>0) and (data[k,c]<>0)) then //valid JD
             begin
               x:=wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min));
               y:=round(bspace+(h-bspace*2)*(data[k,c]-magn_min)/(magn_max-magn_min)   );
 
-              if  new_colour then//new colour for this column. Mark with abbreviation
+              if  new_colour then//new colour_var1 for this column. Mark with abbreviation
               begin
                 bmp.canvas.brush.style:=bsClear;
                 bmp.canvas.font.size:=8;
@@ -1628,13 +1633,36 @@ begin
               bmp.Canvas.brush.color :=filtercolor[c];
               plot_line_and_point(new_colour,x,y,round(scale*photometry_stdev[get_filternr(c)]*2.5)); {var}
               new_colour:=false;
+
+              average_var_magn:=average_var_magn+data[k,c];//for average magnitude
+              inc(counter);
             end;
 
           end;
         end;//c loop
+        if counter<>0 then average_var_magn:= average_var_magn/counter; //average colour for this filter
+        if color_list[fc]=clred then jr:=average_var_magn;
+        if color_list[fc]=clgreen then jv:=average_var_magn;
+        if color_list[fc]=clblue then jb:=average_var_magn;
+        if color_list[fc]=clgreen+1 then sg:=average_var_magn; //SDSS-g
+        if color_list[fc]=$008CFF then sr:=average_var_magn;
+        if color_list[fc]=clMaroon then si:=average_var_magn;
+
+
       end;//fc loop
+      //calculate average colour variable
+      if k<=4 then //only calculate for the first three variables the colour due to space problems in menu
+      begin
+        var_colours:=var_colours+abbrv_var+': ';
+        if ((jb<>0) and (jv<>0)) then var_colours:=var_colours+'b-v='+floattostr2(jb-jv)+'  ';
+        if ((jv<>0) and (jr<>0)) then var_colours:=var_colours+'v-r='+floattostr2(jv-jr)+'  ';
+        if ((sg<>0) and (sr<>0)) then var_colours:=var_colours+'sg-sr='+floattostr2(sg-sr)+'  ';
+        if ((sr<>0) and (si<>0)) then var_colours:=var_colours+'sr-si='+floattostr2(sr-si)+'  ';
+        if  k<vars_end-1 then var_colours:=var_colours+#10;//do not add #10 to last line
+      end;
     end;//k loop
 
+    form_aavso1.colour_var1.caption:=var_colours; //display var(s) colour message
 
     Picture.Bitmap.SetSize(w,h);
     Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to image picture
@@ -1680,7 +1708,7 @@ begin
 end;
 
 
-function find_mean_measured_magnitude(column: integer) : double;//calculate the mean measured magnitude
+function find_mean_measured_magnitude(columnr: integer) : double;//calculate the mean measured magnitude ignoring the filter. Just for sorting the the list in magnitude
 var
    count, c         : integer;
    magn, mean_magn  : double;
@@ -1692,7 +1720,7 @@ begin
   begin
     if RowChecked[c] then
     begin
-      magn:=SubItemDouble[c,column];
+      magn:=SubItemDouble[c,columnr];
       if magn>0 then
       begin
         mean_magn:=mean_magn+magn;
@@ -1701,10 +1729,7 @@ begin
     end;
   end;
   if count>0 then
-  begin
-    //calc standard deviation using the classic method. This will show the effect of outliers
-    result:=mean_magn/count;
-  end
+    result:=mean_magn/count
   else
     result:=-99;//unknown
 end;
@@ -1866,6 +1891,119 @@ begin
   plot_graph;
 end;
 
+//idea to combine red, green and blue in ration. Doesn't change much.
+{procedure Tform_aavso1.Button1Click(Sender: TObject);
+var
+   c,i,count_r,count_g,count_b,k,blueposition,redposition     : integer;
+   dummy,thedate,red,green,blue,Cred, Cblue : double;
+   listcheck_g, listcheck_b, listcheck_r : array of double;
+begin
+
+  setlength(listcheck_g,high(RowChecked));//list with magnitudes check star
+  setlength(listcheck_b,high(RowChecked));//list with magnitudes check star
+  setlength(listcheck_r,high(RowChecked));//list with magnitudes check star
+
+
+  for i:=p_nr_norm to p_nr-1 do
+    if (frac((i-p_nr_norm)/3)=0)  then //column with data
+    begin
+      count_r:=0;
+      count_g:=0;
+      count_b:=0;
+
+
+      //find ratios
+      for c:=0 to high(RowChecked) do //retrieve data from listview
+      begin
+        if RowChecked[c] then
+        begin
+          dummy:=SubItemDouble[c,i];
+         // thedate:=
+          if dummy>0 then
+            begin
+              case SubItemImages[c] of 0,24: begin listcheck_r[count_r]:= dummy; inc(count_r);  end;//Red
+                                          1: begin listcheck_g[count_g]:= dummy; inc(count_g);  end;//TG or V
+                                          2: begin listcheck_b[count_b]:= dummy; inc(count_b);  end;//Blue
+
+              end;//case
+            end;
+        end;
+      end;
+      red:=Smedian(listcheck_r,count_r);
+      green:=Smedian(listcheck_g,count_g);
+      blue:=Smedian(listcheck_b,count_b);
+
+      if IsNaN(green)=false then
+      begin
+        if IsNaN(blue)=false then Cblue:=green/blue else Cblue:=0;
+        if IsNaN(red)=false  then Cred :=green/red else  Cred:=0;
+
+
+
+
+        //Bayer Channel Fusion" (BCF)
+        for c:=0 to high(RowChecked) do //retrieve data
+        begin
+          if ((RowChecked[c]) and (SubItemImages[c]=1)) then //green value
+          begin
+             green:=SubItemDouble[c,i];
+            if green>0 then
+            begin
+              red:=0;
+              blue:=0;
+              blueposition:=-1;
+              redposition:=-1;
+              for k:=0 to high(RowChecked) do //loop in loop
+              begin
+             // memo2_message(inttostr(i)+'  '+inttostr(c)+' ' +inttostr(k));
+
+                //18  1 259
+              //  if ((i>=18) and (c>=1) and (k>=259)) then
+              //  beep;
+
+
+                if ((RowChecked[k]) and (abs(SubItemDouble[c, p_jd_mid]-SubItemDouble[k, p_jd_mid])<SubItemDouble[k, p_exposure]*0.6/(24*3600))) then //checked and same date with 0.6* exposure
+                begin
+                  if SubItemImages[k]=2 then
+                  begin
+                    blue:=SubItemDouble[k,i];//add blue
+                    blueposition:=k;
+                  end;
+                  if SubItemImages[k]=24 then
+                  begin
+                    red:=SubItemDouble[k,i];
+                    redposition:=k;
+                  end;
+                end;
+
+       //         if ((red<>0) and (blue<>0)) then
+        //          break;
+
+
+              end;//for loop
+              if ((red<>0) or (blue<>0)) then
+              begin
+               SubItemDouble[c,i]:=0.5*green+ 0.25*red*Cred+0.25*blue*Cblue;//combine flux of red, green, blue
+
+          //      if ((red=0) or (blue=0)) then
+           //              beep;
+
+               if blue<>0 then SubItemDouble[blueposition,i]:=0;
+               if red<>0 then SubItemDouble[redposition,i]:=0;
+
+
+
+              end;
+
+            end;
+          end;
+        end;
+
+      end;
+    end;
+   plot_graph;
+end;   }
+
 
 procedure Tform_aavso1.deselectall1Click(Sender: TObject);
 var
@@ -2012,14 +2150,6 @@ begin
 
     // Only store image index for the filtered column
      SubItemImages[c] := ListView.Items[c].SubItemImages[P_filter];
-
-     //store JD_mid
-     SubItemDouble[c,P_jd_mid] := StrToFloatDef(ListView.Items[c].SubItems.Strings[P_jd_mid],-99);
-
-     //store P_airmass
-     SubItemDouble[c,P_airmass] := StrToFloatDef(ListView.Items[c].SubItems.Strings[P_airmass],-99);
-
-
   end;
 end;
 
@@ -2239,7 +2369,7 @@ begin
    for m_index:=0 to high(column_vars) do //do all variables. This is not an efficient loop since the comp stars are read every time but was easy to code.
    begin
      if gaia_ensemble=false then
-       calc_b_v_var_and_comp(column_vars[m_index]);//calculate the b-v of the variable
+       calc_star_colour(column_vars[m_index]);//calculate the b-v of the variable
      for c:=0 to high(RowChecked) do
      begin
        if RowChecked[c] then

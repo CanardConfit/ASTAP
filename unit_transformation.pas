@@ -777,9 +777,9 @@ begin
   if pos('Local',stackmenu1.annotate_mode1.text)<>0 then //not online
     memo2_message('Warning, not many Sloan magnitudes in online VSP !');
 
-  update_from_database;
-
-  update_radiobuttons;
+//  update_from_database;//prevent override by wrong factors
+  sloan_checkBox1Change(nil);//update radiobutton labels
+//  update_radiobuttons;
 
   cancel:=true;
 end;
@@ -791,8 +791,6 @@ end;
 
 procedure TForm_transformation1.sloan_checkBox1Change(Sender: TObject);
 begin
-   update_from_database;//prevent override by wrong factors
-   update_radiobuttons;
 
    V_listB:=nil;//nil existing data to avoud confusion
    V_listR:=nil;
@@ -825,6 +823,10 @@ begin
     R_str:='SI';
     sloan:=true;
   end;
+
+  update_from_database;//prevent override by wrong factors
+  update_radiobuttons;
+
 end;
 
 
@@ -889,6 +891,8 @@ const
   MB_YESNO=4;
 
 begin
+  RadioButtonTbv1.checked:=true;//start with this default
+
   if ((pos('std', stackmenu1.annotate_mode1.text)<> 0) or (pos('Local', stackmenu1.annotate_mode1.text)<> 0) or
           (IDYES= Application.MessageBox('Warning. AAVSO annotation is not set at "std field". If no AAVSO comparison stars are available then this routine will not work.'+#10+#10+'This routine will work with any comparison stars so you could continue.'+#10+#10+'Continue?', 'Find tranformation coeficients', MB_ICONQUESTION + MB_YESNO))) then
 
@@ -902,6 +906,8 @@ begin
        memo2_message('Warning, online not many Sloan magnitudes available online.');
     transformation(23 {SG},22 {SR},21 {SI},21 {SI});//Sloan
   end;
+
+
 end;
 
 procedure TForm_transformation1.checkBox_auid1Change(Sender: TObject);

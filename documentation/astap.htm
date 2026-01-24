@@ -77,7 +77,7 @@ or<br>
 </a><br>
 (5 million galaxies)</big></td>
 <td style="background-color: rgb(233, 233, 233); width: 141px;" colspan="1" rowspan="3"><big><a href="https://sourceforge.net/projects/astap-program/files/star_databases/variable_star_database.exe/download"><span style="text-decoration: underline;">Variable stars</span></a><br>
-(v2025.12.22)</big></td>
+(v2025.12.22)<br><a href="nova_positions_retrieval.zip"><br>Nova positions retrieval program</a></big></td>
 </tr>
 <tr>
 <td style="background-color: rgb(233, 233, 233);"><big>Window
@@ -153,7 +153,7 @@ qt5 .tar.gz</a> &nbsp; compiled for QT5 widget</big></td>
 <tr>
 <td><big>MacOS&nbsp;64 bit for intel<span style="font-weight: bold;"> </span>processors</big></td>
 <td><big><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap.pkg/download">Program</a>
-(v2026.01.06)<br>
+(v2026.01.15)<br>
 <a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/openssl_libraries.pkg/download">OpenSSL
 1.1</a> for internet&nbsp;access</big></td>
 <td colspan="1" rowspan="2" style="background-color: rgb(233, 233, 233);"><big><a href="https://sourceforge.net/projects/astap-program/files/star_databases/d80_star_database.pkg/download">D80</a></big></td>
@@ -187,7 +187,7 @@ with the star database</big></td>
 <td style="background-color: rgb(233, 233, 233);"><big>MacOS&nbsp;64
 bit for <span style="font-weight: bold;">Apple silicon</span>
 processors (M-types)</big></td>
-<td style="background-color: rgb(233, 233, 233);"><big><span style="color: red;"></span><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap_M1.pkg/download">Program&nbsp;</a></big><big>(v2026.01.06)</big><big>
+<td style="background-color: rgb(233, 233, 233);"><big><span style="color: red;"></span><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap_M1.pkg/download">Program&nbsp;</a></big><big>(v2026.01.15)</big><big>
 code signing required! See instructions at this&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/">link</a>&nbsp;(bottom)!!
 Significant faster. <small><small>(Dcraw and FITS
 compression are not available&nbsp; in this version<br>
@@ -403,7 +403,7 @@ PI, 64 bit</big></td>
 <td style="background-color: rgb(234, 234, 234);"><big>MacOS&nbsp;64
 bit</big></td>
 <td style="background-color: rgb(234, 234, 234);"><big><a href="astap_mac_X86_64.zip">astap_mac_X86_64.zip</a>
-(v2026.01.06)<br>
+(v2026.01.15)<br>
 Executable only. Move the executable in the application at
 /Contents/MacOS<br>
 </big></td>
@@ -439,7 +439,7 @@ zipped</a>, (obsolete)&nbsp;</big><big><br>
 <td style="background-color: rgb(234, 234, 234);"><big>MacOS
 M1</big></td>
 <td style="background-color: rgb(234, 234, 234);"><big><a href="astap_mac_M1.zip">astap_mac_M1.zip</a>
-(v2026.01.06)<br>
+(v2026.01.15)<br>
 Executable only. Move the executable in the application at
 /Contents/MacOS<br>
 </big></td>
@@ -551,8 +551,7 @@ menu</a></big></li>
 <li><big><a href="astap.htm#export_data">Copy
 selected list to clipboard</a></big></li>
 <li><big><a href="#nova_batch_processing">Batch
-menu unknown stars (Novae search)</a><br>
-</big></li>
+menu unknown stars (Novae search)</a></big></li><li><a href="#header_keyword"><big>Change header keyword batch wise.</big></a></li>
 </ul>
 </ul>
 <li><big><a href="#darks_tab">Darks tab</a></big></li>
@@ -610,7 +609,7 @@ test</a><br>
 <li><big><a href="astap.htm#measure_all">Measure
 all visible variables in one step</a></big></li>
 <li><big><a href="astap.htm#asteroid_magnitude">Measuring
-asteroid magnitudes</a></big></li>
+asteroid magnitudes</a></big></li><li><big><a href="#photometry_popup">Pop-up menu photometry tab</a> <br></big></li>
 </ul>
 <li><big><a href="#inspector_tab">Inspector
 tab</a></big></li>
@@ -1345,16 +1344,7 @@ value.</big><br>
 </tr>
 </tbody>
 </table>
-<big><br>
-Keyword modification:
-The pop-up menu has option to update a keyword of multiple files if
-required. If the keyword DATE-OBS is typed then the program will
-request a time shift in hours. This could be used to correct a recorded
-time of observation. The old DATE-OBS is&nbsp;stored be behind a
-new
-keyword&nbsp;for recovery but that should no be necessary.<br>
-<br>
-<br>
+<big><br><br>
 <a name="uncheck_outliers"></a> <span style="font-weight: bold; text-decoration: underline;">Lights
 tab, How to exclude poor images</span><br>
 <br>
@@ -1531,9 +1521,26 @@ detections.<br>
 <br>
 </span>Below an example of a nova and non-star detection in M101<br>
 <br>
-<img style="width: 1345px; height: 1215px;" alt="" src="astap_nova2.jpg"><br>
+<img style="width: 1345px; height: 1215px;" alt="" src="astap_nova2.jpg"><br><br><br><br><big><span style="font-weight: bold;">Database for novae</span></big><br><br>There is a small utility <a href="nova_positions_retrieval.zip">nova_positions_retrieval.zip</a> &nbsp;for Windows to retrieve the nova positions from <a href="https://www.rochesterastronomy.org/supernova.html" rel="nofollow">www.rochesterastronomy.org/supernova.html</a>
+&nbsp;and writes it to the variable star database
+&nbsp;variable_stars_15.csv. Extract the utility program at the ASTAP
+directory or place the output file variable_stars_15.csv in the ASTAP
+directory. Select in the photometry tab for annotation "Local database
+mag 15". Select in the viewer "Variable star annotation", shortcut
+CTRL+K. If you need this utility for Linux or Mac tell me.<br><br>&nbsp;</big><big><br>
 <span style="font-weight: bold;"></span></big>
-<p align="left"></p>
+<p align="left"></p><big><span style="font-weight: bold;"><a name="header_keyword"></a>&nbsp;Lights tab, pop-up menu, change header&nbsp; keyword batch wise.</span></big><p align="left"><big><span style="font-weight: bold;">Change header keywords of
+selected files</span>:&nbsp;The pop-up menu has an option to
+update a keyword in multiple files if
+required. Select the files to modify and select the pop-up menu with the right mouse button.&nbsp;</big><big>If &nbsp;you
+type for the new keyword value in capital&nbsp;letters DELETE, then the keyword
+will be removed from all file headers.</big></p><big> </big><big>If
+the keyword DATE-OBS is typed then the program will
+request a time shift in hours or a fraction of an hour. This could be
+used to correct a recorded
+time of observation. The old DATE-OBS value is&nbsp;stored behind a new
+keyword like TT120619 for recovery by renaming it back to DATE-OBS.</big><br><p align="left"><big><img style="width: 1312px; height: 638px;" alt="" src="astap_keyword_menu.png"><br>
+</big></p><p align="left"></p>
 <p align="left"><a href="astap.htm#index"><br>
 </a></p>
 <a href="astap.htm#index">Back to index</a><br>
@@ -2761,9 +2768,9 @@ to index</a></p>
 <p align="left"><big>This
 photometry tab allows aperture photometry of variable stars.</big></p>
 <p align="left"><big><a name="photometry_index"></a>Brief
-instructions:</big></p>
+guideline:</big></p>
 <p align="left"><big>1) Load the images in the photometry tab
-using the&nbsp;</big><big><span style="background-color: rgb(153, 153, 153); font-weight: bold;">Browse</span></big><big>&nbsp;button.&nbsp;</big></p>
+using the&nbsp;</big><big><span style="background-color: rgb(153, 153, 153); font-weight: bold;">Browse</span></big><big>&nbsp;button. &nbsp;If you have a SeeStar telescope use these <a href="seestar.htm">SeeStar guideline</a>.</big></p>
 <p align="left"><big>2) Optionally you could use </big><big><span style="background-color: rgb(153, 153, 153); font-weight: bold;">Analyse</span></big><big>&nbsp;button
 or&nbsp;</big><big><span style="background-color: rgb(153, 153, 153); font-weight: bold;">
 +</span></big><big>&nbsp;button</big><big>
@@ -2789,7 +2796,7 @@ VSX and VSP database are measured down to the SNR set.&nbsp;</big></p>
 <p align="left"><big>5) Press the&nbsp;</big><big><span style="background-color: rgb(153, 153, 153); font-weight: bold;">
 &nbsp; &nbsp;&#11208;<big>|</big> &nbsp;
 &nbsp;&nbsp;</span>&nbsp;<span style="font-weight: bold; background-color: rgb(153, 153, 153);"></span><span style="font-weight: bold; background-color: rgb(153, 153, 153);"></span><span style="font-weight: bold; background-color: rgb(153, 153, 153);"></span>
-(play)butto</big><big>n measure all images.&nbsp;</big><big>The
+(play)butto</big><big>n to measure all images.&nbsp;</big><big>The
 program will do the following: </big></p>
 <p style="margin-left: 40px;" align="left"><big>Cycle
 1: Find an astrometric solution for all selected images and write the
@@ -2819,7 +2826,10 @@ the transformation coefficients for your system for later use. </big></p>
 report</span></big></a><big> to open
 the&nbsp;report window.&nbsp;</big><big>In the
 report window select one or more variables, one or&nbsp;more
-comparison stars and a check star and click on create the report.</big></p><p align="left"><big></big></p>
+comparison stars</big><big> and a check star/ </big></p><p align="left"><big>8)
+If it all looks correct, click on create the report. If you see an
+outlier, you can use the graphic popup menu to select the corresponding
+image to inspect.</big></p><p align="left"><big></big></p>
 <p align="left"><big><a href="astap.htm#index">Back
 to index</a></big></p>
 <p align="left"></p>
@@ -2911,17 +2921,20 @@ processing.</big></p>
 <hr style="width: 100%; height: 2px;">
 <p align="left"></p>
 <p align="left"><big>The photometry pop-up menu:</big></p>
-<p align="left"><big><img style="width: 1839px; height: 652px;" alt="" src="astap_photometry5.png"></big></p>
+<p align="left"><big><img style="width: 1827px; height: 721px;" alt="" src="astap_photometry5.png"></big></p>
 <p style="font-weight: bold; text-decoration: underline;" align="left"><big><a name="photometry_popup"></a>Pop-up
 menu of photometry tab:</big></p>
 <p align="left"><big><span style="font-weight: bold;">Change header keywords of
 selected files</span>:&nbsp;The pop-up menu has an option to
 update a keyword in multiple files if
-required. If the keyword DATE-OBS is typed then the program will
-request a time shift in hours. This could be used to correct a recorded
-time of observation. The old DATE-OBS is&nbsp;stored be behind a
-new
-keyword&nbsp;for recovery but that should no be necessary.</big></p>
+required. Select the files to modify and select the pop-up menu with the right mouse button.&nbsp;</big><big>If &nbsp;you
+type for the new keyword value in capital&nbsp;letters DELETE, then the keyword
+will be removed from all file headers.</big></p><p align="left"><big>If
+the keyword DATE-OBS is typed then the program will
+request a time shift in hours or a fraction of an hour. This could be
+used to correct a recorded
+time of observation. The old DATE-OBS value is&nbsp;stored behind a new
+keyword like TT120619 for recovery by renaming it back to DATE-OBS.</big><big></big><big>&nbsp;See this screenshot&nbsp;<a href="astap_keyword_menu.png">astap_keyword_menu.png</a></big></p>
 <br>
 <div style="text-align: left;"><big><span style="font-weight: bold;">Calibrate:</span>
 For maximum accuracy it is better to calibrate the images&nbsp;with
@@ -2949,8 +2962,8 @@ with the "test pattern" button if the default de-Bayer pattern
 &nbsp;"auto" results in the correct result. This works best with
 terrestrial images otherwise select a manual de-Bayer pattern.<br>
 </big><big><span style="font-weight: bold;"></span></big><br>
-<big><span style="font-weight: bold;">Astrometric
-solutions&nbsp;</span>.
+<big><span style="font-weight: bold;">Refresh astrometric
+solutions of selected files</span>.
 If the images are not solved yet, press the&nbsp;"Refresh
 astrometric
 solutions" button This is required to identify the stars for
@@ -2961,7 +2974,13 @@ tab
 and check the initial &#945;,&#948; position in the viewer. If solving fails, go
 through the <a href="conditions">check list</a> for
 solving.<br>
-<br>
+<br><span style="font-weight: bold;">Stack ALL files in groups, mode average. </span>This
+option will stack the files in groups of 2, 3, 8, .. &nbsp;as you
+specify. This will improve the signal-to-noise ratio of the imaged
+stars but reduce the number of observations. This routine will process
+all checked files in the photometry tab. Prior to stacking the files
+will be automatically sorted on filter and secondary on JD-mid (date).
+The original files are unaffected but are removed from the list.<br><br>
 </big><big><span style="font-weight: bold;"></span></big><br>
 <big><a href="astap.htm#photometry_index">Back to
 photometry_index</a></big><br>
@@ -3098,8 +3117,7 @@ in tab photometry for AAVSO annotation either the local database or the
 online standard field
 like "Online DB mag 13 std field".</big></li>
 <li><big>Select
-in the Photometry tab for the Gaia comp stars "Online Gaia
-transformed". This is required for the blue and red filter images. The
+in the Photometry tab for the Gaia comp stars "Online Gaia". This is required for the blue and red filter images. The
 local database contains only the Johnson-V magnitude.</big></li>
 <li><big>In
 case of a DSLR images use the photometry tab popup menu to split them

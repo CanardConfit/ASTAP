@@ -1025,8 +1025,6 @@ type
 
   public
     { Public declarations }
-    procedure DisplayHint(Sender: TObject);//for popup menu hints
-
   end;
 
 var
@@ -2899,17 +2897,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.displayhint(Sender: TObject);
-var
-  hintstr: string;
-begin
-   hintStr:=application.hint;    // Set the form's caption to the hint string
-   if ((length(hintstr)>0) and (copy(hintstr,1,1)='#')) then //# A marker indicating this is coming from a popupmenu. Enter this # at every hint
-      self.Caption:=copy(hintstr,2,999)
-    else
-      self.Caption:='Stack menu'; // Or empty string, or default
-end;
-
 procedure Tstackmenu1.FormCreate(Sender: TObject);
 var
   RealFontSize: integer;
@@ -2926,8 +2913,6 @@ begin
   {$IfDef Darwin}// for MacOS
   if commandline_execution=false then update_stackmenu_mac;
   {$endif}
-
-  Application.OnHint:=DisplayHint;
 end;
 
 procedure Tstackmenu1.FormKeyPress(Sender: TObject; var Key: char);
@@ -3840,6 +3825,8 @@ begin
           update_text(mainform1.memo1.lines,keyw + '=', #39 + new_date + #39);//new date
           update_text(mainform1.memo1.lines,keywOldTime+'=', #39 + head.date_obs + #39+'/ Backup of previous DATE-OBS'); //backup date in unused keyword
           memo2_message('Old date is stored in '+keywOldTime+'. To recover delete keyword DATE-OBS and rename '+keywOldTime+' to DATE-OBS.');
+          remove_key(mainform1.memo1.lines,'JD      =',false{all});//remove
+          remove_key(mainform1.memo1.lines,'JD-AVG  =',false{all});//remove
 
           if tl = stackmenu1.listview1 then
             tl.Items.item[index].subitems.Strings[L_datetime]:=new_date;{update light}
@@ -7165,7 +7152,7 @@ end;
 
 procedure Tstackmenu1.photom_green1Click(Sender: TObject);
 var
-  c,nr,selcnt,progress : integer;
+  c,nr,selcnt,progress,i : integer;
   fn, ff, fnBlue, fnRed : string;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -7206,6 +7193,7 @@ begin
           fnRed:=extract_raw_colour_to_file(ff, 'TR', 1, 1); {extract green red or blue channel}
 
           listview7.Items.beginupdate;
+
           if fnBlue<>'' then listview_add(ListView7,fnBlue,true,P_nr);
           if fnRed<>'' then listview_add(ListView7,fnRed,true,P_nr);;
           listview7.Items.endupdate;
@@ -7216,6 +7204,8 @@ begin
         if fn <> '' then
         begin
           ListView7.items[c].Caption:=fn;//replace by green channel
+          for i:=1 to P_nr-1 do
+                listView7.Items.item[c].subitems.Strings[i]:=('');//clear old values
         end;
 
         inc(progress);
@@ -7223,6 +7213,10 @@ begin
   end;
   analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
   {refresh list}
+
+  SortedColumn:=P_date+1;
+  ListView7.SortDirection:=sdAscending;
+  listview7.sort;//Sort on date
 
   progress_indicator(-100,'');{back to normal}
   Screen.Cursor:=crDefault;  { Always restore to normal }
@@ -9203,14 +9197,21 @@ begin
   counter:=listview7.Items.Count;
   setlength(new_files,10+counter div groupsize); //enough space plus some extra due to filters
   new_counter:=0;
+  listview7.Selected:=nil; {remove any selection for scrolling to active file}
 
 
   repeat
+    listview7.ItemIndex:=index;  {mark where we are. Important set in object inspector    Listview7.HideSelection:=false; Listview7.Rowselect:=true}
+    listview7.Items[index].MakeVisible(False);{scroll to selected item}
+    application.processmessages;
+
+
     listview1.Items.beginUpdate;
     count:=0;
+
     while index < counter do
     begin
-//      if listview7.Items[index].Selected then
+      if listview7.Items[index].checked then
       begin
         if position < 0 then position:=index;//store first position
 
@@ -9228,7 +9229,9 @@ begin
         end
         else
           break;//group is ready
-      end;
+      end
+      else
+        Inc(index);{go to next file}
     end;
     listview1.Items.endUpdate;
 
@@ -9251,8 +9254,6 @@ begin
     inc(new_counter);
 
     listview1.Clear;
-    application.processmessages;
-
   until index >=counter; //ready ??
 
   // add stacked files to listview7
@@ -9270,6 +9271,9 @@ begin
   save_settings2;
 
   analyse_listview(listview7, True {light}, False {full fits}, True{refresh});
+
+  progress_indicator(-100,'');
+
   {refresh list}
 end;
 

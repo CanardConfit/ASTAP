@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.01.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.01.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1478,7 +1478,7 @@ begin
             end;
           end
           else
-          if ((header[i+2]='-') and (header[i+3]='A') and (header[i+4]='G')) then //JD_AVG
+          if ((header[i+2]='-') and (header[i+3]='A') and (header[i+4]='G')) then //JD-AVG
           begin
          //   if head.date_avg='' then {DATE-AVG overrules any JD value}
             begin
@@ -12602,12 +12602,26 @@ end;
 
 
 procedure Tmainform1.DisplayHint(Sender: TObject);
+var
+  hintStr: string;
 begin
-  if ((length(GetlongHint(Application.Hint))>0)) then
+  hintStr := GetLongHint(Application.Hint);
+  if length(hintstr)>0 then
   begin
-     //  mainform1.Caption:=GetlongHint(Application.Hint);
-    statusbar1.SimplePanel:=true;
-    statusbar1.Simpletext:=GetlongHint(Application.Hint);
+    if (Copy(hintStr, 1, 1) = '#') then
+    begin
+      if Assigned(Screen.ActiveForm) and (Screen.ActiveForm is Tstackmenu1) then
+      begin
+        Screen.ActiveForm.Caption := Copy(hintStr, 2, 999);
+        Exit; // Don't show in statusbar
+      end;
+    end
+    else
+    begin
+      statusbar1.SimplePanel:=true;
+      statusbar1.Simpletext:=hintStr;
+      stackmenu1.Caption:='Stack menu'; // Or empty string, or default
+    end;
   end
   else
   statusbar1.SimplePanel:=false;

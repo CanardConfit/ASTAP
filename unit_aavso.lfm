@@ -1,8 +1,8 @@
 object form_aavso1: Tform_aavso1
-  Left = 804
+  Left = 208
   Height = 876
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 12
+  Top = 191
   Width = 1334
   ActiveControl = PairSplitter1
   Caption = 'AAVSO report'
@@ -22,25 +22,25 @@ object form_aavso1: Tform_aavso1
     Width = 1334
     Align = alClient
     Color = clForm
-    Position = 710
+    Position = 750
     SplitterType = pstVertical
     object PairSplitterSide1: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 710
+      Height = 750
       Top = 0
       Width = 1334
       ClientWidth = 1334
-      ClientHeight = 710
-      Constraints.MinHeight = 700
+      ClientHeight = 750
+      Constraints.MinHeight = 730
       object Panel_top_menu1: TPanel
         Left = 0
-        Height = 710
+        Height = 750
         Top = 0
         Width = 1334
         Align = alClient
         AutoSize = True
-        ClientHeight = 710
+        ClientHeight = 750
         ClientWidth = 1334
         ParentBackground = False
         ParentColor = False
@@ -77,10 +77,10 @@ object form_aavso1: Tform_aavso1
           TabOrder = 1
         end
         object apply_transformation1: TCheckBox
-          Left = 16
+          Left = 13
           Height = 23
           Hint = 'The transformation factors should be available. See transformation button in tab photometry. Only for B,V,R filters'
-          Top = 608
+          Top = 648
           Width = 154
           BorderSpacing.Left = 12
           Caption = 'Apply transformation'
@@ -89,10 +89,10 @@ object form_aavso1: Tform_aavso1
           TabOrder = 2
         end
         object obstype1: TComboBox
-          Left = 232
+          Left = 229
           Height = 27
           Hint = 'OBSTYPE, So the camera type used for the observation,  It can be CCD, DSLR, PEP (for Photoelectric Photometry). If absent, it is assumed to be CCD.  If you use a CMOS camera please report it as CCD'
-          Top = 640
+          Top = 680
           Width = 107
           ItemHeight = 19
           ItemIndex = 0
@@ -108,10 +108,10 @@ object form_aavso1: Tform_aavso1
           Text = 'CCD'
         end
         object hjd1: TCheckBox
-          Left = 232
+          Left = 229
           Height = 23
           Hint = 'Report the date as Heliocentric Julian Day'
-          Top = 608
+          Top = 648
           Width = 49
           Caption = 'HJD'
           OnChange = hjd1Change
@@ -120,10 +120,10 @@ object form_aavso1: Tform_aavso1
           TabOrder = 4
         end
         object baa_style1: TCheckBox
-          Left = 384
+          Left = 381
           Height = 23
           Hint = 'Extras report lines will added conform BAA. Info is taken from FITS header.'
-          Top = 608
+          Top = 648
           Width = 82
           Caption = 'BAA style'
           ParentShowHint = False
@@ -131,18 +131,18 @@ object form_aavso1: Tform_aavso1
           TabOrder = 5
         end
         object Label4: TLabel
-          Left = 111
+          Left = 108
           Height = 19
-          Top = 640
+          Top = 680
           Width = 55
           Caption = 'Delimiter'
           ParentColor = False
         end
         object delimiter1: TComboBox
-          Left = 16
+          Left = 13
           Height = 27
           Hint = 'The delimiter used to separate fields in the report. Any will do. '
-          Top = 640
+          Top = 680
           Width = 88
           BorderSpacing.Left = 12
           ItemHeight = 19
@@ -161,10 +161,10 @@ object form_aavso1: Tform_aavso1
           Text = 'tab'
         end
         object report_to_clipboard1: TButton
-          Left = 16
+          Left = 13
           Height = 25
           Hint = 'Copies the report to the clipboard. Paste it into a text editor, save it and upload it to the AAVSO WebObs.'
-          Top = 677
+          Top = 717
           Width = 232
           BorderSpacing.Left = 12
           Caption = 'Report to clipboard'
@@ -174,10 +174,10 @@ object form_aavso1: Tform_aavso1
           TabOrder = 7
         end
         object report_to_file1: TButton
-          Left = 256
+          Left = 272
           Height = 25
           Hint = 'Writes report to file in the same directory as the input files.'
-          Top = 677
+          Top = 717
           Width = 224
           Caption = 'Report to file'
           OnClick = report_to_clipboard1Click
@@ -188,7 +188,7 @@ object form_aavso1: Tform_aavso1
         object Image_photometry1: TImage
           Cursor = crCross
           Left = 504
-          Height = 708
+          Height = 748
           Hint = 'See popup  menu to save. Any check/uncheck in the list view wil result in an update of the graph'
           Top = 1
           Width = 824
@@ -216,7 +216,7 @@ object form_aavso1: Tform_aavso1
         object GroupBox_check1: TGroupBox
           Left = 3
           Height = 75
-          Top = 496
+          Top = 528
           Width = 496
           AutoSize = True
           Caption = 'Check star'
@@ -258,7 +258,7 @@ object form_aavso1: Tform_aavso1
         object GroupBox_comp_stars1: TGroupBox
           Left = 3
           Height = 231
-          Top = 248
+          Top = 280
           Width = 496
           AutoSize = True
           Caption = 'Comparison star(s)'
@@ -294,7 +294,7 @@ object form_aavso1: Tform_aavso1
             ShowHint = True
           end
           object gaia_ensemble1: TCheckBox
-            Left = 224
+            Left = 248
             Height = 23
             Hint = 'If enabled then Gaia  ensemble is used for calibration'
             Top = 0
@@ -308,12 +308,12 @@ object form_aavso1: Tform_aavso1
         end
         object GroupBox_variables1: TGroupBox
           Left = 3
-          Height = 187
-          Top = 56
+          Height = 211
+          Top = 48
           Width = 496
           AutoSize = True
           Caption = 'Variable(s)'
-          ClientHeight = 163
+          ClientHeight = 187
           ClientWidth = 492
           TabOrder = 11
           object abbrv_variable1: TCheckListBox
@@ -332,12 +332,20 @@ object form_aavso1: Tform_aavso1
             ShowHint = True
             TabOrder = 0
           end
+          object colour_var1: TLabel
+            Left = 12
+            Height = 19
+            Top = 168
+            Width = 62
+            Caption = 'Var colour'
+            ParentColor = False
+          end
         end
         object test_button1: TButton
           Left = 430
           Height = 29
           Hint = 'This will place comparison stars in variable position for testing.'
-          Top = 45
+          Top = 40
           Width = 51
           AutoSize = True
           Caption = 'Test'
@@ -351,15 +359,15 @@ object form_aavso1: Tform_aavso1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 161
-      Top = 715
+      Height = 121
+      Top = 755
       Width = 1334
       ClientWidth = 1334
-      ClientHeight = 161
+      ClientHeight = 121
       Constraints.MinHeight = 100
       object Memo1: TMemo
         Left = 0
-        Height = 161
+        Height = 121
         Top = 0
         Width = 1334
         Align = alClient
