@@ -1170,6 +1170,7 @@ function julian_calc(yyyy, mm: integer; dd, hours, minutes, seconds: double): do
 function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*','"',':','|','<','>']}
 function calc_saturation_level(head :theader) : double;//calculate saturation level image
 function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
+function standardise_filter_name(inp :string): string;//standardise filter name
 
 
 const
@@ -4263,12 +4264,43 @@ begin
 end;
 
 
+function standardise_filter_name(inp :string): string;//standardise filter name.
+begin
+  inp:=uppercase(inp);
+  if ((pos('S',inp)>0) or (pos('P',inp)>0)) then //Sloan SG,SR, SI   or Sloan Las Cumbres observatory (GP, RP, IP}
+  begin
+    if pos('G',inp)>0  then  result:='SG'
+    else
+    if pos('R',inp)>0  then  result:='SR'
+    else
+    if pos('I',inp)>0  then  result:='SI'
+    else
+    result:='BP';//unknown
+  end
+  else
+  begin
+    if ((length(inp)=0) or (pos('CV',inp)>0)) then result:='BP'  //Johnson-V, online
+    else
+    if pos('V',inp)>0 then result:='V'
+    else
+    if pos('G',inp)>0 then result:='V' //V, TG, Green
+    else
+    if pos('B',inp)>0  then result:='B' //B, TB, Blue
+    else
+    if pos('R',inp)>0 then result:='R'
+    else
+    if pos('I',inp)>0 then result:='I'
+    else
+    result:='BP';
+  end;
+end;
+
 
 procedure analyse_listview(lv: tlistview; light, full, refresh: boolean); {analyse list of FITS files}
 var
   c, counts, i, iterations, hfd_counter, tabnr: integer;
   hfd_median2, hjd, sd, dummy, alt, az, ra_jnow, dec_jnow, ra_mount_jnow,  dec_mount_jnow, ram, decm, adu_e :double;
-  filename1,filterstr,filterstrUP  : string;
+  filename1,filterstrUP,standarised_filter_name  : string;
   loaded, red, green, blue         : boolean;
   img: Timage_array;
   headx : theader;
@@ -4475,9 +4507,10 @@ begin
               lv.Items.item[c].subitems.Strings[P_filter]:=headx.filter_name;
 
 
-              filterstr:=headx.filter_name;// R, G or V, B or TG
-              filterstrUP:=uppercase(filterstr);
-              if ((length(filterstr)=0) or (pos('CV',filterstrUP)>0) or (pos('LUM',filterstrUP)>0))  then
+              filterstrUP:=uppercase(headx.filter_name);// R, G or V, B or TG
+              standarised_filter_name:=standardise_filter_name(filterstrUP);//standarise filter name
+
+              if ((length(filterstrUP)=0) or (pos('CV',filterstrUP)>0) or (pos('LUM',filterstrUP)>0))  then
               begin
                 if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
                   Lv.Items.item[c].SubitemImages[P_filter] :=25  //raw OSC file
@@ -4485,61 +4518,47 @@ begin
                 lv.Items.item[c].SubitemImages[P_filter]:=4 //assume CV
               end
               else
-              if ((pos('S',filterstrUP)>0) or (pos('P',filterstrUP)>0)) then //Sloan SB, SG, SI or Sloan Las Cumbres GP, RP, IP
-              begin
-                if pos('I',filterstrUP)>0  then
-                begin
-                   lv.Items.item[c].SubitemImages[P_filter]:=21; //SDSS-i
-                   all_filters.SI:=true;
-                end
-                else
-                if pos('R',filterstrUP)>0  then
-                begin
-                  lv.Items.item[c].SubitemImages[P_filter]:=22; //SDSS-r
-                  all_filters.SR:=true;
-                end
-                else
-                if pos('G',filterstrUP)>0  then
-                begin
-                  lv.Items.item[c].SubitemImages[P_filter]:=23; //SDSS-g
-                  all_filters.SG:=true;
-                end
-                else
-                lv.Items.item[c].SubitemImages[P_filter]:=-1; //unknown
-              end
-              else //Johnson-Cousins
-              if pos('V',filterstrUP)>0  then
+              if  standarised_filter_name='V'  then
               begin
                 lv.Items.item[c].SubitemImages[P_filter]:=1; //Green or G or TG
                 all_filters.V:=true;
               end
               else
-              if pos('G',filterstrUP)>0 then
-              begin
-                lv.Items.item[c].SubitemImages[P_filter]:=1; //GREEN, G, TG
-                all_filters.V:=true;
-              end
-              else
-              if pos('B',filterstrUP)>0  then
+              if  standarised_filter_name='B'  then
               begin
                 lv.Items.item[c].SubitemImages[P_filter]:=2; //BLUE, B, TB
                 all_filters.B:=true;
               end
               else
-              if pos('RED',filterstrUP)>0  then
+              if  standarised_filter_name='R'  then
               begin
-                lv.Items.item[c].SubitemImages[P_filter]:=0; //rgb RED, INVALID
+                if length(filterstrUP)>1  then
+                   lv.Items.item[c].SubitemImages[P_filter]:=0 //rgb RED, INVALID
+                else
+                  //The official abbreviation for Cousins R is R. See https://www.aavso.org/filters
+                  lv.Items.item[c].SubitemImages[P_filter]:=24; //Cousins-red. Note Green also contains a R so first test Green
                 all_filters.R:=true;
               end
               else
-              if pos('R',filterstrUP)>0  then
+              if standarised_filter_name='SI'  then
               begin
-                lv.Items.item[c].SubitemImages[P_filter]:=24; //Cousins-red. Note Green also contains a R so first test Green
-                all_filters.R:=true;
-
+                 lv.Items.item[c].SubitemImages[P_filter]:=21; //SDSS-i
+                 all_filters.SI:=true;
               end
-              else                                                                         //The official abbreviation for Cousins R is R. See https://www.aavso.org/filters
-              if pos('I',filterstrUP)>0 then
+              else
+              if  standarised_filter_name='SR'  then
+              begin
+                lv.Items.item[c].SubitemImages[P_filter]:=22; //SDSS-r
+                all_filters.SR:=true;
+              end
+              else
+              if  standarised_filter_name='SG'  then
+              begin
+                lv.Items.item[c].SubitemImages[P_filter]:=23; //SDSS-g
+                all_filters.SG:=true;
+              end
+              else
+              if  standarised_filter_name='I'  then
               begin
                 lv.Items.item[c].SubitemImages[P_filter]:=28; // Bessel
                 all_filters.I:=true;

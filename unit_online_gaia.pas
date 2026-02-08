@@ -89,19 +89,19 @@ begin
           end;
         end
         else
-        if ((filter='SR') or (filter='RP'){Las Cumbres files}) then //SDSS-r
+        if filter='SR' then //SDSS-r
         begin
           if ((BminR>0.0) and (BminR<3.0)) then
             result:=magG + 0.09837 - 0.08592*(BminR) - 0.1907*sqr(BminR) + 0.1701*sqr(BminR)*(BminR) - 0.02263*sqr(sqr(BminR)) ;  {dr3}
         end
         else
-        if ((filter='SI') or (filter='IP')) then //SDSS-i
+        if filter='SI' then //SDSS-i
         begin
           if ((BminR>0.5) and (BminR<2.0)) then
             result:=magG + 0.293 - 0.6404*(BminR) + 0.09609*sqr(BminR) + 0.002104*sqr(BminR)*(BminR);  {dr3}
         end
         else
-        if ((filter='SG') or (filter='GP')) then //SDSS-g
+        if filter='SG' then //SDSS-g
         begin
           if ((BminR>0.3) and (BminR<3.0)) then
             result:=magG - 0.2199 + 0.6365*(BminR) + 0.1548*sqr(BminR) - 0.0064*sqr(BminR)*(BminR);  {dr3}

@@ -38,7 +38,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.01.17';
+  astap_version: string='2026.02.18';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -2401,7 +2401,6 @@ end;
 
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
 var
-  fits_unsampledX, fits_unsampledY :double;
   u,v,u2,v2             : double;
   dRa,dDec,delta,gamma  : double;
 

@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.01.24';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.02.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -15341,7 +15341,6 @@ begin
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype!=*)'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
-//    http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(Vmag<15+|+Bmag<15+)%26+region(box,60.2175d%2B25.5763d,+32.3592m+38.5229m)&OutputMode=LIST&output.format=ASCII'
     plot_simbad(get_http(url));
     Screen.Cursor:=crDefault;
     exit;
@@ -15356,7 +15355,6 @@ begin
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size+'&-out.max=10000&Gmag=<'+trim(annotation_magn);
-//    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=RA_ICRS,DE_ICRS,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+'&-c.bs=533.293551/368.996043&-out.max=1000&Gmag=%3C23
     plot_vizier(get_http(url),magn_type);
     Screen.Cursor:=crDefault;
     exit;
