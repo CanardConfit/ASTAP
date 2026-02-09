@@ -1372,17 +1372,8 @@ var
    end;
 
 begin
+  if filter_name='BP' then filter_name:='V';//display V for no filter or CV
   result:=get_magn(filter_name+'=');
-  if result='' then
-  begin
-    if filter_name='TB' then
-      result:=get_magn('B=')
-    else
-    if filter_name='TR' then
-        result:=get_magn('R=');
-  end;
-  if result='' then //TG
-    result:=get_magn('V=')
 end;
 
 
@@ -1400,6 +1391,30 @@ begin
 end;
 
 
+
+procedure get_database_passband(filterstr: string; out passband :string);//report local or online database and the database passband
+var
+  datab,filterstrUP :string;
+begin
+  datab:=stackmenu1.reference_database1.text;
+  filterstrUP:=uppercase(filterstr);
+
+  if pos('Local',datab)>0 then //local or auto
+  begin
+    if pos('V',filterstrUP)>0  then passband:='V'
+    else
+    passband:='BP';
+    memo2_message('Local database as set in tab Photometry. Filter='+filterstr+'. Local database = '+passband);
+  end
+  else
+  begin  //online auto transformation
+    passband:= standardise_filter_name(filterstrUP);
+    memo2_message('Gaia online with database transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
+  end;
+end;
+
+
+
 procedure plot_deepsky(extract_visible: boolean;font_size: integer);{plot the deep sky object on the image. If extract is true then extract visible to vsp_vsx_list}
 type
   textarea = record
@@ -1408,7 +1423,7 @@ type
 var
   telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,fitsX,fitsY,
   gx_orientation, SIN_dec_ref,COS_dec_ref,max_period  : double;
-  abbrv, period_str: string;
+  abbrv, period_str,standardised_filter_name: string;
   flip_horizontal, flip_vertical,filter_auid_only,skip_aavso,valid_period,hash_symbol,fshape_match,none_manual  : boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,fx,fy, period_position,leng,nrcount : integer;
@@ -1467,6 +1482,9 @@ begin
     text_counter:=0;
     setlength(text_dimensions,1000);
 
+    standardised_filter_name:=standardise_filter_name(head.filter_name);
+
+
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
     while read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa) {deepsky database search} do
@@ -1517,7 +1535,8 @@ begin
                  if font_size<=4 then
                    abbrv:=copy(naam2,1,11) //remove all after abbreviation
                  else
-                   abbrv:=copy(naam2,1,12)+strip_unnecessary_magnitudes(naam2,head.filter_name,'(');
+//                   abbrv:=copy(naam2,1,12)+dddddd strip_unnecessary_magnitudes(naam2,head.filter_name,'(');
+                   abbrv:=copy(naam2,1,12)+ strip_unnecessary_magnitudes(naam2,standardised_filter_name,'(');
               end
               else
               begin //variables
@@ -1689,53 +1708,6 @@ end;{plot deep_sky}
 
 
 
-procedure get_database_passband(filterstr: string; out passband :string);//report local or online database and the database passband
-var
-  datab,filterstrUP :string;
-begin
-  datab:=stackmenu1.reference_database1.text;
-  filterstrUP:=uppercase(filterstr);
-
-  if pos('Local',datab)>0 then //local or auto
-  begin
-    if pos('V',filterstrUP)>0  then passband:='V'
-    else
-    passband:='BP';
-    memo2_message('Local database as set in tab Photometry. Filter='+filterstr+'. Local database = '+passband);
-  end
-  else
-  begin  //online auto transformation
-    if ((length(filterstrUP)=0) or (pos('CV',filterstrUP)>0))  then passband:='BP'  //Johnson-V, online
-    else
-    if ((pos('S',filterstrUP)>0) OR (pos('P',filterstrUP)>0)) then //Sloan SG,SR, SI   or Sloan Las Cumbres observatory (GP, RP, IP}
-    begin
-      if pos('G',filterstrUP)>0  then passband:='SG'  //SDSS-g
-      else
-      if pos('R',filterstrUP)>0  then passband:='SR'  //SDSS-r
-      else
-      if pos('I',filterstrUP)>0  then passband:='SI'  //SDSS-i
-      else
-      passband:='BP'  //online ; //unknown
-    end
-    else //Johnson-Cousins
-    if pos('G',filterstrUP)>0  then
-     passband:='V'  //TG, Johnson-V, online
-    else
-    if pos('V',filterstrUP)>0  then passband:='V'  //Johnson-V, online
-    else
-    if pos('B',filterstrUP)>0  then passband:='B'  //Johnson-B, online Blue
-    else
-    if pos('R',filterstrUP)>0  then passband:='R'  //Cousins-R, online red
-    else
-    if pos('I',filterstrUP)>0  then passband:='I'  //Cousins-R, online red
-    else
-    passband:='BP';  //online take clear view
-
-    memo2_message('Gaia online with database transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
-  end;
-end;
-
-
 procedure plot_vsx_vsp(extract_visible: boolean);{plot downloaded variable and comp stars}
 type
   textarea = record
@@ -1744,7 +1716,7 @@ type
 var
   telescope_ra,telescope_dec, SIN_dec_ref,COS_dec_ref,
   ra,dec,fitsX,fitsY,var_epoch,var_period,delta : double;
-  abbreviation, abbreviation_display, filterstrUP,st: string;
+  abbreviation, abbreviation_display, standardised_filter_name,st: string;
   flip_horizontal, flip_vertical,fshape_match,none_manual: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,x,y,count,counts,mode,nrcount, font_size  : integer;
@@ -1798,6 +1770,8 @@ begin
     setlength(text_dimensions,1000);
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+
+    standardised_filter_name:=standardise_filter_name(head.filter_name);
 
     for mode:=1 to 2 do //do both vsx and vsp
     begin
@@ -1887,25 +1861,19 @@ begin
             abbreviation:=vsp[count].auid;
             //display only the reference magnitude for the current image filter
 
-            filterstrUP:=uppercase(head.filter_name);
-            if ((pos('S',filterstrUP)>0) or (pos('P',filterstrUP)>0)) then //Sloan SG,SR, SI   or Sloan Las Cumbres observatory (GP, RP, IP}
-            begin
-              if pos('G',filterstrUP)>0  then  abbreviation_display:=abbreviation+'_SG='+vsp[count].SGmag
-              else
-              if pos('R',filterstrUP)>0  then  abbreviation_display:=abbreviation+'_SR='+vsp[count].SRmag
-              else
-              if pos('I',filterstrUP)>0  then  abbreviation_display:=abbreviation+'_SI='+vsp[count].SImag;
-            end
+            if standardised_filter_name='V' then abbreviation_display:=abbreviation+' V='+vsp[count].Vmag
             else
-            begin
-                if pos('B',filterstrUP)>0   then  abbreviation_display:=abbreviation+'_B='+vsp[count].Bmag {includes TB}
-              else
-                if pos('R',filterstrUP)>0   then  abbreviation_display:=abbreviation+'_R='+vsp[count].Rmag {includes TR}
-              else
-                if pos('I',filterstrUP)>0   then  abbreviation_display:=abbreviation+'_I='+vsp[count].Imag
-              else
-                abbreviation_display:=abbreviation+' V='+vsp[count].Vmag;
-            end;
+            if standardised_filter_name='B'  then  abbreviation_display:=abbreviation+'_B='+vsp[count].Bmag {includes TB}
+            else
+            if standardised_filter_name='R'   then  abbreviation_display:=abbreviation+'_R='+vsp[count].Rmag {includes TR}
+            else
+            if standardised_filter_name='SG'  then  abbreviation_display:=abbreviation+'_SG='+vsp[count].SGmag
+            else
+            if standardised_filter_name='SR'  then  abbreviation_display:=abbreviation+'_SR='+vsp[count].SRmag
+            else
+            if standardised_filter_name='SI'  then  abbreviation_display:=abbreviation+'_SI='+vsp[count].SImag
+            else
+            if standardised_filter_name='I'   then  abbreviation_display:=abbreviation+'_I='+vsp[count].Imag;
 
             fshape_match:=false;
             with mainform1 do

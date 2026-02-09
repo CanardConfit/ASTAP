@@ -1,8 +1,8 @@
 object mainform1: Tmainform1
-  Left = 578
+  Left = 689
   Height = 634
   Hint = ' '
-  Top = 256
+  Top = 92
   Width = 1333
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'

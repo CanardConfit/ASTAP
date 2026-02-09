@@ -538,7 +538,7 @@ const
   grid_size = 5.0; // Coarser grid for [-6000, 6000], adjust if needed (e.g., 5.0 for denser clustering)
   bucket_capacity = 10; // Max quads per bucket, increase to 20 if overflows occur
 var
-   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,startp,
+   i,j,k,nrstars,j_index1,j_index2,j_index3,nrquads,Sstart,Send,bandw,
    hash_x, hash_y, idx                                                     : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
    dist1,dist2,dist3,dist4,dist5,dist6,temp,disty                          : double;
@@ -1000,55 +1000,50 @@ begin
 end;
 
 
-procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double;snr_list : array of double; var starlist1 : Tstar_list);{ get the brightest star from a star list}
+procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double;snr_list : array of double; var starlist1 : Tstar_list);{ extract the brightest stars from a star list}
 const
-   range=200;
+   range=199;
 var
   snr_histogram : array [0..range] of integer;
   i,count,nrstars, snr_scaled: integer;
-  snr_required : double;
+  snr_required,sqrtRange,overshoot_correction : double;
 
 begin
-  for i:=0 to high(snr_histogram) do snr_histogram[i]:=0; {clear snr histogram}
+  for i:=0 to high(snr_histogram) do snr_histogram[i]:=0; //clear snr histogram
+
+  sqrtRange:= sqrt(highest_snr);
   for i:=0 to high(snr_list) do
   begin
-  //  memo2_message(#9+inttostr(i)+#9+floattostr6(snr_list[i])) ;
-    snr_scaled:=trunc(snr_list[i]*range/highest_snr);
-    snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;{count how often this snr value is measured}
+    snr_scaled:=trunc(sqrt(snr_list[i])*(range)/sqrtRange);//stretch the lower part with many similar stars by applying sqrt. This much faster then using the ln() function
+    snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;//count how often this snr value is measured
   end;
+
   count:=0;
-  i:=range+1;
+  i:=range;
   repeat
     dec(i);
     count:=count+snr_histogram[i];
-  //  memo2_message(#9+inttostr(snr_histogram[i])+ #9 +inttostr(i));
   until ((i<=0) or (count>=nr_stars_required));
 
-  snr_required:=highest_snr*i/range;
+  if snr_histogram[i]<>0 then overshoot_correction:=(count-nr_stars_required)/snr_histogram[i] else overshoot_correction:=0; //linear overshoot correction
+  snr_required:=sqr(sqrtRange*(i+overshoot_correction)/range);  // Convert back from sqrt space
 
   count:=0;
   nrstars:=length(starlist1[0]);
   for i:=0 to nrstars-1 do
-    if snr_list[i]>=snr_required then {preserve brightest stars}
+    if snr_list[i]>=snr_required then //preserve brightest stars
     begin
-      starlist1[0,count]:=starlist1[0,i];{overwrite in the same array}
+      starlist1[0,count]:=starlist1[0,i];//overwrite in the same array
       starlist1[1,count]:=starlist1[1,i];
-   //   memo2_message(#9+floattostr(snr_list[i])+#9+floattostr(starlist2[0,count])+ #9 +floattostr(starlist2[1,count]));
       inc(count);
-     //  For testing:
-     //  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-     //  mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
-     //  mainwindow.image1.Canvas.brush.Style:=bsClear;
-     //  mainwindow.image1.Canvas.Pen.Color := clred;
-     //  mainwindow.image1.Canvas.Rectangle(round(starlist1[0,i])-15,height2-round(starlist1[1,i])-15, round(starlist1[0,i])+15, height2-round(starlist1[1,i])+15);{indicate hfd with rectangle}
-     end;
-  setlength(starlist1,2,count);{reduce length to used length}
+    end;
+  setlength(starlist1,2,count);//reduce length to used length
 end;
+
 
 procedure get_hist2(img :Timage_array; startx,stopx,starty,stopy,upperlimit : integer; out histogram : Tarray_integer);
 var
   i,j,col        : integer;
-  total_value    : double;
 begin
   setlength(histogram,upperlimit+1);
   for i:=0 to upperlimit do
@@ -1162,7 +1157,7 @@ end;
 
 procedure find_stars(img :Timage_array; hfd_min:double; max_stars :integer;out starlist1: Tstar_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
+   fitsX, fitsY,nrstars,radius,i,j,retries,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr_org, noise_lev : double;
    img_sa     : Timage_array;
    snr_list   :  array of double;//array of double;
@@ -1340,109 +1335,6 @@ begin
   if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms');
 end;
 
-
-procedure find_starsOLD(img :Timage_array;hfd_min:double; max_stars : integer; out starlist1: Tstar_list);{find stars and put them in a list}
-var
-   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2,starpixels  : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,noise_lev                      : double;
-   img_sa     : Timage_array;
-   snr_list        : array of double;
-   startTick2  : qword;{for timing/speed purposes}
-const
-    buffersize=5000;{5000}
-begin
-  width2:=length(img[0,0]);{width}
-  height2:=length(img[0]);{height}
-
-  if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
-  SetLength(starlist1,2,buffersize);{set array length}
-  setlength(snr_list,buffersize);{set array length}
-
-  setlength(img_sa,1,height2,width2);{set length of image array}
-  noise_lev:=noise_level[0]; //get_background is called in bin_and_find_star. Background is stored in cblack
-  retries:=3; {try up to four times to get enough stars from the image}
-  repeat
-    if retries=3 then
-      begin if star_level >30*noise_lev then detection_level:=star_level  else retries:=2;{skip} end;//stars are dominant
-    if retries=2 then
-      begin if star_level2>30*noise_lev then detection_level:=star_level2 else retries:=1;{skip} end;//stars are dominant
-    if retries=1 then
-      begin detection_level:=30*noise_lev; end;
-    if retries=0 then
-      begin detection_level:= 7*noise_lev; end;
-
-    highest_snr:=0;
-    nrstars:=0;{set counters at zero}
-
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1  do
-        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
-
-    for fitsY:=1 to height2-1-1 do  //Search through the image. Stay one pixel away from the borders.
-    begin
-      for fitsX:=1 to width2-1-1  do
-      begin
-        if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-backgr>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
-          begin
-          starpixels:=0;
-          if img[0,fitsY,fitsX-1]- backgr>4*noise_lev then inc(starpixels);//inspect in a cross around it.
-          if img[0,fitsY,fitsX+1]- backgr>4*noise_lev then inc(starpixels);
-          if img[0,fitsY-1,fitsX]- backgr>4*noise_lev then inc(starpixels);
-          if img[0,fitsY+1,fitsX]- backgr>4*noise_lev then inc(starpixels);
-          if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
-          begin
-            HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-            if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes}) then
-            begin
-              radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-              sqr_radius:=sqr(radius);
-              xci:=round(xc);{star center as integer}
-              yci:=round(yc);
-              for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-                for m:=-radius to +radius do
-                begin
-                  j:=n+yci;
-                  i:=m+xci;
-                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                    img_sa[0,j,i]:=1;
-                end;
-
-              {store values}
-              inc(nrstars);
-              if nrstars>=length(starlist1[0]) then
-              begin
-                SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
-                setlength(snr_list,nrstars+buffersize);{adapt array size if required}
-              end;
-              starlist1[0,nrstars-1]:=xc; {store star position}
-              starlist1[1,nrstars-1]:=yc;
-              snr_list[nrstars-1]:=snr;{store SNR}
-
-              if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
-            end;
-          end;
-        end;
-      end;
-    end;
-
-    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(backgr))+ '. Detection level used '+inttostr( round(detection_level))
-                                                          +' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF(noise_level[0],ffFixed,0,0));
-
-    dec(retries);{Try again with lower detection level}
-  until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
-
-  img_sa:=nil;{free mem}
-
-  SetLength(starlist1,2,nrstars);{set length correct}
-  setlength(snr_list,nrstars);{set length correct}
-
-  if nrstars>max_stars then {reduce number of stars if too high}
-  begin
-    if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
-    get_brightest_stars(max_stars, highest_snr, snr_list, starlist1);
-  end;
-  if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms');
-end;
 
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 begin
