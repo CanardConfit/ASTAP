@@ -1342,6 +1342,8 @@ const
     buffersize=5000;{5000}
     rastersteps=12;
 
+
+
           procedure find_stars_routine(startx,endx,starty,endy : integer);
           var
              fitsX, fitsY,m,n : integer;
@@ -1360,8 +1362,7 @@ const
                   if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
                   begin
                     HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-
-                    if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes} ) then
+                    if ((hfd1<=30) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent rare double detection due to star spikes} ) then
                     begin
                       {for testing}
                     //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);

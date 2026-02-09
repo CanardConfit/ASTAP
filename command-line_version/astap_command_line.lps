@@ -17,16 +17,16 @@
       <Unit1>
         <Filename Value="unit_command_line_solving.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="616"/>
-        <CursorPos X="70" Y="541"/>
+        <TopLine Value="2445"/>
+        <CursorPos Y="2485"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <TopLine Value="2383"/>
         <CursorPos Y="2404"/>
         <UsageCount Value="200"/>
@@ -88,7 +88,7 @@
         <UsageCount Value="11"/>
       </Unit10>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="29" HistoryIndex="28">
       <Position1>
         <Filename Value="unit_command_line_solving.pas"/>
         <Caret Line="2578" TopLine="2559"/>
@@ -205,10 +205,6 @@
         <Filename Value="unit_command_line_solving.pas"/>
         <Caret Line="1047" TopLine="1026"/>
       </Position29>
-      <Position30>
-        <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="41" Column="36" TopLine="58"/>
-      </Position30>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
@@ -278,13 +274,6 @@
         <WatchKind Value="wpkWrite"/>
         <Source Value="..\astap_main.pas"/>
         <Line Value="13884"/>
-      </Item>
-      <Item>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="unit_command_line_solving.pas"/>
-        <Line Value="2514"/>
       </Item>
     </BreakPoints>
     <Watches>

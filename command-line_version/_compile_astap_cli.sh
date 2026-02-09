@@ -40,7 +40,6 @@ rm astap_cli
 
 
 /home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_aarch64.lpi
-# patchelf --set-interpreter /system/bin/linker64 ./astap_cli
 zip astap_command-line_version_Android_aarch64.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Android_aarch64 file does not exist, aborting!!'
@@ -51,7 +50,6 @@ rm astap_cli
 
 
 /home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86_64.lpi
-# patchelf --set-interpreter /system/bin/linker64 ./astap_cli
 zip astap_command-line_version_Android_x86_64.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Android_x86_64 file does not exist, aborting!!'
