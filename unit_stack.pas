@@ -10532,6 +10532,7 @@ begin
 
   progress_indicator(-100,'');{back to normal}
   Screen.Cursor:=crDefault;{back to normal }
+  memo2_message('Ready');
 end;
 
 procedure Tstackmenu1.report_sqm1Click(Sender: TObject);
