@@ -1262,6 +1262,11 @@ object mainform1: Tmainform1
             Hint = 'Images could be cropped in ASTAP or from CCDCIEL selected sensor section '
             OnClick = image_based_crop1Click
           end
+          object crop_by_coordinates1: TMenuItem
+            Caption = 'Crop by coordinates entered'
+            Hint = 'Program will ask x,y, width, height coordinates and crop accordingly'
+            OnClick = crop_by_coordinates1Click
+          end
         end
         object Separator5: TMenuItem
           Caption = '-'

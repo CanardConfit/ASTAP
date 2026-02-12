@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.02.09';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.02.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -91,6 +91,7 @@ type
     MenuItem25: TMenuItem;
     area_crop1: TMenuItem;
     image_based_crop1: TMenuItem;
+    crop_by_coordinates1: TMenuItem;
     Panel1: TPanel;
     selective_colour_saturation1: TTrackBar;
     Separator4: TMenuItem;
@@ -430,6 +431,7 @@ type
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure area_crop1Click(Sender: TObject);
+    procedure crop_by_coordinates1Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
       Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
@@ -14481,6 +14483,7 @@ begin
 
         progress_indicator(i/count,' Binning');{show progress}
         filename2:=Strings[I];
+        memo2_message('Cropping '+filename2);
         {load fits}
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,memo{mainform1.memo1.lines},head,img)=false)) then begin break;end;
 
@@ -14509,7 +14512,105 @@ begin
     end;
   end;
   memo.free;
+  memo2_message('Ready');
+end;
 
+procedure Tmainform1.crop_by_coordinates1Click(Sender: TObject);
+var
+  aForm:  TForm;
+  aLabel,labelX,labelY,labelW,labelH: TLabel;
+  Editx:   TEdit;
+  Edity:   TEdit;
+  Editw:   TEdit;
+  Edith:   TEdit;
+  Cancel: TBitBtn;
+  Ok:     TBitBtn;
+  result: string;
+const
+  fwidth = 300;
+  fheight = 200;
+  editleft= 50;
+
+begin
+
+  aForm                      := TForm.Create(nil);
+  aForm.Top                  := Top;
+  aForm.Left                 := Left;
+  aForm.Width                := fwidth;
+  aForm.Height               := fheight;
+  aForm.Caption              := Caption;
+  aLabel                     := TLabel.Create(aForm);
+  aLabel.Parent              := aForm;
+  aLabel.Top                 := 5;
+  aLabel.Left                := editleft;
+  aLabel.Caption             := 'Enter FITS crop coordinates:';
+  aLabel.AutoSize            := True;
+
+  LabelX                     := TLabel.Create(aForm);
+  LabelX.Parent              := aForm;
+  LabelX.Top                 := 30;
+  LabelX.Left                := 5;
+  LabelX.Caption             := 'X';
+  LabelY                     := TLabel.Create(aForm);
+  LabelY.Parent              := aForm;
+  LabelY.Top                 := 60;
+  LabelY.Left                := 5;
+  LabelY.Caption             := 'Y';
+  LabelW                     := TLabel.Create(aForm);
+  LabelW.Parent              := aForm;
+  LabelW.Top                 := 90;
+  LabelW.Left                := 5;
+  LabelW.Caption             := 'Width';
+  LabelH                     := TLabel.Create(aForm);
+  LabelH.Parent              := aForm;
+  LabelH.Top                 := 120;
+  LabelH.Left                := 5;
+  LabelH.Caption             := 'Height';
+
+  EditX                       := TEdit.Create(aForm);
+  EditX.Parent                := aForm;
+  EditX.Top                   := 30;
+  EditX.Left                  := editleft;
+  EditX.Width                 := fWidth-editleft -20;
+  editx.text:=floattostrF(startX+2,FFgeneral,6,0);//+1 from array to fits coordinated, +1 to define inside of frame
+  EditY                       := TEdit.Create(aForm);
+  EditY.Parent                := aForm;
+  EditY.Top                   := 60;
+  EditY.Left                  := editleft;
+  EditY.Width                 := fWidth-editleft -20;
+  editY.text:=floattostrF(startY+2,FFgeneral,6,0);//+1 from array to fits coordinated, +1 to define inside of frame
+  EditW                       := TEdit.Create(aForm);
+  EditW.Parent                := aForm;
+  EditW.Top                   := 90;
+  EditW.Left                  := editleft;
+  EditW.Width                 := fWidth-editleft -20;
+  editW.text:=floattostrF(stopX-startX-1,FFgeneral,6,0);
+  EditH                       := TEdit.Create(aForm);
+  EditH.Parent                := aForm;
+  EditH.Top                   := 120;
+  EditH.Left                  := editleft;
+  EditH.Width                 := fWidth-editleft -20;
+  editH.text:=floattostrF(stopY-startY-1,FFgeneral,6,0);
+  Cancel                     := TBitBtn.Create(aForm);
+  Cancel.Parent              := aForm;
+  Cancel.Top                 := fheight-35;
+  Cancel.Left                := editleft;
+  Cancel.Kind                := bkCancel;
+  ok                         := TBitBtn.Create(aForm);
+  ok.Parent                  := aForm;
+  ok.Top                     := fheight-35;
+  ok.Left                    := Fwidth - 95;
+  Ok.Kind                    := bkOK;
+
+  Result := '';
+  if not(aForm.ShowModal = mrCancel) then
+  begin
+    startX:=strtoint(EditX.Text)-2; //-1 from fits to array coordinates, -1 to define frame outside section
+    startY:=strtoint(EditY.Text)-2;
+    stopX:=startX+strtoint(EditW.Text)+1;//
+    stopY:=startY+strtoint(EditH.Text)+1;
+    area_crop1Click(Sender);
+  end;
 end;
 
 
