@@ -107,7 +107,6 @@ var
   img_temp2: TImage_Array;
   i, StartY, EndY, SectionHeight: Integer;
 begin
-//  SetLength(img_temp2, 3, Head.Height, Head.Width);
   SetLength(img_Temp2, 3, Length(img[0]), Length(img[0, 0])); // Set length of image array color
 
   // Limit threads to available CPU logical cores or height

@@ -1082,10 +1082,10 @@ begin
   for m:=0 to length(photometry_stdev)-1 do photometry_stdev[m]:=0;// clear
 
 
-  setlength(data,2+length(column_vars)+length(column_comps), length(RowChecked));
-  for i:=0 to high(data) do
-    for j:=0 to high(data[0]) do
-      data[i,j]:=0;//clear
+  setlength(data,2+length(column_vars)+length(column_comps), length(RowChecked));//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+  //for i:=0 to high(data) do
+  //  for j:=0 to high(data[0]) do
+  //    data[i,j]:=0;//clear
   setlength(listcheck_v,length(data[0]));//list with magnitudes check star
   setlength(listcheck_b,length(data[0]));//list with magnitudes check star
   setlength(listcheck_r,length(data[0]));//list with magnitudes check star

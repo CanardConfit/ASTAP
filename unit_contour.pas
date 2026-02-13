@@ -314,7 +314,7 @@ var
           end;
 
           img_sa[0,fy,fx]:=img_sa[0,fy,fx]+1;//mark as inspected/used
-          if img_sa[0,fy,fx]>1 then break;//is looping local
+          if img_sa[0,fy,fx]>2 then break;//is looping local
           inc(counter);
 
 
@@ -340,7 +340,7 @@ var
             begin
               for k:=min(contour_array[0,i],contour_array[0,j]) to max(contour_array[0,i],contour_array[0,j]) do //mark space between the mininum and maximum x values. With two pixel extra overlap.
               begin
-                if img_sa[0,contour_array[1,i],k]<0 then
+                if img_sa[0,contour_array[1,i],k]=0 then
                 begin
                   surface:=surface+1;
                   img_sa[0,contour_array[1,i],k]:=+1;//mark as inspected/used
@@ -444,7 +444,7 @@ begin
       image1.Canvas.font.size:=fontsize;
     end;
 
-    setlength(img_sa,1,hh,ww);{set length of image array}
+    setlength(img_sa,1,hh,ww);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
     gaussian_blur_threaded(img_bk, blur);{apply gaussian blur }
     get_background(0,img_bk,head,{cblack=0} false{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
@@ -452,9 +452,9 @@ begin
     detection_level:=sigmafactor*head.noise_level+ head.backgr;
     detection_grid:=strtoint2(stackmenu1.detection_grid1.text,400) div binning;
 
-    for fitsY:=0 to hh-1 do
-      for fitsX:=0 to ww-1  do
-        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
+//    for fitsY:=0 to hh-1 do
+//      for fitsX:=0 to ww-1  do
+//        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
 
     for fitsY:=0 to hh-1  do
@@ -462,7 +462,7 @@ begin
       for fitsX:=0 to ww-1 do
       begin
         if ((detection_grid<=0) or (frac(fitsX/detection_grid)=0) or (frac(fitsy/detection_grid)=0)) then //overlay of vertical and horizontal lines
-        if (( img_sa[0,fitsY,fitsX]<0){untested area}  and (img_bk[0,fitsY,fitsX]>detection_level){star}) then {new star}
+        if (( img_sa[0,fitsY,fitsX]=0){untested area}  and (img_bk[0,fitsY,fitsX]>detection_level){star}) then {new star}
         begin
           find_contour(fitsX,fitsY);
           if frac(fitsY/300)= 0 then
@@ -481,9 +481,6 @@ begin
     img_bk:=nil;
     get_hist(0,img);{get histogram of img and his_total}
   end;
-
-
-  img_sa:=nil;{free mem}
 end;
 
 

@@ -41,7 +41,7 @@ var
 begin
   QueryPerformanceFrequency(Freq);
   QueryPerformanceCounter(Count);
-  Result := (Count * 1000000) div Freq;
+  Result := Round((Count / Freq) * 1000000);
 end;
 {$ELSE}
 var

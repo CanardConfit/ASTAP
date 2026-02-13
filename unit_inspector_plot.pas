@@ -252,7 +252,7 @@ begin
       SetLength(fwhm_list,len);{set array length on a starting value}
       SetLength(starlistXY,3,len);{x,y positions}
 
-      setlength(img_sa,1,headx.height,headx.width);{set length of image array}
+      setlength(img_sa,1,headx.height,headx.width);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
       hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
       get_background(0,img,headx,{cblack=0} screenplot=false{histogram is available if in viewer},true {calculate noise level});{calculate background level from peek histogram}
@@ -261,27 +261,27 @@ begin
       backgr:=headx.backgr;
       noise_level:=headx.noise_level;
 
-      retries:=3; {try up to four times to get enough stars from the image}
+      retries:=4; {try up to four times to get enough stars from the image, So 4,3,2,1 }
       repeat
+        if retries=4 then
+          begin if headx.star_level >30*noise_level then detection_level:=headx.star_level  else retries:=3;{skip} end;//stars are dominant
         if retries=3 then
-          begin if headx.star_level >30*noise_level then detection_level:=headx.star_level  else retries:=2;{skip} end;//stars are dominant
+          begin if headx.star_level2>30*noise_level then detection_level:=headx.star_level2 else retries:=2;{skip} end;//stars are dominant
         if retries=2 then
-          begin if headx.star_level2>30*noise_level then detection_level:=headx.star_level2 else retries:=1;{skip} end;//stars are dominant
-        if retries=1 then
           begin detection_level:=30*noise_level; end;
-        if retries=0 then
+        if retries=1 then
           begin detection_level:= 7*noise_level; end;
         nhfd:=0;{set counters at zero}
 
-        for fitsY:=0 to headx.height-1 do
-          for fitsX:=0 to headx.width-1  do
-            img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
+        //for fitsY:=0 to headx.height-1 do
+        //  for fitsX:=0 to headx.width-1  do
+        //    img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
         for fitsY:=1 to headx.height-1-1  do //Search through the image. Stay one pixel away from the borders.
         begin
           for fitsX:=1 to headx.width-1-1 do
           begin
-            if (( img_sa[0,fitsY,fitsX]<=0){area not occupied by a star}  and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star}
+            if (( img_sa[0,fitsY,fitsX]<>retries){area not occupied by a star}  and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star}
             begin
               starpixels:=0;
               if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
@@ -292,7 +292,7 @@ begin
               begin
                 HFD(img,fitsX,fitsY,14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-                if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
+                if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) and (img_sa[0,round(yc),round(xc)]<>retries){prevent double detection} ) then
                 begin
 
                   radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
@@ -306,7 +306,7 @@ begin
                     j:=n+yci;
                     i:=m+xci;
                     if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                      img_sa[0,j,i]:=1;
+                      img_sa[0,j,i]:=retries;//use retries as marker. Then img_sa does not to be reset to 0!
                   end;
 
                   if ((img[0,yci,  xci  ]<data_max) and
@@ -341,7 +341,7 @@ begin
         end;
 
         dec(retries);{prepare for trying with lower detection level}
-      until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+      until ((nhfd>=max_stars) or (retries<=0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
       if restore_req then {raw Bayer image or colour image}
       begin
@@ -770,10 +770,10 @@ begin
   w:=(head.width div scaledown)+1;
   h:=(head.height div scaledown)+1;
 
-  setlength(img_hfd,1,h,w);{set length of image array}
-  for fitsY:=0 to h-1  do
-    for fitsX:=0 to w-1 do
-      img_hfd[0,fitsY,fitsX]:=0;{clear array}
+  setlength(img_hfd,1,h,w);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+//  for fitsY:=0 to h-1  do
+//    for fitsX:=0 to w-1 do
+//      img_hfd[0,fitsY,fitsX]:=0;{clear array}
 
 
   size:=0;
@@ -804,7 +804,7 @@ begin
   head.naxis3:=1;
   for fitsY:=0 to head.height-1  do
     for fitsX:=0 to head.width-1 do
-      img_loaded[0,fitsY,fitsX]:={img_loaded[0,fitsY,fitsX]}+img_hfd[0,fitsY div scaledown,fitsX div scaledown];
+      img_loaded[0,fitsY,fitsX]:=img_hfd[0,fitsY div scaledown,fitsX div scaledown];
 
   img_hfd:=nil;{free memory}
 
@@ -829,10 +829,10 @@ begin
   w:=(head.width div scaledown)+1;
   h:=(head.height div scaledown)+1;
 
-  setlength(img_hfd,1,h,w);{set length of image array}
-  for fitsY:=0 to h-1  do
-    for fitsX:=0 to w-1 do
-      img_hfd[0,fitsY,fitsX]:=0;{clear array}
+  setlength(img_hfd,1,h,w);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+//  for fitsY:=0 to h-1  do
+//    for fitsX:=0 to w-1 do
+//      img_hfd[0,fitsY,fitsX]:=0;{clear array}
 
   max_value:=0;
   min_value:=65535;
@@ -1114,8 +1114,6 @@ begin
     dec(retries);{prepare for trying with lower detection level}
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-  img_sa:=nil;{free mem}
-
   if nhfd<10 then
    begin
      memo2_message('Abort, only '+inttostr(nhfd)+' useful stars!');
@@ -1175,7 +1173,6 @@ begin
   begin
     plot_vector(hfd_values[0,i],hfd_values[1,i],50*(hfd_values[2,i]/1000-1) {aspect},hfd_values[3,i]*pi/180);
   end;
-  hfd_values:=nil;
 end;
 
 
@@ -1599,13 +1596,6 @@ begin
      for fitsX:=0 to side-1 do {copy corner}
         img_temp[col,fitsY+2*(side+gap),fitsX+2*(side+gap)]:=img_loaded[col,fitsY + head.height - side,fitsX+head.width-side];
 
-
-//   setlength(img_loaded,head.naxis3,head.height,head.width);{set length of image array}
-//   img_loaded[0]:=img_temp[0];
-//   if head.naxis3>1 then img_loaded[1]:=img_temp[1];
-//   if head.naxis3>2 then img_loaded[2]:=img_temp[2];
-
-//   img_temp:=nil; {free memory}
 
    img_loaded:=nil;{release memory}
    img_loaded:=img_temp;

@@ -7,6 +7,97 @@ unit unit_raster_rotate;  //This unit applies an accurate arbitrary rotation on 
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{https://web.archive.org/web/20241113121451/https://sudonull.com/post/134233-Precise-rotation-of-the-bitmap-image-at-an-arbitrary-angle
+
+Original describtion:
+
+Precise rotation of the bitmap image at an arbitrary angle
+
+Rotating a raster image by angles that are multiples of 90 ° relative to the geometric center of the image is a trivial task and can be solved without loss of quality by simply converting the coordinates of each pixel.
+
+To rotate the bitmap image at an arbitrary angle, fast but not optimal algorithms have been developed that give an approximation acceptable for practical purposes with loss of quality (for example, this one ).
+Quite a long time ago, out of purely sporting interest, I was interested in the task of the most accurate rotation of the bitmap image at an arbitrary angle. Unfortunately, I could not find a ready-made algorithm
+anywhere, so I had to do it myself. Even if in the end I “invented the bicycle”, the result, it seems to me, turned out to be interesting enough to be shared.
+
+Below we consider the algorithm for precision rotation of a raster image by an arbitrary angle relative to an arbitrary center with minimal loss.
+
+I thank Kharchenko Vladislav Vladimirovich for the assistance provided.
+
+Algorithm
+
+It can be seen from the above figure that after the rotation of the raster image, the color of each pixel of the final image is determined by the addition of the colors of several “fragments” of several pixels
+of the original image, in proportion to the areas of the corresponding “fragments”. Therefore, in general terms, the solution to our problem will be to find the area of ​​all “fragments” for each pixel of the
+original image and to collect the color of each pixel of the final image from the colors of the corresponding “fragments” .
+
+As a pixel model of the source image, we will use a square with side = 1, with the following notation for the angles:
+i1 is the rightmost corner;
+i2 is the lowest corner;
+i3 is the leftmost corner;
+i4 is the topmost corner.
+
+The model of the final image will be a grid of parallel horizontal and vertical lines with a distance between the lines = 1. The
+
+coordinates of the center of rotation of the raster image, in this representation, can be expressed as a pair of arbitrary real numbers. That is, the center of rotation in our problem may lie not at the
+geometric center of the pixel and not at the intersection point of the grid lines, but at an arbitrary point in the Cartesian coordinates.
+
+Since when you rotate the raster image, the square of each pixel rotates by the same angle (relative to the center of this pixel), we will solve the problem for one pixel, and then apply the resulting solution
+for each pixel of the original image.
+
+Rotation of a raster image can be divided into two parts:
+1. The rotation of the square of each pixel of the original image relative to the center of this square by a given angle.
+2. The offset of the center of the square of the pixel in accordance with the angle of rotation of the image relative to the center of rotation of the image so that the square occupies its final position
+   on the grid of the final image.
+
+In this case, the grid of the final image cuts the square of each pixel of the original image into “fragments” in the amount of 4, 5 or 6 pieces.
+
+To systematize the variety of the resulting options, I had to compile a taxonomy of all kinds of intersections of the square of the pixel of the source image with the grid of the final image. There were
+only 23 essentially different options:
+
+
+Legend here are:
+- the numbers in the cells indicate the numbers of the angles of the square of the pixel that fell into this cell of the grid of the final image after the image is rotated;
+- the green color indicates the cells in which the pixel sections got and are guaranteed to be left there by a "fragment";
+- the yellow color indicates the cells into which, depending on the conditions, “fragments” of the pixel square, which are formed not by the corners of the square, but by the sides of the square , may fall (or may not fall).
+
+For clarity, I will give one of the possible variations of option No. 3:
+
+As you can see, the upper right cell does not contain a “fragment” of a pixel, although it could contain rotation under other conditions.
+In order not to burden the reader with detailed geometrical calculations, I’ll say right away that in all these 23 variants the pixel of the original image is dissected into “fragments”, the area of
+which is easily calculated by combining 4 formulas. These formulas are illustrated below. Red color indicates the grid lines of the final image, which cut through the square of the pixel. The area, the area of
+which is calculated by the formula, is shaded in yellow.
+
+
+
+Formula 1: 0.5 + (Y4- Y2)/(2*cos(alpha))
+
+This formula is not used to calculate the final area of ​​the "fragment", but it is convenient to use it for quick calculation of auxiliary intermediate areas, since we know that the area of ​​the entire pixel = 1.
+As input variables, all formulas use heights omitted from the corners of the square by the grid of the final image, for the simple reason that the calculation of these heights is reduced to the instantaneous
+selection of the fractional part of the numerical value of the coordinate of the corresponding corner of the square of the pixel.
+
+Formula 2:  S := x*y+0.5*(y^2 - x^2)*tan(alpha)    This formula is used only in options 1 and 2.
+
+Formula 3   S := 2*x^2/(sin(alpha) * cos(alpha))
+
+A frequently used formula is very good that it is quickly calculated. Since the rotation angle is the same for each pixel, all trigonometric functions can be counted once, before processing all the pixels,
+and then use these values ​​in the loop as constants.
+
+Formula 4   S := ((x/sin(alpha) + y/cos(alpha) - 1)^2 * sin(alpha)*cos(alpha))/2
+
+This formula is calculated in two steps. First, the expression in parentheses is evaluated. If it takes a positive value, then the area is calculated. If the value is negative, it means that the “splinter” formed by the angle of the grid and the side of the square does not cut off the pixel and there is no point in making further calculations.
+
+With all of the above, in general terms, the algorithm will look like this:
+1. Load the original image into the computer memory.
+2. We calculate the size of the final image in pixels.
+3. We create an intermediate two-dimensional array, each element of which contains 3 RGB color components in the format of a floating-point number. The dimensions of the array are equal to the sizes of the final image.
+4. Sequentially iterate over all the pixels of the original image; we turn each of them by a given angle and place it on the grid of the final image, calculating the 4 coordinates of the corners of the square of the
+   pixel; we classify a pixel according to 23 options and consider the area of ​​“fragments”; add the colors of the resulting “fragments” to the corresponding elements of the intermediate array in proportion to the
+   area of ​​these “fragments”.
+5. After processing all the pixels of the original image, round the RGB values ​​in the intermediate array to an integer value for each element and create the final image in BMP format based on these integer values.
+
+}
+
+
+
 
 {$mode delphi}
 
@@ -1159,7 +1250,7 @@ begin
     exit; {finished}
   end;
 
-  R := sqrt(CX * CX + CY * CY);// for the ouput image
+  R := sqrt(CX * CX + CY * CY);// for the output image
   ug := Point2Ang(0, 0, CX, CY, R) + angle;
   if ug >= 360 then
     ug := ug - 360 * trunc(ug / 360);

@@ -100,7 +100,7 @@ Below is a brief flowchart of the ASTAP astrometric solving process:
 interface
 
 uses  Classes, SysUtils, Controls, Forms, Math, StdCtrls,
-      unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation, unit_stars_wide_field, unit_calc_trans_cubic;
+      unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation, unit_stars_wide_field, unit_calc_trans_cubic, unit_profiler;
 
 function solve_image(img: Timage_array;var hd: Theader; memo: TStrings; get_hist{update hist}, check_patternfilter: boolean): boolean;{find match between image and star database}
 procedure bin_and_find_stars(img: Timage_array; var head: theader; binfactor: integer; cropping, hfd_min: double; max_stars: integer; get_hist{update hist}: boolean; out starlist3: Tstar_list; out mean_hfd: double;  out short_warning: string);{bin, measure background, find stars}
@@ -248,9 +248,9 @@ begin
 
   if database_type > 1 then {1476 or 290 files}
   begin
-    {Assume the search field is at a crossing of four tiles. The search field area, by definition 100% is split in 8%, 15%, 20%, 57% area for each tile.
-     There are 500 stars required. It will then retrieve 8% x 500, 15% x 500, 20% x 500, 57% x 500 stars from each tile under the condition these stars are within the green area.
-     This will work assuming the star density within the green area is reasonable homogene.}
+   {Assume the search field is at a crossing of four tiles. The search field area, by definition 100% is split in 8%, 15%, 20%, 57% area for each tile.
+    There are 500 stars required. It will then retrieve 8% x 500, 15% x 500, 20% x 500, 57% x 500 stars from each tile under the condition these stars are within the green area.
+    This will work assuming the star density within the green area is reasonable homogene.}
     find_areas(telescope_ra, telescope_dec, search_field,{var} area1, area2, area3, area4, frac1, frac2, frac3, frac4);{find up to four star database areas for the square image}
 
     if area1 <> 0 then {read 1th area}
@@ -487,9 +487,6 @@ begin
     if cropping <> 1 then memo2_message('Cropping image x ' + floattostrF(cropping, ffFixed, 0, 2));
 
     bin_mono_and_crop(binfactor, cropping, img, img_binned); //{Make mono, bin and crop}
-
- //   setlength(starlist3,1);
- //   exit;
 
     {test routine, to show bin result}
     //    img_loaded:=img_binned;

@@ -1355,8 +1355,7 @@ var
   ExReply: longbool;
   Reply: DWord;
 begin
-  if OpenProcessToken(GetCurrentProcess, TOKEN_ADJUST_PRIVILEGES or
-    TOKEN_QUERY, hToken) then
+  if OpenProcessToken(GetCurrentProcess, TOKEN_ADJUST_PRIVILEGES or TOKEN_QUERY, hToken) then
   begin
     if LookupPrivilegeValue(nil, 'SeShutdownPrivilege', tkp.Privileges[0].Luid) then
     begin
@@ -1718,19 +1717,19 @@ begin
 
   backgr:=head.backgr;
   noise_level:=head.noise_level;
-  retries:=3; {try up to four times to get enough stars from the image}
+  retries:=4; {try up to four times to get enough stars from the image}
 
   hfd_min:=max(0.8 {two pixels}, strtofloat2(
   stackmenu1.min_star_size_stacking1.Caption){hfd});  {to ignore hot pixels which are too small}
 
-  repeat {try three time to find enough stars}
+  repeat {try four time to find enough stars, so 4,3,2,1}
+    if retries=4 then
+      begin if head.star_level >30*noise_level then detection_level:=head.star_level  else retries:=3;{skip} end; //stars are dominant
     if retries=3 then
-      begin if head.star_level >30*noise_level then detection_level:=head.star_level  else retries:=2;{skip} end; //stars are dominant
+      begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=2;{skip} end; //stars are dominant
     if retries=2 then
-      begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end; //stars are dominant
+      begin detection_level:=30*noise_level; if snr_min>=30 then retries:=1; end;
     if retries=1 then
-      begin detection_level:=30*noise_level; if snr_min>=30 then retries:=0; end;
-    if retries=0 then
       begin detection_level:= max(snr_min,7)*noise_level; end;
 
     star_counter:=0;
@@ -1743,16 +1742,13 @@ begin
       startext:='x,y,hfd,snr,flux,ra[0..360],dec[0..360]'+LineEnding;
     end;
 
-    setlength(img_sa, 1, height5, width5);{set length of image array}
-    for fitsY:=0 to height5 - 1 do
-      for fitsX:=0 to width5 - 1 do
-        img_sa[0, fitsY, fitsX]:=-1;{mark as star free area}
+    setlength(img_sa, 1, height5, width5);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
     for fitsY:=1 to height5 - 1-1 do  //Search through the image. Stay one pixel away from the borders.
     begin
       for fitsX:=1 to width5 - 1-1 do
       begin
-        if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and (img[0, fitsY, fitsX] - backgr > detection_level)) then     {new star}
+        if ((img_sa[0, fitsY, fitsX]<>retries){area not occupied by a star} and (img[0, fitsY, fitsX] - backgr > detection_level)) then     {new star}
         begin
           starpixels:=0;
           if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
@@ -1762,7 +1758,7 @@ begin
           if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
           begin
             HFD(img, fitsX, fitsY, 14{annulus radius}, 99 {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);{star HFD and FWHM}
-            if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
+            if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > hfd_min) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<>retries){prevent double detection}) then
             begin
               hfd_list[star_counter]:=hfd1;{store}
               Inc(star_counter);
@@ -1783,7 +1779,7 @@ begin
                   i:=m + xci;
                   if ((j >= 0) and (i >= 0) and (j < height5) and (i < width5) and
                     (sqr(m) + sqr(n) <= sqr_radius)) then
-                    img_sa[0, j, i]:=1;
+                    img_sa[0, j, i]:=retries;//use retries as marker. Then img_sa does not be cleared!
                 end;
 
               if report_type>0 then
@@ -1804,9 +1800,7 @@ begin
     end;
 
     Dec(retries);{Try again with lower detection level}
-    //if report_type>0 then closefile(f);
-
-  until ((star_counter >= max_stars) or (retries < 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+  until ((star_counter >= max_stars) or (retries <= 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
   if ((star_counter > 0) and (report_type<=1)) then head.hfd_median:=SMedian(hfd_List, star_counter) else  head.hfd_median:=99;
 
@@ -1819,8 +1813,6 @@ begin
     writeln(f,startext);
     closefile(f);
   end;
-
-  img_sa:=nil;{free m}
 end;
 
 
@@ -1856,31 +1848,27 @@ begin
   SetLength(hfdlist, len * 4);{set array length on a starting value}
   SetLength(starlistXY, 2, len * 4);{x,y positions}
 
-  setlength(img_sa, 1, head.Height, head.Width);{set length of image array}
+  setlength(img_sa, 1, head.Height, head.Width);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
   get_background(0, img, head,True, True {calculate background and also star level end noise level});
 
   backgr:=head.backgr;
   noise_level:=head.noise_level;
-  retries:=3; {try up to four times to get enough stars from the image}
+  retries:=4; {try up to four times to get enough stars from the image}
   repeat
+    if retries=4 then
+      begin if head.star_level >30*head.noise_level then detection_level:=head.star_level  else retries:=3;{skip} end;//stars are dominant
     if retries=3 then
-      begin if head.star_level >30*head.noise_level then detection_level:=head.star_level  else retries:=2;{skip} end;//stars are dominant
+      begin if head.star_level2>30*head.noise_level then detection_level:=head.star_level2 else retries:=2;{skip} end;//stars are dominant
     if retries=2 then
-      begin if head.star_level2>30*head.noise_level then detection_level:=head.star_level2 else retries:=1;{skip} end;//stars are dominant
-    if retries=1 then
       begin detection_level:=30*head.noise_level; end;
-    if retries=0 then
+    if retries=1 then
       begin detection_level:= 7*head.noise_level; end;
 
     nhfd:=0;{set counter at zero}
 
     if backgr > 8 then
     begin
-      for fitsY:=0 to head.Height - 1 do
-        for fitsX:=0 to head.Width - 1 do
-          img_sa[0,fitsY, fitsX]:=-1;{mark as star free area}
-
       //the nine areas:
       //13     23   33
       //12     22   32
@@ -1890,7 +1878,7 @@ begin
       begin
         for fitsX:=1 to head.Width -1-1 do
         begin
-          if ((img_sa[0, fitsY, fitsX] <= 0){area not occupied by a star} and  (img[0, fitsY, fitsX] - backgr > detection_level)) then   {new star}
+          if ((img_sa[0, fitsY, fitsX]<>retries){area not occupied by a star} and  (img[0, fitsY, fitsX] - backgr > detection_level)) then   {new star}
           begin
             starpixels:=0;
             if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
@@ -1901,7 +1889,7 @@ begin
             begin
               HFD(img, fitsX, fitsY, 25 {LARGE annulus radius}, 99  {flux aperture restriction}, 0 {adu_e}, hfd1, star_fwhm, snr, flux, xc, yc);
               {star HFD and FWHM}
-              if ((hfd1 <= 35) and (snr > 30) and (hfd1 > 0.8) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0){prevent double detection}) then
+              if ((hfd1 <= 35) and (snr > 30) and (hfd1 > 0.8) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<>retries){prevent double detection}) then
               begin    {store values}
                 radius:=round(3.0 * hfd1);  {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
                 sqr_radius:=sqr(radius);
@@ -1914,7 +1902,7 @@ begin
                     i:=m + xci;
                     if ((j >= 0) and (i >= 0) and (j < head.Height) and
                       (i < head.Width) and (sqr(m) + sqr(n) <= sqr_radius)) then
-                      img_sa[0, j, i]:=1;
+                      img_sa[0, j, i]:=retries;//use retries as marker. Then img_sa does not need to be cleared!
                   end;
 
                 if ((img[0, yci, xci] < head.datamax_org - 1) and
@@ -1944,11 +1932,9 @@ begin
           end;
         end;
       end;
-
     end;
-
     Dec(retries);{Try again with lower detection level}
-  until ((nhfd >= max_stars) or (retries < 0)); {reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
+  until ((nhfd >= max_stars) or (retries <= 0)); {reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
   nhfd_11:=0;
   nhfd_21:=0;
@@ -2073,8 +2059,6 @@ begin
   hfdlist_13:=nil;
   hfdlist_23:=nil;
   hfdlist_33:=nil;
-
-  img_sa:=nil;{free m}
 end;
 
 
@@ -2567,6 +2551,7 @@ begin
   opendialog1.Filter:=dialog_filter;
   if opendialog1.Execute then
   begin
+    Screen.Cursor:=crHourglass;
     listview1.Items.beginUpdate;
     for i:=0 to OpenDialog1.Files.Count - 1 do
     begin
@@ -2575,6 +2560,7 @@ begin
         , L_nr);
     end;
     listview1.Items.EndUpdate;
+    Screen.Cursor:=crDefault;
   end;
   images_checked:=count_checked(stackmenu1.Listview1);
   {report the number of lights selected in images_selected and update menu indication}
@@ -2697,11 +2683,8 @@ var
   img_temp : Timage_array;
 begin
   if head.naxis = 0 then exit;
-  Screen.Cursor:=crHourglass;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
   backup_img;
-
 
   if load_fits(filename2, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_temp) then
     {success load}
@@ -2977,15 +2960,16 @@ begin
   OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
   opendialog1.filename:='';
   opendialog1.Filter:=dialog_filter;
-  //fits_file:=true;
   if opendialog1.Execute then
   begin
+    Screen.Cursor:=crHourglass;
     listview4.Items.beginupdate;
     for i:=0 to OpenDialog1.Files.Count - 1 do {add}
     begin
       listview_add(listview4, OpenDialog1.Files[i], True, FD_nr);
     end;
     listview4.Items.endupdate;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -2997,13 +2981,14 @@ begin
   OpenDialog1.Title:='Select images to add';
   OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
   opendialog1.Filter:=dialog_filter;
-  //fits_file:=true;
   if opendialog1.Execute then
   begin
+    Screen.Cursor:=crHourglass;
     listview6.items.beginupdate;
     for i:=0 to OpenDialog1.Files.Count - 1 do {add}
       listview_add(listview6, OpenDialog1.Files[i], True, B_nr);
     listview6.items.endupdate;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -3016,16 +3001,16 @@ begin
   OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
   opendialog1.filename:='';
   opendialog1.Filter:=dialog_filter;
-  //fits_file:=true;
   if opendialog1.Execute then
   begin
+    Screen.Cursor:=crHourglass;
     listview3.items.beginupdate;
     for i:=0 to OpenDialog1.Files.Count - 1 do {add}
     begin
       listview_add(listview3, OpenDialog1.Files[i], True, F_nr);
     end;
     listview3.items.endupdate;
-
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -5323,7 +5308,6 @@ begin
     begin
       X:=fitsX / ratio;
       Y:=fitsY / ratio;
-   //   bilinear_interpolation(img_loaded,x,y,colour);
       BicubicInterpolate(img_loaded,x,y,colour);
 
       for col:=0 to colours-1 do
@@ -5866,8 +5850,7 @@ begin
             demosaic_advanced(img_loaded);{demosaic and set levels}
           end;
 
-          setlength(img_temp,head.naxis3, 0, 0);
-          {set to zero to clear old values (at the edges}
+          setlength(img_temp,0, 0, 0);//Set to zero to clear old values (at the edges
           setlength(img_temp,head.naxis3, head.Height, head.Width);{new size}
 
           aa:=solution_vectorX[0];//move to local variable for minor faster processing
@@ -6184,15 +6167,16 @@ begin
   OpenDialog1.Title:='Select images to add';
   OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
   opendialog1.Filter:=dialog_filter;
-  //fits_file:=true;
   if opendialog1.Execute then
   begin
+    Screen.Cursor:=crHourglass;
     listview8.items.beginupdate;
     for i:=0 to OpenDialog1.Files.Count - 1 do {add}
     begin
       listview_add(listview8, OpenDialog1.Files[i], True, L_nr);
     end;
     listview8.items.endupdate;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -6270,13 +6254,14 @@ begin
   OpenDialog1.Title:='Select images to add';
   OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
   opendialog1.Filter:=dialog_filter;
-  //fits_file:=true;
   if opendialog1.Execute then
   begin
+    Screen.Cursor:=crHourglass;
     listview7.items.beginupdate;
     for i:=0 to OpenDialog1.Files.Count - 1 do {add}
       listview_add(listview7, OpenDialog1.Files[i], True, P_nr);
     listview7.items.endupdate;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -10719,10 +10704,10 @@ begin
 //  mainform1.image1.Canvas.Pen.Color:=clred;
 
 
-  setlength(img_temp3,1,head.height,head.width);{set size of image array}
+  setlength(img_temp3,1,head.height,head.width);
   for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
-      img_temp3[0,fitsY,fitsX]:=default;{clear}
+      img_temp3[0,fitsY,fitsX]:=default;{clear to 1000}
   plot_artificial_stars(img_temp3,head);{create artificial image with database stars as pixels}
 
   analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
@@ -11686,12 +11671,14 @@ begin
   opendialog1.Filter:=dialog_filter; //fits_file:=true;
   if opendialog1.Execute then
   begin
+    Screen.Cursor:=crHourglass;
     listview9.items.beginupdate;
     for i:=0 to OpenDialog1.Files.Count - 1 do {add}
     begin
       listview_add(listview9, OpenDialog1.Files[i], True, M_nr);
     end;
     listview9.items.endupdate;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
