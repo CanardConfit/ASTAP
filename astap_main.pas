@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.02.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.02.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -89,9 +89,8 @@ type
     error_label1: TLabel;
     Image1: TImage;
     MenuItem25: TMenuItem;
-    area_crop1: TMenuItem;
     image_based_crop1: TMenuItem;
-    crop_by_coordinates1: TMenuItem;
+    batch_crop_by_coordinates1: TMenuItem;
     Panel1: TPanel;
     selective_colour_saturation1: TTrackBar;
     Separator4: TMenuItem;
@@ -430,8 +429,7 @@ type
     procedure flipVH1Click(Sender: TObject);
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure batch_add_tilt1Click(Sender: TObject);
-    procedure area_crop1Click(Sender: TObject);
-    procedure crop_by_coordinates1Click(Sender: TObject);
+    procedure batch_crop_by_coordinates1Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
       Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
@@ -14260,7 +14258,7 @@ begin
 end;
 
 
-procedure crop_image(x1,y1,x2,y2 {array coordinates,[0..]} : integer; var img : timage_array;var head : theader; const memo : tstrings);
+function crop_image(x1,y1,x2,y2 {array coordinates,[0..]} : integer; var img : timage_array;var head : theader; const memo : tstrings) : boolean;
 var fitsX,fitsY,col, formalism      : integer;
     fxc,fyc, ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
     img_temp : Timage_array;
@@ -14268,9 +14266,20 @@ begin
   formalism:=mainform1.Polynomial1.itemindex;
 
   x1:=max(x1,0);  // Prevent runtime errors. Box can be outside image
+  x1:=min(x1,head.width-1);//smaller image by batch process
   y1:=max(y1,0);
+  y1:=min(y1,head.height-1);
+
   x2:=min(x2,head.width-1);
   y2:=min(y2,head.height-1);
+
+
+  if ((x1>=x2) or (y1>=y2)) then
+  begin
+    memo2_message('Abort, crop area outside current image');
+    exit;
+    result:=false;
+  end;
 
   head.width:=x2-x1+1;
   head.height:=y2-y1+1;
@@ -14345,6 +14354,7 @@ begin
   end;
 
   update_text(memo,'COMMENT C','  Cropped image');
+  result:=true;
 end;
 
 
@@ -14413,20 +14423,20 @@ begin
 
 
 
-        crop_image(frameX_sample,frameY_sample,frameX_sample+frameW_sample-1,frameY_sample+frameH_sample-1, img4,head4,memo4);
-
-        if fits_file_name(filename2) then
+        if crop_image(frameX_sample,frameY_sample,frameX_sample+frameW_sample-1,frameY_sample+frameH_sample-1, img4,head4,memo4) then
         begin
-          filename3:=ChangeFileExt(Filename2,'_cropped.fits');
-          success:=save_fits(img4,memo4,head4,filename3,true)
-        end
-        else
-        begin
-          filename3:=ChangeFileExt(Filename2,'_cropped.tif');
-          success:=save_tiff16(img4,memo4,filename3,false {flip H},false {flip V},16);
+          if fits_file_name(filename2) then
+          begin
+            filename3:=ChangeFileExt(Filename2,'_cropped.fits');
+            success:=save_fits(img4,memo4,head4,filename3,true)
+          end
+          else
+          begin
+            filename3:=ChangeFileExt(Filename2,'_cropped.tif');
+            success:=save_tiff16(img4,memo4,filename3,false {flip H},false {flip V},16);
+          end;
+          if success=false then begin ShowMessage('Write error !!' + filename3);break; end;
         end;
-        if success=false then begin ShowMessage('Write error !!' + filename3);break; end;
-
 
         Application.ProcessMessages;
         if esc_pressed then break;
@@ -14440,87 +14450,38 @@ begin
 end;
 
 
-procedure Tmainform1.area_crop1Click(Sender: TObject);
-var
-  I              : integer;
-  img : timage_array;
-  memo : Tstrings;
-  head : theader;
-  filename3 : string;
-  success   : boolean;
-begin
-   if areaX1=areaX2 then
-   begin
-     application.messagebox(pchar('No area selected in current image. Hold the right mouse button and pull a rectangle around area of interest, release button and select in popup menu "Set area".'),'',MB_OK);
-     exit;
-   end;
-
-
-  OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter:=dialog_filter_fits_tif;
-  esc_pressed:=false;
-
-  memo:=tstringlist.create;
-
-  if OpenDialog1.Execute then
-  begin
-    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-    try { Do some lengthy operation }
-       with OpenDialog1.Files do
-      for I := 0 to Count - 1 do
-      begin
-
-        progress_indicator(i/count,' Binning');{show progress}
-        filename2:=Strings[I];
-        memo2_message('Cropping '+filename2);
-        {load fits}
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,memo{mainform1.memo1.lines},head,img)=false)) then begin break;end;
-
-        crop_image(areaX1+1,areaY1+1,areaX2-1,areaY2-1 {array coordinates,[0..]}, img,head,memo);//crop to area inside the frame
-
-
-        if fits_file_name(filename2) then
-        begin
-          filename3:=ChangeFileExt(Filename2,'_cropped.fits');
-          success:=save_fits(img,memo,head,filename3,true)
-        end
-        else
-        begin
-          filename3:=ChangeFileExt(Filename2,'_cropped.tif');
-          success:=save_tiff16(img,memo,filename3,false {flip H},false {flip V},16);
-        end;
-        if success=false then begin ShowMessage('Write error !!' + filename3);break; end;
-
-
-        Application.ProcessMessages;
-        if esc_pressed then break;
-      end;
-      finally
-      progress_indicator(-100,'');{progresss done}
-      Screen.Cursor:=crDefault;  { Always restore to normal }
-    end;
-  end;
-  memo.free;
-  memo2_message('Ready');
-end;
-
-procedure Tmainform1.crop_by_coordinates1Click(Sender: TObject);
+procedure Tmainform1.batch_crop_by_coordinates1Click(Sender: TObject);
 var
   aForm:  TForm;
-  aLabel,labelX,labelY,labelW,labelH: TLabel;
+  aLabel,labelX,labelY,labelW,labelH,label_info: TLabel;
   Editx:   TEdit;
   Edity:   TEdit;
   Editw:   TEdit;
   Edith:   TEdit;
   Cancel: TBitBtn;
   Ok:     TBitBtn;
-  result: string;
+  x,y,w,h : integer;
+  I       : integer;
+  img : timage_array;
+  memo : Tstrings;
+  head_temp : theader;
+  filename3 : string;
+  success   : boolean;
 const
   fwidth = 300;
-  fheight = 200;
-  editleft= 50;
+  fheight = 250;
+  editleft= 70;
 
 begin
+  if ((areaX1=0) and (areaY1=0)) then
+  begin
+   areaX2:=head.width-1+2; //array coordinates [0.. ]. areaX1 and areaX2 define the frame so it should just outside the image equals +2
+   areaY2:=head.height-1+2; //array coordinates [0.. ]
+  end;
+
+
+  x:=areaX1 + ((areaX2-areaX1) div 2)+1;//+1 from array to fits coordinates
+  y:=areaY1 + ((areaY2-areaY1) div 2)+1;
 
   aForm                      := TForm.Create(nil);
   aForm.Top                  := Top;
@@ -14539,12 +14500,12 @@ begin
   LabelX.Parent              := aForm;
   LabelX.Top                 := 30;
   LabelX.Left                := 5;
-  LabelX.Caption             := 'X';
+  LabelX.Caption             := 'Center-X';
   LabelY                     := TLabel.Create(aForm);
   LabelY.Parent              := aForm;
   LabelY.Top                 := 60;
   LabelY.Left                := 5;
-  LabelY.Caption             := 'Y';
+  LabelY.Caption             := 'Center-Y';
   LabelW                     := TLabel.Create(aForm);
   LabelW.Parent              := aForm;
   LabelW.Top                 := 90;
@@ -14556,30 +14517,40 @@ begin
   LabelH.Left                := 5;
   LabelH.Caption             := 'Height';
 
+  Label_info                 := TLabel.Create(aForm);
+  Label_info.Parent          := aForm;
+  Label_info.Top             := 165;
+  Label_info.Left            := 5;
+  Label_info.constraints.maxwidth:= Fwidth-10;
+  Label_info.wordwrap        := true;
+
+  Label_info.Caption         := 'Coordinates crop can be set by the mouse. See pop-up menu viewer, set area.';
+
+
   EditX                       := TEdit.Create(aForm);
   EditX.Parent                := aForm;
   EditX.Top                   := 30;
   EditX.Left                  := editleft;
   EditX.Width                 := fWidth-editleft -20;
-  editx.text:=floattostrF(startX+2,FFgeneral,6,0);//+1 from array to fits coordinated, +1 to define inside of frame
+  editX.text:=floattostrF(x,FFgeneral,6,0);
   EditY                       := TEdit.Create(aForm);
   EditY.Parent                := aForm;
   EditY.Top                   := 60;
   EditY.Left                  := editleft;
   EditY.Width                 := fWidth-editleft -20;
-  editY.text:=floattostrF(startY+2,FFgeneral,6,0);//+1 from array to fits coordinated, +1 to define inside of frame
+  editY.text:=floattostrF(y,FFgeneral,6,0);
   EditW                       := TEdit.Create(aForm);
   EditW.Parent                := aForm;
   EditW.Top                   := 90;
   EditW.Left                  := editleft;
   EditW.Width                 := fWidth-editleft -20;
-  editW.text:=floattostrF(stopX-startX-1,FFgeneral,6,0);
+  editW.text:=floattostrF(areaX2-areaX1-1,FFgeneral,6,0);//-2 to define inside frame, +1 to convert from array to fits coodinates
   EditH                       := TEdit.Create(aForm);
   EditH.Parent                := aForm;
   EditH.Top                   := 120;
   EditH.Left                  := editleft;
   EditH.Width                 := fWidth-editleft -20;
-  editH.text:=floattostrF(stopY-startY-1,FFgeneral,6,0);
+  editH.text:=floattostrF(areaY2-areaY1-1,FFgeneral,6,0);//-2 to define inside frame, +1 to convert from array to fits coodinates
   Cancel                     := TBitBtn.Create(aForm);
   Cancel.Parent              := aForm;
   Cancel.Top                 := fheight-35;
@@ -14591,15 +14562,66 @@ begin
   ok.Left                    := Fwidth - 95;
   Ok.Kind                    := bkOK;
 
-  Result := '';
   if not(aForm.ShowModal = mrCancel) then
   begin
-    startX:=strtoint(EditX.Text)-2; //-1 from fits to array coordinates, -1 to define frame outside section
-    startY:=strtoint(EditY.Text)-2;
-    stopX:=startX+strtoint(EditW.Text)+1;//
-    stopY:=startY+strtoint(EditH.Text)+1;
-    area_crop1Click(Sender);
-  end;
+    x:=strtoint(EditX.Text);
+    y:=strtoint(EditY.Text);
+    w:=strtoint(EditW.Text);
+    h:=strtoint(EditH.Text);
+
+    areaX1:=(x- w div 2);//(x - ((w+2) div 2) -1), conversion to frame array coordinates in array [0...]
+    areaY1:=(y- h div 2);
+    areaX2:=startX+w+2;
+    areaY2:=startY+h+2;
+
+    OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+    opendialog1.Filter:=dialog_filter_fits_tif;
+    esc_pressed:=false;
+
+    memo:=tstringlist.create;
+
+    if OpenDialog1.Execute then
+    begin
+      Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+      try { Do some lengthy operation }
+         with OpenDialog1.Files do
+        for I := 0 to Count - 1 do
+        begin
+
+          progress_indicator(i/count,' Binning');{show progress}
+          filename2:=Strings[I];
+          memo2_message('Cropping '+filename2);
+          {load fits}
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,memo{mainform1.memo1.lines},head_temp,img)=false)) then begin break;end;
+
+
+
+          if crop_image(areaX1+1,areaY1+1,areaX2-1,areaY2-1 {array coordinates,[0..]}, img,head_temp,memo) then;//crop to area inside the frame
+          begin
+            if fits_file_name(filename2) then
+            begin
+              filename3:=ChangeFileExt(Filename2,'_cropped.fits');
+              success:=save_fits(img,memo,head_temp,filename3,true)
+            end
+            else
+            begin
+              filename3:=ChangeFileExt(Filename2,'_cropped.tif');
+              success:=save_tiff16(img,memo,filename3,false {flip H},false {flip V},16);
+            end;
+            if success=false then begin ShowMessage('Write error !!' + filename3);break; end;
+          end;
+
+          Application.ProcessMessages;
+          if esc_pressed then break;
+        end;
+        finally
+        progress_indicator(-100,'');{progresss done}
+        Screen.Cursor:=crDefault;  { Always restore to normal }
+      end;
+    end;
+    memo.free;
+    memo2_message('Ready');
+  end;//ok pressed
 end;
 
 
@@ -14622,10 +14644,11 @@ begin
    dec(stopX);
    dec(stopY);
 
-   crop_image(startX,startY,stopX,stopY, img_loaded,head, mainform1.memo1.lines);
-
-   plot_image(mainform1.image1,true);
-   image_move_to_center:=true;
+   if crop_image(startX,startY,stopX,stopY, img_loaded,head, mainform1.memo1.lines) then
+   begin
+     plot_image(mainform1.image1,true);
+     image_move_to_center:=true;
+   end;
 
    Screen.Cursor:=crDefault;
   end;
