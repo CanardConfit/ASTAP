@@ -439,16 +439,8 @@ begin
               height_max:=head.height;
               width_max:=head.width;
 
-              setlength(img_average,6,height_max,width_max);{2 x 3 colours}
+              setlength(img_average,6,height_max,width_max);{2 x 3 colours}//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
               setlength(img_temp,6,height_max,width_max);   {2 x 3 colours}
-
-              for fitsY:=0 to height_max-1 do
-                for fitsX:=0 to width_max-1 do
-                  for col:=0 to 2+3 do //rgb x 2 is 6 colours
-                  begin
-                    img_average[col,fitsY,fitsX]:=0; //clear img_average
-                    img_temp[col,fitsY,fitsX]:=0;//clear counter
-                  end;
             end;{init, c=0}
 
             solution:=true;{assume solution is found}
@@ -867,18 +859,8 @@ begin
           width_max:=abs(round(x_max-x_min));
           height_max:=abs(round(y_max-y_min));
 
-          setlength(img_average,head.naxis3,height_max,width_max);
+          setlength(img_average,head.naxis3,height_max,width_max); //In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
           setlength(img_temp,1,height_max,width_max);{gray}
-
-          for fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-            begin
-              for col:=0 to head.naxis3-1 do
-              begin
-                img_average[col,fitsY,fitsX]:=0; {clear img_average}
-              end;
-              img_temp[0,fitsY,fitsX]:=0; {clear img_temp}
-            end;
         end;
 
         memo2_message('Adding file: '+inttostr(frame_counter+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');     // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
@@ -1066,15 +1048,8 @@ begin
             width_max:=head.width;
             binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
 
-            setlength(img_average,head.naxis3,height_max,width_max);
-            setlength(img_temp,1,height_max,width_max);
-            for fitsY:=0 to height_max-1 do
-              for fitsX:=0 to width_max-1 do
-              begin
-                for col:=0 to head.naxis3-1 do
-                  img_average[col,fitsY,fitsX]:=0; {clear img_average}
-                img_temp[0,fitsY,fitsX]:=0; {clear img_temp}
-              end;
+            setlength(img_average,head.naxis3,height_max,width_max);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+            setlength(img_temp,1,height_max,width_max);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
             if use_star_alignment then
             begin
@@ -1290,15 +1265,8 @@ begin
           jd_mid_reference:=jd_mid; //for  "compensate solar movement". Julian dates are calculated in apply_dark_and_flat
           height_max:=head.height;
           width_max:=head.width;
-          setlength(img_average,head.naxis3,height_max,width_max);
-          setlength(img_temp,head.naxis3,height_max,width_max);
-          for fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-              for col:=0 to head.naxis3-1 do
-              begin
-                img_average[col,fitsY,fitsX]:=0; {clear img_average}
-                img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
-              end;
+          setlength(img_average,head.naxis3,height_max,width_max);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+          setlength(img_temp,head.naxis3,height_max,width_max);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
           binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
 
           if use_star_alignment then
@@ -1445,12 +1413,7 @@ begin
           if init=false then {init (2) for standard deviation step}
           begin
             jd_mid_reference:=jd_mid; //for  "compensate solar movement". Julian dates are calculated in apply_dark_and_flat
-            setlength(img_variance,head.naxis3,height_max,width_max);{mono}
-            for fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-            begin
-              for col:=0 to head.naxis3-1 do img_variance[col,fitsY,fitsX]:=0; {clear img_average}
-            end;
+            setlength(img_variance,head.naxis3,height_max,width_max);//Mono. In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
           end;{c=0}
 
           inc(counter);
@@ -1527,17 +1490,11 @@ begin
           if init=false then {init, (3) step throw outliers out}
           begin
             jd_mid_reference:=jd_mid; //for  "compensate solar movement". Julian dates are calculated in apply_dark_and_flat
-            setlength(img_temp,head.naxis3,height_max,width_max);
-            setlength(img_final,head.naxis3,height_max,width_max);
-            for fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-            begin
-              for col:=0 to head.naxis3-1 do
-              begin
-                img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
-                img_final[col,fitsY,fitsX]:=0; {clear img_temp}
-              end;
-            end;
+            setlength(img_final,head.naxis3,height_max,width_max); //In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+            for fitsY:=0 to height_max-1 do //clear the existing img_temp
+              for fitsX:=0 to width_max-1 do
+                for col:=0 to head.naxis3-1 do
+                  img_temp[col,fitsY,fitsX]:=0; {clear img_temp}
           end;{init}
 
           inc(counter);
@@ -1851,17 +1808,10 @@ begin
               {head.naxis3 is now 3}
            end;
 
-          if init=false then {init, (3) step throw outliers out}
+          if init=false then //init
           begin
-            setlength(img_temp,1,height_max,width_max);
-            setlength(img_final,head.naxis3,height_max,width_max);
-            for fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-            begin
-              for col:=0 to head.naxis3-1 do
-                img_final[col,fitsY,fitsX]:=0; {clear final}
-              img_temp[0,fitsY,fitsX]:=0; {clear counter}
-            end;
+            setlength(img_temp,1,height_max,width_max); //In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+            setlength(img_final,head.naxis3,height_max,width_max);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
           end;{init}
 
           inc(counter);

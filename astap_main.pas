@@ -2374,6 +2374,7 @@ begin
     end;
 end;
 
+
 function duplicate(img:Timage_array ; out img2 : Timage_array): boolean;//fastest way to duplicate an image
 var
   c,w,h,k,i: integer;
@@ -2398,6 +2399,7 @@ begin
 //  result:=img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 //  setlength(result,c,h,w);{force a duplication}
 end;
+
 
 
 function fits_file_name(inp : string): boolean; {fits file name?}
@@ -7213,11 +7215,11 @@ begin
 
   setlength(img_temp2,3,head.height,head.width);{set length of image array color}
 
-  for y := 0 to head.height-2 do   {-2 = -1 -1}
-    for x:=0 to head.width-2 do
-  begin {clear green}
-      img_temp2[1,y,x]:=0;
-  end;
+//  for y := 0 to head.height-2 do   {-2 = -1 -1}
+//    for x:=0 to head.width-2 do
+//  begin {clear green}
+//      img_temp2[1,y,x]:=0;
+//  end;
 
   for y := 0 to head.height-2 do   {-2 = -1 -1}
   begin
@@ -11486,7 +11488,7 @@ begin
 
   SetLength(stars,5,5000);{set array length}
 
-  setlength(img_sa,1,headx.height,headx.width);{set length of image array}
+  setlength(img_sa,1,headx.height,headx.width);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
   get_background(0,img,headx,histogram_update{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
 
@@ -11502,10 +11504,6 @@ begin
     saturation_level := 60000; {could be dark subtracted changing the saturation level}
   saturation_level:=min(headx.datamax_org-1,saturation_level);
 
-
-  for fitsY:=0 to headx.height-1 do
-    for fitsX:=0 to headx.width-1  do
-      img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
 
   for fitsY:=y1 to y2-1 do
   begin
@@ -11621,23 +11619,19 @@ const
       img_temp3[0,fitsY,fitsX]:=default;{clear}
   if plot_artificial_stars(img_temp3,headx)=false then exit;{create artificial image with database stars as pixels}
 
-// for testing
-// img_loaded:=img_temp3;
-// plot_image(mainform1.image1,true,true);
-// exit;
+  // for testing
+  // img_loaded:=img_temp3;
+  // plot_image(mainform1.image1,true,true);
+  // exit;
 
-//  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+  //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   remove_key(memox,'ANNOTATE',true{all});{remove older annotations.}
 
   analyse_image(img,headx,10 {snr_min},0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
   search_radius:=max(3,round(headx.hfd_median));
 
-  setlength(img_sa,1,headx.height,headx.width);{set length of image array}
-   for fitsY:=0 to headx.height-1 do
-    for fitsX:=0 to headx.width-1  do
-      img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
-
+  setlength(img_sa,1,headx.height,headx.width);//set length of image array.//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
   countN:=0;
   data_max:=headx.datamax_org-1;
@@ -11662,9 +11656,6 @@ const
         xci:=round(xc);{star center as integer}
         yci:=round(yc);
 
-//        saturated:=saturation(img,xci,yci,data_max);//star saturated?
-//        saturation(img,round(xc),round(yc),data_max)
-
         if ((snr>10) and ((hfd1<headx.hfd_median*1.5) or (saturation(img,round(xc),round(yc),data_max)){larger then normal}) and (hfd1>=headx.hfd_median*0.75)) then {star detected in img}
         begin
                       {for testing}
@@ -11683,8 +11674,6 @@ const
               i:=m+xci;
               if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
               img_sa[0,j,i]:=+1;{mark as star area}
-              //if img_sa[0,1013,1574]>1 then
-              //beep;
             end;
            measured_magn:=round(10*(headx.MZERO - ln(flux)*2.5/ln(10)));{magnitude x 10}
            if measured_magn<magn_limit_database-10 then {bright enough to be in the database}

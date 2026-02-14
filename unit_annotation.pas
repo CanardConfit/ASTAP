@@ -1247,8 +1247,7 @@ begin
       x:=y;
       inc(z); {new data field}
 
-      case z of 1:
-                     ra2:=valint32(data1,fout)*pi*2/864000;{10*60*60*24, so RA 00:00 00.1=1}
+      case z of 1: ra2:=valint32(data1,fout)*pi*2/864000;{10*60*60*24, so RA 00:00 00.1=1}
                           {valint32 takes 1 ms instead of 4ms}
 
                 2: begin
