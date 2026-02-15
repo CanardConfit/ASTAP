@@ -1253,19 +1253,15 @@ object mainform1: Tmainform1
         object MenuItem25: TMenuItem
           Caption = 'Batch Crop'
           ImageIndex = 50
-          object area_crop1: TMenuItem
-            Caption = 'Crop as "area set" in popup menu '
-            OnClick = area_crop1Click
+          object batch_crop_by_coordinates1: TMenuItem
+            Caption = 'Crop by coordinates'
+            Hint = 'As set by pop-up menu "set area" of viewer or enter manually coordinates.'
+            OnClick = batch_crop_by_coordinates1Click
           end
           object image_based_crop1: TMenuItem
             Caption = 'Crop as the sample image in the viewer'
-            Hint = 'Images could be cropped in ASTAP or from CCDCIEL selected sensor section '
+            Hint = 'Images could be cropped in ASTAP or by CCDCIEL selected sensor section '
             OnClick = image_based_crop1Click
-          end
-          object crop_by_coordinates1: TMenuItem
-            Caption = 'Crop by coordinates entered'
-            Hint = 'Program will ask x,y, width, height coordinates and crop accordingly'
-            OnClick = crop_by_coordinates1Click
           end
         end
         object Separator5: TMenuItem
