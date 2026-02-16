@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 87
+  Left = 643
   Height = 807
-  Top = 200
+  Top = 309
   Width = 1756
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_stackmethod1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 5
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -9529,9 +9529,9 @@ object stackmenu1: Tstackmenu1
       object Separator10: TMenuItem
         Caption = '-'
       end
-      object MenuItem41: TMenuItem
+      object bin_selected_files1: TMenuItem
         Caption = 'Bin 2x2 selected files'
-        OnClick = MenuItem41Click
+        OnClick = bin_selected_files1Click
       end
       object Separator11: TMenuItem
         Caption = '-'

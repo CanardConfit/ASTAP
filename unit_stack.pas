@@ -93,7 +93,7 @@ type
     max_period1: TComboBox;
     rb2: TEdit;
     report_sqm1: TMenuItem;
-    MenuItem41: TMenuItem;
+    bin_selected_files1: TMenuItem;
     annotate_unknown1: TMenuItem;
     Refresh_astrometrical_solutions1: TMenuItem;
     rg2: TEdit;
@@ -775,8 +775,7 @@ type
     procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
-    procedure lightsContextPopup(Sender: TObject; MousePos: TPoint;
-      var Handled: Boolean);
+    procedure lightsContextPopup(Sender: TObject; MousePos: TPoint;  var Handled: Boolean);
     procedure set_saturation1Change(Sender: TObject);
     procedure listview7ItemChecked(Sender: TObject; Item: TListItem);
     procedure list_to_clipboard_swapped_7Click(Sender: TObject);
@@ -794,7 +793,7 @@ type
     procedure MenuItem19Click(Sender: TObject);
     procedure quad_tolerance1Change(Sender: TObject);
     procedure report_sqm1Click(Sender: TObject);
-    procedure MenuItem41Click(Sender: TObject);
+    procedure bin_selected_files1Click(Sender: TObject);
     procedure annotate_unknown1Click(Sender: TObject);
     procedure planetary_image1Exit(Sender: TObject);
     procedure Refresh_astrometrical_solutions1Click(Sender: TObject);
@@ -1091,7 +1090,7 @@ var
 
   files_to_process, files_to_process_LRGB: array of
   TfileToDo;{contains names to process and index to listview1}
-  areay1, areay2: integer;
+  areaX2,areaY1, areaY2: integer;
   hue1, hue2: single;{for colour disk}
   asteroidlist: array of array of array of double;
   solve_show_log: boolean;
@@ -1103,8 +1102,7 @@ var
 
 
 var  {################# initialised variables #########################}
-  areaX1: integer = 0; {for set area}
-  areaX2: integer = 0;
+  areaX1: integer = -1; //For setting an area. Defined the frame around an area in array coordinate = fitsX-1, fitsY-1
   light_exposure: integer = 987654321;{not done indication}
   light_temperature: integer = 987654321;
   dark_gain: string = '987654321';
@@ -10308,7 +10306,7 @@ var
           if fits_file_name(filename1) then
           begin
             filename1:=ChangeFileExt(Filename1,newend+'.fit');
-            result:=save_fits(img_temp,memox,head,filename1,true)
+            result:=save_fits(img_temp,memox,headx,filename1,true)
           end
           else
           begin
@@ -10502,7 +10500,7 @@ begin
           begin
             if lv=listview7 then nrcolumns:=p_nr else nrcolumns:=b_nr;
             lv.Items.BeginUpdate;
-            lv.Items.item[c].Caption:=filename1;
+            lv.Items.item[c].Caption:=filename2;
 
             for i:=1 to nrcolumns-1 do
               lv.Items.item[c].subitems.Strings[i]:=''; //clear other fields
@@ -10511,6 +10509,7 @@ begin
           else
              break;
         end;
+
         inc(progress);
       end;
     end;
@@ -10539,8 +10538,6 @@ begin
 end;
 
 
-
-
 procedure Tstackmenu1.Refresh_astrometrical_solutions1Click(Sender: TObject);
 begin
   save_settings2;{Too many lost selected files, so first save settings.}
@@ -10548,7 +10545,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.MenuItem41Click(Sender: TObject);
+procedure Tstackmenu1.bin_selected_files1Click(Sender: TObject);
 begin
   save_settings2;{Too many lost selected files, so first save settings.}
   process_selected_files(listview1,L_solution {column},'2');
