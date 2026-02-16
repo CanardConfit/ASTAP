@@ -72,7 +72,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.02.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.02.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -14460,7 +14460,7 @@ var
   Edith:   TEdit;
   Cancel: TBitBtn;
   Ok:     TBitBtn;
-  x,y,w,h : integer;
+  x,y,w,h : double;
   I       : integer;
   img : timage_array;
   memo : Tstrings;
@@ -14473,22 +14473,26 @@ const
   editleft= 70;
 
 begin
-  if ((areaX1=0) and (areaY1=0)) then
+  if areaX1=-1 then //undefined, take full image as default
   begin
-   areaX2:=head.width-1+2; //array coordinates [0.. ]. areaX1 and areaX2 define the frame so it should just outside the image equals +2
-   areaY2:=head.height-1+2; //array coordinates [0.. ]
+   areaX2:=head.width; //array coordinates [0.. ]. areaX1 and areaX2 define the frame so it should just outside the image equals +2
+   areaY2:=head.height; //array coordinates [0.. ]
+   areaY1:=-1;
   end;
 
+  //convert frame in array coordinates to inside area in fits coordinates
+  w:=areaX2-areaX1-1;//width inside of frame
+  h:=areaY2-areaY1-1;//height inside of frame
+  x:=1 + areaX1 + ((w+1)/2); // 1+ to convert from array to to FITS coordinates
+  y:=1 + areaY1 + ((h+1)/2);
 
-  x:=areaX1 + ((areaX2-areaX1) div 2)+1;//+1 from array to fits coordinates
-  y:=areaY1 + ((areaY2-areaY1) div 2)+1;
 
   aForm                      := TForm.Create(nil);
   aForm.Top                  := Top;
   aForm.Left                 := Left;
   aForm.Width                := fwidth;
   aForm.Height               := fheight;
-  aForm.Caption              := Caption;
+  aForm.Caption              := 'Batch crop';
   aLabel                     := TLabel.Create(aForm);
   aLabel.Parent              := aForm;
   aLabel.Top                 := 5;
@@ -14524,7 +14528,7 @@ begin
   Label_info.constraints.maxwidth:= Fwidth-10;
   Label_info.wordwrap        := true;
 
-  Label_info.Caption         := 'Coordinates crop can be set by the mouse. See pop-up menu viewer, set area.';
+  Label_info.Caption         := 'Crop coordinates can be set by the mouse. See pop-up menu viewer, set area.';
 
 
   EditX                       := TEdit.Create(aForm);
@@ -14532,25 +14536,25 @@ begin
   EditX.Top                   := 30;
   EditX.Left                  := editleft;
   EditX.Width                 := fWidth-editleft -20;
-  editX.text:=floattostrF(x,FFgeneral,6,0);
+  editX.text:=floattostrF(x,FFgeneral,6,1);
   EditY                       := TEdit.Create(aForm);
   EditY.Parent                := aForm;
   EditY.Top                   := 60;
   EditY.Left                  := editleft;
   EditY.Width                 := fWidth-editleft -20;
-  editY.text:=floattostrF(y,FFgeneral,6,0);
+  editY.text:=floattostrF(y,FFgeneral,6,1);
   EditW                       := TEdit.Create(aForm);
   EditW.Parent                := aForm;
   EditW.Top                   := 90;
   EditW.Left                  := editleft;
   EditW.Width                 := fWidth-editleft -20;
-  editW.text:=floattostrF(areaX2-areaX1-1,FFgeneral,6,0);//-2 to define inside frame, +1 to convert from array to fits coodinates
+  editW.text                 :=floattostrF(w,FFgeneral,6,0);
   EditH                       := TEdit.Create(aForm);
   EditH.Parent                := aForm;
   EditH.Top                   := 120;
   EditH.Left                  := editleft;
   EditH.Width                 := fWidth-editleft -20;
-  editH.text:=floattostrF(areaY2-areaY1-1,FFgeneral,6,0);//-2 to define inside frame, +1 to convert from array to fits coodinates
+  editH.text                  :=floattostrF(h,FFgeneral,6,0);
   Cancel                     := TBitBtn.Create(aForm);
   Cancel.Parent              := aForm;
   Cancel.Top                 := fheight-35;
@@ -14564,15 +14568,17 @@ begin
 
   if not(aForm.ShowModal = mrCancel) then
   begin
-    x:=strtoint(EditX.Text);
-    y:=strtoint(EditY.Text);
-    w:=strtoint(EditW.Text);
-    h:=strtoint(EditH.Text);
+    x:=strtofloat2(EditX.Text);
+    y:=strtofloat2(EditY.Text);
+    w:=strtofloat2(EditW.Text);
+    h:=strtofloat2(EditH.Text);
 
-    areaX1:=(x- w div 2);//(x - ((w+2) div 2) -1), conversion to frame array coordinates in array [0...]
-    areaY1:=(y- h div 2);
-    areaX2:=startX+w+2;
-    areaY2:=startY+h+2;
+    //convert from FITS to out side frame in  array coordinates
+    areaX1:=round(-1 + x - ((w+1)/2));
+    areaY1:=round(-1 + y - ((h+1)/2));
+    areaX2:=round(-1 + x + ((w+1)/2));
+    areaY2:=round(-1 + y + ((h+1)/2));
+
 
     OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
     opendialog1.Filter:=dialog_filter_fits_tif;
@@ -15008,7 +15014,8 @@ begin
   areay1:=startY;
   areax2:=stopX;
   areay2:=stopY;
-  set_area1.checked:=(areaX1<>areaX2);
+  set_area1.checked:=areaX1>-1;
+//  set_area1.checked:=(areaX1<>areaX2);
   //stackmenu1.area_set1.caption:='✓';
   stackmenu1.area_set1.caption:='['+inttostr(areax1)+','+inttostr(areay1)+'], ['+inttostr(areax2)+','+inttostr(areay2)+']';
 
