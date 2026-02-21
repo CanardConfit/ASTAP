@@ -67,8 +67,11 @@ type
     bg2: TEdit;
     br2: TEdit;
     center_position1: TLabel;
+    Label38: TLabel;
+    refresh_astrometric_solutions9: TMenuItem;
     photometry_calibrate1: TCheckBox;
     saturation_level1: TEdit;
+    Separator15: TMenuItem;
     with_auid_only1: TCheckBox;
     gradient_filter_factor1: TComboBox;
     GroupBox24: TGroupBox;
@@ -472,10 +475,7 @@ type
     most_right8: TStaticText;
     most_right9: TStaticText;
     mount1: TTabSheet;
-    mount_add_solutions1: TButton;
     mount_analyse1: TButton;
-    mount_ignore_solutions1: TCheckBox;
-    mount_write_wcs1: TCheckBox;
     multiply_blue1: TEdit;
     multiply_green1: TEdit;
     multiply_red1: TEdit;
@@ -560,7 +560,7 @@ type
     splitRGB1: TButton;
     stack_button1: TBitBtn;
     stack_groups1: TMenuItem;
-    refresh_astrometric_solutions1: TMenuItem;
+    refresh_astrometric_solutions7: TMenuItem;
     photometric_calibration1: TMenuItem;
     photom_extractRGB1: TMenuItem;
     Separator2: TMenuItem;
@@ -776,6 +776,7 @@ type
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure lightsContextPopup(Sender: TObject; MousePos: TPoint;  var Handled: Boolean);
+    procedure refresh_astrometric_solutions9Click(Sender: TObject);
     procedure set_saturation1Change(Sender: TObject);
     procedure listview7ItemChecked(Sender: TObject; Item: TListItem);
     procedure list_to_clipboard_swapped_7Click(Sender: TObject);
@@ -807,7 +808,7 @@ type
     procedure unsharp_edit_threshold1Change(Sender: TObject);
     procedure refresh_solutions_selected1Click(Sender: TObject);
     procedure photometric_calibration1Click(Sender: TObject);
-    procedure refresh_astrometric_solutions1Click(Sender: TObject);
+    procedure refresh_astrometric_solutions7Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure clear_result_list1Click(Sender: TObject);
@@ -864,7 +865,6 @@ type
     procedure live_stacking1Click(Sender: TObject);
     procedure copy_files_to_clipboard1Click(Sender: TObject);
     procedure most_common_mono1Click(Sender: TObject);
-    procedure mount_add_solutions1Click(Sender: TObject);
     procedure new_colour_luminance1Change(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
@@ -1153,7 +1153,7 @@ procedure date_to_jd(date_obs,date_avg: string; exp: double); {convert date_obs 
 function JdToDate(jd: double): string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio: double); {resize img_loaded in free ratio}
 function median_background(var img: Timage_array; color, sizeX, sizeY, x, y: integer): double; {find median value of an area at position x,y with sizeX,sizeY}
-procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer;out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
+procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer);//find background, number of stars, median HFD
 
 
 procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
@@ -1321,6 +1321,7 @@ const
 implementation
 
 uses
+  unit_tiff,
   unit_image_sharpness, unit_threaded_gaussian_blur, unit_star_align,
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
@@ -1683,7 +1684,7 @@ begin
 end;
 
 
-procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer{; out star_counter: integer; out bck:Tbackground; out hfd_median: double});//find background, number of stars, median HFD
+procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer);//find background, number of stars, median HFD
 var
   width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, m,
   xci, yci, sqr_radius, formalism, star_counter, starpixels: integer;
@@ -3844,11 +3845,9 @@ begin
 
         end;
 
-        if fits_file_name(filename_old) then
-          success:=savefits_update_header(mainform1.memo1.lines,filename2)
-        else
-        if tiff_file_name(filename_old) then
-          success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2){guarantee no file is lost}
+        if ((fits_file_name(filename_old)) or (tiff_file_name(filename_old))) then
+          success:=save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits){guarantee no file is lost}
+
         else
         begin
           filename2:=changefileExt(filename_old, '.fits');//xisf and raw files
@@ -4911,7 +4910,6 @@ begin
   head.flatdark_count:=file_count;
   file_list:=nil;
 end;
-
 
 
 procedure box_blur(range : integer; var img: Timage_array);{blur by combining values of pixels, ignore value above max_value and zeros}
@@ -6950,86 +6948,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.mount_add_solutions1Click(Sender: TObject);
-var
-  c: integer;
-  refresh_solutions, success: boolean;
-  thefile, filename1: string;
-  headx : theader;
-  img_temp : Timage_array;
-begin
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-  esc_pressed:=False;
-  refresh_solutions:=mount_ignore_solutions1.Checked; {refresh astrometric solutions}
-
-  {solve lights first to allow flux to magnitude calibration}
-  with stackmenu1 do
-    for c:=0 to listview9.items.Count - 1 do {check for astrometric solutions}
-    begin
-      if ((esc_pressed = False) and (listview9.Items.item[c].Checked) and
-        (listview9.Items.item[c].subitems.Strings[M_ra] = '')) then
-      begin
-        filename1:=listview9.items[c].Caption;
-        mainform1.Caption:=filename1;
-
-        Application.ProcessMessages;
-
-        {load image}
-        if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,memox, headx, img_temp) = False)) then
-        begin
-          Screen.Cursor:=crDefault;{back to normal }
-          exit;
-        end;
-        if ((head.cd1_1 = 0) or (refresh_solutions)) then
-        begin
-          listview9.Selected:=nil; {remove any selection}
-          listview9.ItemIndex:=c;
-          {mark where we are. Important set in object inspector    Listview1.HideSelection:=false; Listview1.Rowselect:=true}
-          listview9.Items[c].MakeVisible(False);{scroll to selected item}
-          memo2_message(filename1 + ' Adding astrometric solution to file.');
-          Application.ProcessMessages;
-
-          if solve_image(img_temp, headx,memox, True  {get hist},false) then
-          begin{match between loaded image and star database}
-            if mount_write_wcs1.Checked then
-            begin
-              thefile:=ChangeFileExt(filename1, '.wcs');{change file extension to .wcs file}
-              write_astronomy_wcs(thefile);
-              listview9.items[c].Caption:=thefile;
-            end
-            else
-            begin
-              if fits_file_name(filename1) then
-                success:=savefits_update_header(memox,filename1)
-              else
-                success:=save_tiff16_secure(img_temp,memox, filename1);{guarantee no file is lost}
-              if success = False then
-              begin
-                ShowMessage('Write error !!' + filename1);
-                Screen.Cursor:=crDefault;
-                exit;
-              end;
-            end;
-          end
-          else
-          begin
-            if errorlevel=32 then break; //no star database found
-            listview9.Items[c].Checked:=False;
-            listview9.Items.item[c].subitems.Strings[M_ra]:='?';
-            listview9.Items.item[c].subitems.Strings[M_dec]:='?';
-            memo2_message(filename1 + 'No astrometric solution found for this file!!');
-          end;
-        end;
-      end;
-    end;
-
-  Screen.Cursor:=crDefault;{back to normal }
-
-  update_menu(False);  //do not allow to save fits. img_load is still valid but Memo3 is cleared. Could be recovered but is not done
-  stackmenu1.mount_analyse1Click(nil);  {update. Since it are WCS files with naxis,2 then image1 will be cleared in load_fits}
-end;
-
 procedure Tstackmenu1.new_colour_luminance1Change(Sender: TObject);
 begin
   update_replacement_colour;
@@ -8124,7 +8042,7 @@ begin
 
     memo2_message( 'Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
 
-    refresh_solutions:=(Sender = stackmenu1.refresh_astrometric_solutions1);
+    refresh_solutions:=(Sender = stackmenu1.refresh_astrometric_solutions7);
     {refresh astrometric solutions}
 
     totalnrstr:=inttostr(listview7.items.Count);
@@ -8156,11 +8074,7 @@ begin
 
           if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
           begin{match between loaded image and star database}
-            if fits_file_name(filename1) then
-              success:=savefits_update_header(memox,filename1)
-            else
-              success:=save_tiff16_secure(img_temp,memox, filename1);{guarantee no file is lost}
-            if success = False then
+            if save_fits_tiff_secure(img_temp,memox,filename1,headx.nrbits)=false then
             begin
               ShowMessage('Write error !!' + filename2);
               exit;//go to finally at the end
@@ -9299,12 +9213,13 @@ begin
 
   calibrate_photometry(img_loaded,mainform1.Memo1.lines,head,false{update});
 
-  if fits_file_name(filename2) then
-    success:=savefits_update_header(mainform1.memo1.lines,filename2)
-  else
-    success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);
-  {guarantee no file is lost}
-  if success = False then
+//  if fits_file_name(filename2) then
+//    success:=savefits_update_header(mainform1.memo1.lines,filename2)
+//  else
+  //  success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);
+ //   success:=save_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits); {guarantee no file is lost}
+
+  if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits)=false then //guarantee no file is lost
   begin
     memo2_message('Abort. Could not save photometric updated file: '+filename2);
     exit;
@@ -9553,7 +9468,7 @@ end;
 procedure Tstackmenu1.blink_annotate_and_solve1Click(Sender: TObject);
 var
   c: integer;
-  buffer_loaded,success : boolean;
+  buffer_loaded : boolean;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed:=false;
@@ -9603,12 +9518,13 @@ begin
         buffer_loaded:=true;//asteroids are in the buffer ready to be reused
         listview6.Items.item[c].subitems.Strings[B_annotated]:='✓';
 
-        if fits_file_name(filename2) then
-          success:=savefits_update_header(mainform1.memo1.lines,filename2)
-        else
-          success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);
-        {guarantee no file is lost}
-        if success = False then
+       // if fits_file_name(filename2) then
+       //   success:=savefits_update_header(mainform1.memo1.lines,filename2)
+       // else
+       //   success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);
+        //{guarantee no file is lost}
+
+        if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines, filename2,head.nrbits)=false then {guarantee no file is lost}
         begin
           ShowMessage('Write error !!' + filename2);
           break;
@@ -10292,16 +10208,13 @@ var
   img_temp                    : Timage_array;
   headx                       : theader;
 
-        function save_fits_tiff(filename1: string) : boolean;
+        function save_fits_tiff : boolean;
         begin
-          if fits_file_name(filename1) then
-            result:=savefits_update_header(memox,filename1)
-          else
-            result:=save_tiff16_secure(img_temp,memox, filename1);{guarantee no file is lost}
+          result:=save_fits_tiff_secure(img_temp,memox, filename1,headx.nrbits); {guarantee no file is lost}
           if result=false then ShowMessage('Write error !!' + filename1);
         end;
 
-        function save_fits_tiff_updated_image(filename1,newend: string) : boolean;
+        function save_fits_tiff_updated_image(newend: string) : boolean;
         begin
           if fits_file_name(filename1) then
           begin
@@ -10311,7 +10224,7 @@ var
           else
           begin
             filename1:=ChangeFileExt(Filename1,newend+'.tif');
-            result:=save_tiff16(img_temp,memox,filename1,false {flip H},false {flip V},16);
+            result:=save_tiff_new(img_temp,filename1, memox.text,headx.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
           end;
         end;
 
@@ -10384,7 +10297,7 @@ begin
           if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
           begin{match between loaded image and star database}
             remove_key(memox,'ANNOTATE',true{all});//remove key word in header. If solution requeres update then annotations are likely not correct.
-            result:=save_fits_tiff(filename1);
+            result:=save_fits_tiff;
             if result=false then break;
           end
           else
@@ -10413,7 +10326,7 @@ begin
             calibrate_photometry(img_temp,memoX,headX, false{update});
             if headX.mzero<>0 then
             begin
-              result:=save_fits_tiff(filename1);
+              result:=save_fits_tiff;
               if result=false then break;
            end;
           end
@@ -10480,7 +10393,7 @@ begin
               Lv.Items.item[c].subitems.Strings[L_result] :='';
             end;
 
-            result:=save_fits_tiff(filename1);
+            result:=save_fits_tiff;
             if result=false then break;
           end
           else
@@ -10495,12 +10408,12 @@ begin
           bin_X2X3X4(img_temp,headx,memox,2);{bin img_loaded 2x or 3x}
           remove_key(memox,'BAYERPAT=',false{all});//do not allow debayer anymore
 
-          result:=save_fits_tiff_updated_image(filename1,'_bin2x2');
+          result:=save_fits_tiff_updated_image('_bin2x2');
           if result then
           begin
             if lv=listview7 then nrcolumns:=p_nr else nrcolumns:=b_nr;
             lv.Items.BeginUpdate;
-            lv.Items.item[c].Caption:=filename2;
+            lv.Items.item[c].Caption:=filename1;
 
             for i:=1 to nrcolumns-1 do
               lv.Items.item[c].subitems.Strings[i]:=''; //clear other fields
@@ -10542,6 +10455,13 @@ procedure Tstackmenu1.Refresh_astrometrical_solutions1Click(Sender: TObject);
 begin
   save_settings2;{Too many lost selected files, so first save settings.}
   process_selected_files(listview1,L_solution {column},'S');
+end;
+
+
+procedure Tstackmenu1.refresh_astrometric_solutions9Click(Sender: TObject);
+begin
+  save_settings2;{Too many lost selected files, so first save settings.}
+  process_selected_files(listview9,p_astrometric,'S');
 end;
 
 
@@ -10616,7 +10536,7 @@ end;
 
 
 
-procedure Tstackmenu1.refresh_astrometric_solutions1Click(Sender: TObject);
+procedure Tstackmenu1.refresh_astrometric_solutions7Click(Sender: TObject);
 begin
   save_settings2;{Too many lost selected files, so first save settings.}
   process_selected_files(listview7,p_astrometric,'S');
@@ -11119,7 +11039,7 @@ begin
 
   esc_pressed:=False;
 
-  stackmenu1.mount_add_solutions1Click(nil);
+ // stackmenu1.mount_add_solutions1Click(nil);
   {add any missing solutions and analyse after that}
 
   counter:=0;
@@ -12235,7 +12155,8 @@ begin
       Result:=savefits_update_header(memo,filename2);
     end
     else
-      Result:=save_tiff16(img,memo, filename2, False {flip H}, False {flip V},16);
+     result:=save_tiff_new(img,filename2, memo.text,hd.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+    //  Result:=save_tiff16(img,memo, filename2, False {flip H}, False {flip V},16);
 
     if Result = False then ShowMessage('Write error !!' + filename2);
   end
@@ -12905,11 +12826,12 @@ begin
           end;
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add_annotations},true {use asteroid buffer. Was loaded by analyse_objects_visible});
 
-          if fits_file_name(filename2) then
-            success:=savefits_update_header(mainform1.memo1.lines,filename2)
-          else
-            success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);{guarantee no file is lost}
-          if success = False then
+          //if fits_file_name(filename2) then
+          //  success:=savefits_update_header(mainform1.memo1.lines,filename2)
+          //else
+          //  success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);{guarantee no file is lost}
+
+          if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines, filename2,head.nrbits)= False then
           begin
             ShowMessage('Write error !!' + filename2);
             Screen.Cursor:=crDefault;

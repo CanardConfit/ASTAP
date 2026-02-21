@@ -38,7 +38,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.02.09';
+  astap_version: string='2026.02.17';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -147,17 +147,6 @@ type
 
   var
     Reader    : TReader;
-    fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
-    fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
-    fitsbufferRGB: array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
-    fitsbufferRGB16: array[0..trunc(bufwide/6)] of byteXX3 absolute fitsbuffer;{buffer for 16 bit RGB PPM file}
-    fitsbufferRGB32: array[0..trunc(bufwide/12)] of byteXXXX3 absolute fitsbuffer;{buffer for -32 bit PFM file}
-    fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
-    fitsbuffer8: array[0..trunc(bufwide/8)] of int64 absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
-    fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
-    fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
-
-
 
 
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
@@ -471,6 +460,7 @@ end;
 
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 var
+  fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
   TheFile  : tfilestream;
   reader_position,I,readsize,bufsize : integer;
   TheFile_new : tfilestream;
@@ -563,6 +553,8 @@ end;
 
 function save_fits16bit(img: Timage_array;filen2:ansistring): boolean;{save to 16 fits file}
 var
+  fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+  fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
   TheFile4 : tfilestream;
   I,j,k,bzero2, dum, remain,dimensions, naxis3_local,height5,width5 : integer;
   line0                : ansistring;
@@ -701,9 +693,14 @@ end;
 
 function load_fits(filen:string;out img_loaded2: Timage_array): boolean;{load fits file}
 var
+  fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+  fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
+  fitsbufferRGB: array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
+  fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+  fitsbuffer8: array[0..trunc(bufwide/8)] of int64 absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
   TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
-  i,j,k,error3,naxis1,width2,height2, reader_position,validate_double_error,naxis,naxis3   : integer;
+  i,j,k,naxis1,width2,height2, reader_position,validate_double_error,naxis,naxis3   : integer;
   tempval                                                                                  : double;
   col_float,bscale,measured_max,scalefactor  : single;
   bzero                       : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -761,6 +758,7 @@ const
 begin
   {some house keeping}
   result:=false; {assume failure}
+  simple:=false;
   {house keeping done}
 
   try
@@ -1540,6 +1538,13 @@ end;
 
 function load_PPM_PGM_PFM(filen:string; out img_loaded2: Timage_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
+  fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+  fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
+  fitsbufferRGB: array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
+  fitsbufferRGB16: array[0..trunc(bufwide/6)] of byteXX3 absolute fitsbuffer;{buffer for 16 bit RGB PPM file}
+  fitsbufferRGB32: array[0..trunc(bufwide/12)] of byteXXXX3 absolute fitsbuffer;{buffer for -32 bit PFM file}
+  fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+  fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   TheFile  : tfilestream;
   i,j, reader_position,naxis,s        : integer;
   aline,w1,h1,bits,comm,comment_line  : ansistring;

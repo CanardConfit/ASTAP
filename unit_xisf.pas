@@ -32,6 +32,8 @@ implementation
 
 
 function load_xisf(filen:string;out head : theader; out img_loaded2: Timage_array; memo:tstrings) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
+const
+  bufwide=65535*4;{buffer size in bytes. Image dimensions 65535x65535}
 var
   TheFile  : tfilestream;
   i,j,k, reader_position,a,b,c,d,e : integer;
@@ -41,6 +43,12 @@ var
   header_length           : longword;
   header2                 :     array of ansichar;
   set_temp                : double;
+  fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+  fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
+  fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+  fitsbufferSingle: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+  fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
+
      procedure close_fits_file; inline;
      begin
         Reader.free;

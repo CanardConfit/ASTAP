@@ -524,7 +524,7 @@ begin
 
   if nrstars_image<30 then //base the quad groups size selection on the number of stars in the image and not on the number of database stars since the database field could be larger
    begin
-     find_many_quads(display,starlist, {out} quads,6 {group size});//Find five times more quads by using closest groups of five stars.
+     find_many_quads(display,starlist, {out} quads,6 {group size});//Find fifteen times more quads by using closest groups of six stars.
      exit;
    end
    else
@@ -1457,7 +1457,6 @@ begin
 end;
 
 
-
 procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlist1: Tstar_list; out mean_hfd: double);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
@@ -1470,8 +1469,6 @@ var
 const
     buffersize=5000;{5000}
     rastersteps=12;
-
-
 
           procedure find_stars_routine(startx,endx,starty,endy : integer);
           var
@@ -1623,9 +1620,6 @@ begin
                                                           +' above background. Star level is '+inttostr(round(head.star_level))+' above background. Noise level is '+floattostrF(head.noise_level,ffFixed,0,0));
     dec(retries);{Try again with lower detection level}
   until ((nrstars>=max_stars) or (retries<=0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
-
-  img_sa:=nil;{free mem}
-
 
   SetLength(starlist1,2,nrstars);{set length correct}
   setlength(snr_list,nrstars);{set length correct}
