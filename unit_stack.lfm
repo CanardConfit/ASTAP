@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 643
+  Left = 79
   Height = 807
-  Top = 309
+  Top = 204
   Width = 1756
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = mount1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 10
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -4368,7 +4368,7 @@ object stackmenu1: Tstackmenu1
           end
           object mount_analyse1: TButton
             Left = 120
-            Height = 26
+            Height = 29
             Hint = 'Analyse image files'
             Top = 5
             Width = 80
@@ -4377,32 +4377,9 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             TabOrder = 1
           end
-          object mount_add_solutions1: TButton
-            Left = 216
-            Height = 29
-            Hint = 'This will add the astrometric solutions to the files'
-            Top = 6
-            Width = 183
-            AutoSize = True
-            Caption = 'Add astrometric solutions'
-            OnClick = mount_add_solutions1Click
-            ParentFont = False
-            ParentShowHint = False
-            ShowHint = True
-            TabOrder = 2
-          end
-          object mount_ignore_solutions1: TCheckBox
-            Left = 616
-            Height = 23
-            Hint = '(Re)solve image list.'
-            Top = 0
-            Width = 173
-            Caption = 'Ignore existing solutions'
-            TabOrder = 3
-          end
           object clear_mount_list1: TButton
             Left = 1056
-            Height = 26
+            Height = 29
             Hint = 'Clear image list'
             Top = 5
             Width = 53
@@ -4411,18 +4388,7 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 4
-          end
-          object mount_write_wcs1: TCheckBox
-            Left = 616
-            Height = 23
-            Hint = 'Write solution to a new separate header file only. (.wcs)'
-            Top = 20
-            Width = 174
-            Caption = 'Do not modify the lights'
-            Checked = True
-            State = cbChecked
-            TabOrder = 5
+            TabOrder = 2
           end
           object help_mount_tab1: TLabel
             Cursor = crHandPoint
@@ -4442,7 +4408,7 @@ object stackmenu1: Tstackmenu1
           end
           object browse_mount1: TBitBtn
             Left = 16
-            Height = 25
+            Height = 29
             Hint = 'Select images to analyse.'
             Top = 6
             Width = 92
@@ -4450,13 +4416,13 @@ object stackmenu1: Tstackmenu1
             Images = ImageList2
             ImageIndex = 23
             OnClick = browse_mount1Click
-            TabOrder = 6
+            TabOrder = 3
           end
           object calc_polar_alignment_error1: TButton
-            Left = 392
+            Left = 616
             Height = 29
             Hint = 'Calcuates from the two or more images the polar alignment error. The images should be taken at different positions in the sky.'
-            Top = 5
+            Top = 6
             Width = 207
             AutoSize = True
             Caption = 'Calculate polar aligment error'
@@ -4464,16 +4430,16 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 7
+            TabOrder = 4
           end
           object hours_and_minutes1: TCheckBox
-            Left = 832
+            Left = 872
             Height = 23
             Hint = 'Format of positions'
-            Top = 0
+            Top = 6
             Width = 90
             Caption = 'HH:MM:SS'
-            TabOrder = 8
+            TabOrder = 5
           end
           object most_right11: TStaticText
             Left = 1250
@@ -4482,8 +4448,16 @@ object stackmenu1: Tstackmenu1
             Width = 3
             AutoSize = True
             Caption = '|'
-            TabOrder = 9
+            TabOrder = 6
             Visible = False
+          end
+          object Label38: TLabel
+            Left = 208
+            Height = 19
+            Top = 5
+            Width = 247
+            Caption = 'Solve the images using the popup menu'
+            ParentColor = False
           end
         end
         object tab_live_stacking1: TTabSheet
@@ -9133,6 +9107,13 @@ object stackmenu1: Tstackmenu1
     object MenuItem31: TMenuItem
       Caption = '-'
     end
+    object refresh_astrometric_solutions9: TMenuItem
+      Caption = 'Refresh astrometrical solutions of selected files'
+      OnClick = refresh_astrometric_solutions9Click
+    end
+    object Separator15: TMenuItem
+      Caption = '-'
+    end
     object renametobak9: TMenuItem
       Caption = 'Rename selected files to *.bak'
       Hint = '#In preperation for deleting later. '
@@ -9357,10 +9338,10 @@ object stackmenu1: Tstackmenu1
       Hint = '#This will bin 2x2 all selected files and add them to the list.'
       OnClick = bin2x2_selectedP1Click
     end
-    object refresh_astrometric_solutions1: TMenuItem
+    object refresh_astrometric_solutions7: TMenuItem
       Caption = 'Refresh astrometrical solutions of selected files'
       Hint = '#This will renew the astrometric solutions and photometric calibration . Use this only for the rare case  the solutions are wrong and alignment is poor.'
-      OnClick = refresh_astrometric_solutions1Click
+      OnClick = refresh_astrometric_solutions7Click
     end
     object Separator2: TMenuItem
       Caption = '-'

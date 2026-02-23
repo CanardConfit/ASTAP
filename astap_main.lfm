@@ -1,5 +1,5 @@
 object mainform1: Tmainform1
-  Left = 689
+  Left = 367
   Height = 634
   Hint = ' '
   Top = 92
@@ -1153,7 +1153,7 @@ object mainform1: Tmainform1
       object MenuItem9: TMenuItem
         Caption = '-'
       end
-      object MenuItem7: TMenuItem
+      object batch_convert1: TMenuItem
         Caption = 'Batch processing'
         Hint = 'Batch processes'
         object batch_add_solution1: TMenuItem

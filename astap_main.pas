@@ -61,9 +61,15 @@ uses
   LCLIntf,{for selectobject, openURL}
   LCLProc,
   FPImage,
-  fpreadTIFF, {all part of fcl-image}
-  fpreadPNG,fpreadBMP,fpreadJPEG,
-  fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
+  //fpreadTIFF, {all part of fcl-image}
+  fpreadPNG,
+  fpreadBMP,
+  fpreadJPEG,{all part of fcl-image}
+  //fpwriteTIFF,
+  fpwritePNG,
+  fpwriteBMP,
+  fpwriteJPEG,
+  //fptiffcmn,  {tiff images}
   LCLVersion, InterfaceBase, LCLPlatformDef,
   SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
@@ -268,7 +274,7 @@ type
     select_all1: TMenuItem;
     save_to_tiff1: TMenuItem;
     extract_pixel_12: TMenuItem;
-    MenuItem7: TMenuItem;
+    batch_convert1: TMenuItem;
     menupaste: TMenuItem;
     menucopy1: TMenuItem;
     PopupMenu_memo1: TPopupMenu;
@@ -677,6 +683,8 @@ type
    Tstring_array = array of string;
    Tinteger_array = array of integer;
 
+const
+  bufwide=65535*4;{buffer size in bytes. Image dimensions 65535x65535}
 
 var
   vsp : array of theauid;//for comparison stars AUID
@@ -868,9 +876,9 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: 
 function unpack_cfitsio(var filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img: Timage_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFF_NEW(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: Timage_array;memo:tstrings) : boolean;{load a tiff file}
+function load_PNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img: Timage_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
-
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 function extract_temperature_from_filename(filename8: string): integer; {try to extract temperature from filename}
@@ -913,8 +921,7 @@ procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
-function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean;nrbits:integer): boolean;{save to 8 or 16 bit TIFF file }
-function save_tiff16_secure(img : Timage_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
+function save_fits_tiff_secure(img : Timage_array; memo: tstrings;filen2:string; nrbits : integer) : boolean;{guarantee no file is lost}
 function find_reference_star(img : Timage_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
@@ -933,8 +940,7 @@ procedure update_sip_coefficients(memo : tstrings);//update all sip coefficients
 function apply_arctan(fov : double): double; //assume the optical system can be modeled by a simple arctan function like a standard rectilinear (pinhole) lens
 
 
-const   bufwide=65535*4;{buffer size in bytes. Image dimensions 65535x65535}
-
+const
   head1: array [0..28] of ansistring=
   (
      {0}('SIMPLE  =                    T / FITS header                                    '),
@@ -980,21 +986,12 @@ var
   Reader    : TReader;
 
 
-  fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
-  fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
-  fitsbufferRGB: array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
-  fitsbufferRGB16: array[0..trunc(bufwide/6)] of byteXX3 absolute fitsbuffer;{buffer for 16 bit RGB PPM file}
-  fitsbufferRGB32: array[0..trunc(bufwide/12)] of byteXXXX3 absolute fitsbuffer;{buffer for -32 bit PFM file}
-  fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
-  fitsbuffer8: array[0..trunc(bufwide/8)] of qword absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
-  fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
-  fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
 
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_threaded_gaussian_blur,unit_inspector_plot,unit_asteroid,
      unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia,unit_contour,
-     unit_threaded_bilinear_interpolation,unit_threaded_demosaic_astroC_bilinear_interpolation,unit_threaded_demosaic_astrosimple,unit_threaded_demosaic_astroM_bilinear_interpolation,unit_transformation;
+     unit_threaded_bilinear_interpolation,unit_threaded_demosaic_astroC_bilinear_interpolation,unit_threaded_demosaic_astrosimple,unit_threaded_demosaic_astroM_bilinear_interpolation,unit_transformation, unit_profiler;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -1147,6 +1144,11 @@ function load_fits(filen:string;light {load as light or dark/flat},load_data,upd
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
 var
+  fitsbuffer        : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+  fitsbuffer2       : array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
+  fitsbufferRGB     : array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
+  fitsbuffer4       : array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+  fitsbuffer8       : array[0..trunc(bufwide/8)] of qword absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
   TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
@@ -1168,7 +1170,7 @@ var
   x_double    : double absolute x_qword;{for conversion 64 bit "big-endian" data}
   int_64      : int64 absolute x_qword;{for 64 bit signed integer}
 
-  tfields,tform_counter,header_count,pointer,let, validate_double_error,dum : integer;
+  tfields,tform_counter,header_count,pointer,let, validate_double_error  : integer;
   ttype,tform,tunit : array of string;
   tbcol,tform_nr    : array of integer;
   simple,image,bintable,asciitable    : boolean;
@@ -1227,13 +1229,17 @@ var {################# initialised variables #########################}
 begin
   {some house keeping}
   result:=false; {assume failure}
+  simple:=false;
+  extend_type:=0; {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
+
 
   if load_data then mainform1.caption:=ExtractFileName(filen);
   {house keeping done}
 
   if tiff_file_name(filen) then  {load Astro-TIFF instead of FITS}
   begin
-    result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2,memo {mainform1.memo1.lines});{load TIFF image}
+    //result:=load_PNGJPEG(filen,light, head,img_loaded2,memo {mainform1.memo1.lines});{load TIFF image}
+    result:=load_tiff_new(filen,light, head,img_loaded2,memo {mainform1.memo1.lines});{load TIFF image}
     exit;
   end;
 
@@ -1478,9 +1484,8 @@ begin
             end;
           end
           else
-          if ((header[i+2]='-') and (header[i+3]='A') and (header[i+4]='G')) then //JD-AVG
+          if ((header[i+2]='-') and (header[i+3]='A') and (header[i+4]='V') and (header[i+5]='G')) then //JD-AVG
           begin
-         //   if head.date_avg='' then {DATE-AVG overrules any JD value}
             begin
               jd2:=validate_double;
               head.date_avg:=JdToDate(jd2);
@@ -2476,13 +2481,17 @@ begin
     key:=copy(memo[index],1,9);
 
     //should in this sequence available. If not fix.
-    if index=1 then if key<>'BITPIX  =' then begin memo.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
-    if index=2 then if key<>'NAXIS   =' then begin memo.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
-    if index=3 then if key<>'NAXIS1  =' then begin memo.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
+    if index=1 then if key<>'BITPIX  =' then
+           begin memo.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
+    if index=2 then  if key<>'NAXIS   =' then
+           begin memo.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
+    if index=3 then if key<>'NAXIS1  =' then
+           begin memo.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
     if index=4 then if key<>'NAXIS2  =' then begin memo.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
     if ((index=5) and (head.naxis3>1)) then if key<>'NAXIS3  =' then
                                              begin memo.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
 
+//    if key='BITPIX  =' then head.nrbits:=read_integer else
     if key='CD1_1   =' then head.cd1_1:=read_float else
     if key='CD1_2   =' then head.cd1_2:=read_float else
     if key='CD2_1   =' then head.cd2_1:=read_float else
@@ -2628,7 +2637,16 @@ begin
 end;
 
 
+
 function load_PPM_PGM_PFM(filen:string; out head :theader; out img_loaded2: Timage_array; memo :Tstrings) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
+var
+  fitsbuffer        : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+  fitsbuffer2       : array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
+  fitsbufferRGB     : array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
+  fitsbufferRGB16   : array[0..trunc(bufwide/6)] of byteXX3 absolute fitsbuffer;{buffer for 16 bit RGB PPM file}
+  fitsbufferRGB32   : array[0..trunc(bufwide/12)] of byteXXXX3 absolute fitsbuffer;{buffer for -32 bit PFM file}
+  fitsbuffer4       : array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+  fitsbufferSingle  : array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
 var
   TheFile  : tfilestream;
   i,j, reader_position,s              : integer;
@@ -2933,18 +2951,108 @@ begin
 end;
 
 
-function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: Timage_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFF_NEW(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: Timage_array;memo:tstrings) : boolean;{load a tiff file}
 var
   i,j   : integer;
   jd2   : double;
   image: TFPCustomImage;
   reader: TFPCustomImageReader;
-  tiff, png,jpeg,colour,saved_header  : boolean;
+  saved_header : boolean;
+  ext,descrip   : string;
+  bitspersample: word;
+
+begin
+  head.naxis:=0; {0 dimensions}
+  result:=false; {assume failure}
+  saved_header:=false;
+  ext:=uppercase(ExtractFileExt(filen));
+
+  read_tiff(filename2,img, descrip,bitspersample, head.datamin_org,result); {unit tiff}
+
+  if result=false then
+  begin
+    memo2_message(descrip);//report type of error
+    exit;
+  end;
+
+  reset_fits_global_variables(true{light},head); {reset the global variable}
+
+  if bitspersample=32 then
+    head.nrbits:=-32 //fits float
+  else
+    head.nrbits:=bitspersample;
+
+
+  memo.beginupdate;
+  memo.clear;{clear memo for new header}
+
+  {set data}
+  extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
+  head.datamin_org:=0;
+  head.datamax_org:=$FFFF;
+  head.backgr:=head.datamin_org;{for case histogram is not called}
+  cwhite:=head.datamax_org;
+
+  if copy(descrip,1,6)='SIMPLE' then {fits header included}
+  begin
+    memo.text:=descrip;
+    read_keys_memo(light, head, memo);
+    saved_header:=true;
+  end
+  else {no fits header in tiff file available}
+  begin
+    for j:=0 to 10 do {create an header with fixed sequence}
+      if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
+        memo.add(head1[j]); {add lines to empthy memo1}
+    memo.add(head1[27]); {add end}
+    if descrip<>'' then add_long_comment(memo,descrip);{add TIFF describtion}
+  end;
+
+
+  head.naxis3:=length(img);
+  if  head.naxis3>1 then head.naxis:=3 else head.naxis:=2; //number of dimensions. 2 for mono, 3 for colour
+  head.width:=length(img[0,0]);
+  head.height:=length(img[0]);
+
+  //update these always to secure FITS format.
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
+  update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
+  update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
+
+  update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,0);
+  update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
+
+  if saved_header=false then {saved header in tiff is not restored}
+  begin
+    JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+    head.date_obs:=JdToDate(jd2);
+    add_text(memo,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
+  end;
+
+  //update_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+
+  memo.endupdate;
+
+  unsaved_import:=true;{file is not available for astrometry.net}
+  result:=true;{succes}
+
+end;
+
+
+function load_PNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: Timage_array;memo:tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+var
+  i,j   : integer;
+  jd2   : double;
+  image: TFPCustomImage;
+  reader: TFPCustomImageReader;
+  //tiff,
+  png,jpeg,colour,saved_header  : boolean;
   ext,descrip   : string;
 begin
   head.naxis:=0; {0 dimensions}
   result:=false; {assume failure}
-  tiff:=false;
+  //tiff:=false;
   jpeg:=false;
   png:=false;
   saved_header:=false;
@@ -2956,12 +3064,12 @@ begin
       Image := TFPCompactImgGray16Bit.Create(10, 10);//for grayscale images only
 
 
-    if ((ext='.TIF') or (ext='.TIFF')) then
-    begin
-       Reader :=  TFPReaderTIFF.Create;
-       tiff:=true;
-    end
-    else
+ //   if ((ext='.TIF') or (ext='.TIFF')) then
+ //   begin
+ //      Reader :=  TFPReaderTIFF.Create;
+ //      tiff:=true;
+ //   end
+ //   else
     if ext='.PNG' then begin
       Reader :=  TFPReaderPNG.Create;
       png:=true;
@@ -2991,7 +3099,7 @@ begin
 
   {$IF FPC_FULLVERSION >= 30200} {FPC3.2.0}
   colour:=true;
-  if ((tiff) and (Image.Extra[TiffGrayBits]<>'0')) then colour:=false; {image grayscale?}
+  //if ((tiff) and (Image.Extra[TiffGrayBits]<>'0')) then colour:=false; {image grayscale?}
   if ((png) and (TFPReaderPNG(reader).grayscale)) then colour:=false; {image grayscale?}
   if ((jpeg) and (TFPReaderJPEG(reader).grayscale)) then colour:=false; {image grayscale?}
   {BMP always colour}
@@ -3060,18 +3168,18 @@ begin
         img[0,head.height-1-i,j]:=image.Colors[j,i].red;
   end;
 
-  if tiff then
-  begin
-    descrip:=image.Extra['TiffImageDescription']; {restore full header in TIFF !!!}
-  end;
+  //if tiff then
+  //begin
+  //  descrip:=image.Extra['TiffImageDescription']; {restore full header in TIFF !!!}
+  //end;
 
-  if copy(descrip,1,6)='SIMPLE' then {fits header included}
-  begin
-    memo.text:=descrip;
-    read_keys_memo(light, head, memo);
-    saved_header:=true;
-  end
-  else {no fits header in tiff file available}
+  //if copy(descrip,1,6)='SIMPLE' then {fits header included}
+  //begin
+  //  memo.text:=descrip;
+  //  read_keys_memo(light, head, memo);
+  //  saved_header:=true;
+  //end
+  //else {no fits header in tiff file available}
   begin
     for j:=0 to 10 do {create an header with fixed sequence}
       if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
@@ -3088,14 +3196,13 @@ begin
   update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
 
-  if saved_header=false then {saved header in tiff is not restored}
-  begin
+  //if saved_header=false then {saved header in tiff is not restored}
+  //begin
     JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
     head.date_obs:=JdToDate(jd2);
     add_text(memo,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
-  end;
+  //end;
 
-  update_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
 
   memo.endupdate;
 
@@ -4321,6 +4428,11 @@ end;
 
 function save_fits(img: Timage_array;memo:tstrings; headX : theader;filen2:ansistring;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
+  fitsbuffer        : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+  fitsbuffer2       : array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
+  fitsbufferRGB     : array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
+  fitsbuffer4       : array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+var
   TheFile4 : tfilestream;
   I,j,k,bzero2,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
   dd : single;
@@ -4623,7 +4735,7 @@ begin
   begin
     if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.tif')
                    else filename2:=ChangeFileExt(Filename2,'_bin3x3.tif');
-    result:=save_tiff16(img_temp,memox,filename2,false {flip H},false {flip V},16);
+    result:=save_tiff_new(img_temp,filename2, memox.text,headX.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
   end;
 end;
 
@@ -8039,22 +8151,9 @@ begin
 end;
 
 
-function save_tiff16_secure(img : Timage_array; memo: tstrings;filen2:string) : boolean;{guarantee no file is lost}
-var
-  filename_tmp : string;
-begin
-  result:=false;{assume failure}
-  filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
-  if  save_tiff16(img, memo, filename_tmp,false {flip H},false {flip V},16) then
-  begin
-    if deletefile(filen2) then
-      result:=renamefile(filename_tmp,filen2);
-  end;
-end;
-
-
-
 function savefits_update_header(memo: tstrings; filen2:string) : boolean;{save fits file with updated header}
+var
+  fitsbuffer        : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
 var
   TheFile,TheFile_new  : tfilestream;
   reader_position,I,readsize,bufsize : integer;
@@ -8144,6 +8243,26 @@ begin
     exit;
   end;
 end;
+
+
+function save_fits_tiff_secure(img : Timage_array; memo: tstrings; filen2:string; nrbits:integer): boolean;
+var
+  filename_tmp: string;
+begin
+  if fits_file_name(filen2) then
+    result:=savefits_update_header(memo,filen2)
+  else
+  begin //tiff
+    result:=false;{assume failure}
+    filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
+    if save_tiff_new(img,filename_tmp, memo.text,nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}) then //success, save to TIFF file
+    begin
+      if deletefile(filen2) then
+      result:=renamefile(filename_tmp,filen2);
+    end;
+  end;
+end;
+
 
 {$ifdef mswindows}
 procedure ExecuteAndWait(const aCommando: string;show_console:boolean);
@@ -8607,10 +8726,6 @@ begin
       dum:=Sett.ReadString('stack','usm_radius',''); if dum<>'' then stackmenu1.unsharp_edit_radius1.text:=dum;
       dum:=Sett.ReadString('stack','usm_thresh',''); if dum<>'' then stackmenu1.unsharp_edit_threshold1.text:=dum;
 
-
-
-      stackmenu1.mount_write_wcs1.Checked:=Sett.ReadBool('stack','wcs',true);{use wcs files for mount}
-
       c:=Sett.ReadInteger('stack','video_index',987654321);if c<>987654321 then video_index:=c;{blink menu, video}
       dum:=Sett.ReadString('stack','frame_rate',''); if dum<>'' then frame_rate:=dum;
 
@@ -9038,7 +9153,6 @@ begin
       sett.writestring('stack','usm_thresh',stackmenu1.unsharp_edit_threshold1.text);
 
       sett.writeInteger('stack','sample_size',stackmenu1.sample_size1.itemindex);
-      sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
 
       sett.writeInteger('stack','video_index',video_index);
       sett.writestring('stack','frame_rate',frame_rate);
@@ -9401,13 +9515,14 @@ begin
 
           if tilt<100 then //success. Tilt= is added to memox in function CCDinspector
           begin
-            if fits_file_name(filename2) then
-              success:=savefits_update_header(memox,filename2)
+            if save_fits_tiff_secure(img_temp,memox,filename2,headx.nrbits)=false then {guarantee no file is lost}
+            begin
+              ShowMessage('Write error !!' + filename2);
+              Screen.Cursor:=crDefault;
+              exit;
+            end
             else
-              success:=save_tiff16_secure(img_temp,memox,filename2);{guarantee no file is lost}
-            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end
-            else
-            memo2_message(filename2+', tilt = '+floattostrF(tilt,FFgeneral,0,2));
+              memo2_message(filename2+', tilt = '+floattostrF(tilt,FFgeneral,0,2));
           end
           else
           memo2_message('Error adding tilt measurement: '+filename2);
@@ -9992,7 +10107,7 @@ begin
       result:=load_xisf(filen,headX,img_temp,memoX)
     else
     if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
-      result:=load_tiffpngJPEG(filen,true,headX,img_temp,memox);
+      result:=load_PNGJPEG(filen,true,headX,img_temp,memox);
 
     if result then
     begin
@@ -10105,10 +10220,22 @@ begin
   if ext1='.XISF' then {XISF}
     result:=load_xisf(filename2,head,img,memo)
   else
-  if ((ext1='.TIF') or (ext1='.TIFF') or (ext1='.PNG') or (ext1='.JPG') or (ext1='.JPEG') or (ext1='.BMP')) then {tif, png, bmp, jpeg}
-    result:=load_tiffpngJPEG(filename2,true {light},head,img,memo);
+  if ((ext1='.TIF') or (ext1='.TIFF')) then
+     result:=load_tiff_new(filename2,true {light},head,img,memo)
+  else
+  if ((ext1='.PNG') or (ext1='.JPG') or (ext1='.JPEG') or (ext1='.BMP')) then {tif, png, bmp, jpeg}
+     result:=load_PNGJPEG(filename2,true {light},head,img,memo);
 
-  if result=false then begin update_menu(false);exit; end;
+  if result=false then
+  begin
+    update_menu(false);
+    if plot then
+    begin
+      mainform1.error_label1.caption:=('Error accessing file!');
+      mainform1.error_label1.visible:=true;
+    end;
+    exit;
+  end;
 
   if plot then
   begin
@@ -11328,11 +11455,13 @@ begin
         begin
           remove_key(mainform1.memo1.lines,'SITELAT =',true{all});
           remove_key(mainform1.memo1.lines,'SITELONG=',true{all});
-          if fits_file_name(filename2) then
-            success:=savefits_update_header(mainform1.memo1.lines,filename2)
-          else
-            success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2);{guarantee no file is lost}
-          if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
+
+          if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits)=false then
+          begin
+            ShowMessage('Write error !!' + filename2);
+            Screen.Cursor:=crDefault;
+            exit;
+          end;
         end
         else err:=true;
       end;
@@ -12000,8 +12129,8 @@ end;
 procedure Tmainform1.batch_annotate1Click(Sender: TObject);
 var
   I: integer;
-  skipped, nrannotated :integer;
-  dobackup,success : boolean;
+  skipped, nrannotated : integer;
+  dobackup             : boolean;
 begin
   OpenDialog1.Title:= 'Select multiple  files to add asteroid annotation to the header';
   OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -12037,11 +12166,12 @@ begin
             else
             begin
               plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations},false);
-              if fits_file_name(filename2) then
-                success:=savefits_update_header(mainform1.memo1.lines,filename2)
-              else
-                success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2);{guarantee no file is lost}
-              if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
+              if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits)=false then {guarantee no file is lost}
+              begin
+                ShowMessage('Write error !!' + filename2);
+                Screen.Cursor:=crDefault;
+                exit;
+              end;
               nrannotated :=nrannotated +1;
             end;
           end;
@@ -13843,9 +13973,8 @@ begin
 
             if hasoption('update') then
             begin
-              if fits_file_name(filename2) then wresult:=savefits_update_header(mainform1.memo1.lines,filename2) {update the fits file header}
-              else
-              if tiff_file_name(filename2) then wresult:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2){guarantee no file is lost}
+              if ((fits_file_name(filename2)) or (tiff_file_name(filename2))) then
+                wresult:=save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits){guarantee no file is lost}
               else
               begin
                 head.nrbits:=16;
@@ -14066,7 +14195,6 @@ begin
 
 
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
- //           oldnrbits:=nrbits;
             solved:=solve_image(img_temp,headx,memox,true {get hist}, false {check filter});
             if solved then nrsolved:=nrsolved+1 {solve}
             else
@@ -14110,13 +14238,10 @@ begin
                 if calculate_sqm(img_temp,headx,memox,true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
                   //memo is updated in calculate_sqm
-//                  update_text(memox,'SQM     = ',floattostr2(headx.sqmfloat)+'               / Sky background [magn/arcsec^2]');//two decimals only for nice reporting
-//                  update_text(memox,'COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
                   mess:=mess+', SQM';
                 end
                 else
                 begin
-//                  update_text(memox,'SQM     =',char(39)+'Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.'+char(39));
                   memo2_message('Error calculating SQM value! Check in the SQM menu (ctrl+Q) first.');
                 end;
               end
@@ -14138,7 +14263,8 @@ begin
                 success:=save_fits(img_temp,memox,headX,filename2,true);//image was updated by calibration.
             end
             else
-              success:=save_tiff16_secure(img_temp,memox,filename2);{guarantee no file is lost}
+              success:=save_fits_tiff_secure(img_temp,memox,filename2,headX.nrbits);{guarantee no file is lost}
+
             if success=false then begin ShowMessage('Write error !!'+#10+#10 + filename2);Screen.Cursor:=crDefault; exit;end;
 
             if ((maintain_date) and (file_age>-1)) then FileSetDate(filename2,file_age);
@@ -14421,8 +14547,6 @@ begin
           break;
         end;
 
-
-
         if crop_image(frameX_sample,frameY_sample,frameX_sample+frameW_sample-1,frameY_sample+frameH_sample-1, img4,head4,memo4) then
         begin
           if fits_file_name(filename2) then
@@ -14433,7 +14557,7 @@ begin
           else
           begin
             filename3:=ChangeFileExt(Filename2,'_cropped.tif');
-            success:=save_tiff16(img4,memo4,filename3,false {flip H},false {flip V},16);
+            success:=save_tiff_new(img4,filename3, memo4.text,head4.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
           end;
           if success=false then begin ShowMessage('Write error !!' + filename3);break; end;
         end;
@@ -14612,7 +14736,7 @@ begin
             else
             begin
               filename3:=ChangeFileExt(Filename2,'_cropped.tif');
-              success:=save_tiff16(img,memo,filename3,false {flip H},false {flip V},16);
+              success:=save_tiff_new(img,filename3, memo.text,head_temp.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
             end;
             if success=false then begin ShowMessage('Write error !!' + filename3);break; end;
           end;
@@ -15159,8 +15283,12 @@ begin
       if fits_file_name(filename2) then
         success:=save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)
       else
-        success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines,filename2);{guarantee no file is lost}
-      if success=false then begin ShowMessage('Write error !!' + filename2);break; end;
+        success:=save_tiff_new(img_loaded,filename2, memo1.text,head.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+      if success=false then
+      begin
+        ShowMessage('Write error !!' + filename2);
+        break;
+      end;
     end;
     if dobackup then restore_img;{for the viewer}
     Screen.Cursor:=crDefault; exit;
@@ -16487,11 +16615,10 @@ procedure Tmainform1.SaveFITSwithupdatedheader1Click(Sender: TObject);
 var
    result : boolean;
 begin
-//  savefits_update_header(mainform1.memo1.lines,filename2);  //file could be binned or cropped so there is no file with same name
   if fits_file_name(filename2) then
     result:=save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)
   else
-    result:=save_tiff16(img_loaded,mainform1.memo1.lines,filename2,false {flip H},false {flip V},16);
+    result:=save_tiff_new(img_loaded,filename2, memo1.text,head.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
 
   if result=false then ShowMessage('Write error !!' + filename2);
 end;
@@ -16851,8 +16978,8 @@ end;
 //  writer.Free;
 //end;
 
-
-function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean;nrbits:integer): boolean;{save to 8 or 16 bit TIFF file }
+{ No longer used. Replace by own unit_tiff
+function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean;nrbits:integer): boolean;//save to 8 or 16 bit TIFF file
 var
   i, j, k,m,nrcolours,w,h      :integer;
   image: TFPCustomImage;
@@ -16861,9 +16988,9 @@ var
   format    : string;
   factor    : single;
 begin
-  nrcolours:=length(img);{nr colours}
-  w:=length(img[0,0]);{width}
-  h:=length(img[0]);{height}
+  nrcolours:=length(img);//nr colours
+  w:=length(img[0,0]);//width
+  h:=length(img[0]);//height
 
   if nrcolours>1 then
      Image := TFPMemoryImage.Create(w, h)//colour buffer, allows ups up to 2gbyte/3
@@ -16874,37 +17001,37 @@ begin
 
   Image.Extra[TiffAlphaBits]:='0';
 
-  if nrbits=8 then  {8 bit fits}
+  if nrbits=8 then  //8 bit fits
   begin
     format:='8';
-    factor:=256; {the tiff writer will divide by 256 again}
+    factor:=256; //the tiff writer will divide by 256 again
   end
   else
   begin
-    format:='16'; {32 bit is not available}
-    factor:=1;{default}
+    format:='16'; //32 bit is not available
+    factor:=1;//default
   end;
 
   Image.Extra[TiffRedBits]:=format;
   Image.Extra[TiffGreenBits]:=format;
   Image.Extra[TiffBlueBits]:=format;
-  Image.Extra[TiffGrayBits]:=format;   {add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081}
+  Image.Extra[TiffGrayBits]:=format;  //add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081
 
-  if nrcolours=1 then {grayscale}
-    Image.Extra[TiffPhotoMetric]:='1' {PhotometricInterpretation = 0 (Min-is-White), 1 (Min-is-Black),  so for 1  black is $0000, White is $FFFF}
+  if nrcolours=1 then //grayscale
+    Image.Extra[TiffPhotoMetric]:='1' //PhotometricInterpretation = 0 (Min-is-White), 1 (Min-is-Black),  so for 1  black is $0000, White is $FFFF
   else
-    Image.Extra[TiffPhotoMetric]:='2';{RGB colour}
+    Image.Extra[TiffPhotoMetric]:='2';//RGB colour
 
   image.Extra[TiffSoftware]:='ASTAP';
 
-  image.Extra[TiffImageDescription]:=memo.text; {store full header in TIFF !!!}
+  image.Extra[TiffImageDescription]:=memo.text; //store full header in TIFF !!!
 
-  Image.Extra[TiffCompression]:= '8'; {FPWriteTiff only support only writing Deflate compression. Any other compression setting is silently replaced in FPWriteTiff at line 465 for Deflate. FPReadTiff that can read other compressed files including LZW.}
+  Image.Extra[TiffCompression]:= '8'; //FPWriteTiff only support only writing Deflate compression. Any other compression setting is silently replaced in FPWriteTiff at line 465 for Deflate. FPReadTiff that can read other compressed files including LZW.
 
 
   For i:=0 to h-1 do
   begin
-    if flip_V=false then k:=h-1-i else k:=i;{reverse fits down to counting}
+    if flip_V=false then k:=h-1-i else k:=i;//reverse fits down to counting
     for j:=0 to w-1 do
     begin
       if flip_H=true then m:=w-1-j else m:=j;
@@ -16926,10 +17053,10 @@ begin
   end;
   image.Free;
   writer.Free;
-end;
+end; }
 
 
-procedure Tmainform1.save_to_tiff1Click(Sender: TObject);
+procedure Tmainform1.save_to_tiff1Click(Sender: TObject);//batch convert to tiff
 var
   I: integer;
   fileDate    : Integer;
@@ -16960,24 +17087,12 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
-        memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
         if sender=save_to_tiff2 then
           fileDate := FileAge(fileName2);
         if load_image(filename2,img_temp,headx,memox,false {recenter},false {plot}) then
         begin
-          filename2:=ChangeFileExt(filename2,'.tif');
-          if abs(headX.nrbits)<=16 then
-          begin
-            written:=save_tiff16(img_temp,memox,filename2,false {flip H},false {flip V},headX.nrbits);
-          end
-          else
-          begin {32 bit files}
-            memo2_message('This file is 32 bit. Only export to TIFF 32 bit possible. No import!!' );
-            if head.naxis3<>1 then {color}
-              written:=save_tiff_96(img_temp,filename2,memox.text {store full header in TIFF},false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
-            else
-             written:=save_tiff_32(img_temp,filename2,memox.text {store full header in TIFF},false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
-          end;
+          written:=save_tiff_new(img_temp,filename2, memox.text,headx.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+          memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));//now the filename extension has changed to tif
           if written then
           begin
             if sender=save_to_tiff2 then
@@ -17436,7 +17551,7 @@ end;
 
 procedure Tmainform1.Export_image1Click(Sender: TObject);
 var
-  filename3:ansistring;
+  filename3: string;
   img_temp : Timage_array;
 begin
   filename3:=ChangeFileExt(FileName2,'');
@@ -17450,75 +17565,78 @@ begin
   begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
+    filename3:=savedialog1.filename;
     if head.naxis3>1 then {color}
     begin
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded,head);
-        save_png16(img_temp,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);  {Change extension is only required due to bug in macOS only. 2021-10-9 See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39423}
+        save_png16(img_temp,ChangeFileExt(filename3,'.png'),flip_horizontal1.checked,flip_vertical1.checked);  {Change extension is only required due to bug in macOS only. 2021-10-9 See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39423}
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_png16(img_loaded,ChangeFileExt(filename3,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded,head);
-        save_tiff16(img_temp,mainform1.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked,16);
+        save_tiff_new(img_temp,filename3, mainform1.memo1.text,16,flip_horizontal1.checked,flip_vertical1.checked, true{overwrite}, 1 {compression}); //save to 16 bit TIFF file
       end
       else
       if savedialog1.filterindex=4 then
-        save_tiff16(img_loaded,mainform1.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked,16)
+      begin
+        save_tiff_new(img_loaded,filename3, mainform1.memo1.text,16,flip_horizontal1.checked,flip_vertical1.checked, true{overwrite}, 1 {compression}); //save to 16 bit TIFF file
+      end
       else
       if savedialog1.filterindex=5 then
-      save_tiff_96(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainform1.memo1.text {store full header in TIFF description} ,flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
+         save_tiff_new(img_loaded,filename3, mainform1.memo1.text,32,flip_horizontal1.checked,flip_vertical1.checked, true{overwrite}, 1 {compression}) //save to 16 bit TIFF file
       else
-      if savedialog1.filterindex=6 then
+        if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded,head);
-        save_PPM_PGM_PFM(img_temp,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_PPM_PGM_PFM(img_temp,48 {colour depth},ChangeFileExt(filename3,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,48 {colour depth},ChangeFileExt(filename3,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,96 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,96 {colour depth},ChangeFileExt(filename3,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
     end {color}
     else
     begin {gray}
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded,head);
-        save_png16(img_temp,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_png16(img_temp,ChangeFileExt(filename3,'.png'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_png16(img_loaded,ChangeFileExt(filename3,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded,head);
-        save_tiff16(img_temp,mainform1.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked,16);
+         save_tiff_new(img_temp,filename3, mainform1.memo1.text,16,flip_horizontal1.checked,flip_vertical1.checked, true{overwrite}, 1 {compression}); //save to 16 bit TIFF file
       end
       else
       if savedialog1.filterindex=4 then
-      save_tiff16(img_loaded,mainform1.memo1.lines,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked,16)
+        save_tiff_new(img_loaded,filename3, mainform1.memo1.text,16,flip_horizontal1.checked,flip_vertical1.checked, true{overwrite}, 1 {compression}) //save to 16 bit TIFF file
       else
       if savedialog1.filterindex=5 then
-        save_tiff_32(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainform1.memo1.text {store full header in TIFF desciption} ,flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
+        save_tiff_new(img_loaded,filename3, mainform1.memo1.text,32,flip_horizontal1.checked,flip_vertical1.checked, true{overwrite}, 1 {compression}) //save to 16 bit TIFF file
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded,head);
-        save_PPM_PGM_PFM(img_temp,16{colour depth}, ChangeFileExt(savedialog1.filename,'.pgm'), flip_horizontal1.checked,flip_vertical1.checked);
+        save_PPM_PGM_PFM(img_temp,16{colour depth}, ChangeFileExt(filename3,'.pgm'), flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,16{colour depth},ChangeFileExt(savedialog1.filename,'.pgm'),flip_horizontal1.checked,flip_vertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,16{colour depth},ChangeFileExt(filename3,'.pgm'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,32 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,32 {colour depth},ChangeFileExt(filename3,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
 
     end;
 
