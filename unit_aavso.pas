@@ -2320,6 +2320,7 @@ begin
   end;
 
   settings:=settings+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
+//  if (disable_autocenter1.checked and disable_autocenter1.enabled) then settings:=settings+' Disabled autcenter';
 
 
   if apply_transformation then
@@ -2579,6 +2580,8 @@ begin
            if gaia_ensemble then //else comparison stars are used.
              if stackmenu1.ListView7.Items.item[c].SubitemImages[P_calibration]<>SubItemImages[c] then
                 comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/TB/TR/G/B/R/SI/SR/SG.';
+
+           if stackmenu1.listview7.Items.item[c].SubitemImages[column_vars[m_index]+1]=30 then comp_magn_info:=comp_magn_info+' Autocenter var disabled';//warning
 
            aavso_report:= aavso_report+ invalidstr+ abbrv_var_clean + delim +
                           StringReplace(stackmenu1.listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+

@@ -78,7 +78,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.02.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.02.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -814,6 +814,7 @@ function load_fits(filen:string;light {load as light or dark/flat},load_data,upd
 procedure plot_image(img: timage;center_image:boolean);
 procedure plot_histogram(img: Timage_array; update_hist: boolean);{get histogram}
 procedure HFD(img: Timage_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr, flux,xc,yc:double);
+procedure HFD_without_autocentering(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux, xc2, yc2 :double);//special for photmetry
 procedure backup_img;
 procedure restore_img;
 function load_image(filename2: string; out img: Timage_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
@@ -15896,8 +15897,8 @@ const
   samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
 
 var
-  width5,height5,i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width : integer;
-  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg,radius,dx,dy,flux_e,sd_bg_e            : double;
+  width5,height5,i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width,r_aper : integer;
+  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg,radius,dx,dy,flux_e,sd_bg_e                   : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
@@ -16060,7 +16061,7 @@ begin
   SumValR:=0;
   pixel_counter:=0;
 
-  if r_aperture<aperture_small then //standard trimmed_median_background, full star flux use
+  if aperture_small>=98 then //standard trimmed_median_background, full star flux use
   begin
     for i:=-r_aperture to r_aperture do //Make steps of one pixel
     for j:=-r_aperture to r_aperture do
@@ -16077,8 +16078,9 @@ begin
   end
   else
   begin //photometry trimmed_median_background. Measure only the bright center of the star for a better SNR
-    for i:=-r_aperture*SamplePoints to r_aperture*SamplePoints do //Make steps in fraction of a pixel
-    for j:=-r_aperture*SamplePoints to r_aperture*SamplePoints do
+    r_aper:=round(max(r_aperture,aperture_small)*SamplePoints); //For faint stars r_aperture could be smaller then aperture_small since signal is below 3 sigma. Take therefore max of both
+    for i:=-r_aper to r_aper do //Make steps in fraction of a pixel
+    for j:=-r_aper to r_aper do
     begin
       dx:=i/samplepoints;
       dy:=j/samplepoints;
@@ -16178,6 +16180,194 @@ begin
       4)	Count pixels which are equal or above half maximum level.
       5)	Use the pixel count as area and calculate the diameter of that area  as diameter:=2 *sqrt(count/pi).}
 end;
+
+
+
+{Procedure uses two global accessible variables:  r_aperture and sd_bg }
+procedure HFD_without_autocentering(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux, xc2, yc2 :double);//special for photmetry
+const
+  max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
+  samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
+
+var
+  x1,y1,width5,height5,i,j,r1_square,r2_square,r2, distance,counter,annulus_width,r_aper : integer;
+  Sumval_small, Xg,Yg, r, val,mad_bg,radius,dx,dy,flux_e,sd_bg_e            : double;
+  background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
+
+    function value_subpixel(x1,y1:double):double; {calculate square image pixel value on subpixel level.}
+    var
+      x_trunc,y_trunc: integer;
+      x_frac,y_frac  : double;
+    begin
+      x_trunc:=trunc(x1);
+      y_trunc:=trunc(y1);
+      if ((x_trunc<=0) or (x_trunc>=(width5-2)) or (y_trunc<=0) or (y_trunc>=(height5-2))) then begin result:=0; exit;end;
+      x_frac :=frac(x1);
+      y_frac :=frac(y1);
+      try
+        result:=         (img[0,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top,    1}
+        result:=result + (img[0,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top,   2}
+        result:=result + (img[0,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+        result:=result + (img[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
+      except
+      end;
+    end;
+
+
+begin
+  width5:=Length(img[0,0]);{width}
+  height5:=Length(img[0]); {height}
+
+  xc2:=xc;//just duplicate. No autocenter
+  yc2:=yc;
+
+
+  {rs should be <=50 to prevent runtime errors}
+  if  aperture_small<99 then
+    annulus_width:=3 {high precession}
+  else
+    annulus_width:=1;{normal & fast}
+
+  r1_square:=rs*rs;{square radius}
+  r2:=rs+annulus_width;
+  r2_square:=r2*r2;
+
+  x1:=round(xc);
+  y1:=round(yc);
+
+  if ((x1-r2<=0) or (x1+r2>=width5-1) or
+      (y1-r2<=0) or (y1+r2>=height5-1) )
+    then begin flux:=0; snr:=0; exit;end;
+
+  flux:=0;
+  snr:=0;
+
+  try
+    counter:=0;
+    for i:=-r2 to r2 do {calculate the mean outside the the detection area}
+    for j:=-r2 to r2 do
+    begin
+      distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
+      if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
+      begin
+        background[counter]:=img[0,y1+j,x1+i];
+        //for testing: mainform1.image1.canvas.pixels[y1+j,x1+i]:=$AAAAAA;
+        inc(counter);
+      end;
+    end;
+
+    star_bg:=Smedian(background,counter);
+    for i:=0 to counter-1 do background[i]:=abs(background[i] - star_bg);{fill background with offsets}
+    mad_bg:=Smedian(background,counter); //median absolute deviation (MAD)
+    sd_bg:=mad_bg*1.4826; {Conversion from mad to sd for a normal distribution. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
+    sd_bg:=max(sd_bg,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
+    {star_bg, sd_bg and r_aperture are global variables}
+
+
+
+    Sumval_small:=0;
+    r_aper:=round(aperture_small+1);//define the radius of the square just a little larger then the aperture_small
+
+    begin //photometry trimmed_median_background. Measure only the bright center of the star for a better SNR
+      for i:=-r_aper*SamplePoints to r_aper*SamplePoints do //Make steps in fraction of a pixel
+      for j:=-r_aper*SamplePoints to r_aper*SamplePoints do
+      begin
+        dx:=i/samplepoints;
+        dy:=j/samplepoints;
+
+        Val:= value_subpixel(xc+dx,yc+dy)-star_bg;//The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level
+        val:=val/(SamplePoints*SamplePoints);
+        r:=sqrt(sqr(dx)+sqr(dy)); //Distance from star gravity center
+        if r<=aperture_small then SumVal_small:=SumVal_small+Val; //Flux within aperture_small. Works more accurate for differential photometry
+      end;
+      flux:=max(sumval_small,0.00001);//Flux in the restricted aperture only. Prevent dividing by zero or negative values
+      radius:=aperture_small; // use smaller aperture
+    end; //photometry trimmed_median_background
+
+
+    if adu_e=0 then
+    begin //no adu to e correction
+      flux_e:=flux;
+      sd_bg_e:=sd_bg;
+    end
+    else
+    begin //adu to e- correction
+      flux_e:=flux*adu_e*sqr(head.xbinning);// if an image is binned the adu's are averaged. So bin2x2 result in four times less adu.
+      sd_bg_e:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
+    end;
+
+    if flux>=1 then
+      snr:=flux_e /sqrt(flux_e +sqr(radius)*pi*sqr(sd_bg_e))
+    else
+      snr:=0;//rare but happens. Prevent runtime errors  by /flux
+
+
+  except
+  end;
+
+  {For both bright stars (shot-noise limited) or skybackground limited situations
+    snr := signal/noise
+    snr := star_signal/sqrt(total_signal)
+    snr := star_signal/sqrt(star_signal + sky_signal)
+    equals
+    snr:=flux/sqrt(flux + r*r*pi* sd^2).
+
+    r is the diameter used for star flux measurement. Flux is the total star flux detected above 3* sd.
+
+    Assuming unity head.gain ADU/e-=1
+    See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)
+    https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
+    http://spiff.rit.edu/classes/phys373.s2014/lectures/signal/signal_illus.html}
+
+//   memo2_message(#9+'######'+#9+inttostr(round(flux))+#9+ floattostr6(r_aperture)+#9+floattostr6(sd)+#9+floattostr6(snr)+#9+floattostr6(sqr(r_aperture)*pi*sqr(sd)));
+
+
+  {==========Notes on HFD calculation method=================
+    Documented this HFD definition also in https://en.wikipedia.org/wiki/Half_flux_diameter
+    References:
+    https://astro-limovie.info/occultation_observation/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
+    https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/
+    http://www.ccdware.com/Files/ITS%20Paper.pdf     See page 10, HFD Measurement Algorithm
+
+    HFD, Half Flux Diameter is defined as: The diameter of circle where total flux value of pixels inside is equal to the outside pixel's.
+    HFR, half flux radius:=0.5*HFD
+    The pixel_flux:=pixel_value - background.
+
+    The approximation routine assumes that the HFD line divides the star in equal portions of gravity:
+        sum(pixel_flux * (distance_from_the_centroid - HFR))=0
+    This can be rewritten as
+       sum(pixel_flux * distance_from_the_centroid) - sum(pixel_values * (HFR))=0
+       or
+       HFR:=sum(pixel_flux * distance_from_the_centroid))/sum(pixel_flux)
+       HFD:=2*HFR
+
+    This is not an exact method but a very efficient routine. Numerical checking with an a highly oversampled artificial Gaussian shaped star indicates the following:
+
+    Perfect two dimensional Gaussian shape with σ=1:   Numerical HFD=2.3548*σ                     Approximation 2.5066, an offset of +6.4%
+    Homogeneous disk of a single value  :              Numerical HFD:=disk_diameter/sqrt(2)       Approximation disk_diameter/1.5, an offset of -6.1%
+
+    The approximate routine is robust and efficient.
+
+    Since the number of pixels illuminated is small and the calculated center of star gravity is not at the center of an pixel, above summation should be calculated on sub-pixel level (as used here)
+    or the image should be re-sampled to a higher resolution.
+
+    A sufficient signal to noise is required to have valid HFD value due to background noise.
+
+    Note that for perfect Gaussian shape both the HFD and FWHM are at the same 2.3548 σ.
+    }
+
+
+   {=============Notes on FWHM:=====================
+      1)	Determine the background level by the averaging the boarder pixels.
+      2)	Calculate the standard deviation of the background.
+
+          Signal is anything 3 * standard deviation above background
+
+      3)	Determine the maximum signal level of region of interest.
+      4)	Count pixels which are equal or above half maximum level.
+      5)	Use the pixel count as area and calculate the diameter of that area  as diameter:=2 *sqrt(count/pi).}
+end;
+
 
 
 

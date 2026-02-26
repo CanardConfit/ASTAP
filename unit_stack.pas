@@ -67,6 +67,7 @@ type
     bg2: TEdit;
     br2: TEdit;
     center_position1: TLabel;
+    disable_autocenter1: TCheckBox;
     Label38: TLabel;
     refresh_astrometric_solutions9: TMenuItem;
     photometry_calibrate1: TCheckBox;
@@ -7911,7 +7912,7 @@ var
   database_col,j,ww,measuring_method                                               : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined,calibratedP,
-  oscP                                                                            : boolean;
+  oscP,disabled_autocenter                                                          : boolean;
   starlistx                                     : Tstar_list;
   astr, filename1,totalnrstr,mess               : string;
   oldra0 : double=0;
@@ -7920,10 +7921,33 @@ var
   img_temp : Timage_array;
 
             function measure_star(deX, deY: double): string;{measure position and flux}
+            var
+               snr2,flux2 : double;
             begin
-              HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {14, annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
+              hfd1:=999;
+              if disabled_autocenter=false then
+                HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
+              if hfd1>=998 then //failed autocentering
+              begin
+
+
+              //  if pos('CoRoT_223930736',vsp_vsx_list[j].abbr)>0 then
+             //    beep;
+
+
+                HFD_without_autocentering(img_loaded,deX-1, deY-1, annulus_radius {annulus radius}, head.mzero_radius, adu_e, {unbinned} {out }snr, flux, xc, yc);//special for photometry
+                hfd1:=0.1;//unknown due to nebula, give it a default value
+                if ((disabled_autocenter=false) and (snr>0)) then memo2_message('Warning autocenter failed for '+vsp_vsx_list[j].abbr+'. Used celestial position instead. Use the online annotation database if possible.');
+             //   HFD_without_autocentering(img_loaded,deX-1, deY-1, annulus_radius {annulus radius}, head.mzero_radius, adu_e, {unbinned} {out }snr2, flux2);//special for photometry
+             //   if snr>0 then memo2_message(','+vsp_vsx_list[j].abbr+', snr ,'+floattostr(snr)+',flux ,'+floattostr(flux)+',snr2 ,'+floattostr(snr2)+',flux2 ,'+floattostr(flux2));
+              end;
+
               if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
               begin
+
+
+                //if round(xc)=0 then
+                //  beep;
                 if saturation(img_loaded,round(xc),round(yc),saturation_level)=false then {not saturated}
                 begin
                   magn:=head.mzero - ln(flux)*2.5/ln(10);
@@ -7970,6 +7994,7 @@ begin
   if listview7.items.Count <= 0 then exit; {no files}
 
   measuring_method:=measuring_method1.itemindex;
+  disabled_autocenter:=(disable_autocenter1.checked and disable_autocenter1.enabled);
 
   if ((measuring_method=0) and (length(mainform1.fshapes)<1)) then
   begin
@@ -8259,8 +8284,8 @@ begin
               celestial_to_pixel(head, vsp_vsx_list[j].ra, vsp_vsx_list[j].dec,true, xn, yn);
               if ((xn>0) and (xn<head.width-1) and (yn>0) and (yn<head.height-1)) then {within image1}
               begin
-             //   if pos('-944',vsp_vsx_list[j].abbr)>0 then
-             //   beep;
+                // if pos('R_Mon',vsp_vsx_list[j].abbr)>0 then
+                // beep;
 
                 astr:=measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
                 if ((snr>=snr_min) or (measuring_method=0)) then //no SNR filter for manual
@@ -8274,6 +8299,10 @@ begin
                      listview7.Items.item[c].subitems.Strings[i]:= astr;
                      listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
                      listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
+                     if hfd1=0.1 then //no autocenter
+                        stackmenu1.listview7.Items.item[c].SubitemImages[i+1]:=30//disabled autocenter
+                     else
+                     stackmenu1.listview7.Items.item[c].SubitemImages[i+1]:=-1;
                      new_object:=false;
                      break;
                     end;
@@ -8291,6 +8320,11 @@ begin
                     listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
                     listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
                     stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
+                    if hfd1=0.1 then //no autocenter
+                      stackmenu1.listview7.Items.item[c].SubitemImages[P_nr-2]:=30 //disabled autocenter
+                    else
+                    stackmenu1.listview7.Items.item[c].SubitemImages[P_nr-2]:=-1
+
                   end;//new object
                 end;//enough snr
               end;
@@ -9321,6 +9355,7 @@ var
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
   snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
+  disable_autocenter1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
   saturation_level1.enabled:=set_saturation1.checked;
@@ -9773,6 +9808,7 @@ begin
   clear_added_AAVSO_columns;
   hide_show_columns_listview7(true {tab8 photometry});
   snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual
+  disable_autocenter1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
 end;
 
 procedure Tstackmenu1.export_to_tg1Click(Sender: TObject);
