@@ -2408,7 +2408,7 @@ begin
                 else
                   process_as_osc:=0;//disable demosaicing
                 if ((headx.naxis3 = 1) and (headx.Xbinning = 1) and (bayerpat <> '')) then rawstr:=' raw' else rawstr:= '';
-                ListView1.Items.item[c].subitems.Strings[L_type]:= copy(imagetype, 1, 5) + IntToStr(headx.nrbits) + rawstr;{type}
+                ListView1.Items.item[c].subitems.Strings[L_type]:= copy(imagetype, 1, 5) + IntToStr(headx.bitpix) + rawstr;{type}
                 if headx.date_obs<>'' then
                   ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(headx.date_obs, 'T', ' ', []), 1, 23) {date/time up to ms}
                 else
@@ -3847,7 +3847,7 @@ begin
         end;
 
         if ((fits_file_name(filename_old)) or (tiff_file_name(filename_old))) then
-          success:=save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits){guarantee no file is lost}
+          success:=save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.bitpix){guarantee no file is lost}
 
         else
         begin
@@ -5961,7 +5961,7 @@ begin
 
   reset_fits_global_variables(True, head);
 
-  head.nrbits:=16;
+  head.bitpix:=16;
   extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
   head.Height:=1800;//1800;
@@ -5992,7 +5992,7 @@ begin
       mainform1.memo1.Lines.add(head1[j]); {add lines to empthy Memo3}
   mainform1.memo1.Lines.add(head1[27]); {add end}
 
-  update_integer(mainform1.memo1.lines,'BITPIX  =', ' / Bits per entry                                 ' , head.nrbits);
+  update_integer(mainform1.memo1.lines,'BITPIX  =', ' / Bits per entry                                 ' , head.bitpix);
   update_integer(mainform1.memo1.lines,'NAXIS1  =', ' / length of x axis                               ' , head.Width);
   update_integer(mainform1.memo1.lines,'NAXIS2  =', ' / length of y axis                               ' , head.Height);
   update_integer(mainform1.memo1.lines,'DATAMIN =', ' / Minimum data value                             ', 0);
@@ -7926,28 +7926,21 @@ var
             begin
               hfd1:=999;
               if disabled_autocenter=false then
-                HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc);  {star HFD and FWHM}
-              if hfd1>=998 then //failed autocentering
-              begin
-
-
+                HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc)  {star HFD and FWHM}
+              else
+              begin //no auto center
               //  if pos('CoRoT_223930736',vsp_vsx_list[j].abbr)>0 then
              //    beep;
-
-
-                HFD_without_autocentering(img_loaded,deX-1, deY-1, annulus_radius {annulus radius}, head.mzero_radius, adu_e, {unbinned} {out }snr, flux, xc, yc);//special for photometry
-                hfd1:=0.1;//unknown due to nebula, give it a default value
-                if ((disabled_autocenter=false) and (snr>0)) then memo2_message('Warning autocenter failed for '+vsp_vsx_list[j].abbr+'. Used celestial position instead. Use the online annotation database if possible.');
-             //   HFD_without_autocentering(img_loaded,deX-1, deY-1, annulus_radius {annulus radius}, head.mzero_radius, adu_e, {unbinned} {out }snr2, flux2);//special for photometry
-             //   if snr>0 then memo2_message(','+vsp_vsx_list[j].abbr+', snr ,'+floattostr(snr)+',flux ,'+floattostr(flux)+',snr2 ,'+floattostr(snr2)+',flux2 ,'+floattostr(flux2));
+        //        if ((abs(xc-1092)<20) and (abs(yc-968)<20)) then
+      //          beep;
+                xc:=deX-1;
+                yc:=deY-1;
+                HFD_without_auto_center(img_loaded,xc,yc, annulus_radius {annulus radius}, head.mzero_radius, adu_e, {unbinned} {out }snr, flux);//special for photometry
+                hfd1:=0.1;//unknown
               end;
 
               if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
               begin
-
-
-                //if round(xc)=0 then
-                //  beep;
                 if saturation(img_loaded,round(xc),round(yc),saturation_level)=false then {not saturated}
                 begin
                   magn:=head.mzero - ln(flux)*2.5/ln(10);
@@ -7999,7 +7992,6 @@ begin
   if ((measuring_method=0) and (length(mainform1.fshapes)<1)) then
   begin
     application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them. Or select mode measure all and select later. Then press on play to measure.','Can not proceed!',0);
-//    application.messagebox('First click on the three stars minimum (VAR, CHECK, COMP) of the first image'+#10+#13+#10+#13+'Or select mode measure all and select later.','Can not proceed!',MB_OK);
     exit;
   end;
 
@@ -8099,7 +8091,7 @@ begin
 
           if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
           begin{match between loaded image and star database}
-            if save_fits_tiff_secure(img_temp,memox,filename1,headx.nrbits)=false then
+            if save_fits_tiff_secure(img_temp,memox,filename1,headx.bitpix)=false then
             begin
               ShowMessage('Write error !!' + filename2);
               exit;//go to finally at the end
@@ -8288,6 +8280,10 @@ begin
                 // beep;
 
                 astr:=measure_star(xn, yn); //measure in the orginal image, not later when it is alligned/transformed to the reference image
+
+                //if pos('-607',vsp_vsx_list[j].abbr)>0 then
+                //beep;
+
                 if ((snr>=snr_min) or (measuring_method=0)) then //no SNR filter for manual
                 begin
                   new_object:=true;
@@ -8299,10 +8295,6 @@ begin
                      listview7.Items.item[c].subitems.Strings[i]:= astr;
                      listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
                      listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
-                     if hfd1=0.1 then //no autocenter
-                        stackmenu1.listview7.Items.item[c].SubitemImages[i+1]:=30//disabled autocenter
-                     else
-                     stackmenu1.listview7.Items.item[c].SubitemImages[i+1]:=-1;
                      new_object:=false;
                      break;
                     end;
@@ -8319,12 +8311,7 @@ begin
                     listview7.Items.item[c].subitems.Strings[P_nr-3]:= astr;
                     listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
                     listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
-                    stackmenu1.listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
-                    if hfd1=0.1 then //no autocenter
-                      stackmenu1.listview7.Items.item[c].SubitemImages[P_nr-2]:=30 //disabled autocenter
-                    else
-                    stackmenu1.listview7.Items.item[c].SubitemImages[P_nr-2]:=-1
-
+                    listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
                   end;//new object
                 end;//enough snr
               end;
@@ -9251,9 +9238,9 @@ begin
 //    success:=savefits_update_header(mainform1.memo1.lines,filename2)
 //  else
   //  success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);
- //   success:=save_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits); {guarantee no file is lost}
+ //   success:=save_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.bitpix); {guarantee no file is lost}
 
-  if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits)=false then //guarantee no file is lost
+  if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.bitpix)=false then //guarantee no file is lost
   begin
     memo2_message('Abort. Could not save photometric updated file: '+filename2);
     exit;
@@ -9559,7 +9546,7 @@ begin
        //   success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);
         //{guarantee no file is lost}
 
-        if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines, filename2,head.nrbits)=false then {guarantee no file is lost}
+        if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines, filename2,head.bitpix)=false then {guarantee no file is lost}
         begin
           ShowMessage('Write error !!' + filename2);
           break;
@@ -10246,7 +10233,7 @@ var
 
         function save_fits_tiff : boolean;
         begin
-          result:=save_fits_tiff_secure(img_temp,memox, filename1,headx.nrbits); {guarantee no file is lost}
+          result:=save_fits_tiff_secure(img_temp,memox, filename1,headx.bitpix); {guarantee no file is lost}
           if result=false then ShowMessage('Write error !!' + filename1);
         end;
 
@@ -10260,7 +10247,7 @@ var
           else
           begin
             filename1:=ChangeFileExt(Filename1,newend+'.tif');
-            result:=save_tiff_new(img_temp,filename1, memox.text,headx.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+            result:=save_tiff_new(img_temp,filename1, memox.text,headx.bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
           end;
         end;
 
@@ -11913,7 +11900,7 @@ begin
 
         update_text(mainform1.memo1.lines,'COMMENT 1', '  Written by ASTAP. www.hnsky.org');
         head.naxis3:=1; {any color is made mono in the routine}
-        head.nrbits:=-32;
+        head.bitpix:=-32;
 
         if save_fits(img_dark,mainform1.memo1.lines,head, path1, False) then {saved}
         begin
@@ -12127,7 +12114,7 @@ begin
           update_text(mainform1.memo1.lines,'COMMENT 1', '  Created by ASTAP www.hnsky.org');
           head.naxis3:=1; {any color is made mono in the routine. Keywords are updated in the save routine}
           head.naxis:=2;  {any color is made mono in the routine. Keywords are updated in the save routine}
-          head.nrbits:=-32;
+          head.bitpix:=-32;
 
           if save_fits(img_flat,mainform1.memo1.lines,head, path1,False) then {saved}
           begin
@@ -12191,7 +12178,7 @@ begin
       Result:=savefits_update_header(memo,filename2);
     end
     else
-     result:=save_tiff_new(img,filename2, memo.text,hd.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+     result:=save_tiff_new(img,filename2, memo.text,hd.bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
     //  Result:=save_tiff16(img,memo, filename2, False {flip H}, False {flip V},16);
 
     if Result = False then ShowMessage('Write error !!' + filename2);
@@ -12419,7 +12406,7 @@ begin
 
             filename2:=StringReplace(ChangeFileExt(filename2, '.fit'), '.fit', '_cal.fit', []); {give new file name }
             memo2_message('█ █ █  Saving calibrated file as ' + filename2);
-            head.nrbits:=-32;
+            head.bitpix:=-32;
             save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True);
             ListView1.items[c].Caption:=filename2;//update list. Also used for photometry
 
@@ -12867,7 +12854,7 @@ begin
           //else
           //  success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);{guarantee no file is lost}
 
-          if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines, filename2,head.nrbits)= False then
+          if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines, filename2,head.bitpix)= False then
           begin
             ShowMessage('Write error !!' + filename2);
             Screen.Cursor:=crDefault;
@@ -13164,7 +13151,7 @@ begin
             filename3:=filename2;
             filename2:=StringReplace(ChangeFileExt(filename2, '.fit'),'.fit', '@ ' + stack_info + '_stacked.fit', []); {give new file name for any extension, FIT, FTS, fits}
             memo2_message('█ █ █ Saving as ' + filename2);
-            head.nrbits:=-32;
+            head.bitpix:=-32;
             save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True {override});
             files_to_process_LRGB[i + 1].Name:=filename2;{should contain [nil,r,g,b,l]}
 
@@ -13250,7 +13237,7 @@ begin
 
     if ((cal_and_align = False) and (skip_combine = False)) then   {do not do this for calibration and alignment only, and skip combine}
     begin  //fits_file:=true;
-      head.nrbits:=-32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
+      head.bitpix:=-32;  {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
       if ((monofile){success none lrgb loop} or (counter_colours <> 0{length(extra2)>=2} {lrgb loop})) then
       begin
@@ -13531,7 +13518,7 @@ begin
         if head.cd1_1 <> 0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result ' + IntToStr(image_counter) + ' as ' + filename2);
 
-        head.nrbits:=-32;
+        head.bitpix:=-32;
         if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True) = False then exit;
         inc(total_counter);
         if save_settings_image_path1.Checked then save_settings(changefileext(filename2, '.cfg'));

@@ -195,11 +195,11 @@ begin
     b:=posex('"',aline,a);inc(b,1); {find begin};
     c:=posex('"',aline,b); {find end};
     message1:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
-    if message1='Float32' then head.nrbits:=-32 {sometimes there is another Uintf8 behind stop _image, so test first only}  else
-    if message1='UInt16' then head.nrbits:=16 else
-    if message1='UInt8' then head.nrbits:=8 else
-    if message1='Float64' then head.nrbits:=-64 else
-    if message1='UInt32' then head.nrbits:=32 else
+    if message1='Float32' then head.bitpix:=-32 {sometimes there is another Uintf8 behind stop _image, so test first only}  else
+    if message1='UInt16' then head.bitpix:=16 else
+    if message1='UInt8' then head.bitpix:=8 else
+    if message1='Float64' then head.bitpix:=-64 else
+    if message1='UInt32' then head.bitpix:=32 else
     error2:=1;
   end;
   if ((a=0) or (error2<>0)) then
@@ -212,11 +212,11 @@ begin
     exit;
   end;
 
-  if head.nrbits=8 then  begin head.datamin_org:=0;head.datamax_org:=255; {8 bits files} end
+  if head.bitpix=8 then  begin head.datamin_org:=0;head.datamax_org:=255; {8 bits files} end
     else {16, -32 files} begin head.datamin_org:=0;head.datamax_org:=$FFFF;end;{not always specified. For example in skyview. So refresh here for case brightness is adjusted}
 
   {update memo keywords}
-  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
   if head.naxis3=1 then  remove_key(memo,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
@@ -389,7 +389,7 @@ begin
   memo.endupdate;
 
   {check if buffer is wide enough for one image line}
-  i:=round(bufwide/(abs(head.nrbits/8)));
+  i:=round(bufwide/(abs(head.bitpix/8)));
   if head.width>i then
   begin
     sysutils.beep;
@@ -406,23 +406,23 @@ begin
     begin
       For i:=head.height-1 downto 0 do //XISF is top-down
       begin
-        try reader.read(fitsbuffer,head.width*round(abs(head.nrbits/8)));except; head.naxis:=0;{failure} end; {read file info}
+        try reader.read(fitsbuffer,head.width*round(abs(head.bitpix/8)));except; head.naxis:=0;{failure} end; {read file info}
 
         for j:=0 to head.width-1 do
         begin
-          if head.nrbits=16 then {16 bit FITS}
+          if head.bitpix=16 then {16 bit FITS}
            img_loaded2[k-1,i,j]:=fitsbuffer2[j]
           else
-          if head.nrbits=-32 then {4 byte floating point  FITS image}
+          if head.bitpix=-32 then {4 byte floating point  FITS image}
             img_loaded2[k-1,i,j]:=65535*fitsbufferSINGLE[j]{store in memory array, scale from 0..1 to 0..65535}
           else
-          if head.nrbits=8  then
+          if head.bitpix=8  then
             img_loaded2[k-1,i,j]:=(fitsbuffer[j])
           else
-          if head.nrbits=-64 then {8 byte, floating point bit FITS image}
+          if head.bitpix=-64 then {8 byte, floating point bit FITS image}
             img_loaded2[k-1,i,j]:=65535*fitsbufferDouble[j]{store in memory array, scale from 0..1 to 0..65535}
           else
-          if head.nrbits=+32 then {4 byte, +32 bit FITS image}
+          if head.bitpix=+32 then {4 byte, +32 bit FITS image}
             img_loaded2[k-1,i,j]:=fitsbuffer4[j]/65535;{scale to 0..64535 float}
         end;
       end;

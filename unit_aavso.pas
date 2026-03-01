@@ -2259,7 +2259,7 @@ begin
   begin
     abrv_comp1.color:=cldefault;
     for i:=0 to high(column_comps) do
-      abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(stackmenu1.listview7.Column[column_comps[i]+1].Caption,false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
+  //    abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(stackmenu1.listview7.Column[column_comps[i]+1].Caption,false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
       abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(ColumnTitles[column_comps[i]+1],false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
   end
   else
@@ -2272,7 +2272,7 @@ begin
     abrv_comp1.color:=cldefault;
 
 
-  delete(abbrv_comp_clean,length(variable_clean),1);//remove last "|"
+  delete(abbrv_comp_clean,length(abbrv_comp_clean),1);//remove last "|"
   store_vsp_stars( abbrv_check_clean+'|'+variable_clean+abbrv_comp_clean); //simple database in settings key report_stars
 
 
@@ -2581,7 +2581,7 @@ begin
              if stackmenu1.ListView7.Items.item[c].SubitemImages[P_calibration]<>SubItemImages[c] then
                 comp_magn_info:=comp_magn_info+'  WARNING INCOMPATIBLE FILTER AND DATABASE PASSBAND! VALID FILTERS CV/V/TG/TB/TR/G/B/R/SI/SR/SG.';
 
-           if stackmenu1.listview7.Items.item[c].SubitemImages[column_vars[m_index]+1]=30 then comp_magn_info:=comp_magn_info+' Autocenter var disabled';//warning
+           if stackmenu1.disable_autocenter1.checked then comp_magn_info:=comp_magn_info+' Autocenter disabled. ';//warning
 
            aavso_report:= aavso_report+ invalidstr+ abbrv_var_clean + delim +
                           StringReplace(stackmenu1.listview7.Items.item[c].subitems.Strings[date_column],',','.',[])+delim+
