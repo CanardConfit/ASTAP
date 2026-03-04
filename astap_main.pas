@@ -78,7 +78,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.02.26';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.03.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -578,7 +578,7 @@ type
   Tarray_integer = array of integer;
 
   Theader =record    {contains the most important header info}
-    nrbits : integer;{almost always equivalent to bitpix}
+    bitpix : integer;{almost always equivalent to bitpix}
     width  : integer;{image width}
     height : integer;{image height}
     naxis  : integer;{number of dimensions}
@@ -814,7 +814,7 @@ function load_fits(filen:string;light {load as light or dark/flat},load_data,upd
 procedure plot_image(img: timage;center_image:boolean);
 procedure plot_histogram(img: Timage_array; update_hist: boolean);{get histogram}
 procedure HFD(img: Timage_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr, flux,xc,yc:double);
-procedure HFD_without_autocentering(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux, xc2, yc2 :double);//special for photmetry
+procedure HFD_without_auto_center(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux :double);//special for photmetry
 procedure backup_img;
 procedure restore_img;
 function load_image(filename2: string; out img: Timage_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
@@ -922,7 +922,7 @@ procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
-function save_fits_tiff_secure(img : Timage_array; memo: tstrings;filen2:string; nrbits : integer) : boolean;{guarantee no file is lost}
+function save_fits_tiff_secure(img : Timage_array; memo: tstrings;filen2:string; bitpix : integer) : boolean;{guarantee no file is lost}
 function find_reference_star(img : Timage_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
 function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
@@ -1365,7 +1365,7 @@ begin
              bayerpat:=get_string {BAYERPAT, bayer pattern such as RGGB}
           else
           if ((header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
-            head.nrbits:=round(validate_double) {BITPIX, read integer using double routine}
+            head.bitpix:=round(validate_double) {BITPIX, read integer using double routine}
           else
           if ( (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
           begin
@@ -1994,7 +1994,7 @@ begin
   begin
     if ((head.naxis=3) and (naxis1=3)) then
     begin
-       head.nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
+       head.bitpix:=24; {threat RGB fits as 2 dimensional with 24 bits data}
        head.naxis3:=3; {will be converted while reading}
     end;
 
@@ -2066,7 +2066,7 @@ begin
 
 
     {############################## read image}
-    i:=round(bufwide/(abs(head.nrbits/8)));{check if buffer is wide enough for one image line}
+    i:=round(bufwide/(abs(head.bitpix/8)));{check if buffer is wide enough for one image line}
     if head.width>i then
     begin
       beep;
@@ -2083,7 +2083,7 @@ begin
       exit;
     end;
 
-    if head.nrbits=16 then
+    if head.bitpix=16 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2099,7 +2099,7 @@ begin
       end;
     end {colors head.naxis3 times}
     else
-    if head.nrbits=-32 then
+    if head.bitpix=-32 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2116,7 +2116,7 @@ begin
       end;
     end {colors head.naxis3 times}
     else
-    if head.nrbits=8 then
+    if head.bitpix=8 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2129,7 +2129,7 @@ begin
       end;
     end {colors head.naxis3 times}
     else
-    if head.nrbits=24 then
+    if head.bitpix=24 then
     For j:=0 to head.height-1 do
     begin
       try reader.read(fitsbuffer,head.width*3);except; head.naxis:=0;{failure} end; {read file info}
@@ -2142,7 +2142,7 @@ begin
       end;
     end
     else
-    if head.nrbits=+32 then
+    if head.bitpix=+32 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2159,7 +2159,7 @@ begin
       end;
     end {colors head.naxis3 times}
     else
-    if head.nrbits=-64 then
+    if head.bitpix=-64 then
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
       For j:=0 to head.height-1 do
@@ -2177,7 +2177,7 @@ begin
     end; {colors head.naxis3 times}
 
     {rescale if required}
-    if ((head.nrbits<=-32){-32 or -64} or (head.nrbits=+32)) then
+    if ((head.bitpix<=-32){-32 or -64} or (head.bitpix=+32)) then
     begin
       scalefactor:=1;
       if measured_max>0 then
@@ -2196,21 +2196,21 @@ begin
 
     end
     else
-    if head.nrbits=8 then head.datamax_org:=255 {not measured}
+    if head.bitpix=8 then head.datamax_org:=255 {not measured}
     else
-    if head.nrbits=24 then
+    if head.bitpix=24 then
     begin
       head.datamax_org:=255;
-      head.nrbits:=8; {already converted to array with separate colour sections}
+      head.bitpix:=8; {already converted to array with separate colour sections}
     end
     else {16 bit}
-    head.datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
+    head.datamax_org:=measured_max;{most common. It set for bitpix=24 in beginning at 255}
 
     head.backgr:=head.datamin_org;{for case histogram is not called}
     cwhite:=head.datamax_org;
 
     result:=head.naxis<>0;{success};
-    reader_position:=reader_position+head.width*head.height*(abs(head.nrbits) div 8)
+    reader_position:=reader_position+head.width*head.height*(abs(head.bitpix) div 8)
   end{image block}
 
   else
@@ -2492,7 +2492,7 @@ begin
     if ((index=5) and (head.naxis3>1)) then if key<>'NAXIS3  =' then
                                              begin memo.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
 
-//    if key='BITPIX  =' then head.nrbits:=read_integer else
+//    if key='BITPIX  =' then head.bitpix:=read_integer else
     if key='CD1_1   =' then head.cd1_1:=read_float else
     if key='CD1_2   =' then head.cd1_2:=read_float else
     if key='CD2_1   =' then head.cd2_1:=read_float else
@@ -2779,13 +2779,13 @@ begin
 
     val(bits,range,err3);{number of bits}
 
-    head.nrbits:=round(range);
+    head.bitpix:=round(range);
 
-    if pfm then begin head.nrbits:=-32; head.datamax_org:=$FFFF;end     {little endian PFM format. If nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+    if pfm then begin head.bitpix:=-32; head.datamax_org:=$FFFF;end     {little endian PFM format. If bitpix=-1 then range 0..1. If bitpix=+1 then big endian with range 0..1 }
     else
-    if head.nrbits=65535 then begin head.nrbits:=16; head.datamax_org:=$FFFF;end
+    if head.bitpix=65535 then begin head.bitpix:=16; head.datamax_org:=$FFFF;end
     else
-    if head.nrbits=255 then begin head.nrbits:=8;head.datamax_org:=$FF; end
+    if head.bitpix=255 then begin head.bitpix:=8;head.datamax_org:=$FF; end
     else
       err3:=999;
 
@@ -2807,13 +2807,13 @@ begin
 
     if color7 then
     begin
-       package:=round((abs(head.nrbits)*3/8));{package size, 3 or 6 bytes}
+       package:=round((abs(head.bitpix)*3/8));{package size, 3 or 6 bytes}
        head.naxis3:=3; {head.naxis3 number of colors}
        head.naxis:=3; {number of dimensions}
     end
     else
     begin {gray image without bayer matrix applied}
-      package:=round((abs(head.nrbits)/8));{package size, 1 or 2 bytes}
+      package:=round((abs(head.bitpix)/8));{package size, 1 or 2 bytes}
       head.naxis3:=1; {head.naxis3 number of colors}
       head.naxis:=2;{number of dimensions}
     end;
@@ -2838,16 +2838,16 @@ begin
           begin
             if color7=false then {gray scale without bayer matrix applied}
             begin
-              if head.nrbits=8 then  {8 BITS, mono 1x8bits}
+              if head.bitpix=8 then  {8 BITS, mono 1x8bits}
                 img_loaded2[0,i,j]:=fitsbuffer[j]{RGB fits with naxis1=3, treated as 48 bits coded pixels}
               else
-              if head.nrbits=16 then {big endian integer}
+              if head.bitpix=16 then {big endian integer}
                 img_loaded2[0,i,j]:=swap(fitsbuffer2[j])
               else {PFM 32 bits grayscale}
               if pfm then
               begin
                 if range<0 then {little endian floats}
-                  img_loaded2[0,i,j]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+                  img_loaded2[0,i,j]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if bitpix=-1 then range 0..1. If bitpix=+1 then big endian with range 0..1 }
                 else
                 begin {big endian floats}
                   x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
@@ -2857,7 +2857,7 @@ begin
             end
             else
             begin
-              if head.nrbits=8 then {24 BITS, colour 3x8bits}
+              if head.bitpix=8 then {24 BITS, colour 3x8bits}
               begin
                 rgbdummy:=fitsbufferRGB[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
                 img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
@@ -2865,7 +2865,7 @@ begin
                 img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
               end
               else
-              if head.nrbits=16 then {48 BITS colour, 3x16 big endian}
+              if head.bitpix=16 then {48 BITS colour, 3x16 big endian}
               begin {48 bits}
                 rgb16dummy:=fitsbufferRGB16[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
                 img_loaded2[0,i,j]:=swap(rgb16dummy[0]);{store in memory array}
@@ -2915,7 +2915,7 @@ begin
         memo.add(head1[j]); {add lines to empthy memo1}
   memo.add(head1[27]); {add end}
 
-  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
   update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
@@ -2968,7 +2968,7 @@ begin
   saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
 
-  read_tiff(filename2,img, descrip,bitspersample, head.datamin_org,result); {unit tiff}
+  read_tiff(filename2,img, descrip,bitspersample, head.datamax_org,result); {unit tiff}
 
   if result=false then
   begin
@@ -2979,21 +2979,19 @@ begin
   reset_fits_global_variables(true{light},head); {reset the global variable}
 
   if bitspersample=32 then
-    head.nrbits:=-32 //fits float
+    head.bitpix:=-32 //fits float
   else
-    head.nrbits:=bitspersample;
+    head.bitpix:=bitspersample;
 
-
-  memo.beginupdate;
-  memo.clear;{clear memo for new header}
 
   {set data}
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
   head.datamin_org:=0;
-  head.datamax_org:=$FFFF;
   head.backgr:=head.datamin_org;{for case histogram is not called}
   cwhite:=head.datamax_org;
 
+  memo.beginupdate;
+  memo.clear;{clear memo for new header}
   if copy(descrip,1,6)='SIMPLE' then {fits header included}
   begin
     memo.text:=descrip;
@@ -3016,7 +3014,7 @@ begin
   head.height:=length(img[0]);
 
   //update these always to secure FITS format.
-  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
   update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
@@ -3031,7 +3029,7 @@ begin
     add_text(memo,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
   end;
 
-  //update_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  update_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
 
   memo.endupdate;
 
@@ -3141,7 +3139,7 @@ begin
 
   {set data}
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
-  head.nrbits:=16;
+  head.bitpix:=16;
   head.datamin_org:=0;
   head.datamax_org:=$FFFF;
   head.backgr:=head.datamin_org;{for case histogram is not called}
@@ -3189,7 +3187,7 @@ begin
     if descrip<>'' then add_long_comment(memo,descrip);{add TIFF describtion}
   end;
 
-  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
+  update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
   update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,head.height);
@@ -3398,7 +3396,7 @@ begin
     head.noise_level:= sd;   {this noise level could be too high if no flat is applied. So for images where center is brighter then the corners.}
 
     {calculate star level}
-    if ((head.nrbits=8) or (head.nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
+    if ((head.bitpix=8) or (head.bitpix=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
     head.star_level:=0;
     head.star_level2:=0;
     i:=max_range;
@@ -4453,7 +4451,7 @@ begin
   height5:=length(img[0]);{height}
   if colours5=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
 
-  if ((headX.nrbits=24) and (colours5<3)) then
+  if ((headX.bitpix=24) and (colours5<3)) then
   begin
     application.messagebox(pchar('Abort, can not save grayscale image as colour image!!'),pchar('Error'),MB_OK);
     exit;
@@ -4477,9 +4475,9 @@ begin
     TheFile4:=tfilestream.Create(filen2, fmcreate );
     try
      {update FITs header}
-      if headX.nrbits<>24 then {standard FITS}
+      if headX.bitpix<>24 then {standard FITS}
       begin
-        update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,headX.nrbits); {16 or -32}
+        update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,headX.bitpix); {16 or -32}
         update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
         update_integer(memo,'NAXIS1  =',' / length of x axis                               ' ,width5);
         update_integer(memo,'NAXIS2  =',' / length of y axis                               ' ,height5);
@@ -4488,11 +4486,11 @@ begin
           else
           remove_key(memo,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
-        if headX.nrbits=16 then bzero2:=32768 else bzero2:=0;
+        if headX.bitpix=16 then bzero2:=32768 else bzero2:=0;
 
         update_integer(memo,'BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
         update_integer(memo,'BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
-        if headX.nrbits<>8 then
+        if headX.bitpix<>8 then
         begin
           update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,round(headX.datamin_org));
           update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(headX.datamax_org));
@@ -4536,7 +4534,7 @@ begin
          inc(i);
       until ((i>=memo.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
-      if headX.nrbits=8 then
+      if headX.bitpix=8 then
       begin
         minimum:=min(0,mainform1.minimum1.position); {stretch later if required}
         maximum:=max(255,mainform1.maximum1.position);
@@ -4555,7 +4553,7 @@ begin
         end;
       end
       else
-      if headX.nrbits=24 then
+      if headX.bitpix=24 then
       begin
         minimum:=min(0,mainform1.minimum1.position); {stretch later if required}
         maximum:=max(255,mainform1.maximum1.position);
@@ -4579,7 +4577,7 @@ begin
       end
       else
 
-      if headX.nrbits=16 then
+      if headX.bitpix=16 then
       begin
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
@@ -4604,7 +4602,7 @@ begin
         end;
       end
       else
-      if headX.nrbits=-32 then
+      if headX.bitpix=-32 then
       begin
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
@@ -4736,7 +4734,7 @@ begin
   begin
     if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.tif')
                    else filename2:=ChangeFileExt(Filename2,'_bin3x3.tif');
-    result:=save_tiff_new(img_temp,filename2, memox.text,headX.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+    result:=save_tiff_new(img_temp,filename2, memox.text,headX.bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
   end;
 end;
 
@@ -6286,7 +6284,7 @@ begin
   end;
 
 
-  if ((head.nrbits=16) or (head.nrbits=8)) then info_message:=info_message+#10+'Greyscale levels: '+ inttostr(greylevels);
+  if ((head.bitpix=16) or (head.bitpix=8)) then info_message:=info_message+#10+'Greyscale levels: '+ inttostr(greylevels);
 
   if head.Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
 
@@ -7923,7 +7921,7 @@ begin
       end;
     end;
 
-    mainform1.statusbar1.panels[5].text:=inttostr(ww)+' x '+inttostr(hh)+' x '+inttostr(colours2)+'   '+inttostr(head.nrbits)+' BPP';{give image dimensions and bit per pixel info}
+    mainform1.statusbar1.panels[5].text:=inttostr(ww)+' x '+inttostr(hh)+' x '+inttostr(colours2)+'   '+inttostr(head.bitpix)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
     mainform1.statusbar1.panels[7].text:=''; {2020-2-15 moved from load_fits to plot_image. Clear any outstanding error}
 
@@ -8246,7 +8244,7 @@ begin
 end;
 
 
-function save_fits_tiff_secure(img : Timage_array; memo: tstrings; filen2:string; nrbits:integer): boolean;
+function save_fits_tiff_secure(img : Timage_array; memo: tstrings; filen2:string; bitpix:integer): boolean;
 var
   filename_tmp: string;
 begin
@@ -8256,7 +8254,7 @@ begin
   begin //tiff
     result:=false;{assume failure}
     filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
-    if save_tiff_new(img,filename_tmp, memo.text,nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}) then //success, save to TIFF file
+    if save_tiff_new(img,filename_tmp, memo.text,bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}) then //success, save to TIFF file
     begin
       if deletefile(filen2) then
       result:=renamefile(filename_tmp,filen2);
@@ -9516,7 +9514,7 @@ begin
 
           if tilt<100 then //success. Tilt= is added to memox in function CCDinspector
           begin
-            if save_fits_tiff_secure(img_temp,memox,filename2,headx.nrbits)=false then {guarantee no file is lost}
+            if save_fits_tiff_secure(img_temp,memox,filename2,headx.bitpix)=false then {guarantee no file is lost}
             begin
               ShowMessage('Write error !!' + filename2);
               Screen.Cursor:=crDefault;
@@ -10062,7 +10060,7 @@ begin
     begin
       if conv_index=2 {dcraw} then head.set_temperature:=extract_temperature_from_filename(filename4);{including update header}
       update_text(mainform1.memo1.lines,'OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
-      head.nrbits:=16;
+      head.bitpix:=16;
       result:=save_fits(img,mainform1.memo1.lines,head,filename4,true);{overwrite. Filename2 will be set to fits file}
     end;
     if loadfile=false then  img:=nil;{clear memory}
@@ -11457,7 +11455,7 @@ begin
           remove_key(mainform1.memo1.lines,'SITELAT =',true{all});
           remove_key(mainform1.memo1.lines,'SITELONG=',true{all});
 
-          if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits)=false then
+          if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.bitpix)=false then
           begin
             ShowMessage('Write error !!' + filename2);
             Screen.Cursor:=crDefault;
@@ -12167,7 +12165,7 @@ begin
             else
             begin
               plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations},false);
-              if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits)=false then {guarantee no file is lost}
+              if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.bitpix)=false then {guarantee no file is lost}
               begin
                 ShowMessage('Write error !!' + filename2);
                 Screen.Cursor:=crDefault;
@@ -13975,10 +13973,10 @@ begin
             if hasoption('update') then
             begin
               if ((fits_file_name(filename2)) or (tiff_file_name(filename2))) then
-                wresult:=save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.nrbits){guarantee no file is lost}
+                wresult:=save_fits_tiff_secure(img_loaded,mainform1.memo1.lines,filename2,head.bitpix){guarantee no file is lost}
               else
               begin
-                head.nrbits:=16;
+                head.bitpix:=16;
                 wresult:=save_fits(img_loaded,mainform1.memo1.lines,head,ChangeFileExt(filename2,'.fits'), true {override});{save original png,tiff jpg to 16 fits file}
               end;
 
@@ -14012,7 +14010,7 @@ begin
                 binning:=round(strtofloat2(GetOptionValue('tofits')));
                 if binning>1 then bin_X2X3X4(img_loaded,head,mainform1.memo1.lines,binning);{bin img_loaded 2x or 3x or 4x}
                 if histogram_done=false then plot_histogram(img_loaded,false {update, already done for solving}); {plot histogram, set sliders}
-                head.nrbits:=8;
+                head.bitpix:=8;
                 save_fits(img_loaded,mainform1.memo1.lines,head,changeFileExt(filename_output,'.fit'),true {overwrite});
               end;
             end;
@@ -14264,7 +14262,7 @@ begin
                 success:=save_fits(img_temp,memox,headX,filename2,true);//image was updated by calibration.
             end
             else
-              success:=save_fits_tiff_secure(img_temp,memox,filename2,headX.nrbits);{guarantee no file is lost}
+              success:=save_fits_tiff_secure(img_temp,memox,filename2,headX.bitpix);{guarantee no file is lost}
 
             if success=false then begin ShowMessage('Write error !!'+#10+#10 + filename2);Screen.Cursor:=crDefault; exit;end;
 
@@ -14558,7 +14556,7 @@ begin
           else
           begin
             filename3:=ChangeFileExt(Filename2,'_cropped.tif');
-            success:=save_tiff_new(img4,filename3, memo4.text,head4.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+            success:=save_tiff_new(img4,filename3, memo4.text,head4.bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
           end;
           if success=false then begin ShowMessage('Write error !!' + filename3);break; end;
         end;
@@ -14737,7 +14735,7 @@ begin
             else
             begin
               filename3:=ChangeFileExt(Filename2,'_cropped.tif');
-              success:=save_tiff_new(img,filename3, memo.text,head_temp.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+              success:=save_tiff_new(img,filename3, memo.text,head_temp.bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
             end;
             if success=false then begin ShowMessage('Write error !!' + filename3);break; end;
           end;
@@ -15107,7 +15105,7 @@ begin
 
   backup_img;
 
-  if head.nrbits=8 then max_range:= 255 else max_range:=65535;
+  if head.bitpix=8 then max_range:= 255 else max_range:=65535;
 
   for col:=0 to head.naxis3-1 do {do all colours}
   begin
@@ -15284,7 +15282,7 @@ begin
       if fits_file_name(filename2) then
         success:=save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)
       else
-        success:=save_tiff_new(img_loaded,filename2, memo1.text,head.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+        success:=save_tiff_new(img_loaded,filename2, memo1.text,head.bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
       if success=false then
       begin
         ShowMessage('Write error !!' + filename2);
@@ -15927,7 +15925,6 @@ begin
   width5:=Length(img[0,0]);{width}
   height5:=Length(img[0]); {height}
 
-
   {rs should be <=50 to prevent runtime errors}
   if  aperture_small<99 then
     annulus_width:=3 {high precession}
@@ -15966,6 +15963,7 @@ begin
     sd_bg:=mad_bg*1.4826; {Conversion from mad to sd for a normal distribution. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
     sd_bg:=max(sd_bg,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
     {star_bg, sd_bg and r_aperture are global variables}
+
 
     repeat {reduce square annulus radius till symmetry to remove stars}
     // Get center of gravity whithin star detection box and count signal pixels, repeat reduce annulus radius till symmetry to remove stars
@@ -16010,6 +16008,9 @@ begin
     until ((boxed) or (rs<=1)) ;{loop and reduce aperture radius until star is boxed}
 
     inc(rs,2);{add some space}
+
+//    if ((abs(xc-745)<10) and (abs(yc-557)<10)) then
+//    beep;
 
     // Build signal histogram from center of gravity
     for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
@@ -16184,15 +16185,16 @@ end;
 
 
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
-procedure HFD_without_autocentering(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux, xc2, yc2 :double);//special for photmetry
+procedure HFD_without_auto_center(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux :double);//special for photmetry
 const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
   samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
 
 var
-  x1,y1,width5,height5,i,j,r1_square,r2_square,r2, distance,counter,annulus_width,r_aper : integer;
-  Sumval_small, Xg,Yg, r, val,mad_bg,radius,dx,dy,flux_e,sd_bg_e            : double;
+  x1,y1,width5,height5,i,j,r1_square,r2_square,r2, distance,counter,annulus_width,r_aper,ars,signal_counter : integer;
+  SumVal, SumValX, SumValY, Sumval_small, Xg,Yg, r, val,mad_bg,radius,dx,dy,flux_e,sd_bg_e                  : double;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
+
 
     function value_subpixel(x1,y1:double):double; {calculate square image pixel value on subpixel level.}
     var
@@ -16218,15 +16220,13 @@ begin
   width5:=Length(img[0,0]);{width}
   height5:=Length(img[0]); {height}
 
-  xc2:=xc;//just duplicate. No autocenter
-  yc2:=yc;
+//  if ((abs(xc-1092)<20) and (abs(yc-968)<20)) then
+//  beep;
+
 
 
   {rs should be <=50 to prevent runtime errors}
-  if  aperture_small<99 then
-    annulus_width:=3 {high precession}
-  else
-    annulus_width:=1;{normal & fast}
+  annulus_width:=3; {high precession}
 
   r1_square:=rs*rs;{square radius}
   r2:=rs+annulus_width;
@@ -16304,73 +16304,7 @@ begin
 
   except
   end;
-
-  {For both bright stars (shot-noise limited) or skybackground limited situations
-    snr := signal/noise
-    snr := star_signal/sqrt(total_signal)
-    snr := star_signal/sqrt(star_signal + sky_signal)
-    equals
-    snr:=flux/sqrt(flux + r*r*pi* sd^2).
-
-    r is the diameter used for star flux measurement. Flux is the total star flux detected above 3* sd.
-
-    Assuming unity head.gain ADU/e-=1
-    See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)
-    https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
-    http://spiff.rit.edu/classes/phys373.s2014/lectures/signal/signal_illus.html}
-
-//   memo2_message(#9+'######'+#9+inttostr(round(flux))+#9+ floattostr6(r_aperture)+#9+floattostr6(sd)+#9+floattostr6(snr)+#9+floattostr6(sqr(r_aperture)*pi*sqr(sd)));
-
-
-  {==========Notes on HFD calculation method=================
-    Documented this HFD definition also in https://en.wikipedia.org/wiki/Half_flux_diameter
-    References:
-    https://astro-limovie.info/occultation_observation/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
-    https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/
-    http://www.ccdware.com/Files/ITS%20Paper.pdf     See page 10, HFD Measurement Algorithm
-
-    HFD, Half Flux Diameter is defined as: The diameter of circle where total flux value of pixels inside is equal to the outside pixel's.
-    HFR, half flux radius:=0.5*HFD
-    The pixel_flux:=pixel_value - background.
-
-    The approximation routine assumes that the HFD line divides the star in equal portions of gravity:
-        sum(pixel_flux * (distance_from_the_centroid - HFR))=0
-    This can be rewritten as
-       sum(pixel_flux * distance_from_the_centroid) - sum(pixel_values * (HFR))=0
-       or
-       HFR:=sum(pixel_flux * distance_from_the_centroid))/sum(pixel_flux)
-       HFD:=2*HFR
-
-    This is not an exact method but a very efficient routine. Numerical checking with an a highly oversampled artificial Gaussian shaped star indicates the following:
-
-    Perfect two dimensional Gaussian shape with σ=1:   Numerical HFD=2.3548*σ                     Approximation 2.5066, an offset of +6.4%
-    Homogeneous disk of a single value  :              Numerical HFD:=disk_diameter/sqrt(2)       Approximation disk_diameter/1.5, an offset of -6.1%
-
-    The approximate routine is robust and efficient.
-
-    Since the number of pixels illuminated is small and the calculated center of star gravity is not at the center of an pixel, above summation should be calculated on sub-pixel level (as used here)
-    or the image should be re-sampled to a higher resolution.
-
-    A sufficient signal to noise is required to have valid HFD value due to background noise.
-
-    Note that for perfect Gaussian shape both the HFD and FWHM are at the same 2.3548 σ.
-    }
-
-
-   {=============Notes on FWHM:=====================
-      1)	Determine the background level by the averaging the boarder pixels.
-      2)	Calculate the standard deviation of the background.
-
-          Signal is anything 3 * standard deviation above background
-
-      3)	Determine the maximum signal level of region of interest.
-      4)	Count pixels which are equal or above half maximum level.
-      5)	Use the pixel count as area and calculate the diameter of that area  as diameter:=2 *sqrt(count/pi).}
 end;
-
-
-
-
 
 
 procedure measure_hotpixels(x1,y1, x2,y2,col : integer; sd,mean:  double; img : Timage_array; out hotpixel_perc, hotpixel_adu :double);{calculate the hotpixels percentage and RMS value}
@@ -16808,7 +16742,7 @@ begin
   if fits_file_name(filename2) then
     result:=save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)
   else
-    result:=save_tiff_new(img_loaded,filename2, memo1.text,head.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+    result:=save_tiff_new(img_loaded,filename2, memo1.text,head.bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
 
   if result=false then ShowMessage('Write error !!' + filename2);
 end;
@@ -17169,7 +17103,7 @@ end;
 //end;
 
 { No longer used. Replace by own unit_tiff
-function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean;nrbits:integer): boolean;//save to 8 or 16 bit TIFF file
+function save_tiff16(img: Timage_array; memo: tstrings; filen2:string;flip_H,flip_V:boolean;bitpix:integer): boolean;//save to 8 or 16 bit TIFF file
 var
   i, j, k,m,nrcolours,w,h      :integer;
   image: TFPCustomImage;
@@ -17191,7 +17125,7 @@ begin
 
   Image.Extra[TiffAlphaBits]:='0';
 
-  if nrbits=8 then  //8 bit fits
+  if bitpix=8 then  //8 bit fits
   begin
     format:='8';
     factor:=256; //the tiff writer will divide by 256 again
@@ -17281,7 +17215,7 @@ begin
           fileDate := FileAge(fileName2);
         if load_image(filename2,img_temp,headx,memox,false {recenter},false {plot}) then
         begin
-          written:=save_tiff_new(img_temp,filename2, memox.text,headx.nrbits,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
+          written:=save_tiff_new(img_temp,filename2, memox.text,headx.bitpix,false {flip H},false {flip V}, true{overwrite}, 1 {compression}); //save to TIFF file
           memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));//now the filename extension has changed to tif
           if written then
           begin
@@ -17342,7 +17276,7 @@ begin
         begin
           if head.naxis3=1 then {monochrome}
           begin
-            if abs(head.nrbits)<=16 then
+            if abs(head.bitpix)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.pgm');
               save_PPM_PGM_PFM(img_temp,16 {colour depth},filename2,false {flip H},false {flip V});
@@ -17355,7 +17289,7 @@ begin
           end
           else
           begin {colour}
-            if abs(head.nrbits)<=16 then
+            if abs(head.bitpix)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.ppm');
               save_PPM_PGM_PFM(img_temp,48 {colour depth},filename2,false,false);
@@ -17903,39 +17837,39 @@ begin
 
   savedialog1.initialdir:=ExtractFilePath(filename2);
   savedialog1.Filter := 'IEEE Float (-32) FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|16 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (special, naxis1=3)(*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-  if head.nrbits=16  then SaveDialog1.FilterIndex:=2
+  if head.bitpix=16  then SaveDialog1.FilterIndex:=2
   else
-  if head.nrbits=-32 then SaveDialog1.FilterIndex:=1
+  if head.bitpix=-32 then SaveDialog1.FilterIndex:=1
   else
-  if head.nrbits=8 then SaveDialog1.FilterIndex:=3;
+  if head.bitpix=8 then SaveDialog1.FilterIndex:=3;
 
 
   if savedialog1.execute then
   begin
     if SaveDialog1.FilterIndex=1 then
-      head.nrbits:=-32
+      head.bitpix:=-32
     else
     if SaveDialog1.FilterIndex=2 then
     begin
-      if head.nrbits=-32 then
-        if (IDYES= Application.MessageBox('16 bit will reduce image quality (was -32). Select yes to continue', 'Save as 16 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if nrbits is reduced}
+      if head.bitpix=-32 then
+        if (IDYES= Application.MessageBox('16 bit will reduce image quality (was -32). Select yes to continue', 'Save as 16 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if bitpix is reduced}
           exit;
-      head.nrbits:=16;
+      head.bitpix:=16;
     end
     else
     if SaveDialog1.FilterIndex=3 then
     begin
-      if abs(head.nrbits)>8 then
-        if (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if nrbits is reduced}
+      if abs(head.bitpix)>8 then
+        if (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if bitpix is reduced}
           exit;
-      head.nrbits:=8;
+      head.bitpix:=8;
     end
     else
     if SaveDialog1.FilterIndex=4 then {special naxis1=3}
     begin
-      if (IDYES= Application.MessageBox('Special 8 bit format. Select yes to continue', 'Save as special 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if nrbits is reduced}
+      if (IDYES= Application.MessageBox('Special 8 bit format. Select yes to continue', 'Save as special 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )=false then {ask queastion if bitpix is reduced}
          exit;
-      head.nrbits:=24;
+      head.bitpix:=24;
     end;
 
     save_fits(img_loaded,mainform1.memo1.lines,head,savedialog1.filename,false);

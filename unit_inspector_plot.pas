@@ -1200,9 +1200,9 @@ begin
   else
     aspect:=((sender=hfd_button1)=false);
 
-  if head.nrbits=8 then {convert to 16 bit}
+  if head.bitpix=8 then {convert to 16 bit}
   begin
-    head.nrbits:=16;
+    head.bitpix:=16;
     head.datamax_org:=65535;
   end;
 
@@ -1231,7 +1231,7 @@ begin
         mainform1.memo1.lines.add(head1[j]); {add lines to empthy memo1}
   mainform1.memo1.lines.add(head1[27]); {add end}
 
-  update_integer(mainform1.memo1.lines,'BITPIX  =',' / Bits per entry                                 ' ,head.nrbits);
+  update_integer(mainform1.memo1.lines,'BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer(mainform1.memo1.lines,'NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer(mainform1.memo1.lines,'NAXIS2  =',' / length of y axis                               ' ,head.height);
   if head.naxis3=1 then  remove_key(mainform1.memo1.lines,'NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
