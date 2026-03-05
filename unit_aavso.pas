@@ -1704,6 +1704,8 @@ begin
       break;
     end;
   end;
+
+  abrv_check1.color:=cldefault;
   plot_graph;
 end;
 

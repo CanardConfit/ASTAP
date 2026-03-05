@@ -9093,8 +9093,6 @@ end;
 procedure Tstackmenu1.stack_groups1Click(Sender: TObject);
 var
   index, counter, oldindex, position, i,j,groupsize,count,ColumnIndex, new_counter: integer;
-  jdf,oldjdf : double;
-  ListItem: TListItem;
   same_filter : boolean;
   new_files   : array of string;
   st:string;
