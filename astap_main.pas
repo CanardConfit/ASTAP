@@ -76,7 +76,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.03.05';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.03.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -14512,10 +14512,6 @@ begin
   frameW_sample:=head.width;
   frameH_sample:=head.height;
 
-  if pos('BOT',head.roworder)>0 then {'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
-  begin
-     frameY_sample:=head.height-frameY_sample- frameH_sample;//image was upside down stored.
-  end;
 
 
   sample_binning:=round(head.xbinning);
@@ -14542,6 +14538,11 @@ begin
         begin
           application.messagebox(pchar('Abort. Sample and target frames should have ROWORDER keyword value!'),'Abort',MB_OK);
           break;
+        end;
+
+        if pos('BOT',head.roworder)>0 then {'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
+        begin
+           frameY_sample:=head4.height-(frameY_sample + frameH_sample);//image was upside down stored.
         end;
 
         if crop_image(frameX_sample,frameY_sample,frameX_sample+frameW_sample-1,frameY_sample+frameH_sample-1, img4,head4,memo4) then
