@@ -65,11 +65,9 @@ uses
   fpreadPNG,
   fpreadBMP,
   fpreadJPEG,{all part of fcl-image}
-  //fpwriteTIFF,
   fpwritePNG,
   fpwriteBMP,
   fpwriteJPEG,
-  //fptiffcmn,  {tiff images}
   LCLVersion, InterfaceBase, LCLPlatformDef,
   SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
@@ -78,7 +76,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.03.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.03.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -14514,10 +14512,6 @@ begin
   frameW_sample:=head.width;
   frameH_sample:=head.height;
 
-  if pos('BOT',head.roworder)>0 then {'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
-  begin
-     frameY_sample:=head.height-frameY_sample- frameH_sample;//image was upside down stored.
-  end;
 
 
   sample_binning:=round(head.xbinning);
@@ -14544,6 +14538,11 @@ begin
         begin
           application.messagebox(pchar('Abort. Sample and target frames should have ROWORDER keyword value!'),'Abort',MB_OK);
           break;
+        end;
+
+        if pos('BOT',head.roworder)>0 then {'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
+        begin
+           frameY_sample:=head4.height-(frameY_sample + frameH_sample);//image was upside down stored.
         end;
 
         if crop_image(frameX_sample,frameY_sample,frameX_sample+frameW_sample-1,frameY_sample+frameH_sample-1, img4,head4,memo4) then
@@ -16187,12 +16186,11 @@ end;
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
 procedure HFD_without_auto_center(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux :double);//special for photmetry
 const
-  max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
   samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
 
 var
-  x1,y1,width5,height5,i,j,r1_square,r2_square,r2, distance,counter,annulus_width,r_aper,ars,signal_counter : integer;
-  SumVal, SumValX, SumValY, Sumval_small, Xg,Yg, r, val,mad_bg,radius,dx,dy,flux_e,sd_bg_e                  : double;
+  x1,y1,width5,height5,i,j,r1_square,r2_square,r2, distance,counter,annulus_width,r_aper : integer;
+  Sumval_small, r, val,mad_bg,radius,dx,dy,flux_e,sd_bg_e                  : double;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
 
 

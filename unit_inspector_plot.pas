@@ -189,10 +189,6 @@ begin
     if screenplot then memo2_message('Inspection of: '+filename2);//else in the batch routine
     restore_req:=false;
 
-     //not required
-  //  oldNaxis3:=headx.naxis3;//for case it is converted to mono
-
-
     if headx.naxis3>1 then {colour image}
     begin
       if duplicate(img,img_bk)=false then exit;//fastest way to duplicate an image
@@ -273,10 +269,6 @@ begin
           begin detection_level:= 7*noise_level; end;
         nhfd:=0;{set counters at zero}
 
-        //for fitsY:=0 to headx.height-1 do
-        //  for fitsX:=0 to headx.width-1  do
-        //    img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
-
         for fitsY:=1 to headx.height-1-1  do //Search through the image. Stay one pixel away from the borders.
         begin
           for fitsX:=1 to headx.width-1-1 do
@@ -306,7 +298,7 @@ begin
                     j:=n+yci;
                     i:=m+xci;
                     if ((j>=0) and (i>=0) and (j<headx.height) and (i<headx.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                      img_sa[0,j,i]:=retries;//use retries as marker. Then img_sa does not to be reset to 0!
+                      img_sa[0,j,i]:=retries;//use retries as marker. Then img_sa does not need to be reset to 0!
                   end;
 
                   if ((img[0,yci,  xci  ]<data_max) and

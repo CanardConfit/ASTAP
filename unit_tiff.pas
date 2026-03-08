@@ -1,8 +1,9 @@
 unit unit_tiff;
 
-{Writes uncompressed or compressed tiff files from an image array}
-{This unit can be called ASTAP-TIFF since it is developped for the ASTAP program}
-{Copyright 2018, 2026 by Han Kleijn}
+{Writes uncompressed or compressed tiff files from an image array
+This unit can be called ASTAP-TIFF since it is developped for the ASTAP program
+Copyright 2018, 2026 by Han Kleijn, www.hnsky.org
+email: han.k.. at...hnsky.org}
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24,7 +25,7 @@ function save_tiff_32(img: Timg_array; filen2, description: ansistring; flip_H, 
 function save_tiff_96(img: Timg_array; filen2, description: ansistring; flip_H, flip_V: boolean; compressionlevel: integer): boolean; //save to 96=3x32 color TIFF file, compressionlevel 0..3 equals clnone,clfastest, cldefault, clmax
 
 {Reading procedures}
-procedure read_tiff(filen: string; var img: Timg_array; out description: string; out bitspersample: word; out measured_max : double; out theresult: boolean); //no compression, lzw compressed, zip compressed, 8,16, 24, 32,48,64,96 bit
+procedure read_tiff(filen: string; var img: Timg_array; out description: string; out bitspersample: word; out measured_max : double; out theresult: boolean); //no compression, lzw compressed, zip compressed, 8,16,24,32,48,64,96 bit
 
 
 implementation
@@ -744,7 +745,6 @@ end;
 { -------------------------------------------------------------------------
   Generic TIFF Read Function (Updated for Big Endian support)
   ------------------------------------------------------------------------- }
-
 procedure read_tiff(filen: string; var img: Timg_array; out description: string;
   out bitspersample: word; out measured_max: double; out theresult: boolean);
 var
