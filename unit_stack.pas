@@ -6274,7 +6274,7 @@ procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
 begin
   if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<1)) then
   begin
-    application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them. Or select mode measure all and select later. Then press on play to measure.','Can not proceed!',0);
+    application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+#13+#10+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
     exit;
   end;
 
@@ -7912,9 +7912,9 @@ var
   database_col,j,ww,measuring_method                                               : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined,calibratedP,
-  oscP,disabled_autocenter                                                          : boolean;
+  oscP,disabled_autocenter,fixed_aperture,fixed_annulus                            : boolean;
   starlistx                                     : Tstar_list;
-  astr, filename1,totalnrstr,mess               : string;
+  astr, filename1,totalnrstr,mess,aperture_str, annulus_Ssr                        : string;
   oldra0 : double=0;
   olddec0: double=-pi/2;
   headx : theader;
@@ -7926,17 +7926,22 @@ var
             begin
               hfd1:=999;
               if disabled_autocenter=false then
-                HFD(img_loaded, round(deX - 1), round(deY - 1), annulus_radius  {annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc)  {star HFD and FWHM}
+                HFD(img_loaded, round(deX-1), round(deY-1), annulus_radius  {annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc)  {star HFD and FWHM}
+//              if HFD1>90 then //try alternative centering method like for R Mod
               else
-              begin //no auto center
+              begin //Try alternative autocenter method. E.g for R Mod
               //  if pos('CoRoT_223930736',vsp_vsx_list[j].abbr)>0 then
              //    beep;
         //        if ((abs(xc-1092)<20) and (abs(yc-968)<20)) then
       //          beep;
                 xc:=deX-1;
                 yc:=deY-1;
+//                find_star_center(img_loaded,3,round(deX-1), round(deY-1),xc,yc);//find center of gravity. For comets and problematic stars
                 HFD_without_auto_center(img_loaded,xc,yc, annulus_radius {annulus radius}, head.mzero_radius, adu_e, {unbinned} {out }snr, flux);//special for photometry
-                hfd1:=0.1;//unknown
+              //  if snr>6 then
+              //  begin
+                   hfd1:=0.1;//unknown
+               // end;
               end;
 
               if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
@@ -7991,7 +7996,7 @@ begin
 
   if ((measuring_method=0) and (length(mainform1.fshapes)<1)) then
   begin
-    application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them. Or select mode measure all and select later. Then press on play to measure.','Can not proceed!',0);
+    application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+#13+#10+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
     exit;
   end;
 
@@ -8050,9 +8055,14 @@ begin
 
     flipvertical:=mainform1.flip_vertical1.Checked;
     fliphorizontal:=mainform1.flip_horizontal1.Checked;
-    apert:=strtofloat2(flux_aperture1.Text);
+
+    aperture_str:=flux_aperture1.Text;
+    fixed_aperture:=pos('px',aperture_str)>0;
+    if fixed_aperture then
+       aperture_str:=stringreplace(aperture_str,'px','',[]);
+    apert:=strtofloat2(aperture_str);
     aperture_ratio:=apert;{remember apert setting}
-    annul:=strtofloat2(annulus_radius1.Text);
+    annul:=strtofloat2(stringreplace(annulus_radius1.Text,'px','',[]));
 
     esc_pressed:=False;
     warned:=False;
@@ -8184,24 +8194,24 @@ begin
 
         if apert <> 0 then {aperture<>auto}
         begin
-          analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only});
-          {find background, number of stars, median HFD}
-          if head.hfd_median <> 0 then
+          if  fixed_aperture=false then
           begin
-            head.mzero_radius:=head.hfd_median * apert / 2;{radius}
-            annulus_radius:=min(50, round(head.hfd_median * annul / 2) - 1);
-            {radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
+             analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only});  {find background, number of stars, median HFD}
+            if head.hfd_median <> 0 then
+              head.mzero_radius:=head.hfd_median * apert / 2 {radius}
+            else
+              head.mzero_radius:=99;{radius for measuring aperture}
           end
-          else
-            head.mzero_radius:=99;{radius for measuring aperture}
+          else //fixed aperture
+            head.mzero_radius:=apert;{radius}
+
+          annulus_radius:=min(50, round(annul) - 1);  {radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
         end
         else{auto}
         begin
           head.mzero_radius:=99;{radius for measuring using a small aperture}
           annulus_radius:=14;{annulus radius}
         end;
-
-
 
         {calibrate using POINT SOURCE calibration using hfd_median found earlier!!!}
         plot_and_measure_stars(img_loaded,mainform1.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
@@ -8296,6 +8306,9 @@ begin
                      listview7.Items.item[c].subitems.Strings[i+1]:= IntToStr(round(snr));
                      listview7.Items.item[c].subitems.Strings[i+2]:= IntToStr(round(flux));
                      new_object:=false;
+
+//                     if hfd1=0.1 then ListView7.Items.item[c].SubitemImages[i+1]:=29;
+
                      break;
                     end;
                   end;
@@ -8312,6 +8325,10 @@ begin
                     listview7.Items.item[c].subitems.Strings[P_nr-2]:= IntToStr(round(snr));
                     listview7.Items.item[c].subitems.Strings[P_nr-1]:= IntToStr(round(flux));
                     listview7.column[P_nr-3+1].tag:=j; //store star position in the variable list. Caption position is always one position higher then data
+
+  //                  if hfd1=0.1 then ListView7.Items.item[c].SubitemImages[P_nr-2]:=29;
+
+
                   end;//new object
                 end;//enough snr
               end;
@@ -9340,7 +9357,7 @@ var
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
   snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
-  disable_autocenter1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
+//  disable_autocenter1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
   hide_show_columns_listview7(true {tab8});
   stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
   saturation_level1.enabled:=set_saturation1.checked;
@@ -9793,7 +9810,7 @@ begin
   clear_added_AAVSO_columns;
   hide_show_columns_listview7(true {tab8 photometry});
   snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual
-  disable_autocenter1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
+//  disable_autocenter1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
 end;
 
 procedure Tstackmenu1.export_to_tg1Click(Sender: TObject);

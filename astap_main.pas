@@ -813,6 +813,7 @@ procedure plot_image(img: timage;center_image:boolean);
 procedure plot_histogram(img: Timage_array; update_hist: boolean);{get histogram}
 procedure HFD(img: Timage_array;x1,y1,rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out hfd1,star_fwhm,snr, flux,xc,yc:double);
 procedure HFD_without_auto_center(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux :double);//special for photmetry
+procedure find_star_center(img: Timage_array;box, x1,y1: integer; out xc,yc:double);{alternative method for comets and problematic stars}
 procedure backup_img;
 procedure restore_img;
 function load_image(filename2: string; out img: Timage_array; out head: theader; memo: tstrings; re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
@@ -4919,6 +4920,7 @@ end;
 
 procedure Tmainform1.clean_up1Click(Sender: TObject);
 begin
+  mainform1.clear_fshapes_array;
   plot_image(mainform1.image1,false);
 end;
 
@@ -5945,6 +5947,7 @@ end;
 
 procedure Tmainform1.remove_markers1Click(Sender: TObject);
 begin
+  mainform1.clear_fshapes_array;
   plot_image(mainform1.image1,false);
 end;
 
@@ -8691,7 +8694,7 @@ begin
       dum:=Sett.ReadString('stack','resize_factor',''); if dum<>'' then stackmenu1.resize_factor1.text:=dum;
       dum:=Sett.ReadString('stack','snr_min_p',''); if dum<>'' then stackmenu1.snr_min_photo1.text:=dum;
       dum:=Sett.ReadString('stack','flux_aperture',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
-      dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
+      dum:=Sett.ReadString('stack','annulus_rad',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
       dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
 
       c:=Sett.ReadInteger('stack','annotate_i',2); stackmenu1.annotate_mode1.itemindex:=c;
@@ -9121,7 +9124,7 @@ begin
 
       sett.writestring('stack','snr_min_p',stackmenu1.snr_min_photo1.text);
       sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
-      sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
+      sett.writestring('stack','annulus_rad',stackmenu1.annulus_radius1.text);
       sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
       sett.writeInteger('stack','annotate_i',stackmenu1.annotate_mode1.itemindex);
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
@@ -11685,10 +11688,16 @@ end;
 procedure calibrate_photometry(img : Timage_array; memo : tstrings; var head : Theader; update: boolean);
 var
   apert,annul         : double;
+  aperture_str        : string;
+  fixed_aperture      : boolean;
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
-  apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
+  aperture_str:=stackmenu1.flux_aperture1.Text;
+  fixed_aperture:=pos('px',aperture_str)>0;
+  if fixed_aperture then
+     aperture_str:=stringreplace(aperture_str,'px','',[]);
+  apert:=strtofloat2(aperture_str);{text "max" will generate a zero}
 
 
   if ((update) or (head.mzero=0) or (aperture_ratio<>apert){new calibration required} or (passband_active<>head.passband_database))  then
@@ -11701,14 +11710,22 @@ begin
 
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
-      analyse_image(img,head,30,0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
-      if head.hfd_median<>0 then
+      if  fixed_aperture=false then
       begin
-        memo2_message('Median HFD is '+floattostrf(head.hfd_median, ffgeneral, 2,0)+'. Aperture and annulus will be adapted accordingly.');;
-        head.mzero_radius:=head.hfd_median*apert/2;{radius}
-        annul:=strtofloat2(stackmenu1.annulus_radius1.text);
-        annulus_radius:=min(50,round(head.hfd_median*annul/2)-1);{Radius. Limit to 50 to prevent runtime errors}
-      end;
+        analyse_image(img,head,30,0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
+        if head.hfd_median<>0 then
+        begin
+          memo2_message('Median HFD is '+floattostrf(head.hfd_median, ffgeneral, 2,0)+'. Aperture and annulus will be adapted accordingly.');;
+          head.mzero_radius:=head.hfd_median*apert/2;{radius}
+        end
+        else
+          memo2_message('No stars detected');
+      end
+      else //fixed aperture radius in pixels
+        head.mzero_radius:=apert;{radius}
+
+      annul:=strtofloat2(stringreplace(stackmenu1.annulus_radius1.Text,'px','',[]));
+      annulus_radius:=min(50, round(annul) - 1);  {radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
     end
     else
     memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
@@ -14914,7 +14931,7 @@ begin
 end;
 
 
-procedure find_star_center(img: Timage_array;box, x1,y1: integer; out xc,yc:double);{}
+procedure find_star_center(img: Timage_array;box, x1,y1: integer; out xc,yc:double);{alternative method for comets and problematic stars}
 var
   i,j,k,w,h  : integer;
   value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
@@ -15786,7 +15803,21 @@ begin
   if ((stackmenu1.pagecontrol1.tabindex=8) and   (stackmenu1.measuring_method1.itemindex=0))  then {photometry}
   begin
     {star alignment}
-    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    if stackmenu1.disable_autocenter1.checked=false then
+      HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc) {auto center using HFD function}
+    else
+    begin
+      xc:=startX;
+      yc:=startY;
+      hfd2:=0.1;
+    end;
+
+//    if hfd2> 90 then//failure, try an alternative method e.g. for R Mon
+//    begin
+//      find_star_center(img_loaded,3,startX,startY,xc,yc);//find center of gravity. For comets and problematic stars
+//      HFD_without_auto_center(img_loaded,xc,yc, 14 {annulus radius}, 3 {aperture radius}, 0{adu_e}, {unbinned} {out }snr, flux);//special for photometry
+//      memo2_message('Alternative centering method used');
+//    end;
 
     if hfd2<90 then {detected something}
     begin

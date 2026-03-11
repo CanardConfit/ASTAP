@@ -935,7 +935,7 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count_v,count_b,count_r,count_i, count_sg,count_si, count_sr,k,icon_nr,i,j,vars_end,x,y,index,fc,countdelta, m,counter : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count_v,count_b,count_r,count_i, count_sg,count_si, count_sr,k,icon_nr,i,vars_end,x,y,index,fc,countdelta, m,counter : integer;
   scale,range, dummy,flux,magn_gaia,
   check_doc_magB,check_doc_magR, check_doc_magV, check_doc_magI,
   check_doc_magSG, check_doc_magSR, check_doc_magSI,
@@ -2214,7 +2214,7 @@ var
     c,date_column,i,icon_nr,m_index : integer;
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
-    transformation, transform_all_factors,transf_str,varab  : string;
+    transformation, transform_all_factors,transf_str,varab, aperture_str  : string;
     apply_transformation,valid_comp,gaia_ensemble : boolean;
     snr_value,err_by_snr,var_magn,check_magn,var_flux, check_flux,
     var_v_correction,var_b_correction,var_r_correction,
@@ -2321,7 +2321,9 @@ begin
     comments:='';
   end;
 
-  settings:=settings+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
+  aperture_str:=stackmenu1.flux_aperture1.text;
+  if pos('px',aperture_str)=0 then aperture_str:=aperture_str+' HFD';
+  settings:=settings+' Aperture='+aperture_str+vsep+' annulus='+stackmenu1.annulus_radius1.text;
 //  if (disable_autocenter1.checked and disable_autocenter1.enabled) then settings:=settings+' Disabled autcenter';
 
 
@@ -2599,7 +2601,7 @@ begin
                           airmass_str+delim+
                           'na'+delim+ {group}
                           chartID +delim+
-                          transformation+comp_magn_info+' ('+settings+ ')'+#13+#10;
+                          transformation+comp_magn_info+settings+#13+#10;
 
 
            date_observation:=copy(stackmenu1.listview7.Items.item[c].subitems.Strings[P_date],1,10);
