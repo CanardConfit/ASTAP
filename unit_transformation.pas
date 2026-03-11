@@ -72,13 +72,16 @@ var
   TvrSTR,
   Tv_vrSTR,
   Tr_vrSTR,
+  TriSTR,
+  Tr_riSTR,
+  Ti_riSTR,
 
-  TgrSTR, //sloan
-  Tg_grSTR,//sloan
-  Tr_grSTR,//sloan
-  TriSTR, //sloan
-  Tr_riSTR,//sloan
-  Ti_riSTR//sloan
+  TgrSTR_sloan, //sloan
+  Tg_grSTR_sloan,//sloan
+  Tr_grSTR_sloan,//sloan
+  TriSTR_sloan, //sloan
+  Tr_riSTR_sloan,//sloan
+  Ti_riSTR_sloan//sloan
   : string;
 
   sloan : boolean=false;
@@ -108,7 +111,7 @@ var
   Tbv, Tbv_intercept, Tbv_sd, Tv_bv, Tv_bv_intercept, Tv_bv_sd, Tb_bv, Tb_bv_intercept, Tb_bv_sd,
   Tvr, Tvr_intercept, Tvr_sd, Tr_vr, Tr_vr_intercept, Tr_vr_sd, Tv_vr, Tv_vr_intercept, Tv_vr_sd,
   Tri, Tri_intercept, Tri_sd, Ti_ri, Ti_ri_intercept, Ti_ri_sd, Tr_ri, Tr_ri_intercept, Tr_ri_sd   : double;
-  abbreviation,abbreviationB,abbreviationR,abbreviationI : array of string;
+  abbreviation,abbreviationBV,abbreviationVR,abbreviationRI : array of string;
   Tbv_labelstr,
   Tb_bv_labelstr,
   Tv_bv_labelstr,
@@ -179,6 +182,8 @@ const
         Result := Round(bspace + (h - bspace * 2) * (ymax - y) / (ymax - ymin));
       end;
 begin
+  if idx<0 then exit;//no data
+
   if ((B_listBV=nil) and (V_listVR=nil) and (R_listRI=nil)) then
     exit;//no data
 
@@ -212,18 +217,18 @@ begin
     if idx<= 2 then
     begin
        x_vals[i] := B_list_documentedBV[i] - V_list_documentedBV[i];     // (B−V)
-       auid[i]:=abbreviationB[i];
+       auid[i]:=abbreviationBV[i];
     end
     else
     if idx<= 5 then
     begin
        x_vals[i] := V_list_documentedVR[i] - R_list_documentedVR[i];     // (V-R)
-       auid[i]:=abbreviationR[i];
+       auid[i]:=abbreviationVR[i];
     end
     else
     begin
        x_vals[i] := R_list_documentedRI[i] - I_list_documentedRI[i];     // (R-I)
-       auid[i]:=abbreviationR[i];
+       auid[i]:=abbreviationRI[i];
     end;
 
 
@@ -521,15 +526,20 @@ begin
     Tvr_tempSTR:=TvrSTR;
     Tv_vr_tempSTR:=Tv_vrSTR;
     Tr_vr_tempSTR:=Tr_vrSTR;
+    Tri_tempSTR:=TriSTR_sloan;
+    Tr_ri_tempSTR:=Tr_riSTR_sloan;
+    Ti_ri_tempSTR:=Ti_riSTR_sloan;
+
   end
   else
   begin
-    Tbv_tempSTR:=TgrSTR;
-    Tb_bv_tempSTR:=Tg_grSTR;
-    Tv_bv_tempSTR:=Tr_grSTR;
-    Tvr_tempSTR:=TriSTR;
-    Tv_vr_tempSTR:=Tr_riSTR;
-    Tr_vr_tempSTR:=Ti_riSTR;
+    Tbv_tempSTR:=TgrSTR_sloan;
+    Tb_bv_tempSTR:=Tg_grSTR_sloan;
+    Tv_bv_tempSTR:=Tr_grSTR_sloan;
+
+    Tvr_tempSTR:=TriSTR_sloan;
+    Tv_vr_tempSTR:=Tr_riSTR_sloan;
+    Tr_vr_tempSTR:=Ti_riSTR_sloan;
   end;
 
 end;
@@ -548,6 +558,18 @@ begin
     RadioButtontr_ri1.caption:=Tr_ri_labelstr+Tr_ri_tempSTR;
     RadioButtonti_ri1.caption:=Ti_ri_labelstr+Ti_ri_tempSTR;
   end;
+end;
+
+
+function filter(s: string) : boolean;
+begin
+  result:=false;
+  if pos ('859',s)>0 then result:=true
+  else
+  if pos ('860',s)>0 then result:=true
+  else
+  if pos ('879',s)>0 then result:=true;
+
 end;
 
 procedure transformation(const ic_B,ic_V,ic_R,ic_R2, ic_I : integer);
@@ -683,19 +705,19 @@ begin
       setlength(V_listBV,starnr);
       setlength(B_list_documentedBV,starnr);
       setlength(V_list_documentedBV,starnr);
-      setlength(abbreviationB,starnr);
+      setlength(abbreviationBV,starnr);
 
 
 
       for j:=0 to starnr-1 do //sanitize. Remove stars without measured or documented magnitudes
       begin
-        if ((B_list[j]>0) and (V_list[j]>0) and(B_list_documented[j]>0) and (V_list_documented[j]>0)) then  //valid data only
+        if ((B_list[j]>0) and (V_list[j]>0) and(B_list_documented[j]>0) and (V_list_documented[j]>0) { and (filter(abbreviation[j]))}) then  //valid data only
         begin
           B_listBV[counter]:=B_list[j];
           V_listBV[counter]:=V_list[j]; //use V_listB to prevent it is modified and used in VR transformation calculation
           B_list_documentedBV[counter]:=B_list_documented[j];
           V_list_documentedBV[counter]:=V_list_documented[j];
-          abbreviationB[counter]:= abbreviation[j];
+          abbreviationBV[counter]:= abbreviation[j];
           inc(counter);
         end;
       end;
@@ -703,12 +725,12 @@ begin
       setlength(V_listBV,counter);//reduce size
       setlength(B_list_documentedBV,counter);//reduce size
       setlength(V_list_documentedBV,counter);//reduce size
-      setlength(abbreviationB,counter);//reduce size
+      setlength(abbreviationBV,counter);//reduce size
 
       if counter<3 then
       begin
         beep;
-        mess:=mess+'Abort, not enough B and V stars found!';
+        mess:=mess+' Abort, not enough B and V stars found!';
         bv_success:=false;
       end
       else
@@ -750,20 +772,20 @@ begin
     if ((iconV) and  (iconR))then
     begin
       setlength(V_listVR,starnr);
-      setlength(V_list_documentedVR,starnr);
       setlength(R_listVR,starnr);
+      setlength(V_list_documentedVR,starnr);
       setlength(R_list_documentedVR,starnr);
-      setlength(abbreviationR,starnr);
+      setlength(abbreviationVR,starnr);
       counter:=0;
       for j:=0 to starnr-1 do //sanitize. Removed stars without measured or documented magnitudes
       begin
-        if ((V_list[j]>0) and (R_list[j]>0) and(V_list_documented[j]>0) and (R_list_documented[j]>0)) then  //valid data only
+        if ((V_list[j]>0) and (R_list[j]>0) and(V_list_documented[j]>0) and (R_list_documented[j]>0) {and (filter(abbreviation[j]))} ) then  //valid data only
         begin
           V_listVR[counter]:=V_list[j];
           R_listVR[counter]:=R_list[j];
           V_list_documentedVR[counter]:=V_list_documented[j];
           R_list_documentedVR[counter]:=R_list_documented[j];
-          abbreviationR[counter]:= abbreviation[j];
+          abbreviationVR[counter]:= abbreviation[j];
           inc(counter);
         end;
       end;
@@ -771,12 +793,12 @@ begin
       setlength(R_listVR,counter);
       setlength(V_list_documentedVR,counter);
       setlength(R_list_documentedVR,counter);
-      setlength(abbreviationR,counter);
+      setlength(abbreviationVR,counter);
 
       if counter<3 then
       begin
         beep;
-        mess:=mess+'Abort, not enough V and R stars found!';
+        mess:=mess+' Abort, not enough V and R stars found!';
 
         vr_success:=false;
       end
@@ -822,17 +844,17 @@ begin
       setlength(R_list_documentedRI,starnr);
       setlength(I_listRI,starnr);
       setlength(I_list_documentedRI,starnr);
-      setlength(abbreviationI,starnr);
+      setlength(abbreviationRI,starnr);
       counter:=0;
       for j:=0 to starnr-1 do //sanitize. Removed stars without measured or documented magnitudes
       begin
-        if ((R_list[j]>0) and (I_list[j]>0) and(R_list_documented[j]>0) and (I_list_documented[j]>0)) then  //valid data only
+        if ((R_list[j]>0) and (I_list[j]>0) and(R_list_documented[j]>0) and (I_list_documented[j]>0)  {and (filter(abbreviation[j]))}) then  //valid data only
         begin
           R_listRI[counter]:=R_list[j];
           I_listRI[counter]:=I_list[j];
           R_list_documentedRI[counter]:=R_list_documented[j];
           I_list_documentedRI[counter]:=I_list_documented[j];
-          abbreviationI[counter]:= abbreviation[j];
+          abbreviationRI[counter]:= abbreviation[j];
           inc(counter);
         end;
       end;
@@ -840,12 +862,12 @@ begin
       setlength(I_listRI,counter);
       setlength(R_list_documentedRI,counter);
       setlength(I_list_documentedRI,counter);
-      setlength(abbreviationI,counter);
+      setlength(abbreviationRI,counter);
 
       if counter<3 then
       begin
         beep;
-        mess:=mess+'Abort, not enough R and I stars found!';
+        mess:=mess+' Abort, not enough R and I stars found!';
 
         ri_success:=false;
       end
@@ -902,7 +924,10 @@ begin
     if vr_success then
       idx:=3 //show bv graph
     else
-      idx:=6;//show vr graph if available
+    if ri_success then
+        idx:=6 //show bv graph
+    else
+      idx:=-1;//show vr graph if available
 
     if ((bv_success) or (vr_success) or (ri_success)) then
     begin
@@ -1127,19 +1152,25 @@ begin
     TbvSTR:=Tbv_tempSTR;//store at correct string
     Tb_bvSTR:=Tb_bv_tempSTR;
     Tv_bvSTR:=Tv_bv_tempSTR;
+
     TvrSTR:=Tvr_tempSTR;
     Tv_vrSTR:=Tv_vr_tempSTR;
     Tr_vrSTR:=Tr_vr_tempSTR;
+
+    TriSTR:=Tri_tempSTR;
+    Tr_riSTR:=Tr_ri_tempSTR;
+    Ti_riSTR:=Ti_ri_tempSTR;
+
     sloan:=false;
   end
   else
   begin
-    TgrSTR:=Tbv_tempSTR; //store at correct string
-    Tg_grSTR:=Tb_bv_tempSTR;
-    Tr_grSTR:=Tv_bv_tempSTR;
-    TriSTR:=Tvr_tempSTR;
-    Tr_riSTR:=Tv_vr_tempSTR;
-    Ti_riSTR:=Tr_vr_tempSTR;
+    TgrSTR_sloan:=Tbv_tempSTR; //store at correct string
+    Tg_grSTR_sloan:=Tb_bv_tempSTR;
+    Tr_grSTR_sloan:=Tv_bv_tempSTR;
+    TriSTR_sloan:=Tvr_tempSTR;
+    Tr_riSTR_sloan:=Tv_vr_tempSTR;
+    Ti_riSTR_sloan:=Tr_vr_tempSTR;
     sloan:=true;
   end;
 

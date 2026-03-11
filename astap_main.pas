@@ -8784,12 +8784,12 @@ begin
       Tv_vrSTR:=Sett.ReadString('transf','Tv_vr','0'); {transformation}
       Tr_vrSTR:=Sett.ReadString('transf','Tr_vr','0'); {transformation}
 
-      TgrSTR:=Sett.ReadString('transf','Tgr','1'); {transformation}
-      Tg_grSTR:=Sett.ReadString('transf','Tg_gr','0'); {transformation}
-      Tr_grSTR:=Sett.ReadString('transf','Tr_gr','0'); {transformation}
-      TriSTR:=Sett.ReadString('transf','Tri','1'); {transformation}
-      Tr_riSTR:=Sett.ReadString('transf','Tr_ri','0'); {transformation}
-      Ti_riSTR:=Sett.ReadString('transf','Ti_ri','0'); {transformation}
+      TgrSTR_sloan:=Sett.ReadString('transf','Tgr','1'); {transformation}
+      Tg_grSTR_sloan:=Sett.ReadString('transf','Tg_gr','0'); {transformation}
+      Tr_grSTR_sloan:=Sett.ReadString('transf','Tr_gr','0'); {transformation}
+      TriSTR_sloan:=Sett.ReadString('transf','Tri','1'); {transformation}
+      Tr_riSTR_sloan:=Sett.ReadString('transf','Tr_ri','0'); {transformation}
+      Ti_riSTR_sloan:=Sett.ReadString('transf','Ti_ri','0'); {transformation}
 
 
       sloan:=Sett.ReadBool('transf','sloan',false);
@@ -9210,12 +9210,12 @@ begin
      sett.writestring('transf','Tv_vr',Tv_vrSTR);
      sett.writestring('transf','Tr_vr',Tr_vrSTR);
 
-     sett.writestring('transf','Tgr',TgrSTR);
-     sett.writestring('transf','Tg_gr',Tg_grSTR);
-     sett.writestring('transf','Tr_gr',Tr_grSTR);
-     sett.writestring('transf','Tri',TriSTR);
-     sett.writestring('transf','Tr_ri',Tr_riSTR);
-     sett.writestring('transf','Ti_ri',Ti_riSTR);
+     sett.writestring('transf','Tgr',TgrSTR_sloan);
+     sett.writestring('transf','Tg_gr',Tg_grSTR_sloan);
+     sett.writestring('transf','Tr_gr',Tr_grSTR_sloan);
+     sett.writestring('transf','Tri',TriSTR_sloan);
+     sett.writestring('transf','Tr_ri',Tr_riSTR_sloan);
+     sett.writestring('transf','Ti_ri',Ti_riSTR_sloan);
 
      sett.writebool('transf','sloan',sloan);
 
