@@ -935,7 +935,7 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count_v,count_b,count_r,count_i, count_sg,count_si, count_sr,k,icon_nr,i,j,vars_end,x,y,index,fc,countdelta, m,counter : integer;
+  x1,y1,c,textp1,textp2,textp3,textp4, nrmarkX, nrmarkY,date_column,count_v,count_b,count_r,count_i, count_sg,count_si, count_sr,k,icon_nr,i,vars_end,x,y,index,fc,countdelta, m,counter : integer;
   scale,range, dummy,flux,magn_gaia,
   check_doc_magB,check_doc_magR, check_doc_magV, check_doc_magI,
   check_doc_magSG, check_doc_magSR, check_doc_magSI,
@@ -1377,8 +1377,8 @@ begin
 
        if ((g_r_check<>-99) and (g_r_comp<>-99)) then //apply transformation on check star to check transformation
        begin
-         SGcorrection:= strtofloat2(Tg_grSTR) * strtofloat2(TgrSTR) * (g_r_check - g_r_comp);
-         SRcorrection:= strtofloat2(Tr_grSTR) * strtofloat2(TgrSTR) * (g_r_check - g_r_comp);
+         SGcorrection:= strtofloat2(Tg_grSTR_sloan) * strtofloat2(TgrSTR_sloan) * (g_r_check - g_r_comp);
+         SRcorrection:= strtofloat2(Tr_grSTR_sloan) * strtofloat2(TgrSTR_sloan) * (g_r_check - g_r_comp);
          SGcorrectionstr:=', transformed g-G='+floattostrF(checkmeanSG-check_doc_magSG+SGcorrection,ffFixed,0,3);
          SRcorrectionstr:=', transformed r-R='+floattostrF(checkmeanSR-check_doc_magSR+SRcorrection,ffFixed,0,3);
        end
@@ -1389,8 +1389,8 @@ begin
 
        if ((r_i_check>-99) and (r_i_comp<>-99)) then //apply transformation on check star to check transformation
        begin
-         SRcorrection:= strtofloat2(Tr_riSTR) * strtofloat2(TriSTR) * (r_i_check - r_i_comp);
-         SIcorrection:= strtofloat2(Ti_riSTR) * strtofloat2(TriSTR) * (r_i_check - r_i_comp);
+         SRcorrection:= strtofloat2(Tr_riSTR_sloan) * strtofloat2(TriSTR_sloan) * (r_i_check - r_i_comp);
+         SIcorrection:= strtofloat2(Ti_riSTR_sloan) * strtofloat2(TriSTR_sloan) * (r_i_check - r_i_comp);
          SRcorrectionstr:=', transformed r-R='+floattostrF(checkmeanSR-check_doc_magSR+SRcorrection,ffFixed,0,3);
          SIcorrectionstr:=', transformed i-I='+floattostrF(checkmeanSI-check_doc_magSI+SIcorrection,ffFixed,0,3);
        end
@@ -2214,7 +2214,7 @@ var
     c,date_column,i,icon_nr,m_index : integer;
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
-    transformation, transform_all_factors,transf_str,varab  : string;
+    transformation, transform_all_factors,transf_str,varab, aperture_str  : string;
     apply_transformation,valid_comp,gaia_ensemble : boolean;
     snr_value,err_by_snr,var_magn,check_magn,var_flux, check_flux,
     var_v_correction,var_b_correction,var_r_correction,
@@ -2321,7 +2321,9 @@ begin
     comments:='';
   end;
 
-  settings:=settings+' aperture='+stackmenu1.flux_aperture1.text+' HFD'+vsep+' annulus='+stackmenu1.annulus_radius1.text+' HFD';
+  aperture_str:=stackmenu1.flux_aperture1.text;
+  if pos('px',aperture_str)=0 then aperture_str:=aperture_str+' HFD';
+  settings:=settings+' Aperture='+aperture_str+vsep+' annulus='+stackmenu1.annulus_radius1.text;
 //  if (disable_autocenter1.checked and disable_autocenter1.enabled) then settings:=settings+' Disabled autcenter';
 
 
@@ -2337,14 +2339,14 @@ begin
     '#Tv_vr= ' + Tv_vrSTR+#13+#10+
     '#Tr_vr= ' + Tr_vrSTR+#13+#10;
 
-    if TgrSTR<>'' then
+    if TgrSTR_sloan<>'' then
     transform_all_factors:=transform_all_factors+
-    '#Tgr= ' + TgrSTR+#13+#10+
-    '#Tg_gr= ' + Tg_grSTR+#13+#10+
-    '#Tr_gr= ' + Tr_grSTR+#13+#10+
-    '#Tri= ' + TriSTR+#13+#10+
-    '#Tr_ri= ' + Tr_riSTR+#13+#10+
-    '#Ti_ri= ' + Ti_riSTR+#13+#10;
+    '#Tgr= ' + TgrSTR_sloan+#13+#10+
+    '#Tg_gr= ' + Tg_grSTR_sloan+#13+#10+
+    '#Tr_gr= ' + Tr_grSTR_sloan+#13+#10+
+    '#Tri= ' + TriSTR_sloan+#13+#10+
+    '#Tr_ri= ' + Tr_riSTR_sloan+#13+#10+
+    '#Ti_ri= ' + Ti_riSTR_sloan+#13+#10;
 
 
   end
@@ -2477,9 +2479,9 @@ begin
                  begin
                    if color_info[c].g_r_var<>-99 then
                    begin
-                     var_sg_correction:= strtofloat2(Tg_grSTR) * strtofloat2(TgrSTR) * (color_info[c].g_r_var{var} - color_info[c].g_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
+                     var_sg_correction:= strtofloat2(Tg_grSTR_sloan) * strtofloat2(TgrSTR_sloan) * (color_info[c].g_r_var{var} - color_info[c].g_r_comp); // Transf corr R = Tr_vr * Tvr *((v-r) - (V-R))
                      var_magn:=var_magn + var_sg_correction;
-                     transformation:='Transf corr. '+floattostr3(var_sg_correction)+'='+Tg_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
+                     transformation:='Transf corr. '+floattostr3(var_sg_correction)+'='+Tg_grSTR_sloan+'*'+TgrSTR_sloan+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
                    end
                    else
                    begin
@@ -2493,9 +2495,9 @@ begin
                  begin
                    if color_info[c].g_r_var<>-99 then
                    begin
-                     var_sr_correction:= strtofloat2(Tr_grSTR) * strtofloat2(TgrSTR) *( color_info[c].g_r_var{var} - color_info[c].g_r_comp);
+                     var_sr_correction:= strtofloat2(Tr_grSTR_sloan) * strtofloat2(TgrSTR_sloan) *( color_info[c].g_r_var{var} - color_info[c].g_r_comp);
                      var_magn:=var_magn+var_sr_correction;
-                     transformation:='Transf corr. '+floattostr3(var_sr_correction)+'='+Tr_grSTR+'*'+TgrSTR+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
+                     transformation:='Transf corr. '+floattostr3(var_sr_correction)+'='+Tr_grSTR_sloan+'*'+TgrSTR_sloan+'*('+floattostr3(color_info[c].g_r_var)+'-'+floattostr3(color_info[c].g_r_comp)+'). Filter used '+filter_used+'.';
                      //filter_used:='V';//change TG to V
                    end
                    else
@@ -2510,9 +2512,9 @@ begin
                  begin
                    if color_info[c].r_i_var<>-99 then
                      begin
-                     var_si_correction:= strtofloat2(Ti_riSTR) * strtofloat2(TriSTR) * (color_info[c].r_i_var{var} - color_info[c].r_i_comp);
+                     var_si_correction:= strtofloat2(Ti_riSTR_sloan) * strtofloat2(TriSTR_sloan) * (color_info[c].r_i_var{var} - color_info[c].r_i_comp);
                      var_magn:=var_magn + var_si_correction;
-                     transformation:='Transf corr. '+floattostr3(var_si_correction)+'='+Ti_riSTR+'*'+TriSTR+'*('+floattostr3(color_info[c].r_i_var)+'-'+floattostr3(color_info[c].r_i_comp)+'). Filter used '+filter_used+'.';
+                     transformation:='Transf corr. '+floattostr3(var_si_correction)+'='+Ti_riSTR_sloan+'*'+TriSTR_sloan+'*('+floattostr3(color_info[c].r_i_var)+'-'+floattostr3(color_info[c].r_i_comp)+'). Filter used '+filter_used+'.';
                      //filter_used:='R';//change TR to R
                    end
                    else
@@ -2599,7 +2601,7 @@ begin
                           airmass_str+delim+
                           'na'+delim+ {group}
                           chartID +delim+
-                          transformation+comp_magn_info+' ('+settings+ ')'+#13+#10;
+                          transformation+comp_magn_info+settings+#13+#10;
 
 
            date_observation:=copy(stackmenu1.listview7.Items.item[c].subitems.Strings[P_date],1,10);

@@ -18,9 +18,12 @@ type
     RadioButtonTbv1: TRadioButton;
     RadioButtonTb_bv1: TRadioButton;
     RadioButtonTr_vr1: TRadioButton;
+    RadioButtonTi_ri1: TRadioButton;
     RadioButtonTvr1: TRadioButton;
+    RadioButtonTri1: TRadioButton;
     RadioButtonTv_bv1: TRadioButton;
     RadioButtonTv_vr1: TRadioButton;
+    RadioButtonTr_ri1: TRadioButton;
     sloan_checkBox1: TCheckBox;
     checkBox_auid1: TCheckBox;
     error_label2: TLabel;
@@ -69,13 +72,16 @@ var
   TvrSTR,
   Tv_vrSTR,
   Tr_vrSTR,
+  TriSTR,
+  Tr_riSTR,
+  Ti_riSTR,
 
-  TgrSTR, //sloan
-  Tg_grSTR,//sloan
-  Tr_grSTR,//sloan
-  TriSTR, //sloan
-  Tr_riSTR,//sloan
-  Ti_riSTR//sloan
+  TgrSTR_sloan, //sloan
+  Tg_grSTR_sloan,//sloan
+  Tr_grSTR_sloan,//sloan
+  TriSTR_sloan, //sloan
+  Tr_riSTR_sloan,//sloan
+  Ti_riSTR_sloan//sloan
   : string;
 
   sloan : boolean=false;
@@ -90,23 +96,33 @@ uses astap_main,unit_stack, unit_contour, unit_aavso;
 { TForm_transformation1 }
 
 var
-  B_list,
-  V_listB,
-  V_listR,
-  R_list,
-  B_list_documented,
-  V_list_documentedB,
-  V_list_documentedR,
-  R_list_documented  : array of double;
+  B_listBV,
+  V_listBV,
+  V_listVR,
+  R_listVR,
+  R_listRI,
+  I_listRI,
+  B_list_documentedBV,
+  V_list_documentedBV,
+  V_list_documentedVR,
+  R_list_documentedVR,
+  R_list_documentedRI,
+  I_list_documentedRI   : array of double;
   Tbv, Tbv_intercept, Tbv_sd, Tv_bv, Tv_bv_intercept, Tv_bv_sd, Tb_bv, Tb_bv_intercept, Tb_bv_sd,
-  Tvr, Tvr_intercept, Tvr_sd, Tr_vr, Tr_vr_intercept, Tr_vr_sd, Tv_vr, Tv_vr_intercept, Tv_vr_sd : double;
-  abbreviation,abbreviationB,abbreviationR : array of string;
+  Tvr, Tvr_intercept, Tvr_sd, Tr_vr, Tr_vr_intercept, Tr_vr_sd, Tv_vr, Tv_vr_intercept, Tv_vr_sd,
+  Tri, Tri_intercept, Tri_sd, Ti_ri, Ti_ri_intercept, Ti_ri_sd, Tr_ri, Tr_ri_intercept, Tr_ri_sd   : double;
+  abbreviation,abbreviationBV,abbreviationVR,abbreviationRI : array of string;
   Tbv_labelstr,
   Tb_bv_labelstr,
   Tv_bv_labelstr,
   Tvr_labelstr,
   Tv_vr_labelstr,
   Tr_vr_labelstr,
+  Tri_labelstr,
+  Tr_ri_labelstr,
+  Ti_ri_labelstr,
+
+
 
 
   Tbv_tempSTR,
@@ -114,7 +130,10 @@ var
   Tv_bv_tempSTR,
   Tvr_tempSTR,
   Tv_vr_tempSTR,
-  Tr_vr_tempSTR    : string;
+  Tr_vr_tempSTR,
+  Tri_tempSTR,
+  Tr_ri_tempSTR,
+  Ti_ri_tempSTR : string;
 
 
 
@@ -125,6 +144,7 @@ var
   B_str:string='B';
   V_str:string='V';
   R_str:string='R';
+  I_str:string='I';
 
 const
   transf_filter_sigma :double=2; //to filter out outliers
@@ -162,7 +182,9 @@ const
         Result := Round(bspace + (h - bspace * 2) * (ymax - y) / (ymax - ymin));
       end;
 begin
-  if ((V_listB=nil) and (V_listR=nil)) then
+  if idx<0 then exit;//no data
+
+  if ((B_listBV=nil) and (V_listVR=nil) and (R_listRI=nil)) then
     exit;//no data
 
   show_auid:=form_transformation1.checkBox_auid1.checked;
@@ -172,9 +194,12 @@ begin
 
 
   if idx<= 2 then
-     N := Length(B_list_documented) //B-V
+     N := Length(B_list_documentedBV) //B-V
   else
-     N := Length(V_list_documentedR);//V-R
+  if idx<= 5 then
+     N := Length(V_list_documentedVR)//V-R
+  else
+     N := Length(R_list_documentedRI);//R-I
 
   if N=0 then Exit;
 
@@ -191,20 +216,26 @@ begin
   begin
     if idx<= 2 then
     begin
-       x_vals[i] := B_list_documented[i] - V_list_documentedB[i];     // (B−V)
-       auid[i]:=abbreviationB[i];
+       x_vals[i] := B_list_documentedBV[i] - V_list_documentedBV[i];     // (B−V)
+       auid[i]:=abbreviationBV[i];
+    end
+    else
+    if idx<= 5 then
+    begin
+       x_vals[i] := V_list_documentedVR[i] - R_list_documentedVR[i];     // (V-R)
+       auid[i]:=abbreviationVR[i];
     end
     else
     begin
-       x_vals[i] := V_list_documentedR[i] - R_list_documented[i];     // (V-R)
-       auid[i]:=abbreviationR[i];
+       x_vals[i] := R_list_documentedRI[i] - I_list_documentedRI[i];     // (R-I)
+       auid[i]:=abbreviationRI[i];
     end;
 
 
 
     case idx of
                 0: begin
-                     y_vals[i] := B_list[i] - V_listB[i];         // Tbv (b−v)
+                     y_vals[i] := B_listBV[i] - V_listBV[i];         // Tbv (b−v)
                      slope:=1/Tbv;   // Tbv = reciprocal of slope of (b-v) plotted versus (B-V)     So inverse slope!!
                      form_transformation1.label1.caption:='1/Slope: '+ FormatFloat('0.000',Tbv);// Tbv = reciprocal of slope of (b-v) plotted versus (B-V)     So inverse slope!!
                      intercept:=Tbv_intercept;
@@ -213,19 +244,28 @@ begin
                      y_label:=lowercase(b_str)+'-'+lowercase(v_str)+' (instrumental - instrumental)';
                    end;
                 3: begin
-                      y_vals[i] := V_listR[i] - R_list[i];     // Tbv (v-r)
+                      y_vals[i] := V_listVR[i] - R_listVR[i];     // Tvr (v-r)
                       slope:=1/Tvr;   // Tvr = reciprocal of slope of (v-r) plotted versus (V-R)     So inverse slope!!
                       form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                       intercept:=Tvr_intercept;
                       sd:=Tvr_sd;
                       x_label:=V_str+'-'+R_str+' (documented - documented)';
                       y_label:=V_str+'-'+lowercase(R_str)+' (documented - instrumental)';
-
+                   end;
+                6: begin
+                      y_vals[i] := R_listRI[i] - I_listRI[i];     // Tvr (v-r)
+                      slope:=1/Tri;   // Tri = reciprocal of slope of (r-i) plotted versus (R-I)     So inverse slope!!
+                      form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
+                      intercept:=Tri_intercept;
+                      sd:=Tri_sd;
+                      x_label:=R_str+'-'+I_str+' (documented - documented)';
+                      y_label:=R_str+'-'+lowercase(I_str)+' (documented - instrumental)';
                    end;
 
 
+
                 1: begin
-                      y_vals[i] := B_list_documented[i] - B_list[i];       // Tb_bv
+                      y_vals[i] := B_list_documentedBV[i] - B_listBV[i];       // Tb_bv
                       slope:=Tb_bv; // Tbv = slope of (B-b) versus (B-V)
                       form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                       intercept:=Tb_bv_intercept;
@@ -234,7 +274,7 @@ begin
                       y_label:=B_str+'-'+lowercase(B_str)+' (documented - instrumental)';
                    end;
                 4: begin
-                      y_vals[i] := V_list_documentedR[i] - V_listR[i];       // Tv_vr
+                      y_vals[i] := V_list_documentedVR[i] - V_listVR[i];       // Tv_vr
                       slope:=Tv_vr; // Tvr = slope of (R-r) versus (V-R)
                       form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                       intercept:=Tv_vr_intercept;
@@ -242,10 +282,20 @@ begin
                       x_label:=V_str+'-'+R_str+' (documented - documented)';
                       y_label:=V_str+'-'+lowercase(V_str)+' (documented - instrumental)';
                    end;
+                7: begin
+                      y_vals[i] := R_list_documentedRI[i] - R_listRI[i];       // Tr_ri
+                      slope:=Tr_ri; // Tri = slope of (I-i) versus (R-I)
+                      form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
+                      intercept:=Tr_ri_intercept;
+                      sd:=Tr_ri_sd;
+                      x_label:=R_str+'-'+I_str+' (documented - documented)';
+                      y_label:=R_str+'-'+lowercase(R_str)+' (documented - instrumental)';
+                   end;
+
 
 
                 2: begin
-                     y_vals[i] := V_list_documentedB[i] - V_listB[i];       // Tv_bv
+                     y_vals[i] := V_list_documentedBV[i] - V_listBV[i];       // Tv_bv
                      slope:=Tv_bv; // Tbv = slope of (V-v) versus (B-V)
                      form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                      intercept:=Tv_bv_intercept;
@@ -254,7 +304,7 @@ begin
                      y_label:=V_str+'-'+lowercase(V_str)+' (documented - instrumental)';
                    end;
                 5: begin
-                     y_vals[i] := R_list_documented[i] - R_list[i];       // Tr_vr
+                     y_vals[i] := R_list_documentedVR[i] - R_listVR[i];       // Tr_vr
                      slope:=Tr_vr; // Tvr = slope of (R-r) versus (V-R)
                      form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
                      intercept:=Tr_vr_intercept;
@@ -262,8 +312,15 @@ begin
                      x_label:=V_str+'-'+(R_str)+' (documented - documented)';
                      y_label:=R_str+'-'+lowercase(R_str)+' (documented - instrumental)';
                    end;
-
-
+                8: begin
+                     y_vals[i] := I_list_documentedRI[i] - I_listRI[i];       // Ti_ri
+                     slope:=Ti_ri; // Tri = slope of (I-i) versus (R-I)
+                     form_transformation1.label1.caption:='Slope: '+ FormatFloat('0.000', slope);
+                     intercept:=Ti_ri_intercept;
+                     sd:=Ti_ri_sd;
+                     x_label:=R_str+'-'+(I_str)+' (documented - documented)';
+                     y_label:=I_str+'-'+lowercase(I_str)+' (documented - instrumental)';
+                   end;
                 end;//case
   end;
 
@@ -469,15 +526,20 @@ begin
     Tvr_tempSTR:=TvrSTR;
     Tv_vr_tempSTR:=Tv_vrSTR;
     Tr_vr_tempSTR:=Tr_vrSTR;
+    Tri_tempSTR:=TriSTR_sloan;
+    Tr_ri_tempSTR:=Tr_riSTR_sloan;
+    Ti_ri_tempSTR:=Ti_riSTR_sloan;
+
   end
   else
   begin
-    Tbv_tempSTR:=TgrSTR;
-    Tb_bv_tempSTR:=Tg_grSTR;
-    Tv_bv_tempSTR:=Tr_grSTR;
-    Tvr_tempSTR:=TriSTR;
-    Tv_vr_tempSTR:=Tr_riSTR;
-    Tr_vr_tempSTR:=Ti_riSTR;
+    Tbv_tempSTR:=TgrSTR_sloan;
+    Tb_bv_tempSTR:=Tg_grSTR_sloan;
+    Tv_bv_tempSTR:=Tr_grSTR_sloan;
+
+    Tvr_tempSTR:=TriSTR_sloan;
+    Tv_vr_tempSTR:=Tr_riSTR_sloan;
+    Tr_vr_tempSTR:=Ti_riSTR_sloan;
   end;
 
 end;
@@ -492,20 +554,39 @@ begin
     RadioButtontvr1.caption:=Tvr_labelstr+Tvr_tempSTR;
     RadioButtontv_vr1.caption:=Tv_vr_labelstr+Tv_vr_tempSTR;
     RadioButtontr_vr1.caption:=Tr_vr_labelstr+Tr_vr_tempSTR;
+    RadioButtontri1.caption:=Tri_labelstr+Tri_tempSTR;
+    RadioButtontr_ri1.caption:=Tr_ri_labelstr+Tr_ri_tempSTR;
+    RadioButtonti_ri1.caption:=Ti_ri_labelstr+Ti_ri_tempSTR;
   end;
 end;
 
-procedure transformation(const ic_B,ic_V,ic_R,ic_R2 : integer);
+
+function filter(s: string) : boolean;
+begin
+  result:=false;
+  if pos ('859',s)>0 then result:=true
+  else
+  if pos ('860',s)>0 then result:=true
+  else
+  if pos ('879',s)>0 then result:=true;
+
+end;
+
+procedure transformation(const ic_B,ic_V,ic_R,ic_R2, ic_I : integer);
 var
    col,row,
-   Rcount, Vcount, Bcount,
+   Rcount, Vcount, Bcount, Icount,
    starnr,icon_nr,nr,j,counter,selected_rows    :integer;
    abrv,auid,julian_str,mess : string;
-   iconB, iconV,iconR,vr_success,bv_success : boolean;
-   R,V,B,
+   iconB, iconV,iconR,iconI,
+   vr_success,bv_success,ri_success  : boolean;
+   R,V,B,I,
    value,snr,snrmin            : double;
-   V_list,
-   V_list_documented   : array of double;
+   B_list,V_list, R_list, I_list,
+   B_list_documented,
+   V_list_documented,
+   R_list_documented,
+   I_list_documented: array of double;
 
 begin
   form_transformation1.error_label1.caption:='';
@@ -529,15 +610,18 @@ begin
   setlength(B_list,nr);
   setlength(V_list,nr);
   setlength(R_list,nr);
+  setlength(I_list,nr);
 
   setlength(B_list_documented,nr);
   setlength(V_list_documented,nr);
   setlength(R_list_documented,nr);
+  setlength(I_list_documented,nr);
 
   setlength(abbreviation,nr);
   iconB:=false;
   iconV:=false;
   iconR:=false;
+  iconI:=false;
 
   snrmin:=strtofloat2(form_transformation1.transformation_snr1.text);
 
@@ -554,9 +638,11 @@ begin
         R:=0;
         V:=0;
         B:=0;
+        I:=0;
         Rcount:=0;
         Vcount:=0;
         Bcount:=0;
+        Icount:=0;
 
         for row := 0 to items.Count - 1 do //go through rows listview7
         begin
@@ -577,7 +663,9 @@ begin
                else
                if icon_nr=ic_V then begin V:=V+value; inc(Vcount);iconV:=true; end  //V or G TG
                else
-               if icon_nr=ic_B then begin B:=B+value; inc(Bcount);iconB:=true; end;  //B or TB
+               if icon_nr=ic_B then begin B:=B+value; inc(Bcount);iconB:=true; end  //B or TB
+               else
+               if icon_nr=ic_I then begin I:=I+value; inc(Icount);iconI:=true; end;  //I
               except
               end;
           end;
@@ -585,10 +673,12 @@ begin
         if Bcount<>0  then begin B:=B/Bcount; B_list[starnr]:=B;      end else B_list[starnr]:=0;//simple mean of all the B measurements of this star
         if Vcount<>0  then begin V:=V/Vcount; V_list[starnr]:=V;      end else V_list[starnr]:=0;//simple mean
         if Rcount<>0  then begin R:=R/Rcount; R_list[starnr]:=R;      end else R_list[starnr]:=0;;//simple mean
+        if Icount<>0  then begin I:=I/Icount; I_list[starnr]:=I;      end else I_list[starnr]:=0;;//simple mean
 
         B_list_documented[starnr]:=retrieve_documented_magnitude(false,ic_B,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
         V_list_documented[starnr]:=retrieve_documented_magnitude(false,ic_V,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
         R_list_documented[starnr]:=retrieve_documented_magnitude(false,ic_R,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
+        I_list_documented[starnr]:=retrieve_documented_magnitude(false,ic_I,col, abrv);//  retrieve comp magnitude from the abbrv string or online VSP
         abbreviation[starnr]:=auid;
 
         inc(starnr);
@@ -611,40 +701,42 @@ begin
     if ((iconB) and  (iconV)) then
     begin
       counter:=0;
-      setlength(V_listB,starnr);
-      setlength(V_list_documentedB,starnr);
-      setlength(abbreviationB,starnr);
+      setlength(B_listBV,starnr);
+      setlength(V_listBV,starnr);
+      setlength(B_list_documentedBV,starnr);
+      setlength(V_list_documentedBV,starnr);
+      setlength(abbreviationBV,starnr);
 
 
 
       for j:=0 to starnr-1 do //sanitize. Remove stars without measured or documented magnitudes
       begin
-        if ((B_list[j]>0) and (V_list[j]>0) and(B_list_documented[j]>0) and (V_list_documented[j]>0)) then  //valid data only
+        if ((B_list[j]>0) and (V_list[j]>0) and(B_list_documented[j]>0) and (V_list_documented[j]>0) { and (filter(abbreviation[j]))}) then  //valid data only
         begin
-          B_list[counter]:=B_list[j];
-          V_listB[counter]:=V_list[j]; //use V_listB to prevent it is modified and used in VR transformation calculation
-          B_list_documented[counter]:=B_list_documented[j];
-          V_list_documentedB[counter]:=V_list_documented[j];
-          abbreviationB[counter]:= abbreviation[j];
+          B_listBV[counter]:=B_list[j];
+          V_listBV[counter]:=V_list[j]; //use V_listB to prevent it is modified and used in VR transformation calculation
+          B_list_documentedBV[counter]:=B_list_documented[j];
+          V_list_documentedBV[counter]:=V_list_documented[j];
+          abbreviationBV[counter]:= abbreviation[j];
           inc(counter);
         end;
       end;
-      setlength(B_list,counter);//reduce size
-      setlength(V_listB,counter);//reduce size
-      setlength(B_list_documented,counter);//reduce size
-      setlength(V_list_documentedB,counter);//reduce size
-      setlength(abbreviationB,counter);//reduce size
+      setlength(B_listBV,counter);//reduce size
+      setlength(V_listBV,counter);//reduce size
+      setlength(B_list_documentedBV,counter);//reduce size
+      setlength(V_list_documentedBV,counter);//reduce size
+      setlength(abbreviationBV,counter);//reduce size
 
       if counter<3 then
       begin
         beep;
-        mess:=mess+'Abort, not enough B and V stars found!';
+        mess:=mess+' Abort, not enough B and V stars found!';
         bv_success:=false;
       end
       else
       begin
         compute_transformation_coefficients(
-          B_list_documented, V_list_documentedB, B_list, V_listB,
+          B_list_documentedBV, V_list_documentedBV, B_listBV, V_listBV,
           counter,
           {out} Tbv, Tbv_intercept, Tbv_sd,
               Tb_bv, Tb_bv_intercept, Tb_bv_sd,
@@ -679,39 +771,41 @@ begin
 
     if ((iconV) and  (iconR))then
     begin
-      setlength(V_listR,starnr);
-      setlength(V_list_documentedR,starnr);
-      setlength(abbreviationR,starnr);
+      setlength(V_listVR,starnr);
+      setlength(R_listVR,starnr);
+      setlength(V_list_documentedVR,starnr);
+      setlength(R_list_documentedVR,starnr);
+      setlength(abbreviationVR,starnr);
       counter:=0;
       for j:=0 to starnr-1 do //sanitize. Removed stars without measured or documented magnitudes
       begin
-        if ((V_list[j]>0) and (R_list[j]>0) and(V_list_documented[j]>0) and (R_list_documented[j]>0)) then  //valid data only
+        if ((V_list[j]>0) and (R_list[j]>0) and(V_list_documented[j]>0) and (R_list_documented[j]>0) {and (filter(abbreviation[j]))} ) then  //valid data only
         begin
-          V_listR[counter]:=V_list[j];
-          R_list[counter]:=R_list[j];
-          V_list_documentedR[counter]:=V_list_documented[j];
-          R_list_documented[counter]:=R_list_documented[j];
-          abbreviationR[counter]:= abbreviation[j];
+          V_listVR[counter]:=V_list[j];
+          R_listVR[counter]:=R_list[j];
+          V_list_documentedVR[counter]:=V_list_documented[j];
+          R_list_documentedVR[counter]:=R_list_documented[j];
+          abbreviationVR[counter]:= abbreviation[j];
           inc(counter);
         end;
       end;
-      setlength(V_listR,counter);
-      setlength(R_list,counter);
-      setlength(V_list_documentedR,counter);
-      setlength(R_list_documented,counter);
-      setlength(abbreviationR,counter);
+      setlength(V_listVR,counter);
+      setlength(R_listVR,counter);
+      setlength(V_list_documentedVR,counter);
+      setlength(R_list_documentedVR,counter);
+      setlength(abbreviationVR,counter);
 
       if counter<3 then
       begin
         beep;
-        mess:=mess+'Abort, not enough V and R stars found!';
+        mess:=mess+' Abort, not enough V and R stars found!';
 
         vr_success:=false;
       end
       else
       begin
         compute_transformation_coefficients(
-          V_list_documentedR, R_list_documented, V_listR, R_list,
+          V_list_documentedVR, R_list_documentedVR, V_listVR, R_listVR,
           counter,
           {out} Tvr, Tvr_intercept, Tvr_sd,
               Tv_vr, Tv_vr_intercept, Tv_vr_sd,
@@ -740,12 +834,86 @@ begin
       Tr_vr_tempSTR:=floattostrF(tr_vr,FFfixed,0,3);
     end;
 
-    if ((bv_success=false) and (vr_success=false)) then
+
+    //R & I
+    form_transformation1.error_label2.caption:='';
+
+    if ((iconR) and  (iconI))then
+    begin
+      setlength(R_listRI,starnr);
+      setlength(R_list_documentedRI,starnr);
+      setlength(I_listRI,starnr);
+      setlength(I_list_documentedRI,starnr);
+      setlength(abbreviationRI,starnr);
+      counter:=0;
+      for j:=0 to starnr-1 do //sanitize. Removed stars without measured or documented magnitudes
+      begin
+        if ((R_list[j]>0) and (I_list[j]>0) and(R_list_documented[j]>0) and (I_list_documented[j]>0)  {and (filter(abbreviation[j]))}) then  //valid data only
+        begin
+          R_listRI[counter]:=R_list[j];
+          I_listRI[counter]:=I_list[j];
+          R_list_documentedRI[counter]:=R_list_documented[j];
+          I_list_documentedRI[counter]:=I_list_documented[j];
+          abbreviationRI[counter]:= abbreviation[j];
+          inc(counter);
+        end;
+      end;
+      setlength(R_listRI,counter);
+      setlength(I_listRI,counter);
+      setlength(R_list_documentedRI,counter);
+      setlength(I_list_documentedRI,counter);
+      setlength(abbreviationRI,counter);
+
+      if counter<3 then
+      begin
+        beep;
+        mess:=mess+' Abort, not enough R and I stars found!';
+
+        ri_success:=false;
+      end
+      else
+      begin
+        compute_transformation_coefficients(
+          R_list_documentedRI, I_list_documentedRI, R_listRI, I_listRI,
+          counter,
+          {out} Tri, Tri_intercept, Tri_sd,
+              Tr_ri, Tr_ri_intercept, Tr_ri_sd,
+              Ti_ri, Ti_ri_intercept, Ti_ri_sd);
+        ri_success:=true;
+      end;
+    end
+    else
+      ri_success:=false;
+
+    if ri_success=false then
+    begin
+      Tri:=1;
+      Tr_ri:=0;
+      Ti_ri:=0;
+    end;
+
+    with Form_transformation1 do
+    begin
+      RadioButtonTri1.enabled:=ri_success;
+      RadioButtonTr_ri1.enabled:=ri_success;
+      RadioButtonTi_ri1.enabled:=ri_success;
+
+      Tri_tempSTR:=floattostrF(tri,FFfixed,0,3);
+      Tr_ri_tempSTR:=floattostrF(tr_ri,FFfixed,0,3);
+      Ti_ri_tempSTR:=floattostrF(ti_ri,FFfixed,0,3);
+    end;
+
+
+
+
+
+    if ((bv_success=false) and (vr_success=false) and (ri_success=false)) then
     begin
       if iconB=false then mess:=mess+' '+B_str+' not found.';
       if iconV=false then mess:=mess+' '+V_str+' not found.';
       if iconR=false then mess:=mess+' '+R_str+' not found.';
-      mess:=mess+' Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR, SG, SR, SI'+#13+#10+'Correct header values with with popup menu if required.';
+      if iconI=false then mess:=mess+' '+I_str+' not found.';
+      mess:=mess+' Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR, I , SG, SR, SI'+#13+#10+'Correct header values with with popup menu if required.';
       form_transformation1.error_label1.caption:=mess;
       memo2_message('Transformation failure. '+mess);
     end;
@@ -753,9 +921,15 @@ begin
     if bv_success then
       idx:=0 //show bv graph
     else
-      idx:=3;//show vr graph if available
+    if vr_success then
+      idx:=3 //show bv graph
+    else
+    if ri_success then
+        idx:=6 //show bv graph
+    else
+      idx:=-1;//show vr graph if available
 
-    if ((bv_success) or (vr_success)) then
+    if ((bv_success) or (vr_success) or (ri_success)) then
     begin
       form_transformation1.error_label1.caption:='';
       memo2_message('Transformation ready');
@@ -792,8 +966,10 @@ end;
 procedure TForm_transformation1.sloan_checkBox1Change(Sender: TObject);
 begin
 
-   V_listB:=nil;//nil existing data to avoud confusion
-   V_listR:=nil;
+   V_listBV:=nil;//nil existing data to avoid confusion
+   V_listVR:=nil;
+   R_listVR:=nil;
+   R_listRI:=nil;
 
   if sloan_checkBox1.checked=false then
   begin
@@ -803,10 +979,15 @@ begin
     Tvr_labelstr:='Tvr=';
     Tv_vr_labelstr:='Tv_vr=';
     Tr_vr_labelstr:='Tr_vr=';
+    Tri_labelstr:='Tri=';
+    Tr_ri_labelstr:='Tr_ri=';
+    Ti_ri_labelstr:='Ti_ri=';
+
 
     B_str:='B';
     V_str:='V';
     R_str:='R';
+    I_str:='I';
     sloan:=false;//here so it wil work directly in unit_aavso
   end
   else
@@ -817,10 +998,16 @@ begin
     Tvr_labelstr:='Tri=';
     Tv_vr_labelstr:='Tr_ri=';
     Tr_vr_labelstr:='Ti_ri=';
+    Tri_labelstr:='';
+    Tr_ri_labelstr:='';
+    Ti_ri_labelstr:='';
+
+
 
     B_str:='SG';
     V_str:='SR';
     R_str:='SI';
+    I_str:='';
     sloan:=true;
   end;
 
@@ -898,13 +1085,13 @@ begin
 
   if sloan=false then
   begin
-    transformation(2,1,0,24);  //B, V, R, Rc
+    transformation(2,1,0,24,28);  //B, V, R, Rc, ic
   end
   else
   begin
     if stackmenu1.annotate_mode1.itemindex>4 then
        memo2_message('Warning, online not many Sloan magnitudes available online.');
-    transformation(23 {SG},22 {SR},21 {SI},21 {SI});//Sloan
+    transformation(23 {SG},22 {SR},21 {SI},21 {SI},99);//Sloan
   end;
 
 
@@ -914,7 +1101,6 @@ procedure TForm_transformation1.checkBox_auid1Change(Sender: TObject);
 begin
   plot_transformation_graph;
 end;
-
 
 
 procedure TForm_transformation1.RadioButtonTbv1Click(Sender: TObject);
@@ -929,7 +1115,13 @@ begin
   else
   if RadioButtonTv_vr1.checked then idx:=4
   else
-  if RadioButtonTr_vr1.checked then idx:=5;
+  if RadioButtonTr_vr1.checked then idx:=5
+  else
+  if RadioButtonTri1.checked then idx:=6
+  else
+  if RadioButtonTr_ri1.checked then idx:=7
+  else
+  if RadioButtonTi_ri1.checked then idx:=8;
 
   plot_transformation_graph;
 end;
@@ -960,19 +1152,25 @@ begin
     TbvSTR:=Tbv_tempSTR;//store at correct string
     Tb_bvSTR:=Tb_bv_tempSTR;
     Tv_bvSTR:=Tv_bv_tempSTR;
+
     TvrSTR:=Tvr_tempSTR;
     Tv_vrSTR:=Tv_vr_tempSTR;
     Tr_vrSTR:=Tr_vr_tempSTR;
+
+    TriSTR:=Tri_tempSTR;
+    Tr_riSTR:=Tr_ri_tempSTR;
+    Ti_riSTR:=Ti_ri_tempSTR;
+
     sloan:=false;
   end
   else
   begin
-    TgrSTR:=Tbv_tempSTR; //store at correct string
-    Tg_grSTR:=Tb_bv_tempSTR;
-    Tr_grSTR:=Tv_bv_tempSTR;
-    TriSTR:=Tvr_tempSTR;
-    Tr_riSTR:=Tv_vr_tempSTR;
-    Ti_riSTR:=Tr_vr_tempSTR;
+    TgrSTR_sloan:=Tbv_tempSTR; //store at correct string
+    Tg_grSTR_sloan:=Tb_bv_tempSTR;
+    Tr_grSTR_sloan:=Tv_bv_tempSTR;
+    TriSTR_sloan:=Tvr_tempSTR;
+    Tr_riSTR_sloan:=Tv_vr_tempSTR;
+    Ti_riSTR_sloan:=Tr_vr_tempSTR;
     sloan:=true;
   end;
 
