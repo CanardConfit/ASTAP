@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#Update the version dates
+sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_amd64/DEBIAN/control
+sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_i386/DEBIAN/control
+sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_armhf/DEBIAN/control
+sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_aarch64/DEBIAN/control
+
 rm ~/astap.fpc/astap
 /home/h/fpcupdeluxe_stable/lazarus/lazbuild /home/h/astap.fpc/astap_linux_amd64.lpi
 if [[ ! -f ~/astap.fpc/astap ]] ; then
@@ -128,6 +134,10 @@ tar -czvf astap_armhf_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/as
 
 #restore amd64 installation
 sudo dpkg -i ./astap_amd64.deb
+
+
+./_build_astap_arch_linux.sh
+
 
 read -p "Press any key to continue"
 

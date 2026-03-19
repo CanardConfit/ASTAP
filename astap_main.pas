@@ -25,9 +25,9 @@ https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
 
 line colours GTK3
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41655
+FIXED       https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41655
 pairspliter GTK3
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41654
+FIXED       https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41654
 
 
 https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
@@ -76,7 +76,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.03.06';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.03.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -5483,9 +5483,10 @@ const resolution=6;
       rs=68 div 2;//half size image_north
       qrs=rs div resolution;
 var
-  i, j,distance,hh,diam1,diam2  : integer;
-  val,valmax,valmin             : double;
+  i, j,distance,hh,diam1,diam2    : integer;
+  val,valmax,valmin,dist,radius   : double;
   profile: array[0..1,-rs..rs] of double;
+  fixed_aperture : boolean;
 begin
   with mainform1.image_north_arrow1 do
   begin
@@ -5552,8 +5553,9 @@ begin
 //   mainform1.caption:=floattostr(diff);
 
 
-    diam1:=round((width/2 + (resolution/4) * object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));//in 1/6 pixel resolution
-    diam2:=round((width/2 - (resolution/4) * object_hfd*strtofloat2(stackmenu1.flux_aperture1.text)));
+    dist:=(resolution/2) * object_hfd*strtofloat2(stackmenu1.flux_aperture1.text); //factor times HFD
+    diam1:=round(width/2 + dist);
+    diam2:=round(width/2 - dist);
 
     if diam2>=0 then  //show aperture if aperture setting is less then maximum as set in tap photometry.
     begin
@@ -7747,7 +7749,7 @@ type
   TByteArray2 = Array[0..32767*4] of Byte;//Maximum width 32768 pixels
 var
    i,j,col_r,col_g,col_b,linenr,columnr,hh,ww,colours2 :integer;
-   colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, saturationFactor,selectiveStrength: single;
+   colrr,colgg,colbb,luminance, luminance_stretched,factor, largest,inv_largest, saturationFactor,selectiveStrength,scale: single;
    Bitmap       : TBitmap;{for fast pixel routine}
    xLine        : PByteArray2;{for fast pixel routine}
    flipv, fliph : boolean;
@@ -7788,15 +7790,13 @@ begin
   {create bitmap}
   bitmap := TBitmap.Create;
   try
-    with bitmap do
-    begin
-      width := ww;
-      height := hh;
-      // Unclear why this must follow width/height to work correctly.
-      // If PixelFormat precedes width/height, bitmap will always be black.
-      bitmap.PixelFormat := pf24bit;
-    end;
-    except;
+
+  bitmap := TBitmap.Create;
+  bitmap.PixelFormat := pf24bit;  // faster on Windows then pf32bit
+  with bitmap do
+  begin
+    width := ww;
+    height := hh;
   end;
 
   saturationFactor:=mainform1.saturation_factor_plot1.position/20;
@@ -7808,6 +7808,7 @@ begin
   flipv:=mainform1.flip_vertical1.Checked;
   fliph:=mainform1.Flip_horizontal1.Checked;
 
+  scale:=1/(cwhite-head.backgr);
   for i:=0 to hh-1 do
   begin
     if flipv then linenr:=i else linenr:=(hh-1)-i;{flip vertical?. Note FITS count from bottom, windows from top}
@@ -7816,15 +7817,15 @@ begin
     begin
       if fliph then columnr:=(ww-1)-j else columnr:=j;{flip horizontal?}
 
-      colrr:=(img_loaded[0,i,columnr]-head.backgr)/(cwhite-head.backgr);{scale to 1}
+      colrr:=(img_loaded[0,i,columnr]-head.backgr)*scale; {scale to 1}
 
       if colours2>=2 then {at least two colours}
-        colgg:=(img_loaded[1,i,columnr]-head.backgr)/(cwhite-head.backgr){scale to 1}
+        colgg:=(img_loaded[1,i,columnr]-head.backgr)*scale {scale to 1}
       else
         colgg:=colrr;
 
       if head.naxis3>=3 then {at least three colours}
-        colbb:=(img_loaded[2,i,columnr]-head.backgr)/(cwhite-head.backgr){scale to 1}
+        colbb:=(img_loaded[2,i,columnr]-head.backgr)*scale {scale to 1}
       else
         colbb:=colrr;
 
@@ -7834,9 +7835,10 @@ begin
       if colbb>largest then largest:=colbb;
       if largest>1 then {clamp to 1 but preserve colour, so ratio r,g,b}
       begin
-        colrr:=colrr/largest;
-        colgg:=colgg/largest;
-        colbb:=colbb/largest;
+        inv_largest:=1/largest;
+        colrr:=colrr*inv_largest;
+        colgg:=colgg*inv_largest;
+        colbb:=colbb*inv_largest;
         largest:=1;
       end;
 
@@ -7874,20 +7876,25 @@ begin
         xLine^[j*4+1]:=col_r; {4*8=32 bit}
         xLine^[j*4+2]:=col_g; {fast pixel write routine }
         xLine^[j*4+3]:=col_b;
+        // j*4+3 = alpha/padding, left as 0
      {$endif}
      {$ifdef linux}
         xLine^[j*4]  :=col_b; {4*8=32 bit}
         xLine^[j*4+1]:=col_g; {fast pixel write routine }
         xLine^[j*4+2]:=col_r;
+        // j*4+3 = alpha/padding, left as 0
       {$endif}
     end;{j}
   end; {i}
 
-  img.picture.Graphic := Bitmap; {show image}
-  Bitmap.Free;
+  //img.picture.Graphic := Bitmap; {show image}
+  img.Picture.Assign(bitmap);  // Show image. safer than .Graphic :=
+  finally
+    bitmap.Free;  // always freed, even if pixel loop raises an exception
+  end;
 
-  img.Picture.Bitmap.Transparent := True;
-  img.Picture.Bitmap.TransparentColor := clblack;
+ // img.Picture.Bitmap.Transparent := True;
+ // img.Picture.Bitmap.TransparentColor := clblack;
 
   if center_image then {image new of resized}
   begin
@@ -8693,7 +8700,7 @@ begin
       dum:=Sett.ReadString('stack','filter_artificial_colouring',''); if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','resize_factor',''); if dum<>'' then stackmenu1.resize_factor1.text:=dum;
       dum:=Sett.ReadString('stack','snr_min_p',''); if dum<>'' then stackmenu1.snr_min_photo1.text:=dum;
-      dum:=Sett.ReadString('stack','flux_aperture',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
+      dum:=Sett.ReadString('stack','flux_apert',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_rad',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
       dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
 
@@ -8783,13 +8790,17 @@ begin
       TvrSTR:=Sett.ReadString('transf','Tvr','1'); {transformation}
       Tv_vrSTR:=Sett.ReadString('transf','Tv_vr','0'); {transformation}
       Tr_vrSTR:=Sett.ReadString('transf','Tr_vr','0'); {transformation}
+      TriSTR:=Sett.ReadString('transf','Tri','1'); {transformation}
+      Tr_riSTR:=Sett.ReadString('transf','Tr_ri','0'); {transformation}
+      Ti_riSTR:=Sett.ReadString('transf','Ti_ri','0'); {transformation}
 
-      TgrSTR_sloan:=Sett.ReadString('transf','Tgr','1'); {transformation}
-      Tg_grSTR_sloan:=Sett.ReadString('transf','Tg_gr','0'); {transformation}
-      Tr_grSTR_sloan:=Sett.ReadString('transf','Tr_gr','0'); {transformation}
-      TriSTR_sloan:=Sett.ReadString('transf','Tri','1'); {transformation}
-      Tr_riSTR_sloan:=Sett.ReadString('transf','Tr_ri','0'); {transformation}
-      Ti_riSTR_sloan:=Sett.ReadString('transf','Ti_ri','0'); {transformation}
+
+      TgrSTR_sloan:=Sett.ReadString('transf','Tgr_s','1'); {transformation}
+      Tg_grSTR_sloan:=Sett.ReadString('transf','Tg_gr_s','0'); {transformation}
+      Tr_grSTR_sloan:=Sett.ReadString('transf','Tr_gr_s','0'); {transformation}
+      TriSTR_sloan:=Sett.ReadString('transf','Tri_s','1'); {transformation}
+      Tr_riSTR_sloan:=Sett.ReadString('transf','Tr_ri_s','0'); {transformation}
+      Ti_riSTR_sloan:=Sett.ReadString('transf','Ti_ri_s','0'); {transformation}
 
 
       sloan:=Sett.ReadBool('transf','sloan',false);
@@ -9123,7 +9134,7 @@ begin
       sett.writestring('stack','resize_factor',stackmenu1.resize_factor1.text);
 
       sett.writestring('stack','snr_min_p',stackmenu1.snr_min_photo1.text);
-      sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
+      sett.writestring('stack','flux_apert',stackmenu1.flux_aperture1.text);
       sett.writestring('stack','annulus_rad',stackmenu1.annulus_radius1.text);
       sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
       sett.writeInteger('stack','annotate_i',stackmenu1.annotate_mode1.itemindex);
@@ -9209,13 +9220,16 @@ begin
      sett.writestring('transf','Tvr',TvrSTR);
      sett.writestring('transf','Tv_vr',Tv_vrSTR);
      sett.writestring('transf','Tr_vr',Tr_vrSTR);
+     sett.writestring('transf','Tri',TriSTR);
+     sett.writestring('transf','Tr_ri',Tr_riSTR);
+     sett.writestring('transf','Ti_ri',Ti_riSTR);
 
-     sett.writestring('transf','Tgr',TgrSTR_sloan);
-     sett.writestring('transf','Tg_gr',Tg_grSTR_sloan);
-     sett.writestring('transf','Tr_gr',Tr_grSTR_sloan);
-     sett.writestring('transf','Tri',TriSTR_sloan);
-     sett.writestring('transf','Tr_ri',Tr_riSTR_sloan);
-     sett.writestring('transf','Ti_ri',Ti_riSTR_sloan);
+     sett.writestring('transf','Tgr_s',TgrSTR_sloan);
+     sett.writestring('transf','Tg_gr_s',Tg_grSTR_sloan);
+     sett.writestring('transf','Tr_gr_s',Tr_grSTR_sloan);
+     sett.writestring('transf','Tri_s',TriSTR_sloan);
+     sett.writestring('transf','Tr_ri_s',Tr_riSTR_sloan);
+     sett.writestring('transf','Ti_ri_s',Ti_riSTR_sloan);
 
      sett.writebool('transf','sloan',sloan);
 
@@ -11688,17 +11702,10 @@ end;
 procedure calibrate_photometry(img : Timage_array; memo : tstrings; var head : Theader; update: boolean);
 var
   apert,annul         : double;
-  aperture_str        : string;
-  fixed_aperture      : boolean;
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
-  aperture_str:=stackmenu1.flux_aperture1.Text;
-  fixed_aperture:=pos('px',aperture_str)>0;
-  if fixed_aperture then
-     aperture_str:=stringreplace(aperture_str,'px','',[]);
-  apert:=strtofloat2(aperture_str);{text "max" will generate a zero}
-
+  apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
 
   if ((update) or (head.mzero=0) or (aperture_ratio<>apert){new calibration required} or (passband_active<>head.passband_database))  then
   begin
@@ -11710,19 +11717,14 @@ begin
 
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
-      if  fixed_aperture=false then
+      analyse_image(img,head,30,0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
+      if head.hfd_median<>0 then
       begin
-        analyse_image(img,head,30,0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
-        if head.hfd_median<>0 then
-        begin
-          memo2_message('Median HFD is '+floattostrf(head.hfd_median, ffgeneral, 2,0)+'. Aperture and annulus will be adapted accordingly.');;
-          head.mzero_radius:=head.hfd_median*apert/2;{radius}
-        end
-        else
-          memo2_message('No stars detected');
+        memo2_message('Median HFD is '+floattostrf(head.hfd_median, ffgeneral, 2,0)+'. Aperture and annulus will be adapted accordingly.');;
+        head.mzero_radius:=head.hfd_median*apert;{radius in px}
       end
-      else //fixed aperture radius in pixels
-        head.mzero_radius:=apert;{radius}
+      else
+        memo2_message('No stars detected');
 
       annul:=strtofloat2(stringreplace(stackmenu1.annulus_radius1.Text,'px','',[]));
       annulus_radius:=min(50, round(annul) - 1);  {radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
@@ -12099,7 +12101,7 @@ begin
     image1.Canvas.font.color:=clwhite;
     text_height:=mainform1.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
     if head.magn_limit<>0 then
-      image1.Canvas.textout(round(fontsize*2),head.height-text_height,'Limiting magnitude '+floattostrF(head.magn_limit,FFFixed,0,2)+ ' (SNR=7, aperture ⌀'+floattostrF(head.mzero_radius,FFFixed,0,2) + ')');  {magn_limit is calculated plot_and_measure_stars}
+      image1.Canvas.textout(round(fontsize*2),head.height-text_height,'Limiting magnitude '+floattostrF(head.magn_limit,FFFixed,0,2)+ ' (SNR=7, aperture radius '+floattostrF(head.mzero_radius,FFFixed,0,2) + ' px)');  {magn_limit is calculated plot_and_measure_stars}
   end
   else
   begin// to Clipboard

@@ -12,7 +12,7 @@ type
   { TForm_transformation1 }
 
   TForm_transformation1 = class(TForm)
-    Button1: TButton;
+    calculate1: TButton;
     cancel1: TButton;
     GroupBox1: TGroupBox;
     RadioButtonTbv1: TRadioButton;
@@ -39,7 +39,7 @@ type
     Label2: TLabel;
     Label3: TLabel;
 
-    procedure Button1Click(Sender: TObject);
+    procedure calculate1Click(Sender: TObject);
     procedure checkBox_auid1Change(Sender: TObject);
     procedure RadioButtonTbv1Click(Sender: TObject);
     procedure save1Click(Sender: TObject);
@@ -186,6 +186,50 @@ begin
 
   if ((B_listBV=nil) and (V_listVR=nil) and (R_listRI=nil)) then
     exit;//no data
+
+  case idx of
+              0: begin
+                   if ((B_listBV=nil) or (V_listBV=nil)) then
+                   exit;
+                 end;
+              3: begin
+                    if ((V_listVR=nil) or (R_listVR=nil)) then
+                    exit;
+                 end;
+              6: begin
+                    if ((R_listRI=nil) or (I_listRI=nil)) then
+                    exit;
+                 end;
+              1: begin
+                    if  ((B_list_documentedBV=nil) or (B_listBV=nil)) then
+                    exit;       // Tb_bv
+                 end;
+              4: begin
+                   if ((V_list_documentedVR=nil) or (V_listVR=nil)) then
+                   exit;       // Tv_vr
+                 end;
+              7: begin
+                    if ((R_list_documentedRI=nil) or (R_listRI=nil)) then
+                    exit;       // Tr_ri
+                 end;
+
+
+
+              2: begin
+                   if ((V_list_documentedBV=nil) or (V_listBV=nil)) then
+                   exit;       // Tv_bv
+                 end;
+              5: begin
+                   if ((R_list_documentedVR=nil) or (R_listVR=nil)) then
+                   exit;       // Tr_vr
+                 end;
+              8: begin
+                   if ((I_list_documentedRI=nil) or (I_listRI=nil)) then
+                   exit;       // Ti_ri
+                 end;
+              end;//case
+
+
 
   show_auid:=form_transformation1.checkBox_auid1.checked;
   wtext:=mainform1.image1.Canvas.textwidth('12.3456');
@@ -526,9 +570,9 @@ begin
     Tvr_tempSTR:=TvrSTR;
     Tv_vr_tempSTR:=Tv_vrSTR;
     Tr_vr_tempSTR:=Tr_vrSTR;
-    Tri_tempSTR:=TriSTR_sloan;
-    Tr_ri_tempSTR:=Tr_riSTR_sloan;
-    Ti_ri_tempSTR:=Ti_riSTR_sloan;
+    Tri_tempSTR:=TriSTR;
+    Tr_ri_tempSTR:=Tr_riSTR;
+    Ti_ri_tempSTR:=Ti_riSTR;
 
   end
   else
@@ -572,7 +616,7 @@ begin
 
 end;
 
-procedure transformation(const ic_B,ic_V,ic_R,ic_R2, ic_I : integer);
+procedure transformation(const ic_B,ic_V,ic_R, ic_I : integer);
 var
    col,row,
    Rcount, Vcount, Bcount, Icount,
@@ -659,7 +703,7 @@ begin
              if ((snr>=snrmin) and (value<>0)) then //measurement found
              try
                icon_nr:=Items.item[row].SubitemImages[P_filter];
-               if ((icon_nr=ic_R) or (icon_nr=ic_R2)) then begin R:=R+value; inc(Rcount);iconR:=true; end  //red or Cousins red
+               if icon_nr=ic_R then begin R:=R+value; inc(Rcount);iconR:=true; end  //red or Cousins red
                else
                if icon_nr=ic_V then begin V:=V+value; inc(Vcount);iconV:=true; end  //V or G TG
                else
@@ -960,7 +1004,8 @@ end;
 
 procedure TForm_transformation1.sigma_transformation1EditingDone(Sender: TObject );
 begin
-  plot_transformation_graph;
+  calculate1Click(nil);
+//  plot_transformation_graph;
 end;
 
 procedure TForm_transformation1.sloan_checkBox1Change(Sender: TObject);
@@ -998,11 +1043,6 @@ begin
     Tvr_labelstr:='Tri=';
     Tv_vr_labelstr:='Tr_ri=';
     Tr_vr_labelstr:='Ti_ri=';
-    Tri_labelstr:='';
-    Tr_ri_labelstr:='';
-    Ti_ri_labelstr:='';
-
-
 
     B_str:='SG';
     V_str:='SR';
@@ -1010,6 +1050,10 @@ begin
     I_str:='';
     sloan:=true;
   end;
+  RadioButtonTri1.visible:=(sloan=false);
+  RadioButtonTr_ri1.visible:=(sloan=false);
+  RadioButtonTi_ri1.visible:=(sloan=false);
+
 
   update_from_database;//prevent override by wrong factors
   update_radiobuttons;
@@ -1071,7 +1115,7 @@ begin
 end;
 
 
-procedure TForm_transformation1.Button1Click(Sender: TObject);
+procedure TForm_transformation1.calculate1Click(Sender: TObject);
 const
   idyes=6;
   MB_ICONQUESTION=32;
@@ -1085,13 +1129,13 @@ begin
 
   if sloan=false then
   begin
-    transformation(2,1,0,24,28);  //B, V, R, Rc, ic
+    transformation(2,1,24,28);  //B, V, R, Rc, ic
   end
   else
   begin
     if stackmenu1.annotate_mode1.itemindex>4 then
        memo2_message('Warning, online not many Sloan magnitudes available online.');
-    transformation(23 {SG},22 {SR},21 {SI},21 {SI},99);//Sloan
+    transformation(23 {SG},22 {SR},21 {SI},99);//Sloan
   end;
 
 
@@ -1171,8 +1215,13 @@ begin
     TriSTR_sloan:=Tvr_tempSTR;
     Tr_riSTR_sloan:=Tv_vr_tempSTR;
     Ti_riSTR_sloan:=Tr_vr_tempSTR;
+
     sloan:=true;
   end;
+
+  RadioButtonTri1.visible:=(sloan=false);
+  RadioButtonTr_ri1.visible:=(sloan=false);
+  RadioButtonTi_ri1.visible:=(sloan=false);
 
   save_settings2;//save coefficients
 end;

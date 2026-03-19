@@ -2406,13 +2406,16 @@ begin
                            flux≈snr*(hfd*1.0)*sqrt(pi)*sd   assuming star diameter for the faintest stars is reduced to 2 * hfd average, so radius is 1*hfd
                              }
           flux_snr_7:=7*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length});{Assuming minimum SNR is 7 and the aperture is reduced to about 2 * hfd for the faintest stars. So r=HFD}
+
+
           apert:=strtofloat2(stackmenu1.flux_aperture1.text);{aperture diameter expressed in HFD's. If aperture diameter is HFD, half of the star flux is lost}
           if apert=0 then apert:=10; {aperture is zero if is set at max text. Set very high}
 
           //encircled flux =1-EXP(-0.5*(radial_distance/sigma)^2)
-          //encircled flux =1-EXP(-0.5*((apert*HFD/2)/(HFD/2.3548))^2)
-          //encircled flux =1-EXP(-0.5*(apert*2.3548/2))^2)
-          correction:=(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma})));
+          //encircled flux =1-EXP(-0.5*(apert*2.3548))^2)
+          correction:=(1-EXP(-0.5*sqr(apert*2.3548 {sigma})));
+
+
           flux_snr_7:=flux_snr_7*correction; {Correction for reduced aparture.}
 
           head.magn_limit:=head.mzero-ln(flux_snr_7)*2.5/ln(10); //global variable.  same as:  mzero-ln(flux)*2.5/ln(10)
@@ -2420,7 +2423,7 @@ begin
           //mag:=MZERO - 2.5*ln(flux)/ln(10);
           mag_saturation:=head.mzero-ln( 0.95*data_max*Smedian(flux_peak_ratio,counter_flux_measured {length} ) )*2.5/ln(10);
 
-          magn_limit_str:='Limiting magnitude is '+ floattostrF(head.magn_limit,ffFixed,0,2)+' ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture ⌀'+stackmenu1.flux_aperture1.text+') Saturation at ≈ '+floattostrF(mag_saturation,ffFixed,0,1);
+          magn_limit_str:='Limiting magnitude is '+ floattostrF(head.magn_limit,ffFixed,0,2)+' ( σ='+floattostrF(standard_error_mean,ffgeneral,2,0)+', SNR=7, aperture radius '+stackmenu1.flux_aperture1.text+' HFD) Saturation at ≈ '+floattostrF(mag_saturation,ffFixed,0,1);
 
           update_float(memo,'LIM_MAGN=',' / Limiting magnitude (SNR=7, aperture '+floattostr2(head.mzero_radius)+' px)',false ,head.magn_limit);
 
