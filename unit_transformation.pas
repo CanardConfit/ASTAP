@@ -992,7 +992,7 @@ begin
 
   sloan_checkBox1.checked:=sloan;
 
-  if pos('Local',stackmenu1.annotate_mode1.text)<>0 then //not online
+  if pos('Local',stackmenu1.annotate_mode1.text)=0 then //not online
     memo2_message('Warning, not many Sloan magnitudes in online VSP !');
 
 //  update_from_database;//prevent override by wrong factors

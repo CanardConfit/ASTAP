@@ -2217,7 +2217,7 @@ begin
     if stackmenu1.reference_database1.itemindex=0 then  //local database
       begin
         if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
-        memo2_message('Using star database '+uppercase(name_database));
+        memo2_message('Using star database '+uppercase(name_database)+' as reference.');
         firstletter:=uppercase(copy(name_database,1,1));
         if firstletter='V' then passband_active:='V'
         else

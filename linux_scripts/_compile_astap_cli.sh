@@ -1,3 +1,5 @@
+#!/bin/bash
+
 rm astap_cli
 
 /home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_linux_aarch64.lpi
@@ -6,17 +8,19 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Linux_aarch64 file does not exist, aborting!!'
     exit
 fi
+cp ./astap_cli  /home/h/astap_install/arch_aarch64/opt/astap
+cp ./astap_cli  /home/h/astap_install/astap_aarch64/opt/astap
 rm astap_cli
 
 
 
 /home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_linux_armhf.lpi
-patchelf --set-interpreter /system/bin/linker ./astap_cli
 zip astap_command-line_version_Linux_armhf.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Linux_armhf file does not exist, aborting!!'
     exit
 fi
+cp ./astap_cli  /home/h/astap_install/astap_armhf/opt/astap
 rm astap_cli
 
 
@@ -37,8 +41,37 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
 fi
 rm astap_cli
 
+
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_aarch64.lpi
+zip astap_command-line_version_Android_aarch64.zip astap_cli
+if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
+    echo 'Android_aarch64 file does not exist, aborting!!'
+    exit
+fi
+rm astap_cli
+
+
+
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86_64.lpi
+zip astap_command-line_version_Android_x86_64.zip astap_cli
+if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
+    echo 'Android_x86_64 file does not exist, aborting!!'
+    exit
+fi
+rm astap_cli
+
+
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86.lpi
+zip astap_command-line_version_Android_x86.zip astap_cli
+if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
+    echo 'Android_armhf file does not exist, aborting!!'
+    exit
+fi
+rm astap_cli
+
+
 /home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_armhf.lpi
-patchelf --set-interpreter /system/bin/linker ./astap_cli
+# patchelf --set-interpreter /system/bin/linker ./astap_cli
 zip astap_command-line_version_Android_armhf.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Android_armhf file does not exist, aborting!!'
@@ -47,39 +80,14 @@ fi
 rm astap_cli
 
 
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_aarch64.lpi
-patchelf --set-interpreter /system/bin/linker64 ./astap_cli
-zip astap_command-line_version_Android_aarch64.zip astap_cli
-if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
-    echo 'Android_armhf file does not exist, aborting!!'
-    exit
-fi
-rm astap_cli
-
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86.lpi
-patchelf --set-interpreter /system/bin/linker ./astap_cli
-zip astap_command-line_version_Android_x86.zip astap_cli
-if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
-    echo 'Android_armhf file does not exist, aborting!!'
-    exit
-fi
-rm astap_cli
-
-/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_android_x86_64.lpi
-patchelf --set-interpreter /system/bin/linker64 ./astap_cli
-zip astap_command-line_version_Android_x86_64.zip astap_cli
-if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
-    echo 'Android_x86_64 file does not exist, aborting!!'
-    exit
-fi
-rm astap_cli
-
 /home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_linux.lpi
 zip astap_command-line_version_Linux_amd64.zip astap_cli
 if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Linux_amd64 file does not exist, aborting!!'
     exit
 fi
+cp ./astap_cli  /home/h/astap_install/arch_amd64/opt/astap
+cp ./astap_cli  /home/h/astap_install/astap_amd64/opt/astap
 rm astap_cli
 
 

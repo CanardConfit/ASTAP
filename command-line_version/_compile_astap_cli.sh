@@ -8,6 +8,8 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Linux_aarch64 file does not exist, aborting!!'
     exit
 fi
+cp ./astap_cli  /home/h/astap_install/arch_aarch64/opt/astap
+cp ./astap_cli  /home/h/astap_install/astap_aarch64/opt/astap
 rm astap_cli
 
 
@@ -18,6 +20,7 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Linux_armhf file does not exist, aborting!!'
     exit
 fi
+cp ./astap_cli  /home/h/astap_install/astap_armhf/opt/astap
 rm astap_cli
 
 
@@ -83,6 +86,8 @@ if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
     echo 'Linux_amd64 file does not exist, aborting!!'
     exit
 fi
+cp ./astap_cli  /home/h/astap_install/arch_amd64/opt/astap
+cp ./astap_cli  /home/h/astap_install/astap_amd64/opt/astap
 rm astap_cli
 
 

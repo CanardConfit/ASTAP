@@ -7,7 +7,7 @@ sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_armhf/DEBIAN/control
 sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_aarch64/DEBIAN/control
 
 rm ~/astap.fpc/astap
-/home/h/fpcupdeluxe_stable/lazarus/lazbuild /home/h/astap.fpc/astap_linux_amd64.lpi
+/home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_amd64.lpi
 if [[ ! -f ~/astap.fpc/astap ]] ; then
     echo 'AMD64 file does not exist, aborting!!'
     exit
@@ -35,7 +35,7 @@ tar -czvf astap_amd64.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/astap/a
 
 
 rm ~/astap.fpc/astap
-/home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_qt5.lpi
+/home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_qt5.lpi
 if [[ ! -f ~/astap.fpc/astap ]] ; then
     echo 'AMD64 QT5 file does not exist, aborting!!'
     exit
@@ -56,24 +56,9 @@ sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_i386
 
 
 
-#build aarch64
-rm ~/astap.fpc/astap 
-/home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64.lpi                  
-if [[ ! -f ~/astap.fpc/astap ]] ; then
-    echo 'aarch64 file does not exist, aborting!!'
-    exit
-fi
-cp /home/h/astap.fpc/astap /home/h/astap_install/astap_aarch64/opt/astap
-cd /home/h/astap_install
-sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64
-sudo cp /home/h/astap.fpc/astap /opt/astap
-sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt/astap
-tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
-
-
 #build aarch64 qt5
 rm ~/astap.fpc/astap 
-/home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64_qt5.lpi
+/home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64_qt5.lpi
  if [[ ! -f ~/astap.fpc/astap ]] ; then
     echo 'aarch64 qt5 file does not exist, aborting!!'
     exit
@@ -129,6 +114,23 @@ if [[ ! -f ~/astap.fpc/astap ]] ; then
 fi 
 sudo cp /home/h/astap.fpc/astap /opt/astap
 tar -czvf astap_armhf_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+
+
+
+#build aarch64
+rm ~/astap.fpc/astap 
+/home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64.lpi                  
+if [[ ! -f ~/astap.fpc/astap ]] ; then
+    echo 'aarch64 file does not exist, aborting!!'
+    exit
+fi
+cp /home/h/astap.fpc/astap /home/h/astap_install/astap_aarch64/opt/astap
+cd /home/h/astap_install
+sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64
+sudo cp /home/h/astap.fpc/astap /opt/astap
+sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt/astap
+tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
+
 
 
 
