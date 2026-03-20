@@ -69,6 +69,7 @@ type
     center_position1: TLabel;
     disable_autocenter1: TCheckBox;
     Label38: TLabel;
+    Label59: TLabel;
     refresh_astrometric_solutions9: TMenuItem;
     photometry_calibrate1: TCheckBox;
     saturation_level1: TEdit;
@@ -1171,7 +1172,6 @@ function calc_saturation_level(head :theader) : double;//calculate saturation le
 function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
 function standardise_filter_name(inp :string): string;//standardise filter name
 
-
 const
   L_object = 0; {lights, position in listview1}
   L_filter = 1;
@@ -2060,7 +2060,6 @@ begin
   hfdlist_23:=nil;
   hfdlist_33:=nil;
 end;
-
 
 
 function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
@@ -4515,11 +4514,8 @@ begin
               else
               if  standarised_filter_name='R'  then
               begin
-                if length(filterstrUP)>1  then
-                   lv.Items.item[c].SubitemImages[P_filter]:=0 //rgb RED, INVALID
-                else
-                  //The official abbreviation for Cousins R is R. See https://www.aavso.org/filters
-                  lv.Items.item[c].SubitemImages[P_filter]:=24; //Cousins-red. Note Green also contains a R so first test Green
+                //The official abbreviation for Cousins R is R. See https://www.aavso.org/filters
+                lv.Items.item[c].SubitemImages[P_filter]:=24; //Cousins-red. Note Green also contains a R so first test Green
                 all_filters.R:=true;
               end
               else
@@ -7912,7 +7908,7 @@ var
   database_col,j,ww,measuring_method                                               : integer;
   flipvertical, fliphorizontal, refresh_solutions, analysedP, store_annotated,
   warned, success,new_object,listview_updating, reference_defined,calibratedP,
-  oscP,disabled_autocenter,fixed_aperture,fixed_annulus                            : boolean;
+  oscP,disabled_autocenter                                                         : boolean;
   starlistx                                     : Tstar_list;
   astr, filename1,totalnrstr,mess,aperture_str, annulus_Ssr                        : string;
   oldra0 : double=0;
@@ -8056,11 +8052,7 @@ begin
     flipvertical:=mainform1.flip_vertical1.Checked;
     fliphorizontal:=mainform1.flip_horizontal1.Checked;
 
-    aperture_str:=flux_aperture1.Text;
-    fixed_aperture:=pos('px',aperture_str)>0;
-    if fixed_aperture then
-       aperture_str:=stringreplace(aperture_str,'px','',[]);
-    apert:=strtofloat2(aperture_str);
+    apert:=strtofloat2(flux_aperture1.Text);
     aperture_ratio:=apert;{remember apert setting}
     annul:=strtofloat2(stringreplace(annulus_radius1.Text,'px','',[]));
 
@@ -8194,16 +8186,11 @@ begin
 
         if apert <> 0 then {aperture<>auto}
         begin
-          if  fixed_aperture=false then
-          begin
-             analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only});  {find background, number of stars, median HFD}
-            if head.hfd_median <> 0 then
-              head.mzero_radius:=head.hfd_median * apert / 2 {radius}
-            else
-              head.mzero_radius:=99;{radius for measuring aperture}
-          end
-          else //fixed aperture
-            head.mzero_radius:=apert;{radius}
+          analyse_image(img_loaded, head, 30, 0 {report nr stars and hfd only});  {find background, number of stars, median HFD}
+          if head.hfd_median <> 0 then
+            head.mzero_radius:=head.hfd_median * apert {radius}
+          else
+            head.mzero_radius:=99;{radius for measuring aperture}
 
           annulus_radius:=min(50, round(annul) - 1);  {radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
         end
@@ -9363,13 +9350,13 @@ begin
   saturation_level1.enabled:=set_saturation1.checked;
 
   //Already fixed in trunk Remove in 2026
-  {$ifdef darwin} {MacOS}
-   //temporary bug fix
-   dummy:=stackmenu1.reference_database1.itemindex;
-   stackmenu1.reference_database1.items.insert(0,'Local database '+ star_database1.text);
-   stackmenu1.reference_database1.items.delete(1);
-   stackmenu1.reference_database1.itemindex:=dummy;
-  {$endif}
+//  {$ifdef darwin} {MacOS}
+//   //temporary bug fix
+//   dummy:=stackmenu1.reference_database1.itemindex;
+//   stackmenu1.reference_database1.items.insert(0,'Local database '+ star_database1.text);
+//   stackmenu1.reference_database1.items.delete(1);
+//   stackmenu1.reference_database1.itemindex:=dummy;
+//  {$endif}
 
 end;
 
@@ -10080,15 +10067,16 @@ begin
 end;
 
 
-function find_sd_star(column: integer) : double;//calculate the standard deviation of a variable
+procedure find_sd_star(column: integer; out sd, snr : double);//calculate the standard deviation of a star
 var
    count, c,count_check, icon_nr  : integer;
-   magn, mean                       : double;
+   magn, mean                     : double;
    dum: string;
    listMagnitudes : array of double;
 begin
   count:=0;
   count_check:=0;
+  snr:=0;
   setlength(listMagnitudes,stackmenu1.listview7.items.count);//list with magnitudes check star
 
   with stackmenu1 do
@@ -10103,6 +10091,7 @@ begin
       if magn>0 then
       begin
         listMagnitudes[count]:= magn;
+        snr:=snr+strtofloat(listview7.Items.item[c].subitems.Strings[column+1]);
         inc(count);
       end;
       inc(count_check);
@@ -10112,10 +10101,11 @@ begin
   if count>count_check/2 then //at least 50% valid measurements Not 50% because it will not report if two filter are in the list
   begin
      //calc standard deviation using the classic method. This will show the effect of outliers
-    calc_sd_and_mean(listMagnitudes, count{counter},{out}result, mean);// calculate sd and mean of an array of doubles}
+    calc_sd_and_mean(listMagnitudes, count{counter},{out}sd, mean);// calculate sd and mean of an array of doubles}
+    snr:=snr/count;//average
   end
   else
-    result:=-99;//unknown
+    sd:=-99;//unknown
 end;
 
 
@@ -10123,16 +10113,18 @@ end;
 
 procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);
 var
-  j,i,count : integer;
-  best, best_aperture,sd : double;
+  j,i,count,count30 : integer;
+  best, best_aperture,sd,snr, sd_check_star30 : double;
+  best30, best_aperture30        : double;
   results,beststr,oldstr,abrv   : string;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed:=false;
   best:=99;
+  best30:=99;
   results:='';
   oldstr:=flux_aperture1.text;
-  if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which gives the lowest standard deviation for the comparison stars. In manual mode you should select comparison stars first. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
+  if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which gives the lowest standard deviation for the comparison stars. In manual mode you should select comparison stars first. It works best with faint comparison stars. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
   begin
     if ((mainform1.Fshapes=nil) and (stackmenu1.measuring_method1.itemindex=0)) then
     begin
@@ -10140,60 +10132,83 @@ begin
       Screen.Cursor:=crDefault;{back to normal }
       exit;
     end;
-    for j:=14 to 22 do
+
+    for j:=07 to 20 do
     begin
      flux_aperture1.text:=floattostr(j/10);
      application.processmessages;
      if esc_pressed then exit;
-     sd_check_star:=0;
      stackmenu1.photometry_button1Click(nil);
 
+     ExtractListViewDataToArrays(stackmenu1.ListView7, P_filter);//copy listview7 data to arrays
      count:=0;
+     count30:=0;
      sd_check_star:=0;
+     sd_check_star30:=0;
      for i:=p_nr_norm to p_nr-1 do
        if frac((i-p_nr_norm)/3)=0 then //not snr column
        begin
          abrv:=stackmenu1.listview7.Column[i+1].Caption;
          if pos('000-',abrv)>0 then  //check star or iau code
          begin
-           sd:=find_sd_star(i);
-           if sd>0 then //not saturated and sd found
+           find_sd_star(i,sd,snr);
+           if sd>0 then
            begin
-             sd_check_star:=sd_check_star+sd;
-             inc(count);
+             if snr>30 then //not saturated and sd found
+             begin
+               sd_check_star:=sd_check_star+sd;
+               inc(count);
+             end;
+             if sd>0 then //not saturated and sd found
+             begin
+               sd_check_star30:=sd_check_star30+sd;
+               inc(count30);
+             end;
            end;
          end;
        end;
-       if count>0 then
+       if count30>0 then
        begin
+         sd_check_star30:=sd_check_star30/count30;
+         if sd_check_star30<best30 then
+         begin
+           best30:=sd_check_star30;
+           best_aperture30:=j/10;
+         end;
+      end
+      else
+      if count>0 then
+      begin
          sd_check_star:=sd_check_star/count;
          if sd_check_star<best then
          begin
            best:=sd_check_star;
            best_aperture:=j/10;
          end;
-
        end
        else
        begin
-        if stackmenu1.measuring_method1.itemindex=0 then
+         if stackmenu1.measuring_method1.itemindex=0 then
            application.messagebox(PChar('Abort!'+#10+#10+ 'Select one or more comparison stars starting with 000- !'), PChar('Missing comparison stars'), MB_OK)
-        else
-           application.messagebox(PChar('Abort!'+#10+#10+ 'No suitable comparison star(s) starting with 000- found! '), PChar('Missing comparison stars'), MB_OK);
-        flux_aperture1.text:=oldstr;
-        memo2_message('Abort, no suitable comparison star(s) selected or found');
-        break;
+         else
+            application.messagebox(PChar('Abort!'+#10+#10+ 'No suitable comparison star(s) starting with 000- found! '), PChar('Missing comparison stars'), MB_OK);
+         flux_aperture1.text:=oldstr;
+         memo2_message('Abort, no suitable comparison star(s) selected or found');
+         break;
        end;
 
-     results:=results+'Aperture '+floattostrF(j/10,FFgeneral,2,1)+',   σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+#13+#10;
+     results:=results+'Aperture '+floattostrF(j/10,FFfixed,0,1)+',   SNR<30 σ: '+ floattostrF(sd_check_star30,FFgeneral,4,0)+',   SNR>30 σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+#13+#10;
     end;
   end;
-  if sd_check_star>0 then
+  if sd_check_star30>0 then
   begin
-    beststr:=floattostrF(best_aperture,FFgeneral,2,1);
+    beststr:=floattostrF(best_aperture30,FFgeneral,2,1);
     flux_aperture1.text:=beststr;
-    memo2_message('Test completed. Results: '+#13+#10+results+#13+#10+#13+#10+'Best aperture setting for these images is '+beststr);
-  end;
+    memo2_message('Test completed.: '+#13+#10+results+#13+#10+#13+#10+'Best aperture setting for faint stars with SNR<30 is '+beststr);
+  end
+  else
+    memo2_message('Test completed.: '+#13+#10+results+#13+#10+#13+#10+'Could not detect faint stars with SNR<30.');
+
   Screen.Cursor:=crDefault;{back to normal }
 end;
 

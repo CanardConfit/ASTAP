@@ -46,14 +46,14 @@ object Form_transformation1: TForm_transformation1
     Caption = '---'
     ParentColor = False
   end
-  object Button1: TButton
+  object calculate1: TButton
     Left = 16
     Height = 25
     Hint = 'Calculate the transformation coefficients.'
     Top = 656
     Width = 163
     Caption = 'Calculate'
-    OnClick = Button1Click
+    OnClick = calculate1Click
     TabOrder = 0
   end
   object Label5: TLabel
@@ -86,9 +86,9 @@ object Form_transformation1: TForm_transformation1
     Text = '2'
   end
   object error_label1: TLabel
-    Left = 16
+    Left = 40
     Height = 19
-    Top = 112
+    Top = 104
     Width = 18
     Caption = '---'
     Font.Color = clRed
