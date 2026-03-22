@@ -1338,7 +1338,6 @@ type
 var
   bsolutions: array of blink_solution;
   blink_width,blink_height,blink_naxis3 : integer;
-  sd_check_star : double;
 
 {$IFDEF fpc}
   {$R *.lfm}
@@ -4269,9 +4268,9 @@ begin
     else
     if pos('B',inp)>0  then result:='B' //B, TB, Blue
     else
-    if pos('R',inp)>0 then result:='R'
+    if pos('I',inp)>0 then result:='I' //I, IR, Ic
     else
-    if pos('I',inp)>0 then result:='I'
+    if pos('R',inp)>0 then result:='R'
     else
     result:='BP';
   end;
@@ -10080,10 +10079,10 @@ begin
   setlength(listMagnitudes,stackmenu1.listview7.items.count);//list with magnitudes check star
 
   with stackmenu1 do
-  for c:=0 to high(RowChecked) do {retrieve data from listview}
+  for c:=0 to stackmenu1.listview7.items.count-1 do {retrieve data from listview}
   begin
-    icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
-    if ((icon_nr=1) or (icon_nr=4)) then //for filter V or TG or CV only
+  //  icon_nr:=listview7.Items.item[c].SubitemImages[P_filter];
+  //  if ((icon_nr=1) or (icon_nr=4)) then //for filter V or TG or CV only
     if listview7.Items.item[c].checked then
     begin
       dum:=(listview7.Items.item[c].subitems.Strings[column]);{var star}
@@ -10113,10 +10112,13 @@ end;
 
 procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);
 var
-  j,i,count,count30 : integer;
-  best, best_aperture,sd,snr, sd_check_star30 : double;
-  best30, best_aperture30        : double;
+  j,i,count,count30,count90 : integer;
+  sd,snr,
+  sd_check_star, best,   best_aperture,
+  sd_check_star30, best30, best_aperture30,
+  sd_check_star90, best90, best_aperture90  : double;
   results,beststr,oldstr,abrv   : string;
+  sd_check_starAR, sd_check_starAR30,sd_check_starAR90 : array of double;
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed:=false;
@@ -10124,7 +10126,16 @@ begin
   best30:=99;
   results:='';
   oldstr:=flux_aperture1.text;
-  if (IDYES= Application.MessageBox('This routine will try apertures from 1.4 to 2.2 in steps of 0.1 to find the setting which gives the lowest standard deviation for the comparison stars. In manual mode you should select comparison stars first. It works best with faint comparison stars. This will take a long time to process.'+#10+#10+'Continue?', 'Find best aperture?', MB_ICONQUESTION + MB_YESNO) ) then
+
+  if (IDYES = Application.MessageBox(
+    'This routine will test aperture radii from 0.7 to 2.0 HFD in steps of 0.1 to find the value that gives the lowest standard deviation for the comparison stars.' +
+    ' In manual mode, you should select comparison stars first.' + #10#10 +
+    ' Use this with images that have FAINT comparison stars taken with a SINGLE filter. Preferable from a rich cluster like M67. Set measure all minimum SNR at 10.' + #10#10 +
+    ' This process may take a long time.' + #10#10 +
+    'Continue?',
+    'Find Best Aperture?',
+    MB_ICONQUESTION + MB_YESNO
+  )) then
   begin
     if ((mainform1.Fshapes=nil) and (stackmenu1.measuring_method1.itemindex=0)) then
     begin
@@ -10133,18 +10144,37 @@ begin
       exit;
     end;
 
-    for j:=07 to 20 do
+    best:=999;
+    best30:=999;
+    best90:=999;
+    best_aperture:=0;
+    best_aperture30:=0;
+    best_aperture90:=0;
+
+
+
+    for j:=07 to 22 do
     begin
+
      flux_aperture1.text:=floattostr(j/10);
      application.processmessages;
      if esc_pressed then exit;
      stackmenu1.photometry_button1Click(nil);
 
-     ExtractListViewDataToArrays(stackmenu1.ListView7, P_filter);//copy listview7 data to arrays
+//     ExtractListViewDataToArrays(stackmenu1.ListView7, P_filter);//copy listview7 data to arrays
      count:=0;
      count30:=0;
+     count90:=0;
      sd_check_star:=0;
      sd_check_star30:=0;
+     sd_check_star90:=0;
+      sd_check_starAR:=nil;
+      setlength(sd_check_starAR,1+(p_nr-p_nr_norm) div 3);
+      sd_check_starAR30:=nil;
+      setlength(sd_check_starAR30,1+(p_nr-p_nr_norm) div 3);
+      sd_check_starAR90:=nil;
+      setlength(sd_check_starAR90,1+(p_nr-p_nr_norm) div 3);
+
      for i:=p_nr_norm to p_nr-1 do
        if frac((i-p_nr_norm)/3)=0 then //not snr column
        begin
@@ -10152,59 +10182,86 @@ begin
          if pos('000-',abrv)>0 then  //check star or iau code
          begin
            find_sd_star(i,sd,snr);
+           //memo2_message(abrv+', sd='+floattostr(sd)+',  snr= '+floattostr(snr));
            if sd>0 then
            begin
-             if snr>30 then //not saturated and sd found
+             if snr>90 then //not saturated and sd found
              begin
-               sd_check_star:=sd_check_star+sd;
+               //sd_check_star:=sd_check_star+sd;
+               sd_check_starAR[count]:=sd;
                inc(count);
-             end;
-             if sd>0 then //not saturated and sd found
+             end
+             else
+             if snr>30 then //30<SNR<60
              begin
-               sd_check_star30:=sd_check_star30+sd;
+               //sd_check_star90:=sd_check_star90+sd;
+               sd_check_starAR90[count90]:=sd;
+               inc(count90);
+             end
+             else
+             begin //faint stars
+//               sd_check_star30:=sd_check_star30+sd;
+               sd_check_starAR30[count30]:=sd;
                inc(count30);
              end;
            end;
          end;
-       end;
-       if count30>0 then
-       begin
-         sd_check_star30:=sd_check_star30/count30;
-         if sd_check_star30<best30 then
-         begin
-           best30:=sd_check_star30;
-           best_aperture30:=j/10;
-         end;
-      end
-      else
-      if count>0 then
-      begin
-         sd_check_star:=sd_check_star/count;
-         if sd_check_star<best then
-         begin
-           best:=sd_check_star;
-           best_aperture:=j/10;
-         end;
-       end
-       else
-       begin
-         if stackmenu1.measuring_method1.itemindex=0 then
-           application.messagebox(PChar('Abort!'+#10+#10+ 'Select one or more comparison stars starting with 000- !'), PChar('Missing comparison stars'), MB_OK)
-         else
-            application.messagebox(PChar('Abort!'+#10+#10+ 'No suitable comparison star(s) starting with 000- found! '), PChar('Missing comparison stars'), MB_OK);
-         flux_aperture1.text:=oldstr;
-         memo2_message('Abort, no suitable comparison star(s) selected or found');
-         break;
-       end;
+        end;//all stars checked for this image
 
-     results:=results+'Aperture '+floattostrF(j/10,FFfixed,0,1)+',   SNR<30 σ: '+ floattostrF(sd_check_star30,FFgeneral,4,0)+',   SNR>30 σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+#13+#10;
-    end;
+        if count>0 then  //60<SNR
+        begin
+           //sd_check_star:=sd_check_star/count;
+           sd_check_star:=smedian(sd_check_starAR,count);
+
+           if sd_check_star<best then
+           begin
+             best:=sd_check_star;
+             best_aperture:=j/10;
+           end;
+        end;
+        if count90>0 then  //30<SNR<60
+        begin
+          //sd_check_star90:=sd_check_star90/count90;
+          sd_check_star90:=smedian(sd_check_starAR90,count90);
+          if sd_check_star90<best90 then
+          begin
+            best90:=sd_check_star90;
+            best_aperture90:=j/10;
+          end;
+        end;
+        if count30>0 then //SNR30
+        begin
+           //sd_check_star30:=sd_check_star30/count30;
+           sd_check_star30:=smedian(sd_check_starAR30,count30);
+           if sd_check_star30<best30 then
+           begin
+             best30:=sd_check_star30;
+             best_aperture30:=j/10;
+           end;
+         end;
+
+         if ((count=0) and (count30=0) and (count90=0)) then
+         begin
+           if stackmenu1.measuring_method1.itemindex=0 then
+             application.messagebox(PChar('Abort!'+#10+#10+ 'Select one or more comparison stars starting with 000- !'), PChar('Missing comparison stars'), MB_OK)
+           else
+              application.messagebox(PChar('Abort!'+#10+#10+ 'No suitable comparison star(s) starting with 000- found! '), PChar('Missing comparison stars'), MB_OK);
+           flux_aperture1.text:=oldstr;
+           memo2_message('Abort, no suitable comparison star(s) selected or found');
+           break;
+         end;
+
+     results:=results+'Aperture '+floattostrF(j/10,FFfixed,0,1)+',   SNR<30 σ: '+ floattostrF(sd_check_star30,FFgeneral,4,0)+',   30<SNR<60 σ: '+ floattostrF(sd_check_star90,FFgeneral,4,0)+',   60<SNR σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+#13+#10;
+    end; //all images done
   end;
   if sd_check_star30>0 then
   begin
     beststr:=floattostrF(best_aperture30,FFgeneral,2,1);
     flux_aperture1.text:=beststr;
-    memo2_message('Test completed.: '+#13+#10+results+#13+#10+#13+#10+'Best aperture setting for faint stars with SNR<30 is '+beststr);
+    memo2_message('Test completed.: '+#13+#10+results+#13+#10+#13+#10+
+    'Best aperture setting for faint stars with SNR<30 is '+beststr+#13+#10+
+    'Best aperture setting for faint stars with 30<SNR<60 is '+floattostrF(best_aperture90,FFgeneral,2,1)+#13+#10+
+    'Best aperture setting for faint stars with 60<SNR is '+floattostrF(best_aperture,FFgeneral,2,1)    );
   end
   else
     memo2_message('Test completed.: '+#13+#10+results+#13+#10+#13+#10+'Could not detect faint stars with SNR<30.');
