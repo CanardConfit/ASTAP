@@ -7353,31 +7353,32 @@ end;
 
 procedure clear_added_AAVSO_columns;
 var
-  i: integer;
+  c, k: integer;
   TempList: TStringList;
+  IconBackup: integer; // To store icon
 begin
-  memo2_message('Clearing the list.');
   TempList := TStringList.Create;
   try
     with stackmenu1.listview7 do
     begin
       Items.BeginUpdate;
       try
-        // 1. Process the rows
-        for i := 0 to Items.Count - 1 do
+        for c := 0 to Items.Count - 1 do
         begin
-          // Copy current subitems to our buffer
-          TempList.Assign(Items[i].SubItems);
+          // 1. Backup existing image indices for the columns we are KEEPING
+          IconBackup := Items[c].SubItemImages[p_filter];
 
-          // Truncate the buffer to the desired count in memory
+          // 2. Fast Text Update
+          TempList.Assign(Items[c].SubItems);
           while TempList.Count > p_nr_norm do
             TempList.Delete(TempList.Count - 1);
+          Items[c].SubItems.Assign(TempList);
 
-          // Slam the entire list back into the Item in one go
-          Items[i].SubItems.Assign(TempList);
-        end;
+          // 3. Restore the icon
+          Items[c].SubItemImages[p_filter]:=IconBackup;
+         end;
 
-        // 2. Clean up column headers
+        // Clean up headers
         while ColumnCount > (p_nr_norm + 1) do
           Columns.Delete(ColumnCount - 1);
 
@@ -8263,6 +8264,9 @@ begin
         database_col:=-1; // unknown. Should not happen
 
         ListView7.Items.item[c].SubitemImages[P_calibration]:= database_col ; //show selected database passband
+
+//        ListView7.Items.item[c].SubitemImages[P_filter]:= 24 ; //show selected database passband
+
 
         listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(head.magn_limit, FFgeneral, 4, 0);
 
