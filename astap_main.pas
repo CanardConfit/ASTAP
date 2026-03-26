@@ -24,10 +24,9 @@ https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
 https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
 
-line colours GTK3
-FIXED       https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41655
-pairspliter GTK3
-FIXED       https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41654
+GTK3
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42173
+https://github.com/LongDirtyAnimAlf/fpcupdeluxe/issues/806?reload=1
 
 
 https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
@@ -76,7 +75,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.03.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.03.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
