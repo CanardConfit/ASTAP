@@ -1131,7 +1131,7 @@ var  {################# initialised variables #########################}
 const
   dialog_filter =
     'FITS, RAW, TIFF |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;*.tif;*.tiff;*.TIF;*.xisf;'
-    + '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'
+    + '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.ini;'
     + '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'
     + '|JPEG, TIFF, PNG PPM files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;'
     + '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;';
@@ -1171,6 +1171,7 @@ function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*'
 function calc_saturation_level(head :theader) : double;//calculate saturation level image
 function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
 function standardise_filter_name(inp :string): string;//standardise filter name
+procedure photometry_auto(thepath : string);
 
 const
   L_object = 0; {lights, position in listview1}
@@ -4309,6 +4310,13 @@ begin
     if lv.Items.item[c].Checked then
     begin
       filename1:=lv.items[c].Caption;
+      if extractfileext(filename1)='.ini' then //for photometry
+      begin
+        lv.Items.item[c].Checked:=False;
+        load_photometry_settings(filename1);
+        lv.Items.item[c].subitems.Strings[L_result]:='Applied';
+      end
+      else
       if fits_tiff_file_name(filename1) = False  {fits file name?} then
         {not fits or tiff file}
       begin
@@ -7963,21 +7971,12 @@ var
               hfd1:=999;
               if disabled_autocenter=false then
                 HFD(img_loaded, round(deX-1), round(deY-1), annulus_radius  {annulus radius}, head.mzero_radius, adu_e, hfd1, star_fwhm, snr, flux, xc, yc)  {star HFD and FWHM}
-//              if HFD1>90 then //try alternative centering method like for R Mod
               else
               begin //Try alternative autocenter method. E.g for R Mod
-              //  if pos('CoRoT_223930736',vsp_vsx_list[j].abbr)>0 then
-             //    beep;
-        //        if ((abs(xc-1092)<20) and (abs(yc-968)<20)) then
-      //          beep;
                 xc:=deX-1;
                 yc:=deY-1;
-//                find_star_center(img_loaded,3,round(deX-1), round(deY-1),xc,yc);//find center of gravity. For comets and problematic stars
                 HFD_without_auto_center(img_loaded,xc,yc, annulus_radius {annulus radius}, head.mzero_radius, adu_e, {unbinned} {out }snr, flux);//special for photometry
-              //  if snr>6 then
-              //  begin
                    hfd1:=0.1;//unknown
-               // end;
               end;
 
               if ((hfd1 < 50) and (hfd1 > 0) and (snr > 6)) then {star detected in img_loaded}
@@ -8030,11 +8029,11 @@ begin
   measuring_method:=measuring_method1.itemindex;
   disabled_autocenter:=(disable_autocenter1.checked and disable_autocenter1.enabled);
 
-  if ((measuring_method=0) and (length(mainform1.fshapes)<1)) then
-  begin
-    application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+#13+#10+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
-    exit;
-  end;
+ // if ((measuring_method=0) and (length(mainform1.fshapes)<1)) then
+ // begin
+ //   application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+#13+#10+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
+ //   exit;
+ // end;
 
   listview_updating:=false;//store to have only one endupdate;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -8057,6 +8056,13 @@ begin
     if analysedP = False then
          stackmenu1.analysephotometry1Click(nil);
     application.ProcessMessages;{show result}
+
+    if ((measuring_method=0) and (length(mainform1.fshapes)<1)) then
+    begin
+      application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+#13+#10+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
+      exit;
+    end;
+
 
 
     if photometry_calibrate1.checked then
@@ -9685,6 +9691,35 @@ begin
    }
 end;
 
+
+
+procedure photometry_auto(thepath : string);//run photmetry auto
+var
+  FileList: TStringList;
+  i : integer;
+begin
+  with stackmenu1 do
+  begin
+    Screen.Cursor:=crHourglass;
+    listview7.items.beginupdate;
+
+    FileList := FindAllFiles(thepath,'*.fit;*.fits;*.fts;*.ini', false); // True = include subfolders
+    try
+      // FileList now contains all the filenames
+      for i:=0 to filelist.count-1 do
+        listview_add(listview7, filelist[i], True, P_nr);
+    finally
+      FileList.Free;
+    end;
+
+    listview7.items.endupdate;
+    mainform1.Stackimages1Click(nil);//show stack menu
+    stackmenu1.photometry_button1Click(nil);
+    stackmenu1.aavso_button1Click(nil);
+    form_aavso1.report_to_clipboard1Click(nil);
+    Screen.Cursor:=crDefault;
+  end;
+end;
 
 procedure Tstackmenu1.classify_dark_temperature1Change(Sender: TObject);
 begin

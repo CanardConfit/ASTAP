@@ -55,6 +55,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
   clipbrd, ExtCtrls, Menus, Buttons, CheckLst, strutils,comctrls, PairSplitter,
+  inifiles,
   astap_main;
 
 type
@@ -154,6 +155,7 @@ var
   obstype : integer=0;
   variable_clean: string='';
   report_stars: string='';
+  report_stars_short: string='';//used for the local .ini file
 
 var
   aavso_report : string;
@@ -176,6 +178,8 @@ procedure plot_graph; {plot curve}
 function retrieve_documented_magnitude(use_array:boolean; filter,columnr: integer; s: string): double;//retrieve comp magnitude from the abbrv string or online VSP
 procedure calc_sd_and_mean(list: array of double; leng : integer; out sd,mean: double);// calculate sd and mean of an array of doubles}
 procedure ExtractListViewDataToArrays(ListView: TListView; P_filter: Integer);
+procedure load_photometry_settings(lpath: string);
+procedure save_photometry_settings(lpath:string); //save photometry settings for this report
 
 implementation
 
@@ -223,7 +227,7 @@ type
 
 var
   jd_min,jd_max,magn_min,magn_max : double;
-  w,h,bspace{,column_var},column_check,wtext  :integer;
+  w,h,bspace,column_check,wtext  :integer;
   column_comps,column_vars : Tinteger_array;
   test_mode : boolean;
   jd_mouse  : double;//jd_mid of mouse position
@@ -266,15 +270,17 @@ begin
   if form_aavso1.abbrv_variable1.items.count=0 then exit;
 
   hash:=inttostr(round(head.ra0*2*180/pi))+'/'+inttostr(round(head.dec0*2*180/pi)); //very simple hash key. Not perfect at boundaries
-  i:=pos(hash, report_stars);
+
+  report_stars_short:=report_stars_short+report_stars;//combine the short one with the long one. The short one was written to an .ini and retrieved
+  i:=pos(hash, report_stars_short);
   if i>0 then // restore
   begin
     with form_aavso1 do   //check mark variable
 
-    k:=posex('|',report_stars,i+1); //: and of hash
-    L:=posex(';',report_stars,k+1); //; is the end of the entry
+    k:=posex('|',report_stars_short,i+1); //: the end of the hash
+    L:=posex(';',report_stars_short,k+1); //; the end of the entry
 
-    all_comp:=copy(report_stars,k+1,L-k-1);//all comp stars
+    all_comp:=copy(report_stars_short,k+1,L-k-1);//all comp stars
 
     //split all stars
     count:=0;
@@ -334,7 +340,9 @@ begin
     j:=posex(';',report_stars,i); //find end of entry
     delete(report_stars,i,j-i+1); //delete entry
   end;
-  report_stars:=report_stars+ hash+'|'+other_stars+';';
+
+  report_stars_short:=hash+'|'+other_stars+';';
+  report_stars:=report_stars+ report_stars_short;
   if length(report_stars)>10000 then report_stars:=copy(report_stars,200,10999);//limit size. Throw oldest part away.
 end;
 
@@ -2259,6 +2267,72 @@ begin
 end;
 
 
+procedure save_photometry_settings(lpath:string); //save photometry settings for this report
+var
+    Sett : TmemIniFile;
+    c,k    : integer;
+    ra,dec : double;
+begin
+  try
+    Sett := TmemIniFile.Create(lpath);
+    sett.clear; {clear any section in the old ini file}
+    with mainform1 do
+    begin
+      sett.writeBool('aavso_report','apply_transformation',apply_transformation);{AAVSO report}
+      sett.writeBool('aavso_report','ensemble',ensemble_database);{AAVSO report}
+
+      sett.writeInteger('photometry_tab','measure_mode',stackmenu1.measuring_method1.itemindex);
+      sett.writestring('photometry_tab','snr_min_p',stackmenu1.snr_min_photo1.text);
+      sett.writestring('photometry_tab','flux_apert',stackmenu1.flux_aperture1.text);
+      sett.writestring('photometry_tab','annulus_rad',stackmenu1.annulus_radius1.text);
+      sett.writeInteger('photometry_tab','annotate_i',stackmenu1.annotate_mode1.itemindex);
+      sett.writeInteger('photometry_tab','reference_d',stackmenu1.reference_database1.itemindex);
+      sett.writestring('photometry_tab','max_period',stackmenu1.max_period1.text);// required?
+      sett.WriteBool('photometry_tab','set_saturation', stackmenu1.set_saturation1.checked);//photometry tab
+      sett.writestring('photometry_tab','saturation',stackmenu1.saturation_level1.text);
+      sett.writestring('photometry_tab',';Format stars: hash|check|star1|star2|star3|star4|star5;  The hash is the rounded 2*RA/2*DEC in degrees.','');
+      sett.writestring('photometry_tab','stars',report_stars_short);
+
+    end;{mainform1}
+  finally
+    Sett.Free;
+  end;
+end;
+
+
+procedure load_photometry_settings(lpath: string);
+var
+    Sett : TmemIniFile;
+    dum,dum2 : string;
+    c   : integer;
+    bool: boolean;
+    stars : Tstar_list;
+begin
+  try
+    Sett := TmemIniFile.Create(lpath);
+    with mainform1 do
+    begin
+      apply_transformation:=Sett.ReadBool('aavso_report','apply_transformation',false);//aavso report
+      ensemble_database:=Sett.ReadBool('aavso_report','ensemble',false);//aavso report
+
+      c:=Sett.ReadInteger('photometry_tab','measure_mode',1); stackmenu1.measuring_method1.itemindex:=max(c,1);//Do not allow mode one
+      dum:=Sett.ReadString('photometry_tab','snr_min_p',''); if dum<>'' then stackmenu1.snr_min_photo1.text:=dum;
+      dum:=Sett.ReadString('photometry_tab','flux_apert',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
+      dum:=Sett.ReadString('photometry_tab','annulus_rad',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
+
+      c:=Sett.ReadInteger('photometry_tab','annotate_i',2); stackmenu1.annotate_mode1.itemindex:=c;
+      c:=Sett.ReadInteger('photometry_tab','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
+      dum:=Sett.ReadString('photometry_tab','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
+      stackmenu1.set_saturation1.checked:= Sett.ReadBool('photometry_tab','set_saturation',false);//photometry tab
+      dum:=Sett.ReadString('photometry_tab','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
+      report_stars_short:=Sett.ReadString('photometry_tab','stars','');//retrieve stars used
+    end; //with mainform1
+  finally {also for error it end's here}
+    Sett.Free;
+  end;
+
+end;
+
 
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
@@ -2312,7 +2386,6 @@ begin
   begin
     abrv_comp1.color:=cldefault;
     for i:=0 to high(column_comps) do
-  //    abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(stackmenu1.listview7.Column[column_comps[i]+1].Caption,false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
       abbrv_comp_clean:= abbrv_comp_clean+clean_abbreviation(ColumnTitles[column_comps[i]+1],false)+'|'; //variable_clean with still underscore. Note the captions are one position shifted.
   end
   else
@@ -2742,10 +2815,13 @@ begin
     Clipboard.AsText:=#13+#10+aavso_report
   else
   begin
-    savedialog1.filename:=stringreplace(clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,false),'?','',[rfReplaceAll]) +'_'+date_observation+'_report.txt';
+    savedialog1.filename:=stringreplace(clean_abbreviation(ColumnTitles[column_vars[0]+1],false),'?','',[rfReplaceAll])+'_'+date_observation+'_report.txt';
+//    savedialog1.filename:=stringreplace(clean_abbreviation(stackmenu1.listview7.Column[column_vars[m_index]+1].Caption,false),'?','',[rfReplaceAll]) +'_'+date_observation+'_report.txt';
     savedialog1.initialdir:=ExtractFilePath(filename2);
+    if sender=nil then
+       savedialog1.filename:=savedialog1.initialdir+savedialog1.filename; //add path
     savedialog1.Filter := '(*.txt)|*.txt';
-    if savedialog1.execute then
+    if ((sender=nil) or (savedialog1.execute)) then
     begin
       log_to_file2(savedialog1.filename, aavso_report);
       png:= TPortableNetworkGraphic.Create;   {FPC}
@@ -2761,7 +2837,9 @@ begin
     else
     exit;
   end;
-  save_settings2; {for aavso settings}
+  save_settings2; {save configuration}
+//  save_settings(ChangeFileExt(savedialog1.filename,' Add this file to the tab photometry files to reuse the settings.cfg')); //put a copy in the image folder
+  save_photometry_settings(ChangeFileExt(savedialog1.filename,' Add this file to the tab photometry files to reuse the settings.ini')); //save photometry settings for this report
 end;
 
 
