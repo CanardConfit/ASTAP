@@ -117,6 +117,7 @@ begin
     close_fits_file;
     mainform1.error_label1.caption:='Error';
     mainform1.statusbar1.panels[5].text:='Error';
+    mainform1.error_label1.caption:=('Error, accessing the file!');
     mainform1.error_label1.visible:=true;
     exit;
   end;

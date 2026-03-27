@@ -75,7 +75,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.03.25';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.03.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -379,6 +379,7 @@ type
     N3: TMenuItem;
     StatusBar1: TStatusBar;
 
+
     procedure add_marker_position1Click(Sender: TObject);
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
     procedure annotations_visible1Click(Sender: TObject);
@@ -557,13 +558,18 @@ type
     procedure minimum1Change(Sender: TObject);
     procedure GenerateShapes(position,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
     procedure clear_fshapes_array;
+
+    procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
+
   private
     { Private declarations }
-
+    var
+      FStartupDone: Boolean;
   public
     { Public declarations }
     FShapes: array of TShapes;//for photometry
     procedure DisplayHint(Sender: TObject);
+
   end;
 
 var
@@ -846,6 +852,7 @@ procedure update_menu(fits :boolean);{update menu if fits file is available in a
 procedure get_hist(colour:integer;img :Timage_array);{get histogram of img_loaded}
 procedure save_settings2;
 procedure save_settings(lpath:string); //save settings at any path
+function load_settings(lpath: string)  : boolean; //load settings
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
 {$ifdef mswindows}
 procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
@@ -3322,7 +3329,7 @@ end;
 procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
-  value,sd, sd_old,factor,factor2,sd2,dummy : double;
+  value,sd, sd_old,factor,factor2,sd2 : double;
 begin
   if calc_hist then  get_hist(colour,img);{get histogram of img_loaded and his_total}
 
@@ -4055,7 +4062,7 @@ end;
 
 procedure restore_img;
 var
-   resized,success :boolean;
+   resized : boolean;
    old_width2,old_height2 : integer;
 begin
    if mainform1.Undo1.Enabled=true then
@@ -6282,7 +6289,7 @@ begin
     if max_counter>50 then
       info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2))){bit range, calculate 2log}
     else
-      info_message:=info_message+#10+#10+'Bit depth data: ??  Image is not saturated.';
+      info_message:=info_message+#10+#10+'Bit depth data: ??  Image does not contain saturated pixels. Smallest step '+floattostrf(minstep,FFfixed,0,0);
   end;
 
 
@@ -8406,7 +8413,7 @@ begin
 end;
 
 
-function load_settings(lpath: string)  : boolean;
+function load_settings(lpath: string)  : boolean; //load settings
 var
     Sett : TmemIniFile;
     dum : string;
@@ -8698,29 +8705,26 @@ begin
       dum:=Sett.ReadString('stack','star_level_colouring',''); if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','filter_artificial_colouring',''); if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
       dum:=Sett.ReadString('stack','resize_factor',''); if dum<>'' then stackmenu1.resize_factor1.text:=dum;
+
+      dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
+
+      c:=Sett.ReadInteger('stack','measure_mode',0); stackmenu1.measuring_method1.itemindex:=c;
       dum:=Sett.ReadString('stack','snr_min_p',''); if dum<>'' then stackmenu1.snr_min_photo1.text:=dum;
       dum:=Sett.ReadString('stack','flux_apert',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_rad',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
-      dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
-
       c:=Sett.ReadInteger('stack','annotate_i',2); stackmenu1.annotate_mode1.itemindex:=c;
       c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
-
-      c:=Sett.ReadInteger('stack','measure_mode',0); stackmenu1.measuring_method1.itemindex:=c;
-
-      stackmenu1.set_saturation1.checked:= Sett.ReadBool('stack','set_saturation',false);//photometry tab
-      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('stack','photom_cal',true);//photometry tab calibration
-
-
-      dum:=Sett.ReadString('stack','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
       dum:=Sett.ReadString('stack','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
+      stackmenu1.set_saturation1.checked:= Sett.ReadBool('stack','set_saturation',false);//photometry tab
+      dum:=Sett.ReadString('stack','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
+
+      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('stack','photom_cal',true);//photometry tab calibration
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
 
       dum:=Sett.ReadString('stack','noisefilter_blur',''); if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
       dum:=Sett.ReadString('stack','noisefilter_sd',''); if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
-
 
       c:=Sett.ReadInteger('stack','hue_fuzziness',987654321); if c<>987654321 then stackmenu1.hue_fuzziness1.position:=c;
       c:=Sett.ReadInteger('stack','saturation_tolerance',987654321);  if c<>987654321 then stackmenu1.saturation_tolerance1.position:=c;
@@ -8747,9 +8751,9 @@ begin
       baa_style:=Sett.ReadBool('aavso','baa_style',false);{aavso report}
       sort_alphabetically:=Sett.ReadBool('aavso','sort_alphabetically',false);{aavso report}
       apply_transformation:=Sett.ReadBool('aavso','apply_transformation',false);{aavso report}
+      ensemble_database:=Sett.ReadBool('aavso','ensemble',true);{aavso report}
 
       hjd_date:=Sett.ReadBool('aavso','hjd_date',false);{aavso report}
-      ensemble_database:=Sett.ReadBool('aavso','ensemble',true);{aavso report}
 
       aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
       report_stars:=Sett.ReadString('aavso','report-stars','');
@@ -9132,6 +9136,7 @@ begin
 
       sett.writestring('stack','resize_factor',stackmenu1.resize_factor1.text);
 
+      sett.writeInteger('stack','measure_mode',stackmenu1.measuring_method1.itemindex);
       sett.writestring('stack','snr_min_p',stackmenu1.snr_min_photo1.text);
       sett.writestring('stack','flux_apert',stackmenu1.flux_aperture1.text);
       sett.writestring('stack','annulus_rad',stackmenu1.annulus_radius1.text);
@@ -9139,15 +9144,10 @@ begin
       sett.writeInteger('stack','annotate_i',stackmenu1.annotate_mode1.itemindex);
       sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
       sett.writestring('stack','max_period',stackmenu1.max_period1.text);
-
-
-      sett.writeInteger('stack','measure_mode',stackmenu1.measuring_method1.itemindex);
       sett.WriteBool('stack','set_saturation', stackmenu1.set_saturation1.checked);//photometry tab
-      sett.WriteBool('stack','photom_cal', stackmenu1.photometry_calibrate1.checked);//photometry tab
-
-
       sett.writestring('stack','saturation',stackmenu1.saturation_level1.text);
 
+      sett.WriteBool('stack','photom_cal', stackmenu1.photometry_calibrate1.checked);//photometry tab
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
       sett.writestring('stack','sd_factor_list',stackmenu1.sd_factor_list1.text);
@@ -9177,6 +9177,7 @@ begin
       sett.writeBool('aavso','baa_style',baa_style);{AAVSO report}
       sett.writeBool('aavso','sort_alphabetically',sort_alphabetically);{AAVSO report}
       sett.writeBool('aavso','apply_transformation',apply_transformation);{AAVSO report}
+      sett.writeBool('aavso','ensemble',ensemble_database);{AAVSO report}
 
 
 
@@ -12637,10 +12638,29 @@ begin
  end;
 
 
+procedure Tmainform1.ApplicationIdle(Sender: TObject; var Done: Boolean);
+begin
+  if not FStartupDone then
+  begin
+    FStartupDone := True;
+    with application do
+    begin
+      if hasoption('p') then  //do photometry
+      begin
+        photometry_auto(GetOptionValue('p'));
+        halt(errorlevel); {don't save only, do mainform1.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
+      end;
+    end;
+  end;
+end;
+
+
 
 procedure Tmainform1.FormCreate(Sender: TObject);
 var
    param1: string;
+//var
+//  IdleMethod: TIdleEvent;
 begin
 
   {OneInstance of ASTAP if only one parameter is specified. So if user clicks on an associated image in explorer}
@@ -12695,6 +12715,10 @@ begin
  {$IfDef Darwin}// for MacOS
   if commandline_execution=false then update_mainmenu_mac;
  {$endif}
+
+  FStartupDone:=False;
+  Application.OnIdle := self.ApplicationIdle;//for photometry_auto
+
 end;
 
 
@@ -13837,6 +13861,7 @@ begin
 
       //log_to_file('c:\temp\text.txt',cmdline);
 
+
       debug:=hasoption('debug'); {The debug option allows to set some solving parameters in the GUI (graphical user interface) and to test the commandline. In debug trimmed_median_background all commandline parameters are set and the specified image is shown in the viewer. Only the solve command has to be given manuallydebug trimmed_median_background }
       filespecified:=hasoption('f');
       focusrequest:=hasoption('focus1');
@@ -13919,7 +13944,6 @@ begin
              {$ENDIF}
            end;
         end;
-
 
         if debug=false then {standard solve via command line}
         begin
@@ -14104,7 +14128,9 @@ begin
       mainform1.Stackimages1Click(nil);// make stack menu visible
     end
     else
-    load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});{show image of parameter1}
+    if  paramcount=1 then
+      load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});{show image of parameter1}
+
   end {paramcount>0}
   else
   begin
@@ -14132,6 +14158,8 @@ begin
   mainform1.StaticText_labelversion1.caption:='v'+astap_version;
 
   Application.OnHint := DisplayHint;//this line doesn't work reliable in FormCreate.
+
+
 
 end;
 
@@ -15812,13 +15840,6 @@ begin
       yc:=startY;
       hfd2:=0.1;
     end;
-
-//    if hfd2> 90 then//failure, try an alternative method e.g. for R Mon
-//    begin
-//      find_star_center(img_loaded,3,startX,startY,xc,yc);//find center of gravity. For comets and problematic stars
-//      HFD_without_auto_center(img_loaded,xc,yc, 14 {annulus radius}, 3 {aperture radius}, 0{adu_e}, {unbinned} {out }snr, flux);//special for photometry
-//      memo2_message('Alternative centering method used');
-//    end;
 
     if hfd2<90 then {detected something}
     begin
