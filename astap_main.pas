@@ -13856,6 +13856,7 @@ begin
         '-sqm pedestal  {add measured sqm, centalt, airmass values to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-stack  path {startup with live stack tab and path selected}'+#10+
+        '-p path {create a photometry report. An .ini in this path will be used for the settings}'+#10+
         #10+
         'Preference will be given to the command-line values. CSV files are written with a dot as decimal seperator.'+#10+
         'Solver result will be written to filename.ini and filename.wcs.'+#10+
