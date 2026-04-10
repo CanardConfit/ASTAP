@@ -1,6 +1,6 @@
 unit unit_tiff;
 
-{Writes uncompressed or compressed tiff files from an image array
+{Writes and reads uncompressed or compressed tiff files from an to an image array
 This unit can be called ASTAP-TIFF since it is developped for the ASTAP program
 Copyright 2018, 2026 by Han Kleijn, www.hnsky.org
 email: han.k.. at...hnsky.org}
