@@ -78,7 +78,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.04.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.04.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -7764,6 +7764,8 @@ var
    flipv, fliph : boolean;
    ratio        : double;
 begin
+ // if img_loaded=nil then
+ //    exit;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   if ap_order>0 then
@@ -8723,7 +8725,7 @@ begin
       stackmenu1.set_saturation1.checked:= Sett.ReadBool('stack','set_saturation',false);//photometry tab
       dum:=Sett.ReadString('stack','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
 
-      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('stack','photom_cal',true);//photometry tab calibration
+      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('stack','calibration',false);//photometry tab calibration
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
@@ -9153,7 +9155,7 @@ begin
       sett.WriteBool('stack','set_saturation', stackmenu1.set_saturation1.checked);//photometry tab
       sett.writestring('stack','saturation',stackmenu1.saturation_level1.text);
 
-      sett.WriteBool('stack','photom_cal', stackmenu1.photometry_calibrate1.checked);//photometry tab
+      sett.WriteBool('stack','calibration', stackmenu1.photometry_calibrate1.checked);//photometry tab
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
       sett.writestring('stack','sd_factor_list',stackmenu1.sd_factor_list1.text);
@@ -13856,7 +13858,7 @@ begin
         '-sqm pedestal  {add measured sqm, centalt, airmass values to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-stack  path {startup with live stack tab and path selected}'+#10+
-        '-p path {create a photometry report. An .ini in this path will be used for the settings}'+#10+
+        '-p path {create a photometry report of the files in the path. Settings should come from an .ini file in the same path}'+#10+
         #10+
         'Preference will be given to the command-line values. CSV files are written with a dot as decimal seperator.'+#10+
         'Solver result will be written to filename.ini and filename.wcs.'+#10+

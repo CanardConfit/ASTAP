@@ -2285,6 +2285,7 @@ begin
       sett.writeInteger('photometry_tab','annotate_i',stackmenu1.annotate_mode1.itemindex);
       sett.writeString('photometry_tab','ref_database',stackmenu1.reference_database1.text);
       sett.writestring('photometry_tab','max_period',stackmenu1.max_period1.text);// required?
+      sett.WriteBool('photometry_tab','calibration',stackmenu1.photometry_calibrate1.checked);
       sett.WriteBool('photometry_tab','set_saturation', stackmenu1.set_saturation1.checked);//photometry tab
       sett.writestring('photometry_tab','saturation',stackmenu1.saturation_level1.text);
       sett.writestring('photometry_tab',';Format stars: hash|check|star1|star2|star3|star4|star5....;  The hash is the rounded 2*RA/2*DEC in degrees.','');
@@ -2321,6 +2322,7 @@ begin
       dum:=Sett.ReadString('photometry_tab','ref_database','');
                    if dum<>'' then stackmenu1.reference_database1.text:=dum;
       dum:=Sett.ReadString('photometry_tab','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
+      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('photometry_tab','calibration',false);//photometry tab
       stackmenu1.set_saturation1.checked:= Sett.ReadBool('photometry_tab','set_saturation',false);//photometry tab
       dum:=Sett.ReadString('photometry_tab','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
       report_stars_short:=Sett.ReadString('photometry_tab','stars','');//retrieve stars used

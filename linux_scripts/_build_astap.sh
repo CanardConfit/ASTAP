@@ -116,22 +116,21 @@ sudo cp /home/h/astap.fpc/astap /opt/astap
 tar -czvf astap_armhf_qt5.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap
 
 
-#  wait for GTK3 cross compiler fix
 #build aarch64
-#rm ~/astap.fpc/astap 
-#/home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64.lpi                  
-#if [[ ! -f ~/astap.fpc/astap ]] ; then
-#    echo 'aarch64 file does not exist, aborting!!'
-#    exit
-#fi
-#cp /home/h/astap.fpc/astap /home/h/astap_install/astap_aarch64/opt/astap
-#cd /home/h/astap_install
-#sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64
-#sudo cp /home/h/astap.fpc/astap /opt/astap
-#sudo cp /home/h/astap_install/astap_aarch64/opt/astap/astap /opt/astap
-#sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt/astap
-#sudo cp /home/h/astap_install/astap_aarch64/opt/astap/astap_cli /opt/astap
-#tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap  /opt/astap/astap_cli
+rm ~/astap.fpc/astap 
+/home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64.lpi                  
+if [[ ! -f ~/astap.fpc/astap ]] ; then
+   echo 'aarch64 file does not exist, aborting!!'
+   exit
+fi
+cp /home/h/astap.fpc/astap /home/h/astap_install/astap_aarch64/opt/astap
+cd /home/h/astap_install
+sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64
+sudo cp /home/h/astap.fpc/astap /opt/astap
+sudo cp /home/h/astap_install/astap_aarch64/opt/astap/astap /opt/astap
+sudo cp /home/h/astap_install/astap_aarch64/opt/astap/unprocessed_raw-astap /opt/astap
+sudo cp /home/h/astap_install/astap_aarch64/opt/astap/astap_cli /opt/astap
+tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap  /opt/astap/astap_cli
 
 
 

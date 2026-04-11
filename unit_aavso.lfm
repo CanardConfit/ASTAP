@@ -360,7 +360,7 @@ object form_aavso1: Tform_aavso1
       Cursor = crArrow
       Left = 0
       Height = 100
-      Top = 769
+      Top = 770
       Width = 1436
       ClientWidth = 1436
       ClientHeight = 100

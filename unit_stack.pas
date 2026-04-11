@@ -1171,7 +1171,7 @@ function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*'
 function calc_saturation_level(head :theader) : double;//calculate saturation level image
 function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
 function standardise_filter_name(inp :string): string;//standardise filter name
-procedure photometry_auto(thepath : string);
+procedure photometry_auto(thepath : string);//photometry via command line
 
 const
   L_object = 0; {lights, position in listview1}
@@ -4312,9 +4312,10 @@ begin
       filename1:=lv.items[c].Caption;
       if extractfileext(filename1)='.ini' then //for photometry
       begin
-        lv.Items.item[c].Checked:=False;
+        //lv.Items.item[c].Checked:=False; gives problems in command line
+        lv.Items.Delete(c);//remove entry
+        dec(counts);//update for deletion entry
         load_photometry_settings(filename1);
-        lv.Items.item[c].subitems.Strings[L_result]:='Applied';
       end
       else
       if fits_tiff_file_name(filename1) = False  {fits file name?} then
@@ -7147,7 +7148,6 @@ begin
           for i:=1 to P_nr-1 do
                 listView7.Items.item[c].subitems.Strings[i]:=('');//clear old values
         end;
-
         inc(progress);
       end;
   end;
@@ -9701,7 +9701,7 @@ end;
 
 
 
-procedure photometry_auto(thepath : string);//run photmetry auto
+procedure photometry_auto(thepath : string);//run photometry auto from command line
 var
   FileList: TStringList;
   i : integer;
@@ -9711,11 +9711,14 @@ begin
     Screen.Cursor:=crHourglass;
     listview7.items.beginupdate;
 
-    FileList := FindAllFiles(thepath,'*.fit;*.fits;*.fts;*.ini', false); // True = include subfolders
+//    FileList := FindAllFiles(thepath,dialog_filter'*.fit;*.fits;*.fts;*.ini', false); // True = include subfolders
+    FileList := FindAllFiles(thepath,dialog_filter+';*.ini', false); // True = include subfolders
     try
-      // FileList now contains all the filenames
+      listview7.Clear;
       for i:=0 to filelist.count-1 do
         listview_add(listview7, filelist[i], True, P_nr);
+
+      // FileList now contains all the filenames
     finally
       FileList.Free;
     end;
