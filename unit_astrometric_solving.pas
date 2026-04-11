@@ -237,7 +237,7 @@ end;
 
 function read_stars(telescope_ra, telescope_dec, search_field: double; database_type, nrstars_required: integer; out starlist: Tstar_list): boolean;{read star from star database}
 var
-  Bp_Rp, ra2, dec2, frac1, frac2, frac3, frac4, sep: double;
+  B_V, ra2, dec2, frac1, frac2, frac3, frac4, sep: double;
   nrstars, area1, area2, area3, area4, nrstars_required2, Count: integer;
 begin
   Result := False;{assume failure}
@@ -258,7 +258,7 @@ begin
       if open_database(telescope_dec, area1) = False then
         exit;{open database file or reset buffer}
       nrstars_required2 := min(nrstars_required, trunc(nrstars_required * frac1));
-      while ((nrstars < nrstars_required2) and (readdatabase290(telescope_ra, telescope_dec, search_field, {var} ra2, dec2, mag2, Bp_Rp))) do {star 290 file database read. Read up to nrstars_required}
+      while ((nrstars < nrstars_required2) and (readdatabase1476(telescope_ra, telescope_dec, search_field, {var} ra2, dec2, mag2, B_V))) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
         equatorial_standard(telescope_ra, telescope_dec, ra2, dec2, 1, starlist[0, nrstars]{x}, starlist[1, nrstars]{y});{store star CCD x,y position}
         Inc(nrstars);
@@ -271,7 +271,7 @@ begin
         exit; {open database file or reset buffer}
       nrstars_required2 := min(nrstars_required, trunc(nrstars_required * (frac1 + frac2)));
       {prevent round up errors resulting in error starlist}
-      while ((nrstars < nrstars_required2) and (readdatabase290(telescope_ra, telescope_dec, search_field, {var} ra2, dec2, mag2, Bp_Rp))) do {star 290 file database read. Read up to nrstars_required}
+      while ((nrstars < nrstars_required2) and (readdatabase1476(telescope_ra, telescope_dec, search_field, {var} ra2, dec2, mag2, B_V))) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
         equatorial_standard(telescope_ra, telescope_dec, ra2, dec2, 1, starlist[0, nrstars]{x}, starlist[1, nrstars]{y});{store star CCD x,y position}
         Inc(nrstars);
@@ -283,7 +283,7 @@ begin
       if open_database(telescope_dec, area3) = False then
         exit; {open database file or reset buffer}
       nrstars_required2 := min(nrstars_required, trunc(nrstars_required * (frac1 + frac2 + frac3)));
-      while ((nrstars < nrstars_required2) and (readdatabase290(telescope_ra, telescope_dec, search_field, {var} ra2, dec2, mag2, Bp_Rp))) do {star 290 file database read. Read up to nrstars_required}
+      while ((nrstars < nrstars_required2) and (readdatabase1476(telescope_ra, telescope_dec, search_field, {var} ra2, dec2, mag2, B_V))) do {star 290 file database read. Read up to nrstars_required}
       begin {add star}
         equatorial_standard(telescope_ra, telescope_dec, ra2, dec2, 1, starlist[0, nrstars]{x}, starlist[1, nrstars]{y});{store star CCD x,y position}
         Inc(nrstars);
@@ -295,7 +295,7 @@ begin
       if open_database(telescope_dec, area4) = False then
         exit; {open database file}
       nrstars_required2 := min(nrstars_required, trunc(nrstars_required *(frac1 + frac2 + frac3 + frac4)));
-      while ((nrstars < nrstars_required2) and (readdatabase290(telescope_ra, telescope_dec, search_field, {var} ra2, dec2, mag2, Bp_Rp))) do{star 290 file database read. Read up to nrstars_required}
+      while ((nrstars < nrstars_required2) and (readdatabase1476(telescope_ra, telescope_dec, search_field, {var} ra2, dec2, mag2, B_V))) do{star 290 file database read. Read up to nrstars_required}
       begin {add star}
         equatorial_standard(telescope_ra, telescope_dec, ra2, dec2, 1, starlist[0, nrstars]{x}, starlist[1, nrstars]{y});{store star CCD x,y position}
         Inc(nrstars);

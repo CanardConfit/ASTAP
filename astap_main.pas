@@ -28,6 +28,9 @@ GTK3
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42173
 https://github.com/LongDirtyAnimAlf/fpcupdeluxe/issues/806?reload=1
 
+GTK3, bug in sorting Tlistview columns
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42215
+
 
 https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
 https://gitlab.com/freepascal.org/fpc/source/-/issues/41033#example-project  internalsize tiff
@@ -75,7 +78,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.03.27';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.04.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -807,7 +810,7 @@ var {################# initialised variables #########################}
   annotation_diameter : integer=20;
   egain_extra_factor  : integer=16;
   egain_default       : double=1;
-  passband_active: string=''; //Indicates current Gaia conversion active
+  database_passband_active: string=''; //Indicates current Gaia conversion active
   star_profile_plotted: boolean=false;
   minor_planet_at_cursor:string='';
 
@@ -7761,6 +7764,8 @@ var
    flipv, fliph : boolean;
    ratio        : double;
 begin
+ // if img_loaded=nil then
+ //    exit;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   if ap_order>0 then
@@ -8631,6 +8636,7 @@ begin
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
       dum:=Sett.ReadString('stack','star_database',''); if dum<>'' then stackmenu1.star_database1.text:=dum;
+
       dum:=Sett.ReadString('stack','solve_search_field',''); if dum<>'' then stackmenu1.search_fov1.text:=dum;
 
       dum:=Sett.ReadString('stack','radius_search',''); if dum<>'' then stackmenu1.radius_search1.text:=dum;
@@ -8712,13 +8718,14 @@ begin
       dum:=Sett.ReadString('stack','snr_min_p',''); if dum<>'' then stackmenu1.snr_min_photo1.text:=dum;
       dum:=Sett.ReadString('stack','flux_apert',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_rad',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
+      dum:=Sett.ReadString('stack','ref_database',''); if dum<>'' then stackmenu1.reference_database1.text:=dum else stackmenu1.star_database1.text:='Online Gaia';//for photometry
       c:=Sett.ReadInteger('stack','annotate_i',2); stackmenu1.annotate_mode1.itemindex:=c;
-      c:=Sett.ReadInteger('stack','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
+
       dum:=Sett.ReadString('stack','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
       stackmenu1.set_saturation1.checked:= Sett.ReadBool('stack','set_saturation',false);//photometry tab
       dum:=Sett.ReadString('stack','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
 
-      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('stack','photom_cal',true);//photometry tab calibration
+      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('stack','calibration',false);//photometry tab calibration
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
@@ -9142,12 +9149,13 @@ begin
       sett.writestring('stack','annulus_rad',stackmenu1.annulus_radius1.text);
       sett.writestring('stack','font_size_p',stackmenu1.font_size_photometry1.text);
       sett.writeInteger('stack','annotate_i',stackmenu1.annotate_mode1.itemindex);
-      sett.writeInteger('stack','reference_d',stackmenu1.reference_database1.itemindex);
+      sett.writestring('stack','ref_database',stackmenu1.reference_database1.text);
+
       sett.writestring('stack','max_period',stackmenu1.max_period1.text);
       sett.WriteBool('stack','set_saturation', stackmenu1.set_saturation1.checked);//photometry tab
       sett.writestring('stack','saturation',stackmenu1.saturation_level1.text);
 
-      sett.WriteBool('stack','photom_cal', stackmenu1.photometry_calibrate1.checked);//photometry tab
+      sett.WriteBool('stack','calibration', stackmenu1.photometry_calibrate1.checked);//photometry tab
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
       sett.writestring('stack','sd_factor_list',stackmenu1.sd_factor_list1.text);
@@ -11707,7 +11715,7 @@ begin
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
 
-  if ((update) or (head.mzero=0) or (aperture_ratio<>apert){new calibration required} or (passband_active<>head.passband_database))  then
+  if ((update) or (head.mzero=0) or (aperture_ratio<>apert){new calibration required} or (database_passband_active<>head.passband_database))  then
   begin
     memo2_message('Photometric calibration of the measured stellar flux.');
     annulus_radius:=14;{calibrate for extended objects}
@@ -13850,6 +13858,7 @@ begin
         '-sqm pedestal  {add measured sqm, centalt, airmass values to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-stack  path {startup with live stack tab and path selected}'+#10+
+        '-p path {create a photometry report of the files in the path. Settings should come from an .ini file in the same path}'+#10+
         #10+
         'Preference will be given to the command-line values. CSV files are written with a dot as decimal seperator.'+#10+
         'Solver result will be written to filename.ini and filename.wcs.'+#10+
@@ -13935,10 +13944,10 @@ begin
              if isConsole then {stdout available, compile targe option -wh used}
              begin
                writeln('FOCUS='+floattostrF(focus_best,ffFixed,0,1));
-               writeln('ERROR_MIN='+floattostrF(lowest_error,ffFixed,0,5));
+               writeln('ERROR_MIN='+floattostrF(lowest_error2,ffFixed,0,5));
              end;
             {$IFDEF msWindows}
-             halt(round(focus_best)*10000 +min(9999,round(lowest_error*1000)));
+             halt(round(focus_best)*10000 +min(9999,round(lowest_error2*1000)));
             {$ELSE}
              halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
              {$ENDIF}

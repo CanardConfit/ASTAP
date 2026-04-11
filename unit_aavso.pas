@@ -1111,9 +1111,6 @@ begin
 
 
   setlength(data,2+length(column_vars)+length(column_comps), length(RowChecked));//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
-  //for i:=0 to high(data) do
-  //  for j:=0 to high(data[0]) do
-  //    data[i,j]:=0;//clear
   setlength(listcheck_v,length(data[0]));//list with magnitudes check star
   setlength(listcheck_b,length(data[0]));//list with magnitudes check star
   setlength(listcheck_r,length(data[0]));//list with magnitudes check star
@@ -2239,7 +2236,7 @@ begin
   obstype1.ItemIndex:=obstype;
   aavso_report:='';
 
- // form_aavso1.height:=report_to_clipboard1.top+report_to_clipboard1.height+5;//autosize in height. note form_aavso1.autosize:=true doesn't work welll for the timage
+  pairsplitter1.position:=report_to_clipboard1.top+report_to_clipboard1.height+8;//set correct for 4k screens with hiDPI settings. Works only in show. Not in create
 
   if p_nr=p_nr_norm then
   begin
@@ -2286,11 +2283,12 @@ begin
       sett.writestring('photometry_tab','flux_apert',stackmenu1.flux_aperture1.text);
       sett.writestring('photometry_tab','annulus_rad',stackmenu1.annulus_radius1.text);
       sett.writeInteger('photometry_tab','annotate_i',stackmenu1.annotate_mode1.itemindex);
-      sett.writeInteger('photometry_tab','reference_d',stackmenu1.reference_database1.itemindex);
+      sett.writeString('photometry_tab','ref_database',stackmenu1.reference_database1.text);
       sett.writestring('photometry_tab','max_period',stackmenu1.max_period1.text);// required?
+      sett.WriteBool('photometry_tab','calibration',stackmenu1.photometry_calibrate1.checked);
       sett.WriteBool('photometry_tab','set_saturation', stackmenu1.set_saturation1.checked);//photometry tab
       sett.writestring('photometry_tab','saturation',stackmenu1.saturation_level1.text);
-      sett.writestring('photometry_tab',';Format stars: hash|check|star1|star2|star3|star4|star5;  The hash is the rounded 2*RA/2*DEC in degrees.','');
+      sett.writestring('photometry_tab',';Format stars: hash|check|star1|star2|star3|star4|star5....;  The hash is the rounded 2*RA/2*DEC in degrees.','');
       sett.writestring('photometry_tab','stars',report_stars_short);
 
     end;{mainform1}
@@ -2321,8 +2319,10 @@ begin
       dum:=Sett.ReadString('photometry_tab','annulus_rad',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
 
       c:=Sett.ReadInteger('photometry_tab','annotate_i',2); stackmenu1.annotate_mode1.itemindex:=c;
-      c:=Sett.ReadInteger('photometry_tab','reference_d',0); stackmenu1.reference_database1.itemindex:=c;
+      dum:=Sett.ReadString('photometry_tab','ref_database','');
+                   if dum<>'' then stackmenu1.reference_database1.text:=dum;
       dum:=Sett.ReadString('photometry_tab','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
+      stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('photometry_tab','calibration',false);//photometry tab
       stackmenu1.set_saturation1.checked:= Sett.ReadBool('photometry_tab','set_saturation',false);//photometry tab
       dum:=Sett.ReadString('photometry_tab','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
       report_stars_short:=Sett.ReadString('photometry_tab','stars','');//retrieve stars used
@@ -2529,8 +2529,8 @@ begin
            comp_magn_str:='?';//clear for case failure
            check_magn_str:='?';//clear for case failure
 
-           if stackmenu1.reference_database1.itemindex=0 then //local database
-           if pos('v',name_database)>0 then magn_type:='transformed to Johnson-V.' else magn_type:='using BM magnitude.'
+           if pos('On',stackmenu1.reference_database1.text)=0 then //local database
+             if pos('v',name_database)>0 then magn_type:='Local V or B.' else magn_type:='using BM magnitude.'
            else  //online database
              magn_type:='transformed';
 

@@ -1,13 +1,13 @@
 object form_aavso1: Tform_aavso1
-  Left = 389
-  Height = 896
+  Left = 486
+  Height = 849
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 67
-  Width = 1435
+  Top = 84
+  Width = 1436
   ActiveControl = PairSplitter1
   Caption = 'AAVSO report'
-  ClientHeight = 896
-  ClientWidth = 1435
+  ClientHeight = 849
+  ClientWidth = 1436
   Constraints.MinHeight = 750
   LCLVersion = '4.2.0.0'
   OnClose = FormClose
@@ -17,9 +17,9 @@ object form_aavso1: Tform_aavso1
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 896
+    Height = 849
     Top = 0
-    Width = 1435
+    Width = 1436
     Align = alClient
     Color = clForm
     Position = 765
@@ -29,19 +29,19 @@ object form_aavso1: Tform_aavso1
       Left = 0
       Height = 765
       Top = 0
-      Width = 1435
-      ClientWidth = 1435
+      Width = 1436
+      ClientWidth = 1436
       ClientHeight = 765
       Constraints.MinHeight = 730
       object Panel_top_menu1: TPanel
         Left = 0
         Height = 765
         Top = 0
-        Width = 1435
+        Width = 1436
         Align = alClient
         AutoSize = True
         ClientHeight = 765
-        ClientWidth = 1435
+        ClientWidth = 1436
         ParentBackground = False
         ParentColor = False
         TabOrder = 0
@@ -191,7 +191,7 @@ object form_aavso1: Tform_aavso1
           Height = 763
           Hint = 'See popup  menu to save. Any check/uncheck in the list view wil result in an update of the graph'
           Top = 1
-          Width = 905
+          Width = 906
           Align = alClient
           BorderSpacing.Left = 523
           BorderSpacing.Right = 5
@@ -359,17 +359,17 @@ object form_aavso1: Tform_aavso1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 126
+      Height = 100
       Top = 770
-      Width = 1435
-      ClientWidth = 1435
-      ClientHeight = 126
+      Width = 1436
+      ClientWidth = 1436
+      ClientHeight = 100
       Constraints.MinHeight = 100
       object Memo1: TMemo
         Left = 0
-        Height = 126
+        Height = 100
         Top = 0
-        Width = 1435
+        Width = 1436
         Align = alClient
         ScrollBars = ssAutoBoth
         TabOrder = 0

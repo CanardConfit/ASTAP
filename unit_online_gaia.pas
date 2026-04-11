@@ -116,10 +116,10 @@ procedure convert_magnitudes(passband : string); //convert gaia magnitude to a n
 var
   i : integer;
 begin
-  if passband=passband_active then exit;//no action. Already the correct type
+  if passband=database_passband_active then exit;//no action. Already the correct type
   for i:=0 to high(online_database[0]) do
     online_database[5,i]:=transform_gaia(passband,online_database[2,i]{G},online_database[3,i]{BP},online_database[4,i]{RP});
-  passband_active:=passband;//remember last transformation
+  database_passband_active:=passband;//remember last transformation
 end;
 
 
@@ -183,7 +183,7 @@ begin
 
   datalines:=false;
   count2:=0;
-  passband_active:=''; //By definition since new stars are loaded. So the procedure convert_magnitudes should convert the magnitudes again.
+  database_passband_active:=''; //By definition since new stars are loaded. So the procedure convert_magnitudes should convert the magnitudes again.
 
   setlength(online_database,6,slist.count);//position 5 will contain later the converted magnitude
   count:=35;{skip first part}

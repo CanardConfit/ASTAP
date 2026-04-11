@@ -777,7 +777,7 @@ type
     procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
-    procedure lightsContextPopup(Sender: TObject; MousePos: TPoint;  var Handled: Boolean);
+    procedure reference_database1DropDown(Sender: TObject);
     procedure refresh_astrometric_solutions9Click(Sender: TObject);
     procedure set_saturation1Change(Sender: TObject);
     procedure listview7ItemChecked(Sender: TObject; Item: TListItem);
@@ -1171,7 +1171,7 @@ function RemoveSpecialChars(const STR: string): string; {remove ['.','\','/','*'
 function calc_saturation_level(head :theader) : double;//calculate saturation level image
 function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
 function standardise_filter_name(inp :string): string;//standardise filter name
-procedure photometry_auto(thepath : string);
+procedure photometry_auto(thepath : string);//photometry via command line
 
 const
   L_object = 0; {lights, position in listview1}
@@ -1328,7 +1328,7 @@ uses
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
   unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
-  unit_contour, unit_interpolate, unit_sqm, unit_threaded_calibration,unit_transformation;
+  unit_contour, unit_interpolate, unit_sqm, unit_threaded_calibration,unit_transformation, unit_profiler;
 
 type
   blink_solution = record
@@ -4312,9 +4312,10 @@ begin
       filename1:=lv.items[c].Caption;
       if extractfileext(filename1)='.ini' then //for photometry
       begin
-        lv.Items.item[c].Checked:=False;
+        //lv.Items.item[c].Checked:=False; gives problems in command line
+        lv.Items.Delete(c);//remove entry
+        dec(counts);//update for deletion entry
         load_photometry_settings(filename1);
-        lv.Items.item[c].subitems.Strings[L_result]:='Applied';
       end
       else
       if fits_tiff_file_name(filename1) = False  {fits file name?} then
@@ -6350,8 +6351,8 @@ end;
 
 procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
 var
-  m, a, b, posit, center, hfd: double;
-  c, img_counter, i, fields: integer;
+  m, a, b, posit, center, hfd, lowest_error  : double;
+  c, img_counter, i, fields, iteration_cycles: integer;
   array_hfd: array of tdouble2;
 var {################# initialised variables #########################}
   len: integer = 200;
@@ -6399,7 +6400,23 @@ begin
       end;
     if img_counter >= 4 then
     begin
-      find_best_hyperbola_fit(array_hfd, img_counter, m, a, b);
+   {   if i=1 then
+      begin
+        profiler_start;
+        find_best_hyperbola_fit2(array_hfd, img_counter, m, a, b);
+        profiler_log('New');
+        memo2_message('NEW method '+ floattostr(m)+',  '+floattostr(a)+',  '+floattostr(b)+ ',   interations: '+inttostr(iteration_cycles));
+
+        find_best_hyperbola_fit(array_hfd, img_counter, m, a, b);
+        profiler_log('Old');
+        memo2_message(plog);
+        memo2_message('old method '+ floattostr(m)+',  '+floattostr(a)+',  '+floattostr(b)+ ',   interations: '+inttostr(iteration_cycles));
+
+      end;}
+
+      find_best_hyperbola_fit(array_hfd, img_counter, m, a, b, lowest_error, iteration_cycles);
+
+
       {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=m, a, b of hyperbola}
 
       if i = 1 then  memo2_message(#9+'full image              ' + #9 +
@@ -7131,7 +7148,6 @@ begin
           for i:=1 to P_nr-1 do
                 listView7.Items.item[c].subitems.Strings[i]:=('');//clear old values
         end;
-
         inc(progress);
       end;
   end;
@@ -7408,7 +7424,7 @@ begin
     memo2_message('Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
     head.mzero:=0;
   end;
-  if reference_database1.itemindex>0 then  memo2_message('Note that the online reference database is limited to a field-of-view of about 3 degrees');
+  if pos('On',reference_database1.text)>0 then  memo2_message('Note that the online reference database is limited to a field-of-view of about 3 degrees');
   clear_added_AAVSO_columns;
 end;
 
@@ -8029,12 +8045,6 @@ begin
   measuring_method:=measuring_method1.itemindex;
   disabled_autocenter:=(disable_autocenter1.checked and disable_autocenter1.enabled);
 
- // if ((measuring_method=0) and (length(mainform1.fshapes)<1)) then
- // begin
- //   application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+#13+#10+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
- //   exit;
- // end;
-
   listview_updating:=false;//store to have only one endupdate;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   save_settings2;{Too many lost selected files, so first save settings.}
@@ -8497,7 +8507,7 @@ begin
 
   progress_indicator(-100,'');{back to normal}
   memo2_message('Measurements completed.');
-
+  if ((copy(name_database,1,1)='v') and (database_version<>2)) then memo2_message('█████ UPDATE AVAILABLE FOR V50 LOCAL DATABASE CONTAINING BOTH JOHNSON V and B values! DOWNLOAD FROM www.hnsky.org AND INSTALL █████');
 end;
 
 
@@ -9394,9 +9404,7 @@ var
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
   snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
-//  disable_autocenter1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
   hide_show_columns_listview7(true {tab8});
-  stackmenu1.reference_database1.items[0]:='Local database '+ star_database1.text;
   saturation_level1.enabled:=set_saturation1.checked;
 
   //Already fixed in trunk Remove in 2026
@@ -9693,7 +9701,7 @@ end;
 
 
 
-procedure photometry_auto(thepath : string);//run photmetry auto
+procedure photometry_auto(thepath : string);//run photometry auto from command line
 var
   FileList: TStringList;
   i : integer;
@@ -9703,11 +9711,14 @@ begin
     Screen.Cursor:=crHourglass;
     listview7.items.beginupdate;
 
-    FileList := FindAllFiles(thepath,'*.fit;*.fits;*.fts;*.ini', false); // True = include subfolders
+//    FileList := FindAllFiles(thepath,dialog_filter'*.fit;*.fits;*.fts;*.ini', false); // True = include subfolders
+    FileList := FindAllFiles(thepath,dialog_filter+';*.ini', false); // True = include subfolders
     try
-      // FileList now contains all the filenames
+      listview7.Clear;
       for i:=0 to filelist.count-1 do
         listview_add(listview7, filelist[i], True, P_nr);
+
+      // FileList now contains all the filenames
     finally
       FileList.Free;
     end;
@@ -9732,10 +9743,27 @@ begin
   new_analyse_required:=true;
 end;
 
-procedure Tstackmenu1.lightsContextPopup(Sender: TObject; MousePos: TPoint;
-  var Handled: Boolean);
-begin
 
+
+procedure Tstackmenu1.reference_database1DropDown(Sender: TObject);
+var
+  SearchRec: TSearchRec;
+  s: string;
+begin
+  with stackmenu1 do
+  begin
+    reference_database1.items.Clear;
+    reference_database1.items.add('Online Gaia');
+    if SysUtils.FindFirst(database_path + '*0101.*', faAnyFile, SearchRec) = 0 then
+    begin
+      repeat
+        s:=uppercase(copy(searchrec.Name, 1, 3));
+        reference_database1.items.add(s);
+      until SysUtils.FindNext(SearchRec) <> 0;
+    end;
+    SysUtils.FindClose(SearchRec);
+  end;
+  head.mzero:=0;{reset flux calibration. Required if V50 is selected instead of D50}
 end;
 
 
@@ -10357,14 +10385,13 @@ end;
 //not used
 procedure SpeedButton2ClickExperimental;
 var
-  j,i,k,count,count30,count90 : integer;
+  j,i,k,count,count30 : integer;
   sd,snr,
-  sd_check_star, best,   best_aperture,
+  best_aperture,
   sd_check_star30, best30, best_aperture30,
-  sd_check_star90, best90, best_aperture90  : double;
-  results,beststr,oldstr,abrv   : string;
-  sd_check_starAR, sd_check_starAR30,sd_check_starAR90 : array of double;
-
+  best_aperture90  : double;
+  results,beststr,abrv   : string;
+  sd_check_starAR30      : array of double;
   abbreviations     : array of string;
   sd_values        : array of array of double;
 const
@@ -10374,10 +10401,8 @@ const
 begin
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
   esc_pressed:=false;
-  best:=99;
   best30:=99;
   results:='';
-  oldstr:=stackmenu1.flux_aperture1.text;
 
   if (IDYES = Application.MessageBox(
     'This routine will test aperture radii from 0.7 to 2.2 HFD in steps of 0.1 to find the value that gives the lowest standard deviation for the comparison stars.' +
@@ -10396,9 +10421,7 @@ begin
       exit;
     end;
 
-    best:=999;
     best30:=999;
-    best90:=999;
     best_aperture:=0;
     best_aperture30:=0;
     best_aperture90:=0;
@@ -10417,18 +10440,9 @@ begin
 
      count:=0;
      count30:=0;
-     count90:=0;
-     sd_check_star:=0;
      sd_check_star30:=0;
-     sd_check_star90:=0;
-      sd_check_starAR:=nil;
-      setlength(sd_check_starAR,1+(p_nr-p_nr_norm) div 3);
-      sd_check_starAR30:=nil;
-      setlength(sd_check_starAR30,1+(p_nr-p_nr_norm) div 3);
-      sd_check_starAR90:=nil;
-      setlength(sd_check_starAR90,1+(p_nr-p_nr_norm) div 3);
-
-
+     sd_check_starAR30:=nil;
+     setlength(sd_check_starAR30,1+(p_nr-p_nr_norm) div 3);
 
      for i:=p_nr_norm to p_nr-1 do
 

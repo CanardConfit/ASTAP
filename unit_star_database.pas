@@ -32,7 +32,7 @@ var
 
 function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
 procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image.  Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean; inline;{star 290 file database search}
+function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean; inline;{read 290 or 1476 files}
 procedure close_star_database;{Close the tfilestream}
 function open_database(telescope_dec: double; area290: integer): boolean; {open database file}
 
@@ -143,7 +143,7 @@ type
              ra9 : byte;
              dec7: byte;
              dec8: byte;
-             B_R: shortint;{Gaia Bp-Rp}
+             B_Vshort: shortint;{colour (B-V) *50}
    end;
   hnskyhdr1476_5 = packed record  {Most compact format, used for Gaia}
               ra7 : byte;
@@ -185,6 +185,7 @@ var
   name_database         : string;{name star database}
   cache_valid_pos       : integer;
   database_type         : integer;
+  database_version      : integer;
 
 var {################# initialised variables #########################}
   file_open: boolean=false;{file is not open}
@@ -2877,6 +2878,8 @@ begin
     else
     record_size:=ord(database2[109]);{5,6,7,9,10 or 11 bytes record}
 
+    database_version:=ord(database2[108]);
+
     cache_size:=thefile_stars.size-110;
 
     if cache_size>length(cache_array) then  {Only resize when required. Resizing takes time}
@@ -2914,7 +2917,7 @@ end;
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 //
 {$INLINE ON}
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean; inline;{star 290 file database search}
+function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean; inline;{star 290 file database search}
             {searchmode=S screen update }
             {searchmode=M mouse click  search}
             {searchmode=T text search}
@@ -2926,12 +2929,12 @@ const
    blocksize=5*6*4*1024; {a multiply of record sizes 5, 6}
 begin
    {$I-}
-  readdatabase290:=true;
+  readdatabase1476:=true;
   repeat
     repeat
       if cache_position>=cache_size then {should be end of file}
       begin
-        readdatabase290:=false; {no more data in this file}
+        readdatabase1476:=false; {no more data in this file}
         exit;
       end;
 
@@ -2982,7 +2985,10 @@ begin
               begin {normal record without magnitude}
                 ra2:= ra_raw*(pi*2  /((256*256*256)-1));
                 dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, put dec7 behind}
-                Bp_Rp:=b_r;{gaia (Bp-Rp)*10}    {color information}
+                if database_version=2 then
+                  B_V50:=B_Vshort {gaia (B-V)*50}    {color information}
+                else
+                  B_V50:=-999;//old type, mark as not available, ignore values
               end;
             end;
           end;{record size 6}

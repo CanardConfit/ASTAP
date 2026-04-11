@@ -1393,21 +1393,29 @@ end;
 
 procedure get_database_passband(filterstr: string; out passband :string);//report local or online database and the database passband
 var
-  datab,filterstrUP :string;
+  datab,firstletter :string;
 begin
   datab:=stackmenu1.reference_database1.text;
-  filterstrUP:=uppercase(filterstr);
+  passband:= standardise_filter_name(filterstr);
 
-  if pos('Local',datab)>0 then //local or auto
+  if pos('On',datab)=0 then //local or auto
   begin
-    if pos('V',filterstrUP)>0  then passband:='V'
+    firstletter:=uppercase(copy(name_database,1,1));
+    if firstletter='V' then //V50, version 2
+    begin
+      //passband is already correct and will be the same as the filter
+      if ((passband<>'B')  or  (name_database<>'v50'))then
+         passband:='V';// V50 can be only B or V. so for R, I, SG, SR, SI it should be V as default
+    end
     else
-    passband:='BP';
+    if ((firstletter='I') and (passband='I')) then  //I50
+      passband:='I'
+    else //D80, D50, G05
+      passband:='BP';
     memo2_message('Local database as set in tab Photometry. Filter='+filterstr+'. Local database = '+passband);
   end
   else
   begin  //online auto transformation
-    passband:= standardise_filter_name(filterstrUP);
     memo2_message('Gaia online with database transformation as set in tab Photometry. Filter='+filterstr+'. Online Gaia ->'+passband);
   end;
 end;
@@ -2016,21 +2024,21 @@ end;{plot vsp stars}
 
 
 
-function Gaia_star_color(Bp_Rp: integer):integer;
+function Gaia_star_color(B_V50: integer):integer;
 begin
-  if Bp_Rp=-128  then result:=$00FF00 {unknown, green}
+  if B_V50=-128  then result:=$00FF00 {unknown, green}
   else
-  if Bp_Rp<=-0.25*10 then result:=$FF0000 {<-0.25 blauw}
+  if B_V50<=-0.25*50 then result:=$FF0000 {<-0.25 blauw}
   else
-  if Bp_Rp<=-0.1*10 then result:=$FFFF00 {-0.25 tot -0.1 cyaan}
+  if B_V50<=-0.1*50 then result:=$FFFF00 {-0.25 tot -0.1 cyaan}
   else
-  if Bp_Rp<=0.3*10 then result:=$FFFFFF {-0.1 tot 0.3 wit}
+  if B_V50<=0.3*50 then result:=$FFFFFF {-0.1 tot 0.3 wit}
   else
-  if Bp_Rp<=0.7*10 then result:=$A5FFFF {0.3 tot 0.7 geelwit}
+  if B_V50<=0.7*50 then result:=$A5FFFF {0.3 tot 0.7 geelwit}
   else
-  if Bp_Rp<=1.0*10 then result:=$00FFFF {0.7 tot 1.0 geel}
+  if B_V50<=1.0*50 then result:=$00FFFF {0.7 tot 1.0 geel}
   else
-  if Bp_Rp<=1.5*10 then result:=$00A5FF {1.0 tot 1.5 oranje}
+  if B_V50<=1.5*50 then result:=$00A5FF {1.0 tot 1.5 oranje}
   else
   result:=$0000FF; {>1.5 rood}
 end;
@@ -2076,18 +2084,20 @@ end;
 
 procedure plot_and_measure_stars(img : Timage_array; memo: tstrings; var head : Theader; flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
-  telescope_ra,telescope_dec,fov,ra2,dec2, magn,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
+  telescope_ra,telescope_dec,fov,ra2,dec2, magn,B_V50, hfd1,star_fwhm,snr, flux, xc,yc, sep,SIN_dec_ref,COS_dec_ref,
   standard_error_mean,fov_org,fitsX,fitsY, frac1,frac2,frac3,frac4,x,y,x2,y2,flux_snr_7,apert,avg_flux_ratio,adu_e,mag_saturation,correction,val  : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                                                       : integer;
-  flip_horizontal, flip_vertical                        : boolean;
+  flip_horizontal, flip_vertical,add_bv_correction      : boolean;
   flux_ratio_array,hfd_x_sd, flux_peak_ratio,snr_list   : array of double;
-  selected_passband,firstletter : string;
+  selected_passband                                     : string;
   data_max          : single;
   starlist1         : Tstar_list;
 
     procedure plot_star;
+    var
+      magnitude : double;
     begin
-      if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999){mono colour database})then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
+     // if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999){mono colour database})then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
       celestial_to_pixel(head,ra2,dec2,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       x:=(fitsX-1);//In image array range 0..width-1, fits count from 1, image from zero therefore subtract 1
       y:=(fitsY-1);
@@ -2101,10 +2111,10 @@ var
           if flip_horizontal then x2:=(head.width-1)-x else x2:=x;
           if flip_vertical   then y2:=y            else y2:=(head.height-1)-y;
 
-          if Bp_Rp<>999 then {colour version}
+          if B_V50>-999 then {colour version}
           begin
-            mainform1.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
-            mainform1.image1.canvas.pen.color:=Gaia_star_color(round(Bp_Rp));{color circel}
+            mainform1.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn))+':'+inttostr(round(B_V50/5)) {   +'<-'+inttostr(area290) }); //B_V50 is (B-V) * 50
+            mainform1.image1.canvas.pen.color:=Gaia_star_color(round(B_V50));{color circel}
           end
           else
             mainform1.image1.Canvas.textout(round(x2),round(y2),inttostr(round(magn)) );
@@ -2113,7 +2123,7 @@ var
           mainform1.image1.canvas.ellipse(round(x2-len),round(y2-len),round(x2+1+len),round(y2+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
 
-        if ((flux_calibration) and (Bp_Rp<>-128 {if -128 then unreliable Johnson-V magnitude, either Bp or Rp is missing in Gaia})) then
+        if ((flux_calibration) and (B_V50<>-128 {if -128 then unreliable Johnson-V magnitude, either Bp or Rp is missing in Gaia})) then    //For mono database B_V50=-999
         begin
           HFD(img,round(x),round(y), annulus_radius{14,annulus radius},head.mzero_radius,adu_e {adu_e. SNR only in ADU for consistency}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
@@ -2140,7 +2150,13 @@ var
                   SetLength(flux_peak_ratio,counter_flux_measured+500);
                 end;
               end;
-              flux_ratio_array[counter_flux_measured]:=flux/(power(10,(21 {bias}-magn/10)/2.5)); //Linear flux ratio,  should be constant for all stars.
+
+              if ((database_version=2) and (add_bv_correction)) then
+                magnitude:=magn/10+B_V50/50  //used magnitude. The compiler does weird things in next line flux ratio calculation if magn is changed
+              else
+                magnitude:=magn/10;
+
+              flux_ratio_array[counter_flux_measured]:=flux/(power(10,(21 {bias}- magnitude)/2.5)); //Linear flux ratio,  should be constant for all stars.
               snr_list[counter_flux_measured]:=snr;
 
              // memo2_message(#9+floattostr4(magn/10)+#9+floattostr4(2.5 * ln(flux)/ln(10) ));
@@ -2168,7 +2184,8 @@ begin
 
 //    sip:=((ap_order>=2) and (mainform1.Polynomial1.itemindex=1));{use sip corrections?}  Already set
 
-    bp_rp:=999;{not defined in mono versions of the database}
+    B_V50:=-999;{not defined in mono versions of the database}
+    add_bv_correction:=false;
 
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
     pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,1{wcs and sip if available},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
@@ -2214,16 +2231,12 @@ begin
     end;
 
     {sets file290 so do before fov selection}
-    if stackmenu1.reference_database1.itemindex=0 then  //local database
+    if pos('On',stackmenu1.reference_database1.text)=0 then  //local database
       begin
-        if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
+        if select_star_database(stackmenu1.reference_database1.text,head.height*abs(head.cdelt2) {fov})=false then exit;
         memo2_message('Using star database '+uppercase(name_database)+' as reference.');
-        firstletter:=uppercase(copy(name_database,1,1));
-        if firstletter='V' then passband_active:='V'
-        else
-        if firstletter='I' then passband_active:='I'
-        else
-        passband_active:='BP';// for reporting
+        get_database_passband(head.filter_name,{out} database_passband_active);//report selected database passband
+        add_bv_correction:=((database_passband_active='B') and (uppercase(copy(name_database,1,1))='V'));//dual passband V50 active
     end
     else
     begin  //Reading online database. Update if required
@@ -2257,7 +2270,7 @@ begin
       database_type:=0;//online
 
       convert_magnitudes(selected_passband {set in call to get_database_passband}) //convert Gaia magnitude to a new magnitude. If the type is already correct, no action will follow
-                        //database_passband will be stored in passband_active
+                        //database_passband will be stored in database_passband_active
     end; //online
 
 
@@ -2279,7 +2292,7 @@ begin
       begin
         if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * frac1);
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,B_V50)) ) do plot_star;{add star}
       end;
 
       {read 2th area}
@@ -2287,7 +2300,7 @@ begin
       begin
         if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,B_V50)) ) do plot_star;{add star}
       end;
 
       {read 3th area}
@@ -2295,14 +2308,14 @@ begin
       begin
         if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,B_V50)) ) do plot_star;{add star}
       end;
       {read 4th area}
       if area4<>0 then {read 4th area}
       begin
         if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, magn,B_V50)) ) do plot_star;{add star}
       end;
       close_star_database;
     end
@@ -2351,7 +2364,7 @@ begin
         standard_error_mean:=ln((avg_flux_ratio+standard_error_mean)/avg_flux_ratio)*2.5/ln(10);//Convert ratio error to error in magnitudes. Note that log(a)−log(b)=log(a/b) and log():=ln()/ln(10)
 
 
-        head.passband_database:=passband_active; //passband_active is global variable. Now store in the header. head.passband_database can also be retrieved using keyword MZEROPAS
+        head.passband_database:=database_passband_active; //database_passband_active is global variable. Now store it in the header. head.passband_database can also be retrieved using keyword MZEROPAS
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
           update_float(memo,'MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux_e)+MZERO',false,head.mzero)
@@ -2360,7 +2373,7 @@ begin
 
         update_float(memo,'MZEROR  =',' / '+head.passband_database+'=-2.5*log(flux_e)+MZEROR using MZEROAPT',false,head.mzero);//mzero for aperture diameter MZEROAPT
         update_float(memo,'MZEROAPT=',' / Aperture radius used for MZEROR in pixels',false,head.mzero_radius);
-        update_text(memo,'MZEROPAS=',copy(char(39)+passband_active+char(39)+'                    ',1,21)+'/ Passband database used for MZERO measurement.');
+        update_text(memo,'MZEROPAS=',copy(char(39)+database_passband_active+char(39)+'                    ',1,21)+'/ Passband database used for MZERO measurement.');
 
 
          // The magnitude measured is
@@ -2448,7 +2461,7 @@ end;{plot stars}
 
 procedure measure_distortion(out stars_measured : integer);{measure or plot distortion}
 var
-  telescope_ra,telescope_dec,fov,fov_org,ra2,dec2, mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,
+  telescope_ra,telescope_dec,fov,fov_org,ra2,dec2, mag2,B_V50, hfd1,star_fwhm,snr, flux, xc,yc,
   frac1,frac2,frac3,frac4,x,y,x2,y2,astrometric_error_innner, astrometric_error_outer,sep,
   ra3,dec3,astrometric_error_innnerPS,astrometric_error_outerPS                                 : double;
   star_total_counter, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,
@@ -2525,7 +2538,7 @@ begin
     flip_vertical:=mainform1.flip_vertical1.Checked;
     flip_horizontal:=mainform1.flip_horizontal1.Checked;
 
-    bp_rp:=999;{not defined in mono versions of the database}
+    B_V50:=-999;{not defined in mono versions of the database}
 
     {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
     pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,0{wcs only},telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
@@ -2572,7 +2585,7 @@ begin
       begin
         if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * frac1);
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,B_V50)) ) do plot_star;{add star}
       end;
 
       {read 2th area}
@@ -2580,7 +2593,7 @@ begin
       begin
         if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,B_V50)) ) do plot_star;{add star}
       end;
 
       {read 3th area}
@@ -2588,14 +2601,14 @@ begin
       begin
         if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,B_V50)) ) do plot_star;{add star}
       end;
       {read 4th area}
       if area4<>0 then {read 4th area}
       begin
         if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
         nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+        while ((star_total_counter<nrstars_required2) and (readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,B_V50)) ) do plot_star;{add star}
       end;
 
       close_star_database;
@@ -2752,27 +2765,27 @@ begin
 //      if area1<>0 then {read 1th area}
 //      begin
 //        if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
-//        while ((readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
+//        while ((readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
 //      end;
 
       {read 2th area}
 //      if area2<>0 then {read 2th area}
 //      begin
 //        if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
-//        while ((readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
+//        while ((readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
 //      end;
 
       {read 3th area}
       //      if area3<>0 then {read 3th area}
       //      begin
       //        if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
-      //        while ((readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
+      //        while ((readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
       //      end;
       //      {read 4th area}
       //      if area4<>0 then {read 4th area}
       //      begin
       //        if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
-      //        while ((readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
+      //        while ((readdatabase1476(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) and (mag2<=m_limit*10)) do plot_star;{add star}
       //      end;
 
       //      close_star_database;
