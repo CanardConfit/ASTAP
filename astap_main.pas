@@ -78,7 +78,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.04.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.04.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -15857,9 +15857,7 @@ begin
       ycf:=yc+1;
         if head.cd1_1<>0 then
         begin
-       //   pixel_to_celestial(head,xcf,ycf,0,shape_var1_ra,shape_var1_dec);{store shape position in ra,dec for positioning accurate at an other image}
           error_label1.visible:=false;
-
 
           if ((shape_nr=0) or (abs(FShapes[shape_nr-1].fitsX-xcf)>2) or (abs(FShapes[shape_nr-1].fitsY-ycf)>2)) then  //New star selected. Simple check for double click. Not fully foolproove
             GenerateShapes(shape_nr,60,60,3 {penwidth},stEllipse, clLime,'?')
@@ -15879,17 +15877,17 @@ begin
              mainform1.image1.Canvas.font.color:=clred;
              textout_at_fitscoordinates('SATURATED',xint,yint+14);//text at fitsX, fitsY
           end;
+
+          inc(shape_nr);
+          if shape_nr>=10 then
+          shape_nr:=0;
+
         end
         else
         begin
           error_label1.caption:='Can not annotate due to missing image solution!';
           error_label1.visible:=true;
         end;
-
-      inc(shape_nr);
-      if shape_nr>=10 then
-      shape_nr:=0;
-
 
       if ((annotated) and (mainform1.annotations_visible1.checked)) then
          plot_annotations(false {use solution vectors},false);//check if an annotation is near

@@ -2446,7 +2446,7 @@ begin
       end
       else
       begin
-        magn_limit_str:='Calibration failure! Less then three usable stars found.';
+        magn_limit_str:='Flux calibration failure! Less then three usable stars found.';
         mainform1.caption:=magn_limit_str;
         memo2_message(magn_limit_str);
       end;
