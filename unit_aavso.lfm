@@ -1,8 +1,8 @@
 object form_aavso1: Tform_aavso1
-  Left = 486
+  Left = 112
   Height = 849
   Hint = 'Enter your geographic location manually for airmass calculation.'
-  Top = 84
+  Top = 128
   Width = 1436
   ActiveControl = PairSplitter1
   Caption = 'AAVSO report'

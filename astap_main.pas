@@ -78,7 +78,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.04.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.04.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -863,7 +863,7 @@ procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
 procedure execute_unix(const execut:string; param: TStringList; show_output: boolean);{execute linux program and report output}
 procedure execute_unix2(s:string);
 {$endif}
-function trimmed_median_background(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function trimmed_median_background(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,annulus, max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 function get_negative_noise_level(img :Timage_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
 function prepare_ra6(rax:double; sep:string):string; {radialen to text  format 24h 00 00}
@@ -3920,7 +3920,7 @@ begin
 end;
 
 
-function trimmed_median_background(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function trimmed_median_background(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,annulus, max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 var
    i,j,val,width3,height3,sum, upperlimit,Q   :integer;
    histogram : array of integer;
@@ -3948,17 +3948,19 @@ begin
 
   for i:=ymin to  ymax do
     begin
-      for j:=xmin to xmax do
-      begin
-        if ((ellipse=false {use no ellipse}) or (sqr(j-centerX)/sqr(a) +sqr(i-centerY)/sqr(b)<1)) then // standard equation of the ellipse
-        begin
-          val:=round(img[colorM,i,j]);{get one color value}
-          if ((val>=1) and (val<max1)) then {ignore black areas and bright stars}
+      if  abs(i-centerY)>=annulus then //outside defined square center defined by annulus
+        for j:=xmin to xmax do
+          if  abs(j-centerX)>=annulus then //outside defined square center defined by annulus
           begin
-            inc(histogram[val],1);{calculate histogram}
-            sum:=sum+1;
-          end;
-        end;
+            if ((ellipse=false {use no ellipse}) or (sqr(j-centerX)/sqr(a) +sqr(i-centerY)/sqr(b)<1)) then // standard equation of the ellipse
+            begin
+              val:=round(img[colorM,i,j]);{get one color value}
+              if ((val>=1) and (val<max1)) then {ignore black areas and bright stars}
+              begin
+                inc(histogram[val],1);{calculate histogram}
+                sum:=sum+1;
+              end;
+            end;
       end;{j}
     end; {i}
   result:=0; {for case histogram is empthy due to black area}
@@ -6171,7 +6173,7 @@ begin
     local_sigma_clip_mean_and_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
     measure_hotpixels(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,sd,mean,img_loaded,{out}hotpixel_perc,hotpixel_adu);{calculate the hotpixel_adu ratio and average value}
 
-    most_common:=trimmed_median_background(img_loaded,CtrlButton {ellipse},col,startx,stopX,starty,stopY,65535,greylevels);
+    most_common:=trimmed_median_background(img_loaded,CtrlButton {ellipse},col,startx,stopX,starty,stopY,0,65535,greylevels);
 
     {median sampling and min , max}
     max_counter:=1;
@@ -6279,10 +6281,10 @@ begin
   end;
   if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
   begin
-    mc_1:=trimmed_median_background(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},           0{y1},       50{y2},32000,greylevels2);{for this area get most common value equals peak in histogram}
-    mc_2:=trimmed_median_background(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},head.height-1-50{y1},head.height-1{y2},32000,greylevels2);
-    mc_3:=trimmed_median_background(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},head.height-1-50{y1},head.height-1{y2},32000,greylevels2);
-    mc_4:=trimmed_median_background(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},           0{y1},50       {y2},32000,greylevels2);
+    mc_1:=trimmed_median_background(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},           0{y1},       50{y2},0,32000,greylevels2);{for this area get most common value equals peak in histogram}
+    mc_2:=trimmed_median_background(img_loaded,false{ellipse shape},0,          0{x1},      50{x2},head.height-1-50{y1},head.height-1{y2},0,32000,greylevels2);
+    mc_3:=trimmed_median_background(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},head.height-1-50{y1},head.height-1{y2},0,32000,greylevels2);
+    mc_4:=trimmed_median_background(img_loaded,false{ellipse shape},0,head.width-1-50{x1},head.width-1{x2},           0{y1},50       {y2},0,32000,greylevels2);
 
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
   end;
@@ -6830,11 +6832,11 @@ begin
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
 
-      mode_left_bottom:=trimmed_median_background(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000,greylevels);{for this area get most common value equals peak in histogram}
-      mode_left_top:=   trimmed_median_background(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_left_bottom:=trimmed_median_background(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,0,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   trimmed_median_background(img_loaded,false{ellipse shape},k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize,0,32000,greylevels);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom:=trimmed_median_background(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize,32000,greylevels);{for this area get most common value equals peak in histogram}
-      mode_right_top:=   trimmed_median_background(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_right_bottom:=trimmed_median_background(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize,0,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   trimmed_median_background(img_loaded,false{ellipse shape},k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,0,32000,greylevels);{for this area get most common value equals peak in histogram}
 
       noise_left_bottom:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize, mode_left_bottom);{find the negative noise level below most_common_level of a local area}
       noise_left_top:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize, mode_left_top);{find the negative noise level below most_common_level of a local area}
@@ -7639,10 +7641,7 @@ var
 begin
   V := Max(R, Max(G,B));
 
-
   m := Min(R, Min(G,B));
-
-
 
   C := V - m;
   if V > 1e-6 then
@@ -7860,13 +7859,13 @@ begin
       if head.naxis3>=3 then {at least three colours}
         AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);
 
-      luminance:=0.333333*colrr+0.333333*colgg+0.333333*colbb;//keep equal ratio in image development and not luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB;
       if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
       begin
-        luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
+      //  luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
+        luminance:=0.333333*colrr+0.333333*colgg+0.333333*colbb;//luminance in range 0..1. keep equal ratio in image development and not luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB;
         luminance_stretched:=stretch_c[trunc(32768*luminance)];
         factor:=luminance_stretched/luminance;
-        if factor*largest>1 then factor:=1/largest; {clamp again, could be lengther then 1}
+        if factor*largest>1 then factor:=1/largest; {clamp again, could be larger then 1}
         colrr:=colrr*factor;{stretch only luminance but keep rgb ratio!}
         colgg:=colgg*factor;{stretch only luminance but keep rgb ratio!}
         colbb:=colbb*factor;{stretch only luminance but keep rgb ratio!}
@@ -8589,6 +8588,8 @@ begin
       stackmenu1.lrgb_auto_level1.checked:=Sett.ReadBool('stack','lrgb_al',true);
       stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','gr_pu_fl',false);
       stackmenu1.lrgb_global_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
+      stackmenu1.fix_colour_saturated1.checked:=Sett.ReadBool('stack','fix_saturated',true);
+
       dum:=Sett.ReadString('stack','lrgb_sl','');if dum<>'' then stackmenu1.lrgb_global_colour_smooth_sd1.text:=dum;
       dum:=Sett.ReadString('stack','lrgb_sw','');if dum<>'' then stackmenu1.lrgb_global_colour_smooth_width1.text:=dum;
 
@@ -9018,6 +9019,8 @@ begin
       sett.writeBool('stack','gr_pu_fl',stackmenu1.green_purple_filter1.checked);
 
       sett.writeBool('stack','lrgb_cs',stackmenu1.lrgb_global_colour_smooth1.checked);
+      sett.writeBool('stack','fix_saturated',stackmenu1.fix_colour_saturated1.checked);
+
       sett.writestring('stack','lrgb_sd',stackmenu1.lrgb_global_colour_smooth_sd1.text);
 
       sett.writeBool('stack','lrgb_sm',stackmenu1.star_colour_smooth1.checked);
@@ -9463,11 +9466,11 @@ begin
 
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      mode_left_bottom:=trimmed_median_background(img_loaded,false{ellipse shape},k,startX-20,startX,startY-20,startY,32000,greylevels);{for this area get most common value equals peak in histogram}
-      mode_left_top:=trimmed_median_background(img_loaded,false{ellipse shape},k,startX-20,startX,stopY,stopY+20,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_left_bottom:=trimmed_median_background(img_loaded,false{ellipse shape},k,startX-20,startX,startY-20,startY,0,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_left_top:=trimmed_median_background(img_loaded,false{ellipse shape},k,startX-20,startX,stopY,stopY+20,0,32000,greylevels);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom:=trimmed_median_background(img_loaded,false{ellipse shape},k,stopX,stopX+20,startY-20,startY,32000,greylevels);{for this area get most common value equals peak in histogram}
-      mode_right_top:=trimmed_median_background(img_loaded,false{ellipse shape},k,stopX,stopX+20,stopY,stopY+20,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_right_bottom:=trimmed_median_background(img_loaded,false{ellipse shape},k,stopX,stopX+20,startY-20,startY,0,32000,greylevels);{for this area get most common value equals peak in histogram}
+      mode_right_top:=trimmed_median_background(img_loaded,false{ellipse shape},k,stopX,stopX+20,stopY,stopY+20,0,32000,greylevels);{for this area get most common value equals peak in histogram}
 
       for fitsY:=startY to stopY-1 do
       begin
@@ -11412,13 +11415,13 @@ begin
     backup_img;
 
     bsize:=20;
-    colrr1:=trimmed_median_background(img_loaded,false{ellipse shape},0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535,greylevels);{find most common colour of a local area}
-    if head.naxis3>1 then colgg1:=trimmed_median_background(img_loaded,false{ellipse shape},1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535,greylevels);{find most common colour of a local area}
-    if head.naxis3>2 then colbb1:=trimmed_median_background(img_loaded,false{ellipse shape},2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535,greylevels);{find most common colour of a local area}
+    colrr1:=trimmed_median_background(img_loaded,false{ellipse shape},0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,0,65535,greylevels);{find most common colour of a local area}
+    if head.naxis3>1 then colgg1:=trimmed_median_background(img_loaded,false{ellipse shape},1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,0,65535,greylevels);{find most common colour of a local area}
+    if head.naxis3>2 then colbb1:=trimmed_median_background(img_loaded,false{ellipse shape},2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,0,65535,greylevels);{find most common colour of a local area}
 
-    colrr2:=trimmed_median_background(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535,greylevels);{find most common colour of a local area}
-    if head.naxis3>1 then colgg2:=trimmed_median_background(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535,greylevels);{find most common colour of a local area}
-    if head.naxis3>2 then colbb2:=trimmed_median_background(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535,greylevels);{find most common colour of a local area}
+    colrr2:=trimmed_median_background(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,0,65535,greylevels);{find most common colour of a local area}
+    if head.naxis3>1 then colgg2:=trimmed_median_background(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,0,65535,greylevels);{find most common colour of a local area}
+    if head.naxis3>2 then colbb2:=trimmed_median_background(img_loaded,false{ellipse shape},0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,0,65535,greylevels);{find most common colour of a local area}
 
     a:=sqrt(sqr(stopX-startX)+sqr(stopY-startY)); {distance between bright and dark area}
 
