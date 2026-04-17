@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_photometry1
+        ActivePage = tab_stackmethod1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 8
+        TabIndex = 5
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -1896,6 +1896,17 @@ object stackmenu1: Tstackmenu1
               ParentFont = False
               TabOrder = 33
               Text = '3.0'
+            end
+            object fix_colour_saturated1: TCheckBox
+              Left = 2
+              Height = 23
+              Hint = 'This will fix the colour of saturated stars center using the outer regios of the star'
+              Top = 276
+              Width = 171
+              Caption = 'Fix colour saturated stars'
+              Checked = True
+              State = cbChecked
+              TabOrder = 34
             end
           end
           object Label18: TLabel

@@ -67,6 +67,7 @@ type
     bg2: TEdit;
     br2: TEdit;
     center_position1: TLabel;
+    fix_colour_saturated1: TCheckBox;
     disable_autocenter1: TCheckBox;
     Label38: TLabel;
     Label59: TLabel;
@@ -3094,7 +3095,7 @@ begin
   for col:=0 to colors - 1 do {do all colours}
   begin
     {find background value for the 60% center }
-    bg:= trimmed_median_background(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
+    bg:= trimmed_median_background(img_loaded,true{ellipse shape}, col, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height),0, 32000,greylevels);
 
     y:=yStep / 2;
     while y < h do
@@ -3112,7 +3113,7 @@ begin
 
            case themethod of
               0: local_sigma_clip_mean_and_sd(round(x-half_box), round(y-half_box),round(x+half_box),round(y+half_box),col, img_loaded,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-              1: val:= trimmed_median_background(img_loaded,false{ellipse shape}, col, round(x-half_box),round(x+half_box), round(y-half_box),round(y+half_box), 32000,greylevels); {mode finds most common value}
+              1: val:= trimmed_median_background(img_loaded,false{ellipse shape}, col, round(x-half_box),round(x+half_box), round(y-half_box),round(y+half_box),0, 32000,greylevels); {mode finds most common value}
            end;
 
           if val>0 then correction_factor:=bg/val else correction_factor:=1;
@@ -3522,7 +3523,7 @@ begin
       begin
         x:=fitsX * diameter;
         y:=fitsY * diameter;
-        backgr:=trimmed_median_background(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1, trunc(datamax),greylevels);
+        backgr:=trimmed_median_background(sourc,false{ellipse shape}, k, x - radius, x + radius - 1, y - radius, y + radius - 1,0, trunc(datamax),greylevels);
         for i:=-radius to +radius - 1 do
           for j:=-radius to +radius - 1 do
           begin
@@ -5260,7 +5261,7 @@ begin
         begin
           if ((frac(fitsx / 10) = 0) and (frac(fitsY / 10) = 0)) then
           begin
-            most_common:=trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k, fitsX - radius, fitsX + radius - 1, fitsY - radius, fitsY + radius - 1, 32000,greylevels);
+            most_common:=trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k, fitsX - radius, fitsX + radius - 1, fitsY - radius, fitsY + radius - 1,0, 32000,greylevels);
             neg_noise_level:=get_negative_noise_level(img_backup[index_backup].img, k, fitsX - radius, fitsX + radius, fitsY - radius, fitsY + radius, most_common);
             {find the most common value of a local area and calculate negative noise level}
             for i:=-radius to +radius - 1 do
@@ -9904,7 +9905,6 @@ begin
   clear_added_AAVSO_columns;
   hide_show_columns_listview7(true {tab8 photometry});
   snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual
-//  disable_autocenter1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
 end;
 
 procedure Tstackmenu1.export_to_tg1Click(Sender: TObject);
@@ -14065,7 +14065,7 @@ begin
 
     case themethod of
       0: local_sigma_clip_mean_and_sd(round(0.2 * head.Width),round(0.2 * head.Height), round(0.8 * head.Width),round(0.8 * head.Height),k, img_loaded,{out} sd,bg,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-      1: bg:=trimmed_median_background(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height), 32000,greylevels);
+      1: bg:=trimmed_median_background(img_loaded,true{ellipse shape}, k, round(0.2 * head.Width), round(0.8 * head.Width), round(0.2 * head.Height), round(0.8 * head.Height),0, 32000,greylevels);
     end;
 
     {vertical}
@@ -14083,7 +14083,7 @@ begin
 
           case themethod of
              0: local_sigma_clip_mean_and_sd(x1,y1,x2,y2,k, img_backup[index_backup].img,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-             1: val:=trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2, 32000,greylevels);
+             1: val:=trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2,0, 32000,greylevels);
            end;
 
           if val>0 then correction_factor:=bg/val else correction_factor:=1;
@@ -14113,7 +14113,7 @@ begin
 
           case themethod of
              0: local_sigma_clip_mean_and_sd(x1,y1,x2,y2,k, img_backup[index_backup].img,{out} sd,val,iterations);{calculate sigma clip mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-             1: val:=trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2, 32000,greylevels);
+             1: val:=trimmed_median_background(img_backup[index_backup].img,false{ellipse shape}, k,x1,x2, y1, y2,0, 32000,greylevels);
            end;
 
           if val>0 then correction_factor:=bg/val else correction_factor:=1;

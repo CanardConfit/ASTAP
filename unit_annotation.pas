@@ -2095,7 +2095,7 @@ var
 
     procedure plot_star;
     var
-      magnitude : double;
+      magnitude,ADenominator : double;
     begin
      // if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999){mono colour database})then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
       celestial_to_pixel(head,ra2,dec2,true, fitsX,fitsY);{ra,dec to fitsX,fitsY}
@@ -2162,8 +2162,11 @@ var
              // memo2_message(#9+floattostr4(magn/10)+#9+floattostr4(2.5 * ln(flux)/ln(10) ));
               if report_lim_magn then
               begin
-                hfd_x_sd[counter_flux_measured]:=hfd1*sd_bg;//calculate hfd*SD. sd_bg  is a global variable from procedure hfd. The minimum diameter for star detection is 4
-                flux_peak_ratio[counter_flux_measured]:=flux/img[0,round(yc),round(xc)];
+
+                hfd_x_sd[counter_flux_measured]:=hfd1*sd_bg;//calculate hfd*SD. Sd_bg  is a global variable from procedure hfd. The minimum diameter for star detection is 4
+                ADenominator:=img[0,round(yc),round(xc)];
+                if ADenominator=0 then exit; //super rare, a bad pixel with value zero. Ignore this star.
+                flux_peak_ratio[counter_flux_measured]:=flux/ADenominator;
               end;
 
               //  memo2_message(#9+floattostr4(snr)+#9+floattostr4(hfd1)+#9+floattostr4(R_aperture)+#9+floattostr4(sd_bg) );
@@ -2357,14 +2360,14 @@ begin
 
     if flux_calibration then {flux calibration}
     begin
-      if counter_flux_measured>=3 then {at least three stars}
+      head.passband_database:=database_passband_active; //database_passband_active is global variable. Now store it in the header. head.passband_database can also be retrieved using keyword MZEROPAS
+      if counter_flux_measured>=1 then {at least one star}
       begin
         get_best_mean(flux_ratio_array,snr_list,counter_flux_measured {length},avg_flux_ratio,standard_error_mean );//calculate average of flux ratio. Can't do that on mzero. Should be a linear scale
         head.mzero:=21{bias} + ln(avg_flux_ratio)*2.5/ln(10);//from flux ratio to mzero
         standard_error_mean:=ln((avg_flux_ratio+standard_error_mean)/avg_flux_ratio)*2.5/ln(10);//Convert ratio error to error in magnitudes. Note that log(a)−log(b)=log(a/b) and log():=ln()/ln(10)
 
 
-        head.passband_database:=database_passband_active; //database_passband_active is global variable. Now store it in the header. head.passband_database can also be retrieved using keyword MZEROPAS
 
         if copy(stackmenu1.flux_aperture1.text,1,1)='m' then //=Max, calibration for extended objects
           update_float(memo,'MZERO   =',' / Magnitude Zero Point. '+head.passband_database+'=-2.5*log(flux_e)+MZERO',false,head.mzero)
@@ -2446,7 +2449,7 @@ begin
       end
       else
       begin
-        magn_limit_str:='Flux calibration failure! Less then three usable stars found.';
+        magn_limit_str:='Flux calibration failure! No usable stars found.';
         mainform1.caption:=magn_limit_str;
         memo2_message(magn_limit_str);
       end;

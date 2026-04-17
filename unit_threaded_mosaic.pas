@@ -217,10 +217,10 @@ begin
   begin
     if equalise_background then
     begin
-      bck[0] := trimmed_median_background(img_loaded, false, col, 0, round(0.2 * head.width), 0, round(0.2 * head.height), 32000, greylevels);
-      bck[1] := trimmed_median_background(img_loaded, false, col, 0, round(0.2 * head.width), round(0.8 * head.height), head.height - 1, 32000, greylevels);
-      bck[2] := trimmed_median_background(img_loaded, false, col, round(0.8 * head.width), head.width - 1, 0, round(0.2 * head.height), 32000, greylevels);
-      bck[3] := trimmed_median_background(img_loaded, false, col, round(0.8 * head.width), head.width - 1, round(0.8 * head.height), head.height - 1, 32000, greylevels);
+      bck[0] := trimmed_median_background(img_loaded, false, col, 0, round(0.2 * head.width), 0, round(0.2 * head.height),0, 32000, greylevels);
+      bck[1] := trimmed_median_background(img_loaded, false, col, 0, round(0.2 * head.width), round(0.8 * head.height), head.height - 1,0, 32000, greylevels);
+      bck[2] := trimmed_median_background(img_loaded, false, col, round(0.8 * head.width), head.width - 1, 0, round(0.2 * head.height),0, 32000, greylevels);
+      bck[3] := trimmed_median_background(img_loaded, false, col, round(0.8 * head.width), head.width - 1, round(0.8 * head.height), head.height - 1,0, 32000, greylevels);
       background[col] := smedian(bck, 4);
       background_correction_basis[col] := 1000 - background[col]; //this will be used to make background of all frames around 1000. Any other is corrected by overlapping measurement
     end

@@ -209,11 +209,134 @@ begin
 end;
 
 
+procedure fix_saturated_stars(var img: Timage_array; starlist2: Tstar_list;  mean_hfd : double);
+var
+  i,x,y,j,k,step,distance,n,greylevels  : integer;
+  avg_colour,counter,background : array[0..5] of single;
+  value,maximum, maxcolour,luminance   : single;
+begin
+   for i:=0 to length(starlist2[0]) do
+   begin
+     x:=round(starlist2[0,i]);//center of star
+     y:=round(starlist2[1,i]);
+     maximum:=0;
+     for n:=0 to 5 do
+        maximum:=max(maximum,img[n,y,x]); //peak value of star
+
+     if ((img[0,y,x]>60000) or (img[1,y,x]>60000) or (img[2,y,x]>60000) or (img[3,y,x]>60000) or (img[4,y,x]>60000) or (img[5,y,x]>60000)) then
+     begin
+       step:= round(mean_hfd*3);
+       for n:=0 to 5 do
+       begin
+         avg_colour[n]:=0;
+         counter[n]:=0;
+         background[n]:=trimmed_median_background(img, false, n, x-15*step,x+15*step,y-10*step,y+15*step,12*step {skip center where star is},40000 {maximum background expected}, greylevels);//background around the star
+       end;
+
+       //check size star in x.
+       if ((x>15*mean_hfd+2) and (x<length(img[0,0])-15*mean_hfd-2)) then
+       for n:=0 to round(15*mean_hfd) do
+       begin
+         if ((img[0,y,x-n]<200+background[0]) or (img[0,y,x+n]<200+background[0])) then
+         begin
+           step:=n;
+           break;
+         end;
+       end;
+
+
+
+        //     if ((abs(x-2868)<20) and (abs(y-2004)<20)) then
+        //     beep;
+
+       for j:=-step to +step do
+       for k:=-step to +step do
+       begin
+         distance:=sqr(j)+sqr(k);
+         if ((distance<=sqr(step)) and (distance>=sqr(step-1) )) then
+         begin
+           for n:=0 to 5 do
+           begin
+             value:=img[n,y+j,x+k]-background[n];
+             if ((value<10000) and (value>=150)) then
+             begin
+               avg_colour[n]:=avg_colour[n]+value;
+               counter[n]:=counter[n]+1;
+             end;
+           end;
+         end;
+       end;
+
+       for n:=0 to 5 do
+       begin
+         if counter[n]<>0 then
+           avg_colour[n]:=avg_colour[n]/counter[n];
+       end;
+
+
+
+       maxcolour:=0;
+       for n:=0 to 5 do
+       begin
+          maxcolour:=max(maxcolour,avg_colour[n]);
+       end;
+
+
+       for n:=0 to 5 do
+       begin
+          if maxcolour>0 then
+           avg_colour[n]:=avg_colour[n]/maxcolour; //scale to 0..1
+       end;
+
+
+//       step:= round(mean_hfd*3);
+       for j:=-step to +step do
+       for k:=-step to +step do
+       begin
+         distance:=sqr(j)+sqr(k);
+         if distance<=sqr(step) then
+         begin
+           luminance:=0;
+           for n:=0 to 5 do
+           begin
+             if background[n]>0 then
+             luminance:=luminance+0.3333*(img[n,y+j,x+k]-background[n]);
+
+        //     if img[n,y+j,x+k]-background[n]<0 then
+        //     beep;
+           end;
+       //    if luminance<0 then
+        //   beep;
+           luminance:=min(maximum,luminance);
+
+       //    if luminance<0 then
+       //    beep;
+
+           for n:=0 to 5 do
+           //  img[n,y+j,x+k]:=100;
+              if ((background[n]>1) and (avg_colour[n]<>0) and (img[n,y+j,x+k]>10+background[n]))  then
+              begin
+     //                 if luminance*avg_colour[n]<400 then
+     //                 beep;
+
+                img[n,y+j,x+k]:=background[n]+luminance*avg_colour[n];
+              end;
+
+
+         end;
+       end;
+
+     end;
+
+   end;
+
+end;
+
+
+
 procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer ); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,R2,G2,B2,L]}
 var
-  fitsX,fitsY,c,width_max, height_max, binning,max_stars,col,x_trunc,y_trunc  : integer;
-  background_r, background_g, background_b, background_l,
-  background_r2,background_g2,background_b2,
+  fitsX,fitsY,c,width_max, height_max, binning,max_stars,col,x_trunc,y_trunc,i    : integer;
   rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, mean_hfd,
   rr_factor_1, rg_factor_1, rb_factor_1,
   gr_factor_1, gg_factor_1, gb_factor_1,
@@ -228,6 +351,7 @@ var
   warning               : string;
   starlist1,starlist2   : Tstar_list;
   img_temp,img_average  : Timage_array;
+  background : array[0..6] of double; //r,g,b,r2,g2,b2,L
 begin
   with stackmenu1 do
   begin
@@ -274,10 +398,9 @@ begin
       bg_factor_2:=strtofloat2(bg2.text);
       bb_factor_2:=strtofloat2(bb2.text);
 
-      background_r:=0;
-      background_g:=0;
-      background_b:=0;
-      background_l:=0;
+
+      for i:=0 to 6 do
+        background[i]:=0;
 
       counterR:=0;
       counterR2:=0;
@@ -293,7 +416,7 @@ begin
         if c=7 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
         begin {fix RGB stack}
           memo2_message('Correcting the number of pixels added together.');
-          for col:=0 to 5 do  //do 2 x 3colours
+          for col:=0 to 5 do  //do 2 x 3 colours
           begin
             if ((img_temp[col,height_max div 2 ,width_max div 2]>0) or (img_temp[col,(height_max div 2)+2,(width_max div 2) +2]>0) ) then //quick shortcut there is data
             begin
@@ -309,6 +432,12 @@ begin
             end;
           end;
           memo2_message('Applying black spot filter on the interim RRGGBB image.');
+
+          if ((use_astrometry_internal=false) and (fix_colour_saturated1.checked)) then //fix saturated star center
+             fix_saturated_stars(img_average,starlist2, mean_hfd);
+
+
+
           black_spot_filter_for_aligned(img_average); //Black spot filter for 6 colour, 2 rgb
 
           //combine the 2 x RGB
@@ -365,44 +494,44 @@ begin
             if c=1 then
             begin
                get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
-               background_r:=head.backgr;
+               background[0]:=head.backgr;
                counterR:=head.light_count ;counterRdark:=head.dark_count; counterRflat:=head.flat_count; counterRbias:=head.flatdark_count; exposureR:=round(head.exposure);temperatureR:=head.set_temperature;{for historical reasons}
             end;
             if c=2 then
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
-              background_g:=head.backgr;
+              background[1]:=head.backgr;
               counterG:=head.light_count;counterGdark:=head.dark_count; counterGflat:=head.flat_count; counterGbias:=head.flatdark_count; exposureG:=round(head.exposure);temperatureG:=head.set_temperature;
             end;
             if c=3 then
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
-              background_b:=head.backgr;
+              background[2]:=head.backgr;
               counterB:=head.light_count; counterBdark:=head.dark_count; counterBflat:=head.flat_count; counterBbias:=head.flatdark_count; exposureB:=round(head.exposure);temperatureB:=head.set_temperature;
             end;
             if c=4 then
             begin
                get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
-               background_r2:=head.backgr;
+               background[3]:=head.backgr;
                counterR2:=head.light_count ;counterR2dark:=head.dark_count; counterR2flat:=head.flat_count; counterR2bias:=head.flatdark_count; exposureR2:=round(head.exposure);temperatureR2:=head.set_temperature;{for historical reasons}
             end;
             if c=5 then
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
-              background_g2:=head.backgr;
+              background[4]:=head.backgr;
               counterG2:=head.light_count;counterG2dark:=head.dark_count; counterG2flat:=head.flat_count; counterG2bias:=head.flatdark_count; exposureG2:=round(head.exposure);temperatureG2:=head.set_temperature;
             end;
             if c=6 then
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
-              background_b2:=head.backgr;
+              background[5]:=head.backgr;
               counterB2:=head.light_count; counterB2dark:=head.dark_count; counterB2flat:=head.flat_count; counterB2bias:=head.flatdark_count; exposureB2:=round(head.exposure);temperatureB2:=head.set_temperature;
             end;
 
             if c=7 then {Luminance}
             begin
               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
-              background_L:=head.backgr;
+              background[6]:=head.backgr;
               counterL:=head.light_count; counterLdark:=head.dark_count; counterLflat:=head.flat_count; counterLbias:=head.flatdark_count; exposureL:=round(head.exposure);temperatureL:=head.set_temperature;
             end;
 
@@ -526,30 +655,30 @@ begin
                   value:=value + (img_loaded[0,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
                   value:=value + (img_loaded[0,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
 
-                  if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
-                  begin
-                    for col:=0 to 2+3 do
-                      img_temp[col,fitsY,fitsX]:=-9;//mark all colours as saturated if one colour is saturated.
-                  end
-                  else
+                //  if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
+                //  begin
+                 //   for col:=0 to 2+3 do
+                //      img_temp[col,fitsY,fitsX]:=-9;//mark all colours as saturated if one colour is saturated.
+                //  end
+                //  else
                   begin //not saturated
                     if c=1 {red} then
                     begin
-                      value:=(value-background_r);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      value:=(value-background[0]);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
                       if rr_factor_1>0.00001 then begin img_average[0,fitsY,fitsX]:=img_average[0,fitsY,fitsX] + rr_factor_1*value;{execute only if greater then zero for speed}img_temp[0,fitsY,fitsX]:=img_temp[0,fitsY,fitsX]+1; end;
                       if rg_factor_1>0.00001 then begin img_average[1,fitsY,fitsX]:=img_average[1,fitsY,fitsX] + rg_factor_1*value; img_temp[1,fitsY,fitsX]:=img_temp[1,fitsY,fitsX]+1; end;
                       if rb_factor_1>0.00001 then begin img_average[2,fitsY,fitsX]:=img_average[2,fitsY,fitsX] + rb_factor_1*value; img_temp[2,fitsY,fitsX]:=img_temp[2,fitsY,fitsX]+1; end;
                     end;
                     if c=2 {green} then
                     begin
-                      value:=(value-background_g);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      value:=(value-background[1]);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
                       if gr_factor_1>0.00001 then begin img_average[0,fitsY,fitsX]:=img_average[0,fitsY,fitsX] + gr_factor_1*value;{execute only if greater then zero for speed}img_temp[0,fitsY,fitsX]:=img_temp[0,fitsY,fitsX]+1;  end;
                       if gg_factor_1>0.00001 then begin img_average[1,fitsY,fitsX]:=img_average[1,fitsY,fitsX] + gg_factor_1*value;img_temp[1,fitsY,fitsX]:=img_temp[1,fitsY,fitsX]+1; end;
                       if gb_factor_1>0.00001 then begin img_average[2,fitsY,fitsX]:=img_average[2,fitsY,fitsX] + gb_factor_1*value;img_temp[2,fitsY,fitsX]:=img_temp[2,fitsY,fitsX]+1; end;
                     end;
                     if c=3 {blue}  then
                     begin
-                      value:=(value-background_b);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      value:=(value-background[2]);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
                       if br_factor_1>0.00001 then begin img_average[0,fitsY,fitsX]:=img_average[0,fitsY,fitsX] + br_factor_1*value;{execute only if greater then zero for speed}img_temp[0,fitsY,fitsX]:=img_temp[0,fitsY,fitsX]+1;  end;
                       if bg_factor_1>0.00001 then begin img_average[1,fitsY,fitsX]:=img_average[1,fitsY,fitsX] + bg_factor_1*value; img_temp[1,fitsY,fitsX]:=img_temp[1,fitsY,fitsX]+1;end;
                       if bb_factor_1>0.00001 then begin img_average[2,fitsY,fitsX]:=img_average[2,fitsY,fitsX] + bb_factor_1*value; img_temp[2,fitsY,fitsX]:=img_temp[2,fitsY,fitsX]+1;end;
@@ -557,21 +686,21 @@ begin
 
                     if c=4 {red2} then
                     begin
-                      value:=(value-background_r2);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      value:=(value-background[3]);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
                       if rr_factor_2>0.00001 then begin img_average[0+3,fitsY,fitsX]:=img_average[0+3,fitsY,fitsX] + rr_factor_2*value;{execute only if greater then zero for speed}img_temp[0+3,fitsY,fitsX]:=img_temp[0+3,fitsY,fitsX]+1; end;
                       if rg_factor_2>0.00001 then begin img_average[1+3,fitsY,fitsX]:=img_average[1+3,fitsY,fitsX] + rg_factor_2*value; img_temp[1+3,fitsY,fitsX]:=img_temp[1+3,fitsY,fitsX]+1; end;
                       if rb_factor_2>0.00001 then begin img_average[2+3,fitsY,fitsX]:=img_average[2+3,fitsY,fitsX] + rb_factor_2*value; img_temp[2+3,fitsY,fitsX]:=img_temp[2+3,fitsY,fitsX]+1; end;
                     end;
-                    if c=5 {green3} then
+                    if c=5 {green2} then
                     begin
-                      value:=(value-background_g2);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      value:=(value-background[4]);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
                       if gr_factor_2>0.00001 then begin img_average[0+3,fitsY,fitsX]:=img_average[0+3,fitsY,fitsX] + gr_factor_2*value;{execute only if greater then zero for speed}img_temp[0+3,fitsY,fitsX]:=img_temp[0+3,fitsY,fitsX]+1;  end;
                       if gg_factor_2>0.00001 then begin img_average[1+3,fitsY,fitsX]:=img_average[1+3,fitsY,fitsX] + gg_factor_2*value;img_temp[1+3,fitsY,fitsX]:=img_temp[1+3,fitsY,fitsX]+1; end;
                       if gb_factor_2>0.00001 then begin img_average[2+3,fitsY,fitsX]:=img_average[2+3,fitsY,fitsX] + gb_factor_2*value;img_temp[2+3,fitsY,fitsX]:=img_temp[2+3,fitsY,fitsX]+1; end;
                     end;
                     if c=6 {blue2}  then
                     begin
-                      value:=(value-background_b2);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      value:=(value-background[5]);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
                       if br_factor_2>0.00001 then begin img_average[0+3,fitsY,fitsX]:=img_average[0+3,fitsY,fitsX] + br_factor_2*value;{execute only if greater then zero for speed}img_temp[0+3,fitsY,fitsX]:=img_temp[0+3,fitsY,fitsX]+1;  end;
                       if bg_factor_2>0.00001 then begin img_average[1+3,fitsY,fitsX]:=img_average[1+3,fitsY,fitsX] + bg_factor_2*value; img_temp[1+3,fitsY,fitsX]:=img_temp[1+3,fitsY,fitsX]+1;end;
                       if bb_factor_2>0.00001 then begin img_average[2+3,fitsY,fitsX]:=img_average[2+3,fitsY,fitsX] + bb_factor_2*value; img_temp[2+3,fitsY,fitsX]:=img_temp[2+3,fitsY,fitsX]+1;end;
@@ -595,9 +724,9 @@ begin
                       blue_f:=colb/rgbsum;  if blue_f<0  then blue_f:=0; if blue_f>1 then  blue_f:=1;
                     end;
 
-                    img_average[0,fitsY,fitsX]:=1000+(value - background_l)*(red_f);
-                    img_average[1,fitsY,fitsX]:=1000+(value - background_l)*(green_f);
-                    img_average[2,fitsY,fitsX]:=1000+(value - background_l)*(blue_f);
+                    img_average[0,fitsY,fitsX]:=1000+(value - background[6])*(red_f);  //background[6]= background luminance
+                    img_average[1,fitsY,fitsX]:=1000+(value - background[6])*(green_f);
+                    img_average[2,fitsY,fitsX]:=1000+(value - background[6])*(blue_f);
                   end;
                 end;
               end;//for fits:=0 ....
