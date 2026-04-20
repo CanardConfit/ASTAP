@@ -78,7 +78,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.04.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.04.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -8715,11 +8715,11 @@ begin
 
       dum:=Sett.ReadString('stack','font_size_p',''); if dum<>'' then stackmenu1.font_size_photometry1.text:=dum;
 
-      c:=Sett.ReadInteger('stack','measure_mode',0); stackmenu1.measuring_method1.itemindex:=c;
+      stackmenu1.measuring_method1.itemindex:=Sett.ReadInteger('stack','measure_mode',0);
       dum:=Sett.ReadString('stack','snr_min_p',''); if dum<>'' then stackmenu1.snr_min_photo1.text:=dum;
       dum:=Sett.ReadString('stack','flux_apert',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_rad',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
-      dum:=Sett.ReadString('stack','ref_database',''); if dum<>'' then stackmenu1.reference_database1.text:=dum else stackmenu1.star_database1.text:='Online Gaia';//for photometry
+      stackmenu1.reference_database1.text:=Sett.ReadString('stack','ref_database','Online Gaia'); //for photometry
       c:=Sett.ReadInteger('stack','annotate_i',2); stackmenu1.annotate_mode1.itemindex:=c;
 
       dum:=Sett.ReadString('stack','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;

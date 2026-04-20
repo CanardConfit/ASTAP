@@ -1313,10 +1313,22 @@ const
   SN_nr = 14;{ Nova reference frames}
 
 
-
   icon_thumb_down = 8; {image index for outlier}
   icon_king = 9;{image index for best image}
   icon_exclamation=29;
+
+  filter_V  = 1;   // TG or V
+  filter_B  = 2;  //Blue
+  filter_R = 24; //Red, Rc
+  filter_I = 28; //I
+  filter_SI = 21; //SI
+  filter_SR = 22; //SR
+  filter_SG = 23; //SG
+
+  filter_RGB = 3; // RGB image
+  filter_CV  = 4;  //Grey, clear view
+  filter_OSC = 25;  //Raw, One shot colour image
+
 
   video_index: integer = 1;
   frame_rate: string = '1';
@@ -1328,7 +1340,7 @@ uses
   unit_image_sharpness, unit_threaded_gaussian_blur, unit_star_align,
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
-  unit_avi, unit_aavso, unit_raster_rotate, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
+  unit_avi, unit_aavso, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
   unit_contour, unit_interpolate, unit_sqm, unit_threaded_calibration,unit_transformation, unit_profiler;
 
 type
@@ -2362,11 +2374,11 @@ begin
                 if headx.naxis3 >= 3 then
                 begin
                   ListView1.Items.item[c].subitems.Strings[L_filter]:='colour';
-                  ListView1.Items.item[c].SubitemImages[L_filter]:=3 {RGB colour}
+                  ListView1.Items.item[c].SubitemImages[L_filter]:=filter_RGB {RGB colour}
                 end
                 else
                 if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
-                  ListView1.Items.item[c].SubitemImages[L_filter] :=25  //raw OSC file
+                  ListView1.Items.item[c].SubitemImages[L_filter]:=filter_OSC  //raw OSC file
                 else
                   ListView1.Items.item[c].SubitemImages[L_filter] :=get_filter_icon(headx.filter_name,{out} red,green, blue);
                 ListView1.Items.item[c].subitems.Strings[L_bin]:=floattostrf(headx.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf( headx.Ybinning, ffgeneral, 0, 0); {Binning CCD}
@@ -4458,10 +4470,10 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[F_filter]:=headx.filter_name;
               if headx.naxis3 = 3 then
-                lv.Items.item[c].SubitemImages[F_filter]:=3 {RGB colour}
+                lv.Items.item[c].SubitemImages[F_filter]:=filter_RGB {RGB colour}
               else
               if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
-                Lv.Items.item[c].SubitemImages[F_filter] :=25  //raw OSC file
+                Lv.Items.item[c].SubitemImages[F_filter]:=filter_OSC  //raw OSC file
               else
                 Lv.Items.item[c].SubitemImages[F_filter] :=get_filter_icon(headx.filter_name,{out} red,green, blue);
 
@@ -4504,51 +4516,51 @@ begin
               if ((length(filterstrUP)=0) or (pos('CV',filterstrUP)>0) or (pos('LUM',filterstrUP)>0))  then
               begin
                 if  ((bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then
-                  Lv.Items.item[c].SubitemImages[P_filter] :=25  //raw OSC file
+                  Lv.Items.item[c].SubitemImages[P_filter]:=filter_OSC  //raw OSC file
                 else
-                lv.Items.item[c].SubitemImages[P_filter]:=4 //assume CV
+                lv.Items.item[c].SubitemImages[P_filter]:=filter_CV //assume CV
               end
               else
               if  standarised_filter_name='V'  then
               begin
-                lv.Items.item[c].SubitemImages[P_filter]:=1; //Green or G or TG
+                lv.Items.item[c].SubitemImages[P_filter]:=filter_V; //Green or G or TG
                 all_filters.V:=true;
               end
               else
               if  standarised_filter_name='B'  then
               begin
-                lv.Items.item[c].SubitemImages[P_filter]:=2; //BLUE, B, TB
+                lv.Items.item[c].SubitemImages[P_filter]:=filter_B; //BLUE, B, TB
                 all_filters.B:=true;
               end
               else
               if  standarised_filter_name='R'  then
               begin
                 //The official abbreviation for Cousins R is R. See https://www.aavso.org/filters
-                lv.Items.item[c].SubitemImages[P_filter]:=24; //Cousins-red. Note Green also contains a R so first test Green
+                lv.Items.item[c].SubitemImages[P_filter]:=filter_R; //Cousins-red. Note Green also contains a R so first test Green
                 all_filters.R:=true;
               end
               else
               if standarised_filter_name='SI'  then
               begin
-                 lv.Items.item[c].SubitemImages[P_filter]:=21; //SDSS-i
+                 lv.Items.item[c].SubitemImages[P_filter]:=filter_SI; //SDSS-i
                  all_filters.SI:=true;
               end
               else
               if  standarised_filter_name='SR'  then
               begin
-                lv.Items.item[c].SubitemImages[P_filter]:=22; //SDSS-r
+                lv.Items.item[c].SubitemImages[P_filter]:=filter_SR; //SDSS-r
                 all_filters.SR:=true;
               end
               else
               if  standarised_filter_name='SG'  then
               begin
-                lv.Items.item[c].SubitemImages[P_filter]:=23; //SDSS-g
+                lv.Items.item[c].SubitemImages[P_filter]:=filter_SG; //SDSS-g
                 all_filters.SG:=true;
               end
               else
               if  standarised_filter_name='I'  then
               begin
-                lv.Items.item[c].SubitemImages[P_filter]:=28; // Bessel
+                lv.Items.item[c].SubitemImages[P_filter]:=filter_I; // Bessel I
                 all_filters.I:=true;
               end
               else //U is not supported because can't be transformed from Gaia data
@@ -8085,7 +8097,7 @@ begin
         if listview7.Items.item[c].Checked then
         begin
           calibratedP:=(listview7.Items.item[c].subitems.Strings[P_calibration] <> 'None' {calstat}); //calibrated ?
-          oscP:=(listview7.Items.item[c].SubitemImages[P_filter]=25);  //raw OSC file
+          oscP:=(listview7.Items.item[c].SubitemImages[P_filter]=filter_OSC);  //raw OSC file
           break;
         end;
       end;
@@ -8262,28 +8274,25 @@ begin
         plot_and_measure_stars(img_loaded,mainform1.Memo1.lines,head,True {calibration}, False {plot stars},True{report lim magnitude}); {calibrate. Downloaded database will be reused if in same area}
 
         //icon for used database passband. Database selection could be in auto mode so do this after calibration
-        if head.passband_database='BP' then database_col:=4 //gray
+        if head.passband_database='BP' then database_col:=filter_CV //gray, clear view
         else
-        if head.passband_database='R' then database_col:=24 //Cousins-R
+        if head.passband_database='R' then database_col:=filter_R //Cousins-R
         else
-        if head.passband_database='V' then database_col:=1 //green
+        if head.passband_database='V' then database_col:=filter_V //V, green
         else
-        if head.passband_database='B' then database_col:=2 //blue icon
+        if head.passband_database='B' then database_col:=filter_B //blue icon
         else
-        if head.passband_database='I' then database_col:=28 //dark red icon
+        if head.passband_database='I' then database_col:=filter_I //dark red icon
         else
-        if ((head.passband_database='SI') or (head.passband_database='IP')) then database_col:=21 //SDSS-i red/infrared
+        if ((head.passband_database='SI') or (head.passband_database='IP')) then database_col:=filter_SI //SDSS-i red/infrared
         else
-        if ((head.passband_database='SR') or (head.passband_database='RP')) then database_col:=22 //SDSS-r red/orange
+        if ((head.passband_database='SR') or (head.passband_database='RP')) then database_col:=filter_SR //SDSS-r red/orange
         else
-        if ((head.passband_database='SG') or (head.passband_database='GP')) then database_col:=23 //SDSS-g blue/green
+        if ((head.passband_database='SG') or (head.passband_database='GP')) then database_col:=filter_SG //SDSS-g blue/green
         else
         database_col:=-1; // unknown. Should not happen
 
         ListView7.Items.item[c].SubitemImages[P_calibration]:= database_col ; //show selected database passband
-
-//        ListView7.Items.item[c].SubitemImages[P_filter]:= 24 ; //show selected database passband
-
 
         listview7.Items.item[c].subitems.Strings[p_limmagn]:= floattostrF(head.magn_limit, FFgeneral, 4, 0);
 
@@ -9910,8 +9919,8 @@ end;
 procedure Tstackmenu1.export_to_tg1Click(Sender: TObject);
 var
    col,row,nr   :integer;
-   abrv,info,R,V,B,I,Rc,auid,julian_str,filt_line,data_line : string;
-   filt_done,b_filt,v_filt,r_filt,i_filt,rc_filt,skip,selected_rows  : boolean;
+   abrv,info,R,V,B,I,auid,julian_str,filt_line,data_line : string;
+   filt_done,b_filt,v_filt,r_filt,i_filt,skip,selected_rows  : boolean;
 begin
   nr:=(p_nr-p_nr_norm) div 3;
   if nr<2 then
@@ -9937,7 +9946,6 @@ begin
   v_filt:=false;
   r_filt:=false;
   i_filt:=false;
-  rc_filt:=false;
   selected_rows:=false;
   filt_line:='Filt';
   with stackmenu1.listview7 do
@@ -9960,27 +9968,19 @@ begin
             julian_str:='Julian_Day;'+listview7.Items.item[row].subitems.Strings[p_jd_mid];
            try
              case Items.item[row].SubitemImages[P_filter] of
-                       0 : begin R:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';R';R_filt:=true; data_line:=data_line+';'+R; end;  //red
-                       1 : begin V:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';V';V_filt:=true; data_line:=data_line+';'+V;  end;   //V or G TG
-                       2 : begin B:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';B';B_filt:=true; data_line:=data_line+';'+B; end;   //B or TB
-                       28: begin I:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';I';I_filt:=true; data_line:=data_line+';'+I; end;   //I FILTER
-
-//                       21 : begin si:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';SI' end; //SDSS-i
-//                       22 : begin sr:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';SR' end;  //SDSS-r not
-//                       23 : begin sg:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';SG end;  //SDSS-g
-                       24 : begin Rc:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';R';Rc_filt:=true;data_line:=data_line+';'+Rc;  end;  //Cousins red
-
-
+                       filter_R,0 : begin R:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';R';R_filt:=true; data_line:=data_line+';'+R; end;  //red
+                       filter_V    : begin V:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';V';V_filt:=true; data_line:=data_line+';'+V;  end;   //V or G TG
+                       filter_B    : begin B:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';B';B_filt:=true; data_line:=data_line+';'+B; end;   //B or TB
+                       filter_I   : begin I:=listview7.Items.item[row].subitems.Strings[col];filt_line:=filt_line+';I';I_filt:=true; data_line:=data_line+';'+I; end;   //I FILTER
              end;
             except
-              info:=info + ':' + 'Error';
             end;
         end;
         if filt_done=false then
         begin
           info:=julian_str+#13+#10;
           info:=info+Filt_line;
-          if ((b_filt) or (v_filt) or (r_filt) or (i_filt) or (Rc_filt))=false then
+          if ((b_filt) or (v_filt) or (r_filt) or (i_filt))=false then
             begin
               memo2_message('Abort. No B,V,R or I magnitudes found. Press first the play button and the select rows to process!');
               beep;
@@ -9994,7 +9994,6 @@ begin
         if ((V_filt) and (V='')) then skip:=true;//missing magnitude
         if ((R_filt) and (R='')) then skip:=true;//missing magnitude
         if ((I_filt) and (I='')) then skip:=true;//missing magnitude
-        if ((Rc_filt) and (Rc='')) then skip:=true;//missing magnitude
         if pos('Satur',data_line)>0 then skip:=true;
 
         if skip=false then //add star line

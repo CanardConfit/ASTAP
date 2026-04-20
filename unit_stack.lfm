@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_stackmethod1
+        ActivePage = tab_photometry1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 5
+        TabIndex = 8
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2502,7 +2502,7 @@ object stackmenu1: Tstackmenu1
                 BorderSpacing.Around = 5
                 DropDownCount = 20
                 ItemHeight = 19
-                ItemIndex = 3
+                ItemIndex = 15
                 Items.Strings = (
                   '0.5'
                   '0.6'
@@ -2523,7 +2523,7 @@ object stackmenu1: Tstackmenu1
                 )
                 ParentFont = False
                 TabOrder = 0
-                Text = '1'
+                Text = 'auto'
                 OnChange = search_fov1Change
               end
               object GroupBox_star_alignment_settings1: TGroupBox
