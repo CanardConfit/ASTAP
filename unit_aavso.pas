@@ -2289,6 +2289,7 @@ begin
       sett.WriteBool('photometry_tab','calibration',stackmenu1.photometry_calibrate1.checked);
       sett.WriteBool('photometry_tab','set_saturation', stackmenu1.set_saturation1.checked);//photometry tab
       sett.writestring('photometry_tab','saturation',stackmenu1.saturation_level1.text);
+      sett.WriteBool('photometry_tab','disable_autocenter', stackmenu1.disable_autocenter1.checked);//photometry tab
       sett.writestring('photometry_tab',';Format stars: hash|check|star1|star2|star3|star4|star5....;  The hash is the rounded 2*RA/2*DEC in degrees.','');
       sett.writestring('photometry_tab','stars',report_stars_short);
 
@@ -2302,10 +2303,8 @@ end;
 procedure load_photometry_settings(lpath: string);
 var
     Sett : TmemIniFile;
-    dum,dum2 : string;
+    dum  : string;
     c   : integer;
-    bool: boolean;
-    stars : Tstar_list;
 begin
   try
     Sett := TmemIniFile.Create(lpath);
@@ -2320,12 +2319,12 @@ begin
       dum:=Sett.ReadString('photometry_tab','annulus_rad',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
 
       c:=Sett.ReadInteger('photometry_tab','annotate_i',2); stackmenu1.annotate_mode1.itemindex:=c;
-      dum:=Sett.ReadString('photometry_tab','ref_database','');
-                   if dum<>'' then stackmenu1.reference_database1.text:=dum;
+      dum:=Sett.ReadString('photometry_tab','ref_database',''); if dum<>'' then stackmenu1.reference_database1.text:=dum;
       dum:=Sett.ReadString('photometry_tab','max_period',''); if dum<>'' then stackmenu1.max_period1.text:=dum;
       stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('photometry_tab','calibration',false);//photometry tab
       stackmenu1.set_saturation1.checked:= Sett.ReadBool('photometry_tab','set_saturation',false);//photometry tab
       dum:=Sett.ReadString('photometry_tab','saturation',''); if dum<>'' then stackmenu1.saturation_level1.text:=dum;
+      stackmenu1.disable_autocenter1.checked:= Sett.ReadBool('photometry_tab','disable_autocenter',false);//photometry tab
       report_stars_short:=Sett.ReadString('photometry_tab','stars','');//retrieve stars used
     end; //with mainform1
   finally {also for error it end's here}

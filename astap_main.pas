@@ -78,7 +78,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.04.20';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.04.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -13463,146 +13463,6 @@ begin
 end;
 
 
-function platesolve2_command: boolean;
-var
-  i,error1,regions,count        : integer;
-  List: TStrings;
-  command1 : string;
-  f        : textfile;
-  resultstr,rastr,decstr,cdelt,crota,flipped,confidence,resultV,line1,line2 : string;
-  field_size,search_field,dummy {do not remove}                             : double;
-  source_fits,solved,apt_request,file_loaded:boolean;
-begin
-  settingstring := Tstringlist.Create;
- {load program parameters, overriding initial settings if any}
-  with mainform1 do
-  if paramcount>0 then
-  begin
-   // Command line:
-   //PlateSolve2.exe (Right ascension in radians),(Declination in radians),(x dimension in radians),(y dimension in radians),(Number of regions to search),(fits filename),(wait time at the end)
-   //The wait time is optional. The 6 of 7  parameters should be separated by a comma. The values should have a decimal point not a comma. Example:  platesolve2.exe 4.516,0.75,0.0296,0.02268,999,1.fit,0
-   //Example platesolve2.exe   4.516,0.75,0.0296,0.02268,999,1.fit,0
-
-    List := TStringList.Create;
-    try
-      List.Clear;
-      list.StrictDelimiter:=true;{accept spaces in command but reconstruct since they are split over several parameters}
-
-      command1:=paramstr(1);
-      for i:=2 to paramcount do command1:=command1+' '+paramstr(i);{accept spaces in command but reconstruct since they are split over several parameters}
-
-      ExtractStrings([','], [], PChar(command1),List);
-
-      if list.count>=6  then
-         val(list[0],dummy,error1);{extra test, is this a platesolve2 command?}
-
-      if ((list.count>=6) and (error1=0)) then {this is a platesolve2 command line}
-      begin
-        result:=true;
-        commandline_execution:=true; {later required for trayicon and popup notifier}
-
-        filename2:=list[5];
-        source_fits:=fits_file_name(filename2);{fits file extension?}
-        file_loaded:=load_image(filename2,img_loaded,head,mainform1.memo1.lines,false,false {plot});{load file first to give commandline parameters later priority}
-
-        if file_loaded=false then errorlevel:=16;{error file loading}
-
-        ra1.Text:=floattostr6(strtofloat2(list[0])*12/pi);
-        dec1.Text:=floattostr6(strtofloat2(list[1])*180/pi);
-        field_size:=strtofloat2(list[3])*180/pi;{field height in degrees}
-        stackmenu1.search_fov1.text:=floattostr6(field_size);{field width in degrees}
-        fov_specified:=true; {always for platesolve2 command}
-        regions:=strtoint(list[4]);{use the number of regions in the platesolve2 command}
-        if regions=3000{maximum for SGP, force a field of 90 degrees} then   search_field:=90
-        else
-        search_field:= min(180,sqrt(regions)*0.5*field_size);{regions 1000 is equivalent to 32x32 regions. So distance form center is 0.5*32=16 region heights}
-
-        stackmenu1.radius_search1.text:=floattostrF(search_field,ffFixed,0,1);{convert to radius of a square search field}
-        if ((file_loaded) and (solve_image(img_loaded,head,mainform1.memo1.lines,true {get hist},false {check filter}) )) then {find plate solution, filename2 extension will change to .fit}
-        begin
-          resultstr:='Valid plate solution';
-          confidence:='999';
-          resultV:=',1';
-          solved:=true;
-        end
-        else
-        begin
-         //999,999,-1
-         //0,0,0,0,404
-         //Maximum search limit exceeded
-          head.ra0:=999;
-          head.dec0:=999;
-          resultV:=',-1';
-          resultstr:='Maximum search limit exceeded';
-          confidence:='000';
-          solved:=false;
-          errorlevel:=1;{no solution}
-        end;
-        //  0.16855631,0.71149576,1              (ra [rad],dec [rad],1 }
-        //  2.69487,0.5,1.00005,-0.00017,395     {pixelsize*3600, head.crota2, flipped,? ,confidence}
-        //  Valid plate solution
-
-        // .1844945, .72046475, 1
-        // 2.7668, 180.73,-1.0001,-.00015, 416
-        // Valid plate solution
-
-        //  0.16855631,0.71149576,0.0296,0.02268,999,c:\temp\3.fits,0   {m31}
-
-        assignfile(f,ChangeFileExt(filename2,'.apm'));
-        rewrite(f);
-
-        str(head.ra0:9:7,rastr);{mimic format of PlateSolve2}
-        str(head.dec0:9:7,decstr);
-        line1:=rastr+','+decstr+resultV {,1 or ,-1};
-
-        str(head.cdelt2*3600:7:5,cdelt);
-        if ((head.cdelt2=0{prevent divide by zero}) or (head.cdelt1/head.cdelt2<0)) then
-        begin
-          if source_fits then flipped:='1.0000' else flipped:='-1.0000'; {PlateSolve2 sees a FITS file flipped while not flipped due to the orientation 1,1 at left bottom}
-        end
-        else
-        begin
-          if source_fits then flipped:='-1.0000' else flipped:='1.0000';{PlateSolve2 sees a FITS file flipped while not flipped due to the orientation 1,1 at left bottom}
-          head.crota2:=180-head.crota2;{mimic strange Platesolve2 angle calculation.}
-        end;
-
-        head.crota2:=fnmodulo(head.crota2,360); {Platesolve2 reports in 0..360 degrees, mimic this behavior for SGP}
-
-        str(head.crota2:7:2,crota);
-        line2:=cdelt+','+crota+','+flipped+',0.00000,'+confidence;
-
-        apt_request:=pos('IMAGETOSOLVE',uppercase(filename2))>0; {if call from APT then write with numeric separator according Windows setting as for PlateSolve2 2.28}
-        if ((apt_Request) and (formatSettings.decimalseparator= ',' )) then {create PlateSolve2 v2.28 format}
-        begin
-          line1:=stringreplace(line1, '.', ',',[rfReplaceAll]);
-          line2:=stringreplace(line2, '.', ',',[rfReplaceAll]);
-        end;
-
-        writeln(f,line1);
-        writeln(f,line2);
-        writeln(f,resultstr);
-        closefile(f);
-
-        {note SGP uses PlateSolve2 v2.29. This version writes APM always with dot as decimal separator}
-
-        {extra log}
-        write_ini(filename2,solved);{write solution to ini file}
-        count:=0;
-        while  ((fileexists(ChangeFileExt(filename2,'.apm'))=false) and  (count<60)) do begin sleep(50);inc(count); end;{wait maximum 3 seconds till solution file is available before closing the program}
-      end {list count}
-      else
-      begin {not a platesolve2 command}
-        result:=false;
-        filename2:=command1;{for load this file in viewer}
-      end;
-    finally
-      List.Free;
-    end;
-  end
-  else result:=false; {no parameters specified}
-end;
-
-
 procedure write_astronomy_wcs(filen: string);
 var
   TheFile4 : tfilestream;
@@ -13812,13 +13672,14 @@ begin
 
   fov_specified:=false;{assume no FOV specification in commandline}
   screen.Cursor:=0;
-  if platesolve2_command then
-  begin
-    esc_pressed:=true;{kill any running activity. This for APT}
+//  if platesolve2_command then
+//  begin
+//    esc_pressed:=true;{kill any running activity. This for APT}
     {stop program, platesolve command already executed}
-    halt(errorlevel); {don't save only do form.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
-  end
-  else
+//    halt(errorlevel); {don't save only do form.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
+//  end
+//  else
+
   if paramcount>0 then   {file as first parameter}
   begin
     {filename2 is already made in platesolve2_command}
