@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 112
+  Left = 871
   Height = 704
-  Top = 171
+  Top = 257
   Width = 1756
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_stackmethod1
+        ActivePage = lights
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 5
+        TabIndex = 0
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -2502,7 +2502,6 @@ object stackmenu1: Tstackmenu1
                 BorderSpacing.Around = 5
                 DropDownCount = 20
                 ItemHeight = 19
-                ItemIndex = 3
                 Items.Strings = (
                   '0.5'
                   '0.6'
@@ -2523,7 +2522,7 @@ object stackmenu1: Tstackmenu1
                 )
                 ParentFont = False
                 TabOrder = 0
-                Text = '1'
+                Text = '0'
                 OnChange = search_fov1Change
               end
               object GroupBox_star_alignment_settings1: TGroupBox
@@ -3331,7 +3330,7 @@ object stackmenu1: Tstackmenu1
           OnShow = tab_photometry1Show
           object analysephotometry1: TButton
             Left = 104
-            Height = 26
+            Height = 30
             Hint = 'Analyse image files'
             Top = 34
             Width = 80
@@ -3352,7 +3351,7 @@ object stackmenu1: Tstackmenu1
           end
           object photometry_stop1: TButton
             Left = 200
-            Height = 26
+            Height = 30
             Hint = 'Stop photometry blinking'
             Top = 34
             Width = 88
@@ -3363,7 +3362,7 @@ object stackmenu1: Tstackmenu1
           end
           object photometry_button1: TButton
             Left = 296
-            Height = 26
+            Height = 30
             Hint = 'Play button. Scroll through the check-marked images once and measure the marked stars.'
             Top = 34
             Width = 160
@@ -3650,7 +3649,7 @@ object stackmenu1: Tstackmenu1
           end
           object browse_photometry1: TBitBtn
             Left = 0
-            Height = 25
+            Height = 30
             Hint = 'Select images for photometry'
             Top = 34
             Width = 92
