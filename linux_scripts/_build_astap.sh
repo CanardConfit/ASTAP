@@ -2,10 +2,30 @@
 
 #Update the version dates
 sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_amd64/DEBIAN/control
+sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_amd64_gtk3/DEBIAN/control
 sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_i386/DEBIAN/control
 sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_armhf/DEBIAN/control
 sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_aarch64/DEBIAN/control
+sed -i "s/^Version:.*/Version: $(date +%Y.%m.%d)/" ./astap_aarch64_gtk3/DEBIAN/control
 
+#Build amd64 gtk3 version
+rm ~/astap.fpc/astap
+/home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_amd64_gtk3.lpi
+if [[ ! -f ~/astap.fpc/astap ]] ; then
+    echo 'AMD64 GTK3 file does not exist, aborting!!'
+    exit
+fi
+
+cp /home/h/astap.fpc/astap /home/h/astap_install/astap_amd64_gtk3/opt/astap
+cd /home/h/astap_install
+sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_amd64_gtk3
+
+#unpack
+sudo dpkg -i ./astap_amd64_gtk3.deb
+tar -czvf astap_amd64_gtk3.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/astap/astap.ico /opt/astap/copyright.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop /usr/local/bin/astap /opt/astap/dcraw-astap /opt/astap/unprocessed_raw-astap
+
+
+#Build amd64 gtk2 version
 rm ~/astap.fpc/astap
 /home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_amd64.lpi
 if [[ ! -f ~/astap.fpc/astap ]] ; then
@@ -133,10 +153,28 @@ sudo cp /home/h/astap_install/astap_aarch64/opt/astap/astap_cli /opt/astap
 tar -czvf astap_aarch64.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap  /opt/astap/astap_cli
 
 
+#build aarch64_gtk3
+rm ~/astap.fpc/astap 
+/home/h/fpcupdeluxe_new/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_aarch64_gtk3.lpi                  
+if [[ ! -f ~/astap.fpc/astap ]] ; then
+   echo 'aarch64 GTK3 file does not exist, aborting!!'
+   exit
+fi
+cp /home/h/astap.fpc/astap /home/h/astap_install/astap_aarch64_gtk3/opt/astap
+cd /home/h/astap_install
+sudo fakeroot dpkg-deb -Zxz --build /home/h/astap_install/astap_aarch64_gtk3
+sudo cp /home/h/astap.fpc/astap /opt/astap
+sudo cp /home/h/astap_install/astap_aarch64_gtk3/opt/astap/astap /opt/astap
+sudo cp /home/h/astap_install/astap_aarch64_gtk3/opt/astap/unprocessed_raw-astap /opt/astap
+sudo cp /home/h/astap_install/astap_aarch64_gtk3/opt/astap/astap_cli /opt/astap
+tar -czvf astap_aarch64_gtk3.tar.gz /opt/astap/astap   /opt/astap/astap.ico /opt/astap/*.txt /opt/astap/deep_sky.csv /opt/astap/variable_stars.csv /opt/astap/variable_stars_8.csv /usr/share/applications/ASTAP.desktop  /opt/astap/unprocessed_raw-astap  /opt/astap/astap_cli
+
+
 
 
 #restore amd64 installation
 sudo dpkg -i ./astap_amd64.deb
+
 
 
 ./_build_astap_arch_linux.sh

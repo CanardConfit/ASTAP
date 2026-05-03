@@ -1,45 +1,14 @@
 object mainform1: Tmainform1
-  Left = 372
-  Height = 629
+  Left = 285
+  Height = 597
   Hint = ' '
-  Top = 212
-  Width = 1333
+  Top = 273
+  Width = 1273
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 629
-  ClientWidth = 1333
+  ClientHeight = 597
+  ClientWidth = 1273
   Color = clForm
-  Icon.Data = {
-    7E03000000000100010010100000010018006803000016000000280000001000
-    0000200000000100180000000000000300006400000064000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000000
-    000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFF
-    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00
-    0000000000FFFFFF000000000000000000000000000000FFFFFF000000000000
-    000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-    00000000000000FFFFFF000000000000000000000000000000000000FFFFFF00
-    0000000000FFFFFF000000000000000000000000000000FFFFFF000000000000
-    000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-    00000000000000FFFFFF000000000000000000000000000000000000FFFFFF00
-    0000000000FFFFFF000000000000000000000000000000FFFFFF000000000000
-    000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-    00000000000000FFFFFF000000000000000000000000000000000000FFFFFF00
-    0000000000FFFFFF000000000000000000000000000000FFFFFFFFFFFFFFFFFF
-    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000FFFFFF0000000000000000
-    00000000000000000000000000000000000000000000000000000000FFFFFF00
-    0000000000FFFFFF000000000000000000000000000000000000000000000000
-    000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-    00000000000000000000000000000000000000000000000000000000FFFFFF00
-    0000000000FFFFFF000000000000000000000000000000000000000000000000
-    000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-    00000000000000000000000000000000000000000000000000000000FFFFFF00
-    0000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000
-  }
   KeyPreview = True
   Menu = MainMenu1
   ParentFont = True
@@ -71,8 +40,8 @@ object mainform1: Tmainform1
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 606
-    Width = 1333
+    Top = 574
+    Width = 1273
     Panels = <    
       item
         Width = 200
@@ -110,9 +79,9 @@ object mainform1: Tmainform1
   object PairSplitter1: TPairSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 606
+    Height = 574
     Top = 0
-    Width = 1333
+    Width = 1273
     Align = alClient
     Color = clForm
     Position = 176
@@ -122,18 +91,18 @@ object mainform1: Tmainform1
       Left = 0
       Height = 176
       Top = 0
-      Width = 1333
-      ClientWidth = 1333
+      Width = 1273
+      ClientWidth = 1273
       ClientHeight = 176
       object Panel_top_menu1: TPanel
         Left = 0
         Height = 176
         Top = 0
-        Width = 1333
+        Width = 1273
         Align = alClient
         AutoSize = True
         ClientHeight = 176
-        ClientWidth = 1333
+        ClientWidth = 1273
         ParentBackground = False
         TabOrder = 0
         object Label2: TLabel
@@ -231,6 +200,7 @@ object mainform1: Tmainform1
           Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
           Top = 2
           Width = 95
+          Constraints.MaxHeight = 27
           ParentShowHint = False
           PopupMenu = PopupMenu_ra_dec1
           ShowHint = True
@@ -305,7 +275,7 @@ object mainform1: Tmainform1
           OnClick = solve_button1Click
         end
         object save1: TButton
-          Left = 416
+          Left = 420
           Height = 30
           Hint = 'Save FITS file with plate solution'
           Top = 7
@@ -325,7 +295,7 @@ object mainform1: Tmainform1
           OnClick = SaveFITSwithupdatedheader1Click
         end
         object Polynomial1: TComboBox
-          Left = 456
+          Left = 460
           Height = 23
           Hint = 'Use WCS, SIP or DSS polynomial for indicating the position. SIP is available for Astrometry.net solutions and DSS polynomial for images from the DSS survey. A red background is indicating "no valid" solution for this option.'
           Top = 8
@@ -434,7 +404,7 @@ object mainform1: Tmainform1
           end
           object minimum1: TScrollBar
             Left = 67
-            Height = 16
+            Height = 20
             Hint = 'Adjust the black level'
             Top = 57
             Width = 261
@@ -449,7 +419,7 @@ object mainform1: Tmainform1
           end
           object maximum1: TScrollBar
             Left = 67
-            Height = 16
+            Height = 20
             Hint = 'Adjust the white level.'
             Top = 80
             Width = 261
@@ -472,6 +442,7 @@ object mainform1: Tmainform1
             Hint = 'At this level the pixels are displayed as black.'
             Top = 56
             Width = 49
+            Constraints.MaxHeight = 23
             Enabled = False
             Font.CharSet = ANSI_CHARSET
             Font.Height = -12
@@ -491,6 +462,7 @@ object mainform1: Tmainform1
             Hint = 'At this level the pixels are displayed as fully white.'
             Top = 77
             Width = 49
+            Constraints.MaxHeight = 23
             Enabled = False
             Font.CharSet = ANSI_CHARSET
             Font.Height = -12
@@ -653,6 +625,7 @@ object mainform1: Tmainform1
           Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database.'
           Top = 28
           Width = 95
+          Constraints.MaxHeight = 27
           ParentShowHint = False
           PopupMenu = PopupMenu_ra_dec1
           ShowHint = True
@@ -662,7 +635,7 @@ object mainform1: Tmainform1
           OnDblClick = radec_search1Click
         end
         object inversemousewheel1: TCheckBox
-          Left = 456
+          Left = 465
           Height = 19
           Hint = 'Inverse zoom action of the mouse wheel.'
           Top = 40
@@ -682,7 +655,7 @@ object mainform1: Tmainform1
           TabOrder = 7
         end
         object image_north_arrow1: TImage
-          Left = 490
+          Left = 485
           Height = 69
           Hint = 'Long axis is north, small axis is east,  F indicates flipped image.'
           Top = 104
@@ -695,7 +668,7 @@ object mainform1: Tmainform1
           Left = 596
           Height = 174
           Top = 1
-          Width = 736
+          Width = 676
           ActivePage = TabSheet1
           Align = alClient
           BorderSpacing.Left = 595
@@ -704,12 +677,12 @@ object mainform1: Tmainform1
           object TabSheet1: TTabSheet
             Caption = 'Header'
             ClientHeight = 142
-            ClientWidth = 728
+            ClientWidth = 668
             object Memo1: TMemo
               Left = 0
               Height = 142
               Top = 0
-              Width = 728
+              Width = 668
               Align = alClient
               Font.Height = -9
               Font.Name = 'Courier'
@@ -728,12 +701,12 @@ object mainform1: Tmainform1
           object TabSheet2: TTabSheet
             Caption = 'Table'
             ClientHeight = 142
-            ClientWidth = 728
+            ClientWidth = 668
             object Memo3: TMemo
               Left = 0
               Height = 142
               Top = 0
-              Width = 728
+              Width = 668
               Align = alClient
               Font.Height = -9
               Font.Name = 'Courier'
@@ -764,10 +737,10 @@ object mainform1: Tmainform1
           OnClick = UpDown1Click
         end
         object rotation1: TLabel
-          Left = 555
+          Left = 547
           Height = 15
           Hint = 'Orientation of the image north axis, independent of  flip settings.'
-          Top = 132
+          Top = 128
           Width = 6
           Caption = '0'
           Font.CharSet = ANSI_CHARSET
@@ -782,7 +755,7 @@ object mainform1: Tmainform1
           ShowHint = True
         end
         object flip_indication1: TLabel
-          Left = 555
+          Left = 547
           Height = 15
           Hint = 'The image is flipped. Either the east is swapped with west or north is swapped with south.'
           Top = 152
@@ -801,7 +774,7 @@ object mainform1: Tmainform1
           Visible = False
         end
         object StaticText_labelversion1: TStaticText
-          Left = 1207
+          Left = 1147
           Height = 14
           Top = 7
           Width = 122
@@ -818,20 +791,20 @@ object mainform1: Tmainform1
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 425
+      Height = 393
       Top = 181
-      Width = 1333
-      ClientWidth = 1333
-      ClientHeight = 425
+      Width = 1273
+      ClientWidth = 1273
+      ClientHeight = 393
       object Panel1: TPanel
         Left = 0
-        Height = 425
+        Height = 393
         Hint = 'hint'
         Top = 0
-        Width = 1333
+        Width = 1273
         Align = alClient
-        ClientHeight = 425
-        ClientWidth = 1333
+        ClientHeight = 393
+        ClientWidth = 1273
         Color = 2105376
         Font.CharSet = ANSI_CHARSET
         Font.Color = clBlack
@@ -848,9 +821,9 @@ object mainform1: Tmainform1
         OnMouseWheelDown = Panel1MouseWheelDown
         OnMouseWheelUp = Panel1MouseWheelUp
         object Image1: TImage
-          Left = 152
+          Left = 131
           Height = 264
-          Top = 14
+          Top = 3
           Width = 608
           Anchors = []
           ParentShowHint = False
@@ -986,8 +959,8 @@ object mainform1: Tmainform1
   end
   object MainMenu1: TMainMenu
     Images = ImageList1
-    Left = 848
-    Top = 216
+    Left = 824
+    Top = 224
     object File1: TMenuItem
       Caption = '&File'
       Hint = 'Load a FITS, PNG, JPG or BPM file.'
@@ -2140,37 +2113,6 @@ object mainform1: Tmainform1
     }
   end
   object TrayIcon1: TTrayIcon
-    Icon.Data = {
-      7E03000000000100010010100000010018006803000016000000280000001000
-      0000200000000100180000000000000300006400000064000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00
-      0000000000FFFFFF000000000000000000000000000000FFFFFF000000000000
-      000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-      00000000000000FFFFFF000000000000000000000000000000000000FFFFFF00
-      0000000000FFFFFF000000000000000000000000000000FFFFFF000000000000
-      000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-      00000000000000FFFFFF000000000000000000000000000000000000FFFFFF00
-      0000000000FFFFFF000000000000000000000000000000FFFFFF000000000000
-      000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-      00000000000000FFFFFF000000000000000000000000000000000000FFFFFF00
-      0000000000FFFFFF000000000000000000000000000000FFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000FFFFFF0000000000000000
-      00000000000000000000000000000000000000000000000000000000FFFFFF00
-      0000000000FFFFFF000000000000000000000000000000000000000000000000
-      000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-      00000000000000000000000000000000000000000000000000000000FFFFFF00
-      0000000000FFFFFF000000000000000000000000000000000000000000000000
-      000000000000000000000000FFFFFF000000000000FFFFFF0000000000000000
-      00000000000000000000000000000000000000000000000000000000FFFFFF00
-      0000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000
-    }
     Hint = 'ASTAP'
     Left = 1048
     Top = 288

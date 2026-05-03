@@ -498,7 +498,14 @@ begin
 
 
     get_background(0, img_binned, head, True {calc hist}, True {calculate also standard deviation background});{get back ground}
+
+
     find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd); {find stars of the image and put them in a list}
+
+//    profiler_start;
+//    find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd); {find stars of the image and put them in a list}
+//    profiler_log('time used');
+//    memo2_message(plog);
 
     if ((length(img_binned[0]) < 960) and  (stackmenu1.downsample_for_solving1.Text <> '0'){auto}) then
     begin
