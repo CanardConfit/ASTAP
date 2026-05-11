@@ -38,6 +38,7 @@ procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 procedure display_quads(starlistquads :Tstar_list);{draw quads}
 function solution_str: string;
 procedure QuickSort_starlist(var A: Tstar_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
+procedure SigmaClippedMeanFromHistogram(img :Timage_array; colour,startx,stopx,starty,stopy, upperlimit, maxIterations: integer; convergenceThreshold : double; out meanv,stdev : double);
 
 
 implementation
@@ -1328,7 +1329,7 @@ end;
 //end;
 
 
-procedure get_hist2(img :Timage_array; startx,stopx,starty,stopy,upperlimit : integer; out histogram : Tarray_integer);
+procedure get_hist2(img :Timage_array;colour, startx,stopx,starty,stopy,upperlimit : integer; out histogram : Tarray_integer);
 var
   i,j,col        : integer;
 begin
@@ -1340,7 +1341,7 @@ begin
   begin
     for j:=startX to stopX do
     begin
-      col:=round(img[0,i,j]);{pixel value for this colour}
+      col:=round(img[colour,i,j]);{pixel value for this colour}
       if ((col>=1) and (col<upperlimit)) then {ignore black overlap areas and bright stars}
          inc(histogram[col],1);{calculate histogram}
     end;{j}
@@ -1348,7 +1349,7 @@ begin
 end;
 
 
-procedure SigmaClippedMeanFromHistogram(img :Timage_array; startx,stopx,starty,stopy, upperlimit, maxIterations: integer; convergenceThreshold : double; out meanv,stdev : double);
+procedure SigmaClippedMeanFromHistogram(img :Timage_array; colour,startx,stopx,starty,stopy, upperlimit, maxIterations: integer; convergenceThreshold : double; out meanv,stdev : double);
 var
   i, totalCount, iteration, binvalue, val: Integer;
   sum, sumSquares, variance: Double;
@@ -1370,7 +1371,7 @@ begin
   currentUpperLimit := upperlimit;
 
 
-  get_hist2(img,startx,stopx,starty,stopy,upperlimit,{out} histogram);
+  get_hist2(img,colour,startx,stopx,starty,stopy,upperlimit,{out} histogram);
 
   while (not converged) and (iteration < maxIterations) do
   begin
@@ -1596,7 +1597,7 @@ begin
          startY:=1+round(height2*yy/(stepsY+1));
          endY:=min(height2-1-1,round(height2*(yy+1)/(stepsY+1)));
 
-         SigmaClippedMeanFromHistogram(img,startX,endX,startY,endY,max(65500,trunc(head.backgr*2)), 6,0.1,backgr,noise_level);//mean and noise of this sub section
+         SigmaClippedMeanFromHistogram(img,0,startX,endX,startY,endY,max(65500,trunc(head.backgr*2)), 6,0.1,backgr,noise_level);//mean and noise of this sub section
          detection_level:= 7*noise_level;
          find_stars_routine(startX,endX,startY,endY);
        end;

@@ -28,7 +28,9 @@ GTK3
 fixed: https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42173
 fixed: https://github.com/LongDirtyAnimAlf/fpcupdeluxe/issues/806?reload=1
 fixed  https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42256
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42260
+fixed https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42260
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42268
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42269
 
 
 
@@ -78,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.05.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.05.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1148,6 +1150,7 @@ end;{reset global variables}
 //end;
 
 
+
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo: tstrings;out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
 {if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
@@ -1450,19 +1453,6 @@ begin
           else
           if ((header[i+1]='L')  and (header[i+2]='A') and (header[i+3]='T') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
                head.flat_count:=round(validate_double);{read integer as double value}
-
-          if ((header[i+1]='R')  and (header[i+2]='A') and (header[i+3]='M') and (header[i+4]='E')) then
-          begin
-            //FRAMEX  =                  100 / Frame start x
-            //FRAMEY  =                  500 / Frame start y
-            //FRAMEHGT=                  600 / Frame height
-            //FRAMEWDH=                  500 / Frame width
-            if header[i+5]='X' then head.xorgsubf:=round(validate_double)
-            else
-            if header[i+5]='Y' then head.yorgsubf:=round(validate_double);
-          end;
-
-
         end; {F}
 
         if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
@@ -2595,6 +2585,9 @@ begin
     if key='SITELAT =' then sitelat:=read_string else
     if key='SITELONG=' then sitelong:=read_string;
 
+    if key='XORGSUBF=' then head.xorgsubf:=round(read_float);
+    if key='YORGSUBF=' then head.yorgsubf:=round(read_float);
+
 
     {adjustable keywords}
     if key=sqm_key+'='    then sqm_value:=read_string;
@@ -3222,6 +3215,114 @@ begin
 end;
 
 
+procedure ghost_blackout(threshold,dx,dy,diameter: integer);//blackout of ghost stars for spectroscopy
+var
+  jy,jx,radius,sqrradius,ny,nx,fwidth,fheight,cx,cy,fluxmain,fluxghost1,fluxghost2,gy,gx: integer;
+
+    procedure setpixel(ay,ax : integer; val: single);
+    begin
+      if ((ax>=0) and (ax<Fwidth) and (ay>=0) and (ay<Fheight)) then
+        img_loaded[0,ay ,ax]:=val;
+    end;
+
+    function getpixel(ay,ax: integer): single;
+    begin
+      if ((ax>=0) and (ax<Fwidth) and (ay>=0) and (ay<Fheight)) then
+        result:=img_loaded[0,ay ,ax]
+      else
+        result:=0;
+    end;
+
+    function center_of_gravity(iy,ix : integer; out cy,cx,flux : integer): boolean;
+    var
+      sumval,sumvalx,sumvaly : double;
+      val                    : single;
+      i,j,signal_counter: integer;
+    begin
+      result:=false;//default failure
+      flux:=0;//default failure
+      SumVal:=0;
+      SumValX:=0;
+      SumValY:=0;
+      signal_counter:=0;
+
+      for j:=-diameter to diameter do //search wide enough to center on donuts
+      for i:=-diameter to diameter do
+      begin
+        val:=getpixel(iy+j,ix+i);
+        if val>threshold div 2 then
+        begin
+          SumVal:=SumVal+val;
+          SumValX:=SumValX+val*(i);
+          SumValY:=SumValY+val*(j);
+          inc(signal_counter); {how many pixels are illuminated}
+        end;
+      end;
+      if signal_counter<4 then //no star detected
+      begin
+        cy:=iy;
+        cx:=ix;
+      end
+      else
+      begin //center of gravity
+        cy:=round(iy+SumValY/SumVal);
+        cx:=round(ix+SumValX/SumVal);
+        flux:=round(Sumval);
+        result:=true;
+
+      end;
+    end;
+
+begin
+  Radius:=diameter div 2;
+  sqrradius:=sqr(radius);
+  fheight:=length(img_loaded[0]);
+  fwidth:=length(img_loaded[0,0]);
+
+  sqrradius:=sqr(diameter) div 4;
+  try
+    for jy:=1 to Fheight-2 do
+    for jx:=1 to Fwidth-2 do
+    begin
+      if ((img_loaded[0,jy ,  jx  ]>threshold) and
+          (img_loaded[0,jy+1 ,jx  ]>threshold) and
+          (img_loaded[0,jy   ,jx+1]>threshold) and
+          (img_loaded[0,jy+1 ,jx+1]>threshold)) then //four pixels above threshold
+      begin
+        if center_of_gravity(jy,jx,cy,cx,fluxmain) then  //found a possible true star
+        begin
+          if getpixel(cy+dy,cx+dx)<>0 then
+            center_of_gravity(cy+dy,cx+dy,gy,gx,fluxghost1) //calculate ghost1 flux
+          else //no need to check
+            fluxghost1:=0;
+
+          if getpixel(cy-dy,cx-dx)<>0 then
+            center_of_gravity(cy-dy,cx-dy,gy,gx,fluxghost2) //calculate ghost2 flux
+          else //no need to check
+            fluxghost2:=0;
+
+          if ((fluxghost1<fluxmain) and (fluxghost2<fluxmain)) then //found the main star and not a ghost
+          begin
+            if getpixel(cy+dy,cx+dx)<>0 then //ghost star is not yet blackouted
+            for ny:=-radius to +radius do
+              for nx:=-radius to +radius do
+               if sqr(ny)+sqr(nx)<=sqrradius then //round spot
+                 setpixel(cy+dy+ny,cx+dx+nx,$000000); //blackout ghost1 above
+
+           if getpixel(cy-dy,cx-dx)<>0 then //ghost star is not yet blackouted
+           for ny:=-radius to +radius do
+              for nx:=-radius to +radius do
+               if sqr(ny)+sqr(nx)<=sqrradius then //round spot
+                 setpixel(cy-dy+ny,cx-dx+nx,$000000); //blackout ghost2 below
+          end;
+        end;
+      end;
+    end;
+  except
+  end;
+end;
+
+
 procedure Tmainform1.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Open in viewer';
@@ -3245,6 +3346,9 @@ begin
     LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
     Screen.Cursor:=crDefault;
   end;
+
+//  ghost_blackout(10000,0,40,25);//blackout of ghost stars for spectroscopy
+//  plot_image(mainform1.image1,false);
 end;
 
 
@@ -14408,14 +14512,9 @@ var
 begin
    if ((head.xorgsubf=0) and (head.yorgsubf=0)) then  //head, so from image in the viewer
    begin
-     application.messagebox(pchar('Abort. No image in the viewer or the image in the viewer does not contain keywords XORGSUBF, YORGSUBF or FRAMEX, FRAMEY. Crop an sample image first with the popup menu and mouse.'),'',MB_OK);
+     application.messagebox(pchar('Abort. No image in the viewer or the image in the viewer does not contain keywords XORGSUBF, YORGSUBF. Crop an sample image first with the popup menu and mouse.'),'',MB_OK);
      exit;
    end;
-
-{ FRAMEX  =                  671 / Frame start X
-  FRAMEY  =                 1088 / Frame start Y
-  FRAMEHGT=                  148 / Frame start
-  FRAMEWDH=                  178 / Frame start}
 
   OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter:=dialog_filter_fits_tif;
@@ -14427,8 +14526,6 @@ begin
   frameY_sample:=head.yorgsubf;//ascom/alpaca inverse stored
   frameW_sample:=head.width;
   frameH_sample:=head.height;
-
-
 
   sample_binning:=round(head.xbinning);
 
@@ -16105,7 +16202,7 @@ end;
 
 
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
-procedure HFD_without_auto_center(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux :double);//special for photmetry
+procedure HFD_without_auto_center(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux :double);//special for photometry
 const
   samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
 

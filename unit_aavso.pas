@@ -2268,8 +2268,6 @@ end;
 procedure save_photometry_settings(lpath:string); //save photometry settings for this report
 var
     Sett : TmemIniFile;
-    c,k    : integer;
-    ra,dec : double;
 begin
   try
     Sett := TmemIniFile.Create(lpath);
@@ -2339,7 +2337,7 @@ var
     c,date_column,i,icon_nr,m_index : integer;
     err,airmass_str, delim,fnG,detype,baa_extra,magn_type,filter_used,settings,date_format,date_observation,
     abbrv_var_clean,abbrv_check_clean,abbrv_comp_clean,abbrv_comp_clean_report,comp_magn_info,var_magn_str,check_magn_str,comp_magn_str,comments,invalidstr,
-    transformation, transform_all_factors,transf_str,varab, aperture_str  : string;
+    transformation, transform_all_factors,transf_str,varab, aperture_str,upper_filter_used  : string;
     apply_transformation,valid_comp,gaia_ensemble : boolean;
     snr_value,err_by_snr,var_magn,check_magn,var_flux, check_flux,
     var_v_correction,var_b_correction,var_r_correction, var_i_correction,
@@ -2564,7 +2562,7 @@ begin
                    begin
                    var_b_correction:= strtofloat2(Tb_bvSTR) * strtofloat2(TbvSTR) * (color_info[c].b_v_var - color_info[c].b_v_comp);
                    var_magn:=var_magn+var_b_correction;
-                   transformation:='Transf corr. '+floattostr3(var_b_correction)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostr3(color_info[c].b_v_var)+'-'+floattostr3(color_info[c].b_v_comp)+'). Filter used '+filter_used+'.';
+                   transformation:='Transf corr. '+floattostr3(var_b_correction)+'='+Tb_bvSTR+'*'+TbvSTR+'*('+floattostr3(color_info[c].b_v_var)+'-'+floattostr3(color_info[c].b_v_comp)+'). Filter used '+filter_used+'. ';
                    filter_used:='B';//change TB to B
                    end
                    else
@@ -2719,7 +2717,13 @@ begin
                  end;
                end
                else
+               begin
                  transf_str:='NO'; //No is no transformation, YES is transformation.
+                 upper_filter_used:=uppercase(filter_used);
+                 if upper_filter_used='BLUE' then filter_used:='TB' else
+                 if upper_filter_used='GREEN' then filter_used:='TG' else
+                 if upper_filter_used='RED' then filter_used:='TR' else
+               end;
 
                str(var_magn:0:3,var_magn_str);
 

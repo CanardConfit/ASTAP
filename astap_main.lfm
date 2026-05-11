@@ -325,11 +325,11 @@ object mainform1: Tmainform1
           Height = 121
           Hint = ' '
           Top = 54
-          Width = 464
+          Width = 469
           AutoSize = True
           Caption = 'Data range'
           ClientHeight = 101
-          ClientWidth = 460
+          ClientWidth = 465
           Enabled = False
           Font.CharSet = ANSI_CHARSET
           Font.Color = clBlack
@@ -603,6 +603,7 @@ object mainform1: Tmainform1
             Orientation = trVertical
             Position = 0
             Reversed = True
+            BorderSpacing.Right = 5
             Enabled = False
             Font.CharSet = ANSI_CHARSET
             Font.Color = clBlack
