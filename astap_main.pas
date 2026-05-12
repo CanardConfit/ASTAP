@@ -25,14 +25,16 @@ https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
 
 
 GTK3
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42173
-https://github.com/LongDirtyAnimAlf/fpcupdeluxe/issues/806?reload=1
+fixed: https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42173
+fixed: https://github.com/LongDirtyAnimAlf/fpcupdeluxe/issues/806?reload=1
+fixed  https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42256
+fixed https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42260
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42268
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42269
 
-GTK3, bug in sorting Tlistview columns
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42215
 
 
-https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
+fixed https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
 https://gitlab.com/freepascal.org/fpc/source/-/issues/41033#example-project  internalsize tiff
 
 
@@ -78,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.04.21';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.05.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -907,7 +909,7 @@ procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
-procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
+procedure log_to_file2(logf,mess : string);{used for photometry}
 procedure demosaic_advanced(var img : Timage_array);{demosaic img_loaded}
 procedure bin_X2X3X4(var img :Timage_array; var head : theader;memo:tstrings; binfactor:integer);{bin img 2x,3x or 4x}
 procedure local_sigma_clip_mean_and_sd(x1,y1, x2,y2{regio of interest},col : integer; img : Timage_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
@@ -1146,6 +1148,7 @@ end;{reset global variables}
 //  ra1:=ra1-(dra*t*100);{multiply with number of years is t*100. Subtract because we go back to J2000}
 //  dec1:=dec1-(ddec*t*100);
 //end;
+
 
 
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo: tstrings;out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
@@ -1450,19 +1453,6 @@ begin
           else
           if ((header[i+1]='L')  and (header[i+2]='A') and (header[i+3]='T') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
                head.flat_count:=round(validate_double);{read integer as double value}
-
-          if ((header[i+1]='R')  and (header[i+2]='A') and (header[i+3]='M') and (header[i+4]='E')) then
-          begin
-            //FRAMEX  =                  100 / Frame start x
-            //FRAMEY  =                  500 / Frame start y
-            //FRAMEHGT=                  600 / Frame height
-            //FRAMEWDH=                  500 / Frame width
-            if header[i+5]='X' then head.xorgsubf:=round(validate_double)
-            else
-            if header[i+5]='Y' then head.yorgsubf:=round(validate_double);
-          end;
-
-
         end; {F}
 
         if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
@@ -2595,6 +2585,9 @@ begin
     if key='SITELAT =' then sitelat:=read_string else
     if key='SITELONG=' then sitelong:=read_string;
 
+    if key='XORGSUBF=' then head.xorgsubf:=round(read_float);
+    if key='YORGSUBF=' then head.yorgsubf:=round(read_float);
+
 
     {adjustable keywords}
     if key=sqm_key+'='    then sqm_value:=read_string;
@@ -2976,7 +2969,7 @@ begin
   saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
 
-  read_tiff(filename2,img, descrip,bitspersample, head.datamax_org,result); {unit tiff}
+  read_tiff(filen,img, descrip,bitspersample, head.datamax_org,result); {unit tiff}
 
   if result=false then
   begin
@@ -3222,6 +3215,114 @@ begin
 end;
 
 
+procedure ghost_blackout(threshold,dx,dy,diameter: integer);//blackout of ghost stars for spectroscopy
+var
+  jy,jx,radius,sqrradius,ny,nx,fwidth,fheight,cx,cy,fluxmain,fluxghost1,fluxghost2,gy,gx: integer;
+
+    procedure setpixel(ay,ax : integer; val: single);
+    begin
+      if ((ax>=0) and (ax<Fwidth) and (ay>=0) and (ay<Fheight)) then
+        img_loaded[0,ay ,ax]:=val;
+    end;
+
+    function getpixel(ay,ax: integer): single;
+    begin
+      if ((ax>=0) and (ax<Fwidth) and (ay>=0) and (ay<Fheight)) then
+        result:=img_loaded[0,ay ,ax]
+      else
+        result:=0;
+    end;
+
+    function center_of_gravity(iy,ix : integer; out cy,cx,flux : integer): boolean;
+    var
+      sumval,sumvalx,sumvaly : double;
+      val                    : single;
+      i,j,signal_counter: integer;
+    begin
+      result:=false;//default failure
+      flux:=0;//default failure
+      SumVal:=0;
+      SumValX:=0;
+      SumValY:=0;
+      signal_counter:=0;
+
+      for j:=-diameter to diameter do //search wide enough to center on donuts
+      for i:=-diameter to diameter do
+      begin
+        val:=getpixel(iy+j,ix+i);
+        if val>threshold div 2 then
+        begin
+          SumVal:=SumVal+val;
+          SumValX:=SumValX+val*(i);
+          SumValY:=SumValY+val*(j);
+          inc(signal_counter); {how many pixels are illuminated}
+        end;
+      end;
+      if signal_counter<4 then //no star detected
+      begin
+        cy:=iy;
+        cx:=ix;
+      end
+      else
+      begin //center of gravity
+        cy:=round(iy+SumValY/SumVal);
+        cx:=round(ix+SumValX/SumVal);
+        flux:=round(Sumval);
+        result:=true;
+
+      end;
+    end;
+
+begin
+  Radius:=diameter div 2;
+  sqrradius:=sqr(radius);
+  fheight:=length(img_loaded[0]);
+  fwidth:=length(img_loaded[0,0]);
+
+  sqrradius:=sqr(diameter) div 4;
+  try
+    for jy:=1 to Fheight-2 do
+    for jx:=1 to Fwidth-2 do
+    begin
+      if ((img_loaded[0,jy ,  jx  ]>threshold) and
+          (img_loaded[0,jy+1 ,jx  ]>threshold) and
+          (img_loaded[0,jy   ,jx+1]>threshold) and
+          (img_loaded[0,jy+1 ,jx+1]>threshold)) then //four pixels above threshold
+      begin
+        if center_of_gravity(jy,jx,cy,cx,fluxmain) then  //found a possible true star
+        begin
+          if getpixel(cy+dy,cx+dx)<>0 then
+            center_of_gravity(cy+dy,cx+dy,gy,gx,fluxghost1) //calculate ghost1 flux
+          else //no need to check
+            fluxghost1:=0;
+
+          if getpixel(cy-dy,cx-dx)<>0 then
+            center_of_gravity(cy-dy,cx-dy,gy,gx,fluxghost2) //calculate ghost2 flux
+          else //no need to check
+            fluxghost2:=0;
+
+          if ((fluxghost1<fluxmain) and (fluxghost2<fluxmain)) then //found the main star and not a ghost
+          begin
+            if getpixel(cy+dy,cx+dx)<>0 then //ghost star is not yet blackouted
+            for ny:=-radius to +radius do
+              for nx:=-radius to +radius do
+               if sqr(ny)+sqr(nx)<=sqrradius then //round spot
+                 setpixel(cy+dy+ny,cx+dx+nx,$000000); //blackout ghost1 above
+
+           if getpixel(cy-dy,cx-dx)<>0 then //ghost star is not yet blackouted
+           for ny:=-radius to +radius do
+              for nx:=-radius to +radius do
+               if sqr(ny)+sqr(nx)<=sqrradius then //round spot
+                 setpixel(cy-dy+ny,cx-dx+nx,$000000); //blackout ghost2 below
+          end;
+        end;
+      end;
+    end;
+  except
+  end;
+end;
+
+
 procedure Tmainform1.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Open in viewer';
@@ -3245,6 +3346,9 @@ begin
     LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
     Screen.Cursor:=crDefault;
   end;
+
+//  ghost_blackout(10000,0,40,25);//blackout of ghost stars for spectroscopy
+//  plot_image(mainform1.image1,false);
 end;
 
 
@@ -8988,8 +9092,9 @@ begin
 
       sett.writeInteger('stack','stackmenu_left',stackmenu1.left);
       sett.writeInteger('stack','stackmenu_top',stackmenu1.top);
-      sett.writeInteger('stack','stackmenu_height',stackmenu1.height);
-      sett.writeInteger('stack','stackmenu_width',stackmenu1.width);
+
+      sett.writeInteger('stack','stackmenu_height',max(stackmenu1.height,200)); //max temporary for GTK3
+      sett.writeInteger('stack','stackmenu_width',max(stackmenu1.width,300));
       sett.writeInteger('stack','splitter',stackmenu1.pairsplitter1.position);
 
       sett.writeInteger('stack','stack_method',stackmenu1.stack_method1.itemindex);
@@ -12220,6 +12325,7 @@ begin
 end;
 
 
+
 {type
    adata = array of word;
 function rice_encoding(inp : adata; k,bitdepth : integer; out  outp : adata ; out compressedSize : integer) : boolean;
@@ -12676,11 +12782,7 @@ begin
 
   {OneInstance of ASTAP if only one parameter is specified. So if user clicks on an associated image in explorer}
   if paramcount=1 then
-  begin
-    param1:=paramstr(1);
-    if ord(param1[length(param1)])>57  {letter, not a platesolve command}  then {2019-5-4, modification only unique instance if called with file as parameter(1)}
-      check_second_instance;{check for and other instance of the application. If so send paramstr(1) and quit}
-  end
+    check_second_instance{check for and other instance of the application. If so send paramstr(1) and quit}
   else
   if paramcount>1 then {commandline trimmed_median_background}
      trayicon1.visible:=true;{Show trayicon. Do it early otherwise in Win10 it is not shown in the command line trimmed_median_background}
@@ -13387,7 +13489,7 @@ begin
 end;
 
 
-procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
+procedure log_to_file2(logf,mess : string);{used for photometry}
 var
   f   :  textfile;
 begin
@@ -13668,22 +13770,11 @@ begin
     if DirectoryExists(user_path)=false then ForceDirectories(user_path);{create c:\users\yourname\appdata\local\astap   or /users/../.config/astap
                    Force directories will make also .config if missing. Using createdir doesn't work if both a directory and subdirectory are to be made in Linux and Mac}
   end;
-
-
   fov_specified:=false;{assume no FOV specification in commandline}
   screen.Cursor:=0;
-//  if platesolve2_command then
-//  begin
-//    esc_pressed:=true;{kill any running activity. This for APT}
-    {stop program, platesolve command already executed}
-//    halt(errorlevel); {don't save only do form.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
-//  end
-//  else
 
   if paramcount>0 then   {file as first parameter}
   begin
-    {filename2 is already made in platesolve2_command}
-
     with application do
     begin
       if hasOption('h','help') then
@@ -13781,10 +13872,11 @@ begin
         {else dec from fits header}
 
         if hasoption('z') then
-                 stackmenu1.downsample_for_solving1.text:=GetOptionValue('z');
+           stackmenu1.downsample_for_solving1.text:=GetOptionValue('z');
         if hasoption('s') then
-                 stackmenu1.max_stars1.text:=GetOptionValue('s');
-        if hasoption('t') then stackmenu1.quad_tolerance1.text:=GetOptionValue('t');
+           stackmenu1.max_stars1.text:=GetOptionValue('s');
+        if hasoption('t') then
+           stackmenu1.quad_tolerance1.text:=GetOptionValue('t');
 
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
         if hasoption('sip') then
@@ -14002,7 +14094,16 @@ begin
     end
     else
     if  paramcount=1 then
+    begin
+      filename2:=paramstr(1);
+      if ord(filename2[length(filename2)])<=57  {number, a platesolve command} then
+      begin
+        error_label1.caption:='PlateSolve2 command-line is no longer supported! Use an older ASTAP version from before 2026.04.21.';//remove in 2030
+        error_label1.visible:=true;
+      end
+      else
       load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot});{show image of parameter1}
+    end;
 
   end {paramcount>0}
   else
@@ -14411,14 +14512,9 @@ var
 begin
    if ((head.xorgsubf=0) and (head.yorgsubf=0)) then  //head, so from image in the viewer
    begin
-     application.messagebox(pchar('Abort. No image in the viewer or the image in the viewer does not contain keywords XORGSUBF, YORGSUBF or FRAMEX, FRAMEY. Crop an sample image first with the popup menu and mouse.'),'',MB_OK);
+     application.messagebox(pchar('Abort. No image in the viewer or the image in the viewer does not contain keywords XORGSUBF, YORGSUBF. Crop an sample image first with the popup menu and mouse.'),'',MB_OK);
      exit;
    end;
-
-{ FRAMEX  =                  671 / Frame start X
-  FRAMEY  =                 1088 / Frame start Y
-  FRAMEHGT=                  148 / Frame start
-  FRAMEWDH=                  178 / Frame start}
 
   OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter:=dialog_filter_fits_tif;
@@ -14430,8 +14526,6 @@ begin
   frameY_sample:=head.yorgsubf;//ascom/alpaca inverse stored
   frameW_sample:=head.width;
   frameH_sample:=head.height;
-
-
 
   sample_binning:=round(head.xbinning);
 
@@ -16108,7 +16202,7 @@ end;
 
 
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
-procedure HFD_without_auto_center(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux :double);//special for photmetry
+procedure HFD_without_auto_center(img: Timage_array;xc,yc : double; rs {annulus radius}: integer;aperture_small {radius}, adu_e {unbinned} :double; out snr, flux :double);//special for photometry
 const
   samplepoints=5; // for photometry. emperical gives about 10% to 20 % improvment
 
@@ -16401,9 +16495,16 @@ var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,sd,dummy,conv_factor, adu_e : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,pa_str             : string;
   width5,height5,box_SX,box_SY,flipH,flipV,iterations, box_LX,box_LY,i : integer;
-  color1:tcolor;
+  color1  :tcolor;
   r,b :single;
+  inside: boolean;
 begin
+//  {$IFDEF unix}
+//   y:=max(y,0);//for GTK3 widget, Linux
+//   x:=max(x,0);
+//  {$ELSE}
+//  {$ENDIF}
+
    if ssleft in shift then {swipe effect}
    begin
      if down_xy_valid then
@@ -16512,108 +16613,132 @@ begin
    str(mouse_fitsx:4:1,s1);  {fits images start with 1 and not with 0}
    str(mouse_fitsy:4:1,s2); {Y from bottom to top}
 
+   pixel_to_celestial(head,mouse_fitsx,mouse_fitsy,mainform1.Polynomial1.itemindex,raM,decM);
+   mainform1.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
+
    {prevent some rounding errors just outside the dimensions}
-   if mouse_fitsY<1 then mouse_fitsY:=1;
-   if mouse_fitsX<1 then mouse_fitsX:=1;
-   if mouse_fitsY>height5 then mouse_fitsY:=height5;
-   if mouse_fitsX>width5 then mouse_fitsX:=width5;
+   inside:=false;
+   if mouse_fitsY<1 then begin mouse_fitsY:=1; inside:=true; end;
+   if mouse_fitsX<1 then begin mouse_fitsX:=1; inside:=true; end;
+   if mouse_fitsY>height5 then begin mouse_fitsY:=height5;inside:=true; end;
+   if mouse_fitsX>width5 then begin mouse_fitsX:=width5;inside:=true; end;
 
    if copy_paste then
    begin
       show_marker_shape(mainform1.shape_paste1,copy_paste_shape {rectangle or ellipse},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
    end;
-   try color1:=ColorToRGB(mainform1.image1.canvas.pixels[trunc(x*width5/image1.width),trunc(y*height5/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
+   try
+     if ((x>=0) and (y>=0) and (x<width5) and (y<height5)) then
+       color1:=ColorToRGB(mainform1.image1.canvas.pixels[trunc(x*width5/image1.width), trunc(y*height5/image1.height) ]) {x,y should follow zoom factor}
+     else
+       color1:=0;
+   except;
+   end;
 
-   if head.naxis3=3 then {for star temperature}
+
+   if inside=false then  //inside image
    begin
      try
-       r:=img_loaded[0,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-head.backgr;
-       b:=img_loaded[2,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-head.backgr;
+       if head.naxis3=1 then mainform1.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+']' else
+       if head.naxis3=3 then mainform1.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+ {color}
+                                                                                floattostrF(img_loaded[1,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+
+                                                                                floattostrF(img_loaded[2,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+' '+']'
+       else mainform1.statusbar1.panels[3].text:='';
      except
-       {some rounding error, just outside dimensions}
      end;
-   end
-   else
-   begin
-     r:=0;
-     b:=0;
-   end;
 
-   mainform1.statusbar1.panels[4].text:=floattostrF(GetRValue(color1),ffgeneral,5,0)+'/'   {screen colors}
-                                       + floattostrF(GetGValue(color1),ffgeneral,5,0)+'/'
-                                       + floattostrF(GetBValue(color1),ffgeneral,5,0)+
-                                       '  '+rgb_kelvin(r,b) ;
-   try
-     if head.naxis3=1 then mainform1.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+']' else
-     if head.naxis3=3 then mainform1.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+ {color}
-                                                                              floattostrF(img_loaded[1,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+'/'+
-                                                                              floattostrF(img_loaded[2,round(mouse_fitsY)-1,round(mouse_fitsX)-1],ffgeneral,5,0)+' '+']'
-     else mainform1.statusbar1.panels[3].text:='';
-   except
-
-   end;
-
-   pixel_to_celestial(head,mouse_fitsx,mouse_fitsy,mainform1.Polynomial1.itemindex,raM,decM);
-   mainform1.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
-
-   adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
-
-   hfd2:=999;
-   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},head.mzero_radius,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
-   //mainform1.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
-   if ((hfd2<99) and (hfd2>0)) then //star detected
-   begin
-     object_hfd:=hfd2;
-     if ((hfd_arcseconds) and (head.cd1_1<>0)) then conv_factor:=abs(head.cdelt2)*3600{arc seconds} else conv_factor:=1;{pixels}
-     if hfd2*conv_factor>1 then str(hfd2*conv_factor:0:1,hfd_str) else str(hfd2*conv_factor:0:2,hfd_str);
-     str(fwhm_star2*conv_factor:0:1,fwhm_str);
-     if ((hfd_arcseconds) and (head.cd1_1<>0)) then begin hfd_str:=hfd_str+'"';fwhm_str:=fwhm_str+'"';end;
-
-     str(snr:0:0,snr_str);
-     if adu_e=0 then snr_str:='SNR='+snr_str // noise based on ADU's
-       else snr_str:='SNR_e='+snr_str;// noise based on electrons. No unit
-
-     if head.mzero<>0 then {offset calculated in star annotation call}
+     if head.naxis3=3 then {for star temperature}
      begin
-       str(head.mzero -ln(flux)*2.5/ln(10):0:2,mag_str);
-       mag_str:=', '+head.passband_database+'='+mag_str
+       try
+         r:=img_loaded[0,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-head.backgr;
+         b:=img_loaded[2,round(mouse_fitsy)-1,round(mouse_fitsx)-1]-head.backgr;
+       except
+         {some rounding error, just outside dimensions}
+       end;
      end
-     else mag_str:='';
-
-     {centered coordinates}
-     pixel_to_celestial(head,object_xc+1,object_yc+1,mainform1.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
-     if ((object_raM<>0) and (object_decM<>0)) then
-       mainform1.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
-                                               //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
      else
-       mainform1.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
-     mainform1.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str; {+', '+floattostrF(flux,ffFixed,0,0)};
-
-     if adu_e<>0 then
-       mainform1.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' e-'
-     else
-       mainform1.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' ADU';
-
-     if star_profile1.checked then
      begin
-       plot_star_profile(round(object_xc),round(object_yc));
-       star_profile_plotted:=true;
+       r:=0;
+       b:=0;
      end;
-   end
+
+     mainform1.statusbar1.panels[4].text:=floattostrF(GetRValue(color1),ffgeneral,5,0)+'/'   {screen colors}
+                                         + floattostrF(GetGValue(color1),ffgeneral,5,0)+'/'
+                                         + floattostrF(GetBValue(color1),ffgeneral,5,0)+
+                                         '  '+rgb_kelvin(r,b) ;
+
+
+     adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+
+
+     hfd2:=999;
+     HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},head.mzero_radius,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
+     //mainform1.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
+     if ((hfd2<99) and (hfd2>0)) then //star detected
+     begin
+       object_hfd:=hfd2;
+       if ((hfd_arcseconds) and (head.cd1_1<>0)) then conv_factor:=abs(head.cdelt2)*3600{arc seconds} else conv_factor:=1;{pixels}
+       if hfd2*conv_factor>1 then str(hfd2*conv_factor:0:1,hfd_str) else str(hfd2*conv_factor:0:2,hfd_str);
+       str(fwhm_star2*conv_factor:0:1,fwhm_str);
+       if ((hfd_arcseconds) and (head.cd1_1<>0)) then begin hfd_str:=hfd_str+'"';fwhm_str:=fwhm_str+'"';end;
+
+       str(snr:0:0,snr_str);
+       if adu_e=0 then snr_str:='SNR='+snr_str // noise based on ADU's
+         else snr_str:='SNR_e='+snr_str;// noise based on electrons. No unit
+
+       if head.mzero<>0 then {offset calculated in star annotation call}
+       begin
+         str(head.mzero -ln(flux)*2.5/ln(10):0:2,mag_str);
+         mag_str:=', '+head.passband_database+'='+mag_str
+       end
+       else mag_str:='';
+
+       {centered coordinates}
+       pixel_to_celestial(head,object_xc+1,object_yc+1,mainform1.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
+       if ((object_raM<>0) and (object_decM<>0)) then
+         mainform1.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
+                                                 //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
+       else
+         mainform1.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
+       mainform1.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str; {+', '+floattostrF(flux,ffFixed,0,0)};
+
+       if adu_e<>0 then
+         mainform1.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' e-'
+       else
+         mainform1.statusbar1.panels[7].text:=floattostrF(flux,ffFixed,0,0)+' ADU';
+
+       if star_profile1.checked then
+       begin
+         plot_star_profile(round(object_xc),round(object_yc));
+         star_profile_plotted:=true;
+       end;
+     end
+     else
+     begin
+       object_xc:=-999999;{indicate object_raM is unlocked}
+       object_raM:=raM; {use mouse position instead}
+       object_decM:=decM; {use mouse position instead}
+       mainform1.statusbar1.panels[1].text:='';
+
+       local_sigma_clip_mean_and_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+
+       mainform1.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, sd); //reports noise in ADU's (adu_e=0) or electrons
+
+       if star_profile_plotted then plot_north;
+       star_profile_plotted:=false;
+     end;
+   end //inside
    else
-   begin
-     object_xc:=-999999;{indicate object_raM is unlocked}
-     object_raM:=raM; {use mouse position instead}
-     object_decM:=decM; {use mouse position instead}
-     mainform1.statusbar1.panels[1].text:='';
-
-     local_sigma_clip_mean_and_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-
-     mainform1.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, sd); //reports noise in ADU's (adu_e=0) or electrons
-
-     if star_profile_plotted then plot_north;
-     star_profile_plotted:=false;
+   begin//outside image
+     mainform1.statusbar1.panels[1].text:='';//ra,dec object
+     mainform1.statusbar1.panels[2].text:='';//HFD
+     mainform1.statusbar1.panels[3].text:=s1+', '+s2;//fitsX,fitsY
+     mainform1.statusbar1.panels[4].text:='';
+     mainform1.statusbar1.panels[5].text:='';
+     mainform1.statusbar1.panels[6].text:='';
+     mainform1.statusbar1.panels[7].text:='';
    end;
+
 end;
 
 

@@ -245,10 +245,6 @@ begin
        end;
 
 
-
-        //     if ((abs(x-2868)<20) and (abs(y-2004)<20)) then
-        //     beep;
-
        for j:=-step to +step do
        for k:=-step to +step do
        begin
@@ -273,8 +269,6 @@ begin
            avg_colour[n]:=avg_colour[n]/counter[n];
        end;
 
-
-
        maxcolour:=0;
        for n:=0 to 5 do
        begin
@@ -288,8 +282,6 @@ begin
            avg_colour[n]:=avg_colour[n]/maxcolour; //scale to 0..1
        end;
 
-
-//       step:= round(mean_hfd*3);
        for j:=-step to +step do
        for k:=-step to +step do
        begin
@@ -301,35 +293,24 @@ begin
            begin
              if background[n]>0 then
              luminance:=luminance+0.3333*(img[n,y+j,x+k]-background[n]);
-
-        //     if img[n,y+j,x+k]-background[n]<0 then
-        //     beep;
+             //     if img[n,y+j,x+k]-background[n]<0 then
+             //     beep;
            end;
-       //    if luminance<0 then
-        //   beep;
+           //    if luminance<0 then
+           //   beep;
            luminance:=min(maximum,luminance);
-
-       //    if luminance<0 then
-       //    beep;
-
+           //    if luminance<0 then
+           //    beep;
            for n:=0 to 5 do
-           //  img[n,y+j,x+k]:=100;
+             //  img[n,y+j,x+k]:=100;
               if ((background[n]>1) and (avg_colour[n]<>0) and (img[n,y+j,x+k]>10+background[n]))  then
               begin
-     //                 if luminance*avg_colour[n]<400 then
-     //                 beep;
-
                 img[n,y+j,x+k]:=background[n]+luminance*avg_colour[n];
               end;
-
-
          end;
        end;
-
      end;
-
    end;
-
 end;
 
 

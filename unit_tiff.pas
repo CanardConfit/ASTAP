@@ -1019,9 +1019,9 @@ begin
     fs.ReadBuffer(header, 8);
 
     { ── byte-order detection ── }
-    if (header[0] = $49) and (header[1] = $49) then
+    if (header[0] = $49) and (header[1] = $49) then   //73, 73
       big_endian := False                        { II = little-endian }
-    else if (header[0] = $4D) and (header[1] = $4D) then
+    else if (header[0] = $4D) and (header[1] = $4D) then  //77
       big_endian := True                         { MM = big-endian    }
     else
     begin
