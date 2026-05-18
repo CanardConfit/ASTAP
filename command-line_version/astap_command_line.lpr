@@ -143,13 +143,13 @@ begin
     if hasoption('r') then radius_search1:=GetOptionValue('r');
     if hasoption('ra') then
     begin
-      ra0:=strtofloat2(GetOptionValue('ra'))*pi/12;
+      head.ra0:=strtofloat2(GetOptionValue('ra'))*pi/12;
     end;
     {else ra from fits header}
 
     if hasoption('spd') then {south pole distance. Negative values can't be passed via commandline}
     begin
-      dec0:=(strtofloat2(GetOptionValue('spd'))-90)*pi/180;{convert south pole distance to declination}
+      head.dec0:=(strtofloat2(GetOptionValue('spd'))-90)*pi/180;{convert south pole distance to declination}
     end;
     {else dec from fits header}
 

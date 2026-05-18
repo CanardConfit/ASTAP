@@ -658,7 +658,6 @@ type
     use_ephemeris_alignment1: TRadioButton;
     use_manual_alignment1: TRadioButton;
     use_star_alignment1: TRadioButton;
-    use_triples1: TCheckBox;
     add_sip1: TCheckBox;
     Viewimage9: TMenuItem;
     copy_files_to_clipboard1: TMenuItem;
@@ -2728,7 +2727,6 @@ var
   starlistquads       : Tstar_list;
   warning_downsample  : string;
   starlist1           : Tstar_list;
-
 begin
   if head.naxis = 0 then application.messagebox(
       PChar('First load an image in the viewer!'), PChar('No action'), MB_OK)
@@ -2759,7 +2757,6 @@ begin
 
     find_quads(true,length(starlist1[0]),starlist1, starlistquads);{find quads}
     display_quads(starlistquads);
-
     quads_displayed:=True;
     Screen.Cursor:=crDefault;
   end;

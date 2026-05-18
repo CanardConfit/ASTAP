@@ -1804,15 +1804,11 @@ var
 begin
   with form_aavso1 do
   begin
-
     abrv_comp1.clear;
     abrv_check1.clear;
     abbrv_variable1.clear;
     color:=cldefault;
-
-
     gaia_ensemble1.caption:=('Ensemble '+stackmenu1.reference_database1.text);
-
     setlength(starinfo,p_nr-p_nr_norm);
     setlength(starinfoV,p_nr-p_nr_norm);
     count:=0;
