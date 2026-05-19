@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.05.18';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.05.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -11234,6 +11234,7 @@ begin
   Clipboard.AsText:=copy(Memo1.Text,Memo1.SelStart+1, Memo1.SelLength);
 end;
 
+
 procedure Tmainform1.Menufind1Click(Sender: TObject); {for fits header memo1 popup menu}
 begin
   PatternToFind:=uppercase(inputbox('Find','Text to find in fits header:' ,PatternToFind));
@@ -11245,6 +11246,7 @@ begin
      Memo1.SetFocus; // necessary so highlight is visible
   end;
 end;
+
 
 procedure Tmainform1.menufindnext1Click(Sender: TObject);{for fits header memo1 popup menu}
 begin

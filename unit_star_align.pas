@@ -504,7 +504,7 @@ end;
 
 procedure find_quads(display: boolean;nrstars_image:integer; starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2026
 const
-  bucket_capacity = 10; // Max quads per bucket, increase to 20 if overflows occur
+  bucket_capacity = 5; // Max quads per bucket, increase to 20 if overflows occur
   GRID_INV = 0.2; // Pre-calculated inverse of grid_size (1.0 / 5.0)
 var
    i, j, k, nrstars, j_index1, j_index2, j_index3, nrquads, Sstart, Send, bandw,
@@ -586,12 +586,9 @@ begin
     x1 := StarsX[i]; // first star position quad array
     y1 := StarsY[i];
 
-    // OPTIMIZATION: Split loop to avoid j <> i check every iteration
-    // Search before i
-    for j := Sstart to i - 1 do //find closest stars
+    for j := Sstart to Send do //find closest stars
     begin
-
-      if j<>i then
+      if j<>i then //do not check the star with itself
       begin
         disty := sqr(StarsY[j] - y1);
         if disty < distance3 then //pre-check to increase processing speed with a small amount

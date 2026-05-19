@@ -637,80 +637,45 @@ begin
     x1 := StarsX[i]; // first star position quad array
     y1 := StarsY[i];
 
-    // OPTIMIZATION: Split loop to avoid j <> i check every iteration
-    // Search before i
-    for j := Sstart to i - 1 do //find closest stars
+    for j := Sstart to Send do //find closest stars
     begin
-      disty := sqr(StarsY[j] - y1);
-      if disty < distance3 then //pre-check to increase processing speed with a small amount
+      if j<>i then //do not check the star with itself
       begin
-        distance := sqr(StarsX[j] - x1) + disty; {square distances are used}
-        if distance > 1 then //not an identical star. Mod 2021-6-25
+        disty := sqr(StarsY[j] - y1);
+        if disty < distance3 then //pre-check to increase processing speed with a small amount
         begin
-          if distance < distance1 then
+          distance := sqr(StarsX[j] - x1) + disty; {square distances are used}
+          if distance > 1 then //not an identical star. Mod 2021-6-25
           begin
-            distance3 := distance2;//{distance third closest star
-            j_index3 := j_index2; //remember the star position in the list
+            if distance < distance1 then
+            begin
+              distance3 := distance2;//{distance third closest star
+              j_index3 := j_index2; //remember the star position in the list
 
-            distance2 := distance1; //distance second closest star
-            j_index2 := j_index1; //remember the star position in the list
+              distance2 := distance1; //distance second closest star
+              j_index2 := j_index1; //remember the star position in the list
 
-            distance1 := distance; //distance closest star
-            j_index1 := j; //mark later as used
-          end
-          else if distance < distance2 then
-          begin
-            distance3 := distance2; //distance third closest star
-            j_index3 := j_index2; //remember the star position in the list
+              distance1 := distance; //distance closest star
+              j_index1 := j; //mark later as used
+            end
+            else if distance < distance2 then
+            begin
+              distance3 := distance2; //distance third closest star
+              j_index3 := j_index2; //remember the star position in the list
 
-            distance2 := distance; //{distance second closest star}
-            j_index2 := j;
-          end
-          else if distance < distance3 then
-          begin
-            distance3 := distance; //third closest star
-            j_index3 := j; //remember the star position in the list
-          end;
-        end;//{not an identical star. Mod 2021-6-25
-      end; //pre-check
+              distance2 := distance; //{distance second closest star}
+              j_index2 := j;
+            end
+            else if distance < distance3 then
+            begin
+              distance3 := distance; //third closest star
+              j_index3 := j; //remember the star position in the list
+            end;
+          end;//{not an identical star. Mod 2021-6-25
+        end; //pre-check
+
+      end;//j<>i
     end;
-
-    // Search after i
-    for j := i + 1 to Send do {find closest stars}
-    begin
-      disty := sqr(StarsY[j] - y1);
-      if disty < distance3 then //pre-check to increase processing speed with a small amount
-      begin
-        distance := sqr(StarsX[j] - x1) + disty; //square distances are used
-        if distance > 1 then //not an identical star. Mod 2021-6-25
-        begin
-          if distance < distance1 then
-          begin
-            distance3 := distance2; //distance third closest star
-            j_index3 := j_index2; //remember the star position in the list
-
-            distance2 := distance1; //distance second closest star
-            j_index2 := j_index1; //remember the star position in the list
-
-            distance1 := distance; //distance closest star
-            j_index1 := j; //mark later as used
-          end
-          else if distance < distance2 then
-          begin
-            distance3 := distance2; //distance third closest star
-            j_index3 := j_index2; //remember the star position in the list
-
-            distance2 := distance; //distance second closest star
-            j_index2 := j;
-          end
-          else if distance < distance3 then
-          begin
-            distance3 := distance; //third closest star
-            j_index3 := j; //remember the star position in the list
-          end;
-        end; //not an identical star. Mod 2021-6-25
-      end; //pre-check
-    end; //j
 
     if distance3 < 1E99 then //found 4 stars in the restricted area
     begin
