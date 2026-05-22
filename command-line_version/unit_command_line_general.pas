@@ -36,7 +36,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.05.03';
+  astap_version: string='2026.05.18';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -60,91 +60,111 @@ type
   Tarray_integer = array of integer;
   solution_vector   = array[0..2] of double;
 
+  Theader =record    {contains the most important header info}
+      bitpix : integer;{almost always equivalent to bitpix}
+      width  : integer;{image width}
+      height : integer;{image height}
+      naxis  : integer;{number of dimensions}
+      naxis3 : integer;{number of colors}
+      crpix1 : double; {reference point X}
+      crpix2 : double;
+      cdelt1 : double; {X pixel size (deg)}
+      cdelt2 : double; {Y pixel size (deg)}
+      ra0    : double; {mount position. Accurate if solved}
+      dec0   : double; {mount position. Accurate if solved}
+      crota1 : double; {image rotation at center in degrees}
+      crota2 : double; {image rotation at center in degrees}
+      cd1_1  : double; {solution matrix}
+      cd1_2  : double;
+      cd2_1  : double;
+      cd2_2         : double;
+      exposure      : double;
+      datamin_org   : double;
+      datamax_org   : double;{for update histogram}
+      xbinning      : double;//binning for noise calculations
+      ybinning      : double;//binning for noise calculations
+      xpixsz        : double;//Pixel Width in microns (after binning)
+      ypixsz        : double;//Pixel height in microns (after binning)
 
-  var
-    memo1,memo2 :tstrings; {settings for save and loading}
+      gain       : double; {gain in 0.1dB or else}
+      date_obs   : string;
+  end;
 
-    user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
-    img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : Timage_array;
-    filename2: string;
-    nrbits,Xbinning,Ybinning    : integer;
-    size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
-    crota2,crota1                      : double; {image rotation at center in degrees}
-    cd1_1,cd1_2,cd2_1,cd2_2 :double;
-    ra_radians,dec_radians, pixel_size : double;
-    ra_mount,dec_mount                     : double; {telescope ra,dec}
 
-    a_order,ap_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
-    a_0_0,   a_0_1, a_0_2,  a_0_3,  a_1_0,  a_1_1,  a_1_2,  a_2_0,  a_2_1,  a_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
-    b_0_0,   b_0_1, b_0_2,  b_0_3,  b_1_0,  b_1_1,  b_1_2,  b_2_0,  b_2_1,  b_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
-    ap_0_0, ap_0_1,ap_0_2, ap_0_3, ap_1_0, ap_1_1, ap_1_2, ap_2_0, ap_2_1, ap_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
-    bp_0_0, bp_0_1,bp_0_2, bp_0_3, bp_1_0, bp_1_1, bp_1_2, bp_2_0, bp_2_1, bp_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
 
-    histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
-    r_aperture : integer; {histogram number of values}
-    histo_peak_position : integer;
-    his_mean : array[0..2] of integer;
-    noise_level : array[0..2] of double;
-    esc_pressed, fov_specified {, last_extension }: boolean;
-    backgr, star_level,star_level2  : double;
-    exposure,focallen,equinox : double;
-    gain   :double; {from FITS}
-    date_obs : string;
-    instrum  :string;
+var
+  memo1,memo2 :tstrings; {settings for save and loading}
 
-    datamin_org, datamax_org :double;
-    warning_str : string;{for solver}
-    xpixsz,ypixsz: double;//Pixel Width in microns (after binning)
-    ra0,dec0 : double; {plate center values}
-    cdelt1,cdelt2: double;{deg/pixel for x}
+  user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
+  img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : Timage_array;
+  head : Theader;
+  filename2: string;
+  size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
+  ra_radians,dec_radians, pixel_size : double;
+  ra_mount,dec_mount                     : double; {telescope ra,dec}
 
-  const
-    hist_range  {range histogram 255 or 65535 or streched} : integer=255;
-    fits_file: boolean=false;
-    crpix1: double=0;{reference pixel}
-    crpix2: double=0;
-    pi_=pi;//for testing
+  a_order,ap_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+  a_0_0,   a_0_1, a_0_2,  a_0_3,  a_1_0,  a_1_1,  a_1_2,  a_2_0,  a_2_1,  a_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
+  b_0_0,   b_0_1, b_0_2,  b_0_3,  b_1_0,  b_1_1,  b_1_2,  b_2_0,  b_2_1,  b_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
+  ap_0_0, ap_0_1,ap_0_2, ap_0_3, ap_1_0, ap_1_1, ap_1_2, ap_2_0, ap_2_1, ap_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
+  bp_0_0, bp_0_1,bp_0_2, bp_0_3, bp_1_0, bp_1_1, bp_1_2, bp_2_0, bp_2_1, bp_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
 
-  const   bufwide=1024*120;{buffer size in bytes}
+  histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
+  r_aperture : integer; {histogram number of values}
+  histo_peak_position : integer;
+  his_mean : array[0..2] of integer;
+  noise_level : array[0..2] of double;
+  esc_pressed, fov_specified {, last_extension }: boolean;
+  backgr, star_level,star_level2  : double;
+  focallen,equinox : double;
+  instrum  :string;
+  warning_str : string;{for solver}
 
-     head1: array [0..28] of ansistring=
-    (
-       {0}('SIMPLE  =                    T / FITS header                                    '),
-       {1}('BITPIX  =                    8 / Bits per entry                                 '),
-       {2}('NAXIS   =                    2 / Number of dimensions                           '),
-       {3}('NAXIS1  =                  100 / length of x axis                               '),
-       {4}('NAXIS2  =                  100 / length of y axis                               '),
-       {5}('NAXIS3  =                    3 / length of z axis (mostly colors)               '),
-       {6}('EQUINOX =               2000.0 / Equinox of coordinates                         '),
-       {7}('DATAMIN =                    0 / Minimum data value                             '),
-       {8}('DATAMAX =                  255 / Maximum data value                             '),
-       {9}('BZERO   =                  0.0 / Physical_value = BZERO + BSCALE * array_value  '),
-      {10}('BSCALE  =                  1.0 / Physical_value = BZERO + BSCALE * array_value  '),
-      {11}('CTYPE1  = '+#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   '),
-      {12}('CTYPE2  = '+#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   '),
-      {13}('CUNIT1  = '+#39+'deg     '+#39+'           / Unit of coordinates                            '),
-      {14}('CRPIX1  =                  0.0 / X of reference pixel                           '),
-      {15}('CRPIX2  =                  0.0 / Y of reference pixel                           '),
-      {16}('CRVAL1  =                  0.0 / RA of reference pixel (deg)                    '),
-      {17}('CRVAL2  =                  0.0 / DEC of reference pixel (deg)                   '),
-      {18}('CDELT1  =                  0.0 / X pixel size (deg)                             '),
-      {19}('CDELT2  =                  0.0 / Y pixel size (deg)                             '),
-      {20}('CROTA1  =                  0.0 / Image twist of X axis        (deg)             '),
-      {21}('CROTA2  =                  0.0 / Image twist of Y axis W of N (deg)             '),
-      {22}('CD1_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
-      {23}('CD1_2   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
-      {24}('CD2_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
-      {25}('CD2_2   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
-      {26}('PLTSOLVD=                    T / ASTAP from hnsky.org                           '),
-      {27}('END                                                                             '),
-      {28}('                                                                                ')); {should be empthy !!}
+const
+  hist_range  {range histogram 255 or 65535 or streched} : integer=255;
+  fits_file: boolean=false;
+  pi_=pi;//for testing
 
-  type  byteX3  = array[0..2] of byte;
-        byteXX3 = array[0..2] of word;
-        byteXXXX3 = array[0..2] of single;
+const   bufwide=1024*120;{buffer size in bytes}
 
-  var
-    Reader    : TReader;
+   head1: array [0..28] of ansistring=
+  (
+     {0}('SIMPLE  =                    T / FITS header                                    '),
+     {1}('BITPIX  =                    8 / Bits per entry                                 '),
+     {2}('NAXIS   =                    2 / Number of dimensions                           '),
+     {3}('NAXIS1  =                  100 / length of x axis                               '),
+     {4}('NAXIS2  =                  100 / length of y axis                               '),
+     {5}('NAXIS3  =                    3 / length of z axis (mostly colors)               '),
+     {6}('EQUINOX =               2000.0 / Equinox of coordinates                         '),
+     {7}('DATAMIN =                    0 / Minimum data value                             '),
+     {8}('DATAMAX =                  255 / Maximum data value                             '),
+     {9}('BZERO   =                  0.0 / Physical_value = BZERO + BSCALE * array_value  '),
+    {10}('BSCALE  =                  1.0 / Physical_value = BZERO + BSCALE * array_value  '),
+    {11}('CTYPE1  = '+#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   '),
+    {12}('CTYPE2  = '+#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   '),
+    {13}('CUNIT1  = '+#39+'deg     '+#39+'           / Unit of coordinates                            '),
+    {14}('CRPIX1  =                  0.0 / X of reference pixel                           '),
+    {15}('CRPIX2  =                  0.0 / Y of reference pixel                           '),
+    {16}('CRVAL1  =                  0.0 / RA of reference pixel (deg)                    '),
+    {17}('CRVAL2  =                  0.0 / DEC of reference pixel (deg)                   '),
+    {18}('CDELT1  =                  0.0 / X pixel size (deg)                             '),
+    {19}('CDELT2  =                  0.0 / Y pixel size (deg)                             '),
+    {20}('CROTA1  =                  0.0 / Image twist of X axis        (deg)             '),
+    {21}('CROTA2  =                  0.0 / Image twist of Y axis W of N (deg)             '),
+    {22}('CD1_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
+    {23}('CD1_2   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
+    {24}('CD2_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
+    {25}('CD2_2   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
+    {26}('PLTSOLVD=                    T / ASTAP from hnsky.org                           '),
+    {27}('END                                                                             '),
+    {28}('                                                                                ')); {should be empthy !!}
+
+type  byteX3  = array[0..2] of byte;
+      byteXX3 = array[0..2] of word;
+      byteXXXX3 = array[0..2] of single;
+
+var
+  Reader    : TReader;
 
 
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
@@ -178,7 +198,8 @@ procedure log_to_file(logf,mess : string);{for testing}
 
 implementation
 
-uses unit_command_line_solving, unit_command_line_star_database, unit_tiff;
+uses
+  unit_command_line_solving, unit_command_line_star_database, unit_tiff;
 
 
 procedure log_to_file(logf,mess : string);{for testing}
@@ -423,19 +444,19 @@ begin
   begin
     flush(output); {Required in Linux and Mac. Otherwise writeln(f,'  ') mixes with writeln('   ') in redirected output}
     writeln(f,'PLTSOLVD=T');
-    writeln(f,'CRPIX1='+floattostrE(crpix1));// X of reference pixel
-    writeln(f,'CRPIX2='+floattostrE(crpix2));// Y of reference pixel
+    writeln(f,'CRPIX1='+floattostrE(head.crpix1));// X of reference pixel
+    writeln(f,'CRPIX2='+floattostrE(head.crpix2));// Y of reference pixel
 
-    writeln(f,'CRVAL1='+floattostrE(ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
-    writeln(f,'CRVAL2='+floattostrE(dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
-    writeln(f,'CDELT1='+floattostrE(cdelt1));     // X pixel size [deg]
-    writeln(f,'CDELT2='+floattostrE(cdelt2));     // Y pixel size [deg]
-    writeln(f,'CROTA1='+floattostrE(crota1));    // Image twist of X axis [deg]
-    writeln(f,'CROTA2='+floattostrE(crota2));    // Image twist of Y axis [deg]
-    writeln(f,'CD1_1='+floattostrE(cd1_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD1_2='+floattostrE(cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_1='+floattostrE(cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_2='+floattostrE(cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CRVAL1='+floattostrE(head.ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
+    writeln(f,'CRVAL2='+floattostrE(head.dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
+    writeln(f,'CDELT1='+floattostrE(head.cdelt1));     // X pixel size [deg]
+    writeln(f,'CDELT2='+floattostrE(head.cdelt2));     // Y pixel size [deg]
+    writeln(f,'CROTA1='+floattostrE(head.crota1));    // Image twist of X axis [deg]
+    writeln(f,'CROTA2='+floattostrE(head.crota2));    // Image twist of Y axis [deg]
+    writeln(f,'CD1_1='+floattostrE(head.cd1_1));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD1_2='+floattostrE(head.cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD2_1='+floattostrE(head.cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD2_2='+floattostrE(head.cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
   end
   else
   begin
@@ -588,8 +609,8 @@ begin
   bzero2:=32768;
   update_integer('BZERO   =',' / Physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
   update_integer('BSCALE  =',' / Physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
-  update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+  update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
+  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
   {update existing header}
 
   {write memo1 header to file}
@@ -659,37 +680,37 @@ end;
 
 procedure reset_fits_global_variables; {reset the global variable}
 begin
-  ra0:=0;
-  dec0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
-  cdelt1:=0;
-  cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  cd1_1:=0;{just for the case it is not available}
-  cd1_2:=0;{just for the case it is not available}
-  cd2_1:=0;{just for the case it is not available}
-  cd2_2:=0;{just for the case it is not available}
-  xbinning:=1;{normal}
-  ybinning:=1;
+  head.ra0:=0;
+  head.dec0:=0;
+  head.cdelt1:=0;
+  head.cdelt2:=0;
+  head.xpixsz:=0;
+  head.ypixsz:=0;
+  head.crpix1:=0;{reference pixel}
+  head.crpix2:=0;
+  head.cd1_1:=0;{just for the case it is not available}
+  head.cd1_2:=0;{just for the case it is not available}
+  head.cd2_1:=0;{just for the case it is not available}
+  head.cd2_2:=0;{just for the case it is not available}
+  head.Xbinning:=1;{normal}
+  head.Ybinning:=1;
+  head.datamin_org:=0;
+  head.datamax_org:=$FFFF;
+  head.date_obs:='';
+  head.exposure:=0;
+  head.gain:=999;{assume no data available}
+
   ra1:='';
   dec1:='';
   equinox:=2000;
 
-//  naxis:=1;
-//  naxis3:=1;
-  datamin_org:=0;
-  datamax_org:=$FFFF;
-
-  date_obs:='';
-  exposure:=0;
-  gain:=999;{assume no data available}
+  ra_mount:=99999;
+  dec_mount:=99999;
+  focallen:=0;
 end;
 
 
-function load_fits(filen:string;out img_loaded2: Timage_array): boolean;{load fits file}
+function load_fits(filen:string; const memo1 : tstrings; out head: Theader; out img_loaded2: Timage_array): boolean;{load fits file}
 var
   fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
   fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
@@ -698,8 +719,8 @@ var
   fitsbuffer8: array[0..trunc(bufwide/8)] of int64 absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
   TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
-  i,j,k,naxis1,width2,height2, reader_position,validate_double_error,naxis,naxis3   : integer;
-  tempval                                                                                  : double;
+  i,j,k,naxis1{,head.width}{,head.height}, reader_position,validate_double_error{,head.naxis,head.naxis3 }  : integer;
+  tempval                                                                           : double;
   col_float,bscale,measured_max,scalefactor  : single;
   bzero                       : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
   aline                       : ansistring;
@@ -774,8 +795,8 @@ begin
 
   {Reset variables for case they are not specified in the file}
   reset_fits_global_variables; {reset the global variable}
-  naxis:=0;//number of dimensions, normally 2, colour 3
-  naxis3:=1;//number of colours
+  head.naxis:=0;//number of dimensions, normally 2, colour 3
+  head.naxis3:=1;//number of colours
 
   bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
   bscale:=1;
@@ -813,28 +834,28 @@ begin
     repeat  {loop for 80 bytes in 2880 block}
       SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
       memo1.add(aline); {add line to memo}
-      if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxis}
+      if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {head.naxis}
       begin
         if (header[i+5]=' ') then
-            naxis:=round(validate_double)
-        else    {NAXIS number of colors}
-        if (header[i+5]='1') then begin naxis1:=round(validate_double);width2:=naxis1; end else {NAXIS1 pixels}
-        if (header[i+5]='2') then height2:=round(validate_double) else   {NAXIS2 pixels}
+            head.naxis:=round(validate_double)
+        else    {head.naxis number of colors}
+        if (header[i+5]='1') then begin naxis1:=round(validate_double);head.width:=naxis1; end else {NAXIS1 pixels}
+        if (header[i+5]='2') then head.height:=round(validate_double) else   {NAXIS2 pixels}
         if (header[i+5]='3') then
         begin
-           naxis3:=round(validate_double); {NAXIS3 number of colors}
-           if ((naxis=3) and (naxis1=3)) {naxis1} then  {type NAXIS = 3 / Number of dimensions
+           head.naxis3:=round(validate_double); {head.naxis3 number of colors}
+           if ((head.naxis=3) and (naxis1=3)) {naxis1} then  {type head.naxis = 3 / Number of dimensions
                                      NAXIS1 = 3 / Number of Colors
                                      NAXIS2 = 382 / Row length
-                                     NAXIS3 = 255 / Number of rows}
+                                     head.naxis3 = 255 / Number of rows}
                       begin   {RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-                        width2:=height2;
-                        height2:=naxis3;
-                        naxis3:=1;
+                        head.width:=head.height;
+                        head.height:=head.naxis3;
+                        head.naxis3:=1;
                       end;
-           if naxis3>3  then {panic, more then three colours. Program https://github.com/cbassa/stvid is storing the mean, st, max and argmax values of each pixel respectively from multiple files }
+           if head.naxis3>3  then {panic, more then three colours. Program https://github.com/cbassa/stvid is storing the mean, st, max and argmax values of each pixel respectively from multiple files }
            begin
-             naxis3:=1; {display only the first colour}
+             head.naxis3:=1; {display only the first colour}
              memo2_message('Warning more then three colours. Will use only the first one.');
            end;
 
@@ -845,7 +866,7 @@ begin
       if image then {image specific header}
       begin {read image header}
         if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
-          nrbits:=round(validate_double);{BITPIX, read integer using double routine}
+          head.bitpix:=round(validate_double);{head.bitpix, read integer using double routine}
 
         if (header[i]='B') then
         begin
@@ -869,23 +890,23 @@ begin
         begin
           if ((header[i+1]='D')) then
           begin
-             if ((header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {cdelt1}
+             if ((header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {head.cdelt1}
              begin
-               if header[i+5]='1' then cdelt1:=validate_double else{deg/pixel for RA}
-               if header[i+5]='2' then cdelt2:=validate_double;    {deg/pixel for DEC}
+               if header[i+5]='1' then head.cdelt1:=validate_double else{deg/pixel for RA}
+               if header[i+5]='2' then head.cdelt2:=validate_double;    {deg/pixel for DEC}
              end
              else
              begin
-               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   cd1_1:=validate_double;
-               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   cd1_2:=validate_double;
-               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   cd2_1:=validate_double;
-               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   cd2_2:=validate_double;
+               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd1_1:=validate_double;
+               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd1_2:=validate_double;
+               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd2_1:=validate_double;
+               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd2_2:=validate_double;
              end;
           end;
           if ((header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
           begin
-            if (header[i+5]='1') then  ra0:=validate_double*pi/180; {ra center, read double value}
-            if (header[i+5]='2') then  dec0:=validate_double*pi/180; {dec center, read double value}
+            if (header[i+5]='1') then  head.ra0:=validate_double*pi/180; {ra center, read double value}
+            if (header[i+5]='2') then  head.dec0:=validate_double*pi/180; {dec center, read double value}
           end;
         end;//C
 
@@ -893,8 +914,8 @@ begin
              ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
              ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
         begin
-          if cdelt2=0 then
-              begin cdelt2:=validate_double/3600; {deg/pixel for RA} cdelt1:=cdelt2; end; {no CDELT1/2 found yet, use alternative}
+          if head.cdelt2=0 then
+              begin head.cdelt2:=validate_double/3600; {deg/pixel for RA} head.cdelt1:=head.cdelt2; end; {no head.cdelt1/2 found yet, use alternative}
         end;
 
         if ((header[i]='E') and (header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
@@ -912,7 +933,7 @@ begin
           if validate_double_error=0 then //not a string value behind keyword DEC
           begin
             dec_mount:=tempval;
-            if dec0=0 then dec0:=tempval; {dec telescope, read double value only if crval is not available}
+            if head.dec0=0 then head.dec0:=tempval; {dec telescope, read double value only if crval is not available}
           end
           else
            dec1:=get_string;
@@ -940,7 +961,7 @@ begin
           if validate_double_error=0 then //not a string value behind keyword RA
           begin
             ra_mount:=tempval;
-            if ra0=0 then ra0:=tempval; {ra telescope, read double value only if crval1 is not available}
+            if head.ra0=0 then head.ra0:=tempval; {ra telescope, read double value only if crval1 is not available}
           end
           else
             ra1:=get_string;
@@ -949,18 +970,18 @@ begin
 
         if header[i]='X' then
         begin
-        if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
-               xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+        if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {head.xpixsz}
+               head.xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
         if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 xbinning:=round(validate_double);{binning}
+                 head.Xbinning:=round(validate_double);{binning}
         end;//X
 
         if header[i]='Y' then
         begin
-          if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
-               ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+          if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {head.xpixsz}
+               head.ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
           if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-               ybinning:=round(validate_double);{binning}
+               head.Ybinning:=round(validate_double);{binning}
         end;//Y
 
       end; {image header}
@@ -972,7 +993,7 @@ begin
   until end_record; {header, 2880 bytes loop}
 
 
-  if naxis<2 then
+  if head.naxis<2 then
   begin
     result:=false; {no image}
     fits_file:=false;
@@ -982,43 +1003,43 @@ begin
 
   if image then {read image data #########################################}
   begin
-    if ((naxis=3) and (naxis1=3)) then
+    if ((head.naxis=3) and (naxis1=3)) then
     begin
-       nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
-       naxis3:=3; {will be converted while reading}
+       head.bitpix:=24; {threat RGB fits as 2 dimensional with 24 bits data}
+       head.naxis3:=3; {will be converted while reading}
     end;
 
-    if ((ra0<>0) or (dec0<>0)) then
+    if ((head.ra0<>0) or (head.dec0<>0)) then
     begin
       if equinox<>2000 then //e.g. in SharpCap
       begin
-        precession_Jnow_to_J2000(equinox,ra0,dec0); {precession, from unknown equinox to J2000}
+        precession_Jnow_to_J2000(equinox,head.ra0,head.dec0); {precession, from unknown equinox to J2000}
         if dec_mount<999 then precession_Jnow_to_J2000(equinox,ra_mount,dec_mount); {precession, from unknown equinox to J2000}
       end;
-      ra1:=prepare_ra(ra0,' ');
-      dec1:=prepare_dec(dec0,' ');
+      ra1:=prepare_ra(head.ra0,' ');
+      dec1:=prepare_dec(head.dec0,' ');
     end
     else
     if ra1<>'' then
     begin
-      ra_text_to_radians ( ra1 ,ra0,error1); {convert ra text to ra0 in radians}
-      dec_text_to_radians( dec1,dec0,error1); {convert dec text to dec0 in radians}
+      ra_text_to_radians ( ra1 ,head.ra0,error1); {convert ra text to head.ra0 in radians}
+      dec_text_to_radians( dec1,head.dec0,error1); {convert dec text to dec0 in radians}
     end;
 
-    if cdelt2=0 then {simple code for astap-cli only}
+    if head.cdelt2=0 then {simple code for astap-cli only}
     begin
-      if cd1_1=0 then  {no scale, try to fix it}
+      if head.cd1_1=0 then  {no scale, try to fix it}
       begin
-       if ((focallen<>0) and (xpixsz<>0)) then
-          cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+       if ((focallen<>0) and (head.xpixsz<>0)) then
+          head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
       end
       else
-      cdelt2:=sqrt(sqr(cd1_2)+sqr(cd2_2));
+      head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));
     end;
 
     {############################## read image}
-    i:=round(bufwide/(abs(nrbits/8)));{check if buffer is wide enough for one image line}
-    if width2>i then
+    i:=round(bufwide/(abs(head.bitpix/8)));{check if buffer is wide enough for one image line}
+    if head.width>i then
     begin
       beep;
       memo2_message('Too wide FITS file !!!!!');
@@ -1027,20 +1048,20 @@ begin
     end;
 
     try
-      setlength(img_loaded2,naxis3,height2,width2);
+      setlength(img_loaded2,head.naxis3,head.height,head.width);
     except
       memo2_message('Abort, not enough memory!');
       warning_str:='Not enough memory!'; //for command line usage
       exit;
     end;
 
-    if nrbits=16 then
-    for k:=0 to naxis3-1 do {do all colors}
+    if head.bitpix=16 then
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*2);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width*2);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
           col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
@@ -1048,15 +1069,15 @@ begin
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
-    end {colors naxis3 times}
+    end {colors head.naxis3 times}
     else
-    if nrbits=-32 then
-    for k:=0 to naxis3-1 do {do all colors}
+    if head.bitpix=-32 then
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*4);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width*4);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
           col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
@@ -1065,26 +1086,26 @@ begin
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
-    end {colors naxis3 times}
+    end {colors head.naxis3 times}
     else
-    if nrbits=8 then
-    for k:=0 to naxis3-1 do {do all colors}
+    if head.bitpix=8 then
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           img_loaded2[k,j,i]:=(fitsbuffer[i]*bscale + bzero);
         end;
       end;
-    end {colors naxis3 times}
+    end {colors head.naxis3 times}
     else
-    if nrbits=24 then
-    For j:=0 to height2-1 do
+    if head.bitpix=24 then
+    For j:=0 to head.height-1 do
     begin
-      try reader.read(fitsbuffer,width2*3);except; end; {read file info}
-      for i:=0 to width2-1 do
+      try reader.read(fitsbuffer,head.width*3);except; end; {read file info}
+      for i:=0 to head.width-1 do
       begin
         rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
         img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
@@ -1093,13 +1114,13 @@ begin
       end;
     end
     else
-    if nrbits=+32 then
-    for k:=0 to naxis3-1 do {do all colors}
+    if head.bitpix=+32 then
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*4);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width*4);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           col_float:=int32(swapendian(fitsbuffer4[i]))*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
           {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
@@ -1107,15 +1128,15 @@ begin
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
-    end {colors naxis3 times}
+    end {colors head.naxis3 times}
     else
-    if nrbits=-64 then
-    for k:=0 to naxis3-1 do {do all colors}
+    if head.bitpix=-64 then
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*8);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width*8);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
           col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
@@ -1123,39 +1144,39 @@ begin
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
-    end; {colors naxis3 times}
+    end; {colors head.naxis3 times}
 
     {rescale if required}
-    if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
+    if ((head.bitpix<=-32){-32 or -64} or (head.bitpix=+32)) then
     begin
       scalefactor:=1;
       if ((measured_max<=1.01) or (measured_max>65535)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
                                                                                               {or if values are above 65535}
       if scalefactor<>1 then {not a 0..65535 range, rescale}
       begin
-        for k:=0 to naxis3-1 do {do all colors}
-          for j:=0 to height2-1 do
-            for i:=0 to width2-1 do
+        for k:=0 to head.naxis3-1 do {do all colors}
+          for j:=0 to head.height-1 do
+            for i:=0 to head.width-1 do
               img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
-        datamax_org:=65535;
+        head.datamax_org:=65535;
       end
-      else  datamax_org:=measured_max;
+      else  head.datamax_org:=measured_max;
 
     end
     else
-    if nrbits=8 then datamax_org:=255 {not measured}
+    if head.bitpix=8 then head.datamax_org:=255 {not measured}
     else
-    if nrbits=24 then
+    if head.bitpix=24 then
     begin
-      datamax_org:=255;
-      nrbits:=8; {already converted to array with separate colour sections}
+      head.datamax_org:=255;
+      head.bitpix:=8; {already converted to array with separate colour sections}
     end
     else {16 bit}
-    datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
+    head.datamax_org:=measured_max;{most common. It set for head.bitpix=24 in beginning at 255}
 
     result:=true;
     fits_file:=true;{succes}
-    reader_position:=reader_position+width2*height2*(abs(nrbits) div 8)
+    reader_position:=reader_position+head.width*head.height*(abs(head.bitpix) div 8)
   end;{image block}
 
   close_fits_file;
@@ -1400,7 +1421,7 @@ begin
 end;
 
 
-procedure read_keys_memo(naxis3: integer);{for tiff, header in the describtion decoding}
+procedure read_keys_memo(var {var because it is set at default values} head : theader; memo :tstrings);{for tiff header in the describtion decoding}
 var
   key                                      : string;
   count1,index                             : integer;
@@ -1410,19 +1431,19 @@ var
   var
     err: integer;
   begin
-    val(copy(memo1.strings[index],11,20),result,err);
+    val(copy(memo.strings[index],11,20),result,err);
   end;
   function read_integer: integer;
   var
     err: integer;
   begin
-    val(copy(memo1.strings[index],11,20),result,err);
+    val(copy(memo.strings[index],11,20),result,err);
   end;
   function read_string: string;
   var
     p1,p2 :integer;
   begin
-    result:=copy(memo1.strings[index],11,80-11);
+    result:=copy(memo.strings[index],11,80-11);
     p1:=pos(char(39),result);
     p2:=posex(char(39),result,p1+1);
     if p2=0 then p2:=20;
@@ -1431,37 +1452,38 @@ var
 
 begin
   {variables are already reset}
-  count1:=memo1.Count-1-1;
+  count1:=memo.Count-1-1;
 
   index:=1;
   while index<=count1 do {read keys}
   begin
-    key:=copy(memo1.strings[index],1,9);
+    key:=copy(memo.strings[index],1,9);
 
     //should in this sequence available. If not fix.
-    if index=1 then if key<>'BITPIX  =' then begin memo1.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
-    if index=2 then if key<>'NAXIS   =' then begin memo1.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
-    if index=3 then if key<>'NAXIS1  =' then begin memo1.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
-    if index=4 then if key<>'NAXIS2  =' then begin memo1.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
-    if ((index=5) and (naxis3>1)) then if key<>'NAXIS3  =' then begin memo1.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
+    if index=1 then if key<>'BITPIX  =' then begin memo.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
+    if index=2 then if key<>'NAXIS   =' then begin memo.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
+    if index=3 then if key<>'NAXIS1  =' then begin memo.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
+    if index=4 then if key<>'NAXIS2  =' then begin memo.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
+    if ((index=5) and (head.naxis3>1)) then if key<>'NAXIS3  =' then
+                                             begin memo.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
 
 
-    if key='CD1_1   =' then cd1_1:=read_float else
-    if key='CD1_2   =' then cd1_2:=read_float else
-    if key='CD2_1   =' then cd2_1:=read_float else
-    if key='CD2_2   =' then cd2_2:=read_float else
+    if key='CD1_1   =' then head.cd1_1:=read_float else
+    if key='CD1_2   =' then head.cd1_2:=read_float else
+    if key='CD2_1   =' then head.cd2_1:=read_float else
+    if key='CD2_2   =' then head.cd2_2:=read_float else
 
-    if key='CRVAL1  =' then ra0:=read_float*pi/180 {degrees -> radians}  else
-    if key='CRVAL2  =' then dec0:=read_float*pi/180 else
+    if key='CRVAL1  =' then head.ra0:=read_float*pi/180 {degrees -> radians}  else
+    if key='CRVAL2  =' then head.dec0:=read_float*pi/180 else
     if key='RA      =' then
     begin
       ra_mount:=read_float*pi/180;{degrees -> radians}
-      if ra0=0 then ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
+      if head.ra0=0 then head.ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
     end else
     if key='DEC     =' then
     begin
       dec_mount:=read_float*pi/180;
-      if dec0=0 then dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+      if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
     end else
     if ((key='OBJCTRA =') and (ra_mount>=999)) {ra_mount value is unfilled, preference for keyword RA} then
     begin
@@ -1474,59 +1496,57 @@ begin
       dec_mount:=dec_radians;
     end else
 
-    if (key='XBINNING=') then xbinning:=read_integer else
-   if (key='YBINNING=') then ybinning:=read_integer else
+    if (key='XBINNING=') then head.Xbinning:=read_integer else
+   if (key='YBINNING=') then head.Ybinning:=read_integer else
 
     if (key='FOCALLEN=') then focallen:=read_float else
-    if (key='XPIXSZ  =') then xpixsz:=read_float else  {pixelscale in microns}
-    if (key='YPIXSZ  =') then ypixsz:=read_float else
-    if (key='CDELT2  =') then cdelt2:=read_float else   {deg/pixel}
+    if (key='XPIXSZ  =') then head.xpixsz:=read_float else  {pixelscale in microns}
+    if (key='YPIXSZ  =') then head.ypixsz:=read_float else
+    if (key='CDELT2  =') then head.cdelt2:=read_float else   {deg/pixel}
     if (key='EQUINOX =') then equinox:=read_float else
     if ((key='SECPIX2 =') or
         (key='PIXSCALE=') or
-        (key='SCALE   =')) then begin if cdelt2=0 then cdelt2:=read_float/3600; end {no cdelt1/2 found yet, use alternative, image scale arcseconds per pixel}
+        (key='SCALE   =')) then begin if head.cdelt2=0 then head.cdelt2:=read_float/3600; end {no head.cdelt1/2 found yet, use alternative, image scale arcseconds per pixel}
     else
-    if key='DATE-OBS=' then date_obs:=read_string;
+    if key='DATE-OBS=' then head.date_obs:=read_string;
 
     index:=index+1;
   end;
 
-  if ((ra0<>0) or (dec0<>0)) then
+  if ((head.ra0<>0) or (head.dec0<>0)) then
   begin
     if equinox<>2000 then //e.g. in SharpCap
     begin
-      precession_Jnow_to_J2000(equinox,ra0,dec0); {precession, from unknown equinox to J2000}
+      precession_Jnow_to_J2000(equinox,head.ra0,head.dec0); {precession, from unknown equinox to J2000}
       if dec_mount<999 then precession_Jnow_to_J2000(equinox,ra_mount,dec_mount); {precession, from unknown equinox to J2000}
     end;
-    ra1:=prepare_ra(ra0,' ');{this will create Ra_radians for solving}
-    dec1:=prepare_dec(dec0,' ');
+    ra1:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+    dec1:=prepare_dec(head.dec0,' ');
   end
   else
   if ra1<>'' then
   begin
-    ra_text_to_radians ( ra1 ,ra0,error1); {convert ra text to ra0 in radians}
-    dec_text_to_radians( dec1,dec0,error1); {convert dec text to dec0 in radians}
+    ra_text_to_radians ( ra1 ,head.ra0,error1); {convert ra text to head.ra0 in radians}
+    dec_text_to_radians( dec1,head.dec0,error1); {convert dec text to dec0 in radians}
   end;
 
 
   { condition           keyword    to
    if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
-                             ra--->ra_mount  if ra0=0 then   ra_mount--->ra0
-                         crval1--->ra0
+                             ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
+                         crval1--->head.ra0
 
-   if ra0<>0 then           ra0--->ra1.text------------------->ra_radians}
+   if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
 
-
-
-  if cdelt2=0 then {simple code for astap-cli only}
+  if head.cdelt2=0 then {simple code for astap-cli only}
   begin
-    if cd1_1=0 then  {no scale, try to fix it}
+    if head.cd1_1=0 then  {no scale, try to fix it}
     begin
-     if ((focallen<>0) and (xpixsz<>0)) then
-        cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+     if ((focallen<>0) and (head.xpixsz<>0)) then
+        head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
     end
     else
-    cdelt2:=sqrt(sqr(cd1_2)+sqr(cd2_2));
+    head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));
   end;
 end;
 
@@ -1625,13 +1645,13 @@ begin
           if ch in [';','#',' ',char($0A)]=false then comm:=comm+ch
           else
           begin
-            if expdet then begin exposure:=strtofloat2(comm);expdet:=false; end;{get exposure time from comments,special dcraw 0.9.28dev1}
-            if isodet then begin gain:=strtofloat2(comm);isodet:=false; end;{get iso speed as gain}
+            if expdet then begin head.exposure:=strtofloat2(comm);expdet:=false; end;{get head.exposure time from comments,special dcraw 0.9.28dev1}
+            if isodet then begin head.gain:=strtofloat2(comm);isodet:=false; end;{get iso speed as head.gain}
             if instdet then begin instrum:=comm;instdet:=false;end;{camera}
             if timedet then
             begin
               JD2:=2440587.5+ strtoint(comm)/(24*60*60);{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
-              date_obs:=JdToDate(jd2);
+              head.date_obs:=JdToDate(jd2);
               timedet:=false;
             end;{get date from comments}
             comment_line:=comment_line+comm+' ';//for full comment line
@@ -1670,13 +1690,13 @@ begin
 
     val(bits,range,err3);{number of bits}
 
-    nrbits:=round(range);
+    head.bitpix:=round(range);
 
-    if pfm then begin nrbits:=-32; datamax_org:=$FFFF;end     {little endian PFM format. If nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+    if pfm then begin head.bitpix:=-32; head.datamax_org:=$FFFF;end     {little endian PFM format. If head.bitpix=-1 then range 0..1. If head.bitpix=+1 then big endian with range 0..1 }
     else
-    if nrbits=65535 then begin nrbits:=16; datamax_org:=$FFFF;end
+    if head.bitpix=65535 then begin head.bitpix:=16; head.datamax_org:=$FFFF;end
     else
-    if nrbits=255 then begin nrbits:=8;datamax_org:=$FF; end
+    if head.bitpix=255 then begin head.bitpix:=8;head.datamax_org:=$FF; end
     else
       err3:=999;
 
@@ -1690,18 +1710,18 @@ begin
       exit;
     end; {should contain 255 or 65535}
 
-    datamin_org:=0;
+    head.datamin_org:=0;
     backgr:=0;{for case histogram is not called}
 
     if color7 then
     begin
-       package:=round((abs(nrbits)*3/8));{package size, 3 or 6 bytes}
+       package:=round((abs(head.bitpix)*3/8));{package size, 3 or 6 bytes}
        naxis3:=3; {naxis3 number of colors}
        naxis:=3; {number of dimensions}
     end
     else
     begin {gray image without bayer matrix applied}
-      package:=round((abs(nrbits)/8));{package size, 1 or 2 bytes}
+      package:=round((abs(head.bitpix)/8));{package size, 1 or 2 bytes}
       naxis3:=1; {naxis3 number of colors}
       naxis:=2;{number of dimensions}
     end;
@@ -1726,16 +1746,16 @@ begin
           begin
             if color7=false then {gray scale without bayer matrix applied}
             begin
-              if nrbits=8 then  {8 BITS, mono 1x8bits}
+              if head.bitpix=8 then  {8 BITS, mono 1x8bits}
                 img_loaded2[0,i,j]:=fitsbuffer[j]{RGB fits with naxis1=3, treated as 48 bits coded pixels}
               else
-              if nrbits=16 then {big endian integer}
+              if head.bitpix=16 then {big endian integer}
                 img_loaded2[0,i,j]:=swap(fitsbuffer2[j])
               else {PFM 32 bits grayscale}
               if pfm then
               begin
                 if range<0 then {little endian floats}
-                  img_loaded2[0,i,j]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+                  img_loaded2[0,i,j]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if head.bitpix=-1 then range 0..1. If head.bitpix=+1 then big endian with range 0..1 }
                 else
                 begin {big endian floats}
                   x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
@@ -1745,7 +1765,7 @@ begin
             end
             else
             begin
-              if nrbits=8 then {24 BITS, colour 3x8bits}
+              if head.bitpix=8 then {24 BITS, colour 3x8bits}
               begin
                 rgbdummy:=fitsbufferRGB[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
                 img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
@@ -1753,7 +1773,7 @@ begin
                 img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
               end
               else
-              if nrbits=16 then {48 BITS colour, 3x16 big endian}
+              if head.bitpix=16 then {48 BITS colour, 3x16 big endian}
               begin {48 bits}
                 rgb16dummy:=fitsbufferRGB16[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
                 img_loaded2[0,i,j]:=swap(rgb16dummy[0]);{store in memory array}
@@ -1799,19 +1819,19 @@ begin
         memo1.add(head1[j]); {add lines to empthy memo1}
   memo1.add(head1[27]); {add end}
 
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer('BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
   if naxis3<>1 then
     update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                           ' ,round(datamax_org));
+  update_integer('DATAMAX =',' / Maximum data value                           ' ,round(head.datamax_org));
 
-  if exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,exposure);
-  if gain<>999 then     update_float('GAIN    =',' / iso speed                                      ' ,gain);
+  if head.exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,head.exposure);
+  if head.gain<>999 then     update_float('GAIN    =',' / iso speed                                      ' ,head.gain);
 
-  if date_obs<>'' then add_text('DATE-OBS=',#39+date_obs+#39);
+  if head.date_obs<>'' then add_text('DATE-OBS=',#39+head.date_obs+#39);
   if instrum<>''  then add_text('INSTRUME=',#39+INSTRUM+#39);
 
   if naxis3<>1 then
@@ -1850,7 +1870,7 @@ begin
   result:=false; {assume failure}
   saved_header:=false;
 
-  read_tiff(filename2,img, descrip,bitspersample, datamax_org,result); {unit tiff}
+  read_tiff(filename2,img, descrip,bitspersample, head.datamax_org,result); {unit tiff}
 
   if result=false then
   begin
@@ -1861,9 +1881,9 @@ begin
   reset_fits_global_variables; {reset the global variable}
 
   if bitspersample=32 then
-    nrbits:=-32 //fits float
+    head.bitpix:=-32 //fits float
   else
-    nrbits:=bitspersample;
+    head.bitpix:=bitspersample;
 
   naxis3:=length(img);
   if  naxis3>1 then naxis:=3 else naxis:=2; //number of dimensions. 2 for mono, 3 for colour
@@ -1871,7 +1891,7 @@ begin
   height2:=length(img[0]);
 
   {set data}
-  datamin_org:=0;
+  head.datamin_org:=0;
 
   memo1.beginupdate;
   memo1.clear;{clear memo for new header}
@@ -1879,6 +1899,7 @@ begin
   if copy(descrip,1,6)='SIMPLE' then {fits header included}
   begin
     memo1.text:=descrip;
+    read_keys_memo(head, memo1);
     saved_header:=true;
   end
   else {no fits header in tiff file available}
@@ -1892,20 +1913,20 @@ begin
 
 
   //update these always to secure FITS format.
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer('BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
 
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
 
 
   if saved_header=false then {saved header in tiff is not restored}
   begin
     JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-    date_obs:=JdToDate(jd2);
-    add_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+    head.date_obs:=JdToDate(jd2);
+    add_text ('DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
   end;
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
   memo1.endupdate;
@@ -2003,7 +2024,7 @@ begin
 
   {set data}
   fits_file:=true;
-  nrbits:=16;
+  head.bitpix:=16;
 
   width2:=image.width;
   height2:=image.height;
@@ -2029,36 +2050,22 @@ begin
   memo1.beginupdate;
   memo1.clear;{clear memo for new header}
 
-  if copy(descrip,1,6)='SIMPLE' then {fits header included}
-  begin
-    memo1.text:=descrip;
-    read_keys_memo(naxis3);
-    saved_header:=true;
-  end
-  else {no fits header in tiff file available}
-  begin
-    for j:=0 to 10 do {create an header with fixed sequence}
-      if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
-       memo1.add(head1[j]); {add lines to empthy memo1}
-    memo1.add(head1[27]); {add end}
-    if descrip<>'' then add_long_comment(descrip);{add TIFF describtion}
-  end;
+  for j:=0 to 10 do {create an header with fixed sequence}
+  if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
+     memo1.add(head1[j]); {add lines to empthy memo1}
+  memo1.add(head1[27]); {add end}
 
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer('BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
 
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
 
-  if saved_header=false then {saved header in tiff is not restored}
-  begin
-    JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-    date_obs:=JdToDate(jd2);
-    add_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
-  end;
-
+  JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+  head.date_obs:=JdToDate(jd2);
+  add_text ('DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
   memo1.endupdate;
 
@@ -2076,7 +2083,7 @@ begin
   ext1:=uppercase(ExtractFileExt(filename2));
 
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')) then {FITS}
-    result:=load_fits(filename2,img_loaded) //fits
+    result:=load_fits(filename2,memo1,head,img_loaded) //fits
   else
   if ((ext1='.TIF') or (ext1='.TIFF')) then {tiff}
     result:=load_tiff_new(filename2,img_loaded) {tiff}
@@ -2205,7 +2212,7 @@ begin
 
 
     {calculate star level}
-    if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
+    if ((head.bitpix=8) or (head.bitpix=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
     i:=max_range;
     star_level:=0;
     star_level2:=0;
@@ -2414,7 +2421,7 @@ begin
 
     r is the diameter used for star flux measurement. Flux is the total star flux detected above 3* sd.
 
-    Assuming unity gain ADU/e-=1
+    Assuming unity head.gain ADU/e-=1
     See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)
     https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
     http://spiff.rit.edu/classes/phys373/lectures/signal/signal_illus.html}
@@ -2473,30 +2480,30 @@ var
   dRa,dDec,delta,gamma  : double;
 
 begin
-  RAM:=0;DECM:=0;{for case wrong index or cd1_1=0}
+  RAM:=0;DECM:=0;{for case wrong index or head.cd1_1=0}
 
-  if cd1_1<>0 then
+  if head.cd1_1<>0 then
   begin //wcs
     if a_order>=2 then {SIP, Simple Imaging Polynomial}
     begin //apply SIP correction to pixels.
-      u:=fitsx-crpix1;
-      v:=fitsy-crpix2;
+      u:=fitsx-head.crpix1;
+      v:=fitsy-head.crpix2;
       u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
       v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
     end
     else
     begin
-      u2:=fitsx-crpix1;
-      v2:=fitsy-crpix2;
+      u2:=fitsx-head.crpix1;
+      v2:=fitsy-head.crpix2;
     end; {mainwindow.Polynomial1.itemindex=0}
 
 
-    dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
-    dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
-    delta:=cos(dec0)-dDec*sin(dec0);
+    dRa :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
+    dDec:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
+    delta:=cos(head.dec0)-dDec*sin(head.dec0);
     gamma:=sqrt(dRa*dRa+delta*delta);
-    decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
-    ram:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
+    decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
+    ram:=head.ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
     if ram<0 then ram:=ram+2*pi;
     if ram>pi*2 then ram:=ram-pi*2;
   end; //WCS
@@ -2589,7 +2596,7 @@ begin
 
                 if report_type>0 then
                 begin
-                  if cd1_1=0 then
+                  if head.cd1_1=0 then
                     writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
                   else
                   begin

@@ -31,7 +31,7 @@ implementation
 
 
 uses
-  SysUtils, Classes, dialogs, math,
+  SysUtils, Classes, {dialogs,} math,
   zstream, //for ZIP compression/decompression
   FPReadTiff,//for LZW decompression
   unit_command_line_general;//for memo2_message

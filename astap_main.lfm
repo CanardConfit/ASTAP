@@ -1,8 +1,8 @@
 object mainform1: Tmainform1
-  Left = 285
+  Left = 151
   Height = 597
   Hint = ' '
-  Top = 273
+  Top = 282
   Width = 1273
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -636,13 +636,13 @@ object mainform1: Tmainform1
           OnDblClick = radec_search1Click
         end
         object inversemousewheel1: TCheckBox
-          Left = 465
+          Left = 469
           Height = 19
           Hint = 'Inverse zoom action of the mouse wheel.'
           Top = 40
           Width = 101
           Caption = 'Inverse 🖱️ wheel'
-          Color = clBtnText
+          Color = clForm
           Font.CharSet = ANSI_CHARSET
           Font.Color = clWindowText
           Font.Height = -12

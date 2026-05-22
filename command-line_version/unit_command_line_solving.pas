@@ -324,16 +324,15 @@ begin
 end;
 
 
-procedure find_many_quads(starlist: Tstar_list; out quads: Tstar_list; mode: integer {use 5, 6 closest stars});
+procedure find_many_quads(starlist: Tstar_list; out quads: Tstar_list; mode: integer {use 5, 6, 7 closest stars});
 var
-  i, j, k, q, nrstars, nrquads, num_closest, num_quads_per_group, F8: integer;
+  i, j, k, q, nrstars, nrquads, num_closest, num_quads_per_group, insert_pos: integer;
   distance, temp, xt, yt, dist1, dist2, dist3, dist4, dist5, dist6, dx, dy: double;
   identical_quad: boolean;
-  closest_indices: array of integer; // Dynamic array to hold closest star indices
-  closest_distances: array of double; // Store distances to avoid recalculation
-  quad_indices: array[0..3] of integer; // Indices for the current quad
-  x1, y1, x2, y2, x3, y3, x4, y4: double; // Star positions
-
+  closest_indices: array of integer;
+  closest_distances: array of double;
+  quad_indices: array[0..3] of integer;
+  x1, y1, x2, y2, x3, y3, x4, y4: double;
   StarsX, StarsY: PDouble;// Direct pointers for faster array access
   QuadsX, QuadsY: PDouble;// Direct pointers for faster array access
 begin
@@ -341,35 +340,33 @@ begin
   // Initialize direct pointers
   StarsX := @starlist[0, 0]; //this give a tiny improvement in speed
   StarsY := @starlist[1, 0];
-  // Configure based on mode
-  case mode of
-    5:
-      begin
-        num_closest := 5; //collect 5 closest stars
-        num_quads_per_group := 5; // create 5 quads from the 5 stars
-      end;
-    6:
-      begin
-        num_closest := 6; //collect 6 closest stars
-        num_quads_per_group := 15; // create 15 quads from the 6 stars, C(6,4)=15
-      end;
-  end;
 
-  if nrstars < num_closest then
-  begin // Not enough stars
-    SetLength(quads, 8, 0);
-    exit;
+  case mode of // Configure based on mode
+    5: begin
+      num_closest := 5; //collect 5 close stars
+      num_quads_per_group := 5; // create 5 quads from the 5 stars
+       end;
+    6: begin
+         num_closest := 6;//collect 6 close stars
+         num_quads_per_group := 15;  // C(6,4) = 15
+       end;
+    7: begin
+         num_closest := 7; //collect 7 close stars
+         num_quads_per_group := 35;  // C(7,4) = 35
+       end;
   end;
 
   nrquads := 0;
-  SetLength(quads, 8, nrstars * num_quads_per_group); // Pre-allocate space
-  SetLength(closest_indices, num_closest); // Store closest star indices
-  SetLength(closest_distances, num_closest); // Store distances to avoid recalculation
+  SetLength(quads, 8, nrstars * num_quads_per_group);
+  SetLength(closest_indices, num_closest);
+  SetLength(closest_distances, num_closest);
 
   for i := 0 to nrstars - 1 do
   begin
-    // Initialize closest distances to a very large value
-    for j := 0 to num_closest - 1 do
+    closest_distances[0] := 0; // Reference star distance is zero
+    closest_indices[0] := i;// Reference star
+    for j := 1 to num_closest - 1 do // Initialize closest distances to a very large value
+
     begin
       closest_indices[j] := -1;
       closest_distances[j] := 1E99;
@@ -378,131 +375,122 @@ begin
     x1 := StarsX[i]; // Reference star
     y1 := StarsY[i];
 
-    // OPTIMIZATION: Split loop to avoid j <> i check every iteration
-    // Search before i
-    for j := 0 to i - 1 do
+    for j := 0 to nrstars - 1 do
     begin
-      dx := StarsX[j] - x1;
-      dy := StarsY[j] - y1;
-      distance := dx * dx + dy * dy;
-      if distance > 1 then // Skip identical stars (distance=0)
+      if i <> j then
       begin
-        // Insert into the closest list if closer than current farthest
-        for k := num_closest - 1 downto 0 do
+        dx := StarsX[j] - x1;
+        dy := StarsY[j] - y1;
+        distance := dx * dx + dy * dy;
+        if distance > 1 then
         begin
-          if distance < closest_distances[k] then
+          // Fixed insertion sort: find position, then shift
+          insert_pos := -1;
+          for k := num_closest - 1 downto 1 do
           begin
-            if k < num_closest - 1 then
-            begin
-              closest_distances[k + 1] := closest_distances[k];
-              closest_indices[k + 1] := closest_indices[k];
-            end;
-            closest_distances[k] := distance;
-            closest_indices[k] := j;
-          end
-          else
-            break;
-        end;
-      end;
-    end;
-    // Search after i
-    for j := i + 1 to nrstars - 1 do
-    begin
-      dx := StarsX[j] - x1;
-      dy := StarsY[j] - y1;
-      distance := dx * dx + dy * dy;
-      if distance > 1 then // Skip identical stars (distance=0)
-      begin
-        // Insert into the closest list if closer than current farthest
-        for k := num_closest - 1 downto 0 do
-        begin
-          if distance < closest_distances[k] then
+            if distance < closest_distances[k] then
+              insert_pos := k
+            else
+              break;
+          end;
+          if insert_pos >= 0 then
           begin
-            if k < num_closest - 1 then
+            for k := num_closest - 1 downto insert_pos + 1 do
             begin
-              closest_distances[k + 1] := closest_distances[k];
-              closest_indices[k + 1] := closest_indices[k];
+              closest_distances[k] := closest_distances[k - 1];
+              closest_indices[k] := closest_indices[k - 1];
             end;
-            closest_distances[k] := distance;
-            closest_indices[k] := j;
-          end
-          else
-            break;
+            closest_distances[insert_pos] := distance;
+            closest_indices[insert_pos] := j;
+          end;
         end;
       end;
     end;
 
-    // Proceed only if we found enough stars
     if closest_indices[num_closest - 1] <> -1 then
     begin
-      // Generate all quads for this group
+      // Move pointer assignment outside the quad loop
+      QuadsX := @quads[6, 0];
+      QuadsY := @quads[7, 0];
+
       for q := 0 to num_quads_per_group - 1 do
       begin
-        // Select quad indices based on mode
         case mode of
           5: //5 quads from 5 closest stars
-            begin // Original behavior: Rotate which star is excluded
-              if q = 0 then
-              begin // Stars: i, closest[0], closest[1], closest[2]
-                x2 := StarsX[closest_indices[0]];
-                y2 := StarsY[closest_indices[0]];
-                x3 := StarsX[closest_indices[1]];
-                y3 := StarsY[closest_indices[1]];
-                x4 := StarsX[closest_indices[2]];
-                y4 := StarsY[closest_indices[2]];
-              end
-              else if q = 1 then
-              begin // Stars: closest[3], closest[0], closest[1], closest[2]
-                x1 := StarsX[closest_indices[3]];
-                y1 := StarsY[closest_indices[3]];
-              end
-              else if q = 2 then
-              begin // Stars: closest[3], i, closest[1], closest[2]
-                x2 := StarsX[i];
-                y2 := StarsY[i];
-              end
-              else if q = 3 then
-              begin // Stars: closest[3], i, closest[0], closest[2]
-                x3 := StarsX[closest_indices[0]];
-                y3 := StarsY[closest_indices[0]];
-              end
-              else if q = 4 then
-              begin // Stars: closest[3], i, closest[0], closest[1]
-                x4 := StarsX[closest_indices[1]];
-                y4 := StarsY[closest_indices[1]];
-              end;
-            end;
-
+            case q of
+                 0:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=3; end;//exclude 4
+                 1:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=4; end;//exclude 3
+                 2:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=3; quad_indices[3]:=4; end;//exclude 2
+                 3:  begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=4; end;//exclude 1
+                 4:  begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=4; end;//exclude 0
+            end;//case
           6: //15 quads from 6 closest stars, all C(6,4)=15 combinations of 4 from indices 0..5
-            begin
               case q of
-                0:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=3; end;
-                1:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=4; end;
-                2:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=5; end;
-                3:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=3; quad_indices[3]:=4; end;
-                4:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=3; quad_indices[3]:=5; end;
-                5:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=4; quad_indices[3]:=5; end;
-                6:  begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=4; end;
-                7:  begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=5; end;
-                8:  begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=4; quad_indices[3]:=5; end;
-                9:  begin quad_indices[0]:=0; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end;
-                10: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=4; end;
-                11: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=5; end;
-                12: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=4; quad_indices[3]:=5; end;
-                13: begin quad_indices[0]:=1; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end;
-                14: begin quad_indices[0]:=2; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end;
+                0:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=3; end;//exclude 4,5
+                1:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=4; end;//exclude 3,5
+                2:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=5; end;//exclude 3,4
+                3:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=3; quad_indices[3]:=4; end;//exclude 2,5
+                4:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=3; quad_indices[3]:=5; end;//exclude 2,4
+                5:  begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=4; quad_indices[3]:=5; end;//exclude 2,3
+                6:  begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=4; end;//exclude 1,5
+                7:  begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=5; end;//exclude 1,4
+                8:  begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=4; quad_indices[3]:=5; end;//exclude 1,3
+                9:  begin quad_indices[0]:=0; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end;//exclude 1,2
+                10: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=4; end;//exclude 0,5
+                11: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=5; end;//exclude 0,4
+                12: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=4; quad_indices[3]:=5; end;//exclude 0,3
+                13: begin quad_indices[0]:=1; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end;//exclude 0,2
+                14: begin quad_indices[0]:=2; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end;//exclude 0,1
               end;
-              // Get star positions for the quad
-              x1 := StarsX[closest_indices[quad_indices[0]]];
-              y1 := StarsY[closest_indices[quad_indices[0]]];
-              x2 := StarsX[closest_indices[quad_indices[1]]];
-              y2 := StarsY[closest_indices[quad_indices[1]]];
-              x3 := StarsX[closest_indices[quad_indices[2]]];
-              y3 := StarsY[closest_indices[quad_indices[2]]];
-              x4 := StarsX[closest_indices[quad_indices[3]]];
-              y4 := StarsY[closest_indices[quad_indices[3]]];
+          7: // //35 quads from 7 closest stars, C(7,4)=35 combinations of 4 from indices 0..6
+            case q of
+               0: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=3; end; //exclude 4,5,6
+               1: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=4; end; //exclude 3,5,6
+               2: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=5; end; //exclude 3,4,6
+               3: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=2; quad_indices[3]:=6; end; //exclude 3,4,5
+               4: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=3; quad_indices[3]:=4; end; //exclude 2,5,6
+               5: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=3; quad_indices[3]:=5; end; //exclude 2,4,6
+               6: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=3; quad_indices[3]:=6; end; //exclude 2,4,5
+               7: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=4; quad_indices[3]:=5; end; //exclude 2,3,6
+               8: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=4; quad_indices[3]:=6; end; //exclude 2,3,5
+               9: begin quad_indices[0]:=0; quad_indices[1]:=1; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 2,3,4
+              10: begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=4; end; //exclude 1,5,6
+              11: begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=5; end; //exclude 1,4,6
+              12: begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=6; end; //exclude 1,4,5
+              13: begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=4; quad_indices[3]:=5; end; //exclude 1,3,6
+              14: begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=4; quad_indices[3]:=6; end; //exclude 1,3,5
+              15: begin quad_indices[0]:=0; quad_indices[1]:=2; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 1,3,4
+              16: begin quad_indices[0]:=0; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end; //exclude 1,2,6
+              17: begin quad_indices[0]:=0; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=6; end; //exclude 1,2,5
+              18: begin quad_indices[0]:=0; quad_indices[1]:=3; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 1,2,4
+              19: begin quad_indices[0]:=0; quad_indices[1]:=4; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 1,2,3
+              20: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=4; end; //exclude 0,5,6
+              21: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=5; end; //exclude 0,4,6
+              22: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=3; quad_indices[3]:=6; end; //exclude 0,4,5
+              23: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=4; quad_indices[3]:=5; end; //exclude 0,3,6
+              24: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=4; quad_indices[3]:=6; end; //exclude 0,3,5
+              25: begin quad_indices[0]:=1; quad_indices[1]:=2; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 0,3,4
+              26: begin quad_indices[0]:=1; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end; //exclude 0,2,6
+              27: begin quad_indices[0]:=1; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=6; end; //exclude 0,2,5
+              28: begin quad_indices[0]:=1; quad_indices[1]:=3; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 0,2,4
+              29: begin quad_indices[0]:=1; quad_indices[1]:=4; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 0,2,3
+              30: begin quad_indices[0]:=2; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=5; end; //exclude 0,1,6
+              31: begin quad_indices[0]:=2; quad_indices[1]:=3; quad_indices[2]:=4; quad_indices[3]:=6; end; //exclude 0,1,5
+              32: begin quad_indices[0]:=2; quad_indices[1]:=3; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 0,1,4
+              33: begin quad_indices[0]:=2; quad_indices[1]:=4; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 0,1,3
+              34: begin quad_indices[0]:=3; quad_indices[1]:=4; quad_indices[2]:=5; quad_indices[3]:=6; end; //exclude 0,1,2
             end;
         end; // case mode
+
+        // Get star positions for the quad
+        x1 := StarsX[closest_indices[quad_indices[0]]];
+        y1 := StarsY[closest_indices[quad_indices[0]]];
+        x2 := StarsX[closest_indices[quad_indices[1]]];
+        y2 := StarsY[closest_indices[quad_indices[1]]];
+        x3 := StarsX[closest_indices[quad_indices[2]]];
+        y3 := StarsY[closest_indices[quad_indices[2]]];
+        x4 := StarsX[closest_indices[quad_indices[3]]];
+        y4 := StarsY[closest_indices[quad_indices[3]]];
 
         // Calculate quad center
         xt := (x1 + x2 + x3 + x4) * 0.25;
@@ -510,11 +498,9 @@ begin
 
         // Check for duplicates
         identical_quad := false;
-        QuadsX := @quads[6, 0];
-        QuadsY := @quads[7, 0];
         for k := 0 to nrquads - 1 do
         begin
-          if (abs(xt - QuadsX[k]) < 1) and (abs(yt - QuadsY[k]) < 1) then
+          if (abs(xt - QuadsX[k]) < 1) and (abs(yt - QuadsY[k]) < 6) then
           begin
             identical_quad := true;
             break;
@@ -522,16 +508,15 @@ begin
         end;
 
         if not identical_quad then
-        begin
-          // Calculate pairwise distances (OPTIMIZATION: use dx, dy and multiply instead of sqr)
-          dx := x1 - x2; dy := y1 - y2; dist1 := sqrt(dx*dx + dy*dy);
-          dx := x1 - x3; dy := y1 - y3; dist2 := sqrt(dx*dx + dy*dy);
-          dx := x1 - x4; dy := y1 - y4; dist3 := sqrt(dx*dx + dy*dy);
-          dx := x2 - x3; dy := y2 - y3; dist4 := sqrt(dx*dx + dy*dy);
-          dx := x2 - x4; dy := y2 - y4; dist5 := sqrt(dx*dx + dy*dy);
-          dx := x3 - x4; dy := y3 - y4; dist6 := sqrt(dx*dx + dy*dy);
+        begin // Calculate pairwise distances
+          dx := x1-x2; dy := y1-y2; dist1 := sqrt(dx*dx + dy*dy);
+          dx := x1-x3; dy := y1-y3; dist2 := sqrt(dx*dx + dy*dy);
+          dx := x1-x4; dy := y1-y4; dist3 := sqrt(dx*dx + dy*dy);
+          dx := x2-x3; dy := y2-y3; dist4 := sqrt(dx*dx + dy*dy);
+          dx := x2-x4; dy := y2-y4; dist5 := sqrt(dx*dx + dy*dy);
+          dx := x3-x4; dy := y3-y4; dist6 := sqrt(dx*dx + dy*dy);
 
-          // Optimized bubble sort for 6 elements (5 passes max)
+          // Optimized bubble sort for 6 elements
           if dist2 > dist1 then begin temp:=dist1; dist1:=dist2; dist2:=temp; end;
           if dist3 > dist2 then begin temp:=dist2; dist2:=dist3; dist3:=temp; end;
           if dist4 > dist3 then begin temp:=dist3; dist3:=dist4; dist4:=temp; end;
@@ -550,8 +535,8 @@ begin
           //end optimized bubble sort
 
           // Store the quad
-          quads[0, nrquads] := dist1; //largest distance
-          quads[1, nrquads] := dist2 / dist1; //scale to largest distance
+          quads[0, nrquads] := dist1;
+          quads[1, nrquads] := dist2 / dist1;
           quads[2, nrquads] := dist3 / dist1;
           quads[3, nrquads] := dist4 / dist1;
           quads[4, nrquads] := dist5 / dist1;
@@ -560,18 +545,16 @@ begin
           quads[7, nrquads] := yt;
           inc(nrquads);
         end;
+      end; // quad loop
+    end; // enough stars
+  end; // star loop
 
-      end; // End of quad generation loop
-    end; // End of "found enough stars" check
-  end; // End of star loop
-
-  SetLength(quads, 8, nrquads); // Trim to actual number of quads
+  SetLength(quads, 8, nrquads);
 end;
 
 
 procedure find_quads(nrstars_image:integer; starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2026
 const
-  grid_size = 5.0; // Coarser grid for [-6000, 6000], adjust if needed (e.g., 5.0 for denser clustering)
   bucket_capacity = 10; // Max quads per bucket, increase to 20 if overflows occur
   GRID_INV = 0.2; // Pre-calculated inverse of grid_size (1.0 / 5.0)
 var
@@ -589,17 +572,23 @@ var
 begin
   nrstars := Length(starlist[0]); //number of quads will lower
 
-  if nrstars_image<30 then //base the quad groups size selection on the number of stars in the image and not on the number of database stars since the database field could be larger
-   begin
-     find_many_quads(starlist, {out} quads,6 {group size});//Find fifteen times more quads by using closest groups of six stars.
-     exit;
-   end
-   else
-   if nrstars_image<60 then
-   begin
-     find_many_quads(starlist, {out} quads,5 {group size});//Find five times more quads by using closest groups of five stars.
-     exit;
-   end;
+  if ((nrstars_image<15) and (nrstars>6)) then //base the quad groups size selection on the number of stars in the image and not on the number of database stars since the database field could be larger
+  begin
+    find_many_quads(starlist, {out} quads,7 {group size});//Find fifteen times more quads by using closest groups of six stars.
+    exit;
+  end
+  else
+  if ((nrstars_image<30) and (nrstars>5)) then //base the quad groups size selection on the number of stars in the image and not on the number of database stars since the database field could be larger
+  begin
+    find_many_quads(starlist, {out} quads,6 {group size});//Find fifteen times more quads by using closest groups of six stars.
+    exit;
+  end
+  else
+  if ((nrstars_image<60) and (nrstars>4)) then
+  begin
+    find_many_quads(starlist, {out} quads,5 {group size});//Find five times more quads by using closest groups of five stars.
+    exit;
+  end;
 
   if nrstars < 4 then
   begin {not enough stars for quads}
@@ -648,80 +637,45 @@ begin
     x1 := StarsX[i]; // first star position quad array
     y1 := StarsY[i];
 
-    // OPTIMIZATION: Split loop to avoid j <> i check every iteration
-    // Search before i
-    for j := Sstart to i - 1 do //find closest stars
+    for j := Sstart to Send do //find closest stars
     begin
-      disty := sqr(StarsY[j] - y1);
-      if disty < distance3 then //pre-check to increase processing speed with a small amount
+      if j<>i then //do not check the star with itself
       begin
-        distance := sqr(StarsX[j] - x1) + disty; {square distances are used}
-        if distance > 1 then //not an identical star. Mod 2021-6-25
+        disty := sqr(StarsY[j] - y1);
+        if disty < distance3 then //pre-check to increase processing speed with a small amount
         begin
-          if distance < distance1 then
+          distance := sqr(StarsX[j] - x1) + disty; {square distances are used}
+          if distance > 1 then //not an identical star. Mod 2021-6-25
           begin
-            distance3 := distance2;//{distance third closest star
-            j_index3 := j_index2; //remember the star position in the list
+            if distance < distance1 then
+            begin
+              distance3 := distance2;//{distance third closest star
+              j_index3 := j_index2; //remember the star position in the list
 
-            distance2 := distance1; //distance second closest star
-            j_index2 := j_index1; //remember the star position in the list
+              distance2 := distance1; //distance second closest star
+              j_index2 := j_index1; //remember the star position in the list
 
-            distance1 := distance; //distance closest star
-            j_index1 := j; //mark later as used
-          end
-          else if distance < distance2 then
-          begin
-            distance3 := distance2; //distance third closest star
-            j_index3 := j_index2; //remember the star position in the list
+              distance1 := distance; //distance closest star
+              j_index1 := j; //mark later as used
+            end
+            else if distance < distance2 then
+            begin
+              distance3 := distance2; //distance third closest star
+              j_index3 := j_index2; //remember the star position in the list
 
-            distance2 := distance; //{distance second closest star}
-            j_index2 := j;
-          end
-          else if distance < distance3 then
-          begin
-            distance3 := distance; //third closest star
-            j_index3 := j; //remember the star position in the list
-          end;
-        end;//{not an identical star. Mod 2021-6-25
-      end; //pre-check
+              distance2 := distance; //{distance second closest star}
+              j_index2 := j;
+            end
+            else if distance < distance3 then
+            begin
+              distance3 := distance; //third closest star
+              j_index3 := j; //remember the star position in the list
+            end;
+          end;//{not an identical star. Mod 2021-6-25
+        end; //pre-check
+
+      end;//j<>i
     end;
-
-    // Search after i
-    for j := i + 1 to Send do {find closest stars}
-    begin
-      disty := sqr(StarsY[j] - y1);
-      if disty < distance3 then //pre-check to increase processing speed with a small amount
-      begin
-        distance := sqr(StarsX[j] - x1) + disty; //square distances are used
-        if distance > 1 then //not an identical star. Mod 2021-6-25
-        begin
-          if distance < distance1 then
-          begin
-            distance3 := distance2; //distance third closest star
-            j_index3 := j_index2; //remember the star position in the list
-
-            distance2 := distance1; //distance second closest star
-            j_index2 := j_index1; //remember the star position in the list
-
-            distance1 := distance; //distance closest star
-            j_index1 := j; //mark later as used
-          end
-          else if distance < distance2 then
-          begin
-            distance3 := distance2; //distance third closest star
-            j_index3 := j_index2; //remember the star position in the list
-
-            distance2 := distance; //distance second closest star
-            j_index2 := j;
-          end
-          else if distance < distance3 then
-          begin
-            distance3 := distance; //third closest star
-            j_index3 := j; //remember the star position in the list
-          end;
-        end; //not an identical star. Mod 2021-6-25
-      end; //pre-check
-    end; //j
 
     if distance3 < 1E99 then //found 4 stars in the restricted area
     begin
@@ -1084,21 +1038,20 @@ begin
 end;
 
 
-procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double;snr_list : array of double; var starlist1 : Tstar_list);{ extract the brightest stars from a star list}
+procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double; var starlistB : Tstar_list);{ Extract the brightest star from a star list}
 const
    range=199;
 var
   snr_histogram : array [0..range] of integer;
   i,count,nrstars, snr_scaled: integer;
   snr_required,sqrtRange,overshoot_correction : double;
-
 begin
   for i:=0 to high(snr_histogram) do snr_histogram[i]:=0; //clear snr histogram
 
   sqrtRange:= sqrt(highest_snr);
-  for i:=0 to high(snr_list) do
+  for i:=0 to high(starlistB[0]) do
   begin
-    snr_scaled:=trunc(sqrt(snr_list[i])*(range)/sqrtRange);//stretch the lower part with many similar stars by applying sqrt. This much faster then using the ln() function
+    snr_scaled:=trunc(sqrt(starlistB[2,i])*(range)/sqrtRange);//stretch the lower part with many similar stars by applying sqrt. This much faster then using the ln() function
     snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;//count how often this snr value is measured
   end;
 
@@ -1113,15 +1066,16 @@ begin
   snr_required:=sqr(sqrtRange*(i+overshoot_correction)/range);  // Convert back from sqrt space
 
   count:=0;
-  nrstars:=length(starlist1[0]);
+  nrstars:=length(starlistB[0]);
   for i:=0 to nrstars-1 do
-    if snr_list[i]>=snr_required then //preserve brightest stars
+    if starlistB[2,i]>=snr_required then //preserve brightest stars
     begin
-      starlist1[0,count]:=starlist1[0,i];//overwrite in the same array
-      starlist1[1,count]:=starlist1[1,i];
+      starlistB[0,count]:=starlistB[0,i];//overwrite in the same array
+      starlistB[1,count]:=starlistB[1,i];
+      starlistB[2,count]:=starlistB[2,i];//copy SNR
       inc(count);
     end;
-  setlength(starlist1,2,count);//reduce length to used length
+  setlength(starlistB,3,count);//reduce length to used length
 end;
 
 
@@ -1238,194 +1192,12 @@ begin
   end; // while
 end;
 
-procedure find_starsOLD(img :Timage_array; hfd_min:double; max_stars :integer;out starlist1: Tstar_list);{find stars and put them in a list}
-var
-   fitsX, fitsY,nrstars,radius,i,j,retries,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr_org, noise_lev : double;
-   img_sa     : Timage_array;
-   snr_list   :  array of double;//array of double;
-   startTick2  : qword;{for timing/speed purposes}
-// flip_vertical,flip_horizontal  : boolean;
-// starX,starY :integer;
-const
-    buffersize=5000;{5000}
-    rastersteps=12;
-
-          procedure find_stars_routine(startx,endx,starty,endy : integer);
-          var
-             fitsX, fitsY,m,n : integer;
-          begin
-            for fitsY:=startY to endY do  //Search through the image. Stay one pixel away from the borders.
-            begin
-              for fitsX:=startX to endX  do
-              begin
-                if ((img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star above noise level}
-                begin
-                  starpixels:=0;
-                  if img[0,fitsY,fitsX-1]- backgr>4*noise_lev then inc(starpixels);//inspect in a cross around it.
-                  if img[0,fitsY,fitsX+1]- backgr>4*noise_lev then inc(starpixels);
-                  if img[0,fitsY-1,fitsX]- backgr>4*noise_lev then inc(starpixels);
-                  if img[0,fitsY+1,fitsX]- backgr>4*noise_lev then inc(starpixels);
-                  if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
-                  begin
-                    HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-
-                    if ((hfd1<=30) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<=0)) then
-                    begin
-                      {for testing}
-                    //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
-                    //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
-                    //  size:=round(5*hfd1);
-                    //  mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-                    //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-                    //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
-
-                      radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
-                      sqr_radius:=sqr(radius);
-                      xci:=round(xc);{star center as integer}
-                      yci:=round(yc);
-                      for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-                        for m:=-radius to +radius do
-                        begin
-                          j:=n+yci;
-                          i:=m+xci;
-                          if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                            img_sa[0,j,i]:=1;
-                        end;
-
-                      {store values}
-                      inc(nrstars);
-                      if nrstars>=length(starlist1[0]) then
-                      begin
-                        SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
-                        setlength(snr_list,nrstars+buffersize);{adapt array size if required}
-                       end;
-                      starlist1[0,nrstars-1]:=xc; {store star position}
-                      starlist1[1,nrstars-1]:=yc;
-                      snr_list[nrstars-1]:=snr;{store SNR}
-
-                      if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
-                    end;
-                  end;
-                end;
-              end;
-            end;
-          end;
-
-
-begin
-  {for testing}
-//   mainform1.image1.Canvas.Pen.Mode := pmMerge;
-//   mainform1.image1.Canvas.Pen.width := round(1+hd.height/mainform1.image1.height);{thickness lines}
-//   mainform1.image1.Canvas.brush.Style:=bsClear;
-//   mainform1.image1.Canvas.font.color:=$FF;
-//   mainform1.image1.Canvas.font.size:=10;
-//   mainform1.image1.Canvas.Pen.Color := $FF;
-//   flip_vertical:=mainform1.flip_vertical1.Checked;
-//   flip_horizontal:=mainform1.Flip_horizontal1.Checked;
-
-  width2:=length(img[0,0]);{width}
-  height2:=length(img[0]);{height}
-
-  if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
-
-  SetLength(starlist1,2,buffersize);{set array length}
-  setlength(snr_list,buffersize);{set array length}
-
-  setlength(img_sa,1,height2,width2);{set length of image array}
-  noise_lev:=noise_level[0]; //get_background is called in bin_and_find_star. Background is stored in cblack
-  retries:=3; {try up to four times to get enough stars from the image}
-
-
-  repeat
-    highest_snr:=0;
-    nrstars:=0;{set counters at zero}
-
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1  do
-        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
-
-
-    if retries=3 then
-    begin
-      if star_level >30*noise_lev then
-      begin
-        detection_level:=star_level;
-        find_stars_routine(1,width2-1-1,1,height2-1-1);
-      end
-      else
-        retries:=2;{skip}
-    end;//stars are dominant
-    if retries=2 then
-    begin
-      if star_level2>30*noise_lev then
-      begin
-        detection_level:=star_level2;
-        find_stars_routine(1,width2-1-1,1,height2-1-1);
-      end
-      else
-        retries:=1;{skip}
-    end;//stars are dominant
-    if retries=1 then
-    begin
-      detection_level:=30*noise_lev;
-      find_stars_routine(1,width2-1-1,1,height2-1-1);
-    end;
-    if retries=0 then  //last try to find faint stars, divide image in sections and for each section find background and noise level
-    begin
-       if height2<width2 then //calculate steps in x, y
-       begin
-         stepsx:=rastersteps;
-         stepsY:=round(rastersteps*height2/width2);
-       end
-       else
-       begin
-         stepsY:=rastersteps;
-         stepsX:=round(rastersteps*width2/height2);
-       end;
-       backgr_org:=backgr;
-
-       for yy:=0 to stepsY do //find stars in stepsX x stepsY sections
-       for xx:=0 to stepsX do
-       begin
-         startX:=1+round(width2*xx/(stepsX+1));
-         endX:=min(width2-1-1,round(width2*(xx+1)/(stepsX+1)));
-         startY:=1+round(height2*yy/(stepsY+1));
-         endY:=min(height2-1-1,round(height2*(yy+1)/(stepsY+1)));
-
-         SigmaClippedMeanFromHistogram(img,startX,endX,startY,endY,max(65500,trunc(backgr_org*2)), 6,0.1,backgr,noise_lev);//mean and noise of this sub section
-         detection_level:= 7*noise_lev;
-         find_stars_routine(startX,endX,startY,endY);
-       end;
-    end;
-
-    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(backgr))+ '. Detection level used '+inttostr( round(detection_level))
-                                                          +' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF(noise_lev,ffFixed,0,0));
-    dec(retries);{Try again with lower detection level}
-  until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
-
-  img_sa:=nil;{free mem}
-
-
-  SetLength(starlist1,2,nrstars);{set length correct}
-  setlength(snr_list,nrstars);{set length correct}
-
-  if nrstars>max_stars then {reduce number of stars if too high}
-  begin
-    if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
-    get_brightest_stars(max_stars, highest_snr, snr_list, starlist1);
-  end;
-  if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms');
-end;
-
-
 
 procedure find_stars(img :Timage_array; hfd_min:double; max_stars :integer;out starlist1: Tstar_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr_org, noise_lev : double;
    img_sa     : Timage_array;
-   snr_list   :  array of double;//array of double;
    startTick2  : qword;{for timing/speed purposes}
 const
     buffersize=5000;{5000}
@@ -1468,13 +1240,10 @@ const
                       {store values}
                       inc(nrstars);
                       if nrstars>=length(starlist1[0]) then
-                      begin
-                        SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
-                        setlength(snr_list,nrstars+buffersize);{adapt array size if required}
-                       end;
+                        SetLength(starlist1,3,nrstars+buffersize);{adapt array size if required}
                       starlist1[0,nrstars-1]:=xc; {store star position}
                       starlist1[1,nrstars-1]:=yc;
-                      snr_list[nrstars-1]:=snr;{store SNR}
+                      starlist1[2,nrstars-1]:=snr;{store SNR}
 
                       if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
                     end;
@@ -1491,8 +1260,7 @@ begin
 
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
 
-  SetLength(starlist1,2,buffersize);{set array length}
-  setlength(snr_list,buffersize);{set array length}
+  SetLength(starlist1,3,buffersize);{set array length}
 
   setlength(img_sa,1,height2,width2);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
@@ -1562,13 +1330,12 @@ begin
   until ((nrstars>=max_stars) or (retries<=0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
 
-  SetLength(starlist1,2,nrstars);{set length correct}
-  setlength(snr_list,nrstars);{set length correct}
+  SetLength(starlist1,3,nrstars);{set length correct}
 
   if nrstars>max_stars then {reduce number of stars if too high}
   begin
     if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
-    get_brightest_stars(max_stars, highest_snr, snr_list, starlist1);
+    get_brightest_stars(max_stars, highest_snr, starlist1);
   end;
   if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms');
 end;
@@ -1661,7 +1428,7 @@ begin
 end;
 
 
-function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+function position_angle(ra1,dec1,ra0,dec0 : double): double;//Position angle between a line from head.ra0,dec0 to ra1,dec1 and a line from head.ra0, dec0 to the celestial north . Rigorous method
 //See book Meeus, Astronomical Algorithms, formula 46.5 edition 1991 or 48.5 edition 1998, angle of moon limb or page 116 edition 1998.
 //See also https://astronomy.stackexchange.com/questions/25306/measuring-misalignment-between-two-positions-on-sky
 //   PA=arctan2(cos(δ0)sin(α1−α0), sin(δ1)cos(δ0)−sin(δ0)cos(δ1)cos(α1−α0))      In lazarus the function is arctan2(y/x)
@@ -1842,7 +1609,7 @@ begin
   result:=true;{no errors}
 
   //for testing
-//  equatorial_standard(telescope_ra,telescope_dec,ra0,dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
+//  equatorial_standard(telescope_ra,telescope_dec,head.ra0,dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
 //  plot_stars_used_for_solving(correctionX,correctionY); {plot image stars and database stars used for the solution}
 end;
 
@@ -2136,10 +1903,10 @@ begin
   {1) Solve the image with the 1th order solver.
    2) Get the x,y coordinates of the detected stars= "stars_measured"
    3) Get the x,y coordinates of the reference stars= "stars_reference"
-   4) Shift the x,y coordinates of "stars_measured" to the center of the image. so position [0,0] is at CRPIX1, CRPIX2.
+   4) Shift the x,y coordinates of "stars_measured" to the center of the image. so position [0,0] is at head.crpix1, head.crpix2.
    5) Convert reference stars coordinates to the same coordinate system as the measured stars.
       In my case I had to convert the quad x,y coordinates to ra, dec and then convert these to image position using the original first order solution
-   6) Now both the "stars_measured" and "stars_reference" positions match with stars in the image except for distortion. Position [0,0] is at CRPIX1, CRPIX2.
+   6) Now both the "stars_measured" and "stars_reference" positions match with stars in the image except for distortion. Position [0,0] is at head.crpix1, head.crpix2.
    7) For pixel_to_sky  call:  Calc_Trans_Cubic(stars_measured,  stars_reference,...).   The trans array will work for pixel to sky.
    8) For sky_to_pixel  call:  Calc_Trans_Cubic(stars_reference,  stars_measured,...)    The trans array will work for sky to pixel.
    }
@@ -2154,12 +1921,12 @@ begin
   setlength(stars_reference,len);
 
 
-  sincos(dec0,SIN_dec_ref,COS_dec_ref);;{ For 5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
+  sincos(head.dec0,SIN_dec_ref,COS_dec_ref); { For 5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
 
   for i:=0 to len-1 do
   begin
-    stars_measured[i].x:=1+A_XYpositions[0,i]-crpix1;//position as seen from center at crpix1, crpix2, in fits range 1..width
-    stars_measured[i].y:=1+A_XYpositions[1,i]-crpix2;
+    stars_measured[i].x:=1+A_XYpositions[0,i]-head.crpix1;//position as seen from center at head.crpix1, head.crpix2, in fits range 1..width
+    stars_measured[i].y:=1+A_XYpositions[1,i]-head.crpix2;
 
     standard_equatorial( ra_database,dec_database,
                          b_Xrefpositions[i], {x reference star}
@@ -2170,16 +1937,16 @@ begin
 
     {5. Conversion (RA,DEC) -> x,y image in fits range 1..max}
     sincos(dec_t,SIN_dec_t,COS_dec_t);
-    delta_ra:=ra_t-ra0;
+    delta_ra:=ra_t-head.ra0;
     sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
 
     H := SIN_dec_t*sin_dec_ref + COS_dec_t*COS_dec_ref*COS_delta_ra;
     dRA := (COS_dec_t*SIN_delta_ra / H)*180/pi;
     dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
 
-    det:=cd2_2*cd1_1 - cd1_2*cd2_1;
-    stars_reference[i].x:= - (cd1_2*dDEC - cd2_2*dRA) / det;
-    stars_reference[i].y:= + (cd1_1*dDEC - cd2_1*dRA) / det;
+    det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
+    stars_reference[i].x:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+    stars_reference[i].y:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
 
   end;
 
@@ -2335,8 +2102,8 @@ begin
   width2:=length(img[0,0]); {width}
   height2:=length(img[0]);  {height}
 
-  if ((fov_specified=false) and (cdelt2<>0)) then {no FOV in native command line and cdelt2 in header}
-    fov_org:=apply_arctan(height2*abs(cdelt2)){calculate FOV. PI can give negative CDELT2}
+  if ((fov_specified=false) and (head.cdelt2<>0)) then {no FOV in native command line and head.cdelt2 in header}
+    fov_org:=apply_arctan(height2*abs(head.cdelt2)){calculate FOV. PI can give negative head.cdelt2}
   else
    fov_org:=min(180,strtofloat2(search_fov1));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
 
@@ -2373,8 +2140,8 @@ begin
   else
     max_fov:=180;
 
-  dec_radians:=dec0; {store temporary}
-  ra_radians:=ra0;
+  dec_radians:=head.dec0; {store temporary}
+  ra_radians:=head.ra0;
 
   min_star_size_arcsec:=strtofloat2(min_star_size1); {arc sec};
   autoFOV:=(fov_org=0);{specified auto FOV}
@@ -2432,9 +2199,9 @@ begin
 
     {prepare popupnotifier1 text}
     if force_oversize1=false then mess:=' normal' else mess:=' slow';
-    memo2_message('ASTAP solver version CLI-'+astap_version+#10+
+    memo2_message('ASTAP CLI solver version '+astap_version+#10+
                   'Search radius: '+ radius_search1+' degrees, '+#10+
-                  'Start position: '+prepare_ra(ra0,': ')+', '+prepare_dec(dec0,'d ')+#10+
+                  'Start position: '+prepare_ra(head.ra0,': ')+', '+prepare_dec(head.dec0,'d ')+#10+
                   'Image height: '+floattostrf2(fov_org,0,2)+' degrees'+#10+
                   'Binning: '+inttostr(binning)+'x'+inttostr(binning)+#10+
                   'Image dimensions: '+inttostr(width2)+'x'+inttostr(height2)+#10+
@@ -2618,7 +2385,7 @@ begin
                                                          (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
                                                           1, {CCD scale}  ra7 ,dec7{equatorial position}); // the position 1 pixel away
 
-          crota2_rad:=-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+          crota2_rad:=-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from head.ra0,dec0 to ra1,dec1 and a line from head.ra0, dec0 to the celestial north . Rigorous method
           cdelt1_arcsec:=flipped_image*sqrt(sqr(solution_vectorX[0])+sqr(solution_vectorX[1])); // unit arcsec
           cdelt2_arcsec:=sqrt(sqr(solution_vectorY[0])+sqr(solution_vectorY[1])); //unit arcsec
           //mod 2025 ############################################################
@@ -2628,7 +2395,7 @@ begin
         else
         match_nr:=0;//This should not happen for the second solve but just in case
 
-      until ((solution=false) or  (match_nr>=2));{Maximum accurcy loop. After match possible on a corner do a second solve using the found ra0,dec0 for maximum accuracy USING ALL STARS}
+      until ((solution=false) or  (match_nr>=2));{Maximum accurcy loop. After match possible on a corner do a second solve using the found head.ra0,dec0 for maximum accuracy USING ALL STARS}
 
 
     end; {enough quads in image}
@@ -2637,40 +2404,40 @@ begin
 
   if solution then
   begin
-    ang_sep(ra_radians,dec_radians,ra0,dec0, sep_search);{calculate search offset}
-    ra0:=ra_radians;//store solution
-    dec0:=dec_radians;
-    crpix1:=centerX+1;{center image in fits coordinate range 1..width2}
-    crpix2:=centery+1;
+    ang_sep(ra_radians,dec_radians,head.ra0,head.dec0, sep_search);{calculate search offset}
+    head.ra0:=ra_radians;//store solution
+    head.dec0:=dec_radians;
+    head.crpix1:=centerX+1;{center image in fits coordinate range 1..width2}
+    head.crpix2:=centery+1;
 
     memo2_message(#10+inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+quad_tolerance1+' tolerance.'  {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
                  +#10+'Solution["] x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
     //  following doesn't give maximum angle accuracy, so is not used.
-    //    cd1_1:= - solution_vectorX[0]/3600;{/3600, arcsec to degrees conversion}
-    //    cd1_2:= - solution_vectorX[1]/3600;
-    //    cd2_1:= + solution_vectorY[0]/3600;
-    //    cd2_2:= + solution_vectorY[1]/3600;
+    //    head.cd1_1:= - solution_vectorX[0]/3600;{/3600, arcsec to degrees conversion}
+    //    head.cd1_2:= - solution_vectorX[1]/3600;
+    //    head.cd2_1:= + solution_vectorY[0]/3600;
+    //    head.cd2_2:= + solution_vectorY[1]/3600;
 
-    // position 1*flipped_image  pixels in direction crpix1
+    // position 1*flipped_image  pixels in direction head.crpix1
     standard_equatorial( ra_database,dec_database,(solution_vectorX[0]*(centerX+flipped_image) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x} //A pixel_aspect_ratio unequal of 1 is very rare, none square pixels
                                                   (solution_vectorY[0]*(centerX+flipped_image) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
                                                   1, {CCD scale} ra7 ,dec7{equatorial position});
 
-    crota1_rad:=pi/2-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+    crota1_rad:=pi/2-position_angle(ra7,dec7,ra_radians,dec_radians);//Position angle between a line from head.ra0,dec0 to ra1,dec1 and a line from head.ra0, dec0 to the celestial north . Rigorous method
     if crota1_rad>pi then crota1_rad:=crota1_rad-2*pi;//keep within range -pi to +pi
 
-    cdelt1:=cdelt1_arcsec/3600;//convert from arc seconds to degrees
-    cdelt2:=cdelt2_arcsec/3600;
+    head.cdelt1:=cdelt1_arcsec/3600;//convert from arc seconds to degrees
+    head.cdelt2:=cdelt2_arcsec/3600;
 
 
-    cd1_1:=+cdelt1*cos(crota1_rad);
-    cd1_2:=-cdelt1*sin(crota1_rad)*flipped_image;
-    cd2_1:=+cdelt2*sin(crota2_rad)*flipped_image;
-    cd2_2:=+cdelt2*cos(crota2_rad);
+    head.cd1_1:=+head.cdelt1*cos(crota1_rad);
+    head.cd1_2:=-head.cdelt1*sin(crota1_rad)*flipped_image;
+    head.cd2_1:=+head.cdelt2*sin(crota2_rad)*flipped_image;
+    head.cd2_2:=+head.cdelt2*cos(crota2_rad);
 
-    crota2:=crota2_rad*180/pi;//convert to degrees
-    crota1:=crota1_rad*180/pi;
+    head.crota2:=crota2_rad*180/pi;//convert to degrees
+    head.crota1:=crota1_rad*180/pi;
 
 
     solved_in:='Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
@@ -2678,8 +2445,8 @@ begin
     offset_found:=distance_to_string(sep_search ,sep_search)+'.';
     if ra_mount<99 then {mount position known and specified}
     begin
-      ra_offset:=distance_to_string(sep_search, pi*frac((ra_mount-ra0)/pi) * cos((dec0+dec_mount)*0.5 {average dec}));
-      dec_offset:=distance_to_string(sep_search,dec_mount-dec0);
+      ra_offset:=distance_to_string(sep_search, pi*frac((ra_mount-head.ra0)/pi) * cos((head.dec0+dec_mount)*0.5 {average dec}));
+      dec_offset:=distance_to_string(sep_search,dec_mount - head.dec0);
 
       mount_offset:=' Mount offset RA='+ra_offset+', DEC='+dec_offset;{ascii}
       mount_info:=' Mount Δα='+ra_offset+ ',  Δδ='+dec_offset+'. ';
@@ -2690,7 +2457,7 @@ begin
       mount_info:='';
     end;
 
-    memo2_message('Solution found: '+  prepare_ra(ra0,': ')+' '+prepare_dec(dec0,'d ') +#10+solved_in+' Δ was '+offset_found+' '+ mount_info+' Used stars down to magnitude: '+floattostrF2(mag2/10,0,1) );
+    memo2_message('Solution found: '+  prepare_ra(head.ra0,': ')+' '+prepare_dec(head.dec0,'d ') +#10+solved_in+' Δ was '+offset_found+' '+ mount_info+' Used stars down to magnitude: '+floattostrF2(mag2/10,0,1) );
     result:=true;
 
     if ((add_sip1) and
@@ -2707,31 +2474,31 @@ begin
     update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
     update_text ('EQUINOX =','              2000.0 / Equinox of coordinates                         ');  {the equinox is 2000 since the database is in 2000}
 
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
+    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
-    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,ra0*180/pi);
-    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,dec0*180/pi);
+    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
+    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
     update_text   ('PLTSOLVD=','                   T / Astrometric solved by ASTAP_CLI v'+astap_version+'.   ');
     update_text   ('COMMENT 7', solved_in+' Offset was '+offset_found+mount_offset);
 
 
-    vfov:=apply_arctan(height2*cdelt2);
+    vfov:=apply_arctan(height2*head.cdelt2);
     if ((fov_org > 1.05 * (vfov)) or (fov_org < 0.95 * (vfov)))  then    //in astap hd.cdelt2 is always positive. No need for absolute function
     begin
-      if xpixsz<>0 then suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'", FL='+inttostr(round((180/(pi*1000)*xpixsz/cdelt2)) )+'mm'
-                   else suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'"';
+      if head.xpixsz<>0 then suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*head.cdelt2,0,2)+'d, scale='+floattostrF2(head.cdelt2*3600,0,1)+'", FL='+inttostr(round((180/(pi*1000)*head.xpixsz/head.cdelt2)) )+'mm'
+                   else suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*head.cdelt2,0,2)+'d, scale='+floattostrF2(head.cdelt2*3600,0,1)+'"';
       memo2_message(suggest_str);
       warning_str:=suggest_str+warning_str;
     end;

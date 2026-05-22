@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 265
+  Left = 262
   Height = 726
   Top = 182
-  Width = 1649
+  Width = 1652
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
   VertScrollBar.Visible = False
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 709
-  ClientWidth = 1649
+  ClientWidth = 1652
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -2759,7 +2759,7 @@ object stackmenu1: Tstackmenu1
                 Left = 696
                 Height = 23
                 Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but it will slow down solving.  Default this is off.  If off  the search window size will be automatically reduced if sufficient stars are found. This option is equivalent to command line option -speed'
-                Top = 78
+                Top = 56
                 Width = 46
                 BorderSpacing.Around = 5
                 Caption = 'Slow'
@@ -2827,19 +2827,6 @@ object stackmenu1: Tstackmenu1
                 TabOrder = 7
                 OnClick = save_settings_extra_button1Click
               end
-              object use_triples1: TCheckBox
-                Left = 696
-                Height = 23
-                Hint = 'Use triples (three star) for pattern detection for images with less then 30 stars. In all other case use quads (four star).'
-                Top = 54
-                Width = 82
-                BorderSpacing.Around = 5
-                Caption = 'Use triples'
-                Color = clBtnFace
-                ParentColor = False
-                ParentFont = False
-                TabOrder = 8
-              end
               object add_sip1: TCheckBox
                 Left = 696
                 Height = 23
@@ -2851,7 +2838,7 @@ object stackmenu1: Tstackmenu1
                 Color = clBtnFace
                 ParentColor = False
                 ParentFont = False
-                TabOrder = 9
+                TabOrder = 8
               end
               object solar_drift_compensation1: TCheckBox
                 Left = 381
@@ -2861,7 +2848,7 @@ object stackmenu1: Tstackmenu1
                 Width = 167
                 Caption = 'Solar drift compensation'
                 Enabled = False
-                TabOrder = 10
+                TabOrder = 9
                 OnChange = solar_drift_compensation1Change
               end
               object solar_drift_ra1: TEdit
@@ -2870,7 +2857,7 @@ object stackmenu1: Tstackmenu1
                 Hint = 'Drift RA*cos(DEC)  in arcsec/hours. Get this "dRA*cosD" value from JPL Horizons'
                 Top = 126
                 Width = 80
-                TabOrder = 11
+                TabOrder = 10
                 Text = '0'
                 Visible = False
               end
@@ -2889,7 +2876,7 @@ object stackmenu1: Tstackmenu1
                 Hint = 'Drift DEC in arcsec/hours. Get this "d(DEC)/dt" value from JPL Horizons'
                 Top = 126
                 Width = 80
-                TabOrder = 12
+                TabOrder = 11
                 Text = '0'
                 Visible = False
               end

@@ -761,7 +761,7 @@ var
   quad_tolerance, dummy, flip, extra, distance, mount_sep,
   mount_ra_sep, mount_dec_sep, ra_start, dec_start, pixel_aspect_ratio,
   crota1, crota2, flipped_image, arcsec_per_px, mean_hfd, xi, yi, scale, cdelt1, cdelt2,vfov : double;
-  solution, go_ahead, autoFOV, use_triples, yes_use_triples: boolean;
+  solution, go_ahead, autoFOV                              : boolean;
   startTick: qword;{for timing/speed purposes}
   distancestr, mess, info_message, popup_warningG05, popup_warningSample, suggest_str,
   solved_in, offset_found, ra_offset_str, dec_offset_str, mount_info_str,
@@ -793,7 +793,6 @@ begin
   quad_tolerance := strtofloat2(stackmenu1.quad_tolerance1.Text);  //  quad_tolerance := min(quad_tolerance, 0.01);//  prevent too high tolerances set by command line
 
   max_stars := strtoint2(stackmenu1.max_stars1.Text, 500); {maximum star to process, if so filter out brightest stars later}
-  use_triples := stackmenu1.use_triples1.Checked;
 
   ra_start := ra_radians;//start position search;
   dec_start := dec_radians;//start position search;
@@ -931,29 +930,16 @@ begin
 
     if go_ahead then {enough stars, lets find quads}
     begin
-      yes_use_triples := ((nrstars_image < 30) and (use_triples));
+      find_quads(False,nrstars_image, starlist2, quad_star_distances2); {find star quads for new image. Quads are binning independent}
+      quads_str := ' quads';
 
-      if yes_use_triples then
-      begin
-        find_triples_using_quads(starlist2, quad_star_distances2); {find star triples for new image. Quads are binning independent}
+      //   for i:=0 to length(quad_star_distances2[0])-1 do
+      //   begin
+      //        memo2_message(#9+floattostr(quad_star_distances2[0,i])+#9+floattostr(quad_star_distances2[1,i])+#9+floattostr(quad_star_distances2[2,i])+#9+floattostr(quad_star_distances2[3,i])+#9+
+      //                     floattostr(quad_star_distances2[4,i])+#9+floattostr(quad_star_distances2[5,i])+#9+floattostr(quad_star_distances2[6,i])+#9+floattostr(quad_star_distances2[7,i])   );
+      //   end;
+      //   exit;
 
-        quad_tolerance := 0.002;
-        quads_str := ' triples';
-        if solve_show_log then memo2_message('For triples the hash code tolerance is forced to ' + floattostr(quad_tolerance) + '.');
-      end
-      else
-      begin
-        find_quads(False,nrstars_image, starlist2, quad_star_distances2); {find star quads for new image. Quads are binning independent}
-        quads_str := ' quads';
-
-        //   for i:=0 to length(quad_star_distances2[0])-1 do
-        //   begin
-        //        memo2_message(#9+floattostr(quad_star_distances2[0,i])+#9+floattostr(quad_star_distances2[1,i])+#9+floattostr(quad_star_distances2[2,i])+#9+floattostr(quad_star_distances2[3,i])+#9+
-        //                     floattostr(quad_star_distances2[4,i])+#9+floattostr(quad_star_distances2[5,i])+#9+floattostr(quad_star_distances2[6,i])+#9+floattostr(quad_star_distances2[7,i])   );
-        //   end;
-        //   exit;
-
-      end;
 
 
       nr_quads := Length(quad_star_distances2[0]);
@@ -970,12 +956,7 @@ begin
 
       oversize := min(oversize, max_fov / fov2);//limit request to database to 1 tile so 5.142857143 degrees for 1476 database or 9.53 degrees for type 290 database. Otherwise a tile beyond next tile could be selected}
       radius := strtofloat2(stackmenu1.radius_search1.Text);{radius search field}
-
-      if yes_use_triples = False then
-        minimum_quads := 3 + nrstars_image div 140 {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
-      else
-        minimum_quads := 3 + nrstars_image div 140; //one quad is equivalent to 4 triples
-
+      minimum_quads := 3 + nrstars_image div 140 {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
     end
     else
     begin
@@ -1139,14 +1120,8 @@ begin
               //mod 2025 ###################################################
 
               //profiler_start(true);
-
-              if yes_use_triples then
-                find_triples_using_quads(starlist1, quad_star_distances1) {find quads for reference image/database. Filter out too small quads for Earth based telescopes}
-              else
-              begin
-                find_quads(False,nrstars_image, starlist1, quad_star_distances1); {find quads for reference image/database.}
-               //profiler_log('Find_quads1');
-              end;
+              find_quads(False,nrstars_image, starlist1, quad_star_distances1); {find quads for reference image/database.}
+              //profiler_log('Find_quads1');
 
               if solve_show_log then {global variable set in find stars}
                 memo2_message('Search ' + IntToStr(Count) + ', [' + IntToStr(spiral_x) + ',' + IntToStr(spiral_y) + '],' + #9 + 'position: ' +

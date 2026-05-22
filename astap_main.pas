@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.05.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.05.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -860,10 +860,10 @@ procedure save_settings(lpath:string); //save settings at any path
 function load_settings(lpath: string)  : boolean; //load settings
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
 {$ifdef mswindows}
-procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
+function ExecuteAndWait(const aCommando: string; show_console:boolean) : integer;
 {$else} {unix}
-procedure execute_unix(const execut:string; param: TStringList; show_output: boolean);{execute linux program and report output}
-procedure execute_unix2(s:string);
+function execute_unix(const execut:string; param: TStringList; show_output: boolean) : integer;{execute linux program and report output}
+function execute_unix2(s:string) : integer;
 {$endif}
 function trimmed_median_background(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,annulus, max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 function get_negative_noise_level(img :Timage_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
@@ -1060,21 +1060,32 @@ begin
     head.crota1:=999;
     head.ra0:=0;
     head.dec0:=0;
-    ra_mount:=999;
-    dec_mount:=999;
     head.cdelt1:=0;
     head.cdelt2:=0;
     head.xpixsz:=0;
     head.ypixsz:=0;
-    focallen:=0;
-    subsamp:=1;{just for the case it is not available}
     head.cd1_1:=0;{just for the case it is not available}
     head.cd1_2:=0;{just for the case it is not available}
     head.cd2_1:=0;{just for the case it is not available}
     head.cd2_2:=0;{just for the case it is not available}
+    head.roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
+    head.xbinning:=1;{normal}
+    head.ybinning:=1;
+    head.mzero:=0;{factor to calculate magnitude from full flux, new file so set to zero}
+    head.mzero_radius:=99;{circle where flux is measured}
+    head.magn_limit:=0;
+    head.pedestal:=0; {value added during calibration or stacking}
+    head.sqmfloat:=0;
+    head.hfd_median:=0;{median hfd, use in reporting in write_ini}
+    head.hfd_counter:=0;{star counter (for hfd_median), use in reporting in write_ini}
+    head.backgr:=0;
+
+    ra_mount:=999;
+    dec_mount:=999;
+    focallen:=0;
+    subsamp:=1;{just for the case it is not available}
     xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
     ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-    head.roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
 
     a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
     ap_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
@@ -1089,16 +1100,6 @@ begin
     x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
     y_coeff[0]:=0;
 
-    head.xbinning:=1;{normal}
-    head.ybinning:=1;
-    head.mzero:=0;{factor to calculate magnitude from full flux, new file so set to zero}
-    head.mzero_radius:=99;{circle where flux is measured}
-    head.magn_limit:=0;
-    head.pedestal:=0; {value added during calibration or stacking}
-    head.sqmfloat:=0;
-    head.hfd_median:=0;{median hfd, use in reporting in write_ini}
-    head.hfd_counter:=0;{star counter (for hfd_median), use in reporting in write_ini}
-    head.backgr:=0;
     telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';siteelev:='';
 
@@ -1120,18 +1121,17 @@ begin
   head.naxis:=-1;{assume failure}
   head.naxis3:=1;
   head.datamin_org:=0;
-  imagetype:='';
   head.exposure:=0;
   head.set_temperature:=999;
   head.gain:='';
   head.egain:='';{assume no data available}
   head.passband_database:='';//used to measure MZERO
-  bayerpat:='';{reset bayer pattern}
   head.issues:='';;
-
   head.xorgsubf:=0;// frame offset
   head.yorgsubf:=0;
 
+  imagetype:='';
+  bayerpat:='';{reset bayer pattern}
 end;{reset global variables}
 
 
@@ -3046,16 +3046,13 @@ var
   jd2   : double;
   image: TFPCustomImage;
   reader: TFPCustomImageReader;
-  //tiff,
-  png,jpeg,colour,saved_header  : boolean;
-  ext,descrip   : string;
+  png,jpeg,colour  : boolean;
+  ext              : string;
 begin
   head.naxis:=0; {0 dimensions}
   result:=false; {assume failure}
-  //tiff:=false;
   jpeg:=false;
   png:=false;
-  saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
   try
     if filesize1(filen)<300*1024*1024 then //less then 300 mbytes but no guaranty if compressed.
@@ -3063,13 +3060,6 @@ begin
     else //assume greyscale (uncompressed) save memory
       Image := TFPCompactImgGray16Bit.Create(10, 10);//for grayscale images only
 
-
- //   if ((ext='.TIF') or (ext='.TIFF')) then
- //   begin
- //      Reader :=  TFPReaderTIFF.Create;
- //      tiff:=true;
- //   end
- //   else
     if ext='.PNG' then begin
       Reader :=  TFPReaderPNG.Create;
       png:=true;
@@ -3099,7 +3089,6 @@ begin
 
   {$IF FPC_FULLVERSION >= 30200} {FPC3.2.0}
   colour:=true;
-  //if ((tiff) and (Image.Extra[TiffGrayBits]<>'0')) then colour:=false; {image grayscale?}
   if ((png) and (TFPReaderPNG(reader).grayscale)) then colour:=false; {image grayscale?}
   if ((jpeg) and (TFPReaderJPEG(reader).grayscale)) then colour:=false; {image grayscale?}
   {BMP always colour}
@@ -3168,25 +3157,10 @@ begin
         img[0,head.height-1-i,j]:=image.Colors[j,i].red;
   end;
 
-  //if tiff then
-  //begin
-  //  descrip:=image.Extra['TiffImageDescription']; {restore full header in TIFF !!!}
-  //end;
-
-  //if copy(descrip,1,6)='SIMPLE' then {fits header included}
-  //begin
-  //  memo.text:=descrip;
-  //  read_keys_memo(light, head, memo);
-  //  saved_header:=true;
-  //end
-  //else {no fits header in tiff file available}
-  begin
-    for j:=0 to 10 do {create an header with fixed sequence}
-      if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
-        memo.add(head1[j]); {add lines to empthy memo1}
-    memo.add(head1[27]); {add end}
-    if descrip<>'' then add_long_comment(memo,descrip);{add TIFF describtion}
-  end;
+  for j:=0 to 10 do {create an header with fixed sequence}
+  if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
+      memo.add(head1[j]); {add lines to empthy memo1}
+  memo.add(head1[27]); {add end}
 
   update_integer(memo,'BITPIX  =',' / Bits per entry                                 ' ,head.bitpix);
   update_integer(memo,'NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
@@ -3196,13 +3170,9 @@ begin
   update_integer(memo,'DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer(memo,'DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
 
-  //if saved_header=false then {saved header in tiff is not restored}
-  //begin
-    JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-    head.date_obs:=JdToDate(jd2);
-    add_text(memo,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
-  //end;
-
+  JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+  head.date_obs:=JdToDate(jd2);
+  add_text(memo,'DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
 
   memo.endupdate;
 
@@ -8386,52 +8356,50 @@ end;
 
 
 {$ifdef mswindows}
-procedure ExecuteAndWait(const aCommando: string;show_console:boolean);
+function ExecuteAndWait(const aCommando: string; show_console: boolean): Integer;
 var
   tmpStartupInfo: TStartupInfo;
   tmpProcessInformation: TProcessInformation;
   tmpProgram: String;
-
+  dwExitCode: DWORD;
 begin
+  Result := -1;
   tmpProgram := trim(aCommando);
   FillChar(tmpStartupInfo, SizeOf(tmpStartupInfo), 0);
   with tmpStartupInfo do
   begin
     cb := SizeOf(TStartupInfo);
-    if show_console=false then
+    if show_console = false then
     begin
       dwFlags := STARTF_USESHOWWINDOW;
       wShowWindow := SW_SHOWMINNOACTIVE;//SW_SHOWMINIMIZED which causes it to steal keyboard focus from active window. SW_SHOWMINNOACTIVE which opens the window the same way minimized but does not steal focus?
     end
     else
-    wShowWindow := SW_HIDE;
+      wShowWindow := SW_HIDE;
   end;
-  if CreateProcess(nil, pchar(tmpProgram), nil, nil, true,CREATE_DEFAULT_ERROR_MODE or CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS,  nil, nil, tmpStartupInfo, tmpProcessInformation) then
+
+  if CreateProcess(nil, PChar(tmpProgram), nil, nil, True,  CREATE_DEFAULT_ERROR_MODE or CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS,  nil, nil, tmpStartupInfo, tmpProcessInformation) then
   begin // loop every 100 ms
-    while WaitForSingleObject(tmpProcessInformation.hProcess, 100) > 0 do
-    begin
+    while WaitForSingleObject(tmpProcessInformation.hProcess, 100) = WAIT_TIMEOUT do
       Application.ProcessMessages;
-    end;
-    FileClose(tmpProcessInformation.hProcess); { *Converted from CloseHandle* }
-    FileClose(tmpProcessInformation.hThread); { *Converted from CloseHandle* }
+
+    // *** Retrieve the exit code ***
+    if GetExitCodeProcess(tmpProcessInformation.hProcess, dwExitCode) then
+      Result := Integer(dwExitCode);
+
+    CloseHandle(tmpProcessInformation.hProcess);  // use CloseHandle, not FileClose
+    CloseHandle(tmpProcessInformation.hThread);
   end
   else
-  begin
     RaiseLastOSError;
-  end;
 end;
+
 {$else} {unix}
 
-
-procedure execute_unix(const execut:string; param: TStringList; show_output: boolean);{execute linux program and report output}
+function execute_unix(const execut: string; param: TStringList; show_output: boolean): Integer;
 var
-  tmpProgram: String;
-   F : Text;
-   cc:string;
-
-var
-  AProcess: TProcess{UTF8};
-  Astringlist  : TStringList;
+  AProcess: TProcess;
+  AStringList: TStringList;
 begin
   stackmenu1.Memo2.lines.add('Solver command:' + execut+' '+ param.commatext);
   {activate scrolling Memo3}
@@ -8440,36 +8408,44 @@ begin
 
   Application.ProcessMessages;
 
+  Result := -1;
   AStringList := TStringList.Create;
+  AProcess := TProcess.Create(nil);
+  try
+    AProcess.Executable := execut;
+    AProcess.Parameters := param;
+    AProcess.Options := [poUsePipes, poStderrToOutPut];
+    AProcess.Execute;
 
-  AProcess := TProcess{UTF8}.Create(nil);
-  AProcess.Executable :=execut;
-  AProcess.Parameters:=param;
-  AProcess.Options := [{poWaitOnExit,}poUsePipes,poStderrToOutPut]; // + [poWaitOnExit, poUsePipes];
-  AProcess.Execute;
-  repeat
-   begin
-     wait(100);{smart sleep}
-     if (AProcess.Output<>nil) then
-     begin
-       if ((show_output) and (AProcess.Output.NumBytesAvailable>0)) then
-       begin
-         AStringList.LoadFromStream(AProcess.Output);
-         stackmenu1.Memo2.lines.add(astringlist.Text);
-       end;
-     end;
-     Application.ProcessMessages;
-   end;
-  until ((AProcess.Running=false) or  (esc_pressed));
-  AProcess.Free;
-  AStringList.Free;
+    repeat
+      wait(100); {smart sleep}
+      if (AProcess.Output <> nil) and show_output
+        and (AProcess.Output.NumBytesAvailable > 0) then
+      begin
+        AStringList.LoadFromStream(AProcess.Output);
+        stackmenu1.Memo2.Lines.Add(AStringList.Text);
+      end;
+      Application.ProcessMessages;
+    until (not AProcess.Running) or esc_pressed;
+
+    // *** Retrieve the exit code ***
+    Result := AProcess.ExitStatus;
+
+  finally
+    AProcess.Free;
+    AStringList.Free;
+  end;
 end;
 
-procedure execute_unix2(s:string);
-var ex :integer;
+
+function execute_unix2(s: string): Integer;
+var
+  ex: integer;
 begin
-  ex:=fpsystem(s);
-  if ex>3 then showmessage(pchar(wexitStatus));
+  ex := fpSystem(s);
+  Result := wExitStatus(ex);   // decode the raw wait() status into the actual exit code
+  if Result > 3 then
+    ShowMessage('Exit code: ' + IntToStr(Result));
 end;
 {$endif}
 
@@ -8736,8 +8712,6 @@ begin
       stackmenu1.timestamp1.Checked:=Sett.ReadBool('stack','time_stamp',true);{blink}
 
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
-
-      stackmenu1.use_triples1.Checked:=Sett.ReadBool('stack','use_triples',false);
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
       dum:=Sett.ReadString('stack','star_database',''); if dum<>'' then stackmenu1.star_database1.text:=dum;
@@ -9167,7 +9141,6 @@ begin
 
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
 
-      sett.writeBool('stack','use_triples',stackmenu1.use_triples1.checked);
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
 
       if  stackmenu1.use_manual_alignment1.checked then sett.writestring('stack','align_method','4')
@@ -11261,6 +11234,7 @@ begin
   Clipboard.AsText:=copy(Memo1.Text,Memo1.SelStart+1, Memo1.SelLength);
 end;
 
+
 procedure Tmainform1.Menufind1Click(Sender: TObject); {for fits header memo1 popup menu}
 begin
   PatternToFind:=uppercase(inputbox('Find','Text to find in fits header:' ,PatternToFind));
@@ -11272,6 +11246,7 @@ begin
      Memo1.SetFocus; // necessary so highlight is visible
   end;
 end;
+
 
 procedure Tmainform1.menufindnext1Click(Sender: TObject);{for fits header memo1 popup menu}
 begin
@@ -11557,7 +11532,7 @@ end;
 procedure Tmainform1.remove_longitude_latitude1Click(Sender: TObject);
 var
   I: integer;
-  err,success   : boolean;
+  err      : boolean;
   dobackup : boolean;
 begin
   OpenDialog1.Title:='Select multiple  files to remove the observation location from';
@@ -12772,12 +12747,7 @@ begin
 end;
 
 
-
 procedure Tmainform1.FormCreate(Sender: TObject);
-var
-   param1: string;
-//var
-//  IdleMethod: TIdleEvent;
 begin
 
   {OneInstance of ASTAP if only one parameter is specified. So if user clicks on an associated image in explorer}
@@ -17966,7 +17936,6 @@ end;
 
 {#######################################}
 begin
-
   head.height:=100;
   head.width:=100;
   head.crpix1:=0;{reference pixel}
@@ -17976,7 +17945,7 @@ begin
   head.ra0 :=0;
   head.dec0:=0; {plate center values}
 
- {$ifdef CPUARM}
+  {$IFDEF CPU32}
   size_backup:= 0; {0, one backup images for ctrl-z}
   index_backup:=size_backup;
   {$else}
