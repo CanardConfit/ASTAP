@@ -54,9 +54,9 @@ end;
 procedure Tastap.DoRun;
 var
   file_loaded,filespecified,analysespecified, extractspecified, extractspecified2,wresult : boolean;
-  backgr, hfd_median,snr_min          : double;
-  hfd_counter,report                  : integer;
-  filename_output                     : string;
+  snr_min               : double;
+  report                : integer;
+  filename_output       : string;
 begin
   {$IfDef Darwin}// for OS X,
     database_path:='/usr/local/opt/astap/';
@@ -103,7 +103,7 @@ begin
     #10+
     'Analyse options:' +#10+
     '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
-    '-extract snr_min {As -analyse but additionally export info of all detectable stars to a .csv file}'+#10+
+    '-extract snr_min {Export info of all detectable stars to a .csv file}'+#10+
     '-extract2 snr_min {Solve and export info of all detectable stars to a .csv file including ra, dec}'+#10+
     #10+
     'Preference will be given to the command-line values. CSV files are written with a dot as decimal seperator.'+#10+
@@ -125,14 +125,9 @@ begin
     if commandline_log then memo2_message(cmdline);{write the original commmand line}
 
 
-    if filespecified then
-    begin
-      filename2:=GetOptionValue('f');
-      file_loaded:=load_image; {load file first to give commandline parameters later priority}
-      if file_loaded=false then errorlevel:=16;{error file loading}
-    end
-    else
-    file_loaded:=false;
+    filename2:=GetOptionValue('f');
+    file_loaded:=load_image; {load file first to give commandline parameters later priority}
+    if file_loaded=false then errorlevel:=16;{error file loading}
 
     {apply now overriding parameters}
     if hasoption('fov') then
@@ -174,18 +169,24 @@ begin
       if extractspecified then
       begin
         snr_min:=strtofloat2(getoptionvalue('extract'));
-        report:=2; {report nr stars and hfd and export csv file}
+        if analysespecified then
+          report:=1 //calculate median hfd as well
+        else
+          report:=2; {report nr stars and hfd and export csv file}
       end;
       if snr_min=0 then snr_min:=30;
-      analyse_image(img_loaded,snr_min,report, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+      analyse_image(img_loaded,head,snr_min,report); {find background, number of stars, median HFD}
       if isConsole then {stdout available, compile targe option -wh used}
       begin
-        writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,1));
-        writeln('STARS='+inttostr(hfd_counter));
+        writeln('HFD_MEDIAN='+floattostrF2(head.hfd_median,0,1));
+        writeln('STARS='+inttostr(head.hfd_counter));
       end;
 
       {$IFDEF msWindows}
-      halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+      if analysespecified then
+         halt(round(head.hfd_median*100)*1000000+head.hfd_counter) {report in errorlevel the hfd and the number of stars used}
+      else
+        halt(errorlevel);
       {$ELSE}
       halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
       {$ENDIF}
@@ -245,7 +246,7 @@ begin
     begin
       snr_min:=strtofloat2(getoptionvalue('extract2'));
       if snr_min=0 then snr_min:=30;
-      analyse_image(img_loaded,snr_min,2 {report, export CSV only}, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+      analyse_image(img_loaded,head,snr_min,2 {report, export CSV only}); {find background, number of stars, median HFD}
     end;
 
     esc_pressed:=true;{kill any running activity. This for APT}

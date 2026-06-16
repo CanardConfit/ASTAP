@@ -1,6 +1,6 @@
 /* -*- C++ -*-
  * File: unprocessed_raw.cpp
- * Copyright 2009-2021 LibRaw LLC (info@libraw.org)
+ * Copyright 2009-2024 LibRaw LLC (info@libraw.org)
  * Created: Fri Jan 02, 2009
  * Modified for adding meta data to PPM file and FITS export. By Han Kleijn. Version see message
  *
@@ -68,7 +68,7 @@ int main(int ac, char *av[])
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2022-11-21\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2026-06-15\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"
@@ -253,7 +253,7 @@ int main(int ac, char *av[])
 
       sprintf(str,"EXPTIME = %20G   / Exposure time in seconds                                             ",(double)P2.shutter);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-
+ 
       julianday= 2440587.5+ (double)P2.timestamp/(24.0*60.0*60.0);//Julian Day of begin exposure. Convert Unix (time is seconds since 1.1.1970) to Julian Day by adding a factor}
       sprintf(str,"JD      = %20.8f / [Julian Day] The start time of the exposure                           ",julianday);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80           x
@@ -299,8 +299,9 @@ int main(int ac, char *av[])
       }
 
 
-      sprintf(str,"APERTURE= %20d / Lens aperture                                                        ",(long int)P2.aperture);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      sprintf(str,"APERTURE= %20.1f / Lens aperture                                                       ",(double)P2.aperture);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80      
+      
 
       sprintf(str,"FOCALLEN= %20d / Focal length lens                                                    ",(long int)P2.focal_len);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
