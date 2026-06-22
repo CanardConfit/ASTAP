@@ -29,8 +29,8 @@ jobs:
     container:
       image: canardconfit/astap-scripts:v2.0.0
     steps:
-      - name: Create ASTAP binary release draft if needed
+      - name: Create ASTAP binary release if needed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn start releaseBinaries --draft
+        run: yarn start releaseBinaries
         working-directory: /app
