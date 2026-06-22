@@ -1,8 +1,8 @@
 object mainform1: Tmainform1
-  Left = 151
+  Left = 380
   Height = 597
   Hint = ' '
-  Top = 282
+  Top = 238
   Width = 1273
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -490,13 +490,13 @@ object mainform1: Tmainform1
             Font.Pitch = fpVariable
             Font.Quality = fqDraft
             ItemHeight = 15
-            ItemIndex = 2
+            ItemIndex = 1
             Items.Strings = (
               'Low'
-              'Low +'
               'Medium'
-              'Medium +'
               'High'
+              'Low +'
+              'Medium +'
               'High +'
               'Range'
               'Manual'

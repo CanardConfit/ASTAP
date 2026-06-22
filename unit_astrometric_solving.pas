@@ -760,7 +760,7 @@ var
   centerX, centerY, correctionX, correctionY, cropping, min_star_size_arcsec, hfd_min,
   quad_tolerance, dummy, flip, extra, distance, mount_sep,
   mount_ra_sep, mount_dec_sep, ra_start, dec_start, pixel_aspect_ratio,
-  crota1, crota2, flipped_image, arcsec_per_px, mean_hfd, xi, yi, scale, cdelt1, cdelt2,vfov : double;
+  crota1_rad, crota2_rad, flipped_image, arcsec_per_px, mean_hfd, xi, yi, scale, cdelt1_arcsec, cdelt2_arcsec,vfov : double;
   solution, go_ahead, autoFOV                              : boolean;
   startTick: qword;{for timing/speed purposes}
   distancestr, mess, info_message, popup_warningG05, popup_warningSample, suggest_str,
@@ -1105,7 +1105,7 @@ begin
                 Count := 0;
                 for i := 0 to Length(starlist1[0]) - 1 do
                 begin
-                  rotate(crota2, starlist1[0, i] / cdelt1, starlist1[1, i] / cdelt2, xi, yi);{rotate to screen orientation}
+                  rotate(crota2_rad, starlist1[0, i] / cdelt1_arcsec, starlist1[1, i] / cdelt2_arcsec, xi, yi);{rotate to screen orientation}
                   xi := centerX - xi;
                   yi := centerY - yi;
                   if ((xi > 0) and (xi < hd.Width) and (yi > 0) and (yi < hd.Height)) then //within image boundaries
@@ -1187,9 +1187,9 @@ begin
             (solution_vectorX[0] * (centerX) + solution_vectorX[1] * (centerY + 1) + solution_vectorX[2]), {x}
             (solution_vectorY[0] * (centerX) + solution_vectorY[1] * (centerY + 1) + solution_vectorY[2]), {y}  1, {CCD scale}  ra7, dec7{equatorial position}); // the position 1 pixel away
 
-          crota2 := -position_angle(ra7, dec7, ra_radians, dec_radians); //Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
-          cdelt1 := flipped_image * sqrt(sqr(solution_vectorX[0]) + sqr(solution_vectorX[1])); // unit arcsec
-          cdelt2 := sqrt(sqr(solution_vectorY[0]) + sqr(solution_vectorY[1])); //unit arcsec
+          crota2_rad := -position_angle(ra7, dec7, ra_radians, dec_radians); //Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
+          cdelt1_arcsec := flipped_image * sqrt(sqr(solution_vectorX[0]) + sqr(solution_vectorX[1])); // unit arcsec
+          cdelt2_arcsec := sqrt(sqr(solution_vectorY[0]) + sqr(solution_vectorY[1])); //unit arcsec
           //mod 2025 ############################################################
 
           Inc(match_nr);
@@ -1228,8 +1228,8 @@ begin
     //    hd.cd2_2:= + solution_vectorY[1]/3600;
 
 
-    hd.cdelt2 := cdelt2 / 3600; //convert from arc seconds to degrees
-    hd.cdelt1 := cdelt1 / 3600; //convert from arc seconds to degrees
+    hd.cdelt2 := cdelt2_arcsec / 3600; //convert from arc seconds to degrees
+    hd.cdelt1 := cdelt1_arcsec / 3600; //convert from arc seconds to degrees
 
     // position 1*flipped_image  pixels in direction hd.crpix1
     standard_equatorial(ra_database, dec_database,
@@ -1237,18 +1237,18 @@ begin
       (solution_vectorY[0] * (centerX + flipped_image) + solution_vectorY[1] * (centerY) + solution_vectorY[2]), {y}
       1, {CCD scale} ra7, dec7{equatorial position});
 
-    crota1 := pi / 2 - position_angle(ra7, dec7, hd.ra0, hd.dec0);
+    crota1_rad := pi / 2 - position_angle(ra7, dec7, hd.ra0, hd.dec0);
     //Position angle between a line from ra0,dec0 to ra1,dec1 and a line from ra0, dec0 to the celestial north . Rigorous method
-    if crota1 > pi then crota1 := crota1 - 2 * pi;//keep within range -pi to +pi
+    if crota1_rad > pi then crota1_rad := crota1_rad - 2 * pi;//keep within range -pi to +pi
 
 
-    hd.cd1_1 := +hd.cdelt1 * cos(crota1);
-    hd.cd1_2 := -hd.cdelt1 * sin(crota1) * flipped_image;
-    hd.cd2_1 := +hd.cdelt2 * sin(crota2) * flipped_image;
-    hd.cd2_2 := +hd.cdelt2 * cos(crota2);
+    hd.cd1_1 := +hd.cdelt1 * cos(crota1_rad);
+    hd.cd1_2 := -hd.cdelt1 * sin(crota1_rad) * flipped_image;
+    hd.cd2_1 := +hd.cdelt2 * sin(crota2_rad) * flipped_image;
+    hd.cd2_2 := +hd.cdelt2 * cos(crota2_rad);
 
-    hd.crota2 := crota2 * 180 / pi;//convert to degrees
-    hd.crota1 := crota1 * 180 / pi;
+    hd.crota2 := crota2_rad * 180 / pi;//convert to degrees
+    hd.crota1 := crota1_rad * 180 / pi;
 
 
     solved_in := ' Solved in ' + floattostr(round((GetTickCount64 - startTick) / 100) / 10) +' sec.';{make string to report in FITS header.}

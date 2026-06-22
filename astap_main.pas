@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.05.22';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.06.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -918,13 +918,13 @@ function fits_file_name(inp : string): boolean; {fits file name?}
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
-procedure pixel_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
+procedure sensor_coordinates_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
 procedure celestial_to_pixel(const head: theader;ra,dec: double;usethesip : boolean; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
 function savefits_update_header(memo:tstrings;filen2:string) : boolean;{save fits file with updated header}
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name :string);{plot annotation from header in ASTAP format}
-procedure reset_fits_global_variables(light :boolean; out head:theader ); {reset the global variable}
+procedure reset_header_variables(light :boolean; out head:theader ); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
 procedure convert_mono(var img: Timage_array; var head: Theader);
@@ -1052,7 +1052,7 @@ const
 
 
 
-procedure reset_fits_global_variables(light :boolean;out head:theader); {reset the global variable}
+procedure reset_header_variables(light :boolean;out head:theader); {reset the global variable}
 begin
   if light then
   begin
@@ -1272,7 +1272,7 @@ begin
   Reader := TReader.Create(TheFile,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
 
   {Reset GLOBAL variables for case they are not specified in the file}
-  reset_fits_global_variables(light,head);
+  reset_header_variables(light,head);
 
   if get_ext=0 then extend_type:=0; {always an image in main data block}
   naxis1:=0;
@@ -2690,7 +2690,7 @@ begin
   Reader := TReader.Create (theFile,$60000);// 393216 byte buffer
   {theFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
-  reset_fits_global_variables(true{light},head); {reset the global variable}
+  reset_header_variables(true{light},head); {reset the global variable}
 
   I:=0;
   reader_position:=0;
@@ -2977,7 +2977,7 @@ begin
     exit;
   end;
 
-  reset_fits_global_variables(true{light},head); {reset the global variable}
+  reset_header_variables(true{light},head); {reset the global variable}
 
   if bitspersample=32 then
     head.bitpix:=-32 //fits float
@@ -3085,7 +3085,7 @@ begin
      exit;
   end;
 
-  reset_fits_global_variables(true{light},head); {reset the global variable}
+  reset_header_variables(true{light},head); {reset the global variable}
 
   {$IF FPC_FULLVERSION >= 30200} {FPC3.2.0}
   colour:=true;
@@ -3451,6 +3451,7 @@ begin
       fitsX:=15;
       counter:=0;
       sd_old:=sd;
+      sd:=0;
       while fitsX<=width5-1-15 do
       begin
         fitsY:=15;
@@ -5161,13 +5162,13 @@ end;
 }
 
 
-procedure pixel_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
+procedure sensor_coordinates_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
 var
    fits_unsampledX, fits_unsampledY, sindec0,cosdec0 :double;
    u,v,u2,v2             : double;
    xi,eta,delta          : double;
 begin
-  RA:=0;DEC:=0;{for case wrong index or head.cd1_1=0}
+  ra:=0;dec:=0;{for case wrong index or head.cd1_1=0}
   {DSS polynom solution}
   if formalism=2 then {DSS survey}
   begin
@@ -5252,7 +5253,7 @@ begin
 
   if ((data0='c') or (data0='C')) then {place marker in middle}
   begin
-    pixel_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainform1.Polynomial1.itemindex,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
+    sensor_coordinates_to_celestial(head,(head.width+1)/2,(head.height+1)/2,mainform1.Polynomial1.itemindex,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
     data1:='Center image '; {for hint}
@@ -7252,64 +7253,6 @@ begin
 end;
 
 
-procedure demosaic_bilinear_interpolationOLD(var img:Timage_array;pattern: integer);{make from sensor bayer pattern the three colors}
-var
-    X,Y,offsetx, offsety: integer;
-    red,green_odd,green_even,blue : boolean;
-    img_temp2 : Timage_array;
-begin
-  case pattern  of
-     0: begin offsetx:=0; offsety:=0; end;{'GRBG'}
-     1: begin offsetx:=0; offsety:=1; end;{'BGGR'}
-     2: begin offsetx:=1; offsety:=0; end;{'RGGB'}
-     3: begin offsetx:=1; offsety:=1; end;{'GBRG'}
-     else exit;
-  end;
-
-  setlength(img_temp2,3,head.height,head.width);{set length of image array color}
-
-  for y := 1 to head.height-2 do   {-2 = -1 -1}
-  begin
-    for x:=1 to head.width-2 do
-    begin  {http://cilab.knu.ac.kr/English/research/Color/Interpolation.htm ,  Bilinear interpolation}
-
-      try
-      green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
-      green_odd := ( (odd(x+offsetX)) and  (odd(y+offsetY)) );
-      red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
-      blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
-
-      if green_odd then begin
-                   img_temp2[0,y,x]:=     (img[0,y-1,x ] + img[0  ,y+1,x])/2; {red neighbor pixels };
-                   img_temp2[1,y,x]:=     (img[0,y  ,x  ] );
-                   img_temp2[2,y,x]:=     (img[0,y  ,x-1  ] + img[0,y,x+1  ])/2; {blue neighbor pixels }end
-      else
-      if green_even then begin
-                   img_temp2[0,y,x]:=     (img[0,y  ,x-1] + img[0,y,x+1  ])/2; {red neighbor pixels };
-                   img_temp2[1,y,x]:=     (img[0,y  ,x  ] );
-                   img_temp2[2,y,x]:=     (img[0,y-1,x  ] + img[0,y+1,x ])/2; {blue neighbor pixels }end
-      else
-      if red then begin
-                   img_temp2[0,y,x]:=     (img[0,y  ,x  ]);
-                   img_temp2[1,y,x]:=     (img[0,y  ,x-1  ] + img[0,y,x+1  ] + img[0,y-1,x  ]+ img[0,y+1,x])/4;{green neighbours}
-                   img_temp2[2,y,x]:=     (img[0,y-1,x-1] + img[0,y+1,x-1] + img[0,y-1,x+1]+ img[0,y+1,x+1])/4 ; end {blue neighbor pixels }
-      else
-      if blue then begin
-                   img_temp2[0,y,x]:=     (img[0,y-1,x-1] + img[0,y+1,x-1]+ img[0,y-1,x+1]+ img[0,y+1,x+1])/4;
-                   img_temp2[1,y,x]:=     (img[0,y  ,x-1] + img[0,y  ,x+1]+ img[0,y-1,x  ]+ img[0,y+1,x])/4;
-                   img_temp2[2,y,x]:=     (img[0,y  ,x  ] ); end;
-      except
-      end;
-    end;{x loop}
-  end;{y loop}
-
-  img:=img_temp2;
-  img_temp2:=nil;{free temp memory}
-  head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
-  head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
-end;
-
-
 procedure demosaic_x_trans(var img:Timage_array);{make from Fuji X-trans three colors}
 var
     X,Y,x2,y2,xpos,ypos,xpos6,ypos6: integer;
@@ -8081,7 +8024,6 @@ var
   above, above_R          : double;
   histogram2 : array of array of integer;
   histo_peak : array[0..2] of integer;
-  shift      : word;
 
 begin
 //  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
@@ -8098,9 +8040,9 @@ begin
   max_range:=round(min(head.datamax_org,65535)); {measured while loading, Prevent runtime error if head.datamax_org>65535}
 
   case mainform1.range1.itemindex of
-    -1,0,1: above_R:=0.001;{low range}
-       2,3: above_R:=0.003; {medium range}
-       4,5: above_R:=0.01;  {high range}
+    -1,0,3: above_R:=0.001;{low range}
+       1,4: above_R:=0.003; {medium range}
+       2,5: above_R:=0.01;  {high range}
        6,7: begin minm:=round(head.datamin_org);maxm:=round(head.datamax_org)end;{6=range and 7=manual}
        8: begin minm:=round(max_range*0.95); maxm:=round(max_range);  end;{Show saturation}
        9: begin minm:=0; maxm:=65535;head.datamax_org:=65535; end;{max range, use datamin/max}
@@ -8237,8 +8179,8 @@ begin
     end;
   end;
 
-  histogram2:=nil;
-  Screen.Cursor:=crDefault;
+  //histogram2:=nil;
+ // Screen.Cursor:=crDefault;
 end;
 
 
@@ -9739,7 +9681,7 @@ begin
 
 
     {centered coordinates}
-    pixel_to_celestial(head,object_xc+1,object_yc+1,mainform1.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
+    sensor_coordinates_to_celestial(head,object_xc+1,object_yc+1,mainform1.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
     if ((object_raM<>0) and (object_decM<>0)) then
     begin
       line:=line+prepare_ra8(object_raM,' ')+' '+prepare_dec2(object_decM,' ');{object position in RA,DEC}
@@ -11293,8 +11235,8 @@ var
 begin
   if head.cdelt2<>0 then
   begin
-    pixel_to_celestial(head,fitsX1,fitsY1,mainform1.Polynomial1.itemindex,ra1,dec1);{calculate the ra,dec position}
-    pixel_to_celestial(head,fitsX2,fitsY2,mainform1.Polynomial1.itemindex,ra2,dec2);{calculate the ra,dec position}
+    sensor_coordinates_to_celestial(head,fitsX1,fitsY1,mainform1.Polynomial1.itemindex,ra1,dec1);{calculate the ra,dec position}
+    sensor_coordinates_to_celestial(head,fitsX2,fitsY2,mainform1.Polynomial1.itemindex,ra2,dec2);{calculate the ra,dec position}
     ang_sep(ra1,dec1,ra2,dec2, sep);
     sep:=sep*180/pi; //convert to degrees
     if sep<1/60 then seperation:=inttostr(round(sep*3600))+'"'
@@ -12164,7 +12106,7 @@ begin
 
       if subframe then //report
       begin
-        pixel_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
+        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
         rastr:=floattostrF(raM*180/pi,FFfixed,9,6);
         decstr:=floattostrF(decM*180/pi,FFfixed,9,6);
 
@@ -13132,7 +13074,7 @@ begin
             y1:=round(strtofloat2(list[1]));
             x2:=round(strtofloat2(list[2]));
             y2:=round(strtofloat2(list[3]));
-            pixel_to_celestial(head,(x1+x2)/2,(y1+y2)/2,formalism, ra,dec {RA, DEC position annotation});
+            sensor_coordinates_to_celestial(head,(x1+x2)/2,(y1+y2)/2,formalism, ra,dec {RA, DEC position annotation});
             count1:=-1; //stop
           end;
 
@@ -13773,7 +13715,7 @@ begin
         #10+
         'Analyse options:' +#10+
         '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
-        '-extract snr_min {As -analyse but additionally export info of all detectable stars to a .csv file}'+#10+
+        '-extract snr_min {Export info of all detectable stars to a .csv file}'+#10+
         '-extract2 snr_min {Solve and export info of all detectable stars to a .csv file including ra, dec.}'+#10+
         #10+
         'Extra options:' +#10+
@@ -13897,7 +13839,10 @@ begin
             if extractspecified then
             begin
               snr_min:=strtofloat2(getoptionvalue('extract'));
-              report:=2; {report nr stars and hfd and export csv file}
+              if analysespecified then
+                report:=1 //calculate median hfd as well
+              else
+                report:=2; {report nr stars and hfd and export csv file}
             end;
             if snr_min=0 then snr_min:=30;
             analyse_image(img_loaded,head,snr_min,report); {find background, number of stars, median HFD}
@@ -13907,9 +13852,12 @@ begin
               writeln('STARS='+inttostr(head.hfd_counter));
             end;
             {$IFDEF msWindows}
-            halt(round(head.hfd_median*100)*1000000+head.hfd_counter);{report in errorlevel the hfd and the number of stars used}
+            if analysespecified then
+              halt(round(head.hfd_median*100)*1000000+head.hfd_counter){report in errorlevel the hfd and the number of stars used}
+            else
+              halt(errorlevel);
             {$ELSE}
-            halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
+            halt(errorlevel);In linux only range 0..255 possible}
             {$ENDIF}
           end;{analyse fits and report HFD value}
 
@@ -14422,9 +14370,9 @@ begin
     {do the rigid method.}
     fxc:=1+(x1+x2)/2;//position of new center
     fyc:=1+(y1+y2)/2;
-    pixel_to_celestial(head,fxc,fyc, formalism, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
-    pixel_to_celestial(head,1+fxc,fyc, formalism, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
-    pixel_to_celestial(head,fxc,fyc+1 , formalism, ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
+    sensor_coordinates_to_celestial(head,fxc,fyc, formalism, ra_c,dec_c {new center RA, DEC position});   //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
+    sensor_coordinates_to_celestial(head,1+fxc,fyc, formalism, ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});  //make 1 step in direction head.crpix2
+    sensor_coordinates_to_celestial(head,fxc,fyc+1 , formalism, ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
 
     delta_ra:=ra_n-ra_c;
     if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
@@ -15546,8 +15494,8 @@ begin
     window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h);{square box}
     {-c.geom=b  square box, -c.bs=10 box size 10arc
     else radius}
-    pixel_to_celestial(head,startX+1,startY+1, formalism,ra1,dec1);{first position}
-    pixel_to_celestial(head,stopX+1,stopY+1,formalism,ra2,dec2);{first position}
+    sensor_coordinates_to_celestial(head,startX+1,startY+1, formalism,ra1,dec1);{first position}
+    sensor_coordinates_to_celestial(head,stopX+1,stopY+1,formalism,ra2,dec2);{first position}
     object_raM:=(ra1+ra2)/2; {center position}
     object_decM:=(dec1+dec2)/2;
   end;
@@ -15794,7 +15742,7 @@ begin
 
           fshapes[shape_nr].fitsX:=xcf;
           fshapes[shape_nr].fitsY:=ycf;
-          pixel_to_celestial(head,xcf,ycf,1 {try sip if available},fshapes[shape_nr].ra,fshapes[shape_nr].dec);{store shape position in ra,dec for accurate positioning on an other image   fshapes[i].ra}
+          sensor_coordinates_to_celestial(head,xcf,ycf,1 {try sip if available},fshapes[shape_nr].ra,fshapes[shape_nr].dec);{store shape position in ra,dec for accurate positioning on an other image   fshapes[i].ra}
           fshapes[shape_nr].Shape.hint:=prepare_IAU_designation(fshapes[shape_nr].ra,fshapes[shape_nr].dec);//IAU designation till overriden by match with database
           show_marker_shape(FShapes[shape_nr].shape,9 {no change},20,20,10,FShapes[shape_nr].fitsX, FShapes[shape_nr].fitsY);
 
@@ -16583,7 +16531,7 @@ begin
    str(mouse_fitsx:4:1,s1);  {fits images start with 1 and not with 0}
    str(mouse_fitsy:4:1,s2); {Y from bottom to top}
 
-   pixel_to_celestial(head,mouse_fitsx,mouse_fitsy,mainform1.Polynomial1.itemindex,raM,decM);
+   sensor_coordinates_to_celestial(head,mouse_fitsx,mouse_fitsy,mainform1.Polynomial1.itemindex,raM,decM);
    mainform1.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
    {prevent some rounding errors just outside the dimensions}
@@ -16664,7 +16612,7 @@ begin
        else mag_str:='';
 
        {centered coordinates}
-       pixel_to_celestial(head,object_xc+1,object_yc+1,mainform1.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
+       sensor_coordinates_to_celestial(head,object_xc+1,object_yc+1,mainform1.Polynomial1.itemindex,object_raM,object_decM);{input in FITS coordinates}
        if ((object_raM<>0) and (object_decM<>0)) then
          mainform1.statusbar1.panels[1].text:=position_to_string('   ',object_raM,object_decM)
                                                  //prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}

@@ -296,7 +296,7 @@ begin
 end; {lsq_fit}
 
 
-procedure QuickSort_starlist(var A: Tstar_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
+procedure QuickSort_starlist(var A: Tstar_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only. SNR is not update!!!}
 var
   Lo, Hi : integer;
   Pivot, Tx,Ty: double;{ pivot, T are the same type as the elements of array }
@@ -500,7 +500,7 @@ begin
         identical_quad := false;
         for k := 0 to nrquads - 1 do
         begin
-          if (abs(xt - QuadsX[k]) < 1) and (abs(yt - QuadsY[k]) < 6) then
+          if (abs(xt - QuadsX[k]) < 1) and (abs(yt - QuadsY[k]) < 1) then
           begin
             identical_quad := true;
             break;
@@ -574,7 +574,7 @@ begin
 
   if ((nrstars_image<15) and (nrstars>6)) then //base the quad groups size selection on the number of stars in the image and not on the number of database stars since the database field could be larger
   begin
-    find_many_quads(starlist, {out} quads,7 {group size});//Find fifteen times more quads by using closest groups of six stars.
+    find_many_quads(starlist, {out} quads,7 {group size});//Find 35 times more quads by using closest groups of seven stars.
     exit;
   end
   else
@@ -795,6 +795,13 @@ var
    median_ratio : double;
    matchList1, matchlist2  : array of array of integer;
    ratios                  : array of double;
+   // 2026 perf: hoist database-side ratios out of inner j loop. They are constant for fixed i
+   // but the compiler cannot prove that across the setlength(matchlist2,...) call inside the
+   // body, so otherwise it re-fetches them from the global dynamic array on every j iteration.
+   db_r1, db_r2, db_r3, db_r4, db_r5                                   : double;
+   // 2026 perf: cache image-side row pointers (same pattern as StarsX/StarsY in find_quads).
+   // Turns quad_star_distances2[k, j] (3-level deref) into pImg_k[j] (single deref).
+   pImg1, pImg2, pImg3, pImg4, pImg5                                   : PDouble;
 begin
   result:=false; {assume failure}
   nrquads1:=Length(quad_star_distances1[0]);
@@ -806,26 +813,48 @@ begin
   {Find a tolerance resulting in 6 or more of the best matching quads}
   setlength(matchlist2,2,1000);
 
+  // 2026 perf: cache image-side row pointers once. The base addresses of each row do not
+  // change during the match loop (matchlist2 is the only thing resized in the inner body).
+  pImg1 := @quad_star_distances2[1, 0];
+  pImg2 := @quad_star_distances2[2, 0];
+  pImg3 := @quad_star_distances2[3, 0];
+  pImg4 := @quad_star_distances2[4, 0];
+  pImg5 := @quad_star_distances2[5, 0];
+
   nr_references2:=0;
-  i:=0;
-  repeat
-    j:=0;
-    repeat //       ==database==                ==image==
-      if abs(quad_star_distances1[1,i] - quad_star_distances2[1,j])<=quad_tolerance then //all length are scaled to the longest length so scale independent
-      if abs(quad_star_distances1[2,i] - quad_star_distances2[2,j])<=quad_tolerance then
-      if abs(quad_star_distances1[3,i] - quad_star_distances2[3,j])<=quad_tolerance then
-      if abs(quad_star_distances1[4,i] - quad_star_distances2[4,j])<=quad_tolerance then
-      if abs(quad_star_distances1[5,i] - quad_star_distances2[5,j])<=quad_tolerance then
+  for i := 0 to nrquads1 - 1 do                                                  // 2026: was repeat..until, switched to for for clarity; same iteration
+  begin
+    // 2026 perf: load database-side ratios once per i, reused for all nrquads2 inner iterations
+    db_r1 := quad_star_distances1[1, i];
+    db_r2 := quad_star_distances1[2, i];
+    db_r3 := quad_star_distances1[3, i];
+    db_r4 := quad_star_distances1[4, i];
+    db_r5 := quad_star_distances1[5, i];
+
+    for j := 0 to nrquads2 - 1 do                                                // 2026: was repeat..until, switched to for for clarity; same iteration
+    begin
+      //       ==database==                ==image==
+      // Short-circuit chain preserved: with quad_tolerance ~ 0.007 and ratios in [0,1], roughly
+      // 98.6% of (i,j) pairs fail at the first check. Combining the five checks into a single
+      // max(...) <= tol would force all 5 abs() calls per pair, ~5x slower in the common case.
+      if abs(db_r1 - pImg1[j])<=quad_tolerance then //all length are scaled to the longest length so scale independent
+      if abs(db_r2 - pImg2[j])<=quad_tolerance then
+      if abs(db_r3 - pImg3[j])<=quad_tolerance then
+      if abs(db_r4 - pImg4[j])<=quad_tolerance then
+      if abs(db_r5 - pImg5[j])<=quad_tolerance then
       begin
         matchlist2[0,nr_references2]:=i;//store match position
         matchlist2[1,nr_references2]:=j;
         inc(nr_references2);
-        if nr_references2>=length(matchlist2[0]) then setlength(matchlist2,2,nr_references2+1000);//get more space
+        if nr_references2>=length(matchlist2[0]) then
+        begin
+          setlength(matchlist2,2,nr_references2+1000);//get more space
+          // 2026 note: matchlist2 lives in a separate dynamic array from quad_star_distances2,
+          // so the resize cannot relocate pImg1..pImg5. No need to refresh the row pointers.
+        end;
       end;
-      inc(j);
-    until j>=nrquads2;//j loop
-    inc(i);
-  until i>=nrquads1;//i loop
+    end;//j loop
+  end;//i loop
 
   if solve_show_log then memo2_message('Found '+inttostr( nr_references2)+ ' references');
 
@@ -887,11 +916,10 @@ begin
 end;
 
 
-
 function find_fit_using_hash(minimum_count: integer; quad_tolerance: double): boolean;
 const
-  NEIGHBOR_BINS = 1; // Check ±1 bin to cover quad_tolerance
-  MAX_QUADS_PER_BIN = 15; // Preallocate bins for max_hash_count ≈ 13–15
+  NEIGHBOR_BINS = 1; // Check +/-1 bin to cover quad_tolerance
+  MAX_QUADS_PER_BIN = 15; // Preallocate bins for max_hash_count ~ 13-15
 var
   nrquads1, nrquads2, i, j, k, bin, delta_bin, adjusted_bin, hash_bins: integer;
   median_ratio: double;
@@ -913,7 +941,16 @@ begin
   end;
 
   {Set HASH_BINS to twice the maximum number of quads}
-  hash_bins := 2 * Max(nrquads1, nrquads2);
+  // 2026 fix: previously hash_bins := 2*Max(nrquads1, nrquads2), e.g. ~1000 for 500 quads.
+  // But the bin index is Trunc(ratio[1] / quad_tolerance) and ratio[1] is in (0..1],
+  // so bin can only take ~1/quad_tolerance distinct values (~143 for default tolerance 0.007).
+  // The mod was a no-op for values in that range, leaving ~85% of the outer
+  // "for bin := 0 to hash_bins - 1 do" iterating over guaranteed-empty bins.
+  // Tighten hash_bins to the actual range. The +2 covers the slot reached by ratio = 1.0 and
+  // gives one extra slot at the high end for the NEIGHBOR_BINS extension.
+  hash_bins := Round(1.0 / quad_tolerance) + 2;
+  if hash_bins < 4 then hash_bins := 4;            // safety floor for unusually large tolerances
+  if hash_bins > 10000 then hash_bins := 10000;    // safety cap for unusually tiny tolerances
 
   {Initialize hash tables with preallocated bins}
   SetLength(hash_table1, hash_bins,MAX_QUADS_PER_BIN);//rectangle array for the moment but could be adapted for each has bin individually
@@ -930,9 +967,15 @@ begin
   {Populate hash tables}
   for i := 0 to nrquads1 - 1 do
   begin
-    bin := Trunc(quad_star_distances1[1, i] / quad_tolerance) mod hash_bins;
+    // 2026 fix: no "mod hash_bins" needed because bin is now guaranteed in [0, hash_bins-1]
+    // for ratios in (0..1]. Defensive clamp protects against unexpected ratio values
+    // (numerical noise pushing a ratio fractionally above 1, or a future caller passing
+    // ratios outside the expected range).
+    bin := Trunc(quad_star_distances1[1, i] / quad_tolerance);
+    if bin >= hash_bins then bin := hash_bins - 1;
+
     if hash_counts1[bin] >= MAX_QUADS_PER_BIN then //pre check to speedup.
-    if hash_counts1[bin] >= Length(hash_table1[bin]) then //Should normally not happen
+    if hash_counts1[bin] >= Length(hash_table1[bin]) then //Triggers more often now that hash_bins is tighter; still amortised O(1)
       SetLength(hash_table1[bin], Length(hash_table1[bin]) + MAX_QUADS_PER_BIN); {Fallback resize.  Different dimensions are implemented as arrays, and can each have their own size! https://wiki.freepascal.org/Dynamic_array}
     hash_table1[bin,hash_counts1[bin]] := i;
     Inc(hash_counts1[bin]);
@@ -942,10 +985,13 @@ begin
 
   for j := 0 to nrquads2 - 1 do
   begin
-    bin := Trunc(quad_star_distances2[1, j] / quad_tolerance) mod hash_bins;
+    // 2026 fix: same as above - no mod, clamp defensively
+    bin := Trunc(quad_star_distances2[1, j] / quad_tolerance);
+    if bin < 0 then bin := 0;
+    if bin >= hash_bins then bin := hash_bins - 1;
 
     if hash_counts2[bin] >= MAX_QUADS_PER_BIN then //pre check to speedup
-    if hash_counts2[bin] >= Length(hash_table2[bin]) then //Should normally not happen
+    if hash_counts2[bin] >= Length(hash_table2[bin]) then //Triggers more often now that hash_bins is tighter; still amortised O(1)
       SetLength(hash_table2[bin], Length(hash_table2[bin]) + MAX_QUADS_PER_BIN); {Fallback resize.  Different dimensions are implemented as arrays, and can each have their own size! https://wiki.freepascal.org/Dynamic_array}
     hash_table2[bin,hash_counts2[bin]] := j;
     Inc(hash_counts2[bin]);
@@ -962,8 +1008,13 @@ begin
     if (hash_counts1[bin] = 0) then continue; {Skip empty bins}
     for delta_bin := -NEIGHBOR_BINS to NEIGHBOR_BINS do
     begin
-      adjusted_bin := (bin + delta_bin) mod hash_bins;
-      if adjusted_bin < 0 then adjusted_bin := adjusted_bin + hash_bins;
+      // 2026 fix: no wraparound. The previous "(bin + delta_bin) mod hash_bins" was harmless
+      // when hash_bins was ~1000 because edge bins were empty, but with hash_bins tight to the
+      // ratio range it would pair ratio-near-1 quads with ratio-near-0 quads as "neighbours".
+      // The inner abs() check would reject them but the cycles were wasted. The ratio space
+      // [0,1] is not circular, so simply skip out-of-range neighbours.
+      adjusted_bin := bin + delta_bin;
+      if (adjusted_bin < 0) or (adjusted_bin >= hash_bins) then continue;
       if (hash_counts2[adjusted_bin] = 0) then continue; {Skip empty bins}
       for i := 0 to hash_counts1[bin] - 1 do
       begin
@@ -1179,7 +1230,6 @@ begin
     if stdev > 0 then
     begin
       currentLowerLimit := Max(0, Round(meanv - sigmaLow * stdev));
-      currentLowerLimit := 0;
       currentUpperLimit := Min(upperlimit, Round(meanv + sigmaHigh * stdev));
     end;
 
@@ -1211,13 +1261,13 @@ const
             begin
               for fitsX:=startX to endX  do
               begin
-                if ((img_sa[0,fitsY,fitsX]<>retries){star free area for this retry} and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star above noise level}
+                if ((img_sa[0,fitsY,fitsX]<>retries){star free area for this retry} and (img[0,fitsY,fitsX]- head.backgr>detection_level){star}) then {new star above noise level}
                 begin
                   starpixels:=0;
-                  if img[0,fitsY,fitsX-1]- backgr>4*noise_lev then inc(starpixels);//inspect in a cross around it.
-                  if img[0,fitsY,fitsX+1]- backgr>4*noise_lev then inc(starpixels);
-                  if img[0,fitsY-1,fitsX]- backgr>4*noise_lev then inc(starpixels);
-                  if img[0,fitsY+1,fitsX]- backgr>4*noise_lev then inc(starpixels);
+                  if img[0,fitsY,fitsX-1]- head.backgr>4*noise_lev then inc(starpixels);//inspect in a cross around it.
+                  if img[0,fitsY,fitsX+1]- head.backgr>4*noise_lev then inc(starpixels);
+                  if img[0,fitsY-1,fitsX]- head.backgr>4*noise_lev then inc(starpixels);
+                  if img[0,fitsY+1,fitsX]- head.backgr>4*noise_lev then inc(starpixels);
                   if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
                   begin
                     HFD(img,fitsX,fitsY,14{annulus radius}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
@@ -1264,7 +1314,7 @@ begin
 
   setlength(img_sa,1,height2,width2);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
-  noise_lev:=noise_level[0]; //get_background is called in bin_and_find_star. Background is stored in cblack
+  noise_lev:=head.noise_level; //get_background is called in bin_and_find_star. Background is stored in cblack
   retries:=4; {try up to four times to get enough stars from the image}
 
   repeat
@@ -1273,9 +1323,9 @@ begin
 
     if retries=4 then
     begin
-      if star_level >30*noise_lev then
+      if head.star_level >30*noise_lev then
       begin
-        detection_level:=star_level;
+        detection_level:=head.star_level;
         find_stars_routine(1,width2-1-1,1,height2-1-1);
       end
       else
@@ -1283,9 +1333,9 @@ begin
     end;//stars are dominant
     if retries=3 then
     begin
-      if star_level2>30*noise_lev then
+      if head.star_level2>30*noise_lev then
       begin
-        detection_level:=star_level2;
+        detection_level:=head.star_level2;
         find_stars_routine(1,width2-1-1,1,height2-1-1);
       end
       else
@@ -1308,7 +1358,7 @@ begin
          stepsY:=rastersteps;
          stepsX:=round(rastersteps*width2/height2);
        end;
-       backgr_org:=backgr;
+       backgr_org:=head.backgr;
 
        for yy:=0 to stepsY do //find stars in stepsX x stepsY sections
        for xx:=0 to stepsX do
@@ -1318,14 +1368,14 @@ begin
          startY:=1+round(height2*yy/(stepsY+1));
          endY:=min(height2-1-1,round(height2*(yy+1)/(stepsY+1)));
 
-         SigmaClippedMeanFromHistogram(img,startX,endX,startY,endY,max(65500,trunc(backgr_org*2)), 6,0.1,backgr,noise_lev);//mean and noise of this sub section
+         SigmaClippedMeanFromHistogram(img,startX,endX,startY,endY,max(65500,trunc(backgr_org*2)), 6,0.1,head.backgr,noise_lev);//mean and noise of this sub section
          detection_level:= 7*noise_lev;
          find_stars_routine(startX,endX,startY,endY);
        end;
     end;
 
-    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(backgr))+ '. Detection level used '+inttostr( round(detection_level))
-                                                          +' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF(noise_lev,ffFixed,0,0));
+    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(head.backgr))+ '. Detection level used '+inttostr( round(detection_level))
+                                                          +' above background. Star level is '+inttostr(round(head.star_level))+' above background. Noise level is '+floattostrF(noise_lev,ffFixed,0,0));
     dec(retries);{Try again with lower detection level}
   until ((nrstars>=max_stars) or (retries<=0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -1362,7 +1412,7 @@ begin
 
   nrquads := Length(quad_star_distances1[0]);
    {3 quads required giving 3 center quad references}
-   if nrquads<180 then//use brute forsh method
+   if nrquads<120 then//use brute forsh method
    begin
      if find_fit(minimum_quads, tolerance)=false then
      begin
@@ -1826,7 +1876,8 @@ begin
 
     bin_mono_and_crop(binfactor, cropping,img,img_binned); // Make mono, bin and crop
 
-    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}backgr,star_level,star_level2 );{get back ground}
+    get_background(0, img_binned, head, True {calc hist}, True {calculate also standard deviation background});{get back ground}
+
     find_stars(img_binned,hfd_min,max_stars, starlist3); {find stars of the image and put them in a list}
     nrstars:=Length(starlist3[0]);
 
@@ -1864,7 +1915,8 @@ begin
     if length(img)>=3 then //colour image
       convert_mono(img);
 
-    get_background(0,img,true {calc hist},true {calculate also standard deviation background}, {var} backgr,star_level,star_level2);{get back ground}
+    get_background(0, img, head, True {calc hist}, True {calculate also standard deviation background});{get back ground}
+
     find_stars(img,hfd_min, max_stars,starlist3); {find stars of the image and put them in a list}
   end;
 end;

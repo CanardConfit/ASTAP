@@ -102,7 +102,7 @@ begin
   end;
   mainform1.error_label1.visible:=false;
 
-  reset_fits_global_variables(true{light},head);  {Reset variables for case they are not specified in the file}
+  reset_header_variables(true{light},head);  {Reset variables for case they are not specified in the file}
 
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
 

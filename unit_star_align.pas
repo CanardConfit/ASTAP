@@ -197,7 +197,7 @@ begin
 end;
 
 
-procedure QuickSort_starlist(var A: Tstar_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
+procedure QuickSort_starlist(var A: Tstar_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only. SNR is not updated!!}
 var
   Lo, Hi : integer;
   Pivot, Tx,Ty: double;{ pivot, T are the same type as the elements of array }
@@ -435,7 +435,7 @@ begin
         identical_quad := false;
         for k := 0 to nrquads - 1 do
         begin
-          if (abs(xt - QuadsX[k]) < 1) and (abs(yt - QuadsY[k]) < 6) then
+          if (abs(xt - QuadsX[k]) < 1) and (abs(yt - QuadsY[k]) < 1) then
           begin
             identical_quad := true;
             break;
@@ -523,7 +523,7 @@ begin
 
   if ((nrstars_image<15) and (nrstars>6)) then //base the quad groups size selection on the number of stars in the image and not on the number of database stars since the database field could be larger
   begin
-    find_many_quads(display,starlist, {out} quads,7 {group size});//Find fifteen times more quads by using closest groups of six stars.
+    find_many_quads(display,starlist, {out} quads,7 {group size});//Find 35 times more quads by using closest groups of 7 stars.
     exit;
   end
   else
@@ -553,7 +553,7 @@ begin
 
   if nrstars >= 150 then
   begin
-    quickSort_starlist(starlist, 0, nrstars - 1); //sort in X only
+    quickSort_starlist(starlist, 0, nrstars - 1); //sort in X only, snr is not updated!!!
     bandw := round(2 * sqrt(nrstars)); //resulting tolerance band will be about twice the average star distance assuming the stars are equally distributed
   end
   else
@@ -759,6 +759,13 @@ var
    median_ratio : double;
    matchList1, matchlist2  : array of array of integer;
    ratios                  : array of double;
+   // 2026 perf: hoist database-side ratios out of inner j loop. They are constant for fixed i
+   // but the compiler cannot prove that across the setlength(matchlist2,...) call inside the
+   // body, so otherwise it re-fetches them from the global dynamic array on every j iteration.
+   db_r1, db_r2, db_r3, db_r4, db_r5                                   : double;
+   // 2026 perf: cache image-side row pointers (same pattern as StarsX/StarsY in find_quads).
+   // Turns quad_star_distances2[k, j] (3-level deref) into pImg_k[j] (single deref).
+   pImg1, pImg2, pImg3, pImg4, pImg5                                   : PDouble;
 begin
   result:=false; {assume failure}
   nrquads1:=Length(quad_star_distances1[0]);
@@ -768,43 +775,50 @@ begin
   if ((nrquads1<minimum_count) or (nrquads2< minimum_count)) then begin nr_references:=0; exit; end;{no solution abort before run time errors}
 
   {Find a tolerance resulting in 6 or more of the best matching quads}
-  setlength(matchlist2,2,max(nrquads1,nrquads2));
+  setlength(matchlist2,2,1000);
+
+  // 2026 perf: cache image-side row pointers once. The base addresses of each row do not
+  // change during the match loop (matchlist2 is the only thing resized in the inner body).
+  pImg1 := @quad_star_distances2[1, 0];
+  pImg2 := @quad_star_distances2[2, 0];
+  pImg3 := @quad_star_distances2[3, 0];
+  pImg4 := @quad_star_distances2[4, 0];
+  pImg5 := @quad_star_distances2[5, 0];
 
   nr_references2:=0;
-  i:=0;
-  repeat
-    j:=0;
-    repeat //       ==database==                ==image==
-      if abs(quad_star_distances1[1,i] - quad_star_distances2[1,j])<=quad_tolerance then //all length are scaled to the longest length so scale independent
-      if abs(quad_star_distances1[2,i] - quad_star_distances2[2,j])<=quad_tolerance then
-      if abs(quad_star_distances1[3,i] - quad_star_distances2[3,j])<=quad_tolerance then
-      if abs(quad_star_distances1[4,i] - quad_star_distances2[4,j])<=quad_tolerance then
-      if abs(quad_star_distances1[5,i] - quad_star_distances2[5,j])<=quad_tolerance then
+  for i := 0 to nrquads1 - 1 do                                                  // 2026: was repeat..until, switched to for for clarity; same iteration
+  begin
+    // 2026 perf: load database-side ratios once per i, reused for all nrquads2 inner iterations
+    db_r1 := quad_star_distances1[1, i];
+    db_r2 := quad_star_distances1[2, i];
+    db_r3 := quad_star_distances1[3, i];
+    db_r4 := quad_star_distances1[4, i];
+    db_r5 := quad_star_distances1[5, i];
+
+    for j := 0 to nrquads2 - 1 do                                                // 2026: was repeat..until, switched to for for clarity; same iteration
+    begin
+      //       ==database==                ==image==
+      // Short-circuit chain preserved: with quad_tolerance ~ 0.007 and ratios in [0,1], roughly
+      // 98.6% of (i,j) pairs fail at the first check. Combining the five checks into a single
+      // max(...) <= tol would force all 5 abs() calls per pair, ~5x slower in the common case.
+      if abs(db_r1 - pImg1[j])<=quad_tolerance then //all length are scaled to the longest length so scale independent
+      if abs(db_r2 - pImg2[j])<=quad_tolerance then
+      if abs(db_r3 - pImg3[j])<=quad_tolerance then
+      if abs(db_r4 - pImg4[j])<=quad_tolerance then
+      if abs(db_r5 - pImg5[j])<=quad_tolerance then
       begin
         matchlist2[0,nr_references2]:=i;//store match position
         matchlist2[1,nr_references2]:=j;
         inc(nr_references2);
-        if nr_references2>=length(matchlist2[0]) then setlength(matchlist2,2,nr_references2+1000);//get more space
-
-        {memo2_message(','+
-                      floattostr(quad_star_distances1[0,i])+','+
-                      floattostr(quad_star_distances1[1,i])+','+
-                      floattostr(quad_star_distances1[2,i])+','+
-                      floattostr(quad_star_distances1[3,i])+','+
-                      floattostr(quad_star_distances1[4,i])+','+
-                      floattostr(quad_star_distances1[5,i])
-                      +',tolerances,'+
-                      floattostr(quad_star_distances1[1,i] - quad_star_distances2[1,j])+','+
-                      floattostr(quad_star_distances1[2,i] - quad_star_distances2[2,j])+','+
-                      floattostr(quad_star_distances1[3,i] - quad_star_distances2[3,j])+','+
-                      floattostr(quad_star_distances1[4,i] - quad_star_distances2[4,j])+','+
-                      floattostr(quad_star_distances1[5,i] - quad_star_distances2[5,j]));
-          }
+        if nr_references2>=length(matchlist2[0]) then
+        begin
+          setlength(matchlist2,2,nr_references2+1000);//get more space
+          // 2026 note: matchlist2 lives in a separate dynamic array from quad_star_distances2,
+          // so the resize cannot relocate pImg1..pImg5. No need to refresh the row pointers.
+        end;
       end;
-      inc(j);
-    until j>=nrquads2;//j loop
-    inc(i);
-  until i>=nrquads1;//i loop
+    end;//j loop
+  end;//i loop
 
   if solve_show_log then memo2_message('Found '+inttostr( nr_references2)+ ' references');
 
@@ -834,8 +848,7 @@ begin
       inc(nr_references);
     end
     else
-    if solve_show_log then
-       memo2_message('quad outlier removed due to abnormal size: '+floattostr6(100*ratios[k]/median_ratio)+'%');
+    if solve_show_log then memo2_message('quad outlier removed due to abnormal size: '+floattostr6(100*ratios[k]/median_ratio)+'%');
   end;
 
   {outliers in largest length removed}
@@ -861,13 +874,16 @@ begin
     end;
     result:=true;{3 or more references}
   end;
+//  else
+//  if solve_show_log then {global variable set in find stars}
+//     memo2_message('Found matches: '+inttostr(nr_references));
 end;
 
 
 function find_fit_using_hash(minimum_count: integer; quad_tolerance: double): boolean;
 const
-  NEIGHBOR_BINS = 1; // Check ±1 bin to cover quad_tolerance
-  MAX_QUADS_PER_BIN = 15; // Preallocate bins for max_hash_count ≈ 13–15
+  NEIGHBOR_BINS = 1; // Check +/-1 bin to cover quad_tolerance
+  MAX_QUADS_PER_BIN = 15; // Preallocate bins for max_hash_count ~ 13-15
 var
   nrquads1, nrquads2, i, j, k, bin, delta_bin, adjusted_bin, hash_bins: integer;
   median_ratio: double;
@@ -876,13 +892,6 @@ var
   hash_table1, hash_table2: array of array of integer; // Hash tables for quads
   hash_counts1, hash_counts2: array of integer; // Counts per bin
   max_hash_count: integer; // Debug: track largest bin size
-
-  // Local cache variables for inner loop
-  idx1, idx2: integer;
-  q1_d1, q1_d2, q1_d3, q1_d4, q1_d5: double;
-
-  // Pre-calculated inverse for division
-  ToleranceInv: double;
 
 begin
   result := false; {assume failure}
@@ -895,29 +904,44 @@ begin
     exit;
   end;
 
-  // Pre-calculate inverse for faster bin calculation
-  ToleranceInv := 1.0 / quad_tolerance;
-
   {Set HASH_BINS to twice the maximum number of quads}
-  hash_bins := 2 * Max(nrquads1, nrquads2);
+  // 2026 fix: previously hash_bins := 2*Max(nrquads1, nrquads2), e.g. ~1000 for 500 quads.
+  // But the bin index is Trunc(ratio[1] / quad_tolerance) and ratio[1] is in (0..1],
+  // so bin can only take ~1/quad_tolerance distinct values (~143 for default tolerance 0.007).
+  // The mod was a no-op for values in that range, leaving ~85% of the outer
+  // "for bin := 0 to hash_bins - 1 do" iterating over guaranteed-empty bins.
+  // Tighten hash_bins to the actual range. The +2 covers the slot reached by ratio = 1.0 and
+  // gives one extra slot at the high end for the NEIGHBOR_BINS extension.
+  hash_bins := Round(1.0 / quad_tolerance) + 2;
+  if hash_bins < 4 then hash_bins := 4;            // safety floor for unusually large tolerances
+  if hash_bins > 10000 then hash_bins := 10000;    // safety cap for unusually tiny tolerances
 
   {Initialize hash tables with preallocated bins}
-  SetLength(hash_table1, hash_bins, MAX_QUADS_PER_BIN);
-  SetLength(hash_table2, hash_bins, MAX_QUADS_PER_BIN);
-  SetLength(hash_counts1, hash_bins); //In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
-  SetLength(hash_counts2, hash_bins); //In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+  SetLength(hash_table1, hash_bins,MAX_QUADS_PER_BIN);//rectangle array for the moment but could be adapted for each has bin individually
+  SetLength(hash_table2, hash_bins,MAX_QUADS_PER_BIN);
+  SetLength(hash_counts1, hash_bins);
+  SetLength(hash_counts2, hash_bins);
+  for bin := 0 to hash_bins - 1 do
+  begin
+    hash_counts1[bin] := 0;
+    hash_counts2[bin] := 0;
+  end;
   max_hash_count := 0;
 
   {Populate hash tables}
   for i := 0 to nrquads1 - 1 do
   begin
-    bin := Trunc(quad_star_distances1[1, i] * ToleranceInv) mod hash_bins;
-    if bin < 0 then bin := bin + hash_bins; // Handle negative values
+    // 2026 fix: no "mod hash_bins" needed because bin is now guaranteed in [0, hash_bins-1]
+    // for ratios in (0..1]. Defensive clamp protects against unexpected ratio values
+    // (numerical noise pushing a ratio fractionally above 1, or a future caller passing
+    // ratios outside the expected range).
+    bin := Trunc(quad_star_distances1[1, i] / quad_tolerance);
+    if bin >= hash_bins then bin := hash_bins - 1;
 
-    if (hash_counts1[bin] >= MAX_QUADS_PER_BIN) and
-       (hash_counts1[bin] >= Length(hash_table1[bin])) then
-      SetLength(hash_table1[bin], Length(hash_table1[bin]) + MAX_QUADS_PER_BIN);
-    hash_table1[bin, hash_counts1[bin]] := i;
+    if hash_counts1[bin] >= MAX_QUADS_PER_BIN then //pre check to speedup.
+    if hash_counts1[bin] >= Length(hash_table1[bin]) then //Triggers more often now that hash_bins is tighter; still amortised O(1)
+      SetLength(hash_table1[bin], Length(hash_table1[bin]) + MAX_QUADS_PER_BIN); {Fallback resize.  Different dimensions are implemented as arrays, and can each have their own size! https://wiki.freepascal.org/Dynamic_array}
+    hash_table1[bin,hash_counts1[bin]] := i;
     Inc(hash_counts1[bin]);
     if hash_counts1[bin] > max_hash_count then
       max_hash_count := hash_counts1[bin];
@@ -925,83 +949,53 @@ begin
 
   for j := 0 to nrquads2 - 1 do
   begin
-    bin := Trunc(quad_star_distances2[1, j] * ToleranceInv) mod hash_bins;
-    if bin < 0 then bin := bin + hash_bins;
+    // 2026 fix: same as above - no mod, clamp defensively
+    bin := Trunc(quad_star_distances2[1, j] / quad_tolerance);
+    if bin < 0 then bin := 0;
+    if bin >= hash_bins then bin := hash_bins - 1;
 
-    if (hash_counts2[bin] >= MAX_QUADS_PER_BIN) and
-       (hash_counts2[bin] >= Length(hash_table2[bin])) then
-      SetLength(hash_table2[bin], Length(hash_table2[bin]) + MAX_QUADS_PER_BIN);
-    hash_table2[bin, hash_counts2[bin]] := j;
+    if hash_counts2[bin] >= MAX_QUADS_PER_BIN then //pre check to speedup
+    if hash_counts2[bin] >= Length(hash_table2[bin]) then //Triggers more often now that hash_bins is tighter; still amortised O(1)
+      SetLength(hash_table2[bin], Length(hash_table2[bin]) + MAX_QUADS_PER_BIN); {Fallback resize.  Different dimensions are implemented as arrays, and can each have their own size! https://wiki.freepascal.org/Dynamic_array}
+    hash_table2[bin,hash_counts2[bin]] := j;
     Inc(hash_counts2[bin]);
     if hash_counts2[bin] > max_hash_count then
       max_hash_count := hash_counts2[bin];
   end;
 
-  {Preallocate matchlist - estimate ~10% of quads will match}
-  SetLength(matchlist2, 2, max(nrquads1, nrquads2)); {Preallocate for max possible matches}
+  {Find matches using hash tables, checking neighboring bins}
+  SetLength(matchlist2, 2, nrquads1); {Preallocate for max possible matches}
   nr_references2 := 0;
 
-  {Find matches using hash tables, checking neighboring bins}
   for bin := 0 to hash_bins - 1 do
   begin
-    if hash_counts1[bin] = 0 then continue; {Skip empty bins}
-
+    if (hash_counts1[bin] = 0) then continue; {Skip empty bins}
     for delta_bin := -NEIGHBOR_BINS to NEIGHBOR_BINS do
     begin
+      // 2026 fix: no wraparound. The previous "(bin + delta_bin) mod hash_bins" was harmless
+      // when hash_bins was ~1000 because edge bins were empty, but with hash_bins tight to the
+      // ratio range it would pair ratio-near-1 quads with ratio-near-0 quads as "neighbours".
+      // The inner abs() check would reject them but the cycles were wasted. The ratio space
+      // [0,1] is not circular, so simply skip out-of-range neighbours.
       adjusted_bin := bin + delta_bin;
-      // Faster modulo using if for small adjustments
-      if adjusted_bin < 0 then
-        adjusted_bin := adjusted_bin + hash_bins
-      else if adjusted_bin >= hash_bins then
-        adjusted_bin := adjusted_bin - hash_bins;
-
-      if hash_counts2[adjusted_bin] = 0 then continue; {Skip empty bins}
-
+      if (adjusted_bin < 0) or (adjusted_bin >= hash_bins) then continue;
+      if (hash_counts2[adjusted_bin] = 0) then continue; {Skip empty bins}
       for i := 0 to hash_counts1[bin] - 1 do
       begin
-        idx1 := hash_table1[bin, i];
-        // Cache quad1 values to avoid repeated array access
-        q1_d1 := quad_star_distances1[1, idx1];
-        q1_d2 := quad_star_distances1[2, idx1];
-        q1_d3 := quad_star_distances1[3, idx1];
-        q1_d4 := quad_star_distances1[4, idx1];
-        q1_d5 := quad_star_distances1[5, idx1];
-
         for j := 0 to hash_counts2[adjusted_bin] - 1 do
         begin
-          idx2 := hash_table2[adjusted_bin, j];
-
-          // Optimized tolerance checks with early exit
-          if abs(q1_d1 - quad_star_distances2[1, idx2]) > quad_tolerance then continue;
-          if abs(q1_d2 - quad_star_distances2[2, idx2]) > quad_tolerance then continue;
-          if abs(q1_d3 - quad_star_distances2[3, idx2]) > quad_tolerance then continue;
-          if abs(q1_d4 - quad_star_distances2[4, idx2]) > quad_tolerance then continue;
-          if abs(q1_d5 - quad_star_distances2[5, idx2]) > quad_tolerance then continue;
-
-          // Match found
-          matchlist2[0, nr_references2] := idx1;
-          matchlist2[1, nr_references2] := idx2;
-          Inc(nr_references2);
-          if nr_references2 >= Length(matchlist2[0]) then {Fallback resizing if needed}
-            SetLength(matchlist2, 2, nr_references2 + 1000); {Fallback resizing}
-
-          {memo2_message(','+
-                        floattostr(quad_star_distances1[0,hash_table1[bin,i]])+','+
-                        floattostr(quad_star_distances1[1,hash_table1[bin,i]])+','+
-                        floattostr(quad_star_distances1[2,hash_table1[bin,i]])+','+
-                        floattostr(quad_star_distances1[3,hash_table1[bin,i]])+','+
-                        floattostr(quad_star_distances1[4,hash_table1[bin,i]])+','+
-                        floattostr(quad_star_distances1[5,hash_table1[bin,i]])
-                        +',tolerances,'+
-                        floattostr(quad_star_distances1[1,hash_table1[bin,i]] - quad_star_distances2[1,hash_table2[adjusted_bin,j]])+','+
-                        floattostr(quad_star_distances1[2,hash_table1[bin,i]] - quad_star_distances2[2,hash_table2[adjusted_bin,j]])+','+
-                        floattostr(quad_star_distances1[3,hash_table1[bin,i]] - quad_star_distances2[3,hash_table2[adjusted_bin,j]])+','+
-                        floattostr(quad_star_distances1[4,hash_table1[bin,i]] - quad_star_distances2[4,hash_table2[adjusted_bin,j]])+','+
-                        floattostr(quad_star_distances1[5,hash_table1[bin,i]] - quad_star_distances2[5,hash_table2[adjusted_bin,j]]));
-           }
-
-
-
+          if abs(quad_star_distances1[1, hash_table1[bin,i]] - quad_star_distances2[1, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          if abs(quad_star_distances1[2, hash_table1[bin,i]] - quad_star_distances2[2, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          if abs(quad_star_distances1[3, hash_table1[bin,i]] - quad_star_distances2[3, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          if abs(quad_star_distances1[4, hash_table1[bin,i]] - quad_star_distances2[4, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          if abs(quad_star_distances1[5, hash_table1[bin,i]] - quad_star_distances2[5, hash_table2[adjusted_bin,j]]) <= quad_tolerance then
+          begin
+            matchlist2[0, nr_references2] := hash_table1[bin,i];
+            matchlist2[1, nr_references2] := hash_table2[adjusted_bin,j];
+            Inc(nr_references2);
+            if nr_references2 >= Length(matchlist2[0]) then
+              SetLength(matchlist2, 2, nr_references2 + 1000); {Fallback resizing}
+          end;
         end;
       end;
     end;
@@ -1057,6 +1051,7 @@ begin
     result := true;
   end;
 end;
+
 
 
 procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double; var starlistB : Tstar_list);{ Extract the brightest star from a star list}
@@ -1228,7 +1223,6 @@ begin
     if stdev > 0 then
     begin
       currentLowerLimit := Max(0, Round(meanv - sigmaLow * stdev));
-      currentLowerLimit := 0;
       currentUpperLimit := Min(upperlimit, Round(meanv + sigmaHigh * stdev));
     end;
 
@@ -1443,7 +1437,8 @@ begin
 
   nrquads := Length(quad_star_distances1[0]);
   {3 quads required giving 3 center quad references}
-  if nrquads<180 then//use brute force method
+
+  if nrquads<120 then//use brute force method
   begin
     if find_fit(minimum_quads, tolerance)=false then
     begin

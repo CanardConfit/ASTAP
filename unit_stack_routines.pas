@@ -170,7 +170,7 @@ begin
 
 
     //convert the astroid position to ra, dec
-    pixel_to_celestial(head,lx,ly,1 {formalism},  ra1,dec1 );
+    sensor_coordinates_to_celestial(head,lx,ly,1 {formalism},  ra1,dec1 );
     //calculate the astroid position to x,y coordinated of the reference image
     celestial_to_pixel(head_ref, ra1,dec1,true,x1,y1);//ra,dec  ref image to fitsX,fitsY second image
 
@@ -832,25 +832,25 @@ var
 begin
 //  formalism:=mainform1.Polynomial1.itemindex;
   formalism:=0;
-  pixel_to_celestial(head,1,1,formalism , ra, dec); //left bottom
+  sensor_coordinates_to_celestial(head,1,1,formalism , ra, dec); //left bottom
   celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
   x_max:=max(x_max,x);
   y_min:=min(y_min,y);
   y_max:=max(y_max,y);
-  pixel_to_celestial(head,head.width,1,formalism , ra, dec);  //right bottom
+  sensor_coordinates_to_celestial(head,head.width,1,formalism , ra, dec);  //right bottom
   celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
   x_max:=max(x_max,x);
   y_min:=min(y_min,y);
   y_max:=max(y_max,y);
-  pixel_to_celestial(head,1,head.height,formalism , ra, dec); //left top
+  sensor_coordinates_to_celestial(head,1,head.height,formalism , ra, dec); //left top
   celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
   x_max:=max(x_max,x);
   y_min:=min(y_min,y);
   y_max:=max(y_max,y);
-  pixel_to_celestial(head,head.width,head.height,formalism, ra, dec); //right top
+  sensor_coordinates_to_celestial(head,head.width,head.height,formalism, ra, dec); //right top
   celestial_to_pixel(head_ref, ra,dec,false, x,y);//ra,dec to fitsX,fitsY. Do not use SIP to prevent very large errors outside the image.
   x_min:=min(x_min,x);
   x_max:=max(x_max,x);
@@ -957,7 +957,7 @@ begin
            begin memo2_message('█ █ █ █ █ █  Abort!! Too many missing tiles. Field is '+floattostrF(fw,FFFixed,0,1)+'x'+floattostrF(fh,FFfixed,0,1)+
                                               '°. Coverage only '+floattostrF(coverage*100,FFfixed,0,1)+ '%. Is there in outlier in the image list? Check image α, δ positions. For multiple mosaics is classify on "Light object" set?'); exit;end;
 
-          pixel_to_celestial(head,(x_min+x_max)/2,(y_min+y_max)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
+          sensor_coordinates_to_celestial(head,(x_min+x_max)/2,(y_min+y_max)/2,formalism, raMiddle, decMiddle);//find middle of mosaic
           //sincos(decMiddle,SIN_dec_ref,COS_dec_ref);// as procedure initalise_var1, set middle of the mosaic
 
           head_ref.ra0:=raMiddle;// set middle of the mosaic
