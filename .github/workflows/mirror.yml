@@ -1,63 +1,146 @@
 name: mirror-astap-to-git
-run-name: Mirroring Mercury repo of ASTAP
+run-name: Mirroring Mercurial repo of ASTAP
+
 on:
-  #push:
-  #  branches: [ tmp ]
   schedule:
-    - cron: '0 12 * * *'
+    - cron: "0 12 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
-    container: 
+    container:
       image: canardconfit/hg-to-git:python3.14.6-alpine3.24
+
     steps:
-      - name: Create Folder data
-        run: mkdir -p data
-      - name: Clear All
-        id: clear_all
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: "rm -rf git-repo hg-repo"
-        working-directory: data
-      - name: Check for folders
-        id: folders_check
-        run: |
-          if [ -d "data/hg-repo" ]; then
-            echo "hg_repo=true" >> $GITHUB_OUTPUT
-            echo "hg_repo=true"
-          else
-            echo "hg_repo=false" >> $GITHUB_OUTPUT
-            echo "hg_repo=false"
-          fi
-      - name: Clone Mercury Repo
-        run: hg clone http://hg.code.sf.net/p/astap-program/code data/hg-repo
-        if: steps.folders_check.outputs.hg_repo == 'false'
-      - name: Pull existing Mercury repo
-        run: hg pull
-        if: steps.folders_check.outputs.hg_repo == 'true'
-        working-directory: data/hg-repo
-      - name: Write author file for resolution
-        run: "echo '\"han59\"=\"Han59 <han.k@hnsky.org>\"' > data/authors"
-      - name: Checkout imported branch in git-repo
+      - name: Create working directories
+        run: mkdir -p data/exported-repo
+
+      - name: Clone Mercurial repository
+        run: hg clone https://hg.code.sf.net/p/astap-program/code data/hg-repo
+
+      - name: Write author mapping
+        run: echo '"han59"="Han59 <han.k@hnsky.org>"' > data/authors
+
+      - name: Checkout imported branch
         uses: actions/checkout@v7
         with:
           ref: imported
           path: data/git-repo
-      - name: Process mirroring
-        run: /data/fast-export/hg-fast-export.sh -r ../hg-repo --force -A ../authors -M imported
+          fetch-depth: 0
+
+      - name: Initialize conversion repository
+        working-directory: data/exported-repo
+        run: git init
+
+      - name: Convert Mercurial repository
+        working-directory: data/exported-repo
+        run: |
+          /data/fast-export/hg-fast-export.sh \
+            -r ../hg-repo \
+            -A ../authors \
+            -M imported
+
+      - name: Apply converted commits
         working-directory: data/git-repo
-      - name: Push changes to imported
-        uses: ad-m/github-push-action@master
-        with:
-          force_with_lease: true
-          branch: imported
-          directory: data/git-repo
+        shell: sh
+        run: |
+          set -eu
+
+          previous_tip=$(git rev-parse HEAD)
+
+          git config user.name "ASTAP Mirror"
+          git config user.email "mirror@users.noreply.github.com"
+
+          git fetch origin main:refs/remotes/origin/main
+          git remote add converted ../exported-repo
+          git fetch converted imported
+
+          exported_tip=$(git rev-parse converted/imported)
+          repair_history=false
+          base_commit=""
+          anchor=""
+
+          if git merge-base "$previous_tip" origin/main >/dev/null 2>&1; then
+            echo "The imported branch still shares history with main"
+
+            base_commit="$previous_tip"
+            base_tree=$(git show -s --format=%T "$base_commit")
+
+            for commit in $(git rev-list "$exported_tip"); do
+              if [ "$(git show -s --format=%T "$commit")" = "$base_tree" ]; then
+                anchor="$commit"
+                break
+              fi
+            done
+          else
+            echo "The imported branch is disconnected from main."
+            echo "Searching for the latest equivalent commit in main..."
+
+            repair_history=true
+            git log origin/main --format="%T %H" > /tmp/main-trees
+
+            for commit in $(git rev-list "$exported_tip"); do
+              converted_tree=$(git show -s --format=%T "$commit")
+              matching_main_commit=$(
+                awk -v tree="$converted_tree" \
+                  '$1 == tree { print $2; exit }' \
+                  /tmp/main-trees
+              )
+
+              if [ -n "$matching_main_commit" ]; then
+                anchor="$commit"
+                base_commit="$matching_main_commit"
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$anchor" ] || [ -z "$base_commit" ]; then
+            echo "Unable to find a common tree between the Git and Mercurial histories"
+            exit 1
+          fi
+
+          echo "Converted anchor: $anchor"
+          echo "Git base commit: $base_commit"
+
+          new_commits=$(git rev-list --reverse "$anchor..$exported_tip")
+
+          git reset --hard "$base_commit"
+
+          if [ -n "$new_commits" ]; then
+            git cherry-pick $new_commits
+          else
+            echo "No new Mercurial commits."
+          fi
+
+          if [ "$repair_history" = "true" ]; then
+            backup="imported-disconnected-backup-$(date +%Y%m%d%H%M%S)"
+
+            echo "Creating backup branch: $backup"
+            git push origin "$previous_tip:refs/heads/$backup"
+
+            git push \
+              --force-with-lease="refs/heads/imported:$previous_tip" \
+              origin HEAD:imported
+          else
+            git push origin HEAD:imported
+          fi
+
   astap-scripts:
     needs: [mirror]
     runs-on: ubuntu-latest
     container:
       image: canardconfit/astap-scripts:2.0.2
+
     steps:
-      - name: Launch script to check if PR is needed, and create PR with ASTAP News
-        run: yarn start createPullRequest true -t ${{ secrets.GITHUB_TOKEN }}
+      - name: Create pull request when an update is available
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn start createPullRequest true
         working-directory: /app
