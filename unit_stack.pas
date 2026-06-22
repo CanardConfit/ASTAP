@@ -1699,7 +1699,7 @@ end;
 
 procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer);//find background, number of stars, median HFD
 var
-  width5, height5, fitsX, fitsY, size, radius, i, j, retries, max_stars, n, m,
+  width5, height5, fitsX, fitsY, radius, i, j, retries, max_stars, n, m,
   xci, yci, sqr_radius, formalism, star_counter, starpixels: integer;
   hfd1, star_fwhm, snr, flux, xc, yc, detection_level, hfd_min, min_background,
   ra,decl, backgr, noise_level                : double;
@@ -1747,12 +1747,7 @@ begin
     star_counter:=0;
 
     if report_type>0 then {write values to file}
-    begin
-    //  assignfile(f, ChangeFileExt(filename2, '.csv'));
-     // rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
-     // writeln(f, 'x,y,hfd,snr,flux,ra[0..360],dec[0..360]');
       startext:='x,y,hfd,snr,flux,ra[0..360],dec[0..360]'+LineEnding;
-    end;
 
     setlength(img_sa, 1, height5, width5);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
@@ -1797,11 +1792,10 @@ begin
               if report_type>0 then
               begin
                 if head.cd1_1=0 then
-                //  writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
                   startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+LineEnding {+1 to convert 0... to FITS 1... coordinates}
                 else
                 begin
-                  pixel_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
+                  sensor_coordinates_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
                   startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
                 end;
               end;
@@ -1814,14 +1808,14 @@ begin
     Dec(retries);{Try again with lower detection level}
   until ((star_counter >= max_stars) or (retries <= 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-  if ((star_counter > 0) and (report_type<=1)) then head.hfd_median:=SMedian(hfd_List, star_counter) else  head.hfd_median:=99;
+  if ((star_counter > 0) and (report_type<=1)) then head.hfd_median:=SMedian(hfd_List, star_counter) else  head.hfd_median:=21.47;//21.47 max for halt(error_level)
 
   head.hfd_counter:=star_counter;
 
   if report_type>0 then
   begin
     assignfile(f, ChangeFileExt(filename2, '.csv'));
-    rewrite(f); //this could be done 3 times due to the repeat but it is the most simple code
+    rewrite(f);
     writeln(f,startext);
     closefile(f);
   end;
@@ -3658,7 +3652,7 @@ begin
 
         mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
 
-        pixel_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
+        sensor_coordinates_to_celestial(head,1+stars[0,i],1+stars[1,i],formalism,raM,decM);//+1 to get fits coordinated
         report_one_star_magnitudes(raM,decM, {out} b,v,rc,ic,sg,sr,si,g,bp,rp ); //report the database magnitudes for a specfic position. Not efficient but simple routine
 
         mainform1.image1.Canvas.textout(starX+size,starY+size,'Gaia V='+floattostrf(v, ffFixed, 0,2)+', B='+floattostrf(B, ffFixed, 0,2));{add hfd as text}
@@ -4754,7 +4748,7 @@ begin
                 end;
 
                 {calculate crota_jnow}
-                pixel_to_celestial(headx,headx.crpix1, headx.crpix2 + 1,1 {wcs and sip is available}, ram, decm);
+                sensor_coordinates_to_celestial(headx,headx.crpix1, headx.crpix2 + 1,1 {wcs and sip is available}, ram, decm);
 
                 {fitsX, Y to ra,dec}{Step one pixel in Y}
                 J2000_to_apparent(jd_mid, ram, decm);{without refraction}
@@ -5973,7 +5967,7 @@ begin
   {stop visualising Memo3 for speed. Will be activated in plot routine}
   mainform1.memo1.Clear;{clear memo for new header}
 
-  reset_fits_global_variables(True, head);
+  reset_header_variables(True, head);
 
   head.bitpix:=16;
   extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
@@ -7935,7 +7929,7 @@ begin
 
   for i:=0 to nrstars-1 do
   begin
-    pixel_to_celestial(head,starlist[0,i]+1,starlist[1,i]+1, formalism, ra2,dec2);
+    sensor_coordinates_to_celestial(head,starlist[0,i]+1,starlist[1,i]+1, formalism, ra2,dec2);
     vsp_vsx_list[i].ra:=ra2;
     vsp_vsx_list[i].dec:=dec2;
     found:=false;

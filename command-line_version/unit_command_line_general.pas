@@ -36,7 +36,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.05.18';
+  astap_version: string='2026.06.16';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -72,6 +72,15 @@ type
       cdelt2 : double; {Y pixel size (deg)}
       ra0    : double; {mount position. Accurate if solved}
       dec0   : double; {mount position. Accurate if solved}
+
+      backgr : double;//background value
+      star_level : double;//star level
+      star_level2: double;//star level
+      noise_level: double;///noise level background
+
+      hfd_median  : double;
+      hfd_counter : integer;
+
       crota1 : double; {image rotation at center in degrees}
       crota2 : double; {image rotation at center in degrees}
       cd1_1  : double; {solution matrix}
@@ -113,9 +122,7 @@ var
   r_aperture : integer; {histogram number of values}
   histo_peak_position : integer;
   his_mean : array[0..2] of integer;
-  noise_level : array[0..2] of double;
   esc_pressed, fov_specified {, last_extension }: boolean;
-  backgr, star_level,star_level2  : double;
   focallen,equinox : double;
   instrum  :string;
   warning_str : string;{for solver}
@@ -173,9 +180,9 @@ function floattostr6(x:double):string;{float to string with 6 decimals and dot a
 function floattostr4(x:double):string;
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
-procedure analyse_image(img : Timage_array;snr_min:double;report_type:integer;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
+procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer);//find background, number of stars, median HFD
 procedure HFD(img: Timage_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
-procedure get_background(colour: integer; img :Timage_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean); {get background and star level from peek histogram}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
 procedure write_astronomy_wcs(filen: string);
@@ -678,7 +685,7 @@ begin
 end;
 
 
-procedure reset_fits_global_variables; {reset the global variable}
+procedure reset_header_variables; {reset the global variable}
 begin
   head.ra0:=0;
   head.dec0:=0;
@@ -699,6 +706,11 @@ begin
   head.date_obs:='';
   head.exposure:=0;
   head.gain:=999;{assume no data available}
+
+  head.hfd_median:=0;{median hfd, use in reporting in write_ini}
+  head.hfd_counter:=0;{star counter (for hfd_median), use in reporting in write_ini}
+  head.backgr:=0;
+
 
   ra1:='';
   dec1:='';
@@ -794,7 +806,7 @@ begin
   Reader := TReader.Create (TheFile,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
 
   {Reset variables for case they are not specified in the file}
-  reset_fits_global_variables; {reset the global variable}
+  reset_header_variables; {reset the global variable}
   head.naxis:=0;//number of dimensions, normally 2, colour 3
   head.naxis3:=1;//number of colours
 
@@ -1601,7 +1613,7 @@ begin
   {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables}
-  reset_fits_global_variables; {reset the global variable}
+  reset_header_variables; {reset the global variable}
 
   I:=0;
   reader_position:=0;
@@ -1711,7 +1723,7 @@ begin
     end; {should contain 255 or 65535}
 
     head.datamin_org:=0;
-    backgr:=0;{for case histogram is not called}
+    head.backgr:=0;{for case histogram is not called}
 
     if color7 then
     begin
@@ -1878,7 +1890,7 @@ begin
     exit;
   end;
 
-  reset_fits_global_variables; {reset the global variable}
+  reset_header_variables; {reset the global variable}
 
   if bitspersample=32 then
     head.bitpix:=-32 //fits float
@@ -2008,7 +2020,7 @@ begin
   {$ENDIF}
 
   {Reset variables}
-  reset_fits_global_variables; {reset the global variable}
+  reset_header_variables; {reset the global variable}
 
   if colour=false then
   begin
@@ -2138,36 +2150,37 @@ begin
 end;
 
 
-procedure get_background(colour: integer; img :Timage_array;calc_hist, calc_noise_level: boolean; out background, star_level, star_level2: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
-  value,sd, sd_old,factor,factor2 : double;
+  value,sd, sd_old,factor,factor2,sd2 : double;
 begin
-  if calc_hist then
-             get_hist(colour,img);{get histogram of img_loaded and his_total}
+  if calc_hist then  get_hist(colour,img);{get histogram of img_loaded and his_total}
 
-  background:=img[0,0,0];{define something for images containing 0 or 65535 only}
+  head.backgr:=img[0,0,0];{define something for images containing 0 or 65535 only}
 
   {find peak in histogram which should be the average background}
   pixels:=0;
   max_range:=his_mean[colour]; {mean value from histogram}
   if max_range=0 then //mean value
   begin //empthy colour
-    background:=0;
+    head.backgr:=0;
   end
   else
-  for i := 1 to max_range do {find peak, ignore value 0 from oversize}
-    if histogram[colour,i]>pixels then {find colour peak}
-    begin
-      pixels:= histogram[colour,i];
-      background:=i;
-    end;
+  begin
+    for i := 1 to max_range do //find peak, ignore value 0 from oversize
+      if histogram[colour,i]>pixels then //find colour peak
+      begin
+        pixels:= histogram[colour,i];
+        head.backgr:=i;
+      end;
+  end;
 
   {check alternative mean value}
-  if his_mean[colour]>1.5*background {1.5* most common} then
+  if his_mean[colour]>1.5*head.backgr {1.5* most common} then
   begin
-    memo2_message('Will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(background)));
-    background:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}
+    memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(head.backgr)));
+    head.backgr:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}
   end;
 
   if calc_noise_level then  {find star level and background noise level}
@@ -2178,23 +2191,25 @@ begin
     stepsize:=round(height5/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
     if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
 
+
     sd:=99999;
     iterations:=0;
     repeat  {repeat until sd is stable or 7 iterations}
       fitsX:=15;
       counter:=0;
       sd_old:=sd;
+      sd:=0;
       while fitsX<=width5-1-15 do
       begin
         fitsY:=15;
         while fitsY<=height5-1-15 do
         begin
           value:=img[colour,fitsY,fitsX];
-          if ((value<background*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
+          if ((value<head.backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
           begin
-            if ((iterations=0) or (abs(value-background)<=3*sd_old)) then {ignore outliers after first run}
+            if ((iterations=0) or (abs(value-head.backgr)<=3*sd_old)) then {ignore outliers after first run}
             begin
-              sd:=sd+sqr(value-background); {sd}
+              sd:=sd+sqr(value-head.backgr); {sd}
               inc(counter);{keep record of number of pixels processed}
             end;
           end;
@@ -2208,41 +2223,43 @@ begin
         sd:=0;
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
-    noise_level[colour]:= sd;   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
-
+    head.noise_level:= sd;   {this noise level could be too high if no flat is applied. So for images where center is brighter then the corners.}
 
     {calculate star level}
     if ((head.bitpix=8) or (head.bitpix=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
+    head.star_level:=0;
+    head.star_level2:=0;
     i:=max_range;
-    star_level:=0;
-    star_level2:=0;
-    above:=0;
-
     factor:=6*max_stars;//emperical. Number of pixels to test. This produces about 700 stars at hfd=2.25.
     factor2:=24*max_stars;//emperical. Number of pixels to test. This produces about 700 stars at hfd=4.5.
-
-    while ((star_level=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
+    above:=0;
+    while ((head.star_level=0) and (i>head.backgr+1) and (i>0)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
       dec(i);
-      above:=above+histogram[colour,i];//sum pixels above pixel level i
-      if above>=factor then star_level:=i;//level found for stars with HFD=2.25.
+      above:=above+histogram[colour,i];//sum of pixels above pixel level i
+      if above>=factor then head.star_level:=i;//level found for stars with HFD=2.25.
     end;
-    while ((star_level2=0) and (i>background+1)) do {Find star level. 0.001 of the flux is above star level. If there a no stars this should be all pixels with a value 3.09 * sigma (SD noise) above background}
+    while ((head.star_level2=0) and (i>head.backgr+1) and (i>0)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
       dec(i);
-      above:=above+histogram[colour,i];//sum pixels above pixel level i
-      if above>=factor2 then star_level2:=i;//level found for stars with HFD=4.5.
+      above:=above+histogram[colour,i];//sum of pixels above pixel level i
+      if above>=factor2 then
+        head.star_level2:=i;//level found for stars with HFD=4.5.
     end;
 
+
+    //memo2_message('Above count [pixels]'+inttostr(above));
 
     // Clip calculated star level:
     // 1) above 3.5*noise minimum, but also above background value when there is no noise so minimum is 1
     // 2) Below saturated level. So subtract 1 for saturated images. Otherwise no stars are detected}
-    star_level:=max(max(3.5*sd,1 {1}), star_level-background-1 {2) below saturation});//star_level is relative to background
-    star_level2:=max(max(3.5*sd,1 {1}), star_level2-background-1 {2) below saturation});//star_level is relative to background
-
+    head.star_level:= max(max(3.5*sd,1 {1})  ,head.star_level-head.backgr-1 {2) below saturation}); //star_level is relative to background
+    head.star_level2:=max(max(3.5*sd,1 {1})  ,head.star_level2-head.backgr-1 {2) below saturation}); //star_level is relative to background
   end;
 end;
+
+
+
 
 
 procedure HFD(img: Timage_array;x1,y1,rs {boxsize}: integer; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
@@ -2474,7 +2491,7 @@ begin
 end;
 
 
-procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
+procedure sensor_coordinates_to_celestialOLD(head: theader; fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
 var
   u,v,u2,v2             : double;
   dRa,dDec,delta,gamma  : double;
@@ -2511,118 +2528,165 @@ end;
 
 
 
-procedure analyse_image(img : Timage_array;snr_min:double;report_type:integer;out star_counter : integer;out backgr, hfd_median : double); {find background, number of stars, median HFD}
+
+procedure sensor_coordinates_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
 var
-   width2,height2,fitsX,fitsY,diam,i,j,retries,m,n,xci,yci,sqr_diam,starpixels : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,ra,decl,noise_lev              : double;
-   hfd_list                                                                    : array of double;
-   img_sa                                                                      : Timage_array;
+   fits_unsampledX, fits_unsampledY, sindec0,cosdec0 :double;
+   u,v,u2,v2             : double;
+   xi,eta,delta          : double;
+begin
+  ra:=0;dec:=0;{for case wrong index or head.cd1_1=0}
+  if head.cd1_1<>0 then
+  begin //wcs
+    if ((formalism=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial}
+    begin //apply SIP correction to pixels.
+      u:=fitsx-head.crpix1;
+      v:=fitsy-head.crpix2;
+      u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
+      v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
+    end
+    else
+    begin
+      u2:=fitsx-head.crpix1;
+      v2:=fitsy-head.crpix2;
+    end; {mainform1.Polynomial1.itemindex=0}
+
+    //for formalism 0 and 1
+    xi :=(head.cd1_1*u2 + head.cd1_2*v2)*pi/180;
+    eta:=(head.cd2_1*u2 + head.cd2_2*v2)*pi/180;
+
+    sincos(head.dec0,sindec0,cosdec0);
+    delta:=cosdec0-eta*sindec0;
+    ra:=head.ra0+arctan2(xi,delta); {atan2 is required for images containing celestial pole}
+    dec:=arctan((sindec0+eta*cosdec0)/sqrt(sqr(xi)+sqr(delta)));
+    if ra<0 then ra:=ra+pi*2;
+    if ra>pi*2 then ra:=ra-pi*2;
+  end; //WCS
+end;
+
+
+procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer);//find background, number of stars, median HFD
 var
-  f   :  textfile;
-const
-   len: integer=1000;
+  width5, height5, fitsX, fitsY, size, radius, i, j, retries, n, m,
+  xci, yci, sqr_radius, formalism,star_counter, starpixels: integer;
+  hfd1, star_fwhm, snr, flux, xc, yc, detection_level,
+  ra,decl, backgr, noise_level                : double;
+  hfd_list:  array of double;
+  img_sa  : Timage_array;
+  startext: string;
+var
+  f: textfile;
+var   {################# initialised variables #########################}
+  len: integer = 1000;
 begin
   //report_type=0, report hfd_median
   //report_type=1, report hfd_median and write csv file
   //report_type=2, write csv file
 
-  width2 := Length(img[0,0]); {width}
-  height2 := Length(img[0]);  {height}
+  width5:=Length(img[0,0]); {width}
+  height5:=Length(img[0]);  {height}
 
-  SetLength(hfd_list,len);{set array length to len}
+  SetLength(hfd_list, len);{set array length to len}
 
-  get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level,star_level2);
-  noise_lev:=noise_level[0];
-  retries:=3; {try up to four times to get enough stars from the image}
+  get_background(0, img,head, True, True {calculate background and also star level end noise level});
 
-  if ((backgr<60000) and (backgr>8)) then {not an abnormal file}
-  begin
-    repeat {try three time to find enough stars}
-      if retries=3 then
-        begin if star_level >30*noise_lev then detection_level:=star_level  else retries:=2;{skip} end;//stars are dominant
-      if retries=2 then
-        begin if star_level2>30*noise_lev then detection_level:=star_level2 else retries:=1;{skip} end;//stars are dominant
-      if retries=1 then
-        begin detection_level:=30*noise_lev; end;
-      if retries=0 then
-        begin detection_level:= 7*noise_lev; end;
+  detection_level:=head.star_level; {level above background. Start with a potential high value but with a minimum of 3.5 times noise as defined in procedure get_background}
 
-      star_counter:=0;
+  if ap_order>0 then formalism:=1{sip} else formalism:=0{1th order};
 
-      if report_type>0 then {write values to file}
+  backgr:=head.backgr;
+  noise_level:=head.noise_level;
+  retries:=4; {try up to four times to get enough stars from the image}
+
+  repeat {try four time to find enough stars, so 4,3,2,1}
+    if retries=4 then
+      begin if head.star_level >30*noise_level then detection_level:=head.star_level  else retries:=3;{skip} end; //stars are dominant
+    if retries=3 then
+      begin if head.star_level2>30*noise_level then detection_level:=head.star_level2 else retries:=2;{skip} end; //stars are dominant
+    if retries=2 then
+      begin detection_level:=30*noise_level; if snr_min>=30 then retries:=1; end;
+    if retries=1 then
+      begin detection_level:= max(snr_min,7)*noise_level; end;
+
+    star_counter:=0;
+
+    if report_type>0 then {write values to file}
+      startext:='x,y,hfd,snr,flux,ra[0..360],dec[0..360]'+LineEnding;
+
+    setlength(img_sa, 1, height5, width5);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+
+    for fitsY:=1 to height5 - 1-1 do  //Search through the image. Stay one pixel away from the borders.
+    begin
+      for fitsX:=1 to width5 - 1-1 do
       begin
-        assignfile(f,ChangeFileExt(filename2,'.csv'));
-        rewrite(f); {this could be done 3 times due to the repeat but it is the most simple code}
-        writeln(f, 'x,y,hfd,snr,flux,ra[0..360],dec[0..360]');
-      end;
-
-      setlength(img_sa,1,height2,width2);{set length of image array}
-      for fitsY:=0 to height2-1 do
-        for fitsX:=0 to width2-1  do
-          img_sa[0,fitsY,fitsX]:=0;{mark as star free urveyed area}
-
-      for fitsY:=1 to height2-1-1 do //Search through the image. Stay one pixel away from the borders.
-      begin
-        for fitsX:=1 to width2-1-1  do
+        if ((img_sa[0, fitsY, fitsX]<>retries){area not occupied by a star} and (img[0, fitsY, fitsX] - backgr > detection_level)) then     {new star}
         begin
-          if (( img_sa[0,fitsY,fitsX]<=0){star free area} and (img[0,fitsY,fitsX]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
+          starpixels:=0;
+          if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
+          if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+          if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+          if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
+          if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
           begin
-            starpixels:=0;
-            if img[0,fitsY,fitsX-1]- backgr>4*noise_lev then inc(starpixels);//inspect in a cross around it.
-            if img[0,fitsY,fitsX+1]- backgr>4*noise_lev then inc(starpixels);
-            if img[0,fitsY-1,fitsX]- backgr>4*noise_lev then inc(starpixels);
-            if img[0,fitsY+1,fitsX]- backgr>4*noise_lev then inc(starpixels);
-            if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
+            HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            if ((hfd1 <= 30) and (snr > snr_min) and (hfd1 > 0.8) {two pixels minimum} and (img_sa[0,round(yc),round(xc)]<>retries){prevent double detection}) then
+
             begin
-              HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-              if ((hfd1<=30) and (snr>snr_min) and (hfd1>0.8) {two pixels minimum} ) then
+              hfd_list[star_counter]:=hfd1;{store}
+              Inc(star_counter);
+              if star_counter >= len then
               begin
-                hfd_list[star_counter]:=hfd1;{store}
-                inc(star_counter);
-                if star_counter>=len then begin len:=len+1000; SetLength(hfd_list,len);{increase size} end;
-
-                diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-                sqr_diam:=sqr(diam);
-                xci:=round(xc);{star center as integer}
-                yci:=round(yc);
-                for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
-                  for m:=-diam to +diam do
-                  begin
-                    j:=n+yci;
-                    i:=m+xci;
-                    if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
-                      img_sa[0,j,i]:=1;
-                  end;
-
-                if report_type>0 then
-                begin
-                  if head.cd1_1=0 then
-                    writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))) {+1 to convert 0... to FITS 1... coordinates}
-                  else
-                  begin
-                    sensor_coordinates_to_celestial(xc + 1,yc + 1, ra,decl);
-                    writeln(f, floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi) ) {+1 to convert 0... to FITS 1... coordinates}
-                  end;
-                end;//report
+                len:=len + 1000;
+                SetLength(hfd_list, len);{increase size}
               end;
-            end;
-          end;
-        end;
+
+              radius:=round(3.0 * hfd1); {for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_radius:=sqr(radius);
+              xci:=round(xc);{star center as integer}
+              yci:=round(yc);
+              for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                for m:=-radius to +radius do
+                begin
+                  j:=n + yci;
+                  i:=m + xci;
+                  if ((j >= 0) and (i >= 0) and (j < height5) and (i < width5) and
+                    (sqr(m) + sqr(n) <= sqr_radius)) then
+                    img_sa[0, j, i]:=retries;//use retries as marker. Then img_sa does not be cleared!
+                end;
+
+              if report_type>0 then
+              begin
+                if head.cd1_1=0 then
+                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+LineEnding {+1 to convert 0... to FITS 1... coordinates}
+                else
+                begin
+                  sensor_coordinates_to_celestial(head,xc + 1,yc + 1, formalism, ra,decl);
+                  startext:=startext+floattostr4(xc + 1) + ',' + floattostr4(yc + 1) +  ',' + floattostr4(hfd1) + ',' + IntToStr(round(snr)) + ',' + IntToStr(round(flux))+','+floattostr8(ra*180/pi) + ',' + floattostr8(decl*180/pi)+LineEnding  {+1 to convert 0... to FITS 1... coordinates}
+                end;
+              end;
+            end;//star detected
+          end;//3px illuminated
+        end;//star free area
       end;
+    end;
 
-      dec(retries);{Try again with lower detection level}
+    Dec(retries);{Try again with lower detection level}
+  until ((star_counter >= max_stars) or (retries <= 0)); {reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-      if report_type>0 then closefile(f);
+  if ((star_counter > 0) and (report_type<=1)) then head.hfd_median:=SMedian(hfd_List, star_counter) else  head.hfd_median:=21.47;//21.47 max for halt(error_level)
 
-    until ((star_counter>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+  head.hfd_counter:=star_counter;
 
-    if ((star_counter > 0) and (report_type<=1)) then hfd_median := SMedian(hfd_List, star_counter) else  hfd_median := 99;
-  end {backgr is normal}
-  else
-  hfd_median:=99;{Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
-
-  img_sa:=nil;{free mem}
+  if report_type>0 then
+  begin
+    assignfile(f, ChangeFileExt(filename2, '.csv'));
+    rewrite(f);
+    writeln(f,startext);
+    closefile(f);
+  end;
 end;
+
+
 
 
 end.
