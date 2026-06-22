@@ -10,7 +10,7 @@ jobs:
   mirror:
     runs-on: ubuntu-latest
     container: 
-      image: canardconfit/hg-to-git:python3.9.18-alpine3.18
+      image: canardconfit/hg-to-git:python3.14.6-alpine3.24
     steps:
       - name: Create Folder data
         run: mkdir -p data
@@ -39,7 +39,7 @@ jobs:
       - name: Write author file for resolution
         run: "echo '\"han59\"=\"Han59 <han.k@hnsky.org>\"' > data/authors"
       - name: Checkout imported branch in git-repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: imported
           path: data/git-repo
@@ -52,24 +52,17 @@ jobs:
           force_with_lease: true
           branch: imported
           directory: data/git-repo
-  ASTAP-script:
+  astap-scripts:
     needs: [mirror]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/puppeteer/puppeteer:latest
-      options: --user root
+      image: canardconfit/astap-scripts:2.0.0
     steps:
       - name: Checkout main branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           path: git-repo
-      - name: Install node prerequises
-        run: yarn
-        working-directory: git-repo/.github/workflows/ASTAP-scripts
-      - name: Build
-        run: yarn build
-        working-directory: git-repo/.github/workflows/ASTAP-scripts
       - name: Launch script to check if PR is needed, and create PR with ASTAP News
         run: yarn start createPullRequest true -t ${{ secrets.GITHUB_TOKEN }}
-        working-directory: git-repo/.github/workflows/ASTAP-scripts
+        working-directory: /app
