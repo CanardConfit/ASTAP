@@ -22,7 +22,7 @@ jobs:
         run: mkdir -p data/exported-repo
 
       - name: Clone Mercurial repository
-        run: hg clone https://hg.code.sf.net/p/astap-program/code data/hg-repo
+        run: hg clone http://hg.code.sf.net/p/astap-program/code data/hg-repo
 
       - name: Write author mapping
         run: echo '"han59"="Han59 <han.k@hnsky.org>"' > data/authors
