@@ -26,16 +26,16 @@ jobs:
         run: yarn start autoMerge ${{ github.event.inputs.forced == 'true' }} false -t ${{ secrets.GITHUB_TOKEN }}
         working-directory: /app
 
-release-binaries:
-  needs: [auto-merge]
-  runs-on: ubuntu-latest
-  permissions:
-    contents: write
-  container:
-    image: canardconfit/astap-scripts:2.0.0
-  steps:
-    - name: Create ASTAP binary release draft if needed
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: yarn start releaseBinaries --draft
-      working-directory: /app
+  release-binaries:
+    needs: [auto-merge]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    container:
+      image: canardconfit/astap-scripts:2.0.0
+    steps:
+      - name: Create ASTAP binary release draft if needed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn start releaseBinaries --draft
+        working-directory: /app
