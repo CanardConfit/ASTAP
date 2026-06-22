@@ -32,5 +32,5 @@ jobs:
       - name: Create ASTAP binary release draft if needed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn start releaseBinaries --draft --repo /tmp/astap
+        run: yarn start releaseBinaries --draft
         working-directory: /app
