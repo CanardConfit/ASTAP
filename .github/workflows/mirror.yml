@@ -136,7 +136,7 @@ jobs:
     needs: [mirror]
     runs-on: ubuntu-latest
     container:
-      image: canardconfit/astap-scripts:2.0.2
+      image: canardconfit/astap-scripts:v2.0.0
 
     steps:
       - name: Create pull request when an update is available
