@@ -56,14 +56,8 @@ jobs:
     needs: [mirror]
     runs-on: ubuntu-latest
     container:
-      image: canardconfit/astap-scripts:2.0.1
-      options: --user root
+      image: canardconfit/astap-scripts:2.0.2
     steps:
-      - name: Checkout main branch
-        uses: actions/checkout@v7
-        with:
-          ref: main
-          path: /tmp/astap
       - name: Launch script to check if PR is needed, and create PR with ASTAP News
         run: yarn start createPullRequest true -t ${{ secrets.GITHUB_TOKEN }}
         working-directory: /app

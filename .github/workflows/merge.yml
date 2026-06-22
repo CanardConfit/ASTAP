@@ -15,13 +15,8 @@ jobs:
   auto-merge:
     runs-on: ubuntu-latest
     container:
-      image: canardconfit/astap-scripts:2.0.1
+      image: canardconfit/astap-scripts:2.0.2
     steps:
-      - name: Checkout main branch
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          path: /tmp/astap
       - name: Launch AutoMerge script
         run: yarn start autoMerge ${{ github.event.inputs.forced == 'true' }} false -t ${{ secrets.GITHUB_TOKEN }}
         working-directory: /app
@@ -32,7 +27,7 @@ jobs:
     permissions:
       contents: write
     container:
-      image: canardconfit/astap-scripts:2.0.1
+      image: canardconfit/astap-scripts:2.0.2
     steps:
       - name: Create ASTAP binary release draft if needed
         env:
