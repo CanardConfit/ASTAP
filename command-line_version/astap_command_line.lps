@@ -8,9 +8,8 @@
       <Unit0>
         <Filename Value="astap_command_line.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="213"/>
-        <CursorPos Y="242"/>
+        <TopLine Value="214"/>
+        <CursorPos X="32" Y="227"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -26,9 +25,9 @@
       <Unit2>
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="2526"/>
-        <CursorPos X="15" Y="2546"/>
+        <CursorPos X="36" Y="39"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>
@@ -251,7 +250,7 @@
         </Mode0>
       </Modes>
     </RunParams>
-    <HistoryLists Count="3">
+    <HistoryLists Count="2">
       <List0 Name="LaunchingApplication" Type="File" Count="1">
         <Item1 Value="C:\WINDOWS\system32\cmd.exe /C ${TargetCmdLine}"/>
       </List0>
