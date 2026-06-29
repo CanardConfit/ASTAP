@@ -13857,7 +13857,7 @@ begin
             else
               halt(errorlevel);
             {$ELSE}
-            halt(errorlevel);In linux only range 0..255 possible}
+            halt(errorlevel);//In linux only range 0..255 possible
             {$ENDIF}
           end;{analyse fits and report HFD value}
 
