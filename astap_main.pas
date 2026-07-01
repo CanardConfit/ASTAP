@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.06.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.06.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -13857,7 +13857,7 @@ begin
             else
               halt(errorlevel);
             {$ELSE}
-            halt(errorlevel);In linux only range 0..255 possible}
+            halt(errorlevel);//In linux only range 0..255 possible
             {$ENDIF}
           end;{analyse fits and report HFD value}
 
