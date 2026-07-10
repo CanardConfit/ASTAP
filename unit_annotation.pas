@@ -2326,7 +2326,7 @@ begin
     if database_type=1 then
     begin {W08 single file wide field database}
       if wide_database<>name_database then
-                              read_stars_wide_field;{load wide field stars array}
+        if read_stars_wide_field=false then exit;{load wide field stars array}
       count:=0;
       while ((star_total_counter<max_nr_stars) and  (count<length(wide_field_stars) div 3) ) do {star file 001 database read. Read up to nrstars_required}
       begin
@@ -2619,7 +2619,7 @@ begin
     else
     begin {W08 database}
       if wide_database<>name_database then
-                              read_stars_wide_field;{load wide field stars array}
+        if read_stars_wide_field=false then exit;{load wide field stars array}
       count:=0;
       while ((star_total_counter<max_nr_stars) and  (count<length(wide_field_stars) div 3) ) do {star file 001 database read. Read up to nrstars_required}
       begin

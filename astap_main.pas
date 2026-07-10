@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.06.29';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.07.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -875,7 +875,7 @@ function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24
 function prepare_ra8(rax:double; sep:string):string; {radialen to text, format 24: 00 00.00 }
 Function prepare_dec2(decx:double; sep:string):string; {radialen to text, format 90d 00 00.1}
 function inttostr5(x:integer):string;{always 5 digit}
-function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
+function SMedian(var list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 procedure mad_median(list: array of double; leng :integer;out mad,median :double);{calculate mad and median without modifying the data}
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS(var head:theader);{convert new style FITS to old style}
@@ -11986,7 +11986,7 @@ begin
 end;
 
 
-function SMedian(list: array of double; leng: integer): double;{get median of an array of double}
+function SMedian(var list: array of double; leng: integer): double;{get median of an array of double. Declaring list as var is the fastest method for sending an open array background[0..1000] }
 var
   mid : integer;
 begin

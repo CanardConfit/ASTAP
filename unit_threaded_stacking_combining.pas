@@ -1,4 +1,4 @@
-unit unit_threaded_stacking_step3;
+unit unit_threaded_stacking_combining;
 {Copyright (C) 2025 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
@@ -62,14 +62,14 @@ end;
 
 procedure TfinalArrayThread.Execute;
 var
-  h, w, col, x_trunc,y_trunc  : Integer;
-  x_frac,y_frac,x_new, y_new  : double;
-  val                         : single;
+  h, w, col, x_trunc,y_trunc                      : Integer;
+  x_frac,y_frac,x_new, y_new, w00, w10, w01, w11  : double;
+  val                                             : single;
 begin
   //Inverse Mapping (a.k.a. Backward Mapping) Instead of mapping source → destination (forward), you loop over destination pixels and figure out where they came from in the original image
   //combine excluding outliers
   for h := FRowStart to FRowEnd do //cycle in reference image dimensions and find source pixel
-    for w := 0 to Fwidth_source - 1 do // This procedure is using reverse mapping. So the transfer function from destination to source image is known. See e.g. https://www.cs.princeton.edu/courses/archive/spr11/cos426/notes/cos426_s11_lecture03_warping.pdf
+    for w := 0 to Fwidth_dest - 1 do // This procedure is using reverse mapping. So the transfer function from destination to source image is known. See e.g. https://www.cs.princeton.edu/courses/archive/spr11/cos426/notes/cos426_s11_lecture03_warping.pdf
     begin //find source image position
       x_new := Faa * w + Fbb * h + Fcc;//correction x:=aX+bY+c
       y_new := Fdd * w + Fee * h + Fff;//correction y:=aX+bY+c
@@ -82,12 +82,23 @@ begin
         x_frac :=frac(x_new);
         y_frac :=frac(y_new);
 
+        w00 := (1-x_frac)*(1-y_frac);  {pixel left top,    1}
+        w10 :=     x_frac*(1-y_frac);  {pixel right top,   2}
+        w01 := (1-x_frac)*   y_frac;   {pixel left bottom, 3}
+        w11 :=    x_frac *   y_frac;   {pixel right bottom,4}
+
+
         for col := 0 to Fcolors - 1 do //resample the source image
         begin //Bilinearly interpolate four closest pixels of the source
-          val:=      (source^[col,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top,    1}
-          val:=val + (source^[col,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top,   2}
-          val:=val + (source^[col,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-          val:=val + (source^[col,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
+          val := source^[col,y_trunc  ,x_trunc  ] * w00 +  {pixel left top,    1}
+                 source^[col,y_trunc  ,x_trunc+1] * w10 +  {pixel right top,   2}
+                 source^[col,y_trunc+1,x_trunc  ] * w01 +  {pixel left bottom, 3}
+                 source^[col,y_trunc+1,x_trunc+1] * w11;   {pixel right bottom,4}
+
+//          val:=      (source^[col,y_trunc  ,x_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top,    1}
+//          val:=val + (source^[col,y_trunc  ,x_trunc+1]) * (  x_frac)*(1-y_frac);{pixel right top,   2}
+//          val:=val + (source^[col,y_trunc+1,x_trunc  ]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+//          val:=val + (source^[col,y_trunc+1,x_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom,4}
           val:=val - Fbackground;
           if sqr (val - arrayA^[col,h,w]{average})< Fvariance_factor {sqr sd}*( arrayB^[col,h,w]){variance}  then {not an outlier}
           begin
@@ -115,13 +126,13 @@ begin
 
   // Limit threads to available CPU logical cores or height
   {$ifdef mswindows}
-  THREAD_COUNT := Min(System.CPUCount, height_source);//work in Windows and Linux virtual machine but not in native Linux or Darwin and return then 1.
+  THREAD_COUNT := Min(System.CPUCount, height_dest);//work in Windows and Linux virtual machine but not in native Linux or Darwin and return then 1.
   {$else} {unix}
-  THREAD_COUNT := Min(GetSystemThreadCount, height_source);
+  THREAD_COUNT := Min(GetSystemThreadCount, height_dest);
   {$endif}
 
   SetLength(Threads, THREAD_COUNT);
-  RowsPerThread := height_source div THREAD_COUNT;
+  RowsPerThread := height_dest div THREAD_COUNT;
 
   // Create and start threads
   for i := 0 to THREAD_COUNT - 1 do
@@ -129,7 +140,7 @@ begin
     RowStart := i * RowsPerThread;
     RowEnd := (i + 1) * RowsPerThread - 1;
     if i = THREAD_COUNT - 1 then
-      RowEnd := height_source - 1;
+      RowEnd := height_dest - 1;
 
 
     Threads[i] := TfinalArrayThread.Create(RowStart, RowEnd, dest, source, arrayA,arrayB,arrayC, solution_vectorX,solution_vectorY, background, weightf,variance_factor{doubles},colors, width_dest,height_source,width_source);

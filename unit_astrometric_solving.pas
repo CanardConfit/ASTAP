@@ -1257,8 +1257,9 @@ begin
 
     if ra_mount < 99 then {mount position known and specified. Calculate mount offset}
     begin
-      mount_ra_sep := pi * frac((ra_mount - ra_radians) / pi) * cos(
-        (dec_mount + dec_radians) * 0.5 {average dec});//total mount error. Only used for scaling
+      mount_ra_sep :=fnmodulo(ra_mount-head.ra0,2*pi); if mount_ra_sep >pi then mount_ra_sep :=mount_ra_sep-2*pi;//2026 fix, map to range -pi..+pi. The old expression pi*frac((ra_mount-head.ra0)/pi) removed multiples of pi instead of 2*pi and reported a wrong offset when the mount RA and solution RA are on opposite sides of 0h RA
+      mount_ra_sep:=mount_ra_sep * cos((head.dec0+dec_mount)*0.5 {average dec});//only used for scaling
+
       mount_dec_sep := dec_mount - dec_radians;
       mount_sep := sqrt(sqr(mount_ra_sep) + sqr(mount_dec_sep));  //mount_sep is only used for scaling}
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="12"/>
+    <Version Value="13"/>
     <PathDelim Value="\"/>
     <General>
       <Flags>
@@ -26,10 +26,13 @@
       <Attributes pvaPreRelease="True"/>
       <StringTable CompanyName="www.hnsky.org" FileDescription="Astrometric STAcking Program" LegalCopyright="Han Kleijn" OriginalFilename="astap.exe" ProductName="ASTAP" ProductVersion="File version refers to the interface standard"/>
     </VersionInfo>
+    <MacroValues Count="1">
+      <Macro1 Name="LCLWidgetType" Value="gtk3"/>
+    </MacroValues>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
       <SharedMatrixOptions Count="1">
-        <Item1 ID="157524384531" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk3"/>
+        <Item1 ID="811854186262" Modes="Default" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk3"/>
       </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>
@@ -133,6 +136,7 @@
         <GenerateDebugInfo Value="False"/>
         <RunWithoutDebug Value="True"/>
         <DebugInfoType Value="dsDwarf2Set"/>
+        <UseHeaptrc Value="True"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
       <Options>
@@ -148,7 +152,7 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="9">
+    <Exceptions Count="11">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -176,6 +180,12 @@
       <Item9>
         <Name Value="RunError(219)"/>
       </Item9>
+      <Item10>
+        <Name Value="External: SIGSEGV"/>
+      </Item10>
+      <Item11>
+        <Name Value="External: Unknown exception code 6"/>
+      </Item11>
     </Exceptions>
   </Debugging>
 </CONFIG>

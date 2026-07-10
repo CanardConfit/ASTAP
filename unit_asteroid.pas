@@ -284,9 +284,9 @@ begin
   re  := sqrt(sqr(xe)+sqr(ye)+sqr(ze)); {Distance Sun and Earth}
   r_ep:= sqrt(sqr(xp)+sqr(yp)+sqr(zp)); {Distance Earth and minor planet}
 
-  elong:=(180/pi)*arccos( ( r_ep*r_ep + re*re - r_sp*r_sp ) / ( 2.0*r_ep*re ) );{calculation elongation, phase angle and phase}
+  elong:=(180/pi)*arccos( (max(-1.0,min(1.0, r_ep*r_ep + re*re - r_sp*r_sp ) / ( 2.0*r_ep*re ))) );{calculation elongation, phase angle and phase}
   c_phi:=( sqr(r_ep) + sqr(r_sp) - sqr(re) ) / (2.0*r_ep*r_sp);
-  phi  :=(180/pi)*arccos( c_phi );{phase angle in degrees}
+  phi  :=(180/pi)*arccos(max(-1.0,min(1.0, c_phi)) );{phase angle in degrees}
   phase:= 100*0.5*(1.0+c_phi); {0..100}
 end;
 

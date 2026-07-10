@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units Count="15">
+      <Unit0>
+        <Filename Value="astap.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="astap_main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="mainform1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+        <UsageCount Value="57"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="52"/>
+        <CursorPos X="29" Y="78"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="unit_stack.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="stackmenu1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+        <UsageCount Value="57"/>
+        <TopLine Value="1426"/>
+        <CursorPos Y="1426"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="unit_tiff.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="unit_astrometry.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="unit_gaussian_blur.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="unit_star_align.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="401"/>
+        <CursorPos Y="401"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="unit_annotation.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="unit_thumbnail.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="thumbnails1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UsageCount Value="57"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="unit_xisf.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="unit_stack_routines.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="unit_inspector_plot.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="form_inspection1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UsageCount Value="57"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="unit_hjd.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UsageCount Value="57"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="backup/astap_main.pas"/>
+        <UsageCount Value="7"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="7663"/>
+        <CursorPos X="90" Y="7676"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="backup/unit_stack.pas"/>
+        <UsageCount Value="7"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="396"/>
+        <CursorPos X="5" Y="408"/>
+      </Unit14>
+    </Units>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="408" Column="16" TopLine="388"/>
+      </Position1>
+      <Position2>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="7919" Column="3" TopLine="7906"/>
+      </Position2>
+      <Position3>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="408" Column="16" TopLine="388"/>
+      </Position3>
+      <Position4>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="7915" Column="16" TopLine="7906"/>
+      </Position4>
+      <Position5>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="9021" Column="21" TopLine="8993"/>
+      </Position5>
+      <Position6>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="9569" Column="24" TopLine="9541"/>
+      </Position6>
+      <Position7>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="9696" Column="22" TopLine="9668"/>
+      </Position7>
+      <Position8>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="9703" Column="24" TopLine="9676"/>
+      </Position8>
+      <Position9>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="11631" Column="23" TopLine="11604"/>
+      </Position9>
+      <Position10>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="11969" Column="15" TopLine="11941"/>
+      </Position10>
+      <Position11>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="12584" Column="15" TopLine="12556"/>
+      </Position11>
+      <Position12>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="13627" Column="21" TopLine="13599"/>
+      </Position12>
+      <Position13>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="13645" Column="167" TopLine="13617"/>
+      </Position13>
+      <Position14>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="14428" Column="38" TopLine="14400"/>
+      </Position14>
+      <Position15>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="16613" Column="21" TopLine="16586"/>
+      </Position15>
+      <Position16>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="16689" Column="21" TopLine="16661"/>
+      </Position16>
+      <Position17>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="782" Column="19" TopLine="765"/>
+      </Position17>
+      <Position18>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="1351" Column="11" TopLine="1344"/>
+      </Position18>
+      <Position19>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="3757" Column="25" TopLine="3729"/>
+      </Position19>
+      <Position20>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="2" Column="26"/>
+      </Position20>
+      <Position21>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="71" Column="6" TopLine="43"/>
+      </Position21>
+      <Position22>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="12589" Column="3" TopLine="12587"/>
+      </Position22>
+      <Position23>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="1122" Column="24" TopLine="1107"/>
+      </Position23>
+      <Position24>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="1452" Column="60" TopLine="1421"/>
+      </Position24>
+      <Position25>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="13312" Column="46" TopLine="13284"/>
+      </Position25>
+      <Position26>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="9236" Column="3" TopLine="9231"/>
+      </Position26>
+      <Position27>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="7321" Column="49" TopLine="7318"/>
+      </Position27>
+      <Position28>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="9241" Column="20" TopLine="9234"/>
+      </Position28>
+      <Position29>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="12538" Column="14" TopLine="12535"/>
+      </Position29>
+      <Position30>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="2" Column="26"/>
+      </Position30>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode="default"/>
+    </RunParams>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="unit_stack.pas"/>
+        <Line Value="3746"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
+</CONFIG>
