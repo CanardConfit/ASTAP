@@ -35,7 +35,7 @@ var
 
 implementation
 
-uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_step1,unit_threaded_stacking_step2,unit_threaded_stacking_step3,unit_threaded_mosaic;
+uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_mean,unit_threaded_stacking_mean_and_variance,unit_threaded_stacking_combining,unit_threaded_mosaic;
 
 
 procedure calc_newx_newy(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double; out  x_new_float,  y_new_float : double); {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
@@ -215,7 +215,7 @@ var
   avg_colour,counter,background : array[0..5] of single;
   value,maximum, maxcolour,luminance   : single;
 begin
-   for i:=0 to length(starlist2[0]) do
+   for i:=0 to high(starlist2[0]) do
    begin
      x:=round(starlist2[0,i]);//center of star
      y:=round(starlist2[1,i]);
@@ -1285,7 +1285,7 @@ var
     variance_factor, value,weightF,hfd_min,dummy,mean_hfd,referenceX, referenceY                                        : double;
     init, solution,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,use_sip, solar_drift_compensation,
     use_star_alignment                                                                                                 : boolean;
-    tempval, sumpix, newpix, background, pedestal,val                                                                  : single;
+    tempval, sumpix, newpix, background, pedestal,val,meanv, varv                                                      : single;
     warning     : string;
     starlist1,starlist2 : Tstar_list;
     img_temp,img_average,img_final,img_variance,img_early,dummy_img : Timage_array;
@@ -1357,7 +1357,7 @@ begin
 
         apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
-        memo2_message('Averaging, frame: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
+        memo2_message('Measuring mean and spread, frame: '+inttostr(counter+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
         if esc_pressed then exit;
 
@@ -1377,6 +1377,7 @@ begin
           width_max:=head.width;
           setlength(img_average,head.naxis3,height_max,width_max);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
           setlength(img_temp,head.naxis3,height_max,width_max);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+          setlength(img_variance,head.naxis3,height_max,width_max);//Mono. In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
           binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
 
           if use_star_alignment then
@@ -1462,11 +1463,38 @@ begin
           if solar_drift_compensation then
             compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
 
-          stack_arrays(img_average, img_loaded, img_temp, solution_vectorX,solution_vectorY, background, weightf);//add B to A
+          //stack_arrays(img_average, img_loaded, img_temp, solution_vectorX,solution_vectorY, background, weightf);//add B to A
+          stack_arrays_variance(img_average, img_loaded, img_variance, img_temp, solution_vectorX, solution_vectorY, background, weightf);//calculate mean and variance in one step.
+          { One-pass weighted mean and variance
+            -----------------------------------
+            For each output pixel, frame i contributes a background-subtracted,
+            resampled value  dᵢ = valᵢ − background  with weight wᵢ (weightF, normally 1).
 
+            Accumulate three running sums in a SINGLE pass over the frames:
+                W  = Σ wᵢ           (weightArr, channel 0)
+                S1 = Σ wᵢ·dᵢ        (meanArr)
+                S2 = Σ wᵢ·dᵢ²       (sumsqArr)
+
+
+            Weighted mean:      m = S1 / W
+
+            The weighted variance follows without a second pass from the identity:
+                σ² = Σ wᵢ·(dᵢ − m)² / W
+                   = (S2 − 2m·S1 + m²·W) / W        expand the square
+                   = (S2 − m²·W) / W                since S1 = m·W
+                   = S2/W − m²
+
+            So after the pass:  m = S1/W  and  σ² = S2/W − m²
+
+            Numerical note: σ² is the difference of two nearly equal quantities
+            (S2/W and m²). In single precision this loses accuracy for bright pixels
+            where m >> σ (relative error ≈ (m/σ)²·ε_single). Acceptable here because the
+            value only sets a coarse sigma-clip threshold; if a bright-star stack ever
+            shows drift, promote sumsqArr to double and leave the rest single.
+            A near-constant pixel can give a tiny negative σ² from rounding, so clamp ≥ 0. }
         end;//solution
 
-        progress_indicator(0.1+0.3333*0.9*counter/images_checked,' ■□□');{show progress}
+        progress_indicator(0.1+0.3333*0.9*counter/images_checked,' ■□');{show progress}
         finally
         end;
       end;{try}
@@ -1477,90 +1505,18 @@ begin
           val:=img_temp[0,fitsY,fitsX];
           if val>0 then
             for col:=0 to head.naxis3-1 do
-               img_average[col,fitsY,fitsX]:=img_average[col,fitsY,fitsX]/val;//scale to one image by diving by the number of pixels added
+            begin
+              meanv := img_average[col,fitsY,fitsX]/val;    // m = S1/W, the weighted (already background-subtracted) mean
+              // Variance in one pass: sigma^2 = S2/W - m^2.  For a bright, near-constant pixel S2/W and m^2 are two large, nearly equal values; in single precision their difference can round slightly below zero.
+              // Clamp to 0 so it never produces a negative (or below-floor) threshold later.
+              varv  := max(0, img_variance[col,fitsY,fitsX]/val - meanv*meanv);
+              img_average[col,fitsY,fitsX]  := meanv;        // store the mean for the reject test in finalise_array
+              // The +1 is a variance floor (~1 ADU^2). A saturated/constant pixel has variance ~0, which would make the keep-test (val-mean)^2 < k^2*variance reject every sample and
+              // turn the pixel black. The floor keeps such high-signal pixels; it does not weaken rejection of cosmic rays / satellite tracks, whose deviations dwarf it.
+              img_variance[col,fitsY,fitsX] := 1 + varv;
+            end;
         end;
     end;  {light average}
-
-    {standard deviation of light images}  {stack using sigma clip average}
-    begin {standard deviation}
-      counter:=0;
-
-      init:=false;
-      for c:=0 to high(files_to_process) do
-      if length(files_to_process[c].name)>0 then
-      begin
-        try { Do some lengthy operation }
-          while stacking_paused do pause2;
-          ListView1.Selected :=nil; {remove any selection}
-          ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
-          Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False); {scroll to selected item}
-
-          filename2:=files_to_process[c].name;
-
-          {load image}
-          Application.ProcessMessages;
-          if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,mainform1.memo1.Lines,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
-
-          if init=false then
-          begin
-            {not required. Done in first step}
-          end;
-
-          apply_dark_and_flat(img_loaded,head);{apply dark, flat if required, renew if different head.exposure or ccd temp}
-
-          memo2_message('Measuring deviations, frame '+inttostr(counter+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
-          Application.ProcessMessages;
-          if esc_pressed then exit;
-
-          if process_as_osc>0 then {do demosaic bayer}
-          begin
-            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
-            else
-               demosaic_bayer(img_loaded); {convert OSC image to colour}
-              {head.naxis3 is now 3}
-          end;
-          if init=false then {init (2) for standard deviation step}
-          begin
-            jd_mid_reference:=jd_mid; //for  "compensate solar movement". Julian dates are calculated in apply_dark_and_flat
-            setlength(img_variance,head.naxis3,height_max,width_max);//Mono. In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
-          end;{c=0}
-
-          inc(counter);
-
-          if use_astrometry_internal then  sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
-          else
-          begin {align using star match, read saved solution vectors}
-            solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
-            solution_vectorY:=solutions[c].solution_vectorY;
-          end;
-          init:=true;{initialize for first image done}
-          background:=solutions[c].cblack;
-          weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
-          {2}
-
-          if use_astrometry_internal then
-            astrometric_to_vector(head_ref,head);{convert 1th order astrometric solution to vector solution}
-
-          if solar_drift_compensation then
-            compensate_solar_drift(head, {var} solution_vectorX,solution_vectorY);//compensate movement solar objects
-
-          variance_array(img_variance, img_loaded, img_average,img_temp, solution_vectorX,solution_vectorY, background, weightf);//add B to A
-
-          progress_indicator(0.10+0.3+0.33333*0.9*counter/images_checked,' ■■□');{show progress}
-        finally
-        end;
-      end;{try}
-      if counter<>0 then
-        For fitsY:=0 to height_max-1 do
-          for fitsX:=0 to width_max-1 do
-          begin
-            val:=img_temp[0,fitsY,fitsX];{re-use the img_temp from light average}
-            if val<>0 then
-            for col:=0 to head.naxis3-1 do
-              img_variance[col,fitsY,fitsX]:=1+img_variance[col,fitsY,fitsX]/val; {the extra 1 is for saturated images giving a SD=0}{scale to one image by diving by the number of pixels tested}
-            end;
-    end; {standard deviation of light images}
 
 
     {throw out the outliers of light-dark images}  {stack using sigma clip average}
@@ -1629,7 +1585,7 @@ begin
           //phase 3
           finalise_array(img_final, img_loaded, img_average,img_variance,img_temp, solution_vectorX,solution_vectorY, background, weightf,variance_factor);//add B to A
 
-          progress_indicator(0.1+0.6+0.33333*0.9*counter/images_checked,' ■■■');{show progress}
+          progress_indicator(0.1+0.6+0.33333*0.9*counter/images_checked,' ■■');{show progress}
           finally
         end;
       end;

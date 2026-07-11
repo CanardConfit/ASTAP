@@ -54,7 +54,7 @@
       <Unit1>
         <Filename Value="astap_main.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="mainwindow"/>
+        <ComponentName Value="mainform1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
@@ -133,6 +133,7 @@
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
+        <RunWithoutDebug Value="True"/>
         <DebugInfoType Value="dsDwarf3"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>

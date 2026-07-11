@@ -8471,7 +8471,7 @@ begin
           mainform1.image1.Canvas.Pen.style:=psSolid;
           mainform1.image1.Canvas.Pen.Color:=$000050; {dark red}
 
-          for i:=0 to length(starlistx[0]) - 2 do
+          for i:=0 to high(starlistx[0]) do
           begin
             size:=round(5 * starlistX[2, i]);{5*hfd}
             x_new:= round(aa * (starlistX[0, i]) +  bb * (starlistX[1, i]) + cc); {correction x:=aX+bY+c}

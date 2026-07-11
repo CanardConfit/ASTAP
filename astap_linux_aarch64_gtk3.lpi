@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="12"/>
+    <Version Value="13"/>
     <PathDelim Value="\"/>
     <General>
       <Flags>
@@ -26,10 +26,13 @@
       <Attributes pvaPreRelease="True"/>
       <StringTable CompanyName="www.hnsky.org" FileDescription="Astrometric STAcking Program" LegalCopyright="Han Kleijn" OriginalFilename="astap.exe" ProductName="ASTAP" ProductVersion="File version refers to the interface standard"/>
     </VersionInfo>
+    <MacroValues Count="1">
+      <Macro1 Name="LCLWidgetType" Value="gtk3"/>
+    </MacroValues>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
       <SharedMatrixOptions Count="1">
-        <Item1 ID="157524384531" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk3"/>
+        <Item1 ID="170087697226" Modes="Default" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk3"/>
       </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>
@@ -106,9 +109,7 @@
       <Unit11>
         <Filename Value="unit_inspector_plot.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="form_inspection1"/>
         <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit11>
       <Unit12>
         <Filename Value="unit_hjd.pas"/>
@@ -128,11 +129,14 @@
         <SyntaxMode Value="Delphi"/>
       </SyntaxOptions>
     </Parsing>
+    <CodeGeneration>
+      <TargetCPU Value="aarch64"/>
+      <TargetOS Value="linux"/>
+    </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
         <RunWithoutDebug Value="True"/>
-        <DebugInfoType Value="dsDwarf2Set"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
       <Options>
