@@ -36,7 +36,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.06.29';
+  astap_version: string='2026.07.13';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -109,7 +109,7 @@ var
   head : Theader;
   filename2: string;
   size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
-  ra_radians,dec_radians, pixel_size : double;
+  {ra_radians,dec_radians,} pixel_size : double;
   ra_mount,dec_mount                     : double; {telescope ra,dec}
 
   a_order,ap_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
@@ -202,6 +202,8 @@ procedure update_integer(inpt,comment1:string;x:integer);{update or insert varia
 procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
 procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
 procedure log_to_file(logf,mess : string);{for testing}
+function fnmodulo (x,range: double):double;
+
 
 implementation
 
@@ -1499,13 +1501,13 @@ begin
     end else
     if ((key='OBJCTRA =') and (ra_mount>=999)) {ra_mount value is unfilled, preference for keyword RA} then
     begin
-      ra1:=read_string;{triggers an onchange event which will convert the string to ra_radians}
-      ra_mount:=ra_radians;{preference for keyword RA}
+      ra1:=read_string;
+     // ra_mount:=ra_radians;{preference for keyword RA}
     end  else
     if ((key='OBJCTDEC=') and (dec_mount>=999)) {dec_mount value is unfilled, preference for keyword DEC} then
     begin
-      dec1:=read_string;{triggers an onchange event which will convert the string to dec_radians}
-      dec_mount:=dec_radians;
+      dec1:=read_string;
+      //dec_mount:=dec_radians;
     end else
 
     if (key='XBINNING=') then head.Xbinning:=read_integer else
@@ -1539,7 +1541,9 @@ begin
   if ra1<>'' then
   begin
     ra_text_to_radians ( ra1 ,head.ra0,error1); {convert ra text to head.ra0 in radians}
+    ra_mount:=head.ra0;
     dec_text_to_radians( dec1,head.dec0,error1); {convert dec text to dec0 in radians}
+    dec_mount:=head.dec0;
   end;
 
 

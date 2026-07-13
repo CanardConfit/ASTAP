@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.07.12a';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.07.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1707,7 +1707,7 @@ begin
             end
             else
             begin
-              mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+              mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
               dec_mount:=dec_radians;//preference for the other keywords
             end;
           end;
@@ -6536,6 +6536,7 @@ begin
   {solve internal}
   mainform1.caption:='Solving.......';
   save1.Enabled:=solve_image(img_loaded,head,mainform1.memo1.lines,false {get hist, is already available},false {check filter});{match between loaded image and star database}
+
   if head.cd1_1<>0 then
   begin
     mainform1.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}

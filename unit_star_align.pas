@@ -1262,8 +1262,8 @@ const
             level_star, level_cross                : single;  //2026 perf, hoisted absolute thresholds
             rowC, rowM, rowP, rowSA                : PSingle;  //2026 perf, row pointers. img[0,fitsY,fitsX] needs two pointer dereferences per access on a 3-dimensional dynamic array. Caching the row start pointer per fitsY reduces this to one, which matters in this pixel loop that visits every image pixel up to four times
           begin
-            level_star :=head.backgr+detection_level; //2026 perf, precalculate. Saves a subtraction per pixel and an addition/multiplication per candidate test
-            level_cross:=head.backgr+4*noise_level;
+            level_star :=backgr+detection_level; //2026 perf, precalculate. Saves a subtraction per pixel and an addition/multiplication per candidate test
+            level_cross:=backgr+4*noise_level;
             for fitsY:=startY to endY do  //Search through the image. Stay one pixel away from the borders.
             begin
               rowC :=@img[0,fitsY,0];    //2026 perf, current row
@@ -1272,18 +1272,14 @@ const
               rowSA:=@img_sa[0,fitsY,0]; //2026 perf, star area marking row
               for fitsX:=startX to endX  do
               begin
-                if ((img_sa[0,fitsY,fitsX]<>retries){star free area for this retry} and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star above noise level}
+                if ((rowSA[fitsX]<>retries){star free area for this retry} and (rowC[fitsX]>level_star){star}) then {new star above noise level}
                 begin
                   starpixels:=0;
-//                  if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
-//                  if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
-//                  if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
-//                  if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
-                  if rowC[fitsX-1]>level_cross then inc(starpixels);//inspect in a cross around it.
-                  if rowC[fitsX+1]>level_cross then inc(starpixels);
-                  if rowM[fitsX]>level_cross then inc(starpixels);
-                  if rowP[fitsX]>level_cross then inc(starpixels);
-
+                  //inspect in a cross around it. Should be above 4*noise level
+                  if rowC[fitsX-1]>level_cross then inc(starpixels);//= if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);
+                  if rowC[fitsX+1]>level_cross then inc(starpixels);//= if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+                  if rowM[fitsX]  >level_cross then inc(starpixels);//= if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+                  if rowP[fitsX]  >level_cross then inc(starpixels);//= if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
 
                   if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
                   begin
@@ -1355,7 +1351,6 @@ begin
 
   backgr:=head.backgr;
   noise_level:=head.noise_level;
-
   retries:=4; {try up to four times to get enough stars from the image. So for retries 4,3,2,1 }
   repeat
     mean_hfd:=0;
