@@ -452,7 +452,6 @@ begin
         fwhm_median:=SMedian(fwhm_List,nhfd {use length});
 
 
-
         if ((triangle=true) and (nhfd_11>0)  and (nhfd_21>0) and (nhfd_31>0)) then  {enough information for tilt calculation}
         begin
           median_11:=SMedian(hfdlist_11,nhfd_11);{screw 1}
@@ -576,6 +575,8 @@ begin
 
 
           result:=median_worst-median_best; //for export
+
+          update_text(memo,'HFD     = ',floattostr2(hfd_median)+'                / Median HFD                                     ');
           update_text(memo,'TILT    = ',floattostr2(result)+'                / Delta HFD between worst and best corner. SNR>'+floattostrF(snr_min,FFgeneral,0,0));;//two decimals only for nice reporting
 
 
@@ -644,7 +645,7 @@ begin
         end
         else
         begin
-          mess2:='';
+          mess2:=' Not enough stars for tilt measurement.';
         end;
 
         image1.Canvas.font.style:=[];

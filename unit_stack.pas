@@ -8155,7 +8155,7 @@ begin
           progress_indicator(c/listview7.items.Count,' Solved');
           Application.ProcessMessages;
 
-          if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
+          if solve_image(img_temp,headx,memox,ra_radians,dec_radians, True  {get hist},false {check filter}) then
           begin{match between loaded image and star database}
             if save_fits_tiff_secure(img_temp,memox,filename1,headx.bitpix)=false then
             begin
@@ -9781,7 +9781,7 @@ begin
         listview6.Items[c].MakeVisible(False);{scroll to selected item}
         memo2_message(filename2 + ' Adding astrometric solution to files.');
 
-        if solve_image(img_loaded, head,mainform1.memo1.lines, True  {get hist},false {check filter}) then
+        if solve_image(img_loaded, head,mainform1.memo1.lines,ra_radians,dec_radians, True  {get hist},false {check filter}) then
         begin{match between loaded image and star database}
           memo2_message(filename2 + ' astrometric solved.');
         end
@@ -10698,7 +10698,7 @@ begin
           memo2_message(filename1 + ' Adding astrometric solution to file.');
           Application.ProcessMessages;
 
-          if solve_image(img_temp, headx,memox, True  {get hist},false {check filter}) then
+          if solve_image(img_temp, headx,memox, ra_radians,dec_radians, True  {get hist},false {check filter}) then
           begin{match between loaded image and star database}
             remove_key(memox,'ANNOTATE',true{all});//remove key word in header. If solution requeres update then annotations are likely not correct.
             result:=save_fits_tiff;
@@ -12552,7 +12552,7 @@ end;
 
 function update_solution_and_save(img: Timage_array; var hd: theader;memo:tstrings): boolean;  {plate solving, image should be already loaded create internal solution using the internal solver}
 begin
-  if solve_image(img, hd,memo, True,false) then {match between loaded image and star database}
+  if solve_image(img, hd,memo, ra_radians,dec_radians, True,false) then {match between loaded image and star database}
   begin
     if fits_file_name(filename2) then
     begin

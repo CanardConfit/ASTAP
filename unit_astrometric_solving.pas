@@ -102,7 +102,7 @@ interface
 uses  Classes, SysUtils, Controls, Forms, Math, StdCtrls,
       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation, unit_stars_wide_field, unit_calc_trans_cubic, unit_profiler;
 
-function solve_image(img: Timage_array;var hd: Theader; memo: TStrings; get_hist{update hist}, check_patternfilter: boolean): boolean;{find match between image and star database}
+function solve_image(img: Timage_array; var hd: Theader; memo: TStrings; const ra_start,dec_start:double; get_hist{update hist}, check_patternfilter: boolean): boolean; {find match between image and star database}
 procedure bin_and_find_stars(img: Timage_array; var head: theader; binfactor: integer; cropping, hfd_min: double; max_stars: integer; get_hist{update hist}: boolean; out starlist3: Tstar_list; out mean_hfd: double;  out short_warning: string);{bin, measure background, find stars}
 function report_binning(Height: double): integer;{select the binning}
 function position_angle(ra1, dec1, ra0, dec0: double): double;//Position angle of a body at ra1,dec1 as seen at ra0,dec0. Rigorous method
@@ -750,7 +750,7 @@ end;
 
 
 
-function solve_image(img: Timage_array; var hd: Theader; memo: TStrings; get_hist{update hist}, check_patternfilter: boolean): boolean; {find match between image and star database}
+function solve_image(img: Timage_array; var hd: Theader; memo: TStrings; const ra_start,dec_start:double; get_hist{update hist}, check_patternfilter: boolean): boolean; {find match between image and star database}
 var
   nrstars_image, nrstars_required, nrstars_required2, Count, max_distance, nr_quads,
   minimum_quads, binning, match_nr, spiral_x, spiral_y, spiral_dx,
@@ -840,8 +840,8 @@ begin
   autoFOV := (fov_org = 0);{specified auto FOV}
 
   repeat {autoFOV loop}
-    ra_seed  := ra_radians;  // start position search;
-    dec_seed := dec_radians; // start position search;
+    ra_seed  := ra_start;  // start position search;
+    dec_seed := dec_start; // start position search;
 
     if autoFOV then
     begin
@@ -1026,7 +1026,6 @@ begin
             flip := pi;
           end;
 
-
           if dec_database > 0 then extra := step_size / 2  else  extra := -step_size / 2;{use the distance furthest away from the pole}
 
           ra_database_offset := (STEP_SIZE * spiral_x / cos(dec_database - extra)); {step larger near pole. This ra_database is an offset from zero}
@@ -1082,10 +1081,7 @@ begin
               nrstars_required2 := round(nrstars_required * oversize2 * oversize2); //nr of stars requested request from database
 
               //profiler_start;
-
-              //memo2_message(floattostr(ra_database)+' '+floattostr(dec_database) +' '+floattostr(search_field * oversize2)+' '+floattostr(nrstars_required2));
-
-              if read_stars(ra_database, dec_database, search_field * oversize2, database_type, nrstars_required2,{out} starlist1) = False then
+               if read_stars(ra_database, dec_database, search_field * oversize2, database_type, nrstars_required2,{out} starlist1) = False then
               begin
                 {$IFDEF linux}
                  //keep till 2026
@@ -1100,14 +1096,10 @@ begin
 
               //profiler_log('Find_stars');
 
-
-             // memo2_message('raw stars '+inttostr(Length(starlist1[0])));
-
               //mod 2025 ###################################################
               if match_nr = 1 then  //2025 first solution found, filter out stars for the second match. Avoid that stars outside the image boundaries are used to create database quads
               begin //keep only stars which are visible in the image according the first solution
                 nstars_visible := 0;
-                //memo2_message('step 2, raw stars '+inttostr(Length(starlist1[0])));
 
                 for i := 0 to Length(starlist1[0]) - 1 do
                 begin
@@ -1130,7 +1122,7 @@ begin
               //profiler_log('Find_quads1');
 
               if solve_show_log then {global variable set in find stars}
-                memo2_message('Search '+ '[' + IntToStr(spiral_x) + ',' + IntToStr(spiral_y) + '],' + #9 + 'position: ' +
+                memo2_message('Search '+ inttostr(count) + ', [' + IntToStr(spiral_x) + ',' + IntToStr(spiral_y) + '],' + #9 + 'position: ' +
                              #9 + prepare_ra(ra_database, ': ') + #9 + prepare_dec(dec_database, '° ') +
                              #9 + ' Down to magn ' + floattostrF(mag2 / 10, ffFixed, 0, 1) +
                              #9 + ' ' + IntToStr(length(starlist1[0])) + ' database stars' +
@@ -1223,7 +1215,7 @@ begin
     hd.crpix1 := centerX + 1;{center image in fits coordinate range 1..hd.width}
     hd.crpix2 := centery + 1;
 
-    ang_sep(ra_radians, dec_radians, ra_solved, dec_solved, sep_search); //calculate search offset
+    ang_sep(ra_start, dec_start, ra_solved, dec_solved, sep_search); //calculate search offset
 
     memo2_message(IntToStr(nr_references) + ' of ' +  IntToStr(nr_references2) + quads_str + ' selected matching within ' + floattostr(quad_tolerance) + ' tolerance.' //  3 quads are required giving 3 center quad references}
       + '  Solution["] x:=' + floattostr6(solution_vectorX[0]) + 'x+ ' + floattostr6(solution_vectorX[1]) + 'y+ ' + floattostr6( solution_vectorX[2])

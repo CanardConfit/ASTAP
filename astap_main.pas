@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.07.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.07.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -440,6 +440,7 @@ type
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure batch_crop_by_coordinates1Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
       Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
       var Handled: Boolean);
@@ -1002,7 +1003,7 @@ implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_threaded_gaussian_blur,unit_inspector_plot,unit_asteroid,
      unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides, unit_online_gaia,unit_contour,
-     unit_threaded_bilinear_interpolation,unit_threaded_demosaic_astroC_bilinear_interpolation,unit_threaded_demosaic_astrosimple,unit_threaded_demosaic_astroM_bilinear_interpolation,unit_transformation, unit_profiler;
+     unit_threaded_bilinear_interpolation,unit_threaded_demosaic_astroC_bilinear_interpolation,unit_threaded_demosaic_astrosimple,unit_threaded_demosaic_astroM_bilinear_interpolation,unit_transformation, unit_profiler, unit_ricecomp;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -1150,8 +1151,2081 @@ end;{reset global variables}
 //end;
 
 
-
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo: tstrings;out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
+{if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
+{if load_data then read all else header only}
+{if reset_var=true, reset variables to zero}
+var
+  fitsbuffer        : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+  fitsbuffer2       : array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
+  fitsbufferRGB     : array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
+  fitsbuffer4       : array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+  fitsbuffer8       : array[0..trunc(bufwide/8)] of qword absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
+  TheFile  : tfilestream;
+  header    : array[0..2880] of ansichar;
+  i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
+  tempval, ccd_temperature, jd2,jd_obs, PC1_1,PC1_2, PC2_1,PC2_2   : double;
+  col_float,bscale,measured_max,scalefactor  : single;
+  s                  : string[3];
+  bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
+  aline,number,field : ansistring;
+  rgbdummy           : byteX3;
+
+  word16             : word;   {for 16 signed integer}
+  int_16             : smallint absolute word16;{for 16 signed integer}
+
+  x_longword  : longword;
+  x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
+  int_32      : integer absolute x_longword;{for 32 bit signed integer}
+
+  x_qword     : qword;
+  x_double    : double absolute x_qword;{for conversion 64 bit "big-endian" data}
+  int_64      : int64 absolute x_qword;{for 64 bit signed integer}
+
+  tfields,tform_counter,header_count,pointer,let, validate_double_error  : integer;
+  ttype,tform,tunit : array of string;
+  tform_raw         : array of string;   {unmodified TFORM strings, for the Rice column layout}
+  tbcol,tform_nr    : array of integer;
+  simple,image,bintable,asciitable    : boolean;
+  abyte                               : byte;
+  dummy: string;
+
+  { Rice compressed FITS support (ZCMPTYPE = 'RICE_1') }
+  { NOTE: these are plain locals. Do NOT give them "= value" initialisers here;
+    in FPC a var with an initialiser inside a routine is a typed constant and
+    would keep its value from the previous call to load_fits. }
+  zimage_flag         : boolean;
+  zbitpix_val         : integer;
+  znaxis1_val         : integer;
+  znaxis2_val         : integer;
+  znaxis3_val         : integer;
+  ztile1_val          : integer;
+  ztile2_val          : integer;
+  ztile3_val          : integer;
+  zcmptype_val        : ansistring;
+  zquantiz_val        : ansistring;
+  zdither0_val        : integer;
+  zscale_val          : double;
+  zzero_val           : double;
+  zblank_val          : integer;      { ZBLANK header-level null value }
+  zblank_present      : boolean;      { true only if the ZBLANK keyword was actually present }
+  img_bscale          : double;       { effective image BSCALE (from BINTABLE header) }
+  img_bzero           : double;       { effective image BZERO  (from BINTABLE header) }
+  zname1_val          : ansistring;
+  zname2_val          : ansistring;
+  zname3_val          : ansistring;
+  zname4_val          : ansistring;
+  pcount_val          : integer;
+  blocksize_val       : integer;      { BLOCKSIZE keyword, normally 32 }
+  bytepix_val         : integer;      { BYTEPIX keyword, 1/2/4 }
+  table_rows          : integer;      { NAXIS2 of the BINTABLE = number of tiles }
+  table_rowwidth      : integer;      { NAXIS1 of the BINTABLE = row width in bytes }
+  px,py,pz            : integer;
+  abort_tiles         : boolean;
+  store_pixel         : boolean;
+
+  { Column index lookup for the compressed-data BINTABLE }
+  col_comp_data       : integer;
+  col_zscale_col      : integer;
+  col_zzero_col       : integer;
+  col_zblank_col      : integer;
+  col_gzip_data       : integer;      { GZIP_COMPRESSED_DATA, only to detect fallback tiles }
+  gzip_len            : integer;
+  gzip_reported       : boolean;      { so the message is issued only once }
+  tile_ok             : boolean;
+  col_widths          : array of integer;
+  col_offsets         : array of integer;
+
+  { Heap / table buffers }
+  heap_buffer         : PByte;
+  heap_size           : integer;
+  table_buffer        : PByte;
+  table_size          : integer;
+
+  { Tile iteration }
+  tiles_x, tiles_y, tiles_z, total_tiles : integer;
+  tile_index, tx, ty, tz                 : integer;
+  actual_tile_w, actual_tile_h, actual_tile_d : integer;
+  tile_pixel_count                       : integer;
+  tile_data                              : PByte;
+  tile_data_size                         : integer;
+  compressed_ptr                         : PByte;
+  compressed_len, heap_offset            : integer;
+  row_ptr                                : PByte;
+
+  { Per-tile scale/zero (for quantised float data) }
+  tile_scale                            : double;
+  tile_zero                             : double;
+
+  { Dithering support (SUBTRACTIVE_DITHER_1 / _2) — CFITSIO random table }
+  dither_table                          : array of single; { 10000 values, [0,1) }
+  dither_iseed                          : integer;  { running seed, CFITSIO 'iseed' }
+  dither_next                           : integer;  { running index, CFITSIO 'nextrand' }
+  dither_active                         : boolean;
+  dither_is_2                           : boolean;  { true for SUBTRACTIVE_DITHER_2 }
+  tile_blank                            : integer;
+  tile_has_blank                        : boolean;
+
+  { Pixel placement }
+  img_x, img_y, img_z                   : integer;
+  pixel_idx                             : integer;
+  raw_unsigned                          : longword;
+  signed_value                          : int64;
+  col_float_rice                        : single;
+  measured_max_rice                     : single;
+  measured_min_rice                     : single;
+  scalefactor_rice                      : single;
+  error_msg_rice                        : string;
+  k_rice                                : integer;
+
+var {################# initialised variables #########################}
+  end_record : boolean=false;
+
+     procedure close_fits_file; inline;
+     begin
+       Reader.free;
+       TheFile.free;
+     end;
+
+     { Build CFITSIO's 10000-entry random-value table (fits_init_randoms).
+       Park-Miller minimal-standard LCG, seeded with 1. Values in [0,1). }
+     procedure build_dither_table(out tab: array of single);
+     const
+       ia  = 16807;
+       im  = 2147483647;
+       iq  = 127773;
+       ir_ = 2836;
+     var
+       kk,ii,seed : integer;
+       temp       : double;
+     begin
+       seed := 1;
+       for ii := 0 to 9999 do
+       begin
+         kk   := seed div iq;
+         seed := ia * (seed - kk * iq) - ir_ * kk;
+         if seed < 0 then inc(seed, im);
+         temp := seed / im;
+         if temp > 0.9999999 then temp := 0.9999999; { CFITSIO clamps, keeps < 1 }
+         tab[ii] := temp;
+       end;
+     end;
+
+     { Width in bytes of one BINTABLE column, parsed from the raw TFORM string.
+       Handles the forms  rT  and  rPt(max) / rQt(max)  (variable-length arrays).
+       A variable-length array always occupies an 8-byte (P) or 16-byte (Q)
+       descriptor in the row itself, regardless of the repeat count. }
+     function tform_width(const tf: string): integer;
+     var
+       n,code,rep : integer;
+       t          : string;
+     begin
+       t := trim(tf);
+       if t = '' then begin result := 0; exit; end;
+
+       { leading repeat count (may be absent, meaning 1) }
+       n := 1;
+       while (n <= length(t)) and (t[n] >= '0') and (t[n] <= '9') do inc(n);
+       if n = 1 then rep := 1
+       else
+         if not TryStrToInt(copy(t, 1, n-1), rep) then rep := 1;
+       if rep < 0 then rep := 0;
+
+       if n > length(t) then begin result := 0; exit; end;
+       code := n;   { index of the type character }
+
+       { Variable-length array descriptor: rPt(max) or rQt(max) }
+       if (upcase(t[code]) = 'P') then begin result := 8;  exit; end;
+       if (upcase(t[code]) = 'Q') then begin result := 16; exit; end;
+
+       case upcase(t[code]) of
+         'L': result := 1 * rep;                  { logical }
+         'X': result := (rep + 7) div 8;          { bit array, packed }
+         'B': result := 1 * rep;                  { unsigned byte }
+         'I': result := 2 * rep;                  { 16-bit int }
+         'J': result := 4 * rep;                  { 32-bit int }
+         'K': result := 8 * rep;                  { 64-bit int }
+         'A': result := 1 * rep;                  { character }
+         'E': result := 4 * rep;                  { single }
+         'D': result := 8 * rep;                  { double }
+         'C': result := 8 * rep;                  { single complex }
+         'M': result := 16 * rep;                 { double complex }
+       else
+         result := rep;                           { unknown, assume 1 byte each }
+       end;
+     end;
+
+     { Read an 8-byte big-endian double from a byte pointer }
+     function read_be_double(p: PByte): double;
+     var
+       qw : qword;
+       d  : double absolute qw;
+     begin
+       qw := (qword(p[0]) shl 56) or (qword(p[1]) shl 48) or
+             (qword(p[2]) shl 40) or (qword(p[3]) shl 32) or
+             (qword(p[4]) shl 24) or (qword(p[5]) shl 16) or
+             (qword(p[6]) shl 8)  or  qword(p[7]);
+       result := d;
+     end;
+
+     function validate_double:double;{read floating point or integer values}
+     var t     : string[21];
+         r     : integer;
+     begin
+       t:='';
+       r:=I+10;{position 11 equals 10}
+       while ((header[r]<>'/') and (r<=I+30) {pos 31}) do {'/' check is strictly not necessary but safer. Read up to position 31 so one more then fits standard since CFITSIO could write for minus values up to position 31. A violation of FITS standard 4}
+       begin  {read 20 characters max, position 11 to 31 in string, position 10 to 30 in pchar}
+         if header[r]<>' ' then t:=t+header[r];
+         inc(r);
+       end;
+       val(t,result,validate_double_error);
+     end;
+
+     Function get_string:string;{read string values}
+     var  r: integer;
+     begin
+       result:='';
+       r:=I+11;{start reading at position pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
+       while ((header[r-1]<>#39) and (r<I+77)) do inc(r); {find first quote at pos 11 or later for case it is not at position 11 (free-format strings)}
+       while ((header[r]<>#39){last quote} and (r<I+79)) do {read string up to position 79 equals 78. The while (rather then repeat) instruction guarantees reading emphty strings with length zero correctly}
+       begin
+         result:=result+header[r];
+         inc(r);
+       end;
+       result:=trim(result);
+     end;
+
+     Function get_as_string:string;{read float as string values. Universal e.g. for latitude and longitude which could be either string or float}
+     var  r: integer;
+     begin
+       result:=header[i+10]; //This position could be the minus sign of a number -3.000000000000E+001
+       if result=#39 then result:='';//Ignore the #39 character indication a string
+       r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
+       while ((header[r]<>#39){last quote} and (r<I+30)) do {read string up to position 30}
+       begin
+         result:=result+header[r];
+         inc(r);
+       end;
+     end;
+
+begin
+  {some house keeping}
+  result:=false; {assume failure}
+  simple:=false;
+  extend_type:=0; {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
+
+
+  if load_data then mainform1.caption:=ExtractFileName(filen);
+  {house keeping done}
+
+  if tiff_file_name(filen) then  {load Astro-TIFF instead of FITS}
+  begin
+    //result:=load_PNGJPEG(filen,light, head,img_loaded2,memo {mainform1.memo1.lines});{load TIFF image}
+    result:=load_tiff_new(filen,light, head,img_loaded2,memo {mainform1.memo1.lines});{load TIFF image}
+    exit;
+  end;
+
+  try
+    TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
+  except
+     beep;
+     mainform1.error_label1.caption:=('Error accessing file!');
+     mainform1.error_label1.visible:=true;
+     exit;
+  end;
+  file_size:=TheFile.size;
+
+  memo.beginupdate;{for speed. Will be activated in plot routine}
+  if update_memo then
+    memo.clear;{clear memo for new header}
+
+  Reader := TReader.Create(TheFile,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
+
+  {Reset GLOBAL variables for case they are not specified in the file}
+  reset_header_variables(light,head);
+
+  if get_ext=0 then extend_type:=0; {always an image in main data block}
+  naxis1:=0;
+  bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
+
+  { ---- Reset all Rice/tile-compression variables for this call ---- }
+  zimage_flag    := false;
+  zbitpix_val    := 0;
+  znaxis1_val    := 0;
+  znaxis2_val    := 0;
+  znaxis3_val    := 1;
+  ztile1_val     := 0;
+  ztile2_val     := 0;
+  ztile3_val     := 0;
+  zcmptype_val   := '';
+  zquantiz_val   := 'NONE';
+  zdither0_val   := 0;
+  zscale_val     := 1.0;
+  zzero_val      := 0.0;
+  zblank_val     := 0;
+  zblank_present := false;
+  img_bscale     := 1.0;
+  img_bzero      := 0.0;
+  zname1_val     := '';
+  zname2_val     := '';
+  zname3_val     := '';
+  zname4_val     := '';
+  pcount_val     := 0;
+  blocksize_val  := 32;
+  bytepix_val    := 0;
+  col_comp_data  := -1;
+  col_zscale_col := -1;
+  col_zzero_col  := -1;
+  col_zblank_col := -1;
+  col_gzip_data  := -1;
+  gzip_reported  := false;
+  heap_buffer    := nil;
+  heap_size      := 0;
+  table_buffer   := nil;
+  table_size     := 0;
+  tile_data      := nil;
+  tile_data_size := 0;
+  table_rows     := 0;
+  table_rowwidth := 0;
+  measured_max_rice := 0;
+  measured_min_rice := 0;
+  dither_active  := false;
+  bscale:=1;
+  ccd_temperature:=999;
+  measured_max:=0;
+  PC1_1:=0;
+
+  header_count:=0;
+  bintable:=false;
+  asciitable:=false;
+
+  reader_position:=0;
+  repeat {header, 2880 bytes loop}
+
+  I:=0;
+    repeat {loop for reaching image/table}
+      try
+        { Graceful End-Of-File check to prevent read exceptions }
+        if file_size - reader_position < 2880 then
+        begin
+          if update_memo and (memo <> nil) then  memo.endupdate; { Unlock memo }
+          close_fits_file;
+          mainform1.error_label1.caption := 'End of file reached, no more extensions.';
+          mainform1.error_label1.visible := true;
+          last_extension := true;
+          result := false;
+          exit;
+        end;
+
+
+        reader.read(header[I],2880);{read file header, 2880 bytes}
+        inc(reader_position,2880);  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+        if ((reader_position=2880) and (header[0]='S') and (header[1]='I')  and (header[2]='M') and (header[3]='P') and (header[4]='L') and (header[5]='E') and (header[6]=' ')) then
+        begin
+          simple:=true;
+          image:=true;
+        end;
+        if simple=false then
+        begin
+          if update_memo and (memo <> nil) then  memo.endupdate; { Unlock memo }
+          close_fits_file;
+          beep;
+          mainform1.error_label1.caption:=('Error loading FITS file!! Keyword SIMPLE not found.');
+          mainform1.error_label1.visible:=true;
+          exit;
+        end; {should start with SIMPLE  =,  MaximDL compressed files start with SIMPLE‚=”}
+        if ((header_count<get_ext) and (header[0]='X') and (header[1]='T')  and (header[2]='E') and (header[3]='N') and (header[4]='S') and (header[5]='I') and (header[6]='O') and (header[7]='N') and (header[8]='=')) then
+        begin
+           header_count:=header_count+1;
+           image:=   ((header[11]='I') and (header[12]='M')  and (header[13]='A') and (header[14]='G') and (header[15]='E') and (header[16]=' '));
+           bintable:=((header[11]='B') and (header[12]='I')  and (header[13]='N') and (header[14]='T') and (header[15]='A') and (header[16]='B')); {BINTABLE}
+           asciitable:=((header[11]='T') and (header[12]='A')  and (header[13]='B') and (header[14]='L') and (header[15]='E') and (header[16]=' ')) ;{ascii_table identifier}
+          begin
+            if pos('BINTABLE',get_string)>0 then extend_type:=3 { 'BINTABLE' or 'TABLE'}
+            else
+            if 'TABLE'=get_string then extend_type:=2 {ascii_table identifier}
+            else
+            begin
+              extend_type:=1; {image in the extension}
+              mainform1.Memo3.lines.text:='File contains image(s) in the extension. Can be extracted and saved as a single image.';
+              mainform1.pagecontrol1.showtabs:=true;{show tabs}
+            end;
+          end;
+        end;
+      except;
+        if update_memo and (memo <> nil) then  memo.endupdate; { Unlock memo }
+        close_fits_file;
+        beep;
+        mainform1.error_label1.caption:='Read exception error!!';
+        mainform1.error_label1.visible:=true;
+        exit;
+      end;
+    until ((simple) and (header_count>=get_ext)); {simple is true and correct header found}
+
+    repeat  {loop for 80 bytes in 2880 block}
+      if load_data then
+      begin
+        SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
+        if update_memo then memo.add(aline); {add line to memo}
+      end;
+      if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {head.naxis}
+      begin
+        if (header[i+5]=' ') then head.naxis:=round(validate_double)
+        else    {head.naxis number of colors}
+        if (header[i+5]='1') then begin naxis1:=round(validate_double);head.width:=naxis1; end else {NAXIS1 pixels}
+        if (header[i+5]='2') then head.height:=round(validate_double) else   {NAXIS2 pixels}
+        if (header[i+5]='3') then
+        begin
+          head.naxis3:=round(validate_double); {head.naxis3 number of colors}
+          if ((head.naxis=3) and (naxis1=3)) {naxis1} then  {type head.naxis = 3 / Number of dimensions
+                                     NAXIS1 = 3 / Number of Colors
+                                     NAXIS2 = 382 / Row length
+                                     head.naxis3 = 255 / Number of rows}
+                      begin   {RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
+                        head.width:=head.height;
+                        head.height:=head.naxis3;
+                        head.naxis3:=1;
+                      end;
+          if head.naxis3>3  then {panic more then three colours}
+          begin
+             head.naxis3:=1; {display only the first colour}
+             memo2_message('Warning more then three colours. Displayed only the first one.');
+          end;
+        end;
+      end;
+
+
+      if image then {image specific header}
+      begin {read image header}
+
+         if (header[i]='B') then {B}
+        begin
+          if ((header[i+1]='A')  and (header[i+2]='Y') and (header[i+3]='E') and (header[i+4]='R') and (header[i+5]='P') and (header[i+6]='A')) then {BAYERPAT, read for flats}
+             bayerpat:=get_string {BAYERPAT, bayer pattern such as RGGB}
+          else
+          if ((header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
+            head.bitpix:=round(validate_double) {BITPIX, read integer using double routine}
+          else
+          if ( (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
+          begin
+             tempval:=validate_double;
+             if tempval>2147483647 then
+             bzero:=-2147483648
+             else
+             bzero:=round(tempval); {Maxim DL writes BZERO value -2147483647 as +2147483648 !! }
+            {without this it would have worked also with error check off}
+          end
+          else
+          if ( (header[i+1]='S')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') ) then
+             bscale:=validate_double {rarely used. Normally 1}
+          else
+          if ((header[i+1]='I')  and (header[i+2]='A') and (header[i+3]='S') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
+               head.flatdark_count:=round(validate_double);{read integer as double value}
+        end;{B}
+
+        if (header[i]='C') then {C}
+        begin
+          if ((header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {head.calstat is also for flats}
+              head.calstat:=get_string {indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
+          else
+          if ((header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then   //ccd-temp
+             ccd_temperature:=validate_double;{read double value}
+        end;{C}
+
+        if ((header[i]='D') and (header[i+1]='A')) then {DA}
+        begin
+          if ((header[i+2]='T') and (header[i+3]='E') ) then {DATE}
+          begin
+            if ((header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then head.date_obs:=get_string //date-obs
+            else
+            if ((header[i+4]='-') and (header[i+5]='B') and (header[i+6]='E')) then head.date_obs:=get_string //date-beg
+            else
+            if ((header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then head.date_avg:=get_string //date-avg
+            else
+            if length(head.date_obs)<10 then //Read only DATE when length(date-obs)<length('2000-01-01') assuming DATE-OBS comes first. Note that iTelescope writes obsolete DATE='06/08/25' after DATE-OBS
+              head.date_obs:=get_string  //date      Rare, Could be very wrong since DATE is date of file creation. Eg. astrometry.net DATE    = '2025-03-04T17:58:23' / Date this file was created.
+                                         //date-end  Rare, this will result in a 0.5*exposure error
+
+          end
+          else
+          if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
+               head.dark_count:=round(validate_double);{read integer as double value}
+        end;
+
+//        if (header[i]='D') then {D}
+//        if ((header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+//           ccd_temperature:=validate_double;{read double value}
+
+
+        if (header[i]='E') then
+        begin
+          if ((header[i+1]='G')  and (header[i+2]='A') and (header[i+3]='I') and (header[i+4]='N')) then  {egain}
+          begin
+            head.egain:=trim(get_as_string)//Do not crop anymore since it doesn't work for scientific notation, e-/adu gain
+          end
+          else
+          if ((header[i+1]='X')  and (header[i+2]='P')) then
+          begin
+            if ((header[i+3]='O') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
+                head.exposure:=validate_double;{read double value}
+            if ((header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E') and (header[i+7]=' ')) then {exptime and not exptimer}
+                head.exposure:=validate_double;{read double value}
+          end;
+        end;
+
+
+        if (header[i]='F') then {F}
+        begin
+          if ((header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R') and (header[i+6]=' ')) then
+             head.filter_name:=get_string {trim is already applied}
+          else
+          if ((header[i+1]='L')  and (header[i+2]='A') and (header[i+3]='T') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
+               head.flat_count:=round(validate_double);{read integer as double value}
+        end; {F}
+
+        if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
+             head.gain:=trim(get_as_string); {head.gain CCD}
+
+
+        if header[i]='I' then
+        begin
+          if ((header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then //IMAGETY
+            imagetype:=get_string {trim is already applied}
+          else
+          if ((header[i+1]='S')  and (header[i+2]='S') and (header[i+3]='U') and (header[i+4]='E')  and (header[i+5]='S')) then
+            head.issues:=get_string {trim is already applied}
+          else
+          if ((header[i+1]='S')  and (header[i+2]='O') and (header[i+3]='S') and (header[i+4]='P')) then //ISOSP
+               if head.gain='' then head.gain:=trim(get_as_string);{isospeed, do not override head.gain}
+
+        end;//I
+
+        if ((header[i]='J') and (header[i+1]='D')) then
+        begin
+          if ((header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then //julian day
+          begin
+            if head.date_obs='' then {DATE-OBS overrules any JD value}
+            begin
+              jd2:=validate_double;
+              head.date_obs:=JdToDate(jd2);
+            end;
+          end
+          else
+          if ((header[i+2]='-') and (header[i+3]='A') and (header[i+4]='V') and (header[i+5]='G')) then //JD-AVG
+          begin
+            begin
+              jd2:=validate_double;
+              head.date_avg:=JdToDate(jd2);
+            end;
+          end
+        end;
+
+        if ((header[i]='M') and (header[i+1]='J')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='O') and (header[i+5]='B')) then //MJD-OBS
+          if head.date_obs='' then {DATE-OBS overrules any JD value}
+          begin
+            jd2:=2400000.5+validate_double;// MJD to JD
+            head.date_obs:=JdToDate(jd2);
+          end;
+
+        if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+               try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
+
+
+
+
+        if header[i]='X' then
+        begin
+          if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+                 head.xbinning:=validate_double;{binning}
+          if ((header[i+1]='O')  and (header[i+2]='R') and (header[i+3]='G') and (header[i+4]='S') and (header[i+5]='U')) then //XORGSUBF
+                 head.xorgsubf:=round(validate_double);{sub frame origin}
+        end;
+        if header[i]='Y' then
+        begin
+          if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+                 head.ybinning:=validate_double;{binning}
+          if ((header[i+1]='O')  and (header[i+2]='R') and (header[i+3]='G') and (header[i+4]='S') and (header[i+5]='U')) then //YORGSUBF
+                 head.yorgsubf:=round(validate_double);{sub frame origin}
+        end;
+
+
+        {following variable are not set at zero Set at zero somewhere in the code}
+        if ((header[i]='L') and (header[i+1]='I')  and (header[i+2]='G') and (header[i+3]='H') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then //LIGH_CNT
+             head.light_count:=round(validate_double);{read integer as double value}
+
+        if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then //TIME-OBS
+        begin
+          if length(head.date_obs)=10 then head.date_obs:=head.date_obs+'T'+get_string;//eg. for  by Muniwin
+        end;
+
+
+
+        if light then {read as light ##############################################################################################################################################################}
+        begin
+          if (header[i]='A') then {A}
+          begin
+            if ((header[i+1]='M')  and (header[i+2]='B') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+                focus_temp:=validate_double {ambient temperature}
+            else
+            if ((header[i+1]='O')  and (header[i+2]='C')) then {AOC}
+            begin {ASCOM Observatory Conditions}
+              if ((header[i+3]='B') and (header[i+4]='A') and (header[i+5]='R') and (header[i+6]='O')) then { AOCBAROM}
+                 pressure:=validate_double {read double value}
+              else
+              if ((header[i+3]='A') and (header[i+4]='M') and (header[i+5]='B') and (header[i+6]='T')) then { AOCAMBT}
+                 focus_temp:=validate_double;{read double value}
+            end {AOC}
+            else
+            if ((header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
+               annotated:=true; {contains annotations}
+
+            if ((header[i+1]='M')  and (header[i+2]='D')) then
+            begin
+              if header[i+3]='X' then  {AMDX}
+              begin
+                if header[i+5]=' ' then s:=(header[i+4]) else s:=(header[i+4])+(header[i+5]);
+                val(s,nr,error3);{1 to 20}
+                x_coeff[nr-1]:=validate_double;
+              end
+              else
+              if header[i+3]='Y' then  {AMDY}
+              begin
+                if header[i+5]=' ' then s:=(header[i+4]) else s:=(header[i+4])+(header[i+5]);
+                val(s,nr,error3);{1 to 20}
+                y_coeff[nr-1]:=validate_double;
+              end;
+            end //AMD
+            else
+            if ((header[i+1]='I')  and (header[i+2]='R') and (header[i+3]='M') and (header[i+4]='A') and (header[i+5]='S')) then
+                airmass:=validate_double {airmass}
+            else
+
+            if (header[i+1]='_') then
+            begin {pixel to sky coefficient}
+              if ((header[i+2]='O') and (header[i+3]='R') and (header[i+4]='D')) then a_order:=round(validate_double);{should be >=2 if TAN-SIP convention available}
+              if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='0')) then a_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='1')) then a_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then a_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then a_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='0')) then a_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then a_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then a_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then a_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then a_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='3') and (header[i+3]='_') and (header[i+4]='0')) then a_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            end; //A_
+            if ((header[i+1]='P') and (header[i+2]='_')) then
+            begin {sky to pixel coefficient}
+              if ((header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D')) then ap_order:=round(validate_double);{should be >=2 if TAN-SIP convention available}
+              if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='0')) then ap_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then ap_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then ap_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='3')) then ap_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='0')) then ap_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='1')) then ap_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='2')) then ap_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='0')) then ap_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='1')) then ap_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='3') and (header[i+4]='_') and (header[i+5]='0')) then ap_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            end; //AP_
+          end; //A
+
+
+          if (header[i]='B') then {B}
+          begin
+            if ((header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
+            begin
+               BANDPASS:=validate_double;{read integer as double value. Deep sky survey keyword}
+               if ((bandpass=35) or (bandpass=8)) then head.filter_name:='red'{ 37 possII IR,  35=possII red, 18=possII blue, 8=POSSI red, 7=POSSI blue}
+               else
+               if ((bandpass=18) or (bandpass=7)) then head.filter_name:='blue'
+               else
+               head.filter_name:=floattostr(bandpass);
+            end;
+            if header[i+1]='_' then
+            begin {pixel to sky coefficient}
+               if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='0')) then b_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='1')) then b_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then b_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then b_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='o')) then b_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then b_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then b_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then b_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then b_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+               if ((header[i+2]='3') and (header[i+3]='_') and (header[i+4]='0')) then b_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            end;//B_
+            if ((header[i+1]='P') and (header[i+2]='_')) then
+            begin  {sky to pixel coefficient}
+              if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='0')) then bp_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then bp_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then bp_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='3')) then bp_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='0')) then bp_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='1')) then bp_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='2')) then bp_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='0')) then bp_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='1')) then bp_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+3]='3') and (header[i+4]='_') and (header[i+5]='0')) then bp_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            end;//BP_
+
+          end;//B
+
+
+          if (header[i]='C') then {C}
+          begin
+            if (header[i+1]='R') then {CR}
+            begin
+              if ((header[i+2]='O') and (header[i+3]='T') and (header[i+4]='A')) then  {head.crota2}
+              begin
+                 if (header[i+5]='2') then  head.crota2:=validate_double else {read double value}
+                 if (header[i+5]='1') then  head.crota1:=validate_double;{read double value}
+              end
+              else
+              if ((header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then {head.crpix1}
+              begin
+                if header[i+5]='1' then head.crpix1:=validate_double else{ref pixel for x}
+                if header[i+5]='2' then head.crpix2:=validate_double;    {ref pixel for y}
+              end;
+            end {CR}
+            else
+            if ((header[i+1]='D')  and (header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {head.cdelt1}
+            begin
+              if header[i+5]='1' then head.cdelt1:=validate_double else{deg/pixel for RA}
+              if header[i+5]='2' then head.cdelt2:=validate_double;    {deg/pixel for DEC}
+            end;
+
+            if ((header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
+            begin
+              if (header[i+5]='1') then  head.ra0:=validate_double*pi/180; {ra center, read double value}
+              if (header[i+5]='2') then  head.dec0:=validate_double*pi/180; {dec center, read double value}
+            end
+            else
+            if (header[i+1]='D') then {CD}
+            begin
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd1_1:=validate_double;
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd1_2:=validate_double;
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd2_1:=validate_double;
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd2_2:=validate_double;
+            end
+            else
+            if ((header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T')) then//CENT
+            begin
+              if ((header[i+4]='A') and (header[i+5]='L') and (header[i+6]='T')) then  {CENTALT, SBIG 1.0 standard}
+                centalt:=get_as_string {universal for string and floats}
+              else
+              if ((header[i+4]='A') and (header[i+5]='Z')) then  {CENTAZ, SBIG 1.0 standard}
+                centaz:=get_as_string; {universal for string and floats}
+            end;//CENT
+            if ((header[i+1]='N')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then
+            begin
+              if  (header[i+5]='1') then x_pixel_offset:=round(validate_double){rotation, read double value}
+              else
+              if  (header[i+5]='2') then y_pixel_offset:=round(validate_double);{rotation, read double value}
+            end;//CNPIX
+          end; {C}
+
+          if ((header[i]='D') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]=' ')) then {dec}
+          begin
+            tempval:=validate_double*pi/180;
+            if validate_double_error=0 then //not a string value behind keyword DEC
+            begin
+              dec_mount:=tempval;
+              if head.dec0=0 then head.dec0:=tempval; {dec telescope, read double value only if crval is not available}
+            end
+            else
+            begin
+              mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
+              dec_mount:=dec_radians;//preference for the other keywords
+            end;
+          end;
+
+          if header[i]='E' then
+          begin
+            if ((header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
+                 equinox:=validate_double;
+
+            if ((header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
+              if pos('T',get_as_string)>0 then last_extension:=false;{could be extensions, will be updated later }
+          end;//E
+
+          if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpix1/2}
+               ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
+               ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
+          begin
+            if head.cdelt2=0 then
+                begin head.cdelt2:=validate_double/3600; {deg/pixel for RA} head.cdelt1:=head.cdelt2; end; {no head.cdelt1/2 found yet, use alternative}
+          end;
+
+          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C')) then  {FOC}
+          begin
+            if ((header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {FOCALLEN}
+                    focallen:=validate_double {Focal length of telescope in mm, maxim DL keyword}
+            else
+            if      (  ((header[i+3]='U') and (header[i+4]='S') and (header[i+5]='P') and (header[i+6]='O')) or
+                       ((header[i+3]='P') and (header[i+4]='O') and (header[i+5]='S') and (header[i+6]=' '))  ) then
+                 try focus_pos:=round(validate_double);{focus position} except;end
+            else
+            if      (  ((header[i+3]='U') and (header[i+4]='S') and (header[i+5]='T') and (header[i+6]='E')) or
+                       ((header[i+3]='T') and (header[i+4]='E') and (header[i+5]='M') and (header[i+6]='P')) )  then
+                   focus_temp:=validate_double;{focus temperature}
+          end;//FOC
+
+          if ((header[i]='I') and (header[i+1]='N')  and (header[i+2]='S') and (header[i+3]='T') and (header[i+4]='R') and (header[i+5]='U') and (header[i+6]='M')) then
+                   INSTRUM:=get_string;
+
+          if ((header[i]='M') and (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O')) then
+          begin
+            if (header[i+5]='R') then head.mzero:=validate_double;//ZEROR photometry calibration for restricted aperture
+            if (header[i+5]='A') then head.mzero_radius:=validate_double;//MZEROAPT photometry calibration
+            if (header[i+5]='P') then head.passband_database:=get_string; //MZEROPAS
+          end; //MZERO
+
+
+          if header[i]='L' then   //maxim 7 or ASP
+          begin
+            if ((header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='O') and (header[i+5]='B'))  then  {LAT-OBS}
+              sitelat:=floattostr6(validate_double)
+            else
+            if ((header[i+1]='O')  and (header[i+2]='N') and (header[i+3]='G')  and (header[i+4]='-') and (header[i+5]='O'))  then  {LONG-OBS}
+               sitelong:=floattostr6(validate_double);
+          end;
+          if header[i]='O' then
+          begin
+            if ((header[i+1]='B')  and (header[i+2]='S'))  then  {OBS    site latitude, longitude}
+            begin
+              if ( ((header[i+3]='L') and (header[i+4]='A') and (header[i+5]='T')) or ((header[i+3]='-') and (header[i+4]='L') and(header[i+5]='A')) ) then  {OBSLAT or OBS-LAT}
+                sitelat:=get_as_string;{universal, site latitude as string}
+              if ( ((header[i+3]='L') and (header[i+4]='O') and(header[i+5]='N')) or ((header[i+3]='-') and (header[i+4]='L') and(header[i+5]='O')) ) then  {OBSLONG or OBS-LONG}
+                 sitelong:=get_as_string;{universal, site longitude as string}
+
+              if ((header[i+3]='G') and (header[i+4]='E') and (header[i+5]='O') and(header[i+6]='-')) then {OBSGEO-L, OBSGEO-B}
+              begin
+                if (header[i+7]='B') then
+                  sitelat:=get_as_string {universal, site latitude as string}
+                else
+                if (header[i+7]='L') then
+                  sitelong:=get_as_string;{universal, site longitude as string}
+              end;
+            end;//OBS
+            if ((header[i+1]='R')  and (header[i+2]='I') and (header[i+3]='G') and (header[i+4]='I') and (header[i+5]='N')) then
+                   origin:=get_string;
+            if ((header[i+1]='B')  and (header[i+2]='J')) then {OBJ}
+            begin
+              if  ((header[i+3]='C') and (header[i+4]='T')) then {objctra, objctdec}
+              begin {OBJCT}
+                if ((header[i+5]='R') and (header[i+6]='A') and (ra_mount>=999) {ra_mount value is unfilled, preference for keyword RA}) then
+                begin
+                  mainform1.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+                  ra_mount:=ra_radians;{preference for keyword RA}
+                end
+                else
+                if ((header[i+5]='D') and (header[i+6]='E') and (dec_mount>=999){dec_mount value is unfilled, preference for keyword DEC}) then
+                begin
+                  mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
+                  dec_mount:=dec_radians;
+                end
+                else {for older MaximDL5}
+                if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then //OBJCTALT
+                    centalt:=get_as_string {universal for string and floats}
+                else {for older MaximDL5}
+                if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then
+                    centaz:=get_as_string; {universal for string and floats}
+              end {OBJCT}
+              else
+              if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
+                object_name:=get_string;{trim is already applied}
+            end;{OBJ}
+          end;//O
+
+          if (header[i]='P') then
+          begin
+            if ((header[i+1]='R')  and (header[i+2]='E') and (header[i+3]='S') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
+                 pressure:=validate_double;{read double value}
+            if ((header[i+1]='E')  and (header[i+2]='D') and (header[i+3]='E') and (header[i+4]='S') and (header[i+5]='T') and (header[i+6]='A') and (header[i+7]='L')) then //full keyword since it is also written by raw to fits as pedestal, pedesta1....
+                 head.pedestal:=abs(validate_double);{read double value. Make value positive to make it compatible with MaximDL files which writes it negative}
+
+            if ((header[i+1]='L')  and (header[i+2]='T')) then
+            begin
+              if ((header[i+3]='R') and (header[i+4]='A')) then //PLTRA
+              begin
+                if (header[i+5]='H') then   plate_ra:=validate_double*pi/12;
+                if (header[i+5]='M') then   plate_ra:=plate_ra+validate_double*pi/(60*12);
+                if (header[i+5]='S') then   plate_ra:=plate_ra+validate_double*pi/(60*60*12);;
+              end
+              else
+              if ((header[i+3]='D') and (header[i+4]='E')) then //PLTDE
+              begin
+                if (header[i+7]='N') then  begin if (header[i+11]='-') then  dec_sign:=-1 else dec_sign:=+1;end; {dec sign}
+                if (header[i+6]='D') then   plate_dec:=validate_double*pi/180;
+                if (header[i+6]='M') then   plate_dec:=plate_dec+validate_double*pi/(60*180);
+                if (header[i+6]='S') then   plate_dec:=dec_sign*(plate_dec+validate_double*pi/(60*60*180));
+              end;
+            end;//PLT
+            if ((header[i+1]='P')  and (header[i+2]='O')) then //PPO
+            begin
+              if (header[i+3]='3') then   ppo_coeff[2]:=validate_double;  //DSS polynome
+              if (header[i+3]='6') then   ppo_coeff[5]:=validate_double;
+            end;//PPO
+            if (header[i+1]='C') then //PC
+            begin
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   pc1_1:=validate_double;
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   pc1_2:=validate_double;
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   pc2_1:=validate_double;
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   pc2_2:=validate_double;
+            end;//PC
+          end;//P
+
+          if header[i]='R' then
+          begin
+            if ((header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
+            begin
+              tempval:=validate_double*pi/180;
+              if validate_double_error=0 then //not a string value behind keyword RA
+              begin
+                ra_mount:=tempval;
+                if head.ra0=0 then head.ra0:=tempval; {ra telescope, read double value only if crval is not available}
+              end
+              else
+              begin
+                mainform1.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+                ra_mount:=ra_radians;{preference for other keywords}
+              end;
+            end;
+            if ((header[i+1]='O')  and (header[i+2]='W') and (header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D') and (header[i+6]='E')) then
+              head.roworder:=get_string;
+          end;//R
+
+          if (header[i]='S') then
+          begin
+            if ((header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') ) then  {site latitude, longitude}
+            begin
+              if ((header[i+4]='L') and (header[i+5]='A') and (header[i+6]='T')) then
+                sitelat:=get_as_string;{universal, site latitude as string}
+              if ((header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
+                 sitelong:=get_as_string;{universal, site longitude as string}
+              if ((header[i+4]='E') and (header[i+5]='L') and (header[i+6]='E')) then
+                 siteelev:=get_as_string;{universal, site elevation as string}
+            end;
+            if ((header[i+1]='U')  and (header[i+2]='B') and (header[i+3]='S') and (header[i+4]='A') and (header[i+5]='M')) then
+                    subsamp:=round(validate_double);{subsampling value, DSS polynome plate fit}
+          end;//S
+
+          if ((header[i]='T') and (header[i+1]='E')  and (header[i+2]='L') and (header[i+3]='E') and (header[i+4]='S') and (header[i+5]='C') and (header[i+6]='O')) then
+                   TELESCOP:=get_string;
+
+          {adjustable keyword}
+          if ((header[i]=sqm_key[1]{S}) and (header[i+1]=sqm_key[2]{Q}) and (header[i+2]=sqm_key[3]{M})and (header[i+3]=sqm_key[4])and (header[i+4]=sqm_key[5])and (header[i+5]=sqm_key[6])and (header[i+6]=sqm_key[7]) and (header[i+7]=sqm_key[8])) then {adjustable keyword}
+          begin
+            sqm_value:=trim(get_as_string); {universal for string and floats}{SQM, accept strings (standard) and floats}
+          end;
+
+          if header[i]='X' then
+          begin
+            if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='E') and (header[i+5]='L')) then
+                    x_pixel_size:=validate_double;{rotation, read double value}
+            if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Xpixsz}
+                   head.xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+            if ((header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
+               xbayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
+          end;
+
+          if header[i]='Y' then
+          begin
+            if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='E') and (header[i+5]='L')) then
+                    y_pixel_size:=validate_double;{rotation, read double value}
+            if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Ypixsz}
+                   head.ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+            if ((header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
+               ybayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
+           end;//Y
+
+
+        end;{read as light #####################################################################################################################################3#############################}
+
+      end {image header}
+      else
+      begin {read table header}
+        if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='I') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='D') and (header[i+6]='S')) then {tfields}
+        begin
+           tfields:=round(validate_double);
+           setlength(ttype,tfields);
+           setlength(tform,tfields);
+           setlength(tform_raw,tfields);
+           setlength(tform_nr,tfields);{number of sub field. E.g.12A is 12 time a character}
+           setlength(tbcol,tfields);
+           setlength(tunit,tfields);
+        end;
+
+        { ---- Rice / tiled-image-compression keywords ---- }
+
+        if ((header[i]='Z') and (header[i+1]='I') and (header[i+2]='M') and (header[i+3]='A') and (header[i+4]='G') and (header[i+5]='E')) then {ZIMAGE}
+          zimage_flag := (pos('T',get_as_string)>0);
+
+        if ((header[i]='Z') and (header[i+1]='B') and (header[i+2]='I') and (header[i+3]='T') and (header[i+4]='P') and (header[i+5]='I')) then {ZBITPIX}
+          zbitpix_val := round(validate_double);
+
+        if ((header[i]='Z') and (header[i+1]='N') and (header[i+2]='A') and (header[i+3]='X') and (header[i+4]='I') and (header[i+5]='S')) then {ZNAXIS / ZNAXIS1/2/3}
+        begin
+          if (header[i+6]='1') then znaxis1_val := round(validate_double) else
+          if (header[i+6]='2') then znaxis2_val := round(validate_double) else
+          if (header[i+6]='3') then znaxis3_val := round(validate_double);
+        end;
+
+        if ((header[i]='Z') and (header[i+1]='T') and (header[i+2]='I') and (header[i+3]='L') and (header[i+4]='E')) then {ZTILE1/2/3}
+        begin
+          if (header[i+5]='1') then ztile1_val := round(validate_double) else
+          if (header[i+5]='2') then ztile2_val := round(validate_double) else
+          if (header[i+5]='3') then ztile3_val := round(validate_double);
+        end;
+
+        { ZCMPTYPE — was previously "give up"; now parse the value }
+        if ((header[i]='Z') and (header[i+1]='C') and (header[i+2]='M') and (header[i+3]='P') and (header[i+4]='T') and (header[i+5]='Y')) then
+          zcmptype_val := get_string;
+
+        if ((header[i]='Z') and (header[i+1]='Q') and (header[i+2]='U') and (header[i+3]='A') and (header[i+4]='N') and (header[i+5]='T')) then {ZQUANTIZ}
+          zquantiz_val := get_string;
+
+        if ((header[i]='Z') and (header[i+1]='D') and (header[i+2]='I') and (header[i+3]='T') and (header[i+4]='H') and (header[i+5]='E') and (header[i+6]='R') and (header[i+7]='0')) then {ZDITHER0}
+          zdither0_val := round(validate_double);
+
+        if ((header[i]='Z') and (header[i+1]='S') and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='E') and (header[i+6]=' ')) then {ZSCALE (header-level default)}
+          zscale_val := validate_double;
+
+        if ((header[i]='Z') and (header[i+1]='Z') and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') and (header[i+5]=' ')) then {ZZERO (header-level default)}
+          zzero_val := validate_double;
+
+        { NOTE: there is no such thing as ZBSCALE/ZBZERO.  In the FITS tiled-image
+          compression convention the image's BSCALE/BZERO are copied unchanged into
+          the compressed BINTABLE header under their normal names.  They are picked
+          up by the BZERO/BSCALE parsing a few lines below; img_bzero/img_bscale hold
+          them as doubles so a value like 32768 is not lost or rounded. }
+
+        { ZBLANK — header-level null value for integer compressed images }
+        if ((header[i]='Z') and (header[i+1]='B') and (header[i+2]='L') and (header[i+3]='A') and (header[i+4]='N') and (header[i+5]='K')) then {ZBLANK}
+        begin
+          zblank_val := round(validate_double);
+          zblank_present := true;
+        end;
+
+        { ZNAMEn / ZVALn pairs — look for BLOCKSIZE and BYTEPIX }
+        if ((header[i]='Z') and (header[i+1]='N') and (header[i+2]='A') and (header[i+3]='M') and (header[i+4]='E')) then
+        begin
+          if (header[i+5]='1') then zname1_val := get_string else
+          if (header[i+5]='2') then zname2_val := get_string else
+          if (header[i+5]='3') then zname3_val := get_string else
+          if (header[i+5]='4') then zname4_val := get_string;
+        end;
+        if ((header[i]='Z') and (header[i+1]='V') and (header[i+2]='A') and (header[i+3]='L')) then
+        begin
+          if (header[i+4]='1') then begin
+            if zname1_val='BLOCKSIZE' then blocksize_val := round(validate_double)
+            else if zname1_val='BYTEPIX' then bytepix_val := round(validate_double)
+            else validate_double;
+          end else
+          if (header[i+4]='2') then begin
+            if zname2_val='BLOCKSIZE' then blocksize_val := round(validate_double)
+            else if zname2_val='BYTEPIX' then bytepix_val := round(validate_double)
+            else validate_double;
+          end else
+          if (header[i+4]='3') then begin
+            if zname3_val='BLOCKSIZE' then blocksize_val := round(validate_double)
+            else if zname3_val='BYTEPIX' then bytepix_val := round(validate_double)
+            else validate_double;
+          end else
+          if (header[i+4]='4') then begin
+            if zname4_val='BLOCKSIZE' then blocksize_val := round(validate_double)
+            else if zname4_val='BYTEPIX' then bytepix_val := round(validate_double)
+            else validate_double;
+          end;
+        end;
+
+        { PCOUNT — heap size in bytes (essential for variable-length arrays) }
+        if ((header[i]='P') and (header[i+1]='C') and (header[i+2]='O') and (header[i+3]='U') and (header[i+4]='N') and (header[i+5]='T')) then
+          pcount_val := round(validate_double);
+
+        { BZERO / BSCALE inside the BINTABLE header.  For a tile-compressed image
+          these ARE the image's physical scaling keywords (the convention copies them
+          across unchanged), so keep a full-precision double copy for the Rice path. }
+        if ((header[i]='B') and (header[i+1]='Z') and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') and (header[i+5]=' ')) then
+        begin
+          tempval := validate_double;
+          img_bzero := tempval;                 {full precision, used by the Rice path}
+          if tempval > 2147483647 then
+            bzero := -2147483648
+          else
+            bzero := round(tempval);
+        end
+        else if ((header[i]='B') and (header[i+1]='S') and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='E')) then
+        begin
+          bscale := validate_double;
+          img_bscale := bscale;                 {full precision, used by the Rice path}
+        end;
+
+        { ---- existing TFORM / TTYPE / TUNIT parsing follows ---- }
+
+        if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='O') and (header[i+3]='R') and (header[i+4]='M')) then
+        begin
+          number:=trim(header[i+5]+header[i+6]+header[i+7]);
+          tform_counter:=strtoint(number)-1;
+          tform[tform_counter]:=get_string;
+          tform_raw[tform_counter]:=tform[tform_counter];{keep the original, the parsing below is lossy}
+
+          { Detect variable-length array (P prefix) — essential for COMPRESSED_DATA column }
+          if pos('P', tform[tform_counter]) > 0 then
+          begin
+            { Variable-length array: row stores 8-byte descriptor (nelem + heap offset) }
+            tform[tform_counter] := 'P';
+            tform_nr[tform_counter] := 1;
+          end
+          else
+          try
+          let:=pos('E',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='E';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{single e.g. E, 1E or 4E}
+          let:=pos('D',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='D';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{double e.g. D, 1D or 5D (sub table 5*D) or D25.17}
+          let:=pos('L',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='L';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{logical}
+          let:=pos('X',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='X';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{bit}
+          let:=pos('B',tform[tform_counter]);
+          if let>0 then begin aline:=trim(tform[tform_counter]);
+            tform[tform_counter]:='B';aline:=copy(aline,1,let-1);
+            tform_nr[tform_counter]:=max(1,strtoint('0'+aline));
+          end;{byte}
+          let:=pos('I',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='I';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{16 bit integer}
+          let:=pos('J',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='J';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{32 bit integer}
+          let:=pos('K',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='K';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{64 bit integer}
+          let:=pos('A',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='A';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{char e.g. 12A for astrometry.net first index table}
+          except
+          end;
+        end;
+        if ((header[i]='T') and (header[i+1]='B')  and (header[i+2]='C') and (header[i+3]='O') and (header[i+4]='L')) then
+        begin
+          number:=trim(header[i+5]+header[i+6]+header[i+7]);
+          tform_counter:=strtoint(number)-1;
+          tbcol[tform_counter]:=round(validate_double);
+        end;
+
+        if ((header[i]='T') and (header[i+1]='T')  and (header[i+2]='Y') and (header[i+3]='P') and (header[i+4]='E')) then {field describtion like X, Y}
+        begin
+           number:=trim(header[i+5]+header[i+6]+header[i+7]);
+           ttype[strtoint(number)-1]:=(get_string);
+        end;
+        if ((header[i]='T') and (header[i+1]='U')  and (header[i+2]='N') and (header[i+3]='I') and (header[i+4]='T')) then {unit describtion}
+        begin
+           number:=trim(header[i+5]+header[i+6]+header[i+7]);
+           tunit[strtoint(number)-1]:=get_string;
+        end;
+      end;
+      end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));{end of header. Note keyword ENDIAN exist, so test space behind END}
+      inc(i,80);{go to next 80 bytes record}
+
+    until ((i>=2880) or (end_record)); {loop for 80 bytes in 2880 block}
+    { ##################################################################
+      Automatically fall through to the first extension if the primary
+      HDU is empty (NAXIS=0). This is standard for compressed .fz files
+      and multi-extension FITS (MEF) files.
+      ################################################################## }
+    if (get_ext = 0) and (head.naxis = 0) and (file_size - reader_position > 2880) then
+    begin
+      get_ext := 1;
+      end_record := false;
+      image := false;
+      bintable := false;
+      asciitable := false;
+      if update_memo then memo.clear; { Clear primary header from memo }
+      zimage_flag    := false;
+      zcmptype_val   := '';
+      zquantiz_val   := 'NONE';
+      zdither0_val   := 0;
+      zbitpix_val    := 0;
+      znaxis1_val    := 0;
+      znaxis2_val    := 0;
+      znaxis3_val    := 1;
+      ztile1_val     := 0;
+      ztile2_val     := 0;
+      ztile3_val     := 0;
+      zscale_val     := 1.0;
+      zzero_val      := 0.0;
+      zblank_val     := 0;
+      zblank_present := false;
+      img_bscale     := 1.0;
+      img_bzero      := 0.0;
+      zname1_val     := ''; zname2_val := ''; zname3_val := ''; zname4_val := '';
+      pcount_val     := 0;
+      blocksize_val  := 32;
+      bytepix_val    := 0;
+      col_comp_data  := -1;
+      col_zscale_col := -1;
+      col_zzero_col  := -1;
+      col_zblank_col := -1;
+      col_gzip_data  := -1;
+    end;
+
+  until end_record; {header, 2880 bytes loop}
+
+  memo.endupdate;{for speed}
+
+  { ##################################################################
+    Rice compressed image decompression  (ZCMPTYPE = 'RICE_1')
+    The BINTABLE extension stores tiles of compressed pixel data in
+    a variable-length array column (COMPRESSED_DATA).  The heap area
+    following the table rows contains the actual compressed bytes.
+    ################################################################## }
+  { A tile-compressed image whose ZCMPTYPE is something other than RICE_1 cannot be
+    read.  Without this test it would fall through to the uncompressed branch below
+    and the BINTABLE would be interpreted as pixel data, producing garbage. }
+  if zimage_flag and (zcmptype_val <> 'RICE_1') and (zcmptype_val <> '') then
+  begin
+    if (zcmptype_val = 'GZIP_1') or (zcmptype_val = 'GZIP_2') then
+      memo2_message('GZIP compression not supported!')
+    else
+      memo2_message(zcmptype_val + ' compression not supported! Only RICE_1 is implemented.');
+    warning_str := zcmptype_val + ' compression not supported!';
+    close_fits_file;
+    result := false;
+    exit;
+  end;
+
+  if zimage_flag and (zcmptype_val = 'RICE_1') then
+  begin
+    { Snapshot the BINTABLE geometry BEFORE overwriting head.width/head.height
+      with the uncompressed image dimensions. naxis1 = row width in bytes,
+      head.height = NAXIS2 = number of table rows = number of tiles. }
+    table_rowwidth := naxis1;
+    table_rows     := head.height;
+
+    { Override head dimensions with the uncompressed image dimensions }
+    head.bitpix  := zbitpix_val;
+    head.width   := znaxis1_val;
+    head.height  := znaxis2_val;
+    head.naxis3  := znaxis3_val;
+    if head.naxis3 > 1 then head.naxis := 3 else head.naxis := 2;
+
+    if head.naxis3 > 3 then
+    begin
+      head.naxis3 := 1;
+      memo2_message('Warning: more than three colours in compressed image. Displaying only the first one.');
+    end;
+
+    { Default ZTILE values if absent or zero.  Guard against division by zero. }
+    if ztile1_val <= 0 then ztile1_val := znaxis1_val;
+    if ztile2_val <= 0 then ztile2_val := 1;          { row-by-row is the FITS default }
+    if ztile3_val <= 0 then ztile3_val := 1;
+    if ztile1_val <= 0 then ztile1_val := 1;          { paranoia for znaxis1_val=0 }
+
+    if (head.naxis < 2) or (head.width <= 0) or (head.height <= 0) then
+    begin
+      memo2_message('Error: invalid dimensions in compressed FITS.');
+      close_fits_file;
+      result := false;
+      exit;
+    end;
+
+    if load_data = false then
+    begin
+      close_fits_file;
+      result := true;
+      exit;
+    end;
+
+    if (table_rows <= 0) or (table_rowwidth <= 0) then
+    begin
+      memo2_message('Error: compressed BINTABLE has no rows.');
+      close_fits_file;
+      result := false;
+      exit;
+    end;
+
+    { Compute column offsets and identify COMPRESSED_DATA / ZSCALE / ZZERO / ZBLANK columns.
+
+      IMPORTANT: this parses tform_raw (the untouched TFORM string) rather than the
+      tform[] array.  ASTAP's general TFORM parser above uses a chain of pos() tests
+      with no else-branches, so a string like '1PB(1234)' or '1D' can be rewritten more
+      than once and its repeat count lost.  For a 16-bit compressed file that does not
+      matter (there is only one column, at offset 0), which is why 16-bit decoded
+      perfectly while float — which also carries ZSCALE and ZZERO columns — did not:
+      a wrong column offset makes read_be_double() pick up the wrong 8 bytes, giving
+      each tile (= each image row, since ZTILE2 defaults to 1) a bogus but almost
+      constant scale/zero.  That is the faint fixed-value horizontal line. }
+    setlength(col_widths, tfields);
+    setlength(col_offsets, tfields);
+    pointer := 0;  { reuse 'pointer' variable as byte offset within a table row }
+    for k_rice := 0 to tfields - 1 do
+    begin
+      col_offsets[k_rice] := pointer;
+      col_widths[k_rice]  := tform_width(tform_raw[k_rice]);
+      inc(pointer, col_widths[k_rice]);
+
+      { Identify columns by TTYPE name }
+      if ttype[k_rice] = 'COMPRESSED_DATA' then col_comp_data  := k_rice
+      else if ttype[k_rice] = 'GZIP_COMPRESSED_DATA' then col_gzip_data := k_rice
+      else if ttype[k_rice] = 'ZSCALE'     then col_zscale_col := k_rice
+      else if ttype[k_rice] = 'ZZERO'      then col_zzero_col  := k_rice
+      else if ttype[k_rice] = 'ZBLANK'     then col_zblank_col := k_rice;
+    end;
+
+    { Cross-check the computed layout against the declared row width.  If these
+      disagree the offsets are wrong and every ZSCALE/ZZERO read would be garbage,
+      so fail loudly instead of silently producing banded images. }
+    if pointer <> table_rowwidth then
+    begin
+      memo2_message('Error: computed BINTABLE row width (' + inttostr(pointer) +
+                    ') does not match NAXIS1 (' + inttostr(table_rowwidth) + ').');
+      close_fits_file;
+      result := false;
+      exit;
+    end;
+
+    if col_comp_data < 0 then
+    begin
+      memo2_message('Error: COMPRESSED_DATA column not found in compressed FITS.');
+      close_fits_file;
+      result := false;
+      exit;
+    end;
+
+    if bytepix_val = 0 then
+    begin
+      { Derive BYTEPIX from ZBITPIX if not explicitly given via ZNAMEn/ZVALn }
+      case abs(zbitpix_val) of
+        8:  bytepix_val := 1;
+        16: bytepix_val := 2;
+        32: bytepix_val := 4;
+        64: bytepix_val := 4;   { rice_decode supports 1/2/4 only; 64-bit not supported }
+      else
+        bytepix_val := 4;
+      end;
+    end;
+    if (bytepix_val <> 1) and (bytepix_val <> 2) and (bytepix_val <> 4) then
+    begin
+      memo2_message('Error: unsupported BYTEPIX ' + inttostr(bytepix_val) + ' in compressed FITS.');
+      close_fits_file;
+      result := false;
+      exit;
+    end;
+    if blocksize_val <= 0 then blocksize_val := 32;
+
+    { Allocate the output image array }
+    try
+      setlength(img_loaded2, head.naxis3, head.height, head.width);
+    except
+      memo2_message('Abort, not enough memory for compressed image!');
+      warning_str := 'Not enough memory!';
+      close_fits_file;
+      result := false;
+      exit;
+    end;
+
+    { ---- Read the table rows and the heap.  Everything below is protected so
+           table_buffer / heap_buffer / tile_data can never leak. ---- }
+    table_size := table_rowwidth * table_rows;   { NAXIS1 * NAXIS2 bytes }
+    heap_size  := pcount_val;
+    if heap_size < 0 then heap_size := 0;
+
+    try
+      try
+        getmem(table_buffer, table_size);
+        reader.read(table_buffer^, table_size);
+
+        if heap_size > 0 then
+        begin
+          getmem(heap_buffer, heap_size);
+          reader.read(heap_buffer^, heap_size);
+        end
+        else
+          heap_buffer := nil;
+      except
+        memo2_message('Error reading compressed table/heap data!');
+        close_fits_file;
+        result := false;
+        exit;   { the outer finally still frees the buffers }
+      end;
+
+      { Compute tile grid dimensions }
+      tiles_x := (znaxis1_val + ztile1_val - 1) div ztile1_val;
+      tiles_y := (znaxis2_val + ztile2_val - 1) div ztile2_val;
+      tiles_z := (znaxis3_val + ztile3_val - 1) div ztile3_val;
+      if tiles_z < 1 then tiles_z := 1;
+      total_tiles := tiles_x * tiles_y * tiles_z;
+
+      if total_tiles > table_rows then
+        memo2_message('Warning: tile grid (' + inttostr(total_tiles) +
+                      ') larger than number of table rows (' + inttostr(table_rows) + ').');
+
+      { Build the CFITSIO random table once, if dithering is in use. }
+      dither_is_2   := (zquantiz_val = 'SUBTRACTIVE_DITHER_2');
+      dither_active := ((zquantiz_val = 'SUBTRACTIVE_DITHER_1') or dither_is_2) and (zdither0_val > 0);
+      if dither_active then
+      begin
+        setlength(dither_table, 10000);
+        build_dither_table(dither_table);
+      end;
+
+      measured_max_rice := 0;
+      measured_min_rice := 0;
+      abort_tiles := false;
+
+      { ---- Decompress each tile ---- }
+      for tz := 0 to tiles_z - 1 do
+      begin
+        if abort_tiles then break;
+        for ty := 0 to tiles_y - 1 do
+        begin
+          if abort_tiles then break;
+          for tx := 0 to tiles_x - 1 do
+          begin
+            tile_index := tx + ty * tiles_x + tz * tiles_x * tiles_y;
+            if tile_index >= table_rows then
+            begin
+              abort_tiles := true;   { no more table rows — stop all three loops }
+              break;
+            end;
+
+            { Locate the variable-length-array descriptor in the table row.
+              Descriptor is stored big-endian: 4-byte element count, 4-byte heap offset. }
+            row_ptr := table_buffer + tile_index * table_rowwidth + col_offsets[col_comp_data];
+            compressed_len := integer((longword(row_ptr[0]) shl 24) or (longword(row_ptr[1]) shl 16) or
+                                      (longword(row_ptr[2]) shl 8)  or  longword(row_ptr[3]));
+            heap_offset    := integer((longword(row_ptr[4]) shl 24) or (longword(row_ptr[5]) shl 16) or
+                                      (longword(row_ptr[6]) shl 8)  or  longword(row_ptr[7]));
+
+            { Actual tile dimensions (last row/column may be smaller) }
+            actual_tile_w := min(ztile1_val, znaxis1_val - tx * ztile1_val);
+            actual_tile_h := min(ztile2_val, znaxis2_val - ty * ztile2_val);
+            actual_tile_d := min(ztile3_val, znaxis3_val - tz * ztile3_val);
+            tile_pixel_count := actual_tile_w * actual_tile_h * actual_tile_d;
+
+            if tile_pixel_count <= 0 then continue;
+
+            if compressed_len <= 0 then
+            begin
+              { COMPRESSED_DATA is empty for this tile.  Nearly every CFITSIO-written
+                Rice file carries a GZIP_COMPRESSED_DATA column (usually completely
+                empty, TFORMn = '1PB(0)'), so its mere presence is normal and must not
+                be treated as an error.  But if it actually holds bytes for this tile,
+                the tile was stored gzip-compressed instead of Rice and we cannot
+                decode it -- report once and leave those tiles blank. }
+              gzip_len := 0;
+              if col_gzip_data >= 0 then
+              begin
+                row_ptr := table_buffer + tile_index * table_rowwidth + col_offsets[col_gzip_data];
+                gzip_len := integer((longword(row_ptr[0]) shl 24) or (longword(row_ptr[1]) shl 16) or
+                                    (longword(row_ptr[2]) shl 8)  or  longword(row_ptr[3]));
+              end;
+
+              if (gzip_len > 0) and (gzip_reported = false) then
+              begin
+                memo2_message('GZIP compression not supported!');
+                warning_str := 'GZIP compression not supported!';
+                gzip_reported := true;
+              end;
+              continue;  { leave this tile as zeros }
+            end;
+
+            { Range check on the heap descriptor.  Done in int64 so a corrupt
+              descriptor near 2^31 cannot wrap around and pass the test. }
+            if (heap_offset < 0) or
+               (int64(heap_offset) + int64(compressed_len) > int64(heap_size)) then
+            begin
+              memo2_message('Warning: tile ' + inttostr(tile_index) + ' heap offset out of range, skipped.');
+              continue;
+            end;
+
+            compressed_ptr := heap_buffer + heap_offset;
+
+            { Per-tile ZSCALE / ZZERO / ZBLANK (columns override the header defaults) }
+            tile_scale    := zscale_val;
+            tile_zero     := zzero_val;
+            tile_blank    := zblank_val;
+            tile_has_blank := zblank_present;   {0 is a legal pixel value, so test presence, not value}
+            if col_zscale_col >= 0 then
+            begin
+              row_ptr := table_buffer + tile_index * table_rowwidth + col_offsets[col_zscale_col];
+              tile_scale := read_be_double(row_ptr);
+            end;
+            if col_zzero_col >= 0 then
+            begin
+              row_ptr := table_buffer + tile_index * table_rowwidth + col_offsets[col_zzero_col];
+              tile_zero := read_be_double(row_ptr);
+            end;
+            if col_zblank_col >= 0 then
+            begin
+              row_ptr := table_buffer + tile_index * table_rowwidth + col_offsets[col_zblank_col];
+              tile_blank := integer((longword(row_ptr[0]) shl 24) or (longword(row_ptr[1]) shl 16) or
+                                    (longword(row_ptr[2]) shl 8)  or  longword(row_ptr[3]));
+              tile_has_blank := true;
+            end;
+
+            { Allocate decompression output buffer (with safety padding) }
+            tile_data_size := tile_pixel_count * bytepix_val;
+            getmem(tile_data, tile_data_size + 16);
+            try
+              fillchar(tile_data^, tile_data_size + 16, 0);
+
+              { Call the Rice decompression routine from unit_ricecomp }
+              error_msg_rice := '';
+              tile_ok := rice_decode(compressed_ptr, compressed_len, bytepix_val,
+                                     tile_pixel_count, blocksize_val,
+                                     tile_data, error_msg_rice);
+
+              if tile_ok then
+              begin
+                { Dither sequence.  CFITSIO seeds one running index per TILE and then
+                  advances it once per PIXEL, in the tile's storage order.  Advancing
+                  it only once per row (as an earlier version did) gives every pixel in
+                  a row the same offset, which shows up as horizontal banding and as
+                  stepped haloes around stars. }
+                if dither_active then
+                begin
+                  dither_iseed := (tile_index + zdither0_val - 1) mod 10000;
+                  dither_next  := trunc(dither_table[dither_iseed] * 500);
+                end
+                else
+                begin
+                  dither_iseed := 0;
+                  dither_next  := 0;
+                end;
+
+                { Place decompressed pixels into the image array.
+                  Within a tile, pixels are stored row-major: x varies fastest,
+                  then y, then z (colour plane).  The dither index must walk in this
+                  same order, one step per pixel, including for pixels that fall
+                  outside the image, so it stays in step with the compressor. }
+                for pz := 0 to actual_tile_d - 1 do
+                  for py := 0 to actual_tile_h - 1 do
+                    for px := 0 to actual_tile_w - 1 do
+                    begin
+                      pixel_idx := px + py * actual_tile_w + pz * actual_tile_w * actual_tile_h;
+                      img_x := tx * ztile1_val + px;
+                      img_y := ty * ztile2_val + py;
+                      img_z := tz * ztile3_val + pz;
+
+                      { NB: pixels outside the image must still consume one dither
+                        step, so the advance happens at the bottom of this loop and
+                        we must not 'continue' past it.  Use a flag instead. }
+                      store_pixel := (img_z < head.naxis3) and (img_y < head.height) and (img_x < head.width);
+
+                      { Extract the integer value from the tile buffer.
+                        rice_decode returns values in native byte order. }
+                      case bytepix_val of
+                        1: begin
+                             raw_unsigned := PByte(tile_data)[pixel_idx];
+                             signed_value := raw_unsigned;            { 8-bit FITS is unsigned }
+                           end;
+                        2: begin
+                             raw_unsigned := PWord(tile_data)[pixel_idx];
+                             signed_value := smallint(word(raw_unsigned));   { signed 16-bit }
+                           end;
+                        4: begin
+                             raw_unsigned := PDWord(tile_data)[pixel_idx];
+                             signed_value := integer(longword(raw_unsigned)); { signed 32-bit }
+                           end;
+                        else
+                           signed_value := 0;
+                      end;
+
+                      if (zquantiz_val <> 'NONE') then
+                      begin
+                        { ---- Quantised floating-point data ----
+                          CFITSIO reserves two magic values at the bottom of the int32
+                          range.  Neither is dithered or scaled:
+                            -2147483647  NULL_VALUE  : blank/NaN pixel
+                            -2147483646  ZERO_VALUE  : a pixel that was exactly 0.0 in
+                                                       the original image (SUBTRACTIVE_DITHER_2
+                                                       only; that mode's whole purpose is to
+                                                       preserve hard zeros).
+                          Note the quantised integers normally sit just above these values,
+                          because ZZERO carries the offset -- so ZERO_VALUE really does occur
+                          in ordinary data and must be tested for explicitly.  Testing for
+                          signed_value = 0 instead (as an earlier version did) is wrong twice
+                          over: plain 0 is an ordinary value, and the real magic number is
+                          never caught, so every exactly-zero pixel decodes to a large bogus
+                          number. }
+                        if signed_value = -2147483647 then
+                          col_float_rice := 0          { NULL_VALUE: blank pixel }
+                        else
+                        if dither_is_2 and (signed_value = -2147483646) then
+                          col_float_rice := 0.0        { ZERO_VALUE: original pixel was exactly 0.0 }
+                        else
+                        if dither_active then
+                          { Subtractive dither: undo the random value the compressor
+                            added, then apply the linear scaling.
+                            value = (I - r + 0.5) * ZSCALE + ZZERO }
+                          col_float_rice := (signed_value - dither_table[dither_next] + 0.5) * tile_scale + tile_zero
+                        else
+                          col_float_rice := signed_value * tile_scale + tile_zero;
+                      end
+                      else
+                      begin
+                        { ---- Plain (lossless) integer data ---- }
+                        { Apply the image scaling BSCALE/BZERO as copied into the
+                          compressed BINTABLE header.  Typically BZERO=32768 for
+                          unsigned 16-bit camera data; omitting it shifts the whole
+                          image down by 32768. }
+                        if tile_has_blank and (signed_value = tile_blank) then
+                          col_float_rice := 0    { null pixel }
+                        else
+                          col_float_rice := signed_value * img_bscale + img_bzero;
+                      end;
+
+                      if isNan(col_float_rice) or isInfinite(col_float_rice) then col_float_rice := 0;
+
+                      if store_pixel then
+                      begin
+                        img_loaded2[img_z, img_y, img_x] := col_float_rice;
+                        if col_float_rice > measured_max_rice then measured_max_rice := col_float_rice;
+                        if col_float_rice < measured_min_rice then measured_min_rice := col_float_rice;
+                      end;
+
+                      { Advance the dither index one step per pixel.  On wrap-around
+                        CFITSIO re-seeds rather than simply resetting to 0. }
+                      if dither_active then
+                      begin
+                        inc(dither_next);
+                        if dither_next >= 10000 then
+                        begin
+                          inc(dither_iseed);
+                          if dither_iseed >= 10000 then dither_iseed := 0;
+                          dither_next := trunc(dither_table[dither_iseed] * 500);
+                        end;
+                      end;
+                    end;{px}
+              end
+              else
+                memo2_message('Decompression error for tile ' + inttostr(tile_index) + ': ' + error_msg_rice);
+            finally
+              freemem(tile_data);
+              tile_data := nil;
+            end;
+          end;{tx}
+        end;{ty}
+      end;{tz}
+
+    finally
+      { Always release the table and heap buffers }
+      if table_buffer <> nil then begin freemem(table_buffer); table_buffer := nil; end;
+      if heap_buffer  <> nil then begin freemem(heap_buffer);  heap_buffer  := nil; end;
+    end;
+
+    { Rescale float data to 0..65535 range (same logic as the uncompressed path) }
+    head.datamin_org := measured_min_rice;
+
+    if (zbitpix_val <= -32) or (zbitpix_val = +32) then
+    begin
+      scalefactor_rice := 1;
+      if measured_max_rice > 0 then
+        if (measured_max_rice <= 1.5) or (measured_max_rice > 65535 * 1.5) then
+          scalefactor_rice := 65535 / measured_max_rice;
+      if scalefactor_rice <> 1 then
+      begin
+        for k_rice := 0 to head.naxis3 - 1 do
+          for j := 0 to head.height - 1 do
+            for i := 0 to head.width - 1 do
+              img_loaded2[k_rice, j, i] := img_loaded2[k_rice, j, i] * scalefactor_rice;
+        head.datamin_org := measured_min_rice * scalefactor_rice;
+        head.datamax_org := 65535;
+      end
+      else
+        head.datamax_org := measured_max_rice;
+    end
+    else if zbitpix_val = 8 then
+      head.datamax_org := 255
+    else
+      head.datamax_org := measured_max_rice;
+
+    head.backgr := head.datamin_org;
+    cwhite := head.datamax_org;
+
+    unsaved_import := false;
+    result := true;
+  end  { Rice compressed image }
+  else
+  begin //not rice
+
+    if head.naxis<2 then
+    begin
+      if head.naxis=0 then result:=true {wcs file}
+                 else result:=false; {no image}
+      mainform1.image1.visible:=false;
+      image:=false;
+    end;
+
+    if image then {read image data #########################################}
+    begin
+      if ((head.naxis=3) and (naxis1=3)) then
+      begin
+         head.bitpix:=24; {threat RGB fits as 2 dimensional with 24 bits data}
+         head.naxis3:=3; {will be converted while reading}
+      end;
+
+      if light then //not required for darks and lights since some variables are not reset and could be nan cause runtime error
+      begin
+        if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
+        begin //formalism 3
+          new_to_old_WCS(head);{ convert old WCS to new}
+        end
+        else
+        if ((head.cd1_1=0) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
+        begin
+          if PC1_1<>0 then //formalism 2
+          begin
+            head.CD1_1:=PC1_1* head.cdelt1;
+            head.CD1_2:=PC1_2* head.cdelt1;
+            head.CD2_1:=PC2_1* head.cdelt2;
+            head.CD2_2:=PC2_2* head.cdelt2;
+            new_to_old_WCS(head);{ convert old WCS to new}
+          end
+          else
+          if head.crota2<999 then {new style missing but valid old style solution}
+          begin //formalism 1
+            if head.crota1=999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
+            old_to_new_WCS(head);{ convert old WCS to new}
+           end;
+        end;
+
+        if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
+        begin
+         if ((focallen<>0) and (head.xpixsz<>0)) then
+            head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+        end;
+
+        if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
+        begin
+          if equinox<>2000 then //e.g. in SharpCap
+          begin
+            jd_obs:=(equinox-2000)*365.25+2451545;
+            precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
+            if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+          end;
+
+          mainform1.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+          mainform1.dec1.text:=prepare_dec(head.dec0,' ');
+        end;
+        { condition           keyword    to
+         if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
+                                   ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
+                               crval1--->head.ra0
+
+         if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
+
+      end; //lights
+
+      if head.set_temperature=999 then
+         head.set_temperature:=round(ccd_temperature); {temperature}
+
+
+      unsaved_import:=false;{file is available for astrometry.net}
+
+
+      if load_data=false then
+      begin
+         close_fits_file;
+         result:=true;
+         exit;
+      end;{only read header for analyse or WCS file}
+
+
+      {############################## read image}
+      i:=round(bufwide/(abs(head.bitpix/8)));{check if buffer is wide enough for one image line}
+      if head.width>i then
+      begin
+        beep;
+        textout(mainform1.image1.canvas.handle,30,30,'Too wide FITS file !!!!!',25);
+        close_fits_file;
+        exit;
+      end;
+
+      try
+        setlength(img_loaded2,head.naxis3,head.height,head.width);
+      except
+        memo2_message('Abort, not enough memory!');
+        warning_str:='Not enough memory!'; //for command line usage
+        exit;
+      end;
+
+      if head.bitpix=16 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width*2);except; head.naxis:=0;{failure} end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
+            col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
+            img_loaded2[k,j,i]:=col_float;
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors head.naxis3 times}
+      else
+      if head.bitpix=-32 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+            col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
+            if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
+            img_loaded2[k,j,i]:=col_float;{store in memory array}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors head.naxis3 times}
+      else
+      if head.bitpix=8 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width);except; head.naxis:=0;{failure} end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            img_loaded2[k,j,i]:=(fitsbuffer[i]*bscale + bzero);
+          end;
+        end;
+      end {colors head.naxis3 times}
+      else
+      if head.bitpix=24 then
+      For j:=0 to head.height-1 do
+      begin
+        try reader.read(fitsbuffer,head.width*3);except; head.naxis:=0;{failure} end; {read file info}
+        for i:=0 to head.width-1 do
+        begin
+          rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
+          img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
+          img_loaded2[1,j,i]:=rgbdummy[1];{store in memory array}
+          img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
+        end;
+      end
+      else
+      if head.bitpix=+32 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            col_float:=int32(swapendian(fitsbuffer4[i]))*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
+           {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
+            img_loaded2[k,j,i]:=col_float;{store in memory array}
+            if col_float>measured_max then
+               measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors head.naxis3 times}
+      else
+      if head.bitpix=-64 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width*8);except; end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+            col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
+            img_loaded2[k,j,i]:=col_float;{store in memory array}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+
+          end;
+        end;
+      end; {colors head.naxis3 times}
+
+      {rescale if required}
+      if ((head.bitpix<=-32){-32 or -64} or (head.bitpix=+32)) then
+      begin
+        scalefactor:=1;
+        if measured_max>0 then
+          if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then
+            scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
+                                             {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
+        if scalefactor<>1 then {not a 0..65535 range, rescale}
+        begin
+          for k:=0 to head.naxis3-1 do {do all colors}
+            for j:=0 to head.height-1 do
+              for i:=0 to head.width-1 do
+                img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
+          head.datamax_org:=65535;
+        end
+        else  head.datamax_org:=measured_max;
+
+      end
+      else
+      if head.bitpix=8 then head.datamax_org:=255 {not measured}
+      else
+      if head.bitpix=24 then
+      begin
+        head.datamax_org:=255;
+        head.bitpix:=8; {already converted to array with separate colour sections}
+      end
+      else {16 bit}
+      head.datamax_org:=measured_max;{most common. It set for bitpix=24 in beginning at 255}
+
+      head.backgr:=head.datamin_org;{for case histogram is not called}
+      cwhite:=head.datamax_org;
+
+      result:=head.naxis<>0;{success};
+      reader_position:=reader_position+head.width*head.height*(abs(head.bitpix) div 8)
+    end{image block}
+
+    else
+    if  ((head.naxis=2) and ((bintable) or (asciitable)) ) then
+    begin {read table ############################################}
+      if bintable then extend_type:=3;
+      if asciitable then extend_type:=2;
+
+      {try to read data table}
+      aline:='';
+      for k:=0 to tfields-1 do {columns}
+          aline:=aline+ttype[k]+#9;
+      aline:=aline+sLineBreak;
+      for k:=0 to tfields-1 do {columns}
+         aline:=aline+tunit[k]+#9;
+      aline:=aline+sLineBreak;
+
+      for j:=0 to head.height-1 do {rows}
+      begin
+        try reader.read(fitsbuffer[0],head.width);{read one row} except end;
+
+        if extend_type=2 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),head.width);{convert to string}
+
+        pointer:=0;
+        for k:=0 to tfields-1 do {columns}
+        {read}
+        begin
+          if extend_type=2 then {ascii table}
+          begin
+            if k>0 then insert(#9,field,tbcol[k]+k-1);{insert tab}
+            if k=tfields-1 then aline:=aline+field;{field is ready}
+          end
+          else
+          begin
+            if tform[k]='E' then {4 byte single float or 21 times single if 21E specified}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                x_longword:=(fitsbuffer[pointer] shl 24) +(fitsbuffer[pointer+1] shl 16)+(fitsbuffer[pointer+2] shl 8)+(fitsbuffer[pointer+3]);
+                aline:=aline+floattostrF(x_single,FFexponent,7,0)+#9; {int_IEEE, swap four bytes and the read as floating point}
+                pointer:=pointer+4;
+              end;
+            end
+            else
+            if tform[k]='D' then {8 byte float}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                x_qword:=(qword(fitsbuffer[pointer]) shl 56) +(qword(fitsbuffer[pointer+1]) shl 48)+(qword(fitsbuffer[pointer+2]) shl 40)+(qword(fitsbuffer[pointer+3]) shl 32) + (qword(fitsbuffer[pointer+4]) shl 24) +(qword(fitsbuffer[pointer+5]) shl 16)+(qword(fitsbuffer[pointer+6]) shl 8)+(qword(fitsbuffer[pointer+7]));
+                aline:=aline+floattostrF(x_double,FFexponent,7,0)+#9; {int_IEEE, swap four bytes and the read as floating point}
+                pointer:=pointer+8;
+              end;
+            end
+            else
+            if tform[k]='I' then {16 bit int}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                word16:=(fitsbuffer[pointer] shl 8) + (fitsbuffer[pointer+1]);
+                aline:=aline+inttostr(int_16)+#9;
+                pointer:=pointer+2;
+              end;
+            end
+            else
+            if tform[k]='J' then {32 bit int}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                x_longword:=(fitsbuffer[pointer] shl 24) +(fitsbuffer[pointer+1] shl 16)+(fitsbuffer[pointer+2] shl 8)+(fitsbuffer[pointer+3]);
+                aline:=aline+inttostr(int_32)+#9;
+                pointer:=pointer+4;
+              end;
+            end
+            else
+            if tform[k]='K' then {64 bit int}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                x_qword:=(qword(fitsbuffer[pointer]) shl 56) +(qword(fitsbuffer[pointer+1]) shl 48)+(qword(fitsbuffer[pointer+2]) shl 40)+(qword(fitsbuffer[pointer+3]) shl 32) + (qword(fitsbuffer[pointer+4]) shl 24) +(qword(fitsbuffer[pointer+5]) shl 16)+(qword(fitsbuffer[pointer+6]) shl 8)+(qword(fitsbuffer[pointer+7]));
+                aline:=aline+inttostr(int_64)+#9; {int_IEEE, swap eight bytes and the read as floating point}
+                pointer:=pointer+8;
+              end;
+            end
+            else
+            if ((tform[k]='L') or (Tform[k]='X') or (Tform[k]='B')) then {logical, bit or byte }
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                aline:=aline+inttostr(fitsbuffer[pointer])+#9;
+                pointer:=pointer+1;
+              end;
+            end
+            else
+            if ((Tform[k]='A')) then {chars}
+            begin
+              field:='';
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                abyte:=fitsbuffer[pointer+n];
+                if ((abyte>=32) and  (abyte<=127)) then field:=field+ansichar(abyte)
+                  else  field:=field+'?';{exotic char, prevent confusion tmemo}
+              end;
+              aline:=aline+field+ #9;
+              pointer:=pointer+Tform_nr[k];{for 12A, plus 12}
+            end
+          end;
+        end;
+        aline:=aline+sLineBreak ;
+      end;
+      mainform1.Memo3.lines.text:=aline;
+      aline:=''; {release memory}
+      mainform1.pagecontrol1.showtabs:=true;{show tabs}
+      reader_position:=reader_position+head.width*head.height;
+    end; {read table}
+
+  end;//not rice
+
+
+  if last_extension=false then {test if extension is possible}
+  begin
+    if file_size-reader_position>2880 then {file size confirms extension}
+    begin
+      if get_ext=0 then
+         mainform1.Memo3.lines.text:='File contains extension image(s) or table(s).';
+      mainform1.pagecontrol1.showtabs:=true;{show tabs}
+
+      last_extension:=false;
+      if head.naxis<2 then
+      begin
+        mainform1.error_label1.caption:=('Contains extension(s). Click on the arrows to scroll.');
+        mainform1.error_label1.visible:=true;
+        //mainform1.memo1.visible:=true;{show memo1 since no plotting is coming}
+      end;
+    end
+    else
+    begin
+      last_extension:=true;
+    end;
+  end;
+  if ((last_extension=false) or (extend_type>0)) then
+     mainform1.tabsheet1.caption:='Header '+inttostr(get_ext);
+
+  if ((last_extension=false) or (extend_type>0)) then
+  begin
+     mainform1.tabsheet1.caption:='Header '+inttostr(get_ext);
+     { If we auto-advanced from 0 to 1, sync the UpDown control for compressed fits.fz files}
+     if mainform1.updown1.position <> get_ext then
+        mainform1.updown1.position := get_ext;
+  end;
+
+  close_fits_file;
+
+ // dummy:=memo.text;
+end;
+
+function load_fitsOLD(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;const memo: tstrings;out head: Theader; out img_loaded2: Timage_array): boolean;{load a fits or Astro-TIFF file}
 {if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
@@ -1187,6 +3261,75 @@ var
   tbcol,tform_nr    : array of integer;
   simple,image,bintable,asciitable    : boolean;
   abyte                               : byte;
+  dummy: string;
+
+  { Rice compressed FITS support (ZCMPTYPE = 'RICE_1') }
+  zimage_flag         : boolean = false;
+  zbitpix_val         : integer = 0;
+  znaxis1_val         : integer = 0;
+  znaxis2_val         : integer = 0;
+  znaxis3_val         : integer = 1;
+  ztile1_val          : integer = 0;
+  ztile2_val          : integer = 1;
+  ztile3_val          : integer = 1;
+  zcmptype_val        : ansistring = '';
+  zquantiz_val        : ansistring = 'NONE';
+  zdither0_val        : integer = 0;
+  zscale_val          : double = 1.0;
+  zzero_val           : double = 0.0;
+  zname1_val          : ansistring = '';
+  zname2_val          : ansistring = '';
+  zname3_val          : ansistring = '';
+  zname4_val          : ansistring = '';
+  pcount_val          : integer = 0;
+  blocksize_val       : integer = 32;   { BLOCKSIZE keyword, normally 32 }
+  bytepix_val         : integer = 0;    { BYTEPIX keyword, 1/2/4 }
+  px,py,pz            : integer;
+
+  { Column index lookup for the compressed-data BINTABLE }
+  col_comp_data       : integer = -1;
+  col_zscale_col      : integer = -1;
+  col_zzero_col       : integer = -1;
+  col_zblank_col      : integer = -1;
+  col_widths          : array of integer;
+  col_offsets         : array of integer;
+
+  { Heap / table buffers }
+  heap_buffer         : PByte = nil;
+  heap_size           : integer = 0;
+  table_buffer        : PByte = nil;
+  table_size          : integer = 0;
+
+  { Tile iteration }
+  tiles_x, tiles_y, tiles_z, total_tiles : integer;
+  tile_index, tx, ty, tz                 : integer;
+  actual_tile_w, actual_tile_h, actual_tile_d : integer;
+  tile_pixel_count                       : integer;
+  tile_data                              : PByte = nil;
+  tile_data_size                         : integer = 0;
+  compressed_ptr                         : PByte;
+  compressed_len, heap_offset            : integer;
+  row_ptr                                : PByte;
+
+  { Per-tile scale/zero (for quantised float data) }
+  tile_scale                            : double;
+  tile_zero                             : double;
+
+  { Dithering support (SUBTRACTIVE_DITHER_1) }
+  dither_offsets                        : array of integer;
+  iseed                                 : integer;
+  dither_rand                           : single;
+
+  { Pixel placement }
+  img_x, img_y, img_z                   : integer;
+  pixel_idx                             : integer;
+  raw_unsigned                          : longword;
+  signed_value                          : int64;
+  col_float_rice                        : single;
+  measured_max_rice                     : single = 0;
+  scalefactor_rice                      : single;
+  error_msg_rice                        : string;
+  k_rice                                : integer;
 
 var {################# initialised variables #########################}
   end_record : boolean=false;
@@ -1195,6 +3338,36 @@ var {################# initialised variables #########################}
      begin
        Reader.free;
        TheFile.free;
+     end;
+
+     { Minimal LCG random generator matching CFITSIO's imcomp_rand_value.
+       Returns a value in [0, 1).  Used for SUBTRACTIVE_DITHER_1 dithering. }
+     function imcomp_rand_value(var iseed: integer): single;
+     const
+       ia = 16807;
+       im = 2147483647;
+       iq = 127773;
+       ir_ = 2836;
+     var
+       k: integer;
+     begin
+       k := iseed div iq;
+       iseed := ia * (iseed - k * iq) - ir_ * k;
+       if iseed < 0 then iseed := iseed + im;
+       result := iseed / im;
+     end;
+
+     { Read an 8-byte big-endian double from a byte pointer }
+     function read_be_double(p: PByte): double;
+     var
+       qw : qword;
+       d  : double absolute qw;
+     begin
+       qw := (qword(p[0]) shl 56) or (qword(p[1]) shl 48) or
+             (qword(p[2]) shl 40) or (qword(p[3]) shl 32) or
+             (qword(p[4]) shl 24) or (qword(p[5]) shl 16) or
+             (qword(p[6]) shl 8)  or  qword(p[7]);
+       result := d;
      end;
 
      function validate_double:double;{read floating point or integer values}
@@ -1292,6 +3465,19 @@ begin
   I:=0;
     repeat {loop for reaching image/table}
       try
+        { Graceful End-Of-File check to prevent read exceptions }
+        if file_size - reader_position < 2880 then
+        begin
+          if update_memo and (memo <> nil) then  memo.endupdate; { Unlock memo }
+          close_fits_file;
+          mainform1.error_label1.caption := 'End of file reached, no more extensions.';
+          mainform1.error_label1.visible := true;
+          last_extension := true;
+          result := false;
+          exit;
+        end;
+
+
         reader.read(header[I],2880);{read file header, 2880 bytes}
         inc(reader_position,2880);  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
         if ((reader_position=2880) and (header[0]='S') and (header[1]='I')  and (header[2]='M') and (header[3]='P') and (header[4]='L') and (header[5]='E') and (header[6]=' ')) then
@@ -1301,6 +3487,7 @@ begin
         end;
         if simple=false then
         begin
+          if update_memo and (memo <> nil) then  memo.endupdate; { Unlock memo }
           close_fits_file;
           beep;
           mainform1.error_label1.caption:=('Error loading FITS file!! Keyword SIMPLE not found.');
@@ -1326,6 +3513,7 @@ begin
           end;
         end;
       except;
+        if update_memo and (memo <> nil) then  memo.endupdate; { Unlock memo }
         close_fits_file;
         beep;
         mainform1.error_label1.caption:='Read exception error!!';
@@ -1927,16 +4115,109 @@ begin
            setlength(tbcol,tfields);
            setlength(tunit,tfields);
         end;
-        if ((header[i]='Z') and (header[i+1]='C')  and (header[i+2]='M') and (header[i+3]='P') and (header[i+4]='T')) then  { ZCMPTYPE, compressed image in table Rice and others format}
+
+        { ---- Rice / tiled-image-compression keywords ---- }
+
+        if ((header[i]='Z') and (header[i+1]='I') and (header[i+2]='M') and (header[i+3]='A') and (header[i+4]='G') and (header[i+5]='E')) then {ZIMAGE}
+          zimage_flag := (pos('T',get_as_string)>0);
+
+        if ((header[i]='Z') and (header[i+1]='B') and (header[i+2]='I') and (header[i+3]='T') and (header[i+4]='P') and (header[i+5]='I')) then {ZBITPIX}
+          zbitpix_val := round(validate_double);
+
+        if ((header[i]='Z') and (header[i+1]='N') and (header[i+2]='A') and (header[i+3]='X') and (header[i+4]='I') and (header[i+5]='S')) then {ZNAXIS / ZNAXIS1/2/3}
         begin
-          last_extension:=true;{give up}
+          if (header[i+6]='1') then znaxis1_val := round(validate_double) else
+          if (header[i+6]='2') then znaxis2_val := round(validate_double) else
+          if (header[i+6]='3') then znaxis3_val := round(validate_double);
         end;
+
+        if ((header[i]='Z') and (header[i+1]='T') and (header[i+2]='I') and (header[i+3]='L') and (header[i+4]='E')) then {ZTILE1/2/3}
+        begin
+          if (header[i+5]='1') then ztile1_val := round(validate_double) else
+          if (header[i+5]='2') then ztile2_val := round(validate_double) else
+          if (header[i+5]='3') then ztile3_val := round(validate_double);
+        end;
+
+        { ZCMPTYPE — was previously "give up"; now parse the value }
+        if ((header[i]='Z') and (header[i+1]='C') and (header[i+2]='M') and (header[i+3]='P') and (header[i+4]='T') and (header[i+5]='Y')) then
+          zcmptype_val := get_string;
+
+        if ((header[i]='Z') and (header[i+1]='Q') and (header[i+2]='U') and (header[i+3]='A') and (header[i+4]='N') and (header[i+5]='T')) then {ZQUANTIZ}
+          zquantiz_val := get_string;
+
+        if ((header[i]='Z') and (header[i+1]='D') and (header[i+2]='I') and (header[i+3]='T') and (header[i+4]='H') and (header[i+5]='E') and (header[i+6]='R') and (header[i+7]='0')) then {ZDITHER0}
+          zdither0_val := round(validate_double);
+
+        if ((header[i]='Z') and (header[i+1]='S') and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='E') and (header[i+6]=' ')) then {ZSCALE (header-level default)}
+          zscale_val := validate_double;
+
+        if ((header[i]='Z') and (header[i+1]='Z') and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') and (header[i+5]=' ')) then {ZZERO (header-level default)}
+          zzero_val := validate_double;
+
+        { ZNAMEn / ZVALn pairs — look for BLOCKSIZE and BYTEPIX }
+        if ((header[i]='Z') and (header[i+1]='N') and (header[i+2]='A') and (header[i+3]='M') and (header[i+4]='E')) then
+        begin
+          if (header[i+5]='1') then zname1_val := get_string else
+          if (header[i+5]='2') then zname2_val := get_string else
+          if (header[i+5]='3') then zname3_val := get_string else
+          if (header[i+5]='4') then zname4_val := get_string;
+        end;
+        if ((header[i]='Z') and (header[i+1]='V') and (header[i+2]='A') and (header[i+3]='L')) then
+        begin
+          if (header[i+4]='1') then begin
+            if zname1_val='BLOCKSIZE' then blocksize_val := round(validate_double)
+            else if zname1_val='BYTEPIX' then bytepix_val := round(validate_double)
+            else validate_double;
+          end else
+          if (header[i+4]='2') then begin
+            if zname2_val='BLOCKSIZE' then blocksize_val := round(validate_double)
+            else if zname2_val='BYTEPIX' then bytepix_val := round(validate_double)
+            else validate_double;
+          end else
+          if (header[i+4]='3') then begin
+            if zname3_val='BLOCKSIZE' then blocksize_val := round(validate_double)
+            else if zname3_val='BYTEPIX' then bytepix_val := round(validate_double)
+            else validate_double;
+          end else
+          if (header[i+4]='4') then begin
+            if zname4_val='BLOCKSIZE' then blocksize_val := round(validate_double)
+            else if zname4_val='BYTEPIX' then bytepix_val := round(validate_double)
+            else validate_double;
+          end;
+        end;
+
+        { PCOUNT — heap size in bytes (essential for variable-length arrays) }
+        if ((header[i]='P') and (header[i+1]='C') and (header[i+2]='O') and (header[i+3]='U') and (header[i+4]='N') and (header[i+5]='T')) then
+          pcount_val := round(validate_double);
+
+        { BZERO / BSCALE inside the BINTABLE header (for integer compressed images) }
+        if ((header[i]='B') and (header[i+1]='Z') and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') and (header[i+5]=' ')) then
+        begin
+          tempval := validate_double;
+          if tempval > 2147483647 then
+            bzero := -2147483648
+          else
+            bzero := round(tempval);
+        end
+        else if ((header[i]='B') and (header[i+1]='S') and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='E')) then
+          bscale := validate_double;
+
+        { ---- existing TFORM / TTYPE / TUNIT parsing follows ---- }
 
         if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='O') and (header[i+3]='R') and (header[i+4]='M')) then
         begin
           number:=trim(header[i+5]+header[i+6]+header[i+7]);
           tform_counter:=strtoint(number)-1;
           tform[tform_counter]:=get_string;
+
+          { Detect variable-length array (P prefix) — essential for COMPRESSED_DATA column }
+          if pos('P', tform[tform_counter]) > 0 then
+          begin
+            { Variable-length array: row stores 8-byte descriptor (nelem + heap offset) }
+            tform[tform_counter] := 'P';
+            tform_nr[tform_counter] := 1;
+          end
+          else
           try
           let:=pos('E',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='E';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{single e.g. E, 1E or 4E}
           let:=pos('D',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='D';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{double e.g. D, 1D or 5D (sub table 5*D) or D25.17}
@@ -1976,353 +4257,693 @@ begin
       inc(i,80);{go to next 80 bytes record}
 
     until ((i>=2880) or (end_record)); {loop for 80 bytes in 2880 block}
+    { ##################################################################
+      Automatically fall through to the first extension if the primary
+      HDU is empty (NAXIS=0). This is standard for compressed .fz files
+      and multi-extension FITS (MEF) files.
+      ################################################################## }
+    if (get_ext = 0) and (head.naxis = 0) and (file_size - reader_position > 2880) then
+    begin
+      get_ext := 1;
+      end_record := false;
+      image := false;
+      bintable := false;
+      asciitable := false;
+      if update_memo then memo.clear; { Clear primary header from memo }
+      zimage_flag := false;
+      zcmptype_val := '';
+    end;
+
   until end_record; {header, 2880 bytes loop}
 
   memo.endupdate;{for speed}
 
-  if head.naxis<2 then
+  { ##################################################################
+    Rice compressed image decompression  (ZCMPTYPE = 'RICE_1')
+    The BINTABLE extension stores tiles of compressed pixel data in
+    a variable-length array column (COMPRESSED_DATA).  The heap area
+    following the table rows contains the actual compressed bytes.
+    ################################################################## }
+  if zimage_flag and (zcmptype_val = 'RICE_1') then
   begin
-    if head.naxis=0 then result:=true {wcs file}
-               else result:=false; {no image}
-    mainform1.image1.visible:=false;
-    image:=false;
-  end;
+    { Override head dimensions with the uncompressed image dimensions }
+    head.bitpix  := zbitpix_val;
+    head.width   := znaxis1_val;
+    head.height  := znaxis2_val;
+    head.naxis3  := znaxis3_val;
+    if head.naxis3 > 1 then head.naxis := 3 else head.naxis := 2;
 
-  if image then {read image data #########################################}
-  begin
-    if ((head.naxis=3) and (naxis1=3)) then
+    if head.naxis3 > 3 then
     begin
-       head.bitpix:=24; {threat RGB fits as 2 dimensional with 24 bits data}
-       head.naxis3:=3; {will be converted while reading}
+      head.naxis3 := 1;
+      memo2_message('Warning: more than three colours in compressed image. Displaying only the first one.');
     end;
 
-    if light then //not required for darks and lights since some variables are not reset and could be nan cause runtime error
+    { Default ZTILE values if not specified }
+    if ztile1_val = 0 then ztile1_val := znaxis1_val;
+    if ztile2_val = 0 then ztile2_val := znaxis2_val;
+
+    if head.naxis < 2 then
     begin
-      if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
-      begin //formalism 3
-        new_to_old_WCS(head);{ convert old WCS to new}
-      end
+      close_fits_file;
+      result := false;
+      exit;
+    end;
+
+    if load_data = false then
+    begin
+      close_fits_file;
+      result := true;
+      exit;
+    end;
+
+    { Compute column offsets and identify COMPRESSED_DATA / ZSCALE / ZZERO columns }
+    setlength(col_widths, tfields);
+    setlength(col_offsets, tfields);
+    pointer := 0;  { reuse 'pointer' variable as byte offset }
+    for k_rice := 0 to tfields - 1 do
+    begin
+      col_offsets[k_rice] := pointer;
+      if tform[k_rice] = 'P' then
+        col_widths[k_rice] := 8          { 4-byte count + 4-byte heap offset }
+      else if tform[k_rice] = 'D' then
+        col_widths[k_rice] := 8 * tform_nr[k_rice]
+      else if tform[k_rice] = 'E' then
+        col_widths[k_rice] := 4 * tform_nr[k_rice]
+      else if tform[k_rice] = 'J' then
+        col_widths[k_rice] := 4 * tform_nr[k_rice]
+      else if tform[k_rice] = 'K' then
+        col_widths[k_rice] := 8 * tform_nr[k_rice]
+      else if tform[k_rice] = 'I' then
+        col_widths[k_rice] := 2 * tform_nr[k_rice]
+      else if tform[k_rice] = 'B' then
+        col_widths[k_rice] := 1 * tform_nr[k_rice]
+      else if tform[k_rice] = 'A' then
+        col_widths[k_rice] := 1 * tform_nr[k_rice]
+      else if tform[k_rice] = 'L' then
+        col_widths[k_rice] := 1 * tform_nr[k_rice]
       else
-      if ((head.cd1_1=0) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
-      begin
-        if PC1_1<>0 then //formalism 2
-        begin
-          head.CD1_1:=PC1_1* head.cdelt1;
-          head.CD1_2:=PC1_2* head.cdelt1;
-          head.CD2_1:=PC2_1* head.cdelt2;
-          head.CD2_2:=PC2_2* head.cdelt2;
-          new_to_old_WCS(head);{ convert old WCS to new}
-        end
-        else
-        if head.crota2<999 then {new style missing but valid old style solution}
-        begin //formalism 1
-          if head.crota1=999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
-          old_to_new_WCS(head);{ convert old WCS to new}
-         end;
-      end;
+        col_widths[k_rice] := 1 * tform_nr[k_rice];
 
-      if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
-      begin
-       if ((focallen<>0) and (head.xpixsz<>0)) then
-          head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
-      end;
+      inc(pointer, col_widths[k_rice]);
 
-      if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
-      begin
-        if equinox<>2000 then //e.g. in SharpCap
-        begin
-          jd_obs:=(equinox-2000)*365.25+2451545;
-          precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
-          if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
-        end;
+      { Identify columns by TTYPE name }
+      if ttype[k_rice] = 'COMPRESSED_DATA' then col_comp_data := k_rice
+      else if ttype[k_rice] = 'ZSCALE' then col_zscale_col := k_rice
+      else if ttype[k_rice] = 'ZZERO'  then col_zzero_col  := k_rice
+      else if ttype[k_rice] = 'ZBLANK' then col_zblank_col := k_rice;
+    end;
 
-        mainform1.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
-        mainform1.dec1.text:=prepare_dec(head.dec0,' ');
-      end;
-      { condition           keyword    to
-       if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
-                                 ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
-                             crval1--->head.ra0
-
-       if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
-
-    end; //lights
-
-    if head.set_temperature=999 then
-       head.set_temperature:=round(ccd_temperature); {temperature}
-
-
-    unsaved_import:=false;{file is available for astrometry.net}
-
-
-    if load_data=false then
+    if col_comp_data < 0 then
     begin
-       close_fits_file;
-       result:=true;
-       exit;
-    end;{only read header for analyse or WCS file}
-
-
-    {############################## read image}
-    i:=round(bufwide/(abs(head.bitpix/8)));{check if buffer is wide enough for one image line}
-    if head.width>i then
-    begin
-      beep;
-      textout(mainform1.image1.canvas.handle,30,30,'Too wide FITS file !!!!!',25);
+      memo2_message('Error: COMPRESSED_DATA column not found in compressed FITS.');
       close_fits_file;
       exit;
     end;
 
+    if bytepix_val = 0 then
+    begin
+      { Derive BYTEPIX from ZBITPIX if not explicitly set }
+      case abs(zbitpix_val) of
+        8:  bytepix_val := 1;
+        16: bytepix_val := 2;
+        32: bytepix_val := 4;
+      else
+        bytepix_val := 2;
+      end;
+    end;
+
+    { Allocate the output image array }
     try
-      setlength(img_loaded2,head.naxis3,head.height,head.width);
+      setlength(img_loaded2, head.naxis3, head.height, head.width);
     except
-      memo2_message('Abort, not enough memory!');
-      warning_str:='Not enough memory!'; //for command line usage
+      memo2_message('Abort, not enough memory for compressed image!');
+      warning_str := 'Not enough memory!';
+      close_fits_file;
       exit;
     end;
 
-    if head.bitpix=16 then
-    for k:=0 to head.naxis3-1 do {do all colors}
+    { Read the table data (row descriptors) — NAXIS1 × NAXIS2 bytes }
+    table_size := naxis1 * head.height;   { naxis1 = row width, head.height = NAXIS2 = nr tiles }
+    getmem(table_buffer, table_size);
+    try
+      reader.read(table_buffer^, table_size);
+    except
+      freemem(table_buffer);
+      memo2_message('Error reading compressed table data!');
+      close_fits_file;
+      exit;
+    end;
+
+    { Read the heap (compressed byte streams) — PCOUNT bytes }
+    heap_size := pcount_val;
+    if heap_size > 0 then
     begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width*2);except; head.naxis:=0;{failure} end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
-          col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
-          img_loaded2[k,j,i]:=col_float;
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors head.naxis3 times}
-    else
-    if head.bitpix=-32 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-          col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
-          if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
-          img_loaded2[k,j,i]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors head.naxis3 times}
-    else
-    if head.bitpix=8 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width);except; head.naxis:=0;{failure} end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          img_loaded2[k,j,i]:=(fitsbuffer[i]*bscale + bzero);
-        end;
-      end;
-    end {colors head.naxis3 times}
-    else
-    if head.bitpix=24 then
-    For j:=0 to head.height-1 do
-    begin
-      try reader.read(fitsbuffer,head.width*3);except; head.naxis:=0;{failure} end; {read file info}
-      for i:=0 to head.width-1 do
-      begin
-        rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-        img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
-        img_loaded2[1,j,i]:=rgbdummy[1];{store in memory array}
-        img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
+      getmem(heap_buffer, heap_size);
+      try
+        reader.read(heap_buffer^, heap_size);
+      except
+        freemem(table_buffer);
+        freemem(heap_buffer);
+        memo2_message('Error reading compressed heap data!');
+        close_fits_file;
+        exit;
       end;
     end
     else
-    if head.bitpix=+32 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          col_float:=int32(swapendian(fitsbuffer4[i]))*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
-         {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-          img_loaded2[k,j,i]:=col_float;{store in memory array}
-          if col_float>measured_max then
-             measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors head.naxis3 times}
-    else
-    if head.bitpix=-64 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width*8);except; end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-          col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
-          img_loaded2[k,j,i]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+      heap_buffer := nil;
 
-        end;
-      end;
-    end; {colors head.naxis3 times}
+    { Compute tile grid dimensions }
+    tiles_x := (znaxis1_val + ztile1_val - 1) div ztile1_val;
+    tiles_y := (znaxis2_val + ztile2_val - 1) div ztile2_val;
+    tiles_z := (znaxis3_val + ztile3_val - 1) div ztile3_val;
+    total_tiles := tiles_x * tiles_y * tiles_z;
 
-    {rescale if required}
-    if ((head.bitpix<=-32){-32 or -64} or (head.bitpix=+32)) then
+    { Precompute dither offsets for SUBTRACTIVE_DITHER_1 }
+    if (zquantiz_val = 'SUBTRACTIVE_DITHER_1') and (zdither0_val > 0) then
     begin
-      scalefactor:=1;
-      if measured_max>0 then
-        if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then
-          scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
-                                           {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
-      if scalefactor<>1 then {not a 0..65535 range, rescale}
+      setlength(dither_offsets, ztile2_val);
+      iseed := zdither0_val;
+      for j := 0 to ztile2_val - 1 do
       begin
-        for k:=0 to head.naxis3-1 do {do all colors}
-          for j:=0 to head.height-1 do
-            for i:=0 to head.width-1 do
-              img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
-        head.datamax_org:=65535;
+        dither_rand := imcomp_rand_value(iseed);   { value in [0, 1) }
+        dither_offsets[j] := trunc(dither_rand * 2.0);  { 0 or 1 }
+      end;
+    end;
+
+    measured_max_rice := 0;
+
+    { ---- Decompress each tile ---- }
+    for tz := 0 to tiles_z - 1 do
+      for ty := 0 to tiles_y - 1 do
+        for tx := 0 to tiles_x - 1 do
+        begin
+          tile_index := tx + ty * tiles_x + tz * tiles_x * tiles_y;
+          if tile_index >= head.height then break;  { safety }
+
+          { Locate the variable-length-array descriptor in the table row }
+          row_ptr := table_buffer + tile_index * naxis1 + col_offsets[col_comp_data];
+          compressed_len := (longword(row_ptr[0]) shl 24) or (longword(row_ptr[1]) shl 16) or
+                            (longword(row_ptr[2]) shl 8)  or  longword(row_ptr[3]);
+          heap_offset    := (longword(row_ptr[4]) shl 24) or (longword(row_ptr[5]) shl 16) or
+                            (longword(row_ptr[6]) shl 8)  or  longword(row_ptr[7]);
+
+          { Actual tile dimensions (last row/column may be smaller) }
+          actual_tile_w := min(ztile1_val, znaxis1_val - tx * ztile1_val);
+          actual_tile_h := min(ztile2_val, znaxis2_val - ty * ztile2_val);
+          actual_tile_d := min(ztile3_val, znaxis3_val - tz * ztile3_val);
+          tile_pixel_count := actual_tile_w * actual_tile_h * actual_tile_d;
+
+          if (compressed_len = 0) or (tile_pixel_count = 0) then
+            continue;  { empty tile — leave zeros in image array }
+
+          if heap_offset + compressed_len > heap_size then
+          begin
+            memo2_message('Warning: tile ' + inttostr(tile_index) + ' heap offset out of range, skipped.');
+            continue;
+          end;
+
+          compressed_ptr := heap_buffer + heap_offset;
+
+          { Allocate decompression output buffer (with safety padding) }
+          tile_data_size := tile_pixel_count * bytepix_val;
+          getmem(tile_data, tile_data_size + 16);
+          fillchar(tile_data^, tile_data_size + 16, 0);
+
+          { Call the Rice decompression routine from unit_ricecomp }
+          error_msg_rice := '';
+          if rice_decode(compressed_ptr, compressed_len, bytepix_val,
+                         tile_pixel_count, blocksize_val,
+                         tile_data, error_msg_rice) then
+          begin
+            { Read per-tile ZSCALE / ZZERO if those columns exist }
+            tile_scale := zscale_val;
+            tile_zero  := zzero_val;
+            if col_zscale_col >= 0 then
+            begin
+              row_ptr := table_buffer + tile_index * naxis1 + col_offsets[col_zscale_col];
+              tile_scale := read_be_double(row_ptr);
+            end;
+            if col_zzero_col >= 0 then
+            begin
+              row_ptr := table_buffer + tile_index * naxis1 + col_offsets[col_zzero_col];
+              tile_zero := read_be_double(row_ptr);
+            end;
+
+            { Place decompressed pixels into the image array.
+              Within a tile, pixels are stored row-major: x varies fastest,
+              then y, then z (colour plane). }
+            for pz := 0 to actual_tile_d - 1 do
+              for py := 0 to actual_tile_h - 1 do
+                for px := 0 to actual_tile_w - 1 do
+                begin
+                  pixel_idx := px + py * actual_tile_w + pz * actual_tile_w * actual_tile_h;
+                  img_x := tx * ztile1_val + px;
+                  img_y := ty * ztile2_val + py;
+                  img_z := tz * ztile3_val + pz;
+
+                  if img_z >= head.naxis3 then continue;
+
+                  { Extract unsigned integer value from the tile buffer.
+                    rice_decode returns values in native byte order. }
+                  case bytepix_val of
+                    1: begin
+                         raw_unsigned := PByte(tile_data)[pixel_idx];
+                         signed_value := raw_unsigned;  { 8-bit FITS is unsigned }
+                       end;
+                    2: begin
+                         raw_unsigned := PWord(tile_data)[pixel_idx];
+                         signed_value := smallint(raw_unsigned);  { interpret as signed 16-bit }
+                       end;
+                    4: begin
+                         raw_unsigned := PDWord(tile_data)[pixel_idx];
+                         signed_value := integer(raw_unsigned);   { interpret as signed 32-bit }
+                       end;
+                    else
+                       signed_value := 0;
+                  end;
+
+                  { Apply dithering correction (SUBTRACTIVE_DITHER_1) }
+                  if (zquantiz_val = 'SUBTRACTIVE_DITHER_1') and (zdither0_val > 0) then
+                    signed_value := signed_value + dither_offsets[py];
+
+                  { Convert to physical pixel value }
+                  if (zquantiz_val <> 'NONE') or (zbitpix_val < 0) then
+                  begin
+                    { Quantised floating-point data }
+                    col_float_rice := signed_value * tile_scale + tile_zero;
+                  end
+                  else
+                  begin
+                    { Plain integer data — apply BSCALE / BZERO }
+                    col_float_rice := signed_value * bscale + bzero;
+                  end;
+
+                  if isNan(col_float_rice) then col_float_rice := 0;
+
+                  img_loaded2[img_z, img_y, img_x] := col_float_rice;
+                  if col_float_rice > measured_max_rice then
+                    measured_max_rice := col_float_rice;
+                end;
+          end
+          else
+          begin
+            memo2_message('Rice decompression error for tile ' + inttostr(tile_index) + ': ' + error_msg_rice);
+          end;
+
+          freemem(tile_data);
+        end;  { tile loop }
+
+    { Free heap and table buffers }
+    freemem(table_buffer);
+    if heap_buffer <> nil then freemem(heap_buffer);
+
+    { Rescale float data to 0..65535 range (same logic as uncompressed path) }
+    if (zbitpix_val <= -32) or (zbitpix_val = +32) then
+    begin
+      scalefactor_rice := 1;
+      if measured_max_rice > 0 then
+        if (measured_max_rice <= 1.5) or (measured_max_rice > 65535 * 1.5) then
+          scalefactor_rice := 65535 / measured_max_rice;
+      if scalefactor_rice <> 1 then
+      begin
+        for k_rice := 0 to head.naxis3 - 1 do
+          for j := 0 to head.height - 1 do
+            for i := 0 to head.width - 1 do
+              img_loaded2[k_rice, j, i] := img_loaded2[k_rice, j, i] * scalefactor_rice;
+        head.datamax_org := 65535;
       end
-      else  head.datamax_org:=measured_max;
-
+      else
+        head.datamax_org := measured_max_rice;
     end
+    else if zbitpix_val = 8 then
+      head.datamax_org := 255
     else
-    if head.bitpix=8 then head.datamax_org:=255 {not measured}
-    else
-    if head.bitpix=24 then
-    begin
-      head.datamax_org:=255;
-      head.bitpix:=8; {already converted to array with separate colour sections}
-    end
-    else {16 bit}
-    head.datamax_org:=measured_max;{most common. It set for bitpix=24 in beginning at 255}
+      head.datamax_org := measured_max_rice;
 
-    head.backgr:=head.datamin_org;{for case histogram is not called}
-    cwhite:=head.datamax_org;
+    head.backgr := head.datamin_org;
+    cwhite := head.datamax_org;
 
-    result:=head.naxis<>0;{success};
-    reader_position:=reader_position+head.width*head.height*(abs(head.bitpix) div 8)
-  end{image block}
-
+    unsaved_import := false;
+    result := true;
+//    close_fits_file;
+//    if ((last_extension=false) or (extend_type>0)) then
+//     begin
+//        mainform1.tabsheet1.caption:='Header '+inttostr(get_ext);
+//        { If we auto-advanced from 0 to 1, sync the UpDown control for compressed fits.fz files}
+//        if mainform1.updown1.position <> get_ext then
+//           mainform1.updown1.position := get_ext;
+//     end;
+//    exit;
+  end  { Rice compressed image }
   else
-  if  ((head.naxis=2) and ((bintable) or (asciitable)) ) then
-  begin {read table ############################################}
-    if bintable then extend_type:=3;
-    if asciitable then extend_type:=2;
+  begin //not rice
 
-    {try to read data table}
-    aline:='';
-    for k:=0 to tfields-1 do {columns}
-        aline:=aline+ttype[k]+#9;
-    aline:=aline+sLineBreak;
-    for k:=0 to tfields-1 do {columns}
-       aline:=aline+tunit[k]+#9;
-    aline:=aline+sLineBreak;
-
-    for j:=0 to head.height-1 do {rows}
+    if head.naxis<2 then
     begin
-      try reader.read(fitsbuffer[0],head.width);{read one row} except end;
+      if head.naxis=0 then result:=true {wcs file}
+                 else result:=false; {no image}
+      mainform1.image1.visible:=false;
+      image:=false;
+    end;
 
-      if extend_type=2 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),head.width);{convert to string}
-
-      pointer:=0;
-      for k:=0 to tfields-1 do {columns}
-      {read}
+    if image then {read image data #########################################}
+    begin
+      if ((head.naxis=3) and (naxis1=3)) then
       begin
-        if extend_type=2 then {ascii table}
-        begin
-          if k>0 then insert(#9,field,tbcol[k]+k-1);{insert tab}
-          if k=tfields-1 then aline:=aline+field;{field is ready}
+         head.bitpix:=24; {threat RGB fits as 2 dimensional with 24 bits data}
+         head.naxis3:=3; {will be converted while reading}
+      end;
+
+      if light then //not required for darks and lights since some variables are not reset and could be nan cause runtime error
+      begin
+        if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
+        begin //formalism 3
+          new_to_old_WCS(head);{ convert old WCS to new}
         end
         else
+        if ((head.cd1_1=0) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
         begin
-          if tform[k]='E' then {4 byte single float or 21 times single if 21E specified}
+          if PC1_1<>0 then //formalism 2
           begin
-            for n:=0 to Tform_nr[k]-1 do
-            begin
-              x_longword:=(fitsbuffer[pointer] shl 24) +(fitsbuffer[pointer+1] shl 16)+(fitsbuffer[pointer+2] shl 8)+(fitsbuffer[pointer+3]);
-              aline:=aline+floattostrF(x_single,FFexponent,7,0)+#9; {int_IEEE, swap four bytes and the read as floating point}
-              pointer:=pointer+4;
-            end;
+            head.CD1_1:=PC1_1* head.cdelt1;
+            head.CD1_2:=PC1_2* head.cdelt1;
+            head.CD2_1:=PC2_1* head.cdelt2;
+            head.CD2_2:=PC2_2* head.cdelt2;
+            new_to_old_WCS(head);{ convert old WCS to new}
           end
           else
-          if tform[k]='D' then {8 byte float}
-          begin
-            for n:=0 to Tform_nr[k]-1 do
-            begin
-              x_qword:=(qword(fitsbuffer[pointer]) shl 56) +(qword(fitsbuffer[pointer+1]) shl 48)+(qword(fitsbuffer[pointer+2]) shl 40)+(qword(fitsbuffer[pointer+3]) shl 32) + (qword(fitsbuffer[pointer+4]) shl 24) +(qword(fitsbuffer[pointer+5]) shl 16)+(qword(fitsbuffer[pointer+6]) shl 8)+(qword(fitsbuffer[pointer+7]));
-              aline:=aline+floattostrF(x_double,FFexponent,7,0)+#9; {int_IEEE, swap four bytes and the read as floating point}
-              pointer:=pointer+8;
-            end;
-          end
-          else
-          if tform[k]='I' then {16 bit int}
-          begin
-            for n:=0 to Tform_nr[k]-1 do
-            begin
-              word16:=(fitsbuffer[pointer] shl 8) + (fitsbuffer[pointer+1]);
-              aline:=aline+inttostr(int_16)+#9;
-              pointer:=pointer+2;
-            end;
-          end
-          else
-          if tform[k]='J' then {32 bit int}
-          begin
-            for n:=0 to Tform_nr[k]-1 do
-            begin
-              x_longword:=(fitsbuffer[pointer] shl 24) +(fitsbuffer[pointer+1] shl 16)+(fitsbuffer[pointer+2] shl 8)+(fitsbuffer[pointer+3]);
-              aline:=aline+inttostr(int_32)+#9;
-              pointer:=pointer+4;
-            end;
-          end
-          else
-          if tform[k]='K' then {64 bit int}
-          begin
-            for n:=0 to Tform_nr[k]-1 do
-            begin
-              x_qword:=(qword(fitsbuffer[pointer]) shl 56) +(qword(fitsbuffer[pointer+1]) shl 48)+(qword(fitsbuffer[pointer+2]) shl 40)+(qword(fitsbuffer[pointer+3]) shl 32) + (qword(fitsbuffer[pointer+4]) shl 24) +(qword(fitsbuffer[pointer+5]) shl 16)+(qword(fitsbuffer[pointer+6]) shl 8)+(qword(fitsbuffer[pointer+7]));
-              aline:=aline+inttostr(int_64)+#9; {int_IEEE, swap eight bytes and the read as floating point}
-              pointer:=pointer+8;
-            end;
-          end
-          else
-          if ((tform[k]='L') or (Tform[k]='X') or (Tform[k]='B')) then {logical, bit or byte }
-          begin
-            for n:=0 to Tform_nr[k]-1 do
-            begin
-              aline:=aline+inttostr(fitsbuffer[pointer])+#9;
-              pointer:=pointer+1;
-            end;
-          end
-          else
-          if ((Tform[k]='A')) then {chars}
-          begin
-            field:='';
-            for n:=0 to Tform_nr[k]-1 do
-            begin
-              abyte:=fitsbuffer[pointer+n];
-              if ((abyte>=32) and  (abyte<=127)) then field:=field+ansichar(abyte)
-                else  field:=field+'?';{exotic char, prevent confusion tmemo}
-            end;
-            aline:=aline+field+ #9;
-            pointer:=pointer+Tform_nr[k];{for 12A, plus 12}
-          end
+          if head.crota2<999 then {new style missing but valid old style solution}
+          begin //formalism 1
+            if head.crota1=999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
+            old_to_new_WCS(head);{ convert old WCS to new}
+           end;
         end;
+
+        if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
+        begin
+         if ((focallen<>0) and (head.xpixsz<>0)) then
+            head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+        end;
+
+        if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
+        begin
+          if equinox<>2000 then //e.g. in SharpCap
+          begin
+            jd_obs:=(equinox-2000)*365.25+2451545;
+            precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
+            if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+          end;
+
+          mainform1.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+          mainform1.dec1.text:=prepare_dec(head.dec0,' ');
+        end;
+        { condition           keyword    to
+         if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
+                                   ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
+                               crval1--->head.ra0
+
+         if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
+
+      end; //lights
+
+      if head.set_temperature=999 then
+         head.set_temperature:=round(ccd_temperature); {temperature}
+
+
+      unsaved_import:=false;{file is available for astrometry.net}
+
+
+      if load_data=false then
+      begin
+         close_fits_file;
+         result:=true;
+         exit;
+      end;{only read header for analyse or WCS file}
+
+
+      {############################## read image}
+      i:=round(bufwide/(abs(head.bitpix/8)));{check if buffer is wide enough for one image line}
+      if head.width>i then
+      begin
+        beep;
+        textout(mainform1.image1.canvas.handle,30,30,'Too wide FITS file !!!!!',25);
+        close_fits_file;
+        exit;
       end;
-      aline:=aline+sLineBreak ;
-    end;
-    mainform1.Memo3.lines.text:=aline;
-    aline:=''; {release memory}
-    mainform1.pagecontrol1.showtabs:=true;{show tabs}
-    reader_position:=reader_position+head.width*head.height;
-  end; {read table}
+
+      try
+        setlength(img_loaded2,head.naxis3,head.height,head.width);
+      except
+        memo2_message('Abort, not enough memory!');
+        warning_str:='Not enough memory!'; //for command line usage
+        exit;
+      end;
+
+      if head.bitpix=16 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width*2);except; head.naxis:=0;{failure} end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
+            col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
+            img_loaded2[k,j,i]:=col_float;
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors head.naxis3 times}
+      else
+      if head.bitpix=-32 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+            col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
+            if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
+            img_loaded2[k,j,i]:=col_float;{store in memory array}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors head.naxis3 times}
+      else
+      if head.bitpix=8 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width);except; head.naxis:=0;{failure} end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            img_loaded2[k,j,i]:=(fitsbuffer[i]*bscale + bzero);
+          end;
+        end;
+      end {colors head.naxis3 times}
+      else
+      if head.bitpix=24 then
+      For j:=0 to head.height-1 do
+      begin
+        try reader.read(fitsbuffer,head.width*3);except; head.naxis:=0;{failure} end; {read file info}
+        for i:=0 to head.width-1 do
+        begin
+          rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
+          img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
+          img_loaded2[1,j,i]:=rgbdummy[1];{store in memory array}
+          img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
+        end;
+      end
+      else
+      if head.bitpix=+32 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            col_float:=int32(swapendian(fitsbuffer4[i]))*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
+           {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
+            img_loaded2[k,j,i]:=col_float;{store in memory array}
+            if col_float>measured_max then
+               measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors head.naxis3 times}
+      else
+      if head.bitpix=-64 then
+      for k:=0 to head.naxis3-1 do {do all colors}
+      begin
+        For j:=0 to head.height-1 do
+        begin
+          try reader.read(fitsbuffer,head.width*8);except; end; {read file info}
+          for i:=0 to head.width-1 do
+          begin
+            x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+            col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
+            img_loaded2[k,j,i]:=col_float;{store in memory array}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+
+          end;
+        end;
+      end; {colors head.naxis3 times}
+
+      {rescale if required}
+      if ((head.bitpix<=-32){-32 or -64} or (head.bitpix=+32)) then
+      begin
+        scalefactor:=1;
+        if measured_max>0 then
+          if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then
+            scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
+                                             {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
+        if scalefactor<>1 then {not a 0..65535 range, rescale}
+        begin
+          for k:=0 to head.naxis3-1 do {do all colors}
+            for j:=0 to head.height-1 do
+              for i:=0 to head.width-1 do
+                img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
+          head.datamax_org:=65535;
+        end
+        else  head.datamax_org:=measured_max;
+
+      end
+      else
+      if head.bitpix=8 then head.datamax_org:=255 {not measured}
+      else
+      if head.bitpix=24 then
+      begin
+        head.datamax_org:=255;
+        head.bitpix:=8; {already converted to array with separate colour sections}
+      end
+      else {16 bit}
+      head.datamax_org:=measured_max;{most common. It set for bitpix=24 in beginning at 255}
+
+      head.backgr:=head.datamin_org;{for case histogram is not called}
+      cwhite:=head.datamax_org;
+
+      result:=head.naxis<>0;{success};
+      reader_position:=reader_position+head.width*head.height*(abs(head.bitpix) div 8)
+    end{image block}
+
+    else
+    if  ((head.naxis=2) and ((bintable) or (asciitable)) ) then
+    begin {read table ############################################}
+      if bintable then extend_type:=3;
+      if asciitable then extend_type:=2;
+
+      {try to read data table}
+      aline:='';
+      for k:=0 to tfields-1 do {columns}
+          aline:=aline+ttype[k]+#9;
+      aline:=aline+sLineBreak;
+      for k:=0 to tfields-1 do {columns}
+         aline:=aline+tunit[k]+#9;
+      aline:=aline+sLineBreak;
+
+      for j:=0 to head.height-1 do {rows}
+      begin
+        try reader.read(fitsbuffer[0],head.width);{read one row} except end;
+
+        if extend_type=2 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),head.width);{convert to string}
+
+        pointer:=0;
+        for k:=0 to tfields-1 do {columns}
+        {read}
+        begin
+          if extend_type=2 then {ascii table}
+          begin
+            if k>0 then insert(#9,field,tbcol[k]+k-1);{insert tab}
+            if k=tfields-1 then aline:=aline+field;{field is ready}
+          end
+          else
+          begin
+            if tform[k]='E' then {4 byte single float or 21 times single if 21E specified}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                x_longword:=(fitsbuffer[pointer] shl 24) +(fitsbuffer[pointer+1] shl 16)+(fitsbuffer[pointer+2] shl 8)+(fitsbuffer[pointer+3]);
+                aline:=aline+floattostrF(x_single,FFexponent,7,0)+#9; {int_IEEE, swap four bytes and the read as floating point}
+                pointer:=pointer+4;
+              end;
+            end
+            else
+            if tform[k]='D' then {8 byte float}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                x_qword:=(qword(fitsbuffer[pointer]) shl 56) +(qword(fitsbuffer[pointer+1]) shl 48)+(qword(fitsbuffer[pointer+2]) shl 40)+(qword(fitsbuffer[pointer+3]) shl 32) + (qword(fitsbuffer[pointer+4]) shl 24) +(qword(fitsbuffer[pointer+5]) shl 16)+(qword(fitsbuffer[pointer+6]) shl 8)+(qword(fitsbuffer[pointer+7]));
+                aline:=aline+floattostrF(x_double,FFexponent,7,0)+#9; {int_IEEE, swap four bytes and the read as floating point}
+                pointer:=pointer+8;
+              end;
+            end
+            else
+            if tform[k]='I' then {16 bit int}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                word16:=(fitsbuffer[pointer] shl 8) + (fitsbuffer[pointer+1]);
+                aline:=aline+inttostr(int_16)+#9;
+                pointer:=pointer+2;
+              end;
+            end
+            else
+            if tform[k]='J' then {32 bit int}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                x_longword:=(fitsbuffer[pointer] shl 24) +(fitsbuffer[pointer+1] shl 16)+(fitsbuffer[pointer+2] shl 8)+(fitsbuffer[pointer+3]);
+                aline:=aline+inttostr(int_32)+#9;
+                pointer:=pointer+4;
+              end;
+            end
+            else
+            if tform[k]='K' then {64 bit int}
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                x_qword:=(qword(fitsbuffer[pointer]) shl 56) +(qword(fitsbuffer[pointer+1]) shl 48)+(qword(fitsbuffer[pointer+2]) shl 40)+(qword(fitsbuffer[pointer+3]) shl 32) + (qword(fitsbuffer[pointer+4]) shl 24) +(qword(fitsbuffer[pointer+5]) shl 16)+(qword(fitsbuffer[pointer+6]) shl 8)+(qword(fitsbuffer[pointer+7]));
+                aline:=aline+inttostr(int_64)+#9; {int_IEEE, swap eight bytes and the read as floating point}
+                pointer:=pointer+8;
+              end;
+            end
+            else
+            if ((tform[k]='L') or (Tform[k]='X') or (Tform[k]='B')) then {logical, bit or byte }
+            begin
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                aline:=aline+inttostr(fitsbuffer[pointer])+#9;
+                pointer:=pointer+1;
+              end;
+            end
+            else
+            if ((Tform[k]='A')) then {chars}
+            begin
+              field:='';
+              for n:=0 to Tform_nr[k]-1 do
+              begin
+                abyte:=fitsbuffer[pointer+n];
+                if ((abyte>=32) and  (abyte<=127)) then field:=field+ansichar(abyte)
+                  else  field:=field+'?';{exotic char, prevent confusion tmemo}
+              end;
+              aline:=aline+field+ #9;
+              pointer:=pointer+Tform_nr[k];{for 12A, plus 12}
+            end
+          end;
+        end;
+        aline:=aline+sLineBreak ;
+      end;
+      mainform1.Memo3.lines.text:=aline;
+      aline:=''; {release memory}
+      mainform1.pagecontrol1.showtabs:=true;{show tabs}
+      reader_position:=reader_position+head.width*head.height;
+    end; {read table}
+
+  end;//not rice
 
 
   if last_extension=false then {test if extension is possible}
@@ -2349,7 +4970,17 @@ begin
   if ((last_extension=false) or (extend_type>0)) then
      mainform1.tabsheet1.caption:='Header '+inttostr(get_ext);
 
+  if ((last_extension=false) or (extend_type>0)) then
+  begin
+     mainform1.tabsheet1.caption:='Header '+inttostr(get_ext);
+     { If we auto-advanced from 0 to 1, sync the UpDown control for compressed fits.fz files}
+     if mainform1.updown1.position <> get_ext then
+        mainform1.updown1.position := get_ext;
+  end;
+
   close_fits_file;
+
+ // dummy:=memo.text;
 end;
 
 
@@ -2413,7 +5044,7 @@ end;
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 begin
   inp:=uppercase(extractfileext(inp));
-  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.TIF') or (inp='.TIFF') or (inp='.WCS'));{fits or tiff file name, wcs for mount analyse tab}
+  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.TIF') or (inp='.TIFF') or (inp='.FZ') or (inp='.WCS'));{fits or tiff file name, wcs for mount analyse tab}
 end;
 
 
@@ -6535,7 +9166,7 @@ begin
 
   {solve internal}
   mainform1.caption:='Solving.......';
-  save1.Enabled:=solve_image(img_loaded,head,mainform1.memo1.lines,false {get hist, is already available},false {check filter});{match between loaded image and star database}
+  save1.Enabled:=solve_image(img_loaded,head,mainform1.memo1.lines,ra_radians,dec_radians,false {get hist, is already available},false {check filter});{match between loaded image and star database}
 
   if head.cd1_1<>0 then
   begin
@@ -7781,8 +10412,8 @@ var
    flipv, fliph : boolean;
    ratio        : double;
 begin
- // if img_loaded=nil then
- //    exit;
+  if img_loaded=nil then
+     exit;
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
   if ap_order>0 then
@@ -9714,6 +12345,11 @@ begin
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
 
+procedure Tmainform1.Panel1Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tmainform1.saturation_factor_plot1MouseWheel(Sender: TObject;
   Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
@@ -10249,8 +12885,18 @@ begin
   else
   if (ext1='.FZ') then {CFITSIO format}
   begin
-    if unpack_cfitsio(filename2) then {successful conversion using funpack}
-      result:=load_fits(filename2,true {light},true {load data},true {update memo},0,memo,head,img); {load new fits file}
+//    if unpack_cfitsio(filename2) then {successful conversion using funpack}
+//      result:=load_fits(filename2,true {light},true {load data},true {update memo},0,memo,head,img); {load new fits file}
+
+    { Try native Rice decompression first (get_ext=1 reads the BINTABLE extension) }
+    result := load_fits(filename2, true {light}, true {load data}, true {update memo},0 , memo, head, img);
+//    if result = false then
+//    begin
+//      { Fall back to external funpack if native decompression failed }
+//      if unpack_cfitsio(filename2) then
+//        result := load_fits(filename2, true {light}, true {load data}, true {update memo},0, memo, head, img);
+//    end;
+
   end {fz}
   else
   if check_raw_file_extension(ext1) then {raw format}
@@ -13873,7 +16519,7 @@ begin
             filename_output:=filename2; //use same filename for .ini and .wcs files
 
 
-          if ((file_loaded) and (solve_image(img_loaded,head,mainform1.memo1.lines,true {get hist},checkfilter) )) then {find plate solution, filename2 extension will change to .fit}
+          if ((file_loaded) and (solve_image(img_loaded,head,mainform1.memo1.lines,ra_radians,dec_radians,true {get hist},checkfilter) )) then {find plate solution, filename2 extension will change to .fit}
           begin
             if hasoption('sqm') then {sky quality}
             begin
@@ -14131,7 +16777,7 @@ begin
 
 
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
-            solved:=solve_image(img_temp,headx,memox,true {get hist}, false {check filter});
+            solved:=solve_image(img_temp,headx,memox,ra_radians,dec_radians,true {get hist}, false {check filter});
             if solved then nrsolved:=nrsolved+1 {solve}
             else
             begin
