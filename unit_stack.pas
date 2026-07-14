@@ -13093,6 +13093,7 @@ begin
     calibration_only;
     if process_as_osc > 0 then Memo2_message('OSC images are converted to colour.');
     Memo2_message('Completed. Resulting files are available in tab Results and can be copied to the Blink, Photometry  or Lights tab.');
+    stacking_running:=false;
     exit;
   end;
 
@@ -13112,6 +13113,7 @@ begin
           begin
             memo2_message( '█ █ █  Abort! █ █ █  Reference object missing for one or more files. Double click on all file names and mark with the mouse the reference object. The file name will then turn green.');
             Screen.Cursor:=crDefault;
+            stacking_running:=false;
             exit;
           end;
           Application.ProcessMessages;
@@ -13151,6 +13153,7 @@ begin
           begin
             restore_img;
             Screen.Cursor:=crDefault;
+            stacking_running:=false;
             exit;
           end;
 
@@ -13159,6 +13162,7 @@ begin
           begin
             memo2_message('Error loading file ' + filename2); {failed to load}
             Screen.Cursor:=crDefault;
+            stacking_running:=false;
             exit;
           end;
           solution:=update_solution_and_save(img_loaded, head,mainform1.memo1.lines);//solve and save
@@ -13217,6 +13221,7 @@ begin
           begin
             restore_img;
             Screen.Cursor:=crDefault;
+            stacking_running:=false;
             exit;
           end;
 
@@ -13225,6 +13230,7 @@ begin
           begin
             memo2_message('Error loading file ' + filename2); {failed to load}
             Screen.Cursor:=crDefault;
+            stacking_running:=false;
             exit;
           end;
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add_annotations},true {use asteroid buffer. Was loaded by analyse_objects_visible});
@@ -13238,6 +13244,7 @@ begin
           begin
             ShowMessage('Write error !!' + filename2);
             Screen.Cursor:=crDefault;
+            stacking_running:=false;
             exit;
           end;
 
@@ -13255,6 +13262,7 @@ begin
   begin
     restore_img;
     Screen.Cursor:=crDefault;
+    stacking_running:=false;
     exit;
   end;
 
@@ -13392,7 +13400,8 @@ begin
           progress_indicator(-2, 'ESC');
           restore_img;
           Screen.Cursor:=crDefault;
-          { back to normal }  exit;
+          stacking_running:=false;
+          exit;
         end;
 
       end
@@ -13496,6 +13505,7 @@ begin
               progress_indicator(-2, 'ESC');
               restore_img;
               Screen.Cursor:=crDefault;{ back to normal }
+              stacking_running:=false;
               exit;
             end;
 
@@ -13593,8 +13603,9 @@ begin
           begin
             progress_indicator(-2, 'ESC');
             restore_img;
-            Screen.Cursor:=crDefault;
-            { back to normal }  exit;
+            Screen.Cursor:=crDefault; { back to normal }
+            stacking_running:=false;
+            exit;
           end;
         end
         else
@@ -13606,11 +13617,12 @@ begin
       end;
     end;
 
-    Screen.Cursor:=crDefault;  { Always restore to normal }
     if esc_pressed then
     begin
       progress_indicator(-2, 'ESC');
       restore_img;
+      Screen.Cursor:=crDefault;  { Always restore to normal }
+      stacking_running:=false;
       exit;
     end;
 
@@ -13899,7 +13911,12 @@ begin
         memo2_message('█ █ █  Saving result ' + IntToStr(image_counter) + ' as ' + filename2);
 
         head.bitpix:=-32;
-        if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True) = False then exit;
+        if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True) = False then
+        begin
+          Screen.Cursor:=crDefault;  { Always restore to normal }
+          stacking_running:=false;
+          exit;
+        end;
         inc(total_counter);
         if save_settings_image_path1.Checked then save_settings(changefileext(filename2, '.cfg'));
 
@@ -13938,6 +13955,7 @@ begin
 
   if write_log1.Checked then memo2.Lines.SaveToFile(ChangeFileExt(Filename2, '.txt'));
 
+  Screen.Cursor:=crDefault;  { Always restore to normal }
   stacking_running:=false;
 
   if powerdown_enabled1.Checked then {power down system}

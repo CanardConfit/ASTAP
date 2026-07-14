@@ -289,7 +289,7 @@ begin
     if errordecode=false then result:=true;
   end;
 
-  if errordecode then memo2_message('Error decoding site longitude or latitude!');
+  if errordecode then memo2_message('Altitude unknown due to error decoding site longitude or latitude! Can be set manually in menu "Asteroid & comet annotation" CTRL+R.');
 end;
 
 procedure calculate_az_alt(calc_mode : integer;const head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}

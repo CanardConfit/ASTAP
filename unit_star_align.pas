@@ -763,7 +763,7 @@ var
    nrquads1,nrquads2, i,j,k: integer;
    median_ratio : double;
    matchList1, matchlist2  : array of array of integer;
-   ratios                  : array of double;
+   ratios, ratios_sorted   : array of double;
    // 2026 perf: hoist database-side ratios out of inner j loop. They are constant for fixed i
    // but the compiler cannot prove that across the setlength(matchlist2,...) call inside the
    // body, so otherwise it re-fetches them from the global dynamic array on every j iteration.
@@ -834,7 +834,9 @@ begin
   {calculate median of the longest lenght ratio for matching quads}
   for k:=0 to nr_references2-1 do
     ratios[k]:=quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]; {ratio between largest length of found and reference quad}
-  median_ratio:=smedian(ratios,nr_references2);
+
+  ratios_sorted:=copy(ratios,0,nr_references2); // make a duplicate because SMedian sorts in place. Keep ratios in match order
+  median_ratio:=smedian(ratios_sorted,nr_references2);// Warning array is sorted and therefore modified. In unit_star_align a copy has to be made first!!!
 
   {calculate median absolute deviation of the longest length ratio for matching quads}
 //  for k:=0 to nr_references2-1 do {find standard deviation orientation quads}
@@ -893,7 +895,7 @@ var
   nrquads1, nrquads2, i, j, k, bin, delta_bin, adjusted_bin, hash_bins: integer;
   median_ratio: double;
   matchlist1, matchlist2: array of array of integer;
-  ratios: array of double;
+  ratios, ratios_sorted: array of double;
   hash_table1, hash_table2: array of array of integer; // Hash tables for quads
   hash_counts1, hash_counts2: array of integer; // Counts per bin
   max_hash_count: integer; // Debug: track largest bin size
@@ -1019,8 +1021,8 @@ begin
   SetLength(ratios, nr_references2);
   for k := 0 to nr_references2 - 1 do
     ratios[k] := quad_star_distances1[0, matchlist2[0, k]] / quad_star_distances2[0, matchlist2[1, k]];
-
-  median_ratio := smedian(ratios, nr_references2);
+  ratios_sorted:=copy(ratios,0,nr_references2); // make a duplicate because SMedian sorts in place. Keep ratios in match order
+  median_ratio := smedian(ratios_sorted, nr_references2);
 
   {Calculate median absolute deviation and filter matches}
   nr_references := 0;
@@ -1260,8 +1262,8 @@ const
             level_star, level_cross                : single;  //2026 perf, hoisted absolute thresholds
             rowC, rowM, rowP, rowSA                : PSingle;  //2026 perf, row pointers. img[0,fitsY,fitsX] needs two pointer dereferences per access on a 3-dimensional dynamic array. Caching the row start pointer per fitsY reduces this to one, which matters in this pixel loop that visits every image pixel up to four times
           begin
-            level_star :=head.backgr+detection_level; //2026 perf, precalculate. Saves a subtraction per pixel and an addition/multiplication per candidate test
-            level_cross:=head.backgr+4*noise_level;
+            level_star :=backgr+detection_level; //2026 perf, precalculate. Saves a subtraction per pixel and an addition/multiplication per candidate test
+            level_cross:=backgr+4*noise_level;
             for fitsY:=startY to endY do  //Search through the image. Stay one pixel away from the borders.
             begin
               rowC :=@img[0,fitsY,0];    //2026 perf, current row
@@ -1270,18 +1272,14 @@ const
               rowSA:=@img_sa[0,fitsY,0]; //2026 perf, star area marking row
               for fitsX:=startX to endX  do
               begin
-                if ((img_sa[0,fitsY,fitsX]<>retries){star free area for this retry} and (img[0,fitsY,fitsX]- backgr>detection_level){star}) then {new star above noise level}
+                if ((rowSA[fitsX]<>retries){star free area for this retry} and (rowC[fitsX]>level_star){star}) then {new star above noise level}
                 begin
                   starpixels:=0;
-//                  if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);//inspect in a cross around it.
-//                  if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
-//                  if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
-//                  if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
-                  if rowC[fitsX-1]>level_cross then inc(starpixels);//inspect in a cross around it.
-                  if rowC[fitsX+1]>level_cross then inc(starpixels);
-                  if rowM[fitsX]>level_cross then inc(starpixels);
-                  if rowP[fitsX]>level_cross then inc(starpixels);
-
+                  //inspect in a cross around it. Should be above 4*noise level
+                  if rowC[fitsX-1]>level_cross then inc(starpixels);//= if img[0,fitsY,fitsX-1]- backgr>4*noise_level then inc(starpixels);
+                  if rowC[fitsX+1]>level_cross then inc(starpixels);//= if img[0,fitsY,fitsX+1]- backgr>4*noise_level then inc(starpixels);
+                  if rowM[fitsX]  >level_cross then inc(starpixels);//= if img[0,fitsY-1,fitsX]- backgr>4*noise_level then inc(starpixels);
+                  if rowP[fitsX]  >level_cross then inc(starpixels);//= if img[0,fitsY+1,fitsX]- backgr>4*noise_level then inc(starpixels);
 
                   if starpixels>=2 then //At least 3 illuminated pixels. Not a hot pixel
                   begin
@@ -1353,7 +1351,6 @@ begin
 
   backgr:=head.backgr;
   noise_level:=head.noise_level;
-
   retries:=4; {try up to four times to get enough stars from the image. So for retries 4,3,2,1 }
   repeat
     mean_hfd:=0;

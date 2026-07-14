@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.07.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.07.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -875,7 +875,7 @@ function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24
 function prepare_ra8(rax:double; sep:string):string; {radialen to text, format 24: 00 00.00 }
 Function prepare_dec2(decx:double; sep:string):string; {radialen to text, format 90d 00 00.1}
 function inttostr5(x:integer):string;{always 5 digit}
-function SMedian(var list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
+function SMedian(var list: array of double; leng: integer): double;{get median of an array of double. Declaring list as var is the fastest method for sending an open array background[0..1000]. Warning array is sorted and therefore modified. In unit_star_align a copy have to be made first!!!}
 procedure mad_median(list: array of double; leng :integer;out mad,median :double);{calculate mad and median without modifying the data}
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS(var head:theader);{convert new style FITS to old style}
@@ -1707,7 +1707,7 @@ begin
             end
             else
             begin
-              mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+              mainform1.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
               dec_mount:=dec_radians;//preference for the other keywords
             end;
           end;
@@ -6536,6 +6536,7 @@ begin
   {solve internal}
   mainform1.caption:='Solving.......';
   save1.Enabled:=solve_image(img_loaded,head,mainform1.memo1.lines,false {get hist, is already available},false {check filter});{match between loaded image and star database}
+
   if head.cd1_1<>0 then
   begin
     mainform1.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
@@ -11986,7 +11987,7 @@ begin
 end;
 
 
-function SMedian(var list: array of double; leng: integer): double;{get median of an array of double. Declaring list as var is the fastest method for sending an open array background[0..1000] }
+function SMedian(var list: array of double; leng: integer): double;{get median of an array of double. Declaring list as var is the fastest method for sending an open array background[0..1000]. Warning array is sorted and therefore modified. In unit_star_align a copy have to be made first!!!}
 var
   mid : integer;
 begin
