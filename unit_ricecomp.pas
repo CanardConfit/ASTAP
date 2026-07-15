@@ -107,6 +107,45 @@ function fits_rdecomp_byte(c: PByte;         { input buffer                }
 function rice_decode(compressed: PByte; clen: integer; bytepix, nx, nblock: integer;
                      tile: pointer; out error_message: string): boolean;
 
+{==============================================================================
+  Rice COMPRESSION (encoder).
+
+  Converted from the rcomp.c part of CFITSIO's ricecomp.c (same copyright /
+  attribution as the decoder above).  Only the 16-bit routine is converted,
+  because ASTAP compresses only 16-bit integer FITS images (BITPIX = 16),
+  which is the only case Rice can compress losslessly and is the intended
+  use (many short exposures stored as .fz).
+
+  fits_rcomp_short mirrors fits_rdecomp_short exactly:
+    fsbits = 4, fsmax = 14, bbits = 16, first pixel stored raw big-endian.
+
+  The output is a self-contained compressed tile, byte-for-byte identical to
+  what CFITSIO's fpack produces, so funpack / CFITSIO / astropy can read it and
+  this unit's own fits_rdecomp_short round-trips it exactly.
+==============================================================================}
+
+{ Compress nx 16-bit pixels from arr into buffer c (capacity clen bytes),
+  coding block size nblock (normally 32).
+  Returns the number of bytes written, or -1 on failure (output buffer too
+  small).  As a safe upper bound allocate clen = nx*2 + nx div 16 + 32. }
+function fits_rcomp_short(arr: Prd_word;      { input array of 16-bit pixels }
+                         nx: integer;         { number of input pixels        }
+                         c: PByte;            { output buffer                 }
+                         clen: integer;       { size of output buffer         }
+                         nblock: integer      { coding block size             }
+                         ): integer;
+
+{ Convenience wrapper for FITS tile compression, symmetric with rice_decode.
+  Only bytepix = 2 (16-bit) is supported.
+  tile          : input, byte buffer of nx*2 bytes (word array, native order)
+  compressed    : output buffer, must be at least nx*2 + nx div 16 + 32 bytes
+  clen          : capacity of compressed on input
+  out_len       : number of compressed bytes produced
+  error_message : reason of failure, empty string on success }
+function rice_encode(tile: pointer; bytepix, nx, nblock: integer;
+                     compressed: PByte; clen: integer;
+                     out out_len: integer; out error_message: string): boolean;
+
 implementation
 
 { nonzero_count is lookup table giving number of bits in 8-bit values not
@@ -589,6 +628,279 @@ begin
   if status <> 0 then
     error_message := 'rice_decode: decompression error, corrupt or truncated compressed byte stream';
   result := (status = 0);
+end;
+
+{------------------------------------------------------------------------------
+  rcomp.c    Compress image line using
+             (1) Difference of adjacent pixels
+             (2) Rice algorithm coding
+
+  Bit output buffer, converted from the Buffer struct + output_nbits() /
+  output_nybble()-style helpers of ricecomp.c.  Bits are packed MSB-first,
+  identical to the C encoder, so the decoder above reads them back correctly.
+------------------------------------------------------------------------------}
+type
+  TRiceOutBuffer = record
+    buf        : PByte;    { start of output buffer         }
+    p          : PByte;    { current write position         }
+    bufend     : PByte;    { one past the last usable byte   }
+    bitbuffer  : dword;    { partial byte being assembled    }
+    bits_to_go : integer;  { free bits remaining in bitbuffer }
+    overflow   : boolean;  { set if we ran past bufend       }
+  end;
+
+procedure rice_out_init(var s: TRiceOutBuffer; c: PByte; clen: integer);
+begin
+  s.buf        := c;
+  s.p          := c;
+  s.bufend     := c + clen;
+  s.bitbuffer  := 0;
+  s.bits_to_go := 8;
+  s.overflow   := false;
+end;
+
+{ Append one raw byte to the output, guarding against overrun. }
+procedure rice_put_byte(var s: TRiceOutBuffer; value: byte); inline;
+begin
+  if s.p < s.bufend then
+  begin
+    s.p^ := value;
+    inc(s.p);
+  end
+  else
+    s.overflow := true;
+end;
+
+{ Output n bits (0 <= n <= 32) of "bits", most-significant bit first.
+  Direct port of CFITSIO output_nbits(): the top bits of the current byte are
+  filled, whole bytes are emitted, and a partial remainder is retained. }
+procedure output_nbits(var s: TRiceOutBuffer; bits: dword; n: integer);
+var
+  lbitbuffer  : dword;
+  lbits_to_go : integer;
+begin
+  if n = 0 then exit;
+
+  { mask "bits" to the low n bits so callers need not pre-mask;
+    guard shl 32 which is undefined for a 32-bit operand on x86 }
+  if n < 32 then
+    bits := bits and ((dword(1) shl n) - 1);
+
+  lbitbuffer  := s.bitbuffer;
+  lbits_to_go := s.bits_to_go;
+
+  if n > lbits_to_go then
+  begin
+    { fill the rest of the current byte with the top (lbits_to_go) bits }
+    lbitbuffer := lbitbuffer or (bits shr (n - lbits_to_go));
+    rice_put_byte(s, byte(lbitbuffer));
+    n := n - lbits_to_go;
+    { emit whole bytes }
+    while n > 8 do
+    begin
+      n := n - 8;
+      rice_put_byte(s, byte(bits shr n));
+    end;
+    lbits_to_go := 8 - n;
+    if n > 0 then
+      lbitbuffer := (bits shl lbits_to_go) and $FF
+    else
+      lbitbuffer := 0;
+  end
+  else
+  begin
+    lbits_to_go := lbits_to_go - n;
+    lbitbuffer  := lbitbuffer or ((bits shl lbits_to_go) and $FF);
+  end;
+
+  if lbits_to_go = 0 then
+  begin
+    rice_put_byte(s, byte(lbitbuffer));
+    lbits_to_go := 8;
+    lbitbuffer  := 0;
+  end;
+
+  s.bitbuffer  := lbitbuffer;
+  s.bits_to_go := lbits_to_go;
+end;
+
+{ Flush any partial byte still in the bit buffer.  Returns total bytes written. }
+function rice_out_done(var s: TRiceOutBuffer): integer;
+begin
+  if s.bits_to_go < 8 then
+  begin
+    rice_put_byte(s, byte(s.bitbuffer));
+    s.bits_to_go := 8;
+    s.bitbuffer  := 0;
+  end;
+  if s.overflow then
+    result := -1
+  else
+    result := s.p - s.buf;
+end;
+
+{------------------------------------------------------------------------------
+  fits_rcomp_short : compress nx 16-bit pixels.  Mirrors CFITSIO fits_rcomp_short.
+------------------------------------------------------------------------------}
+function fits_rcomp_short(arr: Prd_word; nx: integer; c: PByte; clen: integer;
+                          nblock: integer): integer;
+var
+  s                       : TRiceOutBuffer;
+  fsbits, fsmax, bbits    : integer;
+  i, j, thisblock, nvals  : integer;
+  fs, fsmask              : integer;
+  lastpix, nextpix        : integer;   { current pixels as signed ints }
+  pdiff                   : integer;
+  dsum                    : int64;      { sum of mapped differences (can be large) }
+  psum                    : integer;
+  dpsum                   : double;
+  v, top                  : dword;
+  diffs                   : array of dword;
+begin
+  { bsize = 2 -> these three constants must match fits_rdecomp_short }
+  fsbits := 4;
+  fsmax  := 14;
+  bbits  := 16;              { = bsize*8, bits per raw pixel }
+
+  if nx <= 0 then exit(-1);
+
+  rice_out_init(s, c, clen);
+
+  { the first pixel is stored raw, 16 bits, big-endian }
+  lastpix := word(arr[0]);
+  rice_put_byte(s, byte(lastpix shr 8));
+  rice_put_byte(s, byte(lastpix and $FF));
+
+  setlength(diffs, nblock);
+
+  i := 0;
+  while i < nx do
+  begin
+    { number of pixels in this block (last block may be short) }
+    nvals := nblock;
+    if i + nvals > nx then nvals := nx - i;
+
+    { form mapped differences and their sum }
+    dsum := 0;
+    for j := 0 to nvals - 1 do
+    begin
+      nextpix := word(arr[i + j]);
+      pdiff   := nextpix - lastpix;
+      { fold the 16-bit difference into the range that survives round-trip:
+        CFITSIO relies on the difference being taken modulo 2^16.  Sign-extend
+        a 16-bit wrap so e.g. 65535 is treated as -1 (a small difference). }
+      pdiff := smallint(pdiff);
+      { map signed pdiff to unsigned: negative -> odd, non-negative -> even }
+      if pdiff < 0 then
+        v := dword(not (dword(pdiff) shl 1))
+      else
+        v := dword(pdiff) shl 1;
+      v := v and $FFFF;      { differences of 16-bit data fit in 16 bits }
+      diffs[j] := v;
+      dsum := dsum + v;
+      lastpix := nextpix;
+    end;
+
+    { choose fs = number of bits to split off, from the mean difference }
+    dpsum := (dsum - (nvals div 2) - 1) / nvals;
+    if dpsum < 0 then dpsum := 0.0;
+    psum := integer(trunc(dpsum)) shr 1;
+    fs := 0;
+    while psum > 0 do
+    begin
+      psum := psum shr 1;
+      inc(fs);
+    end;
+
+    thisblock := nvals;
+
+    if fs >= fsmax then
+    begin
+      { high-entropy block: send the marker then each difference raw (bbits) }
+      output_nbits(s, dword(fsmax + 1), fsbits);
+      for j := 0 to thisblock - 1 do
+        output_nbits(s, diffs[j], bbits);
+    end
+    else if fs = 0 then
+    begin
+      { fs = 0 is still a normal Rice block (code value fs+1 = 1), UNLESS every
+        difference is zero, in which case emit the low-entropy marker 0.
+        Emitting 0 for a non-zero block would be decoded as "all pixels equal
+        the previous one" (decoder fs = value-1 = -1). }
+      j := 0;
+      while (j < thisblock) and (diffs[j] = 0) do inc(j);
+      if j = thisblock then
+        output_nbits(s, 0, fsbits)                { all-zero differences }
+      else
+      begin
+        output_nbits(s, dword(fs + 1), fsbits);   { = 1 }
+        { with fs = 0 there are no split bits; each diff is unary: that many
+          zero bits followed by a terminating one bit }
+        for j := 0 to thisblock - 1 do
+        begin
+          top := diffs[j];
+          while top > 24 do
+          begin
+            output_nbits(s, 0, 24);
+            top := top - 24;
+          end;
+          output_nbits(s, 1, integer(top) + 1);
+        end;
+      end;
+    end
+    else
+    begin
+      { normal Rice block }
+      output_nbits(s, dword(fs + 1), fsbits);
+      fsmask := (1 shl fs) - 1;
+      for j := 0 to thisblock - 1 do
+      begin
+        top := diffs[j] shr fs;               { unary part }
+        while top > 24 do
+        begin
+          output_nbits(s, 0, 24);
+          top := top - 24;
+        end;
+        output_nbits(s, 1, integer(top) + 1); { the terminating one bit }
+        output_nbits(s, diffs[j] and dword(fsmask), fs);  { the fs split bits }
+      end;
+    end;
+
+    i := i + nvals;
+  end;
+
+  result := rice_out_done(s);
+end;
+
+{------------------------------------------------------------------------------
+  Convenience wrapper symmetric with rice_decode.  Only 16-bit is supported.
+------------------------------------------------------------------------------}
+function rice_encode(tile: pointer; bytepix, nx, nblock: integer;
+                     compressed: PByte; clen: integer;
+                     out out_len: integer; out error_message: string): boolean;
+var
+  n: integer;
+begin
+  error_message := '';
+  out_len := 0;
+  if bytepix <> 2 then
+  begin
+    error_message := 'rice_encode: only BYTEPIX = 2 (16-bit) is supported';
+    exit(false);
+  end;
+  if nx <= 0 then
+  begin
+    error_message := 'rice_encode: nx must be positive';
+    exit(false);
+  end;
+  n := fits_rcomp_short(Prd_word(tile), nx, compressed, clen, nblock);
+  if n < 0 then
+  begin
+    error_message := 'rice_encode: output buffer too small';
+    exit(false);
+  end;
+  out_len := n;
+  result := true;
 end;
 
 end.

@@ -13538,6 +13538,7 @@ begin
 
             stack_info:=' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' +  IntToStr(counterL) + 'x' + RemoveSpecialChars(head.filter_name);//filter filter_name for e.g. G/Oiii
 
+            filename2:=stringreplace(filename2,'.fz','',[rfIgnoreCase]);//floating point images can not be saved as compressed
             filename3:=filename2;
             filename2:=StringReplace(ChangeFileExt(filename2, '.fit'),'.fit', '@ ' + stack_info + '_stacked.fit', []); {give new file name for any extension, FIT, FTS, fits}
             memo2_message('█ █ █ Saving as ' + filename2);
