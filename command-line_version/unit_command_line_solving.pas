@@ -1247,7 +1247,7 @@ end;
 
 procedure find_stars(img :Timage_array; hfd_min:double; max_stars :integer;out starlistI: Tstar_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,retries,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
+   nrstars,radius,i,j,retries,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr, noise_lev : double;
    img_sa     : Timage_array;
    startTick2  : qword;{for timing/speed purposes}

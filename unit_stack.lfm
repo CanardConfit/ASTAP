@@ -9000,14 +9000,6 @@ object stackmenu1: Tstackmenu1
       Hint = '#Rename the file'
       OnClick = rename_selectedfiles1Click
     end
-    object MenuItem25: TMenuItem
-      Caption = '-'
-    end
-    object result_compress1: TMenuItem
-      Caption = 'Compress selected files'
-      Hint = '#Compress selected files using external CFITSIO utility program fpack. Files will get extension .fz'
-      OnClick = result_compress1Click
-    end
     object MenuItem15: TMenuItem
       Caption = '-'
     end
