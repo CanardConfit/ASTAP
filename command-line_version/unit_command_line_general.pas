@@ -208,7 +208,7 @@ function fnmodulo (x,range: double):double;
 implementation
 
 uses
-  unit_command_line_solving, unit_command_line_star_database, unit_tiff;
+  unit_command_line_solving, unit_command_line_star_database, unit_tiff_unthreaded;
 
 
 procedure log_to_file(logf,mess : string);{for testing}
