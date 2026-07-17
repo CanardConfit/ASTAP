@@ -501,6 +501,7 @@ begin
 
 
     find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd); {find stars of the image and put them in a list}
+    mean_hfd:=mean_hfd*binfactor;//correct for binning
 
 //    profiler_start;
 //    find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd); {find stars of the image and put them in a list}
@@ -1289,6 +1290,7 @@ begin
       update_text(memo, 'CTYPE2  =', #39 + 'DEC--TAN' + #39 + '           / second parameter DEC,  projection TANgential   ');
     end;
 
+    update_text(memo, 'HFD_MEAN= ',floattostr2(mean_hfd)+'                / Mean HFD. Could be higher then median HFD.     ');//just for info
     update_text(memo, 'CUNIT1  =', #39 + 'deg     ' + #39 + '           / Unit of coordinates                            ');
 
     update_text(memo, 'EQUINOX =','              2000.0 / Equinox of coordinates                         ');  {the equinox is 2000 since the database is in 2000}

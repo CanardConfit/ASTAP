@@ -36,7 +36,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.07.13';
+  astap_version: string='2026.07.16';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -208,7 +208,7 @@ function fnmodulo (x,range: double):double;
 implementation
 
 uses
-  unit_command_line_solving, unit_command_line_star_database, unit_tiff;
+  unit_command_line_solving, unit_command_line_star_database, unit_tiff_unthreaded;
 
 
 procedure log_to_file(logf,mess : string);{for testing}

@@ -668,8 +668,6 @@ type
     PopupMenu8: TPopupMenu;
     removeselected8: TMenuItem;
     renametobak8: TMenuItem;
-    result_compress1: TMenuItem;
-    MenuItem25: TMenuItem;
     rename_result1: TMenuItem;
     MenuItem24: TMenuItem;
     MenuItem20: TMenuItem;
@@ -881,7 +879,6 @@ type
     procedure reference_database1Change(Sender: TObject);
     procedure remove_luminance1Change(Sender: TObject);
     procedure remove_stars1Click(Sender: TObject);
-    procedure result_compress1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
@@ -7442,37 +7439,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.result_compress1Click(Sender: TObject);
-var
-  index, counter: integer;
-  filen: string;
-begin
-  index:=0;
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-  counter:=listview5.Items.Count;
-  esc_pressed:=False;
-  while index < counter do
-  begin
-    if listview5.Items[index].Selected then
-    begin
-      filen:=listview5.items[index].Caption;
-      Application.ProcessMessages;
-      if ((esc_pressed) or (pack_cfitsio(filen) = False)) then
-      begin
-        beep;
-        mainform1.Caption:='Exit with error!!';
-        Screen.Cursor:=crDefault;
-        exit;
-      end;
-    end;
-    Inc(index); {go to next file}
-  end;
-  stackmenu1.Caption:='Finished, all files compressed with extension .fz.';
-  Screen.Cursor:=crDefault;  { Always restore to normal }
-end;
-
-
 procedure Tstackmenu1.restore_file_ext1Click(Sender: TObject);
 var
   searchResult: TSearchRec;
@@ -13538,6 +13504,7 @@ begin
 
             stack_info:=' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' +  IntToStr(counterL) + 'x' + RemoveSpecialChars(head.filter_name);//filter filter_name for e.g. G/Oiii
 
+            filename2:=stringreplace(filename2,'.fz','',[rfIgnoreCase]);//floating point images can not be saved as compressed
             filename3:=filename2;
             filename2:=StringReplace(ChangeFileExt(filename2, '.fit'),'.fit', '@ ' + stack_info + '_stacked.fit', []); {give new file name for any extension, FIT, FTS, fits}
             memo2_message('█ █ █ Saving as ' + filename2);
