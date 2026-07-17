@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.07.16';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.07.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -2689,7 +2689,7 @@ begin
           try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
           for i:=0 to head.width-1 do
           begin
-            col_float:=int32(swapendian(fitsbuffer4[i]))*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
+            col_float:=swapendian(fitsbuffer4[i])*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
            {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
             img_loaded2[k,j,i]:=col_float;{store in memory array}
             if col_float>measured_max then
@@ -14481,7 +14481,7 @@ begin
       begin
         application.messagebox( pchar(
         'Solver command-line usage:'+#10+
-        '-f  filename {fits, tiff, png, pgm, jpg files}'+#10+
+        '-f  filename {fits, fits.fz, tiff, png, pgm, jpg files}'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
         '-fov height_field[degrees]'+#10+
         '-ra  right_ascension[hours]'+#10+
