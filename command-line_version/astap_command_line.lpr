@@ -78,9 +78,9 @@ begin
   begin
     writeln(
     'ASTAP astrometric solver version CLI-'+astap_version+#10+
-    '(C) 2018, 2025 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
+    '(C) 2018, 2026 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
     'Usage:'+#10+
-    '-f  filename {fits, tiff, png, pbm, jpg files}'+#10+
+    '-f  filename {fits, fits.fz, tiff, png, pbm, jpg files}'+#10+
     '-r  radius_area_to_search[degrees]'+#10+      {changed}
     '-fov diameter_field[degrees] {enter zero for auto}'+#10+   {changed}
     '-ra  right_ascension[hours]'+#10+

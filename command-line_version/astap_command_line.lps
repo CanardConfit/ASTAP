@@ -4,11 +4,13 @@
     <PathDelim Value="\"/>
     <Version Value="12"/>
     <BuildModes Active="Default"/>
-    <Units Count="15">
+    <Units Count="17">
       <Unit0>
         <Filename Value="astap_command_line.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos X="29" Y="16"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="212"/>
+        <CursorPos Y="233"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -25,12 +27,20 @@
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="191"/>
-        <CursorPos X="83" Y="211"/>
+        <TopLine Value="1798"/>
+        <CursorPos Y="1830"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>
       <Unit3>
+        <Filename Value="unit_ricecomp_unthreaded.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="29" Y="8"/>
+        <UsageCount Value="27"/>
+        <Loaded Value="True"/>
+      </Unit3>
+      <Unit4>
         <Filename Value="..\unit_stack.pas"/>
         <ComponentName Value="stackmenu1"/>
         <HasResources Value="True"/>
@@ -39,142 +49,218 @@
         <TopLine Value="2772"/>
         <CursorPos X="23" Y="2783"/>
         <UsageCount Value="57"/>
-      </Unit3>
-      <Unit4>
+      </Unit4>
+      <Unit5>
         <Filename Value="..\unit_astrometric_solving.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1296"/>
         <CursorPos Y="1316"/>
         <UsageCount Value="26"/>
-      </Unit4>
-      <Unit5>
+      </Unit5>
+      <Unit6>
         <Filename Value="unit_command_line_star_database.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="2658"/>
         <CursorPos X="19" Y="2678"/>
         <UsageCount Value="80"/>
-      </Unit5>
-      <Unit6>
+      </Unit6>
+      <Unit7>
         <Filename Value="unit_command_line_stars_wide_field.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="16"/>
         <CursorPos X="10" Y="32"/>
         <UsageCount Value="66"/>
-      </Unit6>
-      <Unit7>
-        <Filename Value="..\astap_main.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="11951"/>
-        <CursorPos Y="11989"/>
-        <UsageCount Value="17"/>
       </Unit7>
       <Unit8>
+        <Filename Value="..\astap_main.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1353"/>
+        <CursorPos X="29" Y="1383"/>
+        <UsageCount Value="18"/>
+      </Unit8>
+      <Unit9>
         <Filename Value="..\unit_star_align.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="794"/>
         <CursorPos X="135" Y="839"/>
         <UsageCount Value="17"/>
-      </Unit8>
-      <Unit9>
-        <Filename Value="unit_tiff_unthreaded.pas"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="3"/>
-        <CursorPos X="16"/>
-        <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit9>
       <Unit10>
+        <Filename Value="unit_tiff_unthreaded.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="16"/>
+        <UsageCount Value="13"/>
+      </Unit10>
+      <Unit11>
         <Filename Value="fix claude fable files\unit_command_line_general.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="2288"/>
         <CursorPos X="14" Y="2268"/>
         <UsageCount Value="2"/>
-      </Unit10>
-      <Unit11>
+      </Unit11>
+      <Unit12>
         <Filename Value="fix claude fable files\unit_command_line_solving.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="173"/>
         <CursorPos X="17" Y="191"/>
         <UsageCount Value="2"/>
-      </Unit11>
-      <Unit12>
+      </Unit12>
+      <Unit13>
         <Filename Value="source_ASTAP_COMMAND_LINE_FPC-01-03-2026\unit_command_line_solving.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1446"/>
         <CursorPos Y="1439"/>
         <UsageCount Value="3"/>
-      </Unit12>
-      <Unit13>
+      </Unit13>
+      <Unit14>
         <Filename Value="source_ASTAP_COMMAND_LINE_FPC-18-05-2026\unit_command_line_solving.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1224"/>
         <CursorPos X="118" Y="1251"/>
         <UsageCount Value="3"/>
-      </Unit13>
-      <Unit14>
+      </Unit14>
+      <Unit15>
         <Filename Value="unit_tiff_new.pas"/>
         <UnitName Value="unit_tiff"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="3" Y="5"/>
         <UsageCount Value="10"/>
-      </Unit14>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\unit_ricecomp.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos Y="9"/>
+        <UsageCount Value="11"/>
+      </Unit16>
     </Units>
-    <JumpHistory Count="12" HistoryIndex="11">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2138" Column="36" TopLine="2119"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1410" Column="50" TopLine="1387"/>
       </Position1>
       <Position2>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2146" Column="19" TopLine="2119"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1413" Column="33" TopLine="1387"/>
       </Position2>
       <Position3>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2168" Column="15" TopLine="2135"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1414" Column="32" TopLine="1387"/>
       </Position3>
       <Position4>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2175" Column="15" TopLine="2143"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1420" Column="35" TopLine="1387"/>
       </Position4>
       <Position5>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2183" Column="39" TopLine="2151"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="781" Column="15" TopLine="760"/>
       </Position5>
       <Position6>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2228" Column="17" TopLine="2196"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1014" Column="15" TopLine="979"/>
       </Position6>
       <Position7>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2245" Column="18" TopLine="2213"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1276" Column="23" TopLine="1241"/>
       </Position7>
       <Position8>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2314" Column="14" TopLine="2306"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="882" Column="29" TopLine="851"/>
       </Position8>
       <Position9>
-        <Filename Value="unit_command_line_solving.pas"/>
-        <Caret Line="2380" Column="30" TopLine="2348"/>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="129" TopLine="100"/>
       </Position9>
       <Position10>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="39" Column="36" TopLine="7"/>
+        <Caret Line="1409" TopLine="1388"/>
       </Position10>
       <Position11>
-        <Filename Value="unit_tiff_unthreaded.pas"/>
-        <Caret Column="16"/>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1421" TopLine="1388"/>
       </Position11>
       <Position12>
         <Filename Value="unit_command_line_general.pas"/>
-        <Caret Line="211" Column="83" TopLine="191"/>
+        <Caret Line="1426" TopLine="1391"/>
       </Position12>
+      <Position13>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1674" Column="94"/>
+      </Position13>
+      <Position14>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="46" Column="9" TopLine="37"/>
+      </Position14>
+      <Position15>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="621" Column="137" TopLine="586"/>
+      </Position15>
+      <Position16>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1375" TopLine="1361"/>
+      </Position16>
+      <Position17>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1377" TopLine="1361"/>
+      </Position17>
+      <Position18>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="865" Column="29" TopLine="830"/>
+      </Position18>
+      <Position19>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1376" TopLine="1355"/>
+      </Position19>
+      <Position20>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1388" TopLine="1355"/>
+      </Position20>
+      <Position21>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1647" Column="13" TopLine="1645"/>
+      </Position21>
+      <Position22>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="732" Column="51" TopLine="712"/>
+      </Position22>
+      <Position23>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="812" Column="43" TopLine="780"/>
+      </Position23>
+      <Position24>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="824" Column="30" TopLine="792"/>
+      </Position24>
+      <Position25>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1467" Column="43" TopLine="1435"/>
+      </Position25>
+      <Position26>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1591" Column="28" TopLine="1559"/>
+      </Position26>
+      <Position27>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="2" Column="55"/>
+      </Position27>
+      <Position28>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="656" Column="47" TopLine="624"/>
+      </Position28>
+      <Position29>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="657" Column="47" TopLine="625"/>
+      </Position29>
+      <Position30>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1614" Column="50" TopLine="1582"/>
+      </Position30>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
       <Modes Count="1" ActiveMode="default">
         <Mode0 Name="default">
           <local>
-            <CommandLineParams Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\short_exposure_H-alpha-bin2x2-0.3sec_0_3s_20200818_200259280.fits&quot; -progress"/>
+            <CommandLineParams Value="-r 20 -f &quot;C:\astap.fpc\command_line_version\m45.fits.fz&quot;"/>
             <LaunchingApplication PathPlusParams="C:\WINDOWS\system32\cmd.exe /C ${TargetCmdLine}"/>
           </local>
         </Mode0>
@@ -185,26 +271,26 @@
         <Item1 Value="C:\WINDOWS\system32\cmd.exe /C ${TargetCmdLine}"/>
       </List0>
       <List1 Name="CommandLineParameters" Count="20">
-        <Item1 Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\short_exposure_H-alpha-bin2x2-0.3sec_0_3s_20200818_200259280.fits&quot; -progress"/>
-        <Item2 Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\short_exposure_H-alpha-bin2x2-0.3sec_0_3s_20200818_200259280.fits&quot;"/>
-        <Item3 Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\1\short_exposure_H-alpha-bin2x2-0.3sec_0_3s_20200818_200259280.fits&quot;"/>
-        <Item4 Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\1\short_exposure_bin2x2-0.01sec_0_01s_20200818_203529215.fits&quot;"/>
-        <Item5 Value="-r 1 -f &quot;D:\astap_test_files\short_exposures easy\2_2_0_1s_-25.0C_20220315_215022845_easy.tif&quot;"/>
-        <Item6 Value="-f D:\astap_test_files\short_exposures5\not solved\shortexposure5_Luminance_0_005s_-15C_20250721_213049491.fits -r 1"/>
-        <Item7 Value="-f D:\astap_test_files\short_exposures5\not solved\shortexposure5_Luminance_0_005s_-15C_20250721_213049491.fits"/>
-        <Item8 Value="-f C:\astap.fpc\command_line_version\m45.fits "/>
-        <Item9 Value="-f C:\astap.fpc\command_line_version\m45.fits -extract 30"/>
-        <Item10 Value="-f C:\astap.fpc\command_line_version\m45.fits -analyse 30"/>
-        <Item11 Value="-f d:\temp\1.fits"/>
-        <Item12 Value="-f C:\astap.fpc\command_line_version\m45.fits -s 200"/>
-        <Item13 Value="-f C:\astap.fpc\command_line_version\m45.fits"/>
-        <Item14 Value="-f  &quot;D:\astap_test_files\short_exposures easy\_12_0_1s_-25.1C_20220315_205814410_easy.tif&quot; -r 1"/>
-        <Item15 Value="-f  D:\astap_test_files\short_exposures easy\_12_0_1s_-25.1C_20220315_205814410_easy.tif -r 1"/>
-        <Item16 Value="-f  D:\astap_test_files\short_exposures easy\_12_0_1s_-25.1C_20220315_205814410_easy.fits -r 1 "/>
-        <Item17 Value="-f C:\astap.fpc\command_line_version\m45.tif"/>
-        <Item18 Value="-f C:\astap.fpc\command_line_version\m45.tif -spd 0"/>
-        <Item19 Value="-f C:\astap.fpc\command_line_version\m45.png -spd 0"/>
-        <Item20 Value="-f C:\astap.fpc\command_line_version\Holmberg2.png -spd 90 -ra 0 -z 3 -s 50 -fov 0.4"/>
+        <Item1 Value="-r 20 -f &quot;C:\astap.fpc\command_line_version\m45.fits.fz&quot; "/>
+        <Item2 Value="-r 20 -f &quot;C:\astap.fpc\command_line_version\m45.fits.fz&quot; -progress"/>
+        <Item3 Value="-r 2 -f &quot;C:\astap.fpc\command_line_version\m45.fits.fz&quot; -progress"/>
+        <Item4 Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\short_exposure_H-alpha-bin2x2-0.3sec_0_3s_20200818_200259280.fits&quot; -progress"/>
+        <Item5 Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\short_exposure_H-alpha-bin2x2-0.3sec_0_3s_20200818_200259280.fits&quot;"/>
+        <Item6 Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\1\short_exposure_H-alpha-bin2x2-0.3sec_0_3s_20200818_200259280.fits&quot;"/>
+        <Item7 Value="-r 2 -f &quot;D:\astap_test_files\short_exposures2\1\short_exposure_bin2x2-0.01sec_0_01s_20200818_203529215.fits&quot;"/>
+        <Item8 Value="-r 1 -f &quot;D:\astap_test_files\short_exposures easy\2_2_0_1s_-25.0C_20220315_215022845_easy.tif&quot;"/>
+        <Item9 Value="-f D:\astap_test_files\short_exposures5\not solved\shortexposure5_Luminance_0_005s_-15C_20250721_213049491.fits -r 1"/>
+        <Item10 Value="-f D:\astap_test_files\short_exposures5\not solved\shortexposure5_Luminance_0_005s_-15C_20250721_213049491.fits"/>
+        <Item11 Value="-f C:\astap.fpc\command_line_version\m45.fits "/>
+        <Item12 Value="-f C:\astap.fpc\command_line_version\m45.fits -extract 30"/>
+        <Item13 Value="-f C:\astap.fpc\command_line_version\m45.fits -analyse 30"/>
+        <Item14 Value="-f d:\temp\1.fits"/>
+        <Item15 Value="-f C:\astap.fpc\command_line_version\m45.fits -s 200"/>
+        <Item16 Value="-f C:\astap.fpc\command_line_version\m45.fits"/>
+        <Item17 Value="-f  &quot;D:\astap_test_files\short_exposures easy\_12_0_1s_-25.1C_20220315_205814410_easy.tif&quot; -r 1"/>
+        <Item18 Value="-f  D:\astap_test_files\short_exposures easy\_12_0_1s_-25.1C_20220315_205814410_easy.tif -r 1"/>
+        <Item19 Value="-f  D:\astap_test_files\short_exposures easy\_12_0_1s_-25.1C_20220315_205814410_easy.fits -r 1 "/>
+        <Item20 Value="-f C:\astap.fpc\command_line_version\m45.tif"/>
       </List1>
     </HistoryLists>
   </ProjectSession>
@@ -228,8 +314,22 @@
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
+        <Source Value="unit_command_line_general.pas"/>
+        <Line Value="728"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="astap_command_line.lpr"/>
-        <Line Value="187"/>
+        <Line Value="241"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_command_line.lpr"/>
+        <Line Value="233"/>
       </Item>
     </BreakPoints>
     <Watches>

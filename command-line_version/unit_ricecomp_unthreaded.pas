@@ -1,4 +1,4 @@
-unit unit_ricecomp;
+unit unit_ricecomp_unthreaded;
 
 {==============================================================================
   Rice decompression for FITS tiled image compression (ZCMPTYPE = 'RICE_1').
@@ -6,6 +6,7 @@ unit unit_ricecomp;
   This is a Pascal conversion of the decompression routines of ricecomp.c
   from NASA's CFITSIO library (https://github.com/HEASARC/cfitsio).
   It was created by Han Kleijn, www.hnsky.org for the ASTAP program
+
 
   Original copyright / attribution from ricecomp.c:
 
@@ -87,15 +88,16 @@ unit unit_ricecomp;
 
 interface
 
-
 uses
-  Classes, SysUtils, math, unit_mtpcpu;  // Include necessary units
+  Classes, SysUtils;  // Include necessary units
 
 
 type
   Prd_byte  = PByte;     { unsigned char  * }
   Prd_word  = PWord;     { unsigned short * }
   Prd_dword = PDWord;    { unsigned int   * }
+
+  Timage_array = array of array of array of Single;
 
 
 {==============================================================================
@@ -115,11 +117,11 @@ type
   this unit's own fits_rdecomp_short round-trips it exactly.
 ==============================================================================}
 
-
-
 type
   { All inputs required to decode + place the tiles of one compressed image.
-    Filled by load_fits after it has parsed the BINTABLE header. }
+    Filled by load_fits after it has parsed the BINTABLE header.
+    Identical to the record in unit_ricecomp, so the two units are drop-in
+    interchangeable. }
   Trice_decode_params = record
     { shared read-only source buffers (owned by caller) }
     table_buffer   : PByte;      { the NAXIS1*NAXIS2 table rows            }
@@ -153,17 +155,17 @@ type
     dither_table_ptr           : PSingle;
   end;
 
-type
-  Timage_array = array of array of array of Single;
+{ Decode and place every tile of a RICE_1 compressed image into img.
 
-{ Decode and place every tile of a RICE_1 compressed image into img, using one
-  worker thread per CPU core (bands of whole tiles, so threads write disjoint
-  image rows and need no locking).  Runs on the calling thread until all workers
-  finish.
+  This is the SERIAL twin of unit_ricecomp.rice_decode_tiles: identical
+  signature and identical per-tile arithmetic, but it runs the tiles one after
+  another on the calling thread instead of splitting them across worker threads.
+  Per-tile decoding speed is the same (it calls the same rice_decode and the
+  same placement code); only the multi-core parallelism is absent.
 
   img            : target image, already SetLength'd to [naxis3,height,width]
   p              : all parsed parameters (see Trice_decode_params)
-  out_max/out_min: measured maximum / minimum stored pixel value (merged)
+  out_max/out_min: measured maximum / minimum stored pixel value
   err_gzip       : true if any tile actually held GZIP bytes (unsupported)
   err_decode     : true if rice_decode failed on some tile
   err_range      : true if a heap descriptor was out of range
@@ -176,29 +178,13 @@ procedure rice_decode_tiles(var img: Timage_array;
                             out err_tile_index: integer;
                             out err_msg: string);
 
+{ Serial Rice ENCODER for the one-row-per-tile writer in save_fits_compressed.
 
-{ Parallel Rice *encoder* for the one-row-per-tile writer in save_fits_compressed.
-
-  Encodes rows [0..height-1] of the single-colour image img (colour plane 0) into
-  the caller-owned tile_data[]/tile_len[] arrays, one Rice tile per row, using one
-  worker thread per CPU core (each worker owns a contiguous, disjoint row range).
-  Each worker converts a row to BZERO/BSCALE-adjusted signed 16-bit in its own
-  row16 scratch, calls rice_encode into its own cbuf scratch, then GetMem's the
-  exact-size tile_data[y] and copies the compressed bytes in.  Because the row
-  ranges are disjoint, writes into tile_data[]/tile_len[] never collide and no
-  locking is required.  The whole run happens off the main thread's file/UI work;
-  no worker touches Screen.Cursor, memo2_message, or the output file.
-
-  img        : source image, [>=1, height, width] (only plane 0 is read)
-  width,
-  height     : image dimensions (height = number of rows = number of tiles)
-  nblock     : Rice block size (32, matches the ZVAL1 written by the caller)
-  tile_data  : caller-allocated, length >= height, all entries preset to nil;
-               on success tile_data[y] is a GetMem block of tile_len[y] bytes
-  tile_len   : caller-allocated, length >= height
-  ok         : true if every row encoded successfully
-  err_row    : row index of the first encode failure (or -1)
-  err_msg    : rice_encode's message for the first failure (empty on success)
+  Serial twin of unit_ricecomp.rice_encode_rows: identical signature, encodes
+  rows [0..height-1] of colour plane 0 of img into the caller-owned
+  tile_data[]/tile_len[] arrays, one Rice tile per row.  A single reused
+  difference buffer is passed to rice_encode so no per-row allocation occurs,
+  matching the per-row speed of the threaded encoder (minus the parallelism).
 
   On failure the partially-filled tile_data[] entries are left allocated; the
   caller frees all non-nil entries as it already does. }
@@ -211,9 +197,9 @@ procedure rice_encode_rows(var img: Timage_array;
                            out err_msg: string);
 
 
-
-
 implementation
+
+uses Math;
 
 { nonzero_count is lookup table giving number of bits in 8-bit values not
   including leading zeros, used in fits_rdecomp, fits_rdecomp_short and
@@ -348,7 +334,6 @@ begin
         //else
         //  diff := not (diff shr 1);
         diff := (diff shr 1) xor (0 - (diff and 1));//2026.07.16. unzigzag replacement for above giving about 35% improvement in decoding speed
-
         arr[i] := diff + lastpix;
         lastpix := arr[i];
         inc(i);
@@ -385,8 +370,6 @@ begin
         //else
         //  diff := not (diff shr 1);
         diff := (diff shr 1) xor (0 - (diff and 1));//2026.07.16. unzigzag replacement for above giving about 35% improvement in decoding speed
-
-
         arr[i] := diff + lastpix;
         lastpix := arr[i];
         inc(i);
@@ -496,7 +479,6 @@ begin
         //else
         //  diff := not (diff shr 1);
         diff := (diff shr 1) xor (0 - (diff and 1));//2026.07.16. unzigzag replacement for above giving about 35% improvement in decoding speed
-
         { like in C, the output array element truncates the sum to 16 bit
           and lastpix continues with the truncated value }
         arr[i] := word(diff + lastpix);
@@ -535,7 +517,6 @@ begin
         //else
         //  diff := not (diff shr 1);
         diff := (diff shr 1) xor (0 - (diff and 1));//2026.07.16. unzigzag replacement for above giving about 35% improvement in decoding speed
-
         arr[i] := word(diff + lastpix);
         lastpix := arr[i];
         inc(i);
@@ -644,7 +625,6 @@ begin
         //else
         //  diff := not (diff shr 1);
         diff := (diff shr 1) xor (0 - (diff and 1));//2026.07.16. unzigzag replacement for above giving about 35% improvement in decoding speed
-
         { like in C, the output array element truncates the sum to 8 bit
           and lastpix continues with the truncated value }
         arr[i] := byte(diff + lastpix);
@@ -683,7 +663,6 @@ begin
         //else
         //  diff := not (diff shr 1);
         diff := (diff shr 1) xor (0 - (diff and 1));//2026.07.16. unzigzag replacement for above giving about 35% improvement in decoding speed
-
         arr[i] := byte(diff + lastpix);
         lastpix := arr[i];
         inc(i);
@@ -738,30 +717,24 @@ end;
   output_nybble()-style helpers of ricecomp.c.  Bits are packed MSB-first,
   identical to the C encoder, so the decoder above reads them back correctly.
 ------------------------------------------------------------------------------}
-{ 64-bit-accumulator bit writer.  Bit ordering is MSB-first and the emitted
-  byte stream is byte-for-byte identical to the original one-byte-buffer port of
-  CFITSIO output_nbits():
-    * valid bits live in the LOW `nbits` positions of `acc`
-    * whole bytes are drained from the top whenever nbits >= 8
-    * at flush, a partial (<8) remainder is emitted left-justified, zero-padded
-  The accumulator only ever holds < 8 bits between pushes, and the largest push
-  is 32 bits, so held+push <= 39 < 64: no overflow of acc is possible.
-  Verified byte-for-byte and overflow-signal identical to the previous version
-  over 20000+ randomized/structured cases before replacing it. }
 type
   TRiceOutBuffer = record
-    buf      : PByte;      { start of output buffer            }
-    p        : PByte;      { current write position            }
-    bufend   : PByte;      { one past the last usable byte      }
-    acc      : qword;      { bit accumulator, valid bits low    }
-    nbits    : integer;    { number of valid bits held in acc   }
-    overflow : boolean;    { set if we ran past bufend          }
+    buf        : PByte;    { start of output buffer         }
+    p          : PByte;    { current write position         }
+    bufend     : PByte;    { one past the last usable byte   }
+    bitbuffer  : dword;    { partial byte being assembled    }
+    bits_to_go : integer;  { free bits remaining in bitbuffer }
+    overflow   : boolean;  { set if we ran past bufend       }
   end;
 
-procedure rice_out_init(var s: TRiceOutBuffer; c: PByte; clen: integer); inline;
+procedure rice_out_init(var s: TRiceOutBuffer; c: PByte; clen: integer);
 begin
-  s.buf := c;  s.p := c;  s.bufend := c + clen;
-  s.acc := 0;  s.nbits := 0;  s.overflow := false;
+  s.buf        := c;
+  s.p          := c;
+  s.bufend     := c + clen;
+  s.bitbuffer  := 0;
+  s.bits_to_go := 8;
+  s.overflow   := false;
 end;
 
 { Append one raw byte to the output, guarding against overrun. }
@@ -777,65 +750,66 @@ begin
 end;
 
 { Output n bits (0 <= n <= 32) of "bits", most-significant bit first.
-  The whole-byte drain is written out here (not via a helper) because FPC does
-  not reliably inline nested calls, and the drain is the single hottest loop in
-  the encoder.  No post-drain mask of acc is needed: every byte we emit is
-  byte(acc shr nbits) taken immediately after a fresh (acc shl n), so only the
-  freshly shifted-in low bits are ever read; stale high bits are shifted past
-  the 64-bit width and never observed. }
-procedure output_nbits(var s: TRiceOutBuffer; bits: dword; n: integer); inline;
+  Direct port of CFITSIO output_nbits(): the top bits of the current byte are
+  filled, whole bytes are emitted, and a partial remainder is retained. }
+procedure output_nbits(var s: TRiceOutBuffer; bits: dword; n: integer);
+var
+  lbitbuffer  : dword;
+  lbits_to_go : integer;
 begin
   if n = 0 then exit;
+
+  { mask "bits" to the low n bits so callers need not pre-mask;
+    guard shl 32 which is undefined for a 32-bit operand on x86 }
   if n < 32 then
-    bits := bits and ((dword(1) shl n) - 1);   { caller need not pre-mask }
-  s.acc   := (s.acc shl n) or qword(bits);
-  s.nbits := s.nbits + n;
-  while s.nbits >= 8 do
+    bits := bits and ((dword(1) shl n) - 1);
+
+  lbitbuffer  := s.bitbuffer;
+  lbits_to_go := s.bits_to_go;
+
+  if n > lbits_to_go then
   begin
-    s.nbits := s.nbits - 8;
-    if s.p < s.bufend then begin s.p^ := byte(s.acc shr s.nbits); inc(s.p); end
-    else s.overflow := true;
+    { fill the rest of the current byte with the top (lbits_to_go) bits }
+    lbitbuffer := lbitbuffer or (bits shr (n - lbits_to_go));
+    rice_put_byte(s, byte(lbitbuffer));
+    n := n - lbits_to_go;
+    { emit whole bytes }
+    while n > 8 do
+    begin
+      n := n - 8;
+      rice_put_byte(s, byte(bits shr n));
+    end;
+    lbits_to_go := 8 - n;
+    if n > 0 then
+      lbitbuffer := (bits shl lbits_to_go) and $FF
+    else
+      lbitbuffer := 0;
+  end
+  else
+  begin
+    lbits_to_go := lbits_to_go - n;
+    lbitbuffer  := lbitbuffer or ((bits shl lbits_to_go) and $FF);
   end;
+
+  if lbits_to_go = 0 then
+  begin
+    rice_put_byte(s, byte(lbitbuffer));
+    lbits_to_go := 8;
+    lbitbuffer  := 0;
+  end;
+
+  s.bitbuffer  := lbitbuffer;
+  s.bits_to_go := lbits_to_go;
 end;
 
-{ Output n zero bits (n may be large: a unary run).  Emitted in <=24-bit chunks
-  so nbits never approaches the 64-bit ceiling before a drain. }
-procedure output_zeros(var s: TRiceOutBuffer; n: integer); inline;
+{ Flush any partial byte still in the bit buffer.  Returns total bytes written. }
+function rice_out_done(var s: TRiceOutBuffer): integer;
 begin
-  while n >= 24 do
+  if s.bits_to_go < 8 then
   begin
-    s.acc   := s.acc shl 24;
-    s.nbits := s.nbits + 24;
-    while s.nbits >= 8 do
-    begin
-      s.nbits := s.nbits - 8;
-      if s.p < s.bufend then begin s.p^ := byte(s.acc shr s.nbits); inc(s.p); end
-      else s.overflow := true;
-    end;
-    n := n - 24;
-  end;
-  if n > 0 then
-  begin
-    s.acc   := s.acc shl n;
-    s.nbits := s.nbits + n;
-    while s.nbits >= 8 do
-    begin
-      s.nbits := s.nbits - 8;
-      if s.p < s.bufend then begin s.p^ := byte(s.acc shr s.nbits); inc(s.p); end
-      else s.overflow := true;
-    end;
-  end;
-end;
-
-{ Flush any partial byte still in the accumulator.  Returns total bytes written,
-  or -1 if the output buffer overflowed. }
-function rice_out_done(var s: TRiceOutBuffer): integer; inline;
-begin
-  if s.nbits > 0 then
-  begin
-    { left-justify the partial byte, zero-pad the low bits, as the old buffer did }
-    rice_put_byte(s, byte(s.acc shl (8 - s.nbits)));
-    s.acc := 0;  s.nbits := 0;
+    rice_put_byte(s, byte(s.bitbuffer));
+    s.bits_to_go := 8;
+    s.bitbuffer  := 0;
   end;
   if s.overflow then
     result := -1
@@ -859,7 +833,6 @@ function fits_rcomp_short(arr: Prd_word;      { input array of 16-bit pixels }
                                                     difference buffer; nil = the
                                                     function allocates its own  }
                          ): integer;
-
 var
   s                       : TRiceOutBuffer;
   fsbits, fsmax, bbits    : integer;
@@ -871,8 +844,8 @@ var
   psum                    : integer;
   dpsum                   : double;
   v, top                  : dword;
-  diffs_local             : array of dword;   { fallback if scratch = nil }
-  diffs                   : Prd_dword;         { working pointer, nblock dwords }
+  diffs_local             : array of dword; { owned buffer when scratch = nil }
+  pdiffs                  : Prd_dword;       { active difference buffer (either) }
 begin
   { bsize = 2 -> these three constants must match fits_rdecomp_short }
   fsbits := 4;
@@ -883,23 +856,19 @@ begin
 
   rice_out_init(s, c, clen);
 
-  { the first pixel is stored raw, 16 bits, big-endian (via the accumulator so
-    there is a single output path; MSB-first packing makes this byte-identical) }
+  { the first pixel is stored raw, 16 bits, big-endian }
   lastpix := word(arr[0]);
-  output_nbits(s, dword(lastpix and $FFFF), 16);
+  rice_put_byte(s, byte(lastpix shr 8));
+  rice_put_byte(s, byte(lastpix and $FF));
 
-  { per-block difference scratch: use the caller-supplied buffer when present
-    (the parallel writer hands each worker one reused nblock-sized block, so no
-    allocation happens per row); otherwise allocate a local one, preserving the
-    original behaviour for any standalone caller.  The buffer holds at most
-    nblock dwords and every slot used (0..nvals-1) is written before it is read,
-    so it need not be zero-initialised. }
+  { Use the caller's reused scratch buffer if supplied (avoids a per-call
+    allocation when encoding many rows); otherwise allocate a local one. }
   if scratch <> nil then
-    diffs := scratch
+    pdiffs := scratch
   else
   begin
     setlength(diffs_local, nblock);
-    diffs := Prd_dword(@diffs_local[0]);
+    pdiffs := Prd_dword(@diffs_local[0]);
   end;
 
   i := 0;
@@ -914,22 +883,18 @@ begin
     for j := 0 to nvals - 1 do
     begin
       nextpix := word(arr[i + j]);
-      //pdiff   := nextpix - lastpix;
+      pdiff   := nextpix - lastpix;
       { fold the 16-bit difference into the range that survives round-trip:
         CFITSIO relies on the difference being taken modulo 2^16.  Sign-extend
         a 16-bit wrap so e.g. 65535 is treated as -1 (a small difference). }
-      //pdiff := smallint(pdiff);
+      pdiff := smallint(pdiff);
       { map signed pdiff to unsigned: negative -> odd, non-negative -> even }
-      //if pdiff < 0 then
-      //  v := dword(not (dword(pdiff) shl 1))
-      //else
-      //  v := dword(pdiff) shl 1;
-
-      //mod 2026.07.16 resulting in about 12% speed increase. The classic branchless zigzag is exactly equivalent:
-      pdiff := smallint(nextpix - lastpix);
-      v := dword((pdiff shl 1) xor SarLongint(pdiff, 31)) and $FFFF;
-
-      diffs[j] := v;
+      if pdiff < 0 then
+        v := dword(not (dword(pdiff) shl 1))
+      else
+        v := dword(pdiff) shl 1;
+      v := v and $FFFF;      { differences of 16-bit data fit in 16 bits }
+      pdiffs[j] := v;
       dsum := dsum + v;
       lastpix := nextpix;
     end;
@@ -952,7 +917,7 @@ begin
       { high-entropy block: send the marker then each difference raw (bbits) }
       output_nbits(s, dword(fsmax + 1), fsbits);
       for j := 0 to thisblock - 1 do
-        output_nbits(s, diffs[j], bbits);
+        output_nbits(s, pdiffs[j], bbits);
     end
     else if fs = 0 then
     begin
@@ -961,7 +926,7 @@ begin
         Emitting 0 for a non-zero block would be decoded as "all pixels equal
         the previous one" (decoder fs = value-1 = -1). }
       j := 0;
-      while (j < thisblock) and (diffs[j] = 0) do inc(j);
+      while (j < thisblock) and (pdiffs[j] = 0) do inc(j);
       if j = thisblock then
         output_nbits(s, 0, fsbits)                { all-zero differences }
       else
@@ -971,8 +936,13 @@ begin
           zero bits followed by a terminating one bit }
         for j := 0 to thisblock - 1 do
         begin
-          output_zeros(s, integer(diffs[j]));     { the unary zero run }
-          output_nbits(s, 1, 1);                  { terminating one bit }
+          top := pdiffs[j];
+          while top > 24 do
+          begin
+            output_nbits(s, 0, 24);
+            top := top - 24;
+          end;
+          output_nbits(s, 1, integer(top) + 1);
         end;
       end;
     end
@@ -983,11 +953,14 @@ begin
       fsmask := (1 shl fs) - 1;
       for j := 0 to thisblock - 1 do
       begin
-        top := diffs[j] shr fs;               { unary part (count of zero bits) }
-        output_zeros(s, integer(top));
-        { fuse the terminating one bit with the fs split bits into a single
-          push: value = (1 shl fs) or split, width = fs + 1 }
-        output_nbits(s, (dword(1) shl fs) or (diffs[j] and dword(fsmask)), fs + 1);
+        top := pdiffs[j] shr fs;               { unary part }
+        while top > 24 do
+        begin
+          output_nbits(s, 0, 24);
+          top := top - 24;
+        end;
+        output_nbits(s, 1, integer(top) + 1); { the terminating one bit }
+        output_nbits(s, pdiffs[j] and dword(fsmask), fs);  { the fs split bits }
       end;
     end;
 
@@ -1003,9 +976,7 @@ end;
   compressed    : output buffer, must be at least nx*2 + nx div 16 + 32 bytes
   clen          : capacity of compressed on input
   out_len       : number of compressed bytes produced
-  error_message : reason of failure, empty string on success
-  scratch       : optional caller-owned buffer of nblock dwords, reused across
-                  calls to avoid a per-call allocation; nil = allocate locally }
+  error_message : reason of failure, empty string on success }
 function rice_encode(tile: pointer; bytepix, nx, nblock: integer;
                      compressed: PByte; clen: integer;
                      out out_len: integer; out error_message: string;
@@ -1037,22 +1008,14 @@ end;
 
 
 {==============================================================================
-  PATCH 2 of 3  —  add to unit_ricecomp.pas IMPLEMENTATION section.
-
-  Paste this block anywhere in the IMPLEMENTATION section (e.g. right after the
-  test_image_array procedure, or just before the unit's final "end.").
-
-  It defines:
-    * rice_read_be_double   — standalone big-endian double reader
-    * TRiceTileThread        — TThread descendant, one contiguous tile range each
-    * rice_decode_tiles      — the dispatcher (mirrors unit_threaded_stacking_mean)
-
-  Requires (already present in the uses clause): Classes, SysUtils, Math,
-  astap_main, unit_mtpcpu.  If Math is not yet in the implementation uses, add it:
-      uses math;
+  SERIAL tile decoder + row encoder
+  ---------------------------------
+  Serial twins of unit_ricecomp.rice_decode_tiles / rice_encode_rows.  Same
+  signatures and same per-tile / per-row arithmetic, no threads.  This is what
+  makes unit_ricecomp_unthreaded a drop-in replacement for unit_ricecomp.
 ==============================================================================}
 
-{ Standalone big-endian 8-byte double reader (per-tile ZSCALE / ZZERO). }
+{ Read an 8-byte big-endian double from a byte pointer (per-tile ZSCALE/ZZERO). }
 function rice_read_be_double(pp: PByte): double;
 var
   qw : qword;
@@ -1065,38 +1028,12 @@ begin
   result := d;
 end;
 
-type
-  { One worker owns a half-open tile-index range [FTileStart, FTileEnd).
-    With ZTILE2=1 those map to disjoint image rows, so no locking on img. }
-  TRiceTileThread = class(TThread)
-  private
-    FTileStart, FTileEnd : integer;
-    Fp                   : Trice_decode_params;
-    Fimg                 : ^Timage_array;
-  protected
-    procedure Execute; override;
-  public
-    { outputs, read by the dispatcher after WaitFor }
-    local_max, local_min : single;
-    err_gzip, err_decode, err_range : boolean;
-    err_tile_index : integer;
-    err_msg : string;
-    constructor Create(TileStart, TileEnd: integer; const p: Trice_decode_params;
-                       var img: Timage_array);
-  end;
-
-constructor TRiceTileThread.Create(TileStart, TileEnd: integer;
-                                   const p: Trice_decode_params; var img: Timage_array);
-begin
-  inherited Create(True);   { create suspended }
-  FreeOnTerminate := False;
-  FTileStart := TileStart;
-  FTileEnd   := TileEnd;
-  Fp         := p;          { record copy: all scalars + shared pointers }
-  Fimg       := @img;
-end;
-
-procedure TRiceTileThread.Execute;
+procedure rice_decode_tiles(var img: Timage_array;
+                            const p: Trice_decode_params;
+                            out out_max, out_min: single;
+                            out err_gzip, err_decode, err_range: boolean;
+                            out err_tile_index: integer;
+                            out err_msg: string);
 var
   scratch                 : PByte;
   max_tile_pixels, scratch_cap : integer;
@@ -1121,45 +1058,49 @@ var
   pw_src                  : PWord;
   pdst                    : PSingle;
   vflt                    : single;
+  ntiles                  : integer;
 begin
-  local_max := 0;  local_min := 0;
+  out_max := 0;  out_min := 0;
   err_gzip := false;  err_decode := false;  err_range := false;
   err_tile_index := -1;  err_msg := '';
 
+  { number of tiles actually present (grid may slightly exceed table rows) }
+  ntiles := p.total_tiles;
+  if ntiles > p.table_rows then ntiles := p.table_rows;
+  if ntiles <= 0 then exit;
+
   { own scratch buffer, sized for the largest possible tile, +16 padding }
-  max_tile_pixels := Fp.ztile1_val * Fp.ztile2_val * Fp.ztile3_val;
+  max_tile_pixels := p.ztile1_val * p.ztile2_val * p.ztile3_val;
   if max_tile_pixels < 1 then max_tile_pixels := 1;
-  scratch_cap := max_tile_pixels * Fp.bytepix_val + 16;
+  scratch_cap := max_tile_pixels * p.bytepix_val + 16;
   getmem(scratch, scratch_cap);
   try
-    for tile_index := FTileStart to FTileEnd - 1 do
+    for tile_index := 0 to ntiles - 1 do
     begin
-      if tile_index >= Fp.table_rows then break;
-
       { recover tx,ty,tz (row-major x,y,z) }
-      tx :=  tile_index mod Fp.tiles_x;
-      ty := (tile_index div Fp.tiles_x) mod Fp.tiles_y;
-      tz :=  tile_index div (Fp.tiles_x * Fp.tiles_y);
+      tx :=  tile_index mod p.tiles_x;
+      ty := (tile_index div p.tiles_x) mod p.tiles_y;
+      tz :=  tile_index div (p.tiles_x * p.tiles_y);
 
       { descriptor: 4-byte element count, 4-byte heap offset, big-endian }
-      row_ptr := Fp.table_buffer + tile_index * Fp.table_rowwidth + Fp.off_comp;
+      row_ptr := p.table_buffer + tile_index * p.table_rowwidth + p.off_comp;
       compressed_len := integer((longword(row_ptr[0]) shl 24) or (longword(row_ptr[1]) shl 16) or
                                 (longword(row_ptr[2]) shl 8)  or  longword(row_ptr[3]));
       heap_offset    := integer((longword(row_ptr[4]) shl 24) or (longword(row_ptr[5]) shl 16) or
                                 (longword(row_ptr[6]) shl 8)  or  longword(row_ptr[7]));
 
-      actual_tile_w := Min(Fp.ztile1_val, Fp.znaxis1_val - tx * Fp.ztile1_val);
-      actual_tile_h := Min(Fp.ztile2_val, Fp.znaxis2_val - ty * Fp.ztile2_val);
-      actual_tile_d := Min(Fp.ztile3_val, Fp.znaxis3_val - tz * Fp.ztile3_val);
+      actual_tile_w := Min(p.ztile1_val, p.znaxis1_val - tx * p.ztile1_val);
+      actual_tile_h := Min(p.ztile2_val, p.znaxis2_val - ty * p.ztile2_val);
+      actual_tile_d := Min(p.ztile3_val, p.znaxis3_val - tz * p.ztile3_val);
       tile_pixel_count := actual_tile_w * actual_tile_h * actual_tile_d;
       if tile_pixel_count <= 0 then continue;
 
       if compressed_len <= 0 then
       begin
         gzip_len := 0;
-        if Fp.off_gzip >= 0 then
+        if p.off_gzip >= 0 then
         begin
-          row_ptr := Fp.table_buffer + tile_index * Fp.table_rowwidth + Fp.off_gzip;
+          row_ptr := p.table_buffer + tile_index * p.table_rowwidth + p.off_gzip;
           gzip_len := integer((longword(row_ptr[0]) shl 24) or (longword(row_ptr[1]) shl 16) or
                               (longword(row_ptr[2]) shl 8)  or  longword(row_ptr[3]));
         end;
@@ -1168,32 +1109,32 @@ begin
       end;
 
       if (heap_offset < 0) or
-         (int64(heap_offset) + int64(compressed_len) > int64(Fp.heap_size)) then
+         (int64(heap_offset) + int64(compressed_len) > int64(p.heap_size)) then
       begin
         if not err_range then begin err_range := true; err_tile_index := tile_index; end;
         continue;
       end;
-      compressed_ptr := Fp.heap_buffer + heap_offset;
+      compressed_ptr := p.heap_buffer + heap_offset;
 
-      tile_scale := Fp.zscale_val;
-      tile_zero  := Fp.zzero_val;
-      tile_blank := Fp.zblank_val;
-      tile_has_blank := Fp.zblank_present;
-      if Fp.off_zscale >= 0 then
-        tile_scale := rice_read_be_double(Fp.table_buffer + tile_index * Fp.table_rowwidth + Fp.off_zscale);
-      if Fp.off_zzero >= 0 then
-        tile_zero := rice_read_be_double(Fp.table_buffer + tile_index * Fp.table_rowwidth + Fp.off_zzero);
-      if Fp.off_zblank >= 0 then
+      tile_scale := p.zscale_val;
+      tile_zero  := p.zzero_val;
+      tile_blank := p.zblank_val;
+      tile_has_blank := p.zblank_present;
+      if p.off_zscale >= 0 then
+        tile_scale := rice_read_be_double(p.table_buffer + tile_index * p.table_rowwidth + p.off_zscale);
+      if p.off_zzero >= 0 then
+        tile_zero := rice_read_be_double(p.table_buffer + tile_index * p.table_rowwidth + p.off_zzero);
+      if p.off_zblank >= 0 then
       begin
-        row_ptr := Fp.table_buffer + tile_index * Fp.table_rowwidth + Fp.off_zblank;
+        row_ptr := p.table_buffer + tile_index * p.table_rowwidth + p.off_zblank;
         tile_blank := integer((longword(row_ptr[0]) shl 24) or (longword(row_ptr[1]) shl 16) or
                               (longword(row_ptr[2]) shl 8)  or  longword(row_ptr[3]));
         tile_has_blank := true;
       end;
 
       error_msg_rice := '';
-      tile_ok := rice_decode(compressed_ptr, compressed_len, Fp.bytepix_val,
-                             tile_pixel_count, Fp.blocksize_val, scratch, error_msg_rice);
+      tile_ok := rice_decode(compressed_ptr, compressed_len, p.bytepix_val,
+                             tile_pixel_count, p.blocksize_val, scratch, error_msg_rice);
       if not tile_ok then
       begin
         if not err_decode then
@@ -1204,25 +1145,25 @@ begin
       end;
 
       { ---- FAST PATH: 16-bit lossless full-width row tile inside the image ---- }
-      if Fp.fastpath_possible and (actual_tile_w = Fp.img_width) and (ty < Fp.img_height) then
+      if p.fastpath_possible and (actual_tile_w = p.img_width) and (ty < p.img_height) then
       begin
         pw_src := PWord(scratch);
-        pdst   := @Fimg^[0, ty, 0];   { znaxis3 = 1 on fast path }
-        for px := 0 to Fp.img_width - 1 do
+        pdst   := @img[0, ty, 0];   { znaxis3 = 1 on fast path }
+        for px := 0 to p.img_width - 1 do
         begin
-          vflt := smallint(word(pw_src[px])) * Fp.img_bscale + Fp.img_bzero;
+          vflt := smallint(word(pw_src[px])) * p.img_bscale + p.img_bzero;
           pdst[px] := vflt;
-          if vflt > local_max then local_max := vflt
-          else if vflt < local_min then local_min := vflt;
+          if vflt > out_max then out_max := vflt
+          else if vflt < out_min then out_min := vflt;
         end;
         continue;
       end;
 
       { ---- GENERAL PATH ---- }
-      if Fp.dither_active then
+      if p.dither_active then
       begin
-        dither_iseed := (tile_index + Fp.zdither0_val - 1) mod 10000;
-        dither_next  := trunc(Fp.dither_table_ptr[dither_iseed] * 500);
+        dither_iseed := (tile_index + p.zdither0_val - 1) mod 10000;
+        dither_next  := trunc(p.dither_table_ptr[dither_iseed] * 500);
       end
       else
       begin
@@ -1235,12 +1176,12 @@ begin
           for px := 0 to actual_tile_w - 1 do
           begin
             pixel_idx := px + py * actual_tile_w + pz * actual_tile_w * actual_tile_h;
-            img_x := tx * Fp.ztile1_val + px;
-            img_y := ty * Fp.ztile2_val + py;
-            img_z := tz * Fp.ztile3_val + pz;
-            store_pixel := (img_z < Fp.img_naxis3) and (img_y < Fp.img_height) and (img_x < Fp.img_width);
+            img_x := tx * p.ztile1_val + px;
+            img_y := ty * p.ztile2_val + py;
+            img_z := tz * p.ztile3_val + pz;
+            store_pixel := (img_z < p.img_naxis3) and (img_y < p.img_height) and (img_x < p.img_width);
 
-            case Fp.bytepix_val of
+            case p.bytepix_val of
               1: begin raw_unsigned := PByte(scratch)[pixel_idx];  signed_value := raw_unsigned; end;
               2: begin raw_unsigned := PWord(scratch)[pixel_idx];  signed_value := smallint(word(raw_unsigned)); end;
               4: begin raw_unsigned := PDWord(scratch)[pixel_idx]; signed_value := integer(longword(raw_unsigned)); end;
@@ -1248,14 +1189,14 @@ begin
               signed_value := 0;
             end;
 
-            if not Fp.zquantiz_is_none then
+            if not p.zquantiz_is_none then
             begin
               if signed_value = -2147483647 then
                 col_float_rice := 0
-              else if Fp.dither_is_2 and (signed_value = -2147483646) then
+              else if p.dither_is_2 and (signed_value = -2147483646) then
                 col_float_rice := 0.0
-              else if Fp.dither_active then
-                col_float_rice := (signed_value - Fp.dither_table_ptr[dither_next] + 0.5) * tile_scale + tile_zero
+              else if p.dither_active then
+                col_float_rice := (signed_value - p.dither_table_ptr[dither_next] + 0.5) * tile_scale + tile_zero
               else
                 col_float_rice := signed_value * tile_scale + tile_zero;
               if IsNan(col_float_rice) or IsInfinite(col_float_rice) then col_float_rice := 0;
@@ -1265,203 +1206,30 @@ begin
               if tile_has_blank and (signed_value = tile_blank) then
                 col_float_rice := 0
               else
-                col_float_rice := signed_value * Fp.img_bscale + Fp.img_bzero;
+                col_float_rice := signed_value * p.img_bscale + p.img_bzero;
             end;
 
             if store_pixel then
             begin
-              Fimg^[img_z, img_y, img_x] := col_float_rice;
-              if col_float_rice > local_max then local_max := col_float_rice
-              else if col_float_rice < local_min then local_min := col_float_rice;
+              img[img_z, img_y, img_x] := col_float_rice;
+              if col_float_rice > out_max then out_max := col_float_rice
+              else if col_float_rice < out_min then out_min := col_float_rice;
             end;
 
-            if Fp.dither_active then
+            if p.dither_active then
             begin
               inc(dither_next);
               if dither_next >= 10000 then
               begin
                 inc(dither_iseed);
                 if dither_iseed >= 10000 then dither_iseed := 0;
-                dither_next := trunc(Fp.dither_table_ptr[dither_iseed] * 500);
+                dither_next := trunc(p.dither_table_ptr[dither_iseed] * 500);
               end;
             end;
           end;{px}
     end;{tile_index}
   finally
     freemem(scratch);
-  end;
-end;
-
-{------------------------------------------------------------------------------
-  Dispatcher: split [0,total_tiles) into THREAD_COUNT contiguous bands, run one
-  TRiceTileThread per band, then merge min/max and first-error reports.
-  Structure mirrors unit_threaded_stacking_mean.stack_arrays.
-------------------------------------------------------------------------------}
-procedure rice_decode_tiles(var img: Timage_array;
-                            const p: Trice_decode_params;
-                            out out_max, out_min: single;
-                            out err_gzip, err_decode, err_range: boolean;
-                            out err_tile_index: integer;
-                            out err_msg: string);
-var
-  THREAD_COUNT : integer;
-  Threads      : array of TRiceTileThread;
-  i, TileStart, TileEnd, TilesPerThread, ntiles : integer;
-begin
-  out_max := 0;  out_min := 0;
-  err_gzip := false;  err_decode := false;  err_range := false;
-  err_tile_index := -1;  err_msg := '';
-
-  { number of tiles actually present (grid may slightly exceed table rows) }
-  ntiles := p.total_tiles;
-  if ntiles > p.table_rows then ntiles := p.table_rows;
-  if ntiles <= 0 then exit;
-
-  { same CPU-count logic as unit_threaded_stacking_mean }
-  {$ifdef mswindows}
-  THREAD_COUNT := Min(System.CPUCount, ntiles);
-  {$else} {unix}
-  THREAD_COUNT := Min(GetSystemThreadCount, ntiles);
-  {$endif}
-  if THREAD_COUNT < 1 then THREAD_COUNT := 1;
-
-  SetLength(Threads, THREAD_COUNT);
-  TilesPerThread := ntiles div THREAD_COUNT;
-
-  { create + start }
-  for i := 0 to THREAD_COUNT - 1 do
-  begin
-    TileStart := i * TilesPerThread;
-    TileEnd   := (i + 1) * TilesPerThread;      { half-open }
-    if i = THREAD_COUNT - 1 then TileEnd := ntiles;
-    Threads[i] := TRiceTileThread.Create(TileStart, TileEnd, p, img);
-    Threads[i].Start;
-  end;
-
-  { wait, merge, free }
-  for i := 0 to THREAD_COUNT - 1 do
-  begin
-    Threads[i].WaitFor;
-
-    if Threads[i].local_max > out_max then out_max := Threads[i].local_max;
-    if Threads[i].local_min < out_min then out_min := Threads[i].local_min;
-
-    if Threads[i].err_gzip   then err_gzip := true;
-    if Threads[i].err_range and (not err_range) then
-    begin
-      err_range := true;
-      if err_tile_index < 0 then err_tile_index := Threads[i].err_tile_index;
-    end;
-    if Threads[i].err_decode and (not err_decode) then
-    begin
-      err_decode := true;
-      err_tile_index := Threads[i].err_tile_index;
-      err_msg := Threads[i].err_msg;
-    end;
-
-    Threads[i].Free;
-  end;
-end;
-
-
-{==============================================================================
-  Parallel Rice ENCODER
-  ---------------------
-  Mirror of TRiceTileThread / rice_decode_tiles above, and of
-  unit_threaded_stacking_mean.  One worker owns a half-open row range
-  [FRowStart, FRowEnd); rows map 1:1 to tiles (ZTILE2=1), so the workers write
-  disjoint tile_data[]/tile_len[] slots and share img read-only — no locking.
-==============================================================================}
-type
-  TRiceEncodeThread = class(TThread)
-  private
-    FRowStart, FRowEnd, Fwidth, Fnblock : integer;
-    Fimg       : ^Timage_array;
-    Ftile_data : PPointer;      { -> tile_data[0], PByte array base }
-    Ftile_len  : PInteger;      { -> tile_len[0],  integer array base }
-  protected
-    procedure Execute; override;
-  public
-    { per-thread failure report, read by the dispatcher after WaitFor }
-    local_ok      : boolean;
-    local_err_row : integer;
-    local_err_msg : string;
-    constructor Create(RowStart, RowEnd, width, nblock: integer;
-                       var img: Timage_array;
-                       tile_data_base: PPointer; tile_len_base: PInteger);
-  end;
-
-constructor TRiceEncodeThread.Create(RowStart, RowEnd, width, nblock: integer;
-                                     var img: Timage_array;
-                                     tile_data_base: PPointer; tile_len_base: PInteger);
-begin
-  inherited Create(True);        { create suspended }
-  FreeOnTerminate := False;
-  FRowStart  := RowStart;
-  FRowEnd    := RowEnd;
-  Fwidth     := width;
-  Fnblock    := nblock;
-  Fimg       := @img;
-  Ftile_data := tile_data_base;
-  Ftile_len  := tile_len_base;
-end;
-
-procedure TRiceEncodeThread.Execute;
-var
-  row16   : PWord;
-  cbuf    : PByte;
-  dscratch: Prd_dword;    { reused per-block difference buffer, nblock dwords }
-  clen, y, x, outlen : integer;
-  errmsg  : string;
-  imgp    : ^Timage_array;
-  td      : PPointer;
-  tl      : PInteger;
-  dstp    : PByte;
-begin
-  local_ok      := true;
-  local_err_row := -1;
-  local_err_msg := '';
-
-  imgp := Fimg;
-  td   := Ftile_data;
-  tl   := Ftile_len;
-
-  { own scratch, identical sizing to the original serial writer }
-  getmem(row16, Fwidth * 2);
-  clen := Fwidth * 2 + Fwidth div 16 + 64;   { safe upper bound, matches serial code }
-  getmem(cbuf, clen);
-  { one reused difference buffer for every row this worker encodes, so
-    fits_rcomp_short performs no per-row allocation }
-  getmem(dscratch, Fnblock * sizeof(dword));
-  try
-    for y := FRowStart to FRowEnd - 1 do
-    begin
-      for x := 0 to Fwidth - 1 do
-        { physical value -> BZERO/BSCALE-adjusted signed 16-bit, exactly as the
-          serial writer (and the normal 16-bit writer) does }
-        row16[x] := word(max(0, min(65535, round(imgp^[0, y, x]))) - 32768);
-
-      if not rice_encode(row16, 2, Fwidth, Fnblock, cbuf, clen, outlen, errmsg, dscratch) then
-      begin
-        if local_ok then      { record only the first failure in this worker }
-        begin
-          local_ok      := false;
-          local_err_row := y;
-          local_err_msg := errmsg;
-        end;
-        break;                { stop this worker; other rows in range are abandoned }
-      end;
-
-      { exact-size destination for this row; disjoint index, no locking }
-      getmem(dstp, outlen);
-      move(cbuf^, dstp^, outlen);
-      PPointer(td)[y]  := dstp;      { tile_data[y] := dstp }
-      PInteger(tl)[y]  := outlen;    { tile_len[y]  := outlen }
-    end;
-  finally
-    freemem(row16);
-    freemem(cbuf);
-    freemem(dscratch);
   end;
 end;
 
@@ -1473,67 +1241,55 @@ procedure rice_encode_rows(var img: Timage_array;
                            out err_row: integer;
                            out err_msg: string);
 var
-  THREAD_COUNT : integer;
-  Threads      : array of TRiceEncodeThread;
-  i, RowStart, RowEnd, RowsPerThread : integer;
-  td_base      : PPointer;
-  tl_base      : PInteger;
+  row16   : PWord;
+  cbuf    : PByte;
+  dscratch: Prd_dword;    { reused per-block difference buffer, nblock dwords }
+  clen, y, x, outlen : integer;
+  errmsg  : string;
+  dstp    : PByte;
 begin
   ok      := true;
   err_row := -1;
   err_msg := '';
   if height <= 0 then exit;
 
-  { bases of the shared open arrays; workers index these at disjoint offsets }
-  td_base := PPointer(@tile_data[0]);
-  tl_base := PInteger(@tile_len[0]);
-
-  { same CPU-count logic as unit_threaded_stacking_mean / rice_decode_tiles }
-  {$ifdef mswindows}
-  THREAD_COUNT := Min(System.CPUCount, height);
-  {$else} {unix}
-  THREAD_COUNT := Min(GetSystemThreadCount, height);
-  {$endif}
-  if THREAD_COUNT < 1 then THREAD_COUNT := 1;
-
-  SetLength(Threads, THREAD_COUNT);
-  RowsPerThread := height div THREAD_COUNT;
-
-  { create + start }
-  for i := 0 to THREAD_COUNT - 1 do
-  begin
-    RowStart := i * RowsPerThread;
-    RowEnd   := (i + 1) * RowsPerThread;      { half-open }
-    if i = THREAD_COUNT - 1 then RowEnd := height;
-    Threads[i] := TRiceEncodeThread.Create(RowStart, RowEnd, width, nblock,
-                                           img, td_base, tl_base);
-    Threads[i].Start;
-  end;
-
-  { wait, merge first-error, free }
-  for i := 0 to THREAD_COUNT - 1 do
-  begin
-    Threads[i].WaitFor;
-
-    if (not Threads[i].local_ok) and ok then
+  getmem(row16, width * 2);
+  clen := width * 2 + width div 16 + 64;   { safe upper bound, matches serial code }
+  getmem(cbuf, clen);
+  { one reused difference buffer for every row, so fits_rcomp_short performs no
+    per-row allocation (same optimisation the threaded encoder uses) }
+  getmem(dscratch, nblock * sizeof(dword));
+  try
+    for y := 0 to height - 1 do
     begin
-      ok      := false;
-      err_row := Threads[i].local_err_row;
-      err_msg := Threads[i].local_err_msg;
-    end
-    else if (not Threads[i].local_ok) then
-    begin
-      { keep the earliest-row failure for a stable, deterministic report }
-      if (Threads[i].local_err_row >= 0) and
-         ((err_row < 0) or (Threads[i].local_err_row < err_row)) then
+      for x := 0 to width - 1 do
+        { physical value -> BZERO/BSCALE-adjusted signed 16-bit, exactly as the
+          normal 16-bit writer does }
+        row16[x] := word(max(0, min(65535, round(img[0, y, x]))) - 32768);
+
+      if not rice_encode(row16, 2, width, nblock, cbuf, clen, outlen, errmsg, dscratch) then
       begin
-        err_row := Threads[i].local_err_row;
-        err_msg := Threads[i].local_err_msg;
+        if ok then          { record only the first failure }
+        begin
+          ok      := false;
+          err_row := y;
+          err_msg := errmsg;
+        end;
+        break;              { stop; remaining rows are abandoned }
       end;
-    end;
 
-    Threads[i].Free;
+      { exact-size destination for this row }
+      getmem(dstp, outlen);
+      move(cbuf^, dstp^, outlen);
+      tile_data[y] := dstp;
+      tile_len[y]  := outlen;
+    end;
+  finally
+    freemem(row16);
+    freemem(cbuf);
+    freemem(dscratch);
   end;
 end;
 
 end.
+
