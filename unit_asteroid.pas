@@ -537,6 +537,11 @@ var
         assignfile(txtf,path);
         try
           Reset(txtf);
+          if IOResult<>0 then
+          begin
+            memo2_message('Error, cannot open '+path+'!');
+            exit;
+          end;
           while ((not EOF(txtf)) and (count<maxcount) and (esc_pressed=false)) do   {loop}
           begin
             ReadLn(txtf, s);

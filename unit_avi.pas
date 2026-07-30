@@ -19,13 +19,15 @@ uses
 function write_avi_head(filen, frame_rate: string;  nrframes, w,h: integer): boolean;{open/create file and writes head. Result is false if failure}
 function write_avi_frame(x,y,w,h: integer): boolean; {reads pixels from Timage and writes YUV frames in 444p style, colour or mono. Call this procedure for each image. Result is false if failure}
 procedure close_the_avi(nrframes: integer);
+function avi_write_error: boolean;{true if anything went wrong between write_avi_head and close_the_avi}
 
 implementation
 
-uses astap_main;
+uses astap_main, unit_stack;
 
 var
-  theFile : tfilestream;
+  theFile : tfilestream=nil; {nil when no file is open. Never leave a dangling pointer in here}
+  avi_failure : boolean=false;{sticky error flag for the whole head..frames..close sequence}
   zero_dword : dword=0; // used for up the 3 extra zeros behind each image line depending on the with of the line
   extra      : integer; // number of extra zero's behind each line
 
@@ -50,7 +52,7 @@ type
           dwFlags : dword; // Flags
           dwTotalFrames : dword; // Number frames in file
           dwInitialFrames : dword;
-          dwStreams : dword;  // Number of streams in the file
+          dwStreams : dword;  // Number of streams in the file
           dwSuggestedBufferSize : dword;
           dwWidth : dword;
           dwHeight : dword;
@@ -76,7 +78,7 @@ var
                dwFlags : $00000010; // flags
                dwTotalFrames : $0; // # frames in file
                dwInitialFrames : $0;
-               dwStreams : 1;  // Number of streams in the file
+               dwStreams : 1;  // Number of streams in the file
                dwSuggestedBufferSize : $0;
                dwWidth : 16;
                dwHeight : 8;
@@ -144,7 +146,7 @@ var
             dwScale: 1;
             dwRate:  1;  //* dwRate / dwScale == samples/second */
             dwStart: 0;
-            dwLength: 0; //* In units above... */  size of stream in units as defined in dwRate and dwScale {here number of frames}
+            dwLength: 0; //* In units above... */  size of stream in units as defined in dwRate and dwScale {here number of frames}
             dwSuggestedBufferSize: 0; // to be set later
             dwQuality: 0;
             dwSampleSize: 0;
@@ -221,9 +223,26 @@ var
 
 
 
+procedure close_avi_file;{close the file if one is open. Safe to call at any time, also twice}
+begin
+  FreeAndNil(TheFile);{Free on nil is allowed. Setting to nil afterwards prevents a double free on the next export}
+end;
+
+
+function avi_write_error: boolean;{true if anything went wrong between write_avi_head and close_the_avi}
+begin
+  result:=avi_failure;
+end;
+
+
 function write_avi_head(filen, frame_rate: string; nrframes, w,h: integer): boolean;{open/create file and writes head. Result is false if failure}
+var
+  total : int64;
 begin
   result:=false; // assume failure
+  avi_failure:=false;{start of a new video}
+  close_avi_file;{in case an earlier export was aborted without reaching close_the_avi}
+
   head.dwwidth:= w;
   head.dwheight:= h;
 
@@ -232,7 +251,7 @@ begin
 
   head.dwTotalFrames:=nrframes;
 
-  head.dwMicroSecPerFrame:=round(1000000/max(strtofloat(frame_rate),0.00001));
+  head.dwMicroSecPerFrame:=round(1000000/max(strtofloat2(frame_rate),0.00001));{strtofloat2 is error tolerant and accepts both dot and comma as decimal separator. strtofloat raises an exception on a locale mismatch}
 
   streamhead.bitcount:=8*nrcolors;
   streamhead.width:=w;
@@ -247,20 +266,39 @@ begin
 
 
   movihead.size:= 4 {length dword movi}+(streamhead.sizeimage+sizeof(frame_start))*head.dwTotalFrames;
-  head.riffsize:=sizeof(head)-8+sizeof(streamhead)+sizeof(movihead)+ ( sizeof(frame_start)+ streamhead.sizeimage+ sizeof(indx))*head.dwTotalFrames+sizeof(indexstart) ;
+
   frame_start.x:= streamhead.sizeimage;
 
+  total:=int64(sizeof(head))-8+sizeof(streamhead)+sizeof(movihead)
+         +(int64(sizeof(frame_start))+streamhead.sizeimage+sizeof(indx))*nrframes
+         +sizeof(indexstart);
+
+  if total>=2147483648 then {AVI 1.0 is a 32 bit container. Beyond 2 GiB most players fail}
+  begin
+    avi_failure:=true;
+    memo2_message('Abort, video would be '+inttostr(total div (1024*1024))+
+                  ' Mbyte. The AVI format is limited to 2 Gbyte. Use fewer frames, crop the area, or select the YUV4MPEG2 output.');
+    exit; {result stays false}
+  end;
+  head.riffsize:=total;
 
   try
     TheFile:=tfilestream.Create(filen, fmcreate );
   except
-    TheFile.free;
+    TheFile:=nil;{the assignment above never happened. Do NOT call Free on it}
+    avi_failure:=true;
     exit;
   end;
 
-  thefile.writebuffer(head,sizeof(head));
-  thefile.writebuffer(streamhead,sizeof(streamhead));
-  thefile.writebuffer(movihead,sizeof(movihead));
+  try
+    thefile.writebuffer(head,sizeof(head));
+    thefile.writebuffer(streamhead,sizeof(streamhead));
+    thefile.writebuffer(movihead,sizeof(movihead));
+  except
+    avi_failure:=true;
+    close_avi_file;{disk full or write protected. Do not leave the handle open}
+    exit;
+  end;
   result:=true;
 end;
 
@@ -272,7 +310,9 @@ var
   row         : array of byte;
   xLine       :  PByteArray;
 begin
-  result:=true;
+  result:=false;
+  if TheFile=nil then exit;{no file open. write_avi_head failed, or was never called}
+
   try
     thefile.writebuffer(frame_start,sizeof(frame_start)); {write 00db header}
     setlength(row, nrcolors*w {width});
@@ -300,17 +340,14 @@ begin
         row[nrcolors *(xx-x)]  :=B;
         row[nrcolors *(xx-x)+1]:=G;
         row[nrcolors *(xx-x)+2]:=R;
-
-    //    row[(xx-x)]  :=trunc((R+G+B)/3);  // Mono seams not a valid option with .avi
-
       end;
       thefile.writebuffer(row[0],length(row));
       thefile.writebuffer(zero_dword,extra); // Add extra zeros 0,1,2,3 depending on width to make it a mulitiply of 4 bytes. Found by reverse engineering.
     end;
+    result:=true;
   except
-    result:=false;
-    row:=nil;
-    exit;
+    avi_failure:=true;
+    close_avi_file;{the video is beyond repair, stop writing. close_the_avi will do nothing}
   end;
   row:=nil;
 end;
@@ -320,18 +357,23 @@ procedure close_the_avi(nrframes: integer);
 var
    i: integer;
 begin
-  index_start.size:=nrframes*$10;// index length in bytes
-  thefile.writebuffer(index_start,sizeof(index_start));
-  indx.position:=$4;
-  indx.size:=streamhead.sizeimage;
-  for i:=1 to nrframes do
-  begin
-    thefile.writebuffer(indx,sizeof(indx));
-    indx.position:=indx.position+sizeof(frame_start)+streamhead.sizeimage;
+  if TheFile=nil then exit;{already closed after an earlier error, or never opened}
+
+  try
+    index_start.size:=nrframes*$10;// index length in bytes
+    thefile.writebuffer(index_start,sizeof(index_start));
+    indx.position:=$4;
+    indx.size:=streamhead.sizeimage;
+    for i:=1 to nrframes do
+    begin
+      thefile.writebuffer(indx,sizeof(indx));
+      indx.position:=indx.position+sizeof(frame_start)+streamhead.sizeimage;
+    end;
+  except
+    avi_failure:=true;{index could not be written. The file will be closed anyhow}
   end;
 
-  thefile.free;
+  close_avi_file;{always, on both paths}
 end;
 
 end.
-

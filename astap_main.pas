@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.07.17';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.07.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -906,8 +906,8 @@ procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{R
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 Function LeadingZero(w : integer) : String;
-procedure log_to_file(logf,mess : string);{for testing}
-procedure log_to_file2(logf,mess : string);{used for photometry}
+procedure log_to_file(logf,s : string);{append to the file, create it when it does not yet exist}
+procedure log_to_file2(logf,s : string);{always create a new file}
 procedure demosaic_advanced(var img : Timage_array);{demosaic img_loaded}
 procedure bin_X2X3X4(var img :Timage_array; var head : theader;memo:tstrings; binfactor:integer);{bin img 2x,3x or 4x}
 procedure local_sigma_clip_mean_and_sd(x1,y1, x2,y2{regio of interest},col : integer; img : Timage_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
@@ -991,8 +991,8 @@ type  byteX3  = array[0..2] of byte;
       byteXX3 = array[0..2] of word;
       byteXXXX3 = array[0..2] of single;
 
-var
-  Reader    : TReader;
+//var
+//  Reader    : TReader;
 
 
 
@@ -1275,6 +1275,7 @@ var
   rice_err_range  : boolean;
   rice_err_tile   : integer;
   rice_err_msg    : string;
+  Reader    : TReader;
 var {################# initialised variables #########################}
   end_record : boolean=false;
      procedure close_fits_file; inline;
@@ -2376,7 +2377,6 @@ begin
       memo2_message('Abort, not enough memory for compressed image!');
       warning_str := 'Not enough memory!';
       close_fits_file;
-      result := false;
       exit;
     end;
     { ---- Read the table rows and the heap.  Everything below is protected so
@@ -2620,6 +2620,7 @@ begin
       except
         memo2_message('Abort, not enough memory!');
         warning_str:='Not enough memory!'; //for command line usage
+        close_fits_file;
         exit;
       end;
       if head.bitpix=16 then
@@ -3203,6 +3204,7 @@ var
   comment,color7,pfm,expdet,timedet,isodet,instdet,ccdtempdet  : boolean;
   range, jd2        : double;
   thecomments       : TStringList;
+  Reader            : TReader;
 var
    x_longword  : longword;
    x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
@@ -9061,92 +9063,112 @@ var
   fitsbuffer        : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
 var
   TheFile,TheFile_new  : tfilestream;
-  reader_position,I,readsize,bufsize : integer;
+  TheReader            : TReader; {local. Do NOT use the global Reader, it is owned by load_fits}
+  reader_position,I,readsize,bufsize,blockcount : integer;
   fract       : double;
   line0       : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
   header    : array[0..2880] of ansichar;
   endfound  : boolean;
+  written_ok: boolean;
   filename_tmp: string;
-
-     procedure close_fits_files;
-     begin
-        Reader.free;
-        TheFile.free;
-        TheFile_new.free;
-     end;
 begin
   result:=false;{assume failure}
+  written_ok:=false;
   filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
+
+  {nil first. Local class references are not zero initialised by FPC and Free on nil is safe,
+   so the finally block below is valid no matter where an exception occurs}
+  TheFile_new:=nil;
+  TheFile:=nil;
+  TheReader:=nil;
+
   try
-    TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
-    TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
-    Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
+    try
+      TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
+      TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
+      TheReader := TReader.Create (TheFile,$60000);// 393216 byte buffer
 
-   // if head.calstat<>'' then update_text(memo,'CALSTAT =',#39+old_calstat+#39); {calibration status has not change because the image is original}
-    {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
-    I:=0;
-    reader_position:=0;
-    repeat
-      reader.read(header[i],80); {read file info, 80 bytes only}
-      inc(reader_position,80);
-      endfound:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));
-    until ((endfound) or (I>=sizeof(header)-16 ));
-    if endfound=false then
-    begin
-      close_fits_files;
-      beep;
-      memo2_message('Abort, error reading source FITS file!!');
-      exit;
+      {find the END keyword of the source header. The header content itself comes from memo,
+       so reading into header[0] each time is sufficient, only the position matters}
+      I:=0;
+      blockcount:=0;
+      reader_position:=0;
+      repeat
+        TheReader.read(header[0],80); {read file info, 80 bytes only}
+        inc(reader_position,80);
+        inc(blockcount);
+        endfound:=((header[0]='E') and (header[1]='N')  and (header[2]='D') and (header[3]=' '));
+      until ((endfound) or (blockcount*80>=TheFile.size)); {bounded, do not rely on an EOF exception to break out}
+
+      if endfound=false then
+      begin
+        beep;
+        memo2_message('Abort, error reading source FITS file!!');
+        exit; {the finally block below closes everything}
+      end;
+
+      fract:=frac(reader_position/2880);
+
+      if fract<>0 then
+      begin
+        i:=round((1-fract)*2880);{left part of next 2880 bytes block}
+        TheReader.read(header[0],i); {skip empty part and go to image data}
+        inc(reader_position,i);
+      end;
+      {reader is now at begin of image data}
+
+      {write updated header}
+      for i:=0 to 79 do empthy_line[i]:=#32;{space}
+      i:=0;
+      repeat
+         if i<memo.count then
+         begin
+           line0:=memo[i];
+           while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+           strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+           TheFile_new.writebuffer(aline,80);{write updated header from memo1.}
+         end
+         else
+         begin
+            TheFile_new.writebuffer(empthy_line,80);{write empthy line}
+         end;
+         inc(i);
+      until ((i>=memo.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+
+      bufsize:=sizeof(fitsbuffer);
+      repeat
+         readsize:=min(bufsize,TheFile.size-reader_position);{read flexible in buffersize and not in fixed steps of 2880 bytes. Note some file are not following the FITS standard of blocksize of 2880 bytes causing problem if fixed 2880 bytes are used}
+         if readsize<=0 then break; {nothing left, prevents an endless loop on a truncated file}
+         TheReader.read(fitsbuffer,readsize);
+         inc(reader_position,readsize);
+         TheFile_new.writebuffer(fitsbuffer,readsize); {write buffer}
+       until (reader_position>=TheFile.size);
+
+      written_ok:=true; {only set after the last writebuffer succeeded}
+    except
+      on E: Exception do
+      begin
+        beep;
+        memo2_message('Abort, error updating FITS header! '+E.Message);
+        {written_ok stays false, the temporary file is removed below}
+      end;
     end;
-
-    fract:=frac(reader_position/2880);
-
-    if fract<>0 then
-    begin
-      i:=round((1-fract)*2880);{left part of next 2880 bytes block}
-      reader.read(header[0],i); {skip empty part and go to image data}
-      inc(reader_position,i);
-    end;
-    {reader is now at begin of image data}
-
-    {write updated header}
-    for i:=0 to 79 do empthy_line[i]:=#32;{space}
-    i:=0;
-    repeat
-       if i<memo.count then
-       begin
-         line0:=memo[i];
-         while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
-         strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-         thefile_new.writebuffer(aline,80);{write updated header from memo1.}
-       end
-       else
-       begin
-          thefile_new.writebuffer(empthy_line,80);{write empthy line}
-       end;
-       inc(i);
-    until ((i>=memo.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
-
-    bufsize:=sizeof(fitsbuffer);
-    repeat
-       readsize:=min(bufsize,TheFile.size-reader_position);{read flexible in buffersize and not in fixed steps of 2880 bytes. Note some file are not following the FITS standard of blocksize of 2880 bytes causing problem if fixed 2880 bytes are used}
-       reader.read(fitsbuffer,readsize);
-       inc(reader_position,readsize);
-       thefile_new.writebuffer(fitsbuffer,readsize); {write buffer}
-     until (reader_position>=TheFile.size);
-
-    Reader.free;
+  finally
+    {runs on every path: success, early exit and exception}
+    TheReader.free;
     TheFile.free;
-    TheFile_new.free;
+    TheFile_new.free; {closes and flushes the temporary file. Must happen before rename}
+  end;
 
+  if written_ok then
+  begin
     if deletefile(filen2) then
       result:=renamefile(filename_tmp,filen2);
-  except
-    close_fits_files;
-    beep;
-    exit;
   end;
+
+  if result=false then
+    deletefile(filename_tmp); {do not leave a stray .tmp next to the image files}
 end;
 
 
@@ -10506,7 +10528,7 @@ end;
 
 procedure Tmainform1.mpcreport1Click(Sender: TObject);
 var
-   line,mag_str : string;
+   line,mag_str,filter : string;
    hfd2,fwhm_star2,snr,flux,object_xc,object_yc,object_raM,object_decM  : double;
 begin
   if ap_order=0 then
@@ -10570,7 +10592,9 @@ begin
       end;
       line:=line+mag_str;
     end;
-    line:=line+'B      XXX';
+    filter:=copy(head.filter_name,1,1);
+    if length(filter)=0 then filter:=' ';
+    line:=line+filter+'      XXX';
 
     plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,' 📋');{rectangle, +1 to fits coordinates}
     stackmenu1.memo2.Lines.add(line);
@@ -13086,6 +13110,7 @@ end;
 
 
 
+
 //procedure Tmainform1.Button1Click(Sender: TObject);
 //var
 //   inp,outp : array of word;
@@ -14174,32 +14199,45 @@ end;
 //end;
 
 
-procedure log_to_file(logf,mess : string);{for testing}
+procedure log_to_file(logf,s : string);{append to the file, create it when it does not yet exist}
 var
-  f   :  textfile;
+  fs : TFileStream;
 begin
-  assignfile(f,logf);
   try
-   if fileexists(logf)=false then rewrite(f) else append(f);
-   writeln(f,mess);
-
-  finally
-    closefile(f);
+    if FileExists(logf) then
+      fs := TFileStream.Create(logf, fmOpenWrite or fmShareDenyWrite)
+    else
+      fs := TFileStream.Create(logf, fmCreate or fmShareDenyWrite);
+    try
+      fs.Seek(0, soEnd);{append}
+      s:=s+lineEnding;//guaranties also a minimum length of one for line below
+      fs.WriteBuffer(s[1], length(s));
+    finally
+      fs.Free;
+    end;
+  except
+    on E: Exception do
+      Memo2_Message('Write error "' + logf + '": ' + E.Message);
   end;
 end;
 
 
-procedure log_to_file2(logf,mess : string);{used for photometry}
+procedure log_to_file2(logf,s : string);{Always create a new file. Used for photometry}
 var
-  f   :  textfile;
+  fs : TFileStream;
 begin
-  assignfile(f,logf);
-  try
-    rewrite(f);
-    writeln(f,mess);
-  finally
-    closefile(f);
-  end;
+   try
+     fs:=TFileStream.Create(logf,  fmCreate or fmShareDenyWrite);
+     try
+       s:=s+lineEnding;//guaranties also a minimum length of one for line below
+       fs.WriteBuffer(s[1], length(s));//string should be at least one charactor long to avoid
+     finally
+       fs.Free;
+     end;
+   except
+     on E: Exception do
+       Memo2_Message('Write error "' + LogF + '": ' + E.Message);
+   end;
 end;
 
 
@@ -14220,48 +14258,55 @@ begin
 end;
 
 
-procedure write_ini(filen:string; solution:boolean);{write solution to ini file}
+procedure write_ini(filen:string; solution:boolean);
 var
-   f: text;
+   s, ini_name : string;
+   fs          : TFileStream;
 begin
-  assignfile(f,ChangeFileExt(filen,'.ini'));
-  rewrite(f);
+  ini_name:=ChangeFileExt(filen,'.ini');
   if solution then
   begin
-    writeln(f,'PLTSOLVD=T');
-    writeln(f,'CRPIX1='+floattostrE(head.crpix1));// X of reference pixel
-    writeln(f,'CRPIX2='+floattostrE(head.crpix2));// Y of reference pixel
-
-    writeln(f,'CRVAL1='+floattostrE(head.ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
-    writeln(f,'CRVAL2='+floattostrE(head.dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
-    writeln(f,'CDELT1='+floattostrE(head.cdelt1));     // X pixel size [deg]
-    writeln(f,'CDELT2='+floattostrE(head.cdelt2));     // Y pixel size [deg]
-    writeln(f,'CROTA1='+floattostrE(head.crota1));    // Image twist of X axis [deg]
-    writeln(f,'CROTA2='+floattostrE(head.crota2));    // Image twist of Y axis [deg]
-    writeln(f,'CD1_1='+floattostrE(head.cd1_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD1_2='+floattostrE(head.cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_1='+floattostrE(head.cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_2='+floattostrE(head.cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
-
-    if head.sqmfloat>0 then writeln(f,'SQM='+floattostrE(head.sqmfloat));  // sky background
-    if head.hfd_median>0 then writeln(f,'HFD='+floattostrE(head.hfd_median));
-    if head.hfd_counter>0 then  writeln(f,'STARS='+floattostrE(head.hfd_counter));//number of stars
+    s:='PLTSOLVD=T'+LineEnding
+      +'CRPIX1='+floattostrE(head.crpix1)+LineEnding
+      +'CRPIX2='+floattostrE(head.crpix2)+LineEnding
+      +('CRVAL1='+floattostrE(head.ra0*180/pi))+LineEnding  // RA (j2000_1) of reference pixel [deg]
+      +('CRVAL2='+floattostrE(head.dec0*180/pi))+LineEnding // DEC (j2000_1) of reference pixel [deg]
+      +('CDELT1='+floattostrE(head.cdelt1))+LineEnding      // X pixel size [deg]
+      +('CDELT2='+floattostrE(head.cdelt2))+LineEnding      // Y pixel size [deg]
+      +('CROTA1='+floattostrE(head.crota1))+LineEnding      // Image twist of X axis [deg]
+      +('CROTA2='+floattostrE(head.crota2))+LineEnding      // Image twist of Y axis [deg]
+      +('CD1_1='+floattostrE(head.cd1_1))+LineEnding        // CD matrix to convert (x,y) to (Ra, Dec)
+      +('CD1_2='+floattostrE(head.cd1_2))+LineEnding        // CD matrix to convert (x,y) to (Ra, Dec)
+      +('CD2_1='+floattostrE(head.cd2_1))+LineEnding        // CD matrix to convert (x,y) to (Ra, Dec)
+      +('CD2_2='+floattostrE(head.cd2_2))+LineEnding;       // CD matrix to convert (x,y) to (Ra, Dec)
+      if head.sqmfloat>0   then  s:=s+('SQM='+floattostrE(head.sqmfloat))+LineEnding;  // sky background
+      if head.hfd_median>0 then  s:=s+('HFD='+floattostrE(head.hfd_median))+LineEnding;
+      if head.hfd_counter>0 then s:=s+('STARS='+floattostrE(head.hfd_counter))+LineEnding;//number of stars
   end
   else
-  begin
-    writeln(f,'PLTSOLVD=F');
-  end;
-  writeln(f,'CMDLINE='+cmdline);{write the original commmand line}
-  writeln(f,'DIMENSIONS='+inttostr(head.width)+' x '+inttostr(head.height));//write image dimensions
+    s:='PLTSOLVD=F'+LineEnding;
+
+  s:=s+'CMDLINE='+cmdline+LineEnding
+      +('DIMENSIONS='+inttostr(head.width)+' x '+inttostr(head.height))+LineEnding;//write image dimensions
 
   Case errorlevel of
-             2: writeln(f,'ERROR=Not enough stars.');
-            16: writeln(f,'ERROR=Error reading image file.');
-            32: writeln(f,'ERROR=No star database found.');
-            33: writeln(f,'ERROR=Error reading star database.');
+             2: s:=s+'ERROR=Not enough stars.'+LineEnding;
+            16: s:=s+'ERROR=Error reading image file.'+LineEnding;
+            32: s:=s+'ERROR=No star database found.'+LineEnding;
+            33: s:=s+'ERROR=Error reading star database.'+LineEnding;
   end;
-  if warning_str<>'' then writeln(f,'WARNING='+warning_str);
-  closefile(f);
+  if warning_str<>'' then s:=s+'WARNING='+warning_str+LineEnding;
+
+  try
+    fs:=TFileStream.Create(ini_name, fmCreate);
+    try
+      fs.WriteBuffer(s[1], length(s));
+    finally
+      fs.Free;
+    end;
+  except
+    on E: Exception do memo2_message('Error writing '+ini_name+'!');
+  end;
 end;
 
 
@@ -14274,31 +14319,30 @@ var
 
 begin
   try
-   TheFile4:=tfilestream.Create(filen, fmcreate );
+    TheFile4:=tfilestream.Create(filen, fmcreate );
 
-   update_integer(mainform1.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
-   try
-  {write memo1 header to file}
-   for i:=0 to 79 do empthy_line[i]:=#32;{space}
-   i:=0;
-   repeat
-      if i<mainform1.memo1.lines.count then
-      begin
-        line0:=mainform1.memo1.lines[i];
-        while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
-        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-        thefile4.writebuffer(aline,80);{write updated header from memo1}
-      end
-      else
-      thefile4.writebuffer(empthy_line,80);{write empthy line}
-      inc(i);
-   until ((i>=mainform1.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
-
-
-   finally
-     TheFile4.free;
-   end;
+    update_integer(mainform1.memo1.lines,'NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+    try
+     {write memo1 header to file}
+      for i:=0 to 79 do empthy_line[i]:=#32;{space}
+      i:=0;
+      repeat
+         if i<mainform1.memo1.lines.count then
+         begin
+           line0:=mainform1.memo1.lines[i];
+           while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+           strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+           thefile4.writebuffer(aline,80);{write updated header from memo1}
+         end
+         else
+         thefile4.writebuffer(empthy_line,80);{write empthy line}
+         inc(i);
+      until ((i>=mainform1.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+    finally
+      TheFile4.free;
+    end;
   except
+    memo2_message('Error writing!');
   end;
 end;
 

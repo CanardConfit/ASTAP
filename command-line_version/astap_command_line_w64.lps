@@ -29,12 +29,7 @@
         <Loaded Value="True"/>
       </Unit2>
     </Units>
-    <JumpHistory Count="1">
-      <Position1>
-        <Filename Value="astap_command_line.lpr"/>
-        <Caret Line="7" Column="14"/>
-      </Position1>
-    </JumpHistory>
+    <JumpHistory HistoryIndex="-1"/>
     <RunParams>
       <FormatVersion Value="2"/>
       <Modes ActiveMode=""/>

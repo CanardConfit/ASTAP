@@ -37,7 +37,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.07.17';
+  astap_version: string='2026.07.30';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -217,12 +217,12 @@ var
   f   :  textfile;
 begin
   assignfile(f,logf);
+  if fileexists(logf)=false then rewrite(f) else append(f);
+  if IOResult<>0 then exit; {the file was never opened, so there is nothing to close}
   try
-   if fileexists(logf)=false then rewrite(f) else append(f);
-   writeln(f,mess);
-
+    writeln(f,mess);
   finally
-    closefile(f);
+    closefile(f); {only reached when the file is really open}
   end;
 end;
 
@@ -409,6 +409,7 @@ begin
 end;
 
 
+
 procedure write_astronomy_wcs(filen:string);
 var
   TheFile4 : tfilestream;
@@ -418,8 +419,8 @@ var
 
 begin
   try
-   TheFile4:=tfilestream.Create(ChangeFileExt(filen,'.wcs'), fmcreate );
-
+    TheFile4:=tfilestream.Create(ChangeFileExt(filen,'.wcs'), fmcreate );
+    try
   {write memo1 header to file}
    for i:=0 to 79 do empthy_line[i]:=#32;{space}
    i:=0;
@@ -435,149 +436,177 @@ begin
       thefile4.writebuffer(empthy_line,80);{write empthy line}
       inc(i);
    until ((i>=memo1.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
-
+    finally
+      TheFile4.free; {always, also when the write failed}
+    end;
   except
-    TheFile4.free;
-    exit;
+    memo2_message('Error writing '+ChangeFileExt(filen,'.wcs')+'!');
   end;
-  TheFile4.free;
 end;
 
 
 procedure write_ini(filen:string; solution:boolean);{write solution to ini file}
 var
-   f: text;
+   s, ini_name : string;
+   fs          : TFileStream;
 begin
-  assignfile(f,ChangeFileExt(filen,'.ini'));
-  rewrite(f);
+  ini_name:=ChangeFileExt(filen,'.ini');
+  flush(output); {Required in Linux and Mac. Otherwise the ini writes mix with writeln('   ') in redirected output}
+
   if solution then
   begin
-    flush(output); {Required in Linux and Mac. Otherwise writeln(f,'  ') mixes with writeln('   ') in redirected output}
-    writeln(f,'PLTSOLVD=T');
-    writeln(f,'CRPIX1='+floattostrE(head.crpix1));// X of reference pixel
-    writeln(f,'CRPIX2='+floattostrE(head.crpix2));// Y of reference pixel
-
-    writeln(f,'CRVAL1='+floattostrE(head.ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
-    writeln(f,'CRVAL2='+floattostrE(head.dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
-    writeln(f,'CDELT1='+floattostrE(head.cdelt1));     // X pixel size [deg]
-    writeln(f,'CDELT2='+floattostrE(head.cdelt2));     // Y pixel size [deg]
-    writeln(f,'CROTA1='+floattostrE(head.crota1));    // Image twist of X axis [deg]
-    writeln(f,'CROTA2='+floattostrE(head.crota2));    // Image twist of Y axis [deg]
-    writeln(f,'CD1_1='+floattostrE(head.cd1_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD1_2='+floattostrE(head.cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_1='+floattostrE(head.cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_2='+floattostrE(head.cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
+    s:='PLTSOLVD=T'+LineEnding
+      +'CRPIX1='+floattostrE(head.crpix1)+LineEnding                 // X of reference pixel
+      +'CRPIX2='+floattostrE(head.crpix2)+LineEnding                 // Y of reference pixel
+      +'CRVAL1='+floattostrE(head.ra0*180/pi)+LineEnding             // RA (j2000_1) of reference pixel [deg]
+      +'CRVAL2='+floattostrE(head.dec0*180/pi)+LineEnding            // DEC (j2000_1) of reference pixel [deg]
+      +'CDELT1='+floattostrE(head.cdelt1)+LineEnding                 // X pixel size [deg]
+      +'CDELT2='+floattostrE(head.cdelt2)+LineEnding                 // Y pixel size [deg]
+      +'CROTA1='+floattostrE(head.crota1)+LineEnding                 // Image twist of X axis [deg]
+      +'CROTA2='+floattostrE(head.crota2)+LineEnding                 // Image twist of Y axis [deg]
+      +'CD1_1='+floattostrE(head.cd1_1)+LineEnding                   // CD matrix to convert (x,y) to (Ra, Dec)
+      +'CD1_2='+floattostrE(head.cd1_2)+LineEnding                   // CD matrix to convert (x,y) to (Ra, Dec)
+      +'CD2_1='+floattostrE(head.cd2_1)+LineEnding                   // CD matrix to convert (x,y) to (Ra, Dec)
+      +'CD2_2='+floattostrE(head.cd2_2)+LineEnding;                  // CD matrix to convert (x,y) to (Ra, Dec)
   end
   else
-  begin
-    flush(output); {Required in Linux and Mac. Otherwise writeln(f,'  ') mixes with writeln('   ') in redirected output}
-    writeln(f,'');
-    writeln(f,'PLTSOLVD=F');
-  end;
-  writeln(f,'CMDLINE='+cmdline);{write the original commmand line}
+    s:=LineEnding+'PLTSOLVD=F'+LineEnding; {the empthy first line is kept for compatibility with the old version}
+
+  s:=s+'CMDLINE='+cmdline+LineEnding;{write the original commmand line}
 
   Case errorlevel of
-             2: writeln(f,'ERROR=Not enough stars.');
-            16: writeln(f,'ERROR=Error reading image file.');
-            32: writeln(f,'ERROR=No star database found.');
-            33: writeln(f,'ERROR=Error reading star database.');
+             2: s:=s+'ERROR=Not enough stars.'+LineEnding;
+            16: s:=s+'ERROR=Error reading image file.'+LineEnding;
+            32: s:=s+'ERROR=No star database found.'+LineEnding;
+            33: s:=s+'ERROR=Error reading star database.'+LineEnding;
   end;
-  if warning_str<>'' then writeln(f,'WARNING='+warning_str);
-  closefile(f);
+  if warning_str<>'' then s:=s+'WARNING='+warning_str+LineEnding;
+
+  {single write. Either the file is complete or it is not created at all, so a
+   caller polling the ini can never pick up a half written solution}
+  try
+    fs:=TFileStream.Create(ini_name, fmCreate);
+    try
+      fs.WriteBuffer(s[1],length(s));
+    finally
+      fs.Free;
+    end;
+  except
+    memo2_message('Error writing '+ini_name+'!');
+  end;
 end;
 
 
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 var
-  fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
-  TheFile  : tfilestream;
-  reader_position,I,readsize,bufsize : integer;
-  TheFile_new : tfilestream;
-  fract       : double;
-  line0       : ansistring;
-  aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
-  header    : array[0..2880] of ansichar;
-  endfound  : boolean;
-  filename_tmp: string;
-
-     procedure close_fits_files;
-     begin
-        Reader.free;
-        TheFile.free;
-        TheFile_new.free;
-     end;
+ fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
+ TheFile  : tfilestream;
+ TheReader: TReader; {local. Do NOT use the global Reader, it is owned by load_fits}
+ reader_position,I,readsize,bufsize,blockcount : integer;
+ TheFile_new : tfilestream;
+ fract       : double;
+ line0       : ansistring;
+ aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
+ header    : array[0..2880] of ansichar;
+ endfound  : boolean;
+ written_ok: boolean;
+ filename_tmp: string;
 begin
-  result:=false;{assume failure}
-  filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
+ result:=false;{assume failure}
+ written_ok:=false;
+ filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
+
+ {nil first. Local class references are not zero initialised by FPC and Free on nil is safe,
+  so the finally block below is valid no matter where an exception occurs}
+ TheFile_new:=nil;
+ TheFile:=nil;
+ TheReader:=nil;
+
+ try
   try
-    TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
-    TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
-    Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
+   TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
+   TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
+   TheReader := TReader.Create (TheFile,$60000);// 393216 byte buffer
 
-    {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
-    I:=0;
-    reader_position:=0;
-    repeat
-      reader.read(header[i],80); {read file info, 80 bytes only}
-      inc(reader_position,80);
-      endfound:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));
-    until ((endfound) or (I>=sizeof(header)-16 ));
-    if endfound=false then
-    begin
-      close_fits_files;
-      beep;
-      memo2_message('Abort, error reading source FITS file!!');
-      exit;
-    end;
+   {find the END keyword of the source header. The header content itself comes from memo1,
+    so reading into header[0] each time is sufficient, only the position matters}
+   I:=0;
+   blockcount:=0;
+   reader_position:=0;
+   repeat
+     TheReader.read(header[0],80); {read file info, 80 bytes only}
+     inc(reader_position,80);
+     inc(blockcount);
+     endfound:=((header[0]='E') and (header[1]='N')  and (header[2]='D') and (header[3]=' '));
+   until ((endfound) or (blockcount*80>=TheFile.size)); {bounded, do not rely on an EOF exception to break out}
 
-    fract:=frac(reader_position/2880);
+   if endfound=false then
+   begin
+     beep;
+     memo2_message('Abort, error reading source FITS file!!');
+     exit; {the finally block below closes everything}
+   end;
 
-    if fract<>0 then
-    begin
-      i:=round((1-fract)*2880);{left part of next 2880 bytes block}
-      reader.read(header[0],i); {skip empty part and go to image data}
-      inc(reader_position,i);
-    end;
-    {reader is now at begin of image data}
+   fract:=frac(reader_position/2880);
 
-    {write updated header}
-    for i:=0 to 79 do empthy_line[i]:=#32;{space}
-    i:=0;
-    repeat
-       if i<memo1.count then
-       begin
-         line0:=memo1.strings[i];
-         while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
-         strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-         thefile_new.writebuffer(aline,80);{write updated header from memo1.}
-       end
-       else
-       begin
-          thefile_new.writebuffer(empthy_line,80);{write empthy line}
-       end;
-       inc(i);
-    until ((i>=memo1.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+   if fract<>0 then
+   begin
+     i:=round((1-fract)*2880);{left part of next 2880 bytes block}
+     TheReader.read(header[0],i); {skip empty part and go to image data}
+     inc(reader_position,i);
+   end;
+   {reader is now at begin of image data}
 
-    bufsize:=sizeof(fitsbuffer);
-    repeat
-       readsize:=min(bufsize,TheFile.size-reader_position);{read flexible in buffersize and not in fixed steps of 2880 bytes. Note some file are not following the FITS standard of blocksize of 2880 bytes causing problem if fixed 2880 bytes are used}
-       reader.read(fitsbuffer,readsize);
-       inc(reader_position,readsize);
-       thefile_new.writebuffer(fitsbuffer,readsize); {write buffer}
-     until (reader_position>=TheFile.size);
+   {write updated header}
+   for i:=0 to 79 do empthy_line[i]:=#32;{space}
+   i:=0;
+   repeat
+      if i<memo1.count then
+      begin
+        line0:=memo1.strings[i];
+        while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+        thefile_new.writebuffer(aline,80);{write updated header from memo1.}
+      end
+      else
+      begin
+         thefile_new.writebuffer(empthy_line,80);{write empthy line}
+      end;
+      inc(i);
+   until ((i>=memo1.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
-    Reader.free;
-    TheFile.free;
-    TheFile_new.free;
+   bufsize:=sizeof(fitsbuffer);
+   repeat
+      readsize:=min(bufsize,TheFile.size-reader_position);{read flexible in buffersize and not in fixed steps of 2880 bytes. Note some file are not following the FITS standard of blocksize of 2880 bytes causing problem if fixed 2880 bytes are used}
+      if readsize<=0 then break; {nothing left, prevents an endless loop on a truncated file}
+      TheReader.read(fitsbuffer,readsize);
+      inc(reader_position,readsize);
+      thefile_new.writebuffer(fitsbuffer,readsize); {write buffer}
+    until (reader_position>=TheFile.size);
 
-    if deletefile(filen2) then
-      result:=renamefile(filename_tmp,filen2);
+   written_ok:=true; {only set after the last writebuffer succeeded}
   except
-    close_fits_files;
     beep;
-    exit;
+    memo2_message('Abort, error updating FITS header!');
+    {written_ok stays false, the temporary file is removed below}
   end;
+ finally
+   {runs on every path: success, early exit and exception}
+   TheReader.free;
+   TheFile.free;
+   TheFile_new.free; {closes and flushes the temporary file. Must happen before the rename}
+ end;
+
+ if written_ok then
+ begin
+   if deletefile(filen2) then
+     result:=renamefile(filename_tmp,filen2);
+ end;
+
+ if result=false then
+   deletefile(filename_tmp); {do not leave a stray .tmp next to the image files}
 end;
+
 
 
 function save_fits16bit(img: Timage_array;filen2:ansistring): boolean;{save to 16 fits file}
@@ -600,11 +629,8 @@ begin
   filename2:=filen2;
 
   try
-   TheFile4:=tfilestream.Create(filen2, fmcreate );
-  except
-   TheFile4.free;
-   exit;
-  end;
+    TheFile4:=tfilestream.Create(filen2, fmcreate );
+    try
 
   {update FITs header}
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,16); {16 bit}
@@ -668,8 +694,13 @@ begin
     thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
   end;
 
-  TheFile4.free;
-  result:=true;
+      result:=true; {only after the last writebuffer succeeded}
+    finally
+      TheFile4.free; {always, also when the write failed}
+    end;
+  except
+    memo2_message('Error writing '+filen2+'!');
+  end;
 end;
 
 
@@ -1862,478 +1893,6 @@ begin
 end;
 
 
-function load_fitsOLD(filen:string; const memo1 : tstrings; out head: Theader; out img_loaded2: Timage_array): boolean;{load fits file}
-var
-  fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
-  fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
-  fitsbufferRGB: array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
-  fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
-  fitsbuffer8: array[0..trunc(bufwide/8)] of int64 absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
-  TheFile  : tfilestream;
-  header    : array[0..2880] of ansichar;
-  i,j,k,naxis1{,head.width}{,head.height}, reader_position,validate_double_error{,head.naxis,head.naxis3 }  : integer;
-  tempval                                                                           : double;
-  col_float,bscale,measured_max,scalefactor  : single;
-  bzero                       : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
-  aline                       : ansistring;
-  rgbdummy           : byteX3;
-
-  word16             : word;   {for 16 signed integer}
-  int_16             : smallint absolute word16;{for 16 signed integer}
-
-  x_longword  : longword;
-  x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
-  int_32      : integer absolute x_longword;{for 32 bit signed integer}
-
-  x_qword     : qword;
-  x_double    : double absolute x_qword;{for conversion 64 bit "big-endian" data}
-  int_64      : int64 absolute x_qword;{for 64 bit signed integer}
-
-  simple,image,error1 : boolean;
-const
-  end_record : boolean=false;
-
-     procedure close_fits_file; inline;
-     begin
-        Reader.free;
-        TheFile.free;
-     end;
-
-     function validate_double:double;{read floating point or integer values}
-     var t : string[21];
-         r : integer;
-     begin
-       t:='';
-       r:=I+10;{position 11 equals 10}
-       while ((header[r]<>'/') and (r<=I+30) {pos 31}) do {'/' check is strictly not necessary but safer. Read up to position 31 so one more then fits standard since CFITSIO could write for minus values up to position 31. A violation of FITS standard 4}
-       begin  {read 20 characters max, position 11 to 31 in string, position 10 to 30 in pchar}
-         if header[r]<>' ' then t:=t+header[r];
-         inc(r);
-       end;
-       val(t,result,validate_double_error);
-     end;
-
-
-     Function get_string:string;{read string values}
-     var  r: integer;
-     begin
-       result:='';
-       r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
-       while ((header[r]<>#39){last quote} and (r<I+79)) do {read string up to position 79 equals 78. The while instruction guarantees reading emphty strings with length zero correctly}
-       begin
-         result:=result+header[r];
-         inc(r);
-       end;
-     end;
-
-begin
-  {some house keeping}
-  result:=false; {assume failure}
-  simple:=false;
-  {house keeping done}
-
-  try
-    TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
-  except
-    beep;
-    writeln('Error, accessing the file!');
-    exit;
-  end;
-  fits_file:=false; {assume failure}
-
-  memo1.clear;{clear memo for new header}
-
-  Reader := TReader.Create (TheFile,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
-
-  {Reset variables for case they are not specified in the file}
-  reset_header_variables; {reset the global variable}
-  head.naxis:=0;//number of dimensions, normally 2, colour 3
-  head.naxis3:=1;//number of colours
-
-  bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
-  bscale:=1;
-  naxis1:=0;
-  measured_max:=0;
-
-  reader_position:=0;
-  repeat {header, 2880 bytes loop}
-
-    I:=0;
-    try
-      reader.read(header[I],2880);{read file header, 2880 bytes}
-      inc(reader_position,2880);   {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
-      if ((reader_position=2880) and (header[0]='S') and (header[1]='I')  and (header[2]='M') and (header[3]='P') and (header[4]='L') and (header[5]='E') and (header[6]=' ')) then
-      begin
-        simple:=true;
-        image:=true;
-      end;
-      if simple=false then
-      begin
-        close_fits_file;
-        beep;
-        writeln('Error, accessing the file!');
-        fits_file:=false;
-        exit;
-      end; {should start with SIMPLE  =,  MaximDL compressed files start with SIMPLE‚=”}
-    except;
-      close_fits_file;
-      beep;
-      writeln('Error, accessing the file!');
-      fits_file:=false;
-      exit;
-    end;
-
-    repeat  {loop for 80 bytes in 2880 block}
-      SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
-      memo1.add(aline); {add line to memo}
-      if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {head.naxis}
-      begin
-        if (header[i+5]=' ') then
-            head.naxis:=round(validate_double)
-        else    {head.naxis number of colors}
-        if (header[i+5]='1') then begin naxis1:=round(validate_double);head.width:=naxis1; end else {NAXIS1 pixels}
-        if (header[i+5]='2') then head.height:=round(validate_double) else   {NAXIS2 pixels}
-        if (header[i+5]='3') then
-        begin
-           head.naxis3:=round(validate_double); {head.naxis3 number of colors}
-           if ((head.naxis=3) and (naxis1=3)) {naxis1} then  {type head.naxis = 3 / Number of dimensions
-                                     NAXIS1 = 3 / Number of Colors
-                                     NAXIS2 = 382 / Row length
-                                     head.naxis3 = 255 / Number of rows}
-                      begin   {RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-                        head.width:=head.height;
-                        head.height:=head.naxis3;
-                        head.naxis3:=1;
-                      end;
-           if head.naxis3>3  then {panic, more then three colours. Program https://github.com/cbassa/stvid is storing the mean, st, max and argmax values of each pixel respectively from multiple files }
-           begin
-             head.naxis3:=1; {display only the first colour}
-             memo2_message('Warning more then three colours. Will use only the first one.');
-           end;
-
-         end;
-      end;
-
-
-      if image then {image specific header}
-      begin {read image header}
-        if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
-          head.bitpix:=round(validate_double);{head.bitpix, read integer using double routine}
-
-        if (header[i]='B') then
-        begin
-          if ( (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
-          begin
-            tempval:=validate_double;
-            if tempval>2147483647 then
-            bzero:=-2147483648
-            else
-            bzero:=round(tempval); {Maxim DL writes BZERO value -2147483647 as +2147483648 !! }
-           {without this it would have worked also with error check off}
-         end
-         else
-         if ( (header[i+1]='S')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') ) then
-          begin
-             bscale:=validate_double; {rarely used. Normally 1}
-          end;
-        end;
-
-        if header[i]='C' then
-        begin
-          if ((header[i+1]='D')) then
-          begin
-             if ((header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {head.cdelt1}
-             begin
-               if header[i+5]='1' then head.cdelt1:=validate_double else{deg/pixel for RA}
-               if header[i+5]='2' then head.cdelt2:=validate_double;    {deg/pixel for DEC}
-             end
-             else
-             begin
-               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd1_1:=validate_double;
-               if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd1_2:=validate_double;
-               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd2_1:=validate_double;
-               if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd2_2:=validate_double;
-             end;
-          end;
-          if ((header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
-          begin
-            if (header[i+5]='1') then  head.ra0:=validate_double*pi/180; {ra center, read double value}
-            if (header[i+5]='2') then  head.dec0:=validate_double*pi/180; {dec center, read double value}
-          end;
-        end;//C
-
-        if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpix1/2}
-             ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
-             ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
-        begin
-          if head.cdelt2=0 then
-              begin head.cdelt2:=validate_double/3600; {deg/pixel for RA} head.cdelt1:=head.cdelt2; end; {no head.cdelt1/2 found yet, use alternative}
-        end;
-
-        if ((header[i]='E') and (header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
-             equinox:=validate_double;
-
-
-       if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
-            focallen:=validate_double;{Focal length of telescope in mm, maxim DL keyword}
-
-
-
-        if ((header[i]='D') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]=' ')) then {dec}
-        begin
-          tempval:=validate_double*pi/180;
-          if validate_double_error=0 then //not a string value behind keyword DEC
-          begin
-            dec_mount:=tempval;
-            if head.dec0=0 then head.dec0:=tempval; {dec telescope, read double value only if crval is not available}
-          end
-          else
-           dec1:=get_string;
-        end;
-
-        if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J')) then
-        begin
-          if  ((header[i+3]='C') and (header[i+4]='T')) then {objctra, objctdec}
-          begin
-            if ((header[i+5]='R') and (header[i+6]='A') and (ra_mount>=999) {ra_mount value is unfilled, preference for keyword RA}) then
-            begin
-              ra1:=get_string;
-            end
-            else
-            if ((header[i+5]='D') and (header[i+6]='E') and (dec_mount>=999){dec_mount value is unfilled, preference for keyword DEC}) then
-            begin
-              dec1:=get_string;
-            end;
-          end;
-        end;
-
-        if ((header[i]='R') and (header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
-        begin
-          tempval:=validate_double*pi/180;
-          if validate_double_error=0 then //not a string value behind keyword RA
-          begin
-            ra_mount:=tempval;
-            if head.ra0=0 then head.ra0:=tempval; {ra telescope, read double value only if crval1 is not available}
-          end
-          else
-            ra1:=get_string;
-        end;
-
-
-        if header[i]='X' then
-        begin
-        if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {head.xpixsz}
-               head.xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
-        if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 head.Xbinning:=round(validate_double);{binning}
-        end;//X
-
-        if header[i]='Y' then
-        begin
-          if ((header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {head.xpixsz}
-               head.ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
-          if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-               head.Ybinning:=round(validate_double);{binning}
-        end;//Y
-
-      end; {image header}
-
-      end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));{end of header. Note keyword ENDIAN exist, so test space behind END}
-      inc(i,80);{go to next 80 bytes record}
-
-    until ((i>=2880) or (end_record)); {loop for 80 bytes in 2880 block}
-  until end_record; {header, 2880 bytes loop}
-
-
-  if head.naxis<2 then
-  begin
-    result:=false; {no image}
-    fits_file:=false;
-    image:=false;
-  end;
-
-
-  if image then {read image data #########################################}
-  begin
-    if ((head.naxis=3) and (naxis1=3)) then
-    begin
-       head.bitpix:=24; {threat RGB fits as 2 dimensional with 24 bits data}
-       head.naxis3:=3; {will be converted while reading}
-    end;
-
-    if ((head.ra0<>0) or (head.dec0<>0)) then
-    begin
-      if equinox<>2000 then //e.g. in SharpCap
-      begin
-        precession_Jnow_to_J2000(equinox,head.ra0,head.dec0); {precession, from unknown equinox to J2000}
-        if dec_mount<999 then precession_Jnow_to_J2000(equinox,ra_mount,dec_mount); {precession, from unknown equinox to J2000}
-      end;
-      ra1:=prepare_ra(head.ra0,' ');
-      dec1:=prepare_dec(head.dec0,' ');
-    end
-    else
-    if ra1<>'' then
-    begin
-      ra_text_to_radians ( ra1 ,head.ra0,error1); {convert ra text to head.ra0 in radians}
-      dec_text_to_radians( dec1,head.dec0,error1); {convert dec text to dec0 in radians}
-    end;
-
-    if head.cdelt2=0 then {simple code for astap-cli only}
-    begin
-      if head.cd1_1=0 then  {no scale, try to fix it}
-      begin
-       if ((focallen<>0) and (head.xpixsz<>0)) then
-          head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
-      end
-      else
-      head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));
-    end;
-
-    {############################## read image}
-    i:=round(bufwide/(abs(head.bitpix/8)));{check if buffer is wide enough for one image line}
-    if head.width>i then
-    begin
-      beep;
-      memo2_message('Too wide FITS file !!!!!');
-      close_fits_file;
-      exit;
-    end;
-
-    try
-      setlength(img_loaded2,head.naxis3,head.height,head.width);
-    except
-      memo2_message('Abort, not enough memory!');
-      warning_str:='Not enough memory!'; //for command line usage
-      exit;
-    end;
-
-    if head.bitpix=16 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width*2);except; end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
-          col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
-          img_loaded2[k,j,i]:=col_float;
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors head.naxis3 times}
-    else
-    if head.bitpix=-32 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width*4);except; end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-          col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
-          if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
-          img_loaded2[k,j,i]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors head.naxis3 times}
-    else
-    if head.bitpix=8 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width);except; end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          img_loaded2[k,j,i]:=(fitsbuffer[i]*bscale + bzero);
-        end;
-      end;
-    end {colors head.naxis3 times}
-    else
-    if head.bitpix=24 then
-    For j:=0 to head.height-1 do
-    begin
-      try reader.read(fitsbuffer,head.width*3);except; end; {read file info}
-      for i:=0 to head.width-1 do
-      begin
-        rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-        img_loaded2[0,j,i]:=rgbdummy[0];{store in memory array}
-        img_loaded2[1,j,i]:=rgbdummy[1];{store in memory array}
-        img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
-      end;
-    end
-    else
-    if head.bitpix=+32 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width*4);except; end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          col_float:=int32(swapendian(fitsbuffer4[i]))*bscale+bzero;{max range  -2,147,483,648 ...2,147,483,647 or -$8000 0000 .. $7FFF FFFF.  Scale later to 0..65535}
-          {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-          img_loaded2[k,j,i]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors head.naxis3 times}
-    else
-    if head.bitpix=-64 then
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      For j:=0 to head.height-1 do
-      begin
-        try reader.read(fitsbuffer,head.width*8);except; end; {read file info}
-        for i:=0 to head.width-1 do
-        begin
-          x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-          col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
-          img_loaded2[k,j,i]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end; {colors head.naxis3 times}
-
-    {rescale if required}
-    if ((head.bitpix<=-32){-32 or -64} or (head.bitpix=+32)) then
-    begin
-      scalefactor:=1;
-      if ((measured_max<=1.01) or (measured_max>65535)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
-                                                                                              {or if values are above 65535}
-      if scalefactor<>1 then {not a 0..65535 range, rescale}
-      begin
-        for k:=0 to head.naxis3-1 do {do all colors}
-          for j:=0 to head.height-1 do
-            for i:=0 to head.width-1 do
-              img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
-        head.datamax_org:=65535;
-      end
-      else  head.datamax_org:=measured_max;
-
-    end
-    else
-    if head.bitpix=8 then head.datamax_org:=255 {not measured}
-    else
-    if head.bitpix=24 then
-    begin
-      head.datamax_org:=255;
-      head.bitpix:=8; {already converted to array with separate colour sections}
-    end
-    else {16 bit}
-    head.datamax_org:=measured_max;{most common. It set for head.bitpix=24 in beginning at 255}
-
-    result:=true;
-    fits_file:=true;{succes}
-    reader_position:=reader_position+head.width*head.height*(abs(head.bitpix) div 8)
-  end;{image block}
-
-  close_fits_file;
-end;
-
 
 function fnmodulo (x,range: double):double;
 begin
@@ -3004,10 +2563,15 @@ end;
 function FileSize1(const Filename: string): int64;
 var F : file of byte;
 begin
- assign (F, Filename);
- reset (F);
- result := System.FileSize(F);
- close (F);
+  result:=0;
+  assign (F, Filename);
+  reset (F);// i/o check should be off
+  if IOResult<>0 then exit;
+  try
+    result := System.FileSize(F);
+  finally
+    close (F);
+  end;
 end;
 
 
