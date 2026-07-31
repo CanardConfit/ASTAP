@@ -19,30 +19,55 @@ uses
 function write_yuv4mpeg2_header(filen, framerate: string; colour : boolean; w,h: integer): boolean;{open/create file. Result is false if failure}
 function write_yuv4mpeg2_frame(colour: boolean; x,y,w,h: integer): boolean; {reads pixels from Timage and writes YUV frames in 444p style, colour or mono. Call this procedure for each image. Result is false if failure}
 procedure close_yuv4mpeg2; {close file}
+function yuv4mpeg2_write_error: boolean;{true if anything went wrong between the header and close_yuv4mpeg2}
 
 implementation
 
 uses astap_main;
 var
-  theFile : tfilestream;
+  theFile : tfilestream=nil; {nil when no file is open. Never leave a dangling pointer in here}
+  yuv_failure : boolean=false;{sticky error flag for the whole header..frames..close sequence}
+
+
+procedure close_yuv_file;{close the file if one is open. Safe to call at any time, also twice}
+begin
+  FreeAndNil(TheFile);{Free on nil is allowed. Setting to nil afterwards prevents a double free on the next export}
+end;
+
+
+function yuv4mpeg2_write_error: boolean;{true if anything went wrong between the header and close_yuv4mpeg2}
+begin
+  result:=yuv_failure;
+end;
 
 function write_yuv4mpeg2_header(filen, framerate: string; colour : boolean; w, h {size}: integer): boolean;{open/create file. Result is false if failure}
 var
-  header: array[0..41] of ansichar;
+  header: ansistring;{was a fixed array[0..41] which is too small for a Cmono header or a wide image}
 begin
   result:=false;
+  yuv_failure:=false;{start of a new video}
+  close_yuv_file;{in case an earlier export was aborted without reaching close_yuv4mpeg2}
+
+  {'YUV4MPEG2 W0384 H0288 F01:1 Ip A0:0 C444'+#10}    {See https://wiki.multimedia.cx/index.php/YUV4MPEG2}
+  if colour then header:='YUV4MPEG2 W'+inttostr(w)+' H'+inttostr(h)+' F'+trim(framerate)+':1 Ip A0:0 C444'+#10
+            else header:='YUV4MPEG2 W'+inttostr(w)+' H'+inttostr(h)+' F'+trim(framerate)+':1 Ip A0:0 Cmono'+#10;{width, height,frame rate, interlace progressive, unknown aspect, color space}
 
   try
    TheFile:=tfilestream.Create(filen, fmcreate );
   except
-   TheFile.free;
+   TheFile:=nil;{the assignment above never happened. Do NOT call Free on it}
+   yuv_failure:=true;
    exit;
   end;
-  {'YUV4MPEG2 W0384 H0288 F01:1 Ip A0:0 C444'+#10}    {See https://wiki.multimedia.cx/index.php/YUV4MPEG2}
-  if colour then header:=pansichar('YUV4MPEG2 W'+inttostr(w)+' H'+inttostr(h)+' F'+trim(framerate)+':1 Ip A0:0 C444'+#10)
-            else header:=pansichar('YUV4MPEG2 W'+inttostr(w)+' H'+inttostr(h)+' F'+trim(framerate)+':1 Ip A0:0 Cmono'+#10);{width, height,frame rate, interlace progressive, unknown aspect, color space}
+
   { Write header }
-  thefile.writebuffer ( header, strlen(Header));
+  try
+    thefile.writebuffer(header[1],length(header));{length in bytes, no #0 terminator involved}
+  except
+    yuv_failure:=true;
+    close_yuv_file;{disk full or write protected. Do not leave the handle open}
+    exit;
+  end;
   result:=true;
 end;
 
@@ -56,9 +81,11 @@ const
   header: array[0..5] of ansichar=(('F'),('R'),('A'),('M'),('E'),(#10));
 
 begin
-  result:=true;
+  result:=false;
+  if TheFile=nil then exit;{no file open. write_yuv4mpeg2_header failed, or was never called}
+
   try
-    thefile.writebuffer ( header, strlen(header)); {write FRAME+#10}
+    thefile.writebuffer(header,sizeof(header)); {write FRAME+#10. sizeof, not strlen: the const has no #0 terminator}
 
     setlength(row, w {width});
 
@@ -115,10 +142,10 @@ begin
       end;
       thefile.writebuffer(row[0],length(row));
     end;
+    result:=true;
   except
-    result:=false;
-    row:=nil;
-    exit;
+    yuv_failure:=true;
+    close_yuv_file;{the video is beyond repair, stop writing. close_yuv4mpeg2 will do nothing}
   end;
   row:=nil;
 end;
@@ -126,8 +153,7 @@ end;
 
 procedure close_yuv4mpeg2; {close file}
 begin
-  thefile.free;
+  close_yuv_file;{safe when already closed after an earlier error, or never opened}
 end;
 
 end.
-

@@ -1196,9 +1196,12 @@ begin
               else if p.dither_is_2 and (signed_value = -2147483646) then
                 col_float_rice := 0.0
               else if p.dither_active then
-                col_float_rice := (signed_value - p.dither_table_ptr[dither_next] + 0.5) * tile_scale + tile_zero
+              { double() casts force double-precision reconstruction; without them the
+                single-precision dither table causes catastrophic cancellation for float
+                tiles with a large ZZERO (e.g. Siril SUBTRACTIVE_DITHER_2). }
+                col_float_rice := (double(signed_value) - double(p.dither_table_ptr[dither_next]) + 0.5) * tile_scale + tile_zero
               else
-                col_float_rice := signed_value * tile_scale + tile_zero;
+                col_float_rice := double(signed_value) * tile_scale + tile_zero;
               if IsNan(col_float_rice) or IsInfinite(col_float_rice) then col_float_rice := 0;
             end
             else

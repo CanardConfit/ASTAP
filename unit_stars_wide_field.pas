@@ -32,16 +32,19 @@ var
 begin
   try
     FS := TFileStream.Create(database_path+name_database+'_0101.001',fmOpenRead or fmShareDenyWrite); {read but do not lock file}
-    FS.ReadBuffer(iSize,SizeOf(iSize));
-    SetLength(wide_field_stars,iSize*3);{set length dynamic array}
-    FS.ReadBuffer(wide_field_stars[0],isize*3*sizeof(single){bytes});{this only works with one dimensional arrays}
-  fs.free;
+    try
+      FS.ReadBuffer(iSize,SizeOf(iSize));
+      SetLength(wide_field_stars,iSize*3);{set length dynamic array}
+      FS.ReadBuffer(wide_field_stars[0],isize*3*sizeof(single){bytes});{this only works with one dimensional arrays}
+      wide_database:=name_database;{remember which database is in memory}
+      result:=true;
+    finally
+      FS.free;
+    end;
   except
-    result:=false;
-    exit;
+    wide_field_stars:=nil; {discard a partially read array}
+    wide_database:='';
   end;
-  wide_database:=name_database;{remember which database is in memory}
-  result:=true;
 end;
 
 {
@@ -41320,20 +41323,27 @@ var
   I,iSize : Integer;
 begin
   try
-  FS := TFileStream.Create(database_path+'w08_0101.001', fmCreate);
+    FS := TFileStream.Create(database_path+'w08_0101.001', fmCreate);
   except
     exit;
   end;
   iSize:= Length(star_array);
-  FS.WriteBuffer(iSize,SizeOf(iSize));//store length of array
+  try
+    try
+      FS.WriteBuffer(iSize,SizeOf(iSize));//store length of array
 
-  For I := 0 To iSize - 1 Do //store array
-  begin
-    FS.writebuffer(star_array[i,0],sizeof(single));
-    FS.writebuffer(star_array[i,1],sizeof(single));
-    FS.writebuffer(star_array[i,2],sizeof(single));
+      For I := 0 To iSize - 1 Do //store array
+      begin
+        FS.writebuffer(star_array[i,0],sizeof(single));
+        FS.writebuffer(star_array[i,1],sizeof(single));
+        FS.writebuffer(star_array[i,2],sizeof(single));
+      end;
+    except
+    end;
+  finally
+    FS.Free;
   end;
-  FS.Free;}
+    }
 
 end.
 

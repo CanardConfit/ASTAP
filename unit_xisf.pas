@@ -36,6 +36,8 @@ const
   bufwide=65535*4;{buffer size in bytes. Image dimensions 65535x65535}
 var
   TheFile  : tfilestream;
+  TheReader: TReader; {local. Do NOT use the global Reader, it belongs to load_fits}
+  read_error: boolean;
   i,j,k, reader_position,a,b,c,d,e : integer;
   aline,message1,message_key,message_value,message_comment    : ansistring;
   attachment,start_image  : integer;
@@ -48,13 +50,6 @@ var
   fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferSingle: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
-
-     procedure close_fits_file; inline;
-     begin
-        Reader.free;
-        TheFile.free;
-        result:=false;
-     end;
 
      function extract_string_keyword(keyword:string):string;{extract string value from XML header}
      begin {I don't like xml, apply simple & primitive method}
@@ -92,6 +87,13 @@ begin
   memo.beginupdate;
   memo.clear;{clear memo for new header}
 
+  {Free on nil is safe, so the finally block at the end of this function is valid
+   no matter where an exception or an exit occurs below}
+  TheFile:=nil;
+  TheReader:=nil;
+
+  try {..finally TheReader.free; TheFile.free; memo.endupdate; end}
+
   try
     TheFile:=tfilestream.Create( filen, fmOpenRead );
   except
@@ -107,28 +109,35 @@ begin
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
 
   setlength(header2,16);
-  Reader := TReader.Create(TheFile,$60000);// 393216 byte buffer
+  TheReader := TReader.Create(TheFile,$60000);// 393216 byte buffer
   {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   reader_position:=0;
   try
-    reader.read(header2[0],16);{read XISF signature}
+    TheReader.read(header2[0],16);{read XISF signature}
   except;
-    close_fits_file;
     mainform1.error_label1.caption:='Error';
     mainform1.statusbar1.panels[5].text:='Error';
     mainform1.error_label1.caption:=('Error, accessing the file!');
     mainform1.error_label1.visible:=true;
+    head.naxis:=0;{failure}
     exit;
   end;
   mainform1.error_label1.visible:=false;
   inc(reader_position,16);
   if ((header2[0]='X') and (header2[1]='I')  and (header2[2]='S') and (header2[3]='F') and (header2[4]='0') and (header2[5]='1') and (header2[6]='0') and (header2[7]='0'))=false then
-        begin close_fits_file;mainform1.error_label1.visible:=true; mainform1.statusbar1.panels[5].text:=('Error loading XISF file!! Keyword XSIF100 not found.'); exit; end;
+        begin mainform1.error_label1.visible:=true; mainform1.statusbar1.panels[5].text:=('Error loading XISF file!! Keyword XSIF100 not found.'); head.naxis:=0;{failure} exit; end;
   header_length:=ord(header2[8])+(ord(header2[9]) shl 8) + (ord(header2[10]) shl 16)+(ord(header2[11]) shl 24); {signature length}
 
   setlength(header2,header_length);{could be very large}
-  reader.read(header2[0],header_length);{read XISF header}
+  try
+    TheReader.read(header2[0],header_length);{read XISF header}
+  except
+    mainform1.error_label1.caption:=('Error, XISF header is truncated!');
+    mainform1.error_label1.visible:=true;
+    head.naxis:=0;{failure}
+    exit;
+  end;
   inc(reader_position,header_length);
 
   {some sample image defintions from the XISF header}
@@ -142,7 +151,7 @@ begin
   SetString(aline, Pansichar(@header2[0]),header_length);{convert header to string starting <Image}
   start_image:=pos('<Image ',aline);{find range <image..../image>}
 
-  if posex('compression=',aline,start_image)>0 then begin close_fits_file;mainform1.error_label1.caption:='Error, can not read compressed XISF files!!'; mainform1.error_label1.visible:=true; exit; end;
+  if posex('compression=',aline,start_image)>0 then begin mainform1.error_label1.caption:='Error, can not read compressed XISF files!!'; mainform1.error_label1.visible:=true; head.naxis:=0;{failure} exit; end;
 
   a:=posex('geometry=',aline,start_image);
   if a>0 then
@@ -182,7 +191,6 @@ begin
   end;
   if ((a=0) or (error2<>0)) then
   begin
-    close_fits_file;
     mainform1.error_label1.caption:='Error!. Can not read this format, no attachment';
     mainform1.error_label1.visible:=true;
     head.naxis:=0;
@@ -205,10 +213,8 @@ begin
   end;
   if ((a=0) or (error2<>0)) then
   begin
-    close_fits_file;
     mainform1.error_label1.caption:='Can not read this format.';
     mainform1.error_label1.enabled:=true;
-    Memo.endupdate;
     head.naxis:=0;
     exit;
   end;
@@ -381,13 +387,11 @@ begin
   if attachment-reader_position>0 then {header contains zero's}
   repeat
     i:=min(attachment-reader_position,length(header2));
-    try reader.read(header2[0],i);except;close_fits_file; head.naxis:=0;{failure} exit;end; {skip empty part and go to image data}
+    try TheReader.read(header2[0],i);except; head.naxis:=0;{failure} exit;end; {skip empty part and go to image data}
     inc(reader_position,i);
   until reader_position>=attachment;
 
   header2:=nil;{free memory}
-
-  memo.endupdate;
 
   {check if buffer is wide enough for one image line}
   i:=round(bufwide/(abs(head.bitpix/8)));
@@ -396,18 +400,32 @@ begin
     sysutils.beep;
     mainform1.error_label1.caption:='Too wide XISF file !!!!!';
     mainform1.error_label1.visible:=true;
-    close_fits_file;
     head.naxis:=0;{failure}
     exit;
   end
   else
   begin {buffer wide enough, read image data block}
-    setlength(img_loaded2,head.naxis3,head.height,head.width);
+    try
+      setlength(img_loaded2,head.naxis3,head.height,head.width);
+    except
+      sysutils.beep;
+      mainform1.error_label1.caption:='Abort, not enough memory!';
+      mainform1.error_label1.visible:=true;
+      head.naxis:=0;{failure}
+      exit;
+    end;
+
+    read_error:=false;
     for k:=1 to head.naxis3 do {do all colors}
     begin
       For i:=head.height-1 downto 0 do //XISF is top-down
       begin
-        try reader.read(fitsbuffer,head.width*round(abs(head.bitpix/8)));except; head.naxis:=0;{failure} end; {read file info}
+        try
+          TheReader.read(fitsbuffer,head.width*round(abs(head.bitpix/8))); {read file info}
+        except
+          read_error:=true;
+          break; {truncated file. Stop rather then raising an exception for every remaining line}
+        end;
 
         for j:=0 to head.width-1 do
         begin
@@ -427,13 +445,27 @@ begin
             img_loaded2[k-1,i,j]:=fitsbuffer4[j]/65535;{scale to 0..64535 float}
         end;
       end;
+      if read_error then break;
     end; {colors head.naxis3 times}
+
+    if read_error then
+    begin
+      sysutils.beep;
+      mainform1.error_label1.caption:='Error, XISF image data is truncated!';
+      mainform1.error_label1.visible:=true;
+      head.naxis:=0;{failure}
+      exit;
+    end;
   end;
-  close_fits_file;
   unsaved_import:=true;{file is not available for astrometry.net}
   result:=head.naxis<>0;{success};
-end;
 
+  finally
+    TheReader.free;
+    TheFile.free;
+    memo.endupdate; {exactly one endupdate for the beginupdate above, on every exit path}
+  end;
+end;
 
 end.
 

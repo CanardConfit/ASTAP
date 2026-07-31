@@ -50,9 +50,7 @@ begin
 
     {check if free for reading}
     assign(f,filen);
-    {$I-}
-    reset(f); {prepare for reading}
-    {$I+}
+    reset(f); {prepare for reading} // i/o checking should be off
     result:=(IOresult=0); {report if file is accessible}
     if result then close(f);
   end

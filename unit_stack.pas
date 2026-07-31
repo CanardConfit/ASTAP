@@ -1702,9 +1702,10 @@ var
   ra,decl, backgr, noise_level                : double;
   hfd_list:  array of double;
   img_sa  : Timage_array;
-  startext: string;
-var
-  f: textfile;
+  startext, csv_name: string;
+  fs : Tfilestream;
+//var
+//  f: textfile;
 var   {################# initialised variables #########################}
   len: integer = 1000;
 begin
@@ -1811,11 +1812,25 @@ begin
 
   if report_type>0 then
   begin
-    assignfile(f, ChangeFileExt(filename2, '.csv'));
+    csv_name:=ChangeFileExt(filename2, '.csv');
+    try
+      fs:=TFileStream.Create(csv_name, fmCreate);
+      try
+        fs.WriteBuffer(startext[1], length(startext));
+      finally
+        fs.Free;
+      end;
+    except
+      on E: Exception do
+              memo2_message('Error writing '+csv_name+'! '+E.Message);
+    end;
+  end;
+
+{    assignfile(f, ChangeFileExt(filename2, '.csv'));
     rewrite(f);
     writeln(f,startext);
-    closefile(f);
-  end;
+    closefile(f);}
+
 end;
 
 

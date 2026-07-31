@@ -82,9 +82,7 @@ Begin
     filen:= monitor_directory+ {$ifdef mswindows}'\' {$else} {unix} '/' {$endif}+filen;
     {check if free for reading}
     assign(f,filen);
-    {$I-}
-    reset(f); {prepare for reading}
-    {$I+}
+    reset(f); {prepare for reading, in compiler setting i/o error checking should be off}
     result:=(IOresult=0); {report if file is accessible}
     if result then
       close(f);

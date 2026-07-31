@@ -33,20 +33,30 @@ function read_stars_wide_field : boolean;
 var
   FS    : TFileStream;
   iSize : Integer;
+  // For wide field the stars are stored in a single file w08.001 down to magnitude 8. The stars are sorted from bright to faint.
+  // The file starts with a 4 byte integer specifying the number of records=stars and has for the W08 value 41246.
+  // Each star is stored in a record of three singles (4 byte floats). Starting with magnitude [x10] then  RA [radians]  and finally DEC[radians]. First star is Sirius):
 begin
+  result:=false;
   try
     FS := TFileStream.Create(database_path+name_database+'_0101.001',fmOpenRead or fmShareDenyWrite); {read but do not lock file}
-    FS.ReadBuffer(iSize,SizeOf(iSize));
-    SetLength(wide_field_stars,iSize*3);{set length dynamic array}
-    FS.ReadBuffer(wide_field_stars[0],isize*3*sizeof(single){bytes});{this only works with one dimensional arrays}
-  fs.free;
+    try
+      FS.ReadBuffer(iSize,SizeOf(iSize));
+      if (iSize<=0) or (int64(iSize)*3*sizeof(single) > FS.Size-4) then exit; {record count does not match the file size. Result stays false}
+      SetLength(wide_field_stars,iSize*3);{set length dynamic array}
+      FS.ReadBuffer(wide_field_stars[0],isize*3*sizeof(single){bytes});{this only works with one dimensional arrays}
+      wide_database:=name_database;{remember which database is in memory}
+      result:=true;
+    finally
+      FS.free;
+    end;
   except
-    result:=false;
-    exit;
+    wide_field_stars:=nil; {discard a partially read array}
+    wide_database:='';    {result stays false}
   end;
-  wide_database:=name_database;{remember which database is in memory}
-  result:=true;
 end;
+
+
 
 {
 //USED FOR CREATION OF THE WIDE FIELD DATABASE
