@@ -17,7 +17,7 @@ uses
 
 var
   cos_telescope_dec : double;{store here the cos(telescope_dec) value before and read series}
-  database2         : array[0..(11*10)] of ansichar;{info star database, length 110 char equals 10x11 bytes}
+  database_header         : array[0..(11*10)-1] of ansichar;{info star database, length 110 char equals 10x11 bytes}
 
 // telescope_ra, telescope_dec [radians], contains to center position of the field of interest
 // field_diameter [radians], FOV diameter of field of interest. This is ignored in searchmode=T}
@@ -137,7 +137,7 @@ function open_database(telescope_dec: double; area290: integer): boolean; {open 
 {Magnitude: The stars are sorted with an accuracy of 0.1 magnitude. Prior to each group a special record is written where RA is $FFFFFF and DEC contains the magnitude}
 
 type
-  hnskyhdr1476_6 = packed record  {G16 for storing Rp-Bp. This format is the same as 290_5 but Gaia color information added in an extra shortint}
+  hnskyrec1476_6 = packed record  {G16 for storing Rp-Bp. This format is the same as 290_5 but Gaia color information added in an extra shortint}
              ra7 : byte; {The RA is stored as a 3 bytes word. The DEC position is stored as a two's complement (=standard), three bytes integer. The resolution of this three byte storage will be for RA: 360*60*60/((256*256*256)-1) = 0.077 arc seconds. For the DEC value it will be: 90*60*60/((128*256*256)-1) = 0.039 arc seconds.}
              ra8 : byte;
              ra9 : byte;
@@ -145,7 +145,7 @@ type
              dec8: byte;
              B_Vshort: shortint;{colour (B-V) *50}
    end;
-  hnskyhdr1476_5 = packed record  {Most compact format, used for Gaia}
+  hnskyrec1476_5 = packed record  {Most compact format, used for Gaia}
               ra7 : byte;
               ra8 : byte;
               ra9 : byte;
@@ -2122,8 +2122,8 @@ var {################# initialised variables #########################}
 var {################# initialised variables #########################}
    record_size:integer=11;{default}
 var
-  p6        : ^hnskyhdr1476_6;       { pointer to hnsky record }
-  p5        : ^hnskyhdr1476_5;       { pointer to hnsky record }
+  p6        : ^hnskyrec1476_6;       { pointer to hnsky record }
+  p5        : ^hnskyrec1476_5;       { pointer to hnsky record }
   dec9_storage: shortint;
 
   buf2: array[1..11] of byte;  {read buffer stars}
@@ -2841,7 +2841,7 @@ procedure close_star_database;{Close the tfilestream}
 begin
   if file_open then
   begin
-    thefile_stars.free;
+    FreeAndNil(thefile_stars);
     file_open:=false;
   end;
 end;
@@ -2867,18 +2867,19 @@ begin
     try
       thefile_stars:=tfilestream.Create( database_path+namefile, fmOpenRead or fmShareDenyWrite); {read but do not lock file}
     except
+       FreeAndNil(thefile_stars);
        result:=false;
        exit;
     end;
     file_open:=true; {file is open in tfilestream}
 
     cache_valid_pos:=0;{new file name}
-    thefile_stars.read(database2,110); {read header info, 10x11 is 110 bytes}
-    if database2[109]=' ' then record_size:=11 {default}
+    thefile_stars.read(database_header,110); {read header info, 10x11 is 110 bytes}
+    if database_header[109]=' ' then record_size:=11 {default}
     else
-    record_size:=ord(database2[109]);{5,6,7,9,10 or 11 bytes record}
+    record_size:=ord(database_header[109]);{5,6,7,9,10 or 11 bytes record}
 
-    database_version:=ord(database2[108]);
+    database_version:=ord(database_header[108]);
 
     cache_size:=thefile_stars.size-110;
 
@@ -2911,7 +2912,7 @@ end;
 // Bp-Rp, Gaia color information, not used in ASTAP for solving}
 // result [true/false]  if reported true then more stars are available. If false no more stars available.
 // extra outputs:
-//          database2  : array[0..(11*10)] of ansichar;{text info star database used}
+//          database_header  : array[0..(11*10)] of ansichar;{text info star database used}
 // preconditions:
 //   area290 should be set at 290+1 before any read series
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
