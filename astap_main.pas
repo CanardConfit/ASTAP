@@ -21,17 +21,11 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 {open compiler issues:
 
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
-https://gitlab.com/freepascal.org/fpc/source/-/issues/40302
+https://gitlab.com/freepascal.org/fpc/source/-/issues/40302      (min(1,0.999999)
 
 
 GTK3
-fixed: https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42173
-fixed: https://github.com/LongDirtyAnimAlf/fpcupdeluxe/issues/806?reload=1
-fixed  https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42256
-fixed https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42260
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42268
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42269
-
+All fixed
 
 
 fixed https://gitlab.com/freepascal.org/fpc/source/-/issues/41022   allow larger TIFF files
@@ -43,7 +37,7 @@ ScrollCode=scEndScroll does not appears at the end of scroll
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/37454
 
 //MacOS the combobox tekst doesnt change
-https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41800
+fixed https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41800
 
 // https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/41570
 //Adding -WM10.15 to Project Options > Custom Options enables projects to build without the Linker error. However each .o file generates a version mismatch warning
@@ -4806,11 +4800,11 @@ begin
   {$ELSE} {delphi}
   about_message5:='';
   {$ENDIF}
-  if ord(database2[0])<>0 then
+  if ord(database_header[0])<>0 then
     about_message5:=about_message5+
     #13+#10+
     #13+#10+
-    'Active star database:'+copy(database2,1,108)+ {primary star database. Do not display last byte (110) used for record type. Byte 109 is used for maximum magnitude}
+    'Active star database:'+copy(database_header,1,108)+ {primary star database. Do not display last byte (110) used for record type. Byte 109 is used for maximum magnitude}
     #13+#10;
 
   about_message:= 'ASTAP version '+astap_version+', '+arch {about_message4}+

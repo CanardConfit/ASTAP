@@ -9,8 +9,6 @@
         <Filename Value="astap_command_line.lpr"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="52"/>
-        <CursorPos X="35" Y="83"/>
         <UsageCount Value="20"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -22,11 +20,7 @@
       <Unit2>
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="1"/>
-        <TopLine Value="13"/>
-        <CursorPos X="36" Y="40"/>
         <UsageCount Value="20"/>
-        <Loaded Value="True"/>
       </Unit2>
     </Units>
     <JumpHistory HistoryIndex="-1"/>
