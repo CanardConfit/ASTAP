@@ -1874,7 +1874,7 @@ begin
           end;
           if header[i]='E' then
           begin
-            if ((header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
+            if ((header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then //equinox
                  equinox:=validate_double;
             if ((header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
               if pos('T',get_as_string)>0 then last_extension:=false;{could be extensions, will be updated later }
@@ -5560,7 +5560,7 @@ begin
         for i:=0 to height5-1 do
         begin
           for j:=0 to width5-1 do
-            fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,i,j]);{in FITS file hi en low bytes are swapped}
+             fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,i,j]);{in FITS file hi en low bytes are swapped}
           thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
         end;
       end;
@@ -9221,7 +9221,7 @@ begin
     CloseHandle(tmpProcessInformation.hThread);
   end
   else
-    RaiseLastOSError;
+    result:=-1
 end;
 
 {$else} {unix}
@@ -9543,6 +9543,9 @@ begin
 
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
+
+      stackmenu1.use_starnet2_1.Checked:=Sett.ReadBool('stack','starnet',false);
+      dum:=Sett.ReadString('stack','path_starnet',''); if dum<>'' then path_starnet2:=dum;
 
       dum:=Sett.ReadString('stack','star_database',''); if dum<>'' then stackmenu1.star_database1.text:=dum;
 
@@ -9972,6 +9975,8 @@ begin
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
 
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
+      sett.writeBool('stack','starnet',stackmenu1.use_starnet2_1.Checked);
+      sett.writestring('stack','path_starnet',path_starnet2);
 
       if  stackmenu1.use_manual_alignment1.checked then sett.writestring('stack','align_method','4')
       else
@@ -10744,7 +10749,7 @@ begin
     begin
        pp:=GetShortPath(ExtractFilePath(filename3)); //For path containing japaneseスカイメモ   or  ßÔÒõÕ   or   führ
        ff:=ExtractFileName(filename3);
-       ExecuteAndWait(application_path+'unprocessed_raw.exe '+param+' "'+ pp+ff {filename3}+'"',false);{execute command and wait}
+       ExecuteAndWait(application_path+'unprocessed_raw.exe '+param+' "'+ pp+ff {filename3}+'"',false); {execute command and wait}
        filename4:=FileName3+'.fits';{direct to fits using modified version of unprocessed_raw}
      end;
     {$endif}
@@ -17661,7 +17666,7 @@ begin
           luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
           luminance_stretched:=stretch_c[trunc(32768*luminance)];
           factor:=luminance_stretched/luminance;
-          if factor*largest>1 then factor:=1/largest; {clamp again, could be lengther then 1}
+          if factor*largest>1 then factor:=1/largest; {clamp again, could be larger then 1}
           colrr:=colrr*factor;{stretch only luminance but keep rgb ratio!}
           colgg:=colgg*factor;{stretch only luminance but keep rgb ratio!}
           colbb:=colbb*factor;{stretch only luminance but keep rgb ratio!}

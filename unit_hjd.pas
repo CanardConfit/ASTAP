@@ -62,28 +62,28 @@ end;
 {           ra : right ascension (in radians; equinox of date)         }
 {           dec: declination (in radians; equinox of date)             }
 {           Factors from "Astronomy on the personal computer"          }
-procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] of Sun equinox of date}
-  const
-    cos_ecl=cos(23.43929111*pi/180);{obliquity of ecliptic}
-    sin_ecl=sin(23.43929111*pi/180);{obliquity of ecliptic}
-  var
-    angle,l,m,dl,sin_l,cos_l,y,z,rho,t: double;
+procedure sun(jd:real; out ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] of Sun equinox of date}
+const
+  cos_ecl=cos(23.43929111*pi/180);{obliquity of ecliptic}
+  sin_ecl=sin(23.43929111*pi/180);{obliquity of ecliptic}
+var
+  angle,l,m,dl,sin_l,cos_l,y,z,rho,t: double;
 
-  begin
-    t:=(jd-2451545)/36525; {time in julian centuries since j2000 }
-    m  := 2*pi*frac(0.993133+99.997361*t);
-    dl:= 6893.0*sin(m)+72.0*sin(2*m);
-    angle:=frac(0.7859453 + m/(2*pi) + (6191.2*t+dl)/1296e3);{orbit position}
-    if angle<0 then angle:=angle+1;   {frac(-1.1) is -0.1, should become 0.9}
-    l := 2*pi*angle; {orbit position in radians}
-    sincos(l,sin_l,cos_l);
-    y:=cos_ecl*sin_l;{convert helio to geocentric coordinates}
-    z:=sin_ecl*sin_l;
-    rho:=sqrt(1.0-z*z);
-    dec := arctan(z/rho);
-    ra  := 2*arctan(y/(cos_l+rho));
-    if (ra<0) then ra:=ra+(2*pi);
-  end;
+begin
+  t:=(jd-2451545)/36525; {time in julian centuries since j2000 }
+  m  := 2*pi*frac(0.993133+99.997361*t);
+  dl:= 6893.0*sin(m)+72.0*sin(2*m);
+  angle:=frac(0.7859453 + m/(2*pi) + (6191.2*t+dl)/1296e3);{orbit position}
+  if angle<0 then angle:=angle+1;   {frac(-1.1) is -0.1, should become 0.9}
+  l := 2*pi*angle; {orbit position in radians}
+  sincos(l,sin_l,cos_l);
+  y:=cos_ecl*sin_l;{convert helio to geocentric coordinates}
+  z:=sin_ecl*sin_l;
+  rho:=sqrt(1.0-z*z);
+  dec := arctan(z/rho);
+  ra  := 2*arctan(y/(cos_l+rho));
+  if (ra<0) then ra:=ra+(2*pi);
+end;
 
 
 //procedure precession(jd, ra1,dec1 : double; var ra2,dec2 : double); {precession correction,  simple formula, new Meeus chapter precession}
