@@ -66,7 +66,13 @@ type
     bb2: TEdit;
     bg2: TEdit;
     br2: TEdit;
+    Button3: TButton;
     center_position1: TLabel;
+    MenuItem36: TMenuItem;
+    combine_files1: TMenuItem;
+    starnet_split1: TMenuItem;
+    Separator16: TMenuItem;
+    use_starnet2_1: TCheckBox;
     disable_autocenter1: TCheckBox;
     fix_colour_saturated1: TCheckBox;
     green_purple_filter1: TCheckBox;
@@ -308,8 +314,6 @@ type
     GroupBox15: TGroupBox;
     GroupBox16: TGroupBox;
     GroupBox17: TGroupBox;
-    GroupBox18: TGroupBox;
-    GroupBox19: TGroupBox;
     GroupBox2: TGroupBox;
     GroupBox20: TGroupBox;
     GroupBox21: TGroupBox;
@@ -348,8 +352,6 @@ type
     ignorezero1: TCheckBox;
     ignore_header_solution1: TCheckBox;
     image_to_add1: TLabel;
-    increase_nebulosity1: TBitBtn;
-    increase_nebulosity3: TEdit;
     interim_to_clipboard1: TCheckBox;
     Label1: TLabel;
     Label10: TLabel;
@@ -529,7 +531,6 @@ type
     red_filter2: TEdit;
     reference_database1: TComboBox;
     remove_deepsky_label1: TLabel;
-    remove_stars1: TBitBtn;
     replace_by_master_dark1: TButton;
     replace_by_master_flat1: TButton;
     reset_factors1: TButton;
@@ -633,8 +634,6 @@ type
     undo_button14: TBitBtn;
     undo_button15: TBitBtn;
     undo_button16: TBitBtn;
-    undo_button17: TBitBtn;
-    undo_button18: TBitBtn;
     undo_button19: TBitBtn;
     undo_button2: TBitBtn;
     undo_button20: TBitBtn;
@@ -653,7 +652,6 @@ type
     update_annotations1: TCheckBox;
     update_solution1: TCheckBox;
     UpDown1: TUpDown;
-    UpDown_nebulosity1: TUpDown;
     use_astrometric_alignment1: TRadioButton;
     use_ephemeris_alignment1: TRadioButton;
     use_manual_alignment1: TRadioButton;
@@ -773,8 +771,11 @@ type
     procedure blend1Change(Sender: TObject);
     procedure blink_annotate_and_solve1Click(Sender: TObject);
     procedure apply_unsharp_mask1Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
+    procedure combine_files1Click(Sender: TObject);
+    procedure starnet_split1click(Sender: TObject);
     procedure reference_database1DropDown(Sender: TObject);
     procedure refresh_astrometric_solutions9Click(Sender: TObject);
     procedure set_saturation1Change(Sender: TObject);
@@ -878,7 +879,6 @@ type
     procedure rainbow_Panel1Paint(Sender: TObject);
     procedure reference_database1Change(Sender: TObject);
     procedure remove_luminance1Change(Sender: TObject);
-    procedure remove_stars1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
@@ -1328,6 +1328,11 @@ const
 
   video_index: integer = 1;
   frame_rate: string = '1';
+  {$ifdef mswindows}
+  path_starnet2: string='C:\Program Files\StarNet2\bin\starnet2';
+  {$else} {unix}
+  path_starnet2: string='C:\Program Files\StarNet2\bin\starnet2';
+  {$endif}
 
 implementation
 
@@ -1336,7 +1341,7 @@ uses
   unit_image_sharpness, unit_threaded_gaussian_blur, unit_star_align,
   unit_astrometric_solving, unit_stack_routines, unit_annotation, unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid, unit_yuv4mpeg2,
-  unit_avi, unit_aavso, unit_listbox, unit_aberration, unit_online_gaia, unit_disk,
+  unit_avi, unit_aavso, unit_listbox, unit_aberration, unit_online_gaia,
   unit_contour, unit_interpolate, unit_sqm, unit_threaded_calibration,unit_transformation, unit_profiler;
 
 type
@@ -9467,7 +9472,6 @@ end;
 procedure Tstackmenu1.blink_stack_selected1Click(Sender: TObject);
 var
   i : integer;
-  success : boolean;
 begin
   esc_pressed:=false;
 
@@ -9581,23 +9585,11 @@ end;
 
 
 procedure Tstackmenu1.tab_photometry1Show(Sender: TObject);
-var
-   dummy: integer;
 begin
   stackmenu1.flux_aperture1change(nil);{photometry, disable annulus_radius1 if mode max flux}
   snr_min_photo1.enabled:=measuring_method1.itemindex>=1;//enabled if not manual selection
   hide_show_columns_listview7(true {tab8});
   saturation_level1.enabled:=set_saturation1.checked;
-
-  //Already fixed in trunk Remove in 2026
-//  {$ifdef darwin} {MacOS}
-//   //temporary bug fix
-//   dummy:=stackmenu1.reference_database1.itemindex;
-//   stackmenu1.reference_database1.items.insert(0,'Local database '+ star_database1.text);
-//   stackmenu1.reference_database1.items.delete(1);
-//   stackmenu1.reference_database1.itemindex:=dummy;
-//  {$endif}
-
 end;
 
 
@@ -9876,6 +9868,304 @@ begin
 end;
 
 
+procedure Apply_MTF_Linked(var img: TImage_Array;background, sd: Single);
+const
+  MaxValue          = 65535.0;
+  SigmaFactor       = 2.8;
+  TargetBackground  = 0.25;
+  LumR = 0.2126; LumG = 0.7152; LumB = 0.0722;
+var
+  x, y,nrcolors   : Integer;
+  blackPoint      : Single;
+  target          : Single;
+  rr, mtf          : Single;
+  a, c, twoMtfM1  : Single;
+  R, G, B, L, delta, Lout, k : Single;
+begin
+  blackPoint := background - SigmaFactor * sd;
+  if blackPoint < 0 then blackPoint := 0;
+  if blackPoint >= MaxValue then Exit;
+  target := TargetBackground;
+  rr := (background - blackPoint) / (MaxValue - blackPoint);
+  if rr <= 0 then Exit;
+  mtf := ((target - 1) * rr) / ((2 * target - 1) * rr - target);
+  a := (mtf - 1) * MaxValue;
+  c := mtf * (MaxValue - blackPoint);
+  twoMtfM1 := 2 * mtf - 1;
+
+  nrcolors:=length(img);
+
+  if nrcolors>1 then
+  begin
+    for y := 0 to High(img[0]) do
+    for x := 0 to High(img[0,0]) do
+    begin
+      R := img[0,y,x];
+      G := img[1,y,x];
+      B := img[2,y,x];
+      L := LumR*R + LumG*G + LumB*B;
+
+      if L <= blackPoint then
+      begin
+        img[0,y,x] := 0; img[1,y,x] := 0; img[2,y,x] := 0;
+        Continue;
+      end;
+
+      if L < MaxValue then
+      begin
+        delta := L - blackPoint;
+        Lout := a * delta / (twoMtfM1 * delta - c);
+        if Lout > MaxValue then Lout := MaxValue;
+      end
+      else
+        Lout := MaxValue;
+
+      if L > 0 then
+        k := Lout / L
+      else
+        k := 0;
+
+      img[0,y,x] := Min(R * k, MaxValue);
+      img[1,y,x] := Min(G * k, MaxValue);
+      img[2,y,x] := Min(B * k, MaxValue);
+    end;
+  end
+  else
+  begin
+    for y := 0 to High(img[0]) do
+    for x := 0 to High(img[0,0]) do
+    begin
+      L := img[0,y,x];
+
+      if L <= blackPoint then
+      begin
+        img[0,y,x] := 0;
+        Continue;
+      end;
+
+      if L < MaxValue then
+      begin
+        delta := L - blackPoint;
+        Lout := a * delta / (twoMtfM1 * delta - c);
+        if Lout > MaxValue then Lout := MaxValue;
+      end
+      else
+        Lout := MaxValue;
+
+      if L > 0 then
+        k := Lout / L
+      else
+        k := 0;
+
+      img[0,y,x] := Min(L * k, MaxValue);
+    end;
+  end;
+end;
+
+procedure Unapply_MTF_Linked(var img: TImage_Array;
+                              background, sd: Single);
+const
+  MaxValue          = 65535.0;
+  SigmaFactor       = 2.8;
+  TargetBackground  = 0.25;
+  LumR = 0.2126; LumG = 0.7152; LumB = 0.0722;
+var
+  x, y,nrcolors    : Integer;
+  blackPoint      : Single;
+  target          : Single;
+  rr, mtf          : Single;
+  a, c, twoMtfM1  : Single;
+  R, G, B, L, delta, Lorig, k : Single;
+begin
+  blackPoint := background - SigmaFactor * sd;
+  if blackPoint < 0 then blackPoint := 0;
+  if blackPoint >= MaxValue then Exit;
+  target := TargetBackground;
+  rr := (background - blackPoint) / (MaxValue - blackPoint);
+  if rr <= 0 then Exit;
+  mtf := ((target - 1) * rr) / ((2 * target - 1) * rr - target);
+  a := (mtf - 1) * MaxValue;
+  c := mtf * (MaxValue - blackPoint);
+  twoMtfM1 := 2 * mtf - 1;
+
+  nrcolors:=length(img);
+
+  if nrcolors>1 then
+  begin
+    for y := 0 to High(img[0]) do
+    for x := 0 to High(img[0,0]) do
+    begin
+      R := img[0,y,x];
+      G := img[1,y,x];
+      B := img[2,y,x];
+      L := LumR*R + LumG*G + LumB*B;
+
+      if L <= 0 then
+      begin
+        img[0,y,x] := blackPoint;
+        img[1,y,x] := blackPoint;
+        img[2,y,x] := blackPoint;
+        Continue;
+      end;
+
+      if L < MaxValue then
+      begin
+        delta := L * c / (L * twoMtfM1 - a);
+        Lorig := blackPoint + delta;
+        if Lorig > MaxValue then Lorig := MaxValue
+        else if Lorig < 0 then Lorig := 0;
+      end
+      else
+        Lorig := MaxValue;
+
+      k := Lorig / L;
+
+      img[0,y,x] := Min(R * k, MaxValue);
+      img[1,y,x] := Min(G * k, MaxValue);
+      img[2,y,x] := Min(B * k, MaxValue);
+    end;
+  end
+  else
+  begin
+    for y := 0 to High(img[0]) do
+    for x := 0 to High(img[0,0]) do
+    begin
+      L := img[0,y,x];
+
+      if L <= 0 then
+      begin
+        img[0,y,x] := blackPoint;
+        Continue;
+      end;
+
+      if L < MaxValue then
+      begin
+        delta := L * c / (L * twoMtfM1 - a);
+        Lorig := blackPoint + delta;
+        if Lorig > MaxValue then Lorig := MaxValue
+        else if Lorig < 0 then Lorig := 0;
+      end
+      else
+        Lorig := MaxValue;
+
+      k := Lorig / L;
+
+      img[0,y,x] := Min(L * k, MaxValue);
+    end;
+  end
+end;
+
+
+function startnet_unstretched(filein,filetypeout : string; out fileout_neb,fileout_stars: string): boolean;
+const
+  InvalidChars : set of char = ['(',')'];
+var
+   i: integer;
+   filename1, filename3: string;
+   backgr,  noiselev : double;
+   img : timage_array;
+   headx1,headx2    : theader;
+   memox2 : tstrings;//work memo
+
+begin
+
+  result:=load_fits(filein,true {light},true {load data},true {update memo},0,memox,headx1,img); {load new fits or tiff file}
+  if result=false then exit;
+
+  memox2:= Tstringlist.Create; ; // this needs to be TStringList
+
+  get_background(0, img,headx1, True {get hist}, true {get noise and star_level});
+
+  backgr:=headx1.backgr;
+  noiselev:=headx1.noise_level;
+
+  Apply_MTF_Linked(img,backgr, noiselev); //stretch image
+
+  filename1:='';
+  for i:=1 to length(filein) do //for starnet remove ( and )
+      if not(filein[i] in InvalidChars) then filename1:=filename1+filein[i];
+
+  headx1.bitpix:=16; //save as 16 bit for starnet
+
+  filename3:=ChangeFileExt(Filename1,'_mtf.fits'); //save both tiff and fits
+  result:=save_fits(img,memox,headx1,filename3,true);
+  if result then
+  begin
+    fileout_neb:=ChangeFileExt(Filename1,'_nebula.'+filetypeout);
+    fileout_stars:=ChangeFileExt(Filename1,'_stars.'+filetypeout);
+    {$ifdef mswindows}
+    if ExecuteAndWait(path_starnet2+' --input "'+filename3+'" --output "'+fileout_neb+'" --mask "'+fileout_stars+'"',true {showconsole})<>0 then {execute command and wait}
+    {$else} {unix}
+    if execute_unix2(path_starnet2+' --input "'+filename3+'" --output "'+fileout_neb+'" --mask "'+fileout_stars+'"')<>0 then
+    {$endif}
+
+    begin //executable not found
+      result:=false;//the result of starnet2
+      if fileexists(path_starnet2)=false then
+      with stackmenu1 do
+      begin
+        OpenDialog1.Title:='Select the Starnet2 executable';
+        OpenDialog1.Options:=[ofFileMustExist, ofHideReadOnly];
+        {$ifdef mswindows}
+        OpenDialog1.Filter := 'starnet2.exe|starnet2.exe';
+        {$else} {unix}
+        OpenDialog1.Filter := 'starnet2|starnet2';
+        {$endif}
+        if opendialog1.Execute then
+        begin
+          path_starnet2:=OpenDialog1.Files[0];//store location executable
+          memo2_message('Executable selected. Try again.')
+        end;
+      end;
+    end
+    else
+    begin //starnet2 successfull
+      if filetypeout<>'tif' then //fits, unstretch
+      begin
+        //load image with stars
+        result:=load_fits(fileout_stars,true {light},true {load data},true {update memo},0,memox2,headx2,img); {load new fits file, ignore header}
+        if result then
+        begin
+          memo2_message('Star image processed and loaded again, now unstretching');
+          Unapply_MTF_Linked(img,backgr, noiselev); //unstretch image
+
+          //save unstretched star image
+          result:=save_fits(img,memox,headx1,fileout_stars,true); //save with orginal header
+          if result then
+          begin //load nebula image
+             result:=load_fits(fileout_neb,true {light},true {load data},true {update memo},0, memox2 {mainform1.memo1.lines},headx2,img); {load new fits file}//load without overwriting orginal header
+             if result then
+             begin
+               memo2_message('Nebula image processed and loaded again, now unstretching');
+               Unapply_MTF_Linked(img,backgr, noiselev);
+               //plot_image(mainform1.image1, True);{plot real}
+               //save unstretched star image
+               result:=save_fits(img,memox,headx1,fileout_neb,true);//save with orginal header
+             end;
+          end;
+        end
+        else
+        begin
+          memo2_message('No image found produced by Starnet. Starnet2 path will be cleared. Prompt for new path will occur at next attempt.');
+        end;
+
+      end;//unstretch
+    end;
+  end;
+  if result=false then
+    memo2_message('Failure')
+  else
+     memo2_message('Starnet processing successfully completed for this file.');
+
+  memox2.free;//free tstrings
+end;
+
+
+procedure Tstackmenu1.Button3Click(Sender: TObject);
+begin
+  mainform1.annotate_minor_planets1Click(Sender);
+end;
+
 
 procedure photometry_auto(thepath : string);//run photometry auto from command line
 var
@@ -9919,6 +10209,59 @@ begin
   new_analyse_required:=true;
 end;
 
+procedure Tstackmenu1.combine_files1Click(Sender: TObject);
+var
+  c: integer;
+  lv : tlistview;
+  fitsX, fitsY, col, counter: integer;
+  img_temp : Timage_array;
+  headx   : theader;
+  filename1: string;
+begin
+  lv:=listview1;
+  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+  backup_img; {move viewer data to img_backup}
+
+  counter:=0;
+  for c:=0 to lv.items.Count - 1 do {check for astrometric solutions}
+  begin
+    if lv.Items[c].Selected then   //solve all selected
+    begin
+      filename1:=lv.items[c].Caption;
+      if counter=0 then
+        load_fits(filename1, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded)
+      else
+        if load_fits(filename1, True {light}, True, false {update memo}, 0,memox, headx, img_temp) then
+      begin
+        if ((length(img_temp)=length(img_loaded)) and  (length(img_temp[0])=length(img_loaded[0])) ) then //equal format
+        begin
+            for col:=0 to head.naxis3 - 1 do {all colors}
+              for fitsY:=0 to head.Height - 1 do
+                for fitsX:=0 to head.Width - 1 do
+                begin
+                   img_loaded[col, fitsY, fitsX]:=img_loaded[col, fitsY, fitsX]+img_temp[col, fitsY, fitsX];
+                end;
+        end
+        else
+        begin
+          memo2_message('Error, files of different format!');
+          exit;
+        end;
+      end;
+      inc(counter);
+    end;
+
+    if counter>=2 then
+    begin
+      add_text(mainform1.memo1.lines,'HISTORY   ', add_substract1.text+' '+ExtractFileName(image_to_add1.Caption));
+      plot_histogram(img_loaded, True);
+      plot_image(mainform1.image1, False);{plot real}
+    end;
+
+  end;
+  lv.Selected:=nil; {remove any selection}
+  Screen.Cursor:=crDefault;
+end;
 
 
 procedure Tstackmenu1.reference_database1DropDown(Sender: TObject);
@@ -10586,10 +10929,10 @@ begin
 end;
 
 
-function process_selected_files(lv: tlistview; column: integer; mode : string) : boolean;// S= Solve selected/ U annotate unknow stars / 'P' photometric calibration, add mzero / '2' bin 2x2
+function process_selected_files(lv: tlistview; column: integer; mode : string) : boolean;// S= Solve selected/ U annotate unknow stars / 'P' photometric calibration, add mzero / '2' bin 2x2 / N=solve and split using Starnet2 / A add without alignment
 var
   c,nrcolumns,i,countN,selcnt,progress        : integer;
-  filename1                   : string;
+  filename1, fileout_neb,fileout_stars        : string;
   img_temp                    : Timage_array;
   headx                       : theader;
 
@@ -10671,7 +11014,7 @@ begin
         if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,memox, headx, img_temp) = False)) then
           break;
 
-        if ((mode='S') or ((headx.cd1_1=0) and ((mode='P') or (mode='U') or (mode='Q'))) ) then //S is force solve selected files, U is solve none solved files
+        if ((mode='S') or ((headx.cd1_1=0) and ((mode='P') or (mode='U') or (mode='Q') or (mode='N') )) ) then //S is force solve selected files, U is solve non-solved files
         begin
           lv.ItemIndex:=c;
           {mark where we are. Important set in object inspector    Listview1.HideSelection:=false; Listview1.Rowselect:=true}
@@ -10701,8 +11044,28 @@ begin
             else
               lv.Items.item[c].subitems.Strings[column]:='';
           end;
-
+          application.processmessages;
+          if esc_pressed then break;
         end;//mode='S'
+
+        if ((mode='N') and (headx.cd1_1 <> 0)) then //apply Starnet2
+        begin
+          if startnet_unstretched(filename1,{filetypeout} 'tif',{out} fileout_neb,fileout_stars) then
+          begin //success
+            lv.Items.item[c].checked:=false;//unselect the source
+            listview_add(listview1, fileout_neb,true, L_nr);
+            listview_add(listview1, fileout_stars,true, L_nr);
+            application.processmessages;
+            if esc_pressed then break;
+
+          end
+          else
+          begin
+            esc_pressed:=true;
+            break;
+          end;
+        end;
+
         if ((mode='P') or (mode='U')) then //photometry, add mzero
         begin
           headx.mzero:=0; //force a new calibration
@@ -10842,6 +11205,12 @@ begin
   process_selected_files(listview1,L_solution {column},'S');
 end;
 
+procedure Tstackmenu1.starnet_split1click(Sender: TObject);
+begin
+  save_settings2;{Too many lost selected files, so first save settings.}
+  process_selected_files(listview1,L_solution {column},'N');
+end;
+
 
 procedure Tstackmenu1.refresh_astrometric_solutions9Click(Sender: TObject);
 begin
@@ -10925,184 +11294,6 @@ procedure Tstackmenu1.refresh_astrometric_solutions7Click(Sender: TObject);
 begin
   save_settings2;{Too many lost selected files, so first save settings.}
   process_selected_files(listview7,p_astrometric,'S');
-end;
-
-
-procedure remove_stars;
-var
-  fitsX,fitsY,position,x,y,x1,y1,counter_noflux                  : integer;
-  magnd, backgrR,backgrG,backgrB,delta                           : double;
-  img_temp3 :Timage_array;
-  old_aperture : string;
-
-const
-   default=1000;
-
-   procedure star_background(rs {radius},x1,y1 :integer);
-   var
-     backgroundR,backgroundG,backgroundB : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
-     r1_square,r2_square,distance : double;
-     r2,i,j,counter : integer;
-   begin
-     r1_square:=rs*rs;{square radius}
-     r2:=rs+3 {annulus_width};
-     r2_square:=r2*r2;
-     try
-       counter:=0;
-       for i:=-r2 to r2 do {calculate the mean outside the the detection area}
-       for j:=-r2 to r2 do
-       begin
-         if ((x1-r2>=0) and (x1+r2<=head.width-1) and
-          (y1-r2>=0) and (y1+r2<=head.height-1) ) then
-           begin
-             distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
-             if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
-             begin
-               backgroundR[counter]:=img_loaded[0,y1+j,x1+i];
-               if head.naxis3>1 then backgroundG[counter]:=img_loaded[1,y1+j,x1+i];
-               if head.naxis3>2 then backgroundB[counter]:=img_loaded[2,y1+j,x1+i];
-               inc(counter);
-             end;
-
-           end;
-        end;
-        if counter>2 then
-        begin
-          backgrR:=Smedian(backgroundR,counter);
-          if head.naxis3>1 then backgrG:=Smedian(backgroundG,counter);
-          if head.naxis3>2 then backgrB:=Smedian(backgroundB,counter);
-        end;
-     finally
-     end;
-
-   end;
-
-begin
-  old_aperture:=stackmenu1.flux_aperture1.text;
-  stackmenu1.flux_aperture1.text:='max';//full flux is here required
-
-  calibrate_photometry(img_loaded,mainform1.Memo1.lines,head, false{update});
-
-  stackmenu1.flux_aperture1.text:=old_aperture;
-
-
-  if head.mzero=0 then
-  begin
-    beep;
-    img_temp3:=nil;
-    Screen.Cursor:=crDefault;
-    exit;
-  end;
-
-  memo2_message('Passband setting: '+stackmenu1.reference_database1.text);
-
-
-//  image1.Canvas.Pen.Mode:=pmMerge;
-//  image1.Canvas.Pen.width :=1;
-//  image1.Canvas.brush.Style:=bsClear;
-//  image1.Canvas.font.color:=clyellow;
-//  image1.Canvas.font.name:='Default';
-//  image1.Canvas.font.size:=10;
-//  mainform1.image1.Canvas.Pen.Color:=clred;
-
-
-  setlength(img_temp3,1,head.height,head.width);
-  for fitsY:=0 to head.height-1 do
-    for fitsX:=0 to head.width-1  do
-      img_temp3[0,fitsY,fitsX]:=default;{clear to 1000}
-  plot_artificial_stars(img_temp3,head);{create artificial image with database stars as pixels}
-
-  analyse_image(img_loaded,head,10 {snr_min},0 {report nr stars and hfd only}); {find background, number of stars, median HFD}
-  backgrR:=head.backgr;//defaults
-  backgrG:=head.backgr;
-  backgrB:=head.backgr;
-
-  for fitsY:=0 to head.height-1 do
-    for fitsX:=0 to head.width-1  do
-    begin
-      magnd:=img_temp3[0,fitsY,fitsX];
-      if magnd<default then {a star from the database}
-      begin
-          star_background(round(4*head.hfd_median) {radius},fitsX,fitsY);//calculate background(s)
-          counter_noflux:=0;
-          for position:=0 to high(disk) do //remove star flux
-          begin
-            begin
-              x1:=disk[position,0]; // disk, disk positions starting from center moving outwards
-              y1:=disk[position,1];
-              x:=fitsX+x1; // disk, disk positions starting from center moving outwards
-              y:=fitsY+y1;
-              if ((x>=0) and (x<head.width) and (y>=0) and (y<head.height)) then //within image
-              begin
-//                if max_radius>100 then
-  //              begin
-    //              if img_loaded[0,y,x]-backgrR<=0 then //reached outside of star
-      //              max_radius:=1+sqrt(sqr(x1)+sqr(y1));//allow to continue for one pixel ring max
-        //        end
-          //      else
-                if sqrt(sqr(x1)+sqr(y1))>=head.hfd_median*4 then
-                  break;
-
-                if counter_noflux>0.5*2*pi*sqrt(sqr(x1)+sqr(y1)) then //2*pi*r is circumference
-                  break;
-
-                delta:=img_loaded[0,y,x]-backgrR;//all photometry is only done in the red channel
-
-                if delta>0 then //follow the red channel
-                begin
-                  img_loaded[0,y,x]:=img_loaded[0,y,x]-delta;
-                  if head.naxis3>1 then img_loaded[1,y,x]:=img_loaded[0,y,x]*backgrG/backgrR;
-                  if head.naxis3>2 then img_loaded[2,y,x]:=img_loaded[0,y,x]*backgrB/backgrR;
-                end
-                else
-                inc(counter_noflux);
-
-              end;
-
-            end;
-          end;
-      end;
-    end;
-
-  img_temp3:=nil;{free memo2}
-end;
-
-
-procedure Tstackmenu1.remove_stars1Click(Sender: TObject);
-var
-  gain: single;
-  fitsX,fitsY,col,letter_height   : integer;
-begin
-  if head.naxis=0 then exit; {file loaded?}
-  if head.cd1_1=0 then begin memo2_message('Abort, solve the image first!');exit; end;
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-  backup_img;{preserve img array and fits header of the viewer}
-  head.backgr:=0;
-
-  remove_stars;
-  memo2_message('Stars removed.');
-  gain:=UpDown_nebulosity1.position;
-
-  if sender=increase_nebulosity1 then
-  begin
-    for col:=0 to head.naxis3-1 do //all colour
-      for fitsX:=0 to head.width-1 do
-        for fitsY:=0 to head.height-1 do
-          img_loaded[col, fitsY, fitsX]:=img_backup[index_backup].img[col, fitsY, fitsX] + (img_loaded[col, fitsY, fitsX]-head.backgr {reduce background})*gain;
-
-    memo2_message('Nebulosity signal increased.');
-  end;
-
-  mainform1.image1.Canvas.font.size:=10;
-  mainform1.image1.Canvas.brush.Style:=bsClear;
-
-  letter_height:=mainform1.image1.Canvas.textheight('M');
-  mainform1.image1.Canvas.textout(20,head.height-letter_height,stackmenu1.reference_database1.text);//show which database was used
-
-  plot_image(mainform1.image1,false);//refresh screen
-
-  Screen.Cursor:=crDefault;
 end;
 
 
@@ -12921,12 +13112,12 @@ var
   i, c, nrfiles, image_counter, object_counter,
   first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon :   integer;
   filter_name1, filter_name2, defilter, filename3,
-  extra1, extra2, object_to_process, stack_info, thefilters                       : string;
+  extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_stars   : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
-  success, classify_filter, classify_object, sender_photometry, sender_stack_groups,comet  : boolean;
+  classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue  : boolean;
   startTick: qword;{for timing/speed purposes}
-  min_background, max_background,back_gr,x,y    : double;
+  min_background, max_background,back_gr,x,y                      : double;
   filters_used: array [0..6] of string;//r,g,b,r2,g2,b2,L
 begin
   save_settings2;{too many lost selected files, so first save settings}
@@ -12951,7 +13142,6 @@ begin
   memo2_message('Stack method ' + stack_method1.Text);
   stitching_mode:=pos('stitch', stackmenu1.stack_method1.Text) > 0;
   sigma_clip:=pos('Sigma', stackmenu1.stack_method1.Text) > 0;
-  comet:=pos('Comet', stackmenu1.stack_method1.Text) > 0;
   skip_combine:=pos('skip', stackmenu1.stack_method1.Text) > 0;
   cal_and_align:=pos('alignment', stackmenu1.stack_method1.Text) > 0;  {calibration and alignment only}
   sender_photometry:=(Sender = photom_stack1);//stack instruction from photometry tab?
@@ -13179,8 +13369,53 @@ begin
     end;
   end;
 
+  if ((use_ephemeris_alignment1.Checked) and (use_starnet2_1.checked)) then {split. Do the split before the  annotations since the date_obs in '_stars.' files is later fixed in next code for add annotations}
+  begin
+    memo2_message('Splitting file using Starnet');
+    ListView1.Selected:=nil; {remove any selection}
+    starnet2_failure:=false;
+    for c:=0 to ListView1.items.Count - 1 do
+      if ListView1.items[c].Checked = True then
+      begin
+        try { Do some lengthy operation }
+          while stacking_paused do pause2;
+          filename2:=ListView1.items[c].Caption;
+          if  ((pos('_stars.',filename2)=0) and (pos('_nebula.',filename2)=0)) then //these files are not yet split in nebula or stars
+          begin
+            ListView1.ItemIndex:=c;{show wich file is processed}
+            Listview1.Items[c].MakeVisible(False);{scroll to selected item}
+
+            if startnet_unstretched(filename2,{filetypeout} 'fits',{out} fileout_neb,fileout_stars)=false then
+            begin
+              starnet2_failure:=true;
+              esc_pressed:=true;//prevent mode pauzed
+              break;
+            end;
+            ListView1.Items.item[c].checked:=false;//unselect the source
+            listview_add(listview1, fileout_neb,true, L_nr);
+            listview_add(listview1, fileout_stars,true, L_nr);
+            Application.ProcessMessages;
+          end;
+       finally
+        end;
+     end;
+//     else
+//       ListView1.Items.item[c].SubitemImages[L_quality]:= -1; //prevent icon thumpdown is restoring this unchecked item when analysed again
+
+     if starnet2_failure  then exit;
+     analyse_level:=0; //almost none
+     tempvalue:=uncheck_outliers1.checked;
+     uncheck_outliers1.checked:=false;//prevent item with thumb donw are made checked again in analyse_tab_lights
+     analyse_tab_lights(analyse_level); {analyse any image not done yet. The width is required for sorting the images later and find the reference image}
+     uncheck_outliers1.checked:=tempvalue;
+     Application.ProcessMessages;
+
+   end;
+
+
   if use_ephemeris_alignment1.Checked then {add annotations}
   begin
+    date_obs_reference:='';//used for for image split in comet nebula and stars
     memo2_message('Checking annotations');
     for c:=0 to ListView1.items.Count - 1 do
       if ((ListView1.items[c].Checked = True) and (pos('✓',stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution])>0 {solution}) and
@@ -13214,7 +13449,23 @@ begin
             stacking_running:=false;
             exit;
           end;
+
+          //for image where comet and star are split.
+          if date_obs_reference='' then //used for for images which are split in comet nebula and stars. Split by Starnet.
+          begin
+            if head.date_obs<>'' then
+               date_obs_reference:=head.date_obs //reference time for images only containing stars. So the align perfectly and do not follow comet movement
+            else
+               date_obs_reference:=head.date_avg;
+          end;
+          if pos('_stars.', filename2)<>0 then  //image containing stars only
+          begin
+            head.date_obs:=date_obs_reference; //use a fixed time for the images which contain stars only. So they match each other. For comet they will shift based on the comet drift
+            head.date_avg:='';                 //This fixed time will be used in plot_mpcorb
+          end;
+
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add_annotations},true {use asteroid buffer. Was loaded by analyse_objects_visible});
+
 
           //if fits_file_name(filename2) then
           //  success:=savefits_update_header(mainform1.memo1.lines,filename2)
@@ -13359,12 +13610,6 @@ begin
         begin
           memo2_message('---------- Calibration & alignment for object: ' + object_to_process + ' -----------');
           calibration_and_alignment(process_as_osc, {var}files_to_process, counterL);{saturation clip average}
-        end
-        else
-        if comet then
-        begin
-          stackmenu1.use_ephemeris_alignment1.Checked:=True;  //force ephemeris alignment
-          stack_comet( process_as_osc,{var}files_to_process, counterL);
         end
         else
           stack_average(process_as_osc,{var}files_to_process, counterL);    {average}
