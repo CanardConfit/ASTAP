@@ -74,7 +74,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.07.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.08.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -627,6 +627,7 @@ type
     xorgsubf          : integer;
     yorgsubf          : integer;
 
+    object_name: string;
     egain      : string; {gain in e-/adu}
      gain      : string; {gain in 0.1dB or else}
     date_obs   : string;
@@ -719,11 +720,10 @@ var
   histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
   his_total_red,extend_type,r_aperture : integer; {histogram number of values}
   his_mean             : array[0..2] of integer;
-  stretch_c : array[0..32768] of single;{stretch curve}
+  stretch_c : array[0..65535] of single;{stretch curve}
 
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension,more_hdus_present : boolean;
   star_bg,sd_bg  : double;
-  object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz,magn_limit_str: string;
   focus_temp,cwhite, altitudefloat, pressure,airmass   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
@@ -935,7 +935,7 @@ function duplicate(img:Timage_array ; out img2 : Timage_array): boolean;//fastes
 procedure annotation_position(aname:string;var ra,dec : double);// calculate ra,dec position of one annotation
 procedure remove_photometric_calibration;//from header
 procedure remove_solution(keep_wcs:boolean);//remove all solution key words efficient
-procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
+procedure local_color_smooth(var img : timage_array; startX,stopX,startY,stopY: integer);//local color smooth
 procedure variable_star_annotation(head : theader; extract_visible: boolean {extract to variable_list});
 function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx : theader; out countN: integer) : boolean;//annotate stars missing from the online Gaia catalog or having too bright magnitudes
 function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
@@ -1071,6 +1071,7 @@ begin
     head.hfd_median:=0;{median hfd, use in reporting in write_ini}
     head.hfd_counter:=0;{star counter (for hfd_median), use in reporting in write_ini}
     head.backgr:=0;
+    head.object_name:='';
 
     ra_mount:=999;
     dec_mount:=999;
@@ -1092,7 +1093,7 @@ begin
     x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
     y_coeff[0]:=0;
 
-    telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+    telescop:=''; instrum:='';  origin:=''; {clear}
     sitelat:=''; sitelong:='';siteelev:='';
 
     focus_temp:=999;{assume no data available}
@@ -1958,7 +1959,7 @@ begin
               end {OBJCT}
               else
               if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
-                object_name:=get_string;{trim is already applied}
+                head.object_name:=get_string;{trim is already applied}
             end;{OBJ}
           end;//O
           if (header[i]='P') then
@@ -3061,7 +3062,7 @@ begin
       dec_mount:=dec_radians;//preference for outher keyword
     end
     else
-    if key='OBJECT  =' then object_name:=read_string else
+    if key='OBJECT  =' then head.object_name:=read_string else
 
     if ((key='EXPOSURE=') or ( key='EXPTIME =')) then head.exposure:=read_float else
     if (key='XBINNING=') then head.xbinning:=read_integer else
@@ -8502,8 +8503,8 @@ begin
   if stackmenu1.osc_auto_level1.checked then
   begin
     memo2_message('Adjusting colour levels as set in tab "stack method"');
-    stackmenu1.auto_background_level1Click(nil);
-    apply_factors;{histogram is after this action invalid}
+    colour_correction_factors(img_loaded);//stackmenu1.colour_correction_factors1Click(nil);
+    apply_factors(img_loaded);{histogram is after this action invalid}
     stackmenu1.reset_factors1Click(nil);{reset factors to default}
     plot_histogram(img,true {update}); {plot histogram in colour, set sliders}
   if stackmenu1.osc_colour_smooth1.checked then
@@ -8748,7 +8749,7 @@ begin
       begin
       //  luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
         luminance:=0.333333*colrr+0.333333*colgg+0.333333*colbb;//luminance in range 0..1. keep equal ratio in image development and not luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB;
-        luminance_stretched:=stretch_c[trunc(32768*luminance)];
+        luminance_stretched:=stretch_c[trunc(65535*luminance)];
         factor:=luminance_stretched/luminance;
         if factor*largest>1 then factor:=1/largest; {clamp again, could be larger then 1}
         colrr:=colrr*factor;{stretch only luminance but keep rgb ratio!}
@@ -9544,7 +9545,8 @@ begin
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
-      stackmenu1.use_starnet2_1.Checked:=Sett.ReadBool('stack','starnet',false);
+      c:=Sett.ReadInteger('stack','starnet',987654321); if c<>987654321 then stackmenu1.use_starnet2_1.itemindex:=c;
+
       dum:=Sett.ReadString('stack','path_starnet',''); if dum<>'' then path_starnet2:=dum;
 
       dum:=Sett.ReadString('stack','star_database',''); if dum<>'' then stackmenu1.star_database1.text:=dum;
@@ -9975,7 +9977,9 @@ begin
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
 
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
-      sett.writeBool('stack','starnet',stackmenu1.use_starnet2_1.Checked);
+
+      sett.writeInteger('stack','starnet',stackmenu1.use_starnet2_1.itemindex);
+
       sett.writestring('stack','path_starnet',path_starnet2);
 
       if  stackmenu1.use_manual_alignment1.checked then sett.writestring('stack','align_method','4')
@@ -12252,12 +12256,12 @@ var
 begin
   stretch:=strtofloat2(mainform1.stretch1.Text);
   if stretch<=0.5 then {word "off" gives zero}
-  stretch_on:=false
+    stretch_on:=false
   else
   begin
     stretch_on:=true;
     divider:=arcsinh(stretch);
-    for i:=0 to 32768 do stretch_c[i]:=arcsinh((i/32768.0)*stretch)/divider;{prepare table}
+    for i:=0 to 65535 do stretch_c[i]:=arcsinh((i/65535.0)*stretch)/divider;{prepare table}
   end;
   if mainform1.stretch1.enabled then {file loaded}
   begin
@@ -13036,7 +13040,7 @@ end;
 
 procedure Tmainform1.autocorrectcolours1Click(Sender: TObject);
 begin
-  stackmenu1.auto_background_level1Click(nil);
+  stackmenu1.colour_correction_factors1Click(nil);
   stackmenu1.apply_factor1Click(nil);
 end;
 
@@ -17664,7 +17668,7 @@ begin
         if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
         begin
           luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
-          luminance_stretched:=stretch_c[trunc(32768*luminance)];
+          luminance_stretched:=stretch_c[trunc(65535*luminance)];
           factor:=luminance_stretched/luminance;
           if factor*largest>1 then factor:=1/largest; {clamp again, could be larger then 1}
           colrr:=colrr*factor;{stretch only luminance but keep rgb ratio!}
@@ -17682,7 +17686,7 @@ begin
         colrr:=(col_r-head.backgr)/(cwhite-head.backgr);{scale to 1}
         colrr:=min(1,max(colrr,0));//keep in range 0..65535
         if stretch_on then
-          colrr:=stretch_c[trunc(32768*colrr)];
+          colrr:=stretch_c[trunc(65535*colrr)];
         result[0,fitsY,fitsX] :=trunc(colrr*65535);
       end;
     end;
@@ -18235,7 +18239,7 @@ begin
   ,inttostr(egain_extra_factor))));
 end;
 
-procedure local_color_smooth(startX,stopX,startY,stopY: integer);//local color smooth img_loaded
+procedure local_color_smooth(var img : timage_array; startX,stopX,startY,stopY: integer);//local color smooth
 var
   fitsX,fitsY,dum,k,counter            : integer;
   flux,center_x,center_y,a,b,rgb, lumr : single;
@@ -18246,15 +18250,15 @@ begin
   if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
   startX:=max(0,startX);
   startY:=max(0,startY);
-  stopX:=min(stopX,high(img_loaded[0,0]));
-  stopY:=min(stopY,high(img_loaded[0]));
+  stopX:=min(stopX,high(img[0,0]));
+  stopY:=min(stopY,high(img[0]));
 
   center_x:=(startx+stopX)/2;
   center_y:=(startY+stopY)/2;
   a:=(stopX-1-startx)/2;
   b:=(stopY-1-startY)/2;
 
-  for k:=0 to head.naxis3-1 do {do all colors}
+  for k:=0 to length(img)-1 do {do all colors}
   begin
     counter:=0;
     bk:=nil;//free memory to prevent resize
@@ -18264,7 +18268,7 @@ begin
     begin
       if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
       begin
-         bk[counter]:=img_loaded[k,fitsY,fitsX];
+         bk[counter]:=img[k,fitsY,fitsX];
          counter:=counter+1;
       end;
     end;
@@ -18281,9 +18285,9 @@ begin
   begin
     if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
     begin
-      for k:=0 to head.naxis3-1 do {do all colors}
+      for k:=0 to length(img)-1 do {do all colors}
       begin
-        colour[k]:=colour[k]+img_loaded[k,fitsY,fitsX]-median[k];//sum(red) or sum(green) or sum(blue)
+        colour[k]:=colour[k]+img[k,fitsY,fitsX]-median[k];//sum(red) or sum(green) or sum(blue)
       end;
     end;
   end;
@@ -18294,15 +18298,15 @@ begin
   begin
     if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
     begin
-      flux:=(img_loaded[0,fitsY,fitsX]-median[0]
-            +img_loaded[1,fitsY,fitsX]-median[1]
-            +img_loaded[2,fitsY,fitsX]-median[2]);//flux of one pixel
+      flux:=(img[0,fitsY,fitsX]-median[0]
+            +img[1,fitsY,fitsX]-median[1]
+            +img[2,fitsY,fitsX]-median[2]);//flux of one pixel
 
       {apply average colour to pixel}
       lumr:=flux/rgb;
-      img_loaded[0,fitsY,fitsX]:=median[0]+colour[0]*lumr;//sum(red)  * flux[x,y]/(sum(red)+sum(green)+sum(blue))
-      img_loaded[1,fitsY,fitsX]:=median[1]+colour[1]*lumr;//sum(green)* flux[x,y]/(sum(red)+sum(green)+sum(blue))
-      img_loaded[2,fitsY,fitsX]:=median[2]+colour[2]*lumr;//sum(blue) * flux[x,y]/(sum(red)+sum(green)+sum(blue))
+      img[0,fitsY,fitsX]:=median[0]+colour[0]*lumr;//sum(red)  * flux[x,y]/(sum(red)+sum(green)+sum(blue))
+      img[1,fitsY,fitsX]:=median[1]+colour[1]*lumr;//sum(green)* flux[x,y]/(sum(red)+sum(green)+sum(blue))
+      img[2,fitsY,fitsX]:=median[2]+colour[2]*lumr;//sum(blue) * flux[x,y]/(sum(red)+sum(green)+sum(blue))
 
     end;
   end;
@@ -18317,7 +18321,7 @@ begin
     Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
 
     backup_img;
-    local_color_smooth(startX,stopX,startY,stopY);
+    local_color_smooth(img_loaded,startX,stopX,startY,stopY);
 
     plot_image(mainform1.image1,false);
     Screen.Cursor:=crDefault;
@@ -18372,7 +18376,7 @@ begin
           begin
             jd_start:=jd_start-(GetLocalTimeOffset/(24*60));//convert to local time.
             jd_start:=jd_start-0.5; //move 12 hour earlier to get date beginning night
-            thepath:=RemoveSpecialChars(object_name)+', '+copy(JDtoDate(jd_start),1,10)+', '+headx.filter_name;// the path without special characters
+            thepath:=RemoveSpecialChars(headx.object_name)+', '+copy(JDtoDate(jd_start),1,10)+', '+headx.filter_name;// the path without special characters
 
             {$ifdef mswindows}
             thepath:=SelectDirectoryDialog1.filename+'\'+thepath;

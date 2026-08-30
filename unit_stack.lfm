@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 41
+  Left = 14
   Height = 726
-  Top = 95
+  Top = 192
   Width = 1652
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -1255,7 +1255,6 @@ object stackmenu1: Tstackmenu1
               'Calibration only. No de-mosaic'
               'Average, skip LRGB  combine'
               'Sigma clip, skip LRGB combine'
-              'Comet and stars sharp'
             )
             ParentFont = False
             Style = csDropDownList
@@ -2977,13 +2976,13 @@ object stackmenu1: Tstackmenu1
           end
           object panel_ephemeris1: TPanel
             Left = 208
-            Height = 78
+            Height = 62
             Top = 288
             Width = 1200
             AutoSize = True
             BevelColor = clMenuHighlight
             BevelOuter = bvSpace
-            ClientHeight = 78
+            ClientHeight = 62
             ClientWidth = 1200
             Color = clForm
             Constraints.MinWidth = 1200
@@ -3021,7 +3020,7 @@ object stackmenu1: Tstackmenu1
               OnClick = analyse_objects_visible1Click
             end
             object update_solution1: TCheckBox
-              Left = 832
+              Left = 848
               Height = 23
               Hint = 'Apply this if the FITS header contains already a solution which is not accurate. '
               Top = 6
@@ -3043,20 +3042,31 @@ object stackmenu1: Tstackmenu1
             object Button3: TButton
               Left = 535
               Height = 29
-              Top = 48
+              Top = 32
               Width = 217
               AutoSize = True
               Caption = 'Ephemeriden database settings'
               TabOrder = 4
               OnClick = Button3Click
             end
-            object use_starnet2_1: TCheckBox
-              Left = 832
-              Height = 23
-              Top = 48
-              Width = 319
-              Caption = 'Use StarNet2 to split into comet and star images.'
+            object use_starnet2_1: TComboBox
+              Left = 848
+              Height = 27
+              Hint = 'Use the external commandline version of the program StarNet2.'
+              Top = 32
+              Width = 344
+              DropDownCount = 20
+              ItemHeight = 19
+              ItemIndex = 0
+              Items.Strings = (
+                'Do not use StarNet2'
+                'Split by StarNet2, create a seperate comet & stars stack.'
+                'Split by Starnet2, create a single stack'
+              )
+              ParentFont = False
+              Style = csDropDownList
               TabOrder = 5
+              Text = 'Do not use StarNet2'
             end
           end
           object most_right7: TStaticText
@@ -5201,7 +5211,7 @@ object stackmenu1: Tstackmenu1
               TabOrder = 9
               OnClick = undo_button2Click
             end
-            object auto_background_level1: TButton
+            object colour_correction_factors1: TButton
               Left = 374
               Height = 23
               Hint = 'Levels for neutral background and white stars'
@@ -5210,7 +5220,7 @@ object stackmenu1: Tstackmenu1
               Caption = 'Auto'
               ParentFont = False
               TabOrder = 6
-              OnClick = auto_background_level1Click
+              OnClick = colour_correction_factors1Click
             end
             object reset_factors1: TButton
               Left = 374
@@ -8258,8 +8268,8 @@ object stackmenu1: Tstackmenu1
       ClientHeight = 204
       object memo2: TMemo
         Left = 0
-        Height = 123
-        Top = 81
+        Height = 116
+        Top = 88
         Width = 1920
         Align = alBottom
         Anchors = [akTop, akLeft, akBottom]
@@ -8278,11 +8288,11 @@ object stackmenu1: Tstackmenu1
       end
       object Panel_stack_button1: TPanel
         Left = 0
-        Height = 81
+        Height = 88
         Top = 0
         Width = 1920
         Align = alClient
-        ClientHeight = 81
+        ClientHeight = 88
         ClientWidth = 1920
         ParentBackground = False
         TabOrder = 1
@@ -8635,8 +8645,8 @@ object stackmenu1: Tstackmenu1
   object PopupMenu2: TPopupMenu
     Tag = 1
     Images = ImageList2
-    Left = 544
-    Top = 584
+    Left = 496
+    Top = 592
     object Viewimage2: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -8690,7 +8700,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu3: TPopupMenu
     Tag = 1
     Images = ImageList2
-    Left = 656
+    Left = 592
     Top = 592
     object Viewimage3: TMenuItem
       Caption = 'View image'
@@ -8745,7 +8755,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu4: TPopupMenu
     Tag = 1
     Images = ImageList2
-    Left = 768
+    Left = 704
     Top = 592
     object Viewimage4: TMenuItem
       Caption = 'View image'
@@ -8800,7 +8810,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu5: TPopupMenu
     Tag = 1
     Images = ImageList2
-    Left = 856
+    Left = 800
     Top = 592
     object Viewimage5: TMenuItem
       Caption = 'View image'
@@ -8844,6 +8854,22 @@ object stackmenu1: Tstackmenu1
       OnClick = copy_to_photometry1Click
     end
     object MenuItem24: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem25: TMenuItem
+      Caption = 'StarNet2'
+      object results_split_files1: TMenuItem
+        Caption = 'Split selected images into nebula and star images, tiff, stretched'
+        Hint = 'Stretching is required for StarNet2'
+        OnClick = results_split_files1Click
+      end
+      object results_combine_files1: TMenuItem
+        Caption = 'Combine selected images. No alignment. No saving.'
+        Hint = 'This could be used to combine images split by StarNet2. '
+        OnClick = combine_files1Click
+      end
+    end
+    object Separator17: TMenuItem
       Caption = '-'
     end
     object removeselected5: TMenuItem
@@ -9027,7 +9053,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu6: TPopupMenu
     Tag = 1
     Images = ImageList2
-    Left = 936
+    Left = 896
     Top = 592
     object Viewimage6: TMenuItem
       Caption = 'View image'
@@ -9269,8 +9295,8 @@ object stackmenu1: Tstackmenu1
     Tag = 1
     Images = ImageList2
     OnPopup = PopupMenu1Popup
-    Left = 456
-    Top = 584
+    Left = 376
+    Top = 592
     object Viewimage1: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -9433,6 +9459,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'StarNet2 '
       object starnet_split1: TMenuItem
         Caption = 'Split selected images into nebula and star images, tiff, stretched'
+        Hint = 'Stretching is required for StarNet2'
         OnClick = starnet_split1click
       end
       object combine_files1: TMenuItem

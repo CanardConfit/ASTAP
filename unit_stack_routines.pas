@@ -1846,7 +1846,7 @@ begin
 
           if save_fits(img_loaded,mainform1.memo1.lines,head,filename2,true)=false then exit;//exit if save error
           memo2_message('New aligned image created: '+filename2);
-          report_results(object_name,inttostr(round(head.exposure)),0,-1 {color icon}, 5 {stack icon});{report result in tab result using modified filename2}
+          report_results(head.object_name,inttostr(round(head.exposure)),0,-1 {color icon}, 5 {stack icon});{report result in tab result using modified filename2}
           progress_indicator(0.1+0.9*counter/images_checked,'Cal');{show progress}
         end;
         finally
@@ -1874,7 +1874,6 @@ begin
 
   {arrays will be nilled later. This is done for early exits}
 end;   {calibration and alignment}
-
 
 
 
