@@ -279,7 +279,7 @@ begin
               if colour_correction then
               begin
                 memo2_message('Using first reference image to determine colour adjustment factors.');
-                colour_correction_factors(img_loaded);
+                colour_correction_factors(img_loaded, head);
 
                 {do factor math behind so "subtract view from file" works in correct direction}
                 add_valueR:=strtofloat2(stackmenu1.add_valueR1.Text);

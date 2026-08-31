@@ -68,7 +68,7 @@ int main(int ac, char *av[])
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2026-06-15\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2026-08-31\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"
@@ -543,6 +543,12 @@ void JDtoDate(double jd,  int *year, int *month, int *day, int *hours, int *minu
   double FF,dayFloat,dayFrac;
 
   jd += 0.5;
+  //Snap to the nearest millisecond first. Without this, a jd that is a hair below an exact
+  //minute/day boundary (e.g. ...59.9998s) truncates into the "wrong" minute/day here, but later
+  //gets rounded UP to 60.000 when formatted with %06.3f. Snapping up front makes the calendar
+  //decomposition below and the caller's rounded printout agree, including correctly rolling
+  //into the next calendar day on the rare occasion that requires it.
+  jd = round(jd * 86400000.0) / 86400000.0;
   ZZ = (int)jd; // truncate
   FF = jd - ZZ;  // fractional part
   if(ZZ < 2299160.5)  //Julian calendar?
@@ -567,16 +573,24 @@ void JDtoDate(double jd,  int *year, int *month, int *day, int *hours, int *minu
   else
     *year = CC - 4715;
 
-  // calculate hours, minutes and seconds from day fraction    
+  // calculate hours, minutes and seconds from day fraction
   dayFrac=dayFloat - *day;//calculate day fraction
-  *hours=(int)(dayFrac*24);
-  *minutes=(int)((dayFrac-(float)*hours/24.0)*(24*60));//not round otherwise 23:60
-  *seconds=(dayFrac-(float)*hours/24.0-(float)*minutes/(24.0*60.0))*(24*3600);
+  //Work in integer milliseconds-since-midnight (rounded) rather than chained float truncations.
+  //This guarantees *minutes and *seconds always land in [0,60), so formatting seconds with
+  //%06.3f can never print "60.000" (the case that used to happen right at a minute boundary).
+  long long totalMs = (long long)llround(dayFrac*86400000.0);
+  if (totalMs >= 86400000LL) totalMs -= 86400000LL; //guard; jd was already snapped above
+  if (totalMs < 0) totalMs = 0;                     //guard against negative FP noise
+  *hours   = (int)(totalMs / 3600000LL);
+  totalMs -= (long long)(*hours) * 3600000LL;
+  *minutes = (int)(totalMs / 60000LL);
+  totalMs -= (long long)(*minutes) * 60000LL;
+  *seconds = totalMs / 1000.0;
 
     
   // 2459902.12214120
   // 2022-11-18 14:55:53
-  //      18T14:55:52.999690175053
+  // 18T14:55:52.999690175053
 }
 
 

@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = tab_stackmethod1
+        ActivePage = Result1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 5
+        TabIndex = 4
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -8496,8 +8496,8 @@ object stackmenu1: Tstackmenu1
   end
   object ImageList2: TImageList
     Scaled = True
-    Left = 1344
-    Top = 664
+    Left = 1456
+    Top = 616
     Bitmap = {
       4C7A1E00000010000000100000000D0700000000000078DAED5CDB4E153D14E6
       51FE47F18A17102E94704C8C807212104D4C444485704C087803091063301CA2
@@ -8561,8 +8561,8 @@ object stackmenu1: Tstackmenu1
   end
   object ImageList_colors: TImageList
     Scaled = True
-    Left = 1448
-    Top = 664
+    Left = 1544
+    Top = 616
     Bitmap = {
       4C7A1E0000001000000010000000560900000000000078DAED990B5454C719C7
       A76A8C2F94A811B59A2052A38088451011358822F25041B141D1F82260414488
@@ -8866,7 +8866,7 @@ object stackmenu1: Tstackmenu1
       object results_combine_files1: TMenuItem
         Caption = 'Combine selected images. No alignment. No saving.'
         Hint = 'This could be used to combine images split by StarNet2. '
-        OnClick = combine_files1Click
+        OnClick = results_combine_files1Click
       end
     end
     object Separator17: TMenuItem

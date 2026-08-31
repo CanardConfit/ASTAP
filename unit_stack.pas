@@ -779,6 +779,7 @@ type
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure combine_files1Click(Sender: TObject);
+    procedure results_combine_files1Click(Sender: TObject);
     procedure results_split_files1Click(Sender: TObject);
     procedure starnet_split1click(Sender: TObject);
     procedure reference_database1DropDown(Sender: TObject);
@@ -1174,7 +1175,7 @@ function calc_saturation_level(head :theader) : double;//calculate saturation le
 function get_annotation_position(const memo : tstrings; out x,y : double) : boolean;//find the position of the specified asteroid annotation
 function standardise_filter_name(inp :string): string;//standardise filter name
 procedure photometry_auto(thepath : string);//photometry via command line
-procedure colour_correction_factors(img: Timage_array);//calculate colour correction factors
+procedure colour_correction_factors(img: Timage_array; var headR : Theader);//calculate colour correction factors. Store noise values in headR
 
 
 const
@@ -1320,6 +1321,7 @@ const
   icon_thumb_down = 8; {image index for outlier}
   icon_king = 9;{image index for best image}
   icon_exclamation=29;
+  icon_video=10;
 
   filter_V  = 1;   // TG or V
   filter_B  = 2;  //Blue
@@ -2600,7 +2602,7 @@ begin
 end;
 
 
-procedure report_results(object_to_process, stack_info: string; object_counter, color_icon,stack_icon: integer);{report on tab results}
+procedure report_results(object_to_process, stack_info: string; object_counter, color_icon,stack_icon: integer);{report on tab results, listview}
 begin
   {report result in results}
   with stackmenu1 do
@@ -4229,7 +4231,7 @@ begin
     begin
       filename2:=TL.items[index].Caption;
       theext:=ExtractFileExt(filename2);
-      if theext = '.y4m' then
+      if ((theext = '.y4m') or (theext = '.avi')) then
       begin
         memo2_message('Can not run videos');
         exit;
@@ -10179,14 +10181,24 @@ var
    memox1,memox2 : tstrings;//work memo
 
 begin
-
-  result:=load_fits(filein,true {light},true {load data},true {update memo},0,memox,headx1,img); {load new fits or tiff file}
-  if result=false then exit;
-
   memox1:= Tstringlist.Create; ; // this needs to be TStringList
   memox2:= Tstringlist.Create; ; // this needs to be TStringList
 
-  get_background(0, img,headx1, True {get hist}, true {get noise and star_level});
+  result:=load_fits(filein,true {light},true {load data},true {update memo},0,memox1,headx1,img); {load new fits or tiff file}
+  if result=false then exit;
+
+  if length(img)>1 then //colour. Do before stretching
+  begin
+    memo2_message('Adjusting colour levels if single image. ');
+    colour_correction_factors(img,headx1);//calculate colour correction factors. Headx1 is updated with noise values
+    apply_factors(img);{histogram is invalid after this action}
+    stackmenu1.reset_factors1Click(nil);{reset factors to default}
+    memo2_message('Applying global-smoothing filter on image. Factors are set in tab "pixel math 1"');
+//    apply_star_smooth(img, headx1,stackmenu1.star_colour_smooth_diameter1.Text, stackmenu1.star_colour_smooth_nrstars1.Text);
+    global_colour_smooth(img, strtofloat2(stackmenu1.lrgb_global_colour_smooth_width1.Text), strtofloat2(stackmenu1.lrgb_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
+  end
+  else
+     get_background(0, img,headx1, True {get hist}, true {get noise and star_level});
 
   backgr:=headx1.backgr;
   noiselev:=headx1.noise_level;
@@ -10201,19 +10213,9 @@ begin
 
   headx1.bitpix:=16; //save as 16 bit for starnet
 
-  if length(img)>1 then //colour
-  begin
-    memo2_message('Adjusting colour levels if single image. ');
-    colour_correction_factors(img);//claculate colour correction factors
-    apply_factors(img);{histogram is invalid after this action}
-    memo2_message('Applying global-smoothing filter on image. Factors are set in tab "pixel math 1"');
-//    apply_star_smooth(img, headx1,stackmenu1.star_colour_smooth_diameter1.Text, stackmenu1.star_colour_smooth_nrstars1.Text);
-    global_colour_smooth(img, strtofloat2(stackmenu1.lrgb_global_colour_smooth_width1.Text), strtofloat2(stackmenu1.lrgb_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
-
-  end;
 
   filename3:=ChangeFileExt(Filename1,'_mtf.fits'); //save both tiff and fits
-  result:=save_fits(img,memox,headx1,filename3,true);
+  result:=save_fits(img,memox1,headx1,filename3,true);
   if result then
   begin
     fileout_neb:=ChangeFileExt(Filename1,'_nebula.'+filetypeout);
@@ -10250,28 +10252,28 @@ begin
       if filetypeout<>'tif' then //fits, unstretch
       begin
         //load image with stars
-        result:=load_fits(fileout_stars,true {light},true {load data},true {update memo},0,memox2,headx2,img); {load new fits file, ignore header}
+        result:=load_fits(fileout_stars,true {light},true {load data},true {update memo},0,memox2,headx2,img); //load new fits file. Load without overwriting orginal header using memox2,headx2
         if result then
         begin
       //    memo2_message('Star image processed and loaded again, now unstretching');
       //    Unapply_MTF_Linked(img,backgr, noiselev); //unstretch image
 
           //save unstretched star image
-          if stackmenu1.use_starnet2_1.itemindex=1 then //stack comet and stars seperate
-              update_text(memox,'OBJECT  =',#39+headx1.object_name+'_stars'+#39); {spaces will be added/corrected later}
-          result:=save_fits(img,memox,headx1,fileout_stars,true); //save with orginal header
+       //   if stackmenu1.use_starnet2_1.itemindex=1 then //stack comet and stars seperate
+          update_text(memox1,'OBJECT  =',#39+headx1.object_name+'_stars'+#39); {spaces will be added/corrected later}
+          result:=save_fits(img,memox1,headx1,fileout_stars,true); //save with orginal header
           if result then
           begin //load nebula image
-             result:=load_fits(fileout_neb,true {light},true {load data},true {update memo},0, memox2 {mainform1.memo1.lines},headx2,img); {load new fits file}//load without overwriting orginal header
+             result:=load_fits(fileout_neb,true {light},true {load data},true {update memo},0, memox2 {mainform1.memo1.lines},headx2,img); //load new fits file. Load without overwriting orginal header using memox2,headx2
              if result then
              begin
          //      memo2_message('Nebula image processed and loaded again, now unstretching');
         //       Unapply_MTF_Linked(img,backgr, noiselev);
                //plot_image(mainform1.image1, True);{plot real}
                //save unstretched star image
-               if stackmenu1.use_starnet2_1.itemindex=1 then //stack comet and stars seperate
-                  update_text(memox,'OBJECT  =',#39+headx1.object_name+'_nebula'+#39); {spaces will be added/corrected later}
-               result:=save_fits(img,memox,headx1,fileout_neb,true);//save with orginal header
+           //    if stackmenu1.use_starnet2_1.itemindex=1 then //stack comet and stars seperate
+               update_text(memox1,'OBJECT  =',#39+headx1.object_name+'_nebula'+#39); {spaces will be added/corrected later}
+               result:=save_fits(img,memox1,headx1,fileout_neb,true);//save with orginal header
              end;
           end;
         end
@@ -10385,6 +10387,9 @@ begin
 
     if counter>=2 then
     begin
+      head.object_name:=StringReplace(head.object_name,'_stars','',[]);
+      head.object_name:=StringReplace(head.object_name,'_nebula','',[]);
+      update_text(mainform1.memo1.lines,'OBJECT  =',#39+head.object_name+#39); {spaces will be added/corrected later}
       plot_histogram(img_loaded, True);
       plot_image(mainform1.image1, False);{plot real}
     end;
@@ -10398,7 +10403,12 @@ end;
 
 procedure Tstackmenu1.combine_files1Click(Sender: TObject);
 begin
-  combine_files(tlistview(sender)); //combine selected files, no alignment, no saving
+  combine_files(listview1); //combine selected files, no alignment, no saving
+end;
+
+procedure Tstackmenu1.results_combine_files1Click(Sender: TObject);
+begin
+  combine_files(listview5); //combine selected files, no alignment, no saving
 end;
 
 
@@ -12008,10 +12018,9 @@ begin
   Screen.Cursor:=crDefault;
 end;
 
-
-procedure colour_correction_factors(img: Timage_array);
+procedure colour_correction_factors(img: Timage_array; var headR : Theader);//calculate colour correction factors. Store noise values in headR
 var
-  headR,headG,headB : theader;
+  headG,headB : theader;
 begin
   if length(img_loaded) < 3 then exit;{not a three colour image}
 
@@ -12059,7 +12068,7 @@ begin
   apply_factor1.Enabled:=False;{block apply button temporary}
   application.ProcessMessages;
 
-  colour_correction_factors(img_loaded);
+  colour_correction_factors(img_loaded, head);
 
   apply_factor1.Enabled:=True;{enable apply button}
 end;
@@ -13357,7 +13366,6 @@ begin
     else
       analyse_level:=0; //almost none
 
-  //  exit;
     analyse_tab_lights(analyse_level); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
 
@@ -14048,7 +14056,7 @@ begin
           if stackmenu1.lrgb_auto_level1.Checked then
           begin
             memo2_message('Adjusting colour levels as set in tab "stack method"');
-            colour_correction_factors(img_loaded);
+            colour_correction_factors(img_loaded,head);
             apply_factors(img_loaded);{histogram is after this action invalid}
             stackmenu1.reset_factors1Click(nil);{reset factors to default}
             plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
@@ -14085,7 +14093,7 @@ begin
             if stackmenu1.osc_auto_level1.Checked then
             begin
               memo2_message('Adjusting colour levels as set in tab "stack method"');
-              colour_correction_factors(img_loaded);//stackmenu1.colour_correction_factors1Click(nil);
+              colour_correction_factors(img_loaded,head);//stackmenu1.colour_correction_factors1Click(nil);
               apply_factors(img_loaded);{histogram is after this action invalid}
               stackmenu1.reset_factors1Click(nil);{reset factors to default}
               plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
@@ -14341,6 +14349,27 @@ begin
   else
     memo2.Lines.add('Finished in ' + IntToStr(round((gettickcount64 - startTick) / 1000)) +' sec. The FITS header contains a detailed history.');
 
+  if ((use_ephemeris_alignment) and (starnet_index>0)) then
+  begin
+    if ListView5.Items.Count>=2 then //star and nebula should be available
+    begin
+      memo2_message('Combining stacked star and nebula frames');
+      listview5.Items[ListView5.Items.Count - 2].Selected:=true;
+      listview5.Items[ListView5.Items.Count - 1].Selected:=true;
+      combine_files(listview5); //combine selected files, no alignment, no saving
+
+      filename2:=ChangeFileExt(Filename2, '_comet.fits');
+      if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True {override}) then
+      begin
+        if head.naxis3 > 1 then report_results(head.object_name, stack_info, object_counter, 3 {color icon},5 {stack icon}) {report result in tab results}
+        else
+        report_results(head.object_name, 'comet_stack', object_counter, 4 {gray icon},5 {stack icon});{report result in tab results}
+      end;
+    end;
+
+    mainform1.stretch1.itemindex:=0;
+    memo2_message('Since images are already stretched for Starnet2, the strech factor is now set at off to prevent too much stretching.')
+  end;
 
   {$IFDEF fpc}
   progress_indicator(-100,'');{back to normal}
@@ -14737,7 +14766,7 @@ begin
       mainform1.savedialog1.filename);
 
     filename2:=mainform1.savedialog1.filename;
-    report_results('Video file', '', 0, 15 {video icon},5 {stack icon});{report result in tab results}
+    report_results('Video file', '', 0, icon_video {video icon},5 {stack icon});{report result in tab results}
   end;
 end;
 

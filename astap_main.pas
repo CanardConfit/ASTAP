@@ -8503,7 +8503,7 @@ begin
   if stackmenu1.osc_auto_level1.checked then
   begin
     memo2_message('Adjusting colour levels as set in tab "stack method"');
-    colour_correction_factors(img_loaded);//stackmenu1.colour_correction_factors1Click(nil);
+    colour_correction_factors(img_loaded,head);//stackmenu1.colour_correction_factors1Click(nil);
     apply_factors(img_loaded);{histogram is after this action invalid}
     stackmenu1.reset_factors1Click(nil);{reset factors to default}
     plot_histogram(img,true {update}); {plot histogram in colour, set sliders}
