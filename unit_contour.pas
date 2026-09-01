@@ -452,10 +452,6 @@ begin
     detection_level:=sigmafactor*head.noise_level+ head.backgr;
     detection_grid:=strtoint2(stackmenu1.detection_grid1.text,400) div binning;
 
-//    for fitsY:=0 to hh-1 do
-//      for fitsX:=0 to ww-1  do
-//        img_sa[0,fitsY,fitsX]:=-1;{mark as star free area}
-
 
     for fitsY:=0 to hh-1  do
     begin

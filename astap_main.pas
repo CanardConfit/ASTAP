@@ -6,6 +6,12 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
+
 
 {Notes on MacOS pkg making:
    1) Modify app in applications via "show contents", add updated files.
@@ -74,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.08.30';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -9469,7 +9475,7 @@ begin
       c:=Sett.ReadInteger('stack','stackmenu_top',987654321);  if c<>987654321 then stackmenu1.top:=c;
       c:=Sett.ReadInteger('stack','stackmenu_height',987654321); if c<>987654321 then stackmenu1.height:=c;
       c:=Sett.ReadInteger('stack','stackmenu_width',987654321); if c<>987654321 then stackmenu1.width:=c;
-      c:=Sett.ReadInteger('stack','splitter',987654321); if c<>987654321 then stackmenu1.pairsplitter1.position:=c;
+      c:=Sett.ReadInteger('stack','splitter',987654321); if c<>987654321 then SavedSplitterPos:=c;//PairSplitter1.Position of stackmenu1. Update at formshow to prevent a console warning in GTK3
 
 
       c:=Sett.ReadInteger('stack','mosaic_crop',987654321);if c<>987654321 then stackmenu1.mosaic_crop1.position:=c;
@@ -9545,7 +9551,7 @@ begin
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
-      c:=Sett.ReadInteger('stack','starnet',987654321); if c<>987654321 then stackmenu1.use_starnet2_1.itemindex:=c;
+      stackmenu1.use_starnet2_1.Checked:=Sett.ReadBool('stack','starnet',false);
 
       dum:=Sett.ReadString('stack','path_starnet',''); if dum<>'' then path_starnet2:=dum;
 
@@ -9978,7 +9984,7 @@ begin
 
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
 
-      sett.writeInteger('stack','starnet',stackmenu1.use_starnet2_1.itemindex);
+      sett.writebool('stack','starnet',stackmenu1.use_starnet2_1.checked);
 
       sett.writestring('stack','path_starnet',path_starnet2);
 

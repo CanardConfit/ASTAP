@@ -68,13 +68,14 @@ type
     br2: TEdit;
     Button3: TButton;
     center_position1: TLabel;
+    help_ephemeris_stacking1: TLabel;
     MenuItem25: TMenuItem;
     MenuItem36: TMenuItem;
     combine_files1: TMenuItem;
     results_split_files1: TMenuItem;
     results_combine_files1: TMenuItem;
     Separator17: TMenuItem;
-    use_starnet2_1: TComboBox;
+    use_starnet2_1: TCheckBox;
     starnet_split1: TMenuItem;
     Separator16: TMenuItem;
     disable_autocenter1: TCheckBox;
@@ -779,6 +780,7 @@ type
     procedure classify_dark_temperature1Change(Sender: TObject);
     procedure contour_gaussian1Change(Sender: TObject);
     procedure combine_files1Click(Sender: TObject);
+    procedure help_ephemeris_stacking1Click(Sender: TObject);
     procedure results_combine_files1Click(Sender: TObject);
     procedure results_split_files1Click(Sender: TObject);
     procedure starnet_split1click(Sender: TObject);
@@ -1128,6 +1130,7 @@ var  {################# initialised variables #########################}
   dark_norm_value: double=0;
   stacking_running : boolean=false;
   stacking_paused : boolean=false;
+  SavedSplitterPos: integer=500;
 
 
 
@@ -1341,7 +1344,7 @@ const
   {$ifdef mswindows}
   path_starnet2: string='C:\Program Files\StarNet2\bin\starnet2.exe';
   {$else} {unix}
-  path_starnet2: string='C:\Program Files\StarNet2\bin\starnet2';
+  path_starnet2: string='/usr/bin/starnet2';
   {$endif}
 
 implementation
@@ -4070,7 +4073,8 @@ end;
 
 procedure Tstackmenu1.FormShow(Sender: TObject);
 begin
- // set_icon_stackbutton;//update glyph stack button
+  PairSplitter1.Position := SavedSplitterPos;//update in GTK3 the position later then during load to prevent an [WARNING] GetPosition called without handle for PairSplitter1(TPairSplitter)
+
   stackmenu1.stack_method1Change(nil);
   stackmenu1.quad_tolerance1Change(nil);//make abnormal quad tolerances red
   stackmenu1.pagecontrol1Change(Sender);//update stackbutton1.enabled
@@ -10406,6 +10410,11 @@ begin
   combine_files(listview1); //combine selected files, no alignment, no saving
 end;
 
+procedure Tstackmenu1.help_ephemeris_stacking1Click(Sender: TObject);
+begin
+  openurl('http://www.hnsky.org/astap.htm#ephemeris_alignment');
+end;
+
 procedure Tstackmenu1.results_combine_files1Click(Sender: TObject);
 begin
   combine_files(listview5); //combine selected files, no alignment, no saving
@@ -13279,12 +13288,12 @@ end;
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
   i, c, nrfiles, image_counter, object_counter,
-  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon,starnet_index :   integer;
+  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon :   integer;
   filter_name1, filter_name2, defilter, filename3,
   extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_stars   : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
-  classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue,use_ephemeris_alignment  : boolean;
+  classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue,use_ephemeris_alignment,starnet_checked : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr,x,y                      : double;
   filters_used: array [0..6] of string;//r,g,b,r2,g2,b2,L
@@ -13320,7 +13329,7 @@ begin
   classify_object:=((classify_object1.Checked) and (sender_photometry = False) and (stitching_mode=false));  //disable classify object if sender is photom_stack1
 
   use_ephemeris_alignment:=use_ephemeris_alignment1.Checked;
-  starnet_index:=use_starnet2_1.itemindex;
+  starnet_checked:=use_starnet2_1.checked;
 
   if ((stackmenu1.use_manual_alignment1.Checked) and (sigma_clip) and (pos('Comet', stackmenu1.manual_centering1.Text) <> 0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
 
@@ -13430,7 +13439,7 @@ begin
   min_background:=65535;
   max_background:=0;
 
-  if ((calibration_mode) or (calibration_mode2) or ((use_ephemeris_alignment) and (starnet_index>0)) ) then {calibrate lights only}
+  if ((calibration_mode) or (calibration_mode2) or ((use_ephemeris_alignment) and (starnet_checked)) ) then {calibrate lights only}
   begin
     calibration_only;
     if process_as_osc > 0 then Memo2_message('OSC images are converted to colour.');
@@ -13545,7 +13554,7 @@ begin
     end;
   end;
 
-  if ((use_ephemeris_alignment) and (starnet_index>0)) then {split. Do the split before the  annotations since the date_obs in '_stars.' files is later fixed in next code for add annotations}
+  if ((use_ephemeris_alignment) and (starnet_checked)) then {split. Do the split before the  annotations since the date_obs in '_stars.' files is later fixed in next code for add annotations}
   begin
     memo2_message('Splitting file using Starnet');
     ListView1.Selected:=nil; {remove any selection}
@@ -14349,7 +14358,7 @@ begin
   else
     memo2.Lines.add('Finished in ' + IntToStr(round((gettickcount64 - startTick) / 1000)) +' sec. The FITS header contains a detailed history.');
 
-  if ((use_ephemeris_alignment) and (starnet_index>0)) then
+  if ((use_ephemeris_alignment) and (starnet_checked)) then
   begin
     if ListView5.Items.Count>=2 then //star and nebula should be available
     begin
@@ -14368,7 +14377,7 @@ begin
     end;
 
     mainform1.stretch1.itemindex:=0;
-    memo2_message('Since images are already stretched for Starnet2, the strech factor is now set at off to prevent too much stretching.')
+    memo2_message('Since images are already stretched for Starnet2, the stretch factor is now set at off to prevent too much stretching.')
   end;
 
   {$IFDEF fpc}

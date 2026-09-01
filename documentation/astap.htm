@@ -118,7 +118,7 @@ QT5</a> </big></td>
 </tr>
 <tr>
 <td style="background-color: rgb(233, 233, 233); width: 242px;"><big>Linux 32 bit arm<br>&nbsp;(armhf, arm32)</big></td>
-<td style="background-color: rgb(233, 233, 233); width: 302px;"><big></big><big>v2026.07.30</big><br><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf.deb/download"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_i386.deb/download">Raspian/</a></big></a><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf.deb/download">Debian/Ubuntu (.deb) GTK2</a></big><br></td>
+<td style="background-color: rgb(233, 233, 233); width: 302px;"><big></big><big>v2026.07.30</big><br><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf.deb/download"><big></big></a><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_i386.deb/download">Raspian/</a></big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf.deb/download">Debian/Ubuntu (.deb) GTK2</a></big><br></td>
 </tr>
 <tr>
 <td style="width: 242px;"><big>MacOS&nbsp;64 bit for intel<span style="font-weight: bold;"> </span>processors</big></td>
@@ -341,7 +341,7 @@ zipped</a> (obsolete),</big></td>
 </tr>
 <tr>
 <td style="background-color: rgb(234, 234, 234); width: 228px;"><big>Linux 64 bit arm <br>(aarch64, arm64)</big></td>
-<td style="background-color: rgb(234, 234, 234); width: 310px;"><big>v2026.07.30</big><a href="astap_armhf.deb"><br></a><big><a href="astap_armhf.deb"><a href="astap_aarch64.deb">Raspian/Debian/Ubuntu (.deb), GTK2</a><br></a><a href="astap_aarch64_GTK3.deb">Raspian/Debian/Ubuntu (.deb), GTK3</a><br><a href="astap_aarch64.tar.gz">Any Linux (.tar.gz) GTK2</a><br></big><big><a href="astap_aarch64_gtk3.tar.gz">Any Linux (.tar.gz) GTK3</a></big></td>
+<td style="background-color: rgb(234, 234, 234); width: 310px;"><big>v2026.07.30</big><a href="astap_armhf.deb"><br></a><big><a href="astap_armhf.deb"></a><a href="astap_aarch64.deb">Raspian/Debian/Ubuntu (.deb), GTK2</a><br><a href="astap_aarch64_GTK3.deb">Raspian/Debian/Ubuntu (.deb), GTK3</a><br><a href="astap_aarch64.tar.gz">Any Linux (.tar.gz) GTK2</a><br></big><big><a href="astap_aarch64_gtk3.tar.gz">Any Linux (.tar.gz) GTK3</a></big></td>
 <td style="background-color: rgb(234, 234, 234);"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_command-line_version_Linux_armhf.zip/download">astap_cli&nbsp;</a>
 (</big><big>v2026.07.30</big><big>)</big></td>
 </tr>
@@ -2516,9 +2516,30 @@ trails. There is an experimental stack method to have&nbsp;both
 sharp
 but it will use only the stars of one image.</big><br style="font-family: Arial;">
 <big><br>
-</big><img style="width: 1505px; height: 615px;" alt="" src="astap_ephemeris_alignment.png"><br>
+</big><img style="width: 1435px; height: 625px;" alt="" src="astap_ephemeris_alignment.png"><br>
 </div>
-<p align="left"><a href="astap.htm#index">Back
+<br><p align="left"><big><span style="text-decoration: underline;">Stacking Comet Images<br><br></span>ASTAP
+includes support for the external tool StarNet2. StarNet2 separates the
+stars from the nebula or comet in an image, allowing them to be
+processed independently. In ASTAP, this feature is primarily intended
+for comet stacking. The comet and the stars are extracted into separate
+frames, stacked independently, and then recombined into a single image.
+The final result shows both the comet and the stars as sharp.<span style="text-decoration: underline;"><br></span></big></p><p align="left"><big><span style="text-decoration: underline;"></span></big></p><p align="left"><big><span style="text-decoration: underline;">Installing StarNet2</span><br><br>To use <a href="https://starnetastro.com/">StarNet2</a>,
+download and install it, preferably in its default installation
+directory. When the StarNet2 option is enabled in ASTAP and the
+executable cannot be found, ASTAP will prompt you to locate the
+installation folder. StarNet2 can use your graphics card (GPU) to
+accelerate processing.<br><br><br>Windows: See the official <a href="https://starnetastro.com/documentation/windows-cuda/">StarNet2 Windows installation guide.</a><br><br>If StarNet2 only uses the CPU, the easiest way to enable GPU acceleration is to install <a href="https://globalcdn.nuget.org/packages/microsoft.ai.directml.1.15.4.nupkg?packageVersion=1.15.4">DirectML</a>:<br><br></big></p><ol style="text-align: left;"><li><big>Download the <a href="https://globalcdn.nuget.org/packages/microsoft.ai.directml.1.15.4.nupkg?packageVersion=1.15.4">DirectML</a> package.</big></li><li><big>Rename the downloaded .nupkg file to .zip.</big></li><li><big>Extract DirectML.dll from the bin subdirectory.</big></li><li><big>Copy DirectML.dll to: &nbsp; </big>C:\Program Files\StarNet2\bin<br></li></ol><p align="left"><big><br>After
+installation, Windows Task Manager should indicate substantial GPU
+usage (typically 75% or higher) while StarNet2 is processing.<br><br><br><span style="text-decoration: underline;">Using StarNet2 for Comet Images</span><br><br></big></p><ol style="text-align: left;"><li><big>Select Ephemeris Stacking.</big><big> Enable the StarNet2 option.</big></li><li><big>Load the comet light frames in the Lights tab.</big></li><li><big>Load darks, flats, and flat-darks in their respective tabs, if not already loaded.</big></li><li><big>In the Stack Method tab, set the &#963; factor to a relatively low value, such as 1.4.</big></li><li><big>Press Stack.</big></li></ol><p align="left"><big><br>Processing
+will take longer because both the comet and star images are generated
+and stacked separately. StarNet is fed with sinh stretched frames. The
+special stretching routine has no settings. But in general the final
+result should be fine and the viewer stretching in ASTAP is automatic
+set to off by purpose.<br><br>The Result tab will display three images:&nbsp;</big></p><ul style="text-align: left;"><li><big>the final combined image, &nbsp;</big></li><li><big>the comet/nebula image,&nbsp;</big></li><li><big>the star image.</big></li></ul><p align="left"><big><br>The
+popup menus in both the Result and Lights tabs also provide an option
+to recombine the comet/nebula and star images manually after additional
+processing in an external image editor.</big></p><p align="left"><a href="astap.htm#index">Back
 to index</a></p>
 <p align="left"></p>
 <p align="left"><big><a name="blink"></a><big><span style="text-decoration: underline;">Blink tab</span></big><br>
