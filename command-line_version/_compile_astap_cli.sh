@@ -90,6 +90,15 @@ cp ./astap_cli  /home/h/astap_install/arch_amd64/opt/astap
 cp ./astap_cli  /home/h/astap_install/astap_amd64/opt/astap
 rm astap_cli
 
+/home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_linux_i386.lpi
+zip astap_command-line_version_Linux_i386.zip astap_cli
+if [[ ! -f ~/astap.fpc/command-line_version/astap_cli ]] ; then
+    echo 'Linux_i386 file does not exist, aborting!!'
+    exit
+fi
+rm astap_cli
+
+
 
 /home/h/fpcupdeluxe/lazarus/lazbuild astap_command_line_win11_aarch64.lpi
 zip astap_command-line_version_win11_aarch64 astap_cli.exe

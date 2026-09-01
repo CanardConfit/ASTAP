@@ -9885,195 +9885,6 @@ begin
 end;
 
 
-procedure Apply_MTF_Linked(var img: TImage_Array;background, sd: Single);
-const
-  MaxValue          = 65535.0;
-  SigmaFactor       = 2.8;
-  TargetBackground  = 0.25;
-  LumR = 0.2126; LumG = 0.7152; LumB = 0.0722;
-var
-  x, y,nrcolors   : Integer;
-  blackPoint      : Single;
-  target          : Single;
-  rr, mtf          : Single;
-  a, c, twoMtfM1  : Single;
-  R, G, B, L, delta, Lout, k : Single;
-begin
-  blackPoint := background - SigmaFactor * sd;
-  if blackPoint < 0 then blackPoint := 0;
-  if blackPoint >= MaxValue then Exit;
-  target := TargetBackground;
-  rr := (background - blackPoint) / (MaxValue - blackPoint);
-  if rr <= 0 then Exit;
-  mtf := ((target - 1) * rr) / ((2 * target - 1) * rr - target);
-  a := (mtf - 1) * MaxValue;
-  c := mtf * (MaxValue - blackPoint);
-  twoMtfM1 := 2 * mtf - 1;
-
-  nrcolors:=length(img);
-
-  if nrcolors>1 then
-  begin
-    for y := 0 to High(img[0]) do
-    for x := 0 to High(img[0,0]) do
-    begin
-      R := img[0,y,x];
-      G := img[1,y,x];
-      B := img[2,y,x];
-      L := LumR*R + LumG*G + LumB*B;
-
-      if L <= blackPoint then
-      begin
-        img[0,y,x] := 0; img[1,y,x] := 0; img[2,y,x] := 0;
-        Continue;
-      end;
-
-      if L < MaxValue then
-      begin
-        delta := L - blackPoint;
-        Lout := a * delta / (twoMtfM1 * delta - c);
-        if Lout > MaxValue then Lout := MaxValue;
-      end
-      else
-        Lout := MaxValue;
-
-      if L > 0 then
-        k := Lout / L
-      else
-        k := 0;
-
-      img[0,y,x] := Min(R * k, MaxValue);
-      img[1,y,x] := Min(G * k, MaxValue);
-      img[2,y,x] := Min(B * k, MaxValue);
-    end;
-  end
-  else
-  begin
-    for y := 0 to High(img[0]) do
-    for x := 0 to High(img[0,0]) do
-    begin
-      L := img[0,y,x];
-
-      if L <= blackPoint then
-      begin
-        img[0,y,x] := 0;
-        Continue;
-      end;
-
-      if L < MaxValue then
-      begin
-        delta := L - blackPoint;
-        Lout := a * delta / (twoMtfM1 * delta - c);
-        if Lout > MaxValue then Lout := MaxValue;
-      end
-      else
-        Lout := MaxValue;
-
-      if L > 0 then
-        k := Lout / L
-      else
-        k := 0;
-
-      img[0,y,x] := Min(L * k, MaxValue);
-    end;
-  end;
-end;
-
-procedure Unapply_MTF_Linked(var img: TImage_Array;
-                              background, sd: Single);
-const
-  MaxValue          = 65535.0;
-  SigmaFactor       = 2.8;
-  TargetBackground  = 0.25;
-  LumR = 0.2126; LumG = 0.7152; LumB = 0.0722;
-var
-  x, y,nrcolors    : Integer;
-  blackPoint      : Single;
-  target          : Single;
-  rr, mtf          : Single;
-  a, c, twoMtfM1  : Single;
-  R, G, B, L, delta, Lorig, k : Single;
-begin
-  blackPoint := background - SigmaFactor * sd;
-  if blackPoint < 0 then blackPoint := 0;
-  if blackPoint >= MaxValue then Exit;
-  target := TargetBackground;
-  rr := (background - blackPoint) / (MaxValue - blackPoint);
-  if rr <= 0 then Exit;
-  mtf := ((target - 1) * rr) / ((2 * target - 1) * rr - target);
-  a := (mtf - 1) * MaxValue;
-  c := mtf * (MaxValue - blackPoint);
-  twoMtfM1 := 2 * mtf - 1;
-
-  nrcolors:=length(img);
-
-  if nrcolors>1 then
-  begin
-    for y := 0 to High(img[0]) do
-    for x := 0 to High(img[0,0]) do
-    begin
-      R := img[0,y,x];
-      G := img[1,y,x];
-      B := img[2,y,x];
-      L := LumR*R + LumG*G + LumB*B;
-
-      if L <= 0 then
-      begin
-        img[0,y,x] := blackPoint;
-        img[1,y,x] := blackPoint;
-        img[2,y,x] := blackPoint;
-        Continue;
-      end;
-
-      if L < MaxValue then
-      begin
-        delta := L * c / (L * twoMtfM1 - a);
-        Lorig := blackPoint + delta;
-        if Lorig > MaxValue then Lorig := MaxValue
-        else if Lorig < 0 then Lorig := 0;
-      end
-      else
-        Lorig := MaxValue;
-
-      k := Lorig / L;
-
-      img[0,y,x] := Min(R * k, MaxValue);
-      img[1,y,x] := Min(G * k, MaxValue);
-      img[2,y,x] := Min(B * k, MaxValue);
-    end;
-  end
-  else
-  begin
-    for y := 0 to High(img[0]) do
-    for x := 0 to High(img[0,0]) do
-    begin
-      L := img[0,y,x];
-
-      if L <= 0 then
-      begin
-        img[0,y,x] := blackPoint;
-        Continue;
-      end;
-
-      if L < MaxValue then
-      begin
-        delta := L * c / (L * twoMtfM1 - a);
-        Lorig := blackPoint + delta;
-        if Lorig > MaxValue then Lorig := MaxValue
-        else if Lorig < 0 then Lorig := 0;
-      end
-      else
-        Lorig := MaxValue;
-
-      k := Lorig / L;
-
-      img[0,y,x] := Min(L * k, MaxValue);
-    end;
-  end
-end;
-
-
-
 procedure Apply_Asinh_Linked(var img: TImage_Array; background, sd: Single);
 const
   MaxValue          = 65535.0;
@@ -10207,8 +10018,6 @@ begin
   backgr:=headx1.backgr;
   noiselev:=headx1.noise_level;
 
-//  Apply_MTF_Linked(img,backgr, noiselev); //stretch image
-
   Apply_Asinh_Linked(img,backgr, noiselev);
 
   filename1:='';
@@ -10216,7 +10025,6 @@ begin
       if not(filein[i] in InvalidChars) then filename1:=filename1+filein[i];
 
   headx1.bitpix:=16; //save as 16 bit for starnet
-
 
   filename3:=ChangeFileExt(Filename1,'_mtf.fits'); //save both tiff and fits
   result:=save_fits(img,memox1,headx1,filename3,true);
@@ -10251,19 +10059,13 @@ begin
       end;
     end
     else
-    begin //starnet2 successfull
-    //  headx1.bitpix:=-32; //back to flating point
-      if filetypeout<>'tif' then //fits, unstretch
+    begin //starnet2 successfull. Update the header with orginal header
+      if filetypeout<>'tif' then //fits, update the object keyword
       begin
         //load image with stars
         result:=load_fits(fileout_stars,true {light},true {load data},true {update memo},0,memox2,headx2,img); //load new fits file. Load without overwriting orginal header using memox2,headx2
         if result then
         begin
-      //    memo2_message('Star image processed and loaded again, now unstretching');
-      //    Unapply_MTF_Linked(img,backgr, noiselev); //unstretch image
-
-          //save unstretched star image
-       //   if stackmenu1.use_starnet2_1.itemindex=1 then //stack comet and stars seperate
           update_text(memox1,'OBJECT  =',#39+headx1.object_name+'_stars'+#39); {spaces will be added/corrected later}
           result:=save_fits(img,memox1,headx1,fileout_stars,true); //save with orginal header
           if result then
@@ -10271,11 +10073,6 @@ begin
              result:=load_fits(fileout_neb,true {light},true {load data},true {update memo},0, memox2 {mainform1.memo1.lines},headx2,img); //load new fits file. Load without overwriting orginal header using memox2,headx2
              if result then
              begin
-         //      memo2_message('Nebula image processed and loaded again, now unstretching');
-        //       Unapply_MTF_Linked(img,backgr, noiselev);
-               //plot_image(mainform1.image1, True);{plot real}
-               //save unstretched star image
-           //    if stackmenu1.use_starnet2_1.itemindex=1 then //stack comet and stars seperate
                update_text(memox1,'OBJECT  =',#39+headx1.object_name+'_nebula'+#39); {spaces will be added/corrected later}
                result:=save_fits(img,memox1,headx1,fileout_neb,true);//save with orginal header
              end;
@@ -10286,7 +10083,7 @@ begin
           memo2_message('No image found produced by Starnet. Starnet2 path will be cleared. Prompt for new path will occur at next attempt.');
         end;
 
-      end;//unstretch
+      end;//update keywords
     end;
   end;
   if result=false then
