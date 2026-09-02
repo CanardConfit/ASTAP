@@ -65,7 +65,7 @@ tar -czvf astap_amd64_qt5.tar.gz /opt/astap/astap  /opt/astap/astap.ico /opt/ast
 
 #Build i386    
 rm ~/astap.fpc/astap                                
-/home/h/fpcupdeluxe/lazarus/lazbuild /home/h/astap.fpc/astap_linux_gkt2_i386.lpi                  
+/home/h/fpcupdeluxe_stable/lazarus/lazbuild /home/h/astap.fpc/astap_linux_gkt2_i386.lpi                  
 if [[ ! -f ~/astap.fpc/astap ]] ; then
     echo 'I386 file does not exist, aborting!!'
     exit

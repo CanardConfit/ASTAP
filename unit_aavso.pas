@@ -1557,8 +1557,8 @@ begin
 
     textp4:=textp3+100;
 
-    if object_name<>'' then
-      bmp.canvas.textout(textp4,len*3,object_name)
+    if head.object_name<>'' then
+      bmp.canvas.textout(textp4,len*3,head.object_name)
     else
       bmp.canvas.textout(textp4,len*3,ExtractFilePath(filename2));
 

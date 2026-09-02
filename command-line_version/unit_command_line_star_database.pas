@@ -2484,7 +2484,7 @@ begin
     rot:=ra1*69/(2*pi);
     area_nr:=1+3+9+15+21+27+33+38+43+48+52+56+60+63+65+67+68+1+trunc(rot);
     spaceS:=dec1-dec_boundaries1476[17];
-    spaceN:=dec_boundaries1476[19]-dec1;
+    spaceN:=dec_boundaries1476[18]-dec1;
     spaceW:=(pi*2/69) * frac(rot)*cos_dec1;
     spaceE:=(pi*2/69) * (1-frac(rot))*cos_dec1;
   end
