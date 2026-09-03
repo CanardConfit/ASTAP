@@ -49,8 +49,25 @@ void write_ppm(char meta[],unsigned width, unsigned height, unsigned short *bitm
 void write_fits(char fits_header[],unsigned width, unsigned height, unsigned left_margin, unsigned top_margin,unsigned  width2,unsigned height2, unsigned short *bitmap,
                 const char *fname);
 void write_tiff(int width, int height, unsigned short *bitmap,
-                const char *basename);
+                const char *description, const char *basename);
 void JDtoDate(double jd,  int *year, int *month, int *day, int *hours, int *minutes, double *seconds); //converts a Julian day to a calendar Date and Time according Meeus. C routine written by Han Kleijn
+void build_fits_header(LibRaw &RawProcessor, char fits_header[], unsigned width2, unsigned height2);
+void build_astrotiff_description(const char fits_header[], char *out, size_t outsize);
+
+// These alias RawProcessor.imgdata.* for brevity. At file scope (rather than
+// local to main()) so build_fits_header() below can use them too -- it takes
+// its own "RawProcessor" parameter, and these macros expand textually
+// against whatever variable of that name is in scope, so they work
+// identically in both main() and build_fits_header().
+#define S RawProcessor.imgdata.sizes
+//#define OUT RawProcessor.imgdata.params
+#define OUTR RawProcessor.imgdata.rawparams
+#define P1 RawProcessor.imgdata.idata
+#define P2 RawProcessor.imgdata.other
+#define P3 RawProcessor.imgdata.makernotes.common
+#define exifLens RawProcessor.imgdata.lens
+#define C RawProcessor.imgdata.color
+#define OUT RawProcessor.imgdata.params
 
 int main(int ac, char *av[])
 {
@@ -60,15 +77,12 @@ int main(int ac, char *av[])
   char meta[256];
   char str[180];
   char fits_header[2880];
-  double temperature;
-  int year,month,day,hh,mm;//for JDtoDate
-  double julianday,ss;            //for JDtoDate
 
   LibRaw RawProcessor;
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2026-08-31\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2026-09-03\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"
@@ -87,18 +101,6 @@ int main(int ac, char *av[])
             
     return 0;
   }
-
-#define S RawProcessor.imgdata.sizes
-//#define OUT RawProcessor.imgdata.params
-#define OUTR RawProcessor.imgdata.rawparams
-#define P1 RawProcessor.imgdata.idata
-#define P2 RawProcessor.imgdata.other
-#define P3 RawProcessor.imgdata.makernotes.common
-#define exifLens RawProcessor.imgdata.lens
-#define C RawProcessor.imgdata.color
-
-
-#define OUT RawProcessor.imgdata.params
 
   for (i = 1; i < ac; i++)
   {
@@ -237,119 +239,8 @@ int main(int ac, char *av[])
          
    
 
-      strcpy(fits_header,"SIMPLE  =                    T / FITS header                                      ");
-      fits_header[80]='\0'; // length should be exactly 80
+      build_fits_header(RawProcessor, fits_header, width2, height2);
 
-      strcpy(str,        "BITPIX  =                   16 / Bits per entry                                   ");
-      str[80]='\0'; strcat(fits_header,str);//line 2. Length of each keyword record should be exactly 80
-      strcpy(str,        "NAXIS   =                    2 / Number of dimensions                             ");
-      str[80]='\0'; strcat(fits_header,str);//line 3. Length of each keyword record should be exactly 80
-
-      sprintf(str,"NAXIS1  = %20d / Length of x axis                                                     ", (long int)width2);// long int is required for the correct formating
-      str[80]='\0'; strcat(fits_header,str);//line 4. Length of each keyword record should be exactly 80
-
-      sprintf(str,"NAXIS2  = %20d / Length of y axis                                                     ", (long int)height2);
-      str[80]='\0'; strcat(fits_header,str);//line 5. Length of each keyword record should be exactly 80
-
-      sprintf(str,"EXPTIME = %20G   / Exposure time in seconds                                             ",(double)P2.shutter);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
- 
-      julianday= 2440587.5+ (double)P2.timestamp/(24.0*60.0*60.0);//Julian Day of begin exposure. Convert Unix (time is seconds since 1.1.1970) to Julian Day by adding a factor}
-      sprintf(str,"JD      = %20.8f / [Julian Day] The start time of the exposure                           ",julianday);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80           x
-
-      JDtoDate(julianday, &year, &month, &day,&hh,&mm,&ss);// convert to date
-      sprintf(str,"DATE-OBS= '%4.4i-%2.2i-%2.2iT%2.2i:%2.2i:%06.3f' / [UTC] The start time of the exposure                                 ", year, month, day,hh,mm,ss);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80                                          x
-
-      if (P3.SensorTemperature>-999) {temperature=P3.SensorTemperature;}
-      else
-      if (P3.CameraTemperature>-999) {temperature=P3.CameraTemperature;}
-      else
-      {temperature=999;}
-
-      sprintf(str,"CCD-TEMP= %20G / Sensor or camera temperature                                         ",(double)temperature);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-
-      sprintf(str,"GAIN    = %20d / ISO speed                                                            ",(long int)P2.iso_speed);// long int is required for the correct formating
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      
-      if (C.cblack[0] != 0)
-      {
-      sprintf(str,"PEDESTAL= %20d / Black level                                                          ",(long int)C.cblack[0]);// long int is required for the correct formating
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"PEDESTA2= %20d                                                                        ",(long int)C.cblack[1]);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"PEDESTA3= %20d                                                                        ",(long int)C.cblack[2]);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"PEDESTA4= %20d                                                                        ",(long int)C.cblack[3]);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      }
-
-      if (C.linear_max[0] != 0)
-      {
-      sprintf(str,"DATAMAX = %20d / Max value where still linear                                         ",(long int)C.linear_max[0]);// long int is required for the correct formating
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"DATAMAX2= %20d                                                                        ",(long int)C.linear_max[1]);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"DATAMAX3= %20d                                                                        ",(long int)C.linear_max[2]);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"DATAMAX4= %20d                                                                        ",(long int)C.linear_max[3]);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      }
-
-
-      sprintf(str,"APERTURE= %20.1f / Lens aperture                                                       ",(double)P2.aperture);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80      
-      
-
-      sprintf(str,"FOCALLEN= %20d / Focal length lens                                                    ",(long int)P2.focal_len);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-
-      sprintf(str,"CAMMAKER= '%s'                                                                        ",P1.make);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-
-      sprintf(str,"INSTRUME= '%s'                                                                        ",P1.model );
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      
-      sprintf(str,"TELESCOP= '%s'                                                                        ",exifLens.Lens );
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-    
-
-      if (P1.filters)
-      {
-      sprintf(str,"FILT-PAT= '                '   / Filter pattern                                       ");
-
-      	if (!P1.cdesc[3])
-			P1.cdesc[3] = 'G';
-		for (int i = 0; i < 16; i++)
-			str[i+11]=(P1.cdesc[RawProcessor.fcol(i >> 1, i & 1)]);
-        str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-
-
-      sprintf(str,"BAYERPAT= '    '               / Bayer color pattern                                   ");
-      	if (!P1.cdesc[3])
-			P1.cdesc[3] = 'G';
-		for (int i = 0; i < 4; i++)
-			str[i+11]=(P1.cdesc[RawProcessor.fcol(i >> 1, i & 1)]);
-        str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      }
-
-      sprintf(str,"IMG_FLIP= %20d                                                                         ",(long int)S.flip);
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-
-      sprintf(str,"COMMENT   Raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org             ");
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      
-
-
-      strcpy(str,"END                                                                                     ");
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-
-      for (unsigned i = strlen(fits_header)-1; i < 2880; i += 1)  //complete to 2880
-        fits_header[i]=' ';//fill with space
-      fits_header[2880]='\0';//header should be a multiply of 38 records equals 2880 bytes
-      
       write_fits(fits_header,S.raw_width, S.raw_height, left_margin, top_margin,width2, height2, RawProcessor.imgdata.rawdata.raw_image, outfn);
       }
 //====================================================================================================================================
@@ -357,17 +248,23 @@ int main(int ac, char *av[])
       else
       {
       if (out_tiff)
-        {write_tiff(S.raw_width, S.raw_height,
-                  RawProcessor.imgdata.rawdata.raw_image, outfn); } 
+        {
+        build_fits_header(RawProcessor, fits_header, S.raw_width, S.raw_height);
+        char astrotiff_desc[2880];
+        build_astrotiff_description(fits_header, astrotiff_desc, sizeof(astrotiff_desc));
+        write_tiff(S.raw_width, S.raw_height,
+                  RawProcessor.imgdata.rawdata.raw_image, astrotiff_desc, outfn);
+        }
         else  //write ppm with meta data as comments
         {
         sprintf(str,"%g",P2.shutter);                          strcpy(meta,"# EXPTIME=");   strcat(meta,str);
-        sprintf(str, "%d",(long int)P2.timestamp);                  strcat(meta,"# TIMESTAMP="); strcat(meta,str);
-        sprintf(str, "%d",(long int)P3.SensorTemperature);          strcat(meta,"# CCD-TEMP=");  strcat(meta,str);
-        sprintf(str, "%d",(long int)P3.CameraTemperature);          strcat(meta,"# CAM-TEMP=");  strcat(meta,str);
-        sprintf(str, "%d",(long int)P2.iso_speed);                  strcat(meta,"# ISOSPEED=");  strcat(meta,str);
+        sprintf(str, "%.6f", (double)P2.timestamp + P2.timestamp_subsec); 
+                                                               strcat(meta,"# TIMESTAMP="); strcat(meta,str);
+        sprintf(str, "%d",(long int)P3.SensorTemperature);     strcat(meta,"# CCD-TEMP=");  strcat(meta,str);
+        sprintf(str, "%d",(long int)P3.CameraTemperature);     strcat(meta,"# CAM-TEMP=");  strcat(meta,str);
+        sprintf(str, "%d",(long int)P2.iso_speed);             strcat(meta,"# ISOSPEED=");  strcat(meta,str);
         sprintf(str, "%0.1f",P2.aperture);                     strcat(meta,"# APERTURE=");  strcat(meta,str);
-        sprintf(str, "%d",(long int)P2.focal_len);                  strcat(meta,"# FOCALLEN=");  strcat(meta,str);
+        sprintf(str, "%d",(long int)P2.focal_len);             strcat(meta,"# FOCALLEN=");  strcat(meta,str);
         sprintf(str, "%s", P1.make);                           strcat(meta,"# MAKE=");      strcat(meta,str);
         sprintf(str, "%s", P1.model);                          strcat(meta,"# MODEL=");     strcat(meta,str);
         sprintf(str, "%s", exifLens.Lens);                     strcat(meta,"# LENS=");      strcat(meta,str);
@@ -488,7 +385,7 @@ void tiff_set(ushort *ntag, ushort tag, ushort type, int count, int val)
 }
 #define TOFF(ptr) ((char *)(&(ptr)) - (char *)th)
 
-void tiff_head(int width, int height, struct tiff_hdr *th)
+void tiff_head(int width, int height, struct tiff_hdr *th, int desc_len, int pixel_offset)
 {
   int c;
   time_t timestamp = time(NULL);
@@ -506,7 +403,17 @@ void tiff_head(int width, int height, struct tiff_hdr *th)
     th->bps[c] = 16;
   tiff_set(&th->ntag, 259, 3, 1, 1);
   tiff_set(&th->ntag, 262, 3, 1, 1);
-  tiff_set(&th->ntag, 273, 4, 1, sizeof *th);
+  // ImageDescription (270/0x010E): AstroTIFF FITS header. The string itself is
+  // written to the file right after this fixed-size header block (i.e. at
+  // absolute file offset sizeof(*th), since th is always written first), with
+  // desc_len (count) including the terminating NUL, per TIFF's ASCII convention.
+  if (desc_len > 0)
+    tiff_set(&th->ntag, 270, 2, desc_len, sizeof *th);
+  // StripOffsets (273): pixel data now starts after the header block AND the
+  // appended description (plus any padding to keep it word-aligned, per TIFF's
+  // requirement that tag value/offset targets fall on an even file offset),
+  // instead of always right after the fixed header block.
+  tiff_set(&th->ntag, 273, 4, 1, pixel_offset);
   tiff_set(&th->ntag, 277, 3, 1, 1);
   tiff_set(&th->ntag, 278, 4, 1, height);
   tiff_set(&th->ntag, 279, 4, 1, height * width * 2);
@@ -523,15 +430,27 @@ void tiff_head(int width, int height, struct tiff_hdr *th)
             t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
 }
 
-void write_tiff(int width, int height, unsigned short *bitmap, const char *fn)
+void write_tiff(int width, int height, unsigned short *bitmap, const char *description, const char *fn)
 {
   struct tiff_hdr th;
+  size_t desc_len = description ? strlen(description) + 1 : 0; // +1: TIFF ASCII count includes the terminating NUL
+  size_t desc_offset = sizeof th;                              // description starts right after the fixed header block
+  size_t pixel_offset = desc_offset + desc_len;
+  size_t pad = (pixel_offset % 2) ? 1 : 0;                      // TIFF requires strip data to start on a word (even) boundary
+  pixel_offset += pad;
 
   FILE *ofp = fopen(fn, "wb");
   if (!ofp)
     return;
-  tiff_head(width, height, &th);
+  tiff_head(width, height, &th, (int)desc_len, (int)pixel_offset);
   fwrite(&th, sizeof th, 1, ofp);
+  if (desc_len)
+    fwrite(description, desc_len, 1, ofp);
+  if (pad)
+  {
+    char zero = 0;
+    fwrite(&zero, 1, 1, ofp);
+  }
   fwrite(bitmap, 2, width * height, ofp);
   fclose(ofp);
 }
@@ -590,9 +509,171 @@ void JDtoDate(double jd,  int *year, int *month, int *day, int *hours, int *minu
     
   // 2459902.12214120
   // 2022-11-18 14:55:53
-  // 18T14:55:52.999690175053
+  //      18T14:55:52.999690175053
 }
 
+
+
+void build_fits_header(LibRaw &RawProcessor, char fits_header[], unsigned width2, unsigned height2)
+//Builds the 2880-byte (36 x 80-char card) FITS header block. Shared by the FITS
+//output path (-F/-f/-i) and the TIFF/AstroTIFF path (-T, tag 270 ImageDescription).
+//FITS standard at https://fits.gsfc.nasa.gov/fits_standard.html
+{
+  char str[180];
+  double julianday,ss;
+  double temperature;
+  int year,month,day,hh,mm;
+
+  strcpy(fits_header,"SIMPLE  =                    T / FITS header                                      ");
+  fits_header[80]='\0'; // length should be exactly 80
+
+  strcpy(str,        "BITPIX  =                   16 / Bits per entry                                   ");
+  str[80]='\0'; strcat(fits_header,str);//line 2. Length of each keyword record should be exactly 80
+  strcpy(str,        "NAXIS   =                    2 / Number of dimensions                             ");
+  str[80]='\0'; strcat(fits_header,str);//line 3. Length of each keyword record should be exactly 80
+
+  sprintf(str,"NAXIS1  = %20d / Length of x axis                                                     ", (long int)width2);// long int is required for the correct formating
+  str[80]='\0'; strcat(fits_header,str);//line 4. Length of each keyword record should be exactly 80
+
+  sprintf(str,"NAXIS2  = %20d / Length of y axis                                                     ", (long int)height2);
+  str[80]='\0'; strcat(fits_header,str);//line 5. Length of each keyword record should be exactly 80
+
+  sprintf(str,"EXPTIME = %20G   / Exposure time in seconds                                             ",(double)P2.shutter);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  julianday= 2440587.5+ ((double)P2.timestamp + (double)P2.timestamp_subsec)/(24.0*60.0*60.0);//Julian Day of begin exposure. Convert Unix (time is seconds since 1.1.1970) to Julian Day by adding a factor. timestamp_subsec adds EXIF SubSecTime(Original/Digitized) fractional-second accuracy when the file provides it (0.0 otherwise).
+  sprintf(str,"JD      = %20.8f / [Julian Day] The start time of the exposure                           ",julianday);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80           x
+
+  JDtoDate(julianday, &year, &month, &day,&hh,&mm,&ss);// convert to date
+  sprintf(str,"DATE-OBS= '%4.4i-%2.2i-%2.2iT%2.2i:%2.2i:%06.3f' / [UTC] The start time of the exposure                                 ", year, month, day,hh,mm,ss);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80                                          x
+
+  if (P3.SensorTemperature>-999) {temperature=P3.SensorTemperature;}
+  else
+  if (P3.CameraTemperature>-999) {temperature=P3.CameraTemperature;}
+  else
+  {temperature=999;}
+
+  sprintf(str,"CCD-TEMP= %20G / Sensor or camera temperature                                         ",(double)temperature);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  sprintf(str,"GAIN    = %20d / ISO speed                                                            ",(long int)P2.iso_speed);// long int is required for the correct formating
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  if (C.cblack[0] != 0)
+  {
+  sprintf(str,"PEDESTAL= %20d / Black level                                                          ",(long int)C.cblack[0]);// long int is required for the correct formating
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  sprintf(str,"PEDESTA2= %20d                                                                        ",(long int)C.cblack[1]);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  sprintf(str,"PEDESTA3= %20d                                                                        ",(long int)C.cblack[2]);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  sprintf(str,"PEDESTA4= %20d                                                                        ",(long int)C.cblack[3]);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  }
+
+  if (C.linear_max[0] != 0)
+  {
+  sprintf(str,"DATAMAX = %20d / Max value where still linear                                         ",(long int)C.linear_max[0]);// long int is required for the correct formating
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  sprintf(str,"DATAMAX2= %20d                                                                        ",(long int)C.linear_max[1]);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  sprintf(str,"DATAMAX3= %20d                                                                        ",(long int)C.linear_max[2]);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  sprintf(str,"DATAMAX4= %20d                                                                        ",(long int)C.linear_max[3]);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  }
+
+
+  sprintf(str,"APERTURE= %20.1f / Lens aperture                                                       ",(double)P2.aperture);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+
+  sprintf(str,"FOCALLEN= %20d / Focal length lens                                                    ",(long int)P2.focal_len);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  sprintf(str,"CAMMAKER= '%s'                                                                        ",P1.make);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  sprintf(str,"INSTRUME= '%s'                                                                        ",P1.model );
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  sprintf(str,"TELESCOP= '%s'                                                                        ",exifLens.Lens );
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+
+  if (P1.filters)
+  {
+  sprintf(str,"FILT-PAT= '                '   / Filter pattern                                       ");
+
+    if (!P1.cdesc[3])
+      P1.cdesc[3] = 'G';
+  for (int i = 0; i < 16; i++)
+      str[i+11]=(P1.cdesc[RawProcessor.fcol(i >> 1, i & 1)]);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+
+  sprintf(str,"BAYERPAT= '    '               / Bayer color pattern                                   ");
+    if (!P1.cdesc[3])
+      P1.cdesc[3] = 'G';
+  for (int i = 0; i < 4; i++)
+      str[i+11]=(P1.cdesc[RawProcessor.fcol(i >> 1, i & 1)]);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  }
+
+  sprintf(str,"IMG_FLIP= %20d                                                                         ",(long int)S.flip);
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  sprintf(str,"COMMENT   Raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org             ");
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  strcpy(str,"COMMENT  UTC time is calculated from camera local time using computer timezone  ");
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  strcpy(str,"COMMENT  Computer time zone at the time of processing should match with         ");
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+  strcpy(str,"COMMENT  camera time.                                                           ");
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+
+  strcpy(str,"END                                                                                     ");
+  str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+
+  for (unsigned i = strlen(fits_header)-1; i < 2880; i += 1)  //complete to 2880
+    fits_header[i]=' ';//fill with space
+  fits_header[2880]='\0';//header should be a multiply of 38 records equals 2880 bytes
+}
+
+
+void build_astrotiff_description(const char fits_header[], char *out, size_t outsize)
+//Converts the fixed 2880-byte, 80-char-per-card FITS header block (as built by
+//build_fits_header()) into the form the AstroTIFF spec wants for TIFF tag 270
+//(ImageDescription): the same header lines (SIMPLE...END), each right-trimmed
+//of its 80-char card padding and terminated with LF instead. The FITS
+//block-alignment padding cards that follow END in fits_header are not part of
+//the header content and are dropped -- writing stops right after the END line.
+{
+  if (outsize == 0) return;
+  size_t outlen = 0;
+  out[0] = '\0';
+  int ncards = 2880/80;
+  for (int card = 0; card < ncards; card++)
+  {
+    char line[81];
+    memcpy(line, fits_header + card*80, 80);
+    line[80] = '\0';
+    int end = 79; // right-trim trailing spaces
+    while (end >= 0 && line[end] == ' ') end--;
+    line[end+1] = '\0';
+    size_t linelen = strlen(line);
+    if (outlen + linelen + 2 > outsize) break; // +1 for '\n', +1 for final NUL
+    memcpy(out+outlen, line, linelen);
+    outlen += linelen;
+    out[outlen++] = '\n';
+    out[outlen] = '\0';
+    if (!strncmp(line, "END", 3)) break; // stop right after the END card
+  }
+}
 
 
 void write_fits(char fits_header[],unsigned width, unsigned height, unsigned left_margin, unsigned top_margin,unsigned  width2,unsigned height2, unsigned short *bitmap,

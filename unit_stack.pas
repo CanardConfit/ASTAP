@@ -7608,7 +7608,6 @@ end;
 function JdToDate(jd: double): string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
 var
   A, B, C, D, E, F, G, J, M, T, Z: double;
-  {!!! 2016 by purpose, otherwise with timezone 8, 24:00 midnigth becomes 15:59 UTC}
   HH, MM, SS: integer;
   year3: string;
 begin
@@ -12915,8 +12914,10 @@ begin
             if esc_pressed then exit;
 
             if process_as_osc > 0 then {do demosaic bayer}
-              demosaic_bayer(img_loaded); {convert OSC image to colour}
-            {head.naxis3 is now 3}
+            begin
+              demosaic_bayer(img_loaded); {convert OSC image to colour, head.naxis3 is now 3}
+              ListView1.Items.item[c].SubitemImages[L_filter]:=filter_rgb;
+            end;
 
             update_text(mainform1.memo1.lines,'COMMENT 1', '  Calibrated by ASTAP. www.hnsky.org');
             update_integer(mainform1.memo1.lines,'PEDESTAL=',' / Value added during calibration or stacking     ',round(head.pedestal));//pedestal value added during calibration or stacking
@@ -13087,7 +13088,7 @@ var
   i, c, nrfiles, image_counter, object_counter,
   first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon :   integer;
   filter_name1, filter_name2, defilter, filename3,
-  extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_stars   : string;
+  extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_stars, alignment_method   : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
   classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue,use_ephemeris_alignment,starnet_checked : boolean;
@@ -13107,14 +13108,22 @@ begin
   begin
     stacking_paused:=not stacking_paused;
     if stacking_paused then
-       memo2_message('Stacking is paused. Hit the stack button to continue.');
+      memo2_message('Stacking is paused. Hit the stack button to continue.');
     exit;
   end;
 
   stacking_running:=true;
   esc_pressed:=False;
 
-  memo2_message('Stack method ' + stack_method1.Text);
+  if use_star_alignment1.checked then alignment_method:=use_star_alignment1.caption
+  else
+  if use_astrometric_alignment1.checked then alignment_method:=use_astrometric_alignment1.caption
+  else
+  if use_manual_alignment1.Checked then alignment_method:=use_manual_alignment1.caption
+  else
+  if use_ephemeris_alignment1.Checked then alignment_method:=use_ephemeris_alignment1.caption;
+
+  memo2_message('Stack method ' + stack_method1.Text+', '+alignment_method);
   stitching_mode:=pos('stitch', stackmenu1.stack_method1.Text) > 0;
   sigma_clip:=pos('Sigma', stackmenu1.stack_method1.Text) > 0;
   skip_combine:=pos('skip', stackmenu1.stack_method1.Text) > 0;
@@ -13141,6 +13150,7 @@ begin
     if length(ephemeris_centering1.Text) <= 1 then
     begin
       memo2_message('█ █ █ █ █ █ Abort, no object selected for ephemeris alignment. At tab alignment, press analyse and select object to align on! █ █ █ █ █ █');
+      esc_pressed:=true;
       exit;
     end
     else
@@ -13203,6 +13213,7 @@ begin
   else
   begin
     memo2_message('Abort, no images to stack! Browse for images, darks and flats.');
+    esc_pressed:=true;
     exit;
   end;
 
@@ -13244,7 +13255,7 @@ begin
     if ((calibration_mode) or (calibration_mode2)) then
     begin
       Memo2_message('Completed. Resulting files are available in tab Results and can be copied to the Blink, Photometry  or Lights tab.');
-      stacking_running:=false;
+      esc_pressed:=true;
       exit;
     end;
     //else split them using starnet
@@ -13266,7 +13277,7 @@ begin
           begin
             memo2_message( '█ █ █  Abort! █ █ █  Reference object missing for one or more files. Double click on all file names and mark with the mouse the reference object. The file name will then turn green.');
             Screen.Cursor:=crDefault;
-            stacking_running:=false;
+            esc_pressed:=true;
             exit;
           end;
           Application.ProcessMessages;
@@ -13306,7 +13317,6 @@ begin
           begin
             restore_img;
             Screen.Cursor:=crDefault;
-            stacking_running:=false;
             exit;
           end;
 
@@ -13315,7 +13325,7 @@ begin
           begin
             memo2_message('Error loading file ' + filename2); {failed to load}
             Screen.Cursor:=crDefault;
-            stacking_running:=false;
+            esc_pressed:=true;
             exit;
           end;
           solution:=update_solution_and_save(img_loaded, head,mainform1.memo1.lines);//solve and save
@@ -13367,16 +13377,24 @@ begin
             ListView1.ItemIndex:=c;{show wich file is processed}
             Listview1.Items[c].MakeVisible(False);{scroll to selected item}
 
-            if startnet_split(filename2,{filetypeout} 'fits',{out} fileout_neb,fileout_stars)=false then
+
+            if  ListView1.Items.item[c].SubitemImages[L_filter]=filter_OSC then
             begin
-              starnet2_failure:=true;
-              esc_pressed:=true;//prevent mode pauzed
-              break;
+              memo2_message('█ █ █ █ █ █ Can not proceed with this file! Image is still raw OSC due to missing dark. Add darks & Flats to the tabs. █ █ █ █ █ █ ');
+            end
+            else
+            begin
+              if startnet_split(filename2,{filetypeout} 'fits',{out} fileout_neb,fileout_stars)=false then
+              begin
+                starnet2_failure:=true;
+                esc_pressed:=true;//prevent mode pauzed
+                break;
+              end;
+              ListView1.Items.item[c].checked:=false;//unselect the source
+              listview_add(listview1, fileout_neb,true, L_nr);
+              listview_add(listview1, fileout_stars,true, L_nr);
+              Application.ProcessMessages;
             end;
-            ListView1.Items.item[c].checked:=false;//unselect the source
-            listview_add(listview1, fileout_neb,true, L_nr);
-            listview_add(listview1, fileout_stars,true, L_nr);
-            Application.ProcessMessages;
           end;
        finally
         end;
@@ -13384,7 +13402,11 @@ begin
 //     else
 //       ListView1.Items.item[c].SubitemImages[L_quality]:= -1; //prevent icon thumpdown is restoring this unchecked item when analysed again
 
-     if starnet2_failure  then exit;
+     if starnet2_failure  then
+     begin
+       esc_pressed:=true;
+       exit;
+     end;
      analyse_level:=0; //almost none
      tempvalue:=uncheck_outliers1.checked;
      uncheck_outliers1.checked:=false;//prevent item with thumb down are made checked again in analyse_tab_lights
@@ -13421,7 +13443,6 @@ begin
           begin
             restore_img;
             Screen.Cursor:=crDefault;
-            stacking_running:=false;
             exit;
           end;
 
@@ -13430,7 +13451,7 @@ begin
           begin
             memo2_message('Error loading file ' + filename2); {failed to load}
             Screen.Cursor:=crDefault;
-            stacking_running:=false;
+            esc_pressed:=true;
             exit;
           end;
 
@@ -13460,7 +13481,7 @@ begin
           begin
             ShowMessage('Write error !!' + filename2);
             Screen.Cursor:=crDefault;
-            stacking_running:=false;
+            esc_pressed:=true;
             exit;
           end;
 
@@ -13478,7 +13499,7 @@ begin
   begin
     restore_img;
     Screen.Cursor:=crDefault;
-    stacking_running:=false;
+    //stacking_running:=false;
     exit;
   end;
 
@@ -13610,7 +13631,7 @@ begin
           progress_indicator(-2, 'ESC');
           restore_img;
           Screen.Cursor:=crDefault;
-          stacking_running:=false;
+          //stacking_running:=false;
           exit;
         end;
 
@@ -13715,7 +13736,7 @@ begin
               progress_indicator(-2, 'ESC');
               restore_img;
               Screen.Cursor:=crDefault;{ back to normal }
-              stacking_running:=false;
+              //stacking_running:=false;
               exit;
             end;
 
@@ -13815,7 +13836,7 @@ begin
             progress_indicator(-2, 'ESC');
             restore_img;
             Screen.Cursor:=crDefault; { back to normal }
-            stacking_running:=false;
+            //stacking_running:=false;
             exit;
           end;
         end
@@ -13833,7 +13854,7 @@ begin
       progress_indicator(-2, 'ESC');
       restore_img;
       Screen.Cursor:=crDefault;  { Always restore to normal }
-      stacking_running:=false;
+      //stacking_running:=false;
       exit;
     end;
 
@@ -14125,7 +14146,8 @@ begin
         if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True) = False then
         begin
           Screen.Cursor:=crDefault;  { Always restore to normal }
-          stacking_running:=false;
+          //stacking_running:=false;
+          esc_pressed:=true;
           exit;
         end;
         inc(total_counter);
@@ -14147,35 +14169,39 @@ begin
 
   if total_counter=0 then {somehow nothing was stacked}
   begin
-    memo2.Lines.add('No images in tab lights to stack.');
+    memo2.Lines.add('Failure. Could not stack any image.');
     if classify_filter then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
+    if ((use_ephemeris_alignment) and (starnet_checked)) then
+           memo2.Lines.add('Hint: Failure due to missing darks.')
+    else
     if classify_object then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
     if use_astrometric_alignment1.Checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
   end
   else
-    memo2.Lines.add('Finished in ' + IntToStr(round((gettickcount64 - startTick) / 1000)) +' sec. The FITS header contains a detailed history.');
-
-  if ((use_ephemeris_alignment) and (starnet_checked)) then
   begin
-    if ListView5.Items.Count>=2 then //star and nebula should be available
+    if ((use_ephemeris_alignment) and (starnet_checked)) then
     begin
-      memo2_message('Combining stacked star and nebula frames');
-      listview5.Items[ListView5.Items.Count - 2].Selected:=true;
-      listview5.Items[ListView5.Items.Count - 1].Selected:=true;
-      combine_files(listview5); //combine selected files, no alignment, no saving
-
-      filename2:=ChangeFileExt(Filename2, '_comet.fits');
-      if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True {override}) then
+      if ListView5.Items.Count>=2 then //star and nebula should be available
       begin
-        if head.naxis3 > 1 then report_results(head.object_name, stack_info, object_counter, 3 {color icon},5 {stack icon}) {report result in tab results}
-        else
-        report_results(head.object_name, 'comet_stack', object_counter, 4 {gray icon},5 {stack icon});{report result in tab results}
-      end;
-    end;
+        memo2_message('Combining stacked star and nebula frames');
+        listview5.Items[ListView5.Items.Count - 2].Selected:=true;
+        listview5.Items[ListView5.Items.Count - 1].Selected:=true;
+        combine_files(listview5); //combine selected files, no alignment, no saving
 
-    mainform1.stretch1.itemindex:=0;
-    memo2_message('Since images are already stretched for Starnet2, the stretch factor is now set at off to prevent too much stretching.')
+        filename2:=ChangeFileExt(Filename2, '_comet.fits');
+        if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True {override}) then
+        begin
+          if head.naxis3 > 1 then report_results(head.object_name, stack_info, object_counter, 3 {color icon},5 {stack icon}) {report result in tab results}
+          else
+          report_results(head.object_name, 'comet_stack', object_counter, 4 {gray icon},5 {stack icon});{report result in tab results}
+        end;
+      end;
+      mainform1.stretch1.itemindex:=0;
+      memo2_message('Since images are already stretched for Starnet2, the stretch factor is now set at off to prevent too much stretching.')
+    end;
+    memo2.Lines.add('Finished in ' + IntToStr(round((gettickcount64 - startTick) / 1000)) +' sec. The FITS header contains a detailed history.');
   end;
+
 
   {$IFDEF fpc}
   progress_indicator(-100,'');{back to normal}
@@ -14293,12 +14319,14 @@ end;
 procedure Tstackmenu1.use_astrometric_alignment1Change(Sender: TObject);
 begin
   update_tab_alignment;
+  esc_pressed:=true;//stop any stacking
 end;
 
 
 procedure Tstackmenu1.use_ephemeris_alignment1Change(Sender: TObject);
 begin
   update_tab_alignment;
+  esc_pressed:=true;//stop any stacking
 end;
 
 
@@ -14306,12 +14334,14 @@ procedure Tstackmenu1.use_manual_alignment1Change(Sender: TObject);
 begin
   update_tab_alignment;
   mainform1.shape_manual_alignment1.visible:=use_manual_alignment1.Checked;
+  esc_pressed:=true;//stop any stacking
 end;
 
 
 procedure Tstackmenu1.use_star_alignment1Change(Sender: TObject);
 begin
   update_tab_alignment;
+  esc_pressed:=true;//stop any stacking
 end;
 
 
