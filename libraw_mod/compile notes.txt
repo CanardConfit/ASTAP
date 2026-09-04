@@ -1,3 +1,6 @@
+Use instructions below or the build_all_unprocessed_raw.sh in Linux
+
+
    {############################################################################################
        Linux, compile unprocessed_raw under Linux:
        git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
@@ -34,4 +37,15 @@
        cd LibRaw-with-16-bit-FITS-support
        export LDADD=-mmacosx-version-min=10.10
        make -f Makefile.dist
-   
+
+       #############################################################################################
+  
+       Mac cross compile from X86_64 to silicon (M types ) processor
+
+       git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
+
+
+       cd LibRaw-with-16-bit-FITS-support
+       make clean -f Makefile.dist_m1 # to clean up 
+       export LDADD=-mmacosx-version-min=10.10
+       make -f Makefile.dist_m1
