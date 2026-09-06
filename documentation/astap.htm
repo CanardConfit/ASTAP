@@ -50,7 +50,7 @@ GALAXY database installer</big></td>
 <td style="background-color: rgb(233, 233, 233); width: 242px;"><big>Window
 64 bit</big></td>
 <td style="background-color: rgb(233, 233, 233); width: 302px;"><big><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download">Program</a>
-(v2026.09.01) or <a href="#beta_version">development
+(v2026.09.03) or <a href="#beta_version">development
 version</a></big><span style="color: red;"></span></td>
 <td colspan="1" rowspan="3" style="background-color: rgb(233, 233, 233); width: 103px;"><big><a href="https://sourceforge.net/projects/astap-program/files/star_databases/d80_star_database.exe/download">D80</a></big></td>
 <td colspan="1" rowspan="3" style="background-color: rgb(233, 233, 233); width: 134px;"><big><a href="https://sourceforge.net/projects/astap-program/files/star_databases/d50_star_database.exe/download">D50</a></big></td>
@@ -123,7 +123,7 @@ QT5</a> </big></td>
 <tr>
 <td style="width: 242px;"><big>MacOS&nbsp;64 bit for intel<span style="font-weight: bold;"> </span>processors</big></td>
 <td style="width: 302px;"><big><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap.pkg/download">Program</a>
-(v2026.07.30)<br>
+(v2026.09.01)<br>
 <a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/openssl_libraries.pkg/download">OpenSSL
 1.1</a> for internet&nbsp;access</big></td>
 <td colspan="1" rowspan="2" style="background-color: rgb(233, 233, 233); width: 103px;"><big><a href="https://sourceforge.net/projects/astap-program/files/star_databases/d80_star_database.pkg/download">D80</a></big></td>
@@ -151,7 +151,7 @@ with the star database</big></td>
 <td style="background-color: rgb(233, 233, 233); width: 242px;"><big>MacOS&nbsp;64
 bit for <span style="font-weight: bold;">Apple silicon</span>
 processors (M-types)</big></td>
-<td style="background-color: rgb(233, 233, 233); width: 302px;"><big><span style="color: red;"></span><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap_M1.pkg/download">Program&nbsp;</a></big><big>(v2026.07.30)</big><big>
+<td style="background-color: rgb(233, 233, 233); width: 302px;"><big><span style="color: red;"></span><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap_M1.pkg/download">Program&nbsp;</a></big><big>(v2026.09.01)</big><big>
 code signing required! See instructions at this&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/">link</a>&nbsp;(bottom)!!&nbsp;<small><small><br>
 </small></small></big><big><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/openssl_libraries_M.pkg/download">OpenSSL
 1.1</a> &nbsp;for internet access</big></td>
@@ -252,7 +252,7 @@ work with SharpCap since FOV is not stored.</big></td>
 <tr>
 <td style="background-color: rgb(234, 234, 234); width: 228px;"><big>Window
 64 bit</big></td>
-<td style="background-color: rgb(234, 234, 234); width: 310px;"><big><a href="astap_setup.exe">ASTAP_installer</a>_(v2026.09.01),
+<td style="background-color: rgb(234, 234, 234); width: 310px;"><big><a href="astap_setup.exe">ASTAP_installer</a>_(v2026.09.03),
 <br>
 <a href="astap.zip">ASTAP executable only</a></big></td>
 <td colspan="1" rowspan="3" style="background-color: rgb(234, 234, 234); width: 635px;"><big><a href="https://drive.google.com/file/d/1HJZQU7BXHc-OvS0BNi_b3Cu8ARy2px2K/view?usp=sharing">D80
@@ -1799,7 +1799,7 @@ exposure&nbsp;times are given. With the pop-up menu it is possible
 to copy the image file path to the clipboard for use in a file
 explorer. <br>
 <span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span>&nbsp;<br>
-<a href="astap.htm#index"><img style="border: 0px solid ; width: 1590px; height: 635px;" alt="" src="astap_stack_menu4.png"></a></big></p>
+<a href="astap.htm#index"><img style="border: 0px solid ; width: 1753px; height: 669px;" alt="" src="astap_stack_menu4.png"></a></big></p>
 <p align="left"><big><span style="text-decoration: underline;">Calibration column</span>
 &nbsp;</big></p>
 <p align="left"><big>This
@@ -2485,12 +2485,15 @@ the follow steps:<br>
 </big>
 <ul>
 <li><big>Configure and test the viewer&nbsp;<a href="#asteroid_annotation">Asteroid &amp; Comet
-annotation menu</a> shortcut CTRL+R</big></li>
+annotation menu</a> shortcut CTRL+R or use the&nbsp;"ephemeriden database selection" button in the Alignment tab at section ephemeris alignment.</big></li><li><big>A
+Minor Planet Center database for minor planets &nbsp;and/of comet
+should be downloaded (arrow down button) and selected (double dot
+button) in the above menu.<br></big></li>
 </ul>
 <big><span style="font-weight: bold;">Stacking</span>:<br>
 </big>
 <ul>
-<li><big>Select&nbsp;ephemeris alignment</big></li>
+<li><big>Select&nbsp;ephemeris alignment</big></li><li><big>Check mark the optional <a href="#starnet2">StarNet2</a> external tool if you want both the comet and star sharp. Else only the comet will be sharp and stars will form star trails.<br></big></li>
 <li><big>Browse for all the images in the image tab and
 add if available the dark, flats.</big></li>
 <li><big>Press the button </big><big><span style="font-weight: bold; background-color: rgb(153, 153, 153);"><big>&nbsp;</big></span><small style="font-weight: bold;"><span style="background-color: rgb(153, 153, 153);"><big>Analyse
@@ -2509,22 +2512,21 @@ count and/or limiting magnitude in the same menu. </big></li>
 <li><big>After the stacking is finished it is possible to
 annotate the result. &nbsp;</big></li>
 </ul>
-<big><br>
-Only
-the solar object&nbsp;selected will be sharp. The stars will form
-trails. There is an experimental stack method to have&nbsp;both
-sharp
-but it will use only the stars of one image.</big><br style="font-family: Arial;">
-<big><br>
+<big></big><big><br>
 </big><img style="width: 1435px; height: 625px;" alt="" src="astap_ephemeris_alignment.png"><br>
 </div>
-<br><p align="left"><big><span style="text-decoration: underline;">Stacking Comet Images<br><br></span>ASTAP
+<br><p align="left"><big><span style="text-decoration: underline;"><a name="starnet2"></a>Stacking Comet Images<br><br></span>ASTAP
 includes support for the external tool StarNet2. StarNet2 separates the
 stars from the nebula or comet in an image, allowing them to be
 processed independently. In ASTAP, this feature is primarily intended
 for comet stacking. The comet and the stars are extracted into separate
-frames, stacked independently, and then recombined into a single image.
-The final result shows both the comet and the stars as sharp.<span style="text-decoration: underline;"><br></span></big></p><p align="left"><big><span style="text-decoration: underline;"></span></big></p><p align="left"><big><span style="text-decoration: underline;">Installing StarNet2</span><br><br>To use <a href="https://starnetastro.com/">StarNet2</a>,
+frames, stacked independently and then recombined into a single image.
+The image alignment will be based on the astrometric solution of the
+original image. The drift of the comet will be compensated by the
+ephemeris calculation result based on the ephemeris data using the date
+observed. The star images will be aligned on a fixed equinox/date
+observed. The final result will show both the comet and the
+stars&nbsp;sharp.<span style="text-decoration: underline;"><br></span></big></p><p align="left"><big><span style="text-decoration: underline;"></span></big></p><p align="left"><big><span style="text-decoration: underline;">Installing StarNet2</span><br><br>To use <a href="https://starnetastro.com/">StarNet2</a>,
 download and install it, preferably in its default installation
 directory. When the StarNet2 option is enabled in ASTAP and the
 executable cannot be found, ASTAP will prompt you to locate the
@@ -2533,8 +2535,11 @@ accelerate processing.<br><br><br>Windows: See the official <a href="https://sta
 installation, Windows Task Manager should indicate substantial GPU
 usage (typically 75% or higher) while StarNet2 is processing.<br><br><br><span style="text-decoration: underline;">Using StarNet2 for Comet Images</span><br><br></big></p><ol style="text-align: left;"><li><big>Select Ephemeris Stacking.</big><big> Enable the StarNet2 option.</big></li><li><big>Load the comet light frames in the Lights tab.</big></li><li><big>Load darks, flats, and flat-darks in their respective tabs, if not already loaded.</big></li><li><big>In the Stack Method tab, set the &#963; factor to a relatively low value, such as 1.4.</big></li><li><big>Press Stack.</big></li></ol><p align="left"><big><br>Processing
 will take longer because both the comet and star images are generated
-and stacked separately. StarNet is fed with sinh stretched frames. The
-special stretching routine has no settings. But in general the final
+and stacked separately. StarNet is fed with sinh stretched frames
+allowing better detection of the stars. This
+special stretching routine has no settings and is purely based on the
+image background (median value) and the standard deviation of this
+background. But in general the final
 result should be fine and the viewer stretching in ASTAP is automatic
 set to off by purpose.<br><br>The Result tab will display three images:&nbsp;</big></p><ul style="text-align: left;"><li><big>the final combined image, &nbsp;</big></li><li><big>the comet/nebula image,&nbsp;</big></li><li><big>the star image.</big></li></ul><p align="left"><big><br>The
 popup menus in both the Result and Lights tabs also provide an option

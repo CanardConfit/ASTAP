@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -3216,6 +3216,15 @@ var
         theFile.free;
      end;
 
+    procedure add_to_comment_line;
+    begin
+      if comm<>'' then
+      begin
+        comment_line:=comment_line+comm+' ';//for full comment line
+        comm:='';{clear for next keyword}
+      end;
+    end;
+
 begin
   head.naxis:=0; {0 dimensions}
   result:=false; {assume failure}
@@ -3285,18 +3294,17 @@ begin
             if ccdtempdet then begin head.set_temperature:=round(strtofloat2(comm));ccdtempdet:=false;end;{sensor temperature}
             if timedet then
             begin
-              JD2:=2440587.5+ strtoint(comm)/(24*60*60);{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
+              JD2:=2440587.5+ strtofloat(comm)/(24*60*60);{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
               head.date_obs:=JdToDate(jd2);
               timedet:=false;
             end;{get date from comments}
-            comment_line:=comment_line+comm+' ';//for full comment line
-            comm:='';{clear for next keyword}
+            add_to_comment_line;
           end;
-          if comm='EXPTIME=' then begin expdet:=true; comm:=''; end else
-          if comm='TIMESTAMP=' then begin timedet:=true; comm:=''; end else
-          if comm='ISOSPEED=' then begin isodet:=true; comm:=''; end else
-          if comm='MODEL=' then begin instdet:=true; comm:=''; end; {camera make}
-          if comm='CCD-TEMP=' then begin ccdtempdet:=true; comm:=''; end; {camera make}
+          if comm='EXPTIME=' then begin expdet:=true; add_to_comment_line; end else
+          if comm='TIMESTAMP=' then begin timedet:=true; add_to_comment_line; end else
+          if comm='ISOSPEED=' then begin isodet:=true; add_to_comment_line; end else
+          if comm='MODEL=' then begin instdet:=true; add_to_comment_line; end; {camera make}
+          if comm='CCD-TEMP=' then begin ccdtempdet:=true; add_to_comment_line;; end; {camera make}
         end
         else
         if ord(ch)>32 then aline:=aline+ch;; {DCRAW write space #20 between width&length, Photoshop $0a}
@@ -3481,7 +3489,7 @@ begin
   add_text(memo,'COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
 
   for s:=0 to thecomments.count-1 do
-      add_text(memo,'COMMENT',thecomments[s]);{add PGM comments to header memo}
+      add_long_comment(memo,{'COMMENT',}thecomments[s]);{add PGM comments to header memo}
 
   memo.endupdate;
   thecomments.free; //tstringlist
