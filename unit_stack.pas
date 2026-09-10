@@ -69,9 +69,11 @@ type
     Button3: TButton;
     center_position1: TLabel;
     help_ephemeris_stacking1: TLabel;
-    MenuItem25: TMenuItem;
-    MenuItem36: TMenuItem;
+    starnet_menu1: TMenuItem;
     combine_files1: TMenuItem;
+    results_split_files2: TMenuItem;
+    Separator18: TMenuItem;
+    starnet_split2: TMenuItem;
     results_split_files1: TMenuItem;
     results_combine_files1: TMenuItem;
     Separator17: TMenuItem;
@@ -135,7 +137,7 @@ type
     removeselected10: TMenuItem;
     renametobak10: TMenuItem;
     rename_selectedfiles1: TMenuItem;
-    select10: TMenuItem;
+    check_10: TMenuItem;
     selectall10: TMenuItem;
     Separator8: TMenuItem;
     solar_drift_ra1: TEdit;
@@ -222,7 +224,7 @@ type
     undo_button23: TBitBtn;
     font_size_photometry_UpDown1: TUpDown;
     undo_button24: TBitBtn;
-    unselect10: TMenuItem;
+    uncheck_10: TMenuItem;
     use_astrometry_alignment2: TRadioButton;
     Viewimage10: TMenuItem;
     view_next1: TMenuItem;
@@ -555,7 +557,6 @@ type
     sd_factor_list1: TComboBox;
     search_fov1: TComboBox;
     Separator4: TMenuItem;
-    Separator5: TMenuItem;
     Separator6: TMenuItem;
     show_quads1: TBitBtn;
     sigma_decolour1: TComboBox;
@@ -605,7 +606,7 @@ type
     PopupMenu9: TPopupMenu;
     removeselected9: TMenuItem;
     renametobak9: TMenuItem;
-    select9: TMenuItem;
+    check_9: TMenuItem;
     selectall5: TMenuItem;
     selectall9: TMenuItem;
     stack_method1: TComboBox;
@@ -650,7 +651,7 @@ type
     undo_button8: TBitBtn;
     undo_button9: TBitBtn;
     undo_button_equalise_background1: TBitBtn;
-    unselect9: TMenuItem;
+    uncheck_9: TMenuItem;
     unselect_area1: TButton;
     unsharp_radius1: TTrackBar;
     unsharp_threshold1: TTrackBar;
@@ -681,8 +682,8 @@ type
     PopupMenu7: TPopupMenu;
     removeselected7: TMenuItem;
     renametobak7: TMenuItem;
-    select7: TMenuItem;
-    select8: TMenuItem;
+    check_7: TMenuItem;
+    check_8: TMenuItem;
     selectall3: TMenuItem;
     selectall4: TMenuItem;
     selectall6: TMenuItem;
@@ -698,10 +699,10 @@ type
     PopupMenu6: TPopupMenu;
     removeselected6: TMenuItem;
     renametobak6: TMenuItem;
-    select6: TMenuItem;
-    unselect6: TMenuItem;
-    unselect7: TMenuItem;
-    unselect8: TMenuItem;
+    check_6: TMenuItem;
+    uncheck_6: TMenuItem;
+    uncheck_7: TMenuItem;
+    uncheck_8: TMenuItem;
     Viewimage6: TMenuItem;
     Viewimage7: TMenuItem;
     Viewimage8: TMenuItem;
@@ -738,9 +739,9 @@ type
     renametobak2: TMenuItem;
     renametobak3: TMenuItem;
     renametobak4: TMenuItem;
-    select2: TMenuItem;
-    select3: TMenuItem;
-    select4: TMenuItem;
+    check_2: TMenuItem;
+    check_3: TMenuItem;
+    check_4: TMenuItem;
     luminance_filter_factor2: TEdit;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
@@ -749,11 +750,11 @@ type
     green_filter_factor2: TEdit;
     blue_filter_factor2: TEdit;
     ImageList_colors: TImageList;
-    unselect2: TMenuItem;
-    unselect3: TMenuItem;
-    unselect4: TMenuItem;
-    unselect1: TMenuItem;
-    select1: TMenuItem;
+    uncheck_2: TMenuItem;
+    uncheck_3: TMenuItem;
+    uncheck_4: TMenuItem;
+    uncheck_1: TMenuItem;
+    check_1: TMenuItem;
     OpenDialog1: TOpenDialog;
     ImageList2: TImageList;
     PopupMenu1: TPopupMenu;
@@ -783,6 +784,7 @@ type
     procedure help_ephemeris_stacking1Click(Sender: TObject);
     procedure results_combine_files1Click(Sender: TObject);
     procedure results_split_files1Click(Sender: TObject);
+    procedure results_split_files2Click(Sender: TObject);
     procedure starnet_split1click(Sender: TObject);
     procedure reference_database1DropDown(Sender: TObject);
     procedure refresh_astrometric_solutions9Click(Sender: TObject);
@@ -810,6 +812,7 @@ type
     procedure rename_selectedfiles1Click(Sender: TObject);
     procedure solar_drift_compensation1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
+    procedure starnet_split2Click(Sender: TObject);
     procedure transformation2Click(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
     procedure unsharp_edit_amount1Change(Sender: TObject);
@@ -981,7 +984,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure apply_gaussian_filter1Click(Sender: TObject);
-    procedure select1Click(Sender: TObject);
+    procedure check_1Click(Sender: TObject);
     procedure stack_button1Click(Sender: TObject);
     procedure browse_blink1Click(Sender: TObject);
     procedure browse_flats1Click(Sender: TObject);
@@ -1004,7 +1007,7 @@ type
     procedure edit_background1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure undo_button_equalise_background1Click(Sender: TObject);
-    procedure unselect1Click(Sender: TObject);
+    procedure uncheck_1Click(Sender: TObject);
     procedure unselect_area1Click(Sender: TObject);
     procedure unsharp_amount1Change(Sender: TObject);
     procedure unsharp_radius1Change(Sender: TObject);
@@ -2392,8 +2395,8 @@ begin
             ListView1.Items.BeginUpdate;
             try
               begin
-                //if pos('_stars.', filename2)>0 then headx.object_name:=headx.object_name+'_stars';//for comet stacking using starnet2
-                //if pos('_nebula.', filename2)>0 then headx.object_name:=headx.object_name+'_nebula';//for comet stacking using starnet2
+                if pos('_stars.', filename2)>0 then headx.object_name:=headx.object_name+'_stars';//for comet stacking using starnet2
+                if pos('_nebula.', filename2)>0 then headx.object_name:=headx.object_name+'_nebula';//for comet stacking using starnet2
 
                 ListView1.Items.item[c].subitems.Strings[L_object]:=headx.object_name; {object name, without spaces}
                 ListView1.Items.item[c].subitems.Strings[L_filter]:=headx.filter_name; {filter name, without spaces}
@@ -2437,14 +2440,14 @@ begin
                 if headx.set_temperature <> 999 then ListView1.Items.item[c].subitems.Strings[L_temperature]:= IntToStr(headx.set_temperature);
                 ListView1.Items.item[c].subitems.Strings[L_width]:=IntToStr(headx.Width); {width}
                 ListView1.Items.item[c].subitems.Strings[L_height]:=IntToStr(headx.Height);{height}
-                if raw_box1.enabled=false then  process_as_osc:=0 //classify_filter_light1 is checked
-                else
-                if stackmenu1.make_osc_color1.Checked then process_as_osc:= 2//forced process as OSC images
-                else
                 if ((headx.naxis3 = 1) and (headx.Xbinning = 1) and (bayerpat<> '') and (bayerpat[1]<>'N' {ZWO NONE})) then //auto process as OSC images
                   process_as_osc:=1
                 else
+                if ((raw_box1.enabled) and (stackmenu1.make_osc_color1.Checked)) then   //classify_filter_light1 is unchecked
+                  process_as_osc:= 2//forced process as OSC images
+                else
                   process_as_osc:=0;//disable demosaicing
+
                 if ((headx.naxis3 = 1) and (headx.Xbinning = 1) and (bayerpat <> '')) then rawstr:=' raw' else rawstr:= '';
                 ListView1.Items.item[c].subitems.Strings[L_type]:= copy(imagetype, 1, 5) + IntToStr(headx.bitpix) + rawstr;{type}
                 if headx.date_obs<>'' then
@@ -2975,16 +2978,16 @@ begin
 end;
 
 
-procedure Tstackmenu1.select1Click(Sender: TObject);
+procedure Tstackmenu1.check_1Click(Sender: TObject);
 begin
-  if Sender = select1 then listview_select(listview1);{from popupmenu}
-  if Sender = select2 then listview_select(listview2);{from popupmenu}
-  if Sender = select3 then listview_select(listview3);{from popupmenu}
-  if Sender = select4 then listview_select(listview4);{from popupmenu}
-  if Sender = select6 then listview_select(listview6);{from popupmenu blink}
-  if Sender = select7 then listview_select(listview7);{from popupmenu photometry}
-  if Sender = select8 then listview_select(listview8);
-  if Sender = select9 then listview_select(listview9);
+  if Sender = check_1 then listview_select(listview1);{from popupmenu}
+  if Sender = check_2 then listview_select(listview2);{from popupmenu}
+  if Sender = check_3 then listview_select(listview3);{from popupmenu}
+  if Sender = check_4 then listview_select(listview4);{from popupmenu}
+  if Sender = check_6 then listview_select(listview6);{from popupmenu blink}
+  if Sender = check_7 then listview_select(listview7);{from popupmenu photometry}
+  if Sender = check_8 then listview_select(listview8);
+  if Sender = check_9 then listview_select(listview9);
 end;
 
 
@@ -4103,8 +4106,20 @@ begin
   end;
 end;
 
+procedure listview_unselect_all(lv: TListView);
+var
+  i: Integer;
+begin
+  Lv.BeginUpdate;
+  try
+    for i := 0 to Lv.Items.Count - 1 do
+      lv.Items[i].Selected := False;
+  finally
+    lv.EndUpdate;
+  end;
+end;
 
-procedure listview_unselect(tl: TListView);
+procedure listview_uncheck_selected(tl: TListView);
 var
   item: TListItem;
 begin
@@ -4118,16 +4133,16 @@ begin
 end;
 
 
-procedure Tstackmenu1.unselect1Click(Sender: TObject);
+procedure Tstackmenu1.uncheck_1Click(Sender: TObject);
 begin
-  if Sender = unselect1 then listview_unselect(listview1);{popupmenu}
-  if Sender = unselect2 then listview_unselect(listview2);{popupmenu}
-  if Sender = unselect3 then listview_unselect(listview3);{popupmenu}
-  if Sender = unselect4 then listview_unselect(listview4);{popupmenu}
-  if Sender = unselect6 then listview_unselect(listview6);{popupmenu blink}
-  if Sender = unselect7 then listview_unselect(listview7);
-  if Sender = unselect8 then listview_unselect(listview8);{inspector}
-  if Sender = unselect9 then listview_unselect(listview9);{inspector}
+  if Sender = uncheck_1 then listview_uncheck_selected(listview1);{popupmenu}
+  if Sender = uncheck_2 then listview_uncheck_selected(listview2);{popupmenu}
+  if Sender = uncheck_3 then listview_uncheck_selected(listview3);{popupmenu}
+  if Sender = uncheck_4 then listview_uncheck_selected(listview4);{popupmenu}
+  if Sender = uncheck_6 then listview_uncheck_selected(listview6);{popupmenu blink}
+  if Sender = uncheck_7 then listview_uncheck_selected(listview7);
+  if Sender = uncheck_8 then listview_uncheck_selected(listview8);{inspector}
+  if Sender = uncheck_9 then listview_uncheck_selected(listview9);{inspector}
 end;
 
 
@@ -9983,16 +9998,29 @@ begin
     end;
 end;
 
-function startnet_split(filein,filetypeout : string; out fileout_neb,fileout_stars: string): boolean;
-const
-  InvalidChars : set of char = ['(',')'];
+
+function IsExeNewerThan(const FileName: string; const RefDate: TDateTime): Boolean;
 var
-   i: integer;
-   filename1, filename3: string;
+  FileTime: TDateTime;
+begin
+  Result := False;
+
+  if not FileExists(FileName) then Exit;
+
+  if FileAge(FileName, FileTime) then
+    Result := FileTime >= RefDate;
+end;
+
+
+function starnet_split(filein,mode : string; out fileout_neb,fileout_stars: string): boolean;
+var
+   i,j,k: integer;
+   filename1, filename3, extraoption,fileext: string;
    backgr,  noiselev : double;
    img               : timage_array;
    headx1,headx2    : theader;
    memox1,memox2 : tstrings;//work memo
+  RefDate: TDateTime;
 
 begin
   memox1:= Tstringlist.Create; ; // this needs to be TStringList
@@ -10001,40 +10029,69 @@ begin
   result:=load_fits(filein,true {light},true {load data},true {update memo},0,memox1,headx1,img); {load new fits or tiff file}
   if result=false then exit;
 
-  if length(img)>1 then //colour. Do before stretching
+//  if ((length(img)>1) and (mode='C')) then //colour. Do before stretching. Mode=C comes from ephemeris selection with option StarNet2
+//  begin
+//    memo2_message('Adjusting colour levels if single image. ');
+//    colour_correction_factors(img,headx1);//calculate colour correction factors. Headx1 is updated with noise values
+//    apply_factors(img);{histogram is invalid after this action}
+//    stackmenu1.reset_factors1Click(nil);{reset factors to default}
+//    memo2_message('Applying global-smoothing filter on image. Factors are set in tab "pixel math 1"');
+               //    apply_star_smooth(img, headx1,stackmenu1.star_colour_smooth_diameter1.Text, stackmenu1.star_colour_smooth_nrstars1.Text);
+//    global_colour_smooth(img, strtofloat2(stackmenu1.lrgb_global_colour_smooth_width1.Text), strtofloat2(stackmenu1.lrgb_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
+//  end;
+
+  filename1:=filein;
+
+  if headx1.bitpix=-32 then//floating point file
   begin
-    memo2_message('Adjusting colour levels if single image. ');
-    colour_correction_factors(img,headx1);//calculate colour correction factors. Headx1 is updated with noise values
-    apply_factors(img);{histogram is invalid after this action}
-    stackmenu1.reset_factors1Click(nil);{reset factors to default}
-    memo2_message('Applying global-smoothing filter on image. Factors are set in tab "pixel math 1"');
-//    apply_star_smooth(img, headx1,stackmenu1.star_colour_smooth_diameter1.Text, stackmenu1.star_colour_smooth_nrstars1.Text);
-    global_colour_smooth(img, strtofloat2(stackmenu1.lrgb_global_colour_smooth_width1.Text), strtofloat2(stackmenu1.lrgb_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
+    for k:=0 to length(img)-1 do {do all colors}
+      for i:=0 to length(img[0])-1 do
+        for j:=0 to length(img[0,0])-1 do
+          img[k,i,j]:=min(max(img[k,i,j]/65535,0),1); //normalise to 0..1
+
+    headx1.datamax_org:=1;
+    headx1.datamin_org:=0;
+    filename3:=ChangeFileExt(Filename1,'_mtf.fits'); //save both tiff and fits
+    result:=save_fits(img,memox1,headx1,filename3,true);
+
+    headx1.datamax_org:=65535;
+    headx1.datamin_org:=0;
+
+
   end
   else
-     get_background(0, img,headx1, True {get hist}, true {get noise and star_level});
+  begin
+    filename3:=filename1;
+    result:=true;
+  end;
 
-  backgr:=headx1.backgr;
-  noiselev:=headx1.noise_level;
+  fileext:=ExtractFileExt(filename1);
 
-  Apply_Asinh_Linked(img,backgr, noiselev);
-
-  filename1:='';
-  for i:=1 to length(filein) do //for starnet remove ( and )
-      if not(filein[i] in InvalidChars) then filename1:=filename1+filein[i];
-
-  headx1.bitpix:=16; //save as 16 bit for starnet
-
-  filename3:=ChangeFileExt(Filename1,'_mtf.fits'); //save both tiff and fits
-  result:=save_fits(img,memox1,headx1,filename3,true);
   if result then
   begin
-    fileout_neb:=ChangeFileExt(Filename1,'_nebula.'+filetypeout);
-    fileout_stars:=ChangeFileExt(Filename1,'_stars.'+filetypeout);
+    RefDate := EncodeDate(2026, 9, 4);
+     if IsExeNewerThan(path_starnet2, RefDate) then
+       //ShowMessage('New version detected')
+     else
+     begin
+       ShowMessage('Abort, old StartNet2 detected, update to version 2.6.0 or later');
+       esc_pressed:=true;
+     end;
+
+     if mode='N' then //use StarNet2 stretching.
+     begin
+       extraoption:=' --linear';
+       memo2_message('StarNet2 --linear mode selected');
+     end
+     else
+       extraoption:='';
+
+    fileout_neb:=ChangeFileExt(Filename1,'_nebula'+fileext);
+    fileout_stars:=ChangeFileExt(Filename1,'_stars'+fileext);
     {$ifdef mswindows}
-    if ExecuteAndWait(path_starnet2+' --input "'+filename3+'" --output "'+fileout_neb+'" --mask "'+fileout_stars+'"',true {showconsole})<>0 then {execute command and wait}
+    if ExecuteAndWait('"'+path_starnet2+'" --input "'+filename3+'" --output "'+fileout_neb+'" --mask "'+fileout_stars+'"'+extraoption,true {showconsole})<>0 then {execute command and wait}
     {$else} {unix}
-    if execute_unix2(path_starnet2+' --input "'+filename3+'" --output "'+fileout_neb+'" --mask "'+fileout_stars+'"')<>0 then
+    if execute_unix2('"'+path_starnet2+'" --input "'+filename3+'" --output "'+fileout_neb+'" --mask "'+fileout_stars+'"'+extraoption)<>0 then
     {$endif}
 
     begin //executable not found
@@ -10053,42 +10110,15 @@ begin
         if opendialog1.Execute then
         begin
           path_starnet2:=OpenDialog1.Files[0];//store location executable
-          memo2_message('Executable selected. Try again.')
+          memo2_message('Executable selected. Try again.');
         end;
       end;
-    end
-    else
-    begin //starnet2 successfull. Update the header with orginal header
-      if filetypeout<>'tif' then //fits, update the object keyword
-      begin
-        //load image with stars
-        result:=load_fits(fileout_stars,true {light},true {load data},true {update memo},0,memox2,headx2,img); //load new fits file. Load without overwriting orginal header using memox2,headx2
-        if result then
-        begin
-          update_text(memox1,'OBJECT  =',#39+headx1.object_name+'_stars'+#39); {spaces will be added/corrected later}
-          result:=save_fits(img,memox1,headx1,fileout_stars,true); //save with orginal header
-          if result then
-          begin //load nebula image
-             result:=load_fits(fileout_neb,true {light},true {load data},true {update memo},0, memox2 {mainform1.memo1.lines},headx2,img); //load new fits file. Load without overwriting orginal header using memox2,headx2
-             if result then
-             begin
-               update_text(memox1,'OBJECT  =',#39+headx1.object_name+'_nebula'+#39); {spaces will be added/corrected later}
-               result:=save_fits(img,memox1,headx1,fileout_neb,true);//save with orginal header
-             end;
-          end;
-        end
-        else
-        begin
-          memo2_message('No image found produced by Starnet. Starnet2 path will be cleared. Prompt for new path will occur at next attempt.');
-        end;
-
-      end;//update keywords
     end;
   end;
   if result=false then
-    memo2_message('Failure')
+    memo2_message('Failure ')
   else
-     memo2_message('Starnet processing successfully completed for this file.');
+     memo2_message('Seperate nebula and star image added to the listview');
 
   memox1.free;//free tstrings
   memox2.free;//free tstrings
@@ -10210,6 +10240,7 @@ procedure Tstackmenu1.help_ephemeris_stacking1Click(Sender: TObject);
 begin
   openurl('http://www.hnsky.org/astap.htm#ephemeris_alignment');
 end;
+
 
 procedure Tstackmenu1.results_combine_files1Click(Sender: TObject);
 begin
@@ -10967,7 +10998,7 @@ begin
         if ((esc_pressed) or (load_fits(filename1, True {light}, True, True {update memo}, 0,memox, headx, img_temp) = False)) then
           break;
 
-        if ((mode='S') or ((headx.cd1_1=0) and ((mode='P') or (mode='U') or (mode='Q') or (mode='N') )) ) then //S is force solve selected files, U is solve non-solved files
+        if ((mode='S') or ((headx.cd1_1=0) and ((mode='P') or (mode='U') or (mode='Q') or (mode='N')  or (mode='N2') )) ) then //S is force solve selected files, U is solve non-solved files
         begin
           lv.ItemIndex:=c;
           {mark where we are. Important set in object inspector    Listview1.HideSelection:=false; Listview1.Rowselect:=true}
@@ -11001,9 +11032,9 @@ begin
           if esc_pressed then break;
         end;//mode='S'
 
-        if ((mode='N') and (headx.cd1_1 <> 0)) then //apply Starnet2
+        if (  ((mode='N') or (mode='N2')) and (headx.cd1_1 <> 0)) then //apply Starnet2 if solved
         begin
-          if startnet_split(filename1,{filetypeout} 'tif',{out} fileout_neb,fileout_stars) then
+          if starnet_split(filename1,mode,{out} fileout_neb,fileout_stars) then
           begin //success
             lv.Items.item[c].checked:=false;//unselect the source
             listview_add(lv, fileout_neb,true, L_nr);
@@ -11134,10 +11165,23 @@ begin
 end;
 
 
+procedure Tstackmenu1.starnet_split2Click(Sender: TObject);
+begin
+  save_settings2;{Too many lost selected files, so first save settings.}
+  process_selected_files(listview1,L_solution {column},'N2');
+end;
+
+
 procedure Tstackmenu1.results_split_files1Click(Sender: TObject);
 begin
   save_settings2;{Too many lost selected files, so first save settings.}
   process_selected_files(listview5,R_issues {column},'N');
+end;
+
+procedure Tstackmenu1.results_split_files2Click(Sender: TObject);
+begin
+  save_settings2;{Too many lost selected files, so first save settings.}
+  process_selected_files(listview5,R_issues {column},'N2');
 end;
 
 
@@ -12717,15 +12761,19 @@ end;
 
 function apply_dark_and_flat(var img: Timage_array; var hd : theader): boolean; {apply dark and flat if required, renew if different head.exposure or ccd temp}
 var
-  fitsX, fitsY   : integer;
+  fitsX, fitsY, resultcounter   : integer;
   Value, flatNorm11, flatNorm12, flatNorm21, flatNorm22, flat_norm_value: double;
 
 begin
   Result:=False;
+  resultcounter:=0;
   date_to_jd(hd.date_obs,hd.date_avg, hd.exposure {light}); // convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light. JD dates are also used later in stacking
 
   if pos('D', hd.calstat) <> 0 then {is the light already calibrated}
-    memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
+  begin
+    memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT');
+    inc(resultcounter);
+  end
   else
   begin
     load_master_dark(round(jd_start),hd); {will only be renewed if different hd.exposure or hd.set_temperature.}
@@ -12756,11 +12804,15 @@ begin
       hd.calstat:='D'; {dark applied, store in header of reference file}
       hd.dark_count:=head_dark.dark_count;
       hd.datamax_org:=hd.datamax_org - dark_norm_value;{adapt light datamax_org}
-      Result:=True;
+      inc(resultcounter);
     end;
   end;{apply dark}
 
-  if pos('F', hd.calstat) <> 0 then memo2_message('Skipping flat calibration, already applied. See header keyword CALSTAT')
+  if pos('F', hd.calstat) <> 0 then
+  begin
+    memo2_message('Skipping flat calibration, already applied. See header keyword CALSTAT');
+    inc(resultcounter);
+  end
   else
   begin
     load_master_flat(round(jd_start), hd);  {will only be renewed if different filter name.  Note load will overwrite hd.calstat}
@@ -12858,9 +12910,10 @@ begin
       hd.calstat:=hd.calstat + 'F' + head_flat.calstat{B from flat};   {mark that flat and bias have been applied. Store in the header of the reference file}
       hd.flat_count:=head_flat.flat_count;
       hd.flatdark_count:=head_flat.flatdark_count;
-      Result:=True;
+      inc(resultcounter);
     end;{flat correction}
   end;{do flat & flat dark}
+  result:=resultcounter>=2;//both dark and flat applied?
 end;
 
 
@@ -13082,6 +13135,73 @@ begin
   Result:=Result + '_stacked.fits';
 end;
 
+procedure lrgb_colour_fix;
+begin
+  with stackmenu1 do
+  begin
+    if lrgb_auto_level1.Checked then
+    begin
+      memo2_message('Adjusting colour levels as set in tab "stack method"');
+      colour_correction_factors(img_loaded,head);
+      apply_factors(img_loaded);{histogram is after this action invalid}
+      stackmenu1.reset_factors1Click(nil);{reset factors to default}
+  //    plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+
+      if stackmenu1.lrgb_global_colour_smooth1.Checked then
+      begin
+        memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
+        global_colour_smooth(img_loaded, strtofloat2(lrgb_global_colour_smooth_width1.Text), strtofloat2(lrgb_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
+      end;
+      if star_colour_smooth1.Checked then
+      begin
+        memo2_message('Applying star-smoothing filter image as set in tab "stack method"');
+        apply_star_smooth(img_loaded, head,stackmenu1.lrgb_star_colour_smooth_diameter1.Text, stackmenu1.lrgb_star_colour_smooth_nrstars1.Text);
+      end;
+
+      if stackmenu1.green_purple_filter1.Checked then
+      begin
+        memo2_message('Applying "remove green and purple" filter');
+        green_purple_filter(img_loaded);
+      end;
+
+
+    end
+    else
+    begin
+      memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
+  //    plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+    end;
+
+  end;
+end;
+
+
+procedure osc_colour_fix;
+begin
+  with stackmenu1 do
+  begin
+    if osc_auto_level1.Checked then
+    begin
+      memo2_message('Adjusting colour levels as set in tab "stack method"');
+      colour_correction_factors(img_loaded,head);//stackmenu1.colour_correction_factors1Click(nil);
+      apply_factors(img_loaded);{histogram is after this action invalid}
+      stackmenu1.reset_factors1Click(nil);{reset factors to default}
+  //    plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+      if osc_colour_smooth1.Checked then
+      begin
+        memo2_message( 'Applying colour-smoothing filter image as set in tab "stack method".');
+        global_colour_smooth(img_loaded, strtofloat2(osc_global_colour_smooth_width1.Text), strtofloat2(osc_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
+      end;
+    end
+    else
+    begin
+      memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
+  //    plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+    end;
+
+  end;
+end;
+
 
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
@@ -13095,6 +13215,7 @@ var
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr,x,y                      : double;
   filters_used: array [0..6] of string;//r,g,b,r2,g2,b2,L
+  comet_frames_to_combine : array[1..2] of integer;
 begin
   save_settings2;{too many lost selected files, so first save settings}
 
@@ -13384,7 +13505,7 @@ begin
             end
             else
             begin
-              if startnet_split(filename2,{filetypeout} 'fits',{out} fileout_neb,fileout_stars)=false then
+              if starnet_split(filename2, 'N' {stretch in StarNet2},{out} fileout_neb,fileout_stars)=false then
               begin
                 starnet2_failure:=true;
                 esc_pressed:=true;//prevent mode pauzed
@@ -13685,7 +13806,8 @@ begin
           files_to_process[c].listviewindex:=c; {use same index as listview except when later put lowest HFD first}
           if ((ListView1.items[c].Checked = True) and (ListView1.Items.item[c].SubitemImages[L_result]<0){not yet done} and (length(ListView1.Items.item[c].subitems.Strings[L_filter])>0) {skip any file without a filter name}) then
           begin  {not done yet}
-            if object_to_process = '' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a next object name to stack}
+            if object_to_process = '' then
+               object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a next object name to stack}
 
             if ((classify_object = False) or ((object_to_process <> '') and (object_to_process = uppercase(ListView1.Items.item[c].subitems.Strings[L_object])))) {correct object?} then
             begin {correct object}
@@ -13792,7 +13914,7 @@ begin
 
 
             filename2:=filename3;{restore last filename}
-            extra1:=extra1 + head.filter_name;
+     //       extra1:=extra1 + head.filter_name;
           end{nrfiles>1}
           else
           begin
@@ -13816,8 +13938,9 @@ begin
             begin extra2:=extra2 + 'L'; end;
           end;{case}
 
-          //   extra1:=extra1+head.filter_name;
-        end;
+          extra1:=extra1+head.filter_name;//for looping trough all objects
+        end; //files>0
+
       end;{for loop for 4 RGBL}
 
       if skip_combine = False then
@@ -13878,77 +14001,31 @@ begin
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations},true {buffer_loaded});//removes also the old keywords
         end;
 
-        if counter_colours <> 0{length(extra2)>=2} {lrgb loop} then
+        if ((use_ephemeris_alignment=false) or (use_starnet2_1.checked=false)) then //do not colour balance here when images are split by StarNet2
         begin
-          if stackmenu1.lrgb_auto_level1.Checked then
+          if counter_colours <> 0{length(extra2)>=2} {lrgb loop} then
           begin
-            memo2_message('Adjusting colour levels as set in tab "stack method"');
-            colour_correction_factors(img_loaded,head);
-            apply_factors(img_loaded);{histogram is after this action invalid}
-            stackmenu1.reset_factors1Click(nil);{reset factors to default}
-            plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-
-            if stackmenu1.lrgb_global_colour_smooth1.Checked then
-            begin
-              memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
-              global_colour_smooth(img_loaded, strtofloat2(lrgb_global_colour_smooth_width1.Text), strtofloat2(lrgb_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
-            end;
-            if stackmenu1.star_colour_smooth1.Checked then
-            begin
-              memo2_message('Applying star-smoothing filter image as set in tab "stack method"');
-              apply_star_smooth(img_loaded, head,stackmenu1.lrgb_star_colour_smooth_diameter1.Text, stackmenu1.lrgb_star_colour_smooth_nrstars1.Text);
-            end;
-
-            if stackmenu1.green_purple_filter1.Checked then
-            begin
-              memo2_message('Applying "remove green and purple" filter');
-              green_purple_filter(img_loaded);
-            end;
-
-
+            lrgb_colour_fix;
           end
           else
           begin
-            memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
-            plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-          end;
-        end
-        else
-        begin
-          if process_as_osc > 0 then
-          begin
-            if stackmenu1.osc_auto_level1.Checked then
+            if process_as_osc > 0 then
             begin
-              memo2_message('Adjusting colour levels as set in tab "stack method"');
-              colour_correction_factors(img_loaded,head);//stackmenu1.colour_correction_factors1Click(nil);
-              apply_factors(img_loaded);{histogram is after this action invalid}
-              stackmenu1.reset_factors1Click(nil);{reset factors to default}
-              plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-              if stackmenu1.osc_colour_smooth1.Checked then
-              begin
-                memo2_message( 'Applying colour-smoothing filter image as set in tab "stack method".');
-                global_colour_smooth(img_loaded, strtofloat2(osc_global_colour_smooth_width1.Text), strtofloat2(osc_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
-              end;
+              osc_colour_fix;
             end
-            else
-            begin
-              memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
-              plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
-            end;
-          end
-          else {mono files}
-            plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+            else {mono files}
+             ;// plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+          end;
+
         end;
 
+        plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
         plot_image(mainform1.image1, True);{plot real}
 
         mainform1.Memo1.Lines.BeginUpdate;
 
-        //remove_solution(false {keep wcs});//fast and efficient
-
         remove_key(mainform1.memo1.lines,'DATE    ', False{all});{no purpose anymore for the original date written}
-//        remove_key(mainform1.memo1.lines,'EXPTIME', False{all}); {remove, will be added later in the header}
-        remove_key(mainform1.memo1.lines,'EXPOSURE', False{all});{remove, will be replaced by EXPTIME, LUM_EXP, RED_EXP.....}
+        remove_key(mainform1.memo1.lines,'EXPOSURE', False{all});{remove, will be replaced by EXPTIME, LUM_EXP, RED_EXP.....EXPTIME will be update later}
         remove_key(mainform1.memo1.lines,'CCD-TEMP', False{all});{remove, will be replaced by SET-TEMP.....}
         remove_key(mainform1.memo1.lines,'SET-TEMP', False{all});{remove, will be added later in mono or for colour as LUM_TEMP, RED_TEMP.....}
         remove_key(mainform1.memo1.lines,'LIGH_CNT', False{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
@@ -14164,6 +14241,7 @@ begin
     Application.ProcessMessages;{look for keyboard instructions}
     total_counter:=total_counter + counterL; {keep record of lights done}
 
+    if object_counter<=2 then comet_frames_to_combine[object_counter]:=ListView5.Items.Count-1;//remember the lrgb or osc stack position for combining later
 
   until ((counterL = 0){none lrgb loop} and (extra1 = ''){lrgb loop});{do all names}
 
@@ -14184,9 +14262,26 @@ begin
       if ListView5.Items.Count>=2 then //star and nebula should be available
       begin
         memo2_message('Combining stacked star and nebula frames');
-        listview5.Items[ListView5.Items.Count - 2].Selected:=true;
-        listview5.Items[ListView5.Items.Count - 1].Selected:=true;
+
+
+//        listview5.Items[ListView5.Items.Count - 2].Selected:=true;
+//        listview5.Items[ListView5.Items.Count - 1].Selected:=true;
+        listview_unselect_all(listview5);
+        listview5.Items[comet_frames_to_combine[1]].Selected:=true;
+        listview5.Items[comet_frames_to_combine[2]].Selected:=true;
+
         combine_files(listview5); //combine selected files, no alignment, no saving
+
+        if length(img_loaded)>1 then //colour
+        begin
+          if classify_filter_light1.checked then //lrgb image
+            lrgb_colour_fix
+          else
+            osc_colour_fix;
+        end;
+        plot_histogram(img_loaded, True {update}); {plot histogram, set sliders}
+        plot_image(mainform1.image1, True);{plot real}
+
 
         filename2:=ChangeFileExt(Filename2, '_comet.fits');
         if save_fits(img_loaded,mainform1.memo1.lines,head, filename2, True {override}) then
@@ -14196,8 +14291,6 @@ begin
           report_results(head.object_name, 'comet_stack', object_counter, 4 {gray icon},5 {stack icon});{report result in tab results}
         end;
       end;
-      mainform1.stretch1.itemindex:=0;
-      memo2_message('Since images are already stretched for Starnet2, the stretch factor is now set at off to prevent too much stretching.')
     end;
     memo2.Lines.add('Finished in ' + IntToStr(round((gettickcount64 - startTick) / 1000)) +' sec. The FITS header contains a detailed history.');
   end;

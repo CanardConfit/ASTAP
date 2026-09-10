@@ -80,7 +80,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.03';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
