@@ -1347,7 +1347,11 @@ const
   {$ifdef mswindows}
   path_starnet2: string='C:\Program Files\StarNet2\bin\starnet2.exe';
   {$else} {unix}
-  path_starnet2: string='/usr/bin/starnet2';
+  {$IFDEF Darwin}
+   path_starnet2: string='/usr/local/bin/starnet2';
+  {$else}
+   path_starnet2: string='/usr/bin/starnet2';
+  {$endif}
   {$endif}
 
 implementation
@@ -10015,12 +10019,15 @@ end;
 function starnet_split(filein,mode : string; out fileout_neb,fileout_stars: string): boolean;
 var
    i,j,k: integer;
-   filename1, filename3, extraoption,fileext: string;
-   backgr,  noiselev : double;
-   img               : timage_array;
+   filename3, extraoption,fileext: string;
+   img              : timage_array;
    headx1,headx2    : theader;
    memox1,memox2 : tstrings;//work memo
-  RefDate: TDateTime;
+   RefDate: TDateTime;
+
+   Params: TStringList;
+   ExitCode: Integer;
+
 
 begin
   memox1:= Tstringlist.Create; ; // this needs to be TStringList
@@ -10029,18 +10036,6 @@ begin
   result:=load_fits(filein,true {light},true {load data},true {update memo},0,memox1,headx1,img); {load new fits or tiff file}
   if result=false then exit;
 
-//  if ((length(img)>1) and (mode='C')) then //colour. Do before stretching. Mode=C comes from ephemeris selection with option StarNet2
-//  begin
-//    memo2_message('Adjusting colour levels if single image. ');
-//    colour_correction_factors(img,headx1);//calculate colour correction factors. Headx1 is updated with noise values
-//    apply_factors(img);{histogram is invalid after this action}
-//    stackmenu1.reset_factors1Click(nil);{reset factors to default}
-//    memo2_message('Applying global-smoothing filter on image. Factors are set in tab "pixel math 1"');
-               //    apply_star_smooth(img, headx1,stackmenu1.star_colour_smooth_diameter1.Text, stackmenu1.star_colour_smooth_nrstars1.Text);
-//    global_colour_smooth(img, strtofloat2(stackmenu1.lrgb_global_colour_smooth_width1.Text), strtofloat2(stackmenu1.lrgb_global_colour_smooth_sd1.text), False {get  hist});{histogram doesn't needs an update}
-//  end;
-
-  filename1:=filein;
 
   if headx1.bitpix=-32 then//floating point file
   begin
@@ -10051,21 +10046,20 @@ begin
 
     headx1.datamax_org:=1;
     headx1.datamin_org:=0;
-    filename3:=ChangeFileExt(Filename1,'_mtf.fits'); //save both tiff and fits
+    filename3:=ChangeFileExt(filein,'_mtf.fits'); //save both tiff and fits
     result:=save_fits(img,memox1,headx1,filename3,true);
 
     headx1.datamax_org:=65535;
     headx1.datamin_org:=0;
 
-
   end
   else
   begin
-    filename3:=filename1;
+    filename3:=filein;
     result:=true;
   end;
 
-  fileext:=ExtractFileExt(filename1);
+  fileext:=ExtractFileExt(filein);
 
   if result then
   begin
@@ -10080,45 +10074,56 @@ begin
 
      if mode='N' then //use StarNet2 stretching.
      begin
-       extraoption:=' --linear';
+       extraoption:='--linear';
        memo2_message('StarNet2 --linear mode selected');
      end
      else
        extraoption:='';
 
-    fileout_neb:=ChangeFileExt(Filename1,'_nebula'+fileext);
-    fileout_stars:=ChangeFileExt(Filename1,'_stars'+fileext);
-    {$ifdef mswindows}
-    if ExecuteAndWait('"'+path_starnet2+'" --input "'+filename3+'" --output "'+fileout_neb+'" --mask "'+fileout_stars+'"'+extraoption,true {showconsole})<>0 then {execute command and wait}
-    {$else} {unix}
-    if execute_unix2('"'+path_starnet2+'" --input "'+filename3+'" --output "'+fileout_neb+'" --mask "'+fileout_stars+'"'+extraoption)<>0 then
-    {$endif}
+    fileout_neb:=ChangeFileExt(filein,'_nebula'+fileext);
+    fileout_stars:=ChangeFileExt(filein,'_stars'+fileext);
 
-    begin //executable not found
-      result:=false;//the result of starnet2
-      esc_pressed:=true; //stop and avoid pauzed
-      if fileexists(path_starnet2)=false then
-      with stackmenu1 do
+    Params := TStringList.Create;
+    try
+      if extraoption <> '' then
+        Params.Add(extraoption);
+      Params.Add('--input');
+      Params.Add(filename3);
+      Params.Add('--output');
+      Params.Add(fileout_neb);
+      Params.Add('--mask');
+      Params.Add(fileout_stars);
+
+      if ExecuteAndLog(path_starnet2, Params, stackmenu1.Memo2.Lines, ExitCode) then
       begin
-        OpenDialog1.Title:='Select the Starnet2 executable';
-        OpenDialog1.Options:=[ofFileMustExist, ofHideReadOnly];
-        {$ifdef mswindows}
-        OpenDialog1.Filter := 'starnet2.exe|starnet2.exe';
-        {$else} {unix}
-        OpenDialog1.Filter := 'starnet2|starnet2';
-        {$endif}
-        if opendialog1.Execute then
+        //stackmenu1.Memo2.Lines.Add(Format('Process finished, exit code %d', [ExitCode]))
+        memo2_message('Seperate nebula and star image added to the listview');
+      end
+      else
+      begin
+        result:=false;//the result of starnet2
+        esc_pressed:=true; //stop and avoid pauzed
+        if fileexists(path_starnet2)=false then
+        with stackmenu1 do
         begin
-          path_starnet2:=OpenDialog1.Files[0];//store location executable
-          memo2_message('Executable selected. Try again.');
+          OpenDialog1.Title:='Select the Starnet2 executable';
+          OpenDialog1.Options:=[ofFileMustExist, ofHideReadOnly];
+          {$ifdef mswindows}
+          OpenDialog1.Filter := 'starnet2.exe|starnet2.exe';
+          {$else} {unix}
+          OpenDialog1.Filter := 'starnet2|starnet2';
+          {$endif}
+          if opendialog1.Execute then
+          begin
+            path_starnet2:=OpenDialog1.Files[0];//store location executable
+            memo2_message('Executable selected. Try again.');
+          end;
         end;
       end;
+    finally
+      Params.Free;
     end;
   end;
-  if result=false then
-    memo2_message('Failure ')
-  else
-     memo2_message('Seperate nebula and star image added to the listview');
 
   memox1.free;//free tstrings
   memox2.free;//free tstrings

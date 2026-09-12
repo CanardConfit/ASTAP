@@ -77,10 +77,11 @@ uses
   clipbrd, {for copy to clipboard}
   Buttons, PopupNotifier, PairSplitter, simpleipc,
   CustApp, Types, fileutil,
+  process, //for execution
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.12';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -564,10 +565,8 @@ type
     procedure minimum1Change(Sender: TObject);
     procedure GenerateShapes(position,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
     procedure clear_fshapes_array;
-
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
-
-  private
+   private
     { Private declarations }
     var
       FStartupDone: Boolean;
@@ -947,6 +946,7 @@ function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx 
 function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
 procedure update_sip_coefficients(memo : tstrings);//update all sip coefficients in memo
 function apply_arctan(fov : double): double; //assume the optical system can be modeled by a simple arctan function like a standard rectilinear (pinhole) lens
+function ExecuteAndLog(const aExecutable: string; aParams: TStrings; aLog: TStrings; out aExitCode: Integer): Boolean;
 
 
 const
@@ -9196,6 +9196,99 @@ begin
       if deletefile(filen2) then
       result:=renamefile(filename_tmp,filen2);
     end;
+  end;
+end;
+
+
+
+function ExecuteAndLog(const aExecutable: string; aParams: TStrings;
+  aLog: TStrings; out aExitCode: Integer): Boolean;
+const
+  BufSize = 4096;
+var
+  AProcess: TProcess;
+  Buffer: array[0..BufSize - 1] of byte;
+  BytesRead: LongInt;
+  PendingLine: RawByteString;
+  Carry: RawByteString;   // holds a partial (unterminated) line between reads
+
+      procedure Drain;
+      var
+        Chunk: RawByteString;
+        NLPos, CRPos, SplitPos: Integer;
+      begin
+        while (AProcess.Output <> nil) and (AProcess.Output.NumBytesAvailable > 0) do
+        begin
+          BytesRead := AProcess.Output.Read(Buffer, BufSize);
+          if BytesRead > 0 then
+          begin
+            SetString(Chunk, PAnsiChar(@Buffer[0]), BytesRead);
+            Carry := Carry + Chunk;
+
+            // emit complete lines/updates as soon as we hit CR or LF
+            repeat
+              NLPos := Pos(#10, Carry);
+              CRPos := Pos(#13, Carry);
+
+              if (NLPos = 0) and (CRPos = 0) then
+                Break; // no full terminator yet, wait for more bytes
+
+              if (CRPos > 0) and ((NLPos = 0) or (CRPos < NLPos)) then
+                SplitPos := CRPos
+              else
+                SplitPos := NLPos;
+
+              PendingLine := Copy(Carry, 1, SplitPos - 1);
+              if Assigned(aLog) then
+                aLog.Add(PendingLine);
+              Delete(Carry, 1, SplitPos);
+
+              // if CRLF together, drop the immediately-following LF too
+              if (SplitPos = CRPos) and (Length(Carry) > 0) and (Carry[1] = #10) then
+                Delete(Carry, 1, 1);
+            until False;
+          end;
+        end;
+      end;
+
+begin
+  Result := False;
+  aExitCode := -1;
+  Carry := '';
+  AProcess := TProcess.Create(nil);
+  try
+    AProcess.Executable := aExecutable;
+    if Assigned(aParams) then
+      AProcess.Parameters.Assign(aParams);
+
+    AProcess.Options := [poUsePipes, poStderrToOutPut];
+    {$ifdef mswindows}
+    AProcess.Options := AProcess.Options + [poNoConsole];
+    {$endif}
+
+    AProcess.Execute;
+
+    repeat
+      Drain;
+      if AProcess.Running then
+      begin
+        Sleep(50);
+        {$ifdef LCL}
+        Application.ProcessMessages;
+        {$endif}
+      end;
+    until not AProcess.Running;
+
+    Drain; // final flush of anything left in the pipe
+
+    // flush any trailing partial line with no terminating LF
+    if (Carry <> '') and Assigned(aLog) then
+      aLog.Add(Carry);
+
+    aExitCode := AProcess.ExitStatus;
+    Result := True;
+  finally
+    AProcess.Free;
   end;
 end;
 
