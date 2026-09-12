@@ -59,7 +59,7 @@ uses
   {$else} {unix}
   LCLType, {for vk_...}
   Unix,  {for console}
-  Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,process,
+  Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,
   BaseUnix, {for fpchmod}
   {$endif}
   LCLIntf,{for selectobject, openURL}
