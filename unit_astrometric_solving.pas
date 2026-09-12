@@ -454,14 +454,14 @@ begin
 end;
 
 
-procedure convert_mono2(var img: Timage_array; out img_mono :Timage_array);//convert colour image to mono image
+procedure convert_image_to_new_mono_image(var img: Timage_array; out img_mono :Timage_array);//convert colour image to a new mono image
 var
    fitsX,fitsY,width2,height2: integer;
 begin
   if length(img)<3 then exit;{prevent run time error mono images}
   height2:=length(img[0]);
   width2:=length(img[0,0]);
-  memo2_message('Converting to mono.');
+  memo2_message('Creating a mono duplicate for star detection.');
   setlength(img_mono,1,height2,width2);{set length of image array mono}
 
   for fitsY:=0 to height2-1 do
@@ -543,7 +543,7 @@ begin
     if length(img)>=3 then //colour to mono, equalise background
     begin
       if duplicate(img,img_binned)=false then exit;//work with img_binned to protect the orginal image
-      if length(img)>=3 then convert_mono2(img,img_binned);
+      if length(img)>=3 then convert_image_to_new_mono_image(img,img_binned);
       get_background(0, img_binned, head, true {calc hist}, True {calculate also standard deviation background});{get back ground}
       find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd);
     end
