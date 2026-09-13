@@ -273,17 +273,17 @@ begin
 
     try { Do some lengthy operation }
         with mainform1.OpenDialog1.Files do
-        for I := 0 to Count - 1 do
+        for I := 1 to Count do
         begin
-          filename2:=Strings[I];
-          fileprocessed1.caption:='Solving '+inttostr(i)+'-'+inttostr(Count-1)+': '+filename2;
-          progress_indicator(i/count,' Solving');{show progress}
+          filename2:=Strings[I-1];
+          fileprocessed1.caption:='Solving '+inttostr(i)+'-'+inttostr(Count)+': '+filename2;
+          progress_indicator((i-1)/count,' Solving');{show progress}
 
           Application.ProcessMessages;
           if esc_pressed then
           begin
             Screen.Cursor:=crDefault;
-            exit;
+            break;
           end;
           if astrometry_net(filename2,true {remove_tmp}) then
              begin inc(solved); solved1.caption:= 'Solved: '+inttostr(solved); memo2_message('Solved: '+filename2);    end
@@ -293,6 +293,7 @@ begin
       finally
       progress_indicator(-100,'');{progresss done}
       Screen.Cursor:=crDefault;  { Always restore to normal }
+      form_astrometry_net1.memo1.lines.add('Ready');
     end;
   end;
 end;
