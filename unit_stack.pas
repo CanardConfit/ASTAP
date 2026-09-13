@@ -10116,7 +10116,7 @@ begin
        begin
          result:=false;//the result of starnet2
          esc_pressed:=true; //stop and avoid pauzed
-         memo2_message('StarNet2 exection error ' + inttostr(exitcode));
+         memo2_message('StarNet2 execution error ' + inttostr(exitcode));
 
        end;
      finally
