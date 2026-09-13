@@ -14266,10 +14266,6 @@ begin
       if ListView5.Items.Count>=2 then //star and nebula should be available
       begin
         memo2_message('Combining stacked star and nebula frames');
-
-
-//        listview5.Items[ListView5.Items.Count - 2].Selected:=true;
-//        listview5.Items[ListView5.Items.Count - 1].Selected:=true;
         listview_unselect_all(listview5);
         listview5.Items[comet_frames_to_combine[1]].Selected:=true;
         listview5.Items[comet_frames_to_combine[2]].Selected:=true;

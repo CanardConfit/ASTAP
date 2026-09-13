@@ -10931,7 +10931,7 @@ begin
     begin {unprocessed_raw-astap is a modified version and accepts -i and -f}
       Params := TStringList.Create;
       try
-        Params.Add(param);
+        Params.Add(parm);
         Params.Add(filename3);
         if ExecuteAndLog(application_path+'unprocessed_raw-astap', Params, nil {logging not required}, ExitCode) then
         begin
@@ -10956,7 +10956,7 @@ begin
     begin
       Params := TStringList.Create;
       try
-        Params.Add(param);
+        Params.Add(parm);
         Params.Add(filename3);
         if ExecuteAndLog(application_path+'/unprocessed_raw', Params, nil {logging not required}, ExitCode) then
         begin
