@@ -11,13 +11,13 @@ interface
 uses
   Classes, SysUtils,forms, math, unit_stack, astap_main, unit_star_align,clipbrd;
 
-procedure stack_LRGB( var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
-procedure stack_average(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
+procedure stack_LRGB( var files_to_process : array of TfileToDo;alignment_mode:integer; out counter : integer );{stack LRGB mode}
+procedure stack_average(process_as_osc:integer; var files_to_process : array of TfileToDo; alignment_mode:integer; out counter : integer);{stack average}
 
 procedure stack_mosaic(process_as_osc:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out frame_counter : integer);{mosaic/tile mode}
 
-procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
-procedure calibration_and_alignment(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
+procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; alignment_mode:integer; out counter : integer); {stack using sigma clip average}
+procedure calibration_and_alignment(process_as_osc:integer; var files_to_process : array of TfileToDo; alignment_mode: integer; out counter : integer); {calibration_and_alignment only}
 
 procedure astrometric_to_vector(headA, headB : theader);{convert astrometric solution to vector solution}
 function test_bayer_matrix(img: Timage_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
@@ -316,7 +316,7 @@ end;
 
 
 
-procedure stack_LRGB(var files_to_process : array of TfileToDo; out counter : integer ); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,R2,G2,B2,L]}
+procedure stack_LRGB(var files_to_process : array of TfileToDo; alignment_mode:integer; out counter : integer ); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,R2,G2,B2,L]}
 var
   fitsX,fitsY,c,width_max, height_max, binning,max_stars,col,x_trunc,y_trunc,i    : integer;
   rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, mean_hfd,
@@ -339,9 +339,16 @@ begin
   begin
 
     {move often used setting to booleans. Great speed improved if use in a loop and read many times}
-    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
-    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometric_alignment1.checked;
+//    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+//    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
+//    use_astrometry_internal:=use_astrometric_alignment1.checked;
+
+    //use_star_alignment:=alignment_mode=0;
+    use_astrometry_internal:=alignment_mode=1;
+    use_manual_align:=alignment_mode=2;
+    use_ephemeris_alignment:=alignment_mode=3;
+
+
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
     use_sip:=stackmenu1.add_sip1.checked;
@@ -1054,7 +1061,7 @@ begin
 end;
 
 
-procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
+procedure stack_average(process_as_osc :integer; var files_to_process : array of TfileToDo;alignment_mode:integer; out counter : integer);{stack average}
 var
     fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,max_stars,old_naxis3,mm,ccc                  : integer;
     background, weightF,hfd_min,aa,bb,cc,dd,ee,ff,pedestal,dummy,mean_hfd,referenceX, referenceY                                   : double;
@@ -1070,10 +1077,16 @@ var
 begin
   with stackmenu1 do
   begin
-    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
-    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometric_alignment1.checked;
-    use_star_alignment:=use_star_alignment1.checked;
+    //use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    //use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
+    //use_astrometry_internal:=use_astrometric_alignment1.checked;
+    //use_star_alignment:=use_star_alignment1.checked;
+
+    use_star_alignment:=alignment_mode=0;
+    use_astrometry_internal:=alignment_mode=1;
+    use_manual_align:=alignment_mode=2;
+    use_ephemeris_alignment:=alignment_mode=3;
+
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text,500);{maximum star to process, if so filter out brightest stars later}
@@ -1272,7 +1285,7 @@ begin
 end;
 
 
-procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
+procedure stack_sigmaclip(process_as_osc:integer; var files_to_process : array of TfileToDo; alignment_mode:integer;out counter : integer); {stack using sigma clip average}
 type
    tsolution  = record
      solution_vectorX : Tsolution_vector {array[0..2] of double};
@@ -1300,10 +1313,15 @@ begin
     use_sip:=stackmenu1.add_sip1.checked;
 
 
-    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
-    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometric_alignment1.checked;
-    use_star_alignment:=use_star_alignment1.checked;
+    //use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    //use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
+    //use_astrometry_internal:=use_astrometric_alignment1.checked;
+    //use_star_alignment:=use_star_alignment1.checked;
+
+    use_star_alignment:=alignment_mode=0;
+    use_astrometry_internal:=alignment_mode=1;
+    use_manual_align:=alignment_mode=2;
+    use_ephemeris_alignment:=alignment_mode=3;
 
     solar_drift_compensation:=((solar_drift_compensation1.checked) and (use_astrometry_internal));
 
@@ -1624,7 +1642,7 @@ begin
 end;   {stack using sigma clip average}
 
 
-procedure calibration_and_alignment(process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
+procedure calibration_and_alignment(process_as_osc :integer; var files_to_process : array of TfileToDo; alignment_mode: integer; out counter : integer); {calibration_and_alignment only}
 var
     fitsX,fitsY,c, old_width, old_height,col, binning, max_stars,old_naxis3,height_average,width_average,ccc  : integer;
     background, hfd_min,pedestal,mean_hfd,value, referenceX, referenceY                                       : double;
@@ -1642,10 +1660,16 @@ begin
     use_sip:=stackmenu1.add_sip1.checked;
 
 
-    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
-    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometric_alignment1.checked;
-    use_star_alignment:=use_star_alignment1.checked;
+//    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+//    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
+//    use_astrometry_internal:=use_astrometric_alignment1.checked;
+//    use_star_alignment:=use_star_alignment1.checked;
+
+    use_star_alignment:=alignment_mode=0;
+    use_astrometry_internal:=alignment_mode=1;
+    use_manual_align:=alignment_mode=2;
+    use_ephemeris_alignment:=alignment_mode=3;
+
 
     {light average}
     begin

@@ -81,7 +81,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -1530,10 +1530,10 @@ begin
       end;
     until ((simple) and (header_count>=get_ext)); {simple is true and correct header found}
     repeat  {loop for 80 bytes in 2880 block}
-      if load_data then
+      if update_memo then
       begin
         SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
-        if update_memo then memo.add(aline); {add line to memo}
+        memo.add(aline); {add line to memo}
       end;
       if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {head.naxis}
       begin
@@ -9647,6 +9647,7 @@ begin
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
       stackmenu1.use_starnet2_1.Checked:=Sett.ReadBool('stack','starnet',false);
+      stackmenu1.remove_comet_remnant1.checked:=Sett.ReadBool('stack','remove_remnant',true);
 
       dum:=Sett.ReadString('stack','path_starnet',''); if dum<>'' then path_starnet2:=dum;
 
@@ -10079,6 +10080,7 @@ begin
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
 
       sett.writebool('stack','starnet',stackmenu1.use_starnet2_1.checked);
+      sett.writebool('stack','remove_remnant',stackmenu1.remove_comet_remnant1.checked);
 
       sett.writestring('stack','path_starnet',path_starnet2);
 

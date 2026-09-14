@@ -69,6 +69,8 @@ type
     Button3: TButton;
     center_position1: TLabel;
     help_ephemeris_stacking1: TLabel;
+    split_files1: TMenuItem;
+    split_files2: TMenuItem;
     starnet_menu1: TMenuItem;
     combine_files1: TMenuItem;
     results_split_files2: TMenuItem;
@@ -93,6 +95,7 @@ type
     saturation_level1: TEdit;
     Separator15: TMenuItem;
     star_colour_smooth1: TCheckBox;
+    remove_comet_remnant1: TCheckBox;
     with_auid_only1: TCheckBox;
     gradient_filter_factor1: TComboBox;
     GroupBox24: TGroupBox;
@@ -814,6 +817,7 @@ type
     procedure SpeedButton2Click(Sender: TObject);
     procedure starnet_split2Click(Sender: TObject);
     procedure transformation2Click(Sender: TObject);
+    procedure use_starnet2_1Change(Sender: TObject);
     procedure view_next1Click(Sender: TObject);
     procedure unsharp_edit_amount1Change(Sender: TObject);
     procedure unsharp_edit_radius1Change(Sender: TObject);
@@ -2343,6 +2347,7 @@ begin
         end
         else
         begin
+
           if pos('DARK', uppercase(imagetype)) > 0 then
           begin
             memo2_message('Move file ' + filename2 + ' to tab DARKS');
@@ -10016,7 +10021,58 @@ begin
 end;
 
 
-function starnet_split(filein,mode : string; out fileout_neb,fileout_stars: string): boolean;
+function remove_comet_remnant1(filen: string; out fileout_neb2 : string): boolean; //remove comet remnant from star-only image.
+var
+  headx1    : theader;
+  memox1    : tstrings;//work memo
+  color,k,i,j,x,y, nrcolours,width,height : integer;
+  img,img2  : timage_array;
+  xx,yy, hfd1,star_fwhm,snr,flux,xc,yc     : double;
+
+begin
+  result:=false;
+  fileout_neb2:='';//assume failure
+  memox1:= Tstringlist.Create; ; // this needs to be TStringList
+  result:=load_fits(filen,true {light},true {load data},true {update memo},0,memox1,headx1,img); {load new fits or tiff file}
+  if result then
+  begin
+    if get_annotation_position(memox1,{out} xx,yy ) then // get the x,y of the annotation position
+    begin
+
+      HFD(img,round(xx),round(yy),14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+
+      if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>7)) then {comet center detected in img}
+      begin
+        nrcolours:=length(img);
+        height:=length(img[0]);
+        width:=length(img[0,0]);
+        setlength(img2,nrcolours,height,width);
+
+        for k:=0 to nrcolours-1 do {do all colors}
+          for i:=0 to height-1 do
+            for j:=0 to width-1 do
+            if sqr(yc-i)+sqr(xc-j)<sqr(hfd1*3) then //near expected comet location
+            begin
+              img2[k,i,j]:=img[k,i,j]; //copy image data
+              img[k,i,j]:=0;//remove comet remnant
+            end;
+
+        result:=save_fits(img,memox1,headx1,filen,true);
+        if result then
+        begin
+          fileout_neb2:=ChangeFileExt(filen,'_remnant_nebula.fits');
+          result:=save_fits(img2,memox1,headx1,fileout_neb2,true);//save coment remnant
+          memo2_message('Extracted comet remnant from _stars and saved as: '+fileout_neb2);
+        end;
+      end
+      else
+      memo2_message('No comet center detected in image');
+    end;
+  end;
+  memox1.free;//free tstrings
+end;
+
+function starnet_split(filein,mode : string; out fileout_neb,fileout_stars,fileout_neb2: string): boolean;
 var
   i,j,k: integer;
   filename3, extraoption,fileext: string;
@@ -10122,6 +10178,13 @@ begin
      finally
        Params.Free;
      end;
+
+     if stackmenu1.remove_comet_remnant1.checked then      //Remove comet-center-remnant from stars-only
+       remove_comet_remnant1(fileout_stars, fileout_neb2)
+     else
+       fileout_neb2:='';
+
+
    end;
  end;
  memox1.free;//free tstrings
@@ -10885,6 +10948,13 @@ begin
   Form_transformation1.Show{Modal};
 end;
 
+procedure Tstackmenu1.use_starnet2_1Change(Sender: TObject);
+begin
+  remove_comet_remnant1.enabled:=use_starnet2_1.checked;
+end;
+
+
+
 
 procedure Tstackmenu1.view_next1Click(Sender: TObject);
 var
@@ -10919,8 +10989,8 @@ end;
 
 function process_selected_files(lv: tlistview; column: integer; mode : string) : boolean;// S= Solve selected/ U annotate unknow stars / 'P' photometric calibration, add mzero / '2' bin 2x2 / N=solve and split using Starnet2 / A add without alignment
 var
-  c,nrcolumns,i,countN,selcnt,progress        : integer;
-  filename1, fileout_neb,fileout_stars        : string;
+  c,nrcolumns,i,countN,selcnt,progress                  : integer;
+  filename1, fileout_neb,fileout_neb2,fileout_stars     : string;
   img_temp                    : Timage_array;
   headx                       : theader;
 
@@ -11038,10 +11108,12 @@ begin
 
         if (  ((mode='N') or (mode='N2')) and (headx.cd1_1 <> 0)) then //apply Starnet2 if solved
         begin
-          if starnet_split(filename1,mode,{out} fileout_neb,fileout_stars) then
+          if starnet_split(filename1,mode,{out} fileout_neb,fileout_stars,fileout_neb2) then
           begin //success
             lv.Items.item[c].checked:=false;//unselect the source
             listview_add(lv, fileout_neb,true, L_nr);
+            if fileout_neb2<>'' then
+              listview_add(lv, fileout_neb2,true, L_nr);
             listview_add(lv, fileout_stars,true, L_nr);
             application.processmessages;
             if esc_pressed then break;
@@ -12776,7 +12848,6 @@ begin
   if pos('D', hd.calstat) <> 0 then {is the light already calibrated}
   begin
     memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT');
-    inc(resultcounter);
   end
   else
   begin
@@ -12815,7 +12886,6 @@ begin
   if pos('F', hd.calstat) <> 0 then
   begin
     memo2_message('Skipping flat calibration, already applied. See header keyword CALSTAT');
-    inc(resultcounter);
   end
   else
   begin
@@ -12917,7 +12987,7 @@ begin
       inc(resultcounter);
     end;{flat correction}
   end;{do flat & flat dark}
-  result:=resultcounter>=2;//both dark and flat applied?
+  result:=resultcounter>0;//A dark or flat or both applied?
 end;
 
 
@@ -13210,9 +13280,9 @@ end;
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
   i, c, nrfiles, image_counter, object_counter,
-  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon :   integer;
+  first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon,alignment_mode :   integer;
   filter_name1, filter_name2, defilter, filename3,
-  extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_stars, alignment_method   : string;
+  extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_neb2,fileout_stars, alignment_method   : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
   classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue,use_ephemeris_alignment,starnet_checked : boolean;
@@ -13240,13 +13310,29 @@ begin
   stacking_running:=true;
   esc_pressed:=False;
 
-  if use_star_alignment1.checked then alignment_method:=use_star_alignment1.caption
+  if use_star_alignment1.checked then
+  begin
+    alignment_method:=use_star_alignment1.caption;
+    alignment_mode:=1;
+  end
   else
-  if use_astrometric_alignment1.checked then alignment_method:=use_astrometric_alignment1.caption
+  if use_astrometric_alignment1.checked then
+  begin
+    alignment_method:=use_astrometric_alignment1.caption;
+    alignment_mode:=1;
+  end
   else
-  if use_manual_alignment1.Checked then alignment_method:=use_manual_alignment1.caption
+  if use_manual_alignment1.Checked then
+  begin
+    alignment_method:=use_manual_alignment1.caption;
+    alignment_mode:=2;
+  end
   else
-  if use_ephemeris_alignment1.Checked then alignment_method:=use_ephemeris_alignment1.caption;
+  if use_ephemeris_alignment1.Checked then
+  begin
+    alignment_method:=use_ephemeris_alignment1.caption;
+    alignment_mode:=3;
+  end;
 
   memo2_message('Stack method ' + stack_method1.Text+', '+alignment_method);
   stitching_mode:=pos('stitch', stackmenu1.stack_method1.Text) > 0;
@@ -13260,6 +13346,7 @@ begin
   classify_object:=((classify_object1.Checked) and (sender_photometry = False) and (stitching_mode=false));  //disable classify object if sender is photom_stack1
 
   use_ephemeris_alignment:=use_ephemeris_alignment1.Checked;
+
   starnet_checked:=use_starnet2_1.checked;
 
   if ((stackmenu1.use_manual_alignment1.Checked) and (sigma_clip) and (pos('Comet', stackmenu1.manual_centering1.Text) <> 0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
@@ -13509,7 +13596,7 @@ begin
             end
             else
             begin
-              if starnet_split(filename2, 'N' {stretch in StarNet2},{out} fileout_neb,fileout_stars)=false then
+              if starnet_split(filename2, 'N' {stretch in StarNet2},{out} fileout_neb,fileout_stars,fileout_neb2)=false then
               begin
                 starnet2_failure:=true;
                 esc_pressed:=true;//prevent mode pauzed
@@ -13517,6 +13604,8 @@ begin
               end;
               ListView1.Items.item[c].checked:=false;//unselect the source
               listview_add(listview1, fileout_neb,true, L_nr);
+              if fileout_neb2<>'' then
+                listview_add(listview1, fileout_neb2,true, L_nr);
               listview_add(listview1, fileout_stars,true, L_nr);
               Application.ProcessMessages;
             end;
@@ -13536,7 +13625,7 @@ begin
      tempvalue:=uncheck_outliers1.checked;
      uncheck_outliers1.checked:=false;//prevent item with thumb down are made checked again in analyse_tab_lights
 
-     classify_object1.checked:=true;//required for seperate stacking of neula and stars having a differenct object desciption, _stars.fits, _nebula.fits
+     classify_object1.checked:=true;//required for seperate stacking of nebula and stars having a differenct object desciption, _stars.fits, _nebula.fits
      analyse_tab_lights(analyse_level); {analyse any image not done yet. The width is required for sorting the images later and find the reference image}
      uncheck_outliers1.checked:=tempvalue;
      Application.ProcessMessages;
@@ -13588,19 +13677,8 @@ begin
             else
                date_obs_reference:=head.date_avg;
           end;
-          if pos('_stars.', filename2)<>0 then  //image containing stars only
-          begin
-            head.date_obs:=date_obs_reference; //use a fixed time for the images which contain stars only. So they match each other. For comet they will shift based on the comet drift
-            head.date_avg:='';                 //This fixed time will be used in plot_mpcorb
-          end;
 
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add_annotations},true {use asteroid buffer. Was loaded by analyse_objects_visible});
-
-
-          //if fits_file_name(filename2) then
-          //  success:=savefits_update_header(mainform1.memo1.lines,filename2)
-          //else
-          //  success:=save_tiff16_secure(img_loaded,mainform1.memo1.lines, filename2);{guarantee no file is lost}
 
           if save_fits_tiff_secure(img_loaded,mainform1.memo1.lines, filename2,head.bitpix)= False then
           begin
@@ -13730,7 +13808,7 @@ begin
         if sigma_clip then
         begin
           if length(files_to_process) <= 5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
-          stack_sigmaclip( process_as_osc,{var}files_to_process, counterL);       {sigma clip combining}
+          stack_sigmaclip( process_as_osc,{var}files_to_process, alignment_mode, counterL);       {sigma clip combining}
         end
         else
         if stitching_mode then
@@ -13739,10 +13817,10 @@ begin
         if cal_and_align then {calibration & alignment only}
         begin
           memo2_message('---------- Calibration & alignment for object: ' + object_to_process + ' -----------');
-          calibration_and_alignment(process_as_osc, {var}files_to_process, counterL);{saturation clip average}
+          calibration_and_alignment(process_as_osc, {var}files_to_process,alignment_mode, counterL);{saturation clip average}
         end
         else
-          stack_average(process_as_osc,{var}files_to_process, counterL);    {average}
+          stack_average(process_as_osc,{var}files_to_process,alignment_mode, counterL);    {average}
 
         if counterL > 0 then
         begin
@@ -13850,12 +13928,12 @@ begin
             if stitching_mode = False then put_best_quality_on_top(files_to_process); {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
             if sigma_clip then
-              stack_sigmaclip( process_as_osc,{var}files_to_process, counterL) {sigma clip combining}
+              stack_sigmaclip( process_as_osc,{var}files_to_process,alignment_mode, counterL) {sigma clip combining}
             else
             if stitching_mode then
               stack_mosaic(process_as_osc,{var}files_to_process, abs(max_background - min_background), counterL){mosaic combining}
             else
-              stack_average(process_as_osc,{var}files_to_process, counterL);{average}
+              stack_average(process_as_osc,{var}files_to_process,alignment_mode, counterL);{average}
 
             if esc_pressed then
             begin
@@ -13957,7 +14035,7 @@ begin
           if files_to_process_LRGB[0].Name = '' then files_to_process_LRGB[0]:=files_to_process_LRGB[2]; {use green channel as reference if no luminance is available}
           counterL:=0; //reset counter for case no Luminance files are available, so RGB stacking.
           files_to_process_LRGB[0].listviewindex:=-1;//indicate there is no correponding listview position. This is used by ephemeris stacking
-          stack_LRGB(files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
+          stack_LRGB(files_to_process_LRGB,alignment_mode, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
           if esc_pressed then
           begin
             progress_indicator(-2, 'ESC');
@@ -14245,7 +14323,15 @@ begin
     Application.ProcessMessages;{look for keyboard instructions}
     total_counter:=total_counter + counterL; {keep record of lights done}
 
-    if object_counter<=2 then comet_frames_to_combine[object_counter]:=ListView5.Items.Count-1;//remember the lrgb or osc stack position for combining later
+    if ((use_ephemeris_alignment) and (starnet_checked) and (object_counter<=2)) then
+    begin
+      comet_frames_to_combine[object_counter]:=ListView5.Items.Count-1;//remember the lrgb or osc stack position for combining later
+      if object_counter=1 then //step 1, stacking comets is ready
+      begin
+        memo2_message('Switching temporary to astrometric alignment for stars');
+        alignment_mode:=1; //astrometric for the stars
+      end;
+    end;
 
   until ((counterL = 0){none lrgb loop} and (extra1 = ''){lrgb loop});{do all names}
 
