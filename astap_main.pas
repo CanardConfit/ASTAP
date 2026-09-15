@@ -59,7 +59,7 @@ uses
   {$else} {unix}
   LCLType, {for vk_...}
   Unix,  {for console}
-  Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,process,
+  Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,
   BaseUnix, {for fpchmod}
   {$endif}
   LCLIntf,{for selectobject, openURL}
@@ -77,10 +77,11 @@ uses
   clipbrd, {for copy to clipboard}
   Buttons, PopupNotifier, PairSplitter, simpleipc,
   CustApp, Types, fileutil,
+  process, //for execution
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -564,10 +565,8 @@ type
     procedure minimum1Change(Sender: TObject);
     procedure GenerateShapes(position,width,height,penwidth : integer; shape: TShapeType; colour : Tcolor; hint: string);
     procedure clear_fshapes_array;
-
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
-
-  private
+   private
     { Private declarations }
     var
       FStartupDone: Boolean;
@@ -860,12 +859,6 @@ procedure save_settings2;
 procedure save_settings(lpath:string); //save settings at any path
 function load_settings(lpath: string)  : boolean; //load settings
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
-{$ifdef mswindows}
-function ExecuteAndWait(const aCommando: string; show_console:boolean) : integer;
-{$else} {unix}
-function execute_unix(const execut:string; param: TStringList; show_output: boolean) : integer;{execute linux program and report output}
-function execute_unix2(s:string) : integer;
-{$endif}
 function trimmed_median_background(img :Timage_array;ellipse:  boolean; colorm,  xmin,xmax,ymin,ymax,annulus, max1 {maximum background expected}:integer; out greylevels:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 function get_negative_noise_level(img :Timage_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
@@ -947,6 +940,7 @@ function annotate_unknown_stars(const memox:tstrings; img : Timage_array; headx 
 function saturation(img : timage_array; x,y: integer;saturation_level: single): boolean;//is the star in the img saturated?
 procedure update_sip_coefficients(memo : tstrings);//update all sip coefficients in memo
 function apply_arctan(fov : double): double; //assume the optical system can be modeled by a simple arctan function like a standard rectilinear (pinhole) lens
+function ExecuteAndLog(const aExecutable: string; aParams: TStrings; aLog: TStrings; out aExitCode: Integer): Boolean;
 
 
 const
@@ -9200,99 +9194,193 @@ begin
 end;
 
 
-{$ifdef mswindows}
-function ExecuteAndWait(const aCommando: string; show_console: boolean): Integer;
-var
-  tmpStartupInfo: TStartupInfo;
-  tmpProcessInformation: TProcessInformation;
-  tmpProgram: String;
-  dwExitCode: DWORD;
-begin
-  Result := -1;
-  tmpProgram := trim(aCommando);
-  FillChar(tmpStartupInfo, SizeOf(tmpStartupInfo), 0);
-  with tmpStartupInfo do
-  begin
-    cb := SizeOf(TStartupInfo);
-    if show_console = false then
-    begin
-      dwFlags := STARTF_USESHOWWINDOW;
-      wShowWindow := SW_SHOWMINNOACTIVE;//SW_SHOWMINIMIZED which causes it to steal keyboard focus from active window. SW_SHOWMINNOACTIVE which opens the window the same way minimized but does not steal focus?
-    end
-    else
-      wShowWindow := SW_HIDE;
-  end;
-
-  if CreateProcess(nil, PChar(tmpProgram), nil, nil, True,  CREATE_DEFAULT_ERROR_MODE or CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS,  nil, nil, tmpStartupInfo, tmpProcessInformation) then
-  begin // loop every 100 ms
-    while WaitForSingleObject(tmpProcessInformation.hProcess, 100) = WAIT_TIMEOUT do
-      Application.ProcessMessages;
-
-    // *** Retrieve the exit code ***
-    if GetExitCodeProcess(tmpProcessInformation.hProcess, dwExitCode) then
-      Result := Integer(dwExitCode);
-
-    CloseHandle(tmpProcessInformation.hProcess);  // use CloseHandle, not FileClose
-    CloseHandle(tmpProcessInformation.hThread);
-  end
-  else
-    result:=-1
-end;
-
-{$else} {unix}
-
-function execute_unix(const execut: string; param: TStringList; show_output: boolean): Integer;
+function ExecuteAndLog(const aExecutable: string; aParams: TStrings;
+  aLog: TStrings; out aExitCode: Integer): Boolean;
+const
+  BufSize = 4096;
 var
   AProcess: TProcess;
-  AStringList: TStringList;
+  Buffer: array[0..BufSize - 1] of byte;
+  BytesRead: LongInt;
+  PendingLine: RawByteString;
+  Carry: RawByteString;   // holds a partial (unterminated) line between reads
+
+  procedure Drain;
+  var
+    Chunk: RawByteString;
+    NLPos, CRPos, SplitPos: Integer;
+  begin
+    while (AProcess.Output <> nil) and (AProcess.Output.NumBytesAvailable > 0) do
+    begin
+      BytesRead := AProcess.Output.Read(Buffer, BufSize);
+      if BytesRead > 0 then
+      begin
+        SetString(Chunk, PAnsiChar(@Buffer[0]), BytesRead);
+        Carry := Carry + Chunk;
+
+        repeat
+          NLPos := Pos(#10, Carry);
+          CRPos := Pos(#13, Carry);
+
+          if (NLPos = 0) and (CRPos = 0) then
+            Break;
+
+          if (CRPos > 0) and ((NLPos = 0) or (CRPos < NLPos)) then
+            SplitPos := CRPos
+          else
+            SplitPos := NLPos;
+
+          PendingLine := Copy(Carry, 1, SplitPos - 1);
+          if Assigned(aLog) then
+            aLog.Add(PendingLine);
+          Delete(Carry, 1, SplitPos);
+
+          if (SplitPos = CRPos) and (Length(Carry) > 0) and (Carry[1] = #10) then
+            Delete(Carry, 1, 1);
+        until False;
+      end;
+    end;
+  end;
+
 begin
-  stackmenu1.Memo2.lines.add('Solver command:' + execut+' '+ param.commatext);
-  {activate scrolling Memo3}
-  stackmenu1.memo2.SelStart:=Length(stackmenu1.memo2.Lines.Text);
-  stackmenu1.memo2.SelLength:=0;
-
-  Application.ProcessMessages;
-
-  Result := -1;
-  AStringList := TStringList.Create;
+  Result := False;
+  aExitCode := -1;
+  Carry := '';
   AProcess := TProcess.Create(nil);
   try
-    AProcess.Executable := execut;
-    AProcess.Parameters := param;
+    AProcess.Executable := aExecutable;
+    if Assigned(aParams) then
+      AProcess.Parameters.Assign(aParams);
+
     AProcess.Options := [poUsePipes, poStderrToOutPut];
+    {$ifdef mswindows}
+    AProcess.Options := AProcess.Options + [poNoConsole];
+    {$endif}
+
     AProcess.Execute;
 
     repeat
-      wait(100); {smart sleep}
-      if (AProcess.Output <> nil) and show_output
-        and (AProcess.Output.NumBytesAvailable > 0) then
-      begin
-        AStringList.LoadFromStream(AProcess.Output);
-        stackmenu1.Memo2.Lines.Add(AStringList.Text);
-      end;
-      Application.ProcessMessages;
+      Drain;
+      if AProcess.Running then
+        Wait(50); //sleep and Application.ProcessMessages;
     until (not AProcess.Running) or esc_pressed;
 
-    // *** Retrieve the exit code ***
-    Result := AProcess.ExitStatus;
+    if esc_pressed and AProcess.Running then
+    begin
+      if Assigned(aLog) then
+        aLog.Add('*** Process aborted by user ***');
 
+      {$ifdef mswindows}
+      AProcess.Terminate(1); {unconditional kill on Windows, no graceful SIGTERM equivalent}
+      {$else}
+      FpKill(AProcess.Handle, SIGTERM);   {ask nicely first}
+      Sleep(200);
+      if AProcess.Running then
+        FpKill(AProcess.Handle, SIGKILL); {force it if SIGTERM was ignored}
+      {$endif}
+      AProcess.WaitOnExit; {reap the process so it doesn't become a zombie}
+      aExitCode := -1;
+      Result := False;
+      exit;
+    end;
+
+    Drain; // final flush of anything left in the pipe
+
+    if (Carry <> '') and Assigned(aLog) then
+      aLog.Add(Carry);
+
+    aExitCode := AProcess.ExitStatus;
+    Result := True;
   finally
     AProcess.Free;
-    AStringList.Free;
   end;
 end;
 
 
-function execute_unix2(s: string): Integer;
+function ExecuteAndLogOLD(const aExecutable: string; aParams: TStrings; aLog: TStrings; out aExitCode: Integer): Boolean;
+const
+  BufSize = 4096;
 var
-  ex: integer;
+  AProcess: TProcess;
+  Buffer: array[0..BufSize - 1] of byte;
+  BytesRead: LongInt;
+  PendingLine: RawByteString;
+  Carry: RawByteString;   // holds a partial (unterminated) line between reads
+
+      procedure Drain;
+      var
+        Chunk: RawByteString;
+        NLPos, CRPos, SplitPos: Integer;
+      begin
+        while (AProcess.Output <> nil) and (AProcess.Output.NumBytesAvailable > 0) do
+        begin
+          BytesRead := AProcess.Output.Read(Buffer, BufSize);
+          if BytesRead > 0 then
+          begin
+            SetString(Chunk, PAnsiChar(@Buffer[0]), BytesRead);
+            Carry := Carry + Chunk;
+
+            // emit complete lines/updates as soon as we hit CR or LF
+            repeat
+              NLPos := Pos(#10, Carry);
+              CRPos := Pos(#13, Carry);
+
+              if (NLPos = 0) and (CRPos = 0) then
+                Break; // no full terminator yet, wait for more bytes
+
+              if (CRPos > 0) and ((NLPos = 0) or (CRPos < NLPos)) then
+                SplitPos := CRPos
+              else
+                SplitPos := NLPos;
+
+              PendingLine := Copy(Carry, 1, SplitPos - 1);
+              if Assigned(aLog) then
+                aLog.Add(PendingLine);
+              Delete(Carry, 1, SplitPos);
+
+              // if CRLF together, drop the immediately-following LF too
+              if (SplitPos = CRPos) and (Length(Carry) > 0) and (Carry[1] = #10) then
+                Delete(Carry, 1, 1);
+            until False;
+          end;
+        end;
+      end;
+
 begin
-  ex := fpSystem(s);
-  Result := wExitStatus(ex);   // decode the raw wait() status into the actual exit code
-  if Result > 3 then
-    ShowMessage('Exit code: ' + IntToStr(Result));
+  Result := False;
+  aExitCode := -1;
+  Carry := '';
+  AProcess := TProcess.Create(nil);
+  try
+    AProcess.Executable := aExecutable;
+    if Assigned(aParams) then
+      AProcess.Parameters.Assign(aParams);
+
+    AProcess.Options := [poUsePipes, poStderrToOutPut];
+    {$ifdef mswindows}
+    AProcess.Options := AProcess.Options + [poNoConsole];
+    {$endif}
+
+    AProcess.Execute;
+
+    repeat
+      Drain;
+      if AProcess.Running then
+        Wait(50); //sleep and Application.ProcessMessages;
+    until not AProcess.Running;
+
+    Drain; // final flush of anything left in the pipe
+
+    // flush any trailing partial line with no terminating LF
+    if (Carry <> '') and Assigned(aLog) then
+      aLog.Add(Carry);
+
+    aExitCode := AProcess.ExitStatus;
+    Result := True;
+  finally
+    AProcess.Free;
+  end;
 end;
-{$endif}
 
 
 function StyleToStr(Style: TFontStyles): string;
@@ -9464,7 +9552,6 @@ begin
       add_annotations:=Sett.ReadBool('ast','add_annotations',false);{asteroids as annotations}
 
       dum:=Sett.ReadString('anet','astrometry_extra_options',''); if dum<>'' then astrometry_extra_options:=dum;{astrometry.net options}
-      show_console:=Sett.ReadBool('anet','show_console',true);
       dum:=Sett.ReadString('anet','cygwin_path',''); if dum<>'' then cygwin_path:=dum;
 
       sqm_applyDF:=Sett.ReadBool('sqm','apply_df',false);{sqm menu}
@@ -9901,7 +9988,6 @@ begin
       sett.writeBool('ast','add_annotations',add_annotations);{for asteroids}
 
       sett.writestring('anet','cygwin_path',cygwin_path);
-      sett.writeBool('anet','show_console',show_console);
       sett.writestring('anet','astrometry_extra_options',astrometry_extra_options);
 
       sett.writeBool('sqm','apply_df',sqm_applyDF);
@@ -10749,8 +10835,10 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: 
 var
   filename4 :string;
   JD2                               : double;
-  conv_index                        : integer;
-  commando,param,pp,ff              : string;
+  conv_index, exitcode              : integer;
+  parm,pp,ff                       : string;
+  Params                            : TStringList;
+
 begin
   result:=true; {assume success}
   conv_index:=stackmenu1.raw_conversion_program1.itemindex; {DCRaw or libraw}
@@ -10758,50 +10846,131 @@ begin
   {conversion direct to FITS}
   if conv_index<=1 then {Libraw}
   begin
-    if conv_index=1 then param:='-i' else param:='-f';
+    if conv_index=1 then parm:='-i' else parm:='-f';
     result:=true; {assume success again}
     {$ifdef mswindows}
     if fileexists(application_path+'unprocessed_raw.exe')=false then
       result:=false {failure}
     else
     begin
-       pp:=GetShortPath(ExtractFilePath(filename3)); //For path containing japaneseスカイメモ   or  ßÔÒõÕ   or   führ
+       pp:={GetShortPath}(ExtractFilePath(filename3)); //For path containing japaneseスカイメモ   or  ßÔÒõÕ   or   führ
        ff:=ExtractFileName(filename3);
-       ExecuteAndWait(application_path+'unprocessed_raw.exe '+param+' "'+ pp+ff {filename3}+'"',false); {execute command and wait}
+
+
+       Params := TStringList.Create;
+       try
+         Params.Add(parm);
+         Params.Add(pp+ff {filename3});
+         if ExecuteAndLog(application_path+'unprocessed_raw.exe', Params, nil {logging not required}, ExitCode) then
+         begin
+           result:=true;
+         end
+         else
+         begin
+           result:=false;//the result of starnet2
+           esc_pressed:=true; //stop and avoid pauzed
+           memo2_message('unprocessed_raw.exe execution error ' + inttostr(exitcode));
+
+         end;
+       finally
+         Params.Free;
+       end;
        filename4:=FileName3+'.fits';{direct to fits using modified version of unprocessed_raw}
      end;
     {$endif}
     {$ifdef linux}
     if fileexists(application_path+'unprocessed_raw-astap')=false then
-    begin {try other installed executables}
+    begin {try other installed executables, these are unmodified versions and do not accept -i or -f}
       if fileexists('/usr/lib/libraw/unprocessed_raw')=false then
       begin
         if fileexists('/usr/bin/unprocessed_raw')=false then
           result:=false {failure}
         else
         begin
-          execute_unix2('/usr/bin/unprocessed_raw "'+filename3+'"');
+          Params := TStringList.Create;
+          try
+            Params.Add(filename3);
+            if ExecuteAndLog('/usr/bin/unprocessed_raw', Params, nil {logging not required}, ExitCode) then
+            begin
+              result:=true;
+            end
+            else
+            begin
+              result:=false;
+              esc_pressed:=true; //stop and avoid pauzed
+              memo2_message('unprocessed_raw execution error ' + inttostr(exitcode));
+            end;
+          finally
+            Params.Free;
+          end;
           filename4:=FileName3+'.pgm';{ filename.NEF.pgm}
         end
       end
       else
       begin
-        execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
+        Params := TStringList.Create;
+        try
+          Params.Add(filename3);
+          if ExecuteAndLog('/usr/lib/libraw/unprocessed_raw', Params, nil {logging not required}, ExitCode) then
+          begin
+            result:=true;
+          end
+          else
+          begin
+            result:=false;
+            esc_pressed:=true; //stop and avoid pauzed
+            memo2_message('unprocessed_raw execution error ' + inttostr(exitcode));
+          end;
+        finally
+          Params.Free;
+        end;
         filename4:=FileName3+'.pgm';{ filename.NEF.pgm}
       end
     end
     else
-    begin
-      execute_unix2(application_path+'unprocessed_raw-astap '+param+' "'+filename3+'"');{direct to fits using modified version of unprocessed_raw}
+    begin {unprocessed_raw-astap is a modified version and accepts -i and -f}
+      Params := TStringList.Create;
+      try
+        Params.Add(parm);
+        Params.Add(filename3);
+        if ExecuteAndLog(application_path+'unprocessed_raw-astap', Params, nil {logging not required}, ExitCode) then
+        begin
+          result:=true;
+        end
+        else
+        begin
+          result:=false;
+          esc_pressed:=true; //stop and avoid pauzed
+          memo2_message('unprocessed_raw-astap execution error ' + inttostr(exitcode));
+        end;
+      finally
+        Params.Free;
+      end;
       filename4:=FileName3+'.fits';{ filename.NEF.pgm}
     end;
    {$endif}
-    {$ifdef Darwin}{MacOS}
+    {$ifdef Darwin}{MacOS, always a modified version and accepts -i and -f}
     if fileexists(application_path+'/unprocessed_raw')=false then
        result:=false {failure}
     else
     begin
-      execute_unix2(application_path+'/unprocessed_raw '+param+' "'+filename3+'"'); {direct to fits using modified version of unprocessed_raw}
+      Params := TStringList.Create;
+      try
+        Params.Add(parm);
+        Params.Add(filename3);
+        if ExecuteAndLog(application_path+'/unprocessed_raw', Params, nil {logging not required}, ExitCode) then
+        begin
+          result:=true;
+        end
+        else
+        begin
+          result:=false;
+          esc_pressed:=true; //stop and avoid pauzed
+          memo2_message('unprocessed_raw execution error ' + inttostr(exitcode));
+        end;
+      finally
+        Params.Free;
+      end;
       filename4:=FileName3+'.fits';{ filename.NEF.pgm}
     end;
    {$endif}
@@ -10849,12 +11018,24 @@ begin
   if conv_index=2  then {dcraw specified}
   begin
     if ExtractFileExt(filename3)='.CR3' then begin result:=false; exit; end; {dcraw can't process .CR3}
-    commando:='-D -4 -t 0';   {-t 0 disables the rotation}
+    //commando:='-D -4 -t 0';   {-t 0 disables the rotation, kept for reference/comments; actual args are added individually below}
     {$ifdef mswindows}
     if fileexists(application_path+'dcraw.exe')=false then
       result:=false {failure, try libraw}
     else
-      ExecuteAndWait(application_path+'dcraw.exe '+commando+ ' "'+filename3+'"',false);{execute command and wait}
+    begin
+      Params := TStringList.Create;
+      try
+        Params.Add('-D');
+        Params.Add('-4');
+        Params.Add('-t');
+        Params.Add('0');
+        Params.Add(filename3);
+        ExecuteAndLog(application_path+'dcraw.exe', Params, nil {logging not required}, ExitCode); {execute command and wait}
+      finally
+        Params.Free;
+      end;
+    end;
 
     {$endif}
     {$ifdef Linux}
@@ -10871,28 +11052,100 @@ begin
             if fileexists('/usr/local/bin/dcraw')=false then
               result:=false {failure}
             else
-              execute_unix2('/usr/local/bin/dcraw '+commando+' "'+filename3+'"');
+            begin
+              Params := TStringList.Create;
+              try
+                Params.Add('-D');
+                Params.Add('-4');
+                Params.Add('-t');
+                Params.Add('0');
+                Params.Add(filename3);
+                ExecuteAndLog('/usr/local/bin/dcraw', Params, nil {logging not required}, ExitCode);
+              finally
+                Params.Free;
+              end;
+            end;
           end
           else
-          execute_unix2('/usr/bin/dcraw '+commando+' "'+filename3+'"');
+          begin
+            Params := TStringList.Create;
+            try
+              Params.Add('-D');
+              Params.Add('-4');
+              Params.Add('-t');
+              Params.Add('0');
+              Params.Add(filename3);
+              ExecuteAndLog('/usr/bin/dcraw', Params, nil {logging not required}, ExitCode);
+            finally
+              Params.Free;
+            end;
+          end;
         end {try standard dcraw}
 
 
         else
-          execute_unix2('/usr/local/bin/dcraw-astap '+commando+' "'+filename3+'"');
+        begin
+          Params := TStringList.Create;
+          try
+            Params.Add('-D');
+            Params.Add('-4');
+            Params.Add('-t');  //-t 0 disables the rotation
+            Params.Add('0');
+            Params.Add(filename3);
+            ExecuteAndLog('/usr/local/bin/dcraw-astap', Params, nil {logging not required}, ExitCode);
+          finally
+            Params.Free;
+          end;
+        end;
       end
       else
-      execute_unix2('/usr/bin/dcraw-astap '+commando+' "'+filename3+'"');
+      begin
+        Params := TStringList.Create;
+        try
+          Params.Add('-D');
+          Params.Add('-4');
+          Params.Add('-t'); //-t 0 disables the rotation
+          Params.Add('0');
+          Params.Add(filename3);
+          ExecuteAndLog('/usr/bin/dcraw-astap', Params, nil {logging not required}, ExitCode);
+        finally
+          Params.Free;
+        end;
+      end;
 
     end
     else
-      execute_unix2(application_path+'dcraw-astap '+commando+' "'+filename3+'"');
+    begin
+      Params := TStringList.Create;
+      try
+        Params.Add('-D');
+        Params.Add('-4');
+        Params.Add('-t'); //-t 0 disables the rotation
+        Params.Add('0');
+        Params.Add(filename3);
+        ExecuteAndLog(application_path+'dcraw-astap', Params, nil {logging not required}, ExitCode);
+      finally
+        Params.Free;
+      end;
+    end;
     {$endif}
     {$ifdef Darwin} {MacOS}
     if fileexists(application_path+'/dcraw')=false then
       result:=false {failure, try libraw}
     else
-      execute_unix2(application_path+'/dcraw '+commando+' "'+filename3+'"');
+    begin
+      Params := TStringList.Create;
+      try
+        Params.Add('-D');
+        Params.Add('-4');
+        Params.Add('-t');//-t 0 disables the rotation
+        Params.Add('0');
+        Params.Add(filename3);
+        ExecuteAndLog(application_path+'/dcraw', Params, nil {logging not required}, ExitCode);
+      finally
+        Params.Free;
+      end;
+    end;
     {$endif}
      if result=false then memo2_message('DCRAW executable not found! Will try unprocessed_raw as alternative.')
      else

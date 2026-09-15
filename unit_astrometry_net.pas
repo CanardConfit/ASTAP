@@ -24,21 +24,18 @@ type
     Button1: TButton;
     Button2: TButton;
     cygwin1: TComboBox;
-    keep_console_open1: TCheckBox;
     failed1: TLabel;
     fileprocessed1: TLabel;
     Label1: TLabel;
+    Memo1: TMemo;
     solved1: TLabel;
     Label22: TLabel;
-    show_console1: TCheckBox;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure cygwin1Change(Sender: TObject);
     procedure cygwin1DropDown(Sender: TObject);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
-    procedure keep_console_open1Change(Sender: TObject);
-    procedure show_console1Change(Sender: TObject);
   private
 
   public
@@ -51,10 +48,8 @@ var
 const
   cygwin_path: string='';
   astrometry_extra_options : string='--downsample 2';
-  show_console : boolean=true;
-  keep_console_open : boolean=false;
 
-function astrometry_net(filename3: string; remove_tmp, showconsole, keep_open: boolean) :boolean;{use local astrometry.net}
+function astrometry_net(filename3: string; remove_tmp : boolean) :boolean;{use local astrometry.net}
 
 
 implementation
@@ -112,14 +107,17 @@ end;
 //                     arcseconds per pixel
 
 
-function astrometry_net(filename3: string; remove_tmp, showconsole, keep_open: boolean) :boolean;{use local astrometry.net}
+function astrometry_net(filename3: string; remove_tmp: boolean) :boolean;{use local astrometry.net}
 var
-   filename_new,filename_linux,filename_bak,param: string;
+   filename_new,filename_linux,filename_bak,parm: string;
    paramlist     : TStringList;
    fpath         : string;
+   Params        : TStringList;
+   exitcode      : integer;
 begin
 
   result:=false;
+  esc_pressed:=false;
 
   mainform1.caption:='Solving: '+ExtractFileName(filename3);
 
@@ -148,60 +146,72 @@ begin
   paramlist.add('--overwrite'); {overwrite}
   paramlist.add('--no-plots'); {no plots}
 
-//  if make_new=false then begin
-//      paramlist.add('--new-fits');{no .new file}
-//      paramlist.add('none');
-//    end;
 
-//    if stackmenu1.limit_pixelsize1.checked then
-//    begin
-//      paramlist.add('--scale-units');{scale-units arcsecperpix}
-//      paramlist.add('arcsecperpix');
-//      paramlist.add('--scale-low');{scale-low in arcsecperpix}
-//      paramlist.add(floattostr6(scale*0.9));
-//      paramlist.add('--scale-high');{scale-high in arcsecperpix}
-//      paramlist.add(floattostr6(scale*1.1));
-//    end;
+  //  if make_new=false then begin
+  //      paramlist.add('--new-fits');{no .new file}
+  //      paramlist.add('none');
+  //    end;
 
-//    if stackmenu1.limit_area1.checked then
-//    begin
-//      paramlist.add('--ra');
-//      paramlist.add(floattostr6(ra_radians*180/pi));
-//      paramlist.add('--dec');
-//      paramlist.add(floattostr6(dec_radians*180/pi));
-//      paramlist.add('--radius');{radius}
-//      paramlist.add(stackmenu1.search_area1.text);
-//    end;
+  //    if stackmenu1.limit_pixelsize1.checked then
+  //    begin
+  //      paramlist.add('--scale-units');{scale-units arcsecperpix}
+  //      paramlist.add('arcsecperpix');
+  //      paramlist.add('--scale-low');{scale-low in arcsecperpix}
+  //      paramlist.add(floattostr6(scale*0.9));
+  //      paramlist.add('--scale-high');{scale-high in arcsecperpix}
+  //      paramlist.add(floattostr6(scale*1.1));
+  //    end;
 
-    {get the extra parameters from the user}
-     ExtractStrings([' '], [], PChar(form_astrometry_net1.astrometry_extra_options1.text),paramlist);
+  //    if stackmenu1.limit_area1.checked then
+  //    begin
+  //      paramlist.add('--ra');
+  //      paramlist.add(floattostr6(ra_radians*180/pi));
+  //      paramlist.add('--dec');
+  //      paramlist.add(floattostr6(dec_radians*180/pi));
+  //      paramlist.add('--radius');{radius}
+  //      paramlist.add(stackmenu1.search_area1.text);
+  //    end;
+
+
+  {get the extra parameters from the user}
+   ExtractStrings([' '], [], PChar(form_astrometry_net1.astrometry_extra_options1.text),paramlist);
 
   {$ifdef mswindows}
-  param:=stringreplace(paramlist.delimitedtext,',',' ',[rfReplaceAll]);
-  param:=stringreplace(param,'"','',[rfReplaceAll]); { paramlist.QuoteChar :=#0 doesn't work always}
-
   if pos('System32',form_astrometry_net1.cygwin1.text)=0 then {Cygwin solver}
   begin
-    if keep_open then ExecuteAndWait('cmd.exe /k '+form_astrometry_net1.cygwin1.text+' --login solve-field "'+filename_linux+'" '+param,showconsole){execute command and wait}
-    else
-    ExecuteAndWait(form_astrometry_net1.cygwin1.text+' --login solve-field "'+filename_linux+'" '+param,showconsole);{execute command and wait}
+    Params := TStringList.Create;
+    try
+      Params.Add('--login');
+      Params.Add('solve-field');
+      Params.Add(filename_linux);
+      Params.AddStrings(paramlist); {the extra option tokens, already split above}
+      ExecuteAndLog(form_astrometry_net1.cygwin1.text, Params, form_astrometry_net1.memo1.lines, exitcode);{execute command and wait}
+    finally
+      Params.Free;
+    end;
   end
   else
   begin {win10 Linux subsystem solver}
     //   C:\Windows\System32\bash.exe -c "solve-field /mnt/c/astap.fpc/_M95_test_image.fit --overwrite --downsample 4"
     // 'C:/astap.fpc/_M95_test_image.fit'
+    parm:=stringreplace(paramlist.delimitedtext,',',' ',[rfReplaceAll]);
+    parm:=stringreplace(parm,'"','',[rfReplaceAll]); { paramlist.QuoteChar :=#0 doesn't work always}
     filename_linux:='/mnt/'+lowercase(copy(filename_linux,1,1))+copy(filename_linux,3,255);{drive should be lowercase}
-
-    if keep_open then ExecuteAndWait('cmd.exe /k '+form_astrometry_net1.cygwin1.text+' -c "solve-field '+#39+filename_linux+#39+' '+param+'"',showconsole){execute command and wait}
-    else
-                      ExecuteAndWait(              form_astrometry_net1.cygwin1.text+' -c "solve-field '+#39+filename_linux+#39+' '+param+'"',showconsole);{execute command and wait}
+    Params := TStringList.Create;
+    try
+      Params.Add('-c');
+      Params.Add('solve-field '+#39+filename_linux+#39+' '+parm); {bash -c takes the whole command as ONE argument, which bash itself then parses}
+      ExecuteAndLog(form_astrometry_net1.cygwin1.text, Params, form_astrometry_net1.memo1.lines, exitcode);{execute command and wait}
+    finally
+      Params.Free;
+    end;
   end;
 
   {$else} {unix}
 
   paramlist.insert(0,filename3);
 //param.Add('"--overwrite --no-plots --objs 150 --downsample 4 --ra 300.000000 --dec 40.410216 --radius 10"');
-   execute_unix(form_astrometry_net1.cygwin1.text+'/solve-field',paramlist, showconsole);
+   ExecuteAndLog(form_astrometry_net1.cygwin1.text+'/solve-field', paramlist, form_astrometry_net1.memo1.lines, exitcode);
   {$endif}
   paramlist.Free;
 
@@ -233,11 +243,10 @@ begin
     end;
   end;
 
-  form_astrometry_net1.close;   {normal this form is not loaded}
-  mainform1.setfocus;
+  if esc_pressed then
+    form_astrometry_net1.memo1.lines.add('ABORT, ESC PRESSED!');
 end;
 
-{ Tform_astrometry_net1 }
 
 procedure Tform_astrometry_net1.Button1Click(Sender: TObject);
 var
@@ -245,8 +254,6 @@ var
   failed, solved :integer;
 begin
   button2.caption:='Stop';
-  show_console:=show_console1.checked;
-  keep_console_open:=keep_console_open1.checked;
   cygwin_path:=cygwin1.text;
   astrometry_extra_options:=astrometry_extra_options1.text;
 
@@ -266,19 +273,19 @@ begin
 
     try { Do some lengthy operation }
         with mainform1.OpenDialog1.Files do
-        for I := 0 to Count - 1 do
+        for I := 1 to Count do
         begin
-          filename2:=Strings[I];
-          fileprocessed1.caption:='Solving '+inttostr(i)+'-'+inttostr(Count-1)+': '+filename2;
-          progress_indicator(i/count,' Solving');{show progress}
+          filename2:=Strings[I-1];
+          fileprocessed1.caption:='Solving '+inttostr(i)+'-'+inttostr(Count)+': '+filename2;
+          progress_indicator((i-1)/count,' Solving');{show progress}
 
           Application.ProcessMessages;
           if esc_pressed then
           begin
             Screen.Cursor:=crDefault;
-            exit;
+            break;
           end;
-          if astrometry_net(filename2,true {remove_tmp},show_console,keep_console_open) then
+          if astrometry_net(filename2,true {remove_tmp}) then
              begin inc(solved); solved1.caption:= 'Solved: '+inttostr(solved); memo2_message('Solved: '+filename2);    end
           else
              begin inc(failed); failed1.caption:= 'Failed: '+inttostr(failed);memo2_message('Failed: '+filename2); end
@@ -286,6 +293,7 @@ begin
       finally
       progress_indicator(-100,'');{progresss done}
       Screen.Cursor:=crDefault;  { Always restore to normal }
+      form_astrometry_net1.memo1.lines.add('Ready');
     end;
   end;
 end;
@@ -328,21 +336,11 @@ end;
 
 procedure Tform_astrometry_net1.FormShow(Sender: TObject);
 begin
-  show_console1.checked:=show_console;
-  keep_console_open1.checked:= keep_console_open;
   cygwin1.text:=cygwin_path;
   astrometry_extra_options1.text:=astrometry_extra_options;
 end;
 
-procedure Tform_astrometry_net1.keep_console_open1Change(Sender: TObject);
-begin
-  keep_console_open:=keep_console_open1.checked;
-end;
 
-procedure Tform_astrometry_net1.show_console1Change(Sender: TObject);
-begin
-  show_console:=show_console1.checked;
-end;
 
 end.
 
