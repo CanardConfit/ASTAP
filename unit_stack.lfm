@@ -2976,13 +2976,13 @@ object stackmenu1: Tstackmenu1
           end
           object panel_ephemeris1: TPanel
             Left = 208
-            Height = 62
+            Height = 70
             Top = 288
             Width = 1200
             AutoSize = True
             BevelColor = clMenuHighlight
             BevelOuter = bvSpace
-            ClientHeight = 62
+            ClientHeight = 70
             ClientWidth = 1200
             Color = clForm
             Constraints.MinWidth = 1200
@@ -2995,7 +2995,7 @@ object stackmenu1: Tstackmenu1
               Height = 27
               Hint = 'Manual alignment: Select an object center routine. After clicking on a star or comet the program will autocenter.'#13#10#13#10#13#10'Ephemeris alignment: '#13#10#13#10'Preperation:'#13#10'- Batch solve the images in the viewer.'#13#10'- Batch annotate the images in the viewer.'#13#10#13#10'Stacking:'#13#10'- Select manual/ephemeris alignment'#13#10'- Browse for all the images in the image tab and add if available the dark, flats.'#13#10'- Double click on one of the image files to open in the viewer. This will fill in tab alignment the option combobox with all annotations.'#13#10'- Select from the option combobox the asteroid to align on.'#13#10'- Hit the analyse button in the image tab. This fill all the x,y positions in the image list based on the object annotation selected.'#13#10'- If all okay, hit the stack button. '
               Top = 6
-              Width = 200
+              Width = 247
               BorderSpacing.Around = 5
               DropDownCount = 20
               ItemHeight = 19
@@ -3009,10 +3009,10 @@ object stackmenu1: Tstackmenu1
               OnChange = ephemeris_centering1Change
             end
             object analyse_objects_visible1: TButton
-              Left = 238
+              Left = 6
               Height = 29
               Hint = 'This will fill the combobox with objects visible in the selected light'
-              Top = 6
+              Top = 40
               Width = 247
               AutoSize = True
               Caption = 'Analyse the selected file in tab lights'
@@ -3020,10 +3020,10 @@ object stackmenu1: Tstackmenu1
               OnClick = analyse_objects_visible1Click
             end
             object update_solution1: TCheckBox
-              Left = 848
+              Left = 536
               Height = 23
               Hint = 'Apply this if the FITS header contains already a solution which is not accurate. '
-              Top = 6
+              Top = 40
               Width = 195
               Caption = 'Refresh astrometric solutions'
               ParentFont = False
@@ -3040,9 +3040,9 @@ object stackmenu1: Tstackmenu1
               TabOrder = 3
             end
             object Button3: TButton
-              Left = 535
+              Left = 272
               Height = 29
-              Top = 32
+              Top = 6
               Width = 217
               AutoSize = True
               Caption = 'Ephemeriden database settings'
@@ -3050,21 +3050,22 @@ object stackmenu1: Tstackmenu1
               OnClick = Button3Click
             end
             object use_starnet2_1: TCheckBox
-              Left = 848
+              Left = 824
               Height = 23
               Hint = 'Use StarNet2 for separate stacking of comet and stars.'
-              Top = 32
+              Top = 6
               Width = 250
               Caption = 'Use StarNet2 to split comet and stars.'
               ParentFont = False
               TabOrder = 5
+              OnChange = use_starnet2_1Change
             end
             object help_ephemeris_stacking1: TLabel
               Cursor = crHandPoint
-              Left = 824
+              Left = 1160
               Height = 25
               Hint = 'Help'
-              Top = 32
+              Top = 10
               Width = 9
               Caption = '?'
               Font.Color = clBlue
@@ -3074,6 +3075,17 @@ object stackmenu1: Tstackmenu1
               ParentShowHint = False
               ShowHint = True
               OnClick = help_ephemeris_stacking1Click
+            end
+            object remove_comet_remnant1: TCheckBox
+              Left = 824
+              Height = 23
+              Hint = 'In case a comet center left over is found in the star-only image, remove it and place in a third image.'
+              Top = 40
+              Width = 370
+              Caption = 'StarNet2, extract comet center remnant from star images.'
+              Enabled = False
+              ParentFont = False
+              TabOrder = 6
             end
           end
           object most_right7: TStaticText
