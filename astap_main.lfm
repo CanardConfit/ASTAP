@@ -1223,6 +1223,19 @@ object mainform1: Tmainform1
           Hint = 'Convert the selected images to the 16 bit PBM (Portable Bit Map) or 32 bit PFM (Portable Float Map) format.'
           OnClick = convert_to_ppm1Click
         end
+        object Separator6: TMenuItem
+          Caption = '-'
+        end
+        object compress_fpack1: TMenuItem
+          Caption = 'Batch compress FITS, preserve file date'
+          Hint = 'Compress selected files lossless using RICE compression. Original files will be kept.'
+          OnClick = compress_fpack1Click
+        end
+        object compress_fpack_dir1: TMenuItem
+          Caption = 'Batch compress FITS in multiple sub directories, preserve file date'
+          Hint = 'Compress files in selected directories lossless using RICE compression'
+          OnClick = compress_fpack_dir1Click
+        end
         object MenuItem31: TMenuItem
           Caption = '-'
         end
@@ -1336,11 +1349,6 @@ object mainform1: Tmainform1
           Caption = 'Remove longitude && latitude info from files'
           Hint = 'Remove location data from the selected FITS files to protect your privacy. It will remove  SITELAT (latitude) and SITELONG (longitude) keywords from the header. Original files will be renamed to *.bak'
           OnClick = remove_longitude_latitude1Click
-        end
-        object compress_fpack1: TMenuItem
-          Caption = 'Batch compress FITS'
-          Hint = 'Compress all files using the CFITSIO utility program fpack. Works best for 32 bit floating point fits files. Original files will be kept.'
-          OnClick = compress_fpack1Click
         end
         object batch_annotate1: TMenuItem
           Caption = 'Batch annotate asteroids && comets'
@@ -1736,7 +1744,8 @@ object mainform1: Tmainform1
   end
   object OpenDialog1: TOpenDialog
     Filter = 'Flexible image transport system files|*.fit*'
-    Options = [ofEnableSizing, ofForceShowHidden, ofViewDetail]
+    InitialDir = 'C:\astap.fpc\'
+    Options = [ofAllowMultiSelect, ofEnableSizing, ofViewDetail]
     OnSelectionChange = OpenDialog1SelectionChange
     Left = 936
     Top = 208
@@ -2350,6 +2359,8 @@ object mainform1: Tmainform1
     Top = 89
   end
   object SelectDirectoryDialog1: TSelectDirectoryDialog
+    InitialDir = 'C:\astap.fpc\'
+    Options = [ofAllowMultiSelect, ofEnableSizing]
     Left = 1184
     Top = 440
   end
