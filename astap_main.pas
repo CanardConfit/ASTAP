@@ -443,6 +443,7 @@ type
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure batch_crop_by_coordinates1Click(Sender: TObject);
+    procedure MenuItem7Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
     procedure Panel1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
@@ -11459,6 +11460,9 @@ begin
 end;
 
 
+
+
+
 { Shared worker: takes a TStrings list of filenames and does the actual compression loop }
 procedure compress_fits_list(filelist: TStrings; deleteold: boolean);
 var
@@ -11488,9 +11492,9 @@ begin
 
       if load_image(filename1, img_temp, headx, memox, false {recenter}, false {plot}) then
       begin
-        fileDate := FileAge(fileName2);
         if headx.bitpix = 16 then
         begin
+          fileDate := FileAge(fileName1);
           filename2:=ChangeFileExt(filename1, '.fits.fz');
           if save_fits_compressed(img_temp, memox, headx,filename2, overwrite_all {overwrite}) = false then
           begin
@@ -15843,6 +15847,11 @@ begin
     memo.free;
     memo2_message('Ready');
   end;//ok pressed
+end;
+
+procedure Tmainform1.MenuItem7Click(Sender: TObject);
+begin
+
 end;
 
 
