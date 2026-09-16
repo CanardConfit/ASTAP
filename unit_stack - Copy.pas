@@ -10540,7 +10540,7 @@ begin
         end;
         if filt_done=false then
         begin
-          info:=julian_str+#13+#10;
+          info:=julian_str+LineEnding;
           info:=info+Filt_line;
           if ((b_filt) or (v_filt) or (r_filt) or (i_filt))=false then
             begin
@@ -10548,7 +10548,7 @@ begin
               beep;
               exit;
             end;
-          info:=info+#13+#10;
+          info:=info+LineEnding;
           filt_done:=true;
         end;
         skip:=false;
@@ -10561,7 +10561,7 @@ begin
         if skip=false then //add star line
         begin
           info:=info+AUID + StringReplace(data_line,',','.',[]);   ;
-          info:=info+#13+#10;
+          info:=info+LineEnding;
         end;
       end;
     end;
@@ -10924,20 +10924,20 @@ begin
            break;
          end;
 
-     results:=results+'Aperture '+floattostrF(j/10,FFfixed,0,1)+',  40>SNR>15 σ: '+ floattostrF(sd_check_star15_40,FFgeneral,4,0)+',  100>SNR>40 σ: '+ floattostrF(sd_check_star40_100,FFgeneral,4,0)+',  SNR>100 σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+#13+#10;
+     results:=results+'Aperture '+floattostrF(j/10,FFfixed,0,1)+',  40>SNR>15 σ: '+ floattostrF(sd_check_star15_40,FFgeneral,4,0)+',  100>SNR>40 σ: '+ floattostrF(sd_check_star40_100,FFgeneral,4,0)+',  SNR>100 σ: '+ floattostrF(sd_check_star,FFgeneral,4,0)+LineEnding;
     end; //all images done
   end;
   if sd_check_star15_40>0 then
   begin
     beststr:=floattostrF(best_aperture15_40,FFgeneral,2,1);
     stackmenu1.flux_aperture1.text:=beststr;
-    memo2_message('Test completed.: '+#13+#10+results+#13+#10+#13+#10+
-    'Best aperture setting for stars with a 40>SNR>15 is '+beststr+#13+#10+
-    'Best aperture setting for stars with a 100>SNR>40 is '+floattostrF(best_aperture40_100,FFgeneral,2,1)+#13+#10+
+    memo2_message('Test completed.: '+LineEnding+results+LineEnding+LineEnding+
+    'Best aperture setting for stars with a 40>SNR>15 is '+beststr+LineEnding+
+    'Best aperture setting for stars with a 100>SNR>40 is '+floattostrF(best_aperture40_100,FFgeneral,2,1)+LineEnding+
     'Best aperture setting for stars with a SNR>100 is '+floattostrF(best_aperture100,FFgeneral,2,1)    );
   end
   else
-    memo2_message('Test completed.: '+#13+#10+results+#13+#10+#13+#10+'Could not detect faint stars with 40>SNR>15.');
+    memo2_message('Test completed.: '+LineEnding+results+LineEnding+LineEnding+'Could not detect faint stars with 40>SNR>15.');
 
   Screen.Cursor:=crDefault;{back to normal }
 end;

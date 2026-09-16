@@ -4806,34 +4806,34 @@ begin
   if TargetCPU='i386' then arch:= 'Intel 32 bit';
   if TargetCPU='x86_64' then arch:= 'Intel 64 bit';
   about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+'.'+
-  #13+#10+
-  #13+#10+
-  'Application path: '+application_path+#13+#10+
+  LineEnding+
+  LineEnding+
+  'Application path: '+application_path+LineEnding+
   'Database path: '+database_path;
   {$ELSE} {delphi}
   about_message5:='';
   {$ENDIF}
   if ord(database_header[0])<>0 then
     about_message5:=about_message5+
-    #13+#10+
-    #13+#10+
+    LineEnding+
+    LineEnding+
     'Active star database:'+copy(database_header,1,108)+ {primary star database. Do not display last byte (110) used for record type. Byte 109 is used for maximum magnitude}
-    #13+#10;
+    LineEnding;
 
   about_message:= 'ASTAP version '+astap_version+', '+arch {about_message4}+
-  #13+#10+
-  #13+#10+
-  #13+#10+
+  LineEnding+
+  LineEnding+
+  LineEnding+
   'Astrometric Stacking Program, astrometric solver and FITS image viewer.'+
   ' This program can view, measure, "astrometric solve" and stack deep sky images.'+
   ' It uses an internal star matching routine or an internal astrometric solving routine for image alignment.'+
   ' For RAW file conversion it uses the external programs Dcraw or LibRaw.'+
-  #13+#10+
-  #13+#10+about_message5+
-  #13+#10+
-  #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
-  #13+#10+
-  #13+#10+'© 2018, 2026 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
+  LineEnding+
+  LineEnding+about_message5+
+  LineEnding+
+  LineEnding+'Send an e-mail if you like this free program. Feel free to distribute!'+
+  LineEnding+
+  LineEnding+'© 2018, 2026 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
   application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
 
@@ -7750,7 +7750,7 @@ begin
   if fileexists(filename2) then load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot}) {load and center, plot}
   else
   begin {file gone/deleted}
-     application.messagebox(pchar('File not found:'+#13+#10+#13+#10+(Sender as Tmenuitem).caption),pchar('Error'),MB_ICONWARNING+MB_OK);
+     application.messagebox(pchar('File not found:'+LineEnding+LineEnding+(Sender as Tmenuitem).caption),pchar('Error'),MB_ICONWARNING+MB_OK);
     (Sender as Tmenuitem).caption:='';
   end;
   add_recent_file(filename2);{update recent files list by moving this one up to first position}
@@ -11563,7 +11563,10 @@ begin
     deleteold  := (MessageDlg('Delete the original files?', mtConfirmation,
                    [mbYes, mbNo], 0) = mrYes);
     if deleteold then
-        deleteold  := (MessageDlg('This will compress the fits files to fits.fz and DELETE the old files. Are you sure?', mtConfirmation,
+        deleteold  := (MessageDlg('This will:'+LineEnding+
+                                  '1) Compress the fits files to .fits.fz'+LineEnding+
+                                  '2) DELETE the old files.'+LineEnding+LineEnding+
+                                  'Are you sure?', mtConfirmation,
                    [mbYes, mbNo], 0) = mrYes);
 
 
@@ -14351,12 +14354,12 @@ procedure Tmainform1.ShowFITSheader1Click(Sender: TObject);
 var bericht: array[0..512] of char;{make this one not too short !}
 begin
    strpcopy(bericht,
-  'Origin: '+origin+#13+#10+
-  'Telescope: '+ telescop+#13+#10+
-  'Instrument: '+instrum+#13+#10+
-  'Filter: '+head.filter_name+#13+#10+
-  'Calibration-status: '+head.calstat+#13+#10+
-  'Date-obs: '+head.date_obs+#13+#10+
+  'Origin: '+origin+LineEnding+
+  'Telescope: '+ telescop+LineEnding+
+  'Instrument: '+instrum+LineEnding+
+  'Filter: '+head.filter_name+LineEnding+
+  'Calibration-status: '+head.calstat+LineEnding+
+  'Date-obs: '+head.date_obs+LineEnding+
   'Exposure-time: '+floattostr(head.exposure));
   messagebox(mainform1.handle,bericht,'Basic fits header',MB_OK);
 end;
@@ -15275,7 +15278,7 @@ begin
           begin
             nrskipped:=nrskipped+1; {plate solved}
             memo2_message('Skipped: '+filename2+ '  Already a solution in the header. Select option overwrite to renew.');
-            skipped:=skipped+#13+#10+extractfilename(filename2);
+            skipped:=skipped+LineEnding+extractfilename(filename2);
           end
           else
           begin
@@ -15302,7 +15305,7 @@ begin
             begin
               memo2_message('No solution: '+filename2);
               nrfailed:=nrfailed+1;
-              failed:=failed+#13+#10+extractfilename(filename2);
+              failed:=failed+LineEnding+extractfilename(filename2);
             end;
           end;
 

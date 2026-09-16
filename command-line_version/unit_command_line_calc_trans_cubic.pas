@@ -10,6 +10,12 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
+
 
 {This unit is based on some C language routines from the package Match. See describtion below. Conversion and modification for the ASTAP program by Han Kleijn.
 The original Match version was suitable an eight coefficients 3th order solution but was extended to a ten cofficients 3th order solution by Cecile Melis for the Siril program.

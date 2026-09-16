@@ -2533,7 +2533,7 @@ executable cannot be found, ASTAP will prompt you to locate the
 installation folder. StarNet2 can use your graphics card (GPU) to
 accelerate processing.<br><br><br>Windows: See the official <a href="https://starnetastro.com/documentation/windows-cuda/">StarNet2 Windows installation guide.</a><br><br>If StarNet2 only uses the CPU, the easiest way to enable GPU acceleration is to install <a href="https://globalcdn.nuget.org/packages/microsoft.ai.directml.1.15.4.nupkg?packageVersion=1.15.4">DirectML</a>:<br><br></big></p><ol style="text-align: left;"><li><big>Download the <a href="https://globalcdn.nuget.org/packages/microsoft.ai.directml.1.15.4.nupkg?packageVersion=1.15.4">DirectML</a> package.</big></li><li><big>Rename the downloaded .nupkg file to .zip.</big></li><li><big>Extract DirectML.dll from the bin subdirectory.</big></li><li><big>Copy DirectML.dll to: &nbsp; </big>C:\Program Files\StarNet2\bin<br></li></ol><p align="left"><big><br>After
 installation, Windows Task Manager should indicate substantial GPU
-usage (typically 75% or higher) while StarNet2 is processing.<br><br><br><span style="text-decoration: underline;">Using StarNet2 for Comet Images</span><br><br></big></p><ol style="text-align: left;"><li><big>Select Ephemeris Stacking.</big><big> Enable the StarNet2 option.</big></li><li><big>Load the comet light frames in the Lights tab.</big></li><li><big>Load darks, flats, and flat-darks in their respective tabs, if not already loaded.</big></li><li><big>In the Stack Method tab, set the &#963; factor to a relatively low value, such as 1.4.</big></li><li><big>Press Stack.</big></li></ol><p align="left"><big><br>Processing
+usage (typically 75% or higher) while StarNet2 is processing.<br><br><br><span style="text-decoration: underline;">Using StarNet2 for comet Images</span><br><br></big></p><ol style="text-align: left;"><li><big>Select Ephemeris Stacking.</big><big> Checkmark option "Use StarNet2". Checkmark option "StarNet2, extract comet remnant from star images".&nbsp;</big></li><li><big>Load the comet light frames in the Lights tab.</big></li><li><big>Load darks, flats, and flat-darks in their respective tabs, if not already loaded.</big></li><li><big>In the Stack Method tab, set the &#963; factor to a relatively low value, such as 1.4.</big></li><li><big>Press Stack.</big></li></ol><p align="left"><big><br>Processing
 will take longer because both the comet and star images are generated
 and stacked separately. StarNet is fed with sinh stretched frames
 allowing better detection of the stars. This
@@ -2541,10 +2541,15 @@ special stretching routine has no settings and is purely based on the
 image background (median value) and the standard deviation of this
 background. But in general the final
 result should be fine and the viewer stretching in ASTAP is automatic
-set to off by purpose.<br><br>The Result tab will display three images:&nbsp;</big></p><ul style="text-align: left;"><li><big>the final combined image, &nbsp;</big></li><li><big>the comet/nebula image,&nbsp;</big></li><li><big>the star image.</big></li></ul><p align="left"><big><br>The
+set to off by purpose.<br><br>The Result tab will display three images:&nbsp;</big></p><ul style="text-align: left;"><li><big>The comet-only stacked image&nbsp;</big></li><li><big>the stas-only stacked image.</big></li><li><big>the combined image shows stars and comet sharp</big></li></ul><p align="left"><big><br>The
 popup menus in both the Result and Lights tabs also provide an option
 to recombine the comet/nebula and star images manually after additional
-processing in an external image editor.</big></p><p align="left"><a href="astap.htm#index">Back
+processing in an external image editor.</big></p><p align="left"><big>Background information, how is the comet &amp; stars sharp image is assembled:</big></p><p align="left"><big>The program does the following:</big></p><ul style="text-align: left;"><li><big>Calibrate the light frames with darks, flats, flat-darks.</big></li><li><big>Astrometric solving of the calibrated light frames.</big></li><li><big>Adds keyword ANNOTATE to the header with the calculated x,y location of the comet.</big></li><li><big>Reduces the data range of the calibrated light frame to strict [0..1] range.</big></li><li><big>Calls StarNet2 to split the frame in a comet-only and stars-only image.</big></li><li><big>If &nbsp;option "StarNet2,
+extract comet remnant from star images" is check marked, any detectable
+star shape in the stars-only image at the expected location of the
+comet center is moved to a second comet-only image image. This only
+works if the ephemeris data is up-to-date and annotation is accurate
+within maybe 5 pixels.</big></li><li><big>Stack and align the comet-only images&nbsp;by the comet&nbsp;x,y position from the header. &nbsp;(..._comet.fits files)</big></li><li><big>Stack the stars-only images using astrometric alignment &nbsp;(..._stars.fits files)</big></li><li><big>Combine the two stacks without alignment.</big></li><li><big>Correct colour balance and smooth star colours.</big></li><li><big>Present the result.</big></li></ul><p align="left"><big></big></p><p align="left"><a href="astap.htm#index">Back
 to index</a></p>
 <p align="left"></p>
 <p align="left"><big><a name="blink"></a><big><span style="text-decoration: underline;">Blink tab</span></big><br>
