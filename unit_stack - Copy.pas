@@ -7,13 +7,6 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
-//  This source code is available at:
-// Master:
-//   https://sourceforge.net/p/astap-program/
-// Irregularly updated:
-//   https://github.com/han-k59/astap
-
-
 interface
 
 uses
@@ -6347,7 +6340,7 @@ procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
 begin
   if ((measuring_method1.itemindex=0) and (length(mainform1.fshapes)<1)) then
   begin
-    application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+LineEnding+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
+    application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+#13+#10+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
     exit;
   end;
 
@@ -8109,7 +8102,7 @@ begin
 
     if ((measuring_method=0) and (length(mainform1.fshapes)<1)) then
     begin
-      application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+LineEnding+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
+      application.messagebox('No star(s) selected. Display the first image in the viewer by double click on it and then select stars in the image by clicking on them.'+#10+#13+#10+#13+'Or select mode "Measure all annotated" and select later. Then press on the ▶| (play) button to measure.','Can not proceed!',0);
       exit;
     end;
 
@@ -13294,7 +13287,7 @@ var
   extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_neb2,fileout_stars, alignment_method   : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
-  classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue,ephemeris_alignment_checked,astrometric_alignment_checked, starnet_checked : boolean;
+  classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue  ,starnet_checked : boolean;
   startTick: qword;{for timing/speed purposes}
   min_background, max_background,back_gr,x,y                      : double;
   filters_used: array [0..6] of string;//r,g,b,r2,g2,b2,L
@@ -13341,11 +13334,8 @@ begin
   if use_ephemeris_alignment1.Checked then
   begin
     alignment_method:=use_ephemeris_alignment1.caption;
-    alignment_mode:=ephemeris_alignment;//this value can change in second step of comet stacking
+    alignment_mode:=ephemeris_alignment;
   end;
-  ephemeris_alignment_checked:=use_ephemeris_alignment1.Checked;//this value will never change
-  astrometric_alignment_checked:=use_astrometric_alignment1.Checked;//this value will never change
-
 
   memo2_message('Stack method ' + stack_method1.Text+', '+alignment_method);
   stitching_mode:=pos('stitch', stackmenu1.stack_method1.Text) > 0;
@@ -13361,9 +13351,9 @@ begin
 
   starnet_checked:=use_starnet2_1.checked;
 
-  if ((stackmenu1.use_manual_alignment1.Checked) and (sigma_clip) and (pos('Comet', stackmenu1.manual_centering1.Text) <> 0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
+  if ((alignment_mode=manual_alignment) and (sigma_clip) and (pos('Comet', stackmenu1.manual_centering1.Text) <> 0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
 
-  if ephemeris_alignment_checked then
+  if alignment_mode=ephemeris_alignment then
   begin
     if length(ephemeris_centering1.Text) <= 1 then
     begin
@@ -13471,7 +13461,7 @@ begin
   min_background:=65535;
   max_background:=0;
 
-  if ((calibration_mode) or (calibration_mode2) or ((ephemeris_alignment_checked) and (starnet_checked)) ) then {calibrate lights only}
+  if ((calibration_mode) or (calibration_mode2) or ((alignment_mode=ephemeris_alignment) and (starnet_checked)) ) then {calibrate lights only}
   begin
     calibration_only;
     if process_as_osc > 0 then Memo2_message('OSC images are converted to colour.');
@@ -13514,10 +13504,10 @@ begin
   stackmenu1.memo2.SelStart:=Length(stackmenu1.memo2.Lines.Text);
   stackmenu1.memo2.SelLength:=0;
 
-  if ((astrometric_alignment_checked) or (ephemeris_alignment_checked) or (stitching_mode)) then  {astrometric alignment}
+  if ((alignment_mode=astrometric_alignment) or (alignment_mode=ephemeris_alignment) or (stitching_mode)) then  {astrometric alignment}
   begin
     memo2_message('Checking astrometric solutions');
-    if ephemeris_alignment_checked then
+    if alignment_mode=ephemeris_alignment then
       ignore:=stackmenu1.update_solution1.Checked {ephemeris}
     else
       ignore:=stackmenu1.ignore_header_solution1.Checked; {stacking}
@@ -13585,7 +13575,7 @@ begin
     end;
   end;
 
-  if ((ephemeris_alignment_checked) and (starnet_checked)) then {split. Do the split before the  annotations since the date_obs in '_stars.' files is later fixed in next code for add annotations}
+  if ((alignment_mode=ephemeris_alignment) and (starnet_checked)) then {split. Do the split before the  annotations since the date_obs in '_stars.' files is later fixed in next code for add annotations}
   begin
     memo2_message('Splitting file using Starnet');
     ListView1.Selected:=nil; {remove any selection}
@@ -13645,7 +13635,7 @@ begin
    end;
 
 
-  if ephemeris_alignment_checked then {add annotations}
+  if alignment_mode=ephemeris_alignment then {add annotations}
   begin
     date_obs_reference:='';//used for for image split in comet nebula and stars
     memo2_message('Checking annotations');
@@ -14095,7 +14085,7 @@ begin
           plot_mpcorb(StrToInt(maxcount_asteroid), strtofloat2(maxmag_asteroid), True {add annotations},true {buffer_loaded});//removes also the old keywords
         end;
 
-        if ((ephemeris_alignment_checked=false) or (starnet_checked=false)) then //do not colour balance here when images are split by StarNet2
+        if ((alignment_mode<>ephemeris_alignment) or (use_starnet2_1.checked=false)) then //do not colour balance here when images are split by StarNet2
         begin
           if counter_colours <> 0{length(extra2)>=2} {lrgb loop} then
           begin
@@ -14148,7 +14138,7 @@ begin
 
           if (((head.naxis3 = 1) or (process_as_osc>0)) and (counterL > 0) ) then {works only for mono}
           begin
-            if ephemeris_alignment_checked=false then
+            if alignment_mode=ephemeris_alignment=false then
             begin
               jd_mid:=jd_sum / counterL;  //average of jd_mid
               airmass:=airmass_sum/ counterL;
@@ -14335,7 +14325,7 @@ begin
     Application.ProcessMessages;{look for keyboard instructions}
     total_counter:=total_counter + counterL; {keep record of lights done}
 
-    if ((ephemeris_alignment_checked) and (starnet_checked) and (object_counter<=2)) then
+    if ((alignment_mode=ephemeris_alignment) and (starnet_checked) and (object_counter<=2)) then
     begin
       comet_frames_to_combine[object_counter]:=ListView5.Items.Count-1;//remember the lrgb or osc stack position for combining later
       if object_counter=1 then //step 1, stacking comets is ready
@@ -14351,15 +14341,15 @@ begin
   begin
     memo2.Lines.add('Failure. Could not stack any image.');
     if classify_filter then memo2.Lines.add('Hint: remove check mark from classify by "light filter" if required or check filter names in tab stack method.');
-    if ((ephemeris_alignment_checked) and (starnet_checked)) then
+    if ((alignment_mode=ephemeris_alignment) and (starnet_checked)) then
            memo2.Lines.add('Hint: Failure due to missing darks.')
     else
     if classify_object then memo2.Lines.add('Hint: remove check mark from classify by "light object" if required.');
-    if astrometric_alignment_checked then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
+    if alignment_mode=astrometric_alignment then memo2.Lines.add('Hint: check field of view camera in tab alignment.');
   end
   else
   begin
-    if ((ephemeris_alignment_checked) and (starnet_checked)) then
+    if ((alignment_mode=ephemeris_alignment) and (starnet_checked)) then
     begin
       if ListView5.Items.Count>=2 then //star and nebula should be available
       begin

@@ -1,4 +1,18 @@
 unit unit_transformation;
+{Copyright (C) 2021, 2026 by Han Kleijn, www.hnsky.org
+ email: han.k.. at...hnsky.org
+
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+
+
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
+
 
 {$mode ObjFPC}{$H+}
 
@@ -957,7 +971,7 @@ begin
       if iconV=false then mess:=mess+' '+V_str+' not found.';
       if iconR=false then mess:=mess+' '+R_str+' not found.';
       if iconI=false then mess:=mess+' '+I_str+' not found.';
-      mess:=mess+' Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR, I , SG, SR, SI'+#13+#10+'Correct header values with with popup menu if required.';
+      mess:=mess+' Check in file headers the value of keyword FILTER. Valid values B, TB, V, G, TG, R, TR, I , SG, SR, SI'+LineEnding+'Correct header values with with popup menu if required.';
       form_transformation1.error_label1.caption:=mess;
       memo2_message('Transformation failure. '+mess);
     end;

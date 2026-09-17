@@ -1,11 +1,18 @@
 unit unit_thumbnail; {FPC unit, shows FITS images as thumbnails (3*X)in a form using Timages. Form is fully resizable and thumbnails (Timage) will follow using the Timage stretch function}
 {$mode delphi}
-{Copyright (C) 2018, 2024 by Han Kleijn, www.hnsky.org
- email: han.k.. at...hnsky.org
+{Copyright (C) 2017-2026 by Han Kleijn, www.hnsky.org
+email: han.k.. at...hnsky.org
 
- This Source Code Form is subject to the terms of the Mozilla Public
- License, v. 2.0. If a copy of the MPL was not distributed with this
- file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
+
 
 interface
 

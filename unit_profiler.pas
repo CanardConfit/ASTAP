@@ -71,7 +71,7 @@ end;
 
 procedure profiler_log(message: string);//log duration with message in string plog
 begin
-  plog:=plog+Format(message+', duration: %d µs', [GetMicroseconds - starttime])+#13+#10;
+  plog:=plog+Format(message+', duration: %d µs', [GetMicroseconds - starttime])+LineEnding;
   starttime:=GetMicroseconds;//reset start time for next measurement
 end;
 

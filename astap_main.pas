@@ -81,7 +81,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.13';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -100,10 +100,12 @@ type
     MenuItem25: TMenuItem;
     image_based_crop1: TMenuItem;
     batch_crop_by_coordinates1: TMenuItem;
+    compress_fpack_dir1: TMenuItem;
     Panel1: TPanel;
     selective_colour_saturation1: TTrackBar;
     Separator4: TMenuItem;
     Separator5: TMenuItem;
+    Separator6: TMenuItem;
     shape_manual_alignment1: TShape;
     shape_marker1: TShape;
     shape_marker2: TShape;
@@ -394,6 +396,7 @@ type
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
     procedure calibrate_photometry1Click(Sender: TObject);
+    procedure compress_fpack_dir1Click(Sender: TObject);
     procedure Constellations1Click(Sender: TObject);
     procedure convert_to_ppm1Click(Sender: TObject);
     procedure export_star_info1Click(Sender: TObject);
@@ -440,6 +443,7 @@ type
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure batch_crop_by_coordinates1Click(Sender: TObject);
+    procedure MenuItem7Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
     procedure Panel1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
@@ -1530,10 +1534,10 @@ begin
       end;
     until ((simple) and (header_count>=get_ext)); {simple is true and correct header found}
     repeat  {loop for 80 bytes in 2880 block}
-      if load_data then
+      if update_memo then
       begin
         SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
-        if update_memo then memo.add(aline); {add line to memo}
+        memo.add(aline); {add line to memo}
       end;
       if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {head.naxis}
       begin
@@ -4802,34 +4806,34 @@ begin
   if TargetCPU='i386' then arch:= 'Intel 32 bit';
   if TargetCPU='x86_64' then arch:= 'Intel 64 bit';
   about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+'.'+
-  #13+#10+
-  #13+#10+
-  'Application path: '+application_path+#13+#10+
+  LineEnding+
+  LineEnding+
+  'Application path: '+application_path+LineEnding+
   'Database path: '+database_path;
   {$ELSE} {delphi}
   about_message5:='';
   {$ENDIF}
   if ord(database_header[0])<>0 then
     about_message5:=about_message5+
-    #13+#10+
-    #13+#10+
+    LineEnding+
+    LineEnding+
     'Active star database:'+copy(database_header,1,108)+ {primary star database. Do not display last byte (110) used for record type. Byte 109 is used for maximum magnitude}
-    #13+#10;
+    LineEnding;
 
   about_message:= 'ASTAP version '+astap_version+', '+arch {about_message4}+
-  #13+#10+
-  #13+#10+
-  #13+#10+
+  LineEnding+
+  LineEnding+
+  LineEnding+
   'Astrometric Stacking Program, astrometric solver and FITS image viewer.'+
   ' This program can view, measure, "astrometric solve" and stack deep sky images.'+
   ' It uses an internal star matching routine or an internal astrometric solving routine for image alignment.'+
   ' For RAW file conversion it uses the external programs Dcraw or LibRaw.'+
-  #13+#10+
-  #13+#10+about_message5+
-  #13+#10+
-  #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
-  #13+#10+
-  #13+#10+'© 2018, 2026 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
+  LineEnding+
+  LineEnding+about_message5+
+  LineEnding+
+  LineEnding+'Send an e-mail if you like this free program. Feel free to distribute!'+
+  LineEnding+
+  LineEnding+'© 2018, 2026 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
   application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
 
@@ -7746,7 +7750,7 @@ begin
   if fileexists(filename2) then load_image(filename2,img_loaded,head,mainform1.memo1.lines,true,true {plot}) {load and center, plot}
   else
   begin {file gone/deleted}
-     application.messagebox(pchar('File not found:'+#13+#10+#13+#10+(Sender as Tmenuitem).caption),pchar('Error'),MB_ICONWARNING+MB_OK);
+     application.messagebox(pchar('File not found:'+LineEnding+LineEnding+(Sender as Tmenuitem).caption),pchar('Error'),MB_ICONWARNING+MB_OK);
     (Sender as Tmenuitem).caption:='';
   end;
   add_recent_file(filename2);{update recent files list by moving this one up to first position}
@@ -9647,6 +9651,7 @@ begin
       stackmenu1.add_sip1.Checked:=Sett.ReadBool('stack','sip',false);
 
       stackmenu1.use_starnet2_1.Checked:=Sett.ReadBool('stack','starnet',false);
+      stackmenu1.remove_comet_remnant1.checked:=Sett.ReadBool('stack','remove_remnant',true);
 
       dum:=Sett.ReadString('stack','path_starnet',''); if dum<>'' then path_starnet2:=dum;
 
@@ -10079,6 +10084,7 @@ begin
       sett.writeBool('stack','sip',stackmenu1.add_sip1.checked);
 
       sett.writebool('stack','starnet',stackmenu1.use_starnet2_1.checked);
+      sett.writebool('stack','remove_remnant',stackmenu1.remove_comet_remnant1.checked);
 
       sett.writestring('stack','path_starnet',path_starnet2);
 
@@ -11454,71 +11460,132 @@ begin
 end;
 
 
-procedure Tmainform1.compress_fpack1Click(Sender: TObject);
+
+
+
+{ Shared worker: takes a TStrings list of filenames and does the actual compression loop }
+procedure compress_fits_list(filelist: TStrings; deleteold: boolean);
 var
   i: integer;
-  filename1: string;
+  filename1,filename2: string;
   err: boolean;
-  img_temp : Timage_array;
-  headx : theader;
-  overwrite_all : boolean;
+  img_temp: Timage_array;
+  headx: theader;
+  overwrite_all: boolean;
+  fileDate       : integer;
 begin
+  esc_pressed := false;
+  overwrite_all := false;
+  err := false;
 
-  OpenDialog1.Title := 'Select multiple  FITS files to compress lossless. Original files will be kept. Only 16 bit files will be compressed';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'FITS files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-  esc_pressed:=false;
-  overwrite_all:=false;
-  err:=false;
+  Screen.Cursor := crHourglass;
+  {$IfDef Darwin}{$else}application.processmessages;{$endif}
+  try
+    for i := 0 to filelist.Count - 1 do
+    begin
+      progress_indicator(i / filelist.Count, ' Converting');
+      filename1 := filelist[i];
+      memo2_message(filename1 + ' file nr. ' + inttostr(i + 1) + '-' + inttostr(filelist.Count));
+      Application.ProcessMessages;
+
+      if esc_pressed then begin err := true; break; end;
+
+      if load_image(filename1, img_temp, headx, memox, false {recenter}, false {plot}) then
+      begin
+        if headx.bitpix = 16 then
+        begin
+          fileDate := FileAge(fileName1);
+          filename2:=ChangeFileExt(filename1, '.fits.fz');
+          if save_fits_compressed(img_temp, memox, headx,filename2, overwrite_all {overwrite}) = false then
+          begin
+            memo2_message('Save error ' + filename2);
+            err := true;
+          end
+          else
+          begin
+            FileSetDate(filename2,filedate);
+            if ((deleteold) and (fileexists(filename2)) ) then
+               deletefile(filename1);
+            end;
+        end
+        else
+          memo2_message('Skipping ' + filename1 + ' since RICE compression can not lossless compress floating point images.');
+      end
+      else
+        err := true;
+    end;
+
+    if err = false then
+    begin
+      mainform1.caption := 'Completed, all files converted.';
+      memo2_message('Completed, all files converted.');
+    end
+    else
+    begin
+      mainform1.caption := 'Finished, files converted but with errors or stopped!';
+      memo2_message('Finished, files converted but with errors or stopped!');
+    end;
+  finally
+    mainform1.caption := 'Finished, all files compressed with extension .fz.';
+    Screen.Cursor := crDefault;
+    progress_indicator(-100, '');
+  end;
+end;
+
+
+procedure Tmainform1.compress_fpack1Click(Sender: TObject);
+begin
+  OpenDialog1.Title := 'Select multiple FITS files to compress lossless. Original files will be kept. Only 16 bit files will be compressed';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist, ofHideReadOnly];
+  OpenDialog1.Filter := 'FITS files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+
   if OpenDialog1.Execute then
+    compress_fits_list(OpenDialog1.Files,false);
+end;
+
+
+procedure Tmainform1.compress_fpack_dir1Click(Sender: TObject);
+var
+  filelist: TStringList;
+  includeSub,deleteold: boolean;
+  d: integer;
+begin
+  SelectDirectoryDialog1.Options := SelectDirectoryDialog1.Options + [ofAllowMultiSelect];
+  SelectDirectoryDialog1.filename:=ExtractFilePath(filename2);
+
+  if SelectDirectoryDialog1.Execute then
   begin
-    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-    try { Do some lengthy operation }
-       with OpenDialog1.Files do
-       for I := 0 to Count - 1 do
-       begin
-         progress_indicator(i/count,' Converting');{show progress}
-         filename1:=Strings[I];
-         memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
-         Application.ProcessMessages;
+    if SelectDirectoryDialog1.Files.Count = 0 then
+      exit; {nothing selected}
 
-         if esc_pressed then begin err:=true; break; end;
+    includeSub := (MessageDlg('Include sub directories?', mtConfirmation,
+                   [mbYes, mbNo], 0) = mrYes);
+    deleteold  := (MessageDlg('Delete the original files?', mtConfirmation,
+                   [mbYes, mbNo], 0) = mrYes);
+    if deleteold then
+        deleteold  := (MessageDlg('This will:'+LineEnding+
+                                  '1) Compress the fits files to .fits.fz'+LineEnding+
+                                  '2) DELETE the old files.'+LineEnding+LineEnding+
+                                  'Are you sure?', mtConfirmation,
+                   [mbYes, mbNo], 0) = mrYes);
 
-         if load_image(filename1,img_temp,headx,memox,false {recenter},false {plot}) then
-         begin
-           if headx.bitpix=16 then
-           begin
-             if save_fits_compressed(img_temp,memox,headx,ChangeFileExt(Filename1,'fits.fz'),overwrite_all {overwrite})=false then
-             begin
-               memo2_message('Error '+filename2);
-               err:=true;;
-             end
-             else
-             memo2_message('Skipping '+filename2+' since RICE compression can not loseless compress floating pointimages.')
-           end;
-         end
-         else
-           err:=true;
-       end;
-       if err=false then
-       begin
-         mainform1.caption:='Completed, all files converted.';
-         memo2_message('Completed, all files converted.');
-       end
-       else
-       begin
-         mainform1.caption:='Finished, files converted but with errors or stopped!';
-         memo2_message('Finished, files converted but with errors or stopped!');
-       end;
 
-      finally
-      mainform1.caption:='Finished, all files compressed with extension .fz.';
+    filelist := TStringList.Create;
+    try
+      for d := 0 to SelectDirectoryDialog1.Files.Count - 1 do
+        FindAllFiles(filelist, SelectDirectoryDialog1.Files[d],
+          '*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS', includeSub);
 
-      Screen.Cursor:=crDefault;  { Always restore to normal }
-      progress_indicator(-100,'');{progresss done}
+      if filelist.Count = 0 then
+        memo2_message('No FITS files found in selected directories')
+      else
+        compress_fits_list(filelist, deleteold);
+    finally
+      filelist.Free;
     end;
   end;
 end;
+
 
 procedure Tmainform1.copy_to_clipboard1Click(Sender: TObject);
 var
@@ -14287,12 +14354,12 @@ procedure Tmainform1.ShowFITSheader1Click(Sender: TObject);
 var bericht: array[0..512] of char;{make this one not too short !}
 begin
    strpcopy(bericht,
-  'Origin: '+origin+#13+#10+
-  'Telescope: '+ telescop+#13+#10+
-  'Instrument: '+instrum+#13+#10+
-  'Filter: '+head.filter_name+#13+#10+
-  'Calibration-status: '+head.calstat+#13+#10+
-  'Date-obs: '+head.date_obs+#13+#10+
+  'Origin: '+origin+LineEnding+
+  'Telescope: '+ telescop+LineEnding+
+  'Instrument: '+instrum+LineEnding+
+  'Filter: '+head.filter_name+LineEnding+
+  'Calibration-status: '+head.calstat+LineEnding+
+  'Date-obs: '+head.date_obs+LineEnding+
   'Exposure-time: '+floattostr(head.exposure));
   messagebox(mainform1.handle,bericht,'Basic fits header',MB_OK);
 end;
@@ -15211,7 +15278,7 @@ begin
           begin
             nrskipped:=nrskipped+1; {plate solved}
             memo2_message('Skipped: '+filename2+ '  Already a solution in the header. Select option overwrite to renew.');
-            skipped:=skipped+#13+#10+extractfilename(filename2);
+            skipped:=skipped+LineEnding+extractfilename(filename2);
           end
           else
           begin
@@ -15238,7 +15305,7 @@ begin
             begin
               memo2_message('No solution: '+filename2);
               nrfailed:=nrfailed+1;
-              failed:=failed+#13+#10+extractfilename(filename2);
+              failed:=failed+LineEnding+extractfilename(filename2);
             end;
           end;
 
@@ -15783,6 +15850,11 @@ begin
     memo.free;
     memo2_message('Ready');
   end;//ok pressed
+end;
+
+procedure Tmainform1.MenuItem7Click(Sender: TObject);
+begin
+
 end;
 
 
@@ -18694,7 +18766,7 @@ var
 begin
   OpenDialog1.Title := 'Select multiple FITS files to set "modified date" to DATE-OBS';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;';
   esc_pressed:=false;
   opendialog1.initialdir:=ExtractFileDir(filename2);
   esc_pressed:=false;

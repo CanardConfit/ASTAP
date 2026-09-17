@@ -8,6 +8,14 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
+
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
+
+
 {$mode delphi}
 
 interface
@@ -2829,7 +2837,7 @@ begin
   if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290;warning:=true; end //old database sorted on magnitude
   else
   begin
-    application.messagebox(PChar('No star database found at ' + database_path + ' !' + #13 + 'Download and install one star database.'), pchar('ASTAP error:'),0);
+    application.messagebox(PChar('No star database found at ' + database_path + ' !' + LineEnding + 'Download and install one star database.'), pchar('ASTAP error:'),0);
     result:=false;
   end;
 

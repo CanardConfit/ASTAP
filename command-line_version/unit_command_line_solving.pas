@@ -6,6 +6,12 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
+
 
 {ASTAP is using a linear astrometric solution for both stacking and solving.  The method is based on what traditionally is called "reducing the plate measurements.
 First step is to find star matches between a test image and a reference image. The reference image is either created from a star database or a reference image.
@@ -1846,7 +1852,7 @@ var
    fitsX,fitsY,width2,height2: integer;
    img_temp : Timage_array;
 begin
-  memo2_message('Converting to mono.');
+  memo2_message('Converting to mono for star detection.');
   height2:=Length(img[0]); {height}
   width2:=Length(img[0,0]); {width}
 

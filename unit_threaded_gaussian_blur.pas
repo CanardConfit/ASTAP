@@ -6,6 +6,12 @@ unit unit_threaded_gaussian_blur;//Threaded Gaussian blur for image arrays
  License, v. 2.0. If a copy of the MPL was not distributed with this
  file, You can obtain one at https://mozilla.org/MPL/2.0/. }
 
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
+
 // idea based on http://users.atw.hu/delphicikk/listaz.php?id=1213&oldal=18
 // The gaussian kernel exp(-(x^2 + y^2)) is of the form f(x)*g(y), which means that you can perform a two-dimensional convolution by doing a sequence
 // of one-dimensional convolutions - first you convolve each row and then each column. This is much faster (an N^2 becomes an N*2).
@@ -16,7 +22,6 @@ unit unit_threaded_gaussian_blur;//Threaded Gaussian blur for image arrays
 // Fourier transform techniques will be better (I couldn't say what the actual cutoff is.)
 // One comment that needs to be made is that a gaussian blur has the magical property that you can blur each row one by one and then blur each
 // column - this is much faster than an actual 2-d convolution.
-
 
 //The gaussian kernel exp(-(x^2 + y^2)) is separable into f(x)*g(y),
 // meaning a 2D convolution can be performed as two 1D convolutions:

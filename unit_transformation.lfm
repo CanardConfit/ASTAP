@@ -6,11 +6,11 @@ object Form_transformation1: TForm_transformation1
   Caption = 'ASTAP transformation'
   ClientHeight = 729
   ClientWidth = 817
+  Position = poDesktopCenter
+  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnResize = FormResize
   OnShow = FormShow
-  Position = poDesktopCenter
-  LCLVersion = '2.2.6.0'
   object Image_transformation1: TImage
     Cursor = crCross
     Left = 200
@@ -53,8 +53,8 @@ object Form_transformation1: TForm_transformation1
     Top = 656
     Width = 163
     Caption = 'Calculate'
-    OnClick = calculate1Click
     TabOrder = 0
+    OnClick = calculate1Click
   end
   object Label5: TLabel
     Left = 16
@@ -79,11 +79,11 @@ object Form_transformation1: TForm_transformation1
       '2.2'
       '2.5'
     )
-    OnEditingDone = sigma_transformation1EditingDone
     ParentShowHint = False
     ShowHint = True
     TabOrder = 1
     Text = '2'
+    OnEditingDone = sigma_transformation1EditingDone
   end
   object error_label1: TLabel
     Left = 40
@@ -102,10 +102,10 @@ object Form_transformation1: TForm_transformation1
     Top = 696
     Width = 75
     Caption = 'Cancel'
-    OnClick = cancel1Click
     ParentShowHint = False
     ShowHint = True
     TabOrder = 2
+    OnClick = cancel1Click
   end
   object save1: TButton
     Left = 104
@@ -114,18 +114,18 @@ object Form_transformation1: TForm_transformation1
     Top = 696
     Width = 75
     Caption = 'Save'
-    OnClick = save1Click
     TabOrder = 3
+    OnClick = save1Click
   end
   object checkBox_auid1: TCheckBox
     Left = 16
     Height = 23
     Hint = 'Show AUID'
     Top = 616
-    Width = 96
+    Width = 90
     Caption = 'Show auid''s'
-    OnChange = checkBox_auid1Change
     TabOrder = 4
+    OnChange = checkBox_auid1Change
   end
   object error_label2: TLabel
     Left = 136
@@ -163,11 +163,11 @@ object Form_transformation1: TForm_transformation1
       '100'
       '130'
     )
-    OnEditingDone = sigma_transformation1EditingDone
     ParentShowHint = False
     ShowHint = True
     TabOrder = 5
     Text = '70'
+    OnEditingDone = sigma_transformation1EditingDone
   end
   object Label4: TLabel
     Left = 16
@@ -182,12 +182,12 @@ object Form_transformation1: TForm_transformation1
     Height = 23
     Hint = 'Check mark this to find Sloan coefficients for g'', r'', i'''
     Top = 136
-    Width = 57
+    Width = 51
     Caption = 'Sloan'
-    OnChange = sloan_checkBox1Change
     ParentShowHint = False
     ShowHint = True
     TabOrder = 6
+    OnChange = sloan_checkBox1Change
   end
   object GroupBox1: TGroupBox
     Left = 8
@@ -203,110 +203,110 @@ object Form_transformation1: TForm_transformation1
       Height = 23
       Hint = 'Tbv'
       Top = 8
-      Width = 62
+      Width = 56
       Caption = 'Tbv=?'
       Checked = True
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 0
       TabStop = True
+      OnClick = RadioButtonTbv1Click
     end
     object RadioButtonTb_bv1: TRadioButton
       Left = 8
       Height = 23
       Hint = 'Tb_bv'
       Top = 40
-      Width = 76
+      Width = 70
       Caption = 'Tb_bv=?'
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 1
+      OnClick = RadioButtonTbv1Click
     end
     object RadioButtonTv_bv1: TRadioButton
       Left = 8
       Height = 23
       Hint = 'Tv_bv'
       Top = 72
-      Width = 75
+      Width = 69
       Caption = 'Tv_bv=?'
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 2
+      OnClick = RadioButtonTbv1Click
     end
     object RadioButtonTvr1: TRadioButton
       Left = 8
       Height = 23
       Hint = 'Tvr'
       Top = 128
-      Width = 59
+      Width = 53
       Caption = 'Tvr=?'
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 3
+      OnClick = RadioButtonTbv1Click
     end
     object RadioButtonTv_vr1: TRadioButton
       Left = 8
       Height = 23
       Hint = 'Tv_vr'
       Top = 160
-      Width = 72
+      Width = 66
       Caption = 'Tv_vr=?'
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 4
+      OnClick = RadioButtonTbv1Click
     end
     object RadioButtonTr_vr1: TRadioButton
       Left = 8
       Height = 23
       Hint = 'Tr_vr'
       Top = 192
-      Width = 70
+      Width = 64
       Caption = 'Tr_vr=?'
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 5
+      OnClick = RadioButtonTbv1Click
     end
     object RadioButtonTri1: TRadioButton
       Left = 8
       Height = 23
       Hint = 'Tri'
       Top = 240
-      Width = 55
+      Width = 49
       Caption = 'Tri=?'
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 6
+      OnClick = RadioButtonTbv1Click
     end
     object RadioButtonTr_ri1: TRadioButton
       Left = 8
       Height = 23
       Hint = 'Tr_ri'
       Top = 272
-      Width = 66
+      Width = 60
       Caption = 'Tr_ri=?'
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 7
+      OnClick = RadioButtonTbv1Click
     end
     object RadioButtonTi_ri1: TRadioButton
       Left = 8
       Height = 23
       Hint = 'Ti_ri'
       Top = 304
-      Width = 64
+      Width = 58
       Caption = 'Ti_ri=?'
-      OnClick = RadioButtonTbv1Click
       ParentShowHint = False
       ShowHint = True
       TabOrder = 8
+      OnClick = RadioButtonTbv1Click
     end
   end
 end

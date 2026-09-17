@@ -1,5 +1,16 @@
 unit unit_threaded_stacking_mean_and_variance;
-{Copyright (C) 2025 by Han Kleijn, www.hnsky.org  MPL 2.0}
+{Copyright (C) 2017-2026 by Han Kleijn, www.hnsky.org
+email: han.k.. at...hnsky.org
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
+
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
 
 interface
 

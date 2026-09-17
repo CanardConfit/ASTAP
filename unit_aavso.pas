@@ -6,6 +6,12 @@ unit unit_aavso; //aavso report unit
  License, v. 2.0. If a copy of the MPL was not distributed with this
  file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
+//  This source code is available at:
+// Master:
+//   https://sourceforge.net/p/astap-program/
+// Irregularly updated:
+//   https://github.com/han-k59/astap
+
 
 {Following the older CCDPhotometryGuide v1.1 2015, the transformation for an two color image series is as follows:
 
@@ -2407,9 +2413,9 @@ begin
   if baa_style1.checked then
   begin
     detype:='AAVSO EXT BAA V1.00';
-    baa_extra:='#LOCATION='+sitelat+' '+sitelong+' '+siteelev+#13+#10+
-               '#TELESCOPE='+TELESCOP+#13+#10+
-               '#CAMERA='+instrum+#13+#10;
+    baa_extra:='#LOCATION='+sitelat+' '+sitelong+' '+siteelev+LineEnding+
+               '#TELESCOPE='+TELESCOP+LineEnding+
+               '#CAMERA='+instrum+LineEnding;
   end
   else
   begin
@@ -2448,29 +2454,29 @@ begin
   if apply_transformation then
   begin
     transform_all_factors:=
-    '#Only the variable is transformed'+#13+#10+
-    '#Johnson Cousins: Transf corr B = Tb_bv * Tbv *((b-v)var - (b-v)comp),   Transf corr V = Tv_bv * Tbv *((b-v)var - (b-v)comp),   Transf corr V = Tv_vr * Tvr *((v-r)var - (v-r)comp)'+#13+#10+
-    '#Johnson Cousins: Transf corr R = Tr_vr * Tvr *((v-r)var - (v-r)comp),   Transf corr R = Tr_ri * Tri *((r-i)var - (r-i)comp),   Transf corr I = Ti_ri * Tri *((r-i)var - (r-i)comp)'+#13+#10+
-    '#Tbv= ' + TbvSTR+#13+#10+
-    '#Tb_bv= ' + Tb_bvSTR+#13+#10+
-    '#Tv_bv= ' + Tv_bvSTR+#13+#10+
-    '#Tvr= ' + TvrSTR+#13+#10+
-    '#Tv_vr= ' + Tv_vrSTR+#13+#10+
-    '#Tr_vr= ' + Tr_vrSTR+#13+#10+
-    '#Tri= ' + TriSTR+#13+#10+
-    '#Tr_ri= ' + Tr_riSTR+#13+#10+
-    '#Ti_ri= ' + Ti_riSTR+#13+#10;
+    '#Only the variable is transformed'+LineEnding+
+    '#Johnson Cousins: Transf corr B = Tb_bv * Tbv *((b-v)var - (b-v)comp),   Transf corr V = Tv_bv * Tbv *((b-v)var - (b-v)comp),   Transf corr V = Tv_vr * Tvr *((v-r)var - (v-r)comp)'+LineEnding+
+    '#Johnson Cousins: Transf corr R = Tr_vr * Tvr *((v-r)var - (v-r)comp),   Transf corr R = Tr_ri * Tri *((r-i)var - (r-i)comp),   Transf corr I = Ti_ri * Tri *((r-i)var - (r-i)comp)'+LineEnding+
+    '#Tbv= ' + TbvSTR+LineEnding+
+    '#Tb_bv= ' + Tb_bvSTR+LineEnding+
+    '#Tv_bv= ' + Tv_bvSTR+LineEnding+
+    '#Tvr= ' + TvrSTR+LineEnding+
+    '#Tv_vr= ' + Tv_vrSTR+LineEnding+
+    '#Tr_vr= ' + Tr_vrSTR+LineEnding+
+    '#Tri= ' + TriSTR+LineEnding+
+    '#Tr_ri= ' + Tr_riSTR+LineEnding+
+    '#Ti_ri= ' + Ti_riSTR+LineEnding;
 
 
     if TgrSTR_sloan<>'1' then
     transform_all_factors:=transform_all_factors+
-    '#Sloan: Transf corr SG = Tg_gr * Tgr *((sg-sr)var - (sg-sr)comp),   Transf corr SR = Tr_gr * Tgr *((sg-sr)var - (sg-sr)comp),   Transf corr SR = Tr_ri_sloan * Tri_sloan *((sr-si)var - (sr-si)comp),   Transf corr SI = Ti_ri_sloan * Tri_sloan *((sr-si)var - (sr-si)comp)'+#13+#10+
-    '#Tgr= ' + TgrSTR_sloan+#13+#10+
-    '#Tg_gr= ' + Tg_grSTR_sloan+#13+#10+
-    '#Tr_gr= ' + Tr_grSTR_sloan+#13+#10+
-    '#Tri= ' + TriSTR_sloan+#13+#10+
-    '#Tr_ri= ' + Tr_riSTR_sloan+#13+#10+
-    '#Ti_ri= ' + Ti_riSTR_sloan+#13+#10;
+    '#Sloan: Transf corr SG = Tg_gr * Tgr *((sg-sr)var - (sg-sr)comp),   Transf corr SR = Tr_gr * Tgr *((sg-sr)var - (sg-sr)comp),   Transf corr SR = Tr_ri_sloan * Tri_sloan *((sr-si)var - (sr-si)comp),   Transf corr SI = Ti_ri_sloan * Tri_sloan *((sr-si)var - (sr-si)comp)'+LineEnding+
+    '#Tgr= ' + TgrSTR_sloan+LineEnding+
+    '#Tg_gr= ' + Tg_grSTR_sloan+LineEnding+
+    '#Tr_gr= ' + Tr_grSTR_sloan+LineEnding+
+    '#Tri= ' + TriSTR_sloan+LineEnding+
+    '#Tr_ri= ' + Tr_riSTR_sloan+LineEnding+
+    '#Ti_ri= ' + Ti_riSTR_sloan+LineEnding;
 
 
   end
@@ -2480,17 +2486,17 @@ begin
   if stackmenu1.annotate_mode1.itemindex<5 then //local database
     chartID:='na'; //else it comes from VSP download
 
-  aavso_report:= '#TYPE='+detype+#13+#10+
-                 '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, v'+astap_version+#13+#10+
-                 '#DELIM='+delimiter1.text+#13+#10+
-                 '#DATE='+date_format+#13+#10+
-                 '#OBSTYPE='+obstype1.text+#13+#10+
-                 '#COMMENTS='+comments+#13+#10+
+  aavso_report:= '#TYPE='+detype+LineEnding+
+                 '#OBSCODE='+obscode+LineEnding+
+                 '#SOFTWARE=ASTAP, v'+astap_version+LineEnding+
+                 '#DELIM='+delimiter1.text+LineEnding+
+                 '#DATE='+date_format+LineEnding+
+                 '#OBSTYPE='+obstype1.text+LineEnding+
+                 '#COMMENTS='+comments+LineEnding+
                   baa_extra+
                   transform_all_factors+
-                 '#'+#13+#10+
-                 '#NAME'+delim+'DATE'+delim+'MAG'+delim+'MERR'+delim+'FILT'+delim+'TRANS'+delim+'MTYPE'+delim+'CNAME'+delim+'CMAG'+delim+'KNAME'+delim+'KMAG'+delim+'AIRMASS'+delim+'GROUP'+delim+'CHART'+delim+'NOTES'+#13+#10;
+                 '#'+LineEnding+
+                 '#NAME'+delim+'DATE'+delim+'MAG'+delim+'MERR'+delim+'FILT'+delim+'TRANS'+delim+'MTYPE'+delim+'CNAME'+delim+'CMAG'+delim+'KNAME'+delim+'KMAG'+delim+'AIRMASS'+delim+'GROUP'+delim+'CHART'+delim+'NOTES'+LineEnding;
 
 
 
@@ -2795,7 +2801,7 @@ begin
                           airmass_str+delim+
                           'na'+delim+ {group}
                           chartID +delim+
-                          transformation+comp_magn_info+settings+#13+#10;
+                          transformation+comp_magn_info+settings+LineEnding;
 
 
            date_observation:=copy(stackmenu1.listview7.Items.item[c].subitems.Strings[P_date],1,10);
@@ -2812,7 +2818,7 @@ begin
   application.processmessages;
 
   if to_clipboard then
-    Clipboard.AsText:=#13+#10+aavso_report
+    Clipboard.AsText:=LineEnding+aavso_report
   else
   begin
     savedialog1.filename:=stringreplace(clean_abbreviation(ColumnTitles[column_vars[0]+1],false),'?','',[rfReplaceAll])+'_'+date_observation+'_report.txt';
