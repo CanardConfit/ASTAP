@@ -192,10 +192,12 @@ begin
       if analysespecified then
          halt(round(head.hfd_median*100)*1000000+head.hfd_counter) {report in errorlevel the hfd and the number of stars used}
       else
-        halt(errorlevel);
+        ExitCode:=errorlevel;
       {$ELSE}
-      halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
+         ExitCode:=errorlevel;{report hfd in errorlevel. In linux only range 0..255 possible}
       {$ENDIF}
+      Terminate;
+       exit;
     end;{analyse fits and report HFD value}
 
     if hasoption('d') then
@@ -259,8 +261,7 @@ begin
     if commandline_log then
              memo2.SavetoFile(ChangeFileExt(filename_output,'.log'));{save memo2 log to log file}
 
-    halt(errorlevel);
-
+    ExitCode:=errorlevel;
     //  Exit status:
     //  0 no errors.
     //  1 no solution.
@@ -278,6 +279,9 @@ begin
 
     // wcs file is written when there is a solution. Could contain:
     // WARNING =.........
+    Terminate;
+
+
   end;{-f option}
 
   {$IfDef Darwin}// for OS X,
@@ -314,8 +318,12 @@ var
 {$R *.res}
 
 begin
+  //SetHeapTraceOutput('HeapTrace.txt'); // supported as of debugger version 3.2.0
   Application:=Tastap.Create(nil);
-  Application.Run;
-  Application.Free;
+  try
+    Application.Run;
+  finally
+    Application.Free;
+  end;
 end.
 
