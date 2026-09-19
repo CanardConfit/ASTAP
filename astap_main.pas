@@ -29,6 +29,9 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
 https://gitlab.com/freepascal.org/fpc/source/-/issues/40302      (min(1,0.999999)
 
+Selection of multiple directories:
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42588
+
 
 GTK3
 All fixed
@@ -81,7 +84,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -11563,8 +11566,8 @@ begin
     deleteold  := (MessageDlg('Delete the original files?', mtConfirmation,
                    [mbYes, mbNo], 0) = mrYes);
     if deleteold then
-        deleteold  := (MessageDlg('This will:'+LineEnding+
-                                  '1) Compress the fits files to .fits.fz'+LineEnding+
+        deleteold  := (MessageDlg('This will:'+LineEnding+LineEnding+
+                                  '1) Compress the fits files to .fits.fz'+LineEnding+LineEnding+
                                   '2) DELETE the old files.'+LineEnding+LineEnding+
                                   'Are you sure?', mtConfirmation,
                    [mbYes, mbNo], 0) = mrYes);
@@ -13846,6 +13849,7 @@ begin
   if paramcount=1 then
     check_second_instance{check for and other instance of the application. If so send paramstr(1) and quit}
   else
+  ;
   if paramcount>1 then {commandline trimmed_median_background}
      trayicon1.visible:=true;{Show trayicon. Do it early otherwise in Win10 it is not shown in the command line trimmed_median_background}
 
