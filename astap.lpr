@@ -14,6 +14,7 @@ uses
 
 {$R *.res}
 begin
+  //SetHeapTraceOutput('heapTrace.txt');
   Application.Scaled:=True;
   Application.Initialize;
   Application.CreateForm(Tmainform1, mainform1);
