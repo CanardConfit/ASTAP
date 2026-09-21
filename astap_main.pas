@@ -29,6 +29,9 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 https://forum.lazarus.freepascal.org/index.php/topic,63511.0.html
 https://gitlab.com/freepascal.org/fpc/source/-/issues/40302      (min(1,0.999999)
 
+Selection of multiple directories:
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/work_items/42588
+
 
 GTK3
 All fixed
@@ -81,7 +84,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.15';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.09.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -802,6 +805,8 @@ var {################# initialised variables #########################}
   commandline_execution : boolean=false;{program executed in command line}
   commandline_log       : boolean=false;{file log request in command line}
   errorlevel        : integer=0;{report errors when shutdown}
+  halt_requested        : boolean=false;{command line finished, halt from OnIdle}
+  halt_errorlevel       : integer=0;
 
   mouse_positionRADEC1 : string='';{For manual reference solving}
   mouse_positionRADEC2 : string='';{For manual reference solving}
@@ -5938,7 +5943,9 @@ begin
   begin
     if deletefile(user_path+'astap.cfg') then
     begin
-      halt(0); {don't save only do mainform1.destroy. Note  mainform1.close will save the setting again, so don't use}
+      halt_errorlevel:=0;
+      halt_requested:=true;
+      exit;{halt from ApplicationIdle, after this frame unwinds}
     end
     else beep;
   end;
@@ -8698,111 +8705,105 @@ begin
   {create bitmap}
   bitmap := TBitmap.Create;
   try
-
-  bitmap := TBitmap.Create;
-  bitmap.PixelFormat := pf24bit;  // faster on Windows then pf32bit
-  with bitmap do
-  begin
-    width := ww;
-    height := hh;
-  end;
-
-  saturationFactor:=mainform1.saturation_factor_plot1.position/20;
-  selectiveStrength:=mainform1.selective_colour_saturation1.position/10;//high is stronger
-  head.backgr:=mainform1.minimum1.position;
-  cwhite:=mainform1.maximum1.position;
-  if cwhite<=head.backgr then cwhite:=head.backgr+1;
-
-  flipv:=mainform1.flip_vertical1.Checked;
-  fliph:=mainform1.Flip_horizontal1.Checked;
-
-  scale:=1/(cwhite-head.backgr);
-  for i:=0 to hh-1 do
-  begin
-    if flipv then linenr:=i else linenr:=(hh-1)-i;{flip vertical?. Note FITS count from bottom, windows from top}
-    xLine := Bitmap.ScanLine[linenr];
-    for j:=0 to ww-1 do
+    bitmap.PixelFormat := pf24bit;  // faster on Windows then pf32bit
+    with bitmap do
     begin
-      if fliph then columnr:=(ww-1)-j else columnr:=j;{flip horizontal?}
+      width := ww;
+      height := hh;
+    end;
 
-      colrr:=(img_loaded[0,i,columnr]-head.backgr)*scale; {scale to 1}
+    saturationFactor:=mainform1.saturation_factor_plot1.position/20;
+    selectiveStrength:=mainform1.selective_colour_saturation1.position/10;//high is stronger
+    head.backgr:=mainform1.minimum1.position;
+    cwhite:=mainform1.maximum1.position;
+    if cwhite<=head.backgr then cwhite:=head.backgr+1;
 
-      if colours2>=2 then {at least two colours}
-        colgg:=(img_loaded[1,i,columnr]-head.backgr)*scale {scale to 1}
-      else
-        colgg:=colrr;
+    flipv:=mainform1.flip_vertical1.Checked;
+    fliph:=mainform1.Flip_horizontal1.Checked;
 
-      if head.naxis3>=3 then {at least three colours}
-        colbb:=(img_loaded[2,i,columnr]-head.backgr)*scale {scale to 1}
-      else
-        colbb:=colrr;
-
-      {find brightest colour and resize all if above 1. Avoid whitening of stars and run time error in stretch_c table}
-      largest:=colrr;
-      if colgg>largest then largest:=colgg;
-      if colbb>largest then largest:=colbb;
-      if largest>1 then {clamp to 1 but preserve colour, so ratio r,g,b}
+    scale:=1/(cwhite-head.backgr);
+    for i:=0 to hh-1 do
+    begin
+      if flipv then linenr:=i else linenr:=(hh-1)-i;{flip vertical?. Note FITS count from bottom, windows from top}
+      xLine := Bitmap.ScanLine[linenr];
+      for j:=0 to ww-1 do
       begin
-        inv_largest:=1/largest;
-        colrr:=colrr*inv_largest;
-        colgg:=colgg*inv_largest;
-        colbb:=colbb*inv_largest;
-        largest:=1;
-      end;
+        if fliph then columnr:=(ww-1)-j else columnr:=j;{flip horizontal?}
 
-      colrr:=max(colrr,0.000000001);//keep just above zero for dividing by luminance and stretch_c
-      colgg:=max(colgg,0.000000001);
-      colbb:=max(colbb,0.000000001);
+        colrr:=(img_loaded[0,i,columnr]-head.backgr)*scale; {scale to 1}
 
-      if head.naxis3>=3 then {at least three colours}
-        AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);
+        if colours2>=2 then {at least two colours}
+          colgg:=(img_loaded[1,i,columnr]-head.backgr)*scale {scale to 1}
+        else
+          colgg:=colrr;
 
-      if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
-      begin
-      //  luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
-        luminance:=0.333333*colrr+0.333333*colgg+0.333333*colbb;//luminance in range 0..1. keep equal ratio in image development and not luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB;
-        luminance_stretched:=stretch_c[trunc(65535*luminance)];
-        factor:=luminance_stretched/luminance;
-        if factor*largest>1 then factor:=1/largest; {clamp again, could be larger then 1}
-        colrr:=colrr*factor;{stretch only luminance but keep rgb ratio!}
-        colgg:=colgg*factor;{stretch only luminance but keep rgb ratio!}
-        colbb:=colbb*factor;{stretch only luminance but keep rgb ratio!}
-      end;
+        if head.naxis3>=3 then {at least three colours}
+          colbb:=(img_loaded[2,i,columnr]-head.backgr)*scale {scale to 1}
+        else
+          colbb:=colrr;
 
-      //convert to range 0..255
-      col_r:=trunc(255*colrr);//trunc is faster then round
-      col_g:=trunc(255*colgg);
-      col_b:=trunc(255*colbb);
+        {find brightest colour and resize all if above 1. Avoid whitening of stars and run time error in stretch_c table}
+        largest:=colrr;
+        if colgg>largest then largest:=colgg;
+        if colbb>largest then largest:=colbb;
+        if largest>1 then {clamp to 1 but preserve colour, so ratio r,g,b}
+        begin
+          inv_largest:=1/largest;
+          colrr:=colrr*inv_largest;
+          colgg:=colgg*inv_largest;
+          colbb:=colbb*inv_largest;
+          largest:=1;
+        end;
+
+        colrr:=max(colrr,0.000000001);//keep just above zero for dividing by luminance and stretch_c
+        colgg:=max(colgg,0.000000001);
+        colbb:=max(colbb,0.000000001);
+
+        if head.naxis3>=3 then {at least three colours}
+          AdjustSaturationHSV(colrr,colgg,colbb,saturationFactor,selectiveStrength);
+
+        if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
+        begin
+        //  luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
+          luminance:=0.333333*colrr+0.333333*colgg+0.333333*colbb;//luminance in range 0..1. keep equal ratio in image development and not luminance := 0.2126*colRR + 0.7152*colGG + 0.0722*colBB;
+          luminance_stretched:=stretch_c[trunc(65535*luminance)];
+          factor:=luminance_stretched/luminance;
+          if factor*largest>1 then factor:=1/largest; {clamp again, could be larger then 1}
+          colrr:=colrr*factor;{stretch only luminance but keep rgb ratio!}
+          colgg:=colgg*factor;{stretch only luminance but keep rgb ratio!}
+          colbb:=colbb*factor;{stretch only luminance but keep rgb ratio!}
+        end;
+
+        //convert to range 0..255
+        col_r:=trunc(255*colrr);//trunc is faster then round
+        col_g:=trunc(255*colgg);
+        col_b:=trunc(255*colbb);
 
 
-     {$ifdef mswindows}
-        xLine^[j*3]  :=col_b; {3*8=24 bit}
-        xLine^[j*3+1]:=col_g; {fast pixel write routine }
-        xLine^[j*3+2]:=col_r;
-     {$endif}
-     {$ifdef darwin} {MacOS}
-        xLine^[j*4+1]:=col_r; {4*8=32 bit}
-        xLine^[j*4+2]:=col_g; {fast pixel write routine }
-        xLine^[j*4+3]:=col_b;
-        // j*4+3 = alpha/padding, left as 0
-     {$endif}
-     {$ifdef linux}
-        xLine^[j*4]  :=col_b; {4*8=32 bit}
-        xLine^[j*4+1]:=col_g; {fast pixel write routine }
-        xLine^[j*4+2]:=col_r;
-        // j*4+3 = alpha/padding, left as 0
-      {$endif}
-    end;{j}
-  end; {i}
+       {$ifdef mswindows}
+          xLine^[j*3]  :=col_b; {3*8=24 bit}
+          xLine^[j*3+1]:=col_g; {fast pixel write routine }
+          xLine^[j*3+2]:=col_r;
+       {$endif}
+       {$ifdef darwin} {MacOS}
+          xLine^[j*4+1]:=col_r; {4*8=32 bit}
+          xLine^[j*4+2]:=col_g; {fast pixel write routine }
+          xLine^[j*4+3]:=col_b;
+          // j*4+3 = alpha/padding, left as 0
+       {$endif}
+       {$ifdef linux}
+          xLine^[j*4]  :=col_b; {4*8=32 bit}
+          xLine^[j*4+1]:=col_g; {fast pixel write routine }
+          xLine^[j*4+2]:=col_r;
+          // j*4+3 = alpha/padding, left as 0
+        {$endif}
+      end;{j}
+    end; {i}
 
-  //img.picture.Graphic := Bitmap; {show image}
-  img.Picture.Assign(bitmap);  // Show image. safer than .Graphic :=
+    img.Picture.Assign(bitmap);  // Show image. safer than .Graphic :=
   finally
     bitmap.Free;  // always freed, even if pixel loop raises an exception
   end;
-
- // img.Picture.Bitmap.Transparent := True;
- // img.Picture.Bitmap.TransparentColor := clblack;
 
   if center_image then {image new of resized}
   begin
@@ -11563,8 +11564,8 @@ begin
     deleteold  := (MessageDlg('Delete the original files?', mtConfirmation,
                    [mbYes, mbNo], 0) = mrYes);
     if deleteold then
-        deleteold  := (MessageDlg('This will:'+LineEnding+
-                                  '1) Compress the fits files to .fits.fz'+LineEnding+
+        deleteold  := (MessageDlg('This will:'+LineEnding+LineEnding+
+                                  '1) Compress the fits files to .fits.fz'+LineEnding+LineEnding+
                                   '2) DELETE the old files.'+LineEnding+LineEnding+
                                   'Are you sure?', mtConfirmation,
                    [mbYes, mbNo], 0) = mrYes);
@@ -13824,6 +13825,7 @@ begin
 
 procedure Tmainform1.ApplicationIdle(Sender: TObject; var Done: Boolean);
 begin
+  if halt_requested then halt(halt_errorlevel);{command line work done, frame of FormShow has unwound}
   if not FStartupDone then
   begin
     FStartupDone := True;
@@ -13832,7 +13834,10 @@ begin
       if hasoption('p') then  //do photometry
       begin
         photometry_auto(GetOptionValue('p'));
-        halt(errorlevel); {don't save only, do mainform1.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
+        halt_errorlevel:=errorlevel;
+        halt_requested:=true;
+        Done:=False;{force an immediate second idle pass, don't wait for a message}
+        exit;{halt on the next idle, after this frame unwinds}
       end;
     end;
   end;
@@ -13846,6 +13851,7 @@ begin
   if paramcount=1 then
     check_second_instance{check for and other instance of the application. If so send paramstr(1) and quit}
   else
+  ;
   if paramcount>1 then {commandline trimmed_median_background}
      trayicon1.visible:=true;{Show trayicon. Do it early otherwise in Win10 it is not shown in the command line trimmed_median_background}
 
@@ -14860,6 +14866,7 @@ begin
     begin
       if hasOption('h','help') then
       begin
+        mainform1.Visible:=false;//prevent flash
         application.messagebox( pchar(
         'Solver command-line usage:'+#10+
         '-f  filename {fits, fits.fz, tiff, png, pgm, jpg files}'+#10+
@@ -14901,7 +14908,7 @@ begin
         'Star database expected at: '+database_path), pchar('ASTAP astrometric solver usage:'),MB_OK);
 
         esc_pressed:=true;{kill any running activity. This for APT}
-        halt(0); {don't save only do mainform1.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
+        begin halt_errorlevel:=0; halt_requested:=true; exit; end;
       end;
 
       //log_to_file('c:\temp\text.txt',cmdline);
@@ -14914,6 +14921,11 @@ begin
       if ((filespecified) or (debug) or (focusrequest)) then
       begin
         commandline_execution:=true;{later required for trayicon and popup notifier and Memo3 scroll in Linux}
+        if debug=false then
+        begin
+          mainform1.Visible:=false;{no window flash before halt in ApplicationIdle. In debug mode the GUI must stay visible}
+          stackmenu1.Visible:=false;{already false via load_settings, harmless insurance}
+        end;
 
         commandline_log:=((debug) or (hasoption('log')));{log to file. In debug trimmed_median_background enable logging to memo2}
         if commandline_log then memo2_message(cmdline);{write the original commmand line}
@@ -14984,9 +14996,9 @@ begin
                writeln('ERROR_MIN='+floattostrF(lowest_error2,ffFixed,0,5));
              end;
             {$IFDEF msWindows}
-             halt(round(focus_best)*10000 +min(9999,round(lowest_error2*1000)));
+            begin halt_errorlevel:=round(focus_best)*10000 + min(9999,round(lowest_error2*1000)); halt_requested:=true; exit; end;
             {$ELSE}
-             halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
+             begin halt_errorlevel:=errorlevel; halt_requested:=true; exit; end;{report hfd in errorlevel. In linux only range 0..255 possible}
              {$ENDIF}
            end;
         end;
@@ -15022,11 +15034,12 @@ begin
             end;
             {$IFDEF msWindows}
             if analysespecified then
-              halt(round(head.hfd_median*100)*1000000+head.hfd_counter){report in errorlevel the hfd and the number of stars used}
+              begin halt_errorlevel:=round(head.hfd_median*100)*1000000+head.hfd_counter; halt_requested:=true; exit; end {report in errorlevel the hfd and the number of stars used}
             else
-              halt(errorlevel);
-            {$ELSE}
-            halt(errorlevel);//In linux only range 0..255 possible
+              begin halt_errorlevel:=errorlevel; halt_requested:=true; exit; end;
+             {$ELSE}
+             begin halt_errorlevel:=errorlevel; halt_requested:=true; exit; end;//In linux only range 0..255 possible
+
             {$ENDIF}
           end;{analyse fits and report HFD value}
 
@@ -15132,7 +15145,8 @@ begin
           esc_pressed:=true;{kill any running activity. This for APT}
           if commandline_log then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename_output,'.log'));{save Memo2 log to log file}
 
-          halt(errorlevel); {don't save only, do mainform1.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
+          begin halt_errorlevel:=errorlevel; halt_requested:=true; exit; end;{don't save only, do mainform1.destroy. Note  mainform1.close causes a window flash briefly, so don't use}
+
 
           //  Exit status:
           //  0 no errors.

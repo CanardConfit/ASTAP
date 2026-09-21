@@ -2979,8 +2979,11 @@ begin
                            {calculate distance and skip when too far from center screen, {if false then outside screen,go to next line}
 end;
 
-begin
-  p6:= @buf2[1];	{ set pointer }
-  p5:= @buf2[1];	{ set pointer }
+
+  initialization
+    p6:= @buf2[1];	{ set pointer }
+    p5:= @buf2[1];	{ set pointer }
+  finalization
+    close_star_database;
 end.
 
