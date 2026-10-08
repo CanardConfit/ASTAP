@@ -83,7 +83,7 @@ function calculate_sqm(img: Timage_array; var headx : theader; memo3 : tstrings;
 var
   correction,az,airm                         : double;
   bayer,form_exist                           : boolean;
-  c,h,w,k,i                                  : integer;
+  c,h,w,k,i,max_stars                        : integer;
   val                                        : single;
   img_tmp                                    : Timage_array;
 begin
@@ -147,11 +147,12 @@ begin
   begin
     if get_bk then
     begin
+      max_stars:=strtoint2(stackmenu1.max_stars1.Text,500);
       if bayer=false then
-        get_background(0,img,headX, get_his {histogram},false {calculate also noise level})
+        get_background(0,img,headX, max_stars, get_his {histogram},false {calculate also noise level})
       else
       begin
-        get_background(0,img_tmp,headX, true {histogram required},false {calculate also noise level});
+        get_background(0,img_tmp,headX,max_stars, true {histogram required},false {calculate also noise level});
       end;
     end;
 

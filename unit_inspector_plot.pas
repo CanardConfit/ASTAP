@@ -251,7 +251,7 @@ begin
       setlength(img_sa,1,headx.height,headx.width);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
       hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-      get_background(0,img,headx,{cblack=0} screenplot=false{histogram is available if in viewer},true {calculate noise level});{calculate background level from peek histogram}
+      get_background(0,img,headx,max_stars,{cblack=0} screenplot=false{histogram is available if in viewer},true {calculate noise level});{calculate background level from peek histogram}
 
       data_max:=headx.datamax_org-1;
       backgr:=headx.backgr;
@@ -260,11 +260,14 @@ begin
       retries:=4; {try up to four times to get enough stars from the image, So 4,3,2,1 }
       repeat
         if retries=4 then
-          begin if headx.star_level >30*noise_level then detection_level:=headx.star_level  else retries:=3;{skip} end;//stars are dominant
+          begin if headx.star_level >30*noise_level then detection_level:=headx.star_level  else retries:=3;{skip} end //stars are dominant
+        else
         if retries=3 then
-          begin if headx.star_level2>30*noise_level then detection_level:=headx.star_level2 else retries:=2;{skip} end;//stars are dominant
+          begin if headx.star_level2>30*noise_level then detection_level:=headx.star_level2 else retries:=2;{skip} end //stars are dominant
+        else
         if retries=2 then
-          begin detection_level:=30*noise_level; end;
+          begin detection_level:=30*noise_level; end
+        else
         if retries=1 then
           begin detection_level:= 7*noise_level; end;
         nhfd:=0;{set counters at zero}
@@ -1019,7 +1022,7 @@ begin
   SetLength(hfd_values,4,4000);{will contain x,y,hfd}
   setlength(img_sa,1,head.height,head.width);{set length of image array}
 
-  get_background(0,img_loaded,head,false{ calculate histogram},true {calculate noise level});{calculate background level from peek histogram}
+  get_background(0,img_loaded,head,max_stars,false{ calculate histogram},true {calculate noise level});{calculate background level from peek histogram}
 
   data_max:=head.datamax_org-1;
   backgr:=head.backgr;

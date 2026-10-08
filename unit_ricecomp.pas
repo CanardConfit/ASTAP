@@ -1346,6 +1346,20 @@ begin
   begin
     Threads[i].WaitFor;
 
+    { 2026 fix (review item AS3): TRiceTileThread.Execute has try/finally but
+      no except, so an exception (e.g. a corrupt tile) ended the worker with
+      FatalException set, its remaining tiles stayed blank and no error was
+      reported. Report it as a decode error. }
+    if (Threads[i].FatalException <> nil) and (not err_decode) then
+    begin
+      err_decode := true;
+      err_tile_index := Threads[i].FTileStart;
+      if Threads[i].FatalException is Exception then
+        err_msg := 'decoder thread failed: ' + Exception(Threads[i].FatalException).Message
+      else
+        err_msg := 'decoder thread failed: ' + Threads[i].FatalException.ClassName;
+    end;
+
     if Threads[i].local_max > out_max then out_max := Threads[i].local_max;
     if Threads[i].local_min < out_min then out_min := Threads[i].local_min;
 
@@ -1415,6 +1429,7 @@ var
   cbuf    : PByte;
   dscratch: Prd_dword;    { reused per-block difference buffer, nblock dwords }
   clen, y, x, outlen : integer;
+  v       : double;  { 2026 (review item AS5) }
   errmsg  : string;
   imgp    : ^Timage_array;
   td      : PPointer;
@@ -1440,9 +1455,18 @@ begin
     for y := FRowStart to FRowEnd - 1 do
     begin
       for x := 0 to Fwidth - 1 do
+      begin
         { physical value -> BZERO/BSCALE-adjusted signed 16-bit, exactly as the
           serial writer (and the normal 16-bit writer) does }
-        row16[x] := word(max(0, min(65535, round(imgp^[0, y, x]))) - 32768);
+        { 2026 fix (review item AS5): round() raised EInvalidOp for a NaN pixel
+          (and for values beyond the Int64 range) before min/max could clamp
+          it; in this worker thread that ended the worker silently (see AS3).
+          Clamp first, NaN becomes 0. }
+        v := imgp^[0, y, x];
+        if IsNan(v) or (v < 0) then v := 0
+        else if v > 65535 then v := 65535;
+        row16[x] := word(round(v) - 32768);
+      end;
 
       if not rice_encode(row16, 2, Fwidth, Fnblock, cbuf, clen, outlen, errmsg, dscratch) then
       begin
@@ -1517,6 +1541,20 @@ begin
   for i := 0 to THREAD_COUNT - 1 do
   begin
     Threads[i].WaitFor;
+
+    { 2026 fix (review item AS3): an exception in TRiceEncodeThread.Execute
+      (try/finally, no except) left ok=true while tile_data[] of the rows not
+      encoded stayed nil, which the caller then wrote. Report it as a failure
+      of the first row of that worker. }
+    if (Threads[i].FatalException <> nil) and Threads[i].local_ok then
+    begin
+      Threads[i].local_ok := false;
+      Threads[i].local_err_row := Threads[i].FRowStart;
+      if Threads[i].FatalException is Exception then
+        Threads[i].local_err_msg := 'encoder thread failed: ' + Exception(Threads[i].FatalException).Message
+      else
+        Threads[i].local_err_msg := 'encoder thread failed: ' + Threads[i].FatalException.ClassName;
+    end;
 
     if (not Threads[i].local_ok) and ok then
     begin

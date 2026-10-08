@@ -84,7 +84,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.09.19';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.10.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -889,7 +889,7 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: 
 
 function load_TIFF_NEW(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img: Timage_array;memo:tstrings) : boolean;{load a tiff file}
 function load_PNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img: Timage_array;memo : tstrings) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
-procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :Timage_array;var head :theader; max_stars:integer; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 function extract_temperature_from_filename(filename8: string): integer; {try to extract temperature from filename}
@@ -1689,8 +1689,9 @@ begin
             jd2:=2400000.5+validate_double;// MJD to JD
             head.date_obs:=JdToDate(jd2);
           end;
-        if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+        if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then //set-temp
                try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
+
         if header[i]='X' then
         begin
           if ((header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
@@ -2248,6 +2249,61 @@ begin
     end;
   until end_record; {header, 2880 bytes loop}
   memo.endupdate;{for speed}
+
+  if light then //not required for darks and lights since some variables are not reset and could be nan cause runtime error
+  begin
+    if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
+    begin //formalism 3
+      new_to_old_WCS(head);{ convert old WCS to new}
+    end
+    else
+    if ((head.cd1_1=0) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
+    begin
+      if PC1_1<>0 then //formalism 2
+      begin
+        head.CD1_1:=PC1_1* head.cdelt1;
+        head.CD1_2:=PC1_2* head.cdelt1;
+        head.CD2_1:=PC2_1* head.cdelt2;
+        head.CD2_2:=PC2_2* head.cdelt2;
+        new_to_old_WCS(head);{ convert old WCS to new}
+      end
+      else
+      if head.crota2<999 then {new style missing but valid old style solution}
+      begin //formalism 1
+        if head.crota1=999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
+        old_to_new_WCS(head);{ convert old WCS to new}
+       end;
+    end;
+    if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
+    begin
+     if ((focallen<>0) and (head.xpixsz<>0)) then
+        head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+    end;
+    if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
+    begin
+      if equinox<>2000 then //e.g. in SharpCap
+      begin
+        jd_obs:=(equinox-2000)*365.25+2451545;
+        precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
+        if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+      end;
+      mainform1.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+      mainform1.dec1.text:=prepare_dec(head.dec0,' ');
+    end;
+    { condition           keyword    to
+     if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
+                               ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
+                           crval1--->head.ra0
+     if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
+  end; //lights
+  if head.set_temperature=999 then
+    head.set_temperature:=round(ccd_temperature); {temperature, for stacking}
+
+  unsaved_import:=false;{file is available for astrometry.net}
+
+
+
+
   { ##################################################################
     Rice compressed image decompression  (ZCMPTYPE = 'RICE_1')
     The BINTABLE extension stores tiles of compressed pixel data in
@@ -2304,6 +2360,8 @@ begin
       result := true;
       exit;
     end;
+
+
     if (table_rows <= 0) or (table_rowwidth <= 0) then
     begin
       memo2_message('Error: compressed BINTABLE has no rows.');
@@ -2555,55 +2613,7 @@ begin
          head.bitpix:=24; {threat RGB fits as 2 dimensional with 24 bits data}
          head.naxis3:=3; {will be converted while reading}
       end;
-      if light then //not required for darks and lights since some variables are not reset and could be nan cause runtime error
-      begin
-        if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
-        begin //formalism 3
-          new_to_old_WCS(head);{ convert old WCS to new}
-        end
-        else
-        if ((head.cd1_1=0) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
-        begin
-          if PC1_1<>0 then //formalism 2
-          begin
-            head.CD1_1:=PC1_1* head.cdelt1;
-            head.CD1_2:=PC1_2* head.cdelt1;
-            head.CD2_1:=PC2_1* head.cdelt2;
-            head.CD2_2:=PC2_2* head.cdelt2;
-            new_to_old_WCS(head);{ convert old WCS to new}
-          end
-          else
-          if head.crota2<999 then {new style missing but valid old style solution}
-          begin //formalism 1
-            if head.crota1=999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
-            old_to_new_WCS(head);{ convert old WCS to new}
-           end;
-        end;
-        if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
-        begin
-         if ((focallen<>0) and (head.xpixsz<>0)) then
-            head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
-        end;
-        if ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) then
-        begin
-          if equinox<>2000 then //e.g. in SharpCap
-          begin
-            jd_obs:=(equinox-2000)*365.25+2451545;
-            precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
-            if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
-          end;
-          mainform1.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
-          mainform1.dec1.text:=prepare_dec(head.dec0,' ');
-        end;
-        { condition           keyword    to
-         if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
-                                   ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
-                               crval1--->head.ra0
-         if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
-      end; //lights
-      if head.set_temperature=999 then
-         head.set_temperature:=round(ccd_temperature); {temperature}
-      unsaved_import:=false;{file is available for astrometry.net}
+
       if load_data=false then
       begin
          close_fits_file;
@@ -3959,7 +3969,7 @@ begin
 end;
 
 
-procedure get_background(colour: integer; img :Timage_array;var head :theader; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :Timage_array;var head :theader; max_stars:integer; calc_hist, calc_noise_level: boolean{; out back : Tbackground}); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
   value,sd, sd_old,factor,factor2,sd2 : double;
@@ -4039,14 +4049,15 @@ begin
     head.star_level:=0;
     head.star_level2:=0;
     i:=max_range;
-    factor:=  6*strtoint2(stackmenu1.max_stars1.text,500);// Number of pixels to test. This produces about 700 stars at hfd=2.25
-    factor2:=24*strtoint2(stackmenu1.max_stars1.text,500);// Number of pixels to test. This produces about 700 stars at hfd=4.5.
+    factor:=  6*max_stars;// Number of pixels to test. This produces about 700 stars at hfd=2.25
+    factor2:=24*max_stars;// Number of pixels to test. This produces about 700 stars at hfd=4.5.
     above:=0;
     while ((head.star_level=0) and (i>head.backgr+1) and (i>0)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
       dec(i);
       above:=above+histogram[colour,i];//sum of pixels above pixel level i
-      if above>=factor then head.star_level:=i;//level found for stars with HFD=2.25.
+      if above>=factor then
+              head.star_level:=i;//level found for stars with HFD=2.25.
     end;
     while ((head.star_level2=0) and (i>head.backgr+1) and (i>0)) do {Assuming stars are dominant. Find star level. Level where factor pixels are above. If there a no stars this should be all pixels with a value 3.0 * sigma (SD noise) above background}
     begin
@@ -9629,7 +9640,7 @@ begin
       stackmenu1.classify_flat_filter1.checked:= Sett.ReadBool('stack','classify_flat_filter',false);
       stackmenu1.classify_dark_date1.checked:= Sett.ReadBool('stack','classify_dark_date',false);
       stackmenu1.classify_flat_date1.checked:= Sett.ReadBool('stack','classify_flat_date',false);
-      stackmenu1.classify_flat_duration1.checked:= Sett.ReadBool('stack','classify_flat_duration',false);
+      stackmenu1.classify_flat_dark_exposure1.checked:= Sett.ReadBool('stack','classify_fd_exposure',false);
 
       stackmenu1.add_time1.checked:= Sett.ReadBool('stack','add_time',false); {add a copy of the settings at image path}
       stackmenu1.save_settings_image_path1.checked:= Sett.ReadBool('stack','copy_sett',false); {add time to resulting stack file name}
@@ -10067,7 +10078,7 @@ begin
       sett.writeBool('stack','classify_flat_filter',stackmenu1.classify_flat_filter1.Checked);
       sett.writeBool('stack','classify_dark_date',stackmenu1.classify_dark_date1.Checked);
       sett.writeBool('stack','classify_flat_date',stackmenu1.classify_flat_date1.Checked);
-      sett.writeBool('stack','classify_flat_duration',stackmenu1.classify_flat_duration1.Checked);
+      sett.writeBool('stack','classify_fd_exposure',stackmenu1.classify_flat_dark_exposure1.Checked);
 
       sett.writeBool('stack','add_time',stackmenu1.add_time1.Checked);
       sett.writeBool('stack','copy_sett',stackmenu1.save_settings_image_path1.Checked);
@@ -11910,7 +11921,7 @@ end;
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access variables
 var
   s,dummy,url                               : string;
-  count,i,j,k,errorRa,errorDec,err,idx,len  : integer;
+  count,i,j,k,errorRa,errorDec,err,len     : integer;
   fov,ra,dec,ProperMotionRA,ProperMotionDEC,years_since_2000,var_period,max_period : double;
   skip,auid_filter  : boolean;
 begin
@@ -11932,7 +11943,7 @@ begin
 
 //  if fov>3 {degrees} then limiting_mag:=min(12,limiting_mag); //There is no limitation for VSX but follow the one of the VSP
 
-  idx:=stackmenu1.annotate_mode1.itemindex;
+  //idx:=stackmenu1.annotate_mode1.itemindex;
   auid_filter:=stackmenu1.with_auid_only1.checked; //((idx>=5+4) and (idx<=8+4)); //variable has an AUID so it can be reported
   max_period:=strtofloat2(stackmenu1.max_period1.text);//infinity result in 0 meaning switched off.
 
@@ -12858,7 +12869,7 @@ end;
 
 procedure measure_magnitudes(img : Timage_array; var headx : Theader; annulus_rad,x1,y1,x2,y2:integer;histogram_update, deep: boolean; var stars :Tstar_list);{find stars and return, x,y, hfd, flux. x1,y1,x2,y2 are a subsection if required}
 var
-  fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
+  fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius, max_stars : integer;
   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min,adu_e  : double;
   img_sa : Timage_array;
   saturation_level : single;
@@ -12869,7 +12880,8 @@ begin
 
   setlength(img_sa,1,headx.height,headx.width);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
 
-  get_background(0,img,headx,histogram_update{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
+  max_stars:=strtoint2(stackmenu1.max_stars1.Text,500);
+  get_background(0,img,headx,max_stars, histogram_update{histogram is already available},true {calculate noise level});{calculate background level from peek histogram}
 
   if deep then detection_level:=5*headx.noise_level else detection_level:=headx.star_level;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}

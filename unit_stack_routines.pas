@@ -481,44 +481,44 @@ begin
 
             if c=1 then
             begin
-               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+               get_background(0,img_loaded,head,max_stars,true,false);{unknown, do not calculate noise_level}
                background[0]:=head.backgr;
                counterR:=head.light_count ;counterRdark:=head.dark_count; counterRflat:=head.flat_count; counterRbias:=head.flatdark_count; exposureR:=round(head.exposure);temperatureR:=head.set_temperature;{for historical reasons}
             end;
             if c=2 then
             begin
-              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              get_background(0,img_loaded,head,max_stars,true,false);{unknown, do not calculate noise_level}
               background[1]:=head.backgr;
               counterG:=head.light_count;counterGdark:=head.dark_count; counterGflat:=head.flat_count; counterGbias:=head.flatdark_count; exposureG:=round(head.exposure);temperatureG:=head.set_temperature;
             end;
             if c=3 then
             begin
-              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              get_background(0,img_loaded,head,max_stars,true,false);{unknown, do not calculate noise_level}
               background[2]:=head.backgr;
               counterB:=head.light_count; counterBdark:=head.dark_count; counterBflat:=head.flat_count; counterBbias:=head.flatdark_count; exposureB:=round(head.exposure);temperatureB:=head.set_temperature;
             end;
             if c=4 then
             begin
-               get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+               get_background(0,img_loaded,head,max_stars,true,false);{unknown, do not calculate noise_level}
                background[3]:=head.backgr;
                counterR2:=head.light_count ;counterR2dark:=head.dark_count; counterR2flat:=head.flat_count; counterR2bias:=head.flatdark_count; exposureR2:=round(head.exposure);temperatureR2:=head.set_temperature;{for historical reasons}
             end;
             if c=5 then
             begin
-              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              get_background(0,img_loaded,head,max_stars,true,false);{unknown, do not calculate noise_level}
               background[4]:=head.backgr;
               counterG2:=head.light_count;counterG2dark:=head.dark_count; counterG2flat:=head.flat_count; counterG2bias:=head.flatdark_count; exposureG2:=round(head.exposure);temperatureG2:=head.set_temperature;
             end;
             if c=6 then
             begin
-              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              get_background(0,img_loaded,head,max_stars,true,false);{unknown, do not calculate noise_level}
               background[5]:=head.backgr;
               counterB2:=head.light_count; counterB2dark:=head.dark_count; counterB2flat:=head.flat_count; counterB2bias:=head.flatdark_count; exposureB2:=round(head.exposure);temperatureB2:=head.set_temperature;
             end;
 
             if c=7 then {Luminance}
             begin
-              get_background(0,img_loaded,head,true,false);{unknown, do not calculate noise_level}
+              get_background(0,img_loaded,head,max_stars,true,false);{unknown, do not calculate noise_level}
               background[6]:=head.backgr;
               counterL:=head.light_count; counterLdark:=head.dark_count; counterLflat:=head.flat_count; counterLbias:=head.flatdark_count; exposureL:=round(head.exposure);temperatureL:=head.set_temperature;
             end;
@@ -1156,7 +1156,7 @@ begin
             end
             else
             begin
-              get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
+              get_background(0,img_loaded,head,max_stars,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
               if ((alignment_mode=manual_alignment) or (alignment_mode=ephemeris_alignment)) then   //equals use_astrometry_internal=false.
               begin
                 referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
@@ -1187,7 +1187,7 @@ begin
             end
             else
             begin
-              get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
+              get_background(0,img_loaded,head,max_stars,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
               if ((alignment_mode=manual_alignment) or (alignment_mode=ephemeris_alignment)) then
               begin {manual alignment}
                 calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
@@ -1366,7 +1366,7 @@ begin
           end
           else
           begin
-            get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
+            get_background(0,img_loaded,head,max_stars,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
             if ((alignment_mode=manual_alignment) or (alignment_mode=ephemeris_alignment)) then   //equals use_astrometry_internal=false
             begin
               referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
@@ -1402,7 +1402,7 @@ begin
           end{internal alignment}
           else
           begin
-            get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
+            get_background(0,img_loaded,head,max_stars,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
             if ((alignment_mode=manual_alignment) or (alignment_mode=ephemeris_alignment)) then //<> use_astrometry_internal
             begin {manual alignment}
               calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),
@@ -1701,7 +1701,7 @@ begin
           end
           else
           begin
-            get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
+            get_background(0,img_loaded,head,max_stars,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
             if ((alignment_mode=manual_alignment) or (alignment_mode=ephemeris_alignment)) then   //equals use_astrometry_internal=false
             begin
               referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
@@ -1733,7 +1733,7 @@ begin
           end
           else
           begin
-            get_background(0,img_loaded,head,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
+            get_background(0,img_loaded,head,max_stars,true,false);//get background. For internal alignment this is calculated in bin_and_find_stars
             if ((alignment_mode=manual_alignment) or (alignment_mode=ephemeris_alignment)) then
             begin {manual alignment}
               calculate_manual_vector(referenceX,referenceY,strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]),

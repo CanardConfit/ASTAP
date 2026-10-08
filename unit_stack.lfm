@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 170
+  Left = 744
   Height = 726
-  Top = 192
+  Top = 218
   Width = 1652
   HorzScrollBar.Page = 300
   HorzScrollBar.Range = 1920
@@ -664,8 +664,8 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Combine darks within 12 hour time range to master'
             Top = 5
-            Width = 233
-            Caption = 'Classify by date for master creation'
+            Width = 337
+            Caption = 'Classify by dark date ± 12 hours for master creation'
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
@@ -887,8 +887,8 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Combine flats within 12 hour time range to master flat. Date flat-darks is ignored.'
             Top = 0
-            Width = 233
-            Caption = 'Classify by date for master creation'
+            Width = 329
+            Caption = 'Classify by flat date ± 12 hours for master creation'
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
@@ -904,13 +904,13 @@ object stackmenu1: Tstackmenu1
             TabOrder = 6
             Visible = False
           end
-          object classify_flat_duration1: TCheckBox
+          object classify_flat_dark_exposure1: TCheckBox
             Left = 816
             Height = 23
             Hint = 'Match the flat and flat-dark by exposure duration'
             Top = 18
             Width = 317
-            Caption = 'Classify by exposure duration for master creation'
+            Caption = 'Classify by flat-dark exposure for master creation'
             TabOrder = 7
           end
         end
@@ -8146,11 +8146,11 @@ object stackmenu1: Tstackmenu1
           end
           object GroupBox21: TGroupBox
             Left = 1047
-            Height = 216
+            Height = 232
             Top = 184
             Width = 337
             Caption = 'Satellite streak detection'
-            ClientHeight = 192
+            ClientHeight = 208
             ClientWidth = 333
             ParentBackground = False
             TabOrder = 13
@@ -8195,18 +8195,16 @@ object stackmenu1: Tstackmenu1
               Top = 56
               Width = 80
               ItemHeight = 19
+              ItemIndex = 1
               Items.Strings = (
-                '1.5'
-                '1.8'
-                '2'
-                '2.5'
-                '3'
-                '4'
-                '5'
+                '7'
+                '10'
+                '20'
+                '40'
               )
               ParentFont = False
               TabOrder = 1
-              Text = '2.0'
+              Text = '10'
             end
             object Label39: TLabel
               Left = 105
@@ -8220,7 +8218,7 @@ object stackmenu1: Tstackmenu1
               Left = 232
               Height = 30
               Hint = 'Clear'
-              Top = 160
+              Top = 168
               Width = 75
               Caption = 'Clear'
               TabOrder = 2
@@ -8230,7 +8228,7 @@ object stackmenu1: Tstackmenu1
               Left = 8
               Height = 30
               Hint = 'Detect object contours and write streak formula to header'
-              Top = 159
+              Top = 168
               Width = 80
               Caption = 'Detect'
               Images = ImageList2
@@ -8247,21 +8245,34 @@ object stackmenu1: Tstackmenu1
               ItemHeight = 19
               ItemIndex = 1
               Items.Strings = (
+                '15'
+                '20'
+                '30'
+                '40'
+                '100'
                 '200'
                 '400'
-                '600'
               )
               ParentFont = False
               TabOrder = 4
-              Text = '400'
+              Text = '20'
             end
             object Label40: TLabel
               Left = 105
               Height = 19
               Top = 96
-              Width = 87
-              Caption = 'Detection grid'
+              Width = 113
+              Caption = 'Detection grid [px]'
               ParentColor = False
+            end
+            object star_trails_as_stars1: TCheckBox
+              Left = 9
+              Height = 23
+              Hint = 'Special option for satellite observations . Not a persistent option. Use command line to invoke.'
+              Top = 135
+              Width = 217
+              Caption = 'See star trails as stars for solving'
+              TabOrder = 5
             end
           end
           object most_right15: TStaticText
@@ -8379,7 +8390,7 @@ object stackmenu1: Tstackmenu1
             TabOrder = 1
           end
           object classify_flat_filter1: TCheckBox
-            Left = 400
+            Left = 376
             Height = 23
             Hint = 'Activate this option if you want link the flats based on filter name. Works both for stacking and master creation.'
             Top = 16
@@ -8395,15 +8406,15 @@ object stackmenu1: Tstackmenu1
             Height = 23
             Hint = 'Activate this option if you want link the darks based on exposure duration. Works both for stacking and master creation.'
             Top = -2
-            Width = 162
-            Caption = 'Dark exposure duration'
+            Width = 106
+            Caption = 'Dark exposure'
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
             TabOrder = 2
           end
           object classify_dark_temperature1: TCheckBox
-            Left = 400
+            Left = 376
             Height = 23
             Hint = 'Activate this option if you want link the darks based on sensor temperature. Works both for stacking and master creation.'
             Top = -2
@@ -8427,10 +8438,10 @@ object stackmenu1: Tstackmenu1
             TabOrder = 5
           end
           object delta_temp1: TEdit
-            Left = 566
+            Left = 547
             Height = 27
             Hint = 'Temperature tolorance'
-            Top = -2
+            Top = 0
             Width = 50
             ParentShowHint = False
             ShowHint = True
@@ -8438,9 +8449,9 @@ object stackmenu1: Tstackmenu1
             Text = '3'
           end
           object delta_temp_updown1: TUpDown
-            Left = 616
+            Left = 597
             Height = 27
-            Top = -2
+            Top = 0
             Width = 12
             Associate = delta_temp1
             Max = 5
@@ -8449,17 +8460,17 @@ object stackmenu1: Tstackmenu1
             TabOrder = 7
           end
           object Label60: TLabel
-            Left = 640
+            Left = 621
             Height = 19
-            Top = 0
+            Top = 2
             Width = 14
             Caption = '°C'
             ParentColor = False
           end
           object Label63: TLabel
-            Left = 555
+            Left = 536
             Height = 19
-            Top = 0
+            Top = 2
             Width = 10
             Caption = '±'
             ParentColor = False
