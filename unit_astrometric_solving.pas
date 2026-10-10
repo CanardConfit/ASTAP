@@ -106,7 +106,7 @@ Below is a brief flowchart of the ASTAP astrometric solving process:
 interface
 
 uses  Classes, SysUtils, Controls, Forms, Math, StdCtrls,
-      unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation, unit_stars_wide_field, unit_calc_trans_cubic, unit_profiler;
+      unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation, unit_stars_wide_field, unit_calc_trans_cubic, unit_profiler,unit_contour;
 
 function solve_image(img: Timage_array; var hd: Theader; memo: TStrings; const ra_start,dec_start:double; get_hist{update hist}, check_patternfilter: boolean): boolean; {find match between image and star database}
 procedure bin_and_find_stars(img: Timage_array; var head: theader; binfactor: integer; cropping, hfd_min: double; max_stars: integer; get_hist{update hist}: boolean; out starlist3: Tstar_list; out mean_hfd: double;  out short_warning: string);{bin, measure background, find stars}
@@ -503,7 +503,7 @@ begin
     //    exit;  }
 
 
-    get_background(0, img_binned, head, True {calc hist}, True {calculate also standard deviation background});{get back ground}
+    get_background(0, img_binned, head, max_stars,True {calc hist}, True {calculate also standard deviation background});{get back ground}
 
 
     find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd); {find stars of the image and put them in a list}
@@ -550,13 +550,24 @@ begin
     begin
       if duplicate(img,img_binned)=false then exit;//work with img_binned to protect the orginal image
       if length(img)>=3 then convert_image_to_new_mono_image(img,img_binned);
-      get_background(0, img_binned, head, true {calc hist}, True {calculate also standard deviation background});{get back ground}
-      find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd);
+
+      if stackmenu1.star_trails_as_stars1.checked=false then
+      begin
+        get_background(0, img_binned, head, max_stars,true {calc hist}, True {calculate also standard deviation background});{get back ground}
+        find_stars(img_binned, head, hfd_min, max_stars, starlist3, mean_hfd);
+      end
+      else
+         trail(commandline_execution=false{plot}, img,head,strtofloat2(stackmenu1.contour_gaussian1.text),strtofloat2(stackmenu1.contour_sigma1.text),starlist3);
     end
     else //no change applied to the image
     begin
-      get_background(0, img, head, get_hist {calc hist}, True {calculate also standard deviation background});{get back ground}
-      find_stars(img, head, hfd_min, max_stars, starlist3, mean_hfd); {find stars of the image and put them in a list}
+      if stackmenu1.star_trails_as_stars1.checked=false then
+      begin
+        get_background(0, img, head, max_stars,get_hist {calc hist}, True {calculate also standard deviation background});{get back ground}
+        find_stars(img, head, hfd_min, max_stars, starlist3, mean_hfd) {find stars of the image and put them in a list}
+      end
+      else
+         trail(commandline_execution=false{plot}, img,head,strtofloat2(stackmenu1.contour_gaussian1.text),strtofloat2(stackmenu1.contour_sigma1.text),starlist3);
     end;
   end;
   //  for i:=0 to length(starlist3[0])-1 do
@@ -767,7 +778,7 @@ var
   centerX, centerY, correctionX, correctionY, cropping, min_star_size_arcsec, hfd_min,
   quad_tolerance, flip, extra, distance, mount_sep,
   mount_ra_sep, mount_dec_sep,pixel_aspect_ratio, crota1_rad, crota2_rad, flipped_image,
-  arcsec_per_px, mean_hfd, xi, yi, scale, cdelt1_arcsec, cdelt2_arcsec,vfov,
+  arcsec_per_px, mean_hfd, xi, yi, cdelt1_arcsec, cdelt2_arcsec,vfov,
   ra_seed, dec_seed, ra_solved, dec_solved                                           : double;
   solution, go_ahead, autoFOV                              : boolean;
   startTick: qword;{for timing/speed purposes}
@@ -1328,7 +1339,7 @@ begin
       equatorial_standard(ra_database, dec_database, hd.ra0, hd.dec0, 1,
         correctionX, correctionY); {calculate correction for x,y position of database center and image center}
       plot_stars_used_for_solving(starlist1, starlist2, hd, correctionX, correctionY); {plot image stars and database stars used for the solution}
-      memo2_message('See viewer image for image stars used (red) and database star used (yellow)');
+      memo2_message('See viewer image for imaged stars used (red) and database stars used (yellow)');
     end;
 
     vfov:=apply_arctan(hd.Height * hd.cdelt2);

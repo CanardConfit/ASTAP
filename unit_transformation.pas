@@ -19,12 +19,12 @@ unit unit_transformation;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,math;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,math,
+  astap_main;
+
 
 type
-
   { TForm_transformation1 }
-
   TForm_transformation1 = class(TForm)
     calculate1: TButton;
     cancel1: TButton;
@@ -75,6 +75,8 @@ type
 
   end;
 
+function trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; filter_sigma : double; out  slope, intercept,sd: double): boolean;//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+
 var
   Form_transformation1: TForm_transformation1;
 
@@ -103,7 +105,7 @@ var
 
 implementation
 
-uses astap_main,unit_stack, unit_contour, unit_aavso;
+uses unit_stack, unit_contour, unit_aavso;
 
 {$R *.lfm}
 
@@ -165,6 +167,77 @@ const
   cancel : boolean=true;
 
 
+
+procedure trendline(xylist: Tstar_list; len{length xylist} : integer; out  slope, intercept:double); //find linear trendline Y = magnitude_slope*X + intercept
+var                                                                   //idea from https://stackoverflow.com/questions/43224/how-do-i-calculate-a-trendline-for-a-graph
+
+   // Method "Ordinary Least Squares Linear Regression"  or simply: "OLS fit" or "Trendline by least-squares minimization"
+   // This is the standard closed-form solution for linear regression using OLS. It's equivalent to what's found in statistical software like Excel’s LINEST, Python's linregress, and R’s lm().
+   // Why "Ordinary"?  Because it's based on minimizing vertical errors (Y-axis), assuming:
+   // Errors are only in Y (not in X)     Residuals are normally distributed   Homoscedasticity (equal variance)
+
+  sumX,sumX2,sumY, sumXY,median,mad  : double;
+  count, i                           : integer;
+
+  median_array                  : array of double;
+
+begin
+  count:=0;
+  sumX:=0;
+  sumX2:=0;
+  sumY:=0;
+  sumXY:=0;
+
+  for i:=0 to  len-1 do
+  begin
+    inc(count);
+    //memo2_message(#9+floattostr(xylist[0,i])+#9+floattostr(xylist[1,i]));
+    sumX:=sumX+xylist[0,i]; //sum X= sum B_V values = sum star colours;
+    sumX2:=sumx2+sqr(xylist[0,i]);
+    sumY:=sumY+xylist[1,i]; //sum Y, sum delta magnitudes;
+    sumXY:=sumXY+xylist[0,i]*xylist[1,i];
+  end;
+
+  Slope:=(count*sumXY - sumX*sumY) / (count*sumX2 - sqr(sumX));   // b = (n*Σ(xy) - ΣxΣy) / (n*Σ(x^2) - (Σx)^2)
+  Intercept:= (sumY - Slope * sumX)/count;                        // a = (Σy - bΣx)/n
+end;
+
+
+function trendline_without_outliers(xylist: Tstar_list; len{length xylist} : integer; filter_sigma : double; out  slope, intercept,sd: double): boolean;//find linear trendline Y = magnitude_slope*X + intercept. Remove outliers in step 2
+var
+  e        : double;
+  xylist2  : Tstar_list;
+  counter,i  : integer;
+begin
+  trendline(xylist, len{length xylist}, {out}  slope, intercept);
+
+  // find standard deviation
+  sd:=0;
+  for i:=0 to len-1 do
+    sd:=sd + sqr(slope*xylist[0,i] - xylist[1,i] + intercept)/(sqr(slope)+1);// sum the sqr line distance. Note the line distance is abs(slope*fitsX -fitsY + intercept)/sqrt(sqr(slope)+1), See https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+  sd:=sqrt(sd/len); //sd
+
+  //calculate the trendline but ignore outliers in Y (b-v)
+  setlength(xylist2,2,len);
+  counter:=0;
+  for i:=0 to len-1 do
+  begin
+    e:=abs(xylist[1,i]{y original} - (slope * xylist[0,i]+intercept{y mean}));  //calculate absolute error
+    if e<filter_sigma *sd then //not an outlier keep 86.64%
+    begin
+      xylist2[0,counter]:=xylist[0,i];// xy list without outliers
+      xylist2[1,counter]:=xylist[1,i];
+      inc(counter)
+    end;
+  end;
+  if counter>=3 then
+  begin
+    trendline(xylist2, counter{length xylist2}, {out}  slope, intercept);
+    result:=true;
+  end
+  else
+    result:=false;
+end;
 
 
 procedure plot_transformation_graph;

@@ -38,6 +38,7 @@ procedure display_quads(starlistquads :Tstar_list);{draw quads}
 function solution_str: string;
 procedure QuickSort_starlist(var A: Tstar_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
 procedure SigmaClippedMeanFromHistogram(img :Timage_array; colour,startx,stopx,starty,stopy, upperlimit, maxIterations: integer; convergenceThreshold : double; out meanv,stdev : double);
+procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double; var starlistB : Tstar_list);{ Extract the brightest star from a star list}
 
 
 implementation

@@ -197,6 +197,10 @@ var
 
   function clamp16(v: double): word; inline;
   begin
+    // 2026 fix (review item AS5): the comparisons below are false for NaN, and
+    // round(NaN) raises EInvalidOp; in a strip thread that silently lost the
+    // strip (see AS2). A NaN (blank) pixel is written as 0.
+    if IsNan(v) then v := 0;
     if v > $FFFF then v := $FFFF;
     if v < 0 then v := 0;
     result := word(round(v));
@@ -298,7 +302,12 @@ function compress_image_strips(const img: Timg_array; fmt: TTiffFormat;
 var
   thread_count, num_strips, i: integer;
   threads: array of TStripCompressThread;
+  err: string;  // 2026 (review item AS2)
 begin
+  // 2026 fix (review item AS1): height2=0 gave thread_count=0 and a division
+  // by zero on the next line
+  if height2 < 1 then
+    raise Exception.Create('save_tiff: empty image');
   thread_count := min(get_thread_count, height2);
   strip_rows := (height2 + thread_count - 1) div thread_count; {ceil, all strips except last have strip_rows rows as TIFF requires}
   num_strips := (height2 + strip_rows - 1) div strip_rows;
@@ -312,10 +321,29 @@ begin
                                               width2, height2, strip_rows, strips);
     threads[i].Start;
   end;
+  // 2026 fix (review item AS2): an exception inside a strip thread (Execute has
+  // try/finally, no except) was not noticed and the missing (nil) strip stream
+  // was then written. Collect the first failure, free all threads, then raise
+  // so the caller returns false.
+  err := '';
   for i := 0 to num_strips - 1 do
   begin
     threads[i].WaitFor;
+    if (err = '') and (threads[i].FatalException <> nil) then
+    begin
+      if threads[i].FatalException is Exception then
+        err := Exception(threads[i].FatalException).Message
+      else
+        err := threads[i].FatalException.ClassName;
+    end;
+    if (err = '') and (strips[i] = nil) then err := 'strip ' + IntToStr(i) + ' not compressed';
     threads[i].Free;
+  end;
+  if err <> '' then
+  begin
+    for i := 0 to num_strips - 1 do
+      FreeAndNil(strips[i]);
+    raise Exception.Create('TIFF compression failed: ' + err);
   end;
   result := num_strips;
 end;
@@ -335,14 +363,17 @@ begin
 
   if length(img)=1 then //monochrome
   begin
-    if bitpix<=16 then //8 or 16 bit origin
+    // 2026 fix (review item AS4): was "bitpix<=16", which is also true for the
+    // negative FITS BITPIX of float images (-32, -64), so these were written as
+    // 16-bit TIFF. abs() selects the float writer for them.
+    if abs(bitpix)<=16 then //8 or 16 bit origin
       result:=save_tiff_16(img,filen2, description,flip_H, flip_V,compressionlevel) {save to 16 bit gray scale TIFF file }
     else  //32 bit origin
       result:=save_tiff_32(img,filen2, description,flip_H, flip_V,compressionlevel) {save to 32 bit gray scale TIFF file }
   end
   else
   begin  //colour
-    if bitpix<=16 then //8 or 16 bit origin
+    if abs(bitpix)<=16 then //8 or 16 bit origin  (2026: abs(), see above, review item AS4)
       result:=save_tiff_48(img,filen2, description,flip_H, flip_V,compressionlevel) {save to 48=3x16 color TIFF file }
     else //32 bit origin
       result:=save_tiff_96(img,filen2, description,flip_H, flip_V,compressionlevel) {save to 96=3x32 color TIFF file }
@@ -397,8 +428,16 @@ begin
     Directorybw16[4]._Value := 8; {Tag 0x0103: Compression = 8 (Deflate)}
 
     {Compress in parallel to memory, one Deflate strip per CPU core}
-    num_strips := compress_image_strips(img, tfGray16, flip_H, flip_V,
-                    TCompressionLevel(compressionlevel), width2, height2, strip_rows, strips);
+    {2026 (review item AS2): compress_image_strips now raises when a strip thread
+     failed; return false (with the partial file removed) as for other errors}
+    try
+      num_strips := compress_image_strips(img, tfGray16, flip_H, flip_V,
+                      TCompressionLevel(compressionlevel), width2, height2, strip_rows, strips);
+    except
+      thefile.free;
+      DeleteFile(filen2);
+      exit;
+    end;
 
     Directorybw16[9]._Value := LongInt(strip_rows);    { RowsPerStrip }
     if num_strips > 1 then
@@ -546,8 +585,24 @@ begin
   begin
     Directorybw32[4]._Value := 8; {Deflate Compression}
 
-    num_strips := compress_image_strips(img, tfGray32, flip_H, flip_V,
-                    TCompressionLevel(compressionlevel), width2, height2, strip_rows, strips);
+    {2026 (review item AS2): compress_image_strips now raises when a strip thread
+
+     failed; return false (with the partial file removed) as for other errors}
+
+    try
+  
+      num_strips := compress_image_strips(img, tfGray32, flip_H, flip_V,
+                      TCompressionLevel(compressionlevel), width2, height2, strip_rows, strips);
+
+    except
+
+      thefile.free;
+
+      DeleteFile(filen2);
+
+      exit;
+
+    end;
 
     Directorybw32[9]._Value := LongInt(strip_rows);    { RowsPerStrip }
     if num_strips > 1 then
@@ -689,8 +744,24 @@ begin
   begin
     Directoryrgb48[4]._Value := 8; {Tag 0x0103: Compression = 8 (Deflate)}
 
-    num_strips := compress_image_strips(img, tfRGB48, flip_H, flip_V,
-                    TCompressionLevel(compressionlevel), width2, height2, strip_rows, strips);
+    {2026 (review item AS2): compress_image_strips now raises when a strip thread
+
+     failed; return false (with the partial file removed) as for other errors}
+
+    try
+  
+      num_strips := compress_image_strips(img, tfRGB48, flip_H, flip_V,
+                      TCompressionLevel(compressionlevel), width2, height2, strip_rows, strips);
+
+    except
+
+      thefile.free;
+
+      DeleteFile(filen2);
+
+      exit;
+
+    end;
 
     Directoryrgb48[9]._Value := LongInt(strip_rows);    { RowsPerStrip }
     if num_strips > 1 then
@@ -836,8 +907,24 @@ begin
   begin
     Directoryrgb96[4]._Value := 8; {Deflate Compression}
 
-    num_strips := compress_image_strips(img, tfRGB96, flip_H, flip_V,
-                    TCompressionLevel(compressionlevel), width2, height2, strip_rows, strips);
+    {2026 (review item AS2): compress_image_strips now raises when a strip thread
+
+     failed; return false (with the partial file removed) as for other errors}
+
+    try
+  
+      num_strips := compress_image_strips(img, tfRGB96, flip_H, flip_V,
+                      TCompressionLevel(compressionlevel), width2, height2, strip_rows, strips);
+
+    except
+
+      thefile.free;
+
+      DeleteFile(filen2);
+
+      exit;
+
+    end;
 
     Directoryrgb96[9]._Value := LongInt(strip_rows);    { RowsPerStrip }
     if num_strips > 1 then

@@ -596,7 +596,8 @@ begin
           documented_comp_magn:=retrieve_documented_magnitude(true,icon_nr,column_comps[i], abbrv_c);//  retrieve the documented magnitude at passband used from the abbrev_comp string
           if documented_comp_magn<=0 then
           begin //COMP magnitude unknown. Most likely '?'
-            warning:=warning+'Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloan filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP.';
+            if length(warning)<80 then
+              warning:=warning+'Warning could not retrieve documented COMP magnitude for this filter. For Red and Sloan filters select AAVSO annotation online. For CV select in Gaia comp stars the local D50 or D80 or online Gaia BP and check mark Ensemble ...';
           end
           else
           begin //COMP magnitude known
@@ -676,7 +677,7 @@ procedure work_on_comp_stars;
 var
   c, count,icon_nr                   : integer;
   mean_sd_comp,b_mag, v_mag, r_mag,i_mag, sg_mag,sr_mag,si_mag    : double;
-  mess                               : string;
+  mess,warning                           : string;
 
 begin
   count:=0;
@@ -707,6 +708,7 @@ begin
     begin
       if comps_info[c].valid then //get the measured magnitude, one for each filter
       begin
+        warning:='';
         mean_sd_comp:=mean_sd_comp+comps_info[c].sd_comp;//sum the sd_comp (weighted standard deviation of the comp stars between them) of each image to calculate an average
         inc(count);
 
@@ -721,7 +723,9 @@ begin
            {SR}   filter_SR  :if sr_mag<0 then  sr_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
            {SI}   filter_SI  :if si_mag<0 then  si_mag:=21- ln(comps_info[c].ratio*comps_info[c].sum_flux_measured)*2.5/ln(10); //convert flux to magnitude for one image only
         end;//case
-      end;//valid data
+      end //valid data
+      else
+        warning:=comps_info[c].warning;
     end;
   end;
 
@@ -742,7 +746,10 @@ begin
   end
   else
   begin
-    form_aavso1.sigma_mzero1.caption:='Saturated/No comparison magnitude(s) available.';
+    if warning='' then
+      form_aavso1.sigma_mzero1.caption:='Saturated/No comparison magnitude(s) available.'
+    else
+      form_aavso1.sigma_mzero1.caption:=warning;
   end;
 end;
 
