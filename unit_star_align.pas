@@ -31,6 +31,7 @@ var
    //starlistquadsDisplay : Tstar_list;
 
 procedure find_stars(img :Timage_array;head: theader; hfd_min:double; max_stars :integer;out starlistI: Tstar_list; out mean_hfd: double);{find stars and put them in a list}
+
 procedure find_quads(display: boolean; nrstars_image:integer; starlist :Tstar_list; out quads :Tstar_list); //build quads using closest stars, revised 2025
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
@@ -43,7 +44,7 @@ procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: doub
 
 implementation
 
-uses  unit_annotation, unit_profiler;
+uses  unit_annotation, unit_profiler, unit_threaded_gaussian_blur;
 
 
 function floattostr6b(x:double):string;//always with dot decimal seperator. Float to string with 6 decimals
@@ -1244,8 +1245,202 @@ begin
 end;
 
 
-
 procedure find_stars(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlistI: Tstar_list; out mean_hfd: double);{find stars and put them in a list}
+var
+   fitsX, fitsY,nrstars,radius,i,j,retries,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr, noise_level,snr_minimum,detection_level_around: double;
+   img_sa     : Timage_array;
+   startTick2  : qword;{for timing/speed purposes}
+// flip_vertical,flip_horizontal  : boolean;
+// starX,starY :integer;
+const
+    buffersize=5000;{5000}
+    rastersteps=12;
+
+          procedure find_stars_routine(startx,endx,starty,endy : integer);
+          var
+            fitsX, fitsY,m,n : integer;
+            level_star, level_star2                : single;  //2026 perf, hoisted absolute thresholds
+            rowC, rowM, rowP, rowSA                : PSingle;  //2026 perf, row pointers. img[0,fitsY,fitsX] needs two pointer dereferences per access on a 3-dimensional dynamic array. Caching the row start pointer per fitsY reduces this to one, which matters in this pixel loop that visits every image pixel up to four times
+          begin
+            level_star :=backgr+detection_level; //2026 perf, precalculate. Saves a subtraction per pixel and an addition/multiplication per candidate test
+            level_star2:=backgr+detection_level_around;
+            for fitsY:=startY to endY do  //Search through the image. Stay one pixel away from the borders.
+            begin
+              rowC :=@img[0,fitsY,0];    //2026 perf, current row
+              rowM :=@img[0,fitsY-1,0];  //2026 perf, row above
+              rowP :=@img[0,fitsY+1,0];  //2026 perf, row below
+              rowSA:=@img_sa[0,fitsY,0]; //2026 perf, star area marking row
+              for fitsX:=startX to endX  do
+              begin
+                if ((rowSA[fitsX]<>retries){star free area for this retry} and (rowC[fitsX]>level_star){star}) then {new star above noise level}
+                begin
+                  starpixels:=0;
+                  //inspect in a 3x3 around it. Should be above detection_level_around above background
+                  if rowC[fitsX-1]>level_star2 then inc(starpixels);//= if img[0,fitsY,fitsX-1]- backgr>detection_level_around then inc(starpixels);
+                  if rowC[fitsX+1]>level_star2 then inc(starpixels);//= if img[0,fitsY,fitsX+1]- backgr>detection_level_around then inc(starpixels);
+                  if rowM[fitsX]  >level_star2 then inc(starpixels);//= if img[0,fitsY-1,fitsX]- backgr>detection_level_around then inc(starpixels);
+                  if rowM[fitsX-1]>level_star2 then inc(starpixels);//= if img[0,fitsY-1,fitsX-1]- backgr>detection_level_around then inc(starpixels);
+                  if rowM[fitsX+1]>level_star2 then inc(starpixels);//= if img[0,fitsY-1,fitsX+1]- backgr>detection_level_around then inc(starpixels);
+                  if rowP[fitsX]  >level_star2 then inc(starpixels);//= if img[0,fitsY+1,fitsX]- backgr>detection_level_around then inc(starpixels);
+                  if rowP[fitsX-1]>level_star2 then inc(starpixels);//= if img[0,fitsY+1,fitsX-1]- backgr>detection_level_around then inc(starpixels);
+                  if rowP[fitsX+1]>level_star2 then inc(starpixels);//= if img[0,fitsY+1,fitsX+1]- backgr>detection_level_around then inc(starpixels);
+
+                  if starpixels>=3 then //At least 1+3 illuminated pixels. Not a hot pixel
+                  begin
+                    HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+                    if ((hfd1<=30) and (snr>snr_minimum) and (hfd1>hfd_min) {0.8 is two pixels minimum} and (img_sa[0,round(yc),round(xc)]<>retries)) then
+                    begin
+                      {for testing}
+                    //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
+                    //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
+                    //  size:=round(5*hfd1);
+                    //  mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+                    //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+                    //  mainform1.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
+
+                      mean_hfd:=mean_hfd+hfd1;//sum up to calculate the average/mean hfd later
+
+                      radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+                      sqr_radius:=sqr(radius);
+                      xci:=round(xc);{star center as integer}
+                      yci:=round(yc);
+                      for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                        for m:=-radius to +radius do
+                        begin
+                          j:=n+yci;
+                          i:=m+xci;
+                          if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                            img_sa[0,j,i]:=retries;//mark as star area. Use retries value, so that img_sa does not requires a clearing!
+                        end;
+
+                      {store values}
+                      inc(nrstars);
+                      if nrstars>=length(starlistI[0]) then
+                      begin
+                        SetLength(starlistI,3,nrstars+buffersize);{adapt array size if required}
+                       end;
+                      starlistI[0,nrstars-1]:=xc; {store star position}
+                      starlistI[1,nrstars-1]:=yc;
+                      starlistI[2,nrstars-1]:=snr;{store SNR}
+
+                      if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
+                    end;
+                  end;
+                end;
+              end;
+            end;
+          end;
+
+
+begin
+  {for testing}
+//   mainform1.image1.Canvas.Pen.Mode := pmMerge;
+//   mainform1.image1.Canvas.Pen.width := round(1+hd.height/mainform1.image1.height);{thickness lines}
+//   mainform1.image1.Canvas.brush.Style:=bsClear;
+//   mainform1.image1.Canvas.font.color:=$FF;
+//   mainform1.image1.Canvas.font.size:=10;
+//   mainform1.image1.Canvas.Pen.Color := $FF;
+//   flip_vertical:=mainform1.flip_vertical1.Checked;
+//   flip_horizontal:=mainform1.Flip_horizontal1.Checked;
+
+  width2:=length(img[0,0]);{width}
+  height2:=length(img[0]);{height}
+
+  solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details, global variable}
+  if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
+
+  SetLength(starlistI,3,buffersize);{set array length}
+
+  setlength(img_sa,1,height2,width2);//In case the length is set to a larger length than the current one, the new elements are zeroed out for a dynamic array. See https://www.freepascal.org/docs-html/rtl/system/setlength.html.
+
+  backgr:=head.backgr;
+  noise_level:=head.noise_level;
+  snr_minimum:=10;
+  retries:=4; {try up to four times to get enough stars from the image. So for retries 4,3,2,1 }
+  repeat
+    mean_hfd:=0;
+    highest_snr:=0;
+    nrstars:=0;{set counters at zero}
+
+    if retries=4 then
+    begin
+      if head.star_level >30*noise_level then
+      begin
+        detection_level:=head.star_level;
+        detection_level_around:=6*noise_level;
+        find_stars_routine(1,width2-1-1,1,height2-1-1);
+      end
+      else
+        retries:=3;{skip}
+    end;//stars are dominant
+    if retries=3 then
+    begin
+      if head.star_level2>30*noise_level then
+      begin
+        detection_level:=head.star_level2;
+        detection_level_around:=4*noise_level;
+        find_stars_routine(1,width2-1-1,1,height2-1-1);
+      end
+      else
+        retries:=2;{skip}
+    end;//stars are dominant
+    if retries=2 then
+    begin
+      detection_level:=30*noise_level;
+      detection_level_around:=4*noise_level;
+      find_stars_routine(1,width2-1-1,1,height2-1-1);
+    end;
+    if retries=1 then  //last try to find faint stars, divide image in sections and for each section find background and noise level
+    begin
+      snr_minimum:=7;//reduce from 10 to 7
+
+      if height2<width2 then //calculate steps in x, y
+      begin
+        stepsx:=rastersteps;
+        stepsY:=round(rastersteps*height2/width2);
+      end
+      else
+      begin
+        stepsY:=rastersteps;
+        stepsX:=round(rastersteps*width2/height2);
+      end;
+        for yy:=0 to stepsY do //find stars in stepsX x stepsY sections
+      for xx:=0 to stepsX do
+      begin
+        startX:=1+round(width2*xx/(stepsX+1));
+        endX:=min(width2-1-1,round(width2*(xx+1)/(stepsX+1)));
+        startY:=1+round(height2*yy/(stepsY+1));
+        endY:=min(height2-1-1,round(height2*(yy+1)/(stepsY+1)));
+
+        SigmaClippedMeanFromHistogram(img,0,startX,endX,startY,endY,max(65500,trunc(head.backgr*2)), 6,0.1,backgr,noise_level);//mean and noise of this sub section
+        noise_level:=max(noise_level,0.5); {prevent zero noise}
+        detection_level:= 5.5*noise_level;
+        detection_level_around:=2.2*noise_level;
+        find_stars_routine(startX,endX,startY,endY);
+      end;
+    end;
+
+    if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(head.backgr))+ '. Detection level used '+inttostr( round(detection_level))
+                                                          +' above background. Star level is '+inttostr(round(head.star_level))+' above background. Noise level is '+floattostrF(head.noise_level,ffFixed,0,0));
+    dec(retries);{Try again with lower detection level}
+  until ((nrstars>=max_stars) or (retries<=0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
+
+  SetLength(starlistI,3,nrstars);{set length correct}
+
+  if nrstars>max_stars then {reduce number of stars if too high}
+  begin
+    if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
+    get_brightest_stars(max_stars, highest_snr , starlistI); //keep only brightest stars
+  end;
+
+  if nrstars>0 then mean_hfd:=mean_hfd/nrstars;
+  if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms. Mean HFD: '+ floattostrF(mean_hfd,ffFixed,0,1) );
+end;
+
+
+
+procedure find_starsOLD(img :Timage_array; head: theader; hfd_min:double; max_stars :integer;out starlistI: Tstar_list; out mean_hfd: double);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,retries,xci,yci,sqr_radius,width2,height2,starpixels,xx,yy,startX,endX,startY,endY,stepsX,stepsY : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,backgr, noise_level: double;
@@ -1442,14 +1637,63 @@ begin
 end;
 
 
+
+function clip_and_refit(minimum_count: integer; max_error_px: double): boolean;
+{Remove quad pairs with a position residual larger than max_error_px and refit once.}
+var
+  i, n, nkeep              : integer;
+  rx, ry, px_scale, limit2 : double;
+begin
+  n := length(b_Xrefpositions);
+  px_scale := sqr(solution_vectorX[0]) + sqr(solution_vectorX[1]);   {(arcsec per solver pixel)^2}
+  limit2 := sqr(max_error_px) * px_scale;                             {squared limit in arcsec^2}
+
+  nkeep := 0;
+  for i := 0 to n-1 do
+  begin
+    rx := solution_vectorX[0]*A_XYpositions[0,i] + solution_vectorX[1]*A_XYpositions[1,i] + solution_vectorX[2] - b_Xrefpositions[i];
+    ry := solution_vectorY[0]*A_XYpositions[0,i] + solution_vectorY[1]*A_XYpositions[1,i] + solution_vectorY[2] - b_Yrefpositions[i];
+    if rx*rx + ry*ry <= limit2 then
+    begin
+      if nkeep <> i then
+      begin
+        A_XYpositions[0,nkeep] := A_XYpositions[0,i];
+        A_XYpositions[1,nkeep] := A_XYpositions[1,i];
+        b_Xrefpositions[nkeep] := b_Xrefpositions[i];
+        b_Yrefpositions[nkeep] := b_Yrefpositions[i];
+      end;
+      inc(nkeep);
+    end;
+  end;
+
+  if nkeep = n then exit(true);                        {common case: nothing removed, no refit}
+
+  if nkeep < max(3, minimum_count) then exit(false);
+
+  setlength(A_XYpositions, 3, nkeep);                  {row 2 stays 1}
+  setlength(b_Xrefpositions, nkeep);
+  setlength(b_Yrefpositions, nkeep);
+  nr_references := nkeep;
+
+  if solve_show_log then
+     memo2_message('Removed '+inttostr(n-nkeep)+' quad(s) with residual > '+floattostrF(max_error_px,ffFixed,0,2)+'px');
+
+
+  result := lsq_fit(A_XYpositions, b_Xrefpositions, solution_vectorX) and
+            lsq_fit(A_XYpositions, b_Yrefpositions, solution_vectorY);
+end;
+
+
+
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 var
-  xy_sqr_ratio   :  double;
-  nrquads        : integer;
+  xy_sqr_ratio, skew, lenX2, lenY2   :  double;
+  nrquads                            : integer;
+const
+  max_skew = 0.04; {sine of the allowed departure from perpendicular axes, 0.04 is about 2.2 degrees}
 begin
   result:=false; //assume failure
 
-  // tolerance:=min(tolerance,0.008);//prevent too high tolerances
   //profiler_start(true);
 
   nrquads := Length(quad_star_distances1[0]);
@@ -1483,8 +1727,23 @@ begin
   {find solution vector for Y:=ax+by+c  / b_Yref:=solution[0]x+solution[1]y+solution[2]}
   if (lsq_fit( A_XYpositions {0..2,[0..nr_equations-1]},b_Yrefpositions, solution_vectorY {[0..2]}))=false then begin reset_solution_vectors(0.001);exit; end;
 
-  xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) ); //last check
-  if ((xy_sqr_ratio<0.9) or (xy_sqr_ratio>1.1)) then {dimensions x, y are not the same, something wrong.}
+  if clip_and_refit(minimum_quads, 20 {pixels})=false then begin reset_solution_vectors(0.001); exit; end; {Remove quad pairs with a position residual larger than max_error_px and refit once.}
+
+
+  lenX2 := sqr(solution_vectorX[0]) + sqr(solution_vectorX[1]);
+  lenY2 := sqr(solution_vectorY[0]) + sqr(solution_vectorY[1]);
+  xy_sqr_ratio := lenX2 / (0.00000001 + lenY2);
+  {rows of a rotation*scale matrix (flipped or not) are perpendicular, so their normalised dot product must be about zero}
+  skew := abs(solution_vectorX[0]*solution_vectorY[0] + solution_vectorX[1]*solution_vectorY[1]) / sqrt(lenX2*lenY2 + 1E-30);
+
+ // xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) ); //last check
+ // if skew > max_skew then
+//  beep;
+
+
+//  if ((xy_sqr_ratio<0.9) or (xy_sqr_ratio>1.1)) then {dimensions x, y are not the same, something wrong.}
+  if ((xy_sqr_ratio < 0.9) or (xy_sqr_ratio > 1.1) or (skew > max_skew)) then {dimensions x, y are not the same or orientation between x, y different, something wrong.}
+
   begin
     reset_solution_vectors(0.001);{nullify}
     if solve_show_log then {global variable set in find stars} memo2_message('Solution skipped on XY ratio: '+ floattostr(xy_sqr_ratio));

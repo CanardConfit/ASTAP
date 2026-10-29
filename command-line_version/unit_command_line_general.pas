@@ -43,7 +43,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.09.19';
+  astap_version: string='2026.10.29, multi-threaded';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -3243,9 +3243,9 @@ end;
 
 procedure sensor_coordinates_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
 var
-   fits_unsampledX, fits_unsampledY, sindec0,cosdec0 :double;
-   u,v,u2,v2             : double;
-   xi,eta,delta          : double;
+  sindec0,cosdec0 :double;
+  u,v,u2,v2             : double;
+  xi,eta,delta          : double;
 begin
   ra:=0;dec:=0;{for case wrong index or head.cd1_1=0}
   if head.cd1_1<>0 then
