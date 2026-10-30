@@ -48,12 +48,14 @@ var
 
 function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
 procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image.  Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
-function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean;{read 290 or 1476 files}
+function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out B_V50 : double): boolean;{read 290 or 1476 files}
 procedure close_star_database;{Detach the reader of this thread from its tile and close its file. The tile stays in the cache}
 function open_database(telescope_dec: double; area290: integer): boolean; {open database file}
 function star_database_reader: pointer;{the reader of the calling thread, for readdatabase1476_reader}
-function readdatabase1476_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean;{as readdatabase1476 but for the reader of star_database_reader. Saves the thread variable lookup at every call}
+function readdatabase1476_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out B_V50 : double): boolean;{as readdatabase1476 but for the reader of star_database_reader. Saves the thread variable lookup at every call}
 procedure clear_star_database_cache;{free the cached tiles. Tiles that other threads are reading stay}
+procedure pin_star_database(const name, path: string; dbtype: integer);{the calling thread keeps reading this database, also if the main thread selects an other one meanwhile. For the worker threads of the spiral search}
+procedure unpin_star_database;{undo pin_star_database. Call before the thread ends}
 
 // The format of the 290 star databases is described in the HNSKY help file
 //
@@ -2689,12 +2691,23 @@ begin
 end;
 
 
+threadvar
+  pin_active : boolean;{set by pin_star_database. The worker threads of the spiral search read the database the search started with}
+  pin_name, pin_path : string;
+  pin_type : integer;
+
+function active_database_type: integer; {database_type, or the pinned type for a worker thread of the spiral search. The main thread may change database_type while the workers read, see pin_star_database}
+begin
+  if pin_active then result:=pin_type else result:=database_type;
+end;
+
+
 procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image. Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
 var
   ra_cornerWN,ra_cornerEN,ra_cornerWS,ra_cornerES,dec_cornerN,dec_cornerS,fov_half, spaceE,spaceW,spaceN,spaceS  : double;
 begin
   {warning FOV should be less the database tile dimensions, so <=9.53 degrees for .290 files and <=5.14 for .1476 files. Otherwise a tile beyond next tile could be selected}
-  if database_type=290 then
+  if active_database_type=290 then
     fov:=min(fov,9.53*pi/180) //should never happen but this crop is preferred
   else
     fov:=min(fov,5.142857*pi/180);//should never happen but this crop is preferred
@@ -2708,7 +2721,7 @@ begin
   ra_cornerWS:=ra1-fov_half/cos(dec_cornerS); if ra_cornerWS<0     then ra_cornerWS:=ra_cornerWS+2*pi;
   ra_cornerES:=ra1+fov_half/cos(dec_cornerS); if ra_cornerES>=2*pi then ra_cornerES:=ra_cornerES-2*pi;
 
-  if database_type=290 then
+  if active_database_type=290 then
   begin
     {corner 1}
     area_and_boundaries(ra_cornerEN,dec_cornerN, area1, spaceE,spaceW,spaceN,spaceS);
@@ -3161,11 +3174,22 @@ begin
   begin
     tile_detach(r);{detach from the previous tile}
 
-    if  database_type=290 then
-      namefile:=name_database+'_'+filenames290[area290] {g17_0101.290}
+    if pin_active then {worker thread of the spiral search. The main thread may select an other database meanwhile, see pin_star_database}
+    begin
+      if  pin_type=290 then
+        namefile:=pin_name+'_'+filenames290[area290] {g17_0101.290}
+      else
+        namefile:=pin_name+'_'+filenames1476[area290]; {g17_0101.1476}
+      fullname:=pin_path+namefile;
+    end
     else
-      namefile:=name_database+'_'+filenames1476[area290]; {g17_0101.1476}
-    fullname:=database_path+namefile;
+    begin
+      if  database_type=290 then
+        namefile:=name_database+'_'+filenames290[area290] {g17_0101.290}
+      else
+        namefile:=name_database+'_'+filenames1476[area290]; {g17_0101.1476}
+      fullname:=database_path+namefile;
+    end;
 
     {look up and attach in one locked section. A found tile without readers could otherwise be freed by an other thread in between}
     EnterCriticalSection(tile_lock);
@@ -3255,7 +3279,10 @@ end;
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 //
 {$INLINE ON}
-function read_star(r: Pdbreader; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean; inline;{star 290 file database search}
+function read_star(r: Pdbreader; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out B_V50 : double): boolean; inline;{star 290 file database search}
+            {mag2 is var, not out: it is only written at a magnitude record and keeps its value for the stars after it, also over
+             calls. As out parameter the value was undefined after a call that met no magnitude record (2026 fix, with -gt the
+             reported magnitude was 1.19e102)}
             {searchmode=S screen update }
             {searchmode=M mouse click  search}
             {searchmode=T text search}
@@ -3353,6 +3380,7 @@ begin
            begin {normal record without magnitude}
              ra2:= ra_raw*(pi*2  /((256*256*256)-1));
              dec2:=((dec9 shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
+             B_V50:=-999;{no colour information in 5 byte records. 2026 fix: was not assigned, so the caller got an undefined value}
              {The RA is stored as a 3 bytes word. The DEC position is stored as a two's complement (=standard), three bytes integer. The resolution of this three byte storage will be for RA: 360*60*60/((256*256*256)-1) = 0.077 arc seconds. For the DEC value it will be: 90*60*60/((128*256*256)-1) = 0.039 arc seconds.}
            end;
          end;
@@ -3394,7 +3422,7 @@ begin
 end;
 
 
-function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean;{star 290 file database search, reader of the calling thread}
+function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out B_V50 : double): boolean;{star 290 file database search, reader of the calling thread}
 begin
   result:=read_star(@dbr,telescope_ra,telescope_dec,field_diameter,ra2,dec2,mag2,B_V50);
 end;
@@ -3406,9 +3434,29 @@ begin
 end;
 
 
-function readdatabase1476_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean;{as readdatabase1476 for the reader of star_database_reader}
+function readdatabase1476_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out B_V50 : double): boolean;{as readdatabase1476 for the reader of star_database_reader}
 begin
   result:=read_star(Pdbreader(reader),telescope_ra,telescope_dec,field_diameter,ra2,dec2,mag2,B_V50);
+end;
+
+
+procedure pin_star_database(const name, path: string; dbtype: integer);{the calling thread keeps reading this database, also if the main thread selects an other one meanwhile}
+{The main thread calls Application.ProcessMessages during the spiral search. An action started from there (annotation, an other
+ solve) can call select_star_database, which assigns name_database and database_type. A worker thread reading those strings at the
+ same time could read freed memory. With a pin the worker reads its own references instead}
+begin
+  pin_name:=name;
+  pin_path:=path;
+  pin_type:=dbtype;
+  pin_active:=true;
+end;
+
+
+procedure unpin_star_database;{undo pin_star_database. Call before the thread ends, the threadvar strings are not freed automatically}
+begin
+  pin_active:=false;
+  pin_name:='';
+  pin_path:='';
 end;
 
 

@@ -43,11 +43,11 @@ var
 
 function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
 procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image.  Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
+function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out Bp_Rp : double): boolean;{star 290 file database search}
 procedure close_star_database;{Detach the reader of this thread from its tile and close its file. Call at the end of a worker thread}
 function open_database(telescope_dec: double; area290: integer): boolean; {open database file}
 function star_database_reader: pointer;{the reader of the calling thread, for readdatabase290_reader}
-function readdatabase290_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean;{as readdatabase290 but for the reader of star_database_reader. Saves the thread variable lookup at every call}
+function readdatabase290_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out Bp_Rp : double): boolean;{as readdatabase290 but for the reader of star_database_reader. Saves the thread variable lookup at every call}
 
 // The format of the 290 star databases is described in the HNSKY help file
 //
@@ -3193,7 +3193,7 @@ end;
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 //
 {$INLINE ON}
-function read_star(r: Pdbreader; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean; inline;{star 290 file database search}
+function read_star(r: Pdbreader; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out Bp_Rp : double): boolean; inline;{star 290 file database search}
             {searchmode=S screen update }
             {searchmode=M mouse click  search}
             {searchmode=T text search}
@@ -3329,7 +3329,7 @@ begin
 end;
 
 
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search, reader of the calling thread}
+function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out Bp_Rp : double): boolean;{star 290 file database search, reader of the calling thread}
 begin
   result:=read_star(@dbr,telescope_ra,telescope_dec,field_diameter,ra2,dec2,mag2,Bp_Rp);
 end;
@@ -3341,7 +3341,7 @@ begin
 end;
 
 
-function readdatabase290_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean;{as readdatabase290 for the reader of star_database_reader}
+function readdatabase290_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2: double; var mag2: double; out Bp_Rp : double): boolean;{as readdatabase290 for the reader of star_database_reader}
 begin
   result:=read_star(Pdbreader(reader),telescope_ra,telescope_dec,field_diameter,ra2,dec2,mag2,Bp_Rp);
 end;

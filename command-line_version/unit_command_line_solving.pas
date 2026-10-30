@@ -2544,6 +2544,51 @@ end;
  Worker threads do not write to the console. The main thread reports the progress (distance in degrees) and the
  warnings in spiral order, so the output is the same as the serial search gives.}
 
+
+//################################ Debugging the spiral search ###############################################
+//
+// SWITCH: remove the // in front of the next line to search with one thread only. Then the original serial loop runs in the
+// main thread and breakpoints, stepping and watches behave as before the threads were added. The compiler gives a warning as
+// long as the switch is on, so it is not forgotten in a release. Put the // back when done.
+//{$DEFINE solve_one_thread}
+//
+// (Without recompiling: option -threads 1 does the same. Option -progress also gives one thread, since the log of every
+// search step must stay in spiral order.)
+//
+// If a problem only shows with more threads: compare the output and .ini of -threads 1 with the normal multi-threaded run.
+// Apart from the thread markers (1THREAD,4THREADS,...) and the timing they must be identical. A difference is the bug report.
+//
+// Debugging with threads:
+// - A breakpoint in solve_step, read_stars, find_quads, find_fit, find_offset_and_rotation or the star database reader can be
+//   hit by any search thread. The debugger stops all threads; View, Debug windows, Threads shows which one stopped. Stepping
+//   may jump between threads. A conditional breakpoint like pos.count=123 stops at one spiral position.
+// - A watch on a threadvar (mag2, solution_vectorX, quad_star_distances1, ...) shows the copy of the thread that stopped, or
+//   nothing if the debugger can not read threadvars. Local variables are more reliable.
+// - An exception in a worker thread is kept and raised again by the main thread after the search (only if the serial search
+//   would have reached that position), so its stack trace is lost. Let the debugger stop at all exceptions to see where it
+//   was raised.
+// - Pausing at a breakpoint is safe. The search has no time outs.
+//
+// Rules for changes in the code that the search threads run (solve_step, read_stars, find_quads, find_many_quads, find_fit,
+// find_fit_using_hash, clip_and_refit, find_offset_and_rotation, lsq_fit and the star database reader):
+// - No output: no memo2_message or write. With more threads the lines come out of spiral order and mixed between threads,
+//   and with option -log memo2_message adds to memo2, a TStringList that is not thread safe. A temporary debug line works
+//   with one thread; use the switch above, or test like the other log lines: if solve_show_log then memo2_message(...)
+//   (-progress gives one thread). A warning a worker must report goes through Tposition, like quad_warnings / warn.
+// - A new global variable that this code writes must be a threadvar. A global that it only reads must be set before the
+//   search starts, or be passed in Tsearch like the other settings.
+// - A new result the caller needs (like mag2 or nr_references) must be copied into Tsearch in solve_step (under the lock) and
+//   back into the main thread variable in solve_image. Otherwise the main thread keeps the value of the last position it
+//   searched itself.
+// - Never use an out parameter for a value that must survive between calls. An out value is undefined at the start of the
+//   call (this gave the "Used stars down to magnitude: 1194530529..." bug, mag2 in the star database reader).
+// - Debug build options -gt (trash variables), -Cr and -Co find such errors early.
+//###############################################################################################################
+
+{$IFDEF solve_one_thread}
+  {$WARNING solve_one_thread is on: the spiral search uses one thread. For debugging only}
+{$ENDIF}
+
 type
   Tposition = record {one position of the spiral}
     ra, dec      : double;
@@ -2613,6 +2658,9 @@ end;
 
 function solve_thread_count: integer; {maximum number of threads for the spiral search}
 begin
+  {$IFDEF solve_one_thread}
+  exit(1);{debugging switch, see "Debugging the spiral search" above}
+  {$ENDIF}
   if solve_show_log then exit(1);{option -progress logs every search step, in spiral order}
   if threads_available=false then exit(1);
   result:=max_solve_threads;{option -threads}
