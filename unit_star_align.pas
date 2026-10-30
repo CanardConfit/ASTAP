@@ -1736,12 +1736,6 @@ begin
   {rows of a rotation*scale matrix (flipped or not) are perpendicular, so their normalised dot product must be about zero}
   skew := abs(solution_vectorX[0]*solution_vectorY[0] + solution_vectorX[1]*solution_vectorY[1]) / sqrt(lenX2*lenY2 + 1E-30);
 
- // xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) ); //last check
- // if skew > max_skew then
-//  beep;
-
-
-//  if ((xy_sqr_ratio<0.9) or (xy_sqr_ratio>1.1)) then {dimensions x, y are not the same, something wrong.}
   if ((xy_sqr_ratio < 0.9) or (xy_sqr_ratio > 1.1) or (skew > max_skew)) then {dimensions x, y are not the same or orientation between x, y different, something wrong.}
 
   begin

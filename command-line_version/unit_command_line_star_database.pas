@@ -3003,9 +3003,10 @@ begin
       exit(p); {loaded}
     end;
     if p=tile_loading then
-    begin {another reader loads it, wait. Tens of microseconds from the OS file cache, milliseconds from an SD card}
+    begin {another reader loads it, wait. Typically 0.1 ms from the OS file cache, milliseconds from an SD card}
       inc(spins);
-      if spins<64 then ThreadSwitch else Sleep(1);
+      if spins<2000 then ThreadSwitch {give the processor away but stay ready. Measured: waits end within the yields}
+      else Sleep(1);{long wait, e.g. a slow medium. Do not burn a processor. Sleep(1) takes about 15.6 ms on Windows, so it must be rare: with Sleep(1) after 64 yields 12 threads on 6 cores spent half their time sleeping}
       continue;
     end;
 

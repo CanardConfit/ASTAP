@@ -44,7 +44,7 @@ procedure read_tiff(filen: string; var img: Timg_array; out description: string;
 implementation
 
 uses
-  SysUtils, Classes, dialogs, math,
+  SysUtils, Classes, {dialogs,} math,{dialogs not used: only in commented-out MessageDlg calls. It would pull the LCL into astap_cli}
   zstream, //for ZIP compression/decompression
   {$ifndef mswindows}
   unit_mtpcpu, //GetSystemThreadCount
@@ -353,13 +353,15 @@ var                                                                             
   extn: string;
 begin
   result:=false;//assume failure
-  extn:=lowercase(extractfileExt(filen2));
-  if ((extn='.tmp') or (extn='.tif') or (extn='.tiff'))=false then // not a special .tmp file for secure tiff save, not .TIF or .TIFF
-    filen2 := ChangeFileExt(filen2, '.tif');
 
-  if ((overwrite=false) and (fileexists(filen2))) = true then
-    if MessageDlg('Existing file ' + filen2 + ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) <> 6 {mbYes} then
-      Exit;
+  //  Following is not used in astap_cli:
+  //  extn:=lowercase(extractfileExt(filen2));
+  //  if ((extn='.tmp') or (extn='.tif') or (extn='.tiff'))=false then // not a special .tmp file for secure tiff save, not .TIF or .TIFF
+  //    filen2 := ChangeFileExt(filen2, '.tif');
+
+  //  if ((overwrite=false) and (fileexists(filen2))) = true then
+  //    if MessageDlg('Existing file ' + filen2 + ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) <> 6 {mbYes} then
+  //      Exit;
 
   if length(img)=1 then //monochrome
   begin
@@ -1386,7 +1388,8 @@ begin
 
   if not FileExists(filen) then
   begin
-    MessageDlg('File not found: ' + filen, mtError, [mbOK], 0);
+//  MessageDlg('File not found: ' + filen, mtError, [mbOK], 0);
+    writeln('File not found: ' + filen);
     Exit;
   end;
 
@@ -1709,8 +1712,9 @@ begin
             DecompressLZW(mem_str.Memory, strip_bytecounts[i], lzwOut, lzwLen);
             if lzwLen < rows_in_strip * row_size then
             begin
-              MessageDlg(Format('LZW failed: expected %d got %d bytes',
-                [rows_in_strip * row_size, lzwLen]), mtError, [mbOK], 0);
+             // MessageDlg(Format('LZW failed: expected %d got %d bytes',
+             //   [rows_in_strip * row_size, lzwLen]), mtError, [mbOK], 0);
+              writeln('LZW decompression failed !');
               Break;
             end;
             lzwPos := 0;
