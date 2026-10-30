@@ -1321,11 +1321,7 @@ begin
   if ntiles <= 0 then exit;
 
   { same CPU-count logic as unit_threaded_stacking_mean }
-  {$ifdef mswindows}
-  THREAD_COUNT := Min(System.CPUCount, ntiles);
-  {$else} {unix}
-  THREAD_COUNT := Min(GetSystemThreadCount, ntiles);
-  {$endif}
+  THREAD_COUNT := Min(GetSystemThreadCount, ntiles);{all platforms, see unit_mtpcpu}
   if THREAD_COUNT < 1 then THREAD_COUNT := 1;
 
   SetLength(Threads, THREAD_COUNT);
@@ -1516,11 +1512,7 @@ begin
   tl_base := PInteger(@tile_len[0]);
 
   { same CPU-count logic as unit_threaded_stacking_mean / rice_decode_tiles }
-  {$ifdef mswindows}
-  THREAD_COUNT := Min(System.CPUCount, height);
-  {$else} {unix}
-  THREAD_COUNT := Min(GetSystemThreadCount, height);
-  {$endif}
+  THREAD_COUNT := Min(GetSystemThreadCount, height);{all platforms, see unit_mtpcpu}
   if THREAD_COUNT < 1 then THREAD_COUNT := 1;
 
   SetLength(Threads, THREAD_COUNT);

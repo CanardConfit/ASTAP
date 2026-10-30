@@ -46,20 +46,13 @@ implementation
 uses
   SysUtils, Classes, {dialogs,} math,{dialogs not used: only in commented-out MessageDlg calls. It would pull the LCL into astap_cli}
   zstream, //for ZIP compression/decompression
-  {$ifndef mswindows}
-  unit_mtpcpu, //GetSystemThreadCount
-  {$endif}
+  unit_mtpcpu, //GetSystemThreadCount, all platforms
   FPReadTiff;//for LZW decompression
 
 
 function get_thread_count: integer; //nr of logical cores
 begin
-  {$ifdef mswindows}
-  result := System.CPUCount;//works in Windows and Linux virtual machine but not in native Linux or Darwin
-  {$else} {unix}
-  result := GetSystemThreadCount;
-  {$endif}
-  if result < 1 then result := 1;
+  result := GetSystemThreadCount;//processors this process may use, all platforms. See unit_mtpcpu
 end;
 
 

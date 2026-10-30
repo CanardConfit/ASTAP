@@ -106,7 +106,7 @@ begin
     '-log  {Write the solver log to a .log text file.}'+#10+
     '-update  {Add the solution to the input fits file header. Jpeg, png, tiff will be written as fits}' +#10+
     '-progress   {Log all progress steps and messages}'+#10+
-    '-threads n  {Maximum number of threads for the search. Default is the number of processors, also set by environment variable ASTAP_THREADS}'+#10+
+    '-threads n  {Maximum number of threads for the search. Default is the number of physical processor cores, also set by environment variable ASTAP_THREADS}'+#10+
     #10+
     'Analyse options:' +#10+
     '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+

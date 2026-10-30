@@ -2835,6 +2835,7 @@ type
     refcount      : integer; {readers attached to this tile. Under tile_lock}
     last_used     : int64;   {for least recently used freeing. Under tile_lock}
     area          : integer; {area number}
+    bad           : boolean; {unknown record size: the tile gives no stars}
   end;
   Ptile = ^Ttile;
 
@@ -2953,7 +2954,7 @@ begin
 end;
 
 
-function tile_open(area: integer; const fullname: string; out read_failed: boolean): Ptile; {open the file and read the header. nil if the file can not be opened. read_failed tells a file that exists but can not be read from a missing file}
+function tile_open(r: Pdbreader; area: integer; const fullname: string; out read_failed: boolean): Ptile; {open the file and read the header. nil if the file can not be opened. read_failed tells a file that exists but can not be read from a missing file. The open file is kept by reader r for loading the blocks}
 var
   t  : Ptile;
   fs : TFileStream;
@@ -2966,6 +2967,7 @@ begin
   t^.area:=area;
   t^.refcount:=0;
   t^.last_used:=0;
+  t^.bad:=false;
   fs:=nil;
   try
     fs:=TFileStream.Create(fullname, fmOpenRead or fmShareDenyWrite); {read but do not lock file}
@@ -2973,9 +2975,13 @@ begin
     if t^.header[109]=' ' then t^.record_size:=11 {default}
     else
     t^.record_size:=ord(t^.header[109]);{5,6,7,9,10 or 11 bytes record}
-    t^.size:=fs.size-110;
+    if ((t^.record_size<5) or (t^.record_size>11)) then {not a star database file. Read no stars instead of overrunning the record buffer}
+    begin
+      t^.record_size:=5;
+      t^.bad:=true;
+    end;
+    if t^.bad then t^.size:=0 else t^.size:=fs.size-110;
     setlength(t^.blocks,(t^.size+tile_blocksize-1) div tile_blocksize); {pointers only, zeroed. Blocks are loaded on demand}
-    fs.free;
   except
     read_failed:=(fs<>nil); {the file was opened, so it exists and the header read failed}
     fs.free;
@@ -2984,6 +2990,9 @@ begin
     dispose(t);
     exit;
   end;
+  FreeAndNil(r^.fstream);{keep the file open in the reader, the first block is read next. Saves a second open of the file}
+  r^.fstream:=fs;
+  r^.fname:=fullname;
   result:=t;
 end;
 
@@ -3121,7 +3130,7 @@ begin
         end;
         if t=nil then
         begin
-          t:=tile_open(area290,fullname,read_failed);{outside tile_lock, the file open may take milliseconds}
+          t:=tile_open(r,area290,fullname,read_failed);{outside tile_lock, the file open may take milliseconds}
           if t<>nil then
           begin
             EnterCriticalSection(tile_lock);
@@ -3338,15 +3347,25 @@ begin
 end;
 
 
-procedure clear_tile_cache; {free all tiles. Only at the end of the program, when no other thread reads}
+procedure clear_tile_cache; {free the tiles. Tiles that other threads are reading stay}
 var
   i : integer;
 begin
+  close_star_database;{detach the reader of the calling thread, else it would keep a pointer to a freed tile}
   EnterCriticalSection(tile_lock);
   try
-    for i:=0 to high(tiles) do
-      tile_free(tiles[i]);
-    tiles:=nil;
+    i:=0;
+    while i<=high(tiles) do
+    begin
+      if tiles[i]^.refcount=0 then
+      begin
+        tile_free(tiles[i]);
+        tiles[i]:=tiles[high(tiles)];
+        setlength(tiles,length(tiles)-1);
+      end
+      else
+        inc(i);
+    end;
   finally
     LeaveCriticalSection(tile_lock);
   end;
