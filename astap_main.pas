@@ -84,7 +84,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.10.08';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.10.14';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -15264,6 +15264,7 @@ var
 begin
   OpenDialog1.Title :='Select multiple files to add astrometric solution';
   OpenDialog1.Options :=[ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.initialdir:=ExtractFileDir(filename2);
   opendialog1.Filter :=dialog_filter_fits_tif;
   esc_pressed:=false;
   add_lim_magn:=add_limiting_magn_check1.Checked;

@@ -2867,12 +2867,13 @@ begin
   mainform1.image1.Canvas.brush.Style:=bsClear;
   mainform1.image1.Canvas.Pen.Color :=clred;
 
+  size:=15;
+
   for i:=0 to nrstars-1 do
   begin
 
     if flip_horizontal=true then starX:=round((hd.width-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
     if flip_vertical=false  then starY:=round((hd.height-starlist2[1,i])) else starY:=round(starlist2[1,i]);
-    size:=15;
     mainform1.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
  end;
 

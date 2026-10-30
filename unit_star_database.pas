@@ -23,9 +23,17 @@ interface
 uses
   Classes, SysUtils, math;
 
-var
+{Star database reader with a shared tile cache, the same code as unit_command_line_star_database of astap_cli.
+ Every thread that reads the star database has its own reader (read position, current tile, file handle). The tiles are kept
+ once in a cache shared by all threads and stay in memory after close_star_database, so the next solve or annotation of the
+ same area does not open and read the files again. See open_database. The routines keep their single thread signatures.}
+threadvar
   cos_telescope_dec : double;{store here the cos(telescope_dec) value before and read series}
   database_header         : array[0..(11*10)-1] of ansichar;{info star database, length 110 char equals 10x11 bytes}
+  database_version        : integer;{byte 108 of the header of the last opened tile. 2 for a V50 with B-V information}
+  database_read_error     : boolean;{set when a tile of an installed database could not be read (disk error or out of memory). Distinguishes that from the end of a tile. Reset by the caller}
+var
+  tile_cache_threads      : integer=1;{number of threads reading the database at the same time. Scales the memory budget of the tile cache, see tile_budget}
 
 // telescope_ra, telescope_dec [radians], contains to center position of the field of interest
 // field_diameter [radians], FOV diameter of field of interest. This is ignored in searchmode=T}
@@ -40,9 +48,12 @@ var
 
 function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
 procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image.  Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
-function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean; inline;{read 290 or 1476 files}
-procedure close_star_database;{Close the tfilestream}
+function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean;{read 290 or 1476 files}
+procedure close_star_database;{Detach the reader of this thread from its tile and close its file. The tile stays in the cache}
 function open_database(telescope_dec: double; area290: integer): boolean; {open database file}
+function star_database_reader: pointer;{the reader of the calling thread, for readdatabase1476_reader}
+function readdatabase1476_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean;{as readdatabase1476 but for the reader of star_database_reader. Saves the thread variable lookup at every call}
+procedure clear_star_database_cache;{free the cached tiles. Tiles that other threads are reading stay}
 
 // The format of the 290 star databases is described in the HNSKY help file
 //
@@ -191,15 +202,10 @@ type
 
 var
   name_database         : string;{name star database}
-  cache_valid_pos       : integer;
   database_type         : integer;
-  database_version      : integer;
 
 var {################# initialised variables #########################}
-  file_open: boolean=false;{file is not open}
   area2    : double=1*pi/180; {search area}
-  old_area  : integer=9999999;
-  cache_position : integer=0;
 
 implementation
 
@@ -2127,17 +2133,6 @@ var {################# initialised variables #########################}
      90*pi/180);
 
 
-var {################# initialised variables #########################}
-   record_size:integer=11;{default}
-var
-  p6        : ^hnskyrec1476_6;       { pointer to hnsky record }
-  p5        : ^hnskyrec1476_5;       { pointer to hnsky record }
-  dec9_storage: shortint;
-
-  buf2: array[1..11] of byte;  {read buffer stars}
-  thefile_stars      : tfilestream;
-  cache_array       : array of byte;{Maximum 53 mbyte for largest G18 file}
-  cache_size        : integer;
 
 
 procedure area_and_boundaries(ra1,dec1 :double; var area_nr: integer; var spaceE,spaceW,spaceN,spaceS: double); {For a ra, dec position find the star database area number and the corresponding boundary distances N, E, W, S}
@@ -2769,6 +2764,8 @@ begin
 end;
 
 
+procedure tile_set_stamp; forward;
+
 function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
 var
   typ : ansichar;
@@ -2784,16 +2781,16 @@ begin
   begin
     if typ='w' then
     begin
-      if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;exit; end
+      if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;tile_set_stamp; exit; end
     end
     else
     if typ in ['d','v','i','h'] then //d80,v50, h18
     begin
-      if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  exit; end;
+      if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  tile_set_stamp; exit; end;
     end; // no else since there is a v50 and v17!!
     if typ in ['v','g'] then//v17, g18
     begin
-      if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;exit; end
+      if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;tile_set_stamp; exit; end
     end;
   end;{auto}
 
@@ -2841,63 +2838,392 @@ begin
     result:=false;
   end;
 
+  if result then tile_set_stamp;{cached tiles of a replaced database are not used}
   if warning then warning_str:='Old database!'; //first potential warning. No add required
 end;
 
 
-procedure close_star_database;{Close the tfilestream}
-begin
-  if file_open then
-  begin
-    FreeAndNil(thefile_stars);
-    file_open:=false;
+{Shared tile cache.
+ The single thread reader kept one file handle and one cache array, as large as the tile file, per process. Several threads
+ would each need their own copy. Instead a tile is loaded once, in blocks of tile_blocksize bytes, and all threads read the same
+ bytes. Only the blocks a reader actually needs are loaded. For a small field of view that is often only the first block, since the
+ stars are sorted from bright to faint.
+
+ Loading a block: the first reader that needs a block claims it with a compare-and-swap on the block pointer (nil -> tile_loading),
+ reads it with its own file handle without holding a lock, and publishes the pointer. Another reader that needs the same block at
+ that moment waits until the pointer appears. Once published a block is never changed, so reading it needs no lock.
+ A block is only freed together with its tile, and a tile only when no reader is attached to it (refcount=0).
+
+ Memory: the loaded blocks may use tile_budget bytes. Above that the least recently used tiles without readers are freed. The
+ tiles in use are never freed, so the budget can be exceeded by the tiles the threads are reading at that moment.}
+
+const
+  tile_blocksize=5*6*4*1024; {bytes per cache block, a multiple of record sizes 5 and 6}
+
+type
+  Pbyte_block = ^Tbyte_block;
+  Tbyte_block = array[0..tile_blocksize-1] of byte;
+
+  Ttile = record             {one star database file, shared by all reader threads}
+    name          : string;  {full path}
+    blocks        : array of Pbyte_block;{the file after the 110 byte header in blocks. nil: not loaded, tile_loading: a reader is loading it, else the data}
+    size          : integer; {bytes in the file after the header}
+    record_size   : integer; {5,6,7,9,10 or 11 bytes per record}
+    header        : array[0..(11*10)-1] of ansichar;{the 110 byte header}
+    refcount      : integer; {readers attached to this tile. Under tile_lock}
+    last_used     : int64;   {for least recently used freeing. Under tile_lock}
+    area          : integer; {area number}
+    version       : integer; {byte 108 of the header}
+    stamp         : longint; {tile_stamp when the tile was opened. A tile of a replaced database is not used again}
+    bad           : boolean; {header too short or unknown record size: the tile gives no stars}
   end;
+  Ptile = ^Ttile;
+
+  Tdbreader = record         {the reader of one thread, see dbr}
+    tile           : Ptile;  {tile this reader is attached to, nil if none. Threadvars start zeroed}
+    old_area       : integer;{area of tile. 0 is never a valid area}
+    cache_position : integer;{read position in the tile}
+    cur_block      : integer;{block of cur_ptr, -1 if cur_ptr is not valid}
+    cur_ptr        : Pbyte_block;
+    blk_start,blk_end : integer;{tile positions covered by cur_ptr. Empty if cur_ptr is not valid}
+    cos_dec        : double;{cos(telescope_dec), see open_database}
+    record_size    : integer;
+    version        : integer;{database_version of the tile}
+    dec9_storage   : shortint;
+    buf2           : array[1..11] of byte;  {read buffer stars}
+    fstream        : TFileStream;{this reader's own handle, only used to load blocks}
+    fname          : string; {file of fstream}
+    fstamp         : longint;{tile stamp of fstream. A database installed again is a new file with the same name}
+  end;
+  Pdbreader = ^Tdbreader;
+
+threadvar
+  dbr : Tdbreader; {the reader of this thread}
+
+var
+  tiles          : array of Ptile; {all tiles in the cache}
+  tile_lock      : TRTLCriticalSection; {guards tiles, tile_bytes, tile_clock, refcount and last_used}
+  tile_open_lock : TRTLCriticalSection; {held while a tile file is opened, so threads that miss the cache at the same time wait for one open instead of each opening the file}
+  tile_bytes     : int64 = 0;  {bytes held in loaded blocks}
+  tile_limit_mb  : integer = -1;{from ASTAP_TILE_CACHE_MB, 0 if not set. -1 not read yet}
+  tile_clock     : int64 = 0;  {use counter for least recently used}
+  tile_loading_marker : byte;  {tile_loading points here}
+  tile_loading        : Pbyte_block; {block pointer value while a reader loads the block}
+  tile_stamp          : longint=0; {file date of the first file of the selected database, see tile_set_stamp}
+
+
+function tile_budget: int64; {bytes the loaded blocks may use before unused tiles are freed. Call under tile_lock}
+var
+  mb : integer;
+begin
+  if tile_limit_mb<0 then
+    tile_limit_mb:=max(0,StrToIntDef(GetEnvironmentVariable('ASTAP_TILE_CACHE_MB'),0));
+  if tile_limit_mb>0 then
+    mb:=tile_limit_mb
+  else
+    mb:=min(256,max(32,16*tile_cache_threads)); {32 MB for one thread, 16 MB per thread with more threads, at most 256 MB. A small field of view needs only the first block(s) of each tile}
+  result:=int64(mb)*1024*1024;
+end;
+
+
+procedure tile_free(t: Ptile); {free a tile and its blocks. Call under tile_lock with refcount 0, so nobody reads or loads it}
+var
+  i : integer;
+begin
+  for i:=0 to high(t^.blocks) do
+    if ((t^.blocks[i]<>nil) and (t^.blocks[i]<>tile_loading)) then
+    begin
+      freemem(t^.blocks[i]);
+      tile_bytes:=tile_bytes-tile_blocksize;
+    end;
+  t^.blocks:=nil;
+  t^.name:='';
+  dispose(t);
+end;
+
+
+procedure tile_evict(needed: int64); {free least recently used tiles without readers until needed bytes fit in the budget. Call under tile_lock}
+var
+  i, victim : integer;
+begin
+  while ((tile_bytes+needed>tile_budget) and (length(tiles)>0)) do
+  begin
+    victim:=-1;
+    for i:=0 to high(tiles) do
+      if ((tiles[i]^.refcount=0) and ((victim<0) or (tiles[i]^.last_used<tiles[victim]^.last_used))) then victim:=i;
+    if victim<0 then exit; {all tiles are in use. Exceed the budget rather than wait}
+    tile_free(tiles[victim]);
+    tiles[victim]:=tiles[high(tiles)];
+    setlength(tiles,length(tiles)-1);
+  end;
+end;
+
+
+function tile_find(const fullname: string): Ptile; {the cached tile, nil if not loaded. Call under tile_lock}
+var
+  i : integer;
+begin
+  for i:=0 to high(tiles) do
+    if ((tiles[i]^.name=fullname) and (tiles[i]^.stamp=tile_stamp)) then exit(tiles[i]);
+  result:=nil; {tiles of a replaced database are no longer found. They are freed as least recently used}
+end;
+
+
+procedure tile_set_stamp; {called by select_star_database. If the database was installed again while the program runs, the file date differs and the cached tiles are not used}
+var
+  ext : string;
+begin
+  if database_type=290 then ext:='.290'
+  else
+  if database_type=1476 then ext:='.1476'
+  else
+  exit;{w08, not read with open_database}
+  tile_stamp:=FileAge(database_path+name_database+'_0101'+ext);
+end;
+
+
+procedure tile_attach(r: Pdbreader; t: Ptile); {attach the reader to a tile so it is not freed. Call under tile_lock}
+begin
+  r^.tile:=t;
+  inc(t^.refcount);
+  inc(tile_clock);
+  t^.last_used:=tile_clock;
+end;
+
+
+procedure tile_detach(r: Pdbreader); {detach the reader from its tile. The file handle is kept}
+begin
+  if r^.tile<>nil then
+  begin
+    EnterCriticalSection(tile_lock);
+    dec(r^.tile^.refcount);
+    inc(tile_clock);
+    r^.tile^.last_used:=tile_clock;
+    LeaveCriticalSection(tile_lock);
+    r^.tile:=nil;
+  end;
+  r^.cur_block:=-1;
+  r^.cur_ptr:=nil;
+  r^.blk_start:=0;
+  r^.blk_end:=0;
+  r^.old_area:=0;
+end;
+
+
+function tile_open(r: Pdbreader; area: integer; const fullname: string; out read_failed: boolean): Ptile; {open the file and read the header. nil if the file can not be opened. read_failed tells a file that exists but can not be read from a missing file. The open file is kept by reader r for loading the blocks}
+var
+  t  : Ptile;
+  fs : TFileStream;
+begin
+  result:=nil;
+  read_failed:=false;
+  new(t); {zeroed by new for the managed fields only}
+  fillchar(t^.header,sizeof(t^.header),0);
+  t^.name:=fullname;
+  t^.area:=area;
+  t^.refcount:=0;
+  t^.last_used:=0;
+  t^.bad:=false;
+  t^.stamp:=tile_stamp;
+  fs:=nil;
+  try
+    fs:=TFileStream.Create(fullname, fmOpenRead or fmShareDenyWrite); {read but do not lock file}
+    t^.bad:=fs.Read(t^.header,110)<110; {read header info, 10x11 is 110 bytes. A shorter file gives no stars, as before}
+    if t^.header[109]=' ' then t^.record_size:=11 {default}
+    else
+    t^.record_size:=ord(t^.header[109]);{5,6,7,9,10 or 11 bytes record}
+    if ((t^.record_size<5) or (t^.record_size>11)) then {not a star database file. Read no stars instead of overrunning the record buffer}
+    begin
+      t^.record_size:=5;
+      t^.bad:=true;
+    end;
+    t^.version:=ord(t^.header[108]);
+    if t^.bad then t^.size:=0 else t^.size:=fs.size-110;
+    setlength(t^.blocks,(t^.size+tile_blocksize-1) div tile_blocksize); {pointers only, zeroed. Blocks are loaded on demand}
+  except
+    read_failed:=(fs<>nil); {the file was opened, so it exists and the header read failed}
+    fs.free;
+    t^.blocks:=nil;
+    t^.name:='';
+    dispose(t);
+    exit;
+  end;
+  FreeAndNil(r^.fstream);{keep the file open in the reader, the first block is read next. Saves a second open of the file}
+  r^.fstream:=fs;
+  r^.fname:=fullname;
+  r^.fstamp:=t^.stamp;
+  result:=t;
+end;
+
+
+function tile_block(r: Pdbreader; t: Ptile; b: integer): Pbyte_block; {the loaded block b of tile t, loading it if required. nil on a read error}
+var
+  p     : Pbyte_block;
+  n     : integer;
+  spins : integer;
+begin
+  spins:=0;
+  repeat
+    p:=t^.blocks[b];
+    if ((p<>nil) and (p<>tile_loading)) then
+    begin
+      ReadDependencyBarrier; {the block contents are read through p. They must not be seen older than the pointer. No code on x86 and ARM}
+      exit(p); {loaded}
+    end;
+    if p=tile_loading then
+    begin {another reader loads it, wait. Typically 0.1 ms from the OS file cache, milliseconds from an SD card}
+      inc(spins);
+      if spins<2000 then ThreadSwitch {give the processor away but stay ready. Measured: waits end within the yields}
+      else Sleep(1);{long wait, e.g. a slow medium. Do not burn a processor. Sleep(1) takes about 15.6 ms on Windows, so it must be rare: with Sleep(1) after 64 yields 12 threads on 6 cores spent half their time sleeping}
+      continue;
+    end;
+
+    {claim the block}
+    if IsMultiThread then {set by BeginThread. Without threads no atomic instructions, like the RTL. Old ARM (Android armv5) uses kernel helpers for them}
+    begin
+      if InterlockedCompareExchange(pointer(t^.blocks[b]), pointer(tile_loading), nil)<>nil then continue; {an other reader was first, wait for it}
+    end
+    else
+      t^.blocks[b]:=tile_loading;
+    p:=nil;
+    try {between the claim and the publish every failure must release the claim, else the waiting readers wait forever}
+      EnterCriticalSection(tile_lock);
+      try
+        tile_evict(tile_blocksize);
+        getmem(p,tile_blocksize);
+        tile_bytes:=tile_bytes+tile_blocksize;
+      finally
+        LeaveCriticalSection(tile_lock);
+      end;
+      n:=min(tile_blocksize, t^.size-b*tile_blocksize);
+      if ((r^.fstream=nil) or (r^.fname<>t^.name) or (r^.fstamp<>t^.stamp)) then
+      begin
+        FreeAndNil(r^.fstream);
+        r^.fname:='';
+        r^.fstream:=TFileStream.Create(t^.name, fmOpenRead or fmShareDenyWrite); {read but do not lock file}
+        r^.fname:=t^.name;
+        r^.fstamp:=t^.stamp;
+      end;
+      r^.fstream.position:=110+int64(b)*tile_blocksize;
+      r^.fstream.ReadBuffer(p^[0],n);
+    except {read error or out of memory}
+      FreeAndNil(r^.fstream);
+      r^.fname:='';
+      if p<>nil then
+      begin
+        EnterCriticalSection(tile_lock);
+        freemem(p);
+        tile_bytes:=tile_bytes-tile_blocksize;
+        LeaveCriticalSection(tile_lock);
+      end;
+      if IsMultiThread then
+        InterlockedExchange(pointer(t^.blocks[b]), nil) {release the claim. A reader that needs this block tries again itself, as a single thread reader would}
+      else
+        t^.blocks[b]:=nil;
+      exit(nil);
+    end;
+    if IsMultiThread then
+    begin
+      WriteBarrier; {the block contents must be visible to the other threads before the pointer}
+      InterlockedExchange(pointer(t^.blocks[b]), pointer(p)); {publish}
+    end
+    else
+      t^.blocks[b]:=p;
+    exit(p);
+  until false;
+end;
+
+
+procedure close_star_database;{Detach the reader of this thread from its tile and close its file. The tile stays in the cache. Call also at the end of a worker thread}
+var
+  r : Pdbreader;
+begin
+  r:=@dbr;
+  tile_detach(r);
+  FreeAndNil(r^.fstream);{else the thread keeps the last database file open}
+  r^.fname:='';
 end;
 
 
 function open_database(telescope_dec: double; area290: integer): boolean; {open database file}
 var
-  namefile : string;
+  namefile,fullname  : string;
+  t                  : Ptile;
+  read_failed        : boolean;
+  r                  : Pdbreader;
 begin
   result:=true;{assume succes}
-  cos_telescope_dec:=cos(telescope_dec);{here to save CPU time}
+  r:=@dbr;
+  r^.cos_dec:=cos(telescope_dec);{here to save CPU time}
+  cos_telescope_dec:=r^.cos_dec;
 
-  if ((area290<>old_area) or (file_open=false)) then
+  if ((area290<>r^.old_area) or (r^.tile=nil) or (r^.tile^.stamp<>tile_stamp)) then {new area, or the database was installed again}
   begin
-    close_star_database;{close the reader if open}
+    tile_detach(r);{detach from the previous tile}
 
     if  database_type=290 then
       namefile:=name_database+'_'+filenames290[area290] {g17_0101.290}
     else
       namefile:=name_database+'_'+filenames1476[area290]; {g17_0101.1476}
+    fullname:=database_path+namefile;
 
-
+    {look up and attach in one locked section. A found tile without readers could otherwise be freed by an other thread in between}
+    EnterCriticalSection(tile_lock);
     try
-      thefile_stars:=tfilestream.Create( database_path+namefile, fmOpenRead or fmShareDenyWrite); {read but do not lock file}
-    except
-       FreeAndNil(thefile_stars);
-       result:=false;
-       exit;
+      t:=tile_find(fullname);
+      if t<>nil then tile_attach(r,t);
+    finally
+      LeaveCriticalSection(tile_lock);
     end;
-    file_open:=true; {file is open in tfilestream}
 
-    cache_valid_pos:=0;{new file name}
-    thefile_stars.read(database_header,110); {read header info, 10x11 is 110 bytes}
-    if database_header[109]=' ' then record_size:=11 {default}
-    else
-    record_size:=ord(database_header[109]);{5,6,7,9,10 or 11 bytes record}
-
-    database_version:=ord(database_header[108]);
-
-    cache_size:=thefile_stars.size-110;
-
-    if cache_size>length(cache_array) then  {Only resize when required. Resizing takes time}
+    if t=nil then {not in the cache, open the file}
     begin
-      cache_array:=nil;{prevent it is copied to the new resized array}
-      setlength(cache_array,cache_size);{ increase cache to star database file size}
+      read_failed:=false;
+      EnterCriticalSection(tile_open_lock);
+      try
+        EnterCriticalSection(tile_lock);
+        try
+          t:=tile_find(fullname); {an other thread could have opened it while this thread waited}
+          if t<>nil then tile_attach(r,t);
+        finally
+          LeaveCriticalSection(tile_lock);
+        end;
+        if t=nil then
+        begin
+          t:=tile_open(r,area290,fullname,read_failed);{outside tile_lock, the file open may take milliseconds}
+          if t<>nil then
+          begin
+            EnterCriticalSection(tile_lock);
+            try
+              try
+                setlength(tiles,length(tiles)+1);
+              except
+                tile_free(t);{out of memory, not in the cache}
+                raise;
+              end;
+              tiles[high(tiles)]:=t;
+              tile_attach(r,t);
+            finally
+              LeaveCriticalSection(tile_lock);
+            end;
+          end;
+        end;
+      finally
+        LeaveCriticalSection(tile_open_lock);
+      end;
+      if t=nil then
+      begin
+        if read_failed then database_read_error:=true;{the file is there but can not be read}
+        result:=false;
+        exit;
+      end;
     end;
 
-    old_area:=area290;
+    move(r^.tile^.header,database_header,sizeof(database_header));
+    r^.record_size:=r^.tile^.record_size;
+    r^.version:=r^.tile^.version;
+    database_version:=r^.version;
+    r^.old_area:=area290;
   end;
   {else  use old data in cache}
 
@@ -2907,7 +3233,10 @@ begin
   //fov=0.5  degrees, 60% of total time
   //fov=4.6  degrees,  8% of total time
 
-  cache_position:=0;
+  r^.cur_block:=-1;
+  r^.blk_start:=0;
+  r^.blk_end:=0;
+  r^.cache_position:=0;
 end;
 
 
@@ -2920,103 +3249,201 @@ end;
 // Bp-Rp, Gaia color information, not used in ASTAP for solving}
 // result [true/false]  if reported true then more stars are available. If false no more stars available.
 // extra outputs:
-//          database_header  : array[0..(11*10)] of ansichar;{text info star database used}
+//    database_header  : array[0..(11*10)] of ansichar;{text info star database used}
 // preconditions:
 //   area290 should be set at 290+1 before any read series
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 //
 {$INLINE ON}
-function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean; inline;{star 290 file database search}
+function read_star(r: Pdbreader; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean; inline;{star 290 file database search}
             {searchmode=S screen update }
             {searchmode=M mouse click  search}
             {searchmode=T text search}
   var
-    ra_raw,block_to_read         : integer;
-    delta_ra                     : double;
-    header_record                : boolean;
-const
-   blocksize=5*6*4*1024; {a multiply of record sizes 5, 6}
+    ra_raw                         : integer;
+    delta_ra, cos_dec, half_field  : double;
+    header_record                  : boolean;
+    t                              : Ptile;
+    p6                             : ^hnskyrec1476_6;       { pointer to hnsky record }
+    p5                             : ^hnskyrec1476_5;       { pointer to hnsky record }
+    p2, ptr                        : Pbyte_block;
+    pos, last_pos, rs, bstart, bend, b, o, i : integer;
+    dec9                           : shortint;
 begin
    {$I-}
-  readdatabase1476:=true;
+  read_star:=true;
+  t:=r^.tile;
+  if t=nil then
+  begin
+    read_star:=false; {no file open}
+    exit;
+  end;
+  {copy the reader state to local variables for the loop, and back at the end}
+  cos_dec:=r^.cos_dec;
+  half_field:=field_diameter/2;
+  rs:=r^.record_size;
+  pos:=r^.cache_position;
+  last_pos:=t^.size-rs;{last position where a complete record starts}
+  bstart:=r^.blk_start;
+  bend:=r^.blk_end;
+  ptr:=r^.cur_ptr;
+  dec9:=r^.dec9_storage;
   repeat
-    repeat
-      if cache_position>=cache_size then {should be end of file}
+    if pos>last_pos then {should be end of file}
+    begin
+      read_star:=false; {no more data in this file}
+      break;
+    end;
+
+    if ((pos>=bend) or (pos<bstart)) then {next block of the tile. In most cases it is already loaded by this or an other thread. Especially for small field of view}
+    begin
+      b:=pos div tile_blocksize;
+      ptr:=tile_block(r,t,b);
+      if ptr=nil then
       begin
-        readdatabase1476:=false; {no more data in this file}
-        exit;
+        r^.cur_block:=-1;
+        bstart:=0;
+        bend:=0;
+        database_read_error:=true;
+        read_star:=false;
+        break;
       end;
-
-      if cache_position>=cache_valid_pos then {add more data to cache. This cache works  about 35 % faster then Treader for files with FOV of 0.5 degrees. This due to re-use cache. No difference for FOV 1.3 degrees. At FOV=0.25 the improvement is 40%}
+      r^.cur_block:=b;
+      bstart:=b*tile_blocksize;
+      bend:=bstart+tile_blocksize;
+    end;
+    o:=pos-bstart;
+    if o+rs<=tile_blocksize then
+      p5:=@ptr^[o]{read the record directly in the cache block}
+    else
+    begin {the record continues in the next block. Only possible for record sizes other than 5 and 6}
+      p2:=tile_block(r,t,r^.cur_block+1);
+      if p2=nil then
       begin
-        block_to_read:=min(cache_size, blocksize);{for small files, don't read more than cache size=file size!}
-        block_to_read:=min(block_to_read,cache_size - cache_valid_pos);{don't read more than file size!}
-        thefile_stars.read(cache_array[cache_valid_pos],block_to_read); {fill cache more. In most cases it can be re-used. Especially for small field of view}
-        cache_valid_pos:=cache_valid_pos+block_to_read;{increase postion where cache buffer is valid.}
+        database_read_error:=true;
+        read_star:=false;
+        break;
       end;
-      move(cache_array[cache_position],buf2,record_size);{move one record for reading}
-      cache_position:=cache_position + record_size;{update cache position}
+      for i:=0 to rs-1 do
+      begin
+        if o<tile_blocksize then r^.buf2[1+i]:=ptr^[o]
+        else r^.buf2[1+i]:=p2^[o-tile_blocksize];
+        inc(o);
+      end;
+      p5:=@r^.buf2[1];
+    end;
+    p6:=pointer(p5);
+    pos:=pos + rs;{update cache position}
 
-      header_record:=false;
+    header_record:=false;
 
-      case record_size of
-      5: begin {record size 5}
-           with p5^ do
+    case rs of
+    5: begin {record size 5}
+         with p5^ do
+         begin
+           ra_raw:=(ra7 + ra8 shl 8 +ra9 shl 16);{always required, fasted method}
+           if ra_raw=$FFFFFF  then  {special magnitude record is found}
            begin
-             ra_raw:=(ra7 + ra8 shl 8 +ra9 shl 16);{always required, fasted method}
-             if ra_raw=$FFFFFF  then  {special magnitude record is found}
-             begin
-               mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
-               {magnitude is stored in mag2 till new magnitude record is found}
-               dec9_storage:=dec7-128;{recover dec9 shortint and put it in storage}
-               header_record:=true;
-             end
-             else
-             begin {normal record without magnitude}
-               ra2:= ra_raw*(pi*2  /((256*256*256)-1));
-               dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
-               {The RA is stored as a 3 bytes word. The DEC position is stored as a two's complement (=standard), three bytes integer. The resolution of this three byte storage will be for RA: 360*60*60/((256*256*256)-1) = 0.077 arc seconds. For the DEC value it will be: 90*60*60/((128*256*256)-1) = 0.039 arc seconds.}
-             end;
+             mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
+             {magnitude is stored in mag2 till new magnitude record is found}
+             dec9:=dec7-128;{recover dec9 shortint and put it in storage}
+            header_record:=true;
+           end
+           else
+           begin {normal record without magnitude}
+             ra2:= ra_raw*(pi*2  /((256*256*256)-1));
+             dec2:=((dec9 shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
+             {The RA is stored as a 3 bytes word. The DEC position is stored as a two's complement (=standard), three bytes integer. The resolution of this three byte storage will be for RA: 360*60*60/((256*256*256)-1) = 0.077 arc seconds. For the DEC value it will be: 90*60*60/((128*256*256)-1) = 0.039 arc seconds.}
            end;
-         end;{record size 5}
-      6: begin {record size 6}
-            with p6^ do
+         end;
+       end;{record size 5}
+    6: begin {record size 6}
+          with p6^ do
+          begin
+            ra_raw:=(ra7 + ra8 shl 8 +ra9 shl 16);{always required, fasted method}
+            if ra_raw=$FFFFFF  then  {special magnitude record is found}
             begin
-              ra_raw:=(ra7 + ra8 shl 8 +ra9 shl 16);{always required, fasted method}
-              if ra_raw=$FFFFFF  then  {special magnitude record is found}
-              begin
-                mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
-                {magnitude is stored in mag2 till new magnitude record is found}
-                dec9_storage:=dec7-128;{recover dec9 shortint and put it in storage}
-                header_record:=true;
-              end
+              mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
+              {magnitude is stored in mag2 till new magnitude record is found}
+              dec9:=dec7-128;{recover dec9 shortint and put it in storage}
+             header_record:=true;
+            end
+            else
+            begin {normal record without magnitude}
+              ra2:= ra_raw*(pi*2  /((256*256*256)-1));
+              dec2:=((dec9 shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, put dec7 behind}
+              if r^.version=2 then
+                B_V50:=B_Vshort {gaia (B-V)*50}    {color information}
               else
-              begin {normal record without magnitude}
-                ra2:= ra_raw*(pi*2  /((256*256*256)-1));
-                dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, put dec7 behind}
-                if database_version=2 then
-                  B_V50:=B_Vshort {gaia (B-V)*50}    {color information}
-                else
-                  B_V50:=-999;//old type, mark as not available, ignore values
-              end;
+                B_V50:=-999;//old type, mark as not available, ignore values
             end;
-          end;{record size 6}
-      end;{case}
-    until header_record=false;
-    delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;{Here because ra2 is not defined in case header_record}
-  until  (  (delta_ra*cos_telescope_dec<field_diameter/2) and (abs(dec2-telescope_dec)<field_diameter/2)  );
+          end;
+        end;{record size 6}
+    end;{case}
+
+    delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
+  until
+    (header_record=false) and
+    (  (abs(delta_ra*cos_dec)<half_field) and (abs(dec2-telescope_dec)<half_field)  );
                            {calculate distance and skip when too far from center screen, {if false then outside screen,go to next line}
+  r^.cache_position:=pos;
+  r^.blk_start:=bstart;
+  r^.blk_end:=bend;
+  r^.cur_ptr:=ptr;
+  r^.dec9_storage:=dec9;
 end;
 
 
+function readdatabase1476(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean;{star 290 file database search, reader of the calling thread}
+begin
+  result:=read_star(@dbr,telescope_ra,telescope_dec,field_diameter,ra2,dec2,mag2,B_V50);
+end;
 
 
+function star_database_reader: pointer;{the reader of the calling thread, for readdatabase1476_reader}
+begin
+  result:=@dbr;
+end;
 
-  initialization
-    p6:= @buf2[1];	{ set pointer }
-    p5:= @buf2[1];	{ set pointer }
-  finalization
-    close_star_database;
 
+function readdatabase1476_reader(reader: pointer; telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,B_V50 : double): boolean;{as readdatabase1476 for the reader of star_database_reader}
+begin
+  result:=read_star(Pdbreader(reader),telescope_ra,telescope_dec,field_diameter,ra2,dec2,mag2,B_V50);
+end;
+
+
+procedure clear_star_database_cache; {free the tiles. Tiles that other threads are reading stay}
+var
+  i : integer;
+begin
+  close_star_database;{detach the reader of the calling thread, else it would keep a pointer to a freed tile}
+  EnterCriticalSection(tile_lock);
+  try
+    i:=0;
+    while i<=high(tiles) do
+    begin
+      if tiles[i]^.refcount=0 then
+      begin
+        tile_free(tiles[i]);
+        tiles[i]:=tiles[high(tiles)];
+        setlength(tiles,length(tiles)-1);
+      end
+      else
+        inc(i);
+    end;
+  finally
+    LeaveCriticalSection(tile_lock);
+  end;
+end;
+
+
+initialization
+  InitCriticalSection(tile_lock);
+  InitCriticalSection(tile_open_lock);
+  tile_loading:=@tile_loading_marker;
+finalization
+  close_star_database;{reader of the main thread}
+  clear_star_database_cache;
+  DoneCriticalSection(tile_lock);
+  DoneCriticalSection(tile_open_lock);
 end.
-

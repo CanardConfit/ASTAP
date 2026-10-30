@@ -39,11 +39,11 @@ uses
   FPImage,
   strutils,
   fpreadPNG, fpreadBMP, fpreadJPEG,  fpwritePNG, fpwriteBMP,fpwriteJPEG,{all part of fcl-image}
-  unit_ricecomp_unthreaded;
+  unit_ricecomp;
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2026.09.19';
+  astap_version: string='2026.10.30, multi-threaded';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -215,7 +215,7 @@ function fnmodulo (x,range: double):double;
 implementation
 
 uses
-  unit_command_line_solving, unit_command_line_star_database, unit_tiff_unthreaded;
+  unit_command_line_solving, unit_command_line_star_database, unit_tiff;
 
 
 procedure log_to_file(logf,mess : string);{for testing}
@@ -767,8 +767,8 @@ function load_fits(filen:string; const memo1 : tstrings; out head: Theader; out 
   Rice-compressed FITS (.fz, ZCMPTYPE = 'RICE_1') stored in a BINTABLE
   extension.  The Rice path is a plain serial version of the one used by the
   GUI: it decodes one tile at a time with rice_decode() from
-  unit_ricecomp_unthreaded and places the pixels itself.  Add
-  unit_ricecomp_unthreaded to this unit's uses clause. }
+  unit_ricecomp and places the pixels itself.  Add
+  unit_ricecomp to this unit's uses clause. }
 var
   fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
   fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
@@ -857,7 +857,7 @@ var
   measured_max_rice                     : single;
   measured_min_rice                     : single;
   scalefactor_rice                      : single;
-  { Parameters + results for the tile decoder in unit_ricecomp_unthreaded }
+  { Parameters + results for the tile decoder in unit_ricecomp}
   rice_p          : Trice_decode_params;
   rice_err_gzip   : boolean;
   rice_err_decode : boolean;
@@ -1581,9 +1581,7 @@ begin
            and (znaxis3_val = 1);
 
       { ---- Fill the parameter record and hand the whole tile array to the
-             serial decoder in unit_ricecomp_unthreaded.  This is exactly the
-             same record and call the GUI uses with unit_ricecomp, so the two
-             units are drop-in interchangeable. ---- }
+             serial decoder in unit_ricecomp}
       rice_p.table_buffer    := table_buffer;
       rice_p.heap_buffer     := heap_buffer;
       rice_p.heap_size       := heap_size;
@@ -3243,9 +3241,9 @@ end;
 
 procedure sensor_coordinates_to_celestial(const head : theader; fitsx,fitsy : double; formalism : integer; out ra,dec  : double) {fitsX, Y to ra,dec};
 var
-   fits_unsampledX, fits_unsampledY, sindec0,cosdec0 :double;
-   u,v,u2,v2             : double;
-   xi,eta,delta          : double;
+  sindec0,cosdec0 :double;
+  u,v,u2,v2             : double;
+  xi,eta,delta          : double;
 begin
   ra:=0;dec:=0;{for case wrong index or head.cd1_1=0}
   if head.cd1_1<>0 then
