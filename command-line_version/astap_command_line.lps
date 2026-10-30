@@ -15,19 +15,19 @@
       <Unit1>
         <Filename Value="unit_command_line_solving.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="2534"/>
-        <CursorPos X="28" Y="2553"/>
+        <TopLine Value="823"/>
+        <CursorPos X="22" Y="832"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <TopLine Value="13"/>
-        <CursorPos X="36" Y="46"/>
+        <CursorPos X="30" Y="21"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>
@@ -168,7 +168,7 @@
         <UsageCount Value="10"/>
       </Unit22>
     </Units>
-    <JumpHistory Count="19" HistoryIndex="18">
+    <JumpHistory Count="26" HistoryIndex="25">
       <Position1>
         <Filename Value="astap_command_line.lpr"/>
         <Caret Line="205" Column="24" TopLine="198"/>
@@ -245,6 +245,34 @@
         <Filename Value="unit_command_line_solving.pas"/>
         <Caret Line="2661" Column="27" TopLine="2630"/>
       </Position19>
+      <Position20>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="21" Column="30" TopLine="13"/>
+      </Position20>
+      <Position21>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1047" Column="69" TopLine="1029"/>
+      </Position21>
+      <Position22>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1059" Column="75" TopLine="1029"/>
+      </Position22>
+      <Position23>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="842" Column="19" TopLine="823"/>
+      </Position23>
+      <Position24>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="892" Column="18" TopLine="862"/>
+      </Position24>
+      <Position25>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1047" Column="69" TopLine="1017"/>
+      </Position25>
+      <Position26>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1059" Column="75" TopLine="1029"/>
+      </Position26>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
