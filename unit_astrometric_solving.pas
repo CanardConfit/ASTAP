@@ -852,7 +852,7 @@ end;
 // find_fit_using_hash, clip_and_refit, find_offset_and_rotation, lsq_fit and the star database reader):
 // - No LCL: no memo2_message, no stackmenu1 or mainform1 controls, no Application. A temporary debug memo2_message there works
 //   with one thread but can crash or garble memo2 with more threads. Use the switch above, or test like the other log lines:
-//   if ((solve_show_log) and (defer_quad_warning=false)) then memo2_message(...)
+//   if ((solve_show_log) and (no_log_in_search=false)) then memo2_message(...)
 // - A new global variable that this code writes must be a threadvar. A global that it only reads must be set before the
 //   search starts, or be passed in Tsearch like the other settings. The main thread calls Application.ProcessMessages during
 //   the search, so the user can start other actions that change globals.
@@ -876,7 +876,6 @@ type
     report_deg   : double; {distance in degrees to report before this position, -1 for none}
     threads      : integer;{number of threads to report before this position, 0 for none}
     done         : boolean;{searched}
-    warn         : integer;{bucket overflow warnings of this position}
   end;
 
   Tsearch = record {one spiral search, shared by the threads}
@@ -1058,7 +1057,6 @@ begin
       p^.x:=c^.spiral_x;
       p^.y:=c^.spiral_y;
       p^.done:=false;
-      p^.warn:=0;
       if seperation * 180 / pi > c^.distance + c^.fov_org then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
       begin
         c^.distance := seperation * 180 / pi;
@@ -1170,7 +1168,7 @@ begin
 
   find_quads(False,c^.nrstars_image, starlist1, quad_star_distances1); {find quads for reference image/database.}
 
-  if ((solve_show_log) and (defer_quad_warning=false)) then {global variable set in find stars. Only with one thread}
+  if ((solve_show_log) and (no_log_in_search=false)) then {global variable set in find stars. Only with one thread}
     memo2_message('Search '+ inttostr(pos.count) + ', [' + IntToStr(pos.x) + ',' + IntToStr(pos.y) + '],' + #9 + 'position: ' +
                  #9 + prepare_ra(pos.ra, ': ') + #9 + prepare_dec(pos.dec, '° ') +
                  #9 + ' Down to magn ' + floattostrF(mag2 / 10, ffFixed, 0, 1) +
@@ -1213,8 +1211,7 @@ var
   exc  : TObject;
   p    : ^Tposition;
 begin
-  quad_warnings:=0;
-  defer_quad_warning:=true;{find_quads may not use memo2 from a worker thread. The main thread reports the warning in search order}
+  no_log_in_search:=true;{find_quads may not use memo2 from a worker thread. The main thread reports the warning in search order}
   exc:=nil;
   try
     stop:=solve_step(c,idx,pos);
@@ -1222,13 +1219,12 @@ begin
     exc:=TObject(AcquireExceptionObject);{raised by the main thread if the serial search would have reached this position, see search_spiral}
     stop:=true;
   end;
-  defer_quad_warning:=false;
+  no_log_in_search:=false;
 
   EnterCriticalSection(c^.lock);
   try
     if exc<>nil then keep_exception(c,idx,exc);
     p:=@c^.window[idx and (length(c^.window)-1)];{idx>=base, since base only passes positions that are done}
-    p^.warn:=quad_warnings;
     p^.done:=true;
     if ((stop) and (idx<c^.stop_at)) then c^.stop_at:=idx;{no positions above this one are needed any more}
   finally
@@ -1342,8 +1338,6 @@ begin
       end;
     end;
   end; {info reporting}
-
-  if p.warn>0 then memo2_message('Warning, bucket size increased!');{found by a worker thread}
 end;
 
 
@@ -1362,7 +1356,7 @@ begin
     begin
       p:=@c^.window[c^.base and (length(c^.window)-1)];
       if p^.done=false then break;
-      if ((p^.threads>0) or (p^.report_deg>=0) or (p^.warn>0)) then
+      if ((p^.threads>0) or (p^.report_deg>=0)) then
       begin
         if n>=length(list) then setlength(list,max(16,2*n));
         list[n]:=p^;
