@@ -2807,8 +2807,6 @@ end;
 
 procedure report_position(const p: Tposition); {report the number of threads and the distance in degrees, if any, before this position}
 begin
-  if p.threads=1 then write('1THREAD,')
-  else
   if p.threads>1 then write(inttostr(p.threads)+'THREADS,');
   if p.report>=0 then write(inttostr(p.report)+'d,');{show what's happening}
 end;
