@@ -2823,18 +2823,39 @@ begin
 end;
 
 
+function selected_rows_descending(tl: tlistview): TIntegerDynArray; //snapshot of selected rows, highest index first. Types unit
+var
+  index, n: integer;
+begin
+  result:=nil;
+  n:=0;
+  setlength(result, tl.Items.Count);
+  for index:=tl.Items.Count-1 downto 0 do
+    if tl.Items[index].Selected then
+    begin
+      result[n]:=index;
+      inc(n);
+    end;
+  setlength(result, n);
+end;
+
 procedure listview_removeselect(tl: tlistview);
 var
-  index: integer;
+  i: integer;
+  rows: TIntegerDynArray;
 begin
-  index:=tl.Items.Count - 1;
-  while index >= 0 do
-  begin
-    if tl.Items[index].Selected then
-      tl.Items.Delete(Index);
-    Dec(index); {go to next file}
+  rows:=selected_rows_descending(tl);//GTK3 changes the selection when the cursor row is deleted, so collect first
+  if length(rows)=0 then exit;
+  tl.Items.BeginUpdate;
+  try
+    for i:=0 to high(rows) do
+      tl.Items.Delete(rows[i]);
+  finally
+    tl.Items.EndUpdate;
   end;
+  tl.ClearSelection;//remove the selection GTK3 moved to a neighbouring row
 end;
+
 
 
 procedure Tstackmenu1.removeselected1Click(Sender: TObject);
@@ -3777,38 +3798,39 @@ end;
 
 procedure listview_rename_bak(tl: tlistview; tab : integer);
 var
-  index,new,position, count,oldposition : integer;
-  thetime             : Tdatetime;
+  i, index, position, count, oldposition : integer;
+  thetime : Tdatetime;
+  rows    : TIntegerDynArray;
 begin
+  rows:=selected_rows_descending(tl);//GTK3 changes the selection when the cursor row is deleted, so collect first
+  if length(rows)=0 then exit;
+
   count:=0;
-  oldposition:=-1;
+  oldposition:=rows[0];
   thetime:=now; //store moment of delete
-  index:=tl.Items.Count - 1;
-  while index >= 0 do
+
+  for i:=0 to high(rows) do
   begin
-    if tl.Items[index].Selected then
+    index:=rows[i];
+    filename2:=tl.items[index].Caption;
+    deletefile(changeFileExt(filename2, '.bak'));     {delete *.bak left over from astrometric solution}
+    if RenameFile(filename2, ChangeFileExt(filename2, '.bak')) then
     begin
-      if oldposition=-1 then oldposition:=index;
-      filename2:=tl.items[index].Caption;
-      deletefile(changeFileExt(filename2, '.bak'));     {delete *.bak left over from astrometric solution}
-      if RenameFile(filename2, ChangeFileExt(filename2, '.bak')) then
-      begin
-        tl.Items.Delete(Index);
-        //keep record of renamed files
-        position:=length(bakfiles);
-        setlength(bakfiles,position+1);//not efficient but easy to program
-        bakfiles[position].tab:=tab;
-        bakfiles[position].thetime:=thetime;
-        bakfiles[position].index:=index;
-        bakfiles[position].name:=filename2;
-        inc(count);
-      end;
+      tl.Items.Delete(index);
+      //keep record of renamed files
+      position:=length(bakfiles);
+      setlength(bakfiles,position+1);
+      bakfiles[position].tab:=tab;
+      bakfiles[position].thetime:=thetime;
+      bakfiles[position].index:=index;
+      bakfiles[position].name:=filename2;
+      inc(count);
     end;
-    Dec(index); {go to next file}
   end;
 
+  tl.ClearSelection;//remove the selection GTK3 moved to a neighbouring row
   oldposition:=oldposition-count;
-  if oldposition>=0 then
+  if ((oldposition>=0) and (oldposition<tl.Items.Count)) then
     tl.Items[oldposition].Selected:=true;//go to old position
 
   if count>0 then
@@ -3820,6 +3842,7 @@ begin
    {$ENDIF}
   end;
 end;
+
 
 
 function now_time_str: string; //reporte current time in 6 digit format as 235959
@@ -5792,10 +5815,10 @@ procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 var
   hfd_min,aa,bb,cc,dd,ee,ff,mean_hfd                                : double;
   c, x_new, y_new, fitsX, fitsY, col, first_image, stepnr, nrrows,
-  cycle, step, ps, bottom, top, left, w, h, max_stars               : integer;
+  cycle, step, ps, bottom, top, left, w, h, max_stars,binning        : integer;
   reference_done, init, store_annotated, res                        : boolean;
-  st                  : string;
-  starlist1,starlist2 : Tstar_list;
+  st,warning_downsample     : string;
+  starlist1,starlist2       : Tstar_list;
   img_temp : Timage_array;
 begin
   if listview6.items.Count <= 1 then exit; {no files}
@@ -5872,8 +5895,12 @@ begin
             if reference_done = False then {get reference}
             begin
               memo2_message( 'Working on star alignment solutions. Blink frequency will increase after completion.');
-              get_background(0, img_loaded,head,max_stars, False {no histogram already done},  True {unknown, calculate also datamax});
-              find_stars(img_loaded, head, hfd_min, max_stars, starlist1,mean_hfd); {find stars and put them in a list}
+//              get_background(0, img_loaded,head,max_stars, False {no histogram already done},  True {unknown, calculate also datamax});
+//              find_stars(img_loaded, head, hfd_min, max_stars, starlist1,mean_hfd); {find stars and put them in a list}
+
+              binning:=report_binning(head.height);{select binning based on the height of the light}
+              bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,false{no histogram already done},starlist1,mean_hfd,warning_downsample);{bin, measure background, find stars}
+
               find_quads(false,length(starlist1[0]),starlist1,quad_star_distances1); {find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
@@ -5890,8 +5917,12 @@ begin
             else
             begin
               mainform1.Caption:=filename2 + ' Working on star solutions........';
-              get_background(0, img_loaded, head,max_stars,False {no histogram already done}, True {unknown, calculate also noise_level} );
-              find_stars(img_loaded, head,hfd_min, max_stars, starlist2,mean_hfd);
+//              get_background(0, img_loaded, head,max_stars,False {no histogram already done}, True {unknown, calculate also noise_level} );
+//              find_stars(img_loaded, head,hfd_min, max_stars, 1{binfactor}, starlist2,mean_hfd);
+
+              binning:=report_binning(head.height);{select binning based on the height of the light}
+              bin_and_find_stars(img_loaded,head, binning,1  {cropping},hfd_min,max_stars,false{no histogram already done},starlist2,mean_hfd,warning_downsample);{bin, measure background, find stars}
+
               {find stars and put them in a list}
               find_quads(false,length(starlist1[0]),starlist2,quad_star_distances2);
               {find star quads for new image}
@@ -7962,7 +7993,10 @@ begin
 
   if img_loaded=nil then exit;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-  find_stars(img_loaded, head,hfd_min, 150 {nr stars}, starlist,mean_hfd);//collect 150 stars. They will be filtered later by SNR. No efficient but avoids changing the find_Star procedure
+  find_stars(img_loaded, head,hfd_min, 150 {nr stars}{, 1{binfactor}, starlist,mean_hfd);//collect 150 stars. They will be filtered later by SNR. No efficient but avoids changing the find_Star procedure
+
+
+
   nrstars:=length(starlist[0]);
   setlength(vsp_vsx_list,nrstars);//make space
   formalism:=mainform1.Polynomial1.itemindex;
@@ -12903,7 +12937,10 @@ begin
       hd.dark_count:=head_dark.dark_count;
       hd.datamax_org:=hd.datamax_org - dark_norm_value;{adapt light datamax_org}
       inc(resultcounter);
-    end;
+    end
+    else
+      head_ref.calstat:='';//no dark applied
+
   end;{apply dark}
 
   if pos('F', hd.calstat) <> 0 then
