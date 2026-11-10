@@ -75,7 +75,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stack menu'
         Top = 0
         Width = 1920
-        ActivePage = lights
+        ActivePage = tab_Pixelmath1
         Align = alClient
         AutoSize = True
         Images = ImageList2
@@ -83,7 +83,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabIndex = 0
+        TabIndex = 13
         TabOrder = 0
         OnChange = pagecontrol1Change
         OnMouseMove = pagecontrol1MouseMove
@@ -9515,7 +9515,7 @@ object stackmenu1: Tstackmenu1
         Caption = '-'
       end
       object split_files1: TMenuItem
-        Caption = 'StarNet2, split selected stretched images into nebula and star images'
+        Caption = 'StarNet2, split selected UNstretched images into nebula and star images'
         Hint = 'Standard for FITS images'
         ImageIndex = 30
         OnClick = starnet_split1Click

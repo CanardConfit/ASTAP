@@ -84,7 +84,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.11.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.11.10';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -104,6 +104,7 @@ type
     image_based_crop1: TMenuItem;
     batch_crop_by_coordinates1: TMenuItem;
     compress_fpack_dir1: TMenuItem;
+    MenuItem7: TMenuItem;
     Panel1: TPanel;
     selective_colour_saturation1: TTrackBar;
     Separator4: TMenuItem;
@@ -448,7 +449,6 @@ type
     procedure batch_crop_by_coordinates1Click(Sender: TObject);
     procedure MenuItem7Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
       Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
       var Handled: Boolean);
@@ -850,7 +850,8 @@ procedure update_integer(memo:tstrings; inpt,comment1:string;x:integer);{update 
 procedure add_integer(memo:tstrings;inpt,comment1:string;x:integer);{add integer variable to header}
 procedure update_float(memo:tstrings; inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
 
-procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
+function remove_key(memo:tstrings;inpt:string; all:boolean): boolean;{remove key word in header. If all=true then remove multiple of the same keyword}
+
 
 function fnmodulo (x,range: double):double;
 function strtoint2(s: string;default:integer):integer; {str to integer, fault tolerant}
@@ -2733,18 +2734,25 @@ begin
       begin
         scalefactor:=1;
         if measured_max>0 then
-          if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then
-            scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
-                                             {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
-        if scalefactor<>1 then {not a 0..65535 range, rescale}
         begin
-          for k:=0 to head.naxis3-1 do {do all colors}
-            for j:=0 to head.height-1 do
-              for i:=0 to head.width-1 do
-                img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
-          head.datamax_org:=65535;
+          if measured_max<=1.0*1.5 then
+            scalefactor:=65535 //rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float
+          else
+          if measured_max>65535*1.5 then
+            scalefactor:=65535/measured_max; // if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535
+
+          if scalefactor<>1 then //not a 0..65535 range, rescale
+          begin
+            for k:=0 to head.naxis3-1 do //do all colors
+              for j:=0 to head.height-1 do
+                for i:=0 to head.width-1 do
+                  img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
+
+             head.datamax_org:=65535;
+          end;
         end
-        else  head.datamax_org:=measured_max;
+        else
+          head.datamax_org:=measured_max;
       end
       else
       if head.bitpix=8 then head.datamax_org:=255 {not measured}
@@ -2755,11 +2763,11 @@ begin
         head.bitpix:=8; {already converted to array with separate colour sections}
       end
       else {16 bit}
-      head.datamax_org:=measured_max;{most common. It set for bitpix=24 in beginning at 255}
+        head.datamax_org:=measured_max;{most common. It set for bitpix=24 in beginning at 255}
       head.backgr:=head.datamin_org;{for case histogram is not called}
       cwhite:=head.datamax_org;
       result:=head.naxis<>0;{success};
-      reader_position:=reader_position+head.width*head.height*(abs(head.bitpix) div 8)
+      reader_position:=reader_position+head.width*head.height*head.naxis3*(abs(head.bitpix) div 8)
     end{image block}
     else
     if  ((head.naxis=2) and ((bintable) or (asciitable)) ) then
@@ -2896,7 +2904,8 @@ begin
     _extract naming when saving: true only when real trailing data follows, so a
     plain single image -- compressed or not -- takes the normal save path.
     Requires at least one full 2880 header block to count as a loadable HDU. }
-  more_hdus_present := ((file_size - reader_position) > 2880) or (get_ext > 1); //get_ext for case last image is displayed
+  more_hdus_present := (((file_size - reader_position) > 2880) or (get_ext > 1)); //get_ext for case last image is displayed
+
   if ((last_extension=false) or (extend_type>0)) then
      mainform1.tabsheet1.caption:='Header '+inttostr(get_ext);
   if ((last_extension=false) or (extend_type>0)) then
@@ -4503,15 +4512,17 @@ begin
 end;
 
 
-procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
+function remove_key(memo:tstrings;inpt:string; all:boolean): boolean;{remove key word in header. If all=true then remove multiple of the same keyword}
 var
    count1: integer;
 begin
+  result:=false;
   count1:=memo.Count-1;
   while count1>=0 do {update keyword}
   begin
     if pos(inpt,memo[count1])>0 then {found}
     begin
+      result:=true;
       memo.delete(count1);
       if all=false then exit;
     end;
@@ -6216,11 +6227,6 @@ begin
   begin
     result:=true;
     mainform1.shape_marker3.visible:=true;
-
-
-//    place_marker_radec(mainform1.shape_marker3,ra_new,dec_new);{place ra,dec marker in image}
-//  shape.pen.style:=psSolid;//for photometry, resturn from psClear;
-//    mainform1.shape_marker3.pen.style:=psClear; //not visible else psSolid
 
     celestial_to_pixel(head, ra_new,dec_new,true, shape_marker3_fitsX,shape_marker3_fitsY); {ra,dec to fitsX,fitsY}
     show_marker_shape(mainform1.shape_marker3,0 {rectangle},50,50,10,shape_marker3_fitsX, shape_marker3_fitsY);
@@ -10730,11 +10736,6 @@ begin
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
 end;
 
-procedure Tmainform1.Panel1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainform1.saturation_factor_plot1MouseWheel(Sender: TObject;
   Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
@@ -13551,11 +13552,17 @@ end;
 
 
 procedure Tmainform1.add_marker_position1Click(Sender: TObject);
+var
+   position : string;
 begin
   if add_marker_position1.checked then
   begin
-    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0   or  23.99 +89.99  or  359.99d 89.99  or  C for center',marker_position );
+    //if head.cd1_1<>0 then
+    // position:=Statusbar1.Panels[0].text:='α, δ';;
+    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0   or  23.99 +89.99  or  359.99d 89.99  or  X for current α, δ position, C for center',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
+    if uppercase(marker_position)='X' then
+       marker_position:=statusbar1.Panels[0].text;
 
     mainform1.shape_marker3.visible:=true;
     add_marker_position1.checked:=place_marker3(marker_position);{place a marker}
@@ -15881,6 +15888,19 @@ end;
 
 procedure Tmainform1.MenuItem7Click(Sender: TObject);
 begin
+  if ((head.naxis3<>3) or (head.naxis=0)) then exit;
+  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
+  begin
+    Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
+
+    backup_img;
+    local_color_smooth(img_loaded,startX,stopX,startY,stopY);
+
+    plot_image(mainform1.image1,false);
+    Screen.Cursor:=crDefault;
+  end{fits file}
+  else
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 
 end;
 
@@ -16258,6 +16278,7 @@ end;
 procedure Tmainform1.set_area1Click(Sender: TObject);
 var
     dum : integer;
+    mess : string;
 begin
   if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
   if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -16269,12 +16290,22 @@ begin
   areax2:=stopX;
   areay2:=stopY;
   set_area1.checked:=areaX1>-1;
-//  set_area1.checked:=(areaX1<>areaX2);
-  //stackmenu1.area_set1.caption:='✓';
-  stackmenu1.area_set1.caption:='['+inttostr(areax1)+','+inttostr(areay1)+'], ['+inttostr(areax2)+','+inttostr(areay2)+']';
+
+  if CTRLbutton then
+  begin
+    copy_paste_shape:=1; //ellipse
+    mess:=  '⬭'
+  end
+  else
+  begin
+    copy_paste_shape:=0;//rectangle
+    mess:='(▭)';
+  end;
+  stackmenu1.area_set1.caption:='['+inttostr(areax1)+','+inttostr(areay1)+'], ['+inttostr(areax2)+','+inttostr(areay2)+'] '+mess;
 
   stackmenu1.center_position1.caption:='Center: '+inttostr((startX+stopX) div 2)+', '+inttostr((startY+stopY) div 2);
 end;
+
 
 procedure rotate_arbitrary(angle,flipped_view, flipped_image: double);
 var centerxs,centerys  : double;
@@ -18624,6 +18655,7 @@ begin
   a:=(stopX-1-startx)/2;
   b:=(stopY-1-startY)/2;
 
+  //calculate median background
   for k:=0 to length(img)-1 do {do all colors}
   begin
     counter:=0;

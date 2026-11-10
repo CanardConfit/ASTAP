@@ -4918,8 +4918,7 @@ begin
   {average}
   for c:=0 to file_count - 1 do
   begin
-    memo2_message('Adding ' + mess + ' image ' + IntToStr(c + 1) +
-      ' to ' + mess + ' average. ' + file_list[c]);
+    memo2_message('Adding ' + mess + ' image ' + IntToStr(c + 1) + ' to ' + mess + ' average. ' + file_list[c]);
 
     {load image}
     Application.ProcessMessages;
@@ -4976,7 +4975,8 @@ end;
 
 function average_flatdarks(flat_exposure: string; out img_bias: Timage_array; out flatdark_exposure,flatdark_temperature,flatdark_gain: string): boolean;
 var
-  c, file_count: integer;
+  c, file_count, i, counter: integer;
+  path1,filen : string;
   file_list: array of string;
   specified  : boolean;
 begin
@@ -4988,30 +4988,78 @@ begin
   file_count:=0;
   specified:=False;
   with stackmenu1 do
-  for c:=0 to listview4.items.Count - 1 do
-    if listview4.items[c].Checked = True then
-    begin
-       if ((classify_flat_dark_exposure1.checked=false) or (flat_exposure=listview4.Items.item[c].subitems.Strings[FD_exposure])) then
-       begin
-         if specified=false then//use data from first flat-dark
-         begin
-           flatdark_exposure:=listview4.Items.item[c].subitems.Strings[FD_exposure];
-           flatdark_temperature:=listview4.Items.item[c].subitems.Strings[D_temperature];
-           flatdark_gain:=listview4.Items.item[c].subitems.Strings[D_gain];
-           specified:=true;
-         end;
-         file_list[file_count]:=ListView4.items[c].Caption;
-         Inc(file_count);
-       end;
-    end;
-  if file_count <> 0 then
   begin
-    memo2_message('Averaging flat dark frames.');
-    average('flat-dark', file_list, file_count, img_bias);{only average}
-    if file_count>0  then result:=true;
-  end;
-  head.flatdark_count:=file_count;
-  file_list:=nil;
+    for c:=0 to listview4.items.Count - 1 do
+      if listview4.items[c].Checked = True then
+      begin
+         if ((classify_flat_dark_exposure1.checked=false) or (flat_exposure=listview4.Items.item[c].subitems.Strings[FD_exposure])) then
+         begin
+
+           if specified=false then//use data from first flat-dark
+           begin
+             flatdark_exposure:=listview4.Items.item[c].subitems.Strings[FD_exposure];
+             flatdark_temperature:=listview4.Items.item[c].subitems.Strings[D_temperature];
+             flatdark_gain:=listview4.Items.item[c].subitems.Strings[D_gain];
+             specified:=true;
+           end;
+           filen:=stackmenu1.ListView4.items[c].Caption;
+           if pos('master_flat_dark', ExtractFileName(filen)) > 0 then {master_flat dark file}
+           begin
+             result:=load_fits(filen,false {light}, True, false {update memo}, 0,mainform1.memo1.lines, head, img_bias);
+             if result then
+             begin
+               memo2_message('Master flat-dark loaded. '+filen);
+               exit;
+             end;
+           end
+           else
+           begin
+             file_list[file_count]:=filen;
+             Inc(file_count);
+           end;
+         end;
+      end;
+    if file_count <> 0 then
+    begin
+      memo2_message('Averaging flat dark frames.');
+      average('flat-dark', file_list, file_count, img_bias);{only average}
+      if file_count>0  then
+      begin
+         result:=true;
+         head.flatdark_count:=file_count;
+
+         path1:=extractfilepath(file_list[0]) + 'master_flat_dark_' + IntToStr(head.flatdark_count) + 'xFD_' + flatdark_exposure+'sec_'+copy(head.date_obs, 1, 10) + '.fit';
+         update_integer(mainform1.memo1.lines,'BIAS_CNT=', ' / Number of flat-dark or bias images combined.   ' , head.flatdark_count);
+
+        if save_fits(img_bias,mainform1.memo1.lines,head, path1,False) then {saved}
+        begin
+          memo2_message('Saved '+path1);
+          application.processmessages;
+
+         application.processmessages;
+         listview4.Items.BeginUpdate; {remove the flats added to master}
+         for i:=0 to file_count do
+         begin
+           c:=0;
+           counter:=listview4.Items.Count;
+           while c < counter do
+           begin
+             if file_list[i] = stackmenu1.ListView4.items[c].Caption then {processed}
+             begin
+               listview4.Items.Delete(c);
+               Dec(counter);{one file less}
+             end
+             else
+               Inc(c);
+           end;
+         end;
+         listview_add(listview4, path1, True, FD_nr);{add master}
+         listview4.Items.EndUpdate;
+
+        end;
+      end;
+    end;
+  end;//stackmenu1
 end;
 
 
@@ -5265,8 +5313,7 @@ end;
 
 procedure Tstackmenu1.analyseflatsButton3Click(Sender: TObject);
 begin
-  analyse_listview(listview3, False {light}, True
-    {full fits, include background and noise}, new_analyse_required3{refresh});
+  analyse_listview(listview3, False {light}, True{full fits, include background and noise}, new_analyse_required3{refresh});
   new_analyse_required3:=False;{analyse done}
 
   {temporary fix for CustomDraw not called}
@@ -7993,10 +8040,7 @@ begin
 
   if img_loaded=nil then exit;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-  find_stars(img_loaded, head,hfd_min, 150 {nr stars}{, 1{binfactor}, starlist,mean_hfd);//collect 150 stars. They will be filtered later by SNR. No efficient but avoids changing the find_Star procedure
-
-
-
+  find_stars(img_loaded, head,hfd_min, 150 {nr stars}, starlist,mean_hfd);  //collect 150 stars. They will be filtered later by SNR. No efficient but avoids changing the find_Star procedure
   nrstars:=length(starlist[0]);
   setlength(vsp_vsx_list,nrstars);//make space
   formalism:=mainform1.Polynomial1.itemindex;
@@ -10290,24 +10334,41 @@ begin
 end;
 
 
-procedure combine_files(lv : tlistview); //combine selected files, no alignment, no saving
+procedure combine_files(lv : tlistview;gain: double); //combine selected files, no alignment, no saving
 var
-  c: integer;
-  fitsX, fitsY, col, counter: integer;
+  c, fitsX, fitsY, col,counter,starimgcounter  : integer;
+  factor : double;
   img_temp : Timage_array;
   headx   : theader;
   filename1: string;
+  gain_applied,gain0 : double;
+  nebula : boolean;
 begin
   backup_img; {move viewer data to img_backup}
 
   counter:=0;
-  for c:=0 to lv.items.Count - 1 do {check for astrometric solutions}
+  starimgcounter:=0;
+  for c:=0 to lv.items.Count - 1 do
   begin
-    if lv.Items[c].Selected then   //solve all selected
+    if lv.Items[c].Selected then
     begin
       filename1:=lv.items[c].Caption;
+      if pos('_nebula',filename1)>0 then
+      begin
+         gain_applied:=gain;
+         nebula:=true;
+      end
+      else
+      begin
+        gain_applied:=1;
+        nebula:=false;
+      end;
+
       if counter=0 then
-        load_fits(filename1, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded)
+      begin
+        load_fits(filename1, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded);
+        gain0:=gain_applied;
+      end
       else
         if load_fits(filename1, True {light}, True, false {update memo}, 0,memox, headx, img_temp) then
       begin
@@ -10317,9 +10378,10 @@ begin
               for fitsY:=0 to head.Height - 1 do
                 for fitsX:=0 to head.Width - 1 do
                 begin
-                   img_loaded[col, fitsY, fitsX]:=img_loaded[col, fitsY, fitsX]+img_temp[col, fitsY, fitsX];
+                   img_loaded[col, fitsY, fitsX]:=img_loaded[col, fitsY, fitsX]*gain0 + img_temp[col, fitsY, fitsX]*gain_applied;
                 end;
           add_text(mainform1.memo1.lines,'HISTORY   ', 'Combined '+ExtractFileName(filename1));
+          gain0:=1;//only for the first time;
         end
         else
         begin
@@ -10328,13 +10390,27 @@ begin
         end;
       end;
       inc(counter);
+      if nebula=false then
+          inc(starimgcounter,1);//only count star images
     end;
 
-    if counter>=2 then
+    if counter>=1 then
     begin
       head.object_name:=StringReplace(head.object_name,'_stars','',[]);
       head.object_name:=StringReplace(head.object_name,'_nebula','',[]);
       update_text(mainform1.memo1.lines,'OBJECT  =',#39+head.object_name+#39); {spaces will be added/corrected later}
+
+      if starimgcounter>1 then
+      begin
+        factor:=1/starimgcounter;
+        for col:=0 to head.naxis3 - 1 do {Resize to amount of star images. }
+          for fitsY:=0 to head.Height - 1 do
+            for fitsX:=0 to head.Width - 1 do
+            begin
+              img_loaded[col, fitsY, fitsX]:=img_loaded[col, fitsY, fitsX]*factor;
+            end;
+      end;
+
       plot_histogram(img_loaded, True);
       plot_image(mainform1.image1, False);{plot real}
     end;
@@ -10346,9 +10422,12 @@ end;
 
 
 procedure Tstackmenu1.combine_files1Click(Sender: TObject);
+var
+  gain : double;
 begin
+  gain:=strtofloat2(InputBox('Gain for nebula','Enter the gain to apply to nebula images:','1'));
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  combine_files(listview1);//combine selected files, no alignment, no saving
+  combine_files(listview1,gain);//combine selected files, no alignment, no saving
   Screen.Cursor:=crDefault;
 end;
 
@@ -10359,9 +10438,12 @@ end;
 
 
 procedure Tstackmenu1.results_combine_files1Click(Sender: TObject);
+var
+  gain : double;
 begin
+  gain:=strtofloat2(InputBox('Gain for nebula','Enter the gain to apply to nebula images:','1'));
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  combine_files(listview5); //combine selected files, no alignment, no saving
+  combine_files(listview5,gain); //combine selected files, no alignment, no saving
  Screen.Cursor:=crDefault;
 end;
 
@@ -11918,7 +12000,7 @@ end;
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var
   fitsX, fitsY, fuzziness,col,i,j : integer;
-  r, g, b, h, s, s_new, v, oldhue, newhue, dhue, saturation_factor, s_old, saturation_tol, v_adjust : single;
+  r, g, bl, h, s, s_new, v, oldhue, newhue, dhue, saturation_factor, s_old, saturation_tol, v_adjust,a,b,center_x,center_y : single;
   colour: tcolor;
   blend : boolean;
   close,close2 : double;
@@ -11960,25 +12042,32 @@ begin
   end;
   {else set in astap_main}
 
+
+  center_x:=(areax1+areax2)/2;
+  center_y:=(areay1+areay2)/2;
+  a:=(areax2-1-areax1)/2;
+  b:=(areay2-1-areay1)/2;
+
   v_adjust:=stackmenu1.new_colour_luminance1.position/100;
 
   for fitsY:=areay1 to areay2 do
     for fitsX:=areax1 to areax2 do
     begin
+      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, inside ellipse
       if colour_close(fitsY,fitsX) then
       begin
         if blend=false then
         begin
-          HSV2RGB(newhue, min(1, s_new * saturation_factor) {s 0..1}, v * v_adjust{v 0..1}, r, g, b);   {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+          HSV2RGB(newhue, min(1, s_new * saturation_factor) {s 0..1}, v * v_adjust{v 0..1}, r, g, bl);   {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
           img_loaded[0, fitsY, fitsX]:=r + head.backgr;
           img_loaded[1, fitsY, fitsX]:=g + head.backgr;
-          img_loaded[2, fitsY, fitsX]:=b + head.backgr;
+          img_loaded[2, fitsY, fitsX]:=bl + head.backgr;
         end
         else
         begin //use nearby colour which differs the most.
           close:=0;
-          for i:=-1 to 1 do
-          for j:=-1 to 1 do
+          for i:=-2 to 2 do
+          for j:=-2 to 2 do
           if ((i<>0) or (j<>0)) then //test all 8 neighbour pixels for the largest colour offset and use this to replace the pixel colour
           begin
             close2:=colour_closeness(fitsY+i,fitsX+j);
@@ -12802,7 +12891,7 @@ begin
           if flat_filter = '' then  head.filter_name:=copy(extractfilename(file_list[0]), 1, 10);{for DSLR images}
 
           path1:=extractfilepath(file_list[0]) + 'master_flat_corrected_with_flat_darks_' + flat_filter + '_' + IntToStr(flat_count) + 'xF_' + IntToStr(head.flatdark_count) + 'xFD_' + flat_exposure+'sec_'+copy(head.date_obs, 1, 10) + '.fit';
-          ;
+
           update_integer(mainform1.memo1.lines,'FLAT_CNT=', ' / Number of flat images combined.                ' , flat_count);
           update_integer(mainform1.memo1.lines,'BIAS_CNT=', ' / Number of flat-dark or bias images combined.   ' , head.flatdark_count);
           if head.flatdark_count <> 0 then head.calstat:=head.calstat + 'B';
@@ -12852,7 +12941,6 @@ begin
 
     until flat_count = 0;{make more than one master}
 
-//    if flatdark_used then listview4.Items.Clear;{remove bias if used}
     save_settings2;{store settings}
     file_list:=nil;
     analyse_listview(listview3, False {light}, full_analyse {full fits (for standard deviation)}, False{refresh});{update the tab information}
@@ -13229,7 +13317,7 @@ end;
 
 
 function propose_file_name(mosaic_mode,long_date, add_time: boolean;
-  object_to_process, filters_used: string): string; {propose a file name}
+  object_to_process : string; filters_used : array of string): string; {propose a file name}
 var
   hh, mm, ss, ms: word;
 begin
@@ -13246,17 +13334,22 @@ begin
   end;
   Result:=Result + ', ';
   if mosaic_mode then Result:=Result + 'mosaic ';
-  if counterR <> 0 then Result:=Result + IntToStr(counterR) + 'x' + IntToStr(exposureR) + 'R ';
-  if counterG <> 0 then Result:=Result + IntToStr(counterG) + 'x' + IntToStr(exposureG) + 'G ';
-  if counterB <> 0 then Result:=Result + IntToStr(counterB) + 'x' + IntToStr(exposureB) + 'B ';
-  if counterL <> 0 then Result:=Result + IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L ';
+  with stackmenu1 do
+  begin
+    if counterR <> 0  then Result:=Result + IntToStr(counterR)  + 'x' + IntToStr(exposureR) + filters_used[0]+' ';
+    if counterG <> 0  then Result:=Result + IntToStr(counterG)  + 'x' + IntToStr(exposureG) + filters_used[1]+' ';
+    if counterB <> 0  then Result:=Result + IntToStr(counterB)  + 'x' + IntToStr(exposureB) + filters_used[2]+' ';
+    if counterR2 <> 0 then Result:=Result + IntToStr(counterR2) + 'x' + IntToStr(exposureR2) + filters_used[3]+' ';
+    if counterG2 <> 0 then Result:=Result + IntToStr(counterG2) + 'x' + IntToStr(exposureG2) + filters_used[4]+' ';
+    if counterB2 <> 0 then Result:=Result + IntToStr(counterB2) + 'x' + IntToStr(exposureB2) + filters_used[5]+' ';
+    if counterL <> 0  then Result:=Result + IntToStr(counterL)  + 'x' + IntToStr(exposureL) + filters_used[6]+' ';
+  end;
   {head.exposure}
   Result:=StringReplace(trim(Result), ' ,', ',', [rfReplaceAll]);
   {remove all spaces in front of comma's}
   telescop:=trim(telescop);
   if trim(telescop) <> '' then Result:=Result + ', ' + telescop;
 
-  if length(filters_used) > 0 then Result:=Result + ', (' + filters_used + ')';
   instrum:=trim(instrum);
   if instrum <> '' then Result:=Result + ', ' + instrum;
   Result:=RemoveSpecialChars(Result);  {slash could be in date but also telescope name like eqmod HEQ5/6}
@@ -13344,7 +13437,7 @@ var
   i, c, nrfiles, image_counter, object_counter,
   first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon :   integer;
   filter_name1, filter_name2, defilter, filename3,
-  extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_neb2,fileout_stars, alignment_method   : string;
+  extra1, extra2, object_to_process, stack_info, date_obs_reference,fileout_neb,fileout_neb2,fileout_stars, alignment_method   : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
   classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue,ephemeris_alignment_checked,astrometric_alignment_checked, starnet_checked : boolean;
@@ -14061,7 +14154,6 @@ begin
 
 
             filename2:=filename3;{restore last filename}
-     //       extra1:=extra1 + head.filter_name;
           end{nrfiles>1}
           else
           begin
@@ -14255,8 +14347,7 @@ begin
           add_integer(mainform1.memo1.lines,'LUM_FLAT=', ' / Flats used for luminance.                      ', head.flat_count);
           add_integer(mainform1.memo1.lines,'LUM_BIAS=', ' / Flat-darks used for luminance.                 ', head.flatdark_count);
 
-          thefilters:=head.filter_name; {used later for file name}
-          stack_info:=' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' + IntToStr(counterL) + 'x' + IntToStr(exposureL) +  'L  (' + thefilters + ')';
+          stack_info:=' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' + IntToStr(counterL) + 'x' + IntToStr(exposureL) +  'L  (' + head.filter_name + ')';
           {head.exposure}
         end
         else {made LRGB color}
@@ -14342,11 +14433,6 @@ begin
           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
 
-
-          thefilters:='';
-          for i:=0 to 6 do if length(filters_used[i]) > 0 then thefilters:=thefilters + ' ' + filters_used[i];
-          thefilters:=trim(thefilters);
-
           stack_info:=' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' +
             IntToStr(head.flat_count) + 'x' + 'F  ' +
             IntToStr(head.dark_count) + 'x' + 'D  ' +
@@ -14356,13 +14442,13 @@ begin
             IntToStr(counterR2) + 'x' + IntToStr(exposureR2) + 'R2  ' +
             IntToStr(counterG2) + 'x' + IntToStr(exposureG2) + 'G2  ' +
             IntToStr(counterB2) + 'x' + IntToStr(exposureB2) + 'B2  ' +
-            IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L  (' + thefilters + ')';
+            IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L';
           {head.exposure}
         end;
 
         mainform1.Memo1.Lines.EndUpdate;
 
-        filename2:=extractfilepath(filename2) + propose_file_name(stitching_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, thefilters);{give it a nice file name}
+        filename2:=extractfilepath(filename2) + propose_file_name(stitching_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, filters_used);{give it a nice file name}
 
         if head.cd1_1 <> 0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result ' + IntToStr(image_counter) + ' as ' + filename2);
@@ -14422,7 +14508,7 @@ begin
         listview5.Items[comet_frames_to_combine[1]].Selected:=true;
         listview5.Items[comet_frames_to_combine[2]].Selected:=true;
 
-        combine_files(listview5); //combine selected files, no alignment, no saving
+        combine_files(listview5,1); //combine selected files, no alignment, no saving
 
         if length(img_loaded)>1 then //colour
         begin

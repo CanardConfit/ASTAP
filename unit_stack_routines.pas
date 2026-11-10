@@ -48,6 +48,49 @@ implementation
 uses unit_astrometric_solving, unit_contour,unit_threaded_stacking_mean,unit_threaded_stacking_mean_and_variance,unit_threaded_stacking_combining,unit_threaded_mosaic;
 
 
+
+procedure remove_rice_key_words(const headerstr : tstrings);//remove most rice compression keywords
+
+{PCOUNT  =             22303638 / size of special data area
+GCOUNT  =                    1 / one data group
+TFIELDS =                    1 / number of fields in each row
+TTYPE1  = 'COMPRESSED_DATA' / label for field 1
+TFORM1  = '1PB(0)  ' / data format of field: variable length
+ZIMAGE  =                    T / extension contains compressed image
+ZSIMPLE =                    T / original image had SIMPLE = T
+ZBITPIX =                   16 / original image had BITPIX = 16
+ZNAXIS  =                    2 / original image had NAXIS = 2
+ZNAXIS1 =                 6216 / original image axis 1
+ZNAXIS2 =                 4152 / original image axis 2
+ZTILE1  =                 6216 / size of tiles axis 1
+ZTILE2  =                    1 / size of tiles axis 2
+ZCMPTYPE= 'RICE_1  ' / compression algorithm
+ZNAME1  = 'BLOCKSIZE' / compression block size
+ZVAL1   =                   32 / pixels per block
+ZNAME2  = 'BYTEPIX ' / bytes per pixel
+ZVAL2   =                    2 / 16-bit integers}
+begin
+  if remove_key(headerstr,'ZIMAGE  =',false{all}) then //ZIMAGE keyword found
+  begin
+    remove_key(headerstr,'PCOUNT  =',false{all});
+    remove_key(headerstr,'GCOUNT  =',false{all});
+    remove_key(headerstr,'TFIELDS =',false{all});
+    remove_key(headerstr,'TTYPE1  =',false{all});
+    remove_key(headerstr,'TFORM1  =',false{all});
+
+    remove_key(headerstr,'ZTILE2  =',false{all});
+    remove_key(headerstr,'ZCMPTYPE=',false{all});
+    remove_key(headerstr,'ZNAME1  =',false{all});
+    remove_key(headerstr,'ZVAL1   =',false{all});
+    remove_key(headerstr,'ZNAME2  =',false{all});
+    remove_key(headerstr,'ZVAL2   =',false{all});
+
+//    more_hdus_present :=false;
+  end;
+end;
+
+
+
 procedure calc_newx_newy(headA, headB : theader; vector_based : boolean; fitsXfloat,fitsYfloat: double; out  x_new_float,  y_new_float : double); {apply either vector or astrometric correction. Fits in 1..width, out range 0..width-1}
 var
   u,u0,v,v0,dRa,dDec,delta,ra_new,dec_new,delta_ra,det,gamma,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,h  : double;
@@ -727,6 +770,8 @@ begin
         head.width:=width_max;
         head.height:=height_max;
         sum_exp:=exposureR+exposureG+exposureG+exposureL+exposureRGB;
+
+     //   remove_rice_key_words(mainform1.memo1.Lines);//remove rice compression keywords. Will almost never happen
       end;
     end;{LRGB}
   end;{with stackmenu1}
@@ -1239,6 +1284,8 @@ begin
         head.height:=height_max;
         head.width:=width_max;
 
+        remove_rice_key_words(mainform1.memo1.Lines);//remove rice compression keywords
+
         for fitsY:=0 to height_max-1 do //this runs in 0.15 sec. Threaded version takes 0.43 sec
           for fitsX:=0 to width_max-1 do
           begin
@@ -1578,6 +1625,9 @@ begin
         head.pedestal:=pedestal;
         head.height:=height_max;
         head.width:=width_max;
+
+        remove_rice_key_words(mainform1.memo1.Lines);//remove rice compression keywords
+
         for col:=0 to head.naxis3-1 do //this runs unthreaded 0.13 sec. with col as third loop 0.15 sec. Threaded takes 0.43 sec.
           for fitsY:=0 to height_max-1 do
               for fitsX:=0 to width_max-1 do
