@@ -1958,10 +1958,6 @@ object mainform1: Tmainform1
         Caption = 'Local colour smooth stars (⬭)'
         OnClick = localcoloursmooth2Click
       end
-      object MenuItem7: TMenuItem
-        Caption = 'MenuItem7'
-        OnClick = MenuItem7Click
-      end
       object remove_colour1: TMenuItem
         Caption = 'Local remove colour (⬭)'
         Hint = 'Intended for some ugly coloured stars in OSC images'
