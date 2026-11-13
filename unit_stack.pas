@@ -170,12 +170,8 @@ type
     apply_gaussian_filter1: TButton;
     apply_get_background1: TButton;
     apply_horizontal_gradient1: TButton;
-    apply_hue1: TButton;
-    apply_remove_background_colour1: TButton;
     apply_star_smooth1: TButton;
     apply_vertical_gradient1: TButton;
-    area_selected1: TLabel;
-    area_set1: TLabel;
     artificial_image_gradient1: TCheckBox;
     auto_background1: TCheckBox;
     colour_correction_factors1: TButton;
@@ -188,7 +184,6 @@ type
     bin_factor1: TComboBox;
     bin_image1: TButton;
     bin_image2: TButton;
-    blend1: TCheckBox;
     blink_button1: TButton;
     blink_button_contB1: TButton;
     blink_button_contF1: TButton;
@@ -276,9 +271,6 @@ type
     clear_selection2: TButton;
     clear_selection3: TButton;
     colournebula1: TButton;
-    colourShape1: TShape;
-    colourShape2: TShape;
-    colourShape3: TShape;
     contour_gaussian1: TComboBox;
     contour_sigma1: TComboBox;
     correct_gradient_label1: TLabel;
@@ -323,9 +315,7 @@ type
     gr1: TEdit;
     green_filter1: TEdit;
     green_filter2: TEdit;
-    GroupBox1: TGroupBox;
     GroupBox10: TGroupBox;
-    GroupBox11: TGroupBox;
     GroupBox12: TGroupBox;
     GroupBox13: TGroupBox;
     GroupBox14: TGroupBox;
@@ -364,9 +354,6 @@ type
     help_uncheck_outliers1: TLabel;
     hfd_simulation1: TComboBox;
     hours_and_minutes1: TCheckBox;
-    HueRadioButton1: TRadioButton;
-    HueRadioButton2: TRadioButton;
-    hue_fuzziness1: TTrackBar;
     ignorezero1: TCheckBox;
     ignore_header_solution1: TCheckBox;
     image_to_add1: TLabel;
@@ -400,7 +387,6 @@ type
     Label33: TLabel;
     Label34: TLabel;
     Label35: TLabel;
-    Label36: TLabel;
     Label39: TLabel;
     Label4: TLabel;
     Label40: TLabel;
@@ -431,7 +417,6 @@ type
     Label65: TLabel;
     Label66: TLabel;
     Label67: TLabel;
-    Label68: TLabel;
     Label69: TLabel;
     Label7: TLabel;
     Label70: TLabel;
@@ -503,10 +488,8 @@ type
     multiply_blue1: TEdit;
     multiply_green1: TEdit;
     multiply_red1: TEdit;
-    new_colour_luminance1: TTrackBar;
     new_height1: TLabel;
     new_height2: TLabel;
-    new_saturation1: TTrackBar;
     undo_button22: TBitBtn;
     unsharp_amount1: TTrackBar;
     noisefilter_blur1: TComboBox;
@@ -540,7 +523,6 @@ type
     press_esc_to_abort1: TLabel;
     quad_tolerance1: TComboBox;
     radius_search1: TComboBox;
-    rainbow_Panel1: TPanel;
     RAposition1: TLabel;
     raw_box1: TGroupBox;
     raw_conversion_program1: TComboBox;
@@ -557,8 +539,6 @@ type
     Result1: TTabSheet;
     rg1: TEdit;
     rr1: TEdit;
-    sample_size1: TComboBox;
-    saturation_tolerance1: TTrackBar;
     save_as_new_file1: TButton;
     save_result1: TButton;
     save_settings_extra_button1: TButton;
@@ -570,7 +550,6 @@ type
     Separator4: TMenuItem;
     Separator6: TMenuItem;
     show_quads1: TBitBtn;
-    sigma_decolour1: TComboBox;
     global_colour_smooth_sd1: TComboBox;
     smart_colour_smooth_button1: TButton;
     global_colour_smooth_width1: TComboBox;
@@ -650,7 +629,6 @@ type
     undo_button13: TBitBtn;
     undo_button14: TBitBtn;
     undo_button15: TBitBtn;
-    undo_button16: TBitBtn;
     undo_button19: TBitBtn;
     undo_button2: TBitBtn;
     undo_button20: TBitBtn;
@@ -660,10 +638,8 @@ type
     undo_button6: TBitBtn;
     undo_button7: TBitBtn;
     undo_button8: TBitBtn;
-    undo_button9: TBitBtn;
     undo_button_equalise_background1: TBitBtn;
     uncheck_9: TMenuItem;
-    unselect_area1: TButton;
     unsharp_radius1: TTrackBar;
     unsharp_threshold1: TTrackBar;
     update_annotations1: TCheckBox;
@@ -785,7 +761,6 @@ type
     procedure apply_star_smooth1Click(Sender: TObject);
     procedure bin2x2_selectedP1Click(Sender: TObject);
     procedure bin_selectedB1Click(Sender: TObject);
-    procedure blend1Change(Sender: TObject);
     procedure blink_annotate_and_solve1Click(Sender: TObject);
     procedure apply_unsharp_mask1Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
@@ -857,7 +832,6 @@ type
     procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
     procedure analyse_inspector1Click(Sender: TObject);
-    procedure apply_hue1Click(Sender: TObject);
     procedure colour_correction_factors1Click(Sender: TObject);
     procedure apply_background_noise_filter1Click(Sender: TObject);
     procedure bayer_pattern1Select(Sender: TObject);
@@ -883,14 +857,12 @@ type
     procedure help_inspector_tab1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure help_pixel_math2Click(Sender: TObject);
-    procedure hue_fuzziness1Change(Sender: TObject);
+//    procedure hue_fuzziness1Change(Sender: TObject);
     procedure listview8CustomDrawItem(Sender: TCustomListView;  Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
     procedure listview8CustomDrawSubItem(Sender: TCustomListView;  Item: TListItem; SubItem: integer; State: TCustomDrawState;  var DefaultDraw: boolean);
     procedure live_stacking1Click(Sender: TObject);
     procedure copy_files_to_clipboard1Click(Sender: TObject);
     procedure most_common_mono1Click(Sender: TObject);
-    procedure new_colour_luminance1Change(Sender: TObject);
-    procedure new_saturation1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
     procedure pagecontrol1MouseMove(Sender: TObject; Shift: TShiftState;  X, Y: integer);
     procedure photom_calibrate1Click(Sender: TObject);
@@ -898,10 +870,7 @@ type
     procedure photom_stack1Click(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
     procedure press_esc_to_abort1Click(Sender: TObject);
-    procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;   Shift: TShiftState; X, Y: integer);
-    procedure rainbow_Panel1Paint(Sender: TObject);
     procedure reference_database1Change(Sender: TObject);
-    procedure remove_luminance1Change(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
@@ -913,7 +882,6 @@ type
     procedure live_stacking_pause1Click(Sender: TObject);
     procedure live_stacking_restart1Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
-    procedure saturation_tolerance1Change(Sender: TObject);
     procedure save_result1Click(Sender: TObject);
     procedure save_settings_extra_button1Click(Sender: TObject);
     procedure smart_colour_smooth_button1Click(Sender: TObject);
@@ -924,7 +892,6 @@ type
     procedure listview6CustomDrawItem(Sender: TCustomListView; Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
     procedure rows_to_clipboard1Click(Sender: TObject);
     procedure selectall1Click(Sender: TObject);
-    procedure apply_remove_background_colour1Click(Sender: TObject);
     procedure reset_factors1Click(Sender: TObject);
     procedure search_fov1Change(Sender: TObject);
     procedure speedButton_location1Click(Sender: TObject);
@@ -1020,7 +987,6 @@ type
     procedure FormShow(Sender: TObject);
     procedure undo_button_equalise_background1Click(Sender: TObject);
     procedure uncheck_1Click(Sender: TObject);
-    procedure unselect_area1Click(Sender: TObject);
     procedure unsharp_amount1Change(Sender: TObject);
     procedure unsharp_radius1Change(Sender: TObject);
     procedure unsharp_threshold1Change(Sender: TObject);
@@ -1179,7 +1145,6 @@ function median_background(var img: Timage_array; color, sizeX, sizeY, x, y: int
 procedure analyse_image(img: Timage_array; var head: Theader; snr_min: double; report_type: integer);//find background, number of stars, median HFD
 
 
-procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
 procedure apply_trimmed_median_background(sourc, dest: Timage_array; datamax : double;radius: integer); {apply most common filter on first array and place result in second array}
 
 procedure report_results(object_to_process, stack_info: string; object_counter, color_icon,stack_icon: integer);{report on tab results}
@@ -4190,11 +4155,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.unselect_area1Click(Sender: TObject);
-begin
-  area_set1.Caption:='⍻';
-end;
-
 procedure Tstackmenu1.unsharp_amount1Change(Sender: TObject);
 begin
   unsharp_edit_amount1.text:=inttostr(unsharp_amount1.position div 10);
@@ -4509,8 +4469,6 @@ begin
             else
               lv.Items.item[c].subitems.Strings[D_exposure]:=floattostrf(headx.exposure, ffgeneral, 6, 6);
 
-            if headx.set_temperature>100 then
-             beep;
             lv.Items.item[c].subitems.Strings[D_temperature]:=IntToStr(headx.set_temperature);//=TStringList(TListItem(lv.Items.FItems.FList^[c]).FSubItems).FList^[D_temperature].FString
             lv.Items.item[c].subitems.Strings[D_binning]:=floattostrf(headx.Xbinning, ffgeneral, 0, 0) + ' x ' + floattostrf(
               headx.Ybinning, ffgeneral, 0, 0);  {Binning CCD}
@@ -4918,8 +4876,7 @@ begin
   {average}
   for c:=0 to file_count - 1 do
   begin
-    memo2_message('Adding ' + mess + ' image ' + IntToStr(c + 1) +
-      ' to ' + mess + ' average. ' + file_list[c]);
+    memo2_message('Adding ' + mess + ' image ' + IntToStr(c + 1) + ' to ' + mess + ' average. ' + file_list[c]);
 
     {load image}
     Application.ProcessMessages;
@@ -4976,7 +4933,8 @@ end;
 
 function average_flatdarks(flat_exposure: string; out img_bias: Timage_array; out flatdark_exposure,flatdark_temperature,flatdark_gain: string): boolean;
 var
-  c, file_count: integer;
+  c, file_count, i, counter: integer;
+  path1,filen : string;
   file_list: array of string;
   specified  : boolean;
 begin
@@ -4988,30 +4946,78 @@ begin
   file_count:=0;
   specified:=False;
   with stackmenu1 do
-  for c:=0 to listview4.items.Count - 1 do
-    if listview4.items[c].Checked = True then
-    begin
-       if ((classify_flat_dark_exposure1.checked=false) or (flat_exposure=listview4.Items.item[c].subitems.Strings[FD_exposure])) then
-       begin
-         if specified=false then//use data from first flat-dark
-         begin
-           flatdark_exposure:=listview4.Items.item[c].subitems.Strings[FD_exposure];
-           flatdark_temperature:=listview4.Items.item[c].subitems.Strings[D_temperature];
-           flatdark_gain:=listview4.Items.item[c].subitems.Strings[D_gain];
-           specified:=true;
-         end;
-         file_list[file_count]:=ListView4.items[c].Caption;
-         Inc(file_count);
-       end;
-    end;
-  if file_count <> 0 then
   begin
-    memo2_message('Averaging flat dark frames.');
-    average('flat-dark', file_list, file_count, img_bias);{only average}
-    if file_count>0  then result:=true;
-  end;
-  head.flatdark_count:=file_count;
-  file_list:=nil;
+    for c:=0 to listview4.items.Count - 1 do
+      if listview4.items[c].Checked = True then
+      begin
+         if ((classify_flat_dark_exposure1.checked=false) or (flat_exposure=listview4.Items.item[c].subitems.Strings[FD_exposure])) then
+         begin
+
+           if specified=false then//use data from first flat-dark
+           begin
+             flatdark_exposure:=listview4.Items.item[c].subitems.Strings[FD_exposure];
+             flatdark_temperature:=listview4.Items.item[c].subitems.Strings[D_temperature];
+             flatdark_gain:=listview4.Items.item[c].subitems.Strings[D_gain];
+             specified:=true;
+           end;
+           filen:=stackmenu1.ListView4.items[c].Caption;
+           if pos('master_flat_dark', ExtractFileName(filen)) > 0 then {master_flat dark file}
+           begin
+             result:=load_fits(filen,false {light}, True, false {update memo}, 0,mainform1.memo1.lines, head, img_bias);
+             if result then
+             begin
+               memo2_message('Master flat-dark loaded. '+filen);
+               exit;
+             end;
+           end
+           else
+           begin
+             file_list[file_count]:=filen;
+             Inc(file_count);
+           end;
+         end;
+      end;
+    if file_count <> 0 then
+    begin
+      memo2_message('Averaging flat dark frames.');
+      average('flat-dark', file_list, file_count, img_bias);{only average}
+      if file_count>0  then
+      begin
+         result:=true;
+         head.flatdark_count:=file_count;
+
+         path1:=extractfilepath(file_list[0]) + 'master_flat_dark_' + IntToStr(head.flatdark_count) + 'xFD_' + flatdark_exposure+'sec_'+copy(head.date_obs, 1, 10) + '.fit';
+         update_integer(mainform1.memo1.lines,'BIAS_CNT=', ' / Number of flat-dark or bias images combined.   ' , head.flatdark_count);
+
+        if save_fits(img_bias,mainform1.memo1.lines,head, path1,False) then {saved}
+        begin
+          memo2_message('Saved '+path1);
+          application.processmessages;
+
+         application.processmessages;
+         listview4.Items.BeginUpdate; {remove the flats added to master}
+         for i:=0 to file_count do
+         begin
+           c:=0;
+           counter:=listview4.Items.Count;
+           while c < counter do
+           begin
+             if file_list[i] = stackmenu1.ListView4.items[c].Caption then {processed}
+             begin
+               listview4.Items.Delete(c);
+               Dec(counter);{one file less}
+             end
+             else
+               Inc(c);
+           end;
+         end;
+         listview_add(listview4, path1, True, FD_nr);{add master}
+         listview4.Items.EndUpdate;
+
+        end;
+      end;
+    end;
+  end;//stackmenu1
 end;
 
 
@@ -5265,8 +5271,7 @@ end;
 
 procedure Tstackmenu1.analyseflatsButton3Click(Sender: TObject);
 begin
-  analyse_listview(listview3, False {light}, True
-    {full fits, include background and noise}, new_analyse_required3{refresh});
+  analyse_listview(listview3, False {light}, True{full fits, include background and noise}, new_analyse_required3{refresh});
   new_analyse_required3:=False;{analyse done}
 
   {temporary fix for CustomDraw not called}
@@ -6852,133 +6857,6 @@ begin
   openurl('http://www.hnsky.org/astap.htm#pixel_math2');
 end;
 
-procedure update_replacement_colour;
-var
-  r, g, b, h, s, v: single;
-  colour: tcolor;
-  saturation: double;
-begin
-  colour:=stackmenu1.colourShape2.brush.color;
-  RGB2HSV(getRvalue(colour), getGvalue(colour), getBvalue(colour), h, s, v);
-
-  saturation:=stackmenu1.new_saturation1.position / 100;
-  v:=v * stackmenu1.new_colour_luminance1.position/100;// adjust luminance
-  HSV2RGB(h, s * saturation {s 0..1}, v {v 0..1}, r, g, b);
-  {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-  stackmenu1.colourshape3.brush.color:=rgb(trunc(r), trunc(g), trunc(b));
-end;
-
-
-
-procedure sample(sx, sy: integer);{sampe local colour and fill shape with colour}
-var
-  halfboxsize, i, j, counter, fx, fy, col_r, col_g, col_b: integer;
-  r, g, b, h, s, v, colrr, colgg, colbb, luminance, luminance_stretched, factor,
-  largest: single;
-  dummy1, radiobutton2: boolean;
-begin
-  dummy1:=stackmenu1.HueRadioButton1.Checked;
-  radiobutton2:=stackmenu1.HueRadioButton2.Checked;
-
-  if ((dummy1 = False) and (radiobutton2 = False)) then exit;
-  halfboxsize:=max(0, (stackmenu1.sample_size1.ItemIndex));
-  counter:=0;
-  colrr:=0;
-  colgg:=0;
-  colbb:=0;
-  for i:=-halfboxsize to halfboxsize do
-    for j:=-halfboxsize to halfboxsize do {average local colour}
-    begin
-      fx:=i + sX;
-      fy:=j + sY;
-      if ((fx >= 0) and (fx < head.Width) and (fy >= 0) and (fy < head.Height)) then
-      begin
-        Inc(counter);
-        colrr:=colrr + img_loaded[0, sY, sX];
-        colgg:=colgg + img_loaded[1, sY, sX];
-        colbb:=colbb + img_loaded[2, sY, sX];
-      end;
-    end;
-  if counter = 0 then exit;
-  colrr:=((colrr / counter) - head.backgr) / (cwhite - head.backgr);{scale to 0..1}
-  colgg:=((colgg / counter) - head.backgr) / (cwhite - head.backgr);{scale to 0..1}
-  colbb:=((colbb / counter) - head.backgr) / (cwhite - head.backgr);{scale to 0..1}
-
-  if colrr <= 0.00000000001 then colrr:=0.00000000001;
-  if colgg <= 0.00000000001 then colgg:=0.00000000001;
-  if colbb <= 0.00000000001 then colbb:=0.00000000001;
-
-  {find brightest colour and resize all if above 1}
-  largest:=colrr;
-  if colgg > largest then largest:=colgg;
-  if colbb > largest then largest:=colbb;
-  if largest > 1 then {clamp to 1 but preserve colour, so ratio r,g,b}
-  begin
-    colrr:=colrr / largest;
-    colgg:=colgg / largest;
-    colbb:=colbb / largest;
-    largest:=1;
-  end;
-
-  if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
-  begin
-    luminance:=(colrr + colgg + colbb) / 3;{luminance in range 0..1}
-    luminance_stretched:=stretch_c[trunc(32768 * luminance)];
-    factor:=luminance_stretched / luminance;
-    if factor * largest > 1 then factor:=1 / largest; {clamp again, could be higher then 1}
-    col_r:=round(colrr * factor * 255);{stretch only luminance but keep rgb ratio!}
-    col_g:=round(colgg * factor * 255);{stretch only luminance but keep rgb ratio!}
-    col_b:=round(colbb * factor * 255);{stretch only luminance but keep rgb ratio!}
-  end
-  else
-  begin
-    col_r:=round(255 * colrr);
-    col_g:=round(255 * colgg);
-    col_b:=round(255 * colbb);
-  end;
-
-  RGB2HSV(col_r, col_g, col_b, h, s, v);
-  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-
-  if dummy1 then
-  begin
-    HSV2RGB(h, s {s 0..1}, v {v 0..1}, r, g, b);
-    {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-    stackmenu1.colourshape1.brush.color:=rgb(trunc(r), trunc(g), trunc(b));
-    stackmenu1.hue_fuzziness1Change(nil);
-  end
-  else
-  if RadioButton2 then
-  begin
-    HSV2RGB(h, s {s 0..1}, v {v 0..1}, r, g, b);
-    {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-    stackmenu1.colourshape2.brush.color:=rgb(trunc(r), trunc(g), trunc(b));
-    update_replacement_colour;
-  end;
-
-end;
-
-procedure Tstackmenu1.hue_fuzziness1Change(Sender: TObject);
-var
-  colour: tcolor;
-  oldhue, s, v, dhue: single;
-begin
-  dhue:=hue_fuzziness1.position;
-  colour:=colourShape1.brush.color;
-  RGB2HSV(getRvalue(colour), getGvalue(colour), getBvalue(colour), oldhue, s, v);
-
-  hue1:=oldhue - dhue / 2;
-  if hue1 > 360 then hue1:=hue1 - 360;
-  if hue1 < 0 then hue1:=hue1 + 360;
-
-  hue2:=oldhue + dhue / 2;
-  if hue2 > 360 then hue2:=hue2 - 360;
-  if hue2 < 0 then hue2:=hue2 + 360;
-
-  stackmenu1.rainbow_panel1.refresh;
-  {plot colour disk in on paint event. Onpaint is required for MacOS}
-end;
-
 
 procedure Tstackmenu1.listview8CustomDrawItem(Sender: TCustomListView;
   Item: TListItem; State: TCustomDrawState; var DefaultDraw: boolean);
@@ -7072,18 +6950,6 @@ end;
 procedure Tstackmenu1.most_common_mono1Click(Sender: TObject);
 begin
   mainform1.convertmono1Click(nil); {back is made in mono procedure}
-end;
-
-
-procedure Tstackmenu1.new_colour_luminance1Change(Sender: TObject);
-begin
-  update_replacement_colour;
-end;
-
-
-procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
-begin
-  update_replacement_colour;
 end;
 
 
@@ -7367,97 +7233,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.rainbow_Panel1MouseDown(Sender: TObject;
-  Button: TMouseButton; Shift: TShiftState; X, Y: integer);
-var
-  w2, h2: integer;
-  hue, dhue, oldhue, s, v, r, g, b: single;
-  colour: tcolor;
-begin
-  with rainbow_Panel1 do
-  begin
-    w2:=Width div 2;
-    h2:=Height div 2;
-
-    hue:=180 + Arctan2(x - w2, y - h2) * 180 / pi;
-
-    dhue:=hue_fuzziness1.position;
-    hue1:=hue - dhue / 2;
-    hue2:=hue + dhue / 2;
-    stackmenu1.rainbow_panel1.refresh;
-    {plot colour disk on an OnPaint event. Required for MacOS}
-  end;
-
-  {adapt shape colours}
-  if HueRadioButton1.Checked then
-  begin
-    colour:=colourShape1.brush.color;
-    RGB2HSV(getRvalue(colour), getGvalue(colour), getBvalue(colour), oldhue, s, v);
-    HSV2RGB(hue, s {s 0..1}, v {v 0..1}, r, g, b);
-    colourShape1.brush.color:=rgb(trunc(r), trunc(g), trunc(b));
-  end;
-  if HueRadioButton2.Checked then
-  begin
-    update_replacement_colour;
-
-    //    colour:=colourShape2.brush.color;
-    //    RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s,v);
-    //    HSV2RGB(hue , s {s 0..1}, v {v 0..1},r,g,b);
-    //    colourShape2.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
-    //    HSV2RGB(hue , s*new_saturation1.position /100 {s 0..1}, v {v 0..1},r,g,b);
-    //    colourShape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
-  end;
-end;
-
-procedure Tstackmenu1.rainbow_Panel1Paint(Sender: TObject);
-{pixel draw on paint required for MacOS}
-var
-  i, j, w2, h2, diameter: integer;
-  r, g, b, h, x, y, radius, s, v: single;
-  colour: tcolor;
-begin
-  with stackmenu1.rainbow_panel1 do
-  begin
-
-    w2:=Width div 2;
-    h2:=Height div 2;
-
-    for i:=-w2 to w2 do
-      for j:=-h2 to h2 do
-      begin
-        if sqr(i) + sqr(j) < sqr(w2) then {plot only in a circel}
-        begin
-          h:=180 + Arctan2(i, j) * 180 / pi;
-          radius:=(i * i + j * j) / (w2 * h2);
-          HSV2RGB(h, radius {s 0..1 or 0..255}, 255 {v 0..1 or 0.255}, r, g, b);
-
-          canvas.pixels[i + w2, j + h2]:=rgb(trunc(r), trunc(g), trunc(b));
-        end;
-      end;
-
-    Canvas.Pen.Width:=2;{thickness lines}
-    Canvas.pen.color:=clblack;
-    sincos(hue1 * pi / 180, x, y);
-    canvas.moveto(w2, h2);
-    canvas.lineto(w2 - round(x * (w2 - 3)), h2 - round(y * (w2 - 3)));
-
-    sincos(hue2 * pi / 180, x, y);
-    canvas.moveto(w2, h2);
-    canvas.lineto(w2 - round(x * (w2 - 3)), h2 - round(y * (w2 - 3)));
-
-    colour:=colourShape1.brush.color;
-    RGB2HSV(getRvalue(colour), getGvalue(colour), getBvalue(colour), h, s, v);
-
-    canvas.Brush.Style:=bsClear;{transparent style}
-    diameter:=max(0, round(w2 * s - w2 * saturation_tolerance1.position / 100));
-    canvas.Ellipse(w2 - diameter, h2 - diameter, w2 + diameter, h2 + diameter);
-
-    diameter:=min(w2, round(w2 * s + w2 * saturation_tolerance1.position / 100));
-    canvas.Ellipse(w2 - diameter, h2 - diameter, w2 + diameter, h2 + diameter);
-
-  end;
-end;
-
 procedure clear_added_AAVSO_columnsOLD;
 
 var
@@ -7535,12 +7310,6 @@ begin
   end;
   if pos('On',reference_database1.text)>0 then  memo2_message('Note that the online reference database is limited to a field-of-view of about 3 degrees');
   clear_added_AAVSO_columns;
-end;
-
-
-procedure Tstackmenu1.remove_luminance1Change(Sender: TObject);
-begin
-  update_replacement_colour;
 end;
 
 
@@ -7993,10 +7762,7 @@ begin
 
   if img_loaded=nil then exit;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-  find_stars(img_loaded, head,hfd_min, 150 {nr stars}{, 1{binfactor}, starlist,mean_hfd);//collect 150 stars. They will be filtered later by SNR. No efficient but avoids changing the find_Star procedure
-
-
-
+  find_stars(img_loaded, head,hfd_min, 150 {nr stars}, starlist,mean_hfd);  //collect 150 stars. They will be filtered later by SNR. No efficient but avoids changing the find_Star procedure
   nrstars:=length(starlist[0]);
   setlength(vsp_vsx_list,nrstars);//make space
   formalism:=mainform1.Polynomial1.itemindex;
@@ -8586,13 +8352,6 @@ begin
   progress_indicator(-100,'');{back to normal}
   memo2_message('Measurements completed.');
   if ((copy(name_database,1,1)='v') and (database_version<>2)) then memo2_message('█████ UPDATE AVAILABLE FOR V50 LOCAL DATABASE CONTAINING BOTH JOHNSON V and B values! DOWNLOAD FROM www.hnsky.org AND INSTALL █████');
-end;
-
-
-procedure Tstackmenu1.saturation_tolerance1Change(Sender: TObject);
-begin
-  stackmenu1.rainbow_panel1.refresh;
-  {plot colour disk in on paint event. Onpaint is required for MacOS}
 end;
 
 
@@ -9356,52 +9115,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.apply_remove_background_colour1Click(Sender: TObject);
-var
-  fitsX, fitsY, max_stars : integer;
-  red, green, blue, signal_R, signal_G, signal_B, sigma, lumn: double;
-  headR,headG,headB : Theader;
-begin
-  if head.naxis3 < 3 then exit;{prevent run time error mono lights}
-
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-
-  backup_img;
-  sigma:=strtofloat2(sigma_decolour1.Text);{standard deviation factor used}
-  max_stars:=strtoint2(stackmenu1.max_stars1.Text,500);
-
-  get_background(1, img_loaded,headG, max_stars, True {hist}, True {noise level});{calculate background and noise_level}
-  get_background(2, img_loaded,headB, max_stars, True {hist}, True {noise level});{calculate background and noise_level}
-  {red at last since all brigthness/contrast display is based on red}
-  get_background(0, img_loaded,headR, max_stars, True {hist}, True {noise level});{calculate background and noise_level}
-
-
-
-  for fitsY:=0 to head.Height - 1 do
-    for fitsX:=0 to head.Width - 1 do
-    begin
-      red:=img_loaded[0, fitsY, fitsX];
-      green:=img_loaded[1, fitsY, fitsX];
-      blue:=img_loaded[2, fitsY, fitsX];
-
-      if ((red - headR.backgr < sigma * headR.noise_level) and (green - headG.backgr < sigma * headG.noise_level) and (blue - headB.backgr < sigma * headB.noise_level)) then {low luminance signal}
-      begin {distribute the colour to luminance}
-        signal_R:=red - headR.backgr;
-        signal_G:=green - headG.backgr;
-        signal_B:=blue - headB.backgr;
-        lumn:=(signal_R + signal_G + signal_B) / 3;{make mono}
-        red:=headR.backgr + lumn;
-        green:=headG.backgr + lumn;
-        blue:=headB.backgr + lumn;
-      end;
-      img_loaded[0, fitsY, fitsX]:=red;
-      img_loaded[1, fitsY, fitsX]:=green;
-      img_loaded[2, fitsY, fitsX]:=blue;
-    end;
-  plot_image(mainform1.image1, False);{plot}
-  Screen.cursor:=crDefault;
-end;
-
 procedure Tstackmenu1.reset_factors1Click(Sender: TObject);
 begin
   add_valueR1.Text:='0.0';
@@ -9684,10 +9397,7 @@ end;
 
 procedure Tstackmenu1.tab_Pixelmath1Show(Sender: TObject);
 begin
-  hue_fuzziness1Change(nil);{pixelmath 1, show position}
-  HueRadioButton2.Enabled:=blend1.checked=false;
-  new_saturation1.Enabled:=blend1.checked=false;
-  new_colour_luminance1.Enabled:=blend1.checked=false;
+//  hue_fuzziness1Change(nil);{pixelmath 1, show position}
 
   stackmenu1.unsharp_amount1Change(sender);//update edit value
   stackmenu1.unsharp_radius1Change(Sender);
@@ -9776,7 +9486,8 @@ begin
     HFD(img,round(starlist[0,i]),round(starlist[1,i]),14 {annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if snr>3 then //should always be the case
     begin
-      radius:=rad*hfd1;
+      radius:=rad*hfd1* hfd1/mean_hfd;//hfd1/mean_hfd is a correction factor for very bright stars which are typically detected larger and have a large "foot".
+      // mainform1.image1.Canvas.textout(round(xc+10),round(yc),floattostrf(hfd1/mean_hfd, ffFixed, 0,2));//For testing
       local_color_smooth(img,round(xc-radius),round(xc+radius),round(yc-radius),round(yc+radius));
     end;
   end;
@@ -9796,13 +9507,6 @@ begin
   Screen.Cursor:=crDefault;
 end;
 
-
-procedure Tstackmenu1.blend1Change(Sender: TObject);
-begin
-  HueRadioButton2.Enabled:=blend1.checked=false;
-  new_saturation1.Enabled:=blend1.checked=false;
-  new_colour_luminance1.Enabled:=blend1.checked=false;
-end;
 
 procedure Tstackmenu1.blink_annotate_and_solve1Click(Sender: TObject);
 var
@@ -10290,24 +9994,41 @@ begin
 end;
 
 
-procedure combine_files(lv : tlistview); //combine selected files, no alignment, no saving
+procedure combine_files(lv : tlistview;gain: double); //combine selected files, no alignment, no saving
 var
-  c: integer;
-  fitsX, fitsY, col, counter: integer;
+  c, fitsX, fitsY, col,counter,starimgcounter  : integer;
+  factor : double;
   img_temp : Timage_array;
   headx   : theader;
   filename1: string;
+  gain_applied,gain0 : double;
+  nebula : boolean;
 begin
   backup_img; {move viewer data to img_backup}
 
   counter:=0;
-  for c:=0 to lv.items.Count - 1 do {check for astrometric solutions}
+  starimgcounter:=0;
+  for c:=0 to lv.items.Count - 1 do
   begin
-    if lv.Items[c].Selected then   //solve all selected
+    if lv.Items[c].Selected then
     begin
       filename1:=lv.items[c].Caption;
+      if pos('_nebula',filename1)>0 then
+      begin
+         gain_applied:=gain;
+         nebula:=true;
+      end
+      else
+      begin
+        gain_applied:=1;
+        nebula:=false;
+      end;
+
       if counter=0 then
-        load_fits(filename1, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded)
+      begin
+        load_fits(filename1, True {light}, True, True {update memo}, 0,mainform1.memo1.lines, head, img_loaded);
+        gain0:=gain_applied;
+      end
       else
         if load_fits(filename1, True {light}, True, false {update memo}, 0,memox, headx, img_temp) then
       begin
@@ -10317,9 +10038,10 @@ begin
               for fitsY:=0 to head.Height - 1 do
                 for fitsX:=0 to head.Width - 1 do
                 begin
-                   img_loaded[col, fitsY, fitsX]:=img_loaded[col, fitsY, fitsX]+img_temp[col, fitsY, fitsX];
+                   img_loaded[col, fitsY, fitsX]:=img_loaded[col, fitsY, fitsX]*gain0 + img_temp[col, fitsY, fitsX]*gain_applied;
                 end;
           add_text(mainform1.memo1.lines,'HISTORY   ', 'Combined '+ExtractFileName(filename1));
+          gain0:=1;//only for the first time;
         end
         else
         begin
@@ -10328,13 +10050,27 @@ begin
         end;
       end;
       inc(counter);
+      if nebula=false then
+          inc(starimgcounter,1);//only count star images
     end;
 
-    if counter>=2 then
+    if counter>=1 then
     begin
       head.object_name:=StringReplace(head.object_name,'_stars','',[]);
       head.object_name:=StringReplace(head.object_name,'_nebula','',[]);
       update_text(mainform1.memo1.lines,'OBJECT  =',#39+head.object_name+#39); {spaces will be added/corrected later}
+
+      if starimgcounter>1 then
+      begin
+        factor:=1/starimgcounter;
+        for col:=0 to head.naxis3 - 1 do {Resize to amount of star images. }
+          for fitsY:=0 to head.Height - 1 do
+            for fitsX:=0 to head.Width - 1 do
+            begin
+              img_loaded[col, fitsY, fitsX]:=img_loaded[col, fitsY, fitsX]*factor;
+            end;
+      end;
+
       plot_histogram(img_loaded, True);
       plot_image(mainform1.image1, False);{plot real}
     end;
@@ -10346,9 +10082,12 @@ end;
 
 
 procedure Tstackmenu1.combine_files1Click(Sender: TObject);
+var
+  gain : double;
 begin
+  gain:=strtofloat2(InputBox('Gain for nebula','Enter the gain to apply to nebula images:','1'));
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  combine_files(listview1);//combine selected files, no alignment, no saving
+  combine_files(listview1,gain);//combine selected files, no alignment, no saving
   Screen.Cursor:=crDefault;
 end;
 
@@ -10359,9 +10098,12 @@ end;
 
 
 procedure Tstackmenu1.results_combine_files1Click(Sender: TObject);
+var
+  gain : double;
 begin
+  gain:=strtofloat2(InputBox('Gain for nebula','Enter the gain to apply to nebula images:','1'));
   Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  combine_files(listview5); //combine selected files, no alignment, no saving
+  combine_files(listview5,gain); //combine selected files, no alignment, no saving
  Screen.Cursor:=crDefault;
 end;
 
@@ -11915,88 +11657,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
-var
-  fitsX, fitsY, fuzziness,col,i,j : integer;
-  r, g, b, h, s, s_new, v, oldhue, newhue, dhue, saturation_factor, s_old, saturation_tol, v_adjust : single;
-  colour: tcolor;
-  blend : boolean;
-  close,close2 : double;
-          function colour_close(y,x : integer) : boolean;
-          begin
-            RGB2HSV(max(0, img_loaded[0, Y, X] - head.backgr), max(0, img_loaded[1, Y, X] - head.backgr), max(0, img_loaded[2, Y, X] - head.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-            dhue:=min(360-abs(oldhue - h),abs(oldhue - h)); //angular distance
-            result:=(((dhue <= fuzziness) or (dhue >= 360 - fuzziness)) and  (abs(s - s_old) < saturation_tol {saturation speed_tolerance1})) {colour close enough, replace colour}
-          end;
-
-          function colour_closeness(y,x : integer) : double;//calcualte how far the colour of pixel x,y  differs from the reference colour
-          begin
-            RGB2HSV(max(0, img_loaded[0, Y, X] - head.backgr), max(0, img_loaded[1, Y, X] - head.backgr), max(0, img_loaded[2, Y, X] - head.backgr), h, s, v);  {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-            dhue:=min(360-abs(oldhue - h),abs(oldhue - h));
-            result:=sqrt( sqr(dhue/360) + sqr(s - s_old));
-          end;
-begin
-  if ((head.naxis = 0) or (head.naxis3 <> 3)) then exit;
-  Screen.Cursor:=crHourglass;{$IfDef Darwin}{$else}application.processmessages;{$endif}// Show hourglass cursor, processmessages is for Linux. Note in MacOS processmessages disturbs events keypress for lv_left, lv_right key
-  backup_img;
-
-  fuzziness:=hue_fuzziness1.position;
-  saturation_tol:=saturation_tolerance1.position / 100;
-  saturation_factor:=new_saturation1.position / 100;
-
-  colour:=colourShape1.brush.color;
-  RGB2HSV(getRvalue(colour), getGvalue(colour), getBvalue(colour), oldhue, s_old, v);
-  colour:=colourShape3.brush.color;
-  RGB2HSV(getRvalue(colour), getGvalue(colour), getBvalue(colour), newhue, s_new, v);
-
-  blend:=blend1.checked;
-
-  if length(stackmenu1.area_set1.Caption)<=3  then {no area selected}
-  begin
-    areax1:=1;
-    areay1:=1;
-    areax2:=head.Width - 1-1;
-    areaY2:=head.Height - 1-1;
-  end;
-  {else set in astap_main}
-
-  v_adjust:=stackmenu1.new_colour_luminance1.position/100;
-
-  for fitsY:=areay1 to areay2 do
-    for fitsX:=areax1 to areax2 do
-    begin
-      if colour_close(fitsY,fitsX) then
-      begin
-        if blend=false then
-        begin
-          HSV2RGB(newhue, min(1, s_new * saturation_factor) {s 0..1}, v * v_adjust{v 0..1}, r, g, b);   {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-          img_loaded[0, fitsY, fitsX]:=r + head.backgr;
-          img_loaded[1, fitsY, fitsX]:=g + head.backgr;
-          img_loaded[2, fitsY, fitsX]:=b + head.backgr;
-        end
-        else
-        begin //use nearby colour which differs the most.
-          close:=0;
-          for i:=-1 to 1 do
-          for j:=-1 to 1 do
-          if ((i<>0) or (j<>0)) then //test all 8 neighbour pixels for the largest colour offset and use this to replace the pixel colour
-          begin
-            close2:=colour_closeness(fitsY+i,fitsX+j);
-            if close2>close then //larger colour offset
-            begin
-               for col:=0 to 2 do img_loaded[col, fitsY, fitsX] :=img_loaded[col, fitsY+i, fitsX+j];//use new found colour
-               close:=close2;//record the largest colour offset
-            end;
-          end;
-        end;
-      end;
-    end;
-  plot_image(mainform1.image1, False);{plot real}
-
-  HueRadioButton1.Checked:=False;
-  HueRadioButton2.Checked:=False;
-  Screen.Cursor:=crDefault;
-end;
 
 procedure colour_correction_factors(img: Timage_array; var headR : Theader);//calculate colour correction factors. Store noise values in headR
 var
@@ -12802,7 +12462,7 @@ begin
           if flat_filter = '' then  head.filter_name:=copy(extractfilename(file_list[0]), 1, 10);{for DSLR images}
 
           path1:=extractfilepath(file_list[0]) + 'master_flat_corrected_with_flat_darks_' + flat_filter + '_' + IntToStr(flat_count) + 'xF_' + IntToStr(head.flatdark_count) + 'xFD_' + flat_exposure+'sec_'+copy(head.date_obs, 1, 10) + '.fit';
-          ;
+
           update_integer(mainform1.memo1.lines,'FLAT_CNT=', ' / Number of flat images combined.                ' , flat_count);
           update_integer(mainform1.memo1.lines,'BIAS_CNT=', ' / Number of flat-dark or bias images combined.   ' , head.flatdark_count);
           if head.flatdark_count <> 0 then head.calstat:=head.calstat + 'B';
@@ -12852,7 +12512,6 @@ begin
 
     until flat_count = 0;{make more than one master}
 
-//    if flatdark_used then listview4.Items.Clear;{remove bias if used}
     save_settings2;{store settings}
     file_list:=nil;
     analyse_listview(listview3, False {light}, full_analyse {full fits (for standard deviation)}, False{refresh});{update the tab information}
@@ -13229,7 +12888,7 @@ end;
 
 
 function propose_file_name(mosaic_mode,long_date, add_time: boolean;
-  object_to_process, filters_used: string): string; {propose a file name}
+  object_to_process : string; filters_used : array of string): string; {propose a file name}
 var
   hh, mm, ss, ms: word;
 begin
@@ -13246,17 +12905,22 @@ begin
   end;
   Result:=Result + ', ';
   if mosaic_mode then Result:=Result + 'mosaic ';
-  if counterR <> 0 then Result:=Result + IntToStr(counterR) + 'x' + IntToStr(exposureR) + 'R ';
-  if counterG <> 0 then Result:=Result + IntToStr(counterG) + 'x' + IntToStr(exposureG) + 'G ';
-  if counterB <> 0 then Result:=Result + IntToStr(counterB) + 'x' + IntToStr(exposureB) + 'B ';
-  if counterL <> 0 then Result:=Result + IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L ';
+  with stackmenu1 do
+  begin
+    if counterR <> 0  then Result:=Result + IntToStr(counterR)  + 'x' + IntToStr(exposureR) + filters_used[0]+' ';
+    if counterG <> 0  then Result:=Result + IntToStr(counterG)  + 'x' + IntToStr(exposureG) + filters_used[1]+' ';
+    if counterB <> 0  then Result:=Result + IntToStr(counterB)  + 'x' + IntToStr(exposureB) + filters_used[2]+' ';
+    if counterR2 <> 0 then Result:=Result + IntToStr(counterR2) + 'x' + IntToStr(exposureR2) + filters_used[3]+' ';
+    if counterG2 <> 0 then Result:=Result + IntToStr(counterG2) + 'x' + IntToStr(exposureG2) + filters_used[4]+' ';
+    if counterB2 <> 0 then Result:=Result + IntToStr(counterB2) + 'x' + IntToStr(exposureB2) + filters_used[5]+' ';
+    if counterL <> 0  then Result:=Result + IntToStr(counterL)  + 'x' + IntToStr(exposureL) + filters_used[6]+' ';
+  end;
   {head.exposure}
   Result:=StringReplace(trim(Result), ' ,', ',', [rfReplaceAll]);
   {remove all spaces in front of comma's}
   telescop:=trim(telescop);
   if trim(telescop) <> '' then Result:=Result + ', ' + telescop;
 
-  if length(filters_used) > 0 then Result:=Result + ', (' + filters_used + ')';
   instrum:=trim(instrum);
   if instrum <> '' then Result:=Result + ', ' + instrum;
   Result:=RemoveSpecialChars(Result);  {slash could be in date but also telescope name like eqmod HEQ5/6}
@@ -13344,7 +13008,7 @@ var
   i, c, nrfiles, image_counter, object_counter,
   first_file, total_counter, counter_colours,analyse_level, referenceX,referenceY,filter_icon :   integer;
   filter_name1, filter_name2, defilter, filename3,
-  extra1, extra2, object_to_process, stack_info, thefilters, date_obs_reference,fileout_neb,fileout_neb2,fileout_stars, alignment_method   : string;
+  extra1, extra2, object_to_process, stack_info, date_obs_reference,fileout_neb,fileout_neb2,fileout_stars, alignment_method   : string;
   lrgb, solution, monofile, ignore, cal_and_align,
   stitching_mode, sigma_clip, calibration_mode, calibration_mode2, skip_combine,
   classify_filter, classify_object, sender_photometry, sender_stack_groups,starnet2_failure,tempvalue,ephemeris_alignment_checked,astrometric_alignment_checked, starnet_checked : boolean;
@@ -14061,7 +13725,6 @@ begin
 
 
             filename2:=filename3;{restore last filename}
-     //       extra1:=extra1 + head.filter_name;
           end{nrfiles>1}
           else
           begin
@@ -14255,8 +13918,7 @@ begin
           add_integer(mainform1.memo1.lines,'LUM_FLAT=', ' / Flats used for luminance.                      ', head.flat_count);
           add_integer(mainform1.memo1.lines,'LUM_BIAS=', ' / Flat-darks used for luminance.                 ', head.flatdark_count);
 
-          thefilters:=head.filter_name; {used later for file name}
-          stack_info:=' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' + IntToStr(counterL) + 'x' + IntToStr(exposureL) +  'L  (' + thefilters + ')';
+          stack_info:=' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' + IntToStr(head.flat_count) + 'x' + 'F  ' + IntToStr(head.dark_count) + 'x' + 'D  ' + IntToStr(counterL) + 'x' + IntToStr(exposureL) +  'L  (' + head.filter_name + ')';
           {head.exposure}
         end
         else {made LRGB color}
@@ -14342,11 +14004,6 @@ begin
           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
 
-
-          thefilters:='';
-          for i:=0 to 6 do if length(filters_used[i]) > 0 then thefilters:=thefilters + ' ' + filters_used[i];
-          thefilters:=trim(thefilters);
-
           stack_info:=' ' + IntToStr(head.flatdark_count) + 'x' + 'FD  ' +
             IntToStr(head.flat_count) + 'x' + 'F  ' +
             IntToStr(head.dark_count) + 'x' + 'D  ' +
@@ -14356,13 +14013,13 @@ begin
             IntToStr(counterR2) + 'x' + IntToStr(exposureR2) + 'R2  ' +
             IntToStr(counterG2) + 'x' + IntToStr(exposureG2) + 'G2  ' +
             IntToStr(counterB2) + 'x' + IntToStr(exposureB2) + 'B2  ' +
-            IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L  (' + thefilters + ')';
+            IntToStr(counterL) + 'x' + IntToStr(exposureL) + 'L';
           {head.exposure}
         end;
 
         mainform1.Memo1.Lines.EndUpdate;
 
-        filename2:=extractfilepath(filename2) + propose_file_name(stitching_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, thefilters);{give it a nice file name}
+        filename2:=extractfilepath(filename2) + propose_file_name(stitching_mode,sender_stack_groups{long date} ,stackmenu1.add_time1.Checked {tab results} or sender_photometry, object_to_process, filters_used);{give it a nice file name}
 
         if head.cd1_1 <> 0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result ' + IntToStr(image_counter) + ' as ' + filename2);
@@ -14422,7 +14079,7 @@ begin
         listview5.Items[comet_frames_to_combine[1]].Selected:=true;
         listview5.Items[comet_frames_to_combine[2]].Selected:=true;
 
-        combine_files(listview5); //combine selected files, no alignment, no saving
+        combine_files(listview5,1); //combine selected files, no alignment, no saving
 
         if length(img_loaded)>1 then //colour
         begin

@@ -84,7 +84,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2026.11.01';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%});
+  astap_version='2026.11.11';  //  astap_version := {$I %DATE%} + ' ' + {$I %TIME%};
 type
   tshapes = record //a shape and it positions
               shape : Tshape;
@@ -446,9 +446,7 @@ type
     procedure dust_spot_removal1Click(Sender: TObject);
     procedure batch_add_tilt1Click(Sender: TObject);
     procedure batch_crop_by_coordinates1Click(Sender: TObject);
-    procedure MenuItem7Click(Sender: TObject);
     procedure mpcreport1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure saturation_factor_plot1MouseWheel(Sender: TObject;
       Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint;
       var Handled: Boolean);
@@ -850,7 +848,8 @@ procedure update_integer(memo:tstrings; inpt,comment1:string;x:integer);{update 
 procedure add_integer(memo:tstrings;inpt,comment1:string;x:integer);{add integer variable to header}
 procedure update_float(memo:tstrings; inpt,comment1:string;preserve_comment:boolean;x:double);{update keyword of fits header in memo}
 
-procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
+function remove_key(memo:tstrings;inpt:string; all:boolean): boolean;{remove key word in header. If all=true then remove multiple of the same keyword}
+
 
 function fnmodulo (x,range: double):double;
 function strtoint2(s: string;default:integer):integer; {str to integer, fault tolerant}
@@ -2732,19 +2731,31 @@ begin
       if ((head.bitpix<=-32){-32 or -64} or (head.bitpix=+32)) then
       begin
         scalefactor:=1;
+        head.datamax_org:=measured_max;
+
         if measured_max>0 then
-          if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then
-            scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
-                                             {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
-        if scalefactor<>1 then {not a 0..65535 range, rescale}
         begin
-          for k:=0 to head.naxis3-1 do {do all colors}
-            for j:=0 to head.height-1 do
-              for i:=0 to head.width-1 do
-                img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
-          head.datamax_org:=65535;
-        end
-        else  head.datamax_org:=measured_max;
+          if measured_max<=1.0*1.5 then
+          begin
+            scalefactor:=65535; //rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float
+            head.datamax_org:=measured_max*65535;
+          end
+          else
+          if measured_max>65535*1.5 then
+          begin
+            scalefactor:=65535/measured_max; // if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535
+            head.datamax_org:=65535;
+          end;
+
+          if scalefactor<>1 then //not a 0..65535 range, rescale
+          begin
+            for k:=0 to head.naxis3-1 do //do all colors
+              for j:=0 to head.height-1 do
+                for i:=0 to head.width-1 do
+                  img_loaded2[k,j,i]:= img_loaded2[k,j,i]*scalefactor;
+
+          end;
+        end;
       end
       else
       if head.bitpix=8 then head.datamax_org:=255 {not measured}
@@ -2755,11 +2766,11 @@ begin
         head.bitpix:=8; {already converted to array with separate colour sections}
       end
       else {16 bit}
-      head.datamax_org:=measured_max;{most common. It set for bitpix=24 in beginning at 255}
+        head.datamax_org:=measured_max;{most common. It set for bitpix=24 in beginning at 255}
       head.backgr:=head.datamin_org;{for case histogram is not called}
       cwhite:=head.datamax_org;
       result:=head.naxis<>0;{success};
-      reader_position:=reader_position+head.width*head.height*(abs(head.bitpix) div 8)
+      reader_position:=reader_position+head.width*head.height*head.naxis3*(abs(head.bitpix) div 8)
     end{image block}
     else
     if  ((head.naxis=2) and ((bintable) or (asciitable)) ) then
@@ -2896,7 +2907,8 @@ begin
     _extract naming when saving: true only when real trailing data follows, so a
     plain single image -- compressed or not -- takes the normal save path.
     Requires at least one full 2880 header block to count as a loadable HDU. }
-  more_hdus_present := ((file_size - reader_position) > 2880) or (get_ext > 1); //get_ext for case last image is displayed
+  more_hdus_present := (((file_size - reader_position) > 2880) or (get_ext > 1)); //get_ext for case last image is displayed
+
   if ((last_extension=false) or (extend_type>0)) then
      mainform1.tabsheet1.caption:='Header '+inttostr(get_ext);
   if ((last_extension=false) or (extend_type>0)) then
@@ -4503,15 +4515,17 @@ begin
 end;
 
 
-procedure remove_key(memo:tstrings;inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
+function remove_key(memo:tstrings;inpt:string; all:boolean): boolean;{remove key word in header. If all=true then remove multiple of the same keyword}
 var
    count1: integer;
 begin
+  result:=false;
   count1:=memo.Count-1;
   while count1>=0 do {update keyword}
   begin
     if pos(inpt,memo[count1])>0 then {found}
     begin
+      result:=true;
       memo.delete(count1);
       if all=false then exit;
     end;
@@ -6216,11 +6230,6 @@ begin
   begin
     result:=true;
     mainform1.shape_marker3.visible:=true;
-
-
-//    place_marker_radec(mainform1.shape_marker3,ra_new,dec_new);{place ra,dec marker in image}
-//  shape.pen.style:=psSolid;//for photometry, resturn from psClear;
-//    mainform1.shape_marker3.pen.style:=psClear; //not visible else psSolid
 
     celestial_to_pixel(head, ra_new,dec_new,true, shape_marker3_fitsX,shape_marker3_fitsY); {ra,dec to fitsX,fitsY}
     show_marker_shape(mainform1.shape_marker3,0 {rectangle},50,50,10,shape_marker3_fitsX, shape_marker3_fitsY);
@@ -9759,17 +9768,10 @@ begin
 
       stackmenu1.photometry_calibrate1.checked:= Sett.ReadBool('stack','calibration',false);//photometry tab calibration
 
-      dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
 
       dum:=Sett.ReadString('stack','noisefilter_blur',''); if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
       dum:=Sett.ReadString('stack','noisefilter_sd',''); if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
-
-      c:=Sett.ReadInteger('stack','hue_fuzziness',987654321); if c<>987654321 then stackmenu1.hue_fuzziness1.position:=c;
-      c:=Sett.ReadInteger('stack','saturation_tolerance',987654321);  if c<>987654321 then stackmenu1.saturation_tolerance1.position:=c;
-      stackmenu1.blend1.checked:= Sett.ReadBool('stack','blend',true);
-
-      c:=Sett.ReadInteger('stack','sample_size',987654321);if c<>987654321 then stackmenu1.sample_size1.itemindex:=c;
 
       dum:=Sett.ReadString('stack','usm_amount',''); if dum<>'' then stackmenu1.unsharp_edit_amount1.text:=dum;
       dum:=Sett.ReadString('stack','usm_radius',''); if dum<>'' then stackmenu1.unsharp_edit_radius1.text:=dum;
@@ -10194,21 +10196,14 @@ begin
       sett.writestring('stack','saturation',stackmenu1.saturation_level1.text);
 
       sett.WriteBool('stack','calibration', stackmenu1.photometry_calibrate1.checked);//photometry tab
-      sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
       sett.writestring('stack','sd_factor_list',stackmenu1.sd_factor_list1.text);
       sett.writestring('stack','noisefilter_blur',stackmenu1.noisefilter_blur1.text);
       sett.writestring('stack','noisefilter_sd',stackmenu1.noisefilter_sd1.text);
 
-      sett.writeInteger('stack','hue_fuzziness',stackmenu1.hue_fuzziness1.position);
-      sett.writeInteger('stack','saturation_tolerance',stackmenu1.saturation_tolerance1.position);
-      sett.WriteBool('stack','blend', stackmenu1.blend1.checked);
-
       sett.writestring('stack','usm_amount',stackmenu1.unsharp_edit_amount1.text);
       sett.writestring('stack','usm_radius',stackmenu1.unsharp_edit_radius1.text);
       sett.writestring('stack','usm_thresh',stackmenu1.unsharp_edit_threshold1.text);
-
-      sett.writeInteger('stack','sample_size',stackmenu1.sample_size1.itemindex);
 
       sett.writeInteger('stack','video_index',video_index);
       sett.writestring('stack','frame_rate',frame_rate);
@@ -10728,11 +10723,6 @@ begin
   end;
 
 //  InputBox('This line to clipboard?','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',line);
-end;
-
-procedure Tmainform1.Panel1Click(Sender: TObject);
-begin
-
 end;
 
 
@@ -13551,11 +13541,17 @@ end;
 
 
 procedure Tmainform1.add_marker_position1Click(Sender: TObject);
+var
+   position : string;
 begin
   if add_marker_position1.checked then
   begin
-    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0   or  23.99 +89.99  or  359.99d 89.99  or  C for center',marker_position );
+    //if head.cd1_1<>0 then
+    // position:=Statusbar1.Panels[0].text:='α, δ';;
+    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0   or  23.99 +89.99  or  359.99d 89.99  or  X for current α, δ position, C for center',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
+    if uppercase(marker_position)='X' then
+       marker_position:=statusbar1.Panels[0].text;
 
     mainform1.shape_marker3.visible:=true;
     add_marker_position1.checked:=place_marker3(marker_position);{place a marker}
@@ -15879,11 +15875,6 @@ begin
   end;//ok pressed
 end;
 
-procedure Tmainform1.MenuItem7Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainform1.CropFITSimage1Click(Sender: TObject);
 var dum     : integer;
@@ -16258,6 +16249,7 @@ end;
 procedure Tmainform1.set_area1Click(Sender: TObject);
 var
     dum : integer;
+    mess : string;
 begin
   if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
   if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -16269,12 +16261,22 @@ begin
   areax2:=stopX;
   areay2:=stopY;
   set_area1.checked:=areaX1>-1;
-//  set_area1.checked:=(areaX1<>areaX2);
-  //stackmenu1.area_set1.caption:='✓';
-  stackmenu1.area_set1.caption:='['+inttostr(areax1)+','+inttostr(areay1)+'], ['+inttostr(areax2)+','+inttostr(areay2)+']';
+
+  if CTRLbutton then
+  begin
+    copy_paste_shape:=1; //ellipse
+    mess:=  '⬭'
+  end
+  else
+  begin
+    copy_paste_shape:=0;//rectangle
+    mess:='(▭)';
+  end;
+  memo2_message('area set: ['+inttostr(areax1)+','+inttostr(areay1)+'], ['+inttostr(areax2)+','+inttostr(areay2)+']');
 
   stackmenu1.center_position1.caption:='Center: '+inttostr((startX+stopX) div 2)+', '+inttostr((startY+stopY) div 2);
 end;
+
 
 procedure rotate_arbitrary(angle,flipped_view, flipped_image: double);
 var centerxs,centerys  : double;
@@ -16986,10 +16988,10 @@ begin
   begin
     Screen.Cursor:=crhandpoint;
 
-    if ((head.naxis3=3) and (stackmenu1.pagecontrol1.tabindex=13) {pixelmath 1}) then {for colour replace function}
-    begin
-      sample(startX,startY);
-    end;
+//    if ((head.naxis3=3) and (stackmenu1.pagecontrol1.tabindex=13) {pixelmath 1}) then {for colour replace function}
+//    begin
+//      sample(startX,startY);
+//    end;
 
     if copy_paste then {paste copied image part}
     begin
@@ -18607,8 +18609,8 @@ end;
 
 procedure local_color_smooth(var img : timage_array; startX,stopX,startY,stopY: integer);//local color smooth
 var
-  fitsX,fitsY,dum,k,counter            : integer;
-  flux,center_x,center_y,a,b,rgb, lumr : single;
+  fitsX,fitsY,dum,k,counter, startx2,stopX2,startY2,stopY2,deltaX,deltaY   : integer;
+  flux,center_x,center_y,a,b,rgb, lumr, radius, a2,b2                      : single;
   colour,median : array[0..2] of single;
   bk  : array of double;
 begin
@@ -18621,26 +18623,40 @@ begin
 
   center_x:=(startx+stopX)/2;
   center_y:=(startY+stopY)/2;
-  a:=(stopX-1-startx)/2;
-  b:=(stopY-1-startY)/2;
+  a:=(stopX-1-startx)*0.5;
+  b:=(stopY-1-startY)*0.5;
 
-  for k:=0 to length(img)-1 do {do all colors}
+
+  deltaX:=(stopX-startX) div 2;
+  deltaY:=(stopY-startY) div 2;
+  startX2:=max(0,startX - deltaX);//double distance from centerX
+  startY2:=max(0,startY - deltaY);
+  stopX2:=min(stopX+deltaX,high(img[0,0]));
+  stopY2:=min(stopY+deltaY,high(img[0]));
+  a2:=a*2;
+  b2:=b*2;
+  //calculate median background
+  for k:=0 to length(img)-1 do //do all colors
   begin
     counter:=0;
     bk:=nil;//free memory to prevent resize
-    setlength(bk,abs((stopx-startx)*(stopy-starty)));
-    for fitsY:=startY to stopY-1 do
-    for fitsX:=startX to stopX-1 do
+    setlength(bk,abs((stopx2-startx2)*(stopy2-starty2)));
+    for fitsY:=startY2 to stopY2-1 do
+    for fitsX:=startX2 to stopX2-1 do
     begin
-      if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)>1 then // standard equation of the ellipse, out side ellipse
+      radius:=sqr(fitsX-center_X)/sqr(a2) +sqr(fitsY-center_Y)/sqr(b2);
+      if((radius>=1) and (radius<=1.1)) then // standard equation of the ellipse, out side ellipse. Here twice the size of the star
       begin
          bk[counter]:=img[k,fitsY,fitsX];
          counter:=counter+1;
       end;
     end;
     median[k]:=smedian(bk,counter);
-    if counter=0 then exit;
+    if counter=0 then
+     exit;
   end;
+
+  //memo2_message(inttostr(counter) + ' pixels');
 
   //sum colour flux
   colour[0]:=0;
@@ -18649,7 +18665,7 @@ begin
   for fitsY:=startY to stopY-1 do
   for fitsX:=startX to stopX-1 do
   begin
-    if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse
+    if sqr(fitsX-center_X)/sqr(a) +sqr(fitsY-center_Y)/sqr(b)<1 then // standard equation of the ellipse, within the ellipse.
     begin
       for k:=0 to length(img)-1 do {do all colors}
       begin
@@ -18676,6 +18692,8 @@ begin
 
     end;
   end;
+
+
 end;
 
 

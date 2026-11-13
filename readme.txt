@@ -1,5 +1,7 @@
 ASTAP is written in Object Pascal and compiled with the Free Pascal Compiler using Lazarus the open source cross platform IDE. 
 
+Executables and source code are available at:   https://sourceforge.net/projects/astap-program/
+
 For the Windows use the astap.lpi project file.
 For the Mac use the astap_mac.lpi project file.
 For Linux use the astap_linux.lpi project file.

@@ -587,7 +587,7 @@ object mainform1: Tmainform1
           object saturation_factor_plot1: TTrackBar
             Left = 416
             Height = 100
-            Hint = 'Saturation adjust factor. The midde position is neutral.  Above is increase, below is decrease.'
+            Hint = 'Colour saturation. The midde position is neutral.  Above is increase, below is decrease.'
             Top = 1
             Width = 20
             Frequency = 5
@@ -848,7 +848,6 @@ object mainform1: Tmainform1
         ParentFont = False
         ParentShowHint = False
         TabOrder = 0
-        OnClick = Panel1Click
         OnMouseDown = Panel1MouseDown
         OnMouseMove = Panel1MouseMove
         OnMouseWheelDown = Panel1MouseWheelDown
